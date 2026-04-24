@@ -11,92 +11,59 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load("//bazel/rules:expand_template.bzl", "expand_template")
+filegroup(
+    name = "repo_suppressions",
+    srcs = [
+        "asan.supp",
+        "lsan.supp",
+        "tsan.supp",
+        "ubsan.supp",
+    ],
+    visibility = ["//quality/integration_testing/sanitizer_support:__pkg__"],
+)
+
+# ==============================================================================
+# Canary tests — verify sanitizer instrumentation is actually active
+# ==============================================================================
+
+cc_binary(
+    name = "asan_canary_bin",
+    testonly = True,
+    srcs = ["asan_canary.cpp"],
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
+)
 
 sh_test(
-    name = "sanitizers_functional_test",
-    srcs = ["sanitizers_functional_test.sh"],
-    data = [
-        "sanitizer.bazelrc",
-        "test_workspace/BUILD.tpl",
-        "test_workspace/MODULE.bazel",
-        "test_workspace/asan_fail_heap_out_of_bounds.cpp",
-        "test_workspace/lsan_fail_leak.cpp",
-        "test_workspace/tsan_fail_data_race.cpp",
+    name = "asan_canary",
+    srcs = ["verify_sanitizer_failure.sh"],
+    args = [
+        "$(location :asan_canary_bin)",
+        "55",
     ],
-    env_inherit = [
-        "PATH",
-        "http_proxy",
-        "https_proxy",
+    data = [":asan_canary_bin"],
+    target_compatible_with = [
+        "@score_cpp_policies//sanitizers/constraints:no_tsan",
+        "@score_cpp_policies//sanitizers/constraints:any_sanitizer",
     ],
-    tags = [
-        "local",  # Test marked local because it uses bazel.
-        "manual",  # Due to long-runtime and local dependencies
-    ],
-    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
 
-filegroup(
-    name = "env_template",
-    srcs = select({
-        "//quality/sanitizer/flags:tsan": ["tsan.env.template"],
-        "//quality/sanitizer/flags:asan_ubsan_lsan": ["asan_ubsan_lsan.env.template"],
-    }),
-    target_compatible_with = ["//quality/sanitizer/constraints:any_sanitizer"],
+cc_binary(
+    name = "tsan_canary_bin",
+    testonly = True,
+    srcs = ["tsan_canary.cpp"],
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_asan_ubsan_lsan"],
 )
 
-[
-    expand_template(
-        name = name + "_env",
-        out = name + "_sanitizer.env",
-        substitutions = {
-            "%ROOT%": root,
-        },
-        target_compatible_with = ["//quality/sanitizer/constraints:any_sanitizer"],
-        template = ":env_template",
-        visibility = ["//:__subpackages__"],
-    )
-    for name, root in (
-        [
-            "absolute",
-            "/",
-        ],
-        [
-            "relative",
-            "./",
-        ],
-    )
-]
-
-filegroup(
-    name = "suppressions",
-    srcs = select({
-        "//quality/sanitizer/flags:tsan": ["tsan.supp"],
-        "//quality/sanitizer/flags:asan_ubsan_lsan": [
-            "asan.supp",
-            "lsan.supp",
-            "ubsan.supp",
-        ],
-    }),
-    target_compatible_with = ["//quality/sanitizer/constraints:any_sanitizer"],
-)
-
-pkg_tar(
-    name = "suppressions_pkg",
-    srcs = [":suppressions"],
-    mode = "0444",
-    package_dir = "quality/sanitizer",
-    target_compatible_with = ["//quality/sanitizer/constraints:any_sanitizer"],
-    visibility = ["//:__subpackages__"],
-)
-
-sh_binary(
-    name = "wrapper",
-    srcs = ["wrapper.sh"],
-    data = [
-        ":relative_env",
-        ":suppressions",
+sh_test(
+    name = "tsan_canary",
+    srcs = ["verify_sanitizer_failure.sh"],
+    args = [
+        "$(location :tsan_canary_bin)",
+        "55",
     ],
-    target_compatible_with = ["//quality/sanitizer/constraints:any_sanitizer"],
+    data = [":tsan_canary_bin"],
+    target_compatible_with = [
+        "@score_cpp_policies//sanitizers/constraints:no_asan_ubsan_lsan",
+        "@score_cpp_policies//sanitizers/constraints:any_sanitizer",
+    ],
 )

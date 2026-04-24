@@ -12,19 +12,20 @@
 # *******************************************************************************
 
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load("//quality/integration_testing:integration_testing.bzl", "integration_test")
+load("@score_cpp_policies//sanitizers/private:merge_suppressions.bzl", "merge_suppressions")
 
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/partial_restart/provider_restart:provider_restart-pkg",
+merge_suppressions(
+    name = "merged_suppressions",
+    srcs = [
+        "//quality/sanitizer:repo_suppressions",
+        "@score_cpp_policies//sanitizers:suppressions",
     ],
 )
 
-integration_test(
-    name = "provider_restart",
-    srcs = ["test_provider_restart.py"],
-    filesystem = ":filesystem",
-    # Disabled for thread sanitizer because of detected race (Ticket-246892)
-    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
+pkg_tar(
+    name = "suppressions_pkg",
+    srcs = [":merged_suppressions"],
+    mode = "0444",
+    package_dir = "sanitizers/suppressions",
+    visibility = ["//visibility:public"],
 )
