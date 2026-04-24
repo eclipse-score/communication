@@ -959,35 +959,32 @@ TEST(SkeletonFieldDeathTest, UpdateWithInvalidFieldNameTriggersTermination)
     EXPECT_DEATH(SkeletonBaseView{unit}.UpdateField("non_existing_test_field_name", field);, ".*");
 }
 
-// Helper skeleton that holds an EnableSet=true field (setter-capable field)
+// Helper skeleton that holds a setter-capable field (tagged WithSetter).
 
 class MySetterSkeleton : public SkeletonBase
 {
   public:
     using SkeletonBase::SkeletonBase;
 
-    SkeletonField<TestSampleType, /*EnableSet=*/true> my_setter_field_{*this, kFieldName};
+    SkeletonField<TestSampleType, WithSetter> my_setter_field_{*this, kFieldName};
 };
 
 // Static type-trait tests for RegisterSetHandler availability
 
-TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerOnlyExistsWhenEnableSetIsTrue)
+TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerOnlyExistsWhenWithSetterTagPresent)
 {
     RecordProperty("Description",
-                   "RegisterSetHandler() shall only exist on SkeletonField<T, EnableSet=true>. "
-                   "Verify via has_member detection that it is absent when EnableSet=false.");
+                   "RegisterSetHandler() shall only exist on SkeletonField tagged WithSetter. "
+                   "Verify that the tag distinguishes the two types.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // RegisterSetHandler should be callable on EnableSet=true
-    static_assert(std::is_same_v<SkeletonField<TestSampleType, true>::FieldType, TestSampleType>,
+    static_assert(std::is_same_v<SkeletonField<TestSampleType, WithSetter>::FieldType, TestSampleType>,
                   "Setter-capable field must expose FieldType");
 
-    // EnableSet=false field must not expose SetHandlerType at the member function level. We verify
-    // indirectly that the EnableSet template parameter distinguishes the types.
-    static_assert(!std::is_same_v<SkeletonField<TestSampleType, false>, SkeletonField<TestSampleType, true>>,
-                  "EnableSet=false and EnableSet=true fields must be different types");
+    static_assert(!std::is_same_v<SkeletonField<TestSampleType>, SkeletonField<TestSampleType, WithSetter>>,
+                  "Tagged and untagged fields must be different types");
 }
 
 // RegisterSetHandler – happy-path: handler forwarded to method binding
