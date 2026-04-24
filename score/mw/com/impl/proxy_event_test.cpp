@@ -106,7 +106,7 @@ class ProxyEventFixture : public ::testing::Test
                        make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment))},
           mock_proxy_event_ptr_{std::make_unique<MockProxyEventType>()},
           mock_proxy_event_{*mock_proxy_event_ptr_},
-          proxy_event_{empty_proxy_, std::move(mock_proxy_event_ptr_), kEventName}
+          proxy_event_{empty_proxy_, kEventName, std::move(mock_proxy_event_ptr_)}
     {
         ON_CALL(mock_proxy_event_, Subscribe(_)).WillByDefault(Return(score::Result<void>{}));
     }
@@ -319,7 +319,7 @@ TYPED_TEST(ProxyEventFixture, CanConstructUnboundProxy)
 
     // When creating an unbound proxy event (note we need a different event name here as the fixture already uses the
     // first)
-    ProxyEvent<typename Base::SampleType> proxy_event{this->empty_proxy_, nullptr, kEventName2};
+    ProxyEvent<typename Base::SampleType> proxy_event{this->empty_proxy_, kEventName2, nullptr};
     // Nothing bad happens
 }
 
@@ -464,7 +464,7 @@ TEST(ProxyEventTest, SamplePtrsToSlotDataAreConst)
     ProxyBase empty_proxy(std::make_unique<mock_binding::Proxy>(),
                           make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
     ProxyEvent<SampleType> proxy{
-        empty_proxy, std::unique_ptr<ProxyEventBinding<SampleType>>{std::move(mock_proxy_ptr)}, kEventName};
+        empty_proxy, kEventName, std::unique_ptr<ProxyEventBinding<SampleType>>{std::move(mock_proxy_ptr)}};
 
     EXPECT_CALL(mock_proxy, Subscribe(max_num_samples));
     EXPECT_CALL(mock_proxy, GetNewSamples(_, _));
@@ -497,7 +497,7 @@ TEST(ProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
     ProxyBase empty_proxy(std::make_unique<mock_binding::Proxy>(),
                           make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
     auto proxy = std::make_unique<ProxyEvent<SampleType>>(
-        empty_proxy, std::unique_ptr<ProxyEventBinding<SampleType>>{std::move(mock_proxy_ptr)}, kEventName);
+        empty_proxy, kEventName, std::unique_ptr<ProxyEventBinding<SampleType>>{std::move(mock_proxy_ptr)});
 
     EXPECT_CALL(mock_proxy, Subscribe(max_num_samples));
     EXPECT_CALL(mock_proxy, GetNewSamples(_, _));
@@ -559,7 +559,7 @@ TEST_F(ProxyEventMoveAssignmentTest, MoveAssignmentTransfersBindingFromSourceToD
     auto second_binding_facade = std::make_unique<mock_binding::ProxyEventFacade<SampleType>>(second_binding_mock);
 
     // Given two registered ProxyEvents, each with their own binding mock
-    ProxyEventType second_event{empty_proxy_, std::move(second_binding_facade), kEventName2};
+    ProxyEventType second_event{empty_proxy_, kEventName2, std::move(second_binding_facade)};
     ProxyBaseView{empty_proxy_}.RegisterEvent(kEventName, proxy_event_);
     ProxyBaseView{empty_proxy_}.RegisterEvent(kEventName2, second_event);
 
