@@ -37,9 +37,16 @@ enum class MessageWithReplyType : std::uint8_t
 {
     kSubscribeServiceMethod = 1,
     kCallMethod,
+    kUnsubscribeServiceMethod,
 };
 
 struct SubscribeServiceMethodUnserializedPayload
+{
+    SkeletonInstanceIdentifier skeleton_instance_identifier;
+    ProxyInstanceIdentifier proxy_instance_identifier;
+};
+
+struct UnsubscribeServiceMethodUnserializedPayload
 {
     SkeletonInstanceIdentifier skeleton_instance_identifier;
     ProxyInstanceIdentifier proxy_instance_identifier;
@@ -111,6 +118,7 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
         });
 
         ON_CALL(mock_subscribe_method_handler_, Call(_, _, _)).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(mock_unsubscribe_method_handler_, Call(_)).WillByDefault(Return(score::ResultBlank{}));
     }
 
     MessagePassingServiceInstanceMethodsFixture& GivenAMessagePassingServiceInstance(
@@ -179,6 +187,18 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
         return *this;
     }
 
+    MessagePassingServiceInstanceMethodsFixture& WithARegisteredUnsubscribeMethodHandler(
+        const SkeletonInstanceIdentifier skeleton_instance_identifier)
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(unit_ != nullptr);
+        IMessagePassingService::ServiceMethodUnsubscribedHandler scoped_unsubscribe_method_handler{
+            unsubscribe_method_handler_scope_, mock_unsubscribe_method_handler_.AsStdFunction()};
+        auto result = unit_->RegisterOnServiceMethodUnsubscribedHandler(skeleton_instance_identifier,
+                                                                        scoped_unsubscribe_method_handler);
+        EXPECT_TRUE(result.has_value());
+        return *this;
+    }
+
     template <typename UnserializedPayload>
     UnserializedPayload DeserializeMethodMessage(score::cpp::span<const std::uint8_t> message,
                                                  MessageWithReplyType message_type)
@@ -235,6 +255,13 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
         return CreateSerializedMethodMessage(payload, MessageWithReplyType::kSubscribeServiceMethod);
     }
 
+    score::cpp::span<const uint8_t> CreateValidUnsubscribeMethodMessage()
+    {
+        const UnsubscribeServiceMethodUnserializedPayload payload{kSkeletonInstanceIdentifier,
+                                                                  kProxyInstanceIdentifier};
+        return CreateSerializedMethodMessage(payload, MessageWithReplyType::kUnsubscribeServiceMethod);
+    }
+
     NiceMock<ClientFactoryMock> client_factory_mock_{};
     NiceMock<ServerFactoryMock> server_factory_mock_{};
 
@@ -257,9 +284,11 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
 
     safecpp::Scope<> method_call_handler_scope_{};
     safecpp::Scope<> subscribe_method_handler_scope_{};
+    safecpp::Scope<> unsubscribe_method_handler_scope_{};
 
     ::testing::MockFunction<void(std::size_t)> mock_method_call_handler_{};
     ::testing::MockFunction<score::ResultBlank(ProxyInstanceIdentifier, uid_t, pid_t)> mock_subscribe_method_handler_{};
+    ::testing::MockFunction<score::ResultBlank(ProxyInstanceIdentifier)> mock_unsubscribe_method_handler_{};
 
     // Since an SendWaitReply returns an score::cpp::span to a message (which is essentially a pointer to a message), we
     // need a buffer to store the message.
@@ -1327,6 +1356,273 @@ TEST_F(MessagePassingServiceInstanceUnregisterSubscribeMethodHandlerTest,
     // When calling UnregisterOnServiceMethodSubscribedHandler before registering a handler
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         unit_->UnregisterOnServiceMethodSubscribedHandler(kSkeletonInstanceIdentifier));
+}
+
+using MessagePassingServiceInstanceRegisterUnsubscribeHandlerTest = MessagePassingServiceInstanceMethodsFixture;
+TEST_F(MessagePassingServiceInstanceRegisterUnsubscribeHandlerTest, ReregisteringHandlerReturnsError)
+{
+    ::testing::MockFunction<score::ResultBlank(ProxyInstanceIdentifier)> mock_unsubscribe_method_handler_2{};
+    safecpp::Scope<> unsubscribe_method_handler_scope_2{};
+    IMessagePassingService::ServiceMethodUnsubscribedHandler scoped_unsubscribe_method_handler_2{
+        unsubscribe_method_handler_scope_2, mock_unsubscribe_method_handler_2.AsStdFunction()};
+
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // When registering a new on method unsubscribed handler for the same skeleton instance identifier
+    auto result = unit_->RegisterOnServiceMethodUnsubscribedHandler(kSkeletonInstanceIdentifier,
+                                                                    scoped_unsubscribe_method_handler_2);
+
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+using MessagePassingServiceInstanceLocalUnsubscribeMethodTest = MessagePassingServiceInstanceMethodsFixture;
+TEST_F(MessagePassingServiceInstanceLocalUnsubscribeMethodTest, CallingWithSelfPidCallsUnsubscribeHandlerLocally)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // Expecting that the registered unsubscribe handler will be called with the provided ProxyInstanceIdentifier
+    EXPECT_CALL(mock_unsubscribe_method_handler_, Call(kProxyInstanceIdentifier));
+
+    // and expecting that an UnsubscribeServiceMethod message will NOT be sent
+    EXPECT_CALL(client_connection_mock_, SendWaitReply(_, _)).Times(0);
+
+    // When calling UnsubscribeServiceMethod with target_node_id equal to the PID of the current process
+    const auto call_result =
+        unit_->UnsubscribeServiceMethod(kSkeletonInstanceIdentifier, kProxyInstanceIdentifier, kLocalPid);
+
+    // Then the result is valid
+    ASSERT_TRUE(call_result.has_value());
+}
+
+TEST_F(MessagePassingServiceInstanceLocalUnsubscribeMethodTest,
+       CallingWithSkeletonIdentifierThatWasNeverRegisteredReturnsSuccess)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier2);
+
+    // When calling UnsubscribeServiceMethod with a SkeletonInstanceIdentifier for which no unsubscribe handler has been
+    // registered (best-effort: returns success instead of error)
+    const auto call_result =
+        unit_->UnsubscribeServiceMethod(kSkeletonInstanceIdentifier, kProxyInstanceIdentifier, kLocalPid);
+
+    // Then the result is valid (best-effort: not-found is treated as success)
+    ASSERT_TRUE(call_result.has_value());
+}
+
+TEST_F(MessagePassingServiceInstanceLocalUnsubscribeMethodTest,
+       CallingAfterUnsubscribeHandlerScopeHasExpiredReturnsSuccess)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // and given that the unsubscribe method handler scope has expired
+    unsubscribe_method_handler_scope_.Expire();
+
+    // When calling UnsubscribeServiceMethod with target_node_id equal to the PID of the current process
+    const auto call_result =
+        unit_->UnsubscribeServiceMethod(kSkeletonInstanceIdentifier, kProxyInstanceIdentifier, kLocalPid);
+
+    // Then the result is valid (best-effort: scope-expired is treated as success)
+    ASSERT_TRUE(call_result.has_value());
+}
+
+TEST_F(MessagePassingServiceInstanceLocalUnsubscribeMethodTest,
+       CallingAfterUnsubscribeHandlerScopeHasExpiredDoesNotCallHandler)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // and given that the unsubscribe method handler scope has expired
+    unsubscribe_method_handler_scope_.Expire();
+
+    // Expecting that the registered unsubscribe method handler will not be called
+    EXPECT_CALL(mock_unsubscribe_method_handler_, Call(_)).Times(0);
+
+    // When calling UnsubscribeServiceMethod
+    score::cpp::ignore =
+        unit_->UnsubscribeServiceMethod(kSkeletonInstanceIdentifier, kProxyInstanceIdentifier, kLocalPid);
+}
+
+using MessagePassingServiceInstanceRemoteUnsubscribeMethodTest = MessagePassingServiceInstanceMethodsFixture;
+TEST_F(MessagePassingServiceInstanceRemoteUnsubscribeMethodTest, CallingWithOtherProcessPidSendsUnsubscribeMessage)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInDifferentProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // Expecting that an UnsubscribeServiceMethod message will be sent containing the provided ProxyInstanceIdentifier
+    // and SkeletonInstanceIdentifier
+    EXPECT_CALL(client_connection_mock_, SendWaitReply(_, _)).WillOnce(WithArg<0>(Invoke([this](auto message) {
+        const auto actual_payload = DeserializeMethodMessage<UnsubscribeServiceMethodUnserializedPayload>(
+            message, MessageWithReplyType::kUnsubscribeServiceMethod);
+        EXPECT_EQ(actual_payload.skeleton_instance_identifier, kSkeletonInstanceIdentifier);
+        EXPECT_EQ(actual_payload.proxy_instance_identifier, kProxyInstanceIdentifier);
+
+        return CreateSerializedMethodReply(score::ResultBlank{}, method_reply_buffer_);
+    })));
+
+    // and expecting that the registered unsubscribe method handler will NOT be called (which would happen when the
+    // client is in the same process)
+    EXPECT_CALL(mock_unsubscribe_method_handler_, Call(_)).Times(0);
+
+    // When calling UnsubscribeServiceMethod with target_node_id equal to the PID of a different process
+    const auto call_result =
+        unit_->UnsubscribeServiceMethod(kSkeletonInstanceIdentifier, kProxyInstanceIdentifier, kRemotePid);
+
+    // Then the result is valid
+    ASSERT_TRUE(call_result.has_value());
+}
+
+TEST_F(MessagePassingServiceInstanceRemoteUnsubscribeMethodTest, ReturnsErrorWhenSendWaitReplyReturnsError)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInDifferentProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // Expecting that SendWaitReply will be called which returns an error
+    EXPECT_CALL(client_connection_mock_, SendWaitReply(_, _))
+        .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createFromErrno())));
+
+    // When calling UnsubscribeServiceMethod with target_node_id equal to the PID of a different process
+    const auto call_result =
+        unit_->UnsubscribeServiceMethod(kSkeletonInstanceIdentifier, kProxyInstanceIdentifier, kRemotePid);
+
+    // Then an error is returned
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(MessagePassingServiceInstanceRemoteUnsubscribeMethodTest, ReturnsErrorWhenReplyPayloadHasUnexpectedSize)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInDifferentProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // Expecting that SendWaitReply will be called which returns a payload with an unexpected size
+    std::vector<std::uint8_t> payload_with_unexpected_size(sizeof(MethodReplyPayload) + 2U);
+    EXPECT_CALL(client_connection_mock_, SendWaitReply(_, _))
+        .WillOnce(Return(
+            score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()}));
+
+    // When calling UnsubscribeServiceMethod with target_node_id equal to the PID of a different process
+    const auto call_result =
+        unit_->UnsubscribeServiceMethod(kSkeletonInstanceIdentifier, kProxyInstanceIdentifier, kRemotePid);
+
+    // Then an error is returned
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kBindingFailure);
+}
+
+using MessagePassingServiceInstanceHandleUnsubscribeMethodMessageTest = MessagePassingServiceInstanceMethodsFixture;
+TEST_F(MessagePassingServiceInstanceHandleUnsubscribeMethodMessageTest, ReturnsErrorWhenPayloadHasUnexpectedSize)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInDifferentProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // When a MessageWithReply message is received of type kUnsubscribeServiceMethod with the wrong payload size
+    std::vector<std::uint8_t> payload_with_unexpected_size(sizeof(UnsubscribeServiceMethodUnserializedPayload) + 2U);
+    payload_with_unexpected_size[0] = static_cast<std::uint8_t>(MessageWithReplyType::kUnsubscribeServiceMethod);
+    const auto result = received_send_message_with_reply_callback_(
+        server_connection_mock_,
+        score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()});
+
+    // Then an error is returned since the error is unrecoverable
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), os::Error::Code::kUnexpected);
+}
+
+TEST_F(MessagePassingServiceInstanceHandleUnsubscribeMethodMessageTest, RepliesWithErrorWhenPayloadHasUnexpectedSize)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInDifferentProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // Expecting that a reply will be sent containing an unexpected message size error
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_THAT(reply_result, ContainsError(MethodErrc::kUnexpectedMessageSize));
+            return {};
+        }));
+
+    // When a MessageWithReply message is received of type kUnsubscribeServiceMethod with the wrong payload size
+    std::vector<std::uint8_t> payload_with_unexpected_size(sizeof(UnsubscribeServiceMethodUnserializedPayload) + 2U);
+    payload_with_unexpected_size[0] = static_cast<std::uint8_t>(MessageWithReplyType::kUnsubscribeServiceMethod);
+    score::cpp::ignore = received_send_message_with_reply_callback_(
+        server_connection_mock_,
+        score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()});
+}
+
+TEST_F(MessagePassingServiceInstanceHandleUnsubscribeMethodMessageTest,
+       ReturnsSuccessWhenUnsubscribeHandlerNotRegistered)
+{
+    // Given that no unsubscribe handler has been registered
+    GivenAMessagePassingServiceInstance().WithAClientInDifferentProcess();
+
+    // Expecting that no handlers are called
+    EXPECT_CALL(mock_unsubscribe_method_handler_, Call(_)).Times(0);
+
+    // When a valid MessageWithReply message is received of type kUnsubscribeServiceMethod
+    const auto result =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidUnsubscribeMethodMessage());
+
+    // Then a valid result is returned (best-effort: not-found returns success)
+    ASSERT_TRUE(result.has_value());
+}
+
+TEST_F(MessagePassingServiceInstanceHandleUnsubscribeMethodMessageTest,
+       RepliesWithSuccessWhenUnsubscribeHandlerNotRegistered)
+{
+    // Given that no unsubscribe handler has been registered
+    GivenAMessagePassingServiceInstance().WithAClientInDifferentProcess();
+
+    // Expecting that a reply will be sent containing success (best-effort: not-found returns success)
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_TRUE(reply_result.has_value());
+            return {};
+        }));
+
+    // When a valid MessageWithReply message is received of type kUnsubscribeServiceMethod
+    score::cpp::ignore =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidUnsubscribeMethodMessage());
+}
+
+TEST_F(MessagePassingServiceInstanceHandleUnsubscribeMethodMessageTest,
+       CallsUnsubscribeMethodHandlerRegisteredWithProvidedSkeletonIdentifier)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInDifferentProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // Expecting that the registered unsubscribe method handler will be called with the provided ProxyInstanceIdentifier
+    EXPECT_CALL(mock_unsubscribe_method_handler_, Call(kProxyInstanceIdentifier));
+
+    // When a MessageWithReply message is received of type kUnsubscribeServiceMethod
+    const auto result =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidUnsubscribeMethodMessage());
+
+    // Then a valid result is returned
+    ASSERT_TRUE(result.has_value());
+}
+
+TEST_F(MessagePassingServiceInstanceHandleUnsubscribeMethodMessageTest,
+       RepliesSuccessWhenUnsubscribeMethodHandlerCalledSuccessfully)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInDifferentProcess().WithARegisteredUnsubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // Expecting that a reply will be sent containing success
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_TRUE(reply_result.has_value());
+            return {};
+        }));
+
+    // When a MessageWithReply message is received of type kUnsubscribeServiceMethod
+    score::cpp::ignore =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidUnsubscribeMethodMessage());
 }
 
 }  // namespace

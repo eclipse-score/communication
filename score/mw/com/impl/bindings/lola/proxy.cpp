@@ -439,7 +439,10 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
 {
 }
 
-Proxy::~Proxy() = default;
+Proxy::~Proxy()
+{
+    TeardownMethods();
+}
 
 void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 {
@@ -716,6 +719,32 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
         }
     }
     return subscription_result;
+}
+
+void Proxy::TeardownMethods() noexcept
+{
+    if (!are_proxy_methods_setup_.load())
+    {
+        return;
+    }
+
+    auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
+    auto& lola_message_passing = lola_runtime.GetLolaMessaging();
+    const SkeletonInstanceIdentifier skeleton_instance_identifier{
+        GetLoLaServiceTypeDeployment(handle_).service_id_,
+        LolaServiceInstanceId{GetLoLaInstanceDeployment(handle_).instance_id_.value()}.GetId()};
+
+    // Best-effort: notify the Skeleton that this Proxy is being destroyed so it can clean up the shared memory
+    // region. If this fails (e.g. Skeleton already stopped offering), log and continue. Some resources may be
+    // leaked on the Skeleton side in that case, but will be cleaned up on Proxy process restart.
+    const auto result = lola_message_passing.UnsubscribeServiceMethod(
+        quality_type_, skeleton_instance_identifier, proxy_instance_identifier_, GetSourcePid());
+    if (!(result.has_value()))
+    {
+        score::mw::log::LogInfo("lola")
+            << __func__ << __LINE__
+            << "TeardownMethods: UnsubscribeServiceMethod failed (best-effort, ignoring). Error:" << result.error();
+    }
 }
 
 memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermissions() const

@@ -629,5 +629,47 @@ TEST_F(SkeletonMethodIsRegisteredFixture, IsRegisteredReturnsTrueIfRegisterHandl
     EXPECT_TRUE(is_registered);
 }
 
+using SkeletonMethodOnProxyMethodUnsubscribeFinishedFixture = SkeletonMethodFixture;
+TEST_F(SkeletonMethodOnProxyMethodUnsubscribeFinishedFixture, CallingBeforeSubscribingIsANoOp)
+{
+    GivenASkeletonMethod().WithARegisteredCallback();
+
+    // Expecting that UnregisterMethodCallHandler will never be called since nothing was subscribed
+    EXPECT_CALL(message_passing_mock_, UnregisterMethodCallHandler(_, _)).Times(0);
+
+    // When calling OnProxyMethodUnsubscribeFinished with a proxy_method_instance_identifier_ that was never subscribed
+    // Then the program should NOT terminate (unlike OnProxyMethodUnsubscribe which has a PRECONDITION check)
+    unit_->OnProxyMethodUnsubscribeFinished(proxy_method_instance_identifier_);
+}
+
+TEST_F(SkeletonMethodOnProxyMethodUnsubscribeFinishedFixture, CallingTwiceWithSameIdentifierIsANoOp)
+{
+    GivenASkeletonMethod().WithARegisteredCallback();
+
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_QM, proxy_method_instance_identifier_, _, _));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, proxy_method_instance_identifier_))
+        .Times(1);  // Must fire exactly once — not on the second UnsubscribeFinished call
+
+    // Given that OnProxyMethodSubscribeFinished is called once for proxy_method_instance_identifier_
+    const auto result = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                              kValidInArgStorage,
+                                                              kValidReturnStorage,
+                                                              proxy_method_instance_identifier_,
+                                                              method_call_handler_scope_,
+                                                              kAllowedProxyUid,
+                                                              kAllowedProxyPid,
+                                                              QualityType::kASIL_QM);
+    EXPECT_TRUE(result.has_value());
+
+    // and given that OnProxyMethodUnsubscribeFinished is called once
+    unit_->OnProxyMethodUnsubscribeFinished(proxy_method_instance_identifier_);
+
+    // When calling OnProxyMethodUnsubscribeFinished a second time with the same identifier
+    // Then the program should NOT terminate (unlike OnProxyMethodUnsubscribe which has a PRECONDITION check)
+    unit_->OnProxyMethodUnsubscribeFinished(proxy_method_instance_identifier_);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

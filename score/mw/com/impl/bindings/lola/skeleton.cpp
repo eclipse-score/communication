@@ -329,6 +329,26 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     }
     method_subscription_registration_guard_qm_.emplace(std::move(qm_registration_result).value());
 
+    // Register an unsubscription handler for QM proxies. The handler uses the same scope as the subscribe handler
+    // (on_service_method_subscribed_handler_scope_) so that unsubscriptions arriving after StopOffer are silently
+    // ignored (the scope will have been expired).
+    auto qm_unsubscription_result = lola_message_passing.RegisterOnServiceMethodUnsubscribedHandler(
+        QualityType::kASIL_QM,
+        skeleton_instance_identifier,
+        IMessagePassingService::ServiceMethodUnsubscribedHandler{
+            on_service_method_subscribed_handler_scope_,
+            [this](const ProxyInstanceIdentifier proxy_instance_identifier) -> ResultBlank {
+                return OnServiceMethodsUnsubscribed(proxy_instance_identifier);
+            }});
+    if (!(qm_unsubscription_result.has_value()))
+    {
+        method_subscription_registration_guard_qm_.reset();
+        score::mw::log::LogError("lola")
+            << "Could not register QM service method unsubscription handler. Returning error.";
+        return MakeUnexpected<Blank>(qm_unsubscription_result.error());
+    }
+    method_unsubscription_registration_guard_qm_.emplace(std::move(qm_unsubscription_result).value());
+
     if (quality_type_ == QualityType::kASIL_B)
     {
         auto allowed_consumers_asil_b = GetAllowedConsumers(QualityType::kASIL_B);
@@ -347,11 +367,32 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         if (!(asil_b_registration_result))
         {
             method_subscription_registration_guard_qm_.reset();
+            method_unsubscription_registration_guard_qm_.reset();
             score::mw::log::LogError("lola") << "Could not register ASIL-B service method handler. Returning error.";
             return MakeUnexpected<Blank>(asil_b_registration_result.error());
         }
         score::cpp::ignore =
             method_subscription_registration_guard_asil_b_.emplace(std::move(asil_b_registration_result).value());
+
+        auto asil_b_unsubscription_result = lola_message_passing.RegisterOnServiceMethodUnsubscribedHandler(
+            QualityType::kASIL_B,
+            skeleton_instance_identifier,
+            IMessagePassingService::ServiceMethodUnsubscribedHandler{
+                on_service_method_subscribed_handler_scope_,
+                [this](const ProxyInstanceIdentifier proxy_instance_identifier) -> ResultBlank {
+                    return OnServiceMethodsUnsubscribed(proxy_instance_identifier);
+                }});
+        if (!(asil_b_unsubscription_result.has_value()))
+        {
+            method_subscription_registration_guard_qm_.reset();
+            method_unsubscription_registration_guard_qm_.reset();
+            method_subscription_registration_guard_asil_b_.reset();
+            score::mw::log::LogError("lola")
+                << "Could not register ASIL-B service method unsubscription handler. Returning error.";
+            return MakeUnexpected<Blank>(asil_b_unsubscription_result.error());
+        }
+        score::cpp::ignore =
+            method_unsubscription_registration_guard_asil_b_.emplace(std::move(asil_b_unsubscription_result).value());
     }
 
     return {};
@@ -391,6 +432,8 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     // Therefore, we first unregister all handlers and then expire the scopes.
     method_subscription_registration_guard_qm_.reset();
     method_subscription_registration_guard_asil_b_.reset();
+    method_unsubscription_registration_guard_qm_.reset();
+    method_unsubscription_registration_guard_asil_b_.reset();
     for (auto& skeleton_method : skeleton_methods_)
     {
         skeleton_method.second.get().UnregisterMethodCallHandlers();
@@ -563,6 +606,23 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
         UnsubscribeMethods(method_ids_to_unsubscribe, proxy_instance_identifier);
         return subscription_result;
     }
+    return {};
+}
+
+ResultBlank Skeleton::OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier)
+{
+    std::lock_guard lock{on_service_methods_subscribed_mutex_};
+
+    // Close the proxy's shared memory region
+    method_resources_.Remove(proxy_instance_identifier);
+
+    // Unregister the method call handler for each SkeletonMethod corresponding to this proxy
+    for (auto& [method_id, skeleton_method_ref] : skeleton_methods_)
+    {
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier, method_id};
+        skeleton_method_ref.get().OnProxyMethodUnsubscribeFinished(proxy_method_instance_identifier);
+    }
+
     return {};
 }
 

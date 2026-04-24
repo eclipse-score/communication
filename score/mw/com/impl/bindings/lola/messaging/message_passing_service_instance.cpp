@@ -66,6 +66,12 @@ struct SubscribeServiceMethodUnserializedPayload
     ProxyInstanceIdentifier proxy_instance_identifier;
 };
 
+struct UnsubscribeServiceMethodUnserializedPayload
+{
+    SkeletonInstanceIdentifier skeleton_instance_identifier;
+    ProxyInstanceIdentifier proxy_instance_identifier;
+};
+
 struct MethodCallUnserializedPayload
 {
     ProxyMethodInstanceIdentifier proxy_method_instance_identifier;
@@ -410,6 +416,10 @@ score::ResultBlank MessagePassingServiceInstance::MessageCallbackWithReply(
         {
             return HandleSubscribeServiceMethodMsg(payload, sender_uid, sender_pid);
         }
+        case score::cpp::to_underlying(MessageWithReplyType::kUnsubscribeServiceMethod):
+        {
+            return HandleUnsubscribeServiceMethodMsg(payload, sender_pid);
+        }
         case score::cpp::to_underlying(MessageWithReplyType::kCallMethod):
         {
             return HandleCallMethodMsg(payload, sender_uid);
@@ -604,6 +614,20 @@ score::ResultBlank MessagePassingServiceInstance::HandleSubscribeServiceMethodMs
                                              sender_node_id);
 }
 
+score::ResultBlank MessagePassingServiceInstance::HandleUnsubscribeServiceMethodMsg(
+    const score::cpp::span<const std::uint8_t> payload,
+    const pid_t /*sender_node_id*/)
+{
+    UnsubscribeServiceMethodUnserializedPayload unserialized_payload{};
+    if (!DeserializeFromPayload(payload, unserialized_payload))
+    {
+        return MakeUnexpected(MethodErrc::kUnexpectedMessageSize);
+    }
+
+    return CallUnsubscribeServiceMethodLocally(unserialized_payload.skeleton_instance_identifier,
+                                               unserialized_payload.proxy_instance_identifier);
+}
+
 score::ResultBlank MessagePassingServiceInstance::HandleCallMethodMsg(
     const score::cpp::span<const std::uint8_t> payload,
     const uid_t sender_uid)
@@ -656,6 +680,36 @@ score::ResultBlank MessagePassingServiceInstance::CallSubscribeServiceMethodLoca
             << "Invocation of subscribe service method handler failed as scope has been destroyed: "
                "SkeletonMethod has already been destroyed.";
         return MakeUnexpected(MethodErrc::kSkeletonAlreadyDestroyed);
+    }
+    return invocation_result.value();
+}
+
+score::ResultBlank MessagePassingServiceInstance::CallUnsubscribeServiceMethodLocally(
+    const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+    const ProxyInstanceIdentifier& proxy_instance_identifier)
+{
+    // A copy of the handler is made under lock and called outside the lock. See CallSubscribeServiceMethodLocally for
+    // a detailed explanation of the pattern.
+    std::shared_lock<std::shared_mutex> read_lock{unsubscribe_service_method_handlers_mutex_};
+    auto handler_it = unsubscribe_service_method_handlers_.find(skeleton_instance_identifier);
+    if (handler_it == unsubscribe_service_method_handlers_.cend())
+    {
+        // The skeleton may have already called StopOffer, which expired the scope used for the handler, or may not
+        // have registered a handler at all. This is a best-effort call so we treat this as success.
+        mw::log::LogInfo("lola") << "Unsubscribe method handler has not been registered for this SkeletonMethod. "
+                                    "Skeleton may have already stopped offering.";
+        return {};
+    }
+
+    auto handler_copy = handler_it->second;
+    read_lock.unlock();
+
+    const auto invocation_result = std::invoke(handler_copy, proxy_instance_identifier);
+    if (!(invocation_result.has_value()))
+    {
+        mw::log::LogInfo("lola") << "Invocation of unsubscribe service method handler was a no-op: scope has been "
+                                    "destroyed (skeleton already stopped offering).";
+        return {};
     }
     return invocation_result.value();
 }
@@ -727,6 +781,39 @@ ResultBlank MessagePassingServiceInstance::CallSubscribeServiceMethodRemotely(
     {
         score::mw::log::LogError("lola")
             << "MessagePassingService: Parsing SubscribeServiceMethodMessage reply from node_id " << target_node_id
+            << "failed during deserialization";
+        return MakeUnexpected<Blank>(deserialization_result.error());
+    }
+    return deserialization_result.value();
+}
+
+ResultBlank MessagePassingServiceInstance::CallUnsubscribeServiceMethodRemotely(
+    const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+    const ProxyInstanceIdentifier& proxy_instance_identifier,
+    const pid_t target_node_id)
+{
+    UnsubscribeServiceMethodUnserializedPayload unserialized_payload{skeleton_instance_identifier,
+                                                                     proxy_instance_identifier};
+    const auto message = SerializeToMessage(score::cpp::to_underlying(MessageWithReplyType::kUnsubscribeServiceMethod),
+                                            unserialized_payload);
+    auto sender = client_cache_.GetMessagePassingClient(target_node_id);
+
+    std::array<std::uint8_t, sizeof(MethodReplyPayload)> reply{};
+    score::cpp::span<std::uint8_t> reply_buffer{reply.data(), reply.size()};
+    const auto method_reply_result = sender->SendWaitReply(message, reply_buffer);
+    if (!method_reply_result.has_value())
+    {
+        score::mw::log::LogError("lola")
+            << "MessagePassingServiceInstance: Sending UnsubscribeServiceMethodMessage to node_id " << target_node_id
+            << " failed with error: " << method_reply_result.error();
+        return MakeUnexpected(MethodErrc::kMessagePassingError);
+    }
+
+    const auto deserialization_result = DeserializeFromMethodReplyPayload(method_reply_result.value());
+    if (!(deserialization_result.has_value()))
+    {
+        score::mw::log::LogError("lola")
+            << "MessagePassingService: Parsing UnsubscribeServiceMethodMessage reply from node_id " << target_node_id
             << "failed during deserialization";
         return MakeUnexpected<Blank>(deserialization_result.error());
     }
@@ -1140,6 +1227,25 @@ ResultBlank MessagePassingServiceInstance::RegisterOnServiceMethodSubscribedHand
     return {};
 }
 
+ResultBlank MessagePassingServiceInstance::RegisterOnServiceMethodUnsubscribedHandler(
+    const SkeletonInstanceIdentifier skeleton_instance_identifier,
+    IMessagePassingService::ServiceMethodUnsubscribedHandler unsubscribed_callback)
+{
+    std::unique_lock<std::shared_mutex> write_lock(unsubscribe_service_method_handlers_mutex_);
+    const auto [existing_element, was_inserted] =
+        unsubscribe_service_method_handlers_.insert({skeleton_instance_identifier, std::move(unsubscribed_callback)});
+
+    if (!was_inserted)
+    {
+        score::mw::log::LogError("lola")
+            << "MessagePassingService: Failed to register OnServiceMethodUnsubscribedHandler "
+               "since it could not be inserted into map.";
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
+    return {};
+}
+
 ResultBlank MessagePassingServiceInstance::RegisterMethodCallHandler(
     const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
     IMessagePassingService::MethodCallHandler method_call_callback,
@@ -1165,6 +1271,16 @@ void MessagePassingServiceInstance::UnregisterOnServiceMethodSubscribedHandler(
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         num_elements_erased != 0U,
         "Function must only be called when a subscribe service method handler was successfully registered!");
+}
+
+void MessagePassingServiceInstance::UnregisterOnServiceMethodUnsubscribedHandler(
+    const SkeletonInstanceIdentifier skeleton_instance_identifier)
+{
+    std::unique_lock<std::shared_mutex> write_lock(unsubscribe_service_method_handlers_mutex_);
+    const auto num_elements_erased = unsubscribe_service_method_handlers_.erase(skeleton_instance_identifier);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        num_elements_erased != 0U,
+        "Function must only be called when an unsubscribe service method handler was successfully registered!");
 }
 
 void MessagePassingServiceInstance::UnregisterMethodCallHandler(
@@ -1209,8 +1325,8 @@ void MessagePassingServiceInstance::RegisterEventNotificationRemote(const Elemen
         {
             score::mw::log::LogError("lola")
                 << "MessagePassingService: RegisterEventNotificationRemote called for event" << event_id.ToString()
-                << "and node_id" << target_node_id << "although event is "
-                << " currently located at node" << registration_count_inserted.first->second.node_id;
+                << "and node_id" << target_node_id << "although event is " << " currently located at node"
+                << registration_count_inserted.first->second.node_id;
             registration_count_inserted.first->second.node_id = target_node_id;
             registration_count_inserted.first->second.counter = 1U;
         }
@@ -1407,6 +1523,34 @@ ResultBlank MessagePassingServiceInstance::SubscribeServiceMethod(
     {
         const auto result =
             CallSubscribeServiceMethodRemotely(skeleton_instance_identifier, proxy_instance_identifier, target_node_id);
+        if (!(result.has_value()))
+        {
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+        return {};
+    }
+}
+
+ResultBlank MessagePassingServiceInstance::UnsubscribeServiceMethod(
+    const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+    const ProxyInstanceIdentifier& proxy_instance_identifier,
+    const pid_t target_node_id)
+{
+    const auto are_skeleton_and_proxy_in_same_process = (target_node_id == self_pid_);
+    if (are_skeleton_and_proxy_in_same_process)
+    {
+        const auto result =
+            CallUnsubscribeServiceMethodLocally(skeleton_instance_identifier, proxy_instance_identifier);
+        if (!(result.has_value()))
+        {
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+        return {};
+    }
+    else
+    {
+        const auto result = CallUnsubscribeServiceMethodRemotely(
+            skeleton_instance_identifier, proxy_instance_identifier, target_node_id);
         if (!(result.has_value()))
         {
             return MakeUnexpected(ComErrc::kBindingFailure);

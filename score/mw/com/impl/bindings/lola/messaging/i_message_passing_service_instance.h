@@ -54,11 +54,18 @@ class IMessagePassingServiceInstance
         IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback,
         IMessagePassingService::AllowedConsumerUids allowed_proxy_uids) = 0;
 
+    virtual ResultBlank RegisterOnServiceMethodUnsubscribedHandler(
+        const SkeletonInstanceIdentifier skeleton_instance_identifier,
+        IMessagePassingService::ServiceMethodUnsubscribedHandler unsubscribed_callback) = 0;
+
     virtual ResultBlank RegisterMethodCallHandler(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
                                                   IMessagePassingService::MethodCallHandler method_call_callback,
                                                   const uid_t allowed_proxy_uid) = 0;
 
     virtual void UnregisterOnServiceMethodSubscribedHandler(
+        SkeletonInstanceIdentifier skeleton_instance_identifier) = 0;
+
+    virtual void UnregisterOnServiceMethodUnsubscribedHandler(
         SkeletonInstanceIdentifier skeleton_instance_identifier) = 0;
 
     virtual void UnregisterMethodCallHandler(ProxyMethodInstanceIdentifier proxy_method_instance_identifier) = 0;
@@ -74,6 +81,10 @@ class IMessagePassingServiceInstance
     virtual ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
                                                const ProxyInstanceIdentifier& proxy_instance_identifier,
                                                const pid_t target_node_id) = 0;
+
+    virtual ResultBlank UnsubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                                 const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                                 const pid_t target_node_id) = 0;
 
     virtual ResultBlank CallMethod(const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
                                    const std::size_t queue_position,

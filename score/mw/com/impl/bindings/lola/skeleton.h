@@ -20,6 +20,7 @@
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_unsubscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_resource_map.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
@@ -170,6 +171,8 @@ class Skeleton final : public SkeletonBinding
                                            const QualityType asil_level,
                                            const pid_t proxy_pid);
 
+    ResultBlank OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier);
+
     using MethodIdsToUnsubscribe = std::vector<UniqueMethodIdentifier>;
 
     std::pair<score::ResultBlank, MethodIdsToUnsubscribe> SubscribeMethods(
@@ -219,6 +222,13 @@ class Skeleton final : public SkeletonBinding
     /// Skeleton::PrepareStopOffer()
     std::optional<MethodSubscriptionRegistrationGuard> method_subscription_registration_guard_qm_;
     std::optional<MethodSubscriptionRegistrationGuard> method_subscription_registration_guard_asil_b_;
+
+    /// \brief RAII guard objects which will unregister a ServiceMethodUnsubscribedHandler on destruction
+    ///
+    /// Each guard corresponds to the method unsubscription handler which was registered in Skeleton::PrepareOffer().
+    /// The guard objects will be destroyed in Skeleton::PrepareStopOffer().
+    std::optional<MethodUnsubscriptionRegistrationGuard> method_unsubscription_registration_guard_qm_;
+    std::optional<MethodUnsubscriptionRegistrationGuard> method_unsubscription_registration_guard_asil_b_;
 
     bool was_old_shm_region_reopened_;
 

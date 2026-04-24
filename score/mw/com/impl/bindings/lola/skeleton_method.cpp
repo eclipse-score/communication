@@ -127,6 +127,16 @@ void SkeletonMethod::OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifie
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(num_elements_erased != 0U);
 }
 
+void SkeletonMethod::OnProxyMethodUnsubscribeFinished(
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
+{
+    const std::lock_guard lock{registration_guards_mutex_};
+    // Silently ignore if there's no entry for this proxy — the proxy may not have subscribed to this method
+    // (e.g. it is a disabled field Get/Set method).
+    score::cpp::ignore =
+        registration_guards_.erase(proxy_method_instance_identifier.proxy_instance_identifier.application_id);
+}
+
 void SkeletonMethod::UnregisterMethodCallHandlers()
 {
     const std::lock_guard lock{registration_guards_mutex_};

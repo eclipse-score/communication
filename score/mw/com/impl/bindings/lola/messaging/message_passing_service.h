@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service_instance.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service_instance_factory.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_instance.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_unsubscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/configuration/global_configuration.h"
@@ -108,6 +109,14 @@ class MessagePassingService final : public IMessagePassingService
         ServiceMethodSubscribedHandler subscribed_callback,
         AllowedConsumerUids allowed_proxy_uids) override;
 
+    /// \brief Register a handler on Skeleton side which will be called when UnsubscribeServiceMethod is called by a
+    /// Proxy.
+    /// \details see IMessagePassingService::RegisterOnServiceMethodUnsubscribedHandler
+    Result<MethodUnsubscriptionRegistrationGuard> RegisterOnServiceMethodUnsubscribedHandler(
+        const QualityType asil_level,
+        SkeletonInstanceIdentifier skeleton_instance_identifier,
+        ServiceMethodUnsubscribedHandler unsubscribed_callback) override;
+
     /// \brief Register a handler on Skeleton side which will be called when CallMethod is called by a Proxy.
     /// \details see IMessagePassingService::RegisterMethodCallHandler
     Result<MethodSubscriptionRegistrationGuard> RegisterMethodCallHandler(
@@ -144,6 +153,14 @@ class MessagePassingService final : public IMessagePassingService
                                        const ProxyInstanceIdentifier& proxy_instance_identifier,
                                        const pid_t target_node_id) override;
 
+    /// \brief Best-effort call made by a Proxy on destruction to notify the Skeleton that the proxy is being
+    /// destroyed.
+    /// \details see IMessagePassingService::UnsubscribeServiceMethod
+    ResultBlank UnsubscribeServiceMethod(const QualityType asil_level,
+                                         const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                         const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                         const pid_t target_node_id) override;
+
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response
     /// will be returned.
@@ -160,6 +177,9 @@ class MessagePassingService final : public IMessagePassingService
 
     void UnregisterOnServiceMethodSubscribedHandler(const QualityType asil_level,
                                                     SkeletonInstanceIdentifier skeleton_instance_identifier) override;
+
+    void UnregisterOnServiceMethodUnsubscribedHandler(const QualityType asil_level,
+                                                      SkeletonInstanceIdentifier skeleton_instance_identifier) override;
 
     void UnregisterMethodCallHandler(const QualityType asil_level,
                                      ProxyMethodInstanceIdentifier proxy_method_instance_identifier) override;

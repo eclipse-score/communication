@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_instance_factory.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_unsubscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/messaging/mw_log_logger.h"
 #include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
 
@@ -164,6 +165,23 @@ Result<MethodSubscriptionRegistrationGuard> MessagePassingService::RegisterOnSer
         *this, asil_level, skeleton_instance_identifier, registration_guards_scope_);
 }
 
+Result<MethodUnsubscriptionRegistrationGuard> MessagePassingService::RegisterOnServiceMethodUnsubscribedHandler(
+    const QualityType asil_level,
+    SkeletonInstanceIdentifier skeleton_instance_identifier,
+    ServiceMethodUnsubscribedHandler unsubscribed_callback)
+{
+    auto& instance = GetMessagePassingServiceInstance(asil_level);
+
+    const auto result = instance.RegisterOnServiceMethodUnsubscribedHandler(skeleton_instance_identifier,
+                                                                            std::move(unsubscribed_callback));
+    if (!(result.has_value()))
+    {
+        return MakeUnexpected<MethodUnsubscriptionRegistrationGuard>(result.error());
+    }
+    return MethodUnsubscriptionRegistrationGuardFactory::Create(
+        *this, asil_level, skeleton_instance_identifier, registration_guards_scope_);
+}
+
 Result<MethodCallRegistrationGuard> MessagePassingService::RegisterMethodCallHandler(
     const QualityType asil_level,
     ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
@@ -211,6 +229,17 @@ ResultBlank MessagePassingService::SubscribeServiceMethod(
     return instance.SubscribeServiceMethod(skeleton_instance_identifier, proxy_instance_identifier, target_node_id);
 }
 
+ResultBlank MessagePassingService::UnsubscribeServiceMethod(
+    const QualityType asil_level,
+    const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+    const ProxyInstanceIdentifier& proxy_instance_identifier,
+    const pid_t target_node_id)
+{
+    auto& instance = GetMessagePassingServiceInstance(asil_level);
+
+    return instance.UnsubscribeServiceMethod(skeleton_instance_identifier, proxy_instance_identifier, target_node_id);
+}
+
 ResultBlank MessagePassingService::CallMethod(const QualityType asil_level,
                                               const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
                                               std::size_t queue_position,
@@ -228,6 +257,15 @@ void MessagePassingService::UnregisterOnServiceMethodSubscribedHandler(
     auto& instance = GetMessagePassingServiceInstance(asil_level);
 
     instance.UnregisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier);
+}
+
+void MessagePassingService::UnregisterOnServiceMethodUnsubscribedHandler(
+    const QualityType asil_level,
+    SkeletonInstanceIdentifier skeleton_instance_identifier)
+{
+    auto& instance = GetMessagePassingServiceInstance(asil_level);
+
+    instance.UnregisterOnServiceMethodUnsubscribedHandler(skeleton_instance_identifier);
 }
 
 void MessagePassingService::UnregisterMethodCallHandler(const QualityType asil_level,

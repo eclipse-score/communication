@@ -58,6 +58,8 @@ class SkeletonMethod : public SkeletonMethodBinding
 
     void OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
 
+    void OnProxyMethodUnsubscribeFinished(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
+    
     bool IsRegistered() const;
 
     void UnregisterMethodCallHandlers();

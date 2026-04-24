@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_unsubscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
@@ -47,6 +48,7 @@ class IMessagePassingService
 {
     friend class MethodSubscriptionRegistrationGuardFactory;
     friend class MethodCallRegistrationGuardFactory;
+    friend class MethodUnsubscriptionRegistrationGuardFactory;
 
   public:
     using HandlerRegistrationNoType = std::uint32_t;
@@ -85,7 +87,18 @@ class IMessagePassingService
     ///        restarted.
     using ServiceMethodSubscribedHandler = safecpp::CopyableScopedFunction<
         score::ResultBlank(ProxyInstanceIdentifier proxy_instance_identifier, uid_t proxy_uid, pid_t proxy_pid)>;
-
+    /// \brief Handler which will be called when the proxy process sends a message that it has unsubscribed from a
+    /// service method.
+    ///
+    /// When a Proxy is destroyed, it will call UnsubscribeServiceMethod which will send a message to the Skeleton
+    /// process. The Skeleton process will then call the ServiceMethodUnsubscribedHandler registered in
+    /// RegisterOnServiceMethodUnsubscribedHandler. The handler should close the proxy's shared memory region and
+    /// unregister the method call handler corresponding to the proxy's ProxyMethodInstanceIdentifier from each
+    /// SkeletonMethod.
+    ///
+    /// \param proxy_instance_identifier unique identifier of the Proxy instance which unsubscribed from the method.
+    using ServiceMethodUnsubscribedHandler =
+        safecpp::CopyableScopedFunction<score::ResultBlank(ProxyInstanceIdentifier proxy_instance_identifier)>;
     /// \brief Handler which will be called when the proxy process sends a message that it has called a method.
     ///
     /// This will be triggered when the Proxy process calls CallMethod.
@@ -197,6 +210,24 @@ class IMessagePassingService
         ServiceMethodSubscribedHandler subscribed_callback,
         AllowedConsumerUids allowed_proxy_uids) = 0;
 
+    /// \brief Register a handler on Skeleton side which will be called when UnsubscribeServiceMethod is called by a
+    /// Proxy.
+    ///
+    /// When a Proxy is destroyed, it will call UnsubscribeServiceMethod. When this message is received in the
+    /// Skeleton process, the handler registered in this function will be called.
+    ///
+    /// The handler is scoped to on_service_method_subscribed_handler_scope_ on the Skeleton side, so that it is
+    /// not called after the Skeleton has started its StopOffer sequence. This is our synchronisation point.
+    ///
+    /// \param asil_level ASIL level of method.
+    /// \param skeleton_instance_identifier to identify which ServiceMethodUnsubscribedHandler to call when
+    ///        UnsubscribeServiceMethod is called on the Proxy side
+    /// \param unsubscribed_callback callback that will be called when UnsubscribeServiceMethod is called
+    virtual Result<MethodUnsubscriptionRegistrationGuard> RegisterOnServiceMethodUnsubscribedHandler(
+        const QualityType asil_level,
+        const SkeletonInstanceIdentifier skeleton_instance_identifier,
+        ServiceMethodUnsubscribedHandler unsubscribed_callback) = 0;
+
     /// \brief Register a handler on Skeleton side which will be called when CallMethod is called by a ProxyMethod.
     ///
     /// When a user calls a method on a ProxyMethod, it will put the InArgs in shared memory (if there are any) and then
@@ -283,6 +314,21 @@ class IMessagePassingService
                                                const ProxyInstanceIdentifier& proxy_instance_identifier,
                                                const pid_t target_node_id) = 0;
 
+    /// \brief Best-effort call made by a Proxy on destruction to notify the Skeleton that the proxy is being
+    /// destroyed so that the Skeleton can clean up the proxy's shared memory region.
+    ///
+    /// This mirrors SubscribeServiceMethod. If this call fails, some resources will be leaked on the Skeleton side
+    /// but will be cleaned up when the Proxy process restarts and the Skeleton detects the PID change.
+    ///
+    /// \param asil_level ASIL level of method.
+    /// \param skeleton_instance_identifier identification of the Skeleton corresponding to the Proxy.
+    /// \param proxy_instance_identifier identification of the Proxy which is being destroyed.
+    /// \param target_node_id PID of the Skeleton process which the unsubscribe call is sent to.
+    virtual ResultBlank UnsubscribeServiceMethod(const QualityType asil_level,
+                                                 const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                                 const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                                 const pid_t target_node_id) = 0;
+
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response
     /// will be returned
@@ -330,6 +376,19 @@ class IMessagePassingService
     /// \param proxy_method_instance_identifier to identify which registered MethodCallHandler to unregister
     virtual void UnregisterMethodCallHandler(const QualityType asil_level,
                                              ProxyMethodInstanceIdentifier proxy_method_instance_identifier) = 0;
+
+    /// \brief Unregister handler that was registered with RegisterOnServiceMethodUnsubscribedHandler
+    ///
+    /// This function is private and will only be called by MethodUnsubscriptionRegistrationGuardFactory on
+    /// destruction.
+    ///
+    /// \pre Shall only be called after RegisterOnServiceMethodUnsubscribedHandler was successfully called.
+    ///
+    /// \param asil_level ASIL level of method.
+    /// \param skeleton_instance_identifier to identify which registered ServiceMethodUnsubscribedHandler to unregister
+    virtual void UnregisterOnServiceMethodUnsubscribedHandler(
+        const QualityType asil_level,
+        SkeletonInstanceIdentifier skeleton_instance_identifier) = 0;
 };
 
 }  // namespace score::mw::com::impl::lola
