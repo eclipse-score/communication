@@ -14,7 +14,7 @@
 filegroup(
     name = "creation_of_skeleton_not_possible_fta",
     srcs = [
-        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
+        "@score_tooling//plantuml:fta_metamodel",
         "creation_of_skeleton_not_possible_fta.puml",
     ],
     visibility = ["//visibility:public"],

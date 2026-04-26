@@ -14,7 +14,7 @@
 filegroup(
     name = "callback_invoked_with_wrong_data_fta",
     srcs = [
-        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
+        "@score_tooling//plantuml:fta_metamodel",
         "callback_invoked_with_wrong_data_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -23,7 +23,7 @@ filegroup(
 filegroup(
     name = "callback_not_invoked_despite_samples_available_fta",
     srcs = [
-        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
+        "@score_tooling//plantuml:fta_metamodel",
         "callback_not_invoked_despite_samples_available_fta.puml",
     ],
     visibility = ["//visibility:public"],

@@ -14,7 +14,7 @@
 filegroup(
     name = "changes_user_data_fta",
     srcs = [
-        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
+        "@score_tooling//plantuml:fta_metamodel",
         "changes_user_data_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -23,7 +23,7 @@ filegroup(
 filegroup(
     name = "does_not_free_resources_after_usage_fta",
     srcs = [
-        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
+        "@score_tooling//plantuml:fta_metamodel",
         "does_not_free_resources_after_usage_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -32,7 +32,7 @@ filegroup(
 filegroup(
     name = "only_partially_notifies_user_fta",
     srcs = [
-        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
+        "@score_tooling//plantuml:fta_metamodel",
         "only_partially_notifies_user_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -41,7 +41,7 @@ filegroup(
 filegroup(
     name = "sends_to_wrong_consumer_fta",
     srcs = [
-        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
+        "@score_tooling//plantuml:fta_metamodel",
         "sends_to_wrong_consumer_fta.puml",
     ],
     visibility = ["//visibility:public"],

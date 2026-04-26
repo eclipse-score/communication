@@ -14,7 +14,7 @@
 filegroup(
     name = "general",
     srcs = [
-        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
+        "@score_tooling//plantuml:fta_metamodel",
         "in_memory_configuration_wrong_fta.puml",
     ],
     visibility = ["//visibility:public"],
