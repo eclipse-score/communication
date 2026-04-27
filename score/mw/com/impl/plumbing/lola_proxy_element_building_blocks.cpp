@@ -71,7 +71,7 @@ std::optional<LoLaProxyElementBuildingBlocks> LookupForLola(const HandleType& ha
     const lola::ElementFqId element_fq_id{
         lola_type_deployment.service_id_, element_id, lola_instance_id->GetId(), element_type};
 
-    return LoLaProxyElementBuildingBlocks{*lola_parent, lola_instance_id->GetId(), element_fq_id};
+    return LoLaProxyElementBuildingBlocks{*lola_parent, element_fq_id};
 }
 
 }  // namespace
