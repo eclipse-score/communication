@@ -17,6 +17,7 @@ pub use bridge_ffi_rs::{
     ProxyBase, ProxyEventBase, ProxyWrapperClass, SkeletonBase, SkeletonEventBase,
 };
 
+#[derive(Debug, Clone)]
 pub struct MockFFIBridge;
 
 impl bridge_ffi_rs::FFIBridge for MockFFIBridge {

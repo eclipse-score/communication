@@ -67,6 +67,7 @@
 // - Enables efficient zero-copy string passing for interface_id, event_id, and type_name parameters
 
 use core::fmt::{Debug, Formatter};
+use core::marker::Unpin;
 use std::ffi::c_char;
 
 /// Opaque C++ void* pointer wrapper
@@ -82,7 +83,10 @@ pub use mw_com::proxy::ProxyEventBase;
 pub use mw_com::proxy::ProxyWrapperClass;
 pub use mw_com::InstanceSpecifier;
 
-pub trait FFIBridge {
+/// FFIBridge trait defines the interface for FFI interactions between Rust COM-API and C++ Lola runtime.
+/// This trait abstracts the FFI calls and allows for different implementations
+/// e.g., Lola bridge, mock bridge for testing.
+pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     // Define any methods that the bridge should have here
     unsafe fn get_allocatee_ptr(
         event_ptr: *mut SkeletonEventBase,
@@ -568,6 +572,7 @@ extern "C" {
     fn mw_com_proxy_event_unsubscribe(event_ptr: *mut ProxyEventBase);
 }
 
+#[derive(Debug, Clone)]
 pub struct LolaFFIBridge;
 
 impl FFIBridge for LolaFFIBridge {
