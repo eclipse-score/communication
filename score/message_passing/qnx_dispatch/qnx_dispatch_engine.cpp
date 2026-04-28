@@ -700,7 +700,7 @@ void QnxDispatchEngine::StopServer(ResourceManagerServer& server) noexcept
     {
         // QNX defect PR# 2561573: resmgr_attach/message_attach calls are not thread-safe for the same dispatch_pointer
         std::lock_guard guard(attach_mutex_);
-        const auto detach_expected = os_resources_.dispatch->resmgr_detach(
+        score::cpp::ignore = os_resources_.dispatch->resmgr_detach(
             dispatch_pointer_, server.resmgr_id_, static_cast<std::uint32_t>(_RESMGR_DETACH_CLOSE));
         server.resmgr_id_ = -1;
     }

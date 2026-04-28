@@ -14,9 +14,17 @@
 """Integration test for generic_proxy."""
 
 
-def test_generic_proxy(sut):
+def generic_proxy(target, mode, cycle_time=None, num_cycles=None, **kwargs):
+    args = ["--mode", mode]
+    if num_cycles is not None:
+        args += ["-n", str(num_cycles)]
+    if cycle_time is not None:
+        args += ["-t", str(cycle_time)]
+    wait_on_exit = num_cycles is not None
+    return target.wrap_exec("bin/generic_proxy", args, cwd="/opt/generic_proxy", wait_on_exit=wait_on_exit, **kwargs)
+
+
+def test_generic_proxy(target):
     """Test generic proxy functionality with sender and receiver."""
-    # Sender runs for 30 cycles at 40ms intervals, Receiver receives 25 cycles
-    with sut.start_process("./bin/generic_proxy -m send -t 40 -n 30", cwd="/opt/generic_proxy/") as sender:
-        with sut.start_process("./bin/generic_proxy -m recv -n 25", cwd="/opt/generic_proxy/") as receiver:
-            assert receiver.wait_for_exit(timeout=120) == 0
+    with generic_proxy(target, "send", cycle_time=40), generic_proxy(target, "recv", num_cycles=25, wait_timeout=15):
+        pass

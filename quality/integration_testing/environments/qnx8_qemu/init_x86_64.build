@@ -16,13 +16,14 @@
 #
 ###############################################################################
 
-[image=0x400000]
+[-optional]
+
+[image=0x3600000]
 [virtual=x86_64,multiboot] boot = {
-    # Use startup-x86 by default
     startup-x86 -v -D8250..115200 -zz
     PATH=/proc/boot
     LD_LIBRARY_PATH=/proc/boot
-    procnto-smp-instr
+    [+keeplinked] procnto-smp-instr
 }
 
 [+script] startup-script = {
@@ -32,51 +33,75 @@
     SYSNAME=nto
     TERM=qansi
 
-    # Open serial console for stdout/stderr/stdin.
-    # Explicitly list all four COM ports so the driver creates
-    # /dev/ser1 – /dev/ser4.  COM1 is the interactive console;
-    # COM2-COM4 are dedicated process output channels backed by
-    # QEMU -serial unix: sockets on the host.
-    devc-ser8250 -e 3f8,4 2f8,3 3e8,4 2e8,3 &
+    devc-ser8250 &
     waitfor /dev/ser1
     reopen /dev/ser1
 
-    # Wait for extra serial ports used as dedicated process
-    # output channels by the test harness.
-    waitfor /dev/ser2
-    waitfor /dev/ser3
-    waitfor /dev/ser4
+    /proc/boot/startup.sh
 
-    # Start random number generator service (provides /dev/urandom
-    # needed by C++ std::random_device and other consumers).
-    random &
-    waitfor /dev/urandom
+    [+session] /bin/sh &
+}
 
+[uid=0 gid=0 perms=0700] startup.sh = {
     # Enable logging via slogger2
+    echo "---> Starting slogger2"
     slogger2 -m -s 253952 -G 7 -V -g 486
     waitfor /dev/slog2
 
+    # PCI server required for virtio-net (QEMU networking)
+    echo "---> Starting PCI Services"
+    pci-server --config=/proc/boot/pci_server.cfg
+    waitfor /dev/pci
+
     # Required to support POSIX pipes (used e.g. by service discovery)
+    echo "---> Starting Pipe"
     pipe
+    waitfor /dev/pipe
+
+    # Start random number generator service (provides /dev/random
+    # needed by C++ std::random_device and other consumers).
+    echo "---> Starting Random"
+    random
+    waitfor /dev/random
 
     # Service discovery depends on inotify, which requires fsevmgr
-    fsevmgr &
+    echo "---> Starting fsevmgr"
+    fsevmgr
     waitfor /dev/fsnotify
 
     # Create a RAM disk and mount it at /tmp_discovery
-    devb-ram ram capacity=1 blk ramdisk=10m,cache=512k,vnode=256
-    waitfor /dev/ram0
-
     # Block size reduced to the minimum, since we only put flag files without content.
     # 4096 inodes for approx. 1360 service offers (~2-3 files per service offer)
-    # Should this command fail with "device too small for filesystem", either reduce the amount of inodes or increase the size of the ramdisk.
-    mkqnx6fs -q -b 512 -i 4096 /dev/ram0
+    echo "---> Starting devb-ram"
+    devb-ram ram capacity=1 blk ramdisk=10m,cache=512k,vnode=256 2>/dev/null
+    waitfor /dev/ram0
 
+    echo "---> Mounting RAM disk"
+    mkqnx6fs -q -b 512 -i 4096 /dev/ram0
     mount -t qnx6 /dev/ram0 /tmp_discovery
     chmod 777 /tmp_discovery
 
-    # We start a shell session to allow user interaction
-    [+session] /bin/sh &
+    # Pseudo-terminal driver needed by sshd
+    echo "---> Starting devc-pty"
+    devc-pty -n 32
+
+    # Networking stack for SSH-based ITF test harness communication
+    echo "---> Starting Networking"
+    io-sock -m phy -m pci -d vtnet_pci
+    waitfor /dev/socket
+
+    echo "---> Configuring network interface"
+    if_up -p vtnet0
+    ifconfig vtnet0 10.0.2.15 netmask 255.255.255.0
+    sysctl -w net.inet.icmp.bmcastecho=1
+    sysctl -w qnx.sec.droproot=33:33
+
+    echo "---> Setting hostname"
+    hostname qnx-score
+
+    # SSH daemon - ITF test harness communicates via SSH
+    echo "---> Starting SSH daemon"
+    /proc/boot/sshd -f /var/ssh/sshd_config
 }
 
 # dynamic loader
@@ -90,9 +115,14 @@ libc.so                                  # C standard library (essential)
 libc.so.6                                # Main C library (malloc, printf, file I/O, etc.)
 libcam.so.2                              # CAM library for device access
 libcrypto.so.3                           # OpenSSL 3 crypto library (needed by qcrypto-openssl-3 plugin)
+libexpat.so.2                            # XML parser library (needed by PCI subsystem)
 libfsnotify.so.1                         # File system notification library
 libgcc_s.so.1                            # GCC runtime support library
+libiconv.so.1                            # Character encoding conversion library
+libjail.so.1                             # Jail/sandbox library (needed by sshd)
 libm.so                                  # Math library
+libpam.so.2                              # PAM authentication library (needed by sshd)
+libpci.so.3.0                            # PCI access library (needed by pci-server)
 libqcrypto.so.1.0                        # QNX cryptographic library
 libqh.so.1                               # QNX helper library
 libqnxnoexcept.so=${QNXNOEXCEPT_LIBRARY}
@@ -101,10 +131,19 @@ libsecpol.so.1                           # Security policy library
 libslog2.so.1                            # System logging library (slog2_* functions)
 libslog2parse.so.1                       # System log parsing library
 libsocket.so.4                           # Socket library (needed by libcrypto)
+libssl.so.3                              # OpenSSL TLS library (needed by sshd)
 libz.so                                  # Zlib compression library
 
 # qcrypto plugin loaded by the random service at runtime
 [search=${QNX_TARGET}/x86_64/lib/dll] qcrypto-openssl-3.so
+
+#############################################
+### NETWORKING COMPONENTS ###
+#############################################
+io-sock                                  # Network stack manager
+mods-pci.so                              # PCI network module
+mods-phy.so                              # PHY network module
+devs-vtnet_pci.so                        # VirtIO network PCI driver (QEMU)
 
 [type=link] /bin/sh=/proc/boot/ksh       # Create symbolic link: sh -> ksh (standard shell link)
 [type=link] /bin/ls=/proc/boot/ls        # Link ls to IFS version for compatibility
@@ -213,31 +252,163 @@ toybox                                   # Minimal Unix utilities collection (re
 [type=link] ability=on                   # Create symbolic link: ability -> on (manages process abilities/privileges)
 [type=link] setconf=getconf              # Create symbolic link: setconf -> getconf (sets configuration parameters)
 [type=link] libslog2.so=libslog2.so.1    # Create version-neutral symbolic link
+[type=link] libsocket.so=libsocket.so.4  # Create version-neutral symbolic link
 [type=link] libqh.so=libqh.so.1          # Create version-neutral symbolic link
+[type=link] qcrypto-openssl.so=qcrypto-openssl-3.so
 
 #############################################
 ### Tools ###
 #############################################
-devb-ram                                                                        # RAM disk block device manager
-devc-ser8250                                                                    # Serial port driver for 8250/16550 UART controllers (console access)
-fsevmgr                                                                         # File system event manager
-ksh                                                                             # Korn shell - provides command-line interface and scripting
-ln                                                                              # Create file links
-mkqnx6fs                                                                        # Create QNX6 file systems
-mount                                                                           # File system mount utility - mounts/unmounts file systems
-on                                                                              # Command execution utility - runs commands with specific options
-pdebug                                                                          # Process debugger
-pidin                                                                           # Process information display - shows running processes (like 'ps' on Linux)
-pipe                                                                            # Named pipe manager
-random                                                                          # Random number generator service (/dev/random, /dev/urandom)
-slay                                                                            # Kill or modify a process by name or ID
-slog2info                                                                       # System log viewer - displays logged messages
-slogger2                                                                        # System logging daemon - collects and manages log messages
+devb-ram                                 # RAM disk block device manager
+devc-pty                                 # Pseudo-terminal driver (needed by sshd)
+devc-ser8250                             # Serial port driver for 8250/16550 UART controllers (console access)
+fsevmgr                                  # File system event manager
+getconf                                  # Get system configuration values
+hostname                                 # Set/display system hostname
+if_up                                    # Bring network interface up
+ifconfig                                 # Configure network interfaces
+ksh                                      # Korn shell - provides command-line interface and scripting
+ln                                       # Create file links
+mkqnx6fs                                 # Create QNX6 file systems
+mount                                    # File system mount utility - mounts/unmounts file systems
+on                                       # Command execution utility - runs commands with specific options
+pci-server                               # PCI server (required for virtio-net)
+pdebug                                   # Process debugger
+pidin                                    # Process information display - shows running processes (like 'ps' on Linux)
+pipe                                     # Named pipe manager
+random                                   # Random number generator service (/dev/random, /dev/urandom)
+route                                    # Manage network routing tables
+slay                                     # Kill or modify a process by name or ID
+slog2info                                # System log viewer - displays logged messages
+slogger2                                 # System logging daemon - collects and manages log messages
+sshd                                     # SSH daemon (ITF test harness communicates via SSH)
+sysctl                                   # View/modify kernel parameters
+
+/usr/lib/ssh/sftp-server=${QNX_TARGET}/${PROCESSOR}/usr/libexec/sftp-server  # SFTP server (file transfer for ITF)
+
+#############################################
+### PCI COMPONENTS ###
+#############################################
+pci/pci_hw-Intel_x86.so
+pci/pci_slog2.so
+pci/pci_cap-0x05.so
+pci/pci_cap-0x10.so
+pci/pci_cap-0x11.so
+pci/pci_strings.so
+pci/pci_bkwd_compat.so
+pci/pci_debug2.so
+
+#############################################
+### SYSTEM DIRECTORIES ###
+#############################################
+[gid=0 uid=0 dperms=755 type=dir] /var/chroot/sshd
+[gid=0 uid=0 dperms=700 type=dir] /var/ssh
+
+[perms=0444] pci_server.cfg = {
+[buscfg]
+DO_BUS_CONFIG=no
+
+[envars]
+PCI_DEBUG_MODULE=pci_debug2.so
+PCI_HW_MODULE=pci_hw-Intel_x86.so
+PCI_HW_CONFIG_FILE=/proc/boot/pci_hw.cfg
+}
+
+[perms=0444] pci_hw.cfg = {
+[interrupts]
+B0:D17:F0    A    18
+B0:D17:F0    B    19
+B0:D17:F0    C    16
+B0:D17:F0    D    17
+B3:D0:F0     A    18
+B3:D0:F0     B    19
+B3:D0:F0     C    16
+B3:D0:F0     D    17
+}
+
+[uid=0 gid=0 perms=0444] /etc/passwd = {
+root::0:0:Superuser:/:/bin/sh
+qnxuser::1000:1000:QNX User:/:/bin/sh
+sshd::15:6:sshd:/:/bin/false
+}
+
+[uid=0 gid=0 perms=0444] /etc/group = {
+root::0:root
+qnxuser::1000:qnxuser
+sshd::6:sshd
+}
+
+[uid=0 gid=0 perms=0444] /etc/profile = {
+export TERM=qansi
+export PATH=/proc/boot
+export LD_LIBRARY_PATH=/proc/boot
+export MAGIC=/system/etc/magic
+}
+
+[uid=0 gid=0 perms=0400] /var/ssh/ssh_host_rsa_key = {
+-----BEGIN OPENSSH PRIVATE KEY-----
+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
+Fu+/MLbJQuA1zpAAAAAAEC
+-----END OPENSSH PRIVATE KEY-----
+}
+
+[uid=0 gid=0 perms=0444] /var/ssh/sshd_config = {
+Port 22
+Protocol 2
+HostKey /var/ssh/ssh_host_rsa_key
+AllowTcpForwarding yes
+Subsystem sftp /usr/lib/ssh/sftp-server
+PasswordAuthentication yes
+PermitEmptyPasswords yes
+PubkeyAuthentication no
+ChallengeResponseAuthentication no
+HostbasedAuthentication no
+PermitRootLogin yes
+PermitUserEnvironment yes
+PidFile none
+LogLevel DEBUG
+StrictModes no
+UseDNS no
+MaxAuthTries 3
+LoginGraceTime 30
+}
 
 # Package provided filesystem to root
 /=${FOLDER}
 
 # QEMU environment configuration (qcrypto.conf for the random service)
 /etc/qcrypto.conf=${QEMU_CONFIG}/etc/qcrypto.conf
-
-

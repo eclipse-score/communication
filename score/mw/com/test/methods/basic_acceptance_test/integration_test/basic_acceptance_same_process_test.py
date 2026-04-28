@@ -11,18 +11,21 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-def test_basic_acceptance_same_process_test(sut):
-    """"
-    Test method call functionality between provider and consumer which are run in the same process.
 
-    The test starts a single process which spawns two threads.
-    The first thread creates a Skeleton instance which contains a method with InArgs and Return value.
-    This thread checks that the service can be offered and the handler successfully registered.
+def consumer_and_provider(target, **kwargs):
+    args = []
+    return target.wrap_exec(
+        "bin/main_consumer_and_provider", args, cwd="/opt/MainConsumerAndProviderApp", wait_on_exit=True, **kwargs
+    )
 
-    The second thread creates a Proxy instance which subscribes to the Skeleton in the first thread.
-    This thread calls a zero-copy and with-copy method call and verifies that both calls succeed and return the expected value.
 
-    Test is successful if all previous checks return true and we have no crashes.
+def test_basic_acceptance_same_process_test(target):
+    """Test method call functionality between provider and consumer in the same process.
+
+    The test starts a single process with two threads. The first thread creates a Skeleton
+    instance with a method (InArgs and Return value). The second thread creates a Proxy
+    subscribing to the Skeleton, calling zero-copy and with-copy methods, verifying both
+    succeed with expected return values.
     """
-    with sut.start_process("./bin/main_consumer_and_provider", cwd="/opt/MainConsumerAndProviderApp/") as consumer_and_sender:
-        assert consumer_and_sender.wait_for_exit(timeout=120) == 0
+    with consumer_and_provider(target):
+        pass

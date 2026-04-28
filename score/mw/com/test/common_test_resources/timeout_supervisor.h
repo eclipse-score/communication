@@ -18,6 +18,7 @@
 #include "score/concurrency/timed_executor/concurrent_timed_executor.h"
 
 #include <score/callback.hpp>
+#include <score/memory.hpp>
 #include <score/stop_token.hpp>
 
 #include <chrono>
@@ -33,7 +34,7 @@ namespace score::mw::com::test
 class TimeoutSupervisor
 {
   public:
-    TimeoutSupervisor() = default;
+    TimeoutSupervisor();
     TimeoutSupervisor(const TimeoutSupervisor&) = delete;
     TimeoutSupervisor(TimeoutSupervisor&&) = delete;
     TimeoutSupervisor& operator=(const TimeoutSupervisor&) = delete;
@@ -44,11 +45,11 @@ class TimeoutSupervisor
     void StopSupervision();
 
   private:
+    void CreateExecutor();
+
     std::mutex mutex_;
     score::cpp::stop_source abort_source_{};
-    score::concurrency::ConcurrentTimedExecutor<std::chrono::steady_clock> executor_{
-        score::cpp::pmr::new_delete_resource(),
-        score::cpp::pmr::make_unique<score::concurrency::ThreadPool>(score::cpp::pmr::new_delete_resource(), 1U)};
+    score::cpp::pmr::unique_ptr<score::concurrency::ConcurrentTimedExecutor<std::chrono::steady_clock>> executor_;
 };
 
 }  // namespace score::mw::com::test

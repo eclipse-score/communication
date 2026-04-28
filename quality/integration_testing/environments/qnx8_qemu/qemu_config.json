@@ -1,0 +1,18 @@
+{
+    "networks": [
+        {
+            "name": "lo",
+            "ip_address": "127.0.0.1",
+            "gateway": "127.0.0.1"
+        }
+    ],
+    "ssh_port": 2222,
+    "qemu_num_cores": 2,
+    "qemu_ram_size": "1G",
+    "port_forwarding": [
+        {
+            "host_port": 2222,
+            "guest_port": 22
+        }
+    ]
+}

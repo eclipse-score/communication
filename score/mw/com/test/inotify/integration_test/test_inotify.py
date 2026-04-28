@@ -14,7 +14,12 @@
 """Integration test for inotify."""
 
 
-def test_inotify(sut):
+def inotify(target, **kwargs):
+    args = []
+    return target.wrap_exec("bin/inotify_test", args, cwd="/opt/InotifyTestApp", wait_on_exit=True, **kwargs)
+
+
+def test_inotify(target):
     """Test inotify functionality."""
-    with sut.start_process("./bin/inotify_test", cwd="/opt/InotifyTestApp/") as process:
-        assert process.wait_for_exit() == 0
+    with inotify(target, wait_timeout=60):
+        pass

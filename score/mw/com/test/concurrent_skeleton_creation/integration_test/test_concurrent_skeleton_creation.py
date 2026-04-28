@@ -14,10 +14,17 @@
 """Integration test for concurrent_skeleton_creation."""
 
 
-def test_concurrent_skeleton_creation(sut):
+def concurrent_skeleton_creation(target, **kwargs):
+    args = [
+        "--service_instance_manifest",
+        "etc/mw_com_config.json"
+    ]
+    return target.wrap_exec(
+        "bin/concurrent_skeleton_creation", args, cwd="/opt/concurrent_skeleton_creation", wait_on_exit=True, **kwargs
+    )
+
+
+def test_concurrent_skeleton_creation(target):
     """Test concurrent skeleton creation and offer behavior."""
-    with sut.start_process(
-        "./bin/concurrent_skeleton_creation --service_instance_manifest ./etc/mw_com_config.json",
-        cwd="/opt/concurrent_skeleton_creation",
-    ) as process:
-        assert process.wait_for_exit() == 0
+    with concurrent_skeleton_creation(target, wait_timeout=30):
+        pass

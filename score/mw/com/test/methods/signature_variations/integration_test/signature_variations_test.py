@@ -11,25 +11,24 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-def test_signature_variations(sut):
+
+def provider(target, **kwargs):
+    args = []
+    return target.wrap_exec("bin/main_provider", args, cwd="/opt/MainProviderApp", wait_on_exit=True, **kwargs)
+
+
+def consumer(target, **kwargs):
+    args = []
+    return target.wrap_exec("bin/main_consumer", args, cwd="/opt/MainConsumerApp", wait_on_exit=True, **kwargs)
+
+
+def test_signature_variations(target):
+    """Test method calls for different signature variations between provider and consumer.
+
+    The provider Skeleton contains four methods: Method with InArg and Return,
+    Method with InArg only, Method with Return only, and Method without InArg or Return.
+    The consumer Proxy calls zero-copy and with-copy variants for each method,
+    verifying all calls succeed and return expected values.
     """
-    Test method call functionality for different method signature variations between provider and consumer which are run in different processes.
-
-    The test starts two processes.
-    The first process creates a Skeleton instance which contains four methods:
-        - Method with InArg and Return
-        - Method with InArg only
-        - Method with Return only
-        - Method without InArg or Return
-    This process checks that the service can be offered and handlers were successfully registered for all four methods.
-    This registered handlers for the method with InArg only checks that it is called with the expected arguments from the Proxy side.
-
-    The second process creates a Proxy instance which subscribes to the Skeleton in the first process.
-    This process calls a zero-copy (where possible) and with-copy method call for each of the four methods and verifies that all calls succeed and return the expected value.
-
-    Test is successful if all previous checks return true and we have no crashes.
-    """
-    with sut.start_process("./bin/main_provider", cwd="/opt/MainProviderApp/") as sender:
-        with sut.start_process("./bin/main_consumer", cwd="/opt/MainConsumerApp/") as receiver:
-            assert receiver.wait_for_exit(timeout=120) == 0
-            assert sender.wait_for_exit(timeout=120) == 0
+    with provider(target), consumer(target):
+        pass

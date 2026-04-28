@@ -11,23 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# This is not a `py_library`, since we need it as "main" in a `py_test`
-exports_files(
-    [
-        "main.py",
-        "pytest.toml",
-    ],
-)
-
 filegroup(
     name = "pip_requirements",
     srcs = ["requirements.txt"],
     visibility = ["//:__pkg__"],
-)
-
-py_library(
-    name = "system_under_test",
-    srcs = ["system_under_test.py"],
-    target_compatible_with = ["@platforms//os:linux"],
-    visibility = ["//quality/integration_testing/environments:__subpackages__"],
 )

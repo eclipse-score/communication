@@ -1,0 +1,34 @@
+@startuml
+skinparam stereotypePosition bottom
+autonumber "<b>[00]"
+
+actor "Server Application" as SA
+participant "Skeleton::instance" as SKELETON
+participant "Service Discovery" as SD
+database "OS::RAMFS" as OSRAMFS_disco <<tmp_discovery>>
+
+== Initialization ==
+activate SA
+SA -> SKELETON  **: Create()
+activate SKELETON
+SKELETON --> SA: Skeleton/score::Result
+
+opt for each service method in service interface
+    SA -> SKELETON: Register Service Method Implementation()
+    SKELETON --> SA: score::Result<void>
+end
+
+== Service Discovery ==
+SA -> SKELETON: Offer Service()
+SKELETON -> SD ++: Offer Service()
+SD -> OSRAMFS_disco ++: Check/Create Folder and File Structure
+OSRAMFS_disco --> SD --
+SD --> SKELETON --
+
+== Partial Restart ==
+SKELETON -> OSRAMFS_disco ++: Create Existence and Usage Marker Files
+OSRAMFS_disco --> SKELETON --
+
+SKELETON --> SA --
+
+@enduml

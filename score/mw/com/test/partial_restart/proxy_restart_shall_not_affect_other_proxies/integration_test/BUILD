@@ -22,8 +22,21 @@ pkg_tar(
 )
 
 integration_test(
-    name = "proxy_restart_shall_not_affect_other_proxies",
+    name = "proxy_restart_shall_not_affect_other_proxies_graceful",
     timeout = "moderate",
-    srcs = ["test_proxy_restart_shall_not_affect_other_proxies.py"],
+    srcs = [
+        "proxy_restart_shall_not_affect_other_proxies_test_fixture.py",
+        "test_proxy_restart_shall_not_affect_other_proxies_graceful.py",
+    ],
+    filesystem = ":filesystem",
+)
+
+integration_test(
+    name = "proxy_restart_shall_not_affect_other_proxies_kill",
+    timeout = "moderate",
+    srcs = [
+        "proxy_restart_shall_not_affect_other_proxies_test_fixture.py",
+        "test_proxy_restart_shall_not_affect_other_proxies_kill.py",
+    ],
     filesystem = ":filesystem",
 )

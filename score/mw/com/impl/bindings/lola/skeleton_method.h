@@ -74,7 +74,7 @@ class SkeletonMethod : public SkeletonMethodBinding
     /// ToDo: We need to store the registration guard objects in a way that we can clean up old registration guards,
     /// from old, crashed processes (e.g. by storing the PID of the process which registered the guards and checking if
     /// the current pid is different). This is an intermetidate solution and should be revisited after changes are made
-    /// to the method_resource_map in the issue-250236.
+    /// to the method_resource_map in the issue-258913.
     struct MethodHandlerCleanupPackage
     {
         pid_t proxy_pid;

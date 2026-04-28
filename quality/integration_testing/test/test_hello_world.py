@@ -10,17 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-def test_hello_world_via_shell(sut):
-    exit_code, output = sut.execute("echo Hello World!")
+def test_hello_world_via_shell(target):
+    exit_code, output = target.execute("echo Hello World!")
     assert 0 == exit_code
-    assert "Hello World!" in output
+    assert b"Hello World!" in output
 
-def test_hello_world_via_binary_execution(sut):
-    exit_code, output = sut.execute("/example-app")
+
+def test_hello_world_via_binary_execution(target):
+    exit_code, output = target.execute("/example-app")
     assert 0 == exit_code
-    assert "Hello!" in output
+    assert b"Hello!" in output
 
-def test_hello_world_as_process(sut):
-    with sut.start_process('/example-app2') as example_2:
-        with sut.start_process("/example-app") as example:
-            example.wait_for_exit() == 0
+
+def test_hello_world_as_process(target):
+    with target.wrap_exec("/example-app2"):
+        with target.wrap_exec("/example-app", wait_on_exit=True):
+            pass

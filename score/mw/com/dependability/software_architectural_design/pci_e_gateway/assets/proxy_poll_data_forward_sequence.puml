@@ -1,0 +1,53 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+title Proxy event poll and DMA data transfer
+
+participant "CyclicAlarm::instance" as TIMER
+participant "PCIe Gateway::SoC1" as GATEWAY
+participant "GenericProxyEvent::instance" as PROXY_EVENT_INSTANCE order 30
+participant "PCIe Gateway::SoC2" as GATEWAY_OTHER order 40
+
+TIMER -> GATEWAY ++: Cyclic Poll Timer Event
+
+== Collect event/field data to forward ==
+
+create "SamplePtrCollection::instance" as SAMPLE_PTR_COL
+GATEWAY -> SAMPLE_PTR_COL : new
+loop all events and fields of service instances to "gateway"
+    opt poll cycle for event or field reached
+        GATEWAY -> PROXY_EVENT_INSTANCE ++ : GetNewSamples(max_samples)
+            PROXY_EVENT_INSTANCE -> GATEWAY ++ : callback(SamplePtr<void>)
+                GATEWAY -> SAMPLE_PTR_COL ++ : Store(SamplePtr<void>, meta-information)
+                return
+            return
+        return Result<num_samples>
+    end
+end
+
+== Transfer collected samples via PCIe bulk DMA ==
+
+create "DMATransferSetupData::setup_instance" as DMA_SETUP_DATA
+GATEWAY -> DMA_SETUP_DATA : new
+loop elements of SamplePtrCollection
+    GATEWAY -> DMA_SETUP_DATA ++: AddDMASetup(sample_element)
+end
+
+GATEWAY -> GATEWAY_OTHER ++ : SetupDMATransfer(setup_instance)
+    ref over GATEWAY_OTHER : DMA data reception and SkeletonEvent Allocate/Send
+return Result<TargetDMABufferCollection>
+
+GATEWAY -> GATEWAY : CreateScatterGatherListForDMATransfer(SamplePtrCollection, TargetDMABufferCollection)
+
+GATEWAY -> GATEWAY_OTHER ++ : DoDMATransfer(gather_scatter_list)
+return Result<void>
+
+GATEWAY -> SAMPLE_PTR_COL !!: Release samples
+
+GATEWAY -> GATEWAY_OTHER ++ : NotifyDMATransferResult(result)
+    ref over GATEWAY_OTHER : DMA data reception and SkeletonEvent Allocate/Send
+return
+
+@enduml

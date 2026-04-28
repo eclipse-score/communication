@@ -1,0 +1,27 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+participant "Generalized Gateway::Domain A" as GATEWAY
+participant "TransportLayer::Domain A" as TRANSPORT_LAYER order 20
+participant "TransportLayer::Domain B" as TRANSPORT_LAYER_OTHER order 30
+participant "Generalized Gateway::Domain B" as GATEWAY_OTHER order 40
+
+activate GATEWAY
+
+
+    GATEWAY -> TRANSPORT_LAYER ++: ProvideService(InstanceIdentifier, ShmObjectIdentifier, ShmObjectIdentifier, std::optional<ShmObjectIdentifier, Permissions)
+    TRANSPORT_LAYER -> TRANSPORT_LAYER ++: Enrich ShmObjectIdentifiers
+    TRANSPORT_LAYER -> TRANSPORT_LAYER_OTHER ++ : forward ProvideService(InstanceIdentifier, ShmObjectIdentifier, std::optional<ShmObjectIdentifier, Permissions)
+    TRANSPORT_LAYER_OTHER -> TRANSPORT_LAYER_OTHER ++ : setup shared memory based on ShmObjectIdentifiers and Permissions
+    TRANSPORT_LAYER_OTHER -> GATEWAY_OTHER ++: ProvideService(InstanceIdentifier)
+    create "GenericSkeletonOnExistingShm::instance" as SKELETON_INSTANCE order 50
+    GATEWAY_OTHER -> SKELETON_INSTANCE : new
+    return Result<void>
+    TRANSPORT_LAYER_OTHER -> TRANSPORT_LAYER : Result<void>
+    TRANSPORT_LAYER -> GATEWAY : Result<void>
+
+
+
+@enduml

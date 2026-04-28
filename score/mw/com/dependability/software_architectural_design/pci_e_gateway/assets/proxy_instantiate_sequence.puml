@@ -1,0 +1,48 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+participant "PCIe Gateway::SoC1" as GATEWAY
+participant "GenericProxy::class" as PROXY_CLASS
+participant "PCIe Gateway::SoC2" as GATEWAY_OTHER order 40
+
+== Initialization ==
+activate GATEWAY
+GATEWAY -> GATEWAY : Read configuration
+
+ref over GATEWAY, GATEWAY_OTHER : init PCIe communication
+
+loop all configured service instances to "gateway"
+    GATEWAY -> PROXY_CLASS ++ : StartFindService(configured instance)
+    return : Result<FindServiceHandle>
+end
+
+opt if service instance becomes available
+    PROXY_CLASS -> GATEWAY ++: callback(ServiceHandleContainer<T>)
+    create "GenericProxy::instance" as PROXY_INSTANCE
+    GATEWAY -> PROXY_INSTANCE : new
+    create "GenericProxyEvent::instance" as PROXY_EVENT_INSTANCE
+    PROXY_INSTANCE -> PROXY_EVENT_INSTANCE : new
+
+    loop all events and fields
+        GATEWAY -> PROXY_INSTANCE ++: GetEvents().find("EventName")
+        return GenericProxEvent&
+        GATEWAY -> PROXY_EVENT_INSTANCE ++ : Subscribe(max_samples)
+        return Result<void>
+        GATEWAY -> PROXY_EVENT_INSTANCE ++: GetSampleSize()
+        return size : std::size_t
+        GATEWAY -> PROXY_EVENT_INSTANCE ++: GetSampleAlignment()
+        return alignment : std::size_t
+        GATEWAY -> GATEWAY : add size and alignment to meta_info
+    end
+
+    GATEWAY -> GATEWAY_OTHER ++: ServiceInstanceOffered(instanceId, meta_info)
+    ref over GATEWAY_OTHER : Create and offer service instance
+    return : Result<void>
+
+
+end
+
+
+@enduml

@@ -111,6 +111,8 @@ use_repo(
     "score_qcc_x86_64_toolchain",
 )
 
+bazel_dep(name = "score_itf", version = "0.3.0", dev_dependency = True)
+
 # For the moment we still need the old toolchain for ifs generation.
 # Migrate once rules_imagefs is ready to be used (https://github.com/eclipse-score/rules_imagefs/pull/1).
 bazel_dep(name = "score_toolchains_qnx", version = "0.0.7", dev_dependency = True)
@@ -286,18 +288,7 @@ pip.parse(
 )
 use_repo(pip, "lobster_dependencies")
 
-bazel_dep(name = "rules_oci", version = "1.8.0", dev_dependency = True)
-
-oci = use_extension("@rules_oci//oci:extensions.bzl", "oci", dev_dependency = True)
-oci.pull(
-    name = "ubuntu_24_04",
-    digest = "sha256:2e863c44b718727c860746568e1d54afd13b2fa71b160f5cd9058fc436217b30",
-    image = "ubuntu",
-    platforms = ["linux/amd64"],
-    tag = "24.04",
-)
-use_repo(oci, "ubuntu_24_04")
-
+bazel_dep(name = "rules_oci", version = "2.2.7", dev_dependency = True)
 bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
 
 apt = use_extension(

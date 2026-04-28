@@ -109,7 +109,7 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
 
     insertion_result.first->second.registration_guards.push_back(std::move(registration_result).value());
 
-    /// ToDo: This check should be added back in when we go away from the intermetidate solution (issue-250236).
+    /// ToDo: This check should be added back in when we go away from the intermetidate solution (issue-258913).
     /// currently we can not make this check because we store the guards in a vector, which contains all guards for the
     /// individual application, i.e. insertion failure is expected behaviour after the first guard is injected.
     // SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insertion_result.second,

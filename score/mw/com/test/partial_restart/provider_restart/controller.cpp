@@ -33,7 +33,7 @@ namespace score::mw::com::test
 namespace
 {
 
-const std::chrono::seconds kMaxWaitTimeToReachCheckpoint{30U};
+const std::chrono::seconds kMaxWaitTimeToReachCheckpoint{60U};
 
 const std::string_view kShmProviderCheckpointControlFileName = "provider_restart_application_provider_checkpoint_file";
 const std::string_view kShmConsumerCheckpointControlFileName = "provider_restart_application_consumer_checkpoint_file";

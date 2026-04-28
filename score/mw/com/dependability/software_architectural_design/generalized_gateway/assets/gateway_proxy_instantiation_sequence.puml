@@ -1,0 +1,56 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+participant "Generalized Gateway::Domain A" as GATEWAY
+participant "GenericProxy::class" as PROXY_CLASS
+participant "TransportLayer::Domain A" as TRANSPORT_LAYER order 20
+
+== Initialization ==
+activate GATEWAY
+GATEWAY -> GATEWAY : Read configuration
+
+loop all configured service instances to "gateway"
+    GATEWAY -> PROXY_CLASS ++ : StartFindService(configured instance)
+    return : Result<FindServiceHandle>
+end
+
+opt if service instance becomes available
+    PROXY_CLASS -> GATEWAY ++: callback(ServiceHandleContainer<T>)
+    create "GenericProxy::instance" as PROXY_INSTANCE
+    GATEWAY -> PROXY_INSTANCE : new
+
+    loop all events and fields
+
+        create "GenericProxyEvent::instance" as PROXY_EVENT_INSTANCE
+        PROXY_INSTANCE -> PROXY_EVENT_INSTANCE : new
+
+    end
+
+    alt transport layer does NOT support memory sharing
+        loop all events and fields to build ServiceElementConfigurations
+            GATEWAY -> PROXY_INSTANCE ++: GetEvents().find("EventName")
+            return GenericProxEvent&
+            GATEWAY -> PROXY_EVENT_INSTANCE ++ : Subscribe(max_samples)
+            return Result<void>
+            GATEWAY -> PROXY_EVENT_INSTANCE ++: GetSampleSize()
+            return size : std::size_t
+            GATEWAY -> PROXY_EVENT_INSTANCE ++: GetSampleAlignment()
+            return alignment : std::size_t
+            GATEWAY -> GATEWAY : update ServiceElementConfigurations with size and alignment of current event/field
+        end
+        GATEWAY -> TRANSPORT_LAYER ++: ProvideService(LolaServiceId, LolaServiceInstanceId, ServiceElementConfigurations, Permissions)
+        return Result<void>
+    else transport layer does support memory sharing
+        GATEWAY -> GATEWAY : create ShmObjectIdentifiers from LolaServiceId, LolaServiceInstanceId
+        GATEWAY -> TRANSPORT_LAYER ++: ProvideService(LolaServiceId, LolaServiceInstanceId, ShmObjectIdentifier, ShmObjectIdentifier, Permissions)
+        return Result<void>
+    end
+
+    GATEWAY -> TRANSPORT_LAYER ++: ServiceInstanceOffered(instanceId, meta_info)
+    return : Result<void>
+
+end
+
+@enduml

@@ -10,17 +10,3 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-
-load("@score_communication_pip//:requirements.bzl", "requirement")
-
-py_library(
-    name = "docker",
-    srcs = ["docker.py"],
-    target_compatible_with = ["@platforms//os:linux"],
-    visibility = ["//:__subpackages__"],
-    deps = [
-        "//quality/integration_testing:system_under_test",
-        requirement("pytest"),
-        requirement("docker"),
-    ],
-)

@@ -1,0 +1,58 @@
+@startuml
+title Offer Service Instance
+
+start
+
+:Create service-instance-existence
+marker file LOCK;
+
+if (Create existence marker result?) then (EEXIST error || success)
+  :flock(LOCK_EX | LOCK_NB)
+Service Instance Existence LOCK;
+
+  if (flock result?) then (flock success)
+    :Create service-instance-usage
+marker file;
+
+    if (Create usage marker result?) then (EEXIST error || success)
+      :CreateOrOpen shm-objects
+for service instance;
+
+      if (CreateOrOpen result?) then (successfully opened)
+        :Take Over and eventually correct
+existing shm-objects;
+      else (successfully created)
+        :Initialize new
+shm-objects;
+      endif
+
+      :Make Service Instance visible to ServiceDiscovery:
+Create markup file in
+service discovery directory structure;
+
+      if (Create markup file result?) then (success)
+        :offer_success = true;
+      elseif (EEXIST error)
+        :Delete and re-create
+markup file;
+
+        if (Re-create markup result?) then (success)
+          :offer_success = true;
+        else (other error)
+          :offer_success = false;
+        endif
+      else (other error)
+        :offer_success = false;
+      endif
+
+      if (offer_success?) then (yes)
+        :Offer Service SUCCESS;
+      else (no)
+        :Offer Service FAILED;
+      endif
+    endif
+  endif
+endif
+
+stop
+@enduml

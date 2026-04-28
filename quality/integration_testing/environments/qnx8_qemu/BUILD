@@ -12,11 +12,21 @@
 # *******************************************************************************
 
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load("@score_communication_pip//:requirements.bzl", "requirement")
 
 filegroup(
     name = "init_build",
     srcs = ["init_x86_64.build"],
+    visibility = ["//:__subpackages__"],
+)
+
+exports_files(
+    ["qemu_config.json"],
+    visibility = ["//:__subpackages__"],
+)
+
+filegroup(
+    name = "qemu_config",
+    srcs = ["qemu_config.json"],
     visibility = ["//:__subpackages__"],
 )
 
@@ -25,20 +35,4 @@ pkg_tar(
     srcs = ["qcrypto.conf"],
     package_dir = "/etc",
     visibility = ["//:__subpackages__"],
-)
-
-py_library(
-    name = "qemu",
-    srcs = [
-        "console.py",
-        "line_reader.py",
-        "qemu.py",
-        "qemu_runner.py",
-    ],
-    target_compatible_with = ["@platforms//os:linux"],
-    visibility = ["//:__subpackages__"],
-    deps = [
-        "//quality/integration_testing:system_under_test",
-        requirement("pytest"),
-    ],
 )

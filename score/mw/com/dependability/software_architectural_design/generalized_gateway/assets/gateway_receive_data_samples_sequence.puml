@@ -1,0 +1,27 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+title Gateway receive data samples
+
+participant "TransportLayer::Domain B" as TRANSPORT_LAYER order 20
+participant "Generalized Gateway::Domain B" as GATEWAY order 30
+participant "GenericSkeletonEvent::instance" as SKELETON_EVENT_INSTANCE order 40
+
+activate TRANSPORT_LAYER
+TRANSPORT_LAYER -> GATEWAY ++ : AllocateSamples(std::vector<ElementFqId> elements_to_allocate)
+loop all elements_to_allocate
+GATEWAY -> SKELETON_EVENT_INSTANCE ++: Allocate()
+return Result<SampleAllocateePtr<void>>
+GATEWAY -> GATEWAY : Add SampleAllocateePtr<void> to collection
+end
+return Result<std::vector<SampleAllocateePtr<void>>
+TRANSPORT_LAYER -> GATEWAY ++: SendOrUpdateSamples(std::vector<SampleAllocateePtr<void> samples)
+loop each sample in samples
+GATEWAY -> SKELETON_EVENT_INSTANCE ++: Send(sample)
+return Result<void>
+end
+return Result<void>
+
+@enduml

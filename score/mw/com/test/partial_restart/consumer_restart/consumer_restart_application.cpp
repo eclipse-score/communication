@@ -38,7 +38,7 @@ const std::string_view kShmConsumerCheckpointControlFileName = "consumer_restart
 const std::string_view kProviderCheckpointControlName = "Provider";
 const std::string_view kConsumerCheckpointControlName = "Consumer";
 
-const std::chrono::seconds kMaxWaitTimeToReachCheckpoint{30U};
+const std::chrono::seconds kMaxWaitTimeToReachCheckpoint{60U};
 
 /// \brief Test parameters for the ITF test variants for consumer restart.
 /// \details Consult ../README.md

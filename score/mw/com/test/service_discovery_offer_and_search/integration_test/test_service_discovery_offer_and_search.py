@@ -14,8 +14,17 @@
 """Integration tests for service discovery offer and search."""
 
 
-def test_service_discovery_offer_and_search(sut):
+def client(target):
+    args = []
+    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True)
+
+
+def service(target):
+    args = ["-t", "250"]
+    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp")
+
+
+def test_service_discovery_offer_and_search(target):
     """Test service discovery where service offers first, then client searches."""
-    with sut.start_process("./bin/service -t 250", cwd="/opt/ServiceApp/") as service_process:
-        with sut.start_process("./bin/client", cwd="/opt/ClientApp/") as client_process:
-            assert client_process.wait_for_exit() == 0
+    with service(target), client(target):
+        pass

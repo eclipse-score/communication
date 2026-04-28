@@ -1,0 +1,19 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+title Gateway Skeleton instantiation (no memory sharing)
+
+participant "TransportLayer::Domain B" as TRANSPORT_LAYER order 10
+participant "Generalized Gateway::Domain B" as GATEWAY order 20
+
+activate TRANSPORT_LAYER
+TRANSPORT_LAYER -> GATEWAY ++: ProvideService(InstanceIdentifier, ServiceElementConfigurations, Permissions)
+
+
+    create "GenericSkeleton::instance" as SKELETON_INSTANCE order 30
+    GATEWAY -> SKELETON_INSTANCE : new
+return Result<void>
+
+@enduml

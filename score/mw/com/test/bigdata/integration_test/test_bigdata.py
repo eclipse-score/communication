@@ -12,8 +12,18 @@
 # *******************************************************************************
 
 
-def test_bigdata_exchange(sut):
-    # Sender runs for 30 cycles at 40ms intervals, Receiver receives 25 cycles
-    with sut.start_process("./bin/bigdata --mode send -t 40 -n 30", cwd="/opt/bigdata/") as sender_process:
-        with sut.start_process("./bin/bigdata --mode recv -n 25", cwd="/opt/bigdata/") as receiver_process:
-            assert receiver_process.wait_for_exit(timeout=120) == 0
+def bigdata(target, mode, cycle_time=None, num_cycles=None, **kwargs):
+    args = ["--mode", mode]
+    if num_cycles is not None:
+        args += ["-n", str(num_cycles)]
+    if cycle_time is not None:
+        args += ["-t", str(cycle_time)]
+    wait_on_exit = num_cycles is not None
+    return target.wrap_exec("bin/bigdata", args, cwd="/opt/bigdata", wait_on_exit=wait_on_exit, **kwargs)
+
+
+def test_bigdata_exchange(target):
+    """Test bigdata exchange between sender and receiver."""
+    # Sender runs for continuous cycles at 40ms intervals, Receiver receives 25 cycles
+    with bigdata(target, "send", cycle_time=40), bigdata(target, "recv", num_cycles=25, wait_timeout=120):
+        pass
