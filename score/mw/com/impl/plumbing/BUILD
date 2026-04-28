@@ -830,6 +830,20 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
+    name = "lola_proxy_element_building_blocks_test",
+    srcs = [
+        "lola_proxy_element_building_blocks_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":lola_proxy_element_building_blocks",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+    ],
+)
+
+cc_gtest_unit_test(
     name = "skeleton_field_binding_factory_test",
     srcs = [
         "skeleton_field_binding_factory_test.cpp",
@@ -899,6 +913,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":skeleton_event_binding_factory_test",
         ":skeleton_field_binding_factory_test",
         ":skeleton_service_element_binding_factory_test",
+        ":lola_proxy_element_building_blocks_test",
         ":unit_test",
     ],
     visibility = [

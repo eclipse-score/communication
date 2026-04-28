@@ -16,7 +16,6 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/configuration/lola_service_element_id.h"
-#include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_binding.h"
@@ -35,7 +34,6 @@ namespace score::mw::com::impl
 struct LoLaProxyElementBuildingBlocks
 {
     lola::Proxy& parent;
-    LolaServiceInstanceId::InstanceId instance_id;
     lola::ElementFqId element_fq_id;
 };
 
