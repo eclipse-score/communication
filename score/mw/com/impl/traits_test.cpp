@@ -549,7 +549,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
                 CreateEventBinding(identifier_with_valid_binding_, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
-    // Field get method binding (not yet fully implemented; set method only exists when EnableSet=true)
+    // Field set method binding (only created when the SkeletonField is tagged WithSetter)
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, _))
         .Times(1)
         .WillOnce(Invoke([this](const InstanceIdentifier&, SkeletonBinding*, const std::string_view, MethodType)
@@ -644,7 +644,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Expecting that the Create call on the SkeletonMethodBindingFactory returns an invalid binding for the method.
-    // Field get method binding (not yet fully implemented; set method only exists when EnableSet=true)
+    // Field set method binding (only created when the SkeletonField is tagged WithSetter)
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, _)).Times(1);
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
                 Create(identifier_with_valid_binding_, _, kMethodName, _))
@@ -779,7 +779,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
 {
 
     // Expecting that the Create call on the SkeletonMethodBindingFactory returns an invalid binding for the method.
-    // Field get method binding (not yet fully implemented; set method only exists when EnableSet=true)
+    // Field set method binding (only created when the SkeletonField is tagged WithSetter)
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, _)).Times(1);
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
                 Create(identifier_with_valid_binding_, _, kMethodName, _))

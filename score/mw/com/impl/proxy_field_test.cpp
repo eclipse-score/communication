@@ -128,6 +128,18 @@ struct has_get_new_samples<T,
     : std::true_type
 {
 };
+
+template <typename, typename = void>
+struct has_inject_mock : std::false_type
+{
+};
+template <typename T>
+struct has_inject_mock<
+    T,
+    std::void_t<decltype(std::declval<T&>().InjectMock(std::declval<IProxyEvent<typename T::FieldType>&>()))>>
+    : std::true_type
+{
+};
 }  // namespace
 
 TEST(ProxyFieldTest, NotCopyable)
@@ -193,6 +205,7 @@ TEST(ProxyFieldNotifierGatingTest, NotifierSurfaceExistsWhenWithNotifierTagIsPre
     static_assert(has_set_receive_handler<NotifierField>::value);
     static_assert(has_unset_receive_handler<NotifierField>::value);
     static_assert(has_get_new_samples<NotifierField>::value);
+    static_assert(has_inject_mock<NotifierField>::value);
 }
 
 TEST(ProxyFieldNotifierGatingTest, NotifierSurfaceIsAbsentWhenWithNotifierTagIsMissing)
@@ -207,6 +220,7 @@ TEST(ProxyFieldNotifierGatingTest, NotifierSurfaceIsAbsentWhenWithNotifierTagIsM
     static_assert(!has_set_receive_handler<GetterOnlyField>::value);
     static_assert(!has_unset_receive_handler<GetterOnlyField>::value);
     static_assert(!has_get_new_samples<GetterOnlyField>::value);
+    static_assert(!has_inject_mock<GetterOnlyField>::value);
 }
 
 }  // namespace

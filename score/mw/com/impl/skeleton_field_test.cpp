@@ -998,7 +998,7 @@ TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerOnlyExistsWhenWithSetterTagP
 TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerForwardsToMethodBinding)
 {
     RecordProperty("Description",
-                   "Calling RegisterSetHandler() on an EnableSet=true SkeletonField shall forward "
+                   "Calling RegisterSetHandler() on a WithSetter-tagged SkeletonField shall forward "
                    "the handler registration to the underlying SkeletonMethod binding and return "
                    "success.");
     RecordProperty("TestType", "Requirements-based test");
@@ -1074,13 +1074,13 @@ TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerPropagatesBindingError)
     EXPECT_EQ(result.error(), ComErrc::kCommunicationLinkError);
 }
 
-// PrepareOffer fails when EnableSet=true but no handler has been registered
+// PrepareOffer fails when WithSetter is present but no handler has been registered
 
 TEST(SkeletonFieldSetHandlerTest, PrepareOfferFailsWhenSetHandlerNotRegistered)
 {
     RecordProperty("Verifies", "SCR-17563743");
     RecordProperty("Description",
-                   "When a SkeletonField is defined with EnableSet=true and no set handler has been "
+                   "When a SkeletonField is tagged WithSetter and no set handler has been "
                    "registered, PrepareOffer() shall return kSetHandlerNotSet.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1112,12 +1112,12 @@ TEST(SkeletonFieldSetHandlerTest, PrepareOfferFailsWhenSetHandlerNotRegistered)
     EXPECT_EQ(result.error(), ComErrc::kSetHandlerNotSet);
 }
 
-// PrepareOffer succeeds when EnableSet=true and handler IS registered
+// PrepareOffer succeeds when WithSetter is present and handler IS registered
 
 TEST(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsAfterRegisterSetHandler)
 {
     RecordProperty("Description",
-                   "When an EnableSet=true SkeletonField has a set handler registered and an initial "
+                   "When a WithSetter-tagged SkeletonField has a set handler registered and an initial "
                    "value set, PrepareOffer() shall succeed.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1164,12 +1164,12 @@ TEST(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsAfterRegisterSetHandler)
     EXPECT_TRUE(result.has_value());
 }
 
-// EnableSet=false: PrepareOffer does NOT require a registered set handler
+// No WithSetter tag: PrepareOffer does NOT require a registered set handler
 
-TEST(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenEnableSetIsFalse)
+TEST(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenWithSetterTagIsAbsent)
 {
     RecordProperty("Description",
-                   "When a SkeletonField has EnableSet=false (no setter), PrepareOffer() shall "
+                   "When a SkeletonField has no WithSetter tag (no setter), PrepareOffer() shall "
                    "succeed without registering a set handler.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1190,7 +1190,7 @@ TEST(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenEnableSe
     EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(Result<void>{}));
     EXPECT_CALL(event_binding, Send(initial_value, _)).WillOnce(Return(Result<void>{}));
 
-    // A non-setter skeleton (EnableSet=false)
+    // A skeleton field without WithSetter tag
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
     ASSERT_TRUE(unit.my_dummy_field_.Update(initial_value).has_value());
