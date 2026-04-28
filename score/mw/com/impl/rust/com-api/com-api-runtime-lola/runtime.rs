@@ -23,7 +23,8 @@ use com_api_concept::{
     Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime,
 };
 
-use bridge_ffi_rs::{FFIBridge, LolaFFIBridge};
+use bridge_ffi_rs::FFIBridge;
+use bridge_ffi_lola::LolaFFIBridge;
 
 pub struct LolaRuntimeImpl<B: FFIBridge = LolaFFIBridge> {
     _marker: PhantomData<B>,

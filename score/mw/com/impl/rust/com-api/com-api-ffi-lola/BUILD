@@ -55,3 +55,14 @@ rust_library(
         ":bridge_ffi_rs",
     ],
 )
+
+rust_library(
+    name = "bridge_ffi_lola",
+    srcs = ["bridge_ffi_lola.rs"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":bridge_ffi_rs",
+    ],
+)

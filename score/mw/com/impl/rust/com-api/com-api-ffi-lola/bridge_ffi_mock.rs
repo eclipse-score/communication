@@ -18,10 +18,10 @@
 // all the test cases and scenarios.
 #![doc(hidden)]
 
-pub use bridge_ffi_rs::{
-    CMutVoidPtr, CVoidPtr, FFIBridge, FatPtr, FindServiceHandle, HandleContainer, HandleType,
-    InstanceSpecifier, NativeFindServiceHandle, NativeHandleContainer, NativeInstanceSpecifier,
-    ProxyBase, ProxyEventBase, ProxyWrapperClass, SkeletonBase, SkeletonEventBase,
+use bridge_ffi_rs::{
+    FatPtr, FindServiceHandle, HandleContainer, HandleType, InstanceSpecifier,
+    NativeHandleContainer, NativeInstanceSpecifier, ProxyBase, ProxyEventBase, SkeletonBase,
+    SkeletonEventBase,
 };
 
 #[derive(Debug, Clone)]
