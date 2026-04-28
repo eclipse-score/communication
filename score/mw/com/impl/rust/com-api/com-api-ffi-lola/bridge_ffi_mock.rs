@@ -23,6 +23,21 @@ use bridge_ffi_rs::{
     NativeHandleContainer, NativeInstanceSpecifier, ProxyBase, ProxyEventBase, SkeletonBase,
     SkeletonEventBase,
 };
+use std::cell::RefCell;
+
+// Per-test thread-local backing storage for the allocate-and-send mock path.
+//
+// `DATA_BACKING` holds a type-erased pointer to a heap-allocated `MaybeUninit<T>` buffer
+// paired with a drop-glue function so `clear_alloc_backing` can free it without knowing `T`.
+//
+// `ALLOC_SIZE` holds `size_of::<SampleAllocateePtr<T>>()` so `get_allocatee_ptr` can
+// zero-fill the caller's `MaybeUninit` slot — zeroed = Blank variant (_index = 0),
+// which makes `assume_init()` defined behaviour.
+thread_local! {
+    static DATA_BACKING: RefCell<Option<(*mut std::ffi::c_void, fn(*mut std::ffi::c_void))>> =
+        RefCell::new(None);
+    static ALLOC_SIZE: RefCell<usize> = RefCell::new(0);
+}
 
 #[derive(Debug, Clone)]
 pub struct MockFFIBridge;
@@ -33,25 +48,50 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
     /// Returns true if event_ptr is non-null (mock behavior).
     unsafe fn get_allocatee_ptr(
         event_ptr: *mut SkeletonEventBase,
-        _allocatee_ptr: *mut std::ffi::c_void,
+        allocatee_ptr: *mut std::ffi::c_void,
         _event_type: &str,
     ) -> bool {
-        !event_ptr.is_null()
+        if event_ptr.is_null() {
+            return false;
+        }
+        ALLOC_SIZE.with(|s| {
+            let size = *s.borrow();
+            if size > 0 {
+                // SAFETY: allocatee_ptr is MaybeUninit<SampleAllocateePtr<T>> with `size` bytes.
+                std::ptr::write_bytes(allocatee_ptr as *mut u8, 0, size);
+            }
+        });
+        true
     }
 
     /// Mock implementation of delete_allocatee_ptr.
     /// # Safety
     /// No-op for mock.
-    unsafe fn delete_allocatee_ptr(_allocatee_ptr: *mut std::ffi::c_void, _type_name: &str) {}
+    unsafe fn delete_allocatee_ptr(_allocatee_ptr: *mut std::ffi::c_void, _type_name: &str) {
+        DATA_BACKING.with(|d| {
+            if let Some((ptr, drop_fn)) = d.borrow_mut().take() {
+                drop_fn(ptr);
+            }
+        });
+        ALLOC_SIZE.with(|s| *s.borrow_mut() = 0);
+    }
 
     /// Mock implementation of get_allocatee_data_ptr.
     /// # Safety
-    /// Returns the input pointer cast to mutable (mock behavior).
+    /// `MockFFIBridge::set_alloc_backing::<T>()` must have been called before this.
+    /// Returns a pointer to the heap-allocated `MaybeUninit<T>` buffer where the caller
+    /// may write `T` and later read it back via `Deref`.
     unsafe fn get_allocatee_data_ptr(
-        allocatee_ptr: *const std::ffi::c_void,
+        _allocatee_ptr: *const std::ffi::c_void,
         _type_name: &str,
     ) -> *mut std::ffi::c_void {
-        allocatee_ptr as *mut std::ffi::c_void
+        // Return the pre-allocated MaybeUninit<T> buffer registered by set_alloc_backing.
+        DATA_BACKING.with(|d| {
+            d.borrow()
+                .as_ref()
+                .map(|(ptr, _)| *ptr)
+                .unwrap_or(std::ptr::null_mut())
+        })
     }
 
     /// Mock implementation of skeleton_event_send_sample_allocatee.
@@ -263,5 +303,29 @@ impl MockFFIBridge {
     /// canonical representation for "valid but empty" in the mock.
     pub fn make_proxy_event_ptr() -> *mut ProxyEventBase {
         std::ptr::NonNull::<ProxyEventBase>::dangling().as_ptr()
+    }
+
+    /// Registers type `T` as the backing type for the next `get_allocatee_ptr` /
+    /// `get_allocatee_data_ptr` cycle.
+    ///
+    /// Heap-allocates a `MaybeUninit<T>` buffer whose address is returned by
+    /// `get_allocatee_data_ptr`, and records `size_of::<SampleAllocateePtr<T>>()` so that
+    /// `get_allocatee_ptr` can zero-fill the caller's slot (making `assume_init()` safe).
+    pub fn set_alloc_backing<T: 'static>() {
+        use sample_allocatee_ptr_rs::SampleAllocateePtr;
+        let data_ptr =
+            Box::into_raw(Box::new(std::mem::MaybeUninit::<T>::uninit())) as *mut std::ffi::c_void;
+        // Drop glue: frees the MaybeUninit<T> box without running T's destructor.
+        let drop_fn: fn(*mut std::ffi::c_void) = |p| {
+            // SAFETY: p was allocated as Box<MaybeUninit<T>> by set_alloc_backing::<T>.
+            drop(unsafe { Box::from_raw(p as *mut std::mem::MaybeUninit<T>) });
+        };
+        // Replace any previous backing (prevents leaks on repeated calls).
+        DATA_BACKING.with(|d| {
+            if let Some((old_ptr, old_drop)) = d.borrow_mut().replace((data_ptr, drop_fn)) {
+                old_drop(old_ptr);
+            }
+        });
+        ALLOC_SIZE.with(|s| *s.borrow_mut() = std::mem::size_of::<SampleAllocateePtr<T>>());
     }
 }

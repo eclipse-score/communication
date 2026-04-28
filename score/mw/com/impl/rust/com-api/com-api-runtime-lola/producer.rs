@@ -305,9 +305,13 @@ impl<B: FFIBridge> NativeSkeletonHandle<B> {
         //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
         let raw_handle =
             unsafe { B::create_skeleton(interface_id, instance_specifier.as_native()) };
-        let handle = std::ptr::NonNull::new(raw_handle)
-            .ok_or(Error::ProducerError(ProducerFailedReason::SkeletonCreationFailed))?;
-        Ok(Self { handle, _marker: PhantomData })
+        let handle = std::ptr::NonNull::new(raw_handle).ok_or(Error::ProducerError(
+            ProducerFailedReason::SkeletonCreationFailed,
+        ))?;
+        Ok(Self {
+            handle,
+            _marker: PhantomData,
+        })
     }
 }
 
@@ -519,6 +523,9 @@ mod test {
 
     #[test]
     fn test_publisher_allocate_and_send() {
+        // Register T so get_allocatee_ptr zero-fills the SampleAllocateePtr slot
+        // (safe assume_init) and get_allocatee_data_ptr returns real T-backed storage.
+        MockFFIBridge::set_alloc_backing::<TestData>();
         let instance_info = make_provider_info("TestData");
         let publisher: Publisher<TestData, MockFFIBridge> =
             Publisher::<TestData, MockFFIBridge>::new("TestEvent", instance_info)
