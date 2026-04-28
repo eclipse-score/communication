@@ -14,6 +14,7 @@
 filegroup(
     name = "root_causes_skeleton",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/allocate_an_event_or_field:allocate_in_wrong_memory_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/allocate_an_event_or_field:to_few_memory_allocated_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/creation:creation_of_skeleton_not_possible_fta",

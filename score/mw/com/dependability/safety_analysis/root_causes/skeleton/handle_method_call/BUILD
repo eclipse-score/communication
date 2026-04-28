@@ -14,6 +14,7 @@
 filegroup(
     name = "wrong_in_args_used_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "wrong_in_args_used_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -22,6 +23,7 @@ filegroup(
 filegroup(
     name = "wrong_method_called_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "wrong_method_called_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -30,6 +32,7 @@ filegroup(
 filegroup(
     name = "wrong_results_provided_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "wrong_results_provided_fta.puml",
     ],
     visibility = ["//visibility:public"],

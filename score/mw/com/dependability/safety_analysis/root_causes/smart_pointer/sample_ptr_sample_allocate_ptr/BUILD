@@ -14,6 +14,7 @@
 filegroup(
     name = "sample_ptr_sample_allocate_ptr",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "does_not_free_resources_on_destruction_fta.puml",
         "returns_wrong_data_fta.puml",
     ],
