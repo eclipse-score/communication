@@ -28,6 +28,10 @@ struct WithSetter
 {
 };
 
+struct WithNotifier
+{
+};
+
 namespace detail
 {
 
