@@ -45,14 +45,18 @@ TEST(ProxyFieldTest, NotCopyable)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    static_assert(!std::is_copy_constructible<ProxyField<TestSampleType>>::value, "Is wrongly copyable");
-    static_assert(!std::is_copy_assignable<ProxyField<TestSampleType>>::value, "Is wrongly copyable");
+    static_assert(!std::is_copy_constructible<ProxyField<TestSampleType, WithGetter, WithNotifier>>::value,
+                  "Is wrongly copyable");
+    static_assert(!std::is_copy_assignable<ProxyField<TestSampleType, WithGetter, WithNotifier>>::value,
+                  "Is wrongly copyable");
 }
 
 TEST(ProxyFieldTest, IsMoveable)
 {
-    static_assert(std::is_move_constructible<ProxyField<TestSampleType>>::value, "Is not move constructible");
-    static_assert(std::is_move_assignable<ProxyField<TestSampleType>>::value, "Is not move assignable");
+    static_assert(std::is_move_constructible<ProxyField<TestSampleType, WithGetter, WithSetter>>::value,
+                  "Is not move constructible");
+    static_assert(std::is_move_assignable<ProxyField<TestSampleType, WithGetter, WithSetter>>::value,
+                  "Is not move assignable");
 }
 
 TEST(ProxyFieldTest, ClassTypeDependsOnFieldDataType)
@@ -63,10 +67,18 @@ TEST(ProxyFieldTest, ClassTypeDependsOnFieldDataType)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    using FirstProxyFieldType = ProxyField<bool>;
-    using SecondProxyFieldType = ProxyField<std::uint16_t>;
+    using FirstProxyFieldType = ProxyField<bool, WithGetter, WithNotifier>;
+    using SecondProxyFieldType = ProxyField<std::uint16_t, WithGetter, WithNotifier>;
     static_assert(!std::is_same_v<FirstProxyFieldType, SecondProxyFieldType>,
                   "Class type does not depend on field data type");
+}
+
+TEST(ProxyFieldTest, ClassTypeDependsOnFieldTagType)
+{
+    using FirstProxyFieldType = ProxyField<bool, WithGetter, WithNotifier>;
+    using SecondProxyFieldType = ProxyField<bool, WithGetter, WithSetter>;
+    static_assert(!std::is_same_v<FirstProxyFieldType, SecondProxyFieldType>,
+                  "Class type does not depend on field tag type");
 }
 
 TEST(ProxyFieldTest, ProxyFieldContainsPublicFieldType)
@@ -79,8 +91,9 @@ TEST(ProxyFieldTest, ProxyFieldContainsPublicFieldType)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     using CustomFieldType = std::uint16_t;
-    static_assert(std::is_same<typename ProxyField<CustomFieldType>::FieldType, CustomFieldType>::value,
-                  "Incorrect FieldType.");
+    static_assert(
+        std::is_same<typename ProxyField<CustomFieldType, WithGetter, WithNotifier>::FieldType, CustomFieldType>::value,
+        "Incorrect FieldType.");
 }
 
 }  // namespace

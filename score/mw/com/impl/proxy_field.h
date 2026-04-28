@@ -40,7 +40,7 @@ namespace score::mw::com::impl
 // Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "An identifier with external linkage shall have
 // exactly one definition". This a forward class declaration.
 // coverity[autosar_cpp14_m3_2_3_violation]
-template <typename FieldType>
+template <typename FieldType, typename... Tags>
 class ProxyFieldAttorney;
 
 /// \brief This is the user-visible class of a field that is part of a proxy. It delegates all functionality to
@@ -52,11 +52,17 @@ class ProxyFieldAttorney;
 template <typename SampleDataType, typename... Tags>
 class ProxyField final : public ProxyFieldBase
 {
+
+    static_assert(
+        detail::contains_type<WithNotifier, Tags...>::value || detail::contains_type<WithGetter, Tags...>::value,
+        "A field must either have WithGetter or WithNotifier enabled otherwise, there is no way for the consumer to "
+        "receive the field values.");
+
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
     // Design decision: The "*Attorney" class is a helper, which sets the internal state of this class accessing
     // private members and used for testing purposes only.
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class ProxyFieldAttorney<SampleDataType>;
+    friend class ProxyFieldAttorney<SampleDataType, Tags...>;
 
   public:
     using FieldType = SampleDataType;

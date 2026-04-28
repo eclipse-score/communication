@@ -99,7 +99,7 @@ struct GenericProxyEventStruct
 
 struct ProxyFieldStruct
 {
-    using ServiceElementType = ProxyField<TestEventOrFieldType>;
+    using ServiceElementType = ProxyField<TestEventOrFieldType, WithGetter, WithNotifier>;
     using MockServiceElementType = mock_binding::ProxyEvent<TestEventOrFieldType>;
 };
 

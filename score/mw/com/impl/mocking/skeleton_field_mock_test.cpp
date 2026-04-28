@@ -41,7 +41,7 @@ class SkeletonFieldMockFixture : public ::testing::Test
 
     SkeletonFieldMock<TestSampleType> skeleton_field_mock_{};
     SkeletonBase skeleton_base_{nullptr, MakeFakeInstanceIdentifier(1U)};
-    SkeletonField<TestSampleType> unit_{skeleton_base_, kDummyFieldName, nullptr};
+    SkeletonField<TestSampleType, WithGetter, WithNotifier> unit_{skeleton_base_, kDummyFieldName, nullptr};
 };
 
 TEST_F(SkeletonFieldMockFixture, AllocateDispatchesToMockAfterInjectingMock)

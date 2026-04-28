@@ -64,7 +64,7 @@ struct ProxyEventStruct
 
 struct ProxyFieldStruct
 {
-    using ProxyEventField = ProxyField<TestSampleType>;
+    using ProxyEventField = ProxyField<TestSampleType, WithGetter, WithNotifier>;
     using ProxyEventFieldMock = ProxyEventMock<TestSampleType>;
 };
 

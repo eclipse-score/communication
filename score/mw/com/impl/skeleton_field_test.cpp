@@ -65,7 +65,7 @@ class MyDummySkeleton : public SkeletonBase
   public:
     using SkeletonBase::SkeletonBase;
 
-    SkeletonField<TestSampleType> my_dummy_field_{*this, kFieldName};
+    SkeletonField<TestSampleType, WithGetter, WithNotifier> my_dummy_field_{*this, kFieldName};
 };
 
 TEST(SkeletonFieldTest, NotCopyable)
@@ -76,14 +76,18 @@ TEST(SkeletonFieldTest, NotCopyable)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    static_assert(!std::is_copy_constructible<SkeletonField<TestSampleType>>::value, "Is wrongly copyable");
-    static_assert(!std::is_copy_assignable<SkeletonField<TestSampleType>>::value, "Is wrongly copyable");
+    static_assert(!std::is_copy_constructible<SkeletonField<TestSampleType, WithGetter, WithNotifier>>::value,
+                  "Is wrongly copyable");
+    static_assert(!std::is_copy_assignable<SkeletonField<TestSampleType, WithGetter, WithSetter>>::value,
+                  "Is wrongly copyable");
 }
 
 TEST(SkeletonFieldTest, IsMoveable)
 {
-    static_assert(std::is_move_constructible<SkeletonField<TestSampleType>>::value, "Is not move constructible");
-    static_assert(std::is_move_assignable<SkeletonField<TestSampleType>>::value, "Is not move assignable");
+    static_assert(std::is_move_constructible<SkeletonField<TestSampleType, WithGetter, WithNotifier>>::value,
+                  "Is not move constructible");
+    static_assert(std::is_move_assignable<SkeletonField<TestSampleType, WithGetter, WithSetter>>::value,
+                  "Is not move assignable");
 }
 
 TEST(SkeletonFieldTest, ClassTypeDependsOnFieldDataType)
@@ -94,10 +98,18 @@ TEST(SkeletonFieldTest, ClassTypeDependsOnFieldDataType)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    using FirstSkeletonFieldType = SkeletonField<bool>;
-    using SecondSkeletonFieldType = SkeletonField<std::uint16_t>;
+    using FirstSkeletonFieldType = SkeletonField<bool, WithGetter, WithNotifier>;
+    using SecondSkeletonFieldType = SkeletonField<std::uint16_t, WithGetter, WithNotifier>;
     static_assert(!std::is_same_v<FirstSkeletonFieldType, SecondSkeletonFieldType>,
                   "Class type does not depend on field data type");
+}
+
+TEST(SkeletonFieldTest, ClassTypeDependsOnFieldTagType)
+{
+    using FirstSkeletonFieldType = SkeletonField<bool, WithGetter, WithNotifier>;
+    using SecondSkeletonFieldType = SkeletonField<bool, WithGetter, WithSetter>;
+    static_assert(!std::is_same_v<FirstSkeletonFieldType, SecondSkeletonFieldType>,
+                  "Class type does not depend on field tag type");
 }
 
 TEST(SkeletonFieldTest, SkeletonFieldContainsPublicSampleType)
@@ -109,7 +121,8 @@ TEST(SkeletonFieldTest, SkeletonFieldContainsPublicSampleType)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    static_assert(std::is_same<typename SkeletonField<TestSampleType>::FieldType, TestSampleType>::value,
+    static_assert(std::is_same<typename SkeletonField<TestSampleType, WithGetter, WithNotifier>::FieldType,
+                               TestSampleType>::value,
                   "Incorrect FieldType.");
 }
 
@@ -966,7 +979,7 @@ class MySetterSkeleton : public SkeletonBase
   public:
     using SkeletonBase::SkeletonBase;
 
-    SkeletonField<TestSampleType, WithSetter> my_setter_field_{*this, kFieldName};
+    SkeletonField<TestSampleType, WithSetter, WithNotifier> my_setter_field_{*this, kFieldName};
 };
 
 // Static type-trait tests for RegisterSetHandler availability
@@ -980,11 +993,12 @@ TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerOnlyExistsWhenWithSetterTagP
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    static_assert(std::is_same_v<SkeletonField<TestSampleType, WithSetter>::FieldType, TestSampleType>,
+    static_assert(std::is_same_v<SkeletonField<TestSampleType, WithSetter, WithNotifier>::FieldType, TestSampleType>,
                   "Setter-capable field must expose FieldType");
 
-    static_assert(!std::is_same_v<SkeletonField<TestSampleType>, SkeletonField<TestSampleType, WithSetter>>,
-                  "Tagged and untagged fields must be different types");
+    static_assert(!std::is_same_v<SkeletonField<TestSampleType, WithGetter, WithNotifier>,
+                                  SkeletonField<TestSampleType, WithSetter, WithNotifier>>,
+                  "Distinct tag packs must produce distinct types");
 }
 
 // RegisterSetHandler – happy-path: handler forwarded to method binding

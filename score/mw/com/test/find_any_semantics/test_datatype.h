@@ -34,7 +34,7 @@ class TestInterface : public T::Base
   public:
     using T::Base::Base;
 
-    typename T::template Field<std::int32_t> test_field{*this, "test_field"};
+    typename T::template Field<std::int32_t, score::mw::com::WithNotifier> test_field{*this, "test_field"};
 };
 
 using TestDataProxy = score::mw::com::AsProxy<TestInterface>;
