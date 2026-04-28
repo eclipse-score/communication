@@ -393,14 +393,14 @@
                                             "useGetIfAvailable": {
                                                 "type": "boolean",
                                                 "title": "Use Field Getter If Available",
-                                                "description": "When true, the getter for this field will be used if the service type declares one.",
-                                                "default": false
+                                                "description": "When true, the getter for this field will be used if the service type declares one in the C++ service interface. Applicable for proxy/consumer side.",
+                                                "default": true
                                             },
                                             "useSetIfAvailable": {
                                                 "type": "boolean",
                                                 "title": "Use Field Setter If Available",
-                                                "description": "When true, the setter for this field will be used if the service type declares one.",
-                                                "default": false
+                                                "description": "When true, the setter for this field will be used if the service type declares one in the C++ service interface. Applicable for proxy/consumer side.",
+                                                "default": true
                                             }
                                         }
                                     }
