@@ -66,6 +66,11 @@ inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyFieldBindingFactoryIm
     ProxyBase& parent,
     const std::string_view field_name) noexcept
 {
+    // why do we dispatch to nethod binding factory but have copied and pasted ProxyEventBindingFactoryImpl<SampleType>::Create( here?
+    // Probably pass in ServiceElementType to ProxyEventBindingFactoryImpl<SampleType>::Create
+    // I think we shouldn't duplicate this code here. I think we can probably add ServiceElementType to ProxyEventBindingFactoryImpl<SampleType>::Create
+    // but could also be an option to create something like ProxyEventOrFieldBindingFactoryImpl::Create or some similar
+    // free function.
     const auto lookup = LookupLolaProxyElement(parent, field_name, ServiceElementType::FIELD);
     if (!lookup.has_value())
     {

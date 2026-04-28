@@ -23,6 +23,11 @@ namespace score::mw::com::impl
 
 /// \brief Lookup key for a method on a Proxy/Skeleton, formed from the method name and its MethodType.
 /// A field's Get, a field's Set and a regular method may share the same name the type field disambiguates them.
+// file doesnt match class name.
+// missing cpp.
+// do we really want the same name as lola::UniqueMethodIdentifier?
+
+// Doesn't seem to be used anywhere. Can we remove it?
 struct UniqueMethodIdentifier
 {
     std::string_view name;

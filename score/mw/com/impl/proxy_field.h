@@ -336,8 +336,6 @@ class ProxyField final : public ProxyFieldBase
         proxy_base_view.RegisterField(field_name, *this);
     }
 
-    std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;
-
     struct empty
     {
     };
@@ -347,6 +345,7 @@ class ProxyField final : public ProxyFieldBase
 
     ProxyGetMethodType proxy_method_get_dispatch_;
     ProxySetMethodType proxy_method_set_dispatch_;
+    std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;
 
     static_assert(std::is_same<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>::value,
                   "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "

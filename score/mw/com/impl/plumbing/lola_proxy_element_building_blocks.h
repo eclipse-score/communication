@@ -28,35 +28,45 @@
 namespace score::mw::com::impl
 {
 
-/// \brief Result of resolving a named service element against the lola deployment on the proxy side.
-/// \details Carries everything a binding constructor needs that comes from deployment/handle lookup.
-///          This is intentionally agnostic to what kind of binding is being built (event, field notifier,
-///          method); the construction step lives with the caller.
-struct LoLaProxyElementBuildingBlocks
-{
-    lola::Proxy& parent;
-    LolaServiceInstanceId::InstanceId instance_id;
-    lola::ElementFqId element_fq_id;
-};
+// Either GetLolaProxyBinding or this generic one
+template <typename ProxyBindingImpl>
+ProxyBinding& GetProxyBindingImpl(ProxyBinding* parent_binding);
 
-/// \brief Validate the parent is a lola proxy and resolve the element name against the lola deployment contained in the
-/// given handle.
-/// \return The lookup data on success, std::nullopt for non-lola bindings or a missing parent binding.
-/// \note Fatally asserts on a malformed instance id or an element name that is not present in the
-///       deployment, matching the previous behaviour of the per-factory inlined lookups.
-std::optional<LoLaProxyElementBuildingBlocks> LookupLolaProxyElement(const HandleType& handle,
-                                                                     ProxyBinding* parent_binding,
-                                                                     std::string_view service_element_name,
-                                                                     ServiceElementType element_type) noexcept;
+lola::ElementFqId GetElementFqId(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
+                                 const LolaServiceElementId& element_id);
 
-/// \brief Convenience overload that pulls the handle and binding out of a ProxyBase reference.
-inline std::optional<LoLaProxyElementBuildingBlocks> LookupLolaProxyElement(ProxyBase& parent,
-                                                                            std::string_view service_element_name,
-                                                                            ServiceElementType element_type) noexcept
-{
-    return LookupLolaProxyElement(
-        parent.GetHandle(), ProxyBaseView{parent}.GetBinding(), service_element_name, element_type);
-}
+// /// \brief Result of resolving a named service element against the lola deployment on the proxy side.
+// /// \details Carries everything a binding constructor needs that comes from deployment/handle lookup.
+// ///          This is intentionally agnostic to what kind of binding is being built (event, field notifier,
+// ///          method); the construction step lives with the caller.
+// struct LoLaProxyElementBuildingBlocks
+// {
+//     lola::Proxy& parent;
+//     // LolaServiceInstanceId::InstanceId instance_id;
+//     lola::ElementFqId element_fq_id;
+// };
+
+// // this is only needed in event factory (field fac should dipatch to event fac). So why not put it there?
+// /// \brief Validate the parent is a lola proxy and resolve the element name against the lola deployment contained in the
+// /// given handle.
+// /// \return The lookup data on success, std::nullopt for non-lola bindings or a missing parent binding.
+// /// \note Fatally asserts on a malformed instance id or an element name that is not present in the
+// ///       deployment, matching the previous behaviour of the per-factory inlined lookups.
+// // why do we have this lola stuff in plumbing?
+// std::optional<LoLaProxyElementBuildingBlocks> LookupLolaProxyElement(const HandleType& handle,
+//                                                                      ProxyBinding* parent_binding,
+//                                                                      std::string_view service_element_name,
+//                                                                      ServiceElementType element_type) noexcept;
+
+// // we should align the signatures of the factory creates instead of creating an overload here
+// /// \brief Convenience overload that pulls the handle and binding out of a ProxyBase reference.
+// inline std::optional<LoLaProxyElementBuildingBlocks> LookupLolaProxyElement(ProxyBase& parent,
+//                                                                             std::string_view service_element_name,
+//                                                                             ServiceElementType element_type) noexcept
+// {
+//     return LookupLolaProxyElement(
+//         parent.GetHandle(), ProxyBaseView{parent}.GetBinding(), service_element_name, element_type);
+// }
 
 }  // namespace score::mw::com::impl
 

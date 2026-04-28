@@ -631,6 +631,7 @@ score::Result<void> Proxy::SetupMethods(const std::vector<std::string_view>& ena
     // Add field Get/Set methods to the enabled method data.
     // TODO(Ticket-250429): Replace these constants with actual per-field configuration flags
     // once the field get/set availability is added to the deployment configuration.
+    // rebase: https://github.com/eclipse-score/communication/pull/313#discussion_r3154898368
     constexpr bool kUseGetIfAvailable = true;
     constexpr bool kUseSetIfAvailable = true;
 
@@ -638,6 +639,12 @@ score::Result<void> Proxy::SetupMethods(const std::vector<std::string_view>& ena
     // queue size > 1.
     constexpr LolaMethodInstanceDeployment::QueueSize kFieldMethodQueueSize{1U};
 
+    // this should be parallel to GetMethodIdAndQueueSizeFromNames. they're both doing the same thing except one is for
+    // mehtods and the other is for fields. We could make the function generic and pass in .methods_ / .fields_ into the
+    // different calls. We shouldn't be checking proxy_methods_ count here: the behaviour should be the same if a field
+    // or method is specified in the configuration but not in shm i.e. proxy_methods_.count should be checked for all
+    // methods in InitializeSharedMemoryForMethods.
+    // rebase: https://github.com/eclipse-score/communication/pull/322 (changes implementation of GetMethodIdAndQueueSizeFromNames)
     const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
     const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
     {

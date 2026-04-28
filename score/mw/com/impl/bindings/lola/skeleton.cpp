@@ -474,10 +474,12 @@ void Skeleton::RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMe
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");
 }
 
+// Rename this to VerifyAllMethodHandlersRegistered
 bool Skeleton::VerifyAllMethodsRegistered() const
 {
     for (const auto& [method_id, method_reference] : skeleton_methods_)
     {
+        // Methods now register themselves with the lola::skeleton on construction, also for field methods. Even though we register the getter / setter method handlers for fields, we should still check here to catch any programming bugs.
         // TODO: Remove this skip once the field Get handler is auto-registered in SkeletonField.
         if (method_id.method_type == ::score::mw::com::impl::MethodType::kGet)
         {
@@ -587,6 +589,9 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
 
         if (skeleton_methods_.count(unique_method_identifier) == 0U)
         {
+             // Isn't this impossible? RegisterGet/Set is disabled in proxy when it's disabled in interface.
+             // This continue condition should be removed.
+
             // A proxy may register a Get or Set method for a field that has been disabled in the skeleton's
             // interface definition. In that case, the skeleton has no handler for it.
             if (unique_method_identifier.method_type == MethodType::kGet ||
@@ -597,6 +602,7 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
                 continue;
             }
 
+            // not a config issue (config meaning mw_com_config.json)? shm is corrupted or programming bug?
             // This means that one misconfigured proxy can crash the skeleton and all other correctly configured proxies
             // that are trying to subscribe to the same skeleton instance. However, since this is a configuration error,
             // we consider it better to fail fast and loudly instead of silently ignoring the misconfiguration and

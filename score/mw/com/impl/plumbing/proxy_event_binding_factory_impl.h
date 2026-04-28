@@ -69,9 +69,10 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyEventBindingFactoryImpl<SampleType>::Create(
     ProxyBase& parent,
-    const std::string_view event_name) noexcept
+    const std::string_view event_name,
+    ServiceElementType element_type) noexcept
 {
-    const auto lookup = LookupLolaProxyElement(parent, event_name, ServiceElementType::EVENT);
+    const auto lookup = LookupLolaProxyElement(parent, event_name, element_type);
     if (!lookup.has_value())
     {
         score::mw::log::LogError("lola")
