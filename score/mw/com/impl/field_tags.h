@@ -19,7 +19,8 @@ namespace score::mw::com::impl
 {
 
 /// \brief Tag types used on ProxyField/SkeletonField level to accomplish overload-resolution for various signatures,
-/// which depend on the availability of Get/Set/Notifier.
+/// which depend on the availability of Get/Set/Notifier. A field must enable WithGetter or WithNotifier
+/// (a write-only field would be invisible to consumers).
 struct WithGetter
 {
 };

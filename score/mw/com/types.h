@@ -106,6 +106,12 @@ using MethodInArgTypePtr = impl::MethodInArgPtr<ReturnType>;
 using EventReceiveHandler = impl::EventReceiveHandler;
 
 /// \api
+/// \brief Field tag types used in service-interface definitions to enable Get/Set/Notifier on a field.
+using WithGetter = impl::WithGetter;
+using WithSetter = impl::WithSetter;
+using WithNotifier = impl::WithNotifier;
+
+/// \api
 /// \brief Interpret an interface that follows our traits as proxy (cf. impl/traits.h)
 template <template <class> class T>
 using AsProxy = impl::AsProxy<T>;

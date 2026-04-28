@@ -63,7 +63,7 @@ class MyDummySkeleton final : public SkeletonBase
     SkeletonEvent<TestSampleType> dummy_event{*this, kDummyEventName};
     SkeletonEvent<TestSampleType> dummy_event2{*this, kDummyEventName2};
 
-    SkeletonField<TestSampleType> dummy_field{*this, kDummyFieldName};
+    SkeletonField<TestSampleType, WithGetter, WithNotifier> dummy_field{*this, kDummyFieldName};
 };
 
 mock_binding::Skeleton* GetMockBinding(MyDummySkeleton& skeleton) noexcept

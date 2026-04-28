@@ -40,6 +40,7 @@ namespace score::mw::com::impl
 template <typename SampleDataType, typename... Tags>
 class SkeletonField : public SkeletonFieldBase
 {
+
   public:
     using FieldType = SampleDataType;
 

@@ -69,7 +69,7 @@ class MyDummyProxyWithField : public ProxyBase
   public:
     using ProxyBase::ProxyBase;
 
-    ProxyField<TestSampleType> my_service_element_{*this, kServiceElementName};
+    ProxyField<TestSampleType, WithGetter, WithNotifier> my_service_element_{*this, kServiceElementName};
 };
 
 /// \brief Structs containing types for templated gtests.

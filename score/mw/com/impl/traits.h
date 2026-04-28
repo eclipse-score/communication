@@ -101,16 +101,18 @@ class ProxyWrapperClassTestView;
 ///     typename Trait::template Event<DataType1> struct_event_1_{*this, event_name_0};
 ///     typename Trait::template Event<DataType2> struct_event_2_{*this, event_name_1};
 ///
-///     typename Trait::template Field<DataType1, WithGetter, WithSetter> struct_field_1_{*this, field_name_0};
-///     typename Trait::template Field<DataType2> struct_field_2_{*this, field_name_1};
+///     typename Trait::template Field<DataType1, WithGetter, WithSetter, WithNotifier> struct_field_1_{*this,
+///                                                                                                     field_name_0};
+///     typename Trait::template Field<DataType2, WithNotifier> struct_field_2_{*this, field_name_1};
 ///
 ///     typename Trait::template Method<void(InArgType1)> struct_method_1_{*this, method_name_0};
 ///     typename Trait::template Method<ReturnType()> struct_method_2_{*this, method_name_1};
 ///
 /// };
-/// Notes regarding template args: a field takes its data type plus an optional pack of tags. Presence of WithGetter
-/// or WithSetter enables Get() / Set() respectively on the field. The notifier surface (Subscribe/GetNewSamples on
-/// the proxy side, Update/Allocate on the skeleton side) is part of every field and is not controlled by a tag.
+/// Notes regarding template args: a field takes its data type plus a pack of tags from {WithGetter, WithSetter,
+/// WithNotifier}. WithGetter / WithSetter enable Get() / Set() on the proxy. WithNotifier enables the proxy notifier
+/// surface (Subscribe, GetNewSamples, ...). At least one of WithGetter or WithNotifier must be present, otherwise the
+/// value would be invisible to consumers. The skeleton-side Update/Allocate are part of every field.
 /// A method has a template arg describing the method signature in the form ReturnType(InArgType1, InArgType2, ...).
 /// InArgs and ReturnType are optional. Therefore, these are valid signatures:
 /// - void()
