@@ -30,9 +30,9 @@ pub struct LolaRuntimeImpl<B: FFIBridge = LolaFFIBridge> {
 }
 
 impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
-    type ServiceDiscovery<I: Interface + Send> = SampleConsumerDiscovery<I, B>;
+    type ServiceDiscovery<I: Interface + Send> = LolaConsumerDiscovery<I, B>;
     type Subscriber<T: CommData + Debug> = SubscribableImpl<T, B>;
-    type ProducerBuilder<I: Interface> = SampleProducerBuilder<I, B>;
+    type ProducerBuilder<I: Interface> = LolaProducerBuilder<I, B>;
     type Publisher<T: CommData + Debug> = Publisher<T, B>;
     type ProviderInfo = LolaProviderInfo<B>;
     type ConsumerInfo = LolaConsumerInfo<B>;

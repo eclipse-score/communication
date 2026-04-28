@@ -102,7 +102,8 @@ where
     }
 }
 
-impl<T, B: FFIBridge> AsRef<sample_allocatee_ptr_rs::SampleAllocateePtr<T>> for AllocateePtrWrapper<T, B>
+impl<T, B: FFIBridge> AsRef<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>
+    for AllocateePtrWrapper<T, B>
 where
     T: CommData + Debug,
 {
@@ -334,7 +335,10 @@ pub struct NativeSkeletonEventBase {
 unsafe impl Send for NativeSkeletonEventBase {}
 
 impl NativeSkeletonEventBase {
-    pub fn new<B: FFIBridge>(instance_info: &LolaProviderInfo<B>, identifier: &str) -> Result<Self> {
+    pub fn new<B: FFIBridge>(
+        instance_info: &LolaProviderInfo<B>,
+        identifier: &str,
+    ) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid skeleton handle and interface id to get event
         // skeleton handle is created during producer offer call
         let raw_event_ptr = unsafe {
@@ -423,13 +427,13 @@ where
     }
 }
 
-pub struct SampleProducerBuilder<I: Interface, B: FFIBridge> {
+pub struct LolaProducerBuilder<I: Interface, B: FFIBridge> {
     pub instance_specifier: InstanceSpecifier,
     pub _interface: PhantomData<I>,
     pub _bridge: PhantomData<B>,
 }
 
-impl<I: Interface, B: FFIBridge> SampleProducerBuilder<I, B> {
+impl<I: Interface, B: FFIBridge> LolaProducerBuilder<I, B> {
     pub fn new(_runtime: &LolaRuntimeImpl<B>, instance_specifier: InstanceSpecifier) -> Self {
         Self {
             instance_specifier,
@@ -439,9 +443,14 @@ impl<I: Interface, B: FFIBridge> SampleProducerBuilder<I, B> {
     }
 }
 
-impl<I: Interface, B: FFIBridge> ProducerBuilder<I, LolaRuntimeImpl<B>> for SampleProducerBuilder<I, B> {}
+impl<I: Interface, B: FFIBridge> ProducerBuilder<I, LolaRuntimeImpl<B>>
+    for LolaProducerBuilder<I, B>
+{
+}
 
-impl<I: Interface, B: FFIBridge> Builder<I::Producer<LolaRuntimeImpl<B>>> for SampleProducerBuilder<I, B> {
+impl<I: Interface, B: FFIBridge> Builder<I::Producer<LolaRuntimeImpl<B>>>
+    for LolaProducerBuilder<I, B>
+{
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl<B>>> {
         //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_runtime = mw_com::InstanceSpecifier::try_from(
@@ -463,22 +472,60 @@ impl<I: Interface, B: FFIBridge> Builder<I::Producer<LolaRuntimeImpl<B>>> for Sa
 
 #[cfg(test)]
 mod test {
-    use com_api_concept::CommData;
-    use std::fmt::Debug;
+    use super::*;
+    use bridge_ffi_mock::MockFFIBridge;
+    use com_api_concept::InstanceSpecifier;
+    // Bring trait methods into scope without shadowing local struct names.
+    use com_api_concept::Publisher as _;
+    use com_api_concept::SampleMaybeUninit as _;
+    use com_api_concept::SampleMut as _;
 
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug)]
     #[repr(C)]
-    struct TestData(u32);
+    struct TestData {
+        value: i32,
+    }
 
     unsafe impl com_api_concept::Reloc for TestData {}
 
-    impl CommData for TestData {
+    impl com_api_concept::CommData for TestData {
         const ID: &'static str = "TestData";
     }
 
+    // Creates a `NativeSkeletonHandle<MockFFIBridge>` .
+    fn make_skeleton_handle() -> NativeSkeletonHandle<MockFFIBridge> {
+        let spec = mw_com::InstanceSpecifier::try_from("/test_instance")
+            .expect("valid instance specifier");
+        NativeSkeletonHandle::<MockFFIBridge>::new("", &spec)
+            .expect("MockFFIBridge::create_skeleton should not fail")
+    }
+
+    // Creates a `LolaProviderInfo<MockFFIBridge>` with a valid heap-backed skeleton handle.
+    fn make_provider_info(interface_id: &'static str) -> LolaProviderInfo<MockFFIBridge> {
+        LolaProviderInfo {
+            instance_specifier: InstanceSpecifier::new("/test_instance")
+                .expect("valid instance specifier"),
+            interface_id,
+            skeleton_handle: SkeletonInstanceManager(Arc::new(make_skeleton_handle())),
+        }
+    }
+
     #[test]
-    #[ignore] // Test will be update with Ticket-242140
-    fn send_stuff() {
-        let _test_data = TestData(42);
+    fn test_provider_info_offer_service() {
+        let provider_info = make_provider_info("TestInterface");
+        let _ = provider_info.offer_service();
+        let _ = provider_info.stop_offer_service();
+    }
+
+    #[test]
+    fn test_publisher_allocate_and_send() {
+        let instance_info = make_provider_info("TestData");
+        let publisher: Publisher<TestData, MockFFIBridge> =
+            Publisher::<TestData, MockFFIBridge>::new("TestEvent", instance_info)
+                .expect("Failed to create publisher");
+        let sample = publisher.allocate().expect("Failed to allocate sample");
+        let test_data = TestData { value: 42 };
+        let sample_mut = sample.write(test_data);
+        sample_mut.send().expect("Failed to send sample");
     }
 }

@@ -37,8 +37,8 @@ rust_library(
 rust_test(
     name = "com-api-runtime-lola-tests",
     crate = ":com-api-runtime-lola",
-    tags = ["manual"],
-    deps = [":com-api-runtime-lola"],
+    deps = [":com-api-runtime-lola",
+    "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_mock",],
 )
 
 rust_doc_test(

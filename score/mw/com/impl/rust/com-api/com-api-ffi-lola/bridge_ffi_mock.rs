@@ -11,6 +11,13 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+// This file provides a mock implementation of the FFIBridge trait for testing purposes.
+// It is kind of stub code which we will change according to the needs of our tests.
+// As of now, it just provide basic mock implementation and returning values based on
+// input parameters. In future, we will enhance this mock implementation to verify
+// all the test cases and scenarios.
+#![doc(hidden)]
+
 pub use bridge_ffi_rs::{
     CMutVoidPtr, CVoidPtr, FFIBridge, FatPtr, FindServiceHandle, HandleContainer, HandleType,
     InstanceSpecifier, NativeFindServiceHandle, NativeHandleContainer, NativeInstanceSpecifier,
@@ -234,5 +241,27 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
             // SAFETY: handle was allocated by start_find_service via Box::into_raw
             drop(Box::from_raw(handle));
         }
+    }
+}
+
+impl MockFFIBridge {
+    /// The handle container is backed by a heap-allocated zeroed stub so the pointer
+    /// is stable and non-dangling.  An extra `Arc` clone is intentionally forgotten
+    /// inside this function so the strong count is permanently pinned above zero —
+    /// meaning `HandleContainer::drop` (which calls real C++) is never invoked
+    /// regardless of how many clones the caller makes or drops.
+    pub fn make_handle_container() -> std::sync::Arc<HandleContainer> {
+        // A zeroed usize gives a stable heap pointer.
+        let ptr = Box::leak(Box::new(0usize)) as *mut usize as *mut NativeHandleContainer;
+        let hc = std::sync::Arc::new(HandleContainer::new(ptr));
+        //To avoid the drop of HandleContainer which will call the real C++ destructor.
+        std::mem::forget(std::sync::Arc::clone(&hc));
+        hc
+    }
+
+    /// `ProxyEventBase` is a ZST opaque type, a dangling non-null pointer is the
+    /// canonical representation for "valid but empty" in the mock.
+    pub fn make_proxy_event_ptr() -> *mut ProxyEventBase {
+        std::ptr::NonNull::<ProxyEventBase>::dangling().as_ptr()
     }
 }
