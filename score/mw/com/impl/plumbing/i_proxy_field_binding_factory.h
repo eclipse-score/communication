@@ -34,16 +34,16 @@ class IProxyFieldBindingFactory
     virtual ~IProxyFieldBindingFactory() noexcept = default;
 
     IProxyFieldBindingFactory(IProxyFieldBindingFactory&&) = delete;
-    IProxyFieldBindingFactory& operator=(IProxyFieldBindingFactory&&) = delete;
+    auto operator=(IProxyFieldBindingFactory&&) -> IProxyFieldBindingFactory& = delete;
     IProxyFieldBindingFactory(const IProxyFieldBindingFactory&) = delete;
-    IProxyFieldBindingFactory& operator=(const IProxyFieldBindingFactory&) = delete;
+    auto operator=(const IProxyFieldBindingFactory&) -> IProxyFieldBindingFactory& = delete;
 
     /// Creates instances of the event binding of a proxy field with a particular data type.
     /// \tparam SampleType Type of the data that is exchanges
     /// \param handle The handle containing the binding information.
     /// \param field_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
-    virtual auto CreateEventBinding(ProxyBase& parent, const std::string_view field_name) noexcept
+    virtual auto CreateEventBinding(ProxyBase& parent, std::string_view field_name) noexcept
         -> std::unique_ptr<ProxyEventBinding<SampleType>> = 0;
 };
 }  // namespace score::mw::com::impl

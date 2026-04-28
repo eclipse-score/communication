@@ -38,11 +38,11 @@ class ProxyFieldBase
 
     /// \brief A ProxyFieldBase shall not be copyable
     ProxyFieldBase(const ProxyFieldBase&) = delete;
-    ProxyFieldBase& operator=(const ProxyFieldBase&) = delete;
+    auto operator=(const ProxyFieldBase&) -> ProxyFieldBase& = delete;
 
     /// \brief A ProxyFieldBase shall be moveable
     ProxyFieldBase(ProxyFieldBase&&) noexcept = default;
-    ProxyFieldBase& operator=(ProxyFieldBase&&) noexcept = default;
+    auto operator=(ProxyFieldBase&&) noexcept -> ProxyFieldBase& = default;
 
     virtual ~ProxyFieldBase() noexcept = default;
 
@@ -58,7 +58,7 @@ class ProxyFieldBase
      *                          be able to offer to the using application.
      * \return On failure, returns an error code.
      */
-    ResultBlank Subscribe(const std::size_t max_sample_count) noexcept
+    auto Subscribe(const std::size_t max_sample_count) noexcept -> ResultBlank
     {
         return proxy_event_base_dispatch_->Subscribe(max_sample_count);
     }
@@ -69,7 +69,7 @@ class ProxyFieldBase
      * \details This method can always be called regardless of the state of the field.
      * \return Subscription state of the field.
      */
-    SubscriptionState GetSubscriptionState() noexcept
+    auto GetSubscriptionState() noexcept -> SubscriptionState
     {
         return proxy_event_base_dispatch_->GetSubscriptionState();
     }
@@ -94,7 +94,7 @@ class ProxyFieldBase
      *          unspecified.
      * \return Number of samples that can still be received.
      */
-    std::size_t GetFreeSampleCount() noexcept
+    auto GetFreeSampleCount() noexcept -> std::size_t
     {
         return proxy_event_base_dispatch_->GetFreeSampleCount();
     }
@@ -110,7 +110,7 @@ class ProxyFieldBase
      *         actual new samples. I.e. an implementation is allowed to report a lower number than actual new samples,
      *         which would be provided by a call to GetNewSamples().
      */
-    Result<std::size_t> GetNumNewSamplesAvailable() noexcept
+    auto GetNumNewSamplesAvailable() noexcept -> Result<std::size_t>
     {
         return proxy_event_base_dispatch_->GetNumNewSamplesAvailable();
     }
@@ -127,7 +127,7 @@ class ProxyFieldBase
      *            already running ReceiveHandler. We also see no use cases for it and won't support it therefore.
      * \param handler user provided handler to be called
      */
-    ResultBlank SetReceiveHandler(EventReceiveHandler handler) noexcept
+    auto SetReceiveHandler(EventReceiveHandler handler) noexcept -> ResultBlank
     {
         return proxy_event_base_dispatch_->SetReceiveHandler(std::move(handler));
     }
@@ -136,7 +136,7 @@ class ProxyFieldBase
      * \api
      * \brief Removes any ReceiveHandler registered via SetReceiveHandler.
      */
-    ResultBlank UnsetReceiveHandler() noexcept
+    auto UnsetReceiveHandler() noexcept -> ResultBlank
     {
         return proxy_event_base_dispatch_->UnsetReceiveHandler();
     }

@@ -33,8 +33,9 @@ class ProxyFieldBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyFieldBindingFactory.
-    static std::unique_ptr<ProxyEventBinding<SampleType>> CreateEventBinding(ProxyBase& parent,
-                                                                             std::string_view field_name) noexcept
+    static auto CreateEventBinding(ProxyBase& parent,
+                                   std::string_view field_name) noexcept
+        -> std::unique_ptr<ProxyEventBinding<SampleType>>
     {
         return instance().CreateEventBinding(parent, field_name);
     }
@@ -47,7 +48,7 @@ class ProxyFieldBindingFactory final
     }
 
   private:
-    static IProxyFieldBindingFactory<SampleType>& instance() noexcept;
+    static auto instance() noexcept -> IProxyFieldBindingFactory<SampleType>&;
     static IProxyFieldBindingFactory<SampleType>* mock_;
 };
 

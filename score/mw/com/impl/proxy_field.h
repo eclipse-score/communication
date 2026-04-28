@@ -88,13 +88,13 @@ class ProxyField final : public ProxyFieldBase
 
     /// \brief A ProxyField shall not be copyable
     ProxyField(const ProxyField&) = delete;
-    ProxyField& operator=(const ProxyField&) = delete;
+    auto operator=(const ProxyField&) -> ProxyField& = delete;
 
     /// \brief A ProxyField shall be moveable
-    ProxyField(ProxyField&&) noexcept;
-    ProxyField& operator=(ProxyField&&) & noexcept;
+    ProxyField(ProxyField&& other) noexcept;
+    auto operator=(ProxyField&& other) & noexcept -> ProxyField&;
 
-    ~ProxyField() noexcept = default;
+    ~ProxyField() noexcept override = default;
 
     /**
      * \api
@@ -110,7 +110,8 @@ class ProxyField final : public ProxyFieldBase
      * \return Number of samples that were handed over to the callable or an error.
      */
     template <typename F>
-    Result<std::size_t> GetNewSamples(F&& receiver, const std::size_t max_num_samples) noexcept
+    auto GetNewSamples(F&& receiver, const std::size_t max_num_samples) noexcept
+        -> Result<std::size_t>
     {
         return proxy_event_dispatch_->GetNewSamples(std::forward<F>(receiver), max_num_samples);
     }
@@ -144,7 +145,7 @@ class ProxyField final : public ProxyFieldBase
     // avoid dangling references.
     std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;
 
-    static_assert(std::is_same<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>::value,
+    static_assert(std::is_same_v<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>,
                   "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "
                   "we must ensure that it doesn't move when the ProxyField is moved to avoid dangling references. ");
 };

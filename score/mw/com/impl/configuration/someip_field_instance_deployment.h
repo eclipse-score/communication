@@ -24,7 +24,7 @@ class SomeIpFieldInstanceDeployment
     SomeIpFieldInstanceDeployment() noexcept = default;
     explicit SomeIpFieldInstanceDeployment(const score::json::Object& /* json_object */) noexcept {}
 
-    json::Object Serialize() const noexcept
+    [[nodiscard]] static auto Serialize() noexcept -> json::Object
     {
         return json::Object{};
     }
