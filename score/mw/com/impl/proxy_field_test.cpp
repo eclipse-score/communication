@@ -37,6 +37,111 @@ using namespace ::testing;
 
 using TestSampleType = std::uint8_t;
 
+namespace
+{
+// SFINAE detection traits used to verify that the notifier surface is gated on the WithNotifier tag.
+// Each trait checks whether the corresponding member call is well-formed on the field type.
+
+template <typename, typename = void>
+struct has_subscribe : std::false_type
+{
+};
+template <typename T>
+struct has_subscribe<T, std::void_t<decltype(std::declval<T&>().Subscribe(std::declval<std::size_t>()))>>
+    : std::true_type
+{
+};
+
+template <typename, typename = void>
+struct has_unsubscribe : std::false_type
+{
+};
+template <typename T>
+struct has_unsubscribe<T, std::void_t<decltype(std::declval<T&>().Unsubscribe())>> : std::true_type
+{
+};
+
+template <typename, typename = void>
+struct has_get_subscription_state : std::false_type
+{
+};
+template <typename T>
+struct has_get_subscription_state<T, std::void_t<decltype(std::declval<T&>().GetSubscriptionState())>> : std::true_type
+{
+};
+
+template <typename, typename = void>
+struct has_get_free_sample_count : std::false_type
+{
+};
+template <typename T>
+struct has_get_free_sample_count<T, std::void_t<decltype(std::declval<T&>().GetFreeSampleCount())>> : std::true_type
+{
+};
+
+template <typename, typename = void>
+struct has_get_num_new_samples_available : std::false_type
+{
+};
+template <typename T>
+struct has_get_num_new_samples_available<T, std::void_t<decltype(std::declval<T&>().GetNumNewSamplesAvailable())>>
+    : std::true_type
+{
+};
+
+template <typename, typename = void>
+struct has_set_receive_handler : std::false_type
+{
+};
+template <typename T>
+struct has_set_receive_handler<
+    T,
+    std::void_t<decltype(std::declval<T&>().SetReceiveHandler(std::declval<EventReceiveHandler>()))>> : std::true_type
+{
+};
+
+template <typename, typename = void>
+struct has_unset_receive_handler : std::false_type
+{
+};
+template <typename T>
+struct has_unset_receive_handler<T, std::void_t<decltype(std::declval<T&>().UnsetReceiveHandler())>> : std::true_type
+{
+};
+
+struct DummySampleReceiver
+{
+    template <typename SamplePtrT>
+    void operator()(SamplePtrT) noexcept
+    {
+    }
+};
+
+template <typename, typename = void>
+struct has_get_new_samples : std::false_type
+{
+};
+template <typename T>
+struct has_get_new_samples<T,
+                           std::void_t<decltype(std::declval<T&>().GetNewSamples(std::declval<DummySampleReceiver>(),
+                                                                                 std::declval<std::size_t>()))>>
+    : std::true_type
+{
+};
+
+template <typename, typename = void>
+struct has_inject_mock : std::false_type
+{
+};
+template <typename T>
+struct has_inject_mock<
+    T,
+    std::void_t<decltype(std::declval<T&>().InjectMock(std::declval<IProxyEvent<typename T::FieldType>&>()))>>
+    : std::true_type
+{
+};
+}  // namespace
+
 TEST(ProxyFieldTest, NotCopyable)
 {
     RecordProperty("Verifies", "SCR-17397027");
@@ -94,6 +199,36 @@ TEST(ProxyFieldTest, ProxyFieldContainsPublicFieldType)
     static_assert(
         std::is_same<typename ProxyField<CustomFieldType, WithGetter, WithNotifier>::FieldType, CustomFieldType>::value,
         "Incorrect FieldType.");
+}
+
+TEST(ProxyFieldNotifierGatingTest, NotifierSurfaceExistsWhenWithNotifierTagIsPresent)
+{
+
+    using NotifierField = ProxyField<TestSampleType, WithNotifier>;
+    static_assert(has_subscribe<NotifierField>::value);
+    static_assert(has_unsubscribe<NotifierField>::value);
+    static_assert(has_get_subscription_state<NotifierField>::value);
+    static_assert(has_get_free_sample_count<NotifierField>::value);
+    static_assert(has_get_num_new_samples_available<NotifierField>::value);
+    static_assert(has_set_receive_handler<NotifierField>::value);
+    static_assert(has_unset_receive_handler<NotifierField>::value);
+    static_assert(has_get_new_samples<NotifierField>::value);
+    static_assert(has_inject_mock<NotifierField>::value);
+}
+
+TEST(ProxyFieldNotifierGatingTest, NotifierSurfaceIsAbsentWhenWithNotifierTagIsMissing)
+{
+
+    using GetterOnlyField = ProxyField<TestSampleType, WithGetter>;
+    static_assert(!has_subscribe<GetterOnlyField>::value);
+    static_assert(!has_unsubscribe<GetterOnlyField>::value);
+    static_assert(!has_get_subscription_state<GetterOnlyField>::value);
+    static_assert(!has_get_free_sample_count<GetterOnlyField>::value);
+    static_assert(!has_get_num_new_samples_available<GetterOnlyField>::value);
+    static_assert(!has_set_receive_handler<GetterOnlyField>::value);
+    static_assert(!has_unset_receive_handler<GetterOnlyField>::value);
+    static_assert(!has_get_new_samples<GetterOnlyField>::value);
+    static_assert(!has_inject_mock<GetterOnlyField>::value);
 }
 
 }  // namespace
