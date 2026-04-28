@@ -19,13 +19,9 @@
 namespace score::mw::com::impl::lola
 {
 
-SlotCollector::SlotCollector(ProxyEventDataControlLocalView<>& event_data_control_local,
-                             const std::size_t max_slots,
-                             TransactionLogIndex transaction_log_index) noexcept
-    : event_data_control_local_{event_data_control_local},
-      last_ts_{0U},
-      collected_slots_(max_slots),
-      transaction_log_index_{transaction_log_index}
+SlotCollector::SlotCollector(ConsumerEventDataControlLocalView<>& event_data_control_local,
+                             const std::size_t max_slots) noexcept
+    : event_data_control_local_{event_data_control_local}, last_ts_{0U}, collected_slots_(max_slots)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_slots > 0U, "Pre-allocated slot vector must not be empty!");
 }
@@ -66,7 +62,7 @@ SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(const
     for (std::size_t count = 0U; count < max_count; ++count)
     {
         const std::optional<SlotIndexType> slot =
-            event_data_control_local_.get().ReferenceNextEvent(last_ts_, transaction_log_index_, current_highest);
+            event_data_control_local_.get().ReferenceNextEvent(last_ts_, current_highest);
         if (!(slot.has_value()))
         {
             break;

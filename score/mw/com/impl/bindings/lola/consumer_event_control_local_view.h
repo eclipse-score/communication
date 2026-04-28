@@ -10,29 +10,38 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_AAS_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_CONTROL_LOCAL_VIEW_H
-#define SCORE_AAS_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_CONTROL_LOCAL_VIEW_H
+#ifndef SCORE_AAS_MW_COM_IMPL_BINDINGS_LOLA_CONSUMER_EVENT_CONTROL_LOCAL_VIEW_H
+#define SCORE_AAS_MW_COM_IMPL_BINDINGS_LOLA_CONSUMER_EVENT_CONTROL_LOCAL_VIEW_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
+
+#include <functional>
 
 namespace score::mw::com::impl::lola
 {
 
-class SkeletonEventControlLocalView
+class ConsumerEventControlLocalView
 {
   public:
     using SubscriberCountType = EventSubscriptionControl<>::SubscriberCountType;
-    SkeletonEventControlLocalView(EventControl& event_control_shared_mem) noexcept;
+    ConsumerEventControlLocalView(EventControl& event_control_shared_mem) noexcept;
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    SkeletonEventDataControlLocalView<> data_control;
+    ConsumerEventDataControlLocalView<> data_control;
+
     // coverity[autosar_cpp14_m11_0_1_violation]
+    std::reference_wrapper<EventSubscriptionControl<>> subscription_control;
+
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    std::reference_wrapper<TransactionLogSet> transaction_log_set;
 };
 
 }  // namespace score::mw::com::impl::lola
 
-#endif  // SCORE_AAS_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_CONTROL_LOCAL_VIEW_H
+#endif  // SCORE_AAS_MW_COM_IMPL_BINDINGS_LOLA_CONSUMER_EVENT_CONTROL_LOCAL_VIEW_H

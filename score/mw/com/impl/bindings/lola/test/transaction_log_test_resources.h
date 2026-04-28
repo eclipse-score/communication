@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
@@ -55,26 +56,6 @@ class TransactionLogSetAttorney
     TransactionLogSet& transaction_log_set_;
 };
 
-class TransactionLogAttorney
-{
-  public:
-    TransactionLogAttorney(TransactionLog& transaction_log) noexcept : transaction_log_{transaction_log} {}
-
-    TransactionLogSlot& GetReferenceCountSlot(const TransactionLog::SlotIndexType slot_index) noexcept
-    {
-        return transaction_log_.reference_count_slots_.at(static_cast<std::size_t>(slot_index));
-    }
-
-    bool IsSubscribeTransactionSuccesfullyRecorded() noexcept
-    {
-        return (transaction_log_.subscribe_transactions_.GetTransactionBegin() &&
-                transaction_log_.subscribe_transactions_.GetTransactionEnd());
-    }
-
-  private:
-    TransactionLog& transaction_log_;
-};
-
 class TransactionLogSetHelperFixture : public ::testing::Test
 {
   protected:
@@ -112,29 +93,56 @@ class TransactionLogSetHelperFixture : public ::testing::Test
     }
 };
 
+class TransactionLogRegistrationGuardDeactiveDestructionOperationGuard
+{
+  public:
+    TransactionLogRegistrationGuardDeactiveDestructionOperationGuard()
+    {
+        test::SetDeactiveDestructionOperation(true);
+    }
+    ~TransactionLogRegistrationGuardDeactiveDestructionOperationGuard()
+    {
+        test::SetDeactiveDestructionOperation(false);
+    }
+
+    TransactionLogRegistrationGuardDeactiveDestructionOperationGuard(
+        const TransactionLogRegistrationGuardDeactiveDestructionOperationGuard&) = delete;
+    TransactionLogRegistrationGuardDeactiveDestructionOperationGuard(
+        TransactionLogRegistrationGuardDeactiveDestructionOperationGuard&&) noexcept = delete;
+    TransactionLogRegistrationGuardDeactiveDestructionOperationGuard& operator=(
+        const TransactionLogRegistrationGuardDeactiveDestructionOperationGuard&) = delete;
+    TransactionLogRegistrationGuardDeactiveDestructionOperationGuard& operator=(
+        TransactionLogRegistrationGuardDeactiveDestructionOperationGuard&&) noexcept = delete;
+};
+
 std::uint32_t CreateEventSubscriptionControlState(EventSubscriptionControl<>::SubscriberCountType subscriber_count,
                                                   EventSubscriptionControl<>::SlotNumberType subscribed_slots);
-void AddSubscriptionToEventSubscriptionControl(ProxyEventControlLocalView& proxy_event_control_local,
+void AddSubscriptionToEventSubscriptionControl(EventSubscriptionControl<>& subscription_control,
                                                const EventSubscriptionControl<>::SubscriberCountType subscriber_count,
                                                const TransactionLog::MaxSampleCountType max_sample_count) noexcept;
 void InsertProxyTransactionLogWithValidTransactions(
-    ProxyEventControlLocalView& proxy_event_control_local,
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
+    EventSubscriptionControl<>& subscription_control,
+    TransactionLogSet& transaction_log_set,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept;
 void InsertSkeletonTransactionLogWithValidTransactions(
-    SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local) noexcept;
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
+    TransactionLogSet& transaction_log_set) noexcept;
 
 void InsertProxyTransactionLogWithInvalidTransactions(
-    ProxyEventControlLocalView& proxy_event_control_local,
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
+    EventSubscriptionControl<>& subscription_control,
+    TransactionLogSet& transaction_log_set,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept;
 void InsertSkeletonTransactionLogWithInvalidTransactions(
-    SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local) noexcept;
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
+    TransactionLogSet& transaction_log_set) noexcept;
 
-bool IsProxyTransactionLogIdRegistered(ProxyEventControlLocalView& proxy_event_control_local,
+bool IsProxyTransactionLogIdRegistered(TransactionLogSet& transaction_log_set,
                                        const TransactionLogId& transaction_log_id) noexcept;
-bool IsSkeletonTransactionLogRegistered(
-    SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local) noexcept;
+bool IsSkeletonTransactionLogRegistered(TransactionLogSet& transaction_log_set) noexcept;
 
 }  // namespace score::mw::com::impl::lola
 

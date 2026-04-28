@@ -12,14 +12,13 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/slot_decrementer.h"
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log.h"
 
 #include <score/optional.hpp>
 
@@ -33,8 +32,6 @@ namespace
 {
 
 constexpr std::size_t kMaxSlots{5U};
-constexpr std::size_t kMaxSubscribers{5U};
-const TransactionLogId kDummyTransactionLogId{10U};
 
 class SlotDecrementerFixture : public ::testing::Test
 {
@@ -43,23 +40,22 @@ class SlotDecrementerFixture : public ::testing::Test
     {
         const auto slot_index = AllocateSlotAndReferenceEvent();
         score::cpp::ignore = event_slot_index_.emplace(slot_index);
-        slot_decrementer_ = SlotDecrementer{proxy_event_data_control_local_, slot_index, transaction_log_index_};
+        slot_decrementer_ = SlotDecrementer{consumer_event_data_control_local_, slot_index};
         return *this;
     }
 
     SlotIndexType AllocateSlotAndReferenceEvent(EventSlotStatus::EventTimeStamp timestamp = 1)
     {
         // Allocate a slot which will acquire it for writing
-        auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+        auto slot = provider_event_data_control_local_.AllocateNextSlot();
         EXPECT_TRUE(slot.has_value());
 
         // Mark the slot as ready which allows it to be read
-        skeleton_event_data_control_local_.EventReady(slot.value(), timestamp);
+        provider_event_data_control_local_.EventReady(slot.value(), timestamp);
 
         // Reference the slot which indicates that a consumer is currently reading it. Use timestamp - 1 to ensure that
         // we find the slot that we just marked as ready first.
-        auto client_slot_result =
-            proxy_event_data_control_local_.ReferenceNextEvent(timestamp - 1, transaction_log_index_);
+        auto client_slot_result = consumer_event_data_control_local_.ReferenceNextEvent(timestamp - 1);
         EXPECT_TRUE(client_slot_result.has_value());
 
         return client_slot_result.value();
@@ -67,15 +63,17 @@ class SlotDecrementerFixture : public ::testing::Test
 
     EventSlotStatus::SubscriberCount GetSlotReferenceCount(const SlotIndexType event_slot_index)
     {
-        return EventSlotStatus{skeleton_event_data_control_local_[event_slot_index]}.GetReferenceCount();
+        return EventSlotStatus{provider_event_data_control_local_[event_slot_index]}.GetReferenceCount();
     }
 
     FakeMemoryResource memory_{};
-    EventDataControl event_data_control_{kMaxSlots, memory_, kMaxSubscribers};
-    ProxyEventDataControlLocalView<> proxy_event_data_control_local_{event_data_control_};
-    SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{event_data_control_};
-    TransactionLogIndex transaction_log_index_{
-        proxy_event_data_control_local_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value()};
+    EventDataControl event_data_control_{kMaxSlots, memory_};
+    TransactionLog transaction_log_{kMaxSlots, memory_};
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_, transaction_log_};
+    ProviderEventDataControlLocalView<> provider_event_data_control_local_{event_data_control_};
+    // TransactionLogRegistrationGuard transaction_log_registration_guard_{
+    //     consumer_event_data_control_local_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value()};
+    // TransactionLogIndex transaction_log_index_{transaction_log_registration_guard_.GetTransactionLogIndex()};
 
     std::optional<SlotIndexType> event_slot_index_{};
     score::cpp::optional<SlotDecrementer> slot_decrementer_{};
@@ -121,7 +119,7 @@ TEST_F(SlotDecrementerFixture, MoveAssigningWillDecrementSlotOfMovedToSlotDecrem
 
     // and a second SlotDecrementer referencing a different slot
     const auto second_slot_index = AllocateSlotAndReferenceEvent(2);
-    SlotDecrementer second_slot_decrementer{proxy_event_data_control_local_, second_slot_index, transaction_log_index_};
+    SlotDecrementer second_slot_decrementer{consumer_event_data_control_local_, second_slot_index};
 
     // When move assigning the second SlotDecrementer to the first
     slot_decrementer_.value() = std::move(second_slot_decrementer);

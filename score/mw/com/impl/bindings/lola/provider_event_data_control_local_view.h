@@ -10,13 +10,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_DATA_CONTROL_LOCAL_VIEW_H
-#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_DATA_CONTROL_LOCAL_VIEW_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROVIDER_EVENT_DATA_CONTROL_LOCAL_VIEW_H
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROVIDER_EVENT_DATA_CONTROL_LOCAL_VIEW_H
 
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 #include "score/memory/shared/atomic_indirector.h"
 
@@ -41,7 +40,7 @@ class EventDataControlComposite;
 /// which can negatively affect performance. Therefore, the data in EventDataControl is created / opened once during
 /// Skeleton / Proxy creation, and then is accessed during runtime via EventDataControlLocal.
 template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
-class SkeletonEventDataControlLocalView final
+class ProviderEventDataControlLocalView final
 {
     template <template <typename> class T>
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -52,16 +51,22 @@ class SkeletonEventDataControlLocalView final
     friend class EventDataControlComposite;
 
   public:
+    struct SlotInfo
+    {
+        SlotIndexType slot_index;
+        EventSlotStatus::value_type slot_value;
+    };
+
     using LocalEventControlSlots = score::cpp::span<ControlSlotType>;
 
-    SkeletonEventDataControlLocalView(EventDataControl& event_data_control) noexcept;
+    ProviderEventDataControlLocalView(EventDataControl& event_data_control) noexcept;
 
-    ~SkeletonEventDataControlLocalView() noexcept = default;
+    ~ProviderEventDataControlLocalView() noexcept = default;
 
-    SkeletonEventDataControlLocalView(const SkeletonEventDataControlLocalView&) = delete;
-    SkeletonEventDataControlLocalView& operator=(const SkeletonEventDataControlLocalView&) = delete;
-    SkeletonEventDataControlLocalView(SkeletonEventDataControlLocalView&&) noexcept = delete;
-    SkeletonEventDataControlLocalView& operator=(SkeletonEventDataControlLocalView&& other) noexcept = delete;
+    ProviderEventDataControlLocalView(const ProviderEventDataControlLocalView&) = delete;
+    ProviderEventDataControlLocalView& operator=(const ProviderEventDataControlLocalView&) = delete;
+    ProviderEventDataControlLocalView(ProviderEventDataControlLocalView&&) noexcept = delete;
+    ProviderEventDataControlLocalView& operator=(ProviderEventDataControlLocalView&& other) noexcept = delete;
 
     /// \brief Checks for the oldest unused slot and acquires for writing (thread-safe, wait-free)
     ///
@@ -87,34 +92,14 @@ class SkeletonEventDataControlLocalView final
     /// \pre AllocateNextSlot() was invoked to obtain write-ownership
     void Discard(const SlotIndexType slot_index);
 
-    /// \brief Indicates that a consumer is finished reading (thread-safe, wait-free).
-    /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
-    ///
-    /// \details Will not record the transaction in any TransactionLog. This function is called by the
-    /// TransactionLog::DereferenceSlotCallback created within TransactionLogSet::RollbackProxyTransactions and
-    /// RollbackSkeletonTracingTransactions. In these cases, the transaction will be recorded within
-    /// TransactionLog::RollbackIncrementTransactions resp. RollbackSubscribeTransactions before calling the callback.
-    void DereferenceEventWithoutTransactionLogging(const SlotIndexType event_slot_index) noexcept;
+    std::optional<EventSlotStatus::value_type> TryAllocateSlot(const SlotInfo slot_info) noexcept;
 
-    // /// \brief Directly access EventSlotStatus for one specific slot
+    /// \brief Directly access EventSlotStatus for one specific slot
     EventSlotStatus operator[](const SlotIndexType slot_index) const noexcept;
 
     /// \brief Marks all Slots which are `InWriting` as `Invalid`.
     /// \details This function shall _only_ be called on skeleton side and _only_ if a previous skeleton instance died.
     void RemoveAllocationsForWriting() noexcept;
-
-    // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or
-    // references to private or protected data owned by the class.".
-    // To avoid overhead such as shared_ptr in the result, a non-const reference to the instance is returned instead.
-    // This instance exposes another sub-API that can change the its state and therefore also the state of instance
-    // holder. API callers get the reference and use it in place without leaving the scope, so the reference remains
-    // valid.
-    // coverity[autosar_cpp14_a9_3_1_violation]
-    TransactionLogSet& GetTransactionLogSet() noexcept
-    {
-        // coverity[autosar_cpp14_a9_3_1_violation] see above
-        return transaction_log_set_;
-    }
 
     // helper for performance indication (no production usage)
     static void DumpPerformanceCounters();
@@ -123,11 +108,18 @@ class SkeletonEventDataControlLocalView final
   private:
     /// \brief Finds oldest unused slot within control slots, if there is any.
     /// \return if an unused slot is found, returns its index, otherwise, an empty optional is returned.
-    std::optional<SlotIndexType> FindOldestUnusedSlot() const noexcept;
+    std::optional<ProviderEventDataControlLocalView::SlotInfo> FindOldestUnusedSlot() const noexcept;
+
+    /// \brief Logs performance metrics for slot allocation attempts.
+    void LogPerformanceMetrics(std::uint64_t retry_counter) noexcept;
+
+    /// \brief Sets the slot value for the given slot index.
+    ///
+    /// This is a helper function which is used by EventDataControlComposite to reset the value of a slot in case of a
+    /// failed multi-slot allocation.
+    void SetSlotValue(const SlotInfo slot_info) noexcept;
 
     LocalEventControlSlots state_slots_;
-
-    std::reference_wrapper<TransactionLogSet> transaction_log_set_;
 
     // helper variables to calculated performance indicators
     static inline std::atomic_uint_fast64_t num_alloc_misses{0U};
@@ -136,4 +128,4 @@ class SkeletonEventDataControlLocalView final
 
 }  // namespace score::mw::com::impl::lola
 
-#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_DATA_CONTROL_LOCAL_VIEW_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROVIDER_EVENT_DATA_CONTROL_LOCAL_VIEW_H

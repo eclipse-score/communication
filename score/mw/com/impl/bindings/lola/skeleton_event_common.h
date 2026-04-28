@@ -23,6 +23,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
@@ -69,7 +70,7 @@ class SkeletonEventCommon
 
     ~SkeletonEventCommon() = default;
 
-    void PrepareOfferCommon(const EventDataControlComposite<> event_data_control_composite) noexcept;
+    void PrepareOfferCommon(EventControl& event_control_qm, EventControl* event_control_asil_b) noexcept;
     void PrepareStopOfferCommon() noexcept;
 
     Result<SlotIndexType> AllocateSlot() noexcept;
@@ -102,12 +103,23 @@ class SkeletonEventCommon
         return event_data_control_composite_.value();
     }
 
+    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(consumer_control_local_view_qm_.has_value());
+        return consumer_control_local_view_qm_.value();
+    }
+
   private:
     Skeleton& parent_;
     std::string_view event_name_;
     SkeletonEventProperties event_properties_;
     ElementFqId element_fq_id_;
+
+    std::optional<ProviderEventDataControlLocalView<>> provider_control_local_view_qm_;
+    std::optional<ProviderEventDataControlLocalView<>> provider_control_local_view_asil_b_;
+    std::optional<ConsumerEventDataControlLocalView<>> consumer_control_local_view_qm_;
     std::optional<EventDataControlComposite<>> event_data_control_composite_;
+
     EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
     bool qm_disconnect_;
@@ -123,14 +135,15 @@ class SkeletonEventCommon
     std::atomic<bool> qm_event_update_notifications_registered_{false};
     std::atomic<bool> asil_b_event_update_notifications_registered_{false};
 
-    /// \brief optional RAII guards for tracing transaction log registration/un-registration and cleanup of "pending"
-    /// type erased sample pointers which are created in PrepareOfferCommon() and destroyed in PrepareStopOfferCommon()
+    /// \brief optional RAII guards for tracing transaction log registration/un-registration and cleanup of
+    /// "pending" type erased sample pointers which are created in PrepareOfferCommon() and destroyed in
+    /// PrepareStopOfferCommon()
     /// - optional as only needed when tracing is enabled and when they haven't been cleaned up via a call to
     /// PrepareStopOfferCommon().
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
     std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_{};
 
-    void EmplaceTransactionLogRegistrationGuard();
+    void EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set);
     void EmplaceTypeErasedSamplePtrsGuard();
     void UpdateCurrentTimestamp();
     void SetQmNotificationsRegistered(bool value);
@@ -156,10 +169,21 @@ SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
 }
 
 template <typename SampleType>
-void SkeletonEventCommon<SampleType>::PrepareOfferCommon(
-    const EventDataControlComposite<> event_data_control_composite) noexcept
+void SkeletonEventCommon<SampleType>::PrepareOfferCommon(EventControl& event_control_qm,
+                                                         EventControl* event_control_asil_b) noexcept
 {
-    event_data_control_composite_ = event_data_control_composite;
+    auto& provider_control_local_view_qm = provider_control_local_view_qm_.emplace(event_control_qm.data_control);
+    auto& consumer_control_local_view_qm = consumer_control_local_view_qm_.emplace(event_control_qm.data_control);
+
+    ProviderEventDataControlLocalView<>* provider_control_local_view_asil_b_ptr{nullptr};
+    if (event_control_asil_b != nullptr)
+    {
+        auto& provider_control_local_view_qm =
+            provider_control_local_view_asil_b_.emplace(event_control_asil_b->data_control);
+        provider_control_local_view_asil_b_ptr = &provider_control_local_view_qm;
+    }
+    score::cpp::ignore =
+        event_data_control_composite_.emplace(provider_control_local_view_qm, provider_control_local_view_asil_b_ptr);
 
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
@@ -176,7 +200,7 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(
     // Ticket-188259).
     if (tracing_for_skeleton_event_enabled)
     {
-        EmplaceTransactionLogRegistrationGuard();
+        EmplaceTransactionLogRegistrationGuard(event_control_qm.transaction_log_set_);
         EmplaceTypeErasedSamplePtrsGuard();
     }
 
@@ -225,6 +249,9 @@ void SkeletonEventCommon<SampleType>::PrepareStopOfferCommon() noexcept
     ResetGuards();
 
     event_data_control_composite_.reset();
+    provider_control_local_view_qm_.reset();
+    provider_control_local_view_asil_b_.reset();
+    consumer_control_local_view_qm_.reset();
 }
 
 template <typename SampleType>
@@ -310,12 +337,12 @@ Result<void> SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<Samp
 }
 
 template <typename SampleType>
-void SkeletonEventCommon<SampleType>::EmplaceTransactionLogRegistrationGuard()
+void SkeletonEventCommon<SampleType>::EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
-                                                "EventDataControlComposite must be initialized.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(consumer_control_local_view_qm_.has_value(),
+                                                "ConsumerEventDataControlLocalView must be initialized.");
     score::cpp::ignore = transaction_log_registration_guard_.emplace(
-        TransactionLogRegistrationGuard::Create(event_data_control_composite_.value().GetQmEventDataControlLocal()));
+        transaction_log_set.RegisterSkeletonTracingElement(consumer_control_local_view_qm_.value()));
 }
 
 template <typename SampleType>
