@@ -110,18 +110,6 @@
                                                 "type": "integer",
                                                 "title": "Service Field Id",
                                                 "description": "Binding technology specific field id. LoLa supports 8 bit, while SOME/IP supports 15 bit."
-                                            },
-                                            "Get": {
-                                                "type": "boolean",
-                                                "title": "Service Field Getter",
-                                                "description": "Specify if a getter function is available.",
-                                                "default": false
-                                            },
-                                            "Set": {
-                                                "type": "boolean",
-                                                "title": "Service Field Setter",
-                                                "description": "Specify if a setter function is available. Default value is false.",
-                                                "default": false
                                             }
                                         }
                                     }
@@ -389,6 +377,18 @@
                                                 "default": 0,
                                                 "minimum": 0,
                                                 "maximum": 255
+                                            },
+                                            "useGetIfAvailable": {
+                                                "type": "boolean",
+                                                "title": "Use Field Getter If Available",
+                                                "description": "When true, the getter for this field will be used if the service type declares one in the C++ service interface.",
+                                                "default": false
+                                            },
+                                            "useSetIfAvailable": {
+                                                "type": "boolean",
+                                                "title": "Use Field Setter If Available",
+                                                "description": "When true, the setter for this field will be used if the service type declares one in the C++ service interface.",
+                                                "default": false
                                             }
                                         }
                                     }

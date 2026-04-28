@@ -215,7 +215,10 @@ cc_library(
     hdrs = ["lola_field_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    deps = [":lola_event_instance_deployment"],
+    deps = [
+        ":configuration_common_resources",
+        ":lola_event_instance_deployment",
+    ],
 )
 
 cc_library(

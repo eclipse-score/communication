@@ -59,11 +59,22 @@ package "configuration" {
   }
 
   class "score::mw::com::impl::LolaFieldInstanceDeployment" {
-    + max_samples_: std::uint16_t
-    + max_subscribers_: std::uint8_t
-    + enforce_max_samples_ : score::cpp::optional<bool>
-    + is_set_configured: bool
-    + is_get_configured: bool
+    {static} + constexpr serializationVersion : std::uint32_t
+    + max_subscribers_ : std::optional<SubscriberCountType>
+    + max_concurrent_allocations_ : std::optional<std::uint8_t>
+    + enforce_max_samples_ : bool
+    + use_get_if_available_ : bool
+    + use_set_if_available_ : bool
+    - number_of_sample_slots_ : std::optional<SampleSlotCountType>
+    - number_of_tracing_slots_ : TracingSlotSizeType
+    __
+    {static} + CreateFromJson(json_object : const score::json::Object&) : LolaFieldInstanceDeployment
+    + Serialize() const : score::json::Object
+    --
+    <u>Type Aliases:</u>
+    using SampleSlotCountType as std::uint16_t
+    using SubscriberCountType as std::uint8_t
+    using TracingSlotSizeType as std::uint8_t
   }
 
   class "score::mw::com::impl::LolaMethodInstanceDeployment" {

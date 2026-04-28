@@ -77,6 +77,10 @@ constexpr auto kFieldNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;
 constexpr auto kFieldMaxSubscribersKey = "maxSubscribers"sv;
 constexpr auto kFieldEnforceMaxSamplesKey = "enforceMaxSamples"sv;
 constexpr auto kFieldMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;
+constexpr auto kFieldUseGetIfAvailableKey = "useGetIfAvailable"sv;
+constexpr auto kFieldUseSetIfAvailableKey = "useSetIfAvailable"sv;
+constexpr auto kFieldUseGetIfAvailableDefault = false;
+constexpr auto kFieldUseSetIfAvailableDefault = false;
 constexpr auto kLolaShmSizeKey = "shm-size"sv;
 constexpr auto kLolaControlAsilBShmSizeKey = "control-asil-b-shm-size"sv;
 constexpr auto kLolaControlQmShmSizeKey = "control-qm-shm-size"sv;
@@ -486,12 +490,18 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
         const auto number_of_tracing_slots =
             deployment_parser.RetrieveJsonElement<NumberOfIpcTracingSlots_t>(kNumberOfIpcTracingSlotsKey)
                 .value_or(kNumberOfIpcTracingSlotsDefault);
+        const auto use_get_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseGetIfAvailableKey)
+                                              .value_or(kFieldUseGetIfAvailableDefault);
+        const auto use_set_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey)
+                                              .value_or(kFieldUseSetIfAvailableDefault);
 
         auto field_deployment = LolaFieldInstanceDeployment(number_of_sample_slots,
                                                             max_subscribers,
                                                             kMaxConcurrentAllocationsDefault,
                                                             enforce_max_samples,
-                                                            number_of_tracing_slots);
+                                                            number_of_tracing_slots,
+                                                            use_get_if_available,
+                                                            use_set_if_available);
         const auto emplace_result = service.fields_.emplace(std::piecewise_construct,
                                                             std::forward_as_tuple(std::move(field_name_value)),
                                                             std::forward_as_tuple(field_deployment));
