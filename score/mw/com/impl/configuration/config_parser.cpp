@@ -79,6 +79,8 @@ constexpr auto kFieldEnforceMaxSamplesKey = "enforceMaxSamples"sv;
 constexpr auto kFieldMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;
 constexpr auto kFieldUseGetIfAvailableKey = "useGetIfAvailable"sv;
 constexpr auto kFieldUseSetIfAvailableKey = "useSetIfAvailable"sv;
+constexpr auto kFieldUseGetIfAvailableDefault = false;
+constexpr auto kFieldUseSetIfAvailableDefault = false;
 constexpr auto kLolaShmSizeKey = "shm-size"sv;
 constexpr auto kLolaControlAsilBShmSizeKey = "control-asil-b-shm-size"sv;
 constexpr auto kLolaControlQmShmSizeKey = "control-qm-shm-size"sv;
@@ -488,10 +490,10 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
         const auto number_of_tracing_slots =
             deployment_parser.RetrieveJsonElement<NumberOfIpcTracingSlots_t>(kNumberOfIpcTracingSlotsKey)
                 .value_or(kNumberOfIpcTracingSlotsDefault);
-        const auto use_get_if_available =
-            deployment_parser.RetrieveJsonElement<bool>(kFieldUseGetIfAvailableKey).value_or(false);
-        const auto use_set_if_available =
-            deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey).value_or(false);
+        const auto use_get_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseGetIfAvailableKey)
+                                              .value_or(kFieldUseGetIfAvailableDefault);
+        const auto use_set_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey)
+                                              .value_or(kFieldUseSetIfAvailableDefault);
 
         auto field_deployment = LolaFieldInstanceDeployment(number_of_sample_slots,
                                                             max_subscribers,

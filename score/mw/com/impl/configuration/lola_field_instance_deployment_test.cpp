@@ -66,41 +66,45 @@ TEST_F(LolaFieldInstanceDeploymentFixture, CanCreateFromSerializedObjectWithoutO
 TEST_F(LolaFieldInstanceDeploymentFixture, UseGetIfAvailableIsTrueAfterRoundTripSerialisation)
 {
     // Given a field deployment with use_get_if_available set to true
+    constexpr bool kUseGetIfAvailable{true};
+    constexpr bool kUseSetIfAvailable{false};
     const LolaFieldInstanceDeployment unit{MakeLolaFieldInstanceDeployment(kMaxSamples,
                                                                            kMaxSubscribers,
                                                                            kMaxConcurrentAllocations,
                                                                            kEnforceMaxSamples,
                                                                            kNumberOfTracingSlots,
-                                                                           /*use_get*/ true,
-                                                                           /*use_set*/ false)};
+                                                                           kUseGetIfAvailable,
+                                                                           kUseSetIfAvailable)};
 
     // When serialising and deserialising
     const auto serialized_unit{unit.Serialize()};
     const LolaFieldInstanceDeployment reconstructed_unit{serialized_unit};
 
     // Then use_get_if_available is preserved and use_set_if_available is unaffected
-    EXPECT_TRUE(reconstructed_unit.use_get_if_available_);
-    EXPECT_FALSE(reconstructed_unit.use_set_if_available_);
+    EXPECT_EQ(reconstructed_unit.use_get_if_available_, kUseGetIfAvailable);
+    EXPECT_EQ(reconstructed_unit.use_set_if_available_, kUseSetIfAvailable);
 }
 
 TEST_F(LolaFieldInstanceDeploymentFixture, UseSetIfAvailableIsTrueAfterRoundTripSerialisation)
 {
     // Given a field deployment with use_set_if_available set to true
+    constexpr bool kUseGetIfAvailable{false};
+    constexpr bool kUseSetIfAvailable{true};
     const LolaFieldInstanceDeployment unit{MakeLolaFieldInstanceDeployment(kMaxSamples,
                                                                            kMaxSubscribers,
                                                                            kMaxConcurrentAllocations,
                                                                            kEnforceMaxSamples,
                                                                            kNumberOfTracingSlots,
-                                                                           /*use_get*/ false,
-                                                                           /*use_set*/ true)};
+                                                                           kUseGetIfAvailable,
+                                                                           kUseSetIfAvailable)};
 
     // When serialising and deserialising
     const auto serialized_unit{unit.Serialize()};
     const LolaFieldInstanceDeployment reconstructed_unit{serialized_unit};
 
     // Then use_set_if_available is preserved and use_get_if_available is unaffected
-    EXPECT_FALSE(reconstructed_unit.use_get_if_available_);
-    EXPECT_TRUE(reconstructed_unit.use_set_if_available_);
+    EXPECT_EQ(reconstructed_unit.use_get_if_available_, kUseGetIfAvailable);
+    EXPECT_EQ(reconstructed_unit.use_set_if_available_, kUseSetIfAvailable);
 }
 
 TEST_F(LolaFieldInstanceDeploymentFixture, BothFlagsDefaultToFalseAfterRoundTripSerialisation)
@@ -117,50 +121,26 @@ TEST_F(LolaFieldInstanceDeploymentFixture, BothFlagsDefaultToFalseAfterRoundTrip
     EXPECT_FALSE(reconstructed_unit.use_set_if_available_);
 }
 
-TEST_F(LolaFieldInstanceDeploymentFixture, UseGetAndUseSetFlagsAreIndependentOfEachOther)
+TEST_F(LolaFieldInstanceDeploymentFixture, BothFlagsSetToTrueAfterRoundTripSerialisation)
 {
-    // Given four deployments covering all flag combinations
-    const LolaFieldInstanceDeployment both_false{MakeLolaFieldInstanceDeployment(kMaxSamples,
-                                                                                 kMaxSubscribers,
-                                                                                 kMaxConcurrentAllocations,
-                                                                                 kEnforceMaxSamples,
-                                                                                 kNumberOfTracingSlots,
-                                                                                 false,
-                                                                                 false)};
-    const LolaFieldInstanceDeployment get_only{MakeLolaFieldInstanceDeployment(kMaxSamples,
-                                                                               kMaxSubscribers,
-                                                                               kMaxConcurrentAllocations,
-                                                                               kEnforceMaxSamples,
-                                                                               kNumberOfTracingSlots,
-                                                                               true,
-                                                                               false)};
-    const LolaFieldInstanceDeployment set_only{MakeLolaFieldInstanceDeployment(kMaxSamples,
-                                                                               kMaxSubscribers,
-                                                                               kMaxConcurrentAllocations,
-                                                                               kEnforceMaxSamples,
-                                                                               kNumberOfTracingSlots,
-                                                                               false,
-                                                                               true)};
-    const LolaFieldInstanceDeployment both_true{MakeLolaFieldInstanceDeployment(kMaxSamples,
-                                                                                kMaxSubscribers,
-                                                                                kMaxConcurrentAllocations,
-                                                                                kEnforceMaxSamples,
-                                                                                kNumberOfTracingSlots,
-                                                                                true,
-                                                                                true)};
+    // Given a field deployment with both flags set to true
+    constexpr bool kUseGetIfAvailable{true};
+    constexpr bool kUseSetIfAvailable{true};
+    const LolaFieldInstanceDeployment unit{MakeLolaFieldInstanceDeployment(kMaxSamples,
+                                                                           kMaxSubscribers,
+                                                                           kMaxConcurrentAllocations,
+                                                                           kEnforceMaxSamples,
+                                                                           kNumberOfTracingSlots,
+                                                                           kUseGetIfAvailable,
+                                                                           kUseSetIfAvailable)};
 
-    // Then each combination holds exactly the values set, independently
-    EXPECT_FALSE(both_false.use_get_if_available_);
-    EXPECT_FALSE(both_false.use_set_if_available_);
+    // When serialising and deserialising
+    const auto serialized_unit{unit.Serialize()};
+    const LolaFieldInstanceDeployment reconstructed_unit{serialized_unit};
 
-    EXPECT_TRUE(get_only.use_get_if_available_);
-    EXPECT_FALSE(get_only.use_set_if_available_);
-
-    EXPECT_FALSE(set_only.use_get_if_available_);
-    EXPECT_TRUE(set_only.use_set_if_available_);
-
-    EXPECT_TRUE(both_true.use_get_if_available_);
-    EXPECT_TRUE(both_true.use_set_if_available_);
+    // Then both flags are preserved as true
+    EXPECT_EQ(reconstructed_unit.use_get_if_available_, kUseGetIfAvailable);
+    EXPECT_EQ(reconstructed_unit.use_set_if_available_, kUseSetIfAvailable);
 }
 
 TEST(LolaFieldInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)

@@ -381,13 +381,13 @@
                                             "useGetIfAvailable": {
                                                 "type": "boolean",
                                                 "title": "Use Field Getter If Available",
-                                                "description": "When true, the getter for this field will be used if the service type declares one.",
+                                                "description": "When true, the getter for this field will be used if the service type declares one in the C++ service interface.",
                                                 "default": false
                                             },
                                             "useSetIfAvailable": {
                                                 "type": "boolean",
                                                 "title": "Use Field Setter If Available",
-                                                "description": "When true, the setter for this field will be used if the service type declares one.",
+                                                "description": "When true, the setter for this field will be used if the service type declares one in the C++ service interface.",
                                                 "default": false
                                             }
                                         }

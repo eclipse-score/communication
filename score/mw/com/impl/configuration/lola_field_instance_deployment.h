@@ -64,9 +64,9 @@ class LolaFieldInstanceDeployment
     // coverity[autosar_cpp14_m11_0_1_violation]
     bool enforce_max_samples_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    bool use_get_if_available_{false};
+    bool use_get_if_available_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    bool use_set_if_available_{false};
+    bool use_set_if_available_;
 
     // False positive, variable is used outside of the file.
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
