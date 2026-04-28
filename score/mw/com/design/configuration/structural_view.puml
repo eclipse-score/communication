@@ -68,13 +68,8 @@ package "configuration" {
     - number_of_sample_slots_ : std::optional<SampleSlotCountType>
     - number_of_tracing_slots_ : TracingSlotSizeType
     __
-    + LolaFieldInstanceDeployment(number_of_sample_slots : std::optional<SampleSlotCountType>, max_subscribers : std::optional<SubscriberCountType>, max_concurrent_allocations : std::optional<std::uint8_t>, enforce_max_samples : bool, number_of_tracing_slots : TracingSlotSizeType, use_get_if_available : bool, use_set_if_available : bool) noexcept
     {static} + CreateFromJson(json_object : const score::json::Object&) : LolaFieldInstanceDeployment
     + Serialize() const : score::json::Object
-    + SetNumberOfSampleSlots(number_of_sample_slots : SampleSlotCountType) noexcept : void
-    + GetNumberOfSampleSlots() const noexcept : std::optional<SampleSlotCountType>
-    + GetNumberOfSampleSlotsExcludingTracingSlot() const noexcept : std::optional<SampleSlotCountType>
-    + GetNumberOfTracingSlots() const noexcept : TracingSlotSizeType
     --
     <u>Type Aliases:</u>
     using SampleSlotCountType as std::uint16_t
