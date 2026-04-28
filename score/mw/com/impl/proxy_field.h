@@ -47,8 +47,8 @@ class ProxyFieldAttorney;
 /// ProxyEvent.
 ///
 /// \tparam SampleDataType Type of data that is transferred by the event.
-/// \tparam Tags Optional tag pack; presence of WithGetter / WithSetter enables Get() / Set() respectively.
-///              The notifier surface (Subscribe, GetNewSamples, ...) is part of every field.
+/// \tparam Tags Optional tag pack; presence of WithGetter / WithSetter / WithNotifier enables Get() / Set() /
+/// Subscribe() and other event related methods respectively.
 template <typename SampleDataType, typename... Tags>
 class ProxyField final : public ProxyFieldBase
 {
@@ -203,10 +203,61 @@ class ProxyField final : public ProxyFieldBase
      * \param max_num_samples Maximum number of samples to return via the given callable.
      * \return Number of samples that were handed over to the callable or an error.
      */
-    template <typename F>
+    template <typename F,
+              typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithNotifier, Tags...>::value>>
     Result<std::size_t> GetNewSamples(F&& receiver, const std::size_t max_num_samples) noexcept
     {
         return proxy_event_dispatch_->GetNewSamples(std::forward<F>(receiver), max_num_samples);
+    }
+
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithNotifier, Tags...>::value>>
+    Result<void> Subscribe(const std::size_t max_sample_count) noexcept
+    {
+        return ProxyFieldBase::Subscribe(max_sample_count);
+    }
+
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithNotifier, Tags...>::value>>
+    void Unsubscribe() noexcept
+    {
+        ProxyFieldBase::Unsubscribe();
+    }
+
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithNotifier, Tags...>::value>>
+    SubscriptionState GetSubscriptionState() noexcept
+    {
+        return ProxyFieldBase::GetSubscriptionState();
+    }
+
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithNotifier, Tags...>::value>>
+    std::size_t GetFreeSampleCount() noexcept
+    {
+        return ProxyFieldBase::GetFreeSampleCount();
+    }
+
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithNotifier, Tags...>::value>>
+    Result<std::size_t> GetNumNewSamplesAvailable() noexcept
+    {
+        return ProxyFieldBase::GetNumNewSamplesAvailable();
+    }
+
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithNotifier, Tags...>::value>>
+    Result<void> SetReceiveHandler(EventReceiveHandler handler) noexcept
+    {
+        return ProxyFieldBase::SetReceiveHandler(std::move(handler));
+    }
+
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithNotifier, Tags...>::value>>
+    Result<void> UnsetReceiveHandler() noexcept
+    {
+        return ProxyFieldBase::UnsetReceiveHandler();
     }
 
     template <typename T = SampleDataType,
