@@ -333,7 +333,7 @@ where
         _scratch: SampleContainer<Self::Sample<'a>>,
         _new_samples: usize,
         _max_samples: usize,
-    ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a {
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
         async { todo!() }
     }
 }
@@ -531,16 +531,10 @@ mod test {
         let test_subscriber = super::SubscriberImpl::<u32>::new();
         // block on an asynchronous reception of data from test_subscriber
         futures::executor::block_on(async {
-            let mut sample_buf = SampleContainer::new();
-            match test_subscriber.receive(&mut sample_buf, 1, 1).await {
-                Ok(0) => panic!("No sample received"),
-                Ok(x) => {
-                    println!(
-                        "{} samples received: sample[0] = {}",
-                        x,
-                        *sample_buf.front().unwrap()
-                    )
-                }
+            let sample_buf = SampleContainer::new(1);
+            let (_returned_buf, result) = test_subscriber.receive(sample_buf, 1, 1).await;
+            match result {
+                Ok(()) => {}
                 Err(e) => panic!("{:?}", e),
             }
         })

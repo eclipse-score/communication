@@ -328,33 +328,25 @@ mod test {
                 for attempt in 0..MAX_ATTEMPTS {
                     println!("[RECEIVER] Attempt {}", attempt);
 
-                    // Match and immediately reassign in all branches
-                    sample_buf = match subscribed.receive(sample_buf, 1, 3).await {
-                        Ok(returned_buf) => {
-                            let count = returned_buf.sample_count();
-
-                            if count > 0 {
-                                total_received += count;
-                                println!(
-                                    "[RECEIVER] Received {} samples (total: {})",
-                                    count, total_received
-                                );
-
-                                // Create a mutable version to pop from
-                                let mut buf = returned_buf;
-                                while let Some(sample) = buf.pop_front() {
-                                    println!("[RECEIVER]   Sample: {:.2} psi", sample.pressure);
-                                }
-                                buf
-                            } else {
-                                returned_buf
-                            }
-                        }
-                        Err(e) => {
+                    // Destructure tuple - container is always returned even on error
+                    let (returned_buf, result) = subscribed.receive(sample_buf, 1, 3).await;
+                    sample_buf = {
+                        let count = returned_buf.sample_count();
+                        if let Err(e) = result {
                             println!("[RECEIVER] Error on attempt {}: {:?}", attempt, e);
-                            // Create a fresh buffer if there's an error
-                            SampleContainer::new(5)
+                        } else if count > 0 {
+                            total_received += count;
+                            println!(
+                                "[RECEIVER] Received {} samples (total: {})",
+                                count, total_received
+                            );
                         }
+                        // Drain printed samples
+                        let mut buf = returned_buf;
+                        while let Some(sample) = buf.pop_front() {
+                            println!("[RECEIVER]   Sample: {:.2} psi", sample.pressure);
+                        }
+                        buf
                     };
                 }
 
@@ -399,24 +391,21 @@ mod test {
         println!("[RECEIVER] Async data processor started");
         let mut buffer = SampleContainer::new(5);
         for _ in 0..5 {
-            buffer = match subscribed.receive(buffer, 2, 3).await {
-                Ok(returned_buf) => {
+            let (returned_buf, result) = subscribed.receive(buffer, 2, 3).await;
+            buffer = {
+                if let Err(e) = result {
+                    println!("[RECEIVER] Error receiving data: {:?}", e);
+                } else {
                     let count = returned_buf.sample_count();
                     if count > 0 {
                         println!("[RECEIVER] Received {} samples", count);
-                        let mut buf = returned_buf;
-                        while let Some(sample) = buf.pop_front() {
-                            println!("[RECEIVER]   Sample: {:.2} psi", sample.pressure);
-                        }
-                        buf
-                    } else {
-                        returned_buf
                     }
                 }
-                Err(e) => {
-                    println!("[RECEIVER] Error receiving data: {:?}", e);
-                    SampleContainer::new(5)
+                let mut buf = returned_buf;
+                while let Some(sample) = buf.pop_front() {
+                    println!("[RECEIVER]   Sample: {:.2} psi", sample.pressure);
                 }
+                buf
             }
         }
     }

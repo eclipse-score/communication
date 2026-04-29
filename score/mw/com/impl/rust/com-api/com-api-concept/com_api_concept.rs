@@ -828,8 +828,10 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     ///   buffer and transferred to the container
     ///
     /// # Returns
-    /// Future that resolves to the number of newly added events to the container with at least
-    /// `new_samples` number of new events.
+    /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<()>)`.
+    /// The container is **always** returned (even on error or cancellation) so the caller
+    /// never loses samples that were collected before the future resolved.
+    /// `Ok(())` means at least `new_samples` were received; `Err(_)` describes the failure.
     ///
     /// # Important Notes
     /// User can not concurrenly call `receive` on the same subscription instance from
@@ -849,7 +851,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-    ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a;
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.

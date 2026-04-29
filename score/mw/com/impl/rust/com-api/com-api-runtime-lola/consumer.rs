@@ -543,15 +543,18 @@ where
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-    ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a {
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
         async move {
             if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
-                return Err(Error::ReceiveError(
-                    ReceiveFailedReason::SampleCountOutOfBounds {
-                        max: self.max_num_samples,
-                        requested: max_samples.max(new_samples),
-                    },
-                ));
+                return (
+                    scratch,
+                    Err(Error::ReceiveError(
+                        ReceiveFailedReason::SampleCountOutOfBounds {
+                            max: self.max_num_samples,
+                            requested: max_samples.max(new_samples),
+                        },
+                    )),
+                );
             }
             // Get the event guard to ensure no concurrent receive calls
             // on the same subscriber instance.
@@ -592,7 +595,7 @@ struct ReceiveFuture<'a, T: CommData + Debug> {
 }
 
 impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
-    type Output = Result<SampleContainer<Sample<T>>>;
+    type Output = (SampleContainer<Sample<T>>, Result<()>);
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
         // Extract all immutable values upfront to avoid borrow conflicts with self in the callback
@@ -617,6 +620,7 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
                     self.scratch = Some(scratch);
                     result
                 } else {
+                    self.scratch = Some(scratch);
                     Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError))
                 }
             } else {
@@ -632,15 +636,22 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
                     //event_guard will be dropped here, allowing new receive calls to access the
                     // proxy event
                     self.event_guard = None;
-                    return Poll::Ready(Ok(self
-                        .scratch
-                        .take()
-                        .expect("SampleContainer is not available when returning Future result")));
+                    return Poll::Ready((
+                        self.scratch
+                            .take()
+                            .expect("SampleContainer is not available when returning Future result"),
+                        Ok(()),
+                    ));
                 }
                 // Have some samples but not enough yet, wait for more via waker
                 Poll::Pending
             }
-            Err(e) => Poll::Ready(Err(e)),
+            Err(e) => Poll::Ready((
+                self.scratch
+                    .take()
+                    .expect("SampleContainer unavailable on error; was receive polled after completion?"),
+                Err(e),
+            )),
         }
     }
 }
