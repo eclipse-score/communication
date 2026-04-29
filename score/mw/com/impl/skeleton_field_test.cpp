@@ -961,25 +961,30 @@ TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenWithSe
     EXPECT_TRUE(result.has_value());
 }
 
-TEST(SkeletonFieldSetHandlerTypeTraitsTest, RegisterSetHandlerAcceptsAnyCallable)
+TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerAcceptsStdFunction)
 {
-    RecordProperty("Description",
-                   "RegisterSetHandler() shall accept any callable (lambda, std::function, "
-                   "score::cpp::callback) with signature void(FieldType&). "
-                   "The public interface is not tied to a specific callable type.");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("Priority", "1");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
+    // Given a skeleton containing a field with a setter enabled
+    MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
-    using HandlerSignature = void(TestSampleType&);
+    // When registering a set handler using std::function
+    std::function<void(TestSampleType&)> std_function_handler = [](TestSampleType& /*value*/) noexcept {};
+    const auto result = unit.my_setter_field_.RegisterSetHandler(std_function_handler).has_value();
 
-    // lambda
-    static_assert(std::is_invocable_v<std::function<HandlerSignature>, TestSampleType&>,
-                  "std::function with expected signature must be invocable");
+    // Then the registration succeeds
+    EXPECT_TRUE(result);
+}
 
-    // score::cpp::callback
-    static_assert(std::is_invocable_v<score::cpp::callback<HandlerSignature>, TestSampleType&>,
-                  "score::cpp::callback with expected signature must be invocable");
+TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerAcceptsCppCallback)
+{
+    // Given a skeleton containing a field with a setter enabled
+    MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // When registering a set handler using score::cpp::callback
+    score::cpp::callback<void(TestSampleType&)> cpp_callback_handler = [](TestSampleType& /*value*/) noexcept {};
+    const auto result = unit.my_setter_field_.RegisterSetHandler(std::move(cpp_callback_handler)).has_value();
+
+    // Then the registration succeeds
+    EXPECT_TRUE(result);
 }
 
 // Handler wrapping: user callback is invoked and the field value is updated
@@ -1236,7 +1241,7 @@ TEST_F(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
     EXPECT_TRUE(second_callback_called);
 }
 
-using SkeletonFieldMoveConstructionFixture = SkeletonFieldTestFixture;
+using SkeletonFieldMoveConstructionFixture = SkeletonFieldSetHandlerTest;
 TEST_F(SkeletonFieldMoveConstructionFixture, SecondRegisterSetHandlerReplacesHandler)
 {
     // Note. This test verifies that moving a skeleton does not break the getter / setter methods stored within a field.
@@ -1251,6 +1256,38 @@ TEST_F(SkeletonFieldMoveConstructionFixture, SecondRegisterSetHandlerReplacesHan
 
     // Then the method should still be usable (validated by calling RegisterSetHandler which dispatches to the method)
     unit2.my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
+}
+
+TEST_F(SkeletonFieldMoveConstructionFixture,
+       CallingMethodHandlerCallsSendWithValueModifiedByUserCallbackAfterMoveConstruction)
+{
+    testing::MockFunction<void(TestSampleType&)> user_callback_mock{};
+
+    // Given that the user registered callback will be called which modifies the value in-place
+    TestSampleType expected_set_value{kDummySetValue};
+    const TestSampleType modified_value{kDummySetValue * 2};
+    EXPECT_CALL(user_callback_mock, Call(expected_set_value)).WillOnce(Invoke([](TestSampleType& value) noexcept {
+        value = modified_value;
+    }));
+
+    // Expect that Send will be called on the event binding twice: (1) when the initial value of the field is set. (2)
+    // with the value modified by the set handler when the handler is called
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _)).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(modified_value, _)).WillOnce(Return(Result<void>{}));
+
+    GivenASkeletonWithSetterEnabled().WhichCapturesASetHandler();
+
+    // and given that a set handler was registered
+    ASSERT_TRUE(unit_->my_setter_field_.RegisterSetHandler(user_callback_mock.AsStdFunction()).has_value());
+
+    WhichIsOffered();
+
+    // and given that the skeleton containing the field is move constructed into a new skeleton
+    MySetterSkeleton unit2{std::move(*unit_)};
+
+    // When calling the set handler that was captured by the method binding
+    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
+    captured_set_handler_.value()(in_span, out_span);
 }
 
 }  // namespace
