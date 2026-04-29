@@ -63,8 +63,8 @@ class SkeletonFieldBase
         if (!was_prepare_offer_called_)
         {
             // If the field is configured with a setter, the application must register
-            // a set handler before calling OfferService(), otherwise Offer() shall fail.
-            if (!IsSetHandlerRegistered())
+            // a set handler via RegisterSetHandler before calling OfferService(), otherwise Offer() shall fail.
+            if (IsSetHandlerMissing())
             {
                 score::mw::log::LogWarn("lola")
                     << "Set handler must be registered before offering field: " << field_name_;
@@ -131,8 +131,9 @@ class SkeletonFieldBase
     /// \brief Returns whether the initial value has been saved by the user to be used by DoDeferredUpdate
     virtual bool IsInitialValueSaved() const noexcept = 0;
 
-    /// \brief Returns whether a set handler has been registered.
-    virtual bool IsSetHandlerRegistered() const noexcept = 0;
+    /// \brief Returns true if a setter has been enabled in the interface and a set handler was not registered via
+    /// RegisterSetHandler. Otherwise, returns false.
+    virtual bool IsSetHandlerMissing() const noexcept = 0;
 
     /// \brief Sets the initial value of the field.
     ///

@@ -77,9 +77,9 @@ class MyDummyField : public SkeletonFieldBase
         return {};
     }
 
-    bool IsSetHandlerRegistered() const noexcept override
+    bool IsSetHandlerMissing() const noexcept override
     {
-        return true;
+        return false;
     }
 };
 

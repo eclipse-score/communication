@@ -169,13 +169,13 @@ class SkeletonField : public SkeletonFieldBase
 
     SkeletonEvent<FieldType>* GetTypedEvent() const noexcept;
 
-    bool IsSetHandlerRegistered() const noexcept override
+    bool IsSetHandlerMissing() const noexcept override
     {
-        if constexpr (EnableSet)
+        if constexpr (!EnableSet)
         {
-            return is_set_handler_registered_;
+            return false;
         }
-        return true;
+        return !is_set_handler_registered_;
     }
 
     std::unique_ptr<FieldType> initial_field_value_;

@@ -83,9 +83,9 @@ class MyDummyField : public SkeletonFieldBase
         return {};
     }
 
-    bool IsSetHandlerRegistered() const noexcept override
+    bool IsSetHandlerMissing() const noexcept override
     {
-        return true;
+        return false;
     }
 
     bool was_deferred_update_called_{false};
@@ -100,9 +100,9 @@ class MyDummyFieldFailingDeferredUpdate final : public MyDummyField
         return MakeUnexpected(ComErrc::kCommunicationLinkError);
     }
 
-    bool IsSetHandlerRegistered() const noexcept override
+    bool IsSetHandlerMissing() const noexcept override
     {
-        return true;
+        return false;
     }
 };
 

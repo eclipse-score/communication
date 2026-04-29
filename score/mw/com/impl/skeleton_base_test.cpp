@@ -668,7 +668,7 @@ class DummyField : public SkeletonFieldBase
         return Result<void>{};
     };
 
-    bool IsSetHandlerRegistered() const noexcept override
+    bool IsSetHandlerMissing() const noexcept override
     {
         return false;
     }
