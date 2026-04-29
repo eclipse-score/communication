@@ -10,18 +10,16 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
-
+#include "score/mw/com/impl/bindings/lola/consumer_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
+#include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
-#include "score/mw/com/impl/runtime.h"
-#include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
@@ -35,7 +33,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
 
 namespace score::mw::com::impl::lola
@@ -143,13 +140,23 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto memory_control = score::memory::shared::SharedMemoryFactory::Open(path, false);
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
 
-        auto& event_data_control = control_storage->event_controls_.find(fake_element_fq_id_)->second.data_control;
-        ProxyEventDataControlLocalView<> proxy_event_data_control_local{event_data_control};
-        proxy_event_data_control_local.GetTransactionLogSet().RegisterSkeletonTracingElement();
-        auto slot_index =
-            proxy_event_data_control_local.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
+        auto& event_control = control_storage->event_controls_.find(fake_element_fq_id_)->second;
+
+        // To reference an event, we need to emulate what a ProxyEvent would do so we need to register a dummy
+        // TransactionLog, reference the event and then dereference the event. If we don't dereference the event, then
+        // the TransactionLogRegistrationGuard returned by RegisterProxyElement would crash since there would still be
+        // open transactions on destruction.
+        ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_control.data_control};
+        const TransactionLogId dummy_transaction_log_id{10};
+        auto registration_guard = event_control.transaction_log_set_.RegisterProxyElement(
+            dummy_transaction_log_id, consumer_event_data_control_local);
+        auto slot_index = consumer_event_data_control_local.ReferenceNextEvent(0);
         EXPECT_TRUE(slot_index.has_value());
-        return values->at(slot_index.value());
+        const auto value = values->at(slot_index.value());
+
+        consumer_event_data_control_local.DereferenceEvent(slot_index.value());
+
+        return value;
     }
 
     std::size_t GetFreeSampleSlots() const
@@ -169,11 +176,11 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         const auto search = control_storage->event_controls_.find(fake_element_fq_id_);
         EXPECT_TRUE(search != control_storage->event_controls_.cend());
         auto& event_control = search->second;
-        ProxyEventControlLocalView proxy_event_control_local{event_control};
+        ConsumerEventControlLocalView consumer_event_control_local{event_control};
 
         for (SlotIndexType i = 0U; i < MaxSamples; i++)
         {
-            if (proxy_event_control_local.data_control[i].IsInvalid())
+            if (consumer_event_control_local.data_control[i].IsInvalid())
             {
                 result++;
             }
@@ -188,7 +195,7 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
 
         for (std::size_t counter = 0U; counter < number_of_slots_to_allocate; ++counter)
         {
-            score::cpp::ignore = qm_event_data_control_local.AllocateNextSlot();
+            ASSERT_TRUE(qm_event_data_control_local.AllocateNextSlot());
         }
     }
 

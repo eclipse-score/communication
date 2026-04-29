@@ -264,19 +264,6 @@ cc_library(
 )
 
 cc_library(
-    name = "skeleton_service_data_control_local_view",
-    srcs = ["skeleton_service_data_control_local_view.cpp"],
-    hdrs = ["skeleton_service_data_control_local_view.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    deps = [
-        ":element_fq_id",
-        ":service_data_control",
-        ":skeleton_event_control_local_view",
-    ],
-)
-
-cc_library(
     name = "proxy_service_data_control_local_view",
     srcs = ["proxy_service_data_control_local_view.cpp"],
     hdrs = ["proxy_service_data_control_local_view.h"],
@@ -284,8 +271,8 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":application_id_pid_mapping",
+        ":consumer_event_control_local_view",
         ":element_fq_id",
-        ":proxy_event_control_local_view",
         ":service_data_control",
     ],
 )
@@ -325,8 +312,6 @@ cc_library(
         ":service_data_storage",
         ":shm_path_builder",
         ":skeleton_instance_identifier",
-        ":skeleton_service_data_control_local_view",
-        ":transaction_log_registration_guard",
         ":type_erased_sample_ptrs_guard",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:generic_skeleton_event_binding",
@@ -377,10 +362,10 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola/test:__pkg__"],
     deps = [
+        ":consumer_event_control_local_view",
         ":event",
         ":event_control",
         ":event_subscription_control",
-        ":proxy_event_control_local_view",
         ":proxy_instance_identifier",
         ":proxy_service_data_control_local_view",
         ":service_data_control",
@@ -389,7 +374,6 @@ cc_library(
         ":slot_collector",
         ":subscription_state_machine",
         ":transaction_log_id",
-        ":transaction_log_registration_guard",
         ":transaction_log_rollback_executor",
         "//score/mw/com/impl:generic_proxy_event_binding",
         "//score/mw/com/impl:instance_identifier",
@@ -452,7 +436,7 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
-        ":proxy_event_data_control_local_view",
+        ":consumer_event_data_control_local_view",
         ":slot_decrementer",
     ],
 )
@@ -467,8 +451,8 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
-        ":proxy_event_data_control_local_view",
-        ":transaction_log_index",
+        ":consumer_event_data_control_local_view",
+        ":control_slot_types",
     ],
 )
 
@@ -495,12 +479,11 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
+        ":consumer_event_control_local_view",
+        ":consumer_event_data_control_local_view",
         ":i_runtime",
-        ":proxy_event_control_local_view",
-        ":proxy_event_data_control_local_view",
         ":slot_collector",
         ":transaction_log_id",
-        ":transaction_log_registration_guard",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:scoped_event_receive_handler",
         "//score/mw/com/impl/bindings/lola/messaging:i_message_passing_service",
@@ -514,9 +497,8 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
+        ":consumer_event_data_control_local_view",
         ":event_slot_status",
-        ":proxy_event_data_control_local_view",
-        ":transaction_log_index",
     ],
 )
 
@@ -570,16 +552,15 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         ":control_slot_types",
-        ":transaction_log_set",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/memory/shared:types",
     ],
 )
 
 cc_library(
-    name = "skeleton_event_data_control_local_view",
-    srcs = ["skeleton_event_data_control_local_view.cpp"],
-    hdrs = ["skeleton_event_data_control_local_view.h"],
+    name = "provider_event_data_control_local_view",
+    srcs = ["provider_event_data_control_local_view.cpp"],
+    hdrs = ["provider_event_data_control_local_view.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -587,15 +568,14 @@ cc_library(
         ":control_slot_types",
         ":event_data_control",
         ":event_slot_status",
-        ":transaction_log_set",
         "@score_baselibs//score/memory/shared:atomic_indirector",
     ],
 )
 
 cc_library(
-    name = "proxy_event_data_control_local_view",
-    srcs = ["proxy_event_data_control_local_view.cpp"],
-    hdrs = ["proxy_event_data_control_local_view.h"],
+    name = "consumer_event_data_control_local_view",
+    srcs = ["consumer_event_data_control_local_view.cpp"],
+    hdrs = ["consumer_event_data_control_local_view.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -603,7 +583,7 @@ cc_library(
         ":control_slot_types",
         ":event_data_control",
         ":event_slot_status",
-        ":transaction_log_set",
+        ":transaction_log_local_view",
         "@score_baselibs//score/memory/shared:atomic_indirector",
     ],
 )
@@ -633,33 +613,22 @@ cc_library(
         ":control_slot_types",
         ":event_data_control",
         ":event_subscription_control",
+        ":transaction_log_set",
     ],
 )
 
 cc_library(
-    name = "skeleton_event_control_local_view",
-    srcs = ["skeleton_event_control_local_view.cpp"],
-    hdrs = ["skeleton_event_control_local_view.h"],
+    name = "consumer_event_control_local_view",
+    srcs = ["consumer_event_control_local_view.cpp"],
+    hdrs = ["consumer_event_control_local_view.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
-        ":event_control",
-        ":skeleton_event_data_control_local_view",
-    ],
-)
-
-cc_library(
-    name = "proxy_event_control_local_view",
-    srcs = ["proxy_event_control_local_view.cpp"],
-    hdrs = ["proxy_event_control_local_view.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
-    deps = [
+        ":consumer_event_data_control_local_view",
         ":event_control",
         ":event_data_control",
-        ":proxy_event_data_control_local_view",
+        ":transaction_log_set",
     ],
 )
 
@@ -701,11 +670,11 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":consumer_event_data_control_local_view",
         ":control_slot_types",
         ":event_data_control",
         ":event_slot_status",
-        ":proxy_event_data_control_local_view",
-        ":skeleton_event_data_control_local_view",
+        ":provider_event_data_control_local_view",
         "@score_baselibs//score/memory/shared:atomic_indirector",
     ],
 )
@@ -767,6 +736,20 @@ cc_library(
     srcs = ["transaction_log.cpp"],
     hdrs = ["transaction_log.h"],
     features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":transaction_log_slot",
+        "@score_baselibs//score/containers:dynamic_array",
+        "@score_baselibs//score/memory/shared",
+    ],
+)
+
+cc_library(
+    name = "transaction_log_local_view",
+    srcs = ["transaction_log_local_view.cpp"],
+    hdrs = ["transaction_log_local_view.h"],
+    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/impl:error",
         "@score_baselibs//score/mw/log",
@@ -774,7 +757,8 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
-        ":transaction_log_slot",
+        ":control_slot_types",
+        ":transaction_log",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared",
@@ -790,6 +774,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
 )
 
+# TransactionLogSet and TransactionLogRegistrationGuard are in the same build target to avoid cyclic dependency errors
 cc_library(
     name = "transaction_log_index",
     srcs = ["transaction_log_index.cpp"],
@@ -804,8 +789,14 @@ cc_library(
 
 cc_library(
     name = "transaction_log_set",
-    srcs = ["transaction_log_set.cpp"],
-    hdrs = ["transaction_log_set.h"],
+    srcs = [
+        "transaction_log_registration_guard.cpp",
+        "transaction_log_set.cpp",
+    ],
+    hdrs = [
+        "transaction_log_registration_guard.h",
+        "transaction_log_set.h",
+    ],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -814,13 +805,17 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
+        ":consumer_event_data_control_local_view",
+        ":provider_event_data_control_local_view",
         ":transaction_log",
         ":transaction_log_id",
         ":transaction_log_index",
+        ":transaction_log_local_view",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/util:copyable_atomic",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/result",
+        "@score_baselibs//score/scope_exit",
     ],
 )
 
@@ -839,26 +834,6 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:runtime",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
-        "@score_baselibs//score/result",
-    ],
-)
-
-cc_library(
-    name = "transaction_log_registration_guard",
-    srcs = ["transaction_log_registration_guard.cpp"],
-    hdrs = ["transaction_log_registration_guard.h"],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        "//score/mw/com/impl:error",
-    ],
-    tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
-    deps = [
-        ":proxy_event_data_control_local_view",
-        ":skeleton_event_data_control_local_view",
-        ":transaction_log_id",
-        ":transaction_log_index",
-        ":transaction_log_set",
         "@score_baselibs//score/result",
     ],
 )
@@ -1022,37 +997,39 @@ cc_gtest_unit_test(
         ":event_data_control",
         ":event_slot_status",
         "@score_baselibs//score/containers:dynamic_array",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
 cc_test(
-    name = "skeleton_event_data_control_local_view_test",
+    name = "provider_event_data_control_local_view_test",
     size = "small",
     timeout = "long",
     srcs = [
-        "skeleton_event_data_control_local_view_test.cpp",
+        "provider_event_data_control_local_view_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
     tags = ["unit"],
     deps = [
-        ":skeleton_event_data_control_local_view",
+        ":provider_event_data_control_local_view",
         "//score/mw/com/impl/bindings/lola:event_data_control",
         "//score/mw/com/impl/bindings/lola:event_slot_status",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
 cc_test(
-    name = "proxy_event_data_control_local_view_test",
+    name = "consumer_event_data_control_local_view_test",
     size = "small",
     timeout = "long",
     srcs = [
-        "proxy_event_data_control_local_view_test.cpp",
+        "consumer_event_data_control_local_view_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES + [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
@@ -1060,14 +1037,16 @@ cc_test(
     ],
     tags = ["unit"],
     deps = [
-        ":proxy_event_data_control_local_view",
-        ":skeleton_event_data_control_local_view",
+        ":consumer_event_data_control_local_view",
+        ":provider_event_data_control_local_view",
         "//score/mw/com/impl/bindings/lola:event_data_control",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "//score/mw/com/impl/configuration",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -1076,8 +1055,8 @@ cc_gtest_unit_test(
     srcs = ["event_data_control_composite_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":proxy_event_data_control_local_view",
-        ":skeleton_event_data_control_local_view",
+        ":consumer_event_data_control_local_view",
+        ":provider_event_data_control_local_view",
         "//score/mw/com/impl:instance_specifier",
         "//score/mw/com/impl/bindings/lola:event_data_control",
         "//score/mw/com/impl/bindings/lola:event_data_control_composite",
@@ -1186,9 +1165,9 @@ cc_gtest_unit_test(
     srcs = ["slot_decrementer_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
+        ":consumer_event_data_control_local_view",
         ":event_data_control",
-        ":proxy_event_data_control_local_view",
-        ":skeleton_event_data_control_local_view",
+        ":provider_event_data_control_local_view",
         ":slot_decrementer",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
     ],
@@ -1358,8 +1337,8 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":proxy_event_data_control_local_view",
-        ":skeleton_event_data_control_local_view",
+        ":consumer_event_data_control_local_view",
+        ":provider_event_data_control_local_view",
         ":slot_collector",
         "//score/mw/com/impl/bindings/lola/test_doubles",
     ],
@@ -1408,6 +1387,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
+        ":transaction_log_set",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
     ],
 )
@@ -1441,9 +1421,9 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
-    name = "transaction_log_test",
+    name = "transaction_log_local_view_test",
     srcs = [
-        "transaction_log_test.cpp",
+        "transaction_log_local_view_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
@@ -1529,12 +1509,12 @@ cc_unit_test_suites_for_host_and_qnx(
         ":transaction_log_registration_guard_test",
         ":transaction_log_set_test",
         ":transaction_log_slot_test",
-        ":transaction_log_test",
+        ":transaction_log_local_view_test",
         ":dynamic_array_bounds_checking_test",
         ":event_data_control_test",
         ":event_data_control_composite_test",
-        ":proxy_event_data_control_local_view_test",
-        ":skeleton_event_data_control_local_view_test",
+        ":consumer_event_data_control_local_view_test",
+        ":provider_event_data_control_local_view_test",
         ":generic_proxy_event_test",
         ":partial_restart_path_builder_test",
         ":proxy_instance_identifier_test",

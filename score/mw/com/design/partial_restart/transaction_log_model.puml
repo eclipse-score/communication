@@ -21,8 +21,8 @@ class "lola::TransactionLog" {
 }
 
 class "lola::TransactionLogSet" {
-  +RollbackProxyTransactions(const TransactionLogId&, TransactionLog::DereferenceSlotCallback,TransactionLog::UnsubscribeCallback) : Result<void>
-  +RollbackSkeletonTracingTransactions(TransactionLog::DereferenceSlotCallback) : Result<void>
+  +RollbackProxyTransactions(const TransactionLogId&, TransactionLogLocalView::DereferenceSlotCallback,TransactionLogLocalView::DereferenceSlotCallback) : Result<void>
+  +RollbackSkeletonTracingTransactions(TransactionLogLocalView::DereferenceSlotCallback) : Result<void>
   +RegisterProxyElement(const TransactionLogId&) : score::Result<TransactionLogIndex>
   +RegisterSkeletonTracingElement() : TransactionLogIndex
   +Unregister(TransactionLogIndex) : void

@@ -13,10 +13,10 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 
 #include "score/memory/shared/atomic_indirector.h"
 
@@ -57,13 +57,12 @@ class EventDataControlComposite
     };
 
     /// \brief Constructs a composite which will only manage a single QM control (no ASIL use-case)
-    explicit EventDataControlComposite(SkeletonEventDataControlLocalView<>& asil_qm_control_local,
-                                       ProxyEventDataControlLocalView<>* const proxy_control_local);
+    explicit EventDataControlComposite(ProviderEventDataControlLocalView<AtomicIndirectorType>& asil_qm_control_local);
 
     /// \brief Constructs a composite which will manage QM and ASIL control at the same time
-    explicit EventDataControlComposite(SkeletonEventDataControlLocalView<>& asil_qm_control_local,
-                                       SkeletonEventDataControlLocalView<>* const asil_b_control_local,
-                                       ProxyEventDataControlLocalView<>* const proxy_control_local);
+    explicit EventDataControlComposite(
+        ProviderEventDataControlLocalView<AtomicIndirectorType>& asil_qm_control_local,
+        ProviderEventDataControlLocalView<AtomicIndirectorType>* const asil_b_control_local);
 
     /// \brief Checks for the oldest unused slot and acquires for writing (thread-safe, wait-free)
     ///
@@ -95,42 +94,40 @@ class EventDataControlComposite
     /// \return _true_ if disconnected and the composite supports QM/ASIL parts, _false_ else.
     bool IsQmControlDisconnected() const noexcept;
 
-    /// \brief Returns the (mandatory) SkeletonEventDataControlLocalView for QM.
-    SkeletonEventDataControlLocalView<>& GetQmEventDataControlLocal() const noexcept;
+    /// \brief Returns the (mandatory) ProviderEventDataControlLocalView for QM.
+    ProviderEventDataControlLocalView<AtomicIndirectorType>& GetQmEventDataControlLocal() const noexcept;
 
-    /// \brief Returns a pointer to SkeletonEventDataControlLocalView for ASIL-B
+    /// \brief Returns a pointer to ProviderEventDataControlLocalView for ASIL-B
     /// \return a nullptr if no ASIL-B support, otherwise, a valid pointer to the ASIL-B EventDataControl.
-    SkeletonEventDataControlLocalView<>* GetAsilBEventDataControlLocal() noexcept;
-
-    /// \brief Returns a reference to ProxyEventDataControlLocalView, which is used for tracing
-    /// \pre only called if EventDataControlComposite was constructed with a valid ProxyEventDataControlLocalView
-    ProxyEventDataControlLocalView<>& GetProxyEventDataControlLocalView() noexcept;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>* GetAsilBEventDataControlLocal() noexcept;
 
     /// \brief Returns the timestamp of the provided slot index
     EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot_index) const noexcept;
 
+    /// \brief Returns the latest timestamp of all slots which are currently marked as ready (i.e. have been written to
+    /// by a provider and can be consumet)
+    ///
+    /// This function is used in the partial restart case in which a skeleton instance dies and restarts while there are
+    /// still proxies connected to the old shared memory region. In this case, the skeleton will open and continue to
+    /// use the old region. We must make sure that the current timestamp of the new skeleton is updated based on the
+    /// latest timestamp in the old shared memory region to ensure that the referencing semantics related to the
+    /// timestamp remain correct.
     EventSlotStatus::EventTimeStamp GetLatestTimestamp() const noexcept;
 
   private:
-    struct SlotWithTimeStamp
-    {
-        SlotIndexType slot_index;
-        EventSlotStatus::EventTimeStamp timestamp;
-    };
-
-    std::reference_wrapper<SkeletonEventDataControlLocalView<>> asil_qm_control_local_;
-    SkeletonEventDataControlLocalView<>* asil_b_control_local_;
-
-    ProxyEventDataControlLocalView<>* proxy_control_local_;
+    std::reference_wrapper<ProviderEventDataControlLocalView<AtomicIndirectorType>> asil_qm_control_local_;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>* asil_b_control_local_;
 
     /// \brief flag indicating, whether qm_control part shall be ignored in any public API (AllocateNextSlot(),
     /// EventReady(), Discard()()
     bool ignore_qm_control_;
 
     // Algorithms that operate on multiple control blocks
-    std::optional<SlotWithTimeStamp> GetNextFreeMultiSlot() const noexcept;
+    // \post the returned selected free slot for qm and asil-b must contain the same index and slot value (therefore, we
+    //       only return a single SlotInfo which represents both qm and asil-b slots).
+    std::optional<typename ProviderEventDataControlLocalView<AtomicIndirectorType>::SlotInfo> GetNextFreeMultiSlot()
+        const noexcept;
 
-    bool TryLockSlot(const SlotWithTimeStamp expected_slot_with_timestamp) noexcept;
     std::optional<SlotIndexType> AllocateNextMultiSlot() noexcept;
     void CheckForValidDataControls() const noexcept;
 };

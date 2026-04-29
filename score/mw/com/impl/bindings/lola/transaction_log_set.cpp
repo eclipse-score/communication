@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
+#include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/log/logging.h"
 #include "score/result/result.h"
@@ -43,7 +44,7 @@ bool TransactionLogSet::TransactionLogNode::TryAcquireForRead(TransactionLogId t
 void TransactionLogSet::TransactionLogNode::Reset()
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        !transaction_log_.ContainsTransactions(),
+        !GetTransactionLogLocalView().ContainsTransactions(),
         "Cannot Reset TransactionLog as it still contains some old transactions.");
     needs_rollback_.GetUnderlying() = false;
     Release();
@@ -80,8 +81,8 @@ void TransactionLogSet::MarkTransactionLogsNeedRollback(const TransactionLogId& 
 
 Result<void> TransactionLogSet::RollbackProxyTransactions(
     const TransactionLogId& transaction_log_id,
-    const TransactionLog::DereferenceSlotCallback dereference_slot_callback,
-    const TransactionLog::UnsubscribeCallback unsubscribe_callback)
+    const TransactionLogLocalView::DereferenceSlotCallback dereference_slot_callback,
+    const TransactionLogLocalView::DereferenceSlotCallback unsubscribe_callback)
 {
     const auto transaction_log_node_iterators_to_be_rolled_back =
         FindTransactionLogNodesToBeRolledBack(transaction_log_id);
@@ -92,7 +93,7 @@ Result<void> TransactionLogSet::RollbackProxyTransactions(
     Result<void> rollback_result{};
     for (const auto transaction_log_node_it : transaction_log_node_iterators_to_be_rolled_back)
     {
-        rollback_result = transaction_log_node_it->GetTransactionLog().RollbackProxyElementLog(
+        rollback_result = transaction_log_node_it->GetTransactionLogLocalView().RollbackProxyElementLog(
             dereference_slot_callback, unsubscribe_callback);
         if (rollback_result.has_value())
         {
@@ -104,14 +105,14 @@ Result<void> TransactionLogSet::RollbackProxyTransactions(
 }
 
 Result<void> TransactionLogSet::RollbackSkeletonTracingTransactions(
-    const TransactionLog::DereferenceSlotCallback dereference_slot_callback)
+    const TransactionLogLocalView::DereferenceSlotCallback dereference_slot_callback)
 {
     if (!skeleton_tracing_transaction_log_.IsActive())
     {
         return {};
     }
     const auto rollback_result =
-        skeleton_tracing_transaction_log_.GetTransactionLog().RollbackSkeletonTracingElementLog(
+        skeleton_tracing_transaction_log_.GetTransactionLogLocalView().RollbackSkeletonTracingElementLog(
             dereference_slot_callback);
     if (!rollback_result.has_value())
     {
@@ -121,7 +122,9 @@ Result<void> TransactionLogSet::RollbackSkeletonTracingTransactions(
     return {};
 }
 
-score::Result<TransactionLogIndex> TransactionLogSet::RegisterProxyElement(const TransactionLogId& transaction_log_id)
+score::Result<TransactionLogRegistrationGuard> TransactionLogSet::RegisterProxyElement(
+    const TransactionLogId& transaction_log_id,
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view)
 {
     const auto next_available_slot_result = AcquireNextAvailableSlot(transaction_log_id);
     if (!next_available_slot_result.has_value())
@@ -133,12 +136,14 @@ score::Result<TransactionLogIndex> TransactionLogSet::RegisterProxyElement(const
             "value of max_subscribers.");
     }
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        !next_available_slot_result.value().first->GetTransactionLog().ContainsTransactions(),
+        !next_available_slot_result.value().first->GetTransactionLogLocalView().ContainsTransactions(),
         "Cannot reuse TransactionLog as it still contains some old transactions.");
-    return next_available_slot_result.value().second;
+    return TransactionLogRegistrationGuard{
+        *this, next_available_slot_result.value().second, consumer_event_data_control_local_view};
 }
 
-TransactionLogIndex TransactionLogSet::RegisterSkeletonTracingElement()
+TransactionLogRegistrationGuard TransactionLogSet::RegisterSkeletonTracingElement(
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view)
 {
     // we only do have one skeleton instance accessing the skeleton transaction log, so a dummy value is good enough,
     // we don't need e.g. an uid here.
@@ -148,7 +153,7 @@ TransactionLogIndex TransactionLogSet::RegisterSkeletonTracingElement()
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         skeleton_tracing_transaction_log_.TryAcquire(kDummyTransactionLogIdSkeleton),
         "Unexpected failure to acquire TransactionLogNode for SkeletonEvent!");
-    return kSkeletonIndexSentinel;
+    return TransactionLogRegistrationGuard{*this, kSkeletonIndexSentinel, consumer_event_data_control_local_view};
 }
 
 void TransactionLogSet::Unregister(const TransactionLogIndex transaction_log_index)

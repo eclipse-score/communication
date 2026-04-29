@@ -531,7 +531,7 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
 // exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ProxyEventControlLocalView& Proxy::GetEventControlLocal(const ElementFqId element_fq_id) noexcept
+ConsumerEventControlLocalView& Proxy::GetEventControlLocal(const ElementFqId element_fq_id) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");

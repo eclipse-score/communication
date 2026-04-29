@@ -12,12 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/sample_ptr.h"
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
-#include "score/mw/com/impl/instance_specifier.h"
 
 #include <gtest/gtest.h>
 
@@ -35,25 +33,22 @@ struct DummyStruct
 };
 
 constexpr std::size_t kMaxSlots{5U};
-constexpr std::size_t kMaxSubscribers{5U};
-const TransactionLogId kDummyTransactionLogId{10U};
 
 /// \brief Test fixture for SamplePtr functionality that only works for non-void types
 class SamplePtrTest : public ::testing::Test
 {
   protected:
     FakeMemoryResource memory_{};
-    EventDataControl event_data_control_{kMaxSlots, memory_, kMaxSubscribers};
-    ProxyEventDataControlLocalView<> proxy_event_data_control_local_{event_data_control_};
-    SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{event_data_control_};
-    TransactionLogIndex transaction_log_index_ =
-        proxy_event_data_control_local_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
+    EventDataControl event_data_control_{kMaxSlots, memory_};
+    TransactionLog transaction_log_{kMaxSlots, memory_};
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_, transaction_log_};
+    ProviderEventDataControlLocalView<> provider_event_data_control_local_{event_data_control_};
 
     SlotIndexType AllocateSlot(EventSlotStatus::EventTimeStamp timestamp = 1)
     {
-        auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+        auto slot = provider_event_data_control_local_.AllocateNextSlot();
         EXPECT_TRUE(slot.has_value());
-        skeleton_event_data_control_local_.EventReady(slot.value(), timestamp);
+        provider_event_data_control_local_.EventReady(slot.value(), timestamp);
         return slot.value();
     }
 };
@@ -76,72 +71,60 @@ TYPED_TEST(SamplePtrGenericTypeTest, DereferencesAssignedSlot)
 {
     auto slot_index = SamplePtrTest::AllocateSlot();
 
-    auto client_slot_result =
-        SamplePtrTest::proxy_event_data_control_local_.ReferenceNextEvent(0, SamplePtrTest::transaction_log_index_);
+    auto client_slot_result = SamplePtrTest::consumer_event_data_control_local_.ReferenceNextEvent(0);
     ASSERT_TRUE(client_slot_result.has_value());
     uint8_t dummy_val{};
-    SamplePtr<TypeParam> sample_ptr{&dummy_val,
-                                    SamplePtrTest::proxy_event_data_control_local_,
-                                    client_slot_result.value(),
-                                    SamplePtrTest::transaction_log_index_};
+    SamplePtr<TypeParam> sample_ptr{
+        &dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result.value()};
 
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot_index]}.GetReferenceCount(), 1);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot_index]}.GetReferenceCount(), 1);
     sample_ptr = nullptr;
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot_index]}.GetReferenceCount(), 0);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot_index]}.GetReferenceCount(), 0);
 }
 
 TYPED_TEST(SamplePtrGenericTypeTest, ProperMoveConstruction)
 {
     auto slot_index = SamplePtrTest::AllocateSlot();
 
-    auto client_slot_result =
-        SamplePtrTest::proxy_event_data_control_local_.ReferenceNextEvent(0, SamplePtrTest::transaction_log_index_);
+    auto client_slot_result = SamplePtrTest::consumer_event_data_control_local_.ReferenceNextEvent(0);
     ASSERT_TRUE(client_slot_result.has_value());
     uint8_t dummy_val{};
-    SamplePtr<TypeParam> sample_ptr{&dummy_val,
-                                    SamplePtrTest::proxy_event_data_control_local_,
-                                    client_slot_result.value(),
-                                    SamplePtrTest::transaction_log_index_};
+    SamplePtr<TypeParam> sample_ptr{
+        &dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result.value()};
 
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot_index]}.GetReferenceCount(), 1);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot_index]}.GetReferenceCount(), 1);
     SamplePtr<TypeParam> another_sample_ptr{std::move(sample_ptr)};
     sample_ptr = nullptr;
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot_index]}.GetReferenceCount(), 1);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot_index]}.GetReferenceCount(), 1);
     another_sample_ptr = nullptr;
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot_index]}.GetReferenceCount(), 0);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot_index]}.GetReferenceCount(), 0);
 }
 
 TYPED_TEST(SamplePtrGenericTypeTest, ProperMoveAssignment)
 {
     auto slot = SamplePtrTest::AllocateSlot(1);
 
-    auto client_slot_result =
-        SamplePtrTest::proxy_event_data_control_local_.ReferenceNextEvent(0, SamplePtrTest::transaction_log_index_);
+    auto client_slot_result = SamplePtrTest::consumer_event_data_control_local_.ReferenceNextEvent(0);
     ASSERT_TRUE(client_slot_result.has_value());
     uint8_t dummy_val{};
-    SamplePtr<TypeParam> sample_ptr{&dummy_val,
-                                    SamplePtrTest::proxy_event_data_control_local_,
-                                    client_slot_result.value(),
-                                    SamplePtrTest::transaction_log_index_};
+    SamplePtr<TypeParam> sample_ptr{
+        &dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result.value()};
 
     auto slot2 = SamplePtrTest::AllocateSlot(2);
 
-    auto client_slot_result_2 =
-        SamplePtrTest::proxy_event_data_control_local_.ReferenceNextEvent(1, SamplePtrTest::transaction_log_index_);
+    auto client_slot_result_2 = SamplePtrTest::consumer_event_data_control_local_.ReferenceNextEvent(1);
     ASSERT_TRUE(client_slot_result_2.has_value());
-    SamplePtr<TypeParam> sample_ptr2{&dummy_val,
-                                     SamplePtrTest::proxy_event_data_control_local_,
-                                     client_slot_result_2.value(),
-                                     SamplePtrTest::transaction_log_index_};
+    SamplePtr<TypeParam> sample_ptr2{
+        &dummy_val, SamplePtrTest::consumer_event_data_control_local_, client_slot_result_2.value()};
 
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot]}.GetReferenceCount(), 1);
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot2]}.GetReferenceCount(), 1);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot]}.GetReferenceCount(), 1);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot2]}.GetReferenceCount(), 1);
     sample_ptr2 = std::move(sample_ptr);
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot]}.GetReferenceCount(), 1);
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot2]}.GetReferenceCount(), 0);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot]}.GetReferenceCount(), 1);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot2]}.GetReferenceCount(), 0);
     sample_ptr2 = nullptr;
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot]}.GetReferenceCount(), 0);
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::proxy_event_data_control_local_[slot2]}.GetReferenceCount(), 0);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot]}.GetReferenceCount(), 0);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::consumer_event_data_control_local_[slot2]}.GetReferenceCount(), 0);
 }
 
 TYPED_TEST(SamplePtrGenericTypeTest, TestStaticProperties)
@@ -165,11 +148,10 @@ TEST_F(SamplePtrTest, ArrayOp)
 {
     // Given an SamplePtr on an allocated slot
     AllocateSlot();
-    auto slot_index = proxy_event_data_control_local_.ReferenceNextEvent(0, transaction_log_index_);
+    auto slot_index = consumer_event_data_control_local_.ReferenceNextEvent(0);
     ASSERT_TRUE(slot_index.has_value());
     DummyStruct dummy_val{22, 44};
-    SamplePtr<DummyStruct> sample_ptr{
-        &dummy_val, proxy_event_data_control_local_, slot_index.value(), transaction_log_index_};
+    SamplePtr<DummyStruct> sample_ptr{&dummy_val, consumer_event_data_control_local_, slot_index.value()};
 
     // When accessing the data via ->
     auto val1 = sample_ptr->member1_;
@@ -184,11 +166,10 @@ TEST_F(SamplePtrTest, StarOp)
 {
     // Given an SamplePtr on an allocated slot
     AllocateSlot();
-    auto slot_index = proxy_event_data_control_local_.ReferenceNextEvent(0, transaction_log_index_);
+    auto slot_index = consumer_event_data_control_local_.ReferenceNextEvent(0);
     ASSERT_TRUE(slot_index.has_value());
     DummyStruct dummy_val{22, 44};
-    SamplePtr<DummyStruct> sample_ptr{
-        &dummy_val, proxy_event_data_control_local_, slot_index.value(), transaction_log_index_};
+    SamplePtr<DummyStruct> sample_ptr{&dummy_val, consumer_event_data_control_local_, slot_index.value()};
 
     // When accessing the data via *
     auto val1 = *sample_ptr;
