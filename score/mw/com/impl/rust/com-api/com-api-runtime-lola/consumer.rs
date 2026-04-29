@@ -30,7 +30,7 @@
 #![allow(clippy::needless_lifetimes)]
 
 use crate::Debug;
-use core::future::Future;
+use core::future::{self, Future};
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
@@ -258,8 +258,9 @@ impl NativeProxyEventBase {
     pub fn new(proxy: &NonNull<ProxyBase>, interface_id: &str, identifier: &str) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid proxy pointer and interface id to get event
         // proxy pointer is created during consumer creation
-        let raw_event_ptr =
-            unsafe { bridge_ffi_rs::get_event_from_proxy(proxy.as_ptr(), interface_id, identifier) };
+        let raw_event_ptr = unsafe {
+            bridge_ffi_rs::get_event_from_proxy(proxy.as_ptr(), interface_id, identifier)
+        };
         let proxy_event_ptr = std::ptr::NonNull::new(raw_event_ptr)
             .ok_or(Error::EventError(EventFailedReason::EventCreationFailed))?;
         Ok(Self { proxy_event_ptr })
@@ -535,14 +536,30 @@ where
         )
     }
 
-    // Cannot use `async fn` because the trait mandates `-> impl Future + 'a`,
-    // requiring the returned future to be explicitly bound to the lifetime of `&self`.
     #[allow(clippy::manual_async_fn)]
     fn receive<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
+        self.receive_with_timeout(
+            scratch,
+            new_samples,
+            max_samples,
+            core::future::pending::<()>(),
+        )
+    }
+
+    // Cannot use `async fn` because the trait mandates `-> impl Future + 'a`,
+    // requiring the returned future to be explicitly bound to the lifetime of `&self`.
+    #[allow(clippy::manual_async_fn)]
+    fn receive_with_timeout<'a>(
+        &'a self,
+        scratch: SampleContainer<Self::Sample<'a>>,
+        new_samples: usize,
+        max_samples: usize,
+        timeout_future: impl Future<Output = ()> + 'a,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
         async move {
             if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
@@ -637,9 +654,9 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
                     // proxy event
                     self.event_guard = None;
                     return Poll::Ready((
-                        self.scratch
-                            .take()
-                            .expect("SampleContainer is not available when returning Future result"),
+                        self.scratch.take().expect(
+                            "SampleContainer is not available when returning Future result",
+                        ),
                         Ok(()),
                     ));
                 }
@@ -647,9 +664,9 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
                 Poll::Pending
             }
             Err(e) => Poll::Ready((
-                self.scratch
-                    .take()
-                    .expect("SampleContainer unavailable on error; was receive polled after completion?"),
+                self.scratch.take().expect(
+                    "SampleContainer unavailable on error; was receive polled after completion?",
+                ),
                 Err(e),
             )),
         }

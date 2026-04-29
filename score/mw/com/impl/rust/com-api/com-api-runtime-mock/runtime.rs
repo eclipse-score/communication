@@ -336,6 +336,17 @@ where
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
         async { todo!() }
     }
+
+    #[allow(clippy::manual_async_fn)]
+    fn receive_with_timeout<'a>(
+        &'a self,
+        _scratch: SampleContainer<Self::Sample<'a>>,
+        _new_samples: usize,
+        _max_samples: usize,
+        _timeout_future: impl Future<Output = ()> + 'a,
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
+        async { todo!() }
+    }
 }
 
 pub struct Publisher<T> {

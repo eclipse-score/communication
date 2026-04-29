@@ -852,6 +852,14 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         new_samples: usize,
         max_samples: usize,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a;
+
+    fn receive_with_timeout<'a>(
+        &'a self,
+        scratch: SampleContainer<Self::Sample<'a>>,
+        new_samples: usize,
+        max_samples: usize,
+        timeout_future: impl Future<Output = ()> + 'a,
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.
