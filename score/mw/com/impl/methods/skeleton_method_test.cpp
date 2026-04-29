@@ -58,6 +58,7 @@ class EmptySkeleton final : public SkeletonBase
 };
 
 using TestMethodType = bool(int, bool);
+using TestMethodHandlerType = void(bool&, const int&, const bool&);
 
 TEST(SkeletonMethodTests, NotCopyable)
 {
@@ -85,11 +86,12 @@ TEST(SkeletonMethodTest, ClassTypeDependsOnMethodType)
                   "Class type does not depend on event data type");
 }
 
-template <typename MethodType>
+template <typename Types>
 class SkeletonMethodTypedTest : public ::testing::Test
 {
   public:
-    using Type = MethodType;
+    using MethodType = typename Types::MethodType;
+    using HandlerType = typename Types::HandlerType;
 
     void SetUp() override
     {
@@ -126,16 +128,28 @@ struct MyDataStruct
     double d;
     float f[4];
 };
-using RegisteredFunctionTypes = ::testing::Types<TestMethodType,
-                                                 void(int),
-                                                 void(const double, int),
-                                                 void(char, MyDataStruct),
-                                                 int(),
-                                                 void(),
-                                                 MyDataStruct(MyDataStruct, int, float)>;
+
+template <typename MethodTypeIn, typename HandlerTypeIn>
+struct MethodTypeAndHandlerType
+{
+    using MethodType = MethodTypeIn;
+    using HandlerType = HandlerTypeIn;
+};
+using RegisteredFunctionTypes =
+    ::testing::Types<MethodTypeAndHandlerType<TestMethodType, TestMethodHandlerType>,
+                     MethodTypeAndHandlerType<void(int), void(const int&)>,
+                     MethodTypeAndHandlerType<void(int, int), void(const int&, const int&)>,
+                     MethodTypeAndHandlerType<void(const double, int), void(const double&, const int&)>,
+                     MethodTypeAndHandlerType<void(int, int), void(const int&, const int&)>,
+                     MethodTypeAndHandlerType<void(char, MyDataStruct), void(const char&, const MyDataStruct&)>,
+                     MethodTypeAndHandlerType<int(), void(int&)>,
+                     MethodTypeAndHandlerType<void(), void()>,
+                     MethodTypeAndHandlerType<MyDataStruct(MyDataStruct, int, float),
+                                              void(MyDataStruct&, const MyDataStruct&, const int&, const float&)>>;
 TYPED_TEST_SUITE(SkeletonMethodTypedTest, RegisteredFunctionTypes, );
 
-using SkeletonMethodTestFixture = SkeletonMethodTypedTest<TestMethodType>;
+using SkeletonMethodTestFixture =
+    SkeletonMethodTypedTest<MethodTypeAndHandlerType<TestMethodType, TestMethodHandlerType>>;
 
 TYPED_TEST(SkeletonMethodTypedTest, AnyCombinationOfReturnAndInputArgTypesCanBeRegistered)
 {
@@ -146,8 +160,8 @@ TYPED_TEST(SkeletonMethodTypedTest, AnyCombinationOfReturnAndInputArgTypesCanBeR
     EXPECT_CALL(this->mock_method_binding_, RegisterHandler(_));
 
     // // When a Register call is issued at the binding independent level
-    using FixtureMethodType = typename TestFixture::Type;
-    score::cpp::callback<FixtureMethodType> test_callback{};
+    using HandlerType = typename TestFixture::HandlerType;
+    score::cpp::callback<HandlerType> test_callback{};
     std::ignore = this->method_->RegisterHandler(std::move(test_callback));
 }
 
@@ -162,11 +176,12 @@ TYPED_TEST(SkeletonMethodTypedTest, TwoParameterConstructorCorrectlyCallsBinding
             testing::ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(this->mock_method_binding_))));
 
     // When the 2-parameter constructor of the SkeletonMethod class is called
-    using FixtureMethodType = typename TestFixture::Type;
+    using FixtureMethodType = typename TestFixture::MethodType;
     SkeletonMethod<FixtureMethodType> method{this->empty_skeleton_, this->method_name_};
 
     // Then a Binding can be created which is capable of registering a callback
-    score::cpp::callback<FixtureMethodType> test_callback{};
+    using HandlerType = typename TestFixture::HandlerType;
+    score::cpp::callback<HandlerType> test_callback{};
     EXPECT_TRUE(method.RegisterHandler(std::move(test_callback)));
 }
 
@@ -182,7 +197,7 @@ TYPED_TEST(
         .WillOnce(testing::Return(testing::ByMove(nullptr)));
 
     // When the 2-parameter constructor of the SkeletonMethod class is called
-    using FixtureMethodType = typename TestFixture::Type;
+    using FixtureMethodType = typename TestFixture::MethodType;
     SkeletonMethod<FixtureMethodType> method{this->empty_skeleton_, this->method_name_};
 
     // Then the binding cannot be created and calling AreBindingsValid returns false
@@ -195,10 +210,10 @@ TEST_F(SkeletonMethodTestFixture, ACallbackWithAPointerAsStateCanBeRegistered)
 
     // And a callback with a unique_ptr as a state
     auto test_struct_p = std::make_unique<MyDataStruct>();
-    score::cpp::callback<TestMethodType> test_callback_with_state = [state = std::move(test_struct_p)](
-                                                                        int, bool b) noexcept {
-        return state->b || b;
-    };
+    score::cpp::callback<TestMethodHandlerType> test_callback_with_state =
+        [state = std::move(test_struct_p)](bool& return_value, const int&, const bool& b) noexcept {
+            return_value = state->b || b;
+        };
 
     // Expecting that the register call is dispatched to the binding without an error
     EXPECT_CALL(mock_method_binding_, RegisterHandler(_));
@@ -210,34 +225,38 @@ TEST_F(SkeletonMethodTestFixture, ACallbackWithAPointerAsStateCanBeRegistered)
 using Thing = long;
 using InType1 = double;
 using InType2 = int;
-using VoidVoid = void();
-using ThingVoid = Thing();
-using VoidStuff = void(InType1, InType2);
-using ThingStuff = Thing(InType1, InType2);
+using VoidVoid = MethodTypeAndHandlerType<void(), void()>;
+using ThingVoid = MethodTypeAndHandlerType<Thing(), void(Thing&)>;
+using VoidStuff =
+    MethodTypeAndHandlerType<void(InType1, InType2, InType2), void(const InType1&, const InType2&, const InType2&)>;
+using ThingStuff = MethodTypeAndHandlerType<Thing(InType1, InType2, InType2),
+                                            void(Thing&, const InType1&, const InType2&, const InType2&)>;
 
-template <typename MethodType>
+template <typename Types>
 class SkeletonMethodGenericTestFixture : public ::testing::Test
 {
-
   public:
     void CreateSkeletonMethodWithMockedTypeErasedCallback()
     {
         EmptySkeleton empty_skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
         auto mock_method_binding_ptr = std::make_unique<mock_binding::SkeletonMethodFacade>(mock_method_binding_);
-        method_ = std::make_unique<SkeletonMethod<MethodType>>(
+        method_ = std::make_unique<SkeletonMethod<typename Types::MethodType>>(
             empty_skeleton, "dummy_method", std::move(mock_method_binding_ptr));
     }
 
     static constexpr std::size_t in_args_buffer_size = sizeof(InType1) + sizeof(InType2);
-    void SerializeBuffers(InType1 in_arg_1, InType2 in_arg_2)
+    void SerializeBuffers(InType1 in_arg_1, InType2 in_arg_2, InType2 in_arg_3)
     {
         constexpr std::size_t in_type_1_size = sizeof(InType1);
+        constexpr std::size_t in_type_2_size = sizeof(InType2);
 
         std::byte* write_head = in_args_buffer_.begin();
         new (write_head) InType1(in_arg_1);
         write_head += in_type_1_size;
         new (write_head) InType2(in_arg_2);
+        write_head += in_type_2_size;
+        new (write_head) InType2(in_arg_3);
     }
     Thing GetTypedResultFromOutArgBuffer()
     {
@@ -246,8 +265,8 @@ class SkeletonMethodGenericTestFixture : public ::testing::Test
     std::array<std::byte, sizeof(Thing)> out_arg_buffer_{};
     std::array<std::byte, in_args_buffer_size> in_args_buffer_{};
 
-    std::unique_ptr<SkeletonMethod<MethodType>> method_{nullptr};
-    ::testing::MockFunction<MethodType> typed_callback_mock_{};
+    std::unique_ptr<SkeletonMethod<typename Types::MethodType>> method_{nullptr};
+    ::testing::MockFunction<typename Types::HandlerType> typed_callback_mock_{};
     std::optional<SkeletonMethodBinding::TypeErasedHandler> typeerased_callback_{};
     mock_binding::SkeletonMethod mock_method_binding_{};
 };
@@ -268,11 +287,15 @@ TEST_F(SkeletonMethodThingStuffFixture, DataTransferBetweenTypedAndTypeErasedCal
     Thing ret_val{505};
     InType1 in_arg_1{6.12};
     InType2 in_arg_2{17};
+    InType2 in_arg_3{18};
 
-    // Expecting that a typed callable will be called with correctly deserialized inargs and will return a value
-    EXPECT_CALL(typed_callback_mock_, Call(in_arg_1, in_arg_2)).WillOnce(Return(ret_val));
+    // Expecting that a typed callable will be called with correctly deserialized inargs and return value
+    EXPECT_CALL(typed_callback_mock_, Call(_, in_arg_1, in_arg_2, in_arg_3))
+        .WillOnce(Invoke([ret_val](auto& return_arg, auto, auto, auto) {
+            return_arg = ret_val;
+        }));
 
-    SerializeBuffers(in_arg_1, in_arg_2);
+    SerializeBuffers(in_arg_1, in_arg_2, in_arg_3);
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
     // When the type erased call is executed by the binding
     typeerased_callback_.value()(in_args_buffer_, out_arg_buffer_);
@@ -297,8 +320,10 @@ TEST_F(SkeletonMethodThingVoidFixture, DataTransferBetweenTypedAndTypeErasedCall
 
     Thing ret_val{50255};
 
-    // Expecting that a typed callable will be called without inargs and will return a value
-    EXPECT_CALL(typed_callback_mock_, Call()).WillOnce(Return(ret_val));
+    // Expecting that a typed callable will be called without inargs and return a value
+    EXPECT_CALL(typed_callback_mock_, Call(_)).WillOnce(Invoke([ret_val](auto& return_arg) {
+        return_arg = ret_val;
+    }));
 
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
 
@@ -325,11 +350,12 @@ TEST_F(SkeletonMethodVoidStuffFixture, DataTransferBetweenTypedAndTypeErasedCall
 
     InType1 in_arg_1{0.6};
     InType2 in_arg_2{0x1700};
+    InType2 in_arg_3{0x1701};
 
-    // Expecting that a typed callable will be called with correctly deserialized inargs and will not return a value
-    EXPECT_CALL(typed_callback_mock_, Call(in_arg_1, in_arg_2)).WillOnce(Return());
+    // Expecting that a typed callable will be called with correctly deserialized inargs and no return value
+    EXPECT_CALL(typed_callback_mock_, Call(in_arg_1, in_arg_2, in_arg_3));
 
-    SerializeBuffers(in_arg_1, in_arg_2);
+    SerializeBuffers(in_arg_1, in_arg_2, in_arg_3);
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
 
     // When the type erased call is executed by the binding
@@ -349,8 +375,8 @@ TEST_F(SkeletonMethodVoidVoidFixture, DataTransferBetweenTypedAndTypeErasedCallb
             return {};
         }));
 
-    // Expecting that a typed callable will be called without inargs and will not return a value
-    EXPECT_CALL(typed_callback_mock_, Call()).WillOnce(Return());
+    // Expecting that a typed callable will be called without inargs or return value
+    EXPECT_CALL(typed_callback_mock_, Call());
 
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
     // When the type erased call is executed by the binding

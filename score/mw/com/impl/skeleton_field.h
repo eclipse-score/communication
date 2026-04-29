@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_SKELETON_FIELD_H
 
 #include "score/mw/com/impl/method_type.h"
+#include "score/mw/com/impl/methods/method_handler_checker.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
@@ -123,23 +124,25 @@ class SkeletonField : public SkeletonFieldBase
     template <bool ES = EnableSet, typename std::enable_if<ES, int>::type = 0, typename CallableType>
     Result<void> RegisterSetHandler(CallableType&& set_handler)
     {
-        static_assert(std::is_invocable_v<CallableType, FieldType&>,
+        static_assert(std::is_invocable_r_v<void, CallableType, FieldType&>,
                       "RegisterSetHandler: handler must be callable as void(FieldType& value). "
                       "The argument initially holds the proxy-requested value and may be modified in-place.");
 
-        auto wrapped_callback = [this, set_handler = std::move(set_handler)](FieldType& new_value) -> FieldType {
-            // Allow user to validate/modify the value in-place
-            set_handler(new_value);
+        auto wrapped_callback = [this, set_handler = std::move(set_handler)](FieldType& final_value,
+                                                                             const FieldType& desired_value) {
+            // Copy desired_value (which is a method InArg) into final_value (which is the method return value).
+            // final_value can then be modified in place by set_handler.
+            final_value = desired_value;
 
-            // Store the (possibly modified) value as the latest field value
-            auto update_result = this->Update(new_value);
+            // Allow user to validate/modify the value in-place
+            set_handler(final_value);
+
+            // Copy the (possibly modified) value into the latest field value
+            auto update_result = this->Update(final_value);
             if (!update_result.has_value())
             {
                 score::mw::log::LogError("lola") << "Set handler: failed to update field value.";
             }
-
-            // Return the accepted value to the proxy
-            return new_value;
         };
 
         is_set_handler_registered_ = true;

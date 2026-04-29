@@ -175,6 +175,7 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":method_handler_checker",
         ":skeleton_method_binding",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:skeleton_base",
