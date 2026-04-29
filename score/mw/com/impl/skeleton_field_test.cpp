@@ -824,7 +824,6 @@ TEST_F(SkeletonFieldDeathTest, UpdateWithInvalidFieldNameTriggersTermination)
 }
 
 // Helper skeleton that holds an EnableSet=true field (setter-capable field)
-
 class MySetterSkeleton : public SkeletonBase
 {
   public:
@@ -832,8 +831,6 @@ class MySetterSkeleton : public SkeletonBase
 
     SkeletonField<TestSampleType, /*EnableSet=*/true> my_setter_field_{*this, kFieldName};
 };
-
-// Static type-trait tests for RegisterSetHandler availability
 
 TEST(SkeletonFieldSetHandlerTypeTraitsTest, RegisterSetHandlerOnlyExistsWhenEnableSetIsTrue)
 {
@@ -853,8 +850,6 @@ TEST(SkeletonFieldSetHandlerTypeTraitsTest, RegisterSetHandlerOnlyExistsWhenEnab
     static_assert(!std::is_same_v<SkeletonField<TestSampleType, false>, SkeletonField<TestSampleType, true>>,
                   "EnableSet=false and EnableSet=true fields must be different types");
 }
-
-// RegisterSetHandler – happy-path: handler forwarded to method binding
 
 using SkeletonFieldSetHandlerTest = SkeletonFieldTestFixture;
 
@@ -881,8 +876,6 @@ TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerForwardsToMethodBinding)
     EXPECT_TRUE(result.has_value());
 }
 
-// RegisterSetHandler – failure propagation from the method binding
-
 TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerPropagatesBindingError)
 {
     RecordProperty("Description",
@@ -905,8 +898,6 @@ TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerPropagatesBindingError)
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), ComErrc::kCommunicationLinkError);
 }
-
-// PrepareOffer fails when EnableSet=true but no handler has been registered
 
 TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferFailsWhenSetHandlerNotRegistered)
 {
@@ -934,8 +925,6 @@ TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferFailsWhenSetHandlerNotRegistered
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), ComErrc::kSetHandlerNotSet);
 }
-
-// PrepareOffer succeeds when EnableSet=true and handler IS registered
 
 TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsAfterRegisterSetHandler)
 {
@@ -970,8 +959,6 @@ TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsAfterRegisterSetHandler)
     EXPECT_TRUE(result.has_value());
 }
 
-// EnableSet=false: PrepareOffer does NOT require a registered set handler
-
 TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenEnableSetIsFalse)
 {
     RecordProperty("Description",
@@ -995,8 +982,6 @@ TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenEnable
     const auto result = unit.my_dummy_field_.PrepareOffer();
     EXPECT_TRUE(result.has_value());
 }
-
-// RegisterSetHandler accepts any callable with the expected signature
 
 TEST(SkeletonFieldSetHandlerTypeTraitsTest, RegisterSetHandlerAcceptsAnyCallable)
 {
@@ -1095,7 +1080,6 @@ TEST_F(SkeletonFieldSetHandlerTest, UserCallbackIsInvokedByWrappedHandler)
     EXPECT_TRUE(user_callback_called);
 }
 
-// Handler wrapping: user callback may modify the value in-place
 TEST_F(SkeletonFieldSetHandlerTest, UserCallbackCanModifyValueInPlace)
 {
     RecordProperty("Description",
@@ -1149,7 +1133,6 @@ TEST_F(SkeletonFieldSetHandlerTest, UserCallbackCanModifyValueInPlace)
     capturing_binding_ref.captured_handler_(in_span, out_span);
 }
 
-// Handler wrapping: Update() failure inside the wrapped handler is logged, not propagated
 TEST_F(SkeletonFieldSetHandlerTest, WrappedHandlerLogsWhenUpdateFails)
 {
     RecordProperty("Description",
@@ -1206,7 +1189,6 @@ TEST_F(SkeletonFieldSetHandlerTest, WrappedHandlerLogsWhenUpdateFails)
     EXPECT_TRUE(user_callback_called);
 }
 
-// RegisterSetHandler sets is_set_handler_registered_ flag
 TEST_F(SkeletonFieldSetHandlerTest, IsSetHandlerRegisteredFlagIsSetAfterRegistration)
 {
     RecordProperty("Description",
@@ -1241,7 +1223,6 @@ TEST_F(SkeletonFieldSetHandlerTest, IsSetHandlerRegisteredFlagIsSetAfterRegistra
     EXPECT_TRUE(result.has_value());
 }
 
-// RegisterSetHandler called twice: second call replaces the handler
 TEST_F(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
 {
     RecordProperty("Description",
