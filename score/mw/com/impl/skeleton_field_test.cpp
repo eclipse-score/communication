@@ -961,25 +961,30 @@ TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenWithSe
     EXPECT_TRUE(result.has_value());
 }
 
-TEST(SkeletonFieldSetHandlerTypeTraitsTest, RegisterSetHandlerAcceptsAnyCallable)
+TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerAcceptsStdFunction)
 {
-    RecordProperty("Description",
-                   "RegisterSetHandler() shall accept any callable (lambda, std::function, "
-                   "score::cpp::callback) with signature void(FieldType&). "
-                   "The public interface is not tied to a specific callable type.");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("Priority", "1");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
+    // Given a skeleton containing a field with a setter enabled
+    MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
-    using HandlerSignature = void(TestSampleType&);
+    // When registering a set handler using std::function
+    std::function<void(TestSampleType&)> std_function_handler = [](TestSampleType& /*value*/) noexcept {};
+    const auto result = unit.my_setter_field_.RegisterSetHandler(std_function_handler).has_value();
 
-    // lambda
-    static_assert(std::is_invocable_v<std::function<HandlerSignature>, TestSampleType&>,
-                  "std::function with expected signature must be invocable");
+    // Then the registration succeeds
+    EXPECT_TRUE(result);
+}
 
-    // score::cpp::callback
-    static_assert(std::is_invocable_v<score::cpp::callback<HandlerSignature>, TestSampleType&>,
-                  "score::cpp::callback with expected signature must be invocable");
+TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerAcceptsCppCallback)
+{
+    // Given a skeleton containing a field with a setter enabled
+    MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // When registering a set handler using score::cpp::callback
+    score::cpp::callback<void(TestSampleType&)> cpp_callback_handler = [](TestSampleType& /*value*/) noexcept {};
+    const auto result = unit.my_setter_field_.RegisterSetHandler(std::move(cpp_callback_handler)).has_value();
+
+    // Then the registration succeeds
+    EXPECT_TRUE(result);
 }
 
 // Handler wrapping: user callback is invoked and the field value is updated
