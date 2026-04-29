@@ -28,11 +28,7 @@ class TestInterface : public T::Base
   public:
     using T::Base::Base;
 
-    typename T::template Field<std::int32_t,
-                               score::mw::com::WithGetter,
-                               score::mw::com::WithSetter,
-                               score::mw::com::WithNotifier>
-        test_field{*this, "test_field"};
+    typename T::template Field<std::int32_t, score::mw::com::WithNotifier> test_field{*this, "test_field"};
 };
 
 }  // namespace score::mw::com::test

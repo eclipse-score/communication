@@ -45,15 +45,27 @@ class ProxyEventFieldMockFixture : public ::testing::Test
     using ProxyEventFieldMock = typename T::ProxyEventFieldMock;
 
     ProxyEventFieldMockFixture()
+        : unit_{[this] {
+              if constexpr (detail::is_proxy_field_v<ProxyEventField>)
+              {
+                  return ProxyEventField{proxy_base_,
+                                         kDummyEventFieldName,
+                                         detail::WithTestTag{},
+                                         std::unique_ptr<ProxyEventBinding<TestSampleType>>{nullptr}};
+              }
+              else
+              {
+                  return ProxyEventField{
+                      proxy_base_, kDummyEventFieldName, std::unique_ptr<ProxyEventBinding<TestSampleType>>{nullptr}};
+              }
+          }()}
     {
         unit_.InjectMock(proxy_service_element_mock_);
     }
 
     ProxyEventFieldMock proxy_service_element_mock_{};
     ProxyBase proxy_base_{nullptr, MakeFakeHandle(1U)};
-    ProxyEventField unit_{proxy_base_,
-                          kDummyEventFieldName,
-                          std::unique_ptr<ProxyEventBinding<TestSampleType>>{nullptr}};
+    ProxyEventField unit_;
 };
 
 struct ProxyEventStruct

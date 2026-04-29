@@ -43,6 +43,25 @@ namespace score::mw::com::impl
 template <typename FieldType, typename... Tags>
 class ProxyFieldAttorney;
 
+template <typename SampleDataType, typename... Tags>
+class ProxyField;
+
+namespace detail
+{
+
+template <typename T>
+struct is_proxy_field : std::false_type
+{
+};
+template <typename FieldType, typename... Tags>
+struct is_proxy_field<ProxyField<FieldType, Tags...>> : std::true_type
+{
+};
+template <typename T>
+constexpr bool is_proxy_field_v = is_proxy_field<T>::value;
+
+}  // namespace detail
+
 /// \brief This is the user-visible class of a field that is part of a proxy. It delegates all functionality to
 /// ProxyEvent.
 ///
@@ -67,11 +86,11 @@ class ProxyField final : public ProxyFieldBase
   public:
     using FieldType = SampleDataType;
 
-    /// Testing ctor: bindings are passed in directly (used with mock bindings). The event binding is required
-    /// (no default) to disambiguate this overload from the production ctors when called as `{proxy, field_name}`.
-    /// Method bindings default to nullptr; passing nullptr means the corresponding ProxyMethod is not built.
+    /// Testing ctor: bindings are passed in directly (used with mock bindings). Disambiguated from the production
+    /// ctors via the detail::WithTestTag marker, required as the 3rd argument. Bindings default to nullptr;
     ProxyField(ProxyBase& proxy_base,
                const std::string_view field_name,
+               detail::WithTestTag,
                std::unique_ptr<ProxyEventBinding<FieldType>> event_binding = nullptr,
                std::unique_ptr<ProxyMethodBinding> get_method_binding = nullptr,
                std::unique_ptr<ProxyMethodBinding> set_method_binding = nullptr)

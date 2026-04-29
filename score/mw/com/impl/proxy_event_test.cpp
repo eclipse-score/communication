@@ -106,7 +106,17 @@ class ProxyEventFixture : public ::testing::Test
                        make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment))},
           mock_proxy_event_ptr_{std::make_unique<MockProxyEventType>()},
           mock_proxy_event_{*mock_proxy_event_ptr_},
-          proxy_event_{empty_proxy_, kEventName, std::move(mock_proxy_event_ptr_)}
+          proxy_event_{[this] {
+              if constexpr (detail::is_proxy_field_v<ProxyEventType>)
+              {
+                  return ProxyEventType{
+                      empty_proxy_, kEventName, detail::WithTestTag{}, std::move(mock_proxy_event_ptr_)};
+              }
+              else
+              {
+                  return ProxyEventType{empty_proxy_, kEventName, std::move(mock_proxy_event_ptr_)};
+              }
+          }()}
     {
     }
 
