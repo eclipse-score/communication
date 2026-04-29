@@ -118,18 +118,18 @@ class SkeletonField : public SkeletonFieldBase
     //
     // \tparam CallableType Any callable (std::function, score::cpp::callback, lambda, ...) with the signature:
     //         void(FieldType& new_value)
-    //   - new_value : the value requested by the proxy.
+    //   - new_value : the value requested by the proxy. This value will be modified in place by the registered handler
+    //   and the new value will be used to update the field.
     template <bool ES = EnableSet, typename std::enable_if<ES, int>::type = 0, typename CallableType>
-    Result<void> RegisterSetHandler(CallableType&& handler)
+    Result<void> RegisterSetHandler(CallableType&& set_handler)
     {
         static_assert(std::is_invocable_v<CallableType, FieldType&>,
                       "RegisterSetHandler: handler must be callable as void(FieldType& value). "
                       "The argument initially holds the proxy-requested value and may be modified in-place.");
-        set_handler_ = std::move(handler);
 
-        auto wrapped_callback = [this](FieldType& new_value) -> FieldType {
+        auto wrapped_callback = [this, set_handler = std::move(set_handler)](FieldType& new_value) -> FieldType {
             // Allow user to validate/modify the value in-place
-            set_handler_(new_value);
+            set_handler(new_value);
 
             // Store the (possibly modified) value as the latest field value
             auto update_result = this->Update(new_value);
@@ -167,15 +167,6 @@ class SkeletonField : public SkeletonFieldBase
     using SetMethodType =
         std::conditional_t<EnableSet, std::unique_ptr<SkeletonMethod<SetMethodSignature>>, detail::EnableSetOnlyTag>;
     SetMethodType set_method_;
-
-    // Stores the user-provided set handler. Kept as a member so that the wrapped
-    // callback can invoke it via this->set_handler_. The concrete storage type is
-    // score::cpp::callback with the expected signature so that any callable provided
-    // to RegisterSetHandler is type-erased here.
-    // Zero-cost when EnableSet=false.
-    using SetHandlerStorageType =
-        std::conditional_t<EnableSet, score::cpp::callback<void(FieldType&)>, detail::EnableSetOnlyTag>;
-    SetHandlerStorageType set_handler_{};
 
     // Tracks whether RegisterSetHandler() has been called. Zero-cost when EnableSet=false.
     using IsSetHandlerRegisteredType = std::conditional_t<EnableSet, bool, detail::EnableSetOnlyTag>;
@@ -311,7 +302,6 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(Skeleton
       initial_field_value_{std::move(other.initial_field_value_)},
       skeleton_field_mock_{other.skeleton_field_mock_},
       set_method_{std::move(other.set_method_)},
-      set_handler_{std::move(other.set_handler_)},
       is_set_handler_registered_{std::move(other.is_set_handler_registered_)},
       get_method_{std::move(other.get_method_)}
 {
@@ -330,7 +320,6 @@ auto SkeletonField<SampleDataType, EnableSet, EnableNotifier>::operator=(Skeleto
         initial_field_value_ = std::move(other.initial_field_value_);
         skeleton_field_mock_ = std::move(other.skeleton_field_mock_);
         set_method_ = std::move(other.set_method_);
-        set_handler_ = std::move(other.set_handler_);
         is_set_handler_registered_ = std::move(other.is_set_handler_registered_);
         get_method_ = std::move(other.get_method_);
         SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
