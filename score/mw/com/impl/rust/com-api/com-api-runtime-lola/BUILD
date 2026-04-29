@@ -50,5 +50,5 @@ miri_test(
     name = "com-api-runtime-lola-tests_miri",
     crate = ":com-api-runtime-lola-tests",
     tags = ["manual"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__pkg__"],
 )

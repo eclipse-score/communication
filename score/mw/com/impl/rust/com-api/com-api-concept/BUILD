@@ -67,12 +67,12 @@ miri_test(
     name = "com-api-concept-test_miri",
     crate = ":com-api-concept-test",
     tags = ["manual"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__pkg__"],
 )
 
 miri_test(
     name = "com-api-concept-macros-unit-tests_miri",
     crate = ":com-api-concept-macros-unit-tests",
     tags = ["manual"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__pkg__"],
 )
