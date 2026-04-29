@@ -26,18 +26,19 @@ use bridge_ffi_rs::{
 };
 use std::cell::RefCell;
 
-// Per-test thread-local backing storage for the allocate-and-send mock path.
-//
-// `DATA_BACKING` holds a type-erased pointer to a heap-allocated `MaybeUninit<T>` buffer
-// paired with a drop-glue function so `clear_alloc_backing` can free it without knowing `T`.
-//
-// `ALLOC_SIZE` holds `size_of::<SampleAllocateePtr<T>>()` so `get_allocatee_ptr` can
-// zero-fill the caller's `MaybeUninit` slot — zeroed = Blank variant (_index = 0),
-// which makes `assume_init()` defined behaviour.
+// Type alias for the heap-pointer + drop-glue pair stored in backing thread-locals.
+type BackingEntry = (*mut std::ffi::c_void, fn(*mut std::ffi::c_void));
+
+// The thread-local storage is used to hold the backing data for the mock FFI bridge.
 thread_local! {
-    static DATA_BACKING: RefCell<Option<(*mut std::ffi::c_void, fn(*mut std::ffi::c_void))>> =
-        RefCell::new(None);
-    static ALLOC_SIZE: RefCell<usize> = RefCell::new(0);
+    //DATA_BACKING holds a pointer to the heap-allocated backing data and a drop function to free it.
+    //We are using this when user calls get_allocatee_data_ptr to return a pointer to this backing data.
+    static DATA_BACKING: RefCell<Option<BackingEntry>> = RefCell::new(None);
+    //ALLOC_SIZE holds the size of the allocatee type for the next get_allocatee_ptr call, allowing
+    //the mock to zero-fill the caller's slot correctly.
+    static ALLOC_SIZE: RefCell<usize> = const { RefCell::new(0) };
+    //SAMPLE_BACKING holds a pointer to the heap-allocated sample data and a drop function to free it.
+    static SAMPLE_BACKING: RefCell<Option<BackingEntry>> = RefCell::new(None);
 }
 
 #[derive(Debug, Clone)]
@@ -90,13 +91,24 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
     }
 
     unsafe fn sample_ptr_get(
-        sample_ptr: *const std::ffi::c_void,
+        _sample_ptr: *const std::ffi::c_void,
         _type_name: &str,
     ) -> *const std::ffi::c_void {
-        sample_ptr
+        SAMPLE_BACKING.with(|s| {
+            s.borrow()
+                .as_ref()
+                .map(|(ptr, _)| *ptr as *const std::ffi::c_void)
+                .unwrap_or(std::ptr::null())
+        })
     }
 
-    unsafe fn sample_ptr_delete(_sample_ptr: *mut std::ffi::c_void, _type_name: &str) {}
+    unsafe fn sample_ptr_delete(_sample_ptr: *mut std::ffi::c_void, _type_name: &str) {
+        SAMPLE_BACKING.with(|s| {
+            if let Some((ptr, drop_fn)) = s.borrow_mut().take() {
+                drop_fn(ptr);
+            }
+        });
+    }
 
     unsafe fn skeleton_offer_service(skeleton_ptr: *mut SkeletonBase) -> bool {
         !skeleton_ptr.is_null()
@@ -259,5 +271,25 @@ impl MockFFIBridge {
             }
         });
         ALLOC_SIZE.with(|s| *s.borrow_mut() = std::mem::size_of::<SampleAllocateePtr<T>>());
+    }
+
+    // Registers `data` as the backing value for the next `sample_ptr_get` /
+    // `sample_ptr_delete` cycle.
+    //
+    // Heap-allocates `data` and stores a typed drop-glue so `sample_ptr_delete`
+    // can free it without knowing `T`. `sample_ptr_get` returns the pointer to
+    // the heap `T`, making `get_data()` return a valid `&T`.
+    pub fn set_sample_backing<T: 'static>(data: T) {
+        let ptr = Box::into_raw(Box::new(data)) as *mut std::ffi::c_void;
+        let drop_fn: fn(*mut std::ffi::c_void) = |p| {
+            // SAFETY: p was allocated as Box<T> by set_sample_backing::<T>.
+            drop(unsafe { Box::from_raw(p as *mut T) });
+        };
+        // Replace any previous backing (prevents leaks on repeated calls).
+        SAMPLE_BACKING.with(|s| {
+            if let Some((old_ptr, old_drop)) = s.borrow_mut().replace((ptr, drop_fn)) {
+                old_drop(old_ptr);
+            }
+        });
     }
 }

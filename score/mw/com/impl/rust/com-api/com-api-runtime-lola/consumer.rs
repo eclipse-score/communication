@@ -1210,8 +1210,7 @@ mod test {
     }
     #[test]
     fn test_sample() {
-        // SamplePtr is an opaque FFI type; use zeroed() to construct storage.
-        // MockFFIBridge::sample_ptr_delete is a no-op so this is safe.
+        MockFFIBridge::set_sample_backing::<TestData>(TestData { value: 42 });
         let sample = Sample::<TestData, MockFFIBridge> {
             id: 1,
             inner: LolaBinding::<TestData, MockFFIBridge> {
@@ -1222,7 +1221,7 @@ mod test {
             },
         };
         assert_eq!(sample.id, 1);
-        let _data = sample.get_data();
+        assert_eq!(sample.get_data().value, 42);
     }
 
     #[test]
@@ -1254,6 +1253,6 @@ mod test {
         let mut sample_container = SampleContainer::new(5);
         let _ = subscriber.try_receive(&mut sample_container, 5);
         let _ = subscriber.init_async_receive(&mut subscriber.event.get_proxy_event());
-        let _ = subscriber.receive(sample_container, 5, 5);
+        std::mem::drop(subscriber.receive(sample_container, 5, 5));
     }
 }

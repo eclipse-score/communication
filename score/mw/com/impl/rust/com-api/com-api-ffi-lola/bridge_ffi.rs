@@ -86,6 +86,8 @@ pub use mw_com::InstanceSpecifier;
 /// FFIBridge trait defines the interface for FFI interactions between Rust COM-API and C++ Lola runtime.
 /// This trait abstracts the FFI calls and allows for different implementations
 /// e.g., Lola bridge, mock bridge for testing.
+/// All this trait bound required because runtime types which use this bridge has these bounds,
+/// an because of that this bridge also need to be bound by these traits to be used in runtime implementation.
 pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// # Safety
     /// `event_ptr` must be a valid, non-null pointer to a `SkeletonEventBase` obtained from
