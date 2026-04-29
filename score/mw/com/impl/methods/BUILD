@@ -29,6 +29,17 @@ cc_library(
 )
 
 cc_library(
+    name = "method_handler_checker",
+    srcs = ["method_handler_checker.cpp"],
+    hdrs = ["method_handler_checker.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+)
+
+cc_library(
     name = "proxy_method_base",
     srcs = ["proxy_method_base.cpp"],
     hdrs = ["proxy_method_base.h"],
@@ -108,6 +119,15 @@ cc_gtest_unit_test(
     srcs = ["method_signature_element_ptr_test.cpp"],
     deps = [
         ":method_signature_element_ptr",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "method_handler_checker_test",
+    srcs = ["method_handler_checker_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":method_handler_checker",
     ],
 )
 
@@ -210,6 +230,7 @@ cc_gtest_unit_test(
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
+        ":method_handler_checker_test",
         ":method_signature_element_ptr_test",
         ":proxy_method_test",
         "skeleton_method_base_test",
