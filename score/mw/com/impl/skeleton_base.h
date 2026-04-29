@@ -33,6 +33,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string_view>
 
 namespace score::mw::com::impl
@@ -108,6 +109,10 @@ class SkeletonBase
 
     ISkeletonBase* skeleton_mock_;
 
+    /// Slot-count override consulted by the binding factory during field construction. Managed by
+    /// SlotCountOverrideGuard.
+    std::optional<std::uint16_t> current_slot_count_override_{std::nullopt};
+
     [[nodiscard]] score::Result<void> OfferServiceEvents() const noexcept;
     [[nodiscard]] score::Result<void> OfferServiceFields() const noexcept;
 
@@ -127,6 +132,15 @@ class SkeletonBaseView
     SkeletonBinding* GetBinding() const
     {
         return skeleton_base_.binding_.get();
+    }
+
+    void SetSlotCountOverride(std::optional<std::uint16_t> slot_count) noexcept
+    {
+        skeleton_base_.current_slot_count_override_ = slot_count;
+    }
+    std::optional<std::uint16_t> GetSlotCountOverride() const noexcept
+    {
+        return skeleton_base_.current_slot_count_override_;
     }
 
     void RegisterEvent(const std::string_view event_name, SkeletonEventBase& event)
@@ -217,7 +231,28 @@ class SkeletonBaseView
     SkeletonBase& skeleton_base_;
 };
 
-score::cpp::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpecifier& specifier);
+/// RAII based slot counter update.
+class SlotCountOverrideGuard
+{
+  public:
+    SlotCountOverrideGuard(SkeletonBase& parent, std::uint16_t slot_count) noexcept : parent_{parent}
+    {
+        SkeletonBaseView{parent_}.SetSlotCountOverride(slot_count);
+    }
+    ~SlotCountOverrideGuard() noexcept
+    {
+        SkeletonBaseView{parent_}.SetSlotCountOverride(std::nullopt);
+    }
+
+    SlotCountOverrideGuard(const SlotCountOverrideGuard&) = delete;
+    SlotCountOverrideGuard& operator=(const SlotCountOverrideGuard&) = delete;
+    SlotCountOverrideGuard(SlotCountOverrideGuard&&) = delete;
+    SlotCountOverrideGuard& operator=(SlotCountOverrideGuard&&) = delete;
+
+  private:
+    SkeletonBase& parent_;
+
+    score::cpp::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpecifier& specifier);
 
 }  // namespace score::mw::com::impl
 

@@ -46,9 +46,13 @@ namespace detail
 
 template <typename LolaServiceElementInstanceDeployment>
 lola::SkeletonEventProperties GetSkeletonEventProperties(
-    const LolaServiceElementInstanceDeployment& lola_service_element_instance_deployment)
+    const LolaServiceElementInstanceDeployment& lola_service_element_instance_deployment,
+    std::optional<std::uint16_t> slot_count_override = std::nullopt)
 {
-    if (!lola_service_element_instance_deployment.GetNumberOfSampleSlots().has_value())
+    const auto effective_slot_count = slot_count_override.has_value()
+                                          ? slot_count_override
+                                          : lola_service_element_instance_deployment.GetNumberOfSampleSlots();
+    if (!effective_slot_count.has_value())
     {
         score::mw::log::LogFatal("lola")
             << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Number of sample slots "
@@ -63,7 +67,7 @@ lola::SkeletonEventProperties GetSkeletonEventProperties(
                "not specified in the configuration. Terminating.";
         std::terminate();
     }
-    return lola::SkeletonEventProperties{lola_service_element_instance_deployment.GetNumberOfSampleSlots().value(),
+    return lola::SkeletonEventProperties{effective_slot_count.value(),
                                          lola_service_element_instance_deployment.max_subscribers_.value(),
                                          lola_service_element_instance_deployment.enforce_max_samples_};
 }
@@ -107,8 +111,15 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
             const std::string service_element_name_str{service_element_name};
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_str);
+
+            // Only fields use the slot-count override (set by SkeletonField when WithNotifier is disabled).
+            std::optional<std::uint16_t> slot_count_override{std::nullopt};
+            if constexpr (element_type == ServiceElementType::FIELD)
+            {
+                slot_count_override = SkeletonBaseView{parent}.GetSlotCountOverride();
+            }
             const auto skeleton_event_properties =
-                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
+                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment, slot_count_override);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_str);
