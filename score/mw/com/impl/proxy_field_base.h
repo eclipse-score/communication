@@ -30,10 +30,10 @@ namespace score::mw::com::impl
 class ProxyFieldBase
 {
   public:
+    /// \param proxy_event_base_dispatch May be nullptr when the field has no notifier tag.
     ProxyFieldBase(ProxyBase& proxy_base, std::string_view field_name, ProxyEventBase* proxy_event_base_dispatch)
         : proxy_base_{proxy_base}, proxy_event_base_dispatch_{proxy_event_base_dispatch}, field_name_{field_name}
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_event_base_dispatch != nullptr);
     }
 
     /// \brief A ProxyFieldBase shall not be copyable

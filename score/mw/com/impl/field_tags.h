@@ -49,6 +49,12 @@ struct is_tag_enabled : std::conjunction<contains_type<TargetTag, Tags...>, std:
 {
 };
 
+/// \brief Marker used as a disambiguator on test-only ctors to keep them distinct from production overloads.
+/// Lives in detail to signal "not part of the public API"; tests reach into the detail namespace knowingly.
+struct WithTestTag
+{
+};
+
 }  // namespace detail
 
 }  // namespace score::mw::com::impl
