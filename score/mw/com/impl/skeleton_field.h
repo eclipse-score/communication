@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_SKELETON_FIELD_H
 
 #include "score/mw/com/impl/method_type.h"
+#include "score/mw/com/impl/methods/method_traits_checker.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
@@ -121,30 +122,50 @@ class SkeletonField : public SkeletonFieldBase
     //   - new_value : the value requested by the proxy. This value will be modified in place by the registered handler
     //   and the new value will be used to update the field.
     template <bool ES = EnableSet, std::enable_if_t<ES, int> = 0, typename CallableType>
-    Result<void> RegisterSetHandler(CallableType&& set_handler)
+    Result<void> RegisterSetHandler(CallableType&& user_set_handler)
     {
-        static_assert(std::is_invocable_v<CallableType, FieldType&>,
-                      "RegisterSetHandler: handler must be callable as void(FieldType& value). "
-                      "The argument initially holds the proxy-requested value and may be modified in-place.");
+        using ActualCallableReturnType = typename get_callable_return_type<CallableType>::type;
+        using ExpectedCallableReturnType = void;
+        static_assert(std::is_same_v<ExpectedCallableReturnType, ActualCallableReturnType>,
+                      "Registered method callable must have void return type!");
 
-        auto wrapped_callback =
-            [this, set_handler = std::forward<CallableType>(set_handler)](FieldType& new_value) -> FieldType {
+        using ActualCallableInArgType = typename get_callable_args_types<CallableType>::type;
+        using ExpectedCallableInArgTypes = std::tuple<FieldType&>;
+        static_assert(std::is_same_v<ExpectedCallableInArgTypes, ActualCallableInArgType>,
+                      "Registered method callable must have a single non-const reference argument of type FieldType&!");
+
+        // Since set_handler can be an lvalue reference or an rvalue reference, we ideally would store it as a
+        // universal reference in the type_erased_handler. However, in C++17, this is not supported. Instead, we create
+        // an callable here which will be called below by another lambda which explicitly stores the callback as either
+        // an lvalue reference or an rvalue reference depending on how it was passed in.
+        static auto stateless_wrapped_set_handler = [](CallableType& actual_user_set_handler,
+                                                       SkeletonField& skeleton_field,
+                                                       FieldType& final_value,
+                                                       const FieldType& desired_value) {
+            // Copy desired_value (which is a method InArg) into final_value (which is the method return value).
+            // final_value can then be modified in place by set_handler.
+            final_value = desired_value;
+
             // Allow user to validate/modify the value in-place
-            set_handler(new_value);
+            std::invoke(actual_user_set_handler, final_value);
 
-            // Store the (possibly modified) value as the latest field value
-            auto update_result = this->Update(new_value);
+            // Copy the (possibly modified) value into the latest field value
+            auto update_result = skeleton_field.Update(final_value);
             if (!update_result.has_value())
             {
                 score::mw::log::LogError("lola") << "Set handler: failed to update field value.";
             }
-
-            // Return the accepted value to the proxy
-            return new_value;
         };
 
         is_set_handler_registered_ = true;
-        return set_method_->RegisterHandler(std::move(wrapped_callback));
+
+        auto state = std::make_unique<std::pair<SkeletonField*, CallableType>>(
+            this, std::forward<CallableType>(user_set_handler));
+
+        auto set_handler = [state = std::move(state)](FieldType& final_value, const FieldType& desired_value) mutable {
+            return stateless_wrapped_set_handler(state->second, *(state->first), final_value, desired_value);
+        };
+        return set_method_->RegisterHandler(std::move(set_handler));
     }
 
     /// \brief Updates the reference to SkeletonBase held by this SkeletonField and also the owned methods.
