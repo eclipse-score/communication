@@ -64,7 +64,9 @@ pub struct LolaConsumerInfo<B: FFIBridge> {
 impl<B: FFIBridge> LolaConsumerInfo<B> {
     /// Get a reference to the handle, guaranteed valid as long as this struct exists
     pub fn get_handle(&self) -> Option<&HandleType> {
-        self.handle_container.get(self.handle_index)
+        // SAFETY: handle_container was produced by the bridge or a trusted mock;
+        // both implementations uphold the contract of handle_container_get_at.
+        unsafe { B::handle_container_get_at(&self.handle_container, self.handle_index) }
     }
 }
 
@@ -201,7 +203,7 @@ impl<B: FFIBridge> std::fmt::Debug for ProxyInstanceManager<B> {
 /// it must not expose any mutable access to the proxy instance
 /// Or must not provide any method to access the proxy instance directly
 pub struct NativeProxyBase<B: FFIBridge> {
-   proxy: NonNull<ProxyBase>, // Stores the proxy instance
+    proxy: NonNull<ProxyBase>, // Stores the proxy instance
     _marker: PhantomData<B>,
 }
 
@@ -237,7 +239,10 @@ impl<B: FFIBridge> NativeProxyBase<B> {
         let proxy = std::ptr::NonNull::new(raw_proxy_ptr).ok_or(Error::ConsumerError(
             ConsumerFailedReason::ProxyCreationFailed,
         ))?;
-        Ok(Self { proxy, _marker: PhantomData })
+        Ok(Self {
+            proxy,
+            _marker: PhantomData,
+        })
     }
 }
 
@@ -259,7 +264,11 @@ pub struct NativeProxyEventBase {
 unsafe impl Send for NativeProxyEventBase {}
 
 impl NativeProxyEventBase {
-    pub fn new<B: FFIBridge>(proxy: &NonNull<ProxyBase>, interface_id: &str, identifier: &str) -> Result<Self> {
+    pub fn new<B: FFIBridge>(
+        proxy: &NonNull<ProxyBase>,
+        interface_id: &str,
+        identifier: &str,
+    ) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid proxy pointer and interface id to get event
         // proxy pointer is created during consumer creation
         let raw_event_ptr =

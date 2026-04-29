@@ -243,6 +243,20 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// `handle` must be a valid pointer returned from `start_find_service` that has not
     /// been stopped yet. The handle must not be used after this call.
     unsafe fn stop_find_service(handle: *mut FindServiceHandle);
+
+    /// # Safety
+    /// `container` must be a valid reference to a `HandleContainer` that was produced by the
+    /// bridge (e.g. from `start_find_service` callback). Calling this on a sentinel mock pointer
+    /// is only safe when the mock implementation ignores the inner pointer.
+    unsafe fn handle_container_size(container: &HandleContainer) -> usize;
+
+    /// # Safety
+    /// Same as `handle_container_size`. `index` need not be in-bounds; the method must return
+    /// `None` when `index >= handle_container_size(container)`.
+    unsafe fn handle_container_get_at(
+        container: &HandleContainer,
+        index: usize,
+    ) -> Option<&HandleType>;
 }
 
 /// Opaque proxy base struct

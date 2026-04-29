@@ -767,4 +767,35 @@ impl FFIBridge for LolaFFIBridge {
         // The C++ implementation handles stopping the find service safely.
         mw_com_stop_find_service(handle);
     }
+
+    /// Get the number of service handles in the container
+    ///
+    /// # Arguments
+    /// * `container` - HandleContainer wrapping the native service handle container
+    /// # Returns
+    /// The number of service handles in the container
+    ///
+    /// # Safety
+    /// `container` must wrap a valid C++ `ServiceHandleContainer` pointer.
+    unsafe fn handle_container_size(container: &HandleContainer) -> usize {
+        container.len()
+    }
+    /// Get a reference to the service handle at the specified index in the container
+    ///
+    /// # Arguments
+    /// * `container` - HandleContainer wrapping the native service handle container
+    /// * `index` - Index of the service handle to retrieve
+    ///
+    /// # Returns
+    /// Some reference to the service handle at the specified index,
+    /// or None if the index is out of bounds
+    ///
+    /// # Safety
+    /// `container` must wrap a valid C++ `ServiceHandleContainer` pointer.
+    unsafe fn handle_container_get_at(
+        container: &HandleContainer,
+        index: usize,
+    ) -> Option<&HandleType> {
+        container.get(index)
+    }
 }
