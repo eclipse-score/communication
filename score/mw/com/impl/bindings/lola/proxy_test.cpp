@@ -315,7 +315,7 @@ TEST_F(ProxyCreationDeathTest, GettingEventDataControlWithoutInitialisedEventDat
     // Then trying to get the event data control for an event that was not registered in the ServiceDataStorage
     // Will terminate
     const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
-    EXPECT_DEATH(proxy_->GetEventControlLocal(uninitialised_element_fq_id), ".*");
+    EXPECT_DEATH(proxy_->GetConsumerEventDataControlLocalView(uninitialised_element_fq_id), ".*");
 }
 
 TEST_F(ProxyCreationFixture, ProxyCreationOpensSharedMemoryWithEmptyProvidersWhenStrictAndNoAllowedProviderConfigured)

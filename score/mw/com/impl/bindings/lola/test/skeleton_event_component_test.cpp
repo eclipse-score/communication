@@ -10,7 +10,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/consumer_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
@@ -176,11 +175,11 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         const auto search = control_storage->event_controls_.find(fake_element_fq_id_);
         EXPECT_TRUE(search != control_storage->event_controls_.cend());
         auto& event_control = search->second;
-        ConsumerEventControlLocalView consumer_event_control_local{event_control};
 
         for (SlotIndexType i = 0U; i < MaxSamples; i++)
         {
-            if (consumer_event_control_local.data_control[i].IsInvalid())
+            ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_control.data_control};
+            if (consumer_event_data_control_local[i].IsInvalid())
             {
                 result++;
             }

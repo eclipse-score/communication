@@ -42,6 +42,13 @@ class ServiceDataControl
     {
     }
 
+    ~ServiceDataControl() noexcept = default;
+
+    ServiceDataControl(const ServiceDataControl&) = delete;
+    ServiceDataControl& operator=(const ServiceDataControl&) = delete;
+    ServiceDataControl(ServiceDataControl&&) noexcept = delete;
+    ServiceDataControl& operator=(ServiceDataControl&& other) noexcept = delete;
+
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.

@@ -29,11 +29,15 @@ ProxyEventCommon::ProxyEventCommon(Proxy& parent, const ElementFqId element_fq_i
       // The transaction log is identified by the application's unique identifier.
       transaction_log_id_{
           static_cast<TransactionLogId>(GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId())},
-      event_control_local_{parent_.GetEventControlLocal(event_fq_id_)},
+      event_data_control_local_{parent_.GetConsumerEventDataControlLocalView(event_fq_id_)},
+      subscription_control_{parent_.GetEventSubscriptionControl(event_fq_id_)},
+      transaction_log_set_{parent_.GetTransactionLogSet(event_fq_id_)},
       subscription_event_state_machine_{parent_.GetQualityType(),
                                         event_fq_id_,
                                         GetEventSourcePid(),
-                                        event_control_local_,
+                                        event_data_control_local_,
+                                        subscription_control_.get(),
+                                        transaction_log_set_.get(),
                                         transaction_log_id_}
 {
 }

@@ -182,15 +182,15 @@ inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamplesImpl(Callback&& 
     const auto max_sample_count = tracker.GetNumAvailableGuards();
     const auto slot_indices = proxy_event_common_.GetNewSamplesSlotIndices(max_sample_count);
 
-    auto& event_control = proxy_event_common_.GetEventControl();
+    auto& event_data_control_local = proxy_event_common_.GetConsumerEventDataControlLocal();
 
     for (auto slot_index_it = slot_indices.begin; slot_index_it != slot_indices.end; ++slot_index_it)
     {
         const SampleType& sample_data{samples_.at(static_cast<std::size_t>(*slot_index_it))};
-        const EventSlotStatus event_slot_status{event_control.data_control[*slot_index_it]};
+        const EventSlotStatus event_slot_status{event_data_control_local[*slot_index_it]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
-        SamplePtr<SampleType> sample{&sample_data, event_control.data_control, *slot_index_it};
+        SamplePtr<SampleType> sample{&sample_data, event_data_control_local, *slot_index_it};
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));

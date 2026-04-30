@@ -127,14 +127,14 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
 
     const auto slot_indices = proxy_event_common_.GetNewSamplesSlotIndices(max_sample_count);
 
-    auto& event_control = proxy_event_common_.GetEventControl();
+    auto& event_data_control_local = proxy_event_common_.GetConsumerEventDataControlLocal();
 
     const std::size_t sample_size = meta_info_.data_type_info_.size;
     const std::size_t sample_alignment = meta_info_.data_type_info_.alignment;
     const std::size_t aligned_size =
         memory::shared::CalculateAlignedSize(sample_size, static_cast<std::size_t>(sample_alignment));
 
-    const std::size_t max_number_of_sample_slots = event_control.data_control.GetMaxSampleSlots();
+    const std::size_t max_number_of_sample_slots = event_data_control_local.GetMaxSampleSlots();
     const auto event_slots_raw_array_size = safe_math::Multiply(aligned_size, max_number_of_sample_slots);
 
     if (!event_slots_raw_array_size.has_value())
@@ -173,10 +173,10 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
         const auto* const object_start_address = &event_slots_array[aligned_size * slot_index];
         /* NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic) deviation ends here */
 
-        const EventSlotStatus event_slot_status{event_control.data_control[slot_index]};
+        const EventSlotStatus event_slot_status{event_data_control_local[slot_index]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
-        SamplePtr<void> sample{object_start_address, event_control.data_control, slot_index};
+        SamplePtr<void> sample{object_start_address, event_data_control_local, slot_index};
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));

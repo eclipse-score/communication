@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_ROLLBACK_EXECUTOR_H
 
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
-#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -30,7 +30,7 @@ class TransactionLogRollbackExecutor
     /// \param asil_level asil level of the proxy instance owning this executor.
     /// \param provider_pid pid/node-id of the service instance provider
     /// \param transaction_log_id id of transaction logs to be rolled back.
-    TransactionLogRollbackExecutor(ProxyServiceDataControlLocalView& service_data_control_local,
+    TransactionLogRollbackExecutor(ServiceDataControl& service_data_control,
                                    const SkeletonInstanceIdentifier skeleton_instance_identifier,
                                    const QualityType asil_level,
                                    const pid_t provider_pid,
@@ -57,7 +57,7 @@ class TransactionLogRollbackExecutor
     ///             "to-be-rolled-back".
     void PrepareRollback(lola::IRuntime& lola_runtime) noexcept;
 
-    ProxyServiceDataControlLocalView& service_data_control_local_;
+    ServiceDataControl& service_data_control_;
     /// asil level of the service_data_control_
     const QualityType asil_level_;
     /// pid of the provider of the service instance represented by service_data_control_

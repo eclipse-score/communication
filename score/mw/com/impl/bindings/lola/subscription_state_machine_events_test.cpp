@@ -41,10 +41,13 @@ class StateMachineEventsFixture : public LolaProxyEventResources
   protected:
     StateMachineEventsFixture()
         : LolaProxyEventResources(),
+          consumer_event_data_control_local_view_{proxy_->GetConsumerEventDataControlLocalView(element_fq_id_)},
           state_machine_{proxy_->GetQualityType(),
                          element_fq_id_,
                          kDummyPid,
-                         proxy_->GetEventControlLocal(element_fq_id_),
+                         consumer_event_data_control_local_view_,
+                         proxy_->GetEventSubscriptionControl(element_fq_id_),
+                         proxy_->GetTransactionLogSet(element_fq_id_),
                          kDummyTransactionLogId}
     {
     }
@@ -79,7 +82,7 @@ class StateMachineEventsFixture : public LolaProxyEventResources
     score::cpp::optional<std::reference_wrapper<TransactionLog>> GetTransactionLog(
         const TransactionLogId& transaction_log_id) noexcept
     {
-        auto& transaction_log_set = proxy_->GetEventControlLocal(element_fq_id_).transaction_log_set;
+        auto& transaction_log_set = proxy_->GetTransactionLogSet(element_fq_id_);
         auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();
         auto result =
             std::find_if(transaction_logs.begin(), transaction_logs.end(), [&transaction_log_id](const auto& element) {
@@ -111,15 +114,13 @@ class StateMachineEventsFixture : public LolaProxyEventResources
 
     void RegisterTransactionLog(const TransactionLogId& transaction_log_id) noexcept
     {
-        auto& event_control_local = proxy_->GetEventControlLocal(element_fq_id_);
-        ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view{event_control_local.data_control};
-        auto& transaction_log_set = proxy_->GetEventControlLocal(element_fq_id_).transaction_log_set;
+        auto& transaction_log_set = proxy_->GetTransactionLogSet(element_fq_id_);
         transaction_log_registration_guards_.push_back(
-            transaction_log_set.get()
-                .RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_view)
+            transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_view_)
                 .value());
     }
 
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_view_;
     SubscriptionStateMachine state_machine_;
     std::vector<TransactionLogRegistrationGuard> transaction_log_registration_guards_{};
     pid_t new_event_source_pid_{kDummyPid + 1};
