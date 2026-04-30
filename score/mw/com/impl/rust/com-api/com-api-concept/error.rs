@@ -75,6 +75,8 @@ pub enum ReceiveFailedReason {
     SampleCountOutOfBounds { max: usize, requested: usize },
     #[error("Receive operation was cancelled or timed out")]
     Cancelled,
+    #[error("Input value out of bounds, maximum sample {max}, but new sample is {requested}")]
+    InputValueOutOfBounds { max: usize, requested: usize },
 }
 
 /// Comprehensive error reasons for event-related failures

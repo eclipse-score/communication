@@ -30,7 +30,7 @@
 #![allow(clippy::needless_lifetimes)]
 
 use crate::Debug;
-use core::future::{self, Future};
+use core::future::Future;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
@@ -559,9 +559,20 @@ where
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-        timeout_future: impl Future<Output = ()> + Unpin + 'a,
+        timeout_future: impl Future<Output = ()> + Send + 'static,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
         async move {
+            if new_samples > max_samples {
+                return (
+                    scratch,
+                    Err(Error::ReceiveError(
+                        ReceiveFailedReason::InputValueOutOfBounds {
+                            max: max_samples,
+                            requested: new_samples,
+                        },
+                    )),
+                );
+            }
             if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
                 return (
                     scratch,
@@ -590,7 +601,7 @@ where
                 new_samples,
                 max_samples,
                 total_received: 0,
-                timeout_future,
+                timeout_future: core::pin::pin!(timeout_future),
             }
             .await
         }
