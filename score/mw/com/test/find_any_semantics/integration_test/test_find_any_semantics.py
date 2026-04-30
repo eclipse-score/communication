@@ -15,12 +15,12 @@
 
 
 def client(target, **kwargs):
-    args = ["-r", "20", "-b", "50"]
+    args = ["--num-retries", "20", "--backoff-time", "50"]
     return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True, **kwargs)
 
 
 def service(target, **kwargs):
-    args = ["-t", "250"]
+    args = ["--cycle-time", "250"]
     return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp", **kwargs)
 
 

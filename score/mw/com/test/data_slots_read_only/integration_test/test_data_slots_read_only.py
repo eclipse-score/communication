@@ -17,9 +17,9 @@
 def data_slots_read_only(target, mode, should_modify_data_segment, cycle_time=None, num_cycles=None, **kwargs):
     args = ["--mode", mode, "--should-modify-data-segment", "true" if should_modify_data_segment else "false"]
     if num_cycles is not None:
-        args += ["-n", str(num_cycles)]
+        args += ["--num-cycles", str(num_cycles)]
     if cycle_time is not None:
-        args += ["-t", str(cycle_time)]
+        args += ["--cycle-time", str(cycle_time)]
     wait_on_exit = num_cycles is not None
     return target.wrap_exec(
         "bin/data_slots_read_only", args, cwd="/opt/data_slots_read_only", wait_on_exit=wait_on_exit, **kwargs
