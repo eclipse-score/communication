@@ -146,6 +146,11 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
             })));
     }
 
+    void TearDown() override
+    {
+        proxy_.reset();
+    }
+
     ProxyMethodHandlingFixture& GivenAProxy()
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(configuration_store_ != nullptr);
@@ -420,8 +425,10 @@ TEST_F(ProxySetupMethodsPartialRestartFixture, RemovesStaleArtefactsIfShmFileAlr
     // which returns that it already exists (indicating that a previous Proxy was created which then crashed).
     EXPECT_CALL(filesystem_fake_.GetStandard(), Exists(StartsWith(kMethodShmChannelPrefix))).WillOnce(Return(true));
 
-    // Expecting that RemoveStaleArtefacts will be called with the same shm path
-    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, RemoveStaleArtefacts(StartsWith(kMethodChannelPrefix)));
+    // Expecting that RemoveStaleArtefacts will be called with the same shm path on setup (partial restart cleanup)
+    // and again on proxy destruction (TeardownMethods cleanup).
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, RemoveStaleArtefacts(StartsWith(kMethodChannelPrefix)))
+        .Times(2);
 
     // When calling SetupMethods with the name of the registered ProxyMethod
     score::cpp::ignore = proxy_->SetupMethods();
@@ -1049,6 +1056,160 @@ TEST_F(ProxyMethodHandlingFixture, EnablingMethodThatDoesNotContainQueueSizeInCo
     // When calling SetupMethods with a ProxyMethod name which corresponds to the
     // registered ProxyMethod Then the program terminates
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods());
+}
+
+using ProxyTeardownMethodsFixture = ProxyMethodHandlingFixture;
+
+TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoesNotCallUnsubscribeServiceMethod)
+{
+    // Given a proxy with registered methods but SetupMethods was never called
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that UnsubscribeServiceMethod is never called when methods were not set up
+    EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _)).Times(0);
+
+    // When the proxy is destroyed
+    proxy_.reset();
+}
+
+TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSetupMethodsCallsUnsubscribeServiceMethod)
+{
+    // Given a proxy that has set up methods
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that UnsubscribeServiceMethod is called exactly once on destruction
+    EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _)).Times(1);
+
+    score::cpp::ignore = proxy_->SetupMethods();
+
+    // When the proxy is destroyed
+    proxy_.reset();
+}
+
+TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyCallsUnsubscribeServiceMethodWithCorrectSkeletonIdentifierAndPid)
+{
+    // Given a proxy that has set up methods
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that UnsubscribeServiceMethod is called with the SkeletonInstanceIdentifier derived from the
+    // configuration (service_id = kLolaServiceId, instance_id = kLolaInstanceId) and the skeleton pid from shared
+    // memory (kDummyPid)
+    EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, kDummyPid))
+        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> ResultBlank {
+            EXPECT_EQ(skeleton_instance_identifier.service_id, kLolaServiceId);
+            EXPECT_EQ(skeleton_instance_identifier.instance_id, kLolaInstanceId);
+            return {};
+        })));
+
+    score::cpp::ignore = proxy_->SetupMethods();
+
+    // When the proxy is destroyed
+    proxy_.reset();
+}
+
+TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyCompletesNormallyEvenWhenUnsubscribeServiceMethodFails)
+{
+    // Given a proxy that has set up methods
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Given that UnsubscribeServiceMethod returns an error (e.g. skeleton already stopped offering)
+    EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kCommunicationLinkError)));
+
+    score::cpp::ignore = proxy_->SetupMethods();
+
+    // When the proxy is destroyed, TeardownMethods is best-effort and should not crash or throw
+    EXPECT_NO_FATAL_FAILURE(proxy_.reset());
+}
+
+TEST_F(ProxyTeardownMethodsFixture,
+       DestroyingProxyAfterSetupMethodsWithFailedSubscriptionDoesNotCallUnsubscribeServiceMethod)
+{
+    // Given a proxy that has set up methods but whose initial SubscribeServiceMethod failed (e.g. skeleton crashed
+    // during setup). The are_proxy_methods_setup_ flag is still set to true, but the ProxyMethods are not marked
+    // subscribed because the subscription call failed.
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that UnsubscribeServiceMethod is never called because the ProxyMethods are not subscribed
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kCommunicationLinkError)));
+    EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _)).Times(0);
+
+    score::cpp::ignore = proxy_->SetupMethods();
+
+    // When the proxy is destroyed
+    proxy_.reset();
+}
+
+TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSetupMethodsRemovesShmRegion)
+{
+    // Given a proxy that has successfully set up methods
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that a Remove call and a RemoveStaleArtefacts call are made for the method SHM region on destruction
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Remove(StartsWith(kMethodChannelPrefix))).Times(1);
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, RemoveStaleArtefacts(StartsWith(kMethodChannelPrefix)))
+        .Times(1);
+
+    score::cpp::ignore = proxy_->SetupMethods();
+
+    // When the proxy is destroyed
+    proxy_.reset();
+}
+
+TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoesNotRemoveShmRegion)
+{
+    // Given a proxy with registered methods but SetupMethods was never called
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that Remove and RemoveStaleArtefacts are never called because the SHM was never created
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Remove(_)).Times(0);
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, RemoveStaleArtefacts(_)).Times(0);
+
+    // When the proxy is destroyed
+    proxy_.reset();
 }
 
 }  // namespace

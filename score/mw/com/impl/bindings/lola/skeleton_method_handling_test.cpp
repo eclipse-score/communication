@@ -159,6 +159,14 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
                                                                           skeleton_instance_identifier,
                                                                           method_call_registration_guard_scope_);
             })));
+
+        ON_CALL(message_passing_mock_, RegisterOnServiceMethodUnsubscribedHandler(_, _, _))
+            .WillByDefault(WithArgs<0, 1>(Invoke([this](auto asil_level, auto skeleton_instance_identifier) {
+                return MethodUnsubscriptionRegistrationGuardFactory::Create(message_passing_mock_,
+                                                                            asil_level,
+                                                                            skeleton_instance_identifier,
+                                                                            method_call_registration_guard_scope_);
+            })));
     }
 
     SkeletonMethodHandlingFixture& GivenASkeletonWithTwoMethods()
@@ -216,6 +224,36 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
         return *this;
     }
 
+    SkeletonMethodHandlingFixture& WhichCapturesRegisteredMethodUnsubscribedHandlers()
+    {
+        EXPECT_CALL(message_passing_mock_,
+                    RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _))
+            .WillOnce(WithArgs<0, 1, 2>(
+                Invoke([this](auto asil_level, auto skeleton_instance_identifier, auto method_unsubscribed_handler) {
+                    captured_method_unsubscribed_handler_qm_.emplace(std::move(method_unsubscribed_handler));
+                    return MethodUnsubscriptionRegistrationGuardFactory::Create(message_passing_mock_,
+                                                                                asil_level,
+                                                                                skeleton_instance_identifier,
+                                                                                method_call_registration_guard_scope_);
+                })));
+        if (skeleton_->GetInstanceQualityType() == QualityType::kASIL_B)
+        {
+            EXPECT_CALL(
+                message_passing_mock_,
+                RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _))
+                .WillOnce(WithArgs<0, 1, 2>(Invoke(
+                    [this](auto asil_level, auto skeleton_instance_identifier, auto method_unsubscribed_handler) {
+                        captured_method_unsubscribed_handler_b_.emplace(std::move(method_unsubscribed_handler));
+                        return MethodUnsubscriptionRegistrationGuardFactory::Create(
+                            message_passing_mock_,
+                            asil_level,
+                            skeleton_instance_identifier,
+                            method_call_registration_guard_scope_);
+                    })));
+        }
+        return *this;
+    }
+
     SkeletonMethodHandlingFixture& WhichIsOffered()
     {
         score::cpp::ignore = skeleton_->PrepareOffer(
@@ -256,6 +294,8 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
     MockFunction<SkeletonMethodBinding::TypeErasedCallbackSignature> dumb_mock_type_erased_callback_{};
     std::optional<IMessagePassingService::ServiceMethodSubscribedHandler> captured_method_subscribed_handler_qm_{};
     std::optional<IMessagePassingService::ServiceMethodSubscribedHandler> captured_method_subscribed_handler_b_{};
+    std::optional<IMessagePassingService::ServiceMethodUnsubscribedHandler> captured_method_unsubscribed_handler_qm_{};
+    std::optional<IMessagePassingService::ServiceMethodUnsubscribedHandler> captured_method_unsubscribed_handler_b_{};
 
     safecpp::Scope<> method_call_registration_guard_scope_{};
 };
@@ -1080,6 +1120,201 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
                                                    test::kAllowedQmMethodConsumer,
                                                    kDummyPid);
     EXPECT_TRUE(scoped_handler_result.has_value());
+}
+
+using SkeletonPrepareOfferUnsubscribeFixture = SkeletonMethodHandlingFixture;
+TEST_F(SkeletonPrepareOfferUnsubscribeFixture, PrepareOfferWillRegisterServiceMethodUnsubscribedHandler)
+{
+    GivenASkeletonWithTwoMethods();
+
+    // Expecting that RegisterOnServiceMethodUnsubscribedHandler is called on message passing for QM only
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _))
+        .Times(0);
+
+    // When calling PrepareOffer
+    const auto result = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then a valid result is returned
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(SkeletonPrepareOfferUnsubscribeFixture, PrepareOfferOnAsilBSkeletonRegistersQmAndAsilBUnsubscribedHandlers)
+{
+    GivenAnAsilBSkeletonWithTwoMethods();
+
+    // Expecting that RegisterOnServiceMethodUnsubscribedHandler is called on message passing for QM and ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _));
+
+    // When calling PrepareOffer
+    const auto result = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then a valid result is returned
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(SkeletonPrepareOfferUnsubscribeFixture,
+       PrepareOfferReturnsErrorIfRegisterServiceMethodUnsubscribedHandlerReturnsError)
+{
+    GivenASkeletonWithTwoMethods();
+
+    // Expecting that RegisterOnServiceMethodUnsubscribedHandler is called on message passing which returns an error
+    const auto error_code = ComErrc::kCommunicationLinkError;
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _))
+        .WillOnce(Return(ByMove(MakeUnexpected(error_code))));
+
+    // Expecting that UnregisterOnServiceMethodUnsubscribedHandler is never called since registration failed before
+    // anything was registered
+    EXPECT_CALL(message_passing_mock_, UnregisterOnServiceMethodUnsubscribedHandler(_, _)).Times(0);
+
+    // When calling PrepareOffer
+    const auto result = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), error_code);
+}
+
+TEST_F(SkeletonPrepareOfferUnsubscribeFixture,
+       PrepareOfferReturnsErrorIfAsilBRegisterServiceMethodUnsubscribedHandlerReturnsError)
+{
+    GivenAnAsilBSkeletonWithTwoMethods();
+
+    // Expecting that RegisterOnServiceMethodUnsubscribedHandler is called for QM (succeeds) and ASIL-B (fails)
+    const auto error_code = ComErrc::kCommunicationLinkError;
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _))
+        .WillOnce(Return(ByMove(MakeUnexpected(error_code))));
+    // Expecting that the QM unsubscription guard is unregistered when ASIL-B registration fails
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_));
+
+    // When calling PrepareOffer
+    const auto result = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), error_code);
+}
+
+TEST_F(SkeletonPrepareOfferUnsubscribeFixture, PrepareOfferWillNotCallUnregisterUnsubscribedMethodHandler)
+{
+    GivenAnAsilBSkeletonWithTwoMethods();
+
+    // Expecting that RegisterOnServiceMethodUnsubscribedHandler will be called for QM and ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _));
+
+    // Expecting that UnregisterOnServiceMethodUnsubscribedHandler will not be called
+    EXPECT_CALL(message_passing_mock_, UnregisterOnServiceMethodUnsubscribedHandler(_, _)).Times(0);
+
+    // When calling PrepareOffer
+    score::cpp::ignore = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+}
+
+TEST_F(SkeletonPrepareStopOfferFixture, UnregistersQmAndAsilBUnsubscribedMethodHandlers)
+{
+    GivenAnAsilBSkeletonWithTwoMethods().WhichIsOffered();
+
+    // Expecting that UnregisterOnServiceMethodUnsubscribedHandler will be called for QM and ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_));
+
+    // When calling PrepareStopOffer
+    skeleton_->PrepareStopOffer({});
+}
+
+TEST_F(SkeletonPrepareStopOfferFixture, UnregistersOnlyQmUnsubscribedMethodHandlerForQmSkeleton)
+{
+    GivenASkeletonWithTwoMethods().WhichIsOffered();
+
+    // Expecting that UnregisterOnServiceMethodUnsubscribedHandler will be called for QM only
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterOnServiceMethodUnsubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_))
+        .Times(0);
+
+    // When calling PrepareStopOffer
+    skeleton_->PrepareStopOffer({});
+}
+
+using SkeletonOnServiceMethodsUnsubscribedFixture = SkeletonMethodHandlingFixture;
+TEST_F(SkeletonOnServiceMethodsUnsubscribedFixture, CallingRemovesShmResource)
+{
+    GivenASkeletonWithTwoMethods()
+        .WhichCapturesRegisteredMethodSubscribedHandlers()
+        .WhichCapturesRegisteredMethodUnsubscribedHandlers()
+        .WhichIsOffered();
+
+    // Given that the registered method subscribed handler was called first to open the SHM resource
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
+
+    const auto shm_resource_ref_counter_after_subscribe = mock_method_memory_resource_qm_.use_count();
+
+    // When calling the registered unsubscribed handler for that proxy
+    ASSERT_TRUE(captured_method_unsubscribed_handler_qm_.has_value());
+    const auto unsubscribe_result =
+        std::invoke(captured_method_unsubscribed_handler_qm_.value(), proxy_instance_identifier_qm_);
+
+    // Then the result is valid
+    ASSERT_TRUE(unsubscribe_result.has_value());
+    ASSERT_TRUE(unsubscribe_result->has_value());
+
+    // and the reference counter for the methods SharedMemoryResource should be decremented, indicating it's been
+    // removed from the Skeleton's state
+    EXPECT_EQ(mock_method_memory_resource_qm_.use_count(), shm_resource_ref_counter_after_subscribe - 1U);
+}
+
+TEST_F(SkeletonOnServiceMethodsUnsubscribedFixture, CallingUnregistersMethodCallHandlersForAllMethods)
+{
+    GivenASkeletonWithTwoMethods()
+        .WhichCapturesRegisteredMethodSubscribedHandlers()
+        .WhichCapturesRegisteredMethodUnsubscribedHandlers()
+        .WhichIsOffered();
+
+    // Given that the registered method subscribed handler was called to register method call handlers
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
+
+    // Expecting that UnregisterMethodCallHandler will be called for both methods corresponding to the proxy
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, foo_proxy_method_identifier_qm_));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, dumb_proxy_method_identifier_qm_));
+
+    // When calling the registered unsubscribed handler for that proxy
+    ASSERT_TRUE(captured_method_unsubscribed_handler_qm_.has_value());
+    const auto unsubscribe_result =
+        std::invoke(captured_method_unsubscribed_handler_qm_.value(), proxy_instance_identifier_qm_);
+
+    // Then the result is valid
+    ASSERT_TRUE(unsubscribe_result.has_value());
+    ASSERT_TRUE(unsubscribe_result->has_value());
 }
 
 }  // namespace

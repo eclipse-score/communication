@@ -37,11 +37,13 @@ cc_library(
         "i_message_passing_service.cpp",
         "method_call_registration_guard.cpp",
         "method_subscription_registration_guard.cpp",
+        "method_unsubscription_registration_guard.cpp",
     ],
     hdrs = [
         "i_message_passing_service.h",
         "method_call_registration_guard.h",
         "method_subscription_registration_guard.h",
+        "method_unsubscription_registration_guard.h",
     ],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
@@ -371,6 +373,21 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
+    name = "method_unsubscription_registration_guard_test",
+    srcs = ["method_unsubscription_registration_guard_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":i_message_passing_service",
+        ":message_passing_service_mock",
+        "@score_baselibs//score/mw/log:recorder_mock",
+        "@score_baselibs//score/scope_exit",
+    ],
+)
+
+cc_gtest_unit_test(
     name = "method_call_registration_guard_test",
     srcs = ["method_call_registration_guard_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -412,6 +429,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":message_passing_service_test",
         ":mw_log_logger_test",
         ":method_subscription_registration_guard_test",
+        ":method_unsubscription_registration_guard_test",
         ":method_call_registration_guard_test",
     ],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
