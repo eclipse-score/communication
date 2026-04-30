@@ -35,6 +35,11 @@ common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_
 common:linux_aarch64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:aarch64-linux-gcc_12.2.0-posix
 common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_aarch64_toolchain//:aarch64-linux
 common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_aarch64_unknown_linux_gnu
+# The score aarch64 GCC toolchain is built without --enable-default-pie, so static libs are non-PIC.
+# -no-pie disables PIE; -lstdc++ links the C++ stdlib; -lgcc provides aarch64 outline atomic helpers
+# (__aarch64_ldadd4_acq_rel etc.) from the toolchain's libgcc.a (sysroot's libgcc_s.so lacks them).
+# ticket - https://github.com/eclipse-score/toolchains_rust/issues/27
+common:linux_aarch64_score_gcc_12_2_0_posix --@rules_rust//:extra_rustc_flags=-Clink-arg=-no-pie,-Clink-arg=-lgcc
 
 # In order to build for QNX, you need:
 # * An account on qnx.com
