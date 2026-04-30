@@ -50,10 +50,11 @@ class SkeletonFieldBase
 
     virtual ~SkeletonFieldBase() = default;
 
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept
-    {
-        skeleton_base_ = skeleton_base;
-    }
+    /// \brief Updates the reference to SkeletonBase held by the SkeletonField and also the owned methods.
+    ///
+    /// This must happen in the derived class since the derived class owns the methods (this is required since they are
+    /// templated with the FieldType, which SkeletonFieldBase doesn't know).
+    virtual void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept = 0;
 
     /// \brief Used to indicate that the field shall be available to consumer (e.g. binding specific preparation)
     Result<void> PrepareOffer() noexcept

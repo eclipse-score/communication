@@ -659,6 +659,9 @@ class DummyField : public SkeletonFieldBase
 {
   public:
     using SkeletonFieldBase::SkeletonFieldBase;
+
+    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
+
     bool IsInitialValueSaved() const noexcept override
     {
         return false;

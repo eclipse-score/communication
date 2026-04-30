@@ -1285,5 +1285,26 @@ TEST_F(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
     EXPECT_TRUE(second_callback_called);
 }
 
+using SkeletonFieldMoveConstructionFixture = SkeletonFieldTestFixture;
+TEST_F(SkeletonFieldMoveConstructionFixture, SecondRegisterSetHandlerReplacesHandler)
+{
+    // Note. This test verifies that moving a skeleton does not break the getter / setter methods stored within a field.
+    // When moving, UpdateSkeletonReference must update the references to SkeletonBase in the field instance as well as
+    // the stored methods. However, the SkeletonBase reference in the methods are only used when moving the method (to
+    // update the reference to the method in SkeletonBase). Since the methods are stored in the field as unique_ptrs,
+    // they will never actually be moved. Therefore, with the current implementation, the SkeletonBase reference in the
+    // getter and setter are never used and so we have no way of ensuring that they are updated correctly. We can only
+    // verify that the method is still valid after move construction.
+
+    // Given a skeleton containing a field with a setter enabled
+    MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // When move constructing the skeleton
+    MySetterSkeleton unit2{std::move(unit)};
+
+    // Then the method should still be usable (validated by calling RegisterSetHandler which dispatches to the method)
+    unit2.my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

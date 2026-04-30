@@ -143,7 +143,28 @@ class SkeletonField : public SkeletonFieldBase
         };
 
         is_set_handler_registered_ = true;
-        return set_method_.get()->RegisterHandler(std::move(wrapped_callback));
+        return set_method_->RegisterHandler(std::move(wrapped_callback));
+    }
+
+    /// \brief Updates the reference to SkeletonBase held by this SkeletonField and also the owned methods.
+    ///
+    /// This is necessary when a Skeleton (which owns its events, fields and methods) is moved to a new address. When
+    /// this happens, the references to the SkeletonBase are pointing to the old address and must be updated. This must
+    /// be done also for the get and set method since they call a SkeletonMethod constructor which does not register
+    /// them with the SkeletonBase. Rather, they're considered as part of the SkeletonField and it's the field's
+    /// responsibility to update their SkeletonBase reference when it's moved.
+    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override
+    {
+        skeleton_base_ = skeleton_base;
+
+        if (set_method_ != nullptr)
+        {
+            set_method_->UpdateSkeletonReference(skeleton_base);
+        }
+        if (get_method_ != nullptr)
+        {
+            get_method_->UpdateSkeletonReference(skeleton_base);
+        }
     }
 
   private:
