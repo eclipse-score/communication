@@ -143,6 +143,33 @@ class SamplePtr final
         return get();
     }
 
+    bool operator<(const SamplePtr& other) const noexcept
+    {
+        return std::visit(
+            score::cpp::overload(
+                [](const lola::SamplePtr<SampleType>& lhs, const lola::SamplePtr<SampleType>& rhs) noexcept -> bool {
+                    return lhs < rhs;
+                },
+                [](const auto&, const auto&) noexcept -> bool {
+                    return false;
+                }),
+            binding_sample_ptr_,
+            other.binding_sample_ptr_);
+    }
+
+    bool operator>(const SamplePtr& other) const noexcept
+    {
+        return std::visit(
+            score::cpp::overload(
+                [](const lola::SamplePtr<SampleType>& lhs, const lola::SamplePtr<SampleType>& rhs) noexcept -> bool {
+                    return lhs > rhs;
+                },
+                [](const auto&, const auto&) noexcept -> bool {
+                    return false;
+                }),
+            binding_sample_ptr_,
+            other.binding_sample_ptr_);
+    }
     explicit operator bool() const noexcept
     {
         return std::holds_alternative<score::cpp::blank>(binding_sample_ptr_) == false;
