@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_FIELD_H
 #define SCORE_MW_COM_IMPL_PROXY_FIELD_H
 
+#include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/methods/proxy_method_with_in_args_and_return.h"
 #include "score/mw/com/impl/methods/proxy_method_with_return_type.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory.h"
@@ -46,14 +47,9 @@ class ProxyFieldAttorney;
 /// ProxyEvent.
 ///
 /// \tparam SampleDataType Type of data that is transferred by the event.
-/// \tparam EnableGet Whether the get method shall be enabled for this field. If true, a Get() method will be available.
-/// \tparam EnableSet Whether the set method shall be enabled for this field. If true, a Set() method will be available.
-/// \tparam EnableNotifier Whether the notifier functionality shall be enabled for this field. Whether this has an
-/// effect, depends on the binding that is used. The LoLa/shm-binding ignores this template parameter.
-template <typename SampleDataType,
-          const bool EnableGet = false,
-          const bool EnableSet = false,
-          const bool EnableNotifier = false>
+/// \tparam Tags Optional tag pack; presence of WithGetter / WithSetter enables Get() / Set() respectively.
+///              The notifier surface (Subscribe, GetNewSamples, ...) is part of every field.
+template <typename SampleDataType, typename... Tags>
 class ProxyField final : public ProxyFieldBase
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -65,161 +61,116 @@ class ProxyField final : public ProxyFieldBase
   public:
     using FieldType = SampleDataType;
 
-    /// Constructor that allows to set the binding directly (both EnableGet and EnableSet are true).
-    ///
-    /// This is used for testing only. Allows for directly setting the bindings, and usually the mock binding is used
-    /// here.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && ES>>
+    /// Testing ctor: bindings are passed in directly (used with mock bindings).
+    /// Method bindings default to nullptr; passing nullptr means the corresponding ProxyMethod is not built.
     ProxyField(ProxyBase& proxy_base,
-               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
-               std::unique_ptr<ProxyMethodBinding> get_method_binding,
-               std::unique_ptr<ProxyMethodBinding> set_method_binding,
                const std::string_view field_name,
-               detail::EnableBothTag = {})
-        : ProxyField{proxy_base,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, std::move(event_binding), field_name),
-                     std::make_unique<ProxyMethod<FieldType()>>(
-                         proxy_base,
-                         std::move(get_method_binding),
-                         field_name,
-                         typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
-                     std::make_unique<ProxyMethod<FieldType(FieldType)>>(
-                         proxy_base,
-                         std::move(set_method_binding),
-                         field_name,
-                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
+               std::unique_ptr<ProxyMethodBinding> get_method_binding = nullptr,
+               std::unique_ptr<ProxyMethodBinding> set_method_binding = nullptr)
+        : ProxyField{
+              proxy_base,
+              field_name,
+              std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
+              // If a binding is not provided, then we don't create the method. This ensures that the ProxyMethod
+              // doesn't report that the binding is invalid (via proxy_base_view.MarkServiceElementBindingInvalid())
+              get_method_binding == nullptr ? nullptr
+                                            : std::make_unique<ProxyMethod<FieldType()>>(
+                                                  proxy_base,
+                                                  field_name,
+                                                  std::move(get_method_binding),
+                                                  typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
+              set_method_binding == nullptr
+                  ? nullptr
+                  : std::make_unique<ProxyMethod<FieldType(FieldType)>>(
+                        proxy_base,
+                        field_name,
+                        std::move(set_method_binding),
+                        typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{})}
     {
     }
 
-    /// Constructor that allows to set the binding directly (only EnableGet is true).
-    ///
-    /// This is used for testing only. Allows for directly setting the bindings, and usually the mock binding is used
-    /// here.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && !ES>>
-    ProxyField(ProxyBase& proxy_base,
-               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
-               std::unique_ptr<ProxyMethodBinding> get_method_binding,
-               const std::string_view field_name,
-               detail::EnableGetOnlyTag = {})
+    /// \brief Normal ctor selected when the tag pack contains both WithGetter and WithSetter.
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithGetter, Tags...>::value &&
+                                          detail::is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
+    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, WithGetter = {}, WithSetter = {})
         : ProxyField{proxy_base,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, std::move(event_binding), field_name),
-                     std::make_unique<ProxyMethod<FieldType()>>(
-                         proxy_base,
-                         std::move(get_method_binding),
-                         field_name,
-                         typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
-                     field_name}
-    {
-    }
-
-    /// Constructor that allows to set the binding directly (only EnableSet is true).
-    ///
-    /// This is used for testing only. Allows for directly setting the bindings, and usually the mock binding is used
-    /// here.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && ES>>
-    ProxyField(ProxyBase& proxy_base,
-               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
-               std::unique_ptr<ProxyMethodBinding> set_method_binding,
-               const std::string_view field_name,
-               detail::EnableSetOnlyTag = {})
-        : ProxyField{proxy_base,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, std::move(event_binding), field_name),
-                     std::make_unique<ProxyMethod<FieldType(FieldType)>>(
-                         proxy_base,
-                         std::move(set_method_binding),
-                         field_name,
-                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
-                     field_name}
-    {
-    }
-
-    /// Constructor that allows to set the binding directly (both EnableGet and EnableSet are false).
-    ///
-    /// This is used for testing only. Allows for directly setting the bindings, and usually the mock binding is used
-    /// here.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && !ES>>
-    ProxyField(ProxyBase& proxy_base,
-               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
-               const std::string_view field_name,
-               detail::EnableNeitherTag = {})
-        : ProxyField{proxy_base,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, std::move(event_binding), field_name),
-                     field_name}
-    {
-    }
-
-    /// \brief Constructs a ProxyField (both EnableGet and EnableSet are true). Normal ctor that is used in production
-    /// code.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && ES>>
-    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableBothTag = {})
-        : ProxyField{proxy_base,
+                     field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          field_name,
+                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{}),
                      std::make_unique<ProxyMethod<FieldType()>>(
                          proxy_base,
+                         field_name,
                          ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(proxy_base, field_name),
-                         field_name,
                          typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
                      std::make_unique<ProxyMethod<FieldType(FieldType)>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(proxy_base, field_name),
                          field_name,
-                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                         ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(proxy_base, field_name),
+                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{})}
     {
     }
 
-    /// \brief Constructs a ProxyField (only EnableGet is true). Normal ctor that is used in production code.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && !ES>>
-    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableGetOnlyTag = {})
+    /// \brief Normal ctor selected when the tag pack contains WithGetter but not WithSetter.
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithGetter, Tags...>::value &&
+                                          !detail::is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
+    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, WithGetter = {})
         : ProxyField{proxy_base,
+                     field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          field_name,
+                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{}),
                      std::make_unique<ProxyMethod<FieldType()>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(proxy_base, field_name),
                          field_name,
+                         ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(proxy_base, field_name),
                          typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                     nullptr}
     {
     }
 
-    /// \brief Constructs a ProxyField (only EnableSet is true). Normal ctor that is used in production code.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && ES>>
-    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableSetOnlyTag = {})
+    /// \brief Normal ctor selected when the tag pack contains WithSetter but not WithGetter.
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<!detail::is_tag_enabled<U, SampleDataType, WithGetter, Tags...>::value &&
+                                          detail::is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
+    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, WithSetter = {})
         : ProxyField{proxy_base,
+                     field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          field_name,
+                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{}),
+                     nullptr,
                      std::make_unique<ProxyMethod<FieldType(FieldType)>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(proxy_base, field_name),
                          field_name,
-                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                         ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(proxy_base, field_name),
+                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{})}
     {
     }
 
-    /// \brief Constructs a ProxyField (both EnableGet and EnableSet are false). Normal ctor that is used in production
-    /// code.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && !ES>>
-    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableNeitherTag = {})
+    /// \brief Normal ctor selected when the tag pack contains neither WithGetter nor WithSetter.
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<!detail::is_tag_enabled<U, SampleDataType, WithGetter, Tags...>::value &&
+                                          !detail::is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
+    ProxyField(ProxyBase& proxy_base, const std::string_view field_name)
         : ProxyField{proxy_base,
+                     field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          field_name,
+                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                     nullptr,
+                     nullptr}
     {
     }
 
@@ -253,14 +204,14 @@ class ProxyField final : public ProxyFieldBase
     }
 
     template <typename T = SampleDataType,
-              typename = std::enable_if_t<EnableGet && std::is_same<T, SampleDataType>::value>>
+              typename = std::enable_if_t<detail::is_tag_enabled<T, SampleDataType, WithGetter, Tags...>::value>>
     score::Result<MethodReturnTypePtr<T>> Get() noexcept
     {
         return proxy_method_get_dispatch_->operator()();
     }
 
     template <typename T = SampleDataType,
-              typename = std::enable_if_t<EnableSet && std::is_same<T, SampleDataType>::value>>
+              typename = std::enable_if_t<detail::is_tag_enabled<T, SampleDataType, WithSetter, Tags...>::value>>
     score::Result<MethodReturnTypePtr<T>> Set(SampleDataType& new_field_value) noexcept
     {
         return proxy_method_set_dispatch_->operator()(new_field_value);
@@ -272,14 +223,12 @@ class ProxyField final : public ProxyFieldBase
     }
 
   private:
-    /// \brief Private constructor overload for when both EnableGet and EnableSet are true.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && ES>>
     ProxyField(ProxyBase& proxy_base,
+               const std::string_view field_name,
                std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
                std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch,
-               std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
-               const std::string_view field_name)
-        : ProxyFieldBase{proxy_base, proxy_event_dispatch.get(), field_name},
+               std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch)
+        : ProxyFieldBase{proxy_base, field_name, proxy_event_dispatch.get()},
           proxy_event_dispatch_{std::move(proxy_event_dispatch)},
           proxy_method_get_dispatch_{std::move(proxy_method_get_dispatch)},
           proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)}
@@ -290,71 +239,18 @@ class ProxyField final : public ProxyFieldBase
         proxy_base_view.RegisterField(field_name, *this);
     }
 
-    /// \brief Private constructor overload for when only EnableGet is true.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && !ES>>
-    ProxyField(ProxyBase& proxy_base,
-               std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
-               std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch,
-               const std::string_view field_name)
-        : ProxyFieldBase{proxy_base, proxy_event_dispatch.get(), field_name},
-          proxy_event_dispatch_{std::move(proxy_event_dispatch)},
-          proxy_method_get_dispatch_{std::move(proxy_method_get_dispatch)}
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_event_dispatch_ != nullptr);
-
-        ProxyBaseView proxy_base_view{proxy_base};
-        proxy_base_view.RegisterField(field_name, *this);
-    }
-
-    /// \brief Private constructor overload for when only EnableSet is true.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && ES>>
-    ProxyField(ProxyBase& proxy_base,
-               std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
-               std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
-               const std::string_view field_name)
-        : ProxyFieldBase{proxy_base, proxy_event_dispatch.get(), field_name},
-          proxy_event_dispatch_{std::move(proxy_event_dispatch)},
-          proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)}
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_event_dispatch_ != nullptr);
-
-        ProxyBaseView proxy_base_view{proxy_base};
-        proxy_base_view.RegisterField(field_name, *this);
-    }
-
-    /// \brief Private constructor overload for when both EnableGet and EnableSet are false.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && !ES>>
-    ProxyField(ProxyBase& proxy_base,
-               std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
-               const std::string_view field_name)
-        : ProxyFieldBase{proxy_base, proxy_event_dispatch.get(), field_name},
-          proxy_event_dispatch_{std::move(proxy_event_dispatch)}
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_event_dispatch_ != nullptr);
-
-        ProxyBaseView proxy_base_view{proxy_base};
-        proxy_base_view.RegisterField(field_name, *this);
-    }
-
     std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;
 
-    struct empty
-    {
-    };
-
-    using ProxyGetMethodType = std::conditional_t<EnableGet, std::unique_ptr<ProxyMethod<FieldType()>>, empty>;
-    using ProxySetMethodType = std::conditional_t<EnableSet, std::unique_ptr<ProxyMethod<FieldType(FieldType)>>, empty>;
-
-    ProxyGetMethodType proxy_method_get_dispatch_;
-    ProxySetMethodType proxy_method_set_dispatch_;
+    std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch_;
+    std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch_;
 
     static_assert(std::is_same<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>::value,
                   "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "
                   "we must ensure that it doesn't move when the ProxyField is moved to avoid dangling references. ");
 };
 
-template <typename FieldType, const bool EnableGet, const bool EnableSet, const bool EnableNotifier>
-ProxyField<FieldType, EnableGet, EnableSet, EnableNotifier>::ProxyField(ProxyField&& other) noexcept
+template <typename SampleDataType, typename... Tags>
+ProxyField<SampleDataType, Tags...>::ProxyField(ProxyField&& other) noexcept
     : ProxyFieldBase(std::move(static_cast<ProxyFieldBase&&>(other))),
       proxy_event_dispatch_(std::move(other.proxy_event_dispatch_)),
       proxy_method_get_dispatch_(std::move(other.proxy_method_get_dispatch_)),
@@ -364,14 +260,14 @@ ProxyField<FieldType, EnableGet, EnableSet, EnableNotifier>::ProxyField(ProxyFie
     proxy_base_view.UpdateField(field_name_, *this);
 }
 
-template <typename FieldType, const bool EnableGet, const bool EnableSet, const bool EnableNotifier>
+template <typename SampleDataType, typename... Tags>
 // Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
 // or respectively copy base classes and data members of a class, without any side effects."
 // Rationale: The parent proxy stores a reference to the ProxyEvent. The address that is pointed to must be
 // updated when the ProxyField is moved. Therefore, side effects are required.
 // coverity[autosar_cpp14_a6_2_1_violation]
-auto ProxyField<FieldType, EnableGet, EnableSet, EnableNotifier>::operator=(ProxyField&& other) & noexcept
-    -> ProxyField<FieldType, EnableGet, EnableSet, EnableNotifier>&
+auto ProxyField<SampleDataType, Tags...>::operator=(ProxyField&& other) & noexcept
+    -> ProxyField<SampleDataType, Tags...>&
 {
     if (this != &other)
     {
