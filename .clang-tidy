@@ -12,29 +12,309 @@
 # *******************************************************************************
 
 ---
-# Basic clang-tidy configuration for SCORE Communication project
-# NOTE: the set of enabled checks is yet subject to be tailored for the S-CORE project
+# Clang-tidy configuration for SCORE Communication project
 Checks: >
   -*,
-  clang-analyzer-*,
-  cert-*,
-  cppcoreguidelines-*,
-  bugprone-*,
-  misc-*,
-  performance-*,
-  readability-*,
-  modernize-*
+  bugprone-use-after-move,
+  bugprone-dynamic-static-initializers,
+  bugprone-suspicious-enum-usage,
+  cert-oop54-cpp,
+  clang-analyzer-core.uninitialized.ArraySubscript,
+  clang-analyzer-core.uninitialized.Assign,
+  clang-analyzer-core.uninitialized.Branch,
+  clang-analyzer-core.uninitialized.CapturedBlockVariable,
+  clang-analyzer-core.uninitialized.UndefReturn,
+  clang-analyzer-optin.cplusplus.UninitializedObject,
+  clang-analyzer-security.FloatLoopCounter,
+  clang-analyzer-valist.Uninitialized,
+  cppcoreguidelines-avoid-goto,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-no-malloc,
+  cppcoreguidelines-pro-bounds-constant-array-index,
+  cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  cppcoreguidelines-pro-type-cstyle-cast,
+  cppcoreguidelines-pro-type-member-init,
+  cppcoreguidelines-pro-type-reinterpret-cast,
+  cppcoreguidelines-pro-type-static-cast-downcast,
+  cppcoreguidelines-pro-type-union-access,
+  cppcoreguidelines-virtual-class-destructor,
+  google-default-arguments,
+  google-explicit-constructor,
+  hicpp-no-array-decay,
+  hicpp-no-assembler,
+  misc-definitions-in-headers,
+  misc-unconventional-assign-operator,
+  misc-unused-parameters,
+  modernize-avoid-c-arrays,
+  modernize-deprecated-headers,
+  modernize-make-shared,
+  modernize-use-auto,
+  modernize-use-equals-default,
+  modernize-use-noexcept,
+  modernize-use-using,
+  performance-noexcept-move-constructor,
+  readability-braces-around-statements,
+  readability-implicit-bool-conversion,
+  readability-inconsistent-declaration-parameter-name,
+  readability-isolate-declaration,
+  readability-misplaced-array-index,
+  readability-redundant-control-flow,
+  readability-redundant-declaration,
+  bugprone-forwarding-reference-overload,
+  bugprone-move-forwarding-reference,
+  bugprone-multiple-statement-macro,
+  cert-dcl58-cpp,
+  clang-analyzer-deadcode.DeadStores,
+  clang-analyzer-nullability.NullablePassedToNonnull,
+  clang-analyzer-security.insecureAPI.rand,
+  cppcoreguidelines-narrowing-conversions,
+  cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  cppcoreguidelines-pro-type-vararg,
+  cppcoreguidelines-special-member-functions,
+  fuchsia-multiple-inheritance,
+  google-build-using-namespace,
+  hicpp-move-const-arg,
+  hicpp-signed-bitwise,
+  hicpp-use-nullptr,
+  misc-no-recursion,
+  cert-err52-cpp,
+  clang-analyzer-alpha.security.ArrayBoundV2,
+  clang-analyzer-core.UndefinedBinaryOperatorResult,
+  clang-analyzer-cplusplus.NewDelete,
+  bugprone-assert-side-effect,
+  bugprone-copy-constructor-init,
+  bugprone-dangling-handle,
+  bugprone-suspicious-stringview-data-usage,
+  misc-include-cleaner,
+  misc-use-anonymous-namespace,
+  misc-use-internal-linkage,
+  modernize-avoid-bind,
+  modernize-concat-nested-namespaces,
+  modernize-loop-convert,
+  modernize-make-unique,
+  modernize-min-max-use-initializer-list,
+  modernize-pass-by-value,
+  modernize-raw-string-literal,
+  modernize-redundant-void-arg,
+  modernize-return-braced-init-list,
+  modernize-shrink-to-fit,
+  modernize-type-traits,
+  modernize-unary-static-assert,
+  modernize-use-bool-literals,
+  modernize-use-emplace,
+  modernize-use-equals-delete,
+  modernize-use-integer-sign-comparison,
+  modernize-use-nodiscard,
+  modernize-use-nullptr,
+  modernize-use-transparent-functors,
+  performance-faster-string-find,
+  performance-for-range-copy,
+  performance-implicit-conversion-in-loop,
+  performance-inefficient-algorithm,
+  performance-inefficient-string-concatenation,
+  performance-inefficient-vector-operation,
+  performance-move-const-arg,
+  performance-move-constructor-init,
+  performance-no-automatic-move,
+  performance-no-int-to-ptr,
+  performance-noexcept-swap,
+  performance-trivially-destructible,
+  performance-unnecessary-copy-initialization,
+  performance-unnecessary-value-param,
+  readability-container-data-pointer,
+  readability-else-after-return,
+  readability-magic-numbers,
+  readability-math-missing-parentheses,
+  readability-redundant-casting,
+  readability-redundant-inline-specifier,
+  readability-simplify-boolean-expr,
+  readability-use-anyofallof,
+  readability-use-std-min-max,
+  readability-identifier-naming,
+  misc-confusable-identifiers,
+  misc-misleading-bidirectional,
+  misc-misleading-identifier,
+  misc-uniqueptr-reset-release,
+  misc-unused-alias-decls,
+  misc-unused-using-decls,
+  readability-avoid-nested-conditional-operator,
+  readability-avoid-return-with-void-value,
+  readability-const-return-type,
+  readability-container-size-empty,
+  readability-delete-null-pointer,
+  readability-enum-initial-value,
+  readability-make-member-function-const,
+  readability-misleading-indentation,
+  readability-non-const-parameter,
+  readability-qualified-auto,
+  readability-redundant-smartptr-get,
+  readability-redundant-string-cstr,
+  readability-redundant-string-init,
+  readability-reference-to-constructed-temporary,
+  readability-simplify-subscript-expr,
+  readability-static-definition-in-anonymous-namespace,
+  readability-string-compare,
+  readability-uniqueptr-delete-release,
+  readability-uppercase-literal-suffix,
 
-# Only treat critical checks as errors, others are warnings
-# NOTE: the `WarningsAsErrors` property is yet subject to be tailored for the enabled checks
 WarningsAsErrors: >
   clang-analyzer-*,
 
-# Exclude third-party and external dependencies' headers from analysis
 HeaderFilterRegex: '^(?!.*/third_party/).*'
 
 FormatStyle: file
 
-# NOTE: all `CheckOptions` are yet subject to be provided for each enabled check
-#CheckOptions:
-# none yet
+CheckOptions:
+  - key: readability-inconsistent-declaration-parameter-name.Strict
+    value: true
+  - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value: true
+  - key: hicpp-move-const-arg.CheckTriviallyCopyableMove
+    value: false
+  - key: bugprone-assert-side-effect.AssertMacros
+    value: "assert"
+  - key: bugprone-assert-side-effect.CheckFunctionCalls
+    value: true
+  - key: bugprone-dangling-handle.HandleClasses
+    value: >
+      ::std::basic_string_view;
+      ::std::span
+  - key: bugprone-suspicious-stringview-data-usage.AllowedCallees
+    value: ""
+  - key: bugprone-suspicious-stringview-data-usage.StringViewTypes
+    value: >
+      ::std::basic_string_view;
+      ::std::span
+  - key: modernize-loop-convert.UseCxx20ReverseRanges
+    value: false
+  - key: readability-identifier-naming.ClassMethodCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstexprFunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstexprMethodCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstexprMethodIgnoredRegexp
+    value: "^(address|allocate|allocate_at_least|at|assign|assign_range|back|begin|cbegin|cend|clear|construct|crbegin|crend|deallocate|destroy|end|emplace|emplace_back|emplace_front|empty|erase|get_allocator|front|insert|insert_range|lock|lock_shared|max_size|now|rbegin|rend|pop_back|pop_front|prepend_range|push_back|push_front|select_on_container_copy_construction|size|swap|try_lock|try_lock_for|try_lock_shared|try_lock_shared_for|try_lock_shared_until|try_lock_until|unlock|unlock_shared)$"
+  - key: readability-identifier-naming.FunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalFunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalFunctionIgnoredRegexp
+    value: "^(swap)$"
+  - key: readability-identifier-naming.IgnoreMainLikeFunctions
+    value: true
+  - key: readability-identifier-naming.MethodCase
+    value: CamelCase
+  - key: readability-identifier-naming.MethodIgnoredRegexp
+    value: "^(address|allocate|allocate_at_least|at|assign|assign_range|back|begin|cbegin|cend|clear|construct|crbegin|crend|deallocate|destroy|end|emplace|emplace_back|emplace_front|empty|erase|get_allocator|front|insert|insert_range|lock|lock_shared|max_size|now|rbegin|rend|pop_back|pop_front|prepend_range|push_back|push_front|select_on_container_copy_construction|size|swap|try_lock|try_lock_for|try_lock_shared|try_lock_shared_for|try_lock_shared_until|try_lock_until|unlock|unlock_shared)$"
+  - key: readability-identifier-naming.VirtualMethodCase
+    value: CamelCase
+  - key: readability-identifier-naming.VirtualMethodIgnoredRegexp
+    value: "^(address|allocate|allocate_at_least|at|assign|assign_range|back|begin|cbegin|cend|clear|construct|crbegin|crend|deallocate|destroy|end|emplace|emplace_back|emplace_front|empty|erase|get_allocator|front|insert|insert_range|lock|lock_shared|max_size|now|rbegin|rend|pop_back|pop_front|prepend_range|push_back|push_front|select_on_container_copy_construction|size|swap|try_lock|try_lock_for|try_lock_shared|try_lock_shared_for|try_lock_shared_until|try_lock_until|unlock|unlock_shared)$"
+  - key: misc-uniqueptr-reset-release.IncludeStyle
+    value: "llvm"
+  - key: readability-avoid-return-with-void-value.StrictMode
+    value: true
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: 0
+  - key: readability-enum-initial-value.AllowExplicitZeroFirstInitialValue
+    value: true
+  - key: readability-enum-initial-value.AllowExplicitSequentialInitialValues
+    value: true
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: readability-qualified-auto.AddConstToQualified
+    value: true
+  - key: readability-redundant-string-init.StringNames
+    value: >
+      ::std::basic_string_view;
+      ::std::basic_string
+  - key: readability-simplify-subscript-expr.Types
+    value: >
+      ::std::array;
+      ::std::basic_string_view;
+      ::std::basic_string;
+      ::std::vector;
+      ::std::span
+  - key: readability-string-compare.StringLikeClasses
+    value: >
+      ::std::basic_string_view;
+      ::std::basic_string
+  - key: readability-uniqueptr-delete-release.PreferResetCall
+    value: true
+  - key: readability-identifier-naming.AbstractClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.TemplateTemplateParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeTemplateParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeAliasIgnoredRegexp
+    value: "^(allocator_type|const_pointer|const_iterator|const_local_iterator|const_reference|const_reverse_iterator|const_void_pointer|difference_type|duration|hasher|iterator_category|insert_return_type|is_always_equal|iterator|key_equal|key_compare|key_type|local_iterator|mapped_type|node_type|period|propagate_on_container_copy_assignment|propagate_on_container_move_assignment|propagate_on_container_swap|pointer|rebind|reference|rep|reverse_iterator|size_type|time_point|traits_type|value_compare|value_type|void_pointer)$"
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.UnionCase
+    value: CamelCase
+  - key: readability-identifier-naming.ClassConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.ClassConstantPrefix
+    value: "k"
+  - key: readability-identifier-naming.ClassConstantIgnoredRegexp
+    value: "^(is_steady)$"
+  - key: readability-identifier-naming.ClassMemberCase
+    value: CamelCase
+  - key: readability-identifier-naming.ClassMemberPrefix
+    value: "g"
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstexprVariablePrefix
+    value: "k"
+  - key: readability-identifier-naming.ConstexprVariableIgnoredRegexp
+    value: "^(is_|has_).+_v"
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantPrefix
+    value: "k"
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalConstantPrefix
+    value: "k"
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalVariablePrefix
+    value: "g"
+  - key: readability-identifier-naming.IgnoreMainLikeFunctions
+    value: true
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberSuffix
+    value: "_"
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterPackCase
+    value: lower_case
+  - key: readability-identifier-naming.PublicMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.ScopedEnumConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.ScopedEnumConstantPrefix
+    value: "k"
+  - key: readability-identifier-naming.StaticConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.StaticConstantPrefix
+    value: "k"
+  - key: readability-identifier-naming.StaticVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ValueTemplateParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
