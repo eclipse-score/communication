@@ -31,10 +31,11 @@ const std::string kInstanceSpecifier{"test/methods/non_trivial_constructors/Meth
 
 bool RegisterMethodHandlerWithInArgsAndReturn(NonTrivialConstructorSkeleton& skeleton)
 {
-    auto handler_with_in_args_and_return = [](NonTriviallyConstructibleType a,
-                                              NonTriviallyConstructibleType b) -> NonTriviallyConstructibleType {
+    auto handler_with_in_args_and_return = [](NonTriviallyConstructibleType& return_value,
+                                              const NonTriviallyConstructibleType& a,
+                                              const NonTriviallyConstructibleType& b) {
         std::cout << "Provider: with_in_args_and_return called with " << a << " + " << b << std::endl;
-        return a + b;
+        return_value = a + b;
     };
     const auto register_result =
         skeleton.with_in_args_and_return.RegisterHandler(std::move(handler_with_in_args_and_return));
@@ -50,7 +51,8 @@ bool RegisterMethodHandlerWithInArgsAndReturn(NonTrivialConstructorSkeleton& ske
 
 bool RegisterMethodHandlerWithInArgsOnly(NonTrivialConstructorSkeleton& skeleton)
 {
-    auto handler_with_in_args_only = [](NonTriviallyConstructibleType a, NonTriviallyConstructibleType b) {
+    auto handler_with_in_args_only = [](const NonTriviallyConstructibleType& a,
+                                        const NonTriviallyConstructibleType& b) {
         std::cout << "Provider: with_in_args_only called with " << a << " + " << b << std::endl;
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(a == NonTriviallyConstructibleType{},
                                                 "Unexpected first InArg received!");
@@ -70,9 +72,9 @@ bool RegisterMethodHandlerWithInArgsOnly(NonTrivialConstructorSkeleton& skeleton
 
 bool RegisterMethodHandlerWithReturnOnly(NonTrivialConstructorSkeleton& skeleton)
 {
-    auto handler_with_return_only = []() -> NonTriviallyConstructibleType {
+    auto handler_with_return_only = [](NonTriviallyConstructibleType& return_value) {
         std::cout << "Provider: with_return_only called. Returning " << NonTriviallyConstructibleType{} << std::endl;
-        return NonTriviallyConstructibleType{};
+        return_value = NonTriviallyConstructibleType{};
     };
     const auto register_result = skeleton.with_return_only.RegisterHandler(std::move(handler_with_return_only));
     if (!register_result)

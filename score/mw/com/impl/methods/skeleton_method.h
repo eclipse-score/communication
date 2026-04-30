@@ -12,7 +12,9 @@
  ********************************************************************************/
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
+
 #include "score/mw/com/impl/method_type.h"
+#include "score/mw/com/impl/methods/method_handler_checker.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
@@ -21,7 +23,6 @@
 #include "score/result/result.h"
 
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -160,19 +161,11 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
 {
     static_assert(std::is_rvalue_reference_v<decltype(callback)>,
                   "Callbeck provided to register has to be an rvalue reference");
-
-    // A move would only be problematic if the forwarding refference Callback&& evealuates to an LValue and and is moved
-    // from (which the caller of the function might not expect). We static assert that the callback is an RValue
-    // refference and can always be movef from.
-    // NOLINTNEXTLINE(bugprone-move-forwarding-reference) The callback is asserted to be an RValue reference
-    auto callable_invoker = [callable = std::move(callback)](auto&&... ptrs) -> decltype(auto) {
-        return std::invoke(callable, (*ptrs)...);
-    };
+    AssertCallableMatchesMethodSignature<Callable, ReturnType, ArgTypes...>();
 
     SkeletonMethodBinding::TypeErasedHandler type_erased_callable =
-        [callable_invoker = std::move(callable_invoker)](
-            std::optional<score::cpp::span<std::byte>> type_erased_in_args,
-            std::optional<score::cpp::span<std::byte>> type_erased_return) {
+        [callback = std::move(callback)](std::optional<score::cpp::span<std::byte>> type_erased_in_args,
+                                         std::optional<score::cpp::span<std::byte>> type_erased_return) {
             using InArgPtrTuple = std::tuple<ArgTypes*...>;
             InArgPtrTuple typed_in_arg_ptrs{};
 
@@ -189,15 +182,29 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
             constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
             if constexpr (is_return_type_not_void)
             {
+                const auto typed_return_ptr_tuple = Deserialize<ReturnType>(type_erased_return.value());
+                auto* const typed_return_ptr = std::get<0>(typed_return_ptr_tuple);
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
                     type_erased_return.has_value(),
                     "ReturnType is non void. Thus, type_erased_result needs to have a value!");
-                ReturnType res = std::apply(callable_invoker, std::forward<InArgPtrTuple>(typed_in_arg_ptrs));
-                SerializeArgs<ReturnType>(type_erased_return.value(), res);
+
+                // Call the callable with the typed_return_ptr and the typed_in_arg_ptrs which are unpacked from the
+                // tuple into individual arguments.
+                std::apply(
+                    [&callback, typed_return_ptr](ArgTypes*... typed_in_arg_ptrs) {
+                        std::invoke(callback, *typed_return_ptr, *typed_in_arg_ptrs...);
+                    },
+                    typed_in_arg_ptrs);
             }
             else
             {
-                std::apply(callable_invoker, std::forward<InArgPtrTuple>(typed_in_arg_ptrs));
+                // Call the callable with the typed_in_arg_ptrs which are unpacked from the tuple into individual
+                // arguments.
+                std::apply(
+                    [&callback](ArgTypes*... typed_in_arg_ptrs) {
+                        std::invoke(callback, *typed_in_arg_ptrs...);
+                    },
+                    typed_in_arg_ptrs);
             }
         };
 
@@ -205,4 +212,5 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
 }
 
 }  // namespace score::mw::com::impl
+
 #endif  // SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H

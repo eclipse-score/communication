@@ -67,6 +67,8 @@ class MyDummyField : public SkeletonFieldBase
     {
     }
 
+    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
+
     bool IsInitialValueSaved() const noexcept override
     {
         return true;
@@ -77,9 +79,9 @@ class MyDummyField : public SkeletonFieldBase
         return {};
     }
 
-    bool IsSetHandlerRegistered() const noexcept override
+    bool IsSetHandlerMissing() const noexcept override
     {
-        return true;
+        return false;
     }
 };
 

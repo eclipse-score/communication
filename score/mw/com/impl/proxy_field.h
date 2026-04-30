@@ -261,7 +261,7 @@ class ProxyField final : public ProxyFieldBase
 
     template <typename T = SampleDataType,
               typename = std::enable_if_t<EnableSet && std::is_same<T, SampleDataType>::value>>
-    score::Result<MethodReturnTypePtr<T>> Set(SampleDataType& new_field_value) noexcept
+    score::Result<MethodReturnTypePtr<T>> Set(const SampleDataType& new_field_value) noexcept
     {
         return proxy_method_set_dispatch_->operator()(new_field_value);
     }
