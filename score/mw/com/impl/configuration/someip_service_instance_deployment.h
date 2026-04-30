@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/configuration/someip_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_field_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_instance_id.h"
 
 #include "score/json/json_parser.h"
@@ -34,12 +35,17 @@ class SomeIpServiceInstanceDeployment
   public:
     using EventInstanceMapping = std::unordered_map<std::string, SomeIpEventInstanceDeployment>;
     using FieldInstanceMapping = std::unordered_map<std::string, SomeIpFieldInstanceDeployment>;
+    using MethodInstanceMapping = std::unordered_map<std::string, SomeIpMethodInstanceDeployment>;
 
     explicit SomeIpServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
     explicit SomeIpServiceInstanceDeployment(score::cpp::optional<SomeIpServiceInstanceId> instance_id = {},
                                              EventInstanceMapping events = {},
-                                             FieldInstanceMapping fields = {})
-        : instance_id_{instance_id}, events_{std::move(events)}, fields_{std::move(fields)}
+                                             FieldInstanceMapping fields = {},
+                                             MethodInstanceMapping methods = {})
+        : instance_id_{instance_id},
+          events_{std::move(events)},
+          fields_{std::move(fields)},
+          methods_{std::move(methods)}
     {
     }
 
@@ -54,6 +60,8 @@ class SomeIpServiceInstanceDeployment
     EventInstanceMapping events_;  // key = event name
     // coverity[autosar_cpp14_m11_0_1_violation]
     FieldInstanceMapping fields_;  // key = field name
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    MethodInstanceMapping methods_;  // key = method name
 
     score::json::Object Serialize() const noexcept;
 };

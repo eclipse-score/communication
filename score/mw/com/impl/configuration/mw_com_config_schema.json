@@ -128,6 +128,7 @@
                                 },
                                 "methods": {
                                     "type": "array",
+                                    "title": "Service Methods",
                                     "description": "optional (serviceType may have no methods) binding specific method configurations of this serviceType.",
                                     "items": {
                                         "type": "object",
@@ -395,6 +396,7 @@
                                 },
                                 "methods": {
                                     "type": "array",
+                                    "title": "Method Bindings",
                                     "description": "(optional) Binding technology specific configuration of methods within this instance",
                                     "items": {
                                         "type": "object",

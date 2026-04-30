@@ -14,10 +14,12 @@
 #define SCORE_MW_COM_IMPL_CONFIGURATION_SERVICE_TYPE_DEPLOYMENT_H
 
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <exception>
 #include <string>
@@ -30,7 +32,7 @@ namespace score::mw::com::impl
 class ServiceTypeDeployment
 {
   public:
-    using BindingInformation = std::variant<LolaServiceTypeDeployment, score::cpp::blank>;
+    using BindingInformation = std::variant<LolaServiceTypeDeployment, SomeIpServiceTypeDeployment, score::cpp::blank>;
 
     explicit ServiceTypeDeployment(const score::json::Object& json_object) noexcept;
 
@@ -54,7 +56,8 @@ class ServiceTypeDeployment
      */
     // Variable is used in a test case -> so this line is tested and prepared for easier reuse
     // coverity[autosar_cpp14_a0_1_1_violation]
-    constexpr static std::size_t hashStringSize{LolaServiceTypeDeployment::hashStringSize + 1U};
+    constexpr static std::size_t hashStringSize{
+        std::max(LolaServiceTypeDeployment::hashStringSize, SomeIpServiceTypeDeployment::hashStringSize) + 1U};
 
     constexpr static std::uint32_t serializationVersion = 1U;
 

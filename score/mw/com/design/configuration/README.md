@@ -129,7 +129,13 @@ An example of such a mapping is shown here:
                             "eventId": 633
                         }
                     ],
-                    "fields": []
+                    "fields": [],
+                    "methods": [
+                        {
+                            "methodName": "SetPressure",
+                            "methodId": 40
+                        }
+                    ]
                 },
                 {
                     "binding": "SHM",
@@ -153,7 +159,13 @@ An example of such a mapping is shown here:
                 {
                     "instanceId": 1234,
                     "asil-level": "QM",
-                    "binding": "SOME/IP"
+                    "binding": "SOME/IP",
+                    "methods": [
+                        {
+                            "methodName": "SetPressure",
+                            "queueSize": 1
+                        }
+                    ]
                 },
                 {
                     "instanceId": 62,
