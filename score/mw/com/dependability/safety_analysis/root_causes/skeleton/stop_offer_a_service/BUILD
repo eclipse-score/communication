@@ -14,6 +14,7 @@
 filegroup(
     name = "only_partially_stop_offer_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "only_partially_stop_offer_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -22,6 +23,7 @@ filegroup(
 filegroup(
     name = "stop_offer_on_wrong_ids_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "stop_offer_on_wrong_ids_fta.puml",
     ],
     visibility = ["//visibility:public"],

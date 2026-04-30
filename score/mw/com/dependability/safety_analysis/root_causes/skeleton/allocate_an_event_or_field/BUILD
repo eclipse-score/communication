@@ -14,6 +14,7 @@
 filegroup(
     name = "allocate_in_wrong_memory_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "allocate_in_wrong_memory_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -22,6 +23,7 @@ filegroup(
 filegroup(
     name = "to_few_memory_allocated_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "to_few_memory_allocated_fta.puml",
     ],
     visibility = ["//visibility:public"],

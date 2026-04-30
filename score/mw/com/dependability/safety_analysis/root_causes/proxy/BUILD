@@ -14,6 +14,7 @@
 filegroup(
     name = "root_causes_proxy",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/call_method:call_method_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/construction:construction_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/find_service:service_not_found_fta",

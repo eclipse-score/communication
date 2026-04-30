@@ -14,6 +14,7 @@
 filegroup(
     name = "only_partially_offered_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "only_partially_offered_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -22,6 +23,7 @@ filegroup(
 filegroup(
     name = "service_offered_under_wrong_id_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "service_offered_under_wrong_id_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -30,6 +32,7 @@ filegroup(
 filegroup(
     name = "skeleton_not_offered_without_initial_field_value_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "skeleton_not_offered_without_initial_fieled_value_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -38,6 +41,7 @@ filegroup(
 filegroup(
     name = "skeleton_offered_wrong_binding_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "skeleton_offered_wrong_binding_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -46,6 +50,7 @@ filegroup(
 filegroup(
     name = "skeleton_not_offered_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "skeleton_not_offered_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -54,6 +59,7 @@ filegroup(
 filegroup(
     name = "offers_already_offered_service_fta",
     srcs = [
+        "@score_tooling//plantuml:fta_metamodel",
         "offers_already_offered_service_fta.puml",
     ],
     visibility = ["//visibility:public"],
