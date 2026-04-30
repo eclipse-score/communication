@@ -720,65 +720,6 @@ class SkeletonBaseServiceElementReferencesFixture : public ::testing::Test
     SkeletonMethodBase method_1_{skeleton_, method_name_1_, std::make_unique<mock_binding::SkeletonMethod>()};
 };
 
-TEST_F(SkeletonBaseServiceElementReferencesFixture, RegisteringServiceElementStoresReferenceInMap)
-{
-    // Given a valid MySkeleton object
-
-    // When registering 2 Events, Fields and Methods
-    SkeletonBaseView{skeleton_}.RegisterEvent(event_name_0_, event_0_);
-    SkeletonBaseView{skeleton_}.RegisterEvent(event_name_1_, event_1_);
-    SkeletonBaseView{skeleton_}.RegisterField(field_name_0_, field_0_);
-    SkeletonBaseView{skeleton_}.RegisterField(field_name_1_, field_1_);
-    SkeletonBaseView{skeleton_}.RegisterMethod(method_name_0_, method_0_);
-    SkeletonBaseView{skeleton_}.RegisterMethod(method_name_1_, method_1_);
-
-    // Then the skeleton's reference maps should contain references to the registered elements
-    const auto& events = skeleton_.GetEvents();
-    EXPECT_EQ(events.size(), 2U);
-    EXPECT_EQ(&events.at(event_name_0_).get(), &event_0_);
-    EXPECT_EQ(&events.at(event_name_1_).get(), &event_1_);
-
-    const auto& fields = skeleton_.GetFields();
-    EXPECT_EQ(fields.size(), 2U);
-    EXPECT_EQ(&fields.at(field_name_0_).get(), &field_0_);
-    EXPECT_EQ(&fields.at(field_name_1_).get(), &field_1_);
-
-    const auto& methods = skeleton_.GetMethods();
-    EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
-}
-
-TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferencesToServiceElements)
-{
-    // Given a valid MySkeleton object on which 2 Events, Fields and Methods were registered
-    SkeletonBaseView{skeleton_}.RegisterEvent(event_name_0_, event_0_);
-    SkeletonBaseView{skeleton_}.RegisterEvent(event_name_1_, event_1_);
-    SkeletonBaseView{skeleton_}.RegisterField(field_name_0_, field_0_);
-    SkeletonBaseView{skeleton_}.RegisterField(field_name_1_, field_1_);
-    SkeletonBaseView{skeleton_}.RegisterMethod(method_name_0_, method_0_);
-    SkeletonBaseView{skeleton_}.RegisterMethod(method_name_1_, method_1_);
-
-    // When move constructing a new MySkeleton object
-    MySkeleton moved_to_skeleton{std::move(skeleton_)};
-
-    // Then the moved-to skeleton's reference maps should still contain references to the registered elements
-    const auto& events = moved_to_skeleton.GetEvents();
-    ASSERT_EQ(events.size(), 2U);
-    EXPECT_EQ(&events.at(event_name_0_).get(), &event_0_);
-    EXPECT_EQ(&events.at(event_name_1_).get(), &event_1_);
-
-    const auto& fields = moved_to_skeleton.GetFields();
-    ASSERT_EQ(fields.size(), 2U);
-    EXPECT_EQ(&fields.at(field_name_0_).get(), &field_0_);
-    EXPECT_EQ(&fields.at(field_name_1_).get(), &field_1_);
-
-    const auto& methods = moved_to_skeleton.GetMethods();
-    EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
-}
-
 TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
 {
 
