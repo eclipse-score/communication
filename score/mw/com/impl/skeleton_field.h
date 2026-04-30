@@ -118,18 +118,18 @@ class SkeletonField : public SkeletonFieldBase
     //
     // \tparam CallableType Any callable (std::function, score::cpp::callback, lambda, ...) with the signature:
     //         void(FieldType& new_value)
-    //   - new_value : the value requested by the proxy.
+    //   - new_value : the value requested by the proxy. This value will be modified in place by the registered handler
+    //   and the new value will be used to update the field.
     template <bool ES = EnableSet, typename std::enable_if<ES, int>::type = 0, typename CallableType>
-    Result<void> RegisterSetHandler(CallableType&& handler)
+    Result<void> RegisterSetHandler(CallableType&& set_handler)
     {
         static_assert(std::is_invocable_v<CallableType, FieldType&>,
                       "RegisterSetHandler: handler must be callable as void(FieldType& value). "
                       "The argument initially holds the proxy-requested value and may be modified in-place.");
-        set_handler_ = std::move(handler);
 
-        auto wrapped_callback = [this](FieldType& new_value) -> FieldType {
+        auto wrapped_callback = [this, set_handler = std::move(set_handler)](FieldType& new_value) -> FieldType {
             // Allow user to validate/modify the value in-place
-            set_handler_(new_value);
+            set_handler(new_value);
 
             // Store the (possibly modified) value as the latest field value
             auto update_result = this->Update(new_value);
@@ -143,10 +143,41 @@ class SkeletonField : public SkeletonFieldBase
         };
 
         is_set_handler_registered_ = true;
-        return set_method_.get()->RegisterHandler(std::move(wrapped_callback));
+        return set_method_->RegisterHandler(std::move(wrapped_callback));
+    }
+
+    /// \brief Updates the reference to SkeletonBase held by this SkeletonField and also the owned methods.
+    ///
+    /// This is necessary when a Skeleton (which owns its events, fields and methods) is moved to a new address. When
+    /// this happens, the references to the SkeletonBase are pointing to the old address and must be updated. This must
+    /// be done also for the get and set method since they call a SkeletonMethod constructor which does not register
+    /// them with the SkeletonBase. Rather, they're considered as part of the SkeletonField and it's the field's
+    /// responsibility to update their SkeletonBase reference when it's moved.
+    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override
+    {
+        skeleton_base_ = skeleton_base;
+
+        if (set_method_ != nullptr)
+        {
+            set_method_->UpdateSkeletonReference(skeleton_base);
+        }
+        if (get_method_ != nullptr)
+        {
+            get_method_->UpdateSkeletonReference(skeleton_base);
+        }
     }
 
   private:
+    using SetMethodSignature = FieldType(FieldType);
+    using GetMethodSignature = FieldType();
+
+    /// \brief Private delegating constructor used by the no-setter public ctor and testing ctor.
+    SkeletonField(SkeletonBase& parent,
+                  std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
+                  std::unique_ptr<SkeletonMethod<SetMethodSignature>> skeleton_set_method_dispatch,
+                  std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch,
+                  const std::string_view field_name);
+
     bool IsInitialValueSaved() const noexcept override
     {
         return initial_field_value_ != nullptr;
@@ -159,59 +190,23 @@ class SkeletonField : public SkeletonFieldBase
 
     SkeletonEvent<FieldType>* GetTypedEvent() const noexcept;
 
+    bool IsSetHandlerMissing() const noexcept override
+    {
+        if constexpr (!EnableSet)
+        {
+            return false;
+        }
+        return !is_set_handler_registered_;
+    }
+
     std::unique_ptr<FieldType> initial_field_value_;
     ISkeletonField<FieldType>* skeleton_field_mock_;
 
-    // Zero-cost conditional storage: unique_ptr when EnableSet=true, zero-size tag when false.
-    using SetMethodSignature = FieldType(FieldType);
-    using SetMethodType =
-        std::conditional_t<EnableSet, std::unique_ptr<SkeletonMethod<SetMethodSignature>>, detail::EnableSetOnlyTag>;
-    SetMethodType set_method_;
+    // Tracks whether RegisterSetHandler() has been called.
+    bool is_set_handler_registered_;
 
-    // Stores the user-provided set handler. Kept as a member so that the wrapped
-    // callback can invoke it via this->set_handler_. The concrete storage type is
-    // score::cpp::callback with the expected signature so that any callable provided
-    // to RegisterSetHandler is type-erased here.
-    // Zero-cost when EnableSet=false.
-    using SetHandlerStorageType =
-        std::conditional_t<EnableSet, score::cpp::callback<void(FieldType&)>, detail::EnableSetOnlyTag>;
-    SetHandlerStorageType set_handler_{};
-
-    // Tracks whether RegisterSetHandler() has been called. Zero-cost when EnableSet=false.
-    using IsSetHandlerRegisteredType = std::conditional_t<EnableSet, bool, detail::EnableSetOnlyTag>;
-    IsSetHandlerRegisteredType is_set_handler_registered_{};
-
-    // EnableSet=true: checks the flag; EnableSet=false: no setter, no handler required.
-    bool IsSetHandlerRegistered() const noexcept override
-    {
-        if constexpr (EnableSet)
-        {
-            return is_set_handler_registered_;
-        }
-        return true;
-    }
-
-    /// \brief Private delegating constructor used by the setter-enabled public ctor.
-    template <bool ES = EnableSet, typename = std::enable_if_t<ES>>
-    SkeletonField(SkeletonBase& parent,
-                  std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
-                  const std::string_view field_name,
-                  detail::EnableSetOnlyTag);
-
-    /// \brief Private delegating constructor used by the no-setter public ctor and testing ctor.
-    SkeletonField(SkeletonBase& parent,
-                  std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
-                  const std::string_view field_name);
-
-    // TODO: Move get_method_ initialization into the delegating constructors (like set_method_) once the
-    // Get handler is implemented.
-    using GetMethodSignature = FieldType();
-    std::unique_ptr<SkeletonMethod<GetMethodSignature>> get_method_{
-        std::make_unique<SkeletonMethod<GetMethodSignature>>(
-            skeleton_base_.get(),
-            field_name_,
-            ::score::mw::com::impl::MethodType::kGet,
-            typename SkeletonMethod<GetMethodSignature>::FieldOnlyConstructorEnabler{})};
+    std::unique_ptr<SkeletonMethod<SetMethodSignature>> set_method_;
+    std::unique_ptr<SkeletonMethod<GetMethodSignature>> get_method_;
 };
 
 /// \brief Public ctor — EnableSet=true: delegates to the private ctor that also creates the set method.
@@ -229,8 +224,19 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(Skeleton
                                                          parent,
                                                          field_name),
                                                      typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
-          field_name,
-          detail::EnableSetOnlyTag{}}
+          std::make_unique<SkeletonMethod<SetMethodSignature>>(
+              parent,
+              field_name,
+              ::score::mw::com::impl::MethodType::kSet,
+              typename SkeletonMethod<SetMethodSignature>::FieldOnlyConstructorEnabler{}),
+          // TODO: Move get_method_ initialization into the delegating constructors (like set_method_) once the
+          // Get handler is implemented.
+          std::make_unique<SkeletonMethod<GetMethodSignature>>(
+              parent,
+              field_name,
+              ::score::mw::com::impl::MethodType::kGet,
+              typename SkeletonMethod<GetMethodSignature>::FieldOnlyConstructorEnabler{}),
+          field_name}
 {
 }
 
@@ -249,6 +255,8 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(Skeleton
                                                          parent,
                                                          field_name),
                                                      typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
+          nullptr,
+          nullptr,
           field_name}
 {
 }
@@ -261,40 +269,25 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(
     std::unique_ptr<SkeletonEventBinding<FieldType>> binding)
     : SkeletonField{skeleton_base,
                     std::make_unique<SkeletonEvent<FieldType>>(skeleton_base, field_name, std::move(binding)),
+                    nullptr,
+                    nullptr,
                     field_name}
 {
 }
 
-/// \brief Private delegating ctor — setter enabled.
-template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
-template <bool ES, typename>
-SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(
-    SkeletonBase& parent,
-    std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
-    const std::string_view field_name,
-    detail::EnableSetOnlyTag)
-    : SkeletonFieldBase{parent, field_name, std::move(skeleton_event_dispatch)},
-      initial_field_value_{nullptr},
-      skeleton_field_mock_{nullptr}
-{
-    set_method_ = std::make_unique<SkeletonMethod<SetMethodSignature>>(
-        parent,
-        field_name_,
-        ::score::mw::com::impl::MethodType::kSet,
-        typename SkeletonMethod<SetMethodSignature>::FieldOnlyConstructorEnabler{});
-    SkeletonBaseView skeleton_base_view{parent};
-    skeleton_base_view.RegisterField(field_name, *this);
-}
-
-/// \brief Private delegating ctor — no setter. Receives the already-constructed event.
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
 SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(
     SkeletonBase& parent,
     std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
+    std::unique_ptr<SkeletonMethod<SetMethodSignature>> skeleton_set_method_dispatch,
+    std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch,
     const std::string_view field_name)
     : SkeletonFieldBase{parent, field_name, std::move(skeleton_event_dispatch)},
       initial_field_value_{nullptr},
-      skeleton_field_mock_{nullptr}
+      skeleton_field_mock_{nullptr},
+      is_set_handler_registered_{false},
+      set_method_{std::move(skeleton_set_method_dispatch)},
+      get_method_{std::move(skeleton_get_method_dispatch)}
 {
     SkeletonBaseView skeleton_base_view{parent};
     skeleton_base_view.RegisterField(field_name, *this);
@@ -310,9 +303,8 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(Skeleton
       // coverity[autosar_cpp14_a12_8_3_violation] This is a false-positive.
       initial_field_value_{std::move(other.initial_field_value_)},
       skeleton_field_mock_{other.skeleton_field_mock_},
-      set_method_{std::move(other.set_method_)},
-      set_handler_{std::move(other.set_handler_)},
       is_set_handler_registered_{std::move(other.is_set_handler_registered_)},
+      set_method_{std::move(other.set_method_)},
       get_method_{std::move(other.get_method_)}
 {
     SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
@@ -329,9 +321,8 @@ auto SkeletonField<SampleDataType, EnableSet, EnableNotifier>::operator=(Skeleto
 
         initial_field_value_ = std::move(other.initial_field_value_);
         skeleton_field_mock_ = std::move(other.skeleton_field_mock_);
-        set_method_ = std::move(other.set_method_);
-        set_handler_ = std::move(other.set_handler_);
         is_set_handler_registered_ = std::move(other.is_set_handler_registered_);
+        set_method_ = std::move(other.set_method_);
         get_method_ = std::move(other.get_method_);
         SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
         skeleton_base_view.UpdateField(field_name_, *this);
