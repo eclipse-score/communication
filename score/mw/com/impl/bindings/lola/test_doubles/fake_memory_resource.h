@@ -22,7 +22,15 @@ namespace score::mw::com::impl::lola
 class FakeMemoryResource : public memory::shared::ManagedMemoryResource
 {
   public:
+    [[deprecated(
+        "SPP_DEPRECATION: Please use const getMemoryResourceProxy() noexcept instead, which is the non-deprecated "
+        "version of this function. This function will be removed in a future release.")]]
     const memory::shared::MemoryResourceProxy* getMemoryResourceProxy() noexcept override
+    {
+        return nullptr;
+    }
+
+    const memory::shared::MemoryResourceProxy* getMemoryResourceProxy() const noexcept override
     {
         return nullptr;
     }
