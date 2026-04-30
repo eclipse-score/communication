@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "miri_test", "rust_doc_test", "rust_library", "rust_test")
 
 rust_library(
     name = "com-api-concept",
@@ -39,7 +39,10 @@ rust_test(
     name = "com-api-concept-test",
     crate = ":com-api-concept",
     tags = ["manual"],
-    deps = [":com-api-concept"],
+    deps = [
+        ":com-api-concept",
+        "//score/mw/com/impl/rust/com-api/com-api",
+    ],
 )
 
 rust_doc_test(
@@ -59,4 +62,17 @@ rust_test(
     srcs = ["interface_macros.rs"],
     features = ["link_std_cpp_lib"],
     deps = ["//score/mw/com/impl/rust/com-api/com-api"],
+)
+miri_test(
+    name = "com-api-concept-test_miri",
+    crate = ":com-api-concept-test",
+    tags = ["manual"],
+    visibility = ["//:__pkg__"],
+)
+
+miri_test(
+    name = "com-api-concept-macros-unit-tests_miri",
+    crate = ":com-api-concept-macros-unit-tests",
+    tags = ["manual"],
+    visibility = ["//:__pkg__"],
 )

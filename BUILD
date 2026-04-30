@@ -56,3 +56,15 @@ format_test(
     starlark = "@buildifier_prebuilt//:buildifier",
     workspace = "//:LICENSE",
 )
+
+# Miri test suite
+# Keep the CI suite to targets that run cleanly under Miri today.
+test_suite(
+    name = "miri_tests",
+    testonly = True,
+    tests = [
+        "//score/mw/com/impl/rust/com-api/com-api-concept:com-api-concept-macros-unit-tests_miri",
+        "//score/mw/com/impl/rust/com-api/com-api-concept:com-api-concept-test_miri",
+        "//score/mw/com/impl/rust/com-api/com-api-runtime-lola:com-api-runtime-lola-tests_miri",
+    ],
+)
