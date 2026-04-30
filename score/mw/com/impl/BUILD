@@ -337,6 +337,27 @@ cc_library(
 )
 
 cc_library(
+    name = "skeleton_service_elements",
+    srcs = ["skeleton_service_elements.cpp"],
+    hdrs = ["skeleton_service_elements.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__pkg__",
+        "//score/mw/com/impl/methods:__pkg__",
+        "//score/mw/com/impl/mocking:__pkg__",
+        "//score/mw/com/impl/plumbing:__pkg__",
+    ],
+    deps = [
+        ":skeleton_event_base",
+        ":skeleton_field_base",
+        "//score/mw/com/impl/methods:skeleton_method_base",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_library(
     name = "skeleton_base",
     srcs = ["skeleton_base.cpp"],
     hdrs = ["skeleton_base.h"],
@@ -354,6 +375,7 @@ cc_library(
         ":skeleton_binding",
         ":skeleton_event_base",
         ":skeleton_field_base",
+        ":skeleton_service_elements",
         "//score/mw/com/impl/methods:skeleton_method_base",
         "//score/mw/com/impl/mocking:i_skeleton_base",
         "//score/mw/com/impl/plumbing",
@@ -1283,6 +1305,23 @@ cc_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "skeleton_service_elements_test",
+    srcs = [
+        "skeleton_service_elements_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":skeleton_base",
+        ":skeleton_service_elements",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
@@ -1300,6 +1339,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":service_discovery_test",
         ":service_element_type_test",
         ":skeleton_base_test",
+        ":skeleton_service_elements_test",
         ":unit_test",
         ":traits_test",
         ":unit_test_runtime_single_exec",
