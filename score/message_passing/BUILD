@@ -41,7 +41,10 @@ test_suite(
         "@score_communication//score/message_passing/log:unit_test_suite_host",
         "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_host",
     ],
-    visibility = ["//score/message_passing:__pkg__"],
+    visibility = [
+        "//score/message_passing:__pkg__",
+        "//score/message_passing/dependability:__subpackages__",
+    ],
 )
 
 cc_library(
@@ -116,6 +119,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
+        "//score/message_passing/dependability:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
@@ -146,6 +150,7 @@ cc_library(
         "strict_warnings_no_error",
     ],
     visibility = [
+        "//score/message_passing/dependability:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
@@ -251,6 +256,9 @@ cc_gtest_unit_test(
         "strict_warnings",
         "additional_warnings",
     ],
+    visibility = [
+        "//score/message_passing/dependability:__subpackages__",
+    ],
     deps = [
         ":message_passing_common",
         ":mock",
@@ -268,6 +276,9 @@ cc_gtest_unit_test(
         "strict_warnings",
         "additional_warnings",
     ],
+    visibility = [
+        "//score/message_passing/dependability:__subpackages__",
+    ],
     deps = [
         ":message_passing_unix_domain",
     ],
@@ -283,6 +294,7 @@ cc_gtest_unit_test(
         "resource_manager_fixture_base.h",
     ],
     target_compatible_with = ["@platforms//os:qnx"],
+    visibility = ["//score/message_passing/dependability:__subpackages__"],
     deps = [
         ":message_passing_qnx_dispatch",
         "@score_baselibs//score/concurrency",
