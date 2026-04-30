@@ -11,35 +11,59 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# todo: Extract to toolchain feature once possible
+# ==============================================================================
+# Sanitizer Configurations (adapted from @score_cpp_policies)
+# ==============================================================================
 
-test:with_debug_symbols --cxxopt -gline-tables-only
-test:with_debug_symbols --cxxopt -gcolumn-info
-test:with_debug_symbols --strip=never
+# ------------------------------------------------------------------------------
+# LLVM toolchain path
+# ------------------------------------------------------------------------------
 
+# ASan + UBSan + LSan (Combined) — LLVM
 test:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 test:asan_ubsan_lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-test:asan_ubsan_lsan --config=with_debug_symbols
-test:asan_ubsan_lsan --run_under=//quality/sanitizer:wrapper
-test:asan_ubsan_lsan --//quality/sanitizer/flags:sanitizer=asan_ubsan_lsan
-test:asan_ubsan_lsan --cxxopt -fsanitize=undefined,address,leak
-test:asan_ubsan_lsan --cxxopt -fno-omit-frame-pointer
-test:asan_ubsan_lsan --cxxopt -fno-common
-test:asan_ubsan_lsan --linkopt -fsanitize=undefined,address,leak
-test:asan_ubsan_lsan --linkopt -fsanitize-link-c++-runtime
-test:asan_ubsan_lsan --platform_suffix=asan_ubsan
+build:asan_ubsan_lsan --features=score_asan_ubsan_lsan
+build:asan_ubsan_lsan --features=debug_symbols
+build:asan_ubsan_lsan --strip=never
+build:asan_ubsan_lsan --platform_suffix=asan_ubsan_lsan
+test:asan_ubsan_lsan --@score_cpp_policies//sanitizers/flags:sanitizer=asan_ubsan_lsan
+test:asan_ubsan_lsan --run_under=@score_cpp_policies//sanitizers:wrapper
 
-test:asan --config=asan_ubsan_lsan
-test:ubsan --config=asan_ubsan_lsan
-test:lsan --config=asan_ubsan_lsan
+# Shortcuts for individual sanitizers (LLVM)
+build:asan  --config=asan_ubsan_lsan
+build:ubsan --config=asan_ubsan_lsan
+build:lsan  --config=asan_ubsan_lsan
 
+# ThreadSanitizer — LLVM
 test:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 test:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-test:tsan --config=with_debug_symbols
-test:tsan --run_under=//quality/sanitizer:wrapper
-test:tsan --//quality/sanitizer/flags:sanitizer=tsan
-test:tsan --cxxopt -fsanitize=thread
-test:tsan --cxxopt -O1
-test:tsan --linkopt -fsanitize=thread
-test:tsan --linkopt -fsanitize-link-c++-runtime
-test:tsan --platform_suffix=tsan
+build:tsan --features=score_tsan
+build:tsan --features=debug_symbols
+build:tsan --strip=never
+build:tsan --platform_suffix=tsan
+test:tsan --@score_cpp_policies//sanitizers/flags:sanitizer=tsan
+test:tsan --run_under=@score_cpp_policies//sanitizers:wrapper
+
+# ------------------------------------------------------------------------------
+# GCC toolchain path — validates eclipse-score/bazel_cpp_toolchains#52
+# ------------------------------------------------------------------------------
+
+# ASan + UBSan + LSan (Combined) — GCC
+test:gcc_asan_ubsan_lsan --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux
+test:gcc_asan_ubsan_lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:gcc_asan_ubsan_lsan --features=score_asan_ubsan_lsan
+build:gcc_asan_ubsan_lsan --features=debug_symbols
+build:gcc_asan_ubsan_lsan --strip=never
+build:gcc_asan_ubsan_lsan --platform_suffix=gcc_asan_ubsan_lsan
+test:gcc_asan_ubsan_lsan --@score_cpp_policies//sanitizers/flags:sanitizer=asan_ubsan_lsan
+test:gcc_asan_ubsan_lsan --run_under=@score_cpp_policies//sanitizers:wrapper
+
+# ThreadSanitizer — GCC
+test:gcc_tsan --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux
+test:gcc_tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:gcc_tsan --features=score_tsan
+build:gcc_tsan --features=debug_symbols
+build:gcc_tsan --strip=never
+build:gcc_tsan --platform_suffix=gcc_tsan
+test:gcc_tsan --@score_cpp_policies//sanitizers/flags:sanitizer=tsan
+test:gcc_tsan --run_under=@score_cpp_policies//sanitizers:wrapper

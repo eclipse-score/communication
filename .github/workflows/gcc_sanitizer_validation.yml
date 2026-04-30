@@ -1,0 +1,126 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Validates eclipse-score/bazel_cpp_toolchains#52 (GCC feature injection)
+# by running sanitizer canaries against the GCC toolchain. Canary tests only —
+# full //... build is already covered by address_undefined_behavior_leak_sanitizer.yml
+# and thread_sanitizer.yml using the LLVM toolchain.
+#
+# TODO: Add QCC sanitizer validation once QCC toolchains have sanitizer features and QNX QEMU is available.
+
+name: Validate GCC feature injection (bazel_cpp_toolchains#52)
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+  workflow_call:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request'}}
+jobs:
+    build_and_test_gcc_asan_ubsan_lsan:
+      runs-on: ubuntu-24.04
+      continue-on-error: true
+      permissions:
+        contents: read
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4.2.2
+        - name: Free Disk Space (Ubuntu)
+          uses: eclipse-score/more-disk-space@v1
+          with:
+            level: 4
+        - uses: bazel-contrib/setup-bazel@0.18.0
+          with:
+            bazelisk-cache: true
+            disk-cache: "build_and_test_gcc_asan_ubsan_lsan"
+            repository-cache: true
+            cache-save: ${{ github.event_name == 'merge_group' }}
+        - name: Allow linux-sandbox
+          uses: ./actions/unblock_user_namespace_for_linux_sandbox
+        - name: Run ASan canary under GCC
+          run: |
+            bazel test --config=gcc_asan_ubsan_lsan //quality/sanitizer:asan_canary --test_output=all
+        - name: Debug toolchain resolution (GCC ASan)
+          if: always()
+          run: |
+            bazel cquery --config=gcc_asan_ubsan_lsan \
+              --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type' \
+              //quality/sanitizer:asan_canary_bin 2>&1 \
+              | grep -E 'ToolchainResolution|selected|@score_gcc|@gcc_toolchain' \
+              | tee /tmp/gcc_asan_resolution.log
+        - name: Dump GCC ASan compile+link lines
+          if: always()
+          run: |
+            bazel build --config=gcc_asan_ubsan_lsan \
+              --subcommands=pretty_print \
+              //quality/sanitizer:asan_canary_bin 2>&1 | tee /tmp/gcc_asan_subcmd.log || true
+            echo "---- GCC invocation + sanitizer flags ----"
+            grep -E '/gcc|/g\+\+|fsanitize|-g1' /tmp/gcc_asan_subcmd.log || true
+        - name: Upload logs
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: gcc-asan-logs
+            path: |
+              /tmp/gcc_asan_resolution.log
+              /tmp/gcc_asan_subcmd.log
+
+    build_and_test_gcc_tsan:
+      runs-on: ubuntu-24.04
+      continue-on-error: true
+      permissions:
+        contents: read
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4.2.2
+        - name: Free Disk Space (Ubuntu)
+          uses: eclipse-score/more-disk-space@v1
+          with:
+            level: 4
+        - uses: bazel-contrib/setup-bazel@0.18.0
+          with:
+            bazelisk-cache: true
+            disk-cache: "build_and_test_gcc_tsan"
+            repository-cache: true
+            cache-save: ${{ github.event_name == 'merge_group' }}
+        - name: Allow linux-sandbox
+          uses: ./actions/unblock_user_namespace_for_linux_sandbox
+        - name: Run TSan canary under GCC
+          run: |
+            bazel test --config=gcc_tsan //quality/sanitizer:tsan_canary --test_output=all
+        - name: Debug toolchain resolution (GCC TSan)
+          if: always()
+          run: |
+            bazel cquery --config=gcc_tsan \
+              --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type' \
+              //quality/sanitizer:tsan_canary_bin 2>&1 \
+              | grep -E 'ToolchainResolution|selected|@score_gcc|@gcc_toolchain' \
+              | tee /tmp/gcc_tsan_resolution.log
+        - name: Dump GCC TSan compile+link lines
+          if: always()
+          run: |
+            bazel build --config=gcc_tsan \
+              --subcommands=pretty_print \
+              //quality/sanitizer:tsan_canary_bin 2>&1 | tee /tmp/gcc_tsan_subcmd.log || true
+            echo "---- GCC invocation + sanitizer flags ----"
+            grep -E '/gcc|/g\+\+|fsanitize|-g1' /tmp/gcc_tsan_subcmd.log || true
+        - name: Upload logs
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: gcc-tsan-logs
+            path: |
+              /tmp/gcc_tsan_resolution.log
+              /tmp/gcc_tsan_subcmd.log

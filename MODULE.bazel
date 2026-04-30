@@ -20,7 +20,7 @@ bazel_dep(name = "download_utils", version = "1.2.2")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_cc", version = "0.1.5")
+bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "rules_python", version = "1.5.1")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
 bazel_dep(name = "score_baselibs", version = "0.2.6")
@@ -42,6 +42,14 @@ git_override(
     module_name = "score_tooling",
     commit = "ef7659a233722e07d7cd227c10fb3584bfd37e71",
     remote = "https://github.com/eclipse-score/tooling.git",
+)
+
+# Centralized sanitizer policies (ASan, TSan, UBSan, LSan)
+bazel_dep(name = "score_cpp_policies", version = "0.0.0", dev_dependency = True)
+git_override(
+    module_name = "score_cpp_policies",
+    commit = "8562ace3fb0cda53e9a28bfd3235c1a7961123df",  # tip of rs/swp-245137 branch
+    remote = "https://github.com/RSingh1511/score_cpp_policies.git",
 )
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
@@ -66,13 +74,20 @@ use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.3.0", dev_dependency = True)
 git_override(
     module_name = "score_bazel_cpp_toolchains",
-    commit = "79982259df6dfa9d82cc458163a6d9b08bd24471",
+    # Pinned to PR #52 HEAD for feature-injection testing
+    # https://github.com/eclipse-score/bazel_cpp_toolchains/pull/52
+    commit = "bc1a15ba09022382f03198809d065b737fc3661c",
     remote = "https://github.com/eclipse-score/bazel_cpp_toolchains.git",
 )
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
 score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan_gcc",
+        "@score_cpp_policies//sanitizers/features:tsan_gcc",
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+    ],
     target_cpu = "x86_64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -81,6 +96,11 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan_gcc",
+        "@score_cpp_policies//sanitizers/features:tsan_gcc",
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+    ],
     target_cpu = "aarch64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -129,7 +149,12 @@ toolchains_qnx.sdp(
 )
 use_repo(toolchains_qnx, "toolchains_qnx_ifs")
 
-bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
+bazel_dep(name = "toolchains_llvm", version = "1.7.0", dev_dependency = True)
+git_override(
+    module_name = "toolchains_llvm",
+    commit = "576a587e4542733166ac1c3c4fb14c79c421332c",
+    remote = "https://github.com/bazel-contrib/toolchains_llvm",
+)
 
 llvm = use_extension(
     "@toolchains_llvm//toolchain/extensions:llvm.bzl",
@@ -151,12 +176,20 @@ llvm.toolchain(
         "-Wthread-safety",
     ]},
     cxx_standard = {"": "c++17"},
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan",
+        "@score_cpp_policies//sanitizers/features:tsan",
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+    ],
     link_libs = {"": [
         "-lrt",
         # This is the agreed way to ensure linking for targets using std::atomic operations.
         "-latomic",
     ]},
     llvm_version = "19.1.7",
+    # TODO: Remove once LLVM sysroot is configured.
+    # Without a sysroot, libc++ is unavailable on runners and host tools fail to link.
+    stdlib = {"": "stdc++"},
 )
 use_repo(llvm, "llvm_toolchain")
 
