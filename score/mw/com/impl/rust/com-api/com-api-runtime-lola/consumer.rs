@@ -559,7 +559,7 @@ where
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-        timeout_future: impl Future<Output = ()> + 'a,
+        timeout_future: impl Future<Output = ()> + Unpin + 'a,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
         async move {
             if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
@@ -590,6 +590,7 @@ where
                 new_samples,
                 max_samples,
                 total_received: 0,
+                timeout_future,
             }
             .await
         }
@@ -601,7 +602,7 @@ where
 // a waker storage for async notifications, and parameters for managing the receive operation.
 // The Future implementation for ReceiveFuture defines the polling logic,
 // which attempts to receive samples and manages the state of the receive operation.
-struct ReceiveFuture<'a, T: CommData + Debug> {
+struct ReceiveFuture<'a, T: CommData + Debug, C: Future<Output = ()> + Unpin> {
     event_guard: Option<ProxyEventManagerGuard<'a>>,
     waker_storage: Arc<AtomicWaker>,
     max_num_samples: usize,
@@ -609,9 +610,10 @@ struct ReceiveFuture<'a, T: CommData + Debug> {
     new_samples: usize,
     max_samples: usize,
     total_received: usize,
+    timeout_future: C,
 }
 
-impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
+impl<'a, T: CommData + Debug, C: Future<Output = ()> + Unpin> Future for ReceiveFuture<'a, T, C> {
     type Output = (SampleContainer<Sample<T>>, Result<()>);
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -620,6 +622,17 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
         let new_samples = self.new_samples;
         let max_num_samples = self.max_num_samples;
         let total_received = self.total_received;
+
+        // Poll cancel/timeout future first — C: Unpin so Pin::new is safe, no allocation
+        if Pin::new(&mut self.timeout_future).poll(ctx).is_ready() {
+            self.event_guard = None;
+            return Poll::Ready((
+                self.scratch
+                    .take()
+                    .expect("SampleContainer missing on timeout/cancel"),
+                Err(Error::ReceiveError(ReceiveFailedReason::Cancelled)),
+            ));
+        }
 
         // Register the current waker to be notified when new samples arrive via FFI callback
         self.waker_storage.register(ctx.waker());

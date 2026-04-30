@@ -73,6 +73,8 @@ pub enum ReceiveFailedReason {
     BufferUnavailable,
     #[error("Sample size out of bounds, expected at most {max}, but got {requested}")]
     SampleCountOutOfBounds { max: usize, requested: usize },
+    #[error("Receive operation was cancelled or timed out")]
+    Cancelled,
 }
 
 /// Comprehensive error reasons for event-related failures

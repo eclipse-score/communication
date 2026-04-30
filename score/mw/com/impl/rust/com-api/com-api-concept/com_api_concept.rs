@@ -858,7 +858,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-        timeout_future: impl Future<Output = ()> + 'a,
+        timeout_future: impl Future<Output = ()> + Unpin + 'a,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a;
 }
 
