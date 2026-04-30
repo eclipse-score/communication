@@ -65,9 +65,9 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
         // Default behaviour for get the usable base addresses of the mocked memory resources using the constructed
         // ServiceDataControl / Storage created above.
         ON_CALL(*control_qm_shared_memory_resource_mock_, getUsableBaseAddress())
-            .WillByDefault(Return(static_cast<void*>(&existing_service_data_control_qm_)));
+            .WillByDefault(Return(static_cast<void*>(existing_service_data_control_qm_.get())));
         ON_CALL(*control_asil_b_shared_memory_resource_mock_, getUsableBaseAddress())
-            .WillByDefault(Return(static_cast<void*>(&existing_service_data_control_b_)));
+            .WillByDefault(Return(static_cast<void*>(existing_service_data_control_b_.get())));
         ON_CALL(*data_shared_memory_resource_mock_, getUsableBaseAddress())
             .WillByDefault(Return(static_cast<void*>(&existing_service_data_storage_)));
     }
@@ -97,15 +97,12 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
     // shared memory region which the Skeleton must open and clean up if necessary. The ServiceDataControl /
     // ServiceDataStorage are returned when getUsableBaseAddress() are called on the relevant mocked
     // SharedMemoryResources.
-    ServiceDataControl existing_service_data_control_qm_{
+    std::unique_ptr<ServiceDataControl> existing_service_data_control_qm_{
         CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_QM)};
-    ServiceDataControl existing_service_data_control_b_{
+    std::unique_ptr<ServiceDataControl> existing_service_data_control_b_{
         CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_B)};
     ServiceDataStorage existing_service_data_storage_{
         CreateServiceDataStorageWithEvent<test::TestSampleType>(test::kDummyElementFqId)};
-
-    ProxyServiceDataControlLocalView existing_proxy_service_data_control_qm_local_{existing_service_data_control_qm_};
-    ProxyServiceDataControlLocalView existing_proxy_service_data_control_b_local_{existing_service_data_control_b_};
 
     const UniqueMethodIdentifier fooo_unique_method_id_{test::kFooMethodId, MethodType::kMethod};
     const UniqueMethodIdentifier dumb_unique_method_id_{test::kDumbMethodId, MethodType::kMethod};
@@ -393,9 +390,9 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningServiceUsageMarker
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemoryIfFLockingServiceUsageMarkerFilefails)
 {
     auto skeleton_event_data_control_qm = GetProviderEventDataControlLocalFromServiceDataControl(
-        test::kDummyElementFqId, existing_service_data_control_qm_);
+        test::kDummyElementFqId, *existing_service_data_control_qm_);
     auto skeleton_event_data_control_asil_b = GetProviderEventDataControlLocalFromServiceDataControl(
-        test::kDummyElementFqId, existing_service_data_control_b_);
+        test::kDummyElementFqId, *existing_service_data_control_b_);
 
     // Given a Skeleton constructed from a valid identifier referencing an ASIL-B deployment
     InitialiseSkeleton(GetValidASILInstanceIdentifier());
@@ -858,9 +855,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataIfShmRegio
     // in the opened shared memory region (we check the control section views by allocating a slot in the opened region
     // and checking that the allocation is reflected in the view)
     auto& existing_event_control_qm =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_);
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_qm_);
     auto& existing_event_control_asil_b =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_b_);
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_b_);
     auto& existing_event_data_storage = GetEventStorageFromServiceDataStorage<test::TestSampleType>(
         test::kDummyElementFqId, existing_service_data_storage_);
 
@@ -885,9 +882,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledOnQmTransaction
 {
     // Given a QM ServiceDataControl which contains a TransactionLogSet with valid transactions
     auto proxy_event_data_control_qm_local = GetConsumerEventDataControlLocalFromServiceDataControl(
-        test::kDummyElementFqId, existing_service_data_control_qm_);
+        test::kDummyElementFqId, *existing_service_data_control_qm_);
     auto& transaction_log_set =
-        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_);
+        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_qm_);
     InsertSkeletonTransactionLogWithValidTransactions(proxy_event_data_control_qm_local, transaction_log_set);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 
@@ -923,9 +920,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledOnAsilBTransact
 {
     // Given an Asil B ServiceDataControl which contains a TransactionLogSet with valid transactions
     auto proxy_event_data_control_asil_b_local = GetConsumerEventDataControlLocalFromServiceDataControl(
-        test::kDummyElementFqId, existing_service_data_control_b_);
+        test::kDummyElementFqId, *existing_service_data_control_b_);
     auto& transaction_log_set =
-        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_b_);
+        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_b_);
     InsertSkeletonTransactionLogWithValidTransactions(proxy_event_data_control_asil_b_local, transaction_log_set);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 
@@ -964,9 +961,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
 
     // Given a QM ServiceDataControl which contains a TransactionLogSet with invalid transactions
     auto proxy_event_data_control_qm_local = GetConsumerEventDataControlLocalFromServiceDataControl(
-        test::kDummyElementFqId, existing_service_data_control_qm_);
+        test::kDummyElementFqId, *existing_service_data_control_qm_);
     auto& transaction_log_set =
-        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_);
+        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_qm_);
     InsertSkeletonTransactionLogWithInvalidTransactions(proxy_event_data_control_qm_local, transaction_log_set);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 

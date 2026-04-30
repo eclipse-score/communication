@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
 
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/runtime.h"
@@ -34,25 +35,25 @@ namespace
 // std::bad_optional_access." and points on statement `for (auto& element : service_data_control.event_controls_)`.
 // This is a false positive; no optional is involved in this statement.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void MarkTransactionLogsNeedRollback(ProxyServiceDataControlLocalView& service_data_control,
+void MarkTransactionLogsNeedRollback(ServiceDataControl& service_data_control,
                                      const TransactionLogId transaction_log_id) noexcept
 {
     for (auto& element : service_data_control.event_controls_)
     {
-        auto& transaction_log_set = element.second.transaction_log_set;
-        transaction_log_set.get().MarkTransactionLogsNeedRollback(transaction_log_id);
+        auto& transaction_log_set = element.second.transaction_log_set_;
+        transaction_log_set.MarkTransactionLogsNeedRollback(transaction_log_id);
     }
 }
 
 }  // namespace
 
 TransactionLogRollbackExecutor::TransactionLogRollbackExecutor(
-    ProxyServiceDataControlLocalView& service_data_control_local,
+    ServiceDataControl& service_data_control,
     const SkeletonInstanceIdentifier skeleton_instance_identifier,
     const QualityType asil_level,
     pid_t provider_pid,
     const TransactionLogId transaction_log_id) noexcept
-    : service_data_control_local_{service_data_control_local},
+    : service_data_control_{service_data_control},
       asil_level_{asil_level},
       provider_pid_{provider_pid},
       transaction_log_id_{transaction_log_id},
@@ -71,7 +72,7 @@ void TransactionLogRollbackExecutor::PrepareRollback(lola::IRuntime& lola_runtim
     // Register the application's unique identifier (which is the transaction_log_id_ for this context) and
     // current pid in the shared mapping.
     const auto current_pid = lola_runtime.GetPid();
-    const auto previous_pid = service_data_control_local_.application_id_pid_mapping_.RegisterPid(
+    const auto previous_pid = service_data_control_.application_id_pid_mapping_.RegisterPid(
         static_cast<std::uint32_t>(transaction_log_id_), current_pid);
     if (!(previous_pid.has_value()))
     {
@@ -89,7 +90,7 @@ void TransactionLogRollbackExecutor::PrepareRollback(lola::IRuntime& lola_runtim
     }
 
     // Mark all TransactionLogs for each event that correspond to transaction_log_id as needing to be rolled back.
-    MarkTransactionLogsNeedRollback(service_data_control_local_, transaction_log_id_);
+    MarkTransactionLogsNeedRollback(service_data_control_, transaction_log_id_);
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -116,17 +117,18 @@ Result<void> TransactionLogRollbackExecutor::RollbackTransactionLogs() noexcept
         PrepareRollback(lola_runtime);
     }
 
-    for (auto& element : service_data_control_local_.event_controls_)
+    for (auto& element : service_data_control_.event_controls_)
     {
         auto& event_control = element.second;
-        auto& transaction_log_set = event_control.transaction_log_set;
-        const auto rollback_result = transaction_log_set.get().RollbackProxyTransactions(
+        ConsumerEventDataControlLocalView<> consumer_event_data_control_view{event_control.data_control};
+        auto& transaction_log_set = event_control.transaction_log_set_;
+        const auto rollback_result = transaction_log_set.RollbackProxyTransactions(
             transaction_log_id_,
-            [&event_control](const TransactionLog::SlotIndexType slot_index) noexcept {
-                event_control.data_control.DereferenceEventWithoutTransactionLogging(slot_index);
+            [&consumer_event_data_control_view](const TransactionLog::SlotIndexType slot_index) noexcept {
+                consumer_event_data_control_view.DereferenceEventWithoutTransactionLogging(slot_index);
             },
             [&event_control](const TransactionLog::MaxSampleCountType subscription_max_sample_count) noexcept {
-                event_control.subscription_control.get().Unsubscribe(subscription_max_sample_count);
+                event_control.subscription_control.Unsubscribe(subscription_max_sample_count);
             });
         if (!rollback_result.has_value())
         {

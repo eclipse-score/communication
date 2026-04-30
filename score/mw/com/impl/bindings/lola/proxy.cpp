@@ -20,7 +20,6 @@
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
@@ -196,8 +195,7 @@ OpenSharedMemory(const LolaServiceInstanceDeployment& instance_deployment,
     return std::make_pair(control, data);
 }
 
-ProxyServiceDataControlLocalView GetProxyServiceDataControlLocalView(
-    const memory::shared::ManagedMemoryResource& control_memory_resource) noexcept
+ServiceDataControl& GetServiceDataControl(const memory::shared::ManagedMemoryResource& control_memory_resource) noexcept
 {
     auto* const usable_base_address = control_memory_resource.getUsableBaseAddress();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
@@ -209,7 +207,7 @@ ProxyServiceDataControlLocalView GetProxyServiceDataControlLocalView(
     // The "ServiceDataStorage" type is strongly defined as shared IPC data between Proxy and Skeleton.
     // coverity[autosar_cpp14_m5_2_8_violation]
     auto* const service_data_control = static_cast<ServiceDataControl*>(usable_base_address);
-    return ProxyServiceDataControlLocalView{*service_data_control};
+    return *service_data_control;
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -230,8 +228,8 @@ score::Result<void> ExecutePartialRestartLogic(const QualityType quality_type,
     // The transaction log is identified by the application's unique identifier, which is either the configured
     // 'applicationID' or the process UID as a fallback.
     const TransactionLogId transaction_log_id{static_cast<TransactionLogId>(lola_runtime.GetApplicationId())};
-    auto service_data_control_local = GetProxyServiceDataControlLocalView(control);
-    TransactionLogRollbackExecutor transaction_log_rollback_executor{service_data_control_local,
+    auto& service_data_control = GetServiceDataControl(control);
+    TransactionLogRollbackExecutor transaction_log_rollback_executor{service_data_control,
                                                                      skeleton_instance_identifier,
                                                                      quality_type,
                                                                      service_data_storage.skeleton_pid_,
@@ -417,7 +415,6 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
       control_{std::move(control)},
       data_{std::move(data)},
       method_shm_resource_{nullptr},
-      service_data_control_local_{GetProxyServiceDataControlLocalView(*control_)},
       quality_type_{quality_type},
       event_name_to_element_fq_id_converter_{std::move(event_name_to_element_fq_id_converter)},
       handle_{std::move(handle)},
@@ -532,12 +529,14 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
 // exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ConsumerEventControlLocalView& Proxy::GetEventControlLocal(const ElementFqId element_fq_id) noexcept
+ConsumerEventDataControlLocalView<> Proxy::GetConsumerEventDataControlLocalView(
+    const ElementFqId element_fq_id) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
-    const auto event_entry = service_data_control_local_.event_controls_.find(element_fq_id);
-    if (event_entry == service_data_control_local_.event_controls_.end())
+    auto& service_data_control = GetServiceDataControl(*control_);
+    const auto event_entry = service_data_control.event_controls_.find(element_fq_id);
+    if (event_entry == service_data_control.event_controls_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find control channel for given event instance. Terminating.";
@@ -553,7 +552,47 @@ ConsumerEventControlLocalView& Proxy::GetEventControlLocal(const ElementFqId ele
     // coverity[autosar_cpp14_m7_5_1_violation]
     // coverity[autosar_cpp14_m7_5_2_violation]
     // coverity[autosar_cpp14_a3_8_1_violation]
-    return event_entry->second;
+    return ConsumerEventDataControlLocalView<>{event_entry->second.data_control};
+}
+
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
+// exception.
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+EventSubscriptionControl<>& Proxy::GetEventSubscriptionControl(const ElementFqId element_fq_id) noexcept
+{
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
+                                                      "Proxy::GetEventControl: Managed memory control pointer is Null");
+    auto& service_data_control = GetServiceDataControl(*control_);
+    const auto event_entry = service_data_control.event_controls_.find(element_fq_id);
+    if (event_entry == service_data_control.event_controls_.end())
+    {
+        score::mw::log::LogFatal("lola") << __func__ << __LINE__
+                                         << "Unable to find control channel for given event instance. Terminating.";
+        std::terminate();
+    }
+    return event_entry->second.subscription_control;
+}
+
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
+// exception.
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+TransactionLogSet& Proxy::GetTransactionLogSet(const ElementFqId element_fq_id) noexcept
+{
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
+                                                      "Proxy::GetEventControl: Managed memory control pointer is Null");
+    auto& service_data_control = GetServiceDataControl(*control_);
+    const auto event_entry = service_data_control.event_controls_.find(element_fq_id);
+    if (event_entry == service_data_control.event_controls_.end())
+    {
+        score::mw::log::LogFatal("lola") << __func__ << __LINE__
+                                         << "Unable to find control channel for given event instance. Terminating.";
+        std::terminate();
+    }
+    return event_entry->second.transaction_log_set_;
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -593,9 +632,10 @@ bool Proxy::IsEventProvided(const std::string_view event_name) const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "IsEventProvided: Managed memory control pointer is Null");
+    auto& service_data_control = GetServiceDataControl(*control_);
     const auto element_fq_id = event_name_to_element_fq_id_converter_.Convert(event_name);
-    const auto event_entry = service_data_control_local_.event_controls_.find(element_fq_id);
-    const bool event_exists = (event_entry != service_data_control_local_.event_controls_.end());
+    const auto event_entry = service_data_control.event_controls_.find(element_fq_id);
+    const bool event_exists = (event_entry != service_data_control.event_controls_.end());
     return event_exists;
 }
 

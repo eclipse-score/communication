@@ -131,9 +131,6 @@ void ProxyMockedMemoryFixture::InitialiseDummySkeletonEvent(const ElementFqId el
 
 LolaProxyEventResources::LolaProxyEventResources() : ProxyMockedMemoryFixture{}
 {
-    // Since the Proxy caches a view on ServiceDataControl (via ProxyServiceDataControlLocalView) on construction, we
-    // have to set ensure that the ServiceDataControl is set up before creating the proxy. Therefore, we call
-    // InitialiseDummySkeletonEvent before InitialiseProxyWithConstructor.
     InitialiseDummySkeletonEvent(element_fq_id_, SkeletonEventProperties{max_num_slots_, max_subscribers_, true});
     InitialiseProxyWithConstructor(identifier_);
 }

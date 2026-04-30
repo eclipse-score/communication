@@ -36,9 +36,8 @@ namespace score::mw::com::impl::lola
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_count) noexcept
 {
-    auto transaction_log_registration_guard_result =
-        state_machine_.event_control_local_.transaction_log_set.get().RegisterProxyElement(
-            state_machine_.transaction_log_id_, state_machine_.event_control_local_.data_control);
+    auto transaction_log_registration_guard_result = state_machine_.transaction_log_set_.RegisterProxyElement(
+        state_machine_.transaction_log_id_, state_machine_.event_data_control_local_);
     if (!(transaction_log_registration_guard_result.has_value()))
     {
         std::stringstream ss{};
@@ -59,8 +58,7 @@ Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_cou
     // Since the subscription process is not called frequently, we are not concerned with the performance issue of
     // creating a TransactionLogLocalView  from the TransactionLog in shared memory.
     const auto transaction_log_index = state_machine_.transaction_log_registration_guard_->GetTransactionLogIndex();
-    auto& transaction_log =
-        state_machine_.event_control_local_.transaction_log_set.get().GetTransactionLog(transaction_log_index);
+    auto& transaction_log = state_machine_.transaction_log_set_.GetTransactionLog(transaction_log_index);
     TransactionLogLocalView transaction_log_local_view{transaction_log};
     transaction_log_local_view.SubscribeTransactionBegin(max_sample_count);
 
@@ -69,8 +67,7 @@ Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_cou
     // This is an in purpose casting, as the max sample count could be hold by uint16.
     // coverity[autosar_cpp14_a4_7_1_violation]
     const auto max_sample_count_uint16 = static_cast<std::uint16_t>(max_sample_count);
-    const auto subscription_result =
-        state_machine_.event_control_local_.subscription_control.get().Subscribe(max_sample_count_uint16);
+    const auto subscription_result = state_machine_.subscription_control_.Subscribe(max_sample_count_uint16);
     if (subscription_result != SubscribeResult::kSuccess)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
@@ -87,8 +84,7 @@ Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_cou
     }
     transaction_log_local_view.SubscribeTransactionCommit();
 
-    SlotCollector slot_collector{state_machine_.event_control_local_.data_control,
-                                 static_cast<std::size_t>(max_sample_count)};
+    SlotCollector slot_collector{state_machine_.event_data_control_local_, static_cast<std::size_t>(max_sample_count)};
     if (state_machine_.event_receiver_handler_.has_value())
     {
         // Defer handler registration until provider is available to avoid failed registration attempts.
@@ -160,13 +156,11 @@ const score::cpp::optional<SlotCollector>& NotSubscribedState::GetSlotCollector(
 void NotSubscribedState::OnEntry() noexcept
 {
     const auto transaction_log_index = state_machine_.transaction_log_registration_guard_->GetTransactionLogIndex();
-    auto& transaction_log =
-        state_machine_.event_control_local_.transaction_log_set.get().GetTransactionLog(transaction_log_index);
+    auto& transaction_log = state_machine_.transaction_log_set_.GetTransactionLog(transaction_log_index);
     TransactionLogLocalView transaction_log_local_view{transaction_log};
 
     transaction_log_local_view.UnsubscribeTransactionBegin();
-    state_machine_.event_control_local_.subscription_control.get().Unsubscribe(
-        state_machine_.subscription_data_.max_sample_count_.value());
+    state_machine_.subscription_control_.Unsubscribe(state_machine_.subscription_data_.max_sample_count_.value());
     transaction_log_local_view.UnsubscribeTransactionCommit();
 
     state_machine_.event_receive_handler_manager_.Unregister();
