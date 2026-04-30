@@ -158,9 +158,9 @@ score::Result<void> ProxyBase::StopFindService(const FindServiceHandle handle) n
     return stop_find_service_result;
 }
 
-Result<void> ProxyBase::SetupMethods(const std::vector<std::string_view>& enabled_method_names)
+Result<void> ProxyBase::SetupMethods()
 {
-    const auto result = proxy_binding_->SetupMethods(enabled_method_names);
+    const auto result = proxy_binding_->SetupMethods();
     if (!result.has_value())
     {
         return MakeUnexpected<void>(result.error());

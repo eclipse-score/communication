@@ -129,7 +129,7 @@ int run_consumer()
 
     // Step 1. Find service and create proxy
     std::cout << "\nConsumer: Step 1" << std::endl;
-    if (!consumer.CreateProxy(kInstanceSpecifier, {"with_in_args_and_return", "with_in_args_only", "with_return_only"}))
+    if (!consumer.CreateProxy(kInstanceSpecifier))
     {
         std::cerr << "Methods non_trivial_constructors consumer failed: CreateProxy" << std::endl;
         process_synchronizer_result->Notify();

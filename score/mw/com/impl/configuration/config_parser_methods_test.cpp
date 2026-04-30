@@ -631,5 +631,139 @@ TEST_F(ConfigParserFixture, MethodQueueSizeCanBeSpecified)
     EXPECT_EQ(lola_deployment.methods_.at("SetPressure").queue_size_, 5);
 }
 
+TEST_F(ConfigParserFixture, MethodCanBeExplicitlyDisabled)
+{
+    // Given a JSON with a method with enabled set to false
+    auto j2 = R"(
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 1234,
+          "events": [],
+          "fields": [],
+          "methods": [
+            {
+              "methodName": "SetPressure",
+              "methodId": 40
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "abc/abc/TirePressurePort",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "instances": [
+        {
+          "instanceId": 1234,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [],
+          "fields": [],
+          "methods": [
+            {
+              "methodName": "SetPressure",
+              "enabled": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+)"_json;
+
+    // When parsing the JSON
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+
+    // Then the method should be disabled
+    const auto deployments =
+        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+    const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployments.bindingInfo_);
+    ASSERT_TRUE(lola_deployment.methods_.at("SetPressure").enabled_.has_value());
+    EXPECT_FALSE(lola_deployment.methods_.at("SetPressure").enabled_.value());
+}
+
+TEST_F(ConfigParserFixture, MethodCanBeExplicitlyEnabled)
+{
+    // Given a JSON with a method with enabled set to true
+    auto j2 = R"(
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 1234,
+          "events": [],
+          "fields": [],
+          "methods": [
+            {
+              "methodName": "SetPressure",
+              "methodId": 40
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "abc/abc/TirePressurePort",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "instances": [
+        {
+          "instanceId": 1234,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [],
+          "fields": [],
+          "methods": [
+            {
+              "methodName": "SetPressure",
+              "enabled": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+)"_json;
+
+    // When parsing the JSON
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+
+    // Then the method should be enabled
+    const auto deployments =
+        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+    const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployments.bindingInfo_);
+    ASSERT_TRUE(lola_deployment.methods_.at("SetPressure").enabled_.has_value());
+    EXPECT_TRUE(lola_deployment.methods_.at("SetPressure").enabled_.value());
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

@@ -49,10 +49,12 @@
 #include <score/stop_token.hpp>
 #include <score/utility.hpp>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <sched.h>
 #include <sys/types.h>
+#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -111,12 +113,6 @@ const LolaServiceTypeDeployment kLolaServiceTypeDeploymentWithMethods{
     {},
     {{kDummyMethodName0, kDummyMethodId0}, {kDummyMethodName1, kDummyMethodId1}, {kDummyMethodName2, kDummyMethodId2}}};
 
-const ConfigurationStore kConfigurationStore{InstanceSpecifier::Create(std::string{"my_instance_spec"}).value(),
-                                             make_ServiceIdentifierType("foo"),
-                                             QualityType::kASIL_B,
-                                             kLolaServiceTypeDeploymentWithMethods,
-                                             kLolaServiceInstanceDeploymentWithMethods};
-
 const std::optional<DataTypeSizeInfo> kEmptyInArgsTypeErasedDataInfo{};
 const std::optional<DataTypeSizeInfo> kEmptyReturnTypeTypeErasedDataInfo{};
 const DataTypeSizeInfo kValidInArgsTypeErasedDataInfo{16U, 16U};
@@ -127,8 +123,6 @@ const DataTypeSizeInfo kValidReturnTypeTypeErasedDataInfo1{32U, 16U};
 
 const TypeErasedCallQueue::TypeErasedElementInfo kEmptyTypeErasedInfo{{}, {}, 0};
 const ServiceHandleContainer<HandleType> kEmptyServiceHandleContainer{};
-const ServiceHandleContainer<HandleType> kServiceHandleContainerWithOneHandle{
-    make_HandleType(kConfigurationStore.GetInstanceIdentifier())};
 
 const FindServiceHandle kFindServiceHandle{make_FindServiceHandle(10U)};
 
@@ -154,8 +148,36 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
 
     ProxyMethodHandlingFixture& GivenAProxy()
     {
-        InitialiseProxyWithConstructor(kConfigurationStore.GetInstanceIdentifier());
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(configuration_store_ != nullptr);
+        InitialiseProxyWithConstructor(configuration_store_->GetInstanceIdentifier());
         SCORE_LANGUAGE_FUTURECPP_ASSERT(proxy_ != nullptr);
+        return *this;
+    }
+
+    ProxyMethodHandlingFixture& GivenAConfigurationWithEnabledMethods(
+        const std::vector<std::string_view>& enabled_method_names)
+    {
+        const auto is_method_enabled = [&enabled_method_names](const std::string_view method_name) {
+            return std::find(enabled_method_names.begin(), enabled_method_names.end(), method_name) !=
+                   enabled_method_names.end();
+        };
+        const bool is_method_0_enabled = is_method_enabled(kDummyMethodName0);
+        const bool is_method_1_enabled = is_method_enabled(kDummyMethodName1);
+        const bool is_method_2_enabled = is_method_enabled(kDummyMethodName2);
+
+        configuration_store_ = std::make_unique<ConfigurationStore>(ConfigurationStore{
+            InstanceSpecifier::Create(std::string{"my_instance_spec"}).value(),
+            make_ServiceIdentifierType("foo"),
+            QualityType::kASIL_B,
+            kLolaServiceTypeDeploymentWithMethods,
+            LolaServiceInstanceDeployment{
+                kLolaInstanceId,
+                {},
+                {},
+                {{kDummyMethodName0, LolaMethodInstanceDeployment{kDummyQueueSize0, is_method_0_enabled}},
+                 {kDummyMethodName1, LolaMethodInstanceDeployment{kDummyQueueSize1, is_method_1_enabled}},
+                 {kDummyMethodName2, LolaMethodInstanceDeployment{kDummyQueueSize2, is_method_2_enabled}}}}});
+
         return *this;
     }
 
@@ -200,7 +222,10 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
     void OfferService()
     {
         ASSERT_TRUE(find_service_handler_.has_value());
-        std::invoke(find_service_handler_.value(), kServiceHandleContainerWithOneHandle, kFindServiceHandle);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(configuration_store_ != nullptr);
+        const ServiceHandleContainer<HandleType> service_handle_container_with_one_handle{
+            make_HandleType(configuration_store_->GetInstanceIdentifier())};
+        std::invoke(find_service_handler_.value(), service_handle_container_with_one_handle, kFindServiceHandle);
     }
 
     const MethodData& GetMethodDataFromShm()
@@ -224,18 +249,19 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
     containers::NonRelocatableVector<ProxyMethod> proxy_method_storage_{5U};
 
     std::optional<FindServiceHandler<HandleType>> find_service_handler_{};
+    std::unique_ptr<ConfigurationStore> configuration_store_{nullptr};
 };
 
 TEST_F(ProxyMethodHandlingFixture, EnablingZeroMethodsDoesNotCreateSharedMemory)
 {
     // Given that no ProxyMethods were registered
-    GivenAProxy().GivenAMockedSharedMemoryResource();
+    GivenAConfigurationWithEnabledMethods({}).GivenAProxy().GivenAMockedSharedMemoryResource();
 
     // Expecting that no shared memory region will be created
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Create(StartsWith(kMethodChannelPrefix), _, _, _, _)).Times(0);
 
     // When calling SetupMethods with an empty enabled_method_names vector
-    const auto result = proxy_->SetupMethods({});
+    const auto result = proxy_->SetupMethods();
 
     // Then no error is returned
     EXPECT_TRUE(result.has_value());
@@ -244,17 +270,20 @@ TEST_F(ProxyMethodHandlingFixture, EnablingZeroMethodsDoesNotCreateSharedMemory)
 TEST_F(ProxyMethodHandlingFixture, SuccessfullyCreatingSharedMemoryReturnsSuccess)
 {
     // Given that a ProxyMethod is registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that the shared memory creation succeeds
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Create(StartsWith(kMethodChannelPrefix), _, _, _, _))
         .WillOnce(Return(mock_method_memory_resource_));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    const auto result = proxy_->SetupMethods({kDummyMethodName0});
+    const auto result = proxy_->SetupMethods();
 
     // Then no error is returned
     EXPECT_TRUE(result.has_value());
@@ -263,17 +292,20 @@ TEST_F(ProxyMethodHandlingFixture, SuccessfullyCreatingSharedMemoryReturnsSucces
 TEST_F(ProxyMethodHandlingFixture, FailingToCreateSharedMemoryReturnsError)
 {
     // Given that a ProxyMethod is registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that the shared memory creation fails and returns a nullptr
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Create(StartsWith(kMethodChannelPrefix), _, _, _, _))
         .WillOnce(Return(nullptr));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    const auto result = proxy_->SetupMethods({kDummyMethodName0});
+    const auto result = proxy_->SetupMethods();
 
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
@@ -283,16 +315,19 @@ TEST_F(ProxyMethodHandlingFixture, FailingToCreateSharedMemoryReturnsError)
 TEST_F(ProxyMethodHandlingFixture, CreatesMethodCallQueueForEachMethodInShm)
 {
     // Given that 2 ProxyMethods are registered
-    GivenAProxy().GivenAFakeSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
-         {kDummyMethodId1,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo1, kValidReturnTypeTypeErasedDataInfo1, kDummyQueueSize1}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
+        .GivenAProxy()
+        .GivenAFakeSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+             {kDummyMethodId1,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo1, kValidReturnTypeTypeErasedDataInfo1, kDummyQueueSize1}}});
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // Then a MethodData object will be created which contains TypeErasedCallQueues
     // for each method
@@ -300,23 +335,26 @@ TEST_F(ProxyMethodHandlingFixture, CreatesMethodCallQueueForEachMethodInShm)
     ASSERT_EQ(method_data.method_call_queues_.size(), 2U);
     const UniqueMethodIdentifier expected_method_0{kDummyMethodId0, MethodType::kMethod};
     const UniqueMethodIdentifier expected_method_1{kDummyMethodId1, MethodType::kMethod};
-    EXPECT_EQ(method_data.method_call_queues_.at(0).first, expected_method_0);
-    EXPECT_EQ(method_data.method_call_queues_.at(1).first, expected_method_1);
+    EXPECT_THAT(method_data.method_call_queues_,
+                UnorderedElementsAre(Pair(expected_method_0, _), Pair(expected_method_1, _)));
 }
 
 TEST_F(ProxyMethodHandlingFixture, SetsInArgsAndReturnStoragesForEachMethodInShm)
 {
     // Given that 2 ProxyMethods are registered
-    GivenAProxy().GivenAFakeSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
-         {kDummyMethodId1,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo1, kValidReturnTypeTypeErasedDataInfo1, kDummyQueueSize1}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
+        .GivenAProxy()
+        .GivenAFakeSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+             {kDummyMethodId1,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo1, kValidReturnTypeTypeErasedDataInfo1, kDummyQueueSize1}}});
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // Then the SetInArgsAndReturnStorages will be set for each method (which we validate by checking whether the method
     // can allocate InArgs without crashing, since the allocation is using the inserted storages)
@@ -331,10 +369,13 @@ TEST_F(ProxyMethodHandlingFixture, CreatesSharedMemoryWithUserPermissionsContain
     // Given that a ProxyMethod is registered which is connected to a Fake ServiceDataStorage which stores kDummyUid as
     // the UID of the skeleton (check the construction of FakeMockedServiceData in the constructor of
     // ProxyMockedMemoryFixture)
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that the shared memory creation is called with read and write permissions for the skeleton's
     // uid
@@ -360,17 +401,20 @@ TEST_F(ProxyMethodHandlingFixture, CreatesSharedMemoryWithUserPermissionsContain
             })));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+    score::cpp::ignore = proxy_->SetupMethods();
 }
 
 using ProxySetupMethodsPartialRestartFixture = ProxyMethodHandlingFixture;
 TEST_F(ProxySetupMethodsPartialRestartFixture, RemovesStaleArtefactsIfShmFileAlreadyExists)
 {
     // Given that a ProxyMethod is registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that we check if the shm file already exists in the filesystem
     // which returns that it already exists (indicating that a previous Proxy was created which then crashed).
@@ -380,23 +424,26 @@ TEST_F(ProxySetupMethodsPartialRestartFixture, RemovesStaleArtefactsIfShmFileAlr
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, RemoveStaleArtefacts(StartsWith(kMethodChannelPrefix)));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+    score::cpp::ignore = proxy_->SetupMethods();
 }
 
 TEST_F(ProxySetupMethodsPartialRestartFixture, ReturnsErrorWhenCheckingIfShmFileAlreadyExistsReturnsError)
 {
     // Given that a ProxyMethod is registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that we check if the shm file already exists in the filesystem which returns an error
     EXPECT_CALL(filesystem_fake_.GetStandard(), Exists(StartsWith(kMethodShmChannelPrefix)))
         .WillOnce(Return(MakeUnexpected(filesystem::ErrorCode::kCouldNotRetrieveStatus)));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    const auto result = proxy_->SetupMethods({kDummyMethodName0});
+    const auto result = proxy_->SetupMethods();
 
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
@@ -407,10 +454,13 @@ using ProxySetupMethodsProxyAutoReconnectFixture = ProxyMethodHandlingFixture;
 TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
        DoesNotResendSubscribeMethodIfSkeletonReOfferedButSetupMethodsNeverCalled)
 {
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that SubscribeServiceMethod will never be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(0);
@@ -428,17 +478,20 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
 
 TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, ResendsSubscribeMethodEveryTimeSkeletonReOffered)
 {
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that SubscribeServiceMethod will be called three times: once in SetupMethods and once for every time
     // the find service handler is called when the service has been reoffered
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(3);
 
     // Given that SetupMethods was called
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // Given that the service was initially offered
     OfferService();
@@ -454,16 +507,19 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, ResendsSubscribeMethodEveryTi
 
 TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, MarksProxyMethodsUnsubscribedWhenSkeletonStopOffered)
 {
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
-         {kDummyMethodId1,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+             {kDummyMethodId1,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
 
     // Given that SetupMethods was called which should mark the ProxyMethods as subscribed
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
+    score::cpp::ignore = proxy_->SetupMethods();
     EXPECT_TRUE(proxy_method_storage_.at(0).IsSubscribed());
     EXPECT_TRUE(proxy_method_storage_.at(1).IsSubscribed());
 
@@ -481,13 +537,16 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, MarksProxyMethodsUnsubscribed
 TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
        MarksProxyMethodsSubscribedWhenSkeletonReOfferedAndSubscriptionSucceeds)
 {
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
-         {kDummyMethodId1,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+             {kDummyMethodId1,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
 
     // Expecting that SubscribeServiceMethod will be called once in SetupMethods and a second time in the find service
     // handler when the service has been reoffered which succeeds
@@ -496,7 +555,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
         .WillRepeatedly(Return(score::Result<void>{}));
 
     // Given that SetupMethods was called
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // and given that the service was initially offered and then stop-offered
     OfferService();
@@ -513,13 +572,16 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
 TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
        DoesNotMarkProxyMethodsSubscribedWhenSkeletonReOfferedAndSubscriptionFails)
 {
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
-         {kDummyMethodId1,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+             {kDummyMethodId1,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
 
     // Expecting that SubscribeServiceMethod will be called once in SetupMethods
     Sequence subscribe_service_method_sequence{};
@@ -532,7 +594,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
     // Given that SetupMethods was called
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // and given that the service was initially offered and then stop-offered
     OfferService();
@@ -548,16 +610,19 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
 
 TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, DoesNotResendSubscribeMethodIfSkeletonNeverCrashed)
 {
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that SubscribeServiceMethod will be called only once in SetupMethods
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(1);
 
     // Given that SetupMethods was called
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // When the service is initially offered (but never crashed)
     OfferService();
@@ -565,16 +630,19 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, DoesNotResendSubscribeMethodI
 
 TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, DoesNotResendSubscribeMethodIfSkeletonNeverReOffered)
 {
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that SubscribeServiceMethod will be called only once in SetupMethods
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(1);
 
     // Given that SetupMethods was called
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // Given that the service was initially offered
     OfferService();
@@ -587,10 +655,13 @@ using ProxySetupMethodsMessagePassingFixture = ProxyMethodHandlingFixture;
 TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesCallsSubscribeServiceMethod)
 {
     // Given that a ProxyMethod is registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that SubscribeServiceMethod will be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
@@ -603,16 +674,19 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesCalls
         })));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+    score::cpp::ignore = proxy_->SetupMethods();
 }
 
 TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesForwardsErrorFromSubscribeServiceMethod)
 {
     // Given that a ProxyMethod is registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that SubscribeServiceMethod will be called which returns an error
     const auto call_service_method_subscribed_error_code = ComErrc::kCallQueueFull;
@@ -620,7 +694,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesForwa
         .WillOnce(Return(MakeUnexpected(call_service_method_subscribed_error_code)));
 
     // When calling SetupMethods with the name of the registered ProxyMethod
-    const auto setup_methods_result = proxy_->SetupMethods({kDummyMethodName0});
+    const auto setup_methods_result = proxy_->SetupMethods();
 
     // Then the result contains the error returned by message passing
     ASSERT_FALSE(setup_methods_result.has_value());
@@ -630,19 +704,22 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesForwa
 TEST_F(ProxySetupMethodsMessagePassingFixture, ProxyMethodsMarkedAsSubscribedWhenSubscribeServiceMethodReturnsValid)
 {
     // Given that a ProxyMethod is registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
-         {kDummyMethodId1,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+             {kDummyMethodId1,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
 
     // Expecting that SubscribeServiceMethod will be called and returns a valid result
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).WillOnce(Return(score::Result<void>{}));
 
     // When calling SetupMethods with the name of the registered ProxyMethods
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // Then all registered proxy methods should be marked as subscribed
     EXPECT_TRUE(proxy_method_storage_.at(0).IsSubscribed());
@@ -653,13 +730,16 @@ TEST_F(ProxySetupMethodsMessagePassingFixture,
        ProxyMethodsNotMarkedAsUnsubscribedWhenSubscribeServiceMethodReturnsError)
 {
     // Given that a ProxyMethod is registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
-         {kDummyMethodId1,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+             {kDummyMethodId1,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
 
     // Expecting that SubscribeServiceMethod will be called which returns an error
     const auto call_service_method_subscribed_error_code = ComErrc::kCallQueueFull;
@@ -667,7 +747,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture,
         .WillOnce(Return(MakeUnexpected(call_service_method_subscribed_error_code)));
 
     // When calling SetupMethods with the name of the registered ProxyMethods
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // Then all registered proxy methods should be marked as unsubscribed
     EXPECT_FALSE(proxy_method_storage_.at(0).IsSubscribed());
@@ -677,20 +757,22 @@ TEST_F(ProxySetupMethodsMessagePassingFixture,
 TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingZeroMethodsDoesNotNotifiesSubscribeServiceMethod)
 {
     // Given that no ProxyMethods were registered
-    GivenAProxy().GivenAMockedSharedMemoryResource();
+    GivenAConfigurationWithEnabledMethods({}).GivenAProxy().GivenAMockedSharedMemoryResource();
 
     // Expecting that SubscribeServiceMethod will not be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(0);
 
     // When calling SetupMethods with an empty enabled_method_names vector
-    score::cpp::ignore = proxy_->SetupMethods({});
+    score::cpp::ignore = proxy_->SetupMethods();
 }
 
 TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithoutArgsOrReturnTypesForwardsErrorFromSubscribeServiceMethod)
 {
     // Given that 2 ProxyMethods with no in args or return types were registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0, kEmptyTypeErasedInfo}, {kDummyMethodId1, kEmptyTypeErasedInfo}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods({{kDummyMethodId0, kEmptyTypeErasedInfo}, {kDummyMethodId1, kEmptyTypeErasedInfo}});
 
     // Expecting that SubscribeServiceMethod will be called which returns an error
     const auto call_service_method_subscribed_error_code = ComErrc::kCallQueueFull;
@@ -698,7 +780,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithoutArgsOrReturnTypesFo
         .WillOnce(Return(MakeUnexpected(call_service_method_subscribed_error_code)));
 
     // When calling SetupMethods with the names of the two registered ProxyMethods
-    const auto setup_methods_result = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
+    const auto setup_methods_result = proxy_->SetupMethods();
 
     // Then the result contains the error returned by message passing
     ASSERT_FALSE(setup_methods_result.has_value());
@@ -708,8 +790,10 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithoutArgsOrReturnTypesFo
 TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingMethodsWithoutArgsOrReturnTypesNotifiesServiceMethodSubscribed)
 {
     // Given that 2 ProxyMethods with no in args or return types were registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0, kEmptyTypeErasedInfo}, {kDummyMethodId1, kEmptyTypeErasedInfo}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods({{kDummyMethodId0, kEmptyTypeErasedInfo}, {kDummyMethodId1, kEmptyTypeErasedInfo}});
 
     // Expecting that SubscribeServiceMethod will be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
@@ -722,16 +806,19 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingMethodsWithoutArgsOrRetur
         })));
 
     // When calling SetupMethods with the names of the two registered ProxyMethods
-    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
+    score::cpp::ignore = proxy_->SetupMethods();
 }
 
 TEST_F(ProxySetupMethodsMessagePassingFixture, FailingToGetLolaRuntimeTerminates)
 {
     // Given that a ProxyMethod is registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0,
-          TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that GetBindingRuntime is called on the impl runtime which returns
     // a nullptr
@@ -739,7 +826,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, FailingToGetLolaRuntimeTerminates
 
     // When calling SetupMethods with the name of the registered ProxyMethod
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0}));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods());
 }
 
 class ProxySetupMethodsShmSizeParamaterizedFixture
@@ -847,7 +934,10 @@ TEST_P(ProxySetupMethodsShmSizeParamaterizedFixture, AllocatesEveryByteInSpecifi
 {
     // Given that 2 ProxyMethods with various in args / return types
     const auto& [method_names, methods_to_register] = GetParam();
-    GivenAProxy().GivenAFakeSharedMemoryResource().WithRegisteredProxyMethods(methods_to_register);
+    GivenAConfigurationWithEnabledMethods(method_names)
+        .GivenAProxy()
+        .GivenAFakeSharedMemoryResource()
+        .WithRegisteredProxyMethods(methods_to_register);
 
     // Expecting that a shared memory region will be created with the calculated shm
     // size
@@ -861,33 +951,77 @@ TEST_P(ProxySetupMethodsShmSizeParamaterizedFixture, AllocatesEveryByteInSpecifi
             return fake_method_memory_resource_;
         })));
 
-    // When calling SetupMethods with the names of the registered ProxyMethods
-    score::cpp::ignore = proxy_->SetupMethods(method_names);
+    // When calling SetupMethods
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // Then the number of bytes allocated should equal the size that the shm region
     // was created with
     EXPECT_EQ(fake_method_memory_resource_->GetUserAllocatedBytes(), actual_shm_size);
 }
 
-TEST_F(ProxyMethodHandlingFixture, EnablingMethodsThatWereNotRegisteredTerminates)
+TEST_F(ProxyMethodHandlingFixture, EnabledMethodWithoutRegisteredProxyMethodTerminates)
 {
     // Given that a ProxyMethod was registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0, kEmptyTypeErasedInfo}});
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName1})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods({{kDummyMethodId0, kEmptyTypeErasedInfo}});
 
     // When calling SetupMethods with a ProxyMethod name which does not correspond
     // to the registered ProxyMethod Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName1}));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods());
 }
 
-TEST_F(ProxyMethodHandlingFixture, EnablingMethodsThatAreNotInTheConfigurationTerminates)
+TEST_F(ProxyMethodHandlingFixture, EnabledMethodPresentOnlyInInstanceDeploymentTerminates)
 {
-    GivenAProxy().GivenAMockedSharedMemoryResource();
+    // Given a configuration where an enabled method exists only in the instance deployment
+    // and is missing from the type deployment
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_with_unknown_method{
+        kLolaInstanceId, {}, {}, {{"unknown_method", LolaMethodInstanceDeployment{kDummyQueueSize0, true}}}};
+    const LolaServiceTypeDeployment lola_service_type_deployment_without_unknown_method{kLolaServiceId, {}, {}, {}};
 
-    // When calling SetupMethods with a ProxyMethod name which does not exist in the
-    // configuration Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
-                                                          proxy_->SetupMethods({"SomeInvalidMethodName"}));
+    const ConfigurationStore configuration_store{InstanceSpecifier::Create(std::string{"my_instance_spec"}).value(),
+                                                 make_ServiceIdentifierType("foo"),
+                                                 QualityType::kASIL_B,
+                                                 lola_service_type_deployment_without_unknown_method,
+                                                 lola_service_instance_deployment_with_unknown_method};
+
+    InitialiseProxyWithCreate(configuration_store.GetInstanceIdentifier());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(proxy_ != nullptr);
+
+    GivenAMockedSharedMemoryResource();
+
+    // When calling SetupMethods for a method that is enabled in the instance deployment but missing in the type
+    // deployment Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods());
+}
+
+TEST_F(ProxyMethodHandlingFixture, MethodPresentOnlyInTypeDeploymentDoesNotCreateSharedMemory)
+{
+    // Given a configuration where a method exists only in the type deployment and not in the instance deployment
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_without_method{kLolaInstanceId, {}, {}, {}};
+    const LolaServiceTypeDeployment lola_service_type_deployment_with_method{
+        kLolaServiceId, {}, {}, {{kDummyMethodName0, kDummyMethodId0}}};
+
+    const ConfigurationStore configuration_store{InstanceSpecifier::Create(std::string{"my_instance_spec"}).value(),
+                                                 make_ServiceIdentifierType("foo"),
+                                                 QualityType::kASIL_B,
+                                                 lola_service_type_deployment_with_method,
+                                                 lola_service_instance_deployment_without_method};
+
+    InitialiseProxyWithCreate(configuration_store.GetInstanceIdentifier());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(proxy_ != nullptr);
+
+    GivenAMockedSharedMemoryResource();
+
+    // Expecting that no shared memory should be created, since no method is enabled in the instance deployment.
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Create(StartsWith(kMethodChannelPrefix), _, _, _, _)).Times(0);
+
+    // When calling SetupMethods
+    const auto result = proxy_->SetupMethods();
+
+    // Then SetupMethods succeeds
+    EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(ProxyMethodHandlingFixture, EnablingMethodThatDoesNotContainQueueSizeInConfigurationTerminates)
@@ -896,7 +1030,7 @@ TEST_F(ProxyMethodHandlingFixture, EnablingMethodThatDoesNotContainQueueSizeInCo
     // empty queue size
     const std::optional<LolaMethodInstanceDeployment::QueueSize> empty_queue_size{};
     const LolaServiceInstanceDeployment lola_service_instance_deployment_missing_queue_size{
-        kLolaInstanceId, {}, {}, {{kDummyMethodName0, LolaMethodInstanceDeployment{empty_queue_size}}}};
+        kLolaInstanceId, {}, {}, {{kDummyMethodName0, LolaMethodInstanceDeployment{empty_queue_size, true}}}};
     const LolaServiceTypeDeployment lola_service_type_deployment{
         kLolaServiceId, {}, {}, {{kDummyMethodName0, kDummyMethodId0}}};
 
@@ -914,7 +1048,7 @@ TEST_F(ProxyMethodHandlingFixture, EnablingMethodThatDoesNotContainQueueSizeInCo
 
     // When calling SetupMethods with a ProxyMethod name which corresponds to the
     // registered ProxyMethod Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0}));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods());
 }
 
 }  // namespace

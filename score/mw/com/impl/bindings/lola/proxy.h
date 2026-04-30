@@ -179,7 +179,7 @@ class Proxy : public ProxyBinding
     /// been destructed.
     void UnregisterEventBinding(const std::string_view service_element_name) noexcept override;
 
-    score::Result<void> SetupMethods(const std::vector<std::string_view>& enabled_method_names) override;
+    score::Result<void> SetupMethods() override;
 
     QualityType GetQualityType() const noexcept;
 
@@ -210,7 +210,7 @@ class Proxy : public ProxyBinding
 
     memory::shared::SharedMemoryFactory::UserPermissions GetSkeletonShmPermissions() const;
     std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>
-    GetMethodIdAndQueueSizeFromNames(const std::vector<std::string_view>& enabled_method_names) const;
+    GetMethodIdAndQueueSizeForEnabledMethods() const;
     std::vector<TypeErasedCallQueue::TypeErasedElementInfo> GetTypeErasedElementInfoForEnabledMethods(
         const std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>&
             enabled_method_data) const;

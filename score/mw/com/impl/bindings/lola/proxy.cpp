@@ -37,6 +37,7 @@
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/find_service_handle.h"
 #include "score/mw/com/impl/handle_type.h"
+#include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/service_element_type.h"
 
@@ -624,9 +625,9 @@ void Proxy::UnregisterEventBinding(const std::string_view service_element_name) 
     }
 }
 
-score::Result<void> Proxy::SetupMethods(const std::vector<std::string_view>& enabled_method_names)
+score::Result<void> Proxy::SetupMethods()
 {
-    auto enabled_method_data = GetMethodIdAndQueueSizeFromNames(enabled_method_names);
+    auto enabled_method_data = GetMethodIdAndQueueSizeForEnabledMethods();
 
     // Add field Get/Set methods to the enabled method data.
     // TODO(Ticket-250429): Replace these constants with actual per-field configuration flags
@@ -744,31 +745,32 @@ memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermis
 }
 
 std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>
-Proxy::GetMethodIdAndQueueSizeFromNames(const std::vector<std::string_view>& enabled_method_names) const
+Proxy::GetMethodIdAndQueueSizeForEnabledMethods() const
 {
-    std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>> method_data{};
-    std::transform(
-        enabled_method_names.cbegin(),
-        enabled_method_names.cend(),
-        std::back_inserter(method_data),
-        [this](const auto& method_name) -> std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize> {
-            const std::string method_name_string{method_name};
-            const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
+    std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>
+        enabled_method_ids_and_queue_sizes{};
+    const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
+    const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
+
+    // Get enabled methods from config and build method data
+    for (const auto& [method_name, method_deployment] : lola_service_instance_deployment.methods_)
+    {
+        if (method_deployment.enabled_.has_value() && method_deployment.enabled_.value())
+        {
             const auto method_id =
-                GetServiceElementId<ServiceElementType::METHOD>(lola_service_type_deployment, method_name_string);
+                GetServiceElementId<ServiceElementType::METHOD>(lola_service_type_deployment, method_name);
 
-            const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
-            const auto& method_instance_deployment = GetServiceElementInstanceDeployment<ServiceElementType::METHOD>(
-                lola_service_instance_deployment, method_name_string);
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-                method_instance_deployment.queue_size_.has_value(),
+                method_deployment.queue_size_.has_value(),
                 "Method instance deployment must contain queue_size on proxy side!");
-            const auto queue_size = method_instance_deployment.queue_size_.value();
+            const auto queue_size = method_deployment.queue_size_.value();
 
-            return {{method_id, MethodType::kMethod}, queue_size};
-        });
+            enabled_method_ids_and_queue_sizes.emplace_back(UniqueMethodIdentifier{method_id, MethodType::kMethod},
+                                                            queue_size);
+        }
+    }
 
-    return method_data;
+    return enabled_method_ids_and_queue_sizes;
 }
 
 std::size_t Proxy::CalculateRequiredShmSize(

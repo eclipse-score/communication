@@ -31,7 +31,7 @@ class ProxyContainer
   public:
     ProxyContainer();
 
-    bool CreateProxy(InstanceSpecifier instance_specifier, const std::vector<std::string_view>& enabled_method_names);
+    bool CreateProxy(InstanceSpecifier instance_specifier);
 
     Proxy& GetProxy()
     {
@@ -55,8 +55,7 @@ ProxyContainer<Proxy>::ProxyContainer()
 }
 
 template <typename Proxy>
-bool ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier,
-                                        const std::vector<std::string_view>& enabled_method_names)
+bool ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier)
 {
     bool callback_called{false};
     auto find_service_callback = [this, &callback_called](auto service_handle_container,
@@ -98,7 +97,7 @@ bool ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier,
         return false;
     }
 
-    auto proxy_result = Proxy::Create(*handle_, enabled_method_names);
+    auto proxy_result = Proxy::Create(*handle_);
     proxy_creation_lock.unlock();
     if (!proxy_result.has_value())
     {

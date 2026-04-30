@@ -328,10 +328,8 @@ class ProxyWrapperClass : public Interface<Trait>
     /// \details Exception-less proxy constructor that creates a proxy wrapper by creating the proxy binding
     ///          for the given service handle and validating all service element bindings.
     /// \param instance_handle The handle identifying the service instance to connect to.
-    /// \param enabled_method_names The handle identifying the service instance to connect to.
     /// \return On success, returns a ProxyWrapperClass instance. On failure, returns an error code.
-    static Result<ProxyWrapperClass> Create(const HandleType instance_handle,
-                                            const std::vector<std::string_view>& enabled_method_names = {}) noexcept
+    static Result<ProxyWrapperClass> Create(const HandleType instance_handle) noexcept
     {
         if (creation_results_.has_value())
         {
@@ -350,7 +348,7 @@ class ProxyWrapperClass : public Interface<Trait>
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        const auto setup_methods_result = proxy_wrapper.SetupMethods(enabled_method_names);
+        const auto setup_methods_result = proxy_wrapper.SetupMethods();
         if (!(setup_methods_result.has_value()))
         {
             ::score::mw::log::LogError("lola") << "Could not setup methods on Proxy side";
