@@ -432,6 +432,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
                                  proxy_instance_counter},
       offered_state_machine_{},
       are_proxy_methods_setup_{false},
+      are_proxy_methods_subscribed_{false},
       filesystem_{filesystem},
       find_service_guard_{std::make_unique<FindServiceGuard>(
           [this](ServiceHandleContainer<HandleType> service_handle_container, FindServiceHandle) {
@@ -446,7 +447,10 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
 {
 }
 
-Proxy::~Proxy() = default;
+Proxy::~Proxy()
+{
+    TeardownMethods();
+}
 
 void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 {
@@ -483,6 +487,7 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
     if (offered_state_machine_.GetCurrentState() == OfferedStateMachine::State::STOP_OFFERED)
     {
         std::lock_guard lock{proxy_method_registration_mutex_};
+        are_proxy_methods_subscribed_.store(false);
         for (auto& proxy_method : proxy_methods_)
         {
             proxy_method.second.get().MarkUnsubscribed();
@@ -519,6 +524,7 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
         else
         {
             std::lock_guard lock{proxy_method_registration_mutex_};
+            are_proxy_methods_subscribed_.store(true);
             for (auto& proxy_method : proxy_methods_)
             {
                 proxy_method.second.get().MarkSubscribed();
@@ -724,12 +730,51 @@ score::Result<void> Proxy::SetupMethods()
     if (subscription_result.has_value())
     {
         std::lock_guard lock{proxy_method_registration_mutex_};
+        are_proxy_methods_subscribed_.store(true);
         for (auto& proxy_method : proxy_methods_)
         {
             proxy_method.second.get().MarkSubscribed();
         }
     }
     return subscription_result;
+}
+
+void Proxy::TeardownMethods() noexcept
+{
+    // Skip teardown if method SHM was never created (method_shm_resource_ is null, nothing to clean up).
+    if (!are_proxy_methods_setup_.load())
+    {
+        return;
+    }
+
+    // Subscription state is tracked directly in Proxy (not via ProxyMethod references) because ProxyMethod
+    // objects may have already been destroyed by the time TeardownMethods() is called from ~Proxy().
+    const bool is_subscribed = are_proxy_methods_subscribed_.load();
+    if (is_subscribed)
+    {
+        // Best-effort: notify the Skeleton to clean up its registration guards for this Proxy's methods.
+        // On failure the guards remain until the Skeleton stops offering or restarts, at which point
+        // they will be cleaned up.
+        auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
+        auto& lola_message_passing = lola_runtime.GetLolaMessaging();
+        const SkeletonInstanceIdentifier skeleton_instance_identifier{
+            GetLoLaServiceTypeDeployment(handle_).service_id_,
+            LolaServiceInstanceId{GetLoLaInstanceDeployment(handle_).instance_id_.value()}.GetId()};
+        const auto result = lola_message_passing.UnsubscribeServiceMethod(
+            quality_type_, skeleton_instance_identifier, proxy_instance_identifier_, GetSourcePid());
+        if (!(result.has_value()))
+        {
+            score::mw::log::LogWarn("lola")
+                << __func__ << " " << __LINE__
+                << " TeardownMethods: UnsubscribeServiceMethod failed with error: " << result.error();
+        }
+    }
+
+    // Unlink the method SHM name from the filesystem, then release our mapping.
+    const auto method_shm_path_name = GetMethodChannelShmName();
+    memory::shared::SharedMemoryFactory::Remove(method_shm_path_name);
+    method_shm_resource_.reset();
+    memory::shared::SharedMemoryFactory::RemoveStaleArtefacts(method_shm_path_name);
 }
 
 memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermissions() const

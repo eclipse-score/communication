@@ -246,6 +246,71 @@ TEST_F(MethodResourceMapContainsFixture, ContainsReturnsTrueWhenElementMatchingK
     EXPECT_TRUE(does_contain);
 }
 
+using MethodResourceMapRemoveFixture = MethodResourceMapFixture;
+TEST_F(MethodResourceMapRemoveFixture, RemoveDeletesEntryForGivenProxyInstanceIdentifier)
+{
+    GivenAMethodResourceMap().WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
+                                                   kDummyPid1);
+
+    // When removing the element that was inserted
+    method_resource_map_->Remove(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1});
+
+    // Then the element should no longer be contained in the map
+    EXPECT_FALSE(method_resource_map_->Contains(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
+                                                kDummyPid1));
+}
+
+TEST_F(MethodResourceMapRemoveFixture, RemoveForNonExistentEntryIsANoOp)
+{
+    GivenAMethodResourceMap().WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
+                                                   kDummyPid1);
+
+    // When removing an element that was never inserted (different process identifier)
+    // Then the program should not terminate and should remain a no-op
+    method_resource_map_->Remove(ProxyInstanceIdentifier{kProcessIdentifier2, kProxyInstanceCounter1});
+
+    // and the originally inserted element should still be contained in the map
+    EXPECT_TRUE(method_resource_map_->Contains(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
+                                               kDummyPid1));
+}
+
+TEST_F(MethodResourceMapRemoveFixture, RemoveOnlyDeletesSpecifiedProxyNotOthers)
+{
+    GivenAMethodResourceMap()
+        .WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid1)
+        .WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier2, kProxyInstanceCounter1}, kDummyPid2);
+
+    // When removing only one of the two inserted elements
+    method_resource_map_->Remove(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1});
+
+    // Then only the removed element should no longer be contained in the map
+    EXPECT_FALSE(method_resource_map_->Contains(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
+                                                kDummyPid1));
+
+    // and the other element should still be contained in the map
+    EXPECT_TRUE(method_resource_map_->Contains(ProxyInstanceIdentifier{kProcessIdentifier2, kProxyInstanceCounter1},
+                                               kDummyPid2));
+}
+
+TEST_F(MethodResourceMapRemoveFixture, RemoveOneOfTwoProxiesWithSameApplicationIdLeavesOtherIntact)
+{
+    // Given two proxies sharing the same application_id but with different instance counters
+    GivenAMethodResourceMap()
+        .WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid1)
+        .WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2}, kDummyPid1);
+
+    // When removing one of the two proxies (same application_id, different counter)
+    method_resource_map_->Remove(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1});
+
+    // Then the removed proxy should no longer be contained
+    EXPECT_FALSE(method_resource_map_->Contains(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
+                                                kDummyPid1));
+
+    // and the other proxy sharing the same application_id should still be contained
+    EXPECT_TRUE(method_resource_map_->Contains(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2},
+                                               kDummyPid1));
+}
+
 using MethodResourceMapClearFixture = MethodResourceMapFixture;
 TEST_F(MethodResourceMapClearFixture, ClearingRemovesAllElements)
 {

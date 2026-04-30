@@ -198,6 +198,7 @@ class Proxy : public ProxyBinding
     static std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> current_proxy_instance_counter_;
 
     void ServiceAvailabilityChangeHandler(const bool is_service_available);
+    void TeardownMethods() noexcept;
     void InitializeSharedMemoryForMethods(
         memory::shared::ManagedMemoryResource& memory_resource,
         const std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& method_data,
@@ -257,6 +258,11 @@ class Proxy : public ProxyBinding
     /// concurrently on IMessagePassingService, as long as the shared memory has been setup. The Skeleton side will
     /// simply ignore any duplicate messages.
     std::atomic<bool> are_proxy_methods_setup_;
+
+    /// Tracks whether the proxy methods are currently subscribed (i.e. the Skeleton has acknowledged the subscription).
+    /// Stored directly in Proxy so that TeardownMethods() can safely check this flag even after the ProxyMethod
+    /// objects (and their own is_subscribed_ members) have been destroyed.
+    std::atomic<bool> are_proxy_methods_subscribed_;
 
     score::filesystem::Filesystem filesystem_;
 

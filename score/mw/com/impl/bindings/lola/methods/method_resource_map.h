@@ -79,6 +79,13 @@ class MethodResourceMap
     auto CleanUpOldRegions(const ProxyInstanceIdentifier proxy_instance_identifier, const pid_t proxy_pid)
         -> CleanUpResult;
 
+    /// \brief Removes the ISharedMemoryResource corresponding to the provided ProxyInstanceIdentifier.
+    ///
+    /// This is called on Skeleton side when the Proxy notifies that it is being destroyed, so that the Skeleton can
+    /// close the proxy's shared memory region. If the provided ProxyInstanceIdentifier does not exist in the map, this
+    /// is a no-op (it may have already been cleaned up e.g. by CleanUpOldRegions).
+    void Remove(const ProxyInstanceIdentifier proxy_instance_identifier);
+
     void Clear();
 
   private:

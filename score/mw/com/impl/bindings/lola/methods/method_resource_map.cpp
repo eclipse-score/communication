@@ -90,4 +90,20 @@ auto MethodResourceMap::Clear() -> void
     resource_map_.clear();
 }
 
+void MethodResourceMap::Remove(const ProxyInstanceIdentifier proxy_instance_identifier)
+{
+    auto resources_it = resource_map_.find(proxy_instance_identifier.application_id);
+    if (resources_it == resource_map_.end())
+    {
+        return;
+    }
+
+    auto& inner_map = resources_it->second.inner_resource_map;
+    inner_map.erase(proxy_instance_identifier.proxy_instance_counter);
+    if (inner_map.empty())
+    {
+        resource_map_.erase(resources_it);
+    }
+}
+
 }  // namespace score::mw::com::impl::lola
