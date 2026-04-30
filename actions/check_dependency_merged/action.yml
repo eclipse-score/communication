@@ -1,0 +1,74 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Check Dependency Merged"
+description: >
+  Blocks a PR from being merged until all 'Depends-On: #<PR_NUMBER>'
+  dependency PRs referenced in the PR description are merged.
+  Use this workflow's job name as a required status check in branch protection.
+
+inputs:
+  token:
+    description: "GitHub token with permissions to read PR information"
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  dependency_prs:
+    description: "Comma-separated list of PR numbers that this PR depends on"
+    value: ${{ steps.check.outputs.dependency_prs }}
+  dependency_count:
+    description: "Number of dependency PRs found"
+    value: ${{ steps.check.outputs.dependency_count }}
+  all_dependencies_merged:
+    description: "Whether all dependency PRs are already merged ('true' or 'false')"
+    value: ${{ steps.check.outputs.all_dependencies_merged }}
+  unmerged_prs:
+    description: "Comma-separated list of dependency PR numbers that are not yet merged"
+    value: ${{ steps.check.outputs.unmerged_prs }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check dependency PRs are merged
+      id: check
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        EVENT_NAME: ${{ github.event_name }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: python3 "${ACTION_PATH}/scripts/check_dependencies_merged.py"
+
+    - name: Summary
+      if: always()
+      shell: bash
+      env:
+        DEPENDENCY_PRS: ${{ steps.check.outputs.dependency_prs || '' }}
+        DEPENDENCY_COUNT: ${{ steps.check.outputs.dependency_count || 0 }}
+        ALL_DEPS_MERGED: ${{ steps.check.outputs.all_dependencies_merged || 'true' }}
+        UNMERGED_PRS: ${{ steps.check.outputs.unmerged_prs || '' }}
+      run: |
+        echo "### Dependency Merge Guard" >> $GITHUB_STEP_SUMMARY
+
+        if [[ -z "$DEPENDENCY_PRS" ]]; then
+          echo "✅ No \`Depends-On:\` dependencies found. No merge restrictions." >> $GITHUB_STEP_SUMMARY
+        elif [[ "$ALL_DEPS_MERGED" == "true" ]]; then
+          echo "✅ All **${DEPENDENCY_COUNT}** dependency PR(s) are merged. Merge is allowed." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "🚫 **Merge blocked**: the following dependency PR(s) are not yet merged: ${UNMERGED_PRS}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This PR cannot be merged until all \`Depends-On:\` PRs are merged." >> $GITHUB_STEP_SUMMARY
+          echo "Once they are merged, re-run this workflow or push a commit to re-trigger." >> $GITHUB_STEP_SUMMARY
+        fi
+
