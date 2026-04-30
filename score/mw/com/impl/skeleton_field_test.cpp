@@ -97,6 +97,24 @@ class SkeletonFieldTestFixture : public ::testing::Test
         ON_CALL(skeleton_field_set_binding_mock_, RegisterHandler(_)).WillByDefault(Return(Result<void>{}));
     }
 
+    /// \brief Returns a span pointing to storage containing the provided field value
+    std::pair<score::cpp::span<std::byte>, score::cpp::span<std::byte>> CreateFieldSetterInArgAndReturnSpans(
+        const TestSampleType in_arg_value,
+        const TestSampleType return_value)
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(!in_arg_storage_.has_value());
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(!return_storage_.has_value());
+        score::cpp::ignore = in_arg_storage_.emplace(in_arg_value);
+        score::cpp::ignore = return_storage_.emplace(return_value);
+
+        score::cpp::span<std::byte> in_span{reinterpret_cast<std::byte*>(&(in_arg_storage_.value())),
+                                            sizeof(TestSampleType)};
+        score::cpp::span<std::byte> out_span{reinterpret_cast<std::byte*>(&(return_storage_.value())),
+                                             sizeof(TestSampleType)};
+
+        return {in_span, out_span};
+    }
+
     RuntimeMockGuard runtime_mock_guard_{};
 
     SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard_{};
@@ -105,6 +123,9 @@ class SkeletonFieldTestFixture : public ::testing::Test
     mock_binding::SkeletonEvent<TestSampleType> skeleton_field_binding_mock_{};
     mock_binding::SkeletonMethod skeleton_field_get_binding_mock_{};
     mock_binding::SkeletonMethod skeleton_field_set_binding_mock_{};
+
+    std::optional<TestSampleType> in_arg_storage_{};
+    std::optional<TestSampleType> return_storage_{};
 };
 
 TEST(SkeletonFieldTest, NotCopyable)
@@ -1003,13 +1024,7 @@ TEST_F(SkeletonFieldSetHandlerTest, UserCallbackIsInvokedByWrappedHandler)
     // Simulate the proxy invoking the setter by calling the captured type-erased handler.
     // The SkeletonMethod serializes the incoming value into a byte span before dispatch.
     // We replicate that serialization here for the single TestSampleType argument.
-    using InArgStorage = TestSampleType;
-    InArgStorage in_arg{incoming_value};
-    TestSampleType return_storage{};
-    std::optional<score::cpp::span<std::byte>> in_span{
-        score::cpp::span<std::byte>{reinterpret_cast<std::byte*>(&in_arg), sizeof(InArgStorage)}};
-    std::optional<score::cpp::span<std::byte>> out_span{
-        score::cpp::span<std::byte>{reinterpret_cast<std::byte*>(&return_storage), sizeof(TestSampleType)}};
+    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
     capturing_binding_ref.captured_handler_(in_span, out_span);
 
@@ -1059,12 +1074,7 @@ TEST_F(SkeletonFieldSetHandlerTest, UserCallbackCanModifyValueInPlace)
     ASSERT_TRUE(unit.my_setter_field_.PrepareOffer().has_value());
 
     // Invoke the wrapped handler with incoming_value (10)
-    TestSampleType in_arg{incoming_value};
-    TestSampleType return_storage{};
-    std::optional<score::cpp::span<std::byte>> in_span{
-        score::cpp::span<std::byte>{reinterpret_cast<std::byte*>(&in_arg), sizeof(in_arg)}};
-    std::optional<score::cpp::span<std::byte>> out_span{
-        score::cpp::span<std::byte>{reinterpret_cast<std::byte*>(&return_storage), sizeof(TestSampleType)}};
+    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
     // The handler shall call Send with 20, not 10
     capturing_binding_ref.captured_handler_(in_span, out_span);
@@ -1112,12 +1122,7 @@ TEST_F(SkeletonFieldSetHandlerTest, WrappedHandlerLogsWhenUpdateFails)
     ASSERT_TRUE(unit.my_setter_field_.Update(TestSampleType{1U}).has_value());
     ASSERT_TRUE(unit.my_setter_field_.PrepareOffer().has_value());
 
-    TestSampleType in_arg{incoming_value};
-    TestSampleType return_storage{};
-    std::optional<score::cpp::span<std::byte>> in_span{
-        score::cpp::span<std::byte>{reinterpret_cast<std::byte*>(&in_arg), sizeof(in_arg)}};
-    std::optional<score::cpp::span<std::byte>> out_span{
-        score::cpp::span<std::byte>{reinterpret_cast<std::byte*>(&return_storage), sizeof(TestSampleType)}};
+    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
     // Handler must complete normally even when Update() returns an error
     capturing_binding_ref.captured_handler_(in_span, out_span);
@@ -1208,12 +1213,7 @@ TEST_F(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
     ASSERT_TRUE(unit.my_setter_field_.PrepareOffer().has_value());
 
     // Invoke the most-recently captured handler (from the second registration)
-    TestSampleType in_arg{incoming_value};
-    TestSampleType return_storage{};
-    std::optional<score::cpp::span<std::byte>> in_span{
-        score::cpp::span<std::byte>{reinterpret_cast<std::byte*>(&in_arg), sizeof(in_arg)}};
-    std::optional<score::cpp::span<std::byte>> out_span{
-        score::cpp::span<std::byte>{reinterpret_cast<std::byte*>(&return_storage), sizeof(TestSampleType)}};
+    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
     capturing_binding_ref.captured_handler_(in_span, out_span);
 
