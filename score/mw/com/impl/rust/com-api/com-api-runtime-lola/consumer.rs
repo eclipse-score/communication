@@ -553,36 +553,52 @@ where
 
     // Cannot use `async fn` because the trait mandates `-> impl Future + 'a`,
     // requiring the returned future to be explicitly bound to the lifetime of `&self`.
+    // we do not need to cancle timeout future when receive future resolved,
+    // because ReceiveFuture drop will take care of cancelling the timeout future.
     #[allow(clippy::manual_async_fn)]
     fn receive_with_timeout<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-        timeout_future: impl Future<Output = ()> + Send + 'static,
+        timeout: impl Future<Output = ()> + Send + 'static,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
         async move {
-            if new_samples > max_samples {
-                return (
-                    scratch,
-                    Err(Error::ReceiveError(
-                        ReceiveFailedReason::InputValueOutOfBounds {
-                            max: max_samples,
-                            requested: new_samples,
-                        },
-                    )),
-                );
-            }
-            if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
-                return (
-                    scratch,
-                    Err(Error::ReceiveError(
-                        ReceiveFailedReason::SampleCountOutOfBounds {
-                            max: self.max_num_samples,
-                            requested: max_samples.max(new_samples),
-                        },
-                    )),
-                );
+            match new_samples {
+                0 => {
+                    return (
+                        scratch,
+                        Err(Error::ReceiveError(
+                            ReceiveFailedReason::InputValueOutOfBounds {
+                                max: self.max_num_samples,
+                                requested: 0,
+                            },
+                        )),
+                    )
+                }
+                _ if new_samples > max_samples => {
+                    return (
+                        scratch,
+                        Err(Error::ReceiveError(
+                            ReceiveFailedReason::InputValueOutOfBounds {
+                                max: max_samples,
+                                requested: new_samples,
+                            },
+                        )),
+                    );
+                }
+                _ if max_samples > self.max_num_samples || new_samples > self.max_num_samples => {
+                    return (
+                        scratch,
+                        Err(Error::ReceiveError(
+                            ReceiveFailedReason::InputValueOutOfBounds {
+                                max: self.max_num_samples,
+                                requested: max_samples.max(new_samples),
+                            },
+                        )),
+                    );
+                }
+                _ => {}
             }
             // Get the event guard to ensure no concurrent receive calls
             // on the same subscriber instance.
@@ -601,7 +617,7 @@ where
                 new_samples,
                 max_samples,
                 total_received: 0,
-                timeout_future: core::pin::pin!(timeout_future),
+                timeout: core::pin::pin!(timeout),
             }
             .await
         }
@@ -613,7 +629,9 @@ where
 // a waker storage for async notifications, and parameters for managing the receive operation.
 // The Future implementation for ReceiveFuture defines the polling logic,
 // which attempts to receive samples and manages the state of the receive operation.
-struct ReceiveFuture<'a, T: CommData + Debug, C: Future<Output = ()> + Unpin> {
+// Unpin bound is required for the timeout future to allow it to be safely pinned on the stack without
+// heap allocation.
+struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()> + Unpin> {
     event_guard: Option<ProxyEventManagerGuard<'a>>,
     waker_storage: Arc<AtomicWaker>,
     max_num_samples: usize,
@@ -621,10 +639,10 @@ struct ReceiveFuture<'a, T: CommData + Debug, C: Future<Output = ()> + Unpin> {
     new_samples: usize,
     max_samples: usize,
     total_received: usize,
-    timeout_future: C,
+    timeout: F,
 }
 
-impl<'a, T: CommData + Debug, C: Future<Output = ()> + Unpin> Future for ReceiveFuture<'a, T, C> {
+impl<'a, T: CommData + Debug, F: Future<Output = ()> + Unpin> Future for ReceiveFuture<'a, T, F> {
     type Output = (SampleContainer<Sample<T>>, Result<()>);
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -634,8 +652,8 @@ impl<'a, T: CommData + Debug, C: Future<Output = ()> + Unpin> Future for Receive
         let max_num_samples = self.max_num_samples;
         let total_received = self.total_received;
 
-        // Poll cancel/timeout future first — C: Unpin so Pin::new is safe, no allocation
-        if Pin::new(&mut self.timeout_future).poll(ctx).is_ready() {
+        // Poll cancel/timeout future first — F: Unpin so Pin::new is safe, no allocation
+        if Pin::new(&mut self.timeout).poll(ctx).is_ready() {
             self.event_guard = None;
             return Poll::Ready((
                 self.scratch
@@ -687,12 +705,15 @@ impl<'a, T: CommData + Debug, C: Future<Output = ()> + Unpin> Future for Receive
                 // Have some samples but not enough yet, wait for more via waker
                 Poll::Pending
             }
-            Err(e) => Poll::Ready((
-                self.scratch.take().expect(
-                    "SampleContainer unavailable on error; was receive polled after completion?",
-                ),
-                Err(e),
-            )),
+            Err(e) => {
+                self.event_guard = None;
+                Poll::Ready((
+                    self.scratch.take().expect(
+                        "SampleContainer unavailable on error; was receive polled after completion?",
+                    ),
+                    Err(e),
+                ))
+            }
         }
     }
 }
@@ -973,6 +994,14 @@ fn try_receive_samples<T: CommData + Debug>(
     max_num_samples: usize,
     max_samples: usize,
 ) -> Result<usize> {
+    if max_samples == 0 {
+        return Err(Error::ReceiveError(
+            ReceiveFailedReason::InputValueOutOfBounds {
+                max: max_num_samples,
+                requested: 0,
+            },
+        ));
+    }
     if max_samples > max_num_samples {
         return Err(Error::ReceiveError(
             ReceiveFailedReason::SampleCountOutOfBounds {

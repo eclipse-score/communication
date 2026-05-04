@@ -388,7 +388,7 @@ mod test {
     //receiver function which use async receive to get data, it waits for new data and process it once it arrives,
     //it will receive data 10 times and print the received samples
     async fn async_data_processor_fn<R: Runtime>(
-        subscribed: impl Subscription<Tire, R> + Send + 'static,
+        subscribed: impl Subscription<Tire, R>,
         is_timeout: bool,
     ) {
         println!("[RECEIVER] Async data processor started");

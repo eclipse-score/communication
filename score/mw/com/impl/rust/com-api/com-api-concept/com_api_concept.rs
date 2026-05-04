@@ -800,7 +800,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// # Parameters
     /// * `scratch` - Container for events from this subscription; must not be reused across
     ///   different subscriptions
-    /// * `max_samples` - Maximum number of events to transfer
+    /// * `max_samples` - Maximum number of events to transfer, 0 value is treated as error
     ///
     /// # Returns
     ///
@@ -823,9 +823,9 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// TODO: See above for C++ limitations.
     /// # Parameters
     /// * `scratch` - Container for events from this subscription
-    /// * `new_samples` - Minimum number of new events before resolution
+    /// * `new_samples` - Minimum number of new events before resolution, 0 value is treated as error
     /// * `max_samples` - Maximum number of events that shall be received from the communication
-    ///   buffer and transferred to the container
+    ///   buffer and transferred to the container, 0 value is treated as error
     ///
     /// # Returns
     /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<()>)`.
@@ -853,12 +853,39 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         max_samples: usize,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a;
 
+    /// This method is extension of `receive` with timeout support.
+    /// It returns a future that resolves as soon as at least `new_samples` samples have been transferred
+    /// from the communication buffer to the sample container or the `timeout` future resolves.
+    ///
+    /// # Parameters
+    /// * `scratch` - Container for events from this subscription
+    /// * `new_samples` - Minimum number of new events before resolution, 0 value is treated as error
+    /// * `max_samples` - Maximum number of events that shall be received from the communication
+    ///  buffer and transferred to the container, 0 value is treated as error
+    /// * `timeout` - Future that resolves when the receive operation should time out. If the timeout
+    ///  future resolves before the required number of samples are received, the receive operation is
+    /// considered to have timed out.
+    ///
+    /// # Returns
+    /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<()>)`.
+    /// The container is **always** returned (even on error, timeout, or cancellation) so the caller
+    /// never loses samples that were collected before the future resolved.
+    /// Error is returned if the receive operation fails or if the timeout future resolves before the required
+    /// number of samples are received.
+    ///
+    /// # Important Notes
+    /// User can not concurrenly call `receive_with_timeout` on the same subscription instance from
+    /// multiple threads or tasks.
+    /// `timeout` must be `'static` because timeout futures (e.g. `tokio::time::sleep`) own all
+    /// their state and do not borrow anything from the caller's scope.
+    /// And if you change to `'a` lifetime then it create lifetime bound not satisfied
+    /// error from rust (see issue <https://github.com/rust-lang/rust/issues/100013> for more information)
     fn receive_with_timeout<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-        timeout_future: impl Future<Output = ()> + Send + 'static,
+        timeout: impl Future<Output = ()> + Send + 'static,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a;
 }
 
