@@ -14,8 +14,8 @@
 filegroup(
     name = "does_not_unsubscribe_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "does_not_unsubscribe_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

@@ -14,8 +14,8 @@
 filegroup(
     name = "service_not_found_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "service_not_found_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )
@@ -23,8 +23,8 @@ filegroup(
 filegroup(
     name = "wrong_service_found_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "wrong_service_found_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

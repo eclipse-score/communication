@@ -14,8 +14,8 @@
 filegroup(
     name = "map_containing_nonexistent_events_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "map_containing_nonexistent_events_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

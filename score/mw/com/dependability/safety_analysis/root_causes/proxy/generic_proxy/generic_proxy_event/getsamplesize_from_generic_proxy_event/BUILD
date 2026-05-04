@@ -14,8 +14,8 @@
 filegroup(
     name = "the_size_returned_is_bigger_then_the_actual_value_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "the_size_returned_is_bigger_then_actual_value_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

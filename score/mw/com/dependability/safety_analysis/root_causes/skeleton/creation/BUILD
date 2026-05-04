@@ -14,8 +14,8 @@
 filegroup(
     name = "creation_of_skeleton_not_possible_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "creation_of_skeleton_not_possible_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

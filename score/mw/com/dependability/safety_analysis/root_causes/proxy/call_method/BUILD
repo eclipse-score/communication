@@ -14,10 +14,10 @@
 filegroup(
     name = "call_method_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "call_blocks_fta.puml",
         "wrong_in_args_provided_fta.puml",
         "wrong_results_used_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

@@ -14,9 +14,9 @@
 filegroup(
     name = "method_signature_element_ptr_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "failure_freeing_resources_on_destruction_fta.puml",
         "points_to_wrong_data_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

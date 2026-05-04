@@ -14,8 +14,8 @@
 filegroup(
     name = "subscribe_to_wrong_event_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "subscribe_to_wrong_event_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )
@@ -23,8 +23,8 @@ filegroup(
 filegroup(
     name = "subscribe_with_wrong_max_sample_count_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "subscribe_with_wrong_max_sample_count_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

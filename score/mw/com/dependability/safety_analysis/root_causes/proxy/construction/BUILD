@@ -14,8 +14,8 @@
 filegroup(
     name = "construction_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "service_is_found_but_does_not_exist_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

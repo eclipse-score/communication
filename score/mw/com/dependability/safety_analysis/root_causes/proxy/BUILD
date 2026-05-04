@@ -14,7 +14,6 @@
 filegroup(
     name = "root_causes_proxy",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/call_method:call_method_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/construction:construction_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/find_service:service_not_found_fta",
@@ -27,6 +26,7 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/subscribe_for_an_event:subscribe_to_wrong_event_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/subscribe_for_an_event:subscribe_with_wrong_max_sample_count_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/unsubscribe_for_an_event:does_not_unsubscribe_fta",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

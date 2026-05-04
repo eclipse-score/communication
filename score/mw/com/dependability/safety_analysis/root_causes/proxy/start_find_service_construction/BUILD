@@ -14,8 +14,8 @@
 filegroup(
     name = "start_find_service_callback_is_redundantly_called_fta",
     srcs = [
-        "@score_tooling//plantuml:fta_metamodel",
         "start_find_service_callback_is_redundantly_called_fta.puml",
+        "@score_tooling//plantuml:fta_metamodel",
     ],
     visibility = ["//visibility:public"],
 )
