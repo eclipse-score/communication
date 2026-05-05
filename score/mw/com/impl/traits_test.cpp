@@ -549,13 +549,14 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
                 CreateEventBinding(identifier_with_valid_binding_, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
-    // Field set method binding (only created when the SkeletonField is tagged WithSetter)
-    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, _))
+    // Field get method binding always created for every SkeletonField regardless of tags, because get_method_ is
+    // unconditionally initialized (see TODO in skeleton_field.h). Once get_method_ becomes tag-conditional this
+    // expectation will need to be removed or adjusted accordingly.
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet))
         .Times(1)
-        .WillOnce(Invoke([this](const InstanceIdentifier&, SkeletonBinding*, const std::string_view, MethodType)
-                             -> std::unique_ptr<SkeletonMethodBinding> {
-            return std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_method_binding_mock_);
-        }));
+        .WillOnce(
+            Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_field_method_binding_mock_))));
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
                 Create(identifier_with_valid_binding_, _, kMethodName, _))
         .WillOnce(Return(ByMove(std::move(skeleton_method_binding_mock_ptr))));
@@ -644,8 +645,11 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Expecting that the Create call on the SkeletonMethodBindingFactory returns an invalid binding for the method.
-    // Field set method binding (only created when the SkeletonField is tagged WithSetter)
-    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, _)).Times(1);
+    //  Field get method is always created at the moment (see TODO in skeleton_field.h). Once get_method_ becomes
+    // tag-conditional this expectation can be adjusted accordingly.
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet))
+        .Times(1);
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
                 Create(identifier_with_valid_binding_, _, kMethodName, _))
         .WillOnce(Return(ByMove(nullptr)));
@@ -779,8 +783,12 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
 {
 
     // Expecting that the Create call on the SkeletonMethodBindingFactory returns an invalid binding for the method.
-    // Field set method binding (only created when the SkeletonField is tagged WithSetter)
-    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, _)).Times(1);
+    // Field get method binding always created for every SkeletonField regardless of tags, because get_method_ is
+    // unconditionally initialized (see TODO in skeleton_field.h). Once get_method_ becomes tag-conditional this
+    // expectation will need to be removed or adjusted accordingly.
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kFieldName, MethodType::kGet))
+        .Times(1);
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
                 Create(identifier_with_valid_binding_, _, kMethodName, _))
         .WillOnce(Return(ByMove(nullptr)));
