@@ -87,6 +87,15 @@ class ConsumerEventDataControlLocalView final
         const EventSlotStatus::EventTimeStamp last_search_time,
         const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTAMP_MAX) noexcept;
 
+    /// \brief Returns the latest readable sample and marks it as referenced.
+    ///
+    /// \details This method performs bounded retries on data races while increasing the reference count for the
+    /// selected slot.
+    ///
+    /// \return Index of latest sample if available, empty optional otherwise.
+    /// \post DereferenceEvent() is invoked to withdraw read-ownership
+    std::optional<SlotIndexType> GetLatestSlot() noexcept;
+
     /// \brief Increments refcount of given slot by one (given it is in the correct state i.e. being accessible/
     ///        readable)
     /// \details This is a specific feature - not used by the standard proxy/consumer, which is using
