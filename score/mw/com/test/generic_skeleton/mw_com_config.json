@@ -1,0 +1,142 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/service/GenericTypedInteraction",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 7001,
+          "events": [
+            {
+              "eventName": "Event8Byte",
+              "eventId": 1
+            },
+            {
+              "eventName": "Event64Byte",
+              "eventId": 2
+            },
+            {
+              "eventName": "Event16Byte",
+              "eventId": 3
+            },
+            {
+              "eventName": "Event32Byte",
+              "eventId": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/test/service/GenericGenericInteraction",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 7002,
+          "events": [
+            {
+              "eventName": "Event8Byte",
+              "eventId": 1
+            },
+            {
+              "eventName": "Event64Byte",
+              "eventId": 2
+            },
+            {
+              "eventName": "Event16Byte",
+              "eventId": 3
+            },
+            {
+              "eventName": "Event32Byte",
+              "eventId": 4
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "/test/generic/typed/interaction",
+      "serviceTypeName": "/test/service/GenericTypedInteraction",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "Event8Byte",
+              "numberOfSampleSlots": 5,
+              "maxSubscribers": 1
+            },
+            {
+              "eventName": "Event64Byte",
+              "numberOfSampleSlots": 5,
+              "maxSubscribers": 1
+            },
+            {
+              "eventName": "Event16Byte",
+              "numberOfSampleSlots": 5,
+              "maxSubscribers": 1
+            },
+            {
+              "eventName": "Event32Byte",
+              "numberOfSampleSlots": 5,
+              "maxSubscribers": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/test/generic/generic/interaction",
+      "serviceTypeName": "/test/service/GenericGenericInteraction",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "Event64Byte",
+              "numberOfSampleSlots": 5,
+              "maxSubscribers": 1
+            },
+            {
+              "eventName": "Event32Byte",
+              "numberOfSampleSlots": 5,
+              "maxSubscribers": 1
+            },
+            {
+              "eventName": "Event8Byte",
+              "numberOfSampleSlots": 5,
+              "maxSubscribers": 1
+            },
+            {
+              "eventName": "Event16Byte",
+              "numberOfSampleSlots": 5,
+              "maxSubscribers": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
