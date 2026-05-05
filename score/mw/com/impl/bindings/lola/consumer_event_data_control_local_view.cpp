@@ -146,6 +146,59 @@ auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent
 }
 
 template <template <class> class AtomicIndirectorType>
+auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::GetLatestSlot() noexcept -> std::optional<SlotIndexType>
+{
+    for (std::size_t retry_counter{0U}; retry_counter < MAX_REFERENCE_RETRIES; ++retry_counter)
+    {
+        EventSlotStatus::EventTimeStamp latest_time_stamp{1U};
+        std::optional<SlotIndexType> latest_slot_index{};
+        EventSlotStatus latest_slot_status{EventSlotStatus::UNINITIALIZED_TIMESTAMP, 0U};
+
+        SlotIndexType current_index = 0U;
+        for (const auto& slot : state_slots_)
+        {
+            const EventSlotStatus slot_status{slot.load(std::memory_order_acquire)};
+            if (!slot_status.IsInvalid() && !slot_status.IsInWriting())
+            {
+                const auto slot_time_stamp = slot_status.GetTimeStamp();
+                if (latest_time_stamp < slot_time_stamp)
+                {
+                    latest_time_stamp = slot_time_stamp;
+                    latest_slot_index = current_index;
+                    latest_slot_status = slot_status;
+                }
+            }
+            ++current_index;
+        }
+
+        if (!latest_slot_index.has_value())
+        {
+            return {};
+        }
+
+        const auto slot_index = latest_slot_index.value();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
+
+        auto expected = static_cast<EventSlotStatus::value_type>(latest_slot_status);
+        const auto new_refcount =
+            static_cast<EventSlotStatus::SubscriberCount>(latest_slot_status.GetReferenceCount() + 1U);
+        const EventSlotStatus updated_slot_status{latest_slot_status.GetTimeStamp(), new_refcount};
+        const auto desired = static_cast<EventSlotStatus::value_type>(updated_slot_status);
+
+        transaction_log_local_view_->ReferenceTransactionBegin(slot_index);
+        if (AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_weak(
+                state_slots_[slot_index], expected, desired, std::memory_order_acq_rel))
+        {
+            transaction_log_local_view_->ReferenceTransactionCommit(slot_index);
+            return latest_slot_index;
+        }
+        transaction_log_local_view_->ReferenceTransactionAbort(slot_index);
+    }
+
+    return {};
+}
+
+template <template <class> class AtomicIndirectorType>
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a segmentation fault
 // in case the index goes outside the range. As we already do an index check before accessing, so no way for
