@@ -327,12 +327,18 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
             self.instance_info.interface_id,
             self.identifier,
         )?;
+        let max_num_samples_u32 = u32::try_from(max_num_samples).map_err(|_| {
+            Error::EventError(EventFailedReason::MaxSampleOutOfBounds {
+                max: u32::MAX as usize,
+                requested: max_num_samples,
+            })
+        })?;
         //SAFETY: It is safe to subscribe to event because event_instance is valid
         // which was obtained from valid proxy instance
         let status = unsafe {
             B::subscribe_to_event(
                 std::ptr::from_ref(event_instance.get_proxy_event_base()) as *mut ProxyEventBase,
-                max_num_samples.try_into().unwrap(),
+                max_num_samples_u32,
             )
         };
         if !status {
@@ -347,7 +353,7 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
             max_num_samples,
             instance_info,
             waker_storage: Arc::default(),
-            async_init_status: std::sync::Once::new(),
+            async_init_status: std::sync::OnceLock::new(),
             _proxy: self.proxy_instance.clone(),
             _phantom: PhantomData,
         })
@@ -453,7 +459,7 @@ where
     max_num_samples: usize,
     instance_info: LolaConsumerInfo<B>,
     waker_storage: Arc<AtomicWaker>,
-    async_init_status: std::sync::Once,
+    async_init_status: std::sync::OnceLock<()>,
     _proxy: ProxyInstanceManager<B>,
     _phantom: PhantomData<T>,
 }
@@ -467,7 +473,7 @@ impl<T: CommData + Debug, B: FFIBridge> Drop for SubscriberImpl<T, B> {
         // and then unsubscribe from the event to clean up resources on the C++ side.
         let mut guard = self.event.get_proxy_event();
         unsafe {
-            if self.async_init_status.is_completed()
+            if self.async_init_status.get().is_some()
             // Check if the async receive callback was initialized
             {
                 B::clear_event_receive_handler(guard.deref_mut(), T::ID);
@@ -492,8 +498,15 @@ impl<T: CommData + Debug, B: FFIBridge> SubscriberImpl<T, B> {
         // The callback is a simple waker that wakes the future when new samples arrive,
         // and the lifetime of the callback is managed by Rust, it will not outlive the scope of
         // this function call.
-        unsafe {
-            B::set_event_receive_handler(event_guard.deref_mut(), &fat_ptr, T::ID);
+        let status = unsafe {
+            B::set_event_receive_handler(event_guard.deref_mut(), &fat_ptr, T::ID)
+        };
+        if !status {
+            // SAFETY: ptr was allocated as Box<dyn FnMut() + Send + 'static> via Box::into_raw
+            // above. The handler was not registered so this side retains ownership and must
+            // free it to prevent a leak.
+            drop(unsafe { Box::from_raw(ptr) });
+            return Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError));
         }
         Ok(())
     }
@@ -607,12 +620,16 @@ where
             // Get the event guard to ensure no concurrent receive calls
             // on the same subscriber instance.
             let mut event_guard = self.event.get_proxy_event();
-            // Initialize the async receive callback only once when the first receive call is made
-            // We are using std::sync::Once to ensure that the callback is set only once.
-            self.async_init_status.call_once(|| {
-                self.init_async_receive(&mut event_guard)
-                    .expect("Failed to initialize async receive callback");
-            });
+            // Initialize the async receive callback only once when the first receive call is made.
+            // ProxyEventManager already prevents concurrent receive calls, so the check-then-set
+            // sequence is race-free. Using get/set instead of get_or_try_init avoids the
+            // unstable `once_cell_try` feature while still propagating errors via `?`.
+            if self.async_init_status.get().is_none() {
+                self.init_async_receive(&mut event_guard)?;
+                // Ignore Err: the only way set() fails is if another thread raced us,
+                // which cannot happen because ProxyEventManager panics on concurrent access.
+                let _ = self.async_init_status.set(());
+            }
             ReceiveFuture {
                 event_guard: Some(event_guard),
                 waker_storage: Arc::clone(&self.waker_storage),
@@ -1170,7 +1187,7 @@ pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
 mod test {
 
     use super::*;
-    use bridge_ffi_mock::MockFFIBridge;
+    use bridge_ffi_mock::{MockFFIBridge, MockFFIBridgeGuard};
 
     #[derive(Debug)]
     #[repr(C)]
@@ -1210,6 +1227,8 @@ mod test {
     }
     #[test]
     fn test_sample() {
+        //this is for cleanup of thread local state.
+        let _guard = MockFFIBridgeGuard;
         MockFFIBridge::set_sample_backing::<TestData>(TestData { value: 42 });
         let sample = Sample::<TestData, MockFFIBridge> {
             id: 1,
@@ -1232,7 +1251,10 @@ mod test {
             proxy_instance: make_proxy_instance("TestInterface"),
             data: PhantomData,
         };
-        let _ = subscribable.subscribe(3);
+        assert!(
+            subscribable.subscribe(3).is_ok(),
+            "subscribe should succeed when the mock returns a non-null proxy event sentinel"
+        );
     }
 
     #[test]
@@ -1246,13 +1268,23 @@ mod test {
             max_num_samples: 10,
             instance_info: make_instance_info(),
             waker_storage: Arc::new(AtomicWaker::new()),
-            async_init_status: std::sync::Once::new(),
+            async_init_status: std::sync::OnceLock::new(),
             _proxy: make_proxy_instance("TestInterface"),
             _phantom: PhantomData,
         };
         let mut sample_container = SampleContainer::new(5);
-        let _ = subscriber.try_receive(&mut sample_container, 5);
-        let _ = subscriber.init_async_receive(&mut subscriber.event.get_proxy_event());
-        std::mem::drop(subscriber.receive(sample_container, 5, 5));
+        let count = subscriber
+            .try_receive(&mut sample_container, 5)
+            .expect("try_receive should succeed with a valid mock event");
+        assert_eq!(
+            count, 0,
+            "no samples should be returned by try_receive when the mock event is empty"
+        );
+        let mut event_guard = subscriber.event.get_proxy_event();
+        subscriber
+            .init_async_receive(&mut event_guard)
+            .expect("init_async_receive should succeed");
+        drop(event_guard);
+        drop(subscriber.receive(sample_container, 5, 5));
     }
 }

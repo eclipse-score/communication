@@ -50,7 +50,7 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         allocatee_ptr: *mut std::ffi::c_void,
         _event_type: &str,
     ) -> bool {
-        if event_ptr.is_null() {
+        if event_ptr.is_null() || allocatee_ptr.is_null() {
             return false;
         }
         let size = ALLOC_SIZE.with(|s| *s.borrow());
@@ -150,6 +150,9 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
             return std::ptr::null_mut();
         }
         // ProxyEventBase is a ZST opaque type; a non-null sentinel is sufficient.
+        // LIMITATION: The returned pointer is intentionally dangling and must NOT be
+        // dereferenced. It is only valid as a non-null sentinel for null-checks in the
+        // mock. Any test that dereferences this pointer will trigger undefined behavior.
         std::ptr::NonNull::<ProxyEventBase>::dangling().as_ptr()
     }
 
@@ -159,6 +162,9 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         _event_id: &str,
     ) -> *mut SkeletonEventBase {
         // SkeletonEventBase is a ZST opaque type; a non-null sentinel is sufficient.
+        // LIMITATION: The returned pointer is intentionally dangling and must NOT be
+        // dereferenced. It is only valid as a non-null sentinel for null-checks in the
+        // mock. Any test that dereferences this pointer will trigger undefined behavior.
         std::ptr::NonNull::<SkeletonEventBase>::dangling().as_ptr()
     }
 
@@ -237,6 +243,10 @@ impl MockFFIBridge {
     pub fn make_handle_container() -> std::sync::Arc<HandleContainer> {
         // A dangling non-null sentinel: the inner pointer is never passed to C++ because
         // MockFFIBridge::handle_container_size / handle_container_get_at always return 0 / None.
+        // LIMITATION: `ptr` is intentionally dangling and must NOT be dereferenced.
+        // It is safe only because the mock's handle_container_size / handle_container_get_at
+        // implementations never expose or forward this pointer to any code that would read it.
+        // Tests must not call any real C++ handle-container operations on the returned Arc.
         let ptr = std::ptr::NonNull::<NativeHandleContainer>::dangling().as_ptr();
         let hc = std::sync::Arc::new(HandleContainer::new(ptr));
         // Prevent HandleContainer::drop (which would call real C++ delete) by pinning the refcount.
@@ -246,6 +256,10 @@ impl MockFFIBridge {
 
     // `ProxyEventBase` is a ZST opaque type, a dangling non-null pointer is the
     // canonical representation for "valid but empty" in the mock.
+    //
+    // LIMITATION: The returned pointer is intentionally dangling and must NOT be
+    // dereferenced. Tests may only use it as a non-null sentinel (e.g., to satisfy
+    // null-checks in other mock methods). Dereferencing it is undefined behavior.
     pub fn make_proxy_event_ptr() -> *mut ProxyEventBase {
         std::ptr::NonNull::<ProxyEventBase>::dangling().as_ptr()
     }
@@ -291,5 +305,30 @@ impl MockFFIBridge {
                 old_drop(old_ptr);
             }
         });
+    }
+
+    // Drops all heap-allocated backing data stored in thread-locals and resets ALLOC_SIZE
+    // to zero.
+    fn reset() {
+        DATA_BACKING.with(|d| {
+            if let Some((ptr, drop_fn)) = d.borrow_mut().take() {
+                drop_fn(ptr);
+            }
+        });
+        ALLOC_SIZE.with(|s| *s.borrow_mut() = 0);
+        SAMPLE_BACKING.with(|s| {
+            if let Some((ptr, drop_fn)) = s.borrow_mut().take() {
+                drop_fn(ptr);
+            }
+        });
+    }
+}
+
+// RAII guard that resets all `MockFFIBridge` thread-local state when it goes out of scope.
+pub struct MockFFIBridgeGuard;
+
+impl Drop for MockFFIBridgeGuard {
+    fn drop(&mut self) {
+        MockFFIBridge::reset();
     }
 }

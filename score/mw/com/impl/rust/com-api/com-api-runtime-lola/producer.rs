@@ -477,7 +477,7 @@ impl<I: Interface, B: FFIBridge> Builder<I::Producer<LolaRuntimeImpl<B>>>
 #[cfg(test)]
 mod test {
     use super::*;
-    use bridge_ffi_mock::MockFFIBridge;
+    use bridge_ffi_mock::{MockFFIBridge, MockFFIBridgeGuard};
     use com_api_concept::InstanceSpecifier;
     // Bring trait methods into scope without shadowing local struct names.
     use com_api_concept::Publisher as _;
@@ -517,14 +517,20 @@ mod test {
     #[test]
     fn test_provider_info_offer_service() {
         let provider_info = make_provider_info("TestInterface");
-        let _ = provider_info.offer_service();
-        let _ = provider_info.stop_offer_service();
+        assert!(
+            provider_info.offer_service().is_ok(),
+            "offer_service should succeed when the mock returns a non-null skeleton sentinel"
+        );
+        assert!(
+            provider_info.stop_offer_service().is_ok(),
+            "stop_offer_service should always succeed in the mock"
+        );
     }
 
     #[test]
     fn test_publisher_allocate_and_send() {
-        // Register T so get_allocatee_ptr zero-fills the SampleAllocateePtr slot
-        // (safe assume_init) and get_allocatee_data_ptr returns real T-backed storage.
+        //this is for cleanup of thread local state.
+        let _guard = MockFFIBridgeGuard;
         MockFFIBridge::set_alloc_backing::<TestData>();
         let instance_info = make_provider_info("TestData");
         let publisher: Publisher<TestData, MockFFIBridge> =
@@ -533,6 +539,10 @@ mod test {
         let sample = publisher.allocate().expect("Failed to allocate sample");
         let test_data = TestData { value: 42 };
         let sample_mut = sample.write(test_data);
+        assert_eq!(
+            sample_mut.value, 42,
+            "written value should be readable back through SampleMut before sending"
+        );
         sample_mut.send().expect("Failed to send sample");
     }
 }
