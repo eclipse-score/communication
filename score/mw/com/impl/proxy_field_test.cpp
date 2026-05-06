@@ -447,5 +447,85 @@ TEST_F(ProxyFieldGetSetFixture, NullMethodBindingsDoNotRegisterMethodsAsRegularM
     EXPECT_TRUE(proxy_base_.GetMethods().empty());
 }
 
+TEST_F(ProxyFieldGetSetFixture, SubscribeOnNotifierFieldForwardsMaxSampleCountToBinding)
+{
+    // Given a WithNotifier ProxyField in the unsubscribed state
+    auto field = MakeFieldWithNotifierOnly();
+    constexpr std::size_t kMaxSampleCount = 7U;
+    EXPECT_CALL(proxy_event_mock_, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kNotSubscribed));
+
+    // When Subscribe(kMaxSampleCount) is called
+    EXPECT_CALL(proxy_event_mock_, Subscribe(kMaxSampleCount)).WillOnce(Return(score::ResultBlank{}));
+    const auto result = field.Subscribe(kMaxSampleCount);
+
+    // Then the call delegates to the binding with the same max-sample-count and the success result is propagated
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(ProxyFieldGetSetFixture, SubscribeOnNotifierFieldPropagatesBindingError)
+{
+    // Given a WithNotifier ProxyField whose binding's Subscribe returns an error
+    auto field = MakeFieldWithNotifierOnly();
+    EXPECT_CALL(proxy_event_mock_, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kNotSubscribed));
+    EXPECT_CALL(proxy_event_mock_, Subscribe(_)).WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When Subscribe is called
+    const auto result = field.Subscribe(3U);
+
+    // Then the binding error is propagated to the caller
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(ProxyFieldGetSetFixture, GetSubscriptionStateOnNotifierFieldReturnsBindingValue)
+{
+    // Given a WithNotifier ProxyField
+    auto field = MakeFieldWithNotifierOnly();
+
+    // When GetSubscriptionState() is called and the binding reports kSubscribed
+    EXPECT_CALL(proxy_event_mock_, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kSubscribed));
+    const auto state = field.GetSubscriptionState();
+
+    // Then exactly the value the binding returned is reported back
+    EXPECT_EQ(state, SubscriptionState::kSubscribed);
+}
+
+TEST_F(ProxyFieldGetSetFixture, GetNumNewSamplesAvailableOnNotifierFieldReturnsBindingValue)
+{
+    // Given a WithNotifier ProxyField in the subscribed state
+    auto field = MakeFieldWithNotifierOnly();
+    EXPECT_CALL(proxy_event_mock_, GetSubscriptionState()).WillRepeatedly(Return(SubscriptionState::kSubscribed));
+
+    // When the binding reports 4 new samples
+    EXPECT_CALL(proxy_event_mock_, GetNumNewSamplesAvailable()).WillOnce(Return(4U));
+    const auto result = field.GetNumNewSamplesAvailable();
+
+    // Then exactly that count is forwarded
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(*result, 4U);
+}
+
+TEST_F(ProxyFieldGetSetFixture, NotifierSurfaceCoexistsWithSetterOnSameField)
+{
+    // Given a ProxyField tagged WithSetter + WithNotifier (no getter), both surfaces should be usable
+    auto field = MakeFieldWithSetAndNotifier();
+    constexpr std::size_t kMaxSampleCount = 5U;
+    TestSampleType set_value{42U};
+
+    // Notifier surface: Subscribe forwards to binding
+    EXPECT_CALL(proxy_event_mock_, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kNotSubscribed));
+    EXPECT_CALL(proxy_event_mock_, Subscribe(kMaxSampleCount)).WillOnce(Return(score::ResultBlank{}));
+    const auto subscribe_result = field.Subscribe(kMaxSampleCount);
+    ASSERT_TRUE(subscribe_result.has_value());
+
+    // Setter surface: Set forwards to method binding and the value lands in the in-args buffer
+    EXPECT_CALL(set_method_binding_mock_, GetInArgsBuffer(0));
+    EXPECT_CALL(set_method_binding_mock_, GetReturnValueBuffer(0));
+    EXPECT_CALL(set_method_binding_mock_, DoCall(0));
+    const auto set_result = field.Set(set_value);
+    ASSERT_TRUE(set_result.has_value());
+    EXPECT_EQ(static_cast<TestSampleType>(in_args_buffer_[0]), set_value);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

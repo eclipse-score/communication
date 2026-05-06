@@ -140,7 +140,6 @@ const ConfigurationStore kConfigurationStoreWithFields{
     kLolaServiceTypeDeploymentWithFields,
     kLolaServiceInstanceDeploymentWithFields};
 
-
 const std::optional<DataTypeSizeInfo> kEmptyInArgsTypeErasedDataInfo{};
 const std::optional<DataTypeSizeInfo> kEmptyReturnTypeTypeErasedDataInfo{};
 const DataTypeSizeInfo kValidInArgsTypeErasedDataInfo{16U, 16U};
