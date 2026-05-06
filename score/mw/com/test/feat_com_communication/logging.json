@@ -1,0 +1,14 @@
+{
+    "appId": "feat_com",
+    "appDesc": "communication test",
+    "logLevel": "kDebug",
+    "logLevelThresholdConsole": "kDebug",
+    "logMode": "kConsole",
+    "dynamicDatarouterIdentifiers": true,
+    "service_types": {
+        "score/cp60/MapApiLanesStamped": {
+            "instance_id": "default",
+            "binding": "ipc"
+        }
+    }
+}

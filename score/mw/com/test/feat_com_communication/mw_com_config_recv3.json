@@ -1,0 +1,59 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "BigDataService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 99,
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "eventId": 1
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "eventId": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "score/cp60/MapApiLanesStamped",
+      "serviceTypeName": "BigDataService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "maxSubscribers": 10,
+              "numberOfSampleSlots": 15
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "maxSubscribers": 10,
+              "numberOfSampleSlots": 15
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "global": {"applicationID": 1003, 
+    "asil-level": "QM"
+  }
+}
