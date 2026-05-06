@@ -18,7 +18,6 @@
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 
 #include "score/memory/shared/map.h"
-#include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
 namespace score::mw::com::impl::lola
@@ -42,6 +41,13 @@ class ServiceDataControl
         : event_controls_(resource), application_id_pid_mapping_(kMaxApplicationIdPidMappings, resource)
     {
     }
+
+    ~ServiceDataControl() noexcept = default;
+
+    ServiceDataControl(const ServiceDataControl&) = delete;
+    ServiceDataControl& operator=(const ServiceDataControl&) = delete;
+    ServiceDataControl(ServiceDataControl&&) noexcept = delete;
+    ServiceDataControl& operator=(ServiceDataControl&& other) noexcept = delete;
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member

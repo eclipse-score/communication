@@ -14,12 +14,19 @@
 """Integration test for unsubscribe_deadlock."""
 
 
-def test_unsubscribe_deadlock(sut):
+def unsubscribe_deadlock(target, **kwargs):
+    args = []
+    return target.wrap_exec(
+        "bin/unsubscribe_deadlock", args, cwd="/opt/unsubscribe_deadlock", wait_on_exit=True, **kwargs
+    )
+
+
+def test_unsubscribe_deadlock(target):
     """Test that Unsubscribe doesn't deadlock when called concurrently with GetSubscriptionState.
-    
+
     This is a loopback test where both skeleton and proxy run in the same process.
     It tests that calling Unsubscribe() while GetSubscriptionState() is being called
     from a receive handler doesn't cause a deadlock.
     """
-    with sut.start_process("./bin/unsubscribe_deadlock", cwd="/opt/unsubscribe_deadlock/") as process:
-        assert process.wait_for_exit() == 0
+    with unsubscribe_deadlock(target, wait_timeout=15):
+        pass

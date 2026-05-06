@@ -37,16 +37,16 @@ class IServiceDiscovery
     virtual ~IServiceDiscovery() = default;
     IServiceDiscovery() = default;
 
-    [[nodiscard]] virtual ResultBlank OfferService(InstanceIdentifier) noexcept = 0;
-    [[nodiscard]] virtual ResultBlank StopOfferService(InstanceIdentifier) noexcept = 0;
-    [[nodiscard]] virtual ResultBlank StopOfferService(InstanceIdentifier,
-                                                       QualityTypeSelector quality_type) noexcept = 0;
+    [[nodiscard]] virtual Result<void> OfferService(InstanceIdentifier) noexcept = 0;
+    [[nodiscard]] virtual Result<void> StopOfferService(InstanceIdentifier) noexcept = 0;
+    [[nodiscard]] virtual Result<void> StopOfferService(InstanceIdentifier,
+                                                        QualityTypeSelector quality_type) noexcept = 0;
     virtual Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>,
                                                        const InstanceSpecifier) noexcept = 0;
     virtual Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>, InstanceIdentifier) noexcept = 0;
     virtual Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>,
                                                        const EnrichedInstanceIdentifier) noexcept = 0;
-    [[nodiscard]] virtual ResultBlank StopFindService(const FindServiceHandle) noexcept = 0;
+    [[nodiscard]] virtual Result<void> StopFindService(const FindServiceHandle) noexcept = 0;
     [[nodiscard]] virtual Result<ServiceHandleContainer<HandleType>> FindService(
         InstanceIdentifier instance_identifier) noexcept = 0;
     [[nodiscard]] virtual Result<ServiceHandleContainer<HandleType>> FindService(

@@ -42,11 +42,11 @@ class Skeleton;
 class SkeletonMethod : public SkeletonMethodBinding
 {
   public:
-    SkeletonMethod(Skeleton& skeleton, const ElementFqId element_fq_id);
+    SkeletonMethod(Skeleton& skeleton, const UniqueMethodIdentifier unique_method_identifier);
 
-    ResultBlank RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
+    Result<void> RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
 
-    ResultBlank OnProxyMethodSubscribeFinished(
+    Result<void> OnProxyMethodSubscribeFinished(
         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
         const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
         const std::optional<score::cpp::span<std::byte>> return_queue_storage,
@@ -74,7 +74,7 @@ class SkeletonMethod : public SkeletonMethodBinding
     /// ToDo: We need to store the registration guard objects in a way that we can clean up old registration guards,
     /// from old, crashed processes (e.g. by storing the PID of the process which registered the guards and checking if
     /// the current pid is different). This is an intermetidate solution and should be revisited after changes are made
-    /// to the method_resource_map in the issue-250236.
+    /// to the method_resource_map in the issue-258913.
     struct MethodHandlerCleanupPackage
     {
         pid_t proxy_pid;

@@ -36,10 +36,10 @@ class ProxyEventBase : public ProxyEventBindingBase
 
     MOCK_METHOD(SubscriptionState, GetSubscriptionState, (), (const, noexcept, override));
     MOCK_METHOD(void, Unsubscribe, (), (noexcept, override));
-    MOCK_METHOD(ResultBlank, Subscribe, (std::size_t), (noexcept, override));
+    MOCK_METHOD(Result<void>, Subscribe, (std::size_t), (noexcept, override));
     MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (const, noexcept, override));
-    MOCK_METHOD(ResultBlank, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
-    MOCK_METHOD(ResultBlank, UnsetReceiveHandler, (), (noexcept, override));
+    MOCK_METHOD(Result<void>, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
+    MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));
@@ -66,14 +66,14 @@ class ProxyEvent : public ProxyEventBinding<SampleType>
 
     MOCK_METHOD(SubscriptionState, GetSubscriptionState, (), (const, noexcept, override));
     MOCK_METHOD(void, Unsubscribe, (), (noexcept, override));
-    MOCK_METHOD(ResultBlank, Subscribe, (std::size_t), (noexcept, override));
+    MOCK_METHOD(Result<void>, Subscribe, (std::size_t), (noexcept, override));
     MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (const, noexcept, override));
     MOCK_METHOD(Result<std::size_t>,
                 GetNewSamples,
                 (typename ProxyEventBinding<SampleType>::Callback&&, TrackerGuardFactory&),
                 (noexcept, override));
-    MOCK_METHOD(ResultBlank, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
-    MOCK_METHOD(ResultBlank, UnsetReceiveHandler, (), (noexcept, override));
+    MOCK_METHOD(Result<void>, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
+    MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));
@@ -139,7 +139,7 @@ class ProxyEventFacade : public ProxyEventBinding<SampleType>
     {
         return proxy_event_.Unsubscribe();
     }
-    ResultBlank Subscribe(std::size_t n) noexcept override
+    Result<void> Subscribe(std::size_t n) noexcept override
     {
         return proxy_event_.Subscribe(n);
     }
@@ -152,11 +152,11 @@ class ProxyEventFacade : public ProxyEventBinding<SampleType>
     {
         return proxy_event_.GetNewSamples(std::move(callback), tracker_guard_factory);
     }
-    ResultBlank SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override
+    Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override
     {
         return proxy_event_.SetReceiveHandler(handler);
     }
-    ResultBlank UnsetReceiveHandler() noexcept override
+    Result<void> UnsetReceiveHandler() noexcept override
     {
         return proxy_event_.UnsetReceiveHandler();
     }

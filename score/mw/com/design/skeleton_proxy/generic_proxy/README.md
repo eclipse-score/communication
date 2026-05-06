@@ -87,7 +87,7 @@ The map containing the meta-information gets initialized by the skeleton instanc
 the vectors containing the sample slots in
 ```
 template <typename SampleType>
-std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>> lola::Skeleton::Register(ElementFqId event_fqn,
+std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>> lola::Skeleton::Register(ElementFqId element_fq_id,
    std::size_t number_of_slots)
 ```
 

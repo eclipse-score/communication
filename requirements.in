@@ -14,5 +14,11 @@
 # Python dependencies for integration testing framework
 -r ./quality/integration_testing/requirements.txt
 
-# Python dependencies for traceability tools
--r ./third_party/traceability/requirements.txt
+# Python dependencies for documentation generation
+breathe
+sphinx_rtd_theme
+sphinx_design
+sphinx_needs
+sphinxcontrib_plantuml
+pydata_sphinx_theme
+myst_parser

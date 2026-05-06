@@ -76,13 +76,13 @@ class GenericSkeletonEventTest : public ::testing::Test
         ON_CALL(binding_runtime_mock_, GetServiceDiscoveryClient())
             .WillByDefault(ReturnRef(service_discovery_client_mock_));
 
-        ON_CALL(service_discovery_mock_, OfferService(_)).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(service_discovery_mock_, OfferService(_)).WillByDefault(Return(score::Result<void>{}));
 
         ON_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(_))
             .WillByDefault(Invoke([this](const auto&) {
                 auto mock = std::make_unique<NiceMock<mock_binding::Skeleton>>();
                 this->skeleton_binding_mock_ = mock.get();
-                ON_CALL(*mock, PrepareOffer(_, _, _)).WillByDefault(Return(score::ResultBlank{}));
+                ON_CALL(*mock, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));
                 return mock;
             }));
     }
@@ -204,7 +204,7 @@ TEST_F(GenericSkeletonEventTest, AllocateAndSendDispatchesToBindingAfterOffer)
 
     // And Given the service is Offered
     EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
-    EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton.OfferService().has_value());
 
     // When calling Allocate()
@@ -216,7 +216,7 @@ TEST_F(GenericSkeletonEventTest, AllocateAndSendDispatchesToBindingAfterOffer)
     ASSERT_TRUE(alloc_result.has_value());
 
     // And When calling Send() with the allocated sample
-    EXPECT_CALL(*mock_event_binding_ptr, Send(_)).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*mock_event_binding_ptr, Send(_)).WillOnce(Return(score::Result<void>{}));
 
     auto send_result = event->Send(std::move(alloc_result.value()));
 
@@ -251,7 +251,7 @@ TEST_F(GenericSkeletonEventTest, AllocateReturnsErrorWhenBindingFails)
 
     // And Given the service is Offered
     EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
-    EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton.OfferService().has_value());
 
     // Expect the binding to fail allocation
@@ -292,7 +292,7 @@ TEST_F(GenericSkeletonEventTest, SendReturnsErrorWhenBindingFails)
 
     // And Given the service is Offered
     EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
-    EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton.OfferService().has_value());
 
     // Expect the binding to fail sending

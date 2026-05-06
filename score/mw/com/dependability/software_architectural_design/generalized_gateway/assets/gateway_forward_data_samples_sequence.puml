@@ -1,0 +1,38 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+title Gateway forward data samples
+
+participant "CyclicAlarm::instance" as TIMER
+participant "Generalized Gateway::Domain A" as GATEWAY
+participant "GenericProxyEvent::instance" as PROXY_EVENT_INSTANCE order 30
+participant "TransportLayer::Domain A" as TRANSPORT_LAYER order 40
+
+TIMER -> GATEWAY ++: Cyclic Poll Timer Event
+
+== Collect event/field data to forward ==
+
+create "ServiceElementSampleDataCollection::instance" as SAMPLE_PTR_COL
+GATEWAY -> SAMPLE_PTR_COL : new
+loop all events and fields of service instances to "gateway"
+    opt poll cycle for event or field reached
+        GATEWAY -> PROXY_EVENT_INSTANCE ++ : GetNewSamples(max_samples)
+            PROXY_EVENT_INSTANCE -> GATEWAY ++ : callback(SamplePtr<void>)
+                GATEWAY -> SAMPLE_PTR_COL ++ : Store(SamplePtr<void>, meta-information)
+                return
+            return
+        return Result<num_samples>
+    end
+end
+
+== Transfer collected samples to Domain B ==
+
+GATEWAY -> TRANSPORT_LAYER ++ : ForwardSamples(sample_data_collection)
+ref over TRANSPORT_LAYER : Transport Layer Forward Samples
+return Result<TargetDMABufferCollection>
+
+GATEWAY -> SAMPLE_PTR_COL !!: Release samples
+
+@enduml

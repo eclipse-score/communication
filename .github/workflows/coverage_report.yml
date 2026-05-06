@@ -17,15 +17,17 @@ on:
     outputs:
       artifact-name:
         description: 'Name of the coverage report artifact'
-        value: ${{ jobs.coverage-report.outputs.artifact-name }}
+        value: ${{ jobs.coverage_report.outputs.artifact-name }}
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  group: coverage_report-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request'}}
-
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
 jobs:
   coverage_report:
     runs-on: ubuntu-24.04

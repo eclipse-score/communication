@@ -1,0 +1,43 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+title DMA data reception and SkeletonEvent Allocate/Send
+
+participant "PCIe Gateway::SoC1" as GATEWAY_OTHER
+participant "PCIe Gateway::SoC2" as GATEWAY
+participant "GenericSkeletonEvent::instance" as SKELETON_EVENT_INSTANCE order 30
+
+== Preparation of DMA transfer  ==
+
+GATEWAY_OTHER -> GATEWAY ++ : SetupDMATransfer(setup_instance)
+
+create "SampleAllocateePtrCollection::instance" as SAMPLE_ALLOCATEE_PTR_COL
+GATEWAY -> SAMPLE_ALLOCATEE_PTR_COL : new
+loop all sample meta-information in setup_instance
+    GATEWAY -> SKELETON_EVENT_INSTANCE ++ : Allocate()
+    return Result<SampleAllocateePtr<void>>
+    GATEWAY -> SAMPLE_ALLOCATEE_PTR_COL ++ : Store(sample_allocatee_ptr, meta-information)
+    return
+end
+
+GATEWAY -> GATEWAY : Create TargetDMABufferCollection from SampleAllocateePtrCollection::instance
+return TargetDMABufferCollection
+
+== DMA transfer  ==
+
+GATEWAY_OTHER -> GATEWAY : Execute DMA Transfer
+
+GATEWAY_OTHER -> GATEWAY ++: NotifyDMATransferResult(result)
+
+alt DMA transfer SUCCESS
+    loop for all allocatee_ptrs in SampleAllocateePtrCollection::instance
+        GATEWAY -> SKELETON_EVENT_INSTANCE ++ : Send(allocatee_ptr)
+        return
+    end
+else DMA transfer FAILED
+    GATEWAY -> SAMPLE_ALLOCATEE_PTR_COL !! : destroy
+end
+
+@enduml

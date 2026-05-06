@@ -10,16 +10,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
-
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
+#include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
-#include "score/mw/com/impl/runtime.h"
-#include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
@@ -33,7 +32,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
 
 namespace score::mw::com::impl::lola
@@ -49,15 +47,14 @@ class SkeletonEventAttorney
 
     EventDataControlComposite<>& GetEventDataControlComposite()
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(skeleton_event_.event_data_control_composite_.has_value());
-        return skeleton_event_.event_data_control_composite_.value();
+        return skeleton_event_.skeleton_event_common_.GetEventDataControlComposite();
     }
 
     /// \brief Set handler availability flags for testing purposes
     void SetHandlerAvailability(bool qm_available, bool asil_b_available)
     {
-        skeleton_event_.event_shared_impl_.SetQmNotificationsRegistered(qm_available);
-        skeleton_event_.event_shared_impl_.SetAsilBNotificationsRegistered(asil_b_available);
+        skeleton_event_.skeleton_event_common_.SetQmNotificationsRegistered(qm_available);
+        skeleton_event_.skeleton_event_common_.SetAsilBNotificationsRegistered(asil_b_available);
     }
 
   private:
@@ -142,11 +139,23 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto memory_control = score::memory::shared::SharedMemoryFactory::Open(path, false);
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
 
-        auto& event_data_control = control_storage->event_controls_.find(fake_element_fq_id_)->second.data_control;
-        event_data_control.GetTransactionLogSet().RegisterSkeletonTracingElement();
-        auto slot_indicator = event_data_control.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
-        EXPECT_TRUE(slot_indicator.IsValid());
-        return values->at(slot_indicator.GetIndex());
+        auto& event_control = control_storage->event_controls_.find(fake_element_fq_id_)->second;
+
+        // To reference an event, we need to emulate what a ProxyEvent would do so we need to register a dummy
+        // TransactionLog, reference the event and then dereference the event. If we don't dereference the event, then
+        // the TransactionLogRegistrationGuard returned by RegisterProxyElement would crash since there would still be
+        // open transactions on destruction.
+        ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_control.data_control};
+        const TransactionLogId dummy_transaction_log_id{10};
+        auto registration_guard = event_control.transaction_log_set_.RegisterProxyElement(
+            dummy_transaction_log_id, consumer_event_data_control_local);
+        auto slot_index = consumer_event_data_control_local.ReferenceNextEvent(0);
+        EXPECT_TRUE(slot_index.has_value());
+        const auto value = values->at(slot_index.value());
+
+        consumer_event_data_control_local.DereferenceEvent(slot_index.value());
+
+        return value;
     }
 
     std::size_t GetFreeSampleSlots() const
@@ -165,11 +174,12 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
         const auto search = control_storage->event_controls_.find(fake_element_fq_id_);
         EXPECT_TRUE(search != control_storage->event_controls_.cend());
-        const auto* event_control = &search->second;
+        auto& event_control = search->second;
 
         for (SlotIndexType i = 0U; i < MaxSamples; i++)
         {
-            if ((*event_control).data_control[i].IsInvalid())
+            ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_control.data_control};
+            if (consumer_event_data_control_local[i].IsInvalid())
             {
                 result++;
             }
@@ -180,11 +190,11 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
     void AllocateQmSlots(const std::size_t number_of_slots_to_allocate)
     {
         auto& event_data_control_composite = SkeletonEventAttorney{skeleton_event_}.GetEventDataControlComposite();
-        auto& qm_event_data_control = event_data_control_composite.GetQmEventDataControl();
+        auto& qm_event_data_control_local = event_data_control_composite.GetQmEventDataControlLocal();
 
         for (std::size_t counter = 0U; counter < number_of_slots_to_allocate; ++counter)
         {
-            score::cpp::ignore = qm_event_data_control.AllocateNextSlot();
+            ASSERT_TRUE(qm_event_data_control_local.AllocateNextSlot());
         }
     }
 

@@ -33,7 +33,7 @@ class TracingRuntimeMock : public ITracingRuntime
                 (noexcept, override));
     MOCK_METHOD(void, UnregisterShmObject, (BindingType, ServiceElementInstanceIdentifierView), (noexcept, override));
 
-    MOCK_METHOD(ResultBlank,
+    MOCK_METHOD(Result<void>,
                 Trace,
                 (BindingType,
                  ServiceElementTracingData service_element_tracing_data,
@@ -44,12 +44,12 @@ class TracingRuntimeMock : public ITracingRuntime
                  const void*,
                  std::size_t),
                 (noexcept, override));
-    MOCK_METHOD(ResultBlank,
+    MOCK_METHOD(Result<void>,
                 Trace,
                 (BindingType,
                  ServiceElementInstanceIdentifierView,
                  TracePointType,
-                 score::cpp::optional<TracePointDataId>,
+                 std::optional<TracePointDataId>,
                  const void*,
                  std::size_t),
                 (noexcept, override));

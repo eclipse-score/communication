@@ -34,7 +34,8 @@ class SkeletonMethodBindingFactory final
     /// \brief See documentation in ISkeletonMethodBindingFactory.
     static std::unique_ptr<SkeletonMethodBinding> Create(const InstanceIdentifier& instance_identifier,
                                                          SkeletonBinding* parent_binding,
-                                                         const std::string_view method_name);
+                                                         const std::string_view method_name,
+                                                         MethodType method_type);
 
     /// \brief Inject a mock ISkeletonMethodBindingFactory. If a mock is injected, then all calls on
     /// SkeletonMethodBindingFactory will be dispatched to the mock.

@@ -32,7 +32,7 @@ namespace score::mw::com::impl::tracing
 namespace
 {
 
-void UpdateTracingDataFromTraceResult(ResultBlank trace_result,
+void UpdateTracingDataFromTraceResult(Result<void> trace_result,
                                       ProxyEventTracingData& proxy_event_tracing_data,
                                       bool& proxy_event_trace_point) noexcept
 {

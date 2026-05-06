@@ -29,6 +29,16 @@ class ProxyFieldBindingFactoryMock : public IProxyFieldBindingFactory<SampleType
                 CreateEventBinding,
                 (ProxyBase&, std::string_view),
                 (noexcept, override));
+
+    MOCK_METHOD(std::unique_ptr<ProxyMethodBinding>,
+                CreateGetMethodBinding,
+                (ProxyBase&, std::string_view),
+                (noexcept, override));
+
+    MOCK_METHOD(std::unique_ptr<ProxyMethodBinding>,
+                CreateSetMethodBinding,
+                (ProxyBase&, std::string_view),
+                (noexcept, override));
 };
 
 }  // namespace score::mw::com::impl

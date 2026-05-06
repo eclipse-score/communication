@@ -12,6 +12,9 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 
+#include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
 #include "score/memory/shared/memory_resource_proxy.h"
@@ -175,7 +178,7 @@ SkeletonMockedMemoryFixture::SkeletonMockedMemoryFixture()
     ON_CALL(lola_runtime_mock_, GetApplicationId()).WillByDefault(::testing::Return(kDummyApplicationId));
     ON_CALL(lola_runtime_mock_, GetLolaMessaging()).WillByDefault(::testing::ReturnRef(message_passing_mock_));
 
-    ON_CALL(filesystem_fake_.GetUtils(), CreateDirectories(_, _)).WillByDefault(Return(score::ResultBlank{}));
+    ON_CALL(filesystem_fake_.GetUtils(), CreateDirectories(_, _)).WillByDefault(Return(score::Result<void>{}));
 
     // Default behaviour for path builders
     ON_CALL(shm_path_builder_mock_, GetControlChannelShmName(_, QualityType::kASIL_QM))
@@ -310,17 +313,18 @@ void SkeletonMockedMemoryFixture::ExpectServiceUsageMarkerFileCreatedOrOpenedAnd
     EXPECT_CALL(*unistd_mock_, unlink(StrEq(test::kServiceInstanceUsageFilePath))).Times(0);
 }
 
-ServiceDataControl SkeletonMockedMemoryFixture::CreateServiceDataControlWithEvent(ElementFqId element_fq_id,
-                                                                                  QualityType quality_type) noexcept
+std::unique_ptr<ServiceDataControl> SkeletonMockedMemoryFixture::CreateServiceDataControlWithEvent(
+    ElementFqId element_fq_id,
+    QualityType quality_type) noexcept
 {
     const auto created_resource = (quality_type == QualityType::kASIL_QM) ? control_qm_shared_memory_resource_mock_
                                                                           : control_asil_b_shared_memory_resource_mock_;
-    ServiceDataControl service_data_control{*created_resource};
+    auto service_data_control = std::make_unique<ServiceDataControl>(*created_resource);
 
     auto event_control =
-        service_data_control.event_controls_.emplace(std::piecewise_construct,
-                                                     std::forward_as_tuple(element_fq_id),
-                                                     std::forward_as_tuple(10U, 10U, true, *created_resource));
+        service_data_control->event_controls_.emplace(std::piecewise_construct,
+                                                      std::forward_as_tuple(element_fq_id),
+                                                      std::forward_as_tuple(10U, 10U, true, *created_resource));
     EXPECT_TRUE(event_control.second);
     return service_data_control;
 }
@@ -333,6 +337,39 @@ EventControl& SkeletonMockedMemoryFixture::GetEventControlFromServiceDataControl
     EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
     auto& event_control = event_control_it->second;
     return event_control;
+}
+
+ProviderEventDataControlLocalView<> SkeletonMockedMemoryFixture::GetProviderEventDataControlLocalFromServiceDataControl(
+    ElementFqId element_fq_id,
+    ServiceDataControl& service_data_control) noexcept
+{
+    auto event_control_it = service_data_control.event_controls_.find(element_fq_id);
+    EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
+
+    auto& event_control = event_control_it->second;
+    return ProviderEventDataControlLocalView{event_control.data_control};
+}
+
+ConsumerEventDataControlLocalView<> SkeletonMockedMemoryFixture::GetConsumerEventDataControlLocalFromServiceDataControl(
+    ElementFqId element_fq_id,
+    ServiceDataControl& service_data_control) noexcept
+{
+    auto event_control_it = service_data_control.event_controls_.find(element_fq_id);
+    EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
+
+    auto& event_control = event_control_it->second;
+    return ConsumerEventDataControlLocalView{event_control.data_control};
+}
+
+TransactionLogSet& SkeletonMockedMemoryFixture::GetTransactionLogSetFromServiceDataControl(
+    ElementFqId element_fq_id,
+    ServiceDataControl& service_data_control) noexcept
+{
+    auto event_control_it = service_data_control.event_controls_.find(element_fq_id);
+    EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
+
+    auto& event_control = event_control_it->second;
+    return event_control.transaction_log_set_;
 }
 
 void SkeletonMockedMemoryFixture::CleanUpSkeleton()

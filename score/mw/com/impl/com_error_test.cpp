@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/com_error.h"
 
+#include <score/utility.hpp>
+
 #include <gtest/gtest.h>
 
 namespace score::mw::com::impl

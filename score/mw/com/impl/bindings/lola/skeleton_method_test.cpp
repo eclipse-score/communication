@@ -100,7 +100,7 @@ class SkeletonMethodFixture : public SkeletonMockedMemoryFixture
 
     SkeletonMethodFixture& GivenASkeletonMethod()
     {
-        unit_ = std::make_unique<SkeletonMethod>(*skeleton_, element_fq_id_);
+        unit_ = std::make_unique<SkeletonMethod>(*skeleton_, unique_method_identifier_);
         return *this;
     }
 
@@ -134,14 +134,14 @@ class SkeletonMethodFixture : public SkeletonMockedMemoryFixture
 
     std::unique_ptr<SkeletonMethod> unit_{nullptr};
 
-    const ElementFqId element_fq_id_{kDummyServiceId, kDummyMethodId, kDummyInstanceId, ServiceElementType::METHOD};
+    const UniqueMethodIdentifier unique_method_identifier_{kDummyMethodId, MethodType::kMethod};
 
     const ProxyInstanceIdentifier proxy_instance_identifier_{kDummyProxyInstanceCounter, kDummyApplicationId};
     const ProxyMethodInstanceIdentifier proxy_method_instance_identifier_{proxy_instance_identifier_,
-                                                                          element_fq_id_.element_id_};
+                                                                          unique_method_identifier_};
     const ProxyInstanceIdentifier proxy_instance_identifier_2_{kDummyProxyInstanceCounter + 1, kDummyApplicationId + 1};
     const ProxyMethodInstanceIdentifier proxy_method_instance_identifier_2_{proxy_instance_identifier_2_,
-                                                                            element_fq_id_.element_id_};
+                                                                            unique_method_identifier_};
 
     SkeletonInstanceIdentifier skeleton_instance_identifier_{kDummyServiceId, kDummyInstanceId};
     std::shared_ptr<memory::shared::ISharedMemoryResource> methods_shared_memory_resource_{
@@ -345,7 +345,7 @@ TEST_F(SkeletonMethodUnregisterHandlersFixture, CallingWillUnregisterAllHandlers
 {
     const ProxyInstanceIdentifier proxy_instance_identifier_2{kDummyProxyInstanceCounter + 1, kDummyApplicationId + 1};
     const ProxyMethodInstanceIdentifier proxy_method_instance_identifier_2{proxy_instance_identifier_2,
-                                                                           element_fq_id_.element_id_};
+                                                                           unique_method_identifier_};
     GivenASkeletonMethod().WithARegisteredCallback();
 
     // Expecting that RegisterMethodCallHandler will be called on message passing for each call to
@@ -392,7 +392,7 @@ TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingWillUnregisterHand
     const ProxyInstanceIdentifier proxy_instance_identifier_2{kDummyProxyInstanceCounter + 1U,
                                                               kDummyApplicationId + 1U};
     const ProxyMethodInstanceIdentifier proxy_method_instance_identifier_2{proxy_instance_identifier_2,
-                                                                           element_fq_id_.element_id_};
+                                                                           unique_method_identifier_};
     GivenASkeletonMethod().WithARegisteredCallback();
 
     // Expecting that RegisterMethodCallHandler will be called on message passing for each call to

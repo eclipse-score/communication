@@ -61,14 +61,8 @@ class TestSizeProvider
     /// Get size info for SamplePtr<UserType> variant
     static SizeInfo GetSamplePtrVariantUserDefinedTypeSize() noexcept;
 
-    /// Get size info for ControlSlotIndicator struct
-    static SizeInfo GetControlSlotIndicatorSize() noexcept;
-
     /// Get size info for SlotDecrementer struct
     static SizeInfo GetSlotDecrementerSize() noexcept;
-
-    /// Get size info for ControlSlotCompositeIndicator struct
-    static SizeInfo GetControlSlotCompositeIndicatorSize() noexcept;
 
     /// Get size info for EventDataControlComposite struct
     static SizeInfo GetEventDataControlCompositeSize() noexcept;

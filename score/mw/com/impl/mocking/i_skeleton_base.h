@@ -26,7 +26,7 @@ class ISkeletonBase
     ISkeletonBase() = default;
     virtual ~ISkeletonBase() = default;
 
-    virtual ResultBlank OfferService() = 0;
+    virtual Result<void> OfferService() = 0;
     virtual void StopOfferService() = 0;
 
   protected:

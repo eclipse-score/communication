@@ -33,6 +33,7 @@ use crate::Debug;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
+use std::ptr::NonNull;
 use std::sync::Arc;
 
 use com_api_concept::{
@@ -56,8 +57,9 @@ impl ProviderInfo for LolaProviderInfo {
     fn offer_service(&self) -> Result<()> {
         //SAFETY: it is safe as we are passing valid skeleton handle to offer service
         // the skeleton handle is created during building the provider info instance
-        let status =
-            unsafe { bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle) };
+        let status = unsafe {
+            bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle.as_ptr())
+        };
         if !status {
             return Err(Error::ServiceError(ServiceFailedReason::OfferServiceFailed));
         }
@@ -67,7 +69,9 @@ impl ProviderInfo for LolaProviderInfo {
     fn stop_offer_service(&self) -> Result<()> {
         //SAFETY: it is safe as we are passing valid skeleton handle to stop offer service
         // the skeleton handle is created during building the provider info instance
-        unsafe { bridge_ffi_rs::skeleton_stop_offer_service(self.skeleton_handle.0.handle) };
+        unsafe {
+            bridge_ffi_rs::skeleton_stop_offer_service(self.skeleton_handle.0.handle.as_ptr())
+        };
         Ok(())
     }
 }
@@ -115,9 +119,9 @@ pub struct SampleMut<'a, T>
 where
     T: CommData + Debug,
 {
-    pub skeleton_event: NativeSkeletonEventBase,
-    pub allocatee_ptr: AllocateePtrWrapper<T>,
-    pub lifetime: PhantomData<&'a T>,
+    skeleton_event: NativeSkeletonEventBase,
+    allocatee_ptr: AllocateePtrWrapper<T>,
+    lifetime: PhantomData<&'a T>,
 }
 
 impl<'a, T> SampleMut<'a, T>
@@ -182,7 +186,7 @@ where
         // FFI call will complete before drop run on AllocateePtrWrapper and NativeSkeletonEventBase
         let status = unsafe {
             bridge_ffi_rs::skeleton_event_send_sample_allocatee(
-                self.skeleton_event.skeleton_event_ptr,
+                self.skeleton_event.skeleton_event_ptr.as_ptr(),
                 T::ID,
                 std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
             )
@@ -199,9 +203,9 @@ pub struct SampleMaybeUninit<'a, T>
 where
     T: CommData + Debug,
 {
-    pub skeleton_event: NativeSkeletonEventBase,
-    pub allocatee_ptr: AllocateePtrWrapper<T>,
-    pub lifetime: PhantomData<&'a T>,
+    skeleton_event: NativeSkeletonEventBase,
+    allocatee_ptr: AllocateePtrWrapper<T>,
+    lifetime: PhantomData<&'a T>,
 }
 
 impl<'a, T> SampleMaybeUninit<'a, T>
@@ -287,7 +291,7 @@ impl std::fmt::Debug for SkeletonInstanceManager {
 /// And the lifetime is managed correctly
 /// As it has Send and Sync unsafe impls, it must not expose any mutable access to the skeleton handle
 pub struct NativeSkeletonHandle {
-    pub handle: *mut SkeletonBase,
+    handle: NonNull<SkeletonBase>,
 }
 
 //SAFETY: NativeSkeletonHandle is safe to share between threads because:
@@ -300,13 +304,10 @@ unsafe impl Send for NativeSkeletonHandle {}
 impl NativeSkeletonHandle {
     pub fn new(interface_id: &str, instance_specifier: &mw_com::InstanceSpecifier) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
-        let handle =
+        let raw_handle =
             unsafe { bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native()) };
-        if handle.is_null() {
-            return Err(Error::ProducerError(
-                ProducerFailedReason::SkeletonCreationFailed,
-            ));
-        }
+        let handle = std::ptr::NonNull::new(raw_handle)
+            .ok_or(Error::ProducerError(ProducerFailedReason::SkeletonCreationFailed))?;
         Ok(Self { handle })
     }
 }
@@ -316,7 +317,7 @@ impl Drop for NativeSkeletonHandle {
         //SAFETY: It is safe as we are passing valid skeleton handle to destroy skeleton
         // the handle was created using create_skeleton
         unsafe {
-            bridge_ffi_rs::destroy_skeleton(self.handle);
+            bridge_ffi_rs::destroy_skeleton(self.handle.as_ptr());
         }
     }
 }
@@ -325,7 +326,7 @@ impl Drop for NativeSkeletonHandle {
 /// Manages the lifetime of the SkeletonEventBase pointer
 /// Drop is not required as the skeleton event lifetime is managed by skeleton instance
 pub struct NativeSkeletonEventBase {
-    pub skeleton_event_ptr: *mut SkeletonEventBase,
+    skeleton_event_ptr: NonNull<SkeletonEventBase>,
 }
 
 //SAFETY: NativeSkeletonEventBase is safe to send between threads because:
@@ -338,18 +339,16 @@ impl NativeSkeletonEventBase {
     pub fn new(instance_info: &LolaProviderInfo, identifier: &str) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid skeleton handle and interface id to get event
         // skeleton handle is created during producer offer call
-        let skeleton_event_ptr = unsafe {
+        let raw_event_ptr = unsafe {
             bridge_ffi_rs::get_event_from_skeleton(
-                instance_info.skeleton_handle.0.handle,
+                instance_info.skeleton_handle.0.handle.as_ptr(),
                 instance_info.interface_id,
                 identifier,
             )
         };
-        if skeleton_event_ptr.is_null() {
-            return Err(Error::ProducerError(
-                ProducerFailedReason::SkeletonCreationFailed,
-            ));
-        }
+        let skeleton_event_ptr = std::ptr::NonNull::new(raw_event_ptr).ok_or(
+            Error::ProducerError(ProducerFailedReason::SkeletonCreationFailed),
+        )?;
         Ok(Self { skeleton_event_ptr })
     }
 }
@@ -370,10 +369,9 @@ impl std::fmt::Debug for NativeSkeletonEventBase {
 
 #[derive(Debug)]
 pub struct Publisher<T> {
-    pub identifier: String,
-    pub skeleton_event: NativeSkeletonEventBase,
-    pub _data: PhantomData<T>,
-    pub _skeleton_instance: SkeletonInstanceManager,
+    skeleton_event: NativeSkeletonEventBase,
+    _data: PhantomData<T>,
+    _skeleton_instance: SkeletonInstanceManager,
 }
 
 impl<T> com_api_concept::Publisher<T, LolaRuntimeImpl> for Publisher<T>
@@ -395,7 +393,7 @@ where
             let mut sample =
                 core::mem::MaybeUninit::<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>::uninit();
             let status = bridge_ffi_rs::get_allocatee_ptr(
-                self.skeleton_event.skeleton_event_ptr,
+                self.skeleton_event.skeleton_event_ptr.as_ptr(),
                 sample.as_mut_ptr() as *mut std::ffi::c_void,
                 T::ID,
             );
@@ -419,7 +417,6 @@ where
     fn new(identifier: &str, instance_info: LolaProviderInfo) -> Result<Self> {
         let skeleton_event = NativeSkeletonEventBase::new(&instance_info, identifier)?;
         Ok(Self {
-            identifier: identifier.to_string(),
             skeleton_event,
             _data: PhantomData,
             _skeleton_instance: instance_info.skeleton_handle.clone(),
@@ -427,12 +424,12 @@ where
     }
 }
 
-pub struct SampleProducerBuilder<I: Interface> {
+pub struct LolaProducerBuilder<I: Interface> {
     pub instance_specifier: InstanceSpecifier,
     pub _interface: PhantomData<I>,
 }
 
-impl<I: Interface> SampleProducerBuilder<I> {
+impl<I: Interface> LolaProducerBuilder<I> {
     pub fn new(_runtime: &LolaRuntimeImpl, instance_specifier: InstanceSpecifier) -> Self {
         Self {
             instance_specifier,
@@ -441,9 +438,9 @@ impl<I: Interface> SampleProducerBuilder<I> {
     }
 }
 
-impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for SampleProducerBuilder<I> {}
+impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for LolaProducerBuilder<I> {}
 
-impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuilder<I> {
+impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for LolaProducerBuilder<I> {
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
         //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_runtime = mw_com::InstanceSpecifier::try_from(

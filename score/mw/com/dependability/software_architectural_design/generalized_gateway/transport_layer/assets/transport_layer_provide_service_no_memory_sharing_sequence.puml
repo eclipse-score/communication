@@ -1,0 +1,40 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+participant "Generalized Gateway::Domain A" as GATEWAY
+participant "GenericProxy::class" as GENERIC_PROXY_CLASS order 10
+participant "TransportLayer::Domain A" as TRANSPORT_LAYER order 20
+participant "TransportLayer::Domain B" as TRANSPORT_LAYER_OTHER order 30
+participant "Generalized Gateway::Domain B" as GATEWAY_OTHER order 40
+
+activate GATEWAY
+GATEWAY -> GENERIC_PROXY_CLASS ++ : StartFindService(configured instance)
+return : Result<FindServiceHandle>
+deactivate GATEWAY
+
+opt if service instance becomes available
+    GENERIC_PROXY_CLASS -> GATEWAY ++: callback(ServiceHandleContainer<T>)
+    activate GENERIC_PROXY_CLASS
+    create "GenericProxy::instance" as PROXY_INSTANCE
+    GATEWAY -> PROXY_INSTANCE : new
+
+    GATEWAY -> PROXY_INSTANCE : Read out event/field meta-info
+
+    activate PROXY_INSTANCE
+    return
+    GATEWAY -> GATEWAY : transform event/field meta-info to ServiceElementConfigurations
+
+    GATEWAY -> TRANSPORT_LAYER ++: ProvideService(InstanceIdentifier, ServiceElementConfigurations, Permissions)
+    TRANSPORT_LAYER -> TRANSPORT_LAYER_OTHER ++ : forward ProvideService(InstanceIdentifier, ...)
+    TRANSPORT_LAYER_OTHER -> GATEWAY_OTHER ++: ProvideService(InstanceIdentifier, ...)
+    create "GenericSkeleton::instance" as SKELETON_INSTANCE order 50
+    GATEWAY_OTHER -> SKELETON_INSTANCE : new
+    return Result<void>
+    TRANSPORT_LAYER_OTHER -> TRANSPORT_LAYER : Result<void>
+    TRANSPORT_LAYER -> GATEWAY : Result<void>
+end
+
+
+@enduml

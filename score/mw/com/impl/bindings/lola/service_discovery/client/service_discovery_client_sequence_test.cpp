@@ -457,8 +457,6 @@ TEST_F(ServiceDiscoveryClientFixture, FilesystemIsNotRecrawledIfExactSameSearchA
     // Expecting per crawl and watch of the filesystem for a specific instance we expect one "new" watch, no more!
     EXPECT_CALL(inotify_instance_mock_, AddWatch(_, _)).Times(1);
 
-    WhichContainsAServiceDiscoveryClient();
-
     FindServiceHandle expected_handle_1{make_FindServiceHandle(1U)};
     FindServiceHandle expected_handle_2{make_FindServiceHandle(2U)};
 
@@ -572,9 +570,6 @@ TEST_F(ServiceDiscoveryClientFixture, FilesystemIsNotRecrawledIfAnySearchAlready
 
     // Given a ServiceDiscoveryClient with mocked inotify instance and an offered service instance
     WhichContainsAServiceDiscoveryClient().WithAnOfferedService(kConfigStoreQm1.GetInstanceIdentifier());
-
-    // and given
-    EXPECT_TRUE(service_discovery_client_->OfferService(kConfigStoreQm1.GetInstanceIdentifier()).has_value());
 
     // When starting the same service discovery for above offer twice recursively
     testing::MockFunction<void(std::vector<HandleType>, FindServiceHandle)> inner_handler{};

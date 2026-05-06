@@ -202,7 +202,7 @@ auto ConvertJsonToServiceElementMap(const json::Object& json_object, std::string
     ServiceElementInstanceMapping service_element_map{};
     for (auto& it : service_element_json)
     {
-        const score::cpp::string_view event_name_view{it.first.GetAsStringView()};
+        const auto event_name_view{it.first.GetAsStringView()};
         const std::string event_name{event_name_view.data(), event_name_view.size()};
         auto event_instance_deployment_json = it.second.As<score::json::Object>().value();
         const auto insert_result =

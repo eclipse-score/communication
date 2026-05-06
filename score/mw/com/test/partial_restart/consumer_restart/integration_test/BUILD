@@ -22,10 +22,30 @@ pkg_tar(
 )
 
 integration_test(
-    name = "consumer_restart",
+    name = "consumer_restart_graceful",
     timeout = "moderate",
-    srcs = ["test_consumer_restart.py"],
+    srcs = [
+        "consumer_restart_test_fixture.py",
+        "test_consumer_restart_graceful.py",
+    ],
     filesystem = ":filesystem",
+    # Disabled for thread sanitizer because of detected race (Ticket-246892)
+    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
+)
+
+integration_test(
+    name = "consumer_restart_kill",
+    timeout = "moderate",
+    srcs = [
+        "consumer_restart_test_fixture.py",
+        "test_consumer_restart_kill.py",
+    ],
+    filesystem = ":filesystem",
+    # Flaky: after SIGKILL, CreateNewClient may not reach kReady within its
+    # 500 ms budget under ASAN/LSan, causing the fire-and-forget
+    # RegisterEventNotificationMessage to fail.  The consumer then waits
+    # for event notifications that were never registered.
+    flaky = True,
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )

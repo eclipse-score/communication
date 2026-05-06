@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_ROLLBACK_EXECUTOR_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_ROLLBACK_EXECUTOR_H
 
-#include "score/mw/com/impl/bindings/lola/runtime.h"
+#include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
@@ -39,9 +39,9 @@ class TransactionLogRollbackExecutor
     /// \brief Does a rollback of all transaction logs (log per service element) related to service_data_control/
     ///        transaction_log_id specific to a proxy instance given in the ctor.
     /// \details Besides the pure transaction rollback, there is also some preparation needed/done once for a given
-    ///          service_data_control (independent from the number of local proxy instances referring to it). This is
-    ///          done by an internal call to #PrepareRollback
-    ResultBlank RollbackTransactionLogs() noexcept;
+    ///          service_data_control (independent from the number of local proxy instances referring to it). This
+    ///          is done by an internal call to #PrepareRollback
+    Result<void> RollbackTransactionLogs() noexcept;
 
   private:
     /// \brief Prepares the rollback of proxy service instance specific transaction logs.

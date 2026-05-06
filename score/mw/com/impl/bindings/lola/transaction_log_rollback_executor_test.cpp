@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <memory>
 #include <optional>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -71,13 +72,14 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     TransactionLogRollbackExecutorFixture& WithTransactionLogRollbackExecutor()
     {
         service_data_control_ = std::make_unique<ServiceDataControl>(memory_resource_mock_);
+        AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
+
         unit_ = std::make_unique<TransactionLogRollbackExecutor>(*service_data_control_,
                                                                  kSkeletonInstanceIdentifier,
                                                                  kDummyQualityType,
                                                                  kDummyProviderPid,
                                                                  kDummyTransactionLogId);
 
-        AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
         return *this;
     }
 
@@ -100,11 +102,18 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         ASSERT_EQ(result_pid.value(), pid);
     }
 
-    EventDataControl& GetEventDataControl(const ElementFqId element_fq_id) noexcept
+    ConsumerEventDataControlLocalView<> GetConsumerEventDataControlLocalView(const ElementFqId element_fq_id) noexcept
     {
         auto find_result = service_data_control_->event_controls_.find(element_fq_id);
         EXPECT_NE(find_result, service_data_control_->event_controls_.cend());
-        return find_result->second.data_control;
+        return {find_result->second.data_control};
+    }
+
+    TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id) noexcept
+    {
+        auto find_result = service_data_control_->event_controls_.find(element_fq_id);
+        EXPECT_NE(find_result, service_data_control_->event_controls_.cend());
+        return find_result->second.transaction_log_set_;
     }
 
     void InsertServiceDataControl() noexcept
@@ -118,9 +127,11 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         const ElementFqId& element_fq_id,
         const TransactionLogId& transaction_log_id) noexcept
     {
-        auto& event_data_control = GetEventDataControl(element_fq_id);
-        auto& transaction_log_set = event_data_control.GetTransactionLogSet();
-        const auto transaction_log_index = transaction_log_set.RegisterProxyElement(transaction_log_id).value();
+        auto consumer_event_data_control_local = GetConsumerEventDataControlLocalView(element_fq_id);
+        auto& transaction_log_set = GetTransactionLogSet(element_fq_id);
+        transaction_log_registration_guards_.push_back(
+            transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_data_control_local).value());
+        const auto transaction_log_index = transaction_log_registration_guards_.back().GetTransactionLogIndex();
 
         auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();
         auto& transaction_log_node = transaction_logs.at(transaction_log_index);
@@ -136,9 +147,17 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     memory::shared::SharedMemoryResourceHeapAllocatorMock memory_resource_mock_{kMemoryResourceId};
     MessagePassingServiceMock message_passing_service_mock_{};
 
+    // In this test fixture, we want to simulate that we are opening the shared memory region of a crashed process
+    // (including the TransactionLogSet). We can then test the rollback funtionality of the
+    // TransactionLogRollbackExecutor. However, we therefore have to create TransactionLogRegistrationGuards within this
+    // fixture to simulate the logs in the crashed process. Therefore, we disable the destruction operation of these
+    // TransactionLogRegistrationGuards to prevent an additional rollback being done on the destruction of this fixture.
+    TransactionLogRegistrationGuardDeactiveDestructionOperationGuard guard{};
+
     std::unique_ptr<ServiceDataControl> service_data_control_{nullptr};
     std::unique_ptr<TransactionLogRollbackExecutor> unit_{nullptr};
     RollbackSynchronization rollback_synchronization_{};
+    std::vector<TransactionLogRegistrationGuard> transaction_log_registration_guards_{};
 };
 
 using TransactionLogRegisterProxyElementFixture = TransactionLogRollbackExecutorFixture;
@@ -310,7 +329,8 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillReturnErrorIfAnyLo
     auto& transaction_log_node_0 = RegisterProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
     auto& transaction_log_node_1 = RegisterProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
 
-    transaction_log_node_1.GetTransactionLog().SubscribeTransactionBegin(0U);
+    TransactionLogLocalView transaction_log_local_view{transaction_log_node_1.GetTransactionLog()};
+    transaction_log_local_view.SubscribeTransactionBegin(0U);
 
     ASSERT_TRUE(unit_->RollbackTransactionLogs().has_value());
 

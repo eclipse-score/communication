@@ -13,17 +13,19 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
+#include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
+
 #include "score/result/result.h"
 
-#include "test/skeleton_test_resources.h"
 #include <gtest/gtest.h>
 
 #include <cstddef>
@@ -63,9 +65,9 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
         // Default behaviour for get the usable base addresses of the mocked memory resources using the constructed
         // ServiceDataControl / Storage created above.
         ON_CALL(*control_qm_shared_memory_resource_mock_, getUsableBaseAddress())
-            .WillByDefault(Return(static_cast<void*>(&existing_service_data_control_qm_)));
+            .WillByDefault(Return(static_cast<void*>(existing_service_data_control_qm_.get())));
         ON_CALL(*control_asil_b_shared_memory_resource_mock_, getUsableBaseAddress())
-            .WillByDefault(Return(static_cast<void*>(&existing_service_data_control_b_)));
+            .WillByDefault(Return(static_cast<void*>(existing_service_data_control_b_.get())));
         ON_CALL(*data_shared_memory_resource_mock_, getUsableBaseAddress())
             .WillByDefault(Return(static_cast<void*>(&existing_service_data_storage_)));
     }
@@ -85,21 +87,25 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
 
         InitialiseSkeleton(instance_identifier);
 
-        fooo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, fooo_method_fq_id_);
-        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_method_fq_id_);
+        fooo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, fooo_unique_method_id_);
+        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_unique_method_id_);
 
         return *this;
     }
 
-    ServiceDataControl existing_service_data_control_qm_{
+    // ServiceDataControl, ServiceDataStorage and relevant views which are used in tests in which there already exists a
+    // shared memory region which the Skeleton must open and clean up if necessary. The ServiceDataControl /
+    // ServiceDataStorage are returned when getUsableBaseAddress() are called on the relevant mocked
+    // SharedMemoryResources.
+    std::unique_ptr<ServiceDataControl> existing_service_data_control_qm_{
         CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_QM)};
-    ServiceDataControl existing_service_data_control_b_{
+    std::unique_ptr<ServiceDataControl> existing_service_data_control_b_{
         CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_B)};
     ServiceDataStorage existing_service_data_storage_{
         CreateServiceDataStorageWithEvent<test::TestSampleType>(test::kDummyElementFqId)};
 
-    const ElementFqId fooo_method_fq_id_{10U, test::kFooMethodId, 3U, ServiceElementType::METHOD};
-    const ElementFqId dumb_method_fq_id_{1U, test::kDumbMethodId, 2U, ServiceElementType::METHOD};
+    const UniqueMethodIdentifier fooo_unique_method_id_{test::kFooMethodId, MethodType::kMethod};
+    const UniqueMethodIdentifier dumb_unique_method_id_{test::kDumbMethodId, MethodType::kMethod};
 
     std::unique_ptr<SkeletonMethod> fooo_method_{nullptr};
     std::unique_ptr<SkeletonMethod> dumb_method_{nullptr};
@@ -383,10 +389,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningServiceUsageMarker
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemoryIfFLockingServiceUsageMarkerFilefails)
 {
-    auto& event_control_qm =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_);
-    auto& event_control_asil_b =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_b_);
+    auto skeleton_event_data_control_qm = GetProviderEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, *existing_service_data_control_qm_);
+    auto skeleton_event_data_control_asil_b = GetProviderEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, *existing_service_data_control_b_);
 
     // Given a Skeleton constructed from a valid identifier referencing an ASIL-B deployment
     InitialiseSkeleton(GetValidASILInstanceIdentifier());
@@ -396,11 +402,11 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemo
         .WillOnce(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EWOULDBLOCK))));
 
     // and given that QM and ASIL B control segments contain (previously) allocated slots that are in writing
-    auto first_allocation_qm = event_control_qm.data_control.AllocateNextSlot();
-    ASSERT_TRUE(first_allocation_qm.IsValid());
+    auto first_allocation_qm = skeleton_event_data_control_qm.AllocateNextSlot();
+    ASSERT_TRUE(first_allocation_qm.has_value());
 
-    auto first_allocation_asil_b = event_control_asil_b.data_control.AllocateNextSlot();
-    ASSERT_TRUE(first_allocation_asil_b.IsValid());
+    auto first_allocation_asil_b = skeleton_event_data_control_asil_b.AllocateNextSlot();
+    ASSERT_TRUE(first_allocation_asil_b.has_value());
 
     EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _));
     EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathAsilB, true, _));
@@ -411,13 +417,13 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemo
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // And a new allocation will return the same slot as before, as it was cleaned up
-    auto second_allocation_qm = event_control_qm.data_control.AllocateNextSlot();
-    ASSERT_TRUE(second_allocation_qm.IsValid());
-    EXPECT_EQ(first_allocation_qm.GetIndex(), second_allocation_qm.GetIndex());
+    auto second_allocation_qm = skeleton_event_data_control_qm.AllocateNextSlot();
+    ASSERT_TRUE(second_allocation_qm.has_value());
+    EXPECT_EQ(first_allocation_qm.value(), second_allocation_qm.value());
 
-    auto second_allocation_asil_b = event_control_asil_b.data_control.AllocateNextSlot();
-    ASSERT_TRUE(second_allocation_asil_b.IsValid());
-    EXPECT_EQ(first_allocation_asil_b.GetIndex(), second_allocation_asil_b.GetIndex());
+    auto second_allocation_asil_b = skeleton_event_data_control_asil_b.AllocateNextSlot();
+    ASSERT_TRUE(second_allocation_asil_b.has_value());
+    EXPECT_EQ(first_allocation_asil_b.value(), second_allocation_asil_b.value());
 }
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningExistingSharedMemoryDataFails)
@@ -775,6 +781,25 @@ TEST_F(SkeletonGetInstanceQualityTypeFixture, CallingGetInstanceQualityTypeWithA
 class SkeletonRegisterParamaterisedFixture : public SkeletonTestMockedSharedMemoryFixture,
                                              public WithParamInterface<ServiceElementType>
 {
+  public:
+    EventDataControlComposite<> GetEventDataControlCompositeFromRegistrationResult(
+        const Skeleton::RegistrationResult<test::TestSampleType>& registration_result)
+    {
+        event_control_qm_local_view_.emplace(registration_result.event_control_qm.data_control);
+
+        if (registration_result.event_control_asil_b != nullptr)
+        {
+            event_control_asil_b_local_view_.emplace(registration_result.event_control_asil_b->data_control);
+        }
+
+        ProviderEventDataControlLocalView<>* event_control_asil_b_local_view =
+            registration_result.event_control_asil_b != nullptr ? &event_control_asil_b_local_view_.value() : nullptr;
+        return EventDataControlComposite<>{event_control_qm_local_view_.value(), event_control_asil_b_local_view};
+    }
+
+  private:
+    std::optional<ProviderEventDataControlLocalView<>> event_control_qm_local_view_{};
+    std::optional<ProviderEventDataControlLocalView<>> event_control_asil_b_local_view_{};
 };
 
 TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmRegionWasCreated)
@@ -787,19 +812,17 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmReg
 
     // when the event is registered with the skeleton
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                          test::kFooEventId,
-                          test::kDefaultLolaInstanceId,
-                          ServiceElementType::EVENT};
-    auto [typed_event_data_storage_ptr, event_data_control_composite] =
-        skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
+    ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                              test::kFooEventId,
+                              test::kDefaultLolaInstanceId,
+                              ServiceElementType::EVENT};
+    auto registration_result = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
 
-    // Then the Register call should return pointers to the created control and data sections which can be used to
-    // allocate slots
-    auto allocation = event_data_control_composite.AllocateNextSlot();
-    ASSERT_TRUE(allocation.IsValidQmAndAsilB());
-
-    EXPECT_NE(typed_event_data_storage_ptr, nullptr);
+    // Then the Register call should return pointers to the created control (qm and asil-b) and data sections which can
+    // be used to allocate slots
+    auto event_data_control_composite = GetEventDataControlCompositeFromRegistrationResult(registration_result);
+    const auto allocation = event_data_control_composite.AllocateNextSlot();
+    ASSERT_TRUE(allocation.allocated_slot_index.has_value());
 }
 
 TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataIfShmRegionWasOpened)
@@ -825,31 +848,45 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataIfShmRegio
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // when the event is registered with the skeleton
-    auto [typed_event_data_storage_ptr, event_data_control_composite] =
+    auto registration_result =
         skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
-    // Then the Register call should return pointers to the opened control and data sections in the opened shared
-    // memory region
-    auto& event_control_qm =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_);
-    auto& event_control_asil_b =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_b_);
-    auto& event_data_storage = GetEventStorageFromServiceDataStorage<test::TestSampleType>(
+    // Then the Register call should return views to the opened control section and pointer to the opened data section
+    // in the opened shared memory region (we check the control section views by allocating a slot in the opened region
+    // and checking that the allocation is reflected in the view)
+    auto& existing_event_control_qm =
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_qm_);
+    auto& existing_event_control_asil_b =
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_b_);
+    auto& existing_event_data_storage = GetEventStorageFromServiceDataStorage<test::TestSampleType>(
         test::kDummyElementFqId, existing_service_data_storage_);
 
-    EXPECT_EQ(&event_data_control_composite.GetQmEventDataControl(), &event_control_qm.data_control);
-    ASSERT_TRUE(event_data_control_composite.GetAsilBEventDataControl().has_value());
-    EXPECT_EQ(event_data_control_composite.GetAsilBEventDataControl().value(), &event_control_asil_b.data_control);
-    EXPECT_EQ(typed_event_data_storage_ptr, &event_data_storage);
+    ProviderEventDataControlLocalView<> opened_event_control_local_qm =
+        registration_result.event_control_qm.data_control;
+
+    ASSERT_TRUE(registration_result.event_control_asil_b != nullptr);
+    ProviderEventDataControlLocalView<> opened_event_control_local_asil_b =
+        registration_result.event_control_asil_b->data_control;
+
+    EXPECT_EQ(existing_event_control_qm.data_control.state_slots_[0], 0U);
+    EXPECT_EQ(existing_event_control_asil_b.data_control.state_slots_[0], 0U);
+    opened_event_control_local_qm.AllocateNextSlot();
+    opened_event_control_local_asil_b.AllocateNextSlot();
+    EXPECT_EQ(existing_event_control_qm.data_control.state_slots_[0], std::numeric_limits<std::uint32_t>::max());
+    EXPECT_EQ(existing_event_control_asil_b.data_control.state_slots_[0], std::numeric_limits<std::uint32_t>::max());
+
+    EXPECT_EQ(&registration_result.event_data_storage, &existing_event_data_storage);
 }
 
-TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledIfShmRegionWasOpened)
+TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledOnQmTransactionLogIfShmRegionWasOpened)
 {
     // Given a QM ServiceDataControl which contains a TransactionLogSet with valid transactions
-    auto& event_data_control_qm =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_).data_control;
-    InsertSkeletonTransactionLogWithValidTransactions(event_data_control_qm);
-    EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
+    auto proxy_event_data_control_qm_local = GetConsumerEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, *existing_service_data_control_qm_);
+    auto& transaction_log_set =
+        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_qm_);
+    InsertSkeletonTransactionLogWithValidTransactions(proxy_event_data_control_qm_local, transaction_log_set);
+    EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 
     const ServiceElementType element_type = GetParam();
 
@@ -876,19 +913,18 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledIfShmRegionWasO
         skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
     // Then the TransactionLog should be rollbacked during construction and removed
-    EXPECT_FALSE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
+    EXPECT_FALSE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 }
 
-TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillOnlyBeCalledOnQmControlSection)
+TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledOnAsilBTransactionLogIfShmRegionWasOpened)
 {
-    // Note. this test is artificially inserting transactions into the AsilB control section's TransactionLogSet. In
-    // practice, this TransactionLogSet will never be used.
-
     // Given an Asil B ServiceDataControl which contains a TransactionLogSet with valid transactions
-    auto& event_data_control_asil_b =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_b_).data_control;
-    InsertSkeletonTransactionLogWithValidTransactions(event_data_control_asil_b);
-    EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_asil_b));
+    auto proxy_event_data_control_asil_b_local = GetConsumerEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, *existing_service_data_control_b_);
+    auto& transaction_log_set =
+        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_b_);
+    InsertSkeletonTransactionLogWithValidTransactions(proxy_event_data_control_asil_b_local, transaction_log_set);
+    EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 
     const ServiceElementType element_type = GetParam();
 
@@ -914,8 +950,8 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillOnlyBeCalledOnQmControl
     score::cpp::ignore =
         skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
-    // Then the Asil B TransactionLog will still exist as it was not rolled back
-    EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_asil_b));
+    // Then the TransactionLog should be rollbacked during construction and removed
+    EXPECT_FALSE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 }
 
 TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransactionLogRemainsIfRollbackFails)
@@ -924,10 +960,12 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
     ON_CALL(runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock));
 
     // Given a QM ServiceDataControl which contains a TransactionLogSet with invalid transactions
-    auto& event_data_control_qm =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_).data_control;
-    InsertSkeletonTransactionLogWithInvalidTransactions(event_data_control_qm);
-    EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
+    auto proxy_event_data_control_qm_local = GetConsumerEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, *existing_service_data_control_qm_);
+    auto& transaction_log_set =
+        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_qm_);
+    InsertSkeletonTransactionLogWithInvalidTransactions(proxy_event_data_control_qm_local, transaction_log_set);
+    EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 
     const ServiceElementType element_type = GetParam();
 
@@ -957,7 +995,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
         skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
     // Then the TransactionLog should still exist as it was not removed due to the rollback failing
-    EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
+    EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 }
 
 /// \brief Test case simulates (via a mock SkeletonEvent) the registration of a SkeletonEvent at its parent Skeleton
@@ -989,14 +1027,13 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventDataSlotsExistAfterEventI
 
     // when the event is registered with the skeleton
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{
+    ElementFqId element_fq_id{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
-    auto event_reg_result = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
+    auto event_reg_result = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
 
     // Then a valid slot-vector with the right size exists and we can access/write to it:
-    ASSERT_NE(event_reg_result.first, nullptr);
-    ASSERT_EQ(event_reg_result.first->size(), test::kMaxSlots);
-    event_reg_result.first->at(3) = 0x42;
+    ASSERT_EQ(event_reg_result.event_data_storage.size(), test::kMaxSlots);
+    event_reg_result.event_data_storage.at(3) = 0x42;
 
     CleanUpSkeleton();
 }
@@ -1029,14 +1066,15 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CanAllocateSlotAfterEventIsRegister
 
     // when the event is registered with the skeleton
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{
+    ElementFqId element_fq_id{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
-    auto event_reg_result = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
+    auto event_reg_result = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
 
     // Then we can allocate and free slots on that event
-    auto allocation = event_reg_result.second.AllocateNextSlot();
-    ASSERT_TRUE(allocation.IsValidQM());
-    EXPECT_EQ(allocation.GetIndex(), 0);
+    auto event_data_control_composite = GetEventDataControlCompositeFromRegistrationResult(event_reg_result);
+    auto allocation = event_data_control_composite.AllocateNextSlot();
+    ASSERT_TRUE(allocation.allocated_slot_index.has_value());
+    EXPECT_EQ(allocation.allocated_slot_index.value(), 0);
 
     CleanUpSkeleton();
 }
@@ -1065,19 +1103,20 @@ TEST_P(SkeletonRegisterParamaterisedFixture, AllocateAfterCleanUp)
     std::ignore = skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback));
 
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{
+    ElementFqId element_fq_id{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
-    auto event_reg_result = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
+    auto event_reg_result = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
 
-    auto allocation = event_reg_result.second.AllocateNextSlot();
+    auto event_data_control_composite = GetEventDataControlCompositeFromRegistrationResult(event_reg_result);
+    auto allocation = event_data_control_composite.AllocateNextSlot();
 
     // When cleaning up
     skeleton_->CleanupSharedMemoryAfterCrash();
 
     // Then the same slot can get allocated
-    auto allocation_after_cleanup = event_reg_result.second.AllocateNextSlot();
-    ASSERT_TRUE(allocation_after_cleanup.IsValidQM());
-    EXPECT_EQ(allocation.GetIndex(), allocation_after_cleanup.GetIndex());
+    auto allocation_after_cleanup = event_data_control_composite.AllocateNextSlot();
+    ASSERT_TRUE(allocation_after_cleanup.allocated_slot_index.has_value());
+    EXPECT_EQ(allocation.allocated_slot_index.value(), allocation_after_cleanup.allocated_slot_index.value());
 
     CleanUpSkeleton();
 }
@@ -1154,16 +1193,17 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
 
     // and foo_event is registered with the skeleton with 5 slots
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId foo_event_fqn{
+    ElementFqId foo_element_fq_id{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
-    auto foo_event_reg_result = skeleton_->Register<uint8_t>(foo_event_fqn, test::kDefaultEventProperties);
-    void* const foo_event_data_storage = foo_event_reg_result.first->data();
+    auto foo_event_reg_result = skeleton_->Register<uint8_t>(foo_element_fq_id, test::kDefaultEventProperties);
+    void* const foo_event_data_storage = foo_event_reg_result.event_data_storage.data();
 
     // and dumb_event is registered with the skeleton with 5 slots
-    ElementFqId dumb_event_fqn{
+    ElementFqId dumb_element_fq_id{
         lola_service_type_deployment->service_id_, test::kDumbEventId, test::kDefaultLolaInstanceId, element_type};
-    auto dumb_event_reg_result = skeleton_->Register<VeryComplexType>(dumb_event_fqn, test::kDefaultEventProperties);
-    void* const dumb_event_data_storage = dumb_event_reg_result.first->data();
+    auto dumb_event_reg_result =
+        skeleton_->Register<VeryComplexType>(dumb_element_fq_id, test::kDefaultEventProperties);
+    void* const dumb_event_data_storage = dumb_event_reg_result.event_data_storage.data();
 
     // Expect, that we can then retrieve the meta-info of the registered events
     SkeletonAttorney skeleton_test_attorney{*skeleton_};
@@ -1227,9 +1267,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, NoMetaInfoExistsForInvalidElementId
 
     // and the event is registered with the skeleton
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{
+    ElementFqId element_fq_id{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
-    skeleton_->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+    skeleton_->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
 
     // but when retrieving meta-info for a not registered ElementFqId
     const std::uint16_t UNKNOWN_EVENT_ID{99U};
@@ -1266,14 +1306,14 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CallingRegisterWithSameServiceEleme
 
         const auto* const lola_service_type_deployment =
             GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-        ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                              test::kFooEventId,
-                              test::kDefaultLolaInstanceId,
-                              ServiceElementType::EVENT};
+        ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                  test::kFooEventId,
+                                  test::kDefaultLolaInstanceId,
+                                  ServiceElementType::EVENT};
 
         // When calling register twice with the same ElementFqId
-        score::cpp::ignore = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
-        score::cpp::ignore = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
+        score::cpp::ignore = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
+        score::cpp::ignore = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
     };
     // Then we should terminate
     EXPECT_DEATH(test_function(), ".*");

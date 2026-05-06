@@ -1,0 +1,28 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+actor "User Application" as UA
+participant "Proxy::instance" as PROXY
+participant "OS::RAMFS" as OSRAMFS_methods <<dev/shmem>>
+
+activate UA
+UA -> PROXY ++: Create ServiceProxy(FindServiceHandle)
+
+note right of OSRAMFS_methods
+    multiple proxy instances
+    due to Security and FFI
+end note
+
+loop for each proxy instance
+    PROXY -> OSRAMFS_methods ++: Check/Create Folder and File Structure
+    OSRAMFS_methods --> PROXY --
+
+    PROXY -> OSRAMFS_methods ++: Lock File and set Permissions
+    OSRAMFS_methods --> PROXY --
+end
+
+PROXY -> UA --: Handle <Proxy Instance>
+
+@enduml

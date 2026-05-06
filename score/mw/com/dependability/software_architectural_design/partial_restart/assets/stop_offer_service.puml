@@ -1,0 +1,41 @@
+@startuml
+title Stop Offer Service Instance
+
+start
+
+:Service Discovery:
+Delete markup file in
+service-discovery directory
+structure.;
+
+if (Delete markup file result?) then (success)
+  :munmap/close shm-objects;
+
+  :Lock service-instance-usage
+  marker file exclusive
+  via
+  flock(LOCK_EX | LOCK_NB)
+  to detect, whether
+  proxies are currently using
+  them;
+
+  if (flock result?) then (lock successful)
+    :unlink shm-objects;
+  else (lock failed)
+  endif
+
+  :Remove lock on service-instance-
+  existence marker file
+  flock(LOCK_UN | LOCK_NB)
+  Service Instance LOCK;
+
+  if (Remove lock result?) then (success)
+    :Stop Offer Service SUCCESS;
+    stop
+  endif
+endif
+
+:Stop Offer Service FAILED;
+stop
+
+@enduml

@@ -23,9 +23,9 @@ namespace
 class MySkeleton final : public SkeletonBinding
 {
   public:
-    ResultBlank PrepareOffer(SkeletonEventBindings&,
-                             SkeletonFieldBindings&,
-                             std::optional<RegisterShmObjectTraceCallback>) noexcept override
+    Result<void> PrepareOffer(SkeletonEventBindings&,
+                              SkeletonFieldBindings&,
+                              std::optional<RegisterShmObjectTraceCallback>) noexcept override
     {
         return {};
     }

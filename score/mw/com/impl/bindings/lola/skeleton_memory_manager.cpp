@@ -11,7 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
-#include "score/memory/shared/managed_memory_resource.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
@@ -22,12 +21,13 @@
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
-#include "score/result/result.h"
 
+#include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/new_delete_delegate_resource.h"
 #include "score/memory/shared/shared_memory_factory.h"
 #include "score/mw/log/logging.h"
 #include "score/os/acl.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 #include <score/span.hpp>
@@ -122,30 +122,10 @@ SkeletonMemoryManager::SkeletonMemoryManager(QualityType quality_type,
 {
 }
 
-auto SkeletonMemoryManager::OpenExistingSharedMemory(
-    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> ResultBlank
-{
-    if (!OpenSharedMemoryForControl(QualityType::kASIL_QM))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control QM");
-    }
-
-    if ((quality_type_ == QualityType::kASIL_B) && (!OpenSharedMemoryForControl(QualityType::kASIL_B)))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control ASIL-B");
-    }
-
-    if (!OpenSharedMemoryForData(std::move(register_shm_object_trace_callback)))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for data");
-    }
-    return {};
-}
-
 auto SkeletonMemoryManager::CreateSharedMemory(
     SkeletonBinding::SkeletonEventBindings& events,
     SkeletonBinding::SkeletonFieldBindings& fields,
-    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> ResultBlank
+    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> Result<void>
 {
     const auto storage_size_calc_result = CalculateShmResourceStorageSizes(events, fields);
 
@@ -173,49 +153,43 @@ auto SkeletonMemoryManager::CreateSharedMemory(
     return {};
 }
 
-EventDataControlComposite<> SkeletonMemoryManager::CreateEventControlComposite(
-    const ElementFqId element_fq_id,
-    const SkeletonEventProperties& element_properties) noexcept
+auto SkeletonMemoryManager::OpenExistingSharedMemory(
+    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> Result<void>
 {
-    auto control_qm = control_qm_->event_controls_.emplace(std::piecewise_construct,
-                                                           std::forward_as_tuple(element_fq_id),
-                                                           std::forward_as_tuple(element_properties.number_of_slots,
-                                                                                 element_properties.max_subscribers,
-                                                                                 element_properties.enforce_max_samples,
-                                                                                 *control_qm_resource_));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(control_qm.second,
-                                                "Couldn't register/emplace event-meta-info in data-section.");
-
-    EventDataControl* control_asil_result{nullptr};
-    if (control_asil_resource_ != nullptr)
+    if (!OpenSharedMemoryForControl(QualityType::kASIL_QM))
     {
-        auto iterator =
-            control_asil_b_->event_controls_.emplace(std::piecewise_construct,
-                                                     std::forward_as_tuple(element_fq_id),
-                                                     std::forward_as_tuple(element_properties.number_of_slots,
-                                                                           element_properties.max_subscribers,
-                                                                           element_properties.enforce_max_samples,
-                                                                           *control_asil_resource_));
-
-        // Suppress "AUTOSAR C++14 M7-5-1" rule. This rule declares:
-        // A function shall not return a reference or a pointer to an automatic variable (including parameters), defined
-        // within the function.
-        // Suppress "AUTOSAR C++14 M7-5-2": The address of an object with automatic storage shall not be assigned to
-        // another object that may persist after the first object has ceased to exist.
-        // The result pointer is still valid outside this method until Skeleton object (as a holder) is alive.
-        // coverity[autosar_cpp14_m7_5_1_violation]
-        // coverity[autosar_cpp14_m7_5_2_violation]
-        // coverity[autosar_cpp14_a3_8_1_violation]
-        control_asil_result = &iterator.first->second.data_control;
+        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control QM");
     }
-    // The lifetime of the "control_asil_result" object lasts as long as the Skeleton is alive.
-    // coverity[autosar_cpp14_m7_5_1_violation]
-    // coverity[autosar_cpp14_m7_5_2_violation]
-    // coverity[autosar_cpp14_a3_8_1_violation]
-    return EventDataControlComposite{&control_qm.first->second.data_control, control_asil_result};
+
+    if ((quality_type_ == QualityType::kASIL_B) && (!OpenSharedMemoryForControl(QualityType::kASIL_B)))
+    {
+        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control ASIL-B");
+    }
+
+    if (!OpenSharedMemoryForData(std::move(register_shm_object_trace_callback)))
+    {
+        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for data");
+    }
+    return {};
 }
 
-std::pair<void*, EventDataControlComposite<>> SkeletonMemoryManager::CreateEventDataFromOpenedSharedMemory(
+auto SkeletonMemoryManager::CreateEventControlsInCreatedSharedMemory(const ElementFqId element_fq_id,
+                                                                     const SkeletonEventProperties& element_properties)
+    -> std::pair<std::reference_wrapper<EventControl>, EventControl*>
+{
+    auto& provider_event_control_qm = EmplaceEventControl(QualityType::kASIL_QM, element_fq_id, element_properties);
+    if (control_asil_resource_ == nullptr)
+
+    {
+        return {provider_event_control_qm, nullptr};
+    }
+
+    auto& provider_event_control_asil_b = EmplaceEventControl(QualityType::kASIL_B, element_fq_id, element_properties);
+
+    return {provider_event_control_qm, &provider_event_control_asil_b};
+}
+
+void* SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
     size_t sample_size,
@@ -258,7 +232,52 @@ std::pair<void*, EventDataControlComposite<>> SkeletonMemoryManager::CreateEvent
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
                                                 "Couldn't register/emplace event-meta-info in data-section.");
 
-    return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
+    return data_storage;
+}
+
+auto SkeletonMemoryManager::RetrieveEventControlsFromOpenedSharedMemory(const ElementFqId element_fq_id)
+    -> std::pair<std::reference_wrapper<EventControl>, EventControl*>
+{
+    const auto event_control_qm_it = control_qm_->event_controls_.find(element_fq_id);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_control_qm_it != control_qm_->event_controls_.cend(),
+                                                "Could not find element fq id in map");
+    EventControl& event_control_qm = event_control_qm_it->second;
+    if (quality_type_ == QualityType::kASIL_QM)
+    {
+        return {event_control_qm, nullptr};
+    }
+
+    const auto event_control_asil_b_it = control_asil_b_->event_controls_.find(element_fq_id);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_control_asil_b_it != control_asil_b_->event_controls_.cend(),
+                                                "Could not find asil b element fq id in map");
+    EventControl& event_control_asil_b = event_control_asil_b_it->second;
+
+    // Suppress "AUTOSAR C++14 A3-8-1":
+    // Justification: The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even
+    // returned pointer to internal state until Skeleton object is alive.
+    // coverity[autosar_cpp14_a3_8_1_violation]
+    return {// The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
+            // coverity[autosar_cpp14_m7_5_1_violation]
+            // coverity[autosar_cpp14_m7_5_2_violation]
+            // coverity[autosar_cpp14_a3_8_1_violation]
+            event_control_qm,
+            &event_control_asil_b};
+}
+
+void SkeletonMemoryManager::RollbackSkeletonTracingTransactions(EventControl& event_control)
+{
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_control.data_control};
+    auto rollback_result = event_control.transaction_log_set_.RollbackSkeletonTracingTransactions(
+        [&consumer_event_data_control_local](const TransactionLog::SlotIndexType slot_index) {
+            consumer_event_data_control_local.DereferenceEventWithoutTransactionLogging(slot_index);
+        });
+    if (!rollback_result.has_value())
+    {
+        ::score::mw::log::LogWarn("lola")
+            << "SkeletonEvent: PrepareOffer failed: Could not rollback tracing consumer after "
+               "crash. Disabling tracing.";
+        impl::Runtime::getInstance().GetTracingRuntime()->DisableTracing();
+    }
 }
 
 void SkeletonMemoryManager::RemoveSharedMemory()
@@ -298,17 +317,20 @@ void SkeletonMemoryManager::CleanupSharedMemoryAfterCrash()
 {
     for (auto& event : control_qm_->event_controls_)
     {
-        event.second.data_control.RemoveAllocationsForWriting();
+        ProviderEventDataControlLocalView<> provider_event_data_control_local{event.second.data_control};
+        provider_event_data_control_local.RemoveAllocationsForWriting();
     }
 
     if (control_asil_b_ != nullptr)
     {
         for (auto& event : control_asil_b_->event_controls_)
         {
-            event.second.data_control.RemoveAllocationsForWriting();
+            ProviderEventDataControlLocalView<> provider_event_data_control_local{event.second.data_control};
+            provider_event_data_control_local.RemoveAllocationsForWriting();
         }
     }
 }
+
 void SkeletonMemoryManager::Reset()
 {
     storage_ = nullptr;
@@ -465,12 +487,12 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 bool SkeletonMemoryManager::CreateSharedMemoryForData(
-    const LolaServiceInstanceDeployment& instance,
+    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
     const std::size_t shm_size,
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback)
 {
     memory::shared::SharedMemoryFactory::UserPermissionsMap permissions{};
-    for (const auto& allowed_consumer : instance.allowed_consumer_)
+    for (const auto& allowed_consumer : lola_service_instance_deployment.allowed_consumer_)
     {
         for (const auto& user_identifier : allowed_consumer.second)
         {
@@ -481,7 +503,7 @@ bool SkeletonMemoryManager::CreateSharedMemoryForData(
     const auto path = shm_path_builder_.GetDataChannelShmName(lola_instance_id_);
     const bool use_typed_memory = register_shm_object_trace_callback.has_value();
     const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
-        (permissions.empty()) && (instance.strict_permissions_ == false)
+        (permissions.empty()) && (lola_service_instance_deployment.strict_permissions_ == false)
             ? memory::shared::SharedMemoryFactory::WorldReadable{}
             : memory::shared::SharedMemoryFactory::UserPermissions{permissions};
     const auto memory_resource = score::memory::shared::SharedMemoryFactory::Create(
@@ -526,18 +548,19 @@ bool SkeletonMemoryManager::CreateSharedMemoryForData(
     return true;
 }
 
-bool SkeletonMemoryManager::CreateSharedMemoryForControl(const LolaServiceInstanceDeployment& instance,
-                                                         const QualityType asil_level,
-                                                         const std::size_t shm_size)
+bool SkeletonMemoryManager::CreateSharedMemoryForControl(
+    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
+    const QualityType asil_level,
+    const std::size_t shm_size)
 {
     const auto path = shm_path_builder_.GetControlChannelShmName(lola_instance_id_, asil_level);
 
-    const auto consumer = instance.allowed_consumer_.find(asil_level);
+    const auto consumer = lola_service_instance_deployment.allowed_consumer_.find(asil_level);
     auto& control_resource = (asil_level == QualityType::kASIL_QM) ? control_qm_resource_ : control_asil_resource_;
     auto& data_control_path = (asil_level == QualityType::kASIL_QM) ? data_control_qm_path_ : data_control_asil_path_;
 
     memory::shared::SharedMemoryFactory::UserPermissionsMap permissions{};
-    if (consumer != instance.allowed_consumer_.cend())
+    if (consumer != lola_service_instance_deployment.allowed_consumer_.cend())
     {
         for (const auto& user_identifier : consumer->second)
         {
@@ -547,7 +570,7 @@ bool SkeletonMemoryManager::CreateSharedMemoryForControl(const LolaServiceInstan
     }
 
     const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
-        (permissions.empty()) && (instance.strict_permissions_ == false)
+        (permissions.empty()) && (lola_service_instance_deployment.strict_permissions_ == false)
             ? memory::shared::SharedMemoryFactory::WorldWritable{}
             : memory::shared::SharedMemoryFactory::UserPermissions{permissions};
     control_resource = score::memory::shared::SharedMemoryFactory::Create(
@@ -636,6 +659,8 @@ bool SkeletonMemoryManager::OpenSharedMemoryForControl(const QualityType asil_le
     const auto& control_resource_ref = *control_resource.get();
     control = GetServiceDataControlSkeletonSide(control_resource_ref);
 
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control != nullptr);
+
     return true;
 }
 
@@ -664,7 +689,46 @@ void SkeletonMemoryManager::InitializeSharedMemoryForControl(
     const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory)
 {
     auto& control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
+
     control = memory->construct<ServiceDataControl>(*memory);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control != nullptr);
+}
+
+EventControl& SkeletonMemoryManager::EmplaceEventControl(const QualityType asil_level,
+                                                         ElementFqId element_fq_id,
+                                                         const SkeletonEventProperties& element_properties)
+{
+    auto* const service_data_control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
+    auto* const memory_resource =
+        (asil_level == QualityType::kASIL_QM) ? control_qm_resource_.get() : control_asil_resource_.get();
+
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(service_data_control != nullptr);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(memory_resource != nullptr);
+
+    auto control_qm =
+        service_data_control->event_controls_.emplace(std::piecewise_construct,
+                                                      std::forward_as_tuple(element_fq_id),
+                                                      std::forward_as_tuple(element_properties.number_of_slots,
+                                                                            element_properties.max_subscribers,
+                                                                            element_properties.enforce_max_samples,
+                                                                            *memory_resource));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(control_qm.second,
+                                                "Couldn't register/emplace EventControl in control-section.");
+
+    return control_qm.first->second;
+}
+
+EventMetaInfo& SkeletonMemoryManager::EmplaceEventMetaInfo(const ElementFqId element_fq_id,
+                                                           const DataTypeMetaInfo& sample_meta_info,
+                                                           void* type_erased_event_data_storage)
+{
+    auto inserted_meta_info =
+        storage_->events_metainfo_.emplace(std::piecewise_construct,
+                                           std::forward_as_tuple(element_fq_id),
+                                           std::forward_as_tuple(sample_meta_info, type_erased_event_data_storage));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
+                                                "Couldn't register/emplace event-meta-info in data-section.");
+    return inserted_meta_info.first->second;
 }
 
 }  // namespace score::mw::com::impl::lola

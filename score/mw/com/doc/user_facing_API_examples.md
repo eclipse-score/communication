@@ -1004,7 +1004,7 @@ if (find_handle.has_value()) {
 - Requires valid `FindServiceHandle` from `StartFindService()`
 - Stops callback notifications
 - Safe to call even if discovery already completed
-- Returns `ResultBlank` - check for errors
+- Returns `Result<void>` - check for errors
 
 </details>
 
@@ -1109,7 +1109,7 @@ if (spec.has_value()) {
 
 **Key Points**:
 - Takes only `max_sample_count` parameter
-- Returns `ResultBlank` - check with `has_value()` before use
+- Returns `Result<void>` - check with `has_value()` before use
 - Must subscribe before calling `GetNewSamples()`
 
 </details>
@@ -1279,7 +1279,7 @@ if (result.has_value()) {
 **Key Points**:
 - Removes handler registered with `SetReceiveHandler()`
 - Safe to call even if no handler registered
-- Returns `ResultBlank` - check for errors
+- Returns `Result<void>` - check for errors
 
 </details>
 
@@ -1477,7 +1477,7 @@ if (skeleton_result.has_value()) {
 
 **Key Points**:
 - Call after skeleton creation to enable service discovery
-- Returns `ResultBlank` - check with `has_value()` for success
+- Returns `Result<void>` - check with `has_value()` for success
 - Service remains offered until `StopOfferService()` or skeleton destruction
 - After offering, you can send events and update fields
 - Proxies cannot discover the service after `OfferService()` succeeds
@@ -1580,7 +1580,7 @@ if (skeleton_result.has_value()) {
 - Copy-based accepts `const EventType&` and zero-copy accepts `SampleAllocateePtr<EventType>`
 - Zero-copy requires `Allocate()` first and uses less memory bandwidth
 - Must call `OfferService()` before sending
-- Returns `ResultBlank` - check with `has_value()`
+- Returns `Result<void>` - check with `has_value()`
 
 </details>
 
@@ -1696,7 +1696,7 @@ if (skeleton_result.has_value()) {
 - Initial field value must be set before `OfferService()` is called
 - Copy-based accepts `const FieldType&` and zero-copy accepts `SampleAllocateePtr<FieldType>`
 - Zero-copy requires `Allocate()` first and uses less memory bandwidth
-- Returns `ResultBlank` - check with `has_value()`
+- Returns `Result<void>` - check with `has_value()`
 
 </details>
 

@@ -43,7 +43,7 @@ class EventSlotStatus final
     /// \brief The highest possible value that EventTimeStamp can reach
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
     // variables being given values that are not subsequently used"
-    // Variable is used in EventDataControlImpl.
+    // Variable is used in EventDataControl.
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
     static constexpr EventTimeStamp TIMESTAMP_MAX = std::numeric_limits<EventTimeStamp>::max();
 

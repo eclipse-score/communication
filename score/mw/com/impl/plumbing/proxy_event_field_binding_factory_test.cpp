@@ -160,8 +160,8 @@ TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CanConstructProxyS
 
     // Given a created proxy binding and dummy SkeletonEvent which a ProxyEvent can subscribe to
     const auto instance_identifier = kConfigStoreAsilB.GetInstanceIdentifier();
-    InitialiseProxyWithConstructor(instance_identifier);
     InitialiseDummySkeletonEvent(GetElementFqId(), kSkeletonEventProperties);
+    InitialiseProxyWithConstructor(instance_identifier);
 
     // and a Proxy that contains a lola binding
     const auto handle = kConfigStoreAsilB.GetHandle();

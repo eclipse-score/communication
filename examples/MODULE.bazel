@@ -1,0 +1,47 @@
+bazel_dep(name = "score_communication", version = "0.0.0")
+local_path_override(
+    module_name = "score_communication",
+    path = "..",
+)
+
+bazel_dep(name = "rules_cc", version = "0.1.5")
+bazel_dep(name = "score_baselibs", version = "0.2.6")
+
+# Needed because we do not have a current release of score_tooling (as we are in dev phase of safety sentinel)
+git_override(
+    module_name = "score_tooling",
+    commit = "0160d13fff81ee20643769339036505b853e2bb0",
+    remote = "https://github.com/eclipse-score/tooling.git",
+)
+
+# Needed because of score_tooling not defining yet as dependency
+
+git_override(
+    module_name = "trlc",
+    commit = "3a71fd56001b95dfbb5270a49449ec0a631cd56c",  #TRLC 2.0.4
+    remote = "https://github.com/bmw-software-engineering/trlc.git",
+)
+
+git_override(
+    module_name = "lobster",
+    commit = "d528fbdec2cd72ff7967b51546fb0bd935810258",
+    remote = "https://github.com/bmw-software-engineering/lobster.git",
+)
+
+# Only required to build the example, shall be replaceable with nearly every other C++ Toolchain setup
+bazel_dep(name = "score_bazel_platforms", version = "0.1.2", dev_dependency = True)
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.3.0", dev_dependency = True)
+
+score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
+score_gcc.toolchain(
+    name = "score_gcc_x86_64_toolchain",
+    target_cpu = "x86_64",
+    target_os = "linux",
+    use_base_constraints_only = True,
+    use_default_package = True,
+    version = "12.2.0",
+)
+use_repo(
+    score_gcc,
+    "score_gcc_x86_64_toolchain",
+)

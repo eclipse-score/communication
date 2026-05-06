@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
 
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/runtime.h"
@@ -39,19 +40,19 @@ void MarkTransactionLogsNeedRollback(ServiceDataControl& service_data_control,
 {
     for (auto& element : service_data_control.event_controls_)
     {
-        auto& event_data_control = element.second.data_control;
-        auto& transaction_log_set = event_data_control.GetTransactionLogSet();
+        auto& transaction_log_set = element.second.transaction_log_set_;
         transaction_log_set.MarkTransactionLogsNeedRollback(transaction_log_id);
     }
 }
 
 }  // namespace
 
-TransactionLogRollbackExecutor::TransactionLogRollbackExecutor(ServiceDataControl& service_data_control,
-                                                               SkeletonInstanceIdentifier skeleton_instance_identifier,
-                                                               const QualityType asil_level,
-                                                               const pid_t provider_pid,
-                                                               const TransactionLogId transaction_log_id) noexcept
+TransactionLogRollbackExecutor::TransactionLogRollbackExecutor(
+    ServiceDataControl& service_data_control,
+    const SkeletonInstanceIdentifier skeleton_instance_identifier,
+    const QualityType asil_level,
+    pid_t provider_pid,
+    const TransactionLogId transaction_log_id) noexcept
     : service_data_control_{service_data_control},
       asil_level_{asil_level},
       provider_pid_{provider_pid},
@@ -95,7 +96,7 @@ void TransactionLogRollbackExecutor::PrepareRollback(lola::IRuntime& lola_runtim
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, no way for implicit calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank TransactionLogRollbackExecutor::RollbackTransactionLogs() noexcept
+Result<void> TransactionLogRollbackExecutor::RollbackTransactionLogs() noexcept
 {
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& rollback_synchronization = lola_runtime.GetRollbackSynchronization();
@@ -119,11 +120,12 @@ ResultBlank TransactionLogRollbackExecutor::RollbackTransactionLogs() noexcept
     for (auto& element : service_data_control_.event_controls_)
     {
         auto& event_control = element.second;
-        auto& transaction_log_set = event_control.data_control.GetTransactionLogSet();
+        ConsumerEventDataControlLocalView<> consumer_event_data_control_view{event_control.data_control};
+        auto& transaction_log_set = event_control.transaction_log_set_;
         const auto rollback_result = transaction_log_set.RollbackProxyTransactions(
             transaction_log_id_,
-            [&event_control](const TransactionLog::SlotIndexType slot_index) noexcept {
-                event_control.data_control.DereferenceEventWithoutTransactionLogging(slot_index);
+            [&consumer_event_data_control_view](const TransactionLog::SlotIndexType slot_index) noexcept {
+                consumer_event_data_control_view.DereferenceEventWithoutTransactionLogging(slot_index);
             },
             [&event_control](const TransactionLog::MaxSampleCountType subscription_max_sample_count) noexcept {
                 event_control.subscription_control.Unsubscribe(subscription_max_sample_count);

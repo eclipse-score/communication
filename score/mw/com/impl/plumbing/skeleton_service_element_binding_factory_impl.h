@@ -176,8 +176,12 @@ auto CreateGenericSkeletonServiceElement(const InstanceIdentifier& identifier,
                                                   lola_service_instance_deployment.instance_id_.value().GetId(),
                                                   element_type};
 
-            return std::make_unique<SkeletonServiceElement>(
-                *lola_parent, skeleton_event_properties, element_fq_id, meta_info, tracing::SkeletonEventTracingData{});
+            return std::make_unique<SkeletonServiceElement>(*lola_parent,
+                                                            service_element_name,
+                                                            skeleton_event_properties,
+                                                            element_fq_id,
+                                                            meta_info,
+                                                            tracing::SkeletonEventTracingData{});
         },
         [](const SomeIpServiceInstanceDeployment&) noexcept -> ReturnType {
             return nullptr;

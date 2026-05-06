@@ -76,7 +76,7 @@ TYPED_TEST(ProxyEventFieldMockFixture, SubscribeDispatchesToMockAfterInjectingMo
     // Given a ProxyEvent constructed with an empty binding and an injected mock
 
     // Expecting that Subscribe will be called on the mock which returns a valid result
-    EXPECT_CALL(this->proxy_service_element_mock_, Subscribe(kDummyMaxSampleCount)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(this->proxy_service_element_mock_, Subscribe(kDummyMaxSampleCount)).WillOnce(Return(Result<void>{}));
 
     // When Subscribe is called on the ProxyEvent
     const auto result = this->unit_.Subscribe(kDummyMaxSampleCount);
@@ -183,7 +183,7 @@ TYPED_TEST(ProxyEventFieldMockFixture, SetReceiveHandlerDispatchesToMockAfterInj
 
     // Expecting that SetReceiveHandler will be called on the mock which returns a valid result
 
-    EXPECT_CALL(this->proxy_service_element_mock_, SetReceiveHandler(_)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(this->proxy_service_element_mock_, SetReceiveHandler(_)).WillOnce(Return(Result<void>{}));
 
     // When SetReceiveHandler is called on the ProxyEvent
     const auto result = this->unit_.SetReceiveHandler([]() {});
@@ -215,7 +215,7 @@ TYPED_TEST(ProxyEventFieldMockFixture, UnsetReceiveHandlerDispatchesToMockAfterI
 
     // Expecting that UnsetReceiveHandler will be called on the mock which returns a valid result
 
-    EXPECT_CALL(this->proxy_service_element_mock_, UnsetReceiveHandler()).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(this->proxy_service_element_mock_, UnsetReceiveHandler()).WillOnce(Return(Result<void>{}));
 
     // When UnsetReceiveHandler is called on the ProxyEvent
     const auto result = this->unit_.UnsetReceiveHandler();

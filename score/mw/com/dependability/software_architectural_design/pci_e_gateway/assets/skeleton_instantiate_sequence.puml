@@ -1,0 +1,24 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+participant "PCIe Gateway::SoC1" as GATEWAY
+participant "PCIe Gateway::SoC2" as GATEWAY_OTHER order 40
+
+== Initialization ==
+activate GATEWAY_OTHER
+GATEWAY_OTHER -> GATEWAY_OTHER : Read configuration
+
+ref over GATEWAY, GATEWAY_OTHER : init PCIe communication
+
+activate GATEWAY
+GATEWAY -> GATEWAY_OTHER ++ : ServiceInstanceOffered(instanceId, meta_info)
+    GATEWAY_OTHER -> GATEWAY_OTHER : extract args for skeleton creation from meta_info and configuration
+    create "GenericSkeleton::instance" as SKELETON_INSTANCE
+    GATEWAY_OTHER -> SKELETON_INSTANCE : new
+    GATEWAY_OTHER -> SKELETON_INSTANCE ++ : OfferService()
+    return Result<void>
+return
+
+@enduml

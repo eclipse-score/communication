@@ -23,8 +23,6 @@
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/memory/shared/i_shared_memory_resource.h"
 
-#include <score/optional.hpp>
-
 #include <cstddef>
 #include <mutex>
 #include <optional>
@@ -102,20 +100,19 @@ class TracingRuntime : public impl::tracing::IBindingTracingRuntime
     void UnregisterShmObject(const impl::tracing::ServiceElementInstanceIdentifierView&
                                  service_element_instance_identifier_view) noexcept override;
 
-    score::cpp::optional<analysis::tracing::ShmObjectHandle> GetShmObjectHandle(
+    std::optional<analysis::tracing::ShmObjectHandle> GetShmObjectHandle(
         const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view)
         const noexcept override;
 
-    score::cpp::optional<void*> GetShmRegionStartAddress(
-        const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view)
-        const noexcept override;
+    std::optional<void*> GetShmRegionStartAddress(const impl::tracing::ServiceElementInstanceIdentifierView&
+                                                      service_element_instance_identifier_view) const noexcept override;
 
     void CacheFileDescriptorForReregisteringShmObject(
         const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view,
         const memory::shared::ISharedMemoryResource::FileDescriptor shm_file_descriptor,
         void* const shm_memory_start_address) noexcept override;
 
-    score::cpp::optional<std::pair<memory::shared::ISharedMemoryResource::FileDescriptor, void*>>
+    std::optional<std::pair<memory::shared::ISharedMemoryResource::FileDescriptor, void*>>
     GetCachedFileDescriptorForReregisteringShmObject(
         const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view)
         const noexcept override;
@@ -151,7 +148,7 @@ class TracingRuntime : public impl::tracing::IBindingTracingRuntime
         // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
         // be private.". We need these data elements to be organized into a coherent organized data structure.
         // coverity[autosar_cpp14_m11_0_1_violation]
-        score::cpp::optional<impl::tracing::TypeErasedSamplePtr> sample_ptr;
+        std::optional<impl::tracing::TypeErasedSamplePtr> sample_ptr;
         // coverity[autosar_cpp14_m11_0_1_violation]
         std::mutex mutex;
     };
@@ -170,7 +167,7 @@ class TracingRuntime : public impl::tracing::IBindingTracingRuntime
         -> std::optional<TraceContextId>;
 
     const Configuration& configuration_;
-    score::cpp::optional<analysis::tracing::TraceClientId> trace_client_id_;
+    std::optional<analysis::tracing::TraceClientId> trace_client_id_;
     bool data_loss_flag_;
 
     /// \brief Array of type erased sample pointers containing one element per service element that registers itself via

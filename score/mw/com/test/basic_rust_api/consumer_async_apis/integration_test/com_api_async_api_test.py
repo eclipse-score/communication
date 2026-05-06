@@ -12,8 +12,19 @@
 # *******************************************************************************
 
 
-def test_bigdata_async_exchange(sut):
+def producer(target, num_cycles, **kwargs):
+    args = ["-n", str(num_cycles)]
+    return target.wrap_exec("bin/bigdata-producer", args, cwd="/opt/bigdata-com-api-async", **kwargs)
+
+
+def consumer_async(target, num_cycles, **kwargs):
+    args = ["-n", str(num_cycles)]
+    return target.wrap_exec(
+        "bin/bigdata-consumer-async", args, cwd="/opt/bigdata-com-api-async", wait_on_exit=True, **kwargs
+    )
+
+
+def test_bigdata_async_exchange(target):
     # Sender runs for 40 cycles, Receiver receives 25 cycles asynchronously
-    with sut.start_process("./bin/bigdata-producer -n 40", cwd="/opt/bigdata-com-api-async/") as sender_process:
-        with sut.start_process("./bin/bigdata-consumer-async -n 25", cwd="/opt/bigdata-com-api-async/") as receiver_process:
-            assert receiver_process.wait_for_exit(timeout=120) == 0
+    with producer(target, num_cycles=40), consumer_async(target, num_cycles=25, wait_timeout=120):
+        pass

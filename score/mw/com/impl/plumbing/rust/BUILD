@@ -19,6 +19,9 @@ rust_library(
     visibility = [
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
+    deps = [
+        "@score_communication_crate_index//:libc",
+    ],
 )
 
 rust_library(

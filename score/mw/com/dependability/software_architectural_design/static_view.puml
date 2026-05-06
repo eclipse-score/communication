@@ -1,0 +1,62 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+@startuml static_design
+
+interface "mw_com" as mw_com_public_api
+
+' @todo: Support in parser that this is a component!
+package "mw::com" as mw_com <<SEooC>> {
+
+    component "Frontend" as frontend_component <<component>> {
+        component "Proxy" as frontend_proxy <<unit>>
+        component "Skeleton" as frontend_skeleton <<unit>>
+        component "Service Discovery" as frontend_sd <<unit>>
+    }
+
+    component "Bindings" as bindings <<component>> {
+        component "LoLa" as lola_component <<component>> {
+            component "Proxy" as lola_proxy <<unit>>
+            component "Skeleton" as lola_skeleton <<unit>>
+            component "Service Discovery" as lola_sd <<unit>>
+        }
+        component "Mock" as mock_component <<component>> {
+        }
+    }
+
+    portin " " as p1
+    portin " " as p2
+    portin " " as p3
+
+    portout " " as public_api
+}
+
+together {
+    interface "score::memory" as memory
+    interface "score::message_passing" as message_passing
+    interface "OS" as os
+}
+
+p1 -u-( memory
+p2 -u-( message_passing
+p3 -u-( os
+
+public_api -left-() mw_com_public_api
+
+
+' ------------------------ Formatting -------------------
+
+memory -[hidden]down- lola_sd
+frontend_proxy -[hidden]left- frontend_skeleton
+frontend_skeleton -[hidden]left- frontend_sd
+frontend_component -[hidden]down- bindings
+@enduml

@@ -57,11 +57,7 @@ cc_library(
         "additional_warnings",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-        "@score_logging//score/datarouter:__subpackages__",
-        "@score_logging//score/mw/log/detail/data_router:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = select({
         "@platforms//os:qnx": [":message_passing_qnx_dispatch"],
         "//conditions:default": [":message_passing_unix_domain"],
@@ -203,11 +199,7 @@ cc_library(
         "additional_warnings",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-        "@score_logging//score/datarouter:__subpackages__",
-        "@score_logging//score/mw/log/detail/data_router:__subpackages__",
-    ],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":message_passing_common",
         ":qnx_resource_path",

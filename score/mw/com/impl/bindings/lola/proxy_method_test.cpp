@@ -13,7 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
@@ -40,7 +40,7 @@ namespace
 
 using namespace ::testing;
 
-constexpr LolaMethodId kDummyMethodId{123U};
+constexpr LolaServiceElementId kDummyMethodId{123U};
 constexpr std::size_t kDummyQueuePosition{3U};
 constexpr std::size_t kDummyQueueSize{10U};
 constexpr memory::DataTypeSizeInfo kValidInArgSizeInfo{sizeof(std::uint32_t), alignof(std::uint32_t)};
@@ -78,19 +78,22 @@ class ProxyMethodFixture : public ProxyMockedMemoryFixture
 
     ProxyMethodFixture& GivenAProxyMethod()
     {
-        unit_ = std::make_unique<ProxyMethod>(*proxy_, element_fq_id_, kTypeErasedInfoWithInArgsAndReturn);
+        const ProxyMethodInstanceIdentifier id{proxy_->GetProxyInstanceIdentifier(), unique_method_identifier_};
+        unit_ = std::make_unique<ProxyMethod>(*proxy_, id, kTypeErasedInfoWithInArgsAndReturn);
         return *this;
     }
 
     ProxyMethodFixture& GivenAProxyMethodWithoutInArgsTypeErasedElementInfo()
     {
-        unit_ = std::make_unique<ProxyMethod>(*proxy_, element_fq_id_, kTypeErasedInfoWithReturnOnly);
+        const ProxyMethodInstanceIdentifier id{proxy_->GetProxyInstanceIdentifier(), unique_method_identifier_};
+        unit_ = std::make_unique<ProxyMethod>(*proxy_, id, kTypeErasedInfoWithReturnOnly);
         return *this;
     }
 
     ProxyMethodFixture& GivenAProxyMethodWithoutReturnTypeErasedElementInfo()
     {
-        unit_ = std::make_unique<ProxyMethod>(*proxy_, element_fq_id_, kTypeErasedInfoWithInArgsOnly);
+        const ProxyMethodInstanceIdentifier id{proxy_->GetProxyInstanceIdentifier(), unique_method_identifier_};
+        unit_ = std::make_unique<ProxyMethod>(*proxy_, id, kTypeErasedInfoWithInArgsOnly);
         return *this;
     }
 
@@ -110,10 +113,7 @@ class ProxyMethodFixture : public ProxyMockedMemoryFixture
     std::unique_ptr<ProxyMethod> unit_{nullptr};
 
     score::cpp::stop_source stop_source_{};
-    const ElementFqId element_fq_id_{lola_service_id_,
-                                     kDummyMethodId,
-                                     lola_service_instance_id_.GetId(),
-                                     ServiceElementType::METHOD};
+    const UniqueMethodIdentifier unique_method_identifier_{kDummyMethodId, MethodType::kMethod};
 };
 
 TEST_F(ProxyMethodFixture, GetTypeErasedElementInfoReturnsValueSetOnConstruction)
@@ -149,7 +149,7 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingWithoutMarkingSubscribedReturnsE
     unit_->SetInArgsAndReturnStorages(kValidInArgStorage, kEmptyReturnStorage);
 
     // When calling AllocateInArgs
-    const auto result = unit_->AllocateInArgs(kDummyQueuePosition);
+    const auto result = unit_->GetInArgsBuffer(kDummyQueuePosition);
 
     // Then an error is returned
     EXPECT_FALSE(result.has_value());
@@ -167,7 +167,7 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterMarkingSubscribedThenUnsubs
     unit_->SetInArgsAndReturnStorages(kValidInArgStorage, kEmptyReturnStorage);
 
     // When calling AllocateInArgs
-    const auto result = unit_->AllocateInArgs(kDummyQueuePosition);
+    const auto result = unit_->GetInArgsBuffer(kDummyQueuePosition);
 
     // Then an error is returned
     EXPECT_FALSE(result.has_value());
@@ -182,7 +182,7 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterSettingValidStoragesWithVal
     unit_->SetInArgsAndReturnStorages(kValidInArgStorage, kEmptyReturnStorage);
 
     // When calling AllocateInArgs
-    const auto result = unit_->AllocateInArgs(kDummyQueuePosition);
+    const auto result = unit_->GetInArgsBuffer(kDummyQueuePosition);
 
     // Then a valid result is returned
     EXPECT_TRUE(result.has_value());
@@ -197,7 +197,7 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterSettingValidInArgsStorageWi
 
     // When calling AllocateInArgs
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateInArgs(kDummyQueuePosition));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->GetInArgsBuffer(kDummyQueuePosition));
 }
 
 TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterSettingEmptyInArgsStorageWithInArgsTypeInfoTerminates)
@@ -209,7 +209,7 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterSettingEmptyInArgsStorageWi
 
     // When calling AllocateInArgs
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateInArgs(kDummyQueuePosition));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->GetInArgsBuffer(kDummyQueuePosition));
 }
 
 using ProxyMethodAllocateReturnTypeFixture = ProxyMethodFixture;
@@ -222,7 +222,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingWithoutMarkingSubscribedRetu
     unit_->SetInArgsAndReturnStorages(kEmptyInArgStorage, kValidReturnStorage);
 
     // When calling AllocateReturnType
-    const auto result = unit_->AllocateReturnType(kDummyQueuePosition);
+    const auto result = unit_->GetReturnValueBuffer(kDummyQueuePosition);
 
     // Then an error is returned
     EXPECT_FALSE(result.has_value());
@@ -240,7 +240,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterMarkingSubscribedThenUn
     unit_->SetInArgsAndReturnStorages(kEmptyInArgStorage, kValidReturnStorage);
 
     // When calling AllocateReturnType
-    const auto result = unit_->AllocateReturnType(kDummyQueuePosition);
+    const auto result = unit_->GetReturnValueBuffer(kDummyQueuePosition);
 
     // Then an error is returned
     EXPECT_FALSE(result.has_value());
@@ -255,7 +255,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingValidStoragesWit
     unit_->SetInArgsAndReturnStorages(kEmptyInArgStorage, kValidReturnStorage);
 
     // When calling AllocateReturnType
-    const auto result = unit_->AllocateReturnType(kDummyQueuePosition);
+    const auto result = unit_->GetReturnValueBuffer(kDummyQueuePosition);
 
     // Then a valid result is returned
     EXPECT_TRUE(result.has_value());
@@ -271,7 +271,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingValidReturnStora
     // When calling AllocateReturnType
     // Then the program terminates
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
-                                                          unit_->AllocateReturnType(kDummyQueuePosition));
+                                                          unit_->GetReturnValueBuffer(kDummyQueuePosition));
 }
 
 TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingEmptyReturnStorageWithReturnTypeInfoTerminates)
@@ -284,7 +284,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingEmptyReturnStora
     // When calling AllocateReturnType
     // Then the program terminates
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
-                                                          unit_->AllocateReturnType(kDummyQueuePosition));
+                                                          unit_->GetReturnValueBuffer(kDummyQueuePosition));
 }
 
 using ProxyMethodDoCallFixture = ProxyMethodFixture;
@@ -321,11 +321,11 @@ TEST_F(ProxyMethodDoCallFixture, DispatchesToMessagePassingBinding)
 
     // Expecting that CallMethod is called on the message passing binding which returns success
     EXPECT_CALL(*mock_service_, CallMethod(_, _, kDummyQueuePosition, _))
-        .WillOnce(WithArg<1>(Invoke([](auto proxy_method_instance_identifier) -> ResultBlank {
+        .WillOnce(WithArg<1>(Invoke([](auto proxy_method_instance_identifier) -> Result<void> {
             // Then CallMethod is called with a ProxyMethodInstanceIdentifier containing the application id from the
             // configuration
             EXPECT_EQ(proxy_method_instance_identifier.proxy_instance_identifier.application_id, kDummyApplicationId);
-            return ResultBlank{};
+            return Result<void>{};
         })));
 
     // When calling DoCall

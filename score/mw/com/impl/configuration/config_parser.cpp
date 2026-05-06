@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/configuration/config_parser.h"
 
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
+#include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
@@ -23,6 +24,7 @@
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
 
+#include <score/assert.hpp>
 #include <score/string_view.hpp>
 
 #include <cstdlib>
@@ -67,6 +69,8 @@ constexpr auto kMethodsKey = "methods"sv;
 constexpr auto kMethodNameKey = "methodName"sv;
 constexpr auto kMethodIdKey = "methodId"sv;
 constexpr auto kMethodQueueSizeKey = "queueSize"sv;
+constexpr auto kMethodEnabledKey = "enabled"sv;
+constexpr auto kMethodEnabledDefaultValue = true;
 constexpr auto kEventNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;
 constexpr auto kEventMaxSamplesKey = "maxSamples"sv;
 constexpr auto kEventMaxSubscribersKey = "maxSubscribers"sv;
@@ -523,7 +527,9 @@ auto ParseLolaMethodInstanceDeployment(const score::json::Object& json_map, Lola
         const auto& method_name = GetValueFromJson<std::string>(method_object, kMethodNameKey);
         const std::optional<LolaMethodInstanceDeployment::QueueSize> queue_size =
             GetOptionalValueFromJson<LolaMethodInstanceDeployment::QueueSize>(method_object, kMethodQueueSizeKey);
-        const LolaMethodInstanceDeployment method_deployment{queue_size};
+        const bool method_enabled =
+            GetOptionalValueFromJson<bool>(method_object, kMethodEnabledKey).value_or(kMethodEnabledDefaultValue);
+        const LolaMethodInstanceDeployment method_deployment{queue_size, method_enabled};
 
         const auto emplace_result = service.methods_.emplace(
             std::piecewise_construct, std::forward_as_tuple(method_name), std::forward_as_tuple(method_deployment));

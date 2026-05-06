@@ -12,21 +12,39 @@
 # *******************************************************************************
 
 
-def test_bigdata_exchange(sut):
-    # Sender runs for 30 cycles, Receiver receives 25 cycles
-    with sut.start_process("./bin/bigdata-producer -n 30", cwd="/opt/bigdata-com-api-sync/") as sender_process:
-        with sut.start_process("./bin/bigdata-consumer -n 25", cwd="/opt/bigdata-com-api-sync/") as receiver_process:
-            assert receiver_process.wait_for_exit(timeout=120) == 0
-
-def test_mixed_primitives_exchange(sut):
-    # Sender runs for 30 cycles, Receiver receives 25 cycles
-    with sut.start_process("./bin/bigdata-producer -n 30 -t mixed-primitives", cwd="/opt/bigdata-com-api-sync/") as sender_process:
-        with sut.start_process("./bin/bigdata-consumer -n 25 -t mixed-primitives", cwd="/opt/bigdata-com-api-sync/") as receiver_process:
-            assert receiver_process.wait_for_exit(timeout=120) == 0
+def producer(target, num_cycles, data_type=None, **kwargs):
+    args = ["-n", str(num_cycles)]
+    if data_type is not None:
+        args += ["-t", data_type]
+    return target.wrap_exec("bin/bigdata-producer", args, cwd="/opt/bigdata-com-api-sync", **kwargs)
 
 
-def test_complex_struct_exchange(sut):
+def consumer(target, num_cycles, data_type=None, **kwargs):
+    args = ["-n", str(num_cycles)]
+    if data_type is not None:
+        args += ["-t", data_type]
+    return target.wrap_exec("bin/bigdata-consumer", args, cwd="/opt/bigdata-com-api-sync", wait_on_exit=True, **kwargs)
+
+
+def test_bigdata_exchange(target):
     # Sender runs for 30 cycles, Receiver receives 25 cycles
-    with sut.start_process("./bin/bigdata-producer -n 30 -t complex-struct", cwd="/opt/bigdata-com-api-sync/") as sender_process:
-        with sut.start_process("./bin/bigdata-consumer -n 25 -t complex-struct", cwd="/opt/bigdata-com-api-sync/") as receiver_process:
-            assert receiver_process.wait_for_exit(timeout=120) == 0
+    with producer(target, num_cycles=30), consumer(target, num_cycles=25, wait_timeout=120):
+        pass
+
+
+def test_mixed_primitives_exchange(target):
+    # Sender runs for 30 cycles, Receiver receives 25 cycles
+    with (
+        producer(target, num_cycles=30, data_type="mixed-primitives"),
+        consumer(target, num_cycles=25, data_type="mixed-primitives", wait_timeout=120),
+    ):
+        pass
+
+
+def test_complex_struct_exchange(target):
+    # Sender runs for 30 cycles, Receiver receives 25 cycles
+    with (
+        producer(target, num_cycles=30, data_type="complex-struct"),
+        consumer(target, num_cycles=25, data_type="complex-struct", wait_timeout=120),
+    ):
+        pass

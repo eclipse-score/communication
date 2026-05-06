@@ -1,0 +1,40 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+actor "User Application" as UA
+participant "ProxyMethod::member" as PROXY
+participant "Message Passing" as MP
+database "OS::RAMFS" as OSRAMFS_methods <<dev/shmem>>
+
+activate UA
+
+== Initialization ==
+'  UA -> Allocate auf Proxy Method Instance (Member)
+
+UA -> PROXY ++: allocate InArgs()
+
+opt if InArgs not allocated
+    PROXY -> OSRAMFS_methods ++: Allocate Memory for InArgs()
+    OSRAMFS_methods --> PROXY --
+end
+PROXY -> UA --: score::result<MethodInArgsPtr<T>>
+UA -> UA: Update MethodInArgsPtr<T>
+
+== Method call ==
+
+UA -> PROXY ++: Call(MethodInArgsPtr<T>)
+
+PROXY -> MP: Call Reply (method-id, shmem-object, location)
+deactivate PROXY
+activate MP
+MP --> PROXY: call finished
+deactivate MP
+
+activate PROXY
+PROXY --> OSRAMFS_methods ++: Assign Out Args()
+OSRAMFS_methods -> PROXY --
+PROXY --> UA: score::result<MethodOutArgsPtr<T>>
+
+@enduml

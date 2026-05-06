@@ -10,21 +10,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 
-alias(
-    name = "com_api_example",
-    actual = "//score/mw/com/example/com-api-example:com-api-example",
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "ipc_bridge_cpp",
-    actual = "//score/mw/com/example/ipc_bridge:ipc_bridge_cpp",
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "ipc_bridge_rs",
-    actual = "//score/mw/com/example/ipc_bridge:ipc_bridge_rs",
-    visibility = ["//visibility:public"],
+cc_binary(
+    name = "example",
+    srcs = ["main.cpp"],
+    deps = ["@score_communication//score/mw/com"],
 )

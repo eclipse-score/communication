@@ -1,0 +1,22 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+participant "Generalized Gateway::Domain A" as GATEWAY
+participant "TransportLayer::Domain A" as TRANSPORT_LAYER order 20
+participant "TransportLayer::Domain B" as TRANSPORT_LAYER_OTHER order 30
+participant "Generalized Gateway::Domain B" as GATEWAY_OTHER order 40
+participant "GenericSkeleton::Domain B" as SKELETON_INSTANCE order 50
+
+activate GATEWAY
+GATEWAY -> TRANSPORT_LAYER ++: OfferService(InstanceIdentifier)
+    TRANSPORT_LAYER -> TRANSPORT_LAYER_OTHER ++ : forward OfferService(InstanceIdentifier)
+        TRANSPORT_LAYER_OTHER -> GATEWAY_OTHER ++: OfferService(InstanceIdentifier)
+            GATEWAY_OTHER -> SKELETON_INSTANCE ++: OfferService()
+            return Result<void>
+        return Result<void>
+    return Result<void>
+return Result<void>
+
+@enduml

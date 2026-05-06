@@ -29,8 +29,8 @@ class ISkeletonEvent
     ISkeletonEvent() = default;
     virtual ~ISkeletonEvent() = default;
 
-    virtual ResultBlank Send(const SampleType&) = 0;
-    virtual ResultBlank Send(SampleAllocateePtr<SampleType>) = 0;
+    virtual Result<void> Send(const SampleType&) = 0;
+    virtual Result<void> Send(SampleAllocateePtr<SampleType>) = 0;
     virtual Result<SampleAllocateePtr<SampleType>> Allocate() = 0;
 
   protected:

@@ -11,19 +11,20 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
+#include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
-
-#include "score/filesystem/factory/filesystem_factory_fake.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/runtime.h"
+
+#include "score/filesystem/factory/filesystem_factory_fake.h"
 #include "score/os/mman.h"
 #include "score/os/mocklib/acl_mock.h"
 
-#include "skeleton_test_resources.h"
 #include <gtest/gtest.h>
 
 #include <sys/stat.h>
@@ -142,6 +143,7 @@ class SkeletonComponentTestFixture : public ::testing::Test
             .WillByDefault(::testing::Return(&lola_runtime_mock_));
 
         ON_CALL(lola_runtime_mock_, GetLolaMessaging()).WillByDefault(ReturnRef(message_passing_service_mock_));
+        ON_CALL(runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock_));
     }
 
     void TearDown() override
@@ -221,6 +223,7 @@ class SkeletonComponentTestFixture : public ::testing::Test
     lola::RuntimeMock lola_runtime_mock_{};
 
     MessagePassingServiceMock message_passing_service_mock_{};
+    impl::tracing::TracingRuntimeMock tracing_runtime_mock_{};
 
     mock_binding::SkeletonEvent<TestSampleType> mock_event_binding_{};
     mock_binding::SkeletonEvent<TestSampleType> mock_field_binding_{};
@@ -408,21 +411,21 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_QM)
 
     // Expecting that the event and field are offered during the simulation dry run
     ON_CALL(mock_event_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> ResultBlank {
-            ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                                  test::kFooEventId,
-                                  test::kDefaultLolaInstanceId,
-                                  ServiceElementType::EVENT};
-            unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
+            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                      test::kFooEventId,
+                                      test::kDefaultLolaInstanceId,
+                                      ServiceElementType::EVENT};
+            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
             return {};
         }));
     ON_CALL(mock_field_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> ResultBlank {
-            ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                                  test::kFooFieldId,
-                                  test::kDefaultLolaInstanceId,
-                                  ServiceElementType::FIELD};
-            unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
+            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                      test::kFooFieldId,
+                                      test::kDefaultLolaInstanceId,
+                                      ServiceElementType::FIELD};
+            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
             return {};
         }));
 
@@ -468,21 +471,21 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_AsilB)
 
     // Expecting that the event and field are offered during the simulation dry run
     ON_CALL(mock_event_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> ResultBlank {
-            ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                                  test::kFooEventId,
-                                  test::kDefaultLolaInstanceId,
-                                  ServiceElementType::EVENT};
-            unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
+            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                      test::kFooEventId,
+                                      test::kDefaultLolaInstanceId,
+                                      ServiceElementType::EVENT};
+            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
             return {};
         }));
     ON_CALL(mock_field_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> ResultBlank {
-            ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                                  test::kFooFieldId,
-                                  test::kDefaultLolaInstanceId,
-                                  ServiceElementType::FIELD};
-            unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
+            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                      test::kFooFieldId,
+                                      test::kDefaultLolaInstanceId,
+                                      ServiceElementType::FIELD};
+            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
             return {};
         }));
 

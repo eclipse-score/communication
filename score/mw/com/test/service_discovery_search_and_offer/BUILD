@@ -47,7 +47,7 @@ cc_binary(
         "//score/mw/com/test/common_test_resources:common_service",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
         "//score/mw/com/test/common_test_resources:sync_utils",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -64,7 +64,7 @@ cc_binary(
         "//score/mw/com/test/common_test_resources:proxy_observer",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
         "//score/mw/com/test/common_test_resources:sync_utils",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

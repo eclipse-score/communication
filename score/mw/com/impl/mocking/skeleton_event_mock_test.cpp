@@ -80,7 +80,7 @@ TEST_F(SkeletonEventMockFixture, CopySendDispatchesToMockAfterInjectingMock)
     // Given a SkeletonEvent constructed with an empty binding and an injected mock
 
     // Expecting that Send with copy will be called on the mock which returns a valid result
-    EXPECT_CALL(skeleton_event_mock_, Send(kDummyValueToSend)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(skeleton_event_mock_, Send(kDummyValueToSend)).WillOnce(Return(Result<void>{}));
 
     // When Send with copy is called on the SkeletonEvent
     auto result = unit_.Send(kDummyValueToSend);
@@ -112,9 +112,9 @@ TEST_F(SkeletonEventMockFixture, ZeroCopySendDispatchesToMockAfterInjectingMock)
     // Expecting that zero-copy Send will be called on the mock with a SampleAllocateePtr containing the sent value
     // which returns a valid result
     EXPECT_CALL(skeleton_event_mock_, Send(testing::Matcher<SampleAllocateePtr<TestSampleType>>(_)))
-        .WillOnce(Invoke([](auto sample_allocatee_ptr) noexcept -> ResultBlank {
+        .WillOnce(Invoke([](auto sample_allocatee_ptr) noexcept -> Result<void> {
             EXPECT_EQ(*sample_allocatee_ptr, kDummyValueToSend);
-            return ResultBlank{};
+            return Result<void>{};
         }));
 
     // When zero-copy Send is called on the SkeletonEvent with a SampleAllocateePtr containing a value

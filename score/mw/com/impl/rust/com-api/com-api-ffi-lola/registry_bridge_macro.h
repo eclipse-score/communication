@@ -380,10 +380,10 @@ class InterfaceOperations
     /// \brief Register member operation for event, method, or field
     /// \details Currently used for events. Stores operation in member operation map by name.
     /// \param member_name Name of the member (event/method/field) used as registry key
-    /// \param ops Shared pointer to MemberOperation implementation
-    void RegisterMemberOperation(const std::string_view member_name, std::shared_ptr<MemberOperation> ops)
+    /// \param ops Unique pointer to MemberOperation implementation
+    void RegisterMemberOperation(const std::string_view member_name, std::unique_ptr<MemberOperation> ops)
     {
-        member_operation_map_[member_name] = ops;
+        member_operation_map_[member_name] = std::move(ops);
     }
 
     /// \brief Get member operation for event, method, or field
@@ -401,7 +401,7 @@ class InterfaceOperations
     }
 
   private:
-    using MemberOperationMap = std::unordered_map<std::string_view, std::shared_ptr<MemberOperation>>;
+    using MemberOperationMap = std::unordered_map<std::string_view, std::unique_ptr<MemberOperation>>;
     MemberOperationMap member_operation_map_;
 };
 
@@ -448,9 +448,9 @@ class InterfaceOperationImpl : public InterfaceOperations
 class GlobalRegistryMapping
 {
   public:
-    using InterfaceOprationMap = std::unordered_map<std::string_view, std::shared_ptr<InterfaceOperations>>;
+    using InterfaceOperationMap = std::unordered_map<std::string_view, std::unique_ptr<InterfaceOperations>>;
 
-    using TypeOperationMap = std::unordered_map<std::string_view, std::shared_ptr<TypeOperations>>;
+    using TypeOperationMap = std::unordered_map<std::string_view, std::unique_ptr<TypeOperations>>;
 
     /// \brief Get the type operation map
     /// \details Creates static map on first call and returns reference to it for subsequent calls.
@@ -464,8 +464,8 @@ class GlobalRegistryMapping
     /// \brief Register type operation for a specific type name
     /// \details Called by EXPORT_MW_COM_TYPE macro to register type operations.
     /// \param type_name Name of the type used as key in registry
-    /// \param impl Shared pointer to TypeOperations implementation
-    static void RegisterTypeOperation(const std::string_view type_name, std::shared_ptr<TypeOperations> impl)
+    /// \param impl Unique pointer to TypeOperations implementation
+    static void RegisterTypeOperation(const std::string_view type_name, std::unique_ptr<TypeOperations> impl)
     {
         GetTypeOperationMap()[type_name] = std::move(impl);
     }
@@ -473,9 +473,9 @@ class GlobalRegistryMapping
     /// \brief Get the interface operation map
     /// \details Creates static map on first call and returns reference to it for subsequent calls.
     /// \return Reference to the static interface operation map
-    static InterfaceOprationMap& GetInterfaceOprationMap()
+    static InterfaceOperationMap& GetInterfaceOperationMap()
     {
-        static InterfaceOprationMap s_factories;
+        static InterfaceOperationMap s_factories;
         return s_factories;
     }
 
@@ -483,10 +483,10 @@ class GlobalRegistryMapping
     /// \details Called by EXPORT_MW_COM_EVENT macro to register member operations.
     /// \param interface_id ID of the interface used to locate the interface operation
     /// \param member_name Name of the member (event/method/field) used as registry key
-    /// \param ops Shared pointer to MemberOperation implementation
+    /// \param ops Unique pointer to MemberOperation implementation
     static void RegisterMemberOperation(const std::string_view interface_id,
                                         const std::string_view member_name,
-                                        std::shared_ptr<MemberOperation> ops)
+                                        std::unique_ptr<MemberOperation> ops)
     {
         const auto& registries = GetInterfaceOperation(interface_id);
         if (registries)
@@ -498,11 +498,11 @@ class GlobalRegistryMapping
     /// \brief Register interface operation for a specific interface ID
     /// \details Called by EXPORT_MW_COM_INTERFACE macro to register interface operations.
     /// \param interface_id ID of the interface used as registry key
-    /// \param ops Shared pointer to InterfaceOperations implementation
+    /// \param ops Unique pointer to InterfaceOperations implementation
     static void RegisterInterfaceOperation(const std::string_view interface_id,
-                                           std::shared_ptr<InterfaceOperations> ops)
+                                           std::unique_ptr<InterfaceOperations> ops)
     {
-        GetInterfaceOprationMap()[interface_id] = std::move(ops);
+        GetInterfaceOperationMap()[interface_id] = std::move(ops);
     }
 
     /// \brief Get interface operation for a specific interface ID
@@ -510,8 +510,8 @@ class GlobalRegistryMapping
     /// \return Pointer to InterfaceOperations implementation if found, nullptr otherwise
     static InterfaceOperations* GetInterfaceOperation(const std::string_view interface_id)
     {
-        auto it = GetInterfaceOprationMap().find(interface_id);
-        if (it != GetInterfaceOprationMap().end())
+        auto it = GetInterfaceOperationMap().find(interface_id);
+        if (it != GetInterfaceOperationMap().end())
         {
             return it->second.get();
         }
@@ -649,13 +649,12 @@ class RustBoxedCallable<void,
         {                                                                                                              \
             id##_InterfaceRegistrationHelper()                                                                         \
             {                                                                                                          \
-                /*TODO: We will validate if we can use unique_ptr here - Ticket-219875 */                              \
                 auto interface_event_ops =                                                                             \
-                    std::make_shared<::score::mw::com::impl::rust::InterfaceOperationImpl<ProxyType, SkeletonType>>(); \
+                    std::make_unique<::score::mw::com::impl::rust::InterfaceOperationImpl<ProxyType, SkeletonType>>(); \
                                                                                                                        \
                 /* Register interface factory for FFI layer */                                                         \
-                ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterInterfaceOperation(id_interface,          \
-                                                                                                interface_event_ops);  \
+                ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterInterfaceOperation(                       \
+                    id_interface, std::move(interface_event_ops));                                                     \
             }                                                                                                          \
         };                                                                                                             \
                                                                                                                        \
@@ -674,9 +673,8 @@ class RustBoxedCallable<void,
         event_member##_EventRegistrationHelper()                                                                    \
         {                                                                                                           \
                                                                                                                     \
-            /* TODO: We will validate if we can use unique_ptr here - Ticket-219875 */                              \
             auto event_info =                                                                                       \
-                std::make_shared<::score::mw::com::impl::rust::MemberOperationImpl<ProxyType,                       \
+                std::make_unique<::score::mw::com::impl::rust::MemberOperationImpl<ProxyType,                       \
                                                                                    SkeletonType,                    \
                                                                                    event_type,                      \
                                                                                    &ProxyType::event_member,        \
@@ -684,7 +682,7 @@ class RustBoxedCallable<void,
                                                                                                                     \
             /* Register this event in the LOCAL interface registry (not global) */                                  \
             ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterMemberOperation(                           \
-                std::string_view(id_interface), std::string_view(#event_member), event_info);                       \
+                std::string_view(id_interface), std::string_view(#event_member), std::move(event_info));            \
         }                                                                                                           \
     };                                                                                                              \
                                                                                                                     \
@@ -719,9 +717,10 @@ class RustBoxedCallable<void,
     struct type_tag##_TypeRegistrationHelper                                                                  \
     {                                                                                                         \
         type_tag##_TypeRegistrationHelper()                                                                   \
-        { /* TODO: We will validate if we can use unique_ptr here - Ticket-219875 */                          \
-            auto type_ops = std::make_shared<::score::mw::com::impl::rust::TypeOperationImpl<type>>();        \
-            ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterTypeOperation(#type_tag, type_ops);  \
+        {                                                                                                     \
+            auto type_ops = std::make_unique<::score::mw::com::impl::rust::TypeOperationImpl<type>>();        \
+            ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterTypeOperation(#type_tag,             \
+                                                                                       std::move(type_ops));  \
         }                                                                                                     \
     };                                                                                                        \
                                                                                                               \

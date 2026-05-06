@@ -72,7 +72,7 @@ class MyDummyField : public SkeletonFieldBase
         return true;
     }
 
-    ResultBlank DoDeferredUpdate() noexcept override
+    Result<void> DoDeferredUpdate() noexcept override
     {
         return {};
     }

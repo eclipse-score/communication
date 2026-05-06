@@ -15,7 +15,6 @@
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 
 #include "score/language/safecpp/scoped_function/move_only_scoped_function.h"
-#include "score/mw/log/logging.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -26,12 +25,11 @@ MethodCallRegistrationGuard MethodCallRegistrationGuardFactory::Create(
     const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
     const safecpp::Scope<>& message_passing_service_instance_scope)
 {
-    return std::make_unique<utils::ScopedOperation<safecpp::MoveOnlyScopedFunction<void()>>>(
-        safecpp::MoveOnlyScopedFunction<void()>{
-            message_passing_service_instance_scope,
-            [&message_passing_service, asil_level, proxy_method_instance_identifier]() {
-                message_passing_service.UnregisterMethodCallHandler(asil_level, proxy_method_instance_identifier);
-            }});
+    return MethodCallRegistrationGuard(safecpp::MoveOnlyScopedFunction<void()>{
+        message_passing_service_instance_scope,
+        [&message_passing_service, asil_level, proxy_method_instance_identifier]() {
+            message_passing_service.UnregisterMethodCallHandler(asil_level, proxy_method_instance_identifier);
+        }});
 }
 
 }  // namespace score::mw::com::impl::lola

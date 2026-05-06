@@ -11,20 +11,25 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-def test_basic_acceptance_different_processes_test(sut):
+
+def provider(target, **kwargs):
+    args = []
+    return target.wrap_exec("bin/main_provider", args, cwd="/opt/MainProviderApp", wait_on_exit=True, **kwargs)
+
+
+def consumer(target, **kwargs):
+    args = []
+    return target.wrap_exec("bin/main_consumer", args, cwd="/opt/MainConsumerApp", wait_on_exit=True, **kwargs)
+
+
+def test_basic_acceptance_different_processes_test(target):
+    """Test method call functionality between provider and consumer in different processes.
+
+    The first process creates a Skeleton instance with a method (InArgs and Return value),
+    verifying the service can be offered and the handler successfully registered.
+
+    The second process creates a Proxy instance subscribing to the Skeleton, calling
+    zero-copy and with-copy methods, verifying both succeed with expected return values.
     """
-    Test method call functionality between provider and consumer which are run in different processes.
-
-    The test starts two processes.
-    The first process creates a Skeleton instance which contains a method with InArgs and Return value.
-    This process checks that the service can be offered and the handler successfully registered.
-
-    The second process creates a Proxy instance which subscribes to the Skeleton in the first process.
-    This process calls a zero-copy and with-copy method call and verifies that both calls succeed and return the expected value.
-
-    Test is successful if all previous checks return true and we have no crashes.
-    """
-    with sut.start_process("./bin/main_provider", cwd="/opt/MainProviderApp/") as sender:
-        with sut.start_process("./bin/main_consumer", cwd="/opt/MainConsumerApp/") as receiver:
-            assert receiver.wait_for_exit(timeout=120) == 0
-            assert sender.wait_for_exit(timeout=120) == 0
+    with provider(target), consumer(target):
+        pass

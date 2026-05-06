@@ -38,23 +38,23 @@ class ProxyMethod : public ProxyMethodBinding
 {
   public:
     ProxyMethod(Proxy& proxy,
-                const ElementFqId element_fq_id,
+                ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
                 const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info);
 
     /// \brief Allocates storage for the in-arguments of a method call at the given queue position.
     ///
     /// See ProxyMethodBinding for details
-    score::Result<score::cpp::span<std::byte>> AllocateInArgs(std::size_t queue_position) override;
+    score::Result<score::cpp::span<std::byte>> GetInArgsBuffer(std::size_t queue_position) override;
 
     /// \brief Allocates storage for the return type of a method call at the given queue position.
     ///
     /// See ProxyMethodBinding for details
-    score::Result<score::cpp::span<std::byte>> AllocateReturnType(std::size_t queue_position) override;
+    score::Result<score::cpp::span<std::byte>> GetReturnValueBuffer(std::size_t queue_position) override;
 
     /// \brief Performs the actual method call at the given call-queue position.
     ///
     /// See ProxyMethodBinding for details
-    score::ResultBlank DoCall(std::size_t queue_position) override;
+    score::Result<void> DoCall(std::size_t queue_position) override;
 
     TypeErasedCallQueue::TypeErasedElementInfo GetTypeErasedElementInfo() const;
 

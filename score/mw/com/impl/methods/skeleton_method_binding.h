@@ -44,7 +44,7 @@ class SkeletonMethodBinding
     SkeletonMethodBinding() = default;
     virtual ~SkeletonMethodBinding() = default;
 
-    virtual ResultBlank RegisterHandler(TypeErasedHandler&& callback) = 0;
+    virtual Result<void> RegisterHandler(TypeErasedHandler&& callback) = 0;
 
     SkeletonMethodBinding(const SkeletonMethodBinding&) = delete;
     SkeletonMethodBinding& operator=(const SkeletonMethodBinding&) & = delete;

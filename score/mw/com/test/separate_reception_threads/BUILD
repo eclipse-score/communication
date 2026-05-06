@@ -32,7 +32,7 @@ cc_binary(
         "@boost.program_options",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/scoped_function:move_only_scoped_function",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

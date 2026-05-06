@@ -34,23 +34,20 @@ enum class SubscribeResult : std::uint8_t
                               ///< failed.
 };
 
-namespace detail_event_subscription_control
-{
-
-/// \brief EventSubscriptionControlImpl encapsulates subscription state of an Event/Field. It is stored in Shared
+/// \brief EventSubscriptionControl encapsulates subscription state of an Event/Field. It is stored in Shared
 /// Memory.
 ///
-/// \details Underlying EventSubscriptionControlImpl holds the subscription state (currently subscribed slots, current
+/// \details Underlying EventSubscriptionControl holds the subscription state (currently subscribed slots, current
 ///          number of subscribers) in an atomic member and also max slots and subscribers as constants. It provides
 ///          functionality to subscribe/unsubscribe in a lock-free manner.
 ///          template arg AtomicIndirectorType is used for testing to enable mocking of std::atomic functionality.
 template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
-class EventSubscriptionControlImpl final
+class EventSubscriptionControl final
 {
     template <class EventSubscriptionControl>
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
     // The "EventSubscriptionControlAttorney" class is a helper, which sets the internal state of
-    // "EventSubscriptionControlImpl" accessing private members and used for testing purposes only.
+    // "EventSubscriptionControl" accessing private members and used for testing purposes only.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class lola::EventSubscriptionControlAttorney;
 
@@ -61,12 +58,12 @@ class EventSubscriptionControlImpl final
     ///        LolaEventInstanceDeployment::max_subscribers_
     using SubscriberCountType = std::uint8_t;
 
-    /// \brief Will construct EventSubscriptionControlImpl
+    /// \brief Will construct EventSubscriptionControl
     /// \param max_slot_count maximum/initial number of subscribable slots.
     /// \param max_subscribers maximum number of allowed subscribers.
-    EventSubscriptionControlImpl(const SlotNumberType max_slot_count,
-                                 const SubscriberCountType max_subscribers,
-                                 const bool enforce_max_samples) noexcept;
+    EventSubscriptionControl(const SlotNumberType max_slot_count,
+                             const SubscriberCountType max_subscribers,
+                             const bool enforce_max_samples) noexcept;
 
     /// \brief Subscribe with given number of slots
     /// \param slot_count number of slots to subscribe for
@@ -85,11 +82,7 @@ class EventSubscriptionControlImpl final
     const bool enforce_max_samples_;
 };
 
-}  // namespace detail_event_subscription_control
-
 std::string_view ToString(SubscribeResult subscribe_result) noexcept;
-
-using EventSubscriptionControl = detail_event_subscription_control::EventSubscriptionControlImpl<>;
 
 }  // namespace score::mw::com::impl::lola
 

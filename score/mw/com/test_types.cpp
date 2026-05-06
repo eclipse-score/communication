@@ -28,12 +28,12 @@ void InjectRuntimeMock(IRuntime& runtime_mock)
 
 }  // namespace runtime
 
-InstanceIdentifier MakeDummyInstanceIdentifier(const std::uint16_t unique_identifier)
+InstanceIdentifier MakeFakeInstanceIdentifier(const std::uint16_t unique_identifier)
 {
     return impl::MakeFakeInstanceIdentifier(unique_identifier);
 }
 
-HandleType MakeDummyHandle(const std::uint16_t unique_identifier)
+HandleType MakeFakeHandle(const std::uint16_t unique_identifier)
 {
     return impl::MakeFakeHandle(unique_identifier);
 }

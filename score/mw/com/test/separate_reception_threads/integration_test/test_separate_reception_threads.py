@@ -14,11 +14,18 @@
 """Integration test for separate_reception_threads."""
 
 
-def test_separate_reception_threads(sut):
+def separate_reception_threads(target, **kwargs):
+    args = ["-service_instance_manifest", "./etc/mw_com_config.json"]
+    return target.wrap_exec(
+        "bin/separate_reception_threads", args, cwd="/opt/separate_reception_threads", wait_on_exit=True, **kwargs
+    )
+
+
+def test_separate_reception_threads(target):
     """Test separate reception threads functionality.
-    
+
     NOTE: The main application code for this test is disabled (#if 0) and just returns
     EXIT_SUCCESS immediately. This test verifies the stub runs without error.
     """
-    with sut.start_process("./bin/separate_reception_threads", cwd="/opt/separate_reception_threads/") as process:
-        assert process.wait_for_exit() == 0
+    with separate_reception_threads(target, wait_timeout=15):
+        pass

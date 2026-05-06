@@ -28,15 +28,14 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-TEST(EventSubscriptionControl, Create)
+TEST(EventSubscriptionControlTest, Create)
 {
     // Expect, that we can create EventSubscriptionControl with real and mocked AtomicIndirector types without crash
     EventSubscriptionControl unit1{20, 3, true};
-    detail_event_subscription_control::EventSubscriptionControlImpl<score::memory::shared::AtomicIndirectorMock> unit2{
-        20, 3, true};
+    EventSubscriptionControl<score::memory::shared::AtomicIndirectorMock> unit2{20, 3, true};
 }
 
-TEST(EventSubscriptionControl, Subscribe_OK)
+TEST(EventSubscriptionControlTest, Subscribe_OK)
 {
     // Given a unit with a given slot count and max subscribers
     EventSubscriptionControl unit{20, 3, true};
@@ -48,7 +47,7 @@ TEST(EventSubscriptionControl, Subscribe_OK)
     EXPECT_EQ(unit.Subscribe(10), SubscribeResult::kSuccess);
 }
 
-TEST(EventSubscriptionControl, Subscribe_Failed_Slots)
+TEST(EventSubscriptionControlTest, Subscribe_Failed_Slots)
 {
     // Given a unit with a given slot count and max subscribers
     EventSubscriptionControl unit{20, 3, true};
@@ -60,7 +59,7 @@ TEST(EventSubscriptionControl, Subscribe_Failed_Slots)
     EXPECT_EQ(unit.Subscribe(1), SubscribeResult::kSlotOverflow);
 }
 
-TEST(EventSubscriptionControl, Subscribe_NotEnforceMaxSamples)
+TEST(EventSubscriptionControlTest, Subscribe_NotEnforceMaxSamples)
 {
     // Given a unit with a given slot count and max subscribers, which doesn't force max samples
     EventSubscriptionControl unit{20, 3, false};
@@ -72,7 +71,7 @@ TEST(EventSubscriptionControl, Subscribe_NotEnforceMaxSamples)
     EXPECT_EQ(unit.Subscribe(1), SubscribeResult::kSuccess);
 }
 
-TEST(EventSubscriptionControl, Subscribe_Failed_Subscribers)
+TEST(EventSubscriptionControlTest, Subscribe_Failed_Subscribers)
 {
     // Given a unit with a given slot count and max subscribers
     EventSubscriptionControl unit{20, 3, true};
@@ -87,7 +86,7 @@ TEST(EventSubscriptionControl, Subscribe_Failed_Subscribers)
     EXPECT_EQ(unit.Subscribe(1), SubscribeResult::kMaxSubscribersOverflow);
 }
 
-TEST(EventSubscriptionControl, Subscribe_Unsubscribe_Slots_OK)
+TEST(EventSubscriptionControlTest, Subscribe_Unsubscribe_Slots_OK)
 {
     // Given a unit with a given slot count and max subscribers
     EventSubscriptionControl unit{20, 3, true};
@@ -102,7 +101,7 @@ TEST(EventSubscriptionControl, Subscribe_Unsubscribe_Slots_OK)
     EXPECT_EQ(unit.Subscribe(5), SubscribeResult::kSuccess);
 }
 
-TEST(EventSubscriptionControl, Subscribe_Unsubscribe_Subscribers_OK)
+TEST(EventSubscriptionControlTest, Subscribe_Unsubscribe_Subscribers_OK)
 {
     // Given a unit with a given slot count and max subscribers
     EventSubscriptionControl unit{20, 3, true};
@@ -118,7 +117,7 @@ TEST(EventSubscriptionControl, Subscribe_Unsubscribe_Subscribers_OK)
     EXPECT_EQ(unit.Subscribe(5), SubscribeResult::kSuccess);
 }
 
-TEST(EventSubscriptionControl, ConcurrentAccess)
+TEST(EventSubscriptionControlTest, ConcurrentAccess)
 {
     //  Given a unit with a given slot count and max subscribers
     EventSubscriptionControl unit{20, 3, true};
@@ -152,7 +151,7 @@ TEST(EventSubscriptionControl, ConcurrentAccess)
     t3.join();
 }
 
-TEST(EventSubscriptionControl, CompareExchangeBehaviour_Subscribe)
+TEST(EventSubscriptionControlTest, CompareExchangeBehaviour_Subscribe)
 {
     using namespace score::memory::shared;
     using ::testing::_;
@@ -161,20 +160,18 @@ TEST(EventSubscriptionControl, CompareExchangeBehaviour_Subscribe)
     AtomicMock<std::uint32_t> atomic_mock;
     AtomicIndirectorMock<std::uint32_t>::SetMockObject(&atomic_mock);
 
-    EventSubscriptionControl::SubscriberCountType max_subscribers{3};
+    EventSubscriptionControl<>::SubscriberCountType max_subscribers{3};
     auto num_retries = 2 * max_subscribers;
 
     // Given the operation to update state fails num_retries times
     EXPECT_CALL(atomic_mock, compare_exchange_weak(_, _, _)).Times(num_retries).WillRepeatedly(Return(false));
 
-    detail_event_subscription_control::EventSubscriptionControlImpl<score::memory::shared::AtomicIndirectorMock> unit{
-        20, 3, true};
+    EventSubscriptionControl<score::memory::shared::AtomicIndirectorMock> unit{20, 3, true};
 
     // when calling subscribe()
     EXPECT_EQ(unit.Subscribe(5), SubscribeResult::kUpdateRetryFailure);
 }
 
-using EventSubscriptionControlDeathTest = EventSubscriptionControl;
 TEST(EventSubscriptionControlDeathTest, CompareExchangeBehaviour_Unsubscribe_RetryLimit)
 {
     using namespace score::memory::shared;
@@ -185,12 +182,10 @@ TEST(EventSubscriptionControlDeathTest, CompareExchangeBehaviour_Unsubscribe_Ret
         AtomicMock<std::uint32_t> atomic_mock;
         AtomicIndirectorMock<std::uint32_t>::SetMockObject(&atomic_mock);
 
-        EventSubscriptionControl::SubscriberCountType max_subscribers{3};
+        EventSubscriptionControl<>::SubscriberCountType max_subscribers{3};
         auto num_retries = 2 * max_subscribers;
-        detail_event_subscription_control::EventSubscriptionControlImpl<score::memory::shared::AtomicIndirectorMock>
-            unit{20, 3, true};
-        EventSubscriptionControlAttorney<detail_event_subscription_control::EventSubscriptionControlImpl<
-            score::memory::shared::AtomicIndirectorMock>>
+        EventSubscriptionControl<score::memory::shared::AtomicIndirectorMock> unit{20, 3, true};
+        EventSubscriptionControlAttorney<EventSubscriptionControl<score::memory::shared::AtomicIndirectorMock>>
             attorney{unit};
 
         // Given the unit has currently one subscriber and 5 subscribed slots
@@ -238,7 +233,7 @@ TEST(EventSubscriptionControlDeathTest, Unsubscribe_SlotUnderflow_Dies)
     EXPECT_DEATH(unsubscribe_with_slot_underflow(), ".*");
 }
 
-TEST(EventSubscriptionControl, ToStringShouldReturnExpectedStringForAllSubscribeResultTypes)
+TEST(EventSubscriptionControlTest, ToStringShouldReturnExpectedStringForAllSubscribeResultTypes)
 {
     // When converting each enum value to string
     // Then the result should be the expected string

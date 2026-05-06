@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_METHODS_METHOD_DATA_H
 
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
-#include "score/mw/com/impl/configuration/lola_method_id.h"
+#include "score/mw/com/impl/bindings/lola/methods/unique_method_identifier.h"
 
 #include "score/containers/non_relocatable_vector.h"
 #include "score/memory/shared/managed_memory_resource.h"
@@ -40,9 +40,9 @@ class MethodData
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    containers::NonRelocatableVector<std::pair<LolaMethodId, TypeErasedCallQueue>,
+    containers::NonRelocatableVector<std::pair<UniqueMethodIdentifier, TypeErasedCallQueue>,
                                      std::scoped_allocator_adaptor<memory::shared::PolymorphicOffsetPtrAllocator<
-                                         std::pair<LolaMethodId, TypeErasedCallQueue>>>>
+                                         std::pair<UniqueMethodIdentifier, TypeErasedCallQueue>>>>
         method_call_queues_;
 };
 

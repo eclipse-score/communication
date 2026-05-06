@@ -13,12 +13,12 @@
 #ifndef SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_FIELD_ID_H
 #define SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_FIELD_ID_H
 
-#include "score/mw/com/impl/configuration/lola_event_id.h"
+#include "score/mw/com/impl/configuration/lola_service_element_id.h"
 
 namespace score::mw::com::impl
 {
 
-using LolaFieldId = LolaEventId;
+using LolaFieldId = LolaServiceElementId;
 
 }  // namespace score::mw::com::impl
 

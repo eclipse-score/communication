@@ -11,12 +11,26 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "proxy_container",
     srcs = ["proxy_container.cpp"],
     hdrs = ["proxy_container.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/test/methods:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com",
+    ],
+)
+
+cc_library(
+    name = "skeleton_container",
+    srcs = ["skeleton_container.cpp"],
+    hdrs = ["skeleton_container.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/test/methods:__subpackages__",
@@ -38,8 +52,8 @@ cc_library(
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -57,7 +71,7 @@ cc_library(
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
         "//score/mw/com/test/methods/methods_test_resources:proxy_container",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -72,8 +86,8 @@ cc_library(
     deps = [
         "//score/mw/com/test/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/test/common_test_resources:shared_memory_object_guard",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os/utils/interprocess:interprocess_notification",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )

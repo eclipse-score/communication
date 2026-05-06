@@ -1,0 +1,28 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+title Transport Layer Forward Samples
+
+participant "Generalized Gateway::Domain A" as GATEWAY
+participant "TransportLayer::Domain A" as TRANSPORT_LAYER order 10
+participant "TransportLayer::Domain B" as TRANSPORT_LAYER_OTHER order 20
+participant "Generalized Gateway::Domain B" as GATEWAY_OTHER order 30
+
+== Gateway Domain A decides to forward N Samples (potentially of different events/service instances) ==
+
+activate GATEWAY
+GATEWAY -> TRANSPORT_LAYER : ForwardSamples(ServiceElementSampleDataCollection)
+activate TRANSPORT_LAYER
+TRANSPORT_LAYER -> TRANSPORT_LAYER_OTHER ++ : trigger sample slot allocation other side
+TRANSPORT_LAYER_OTHER -> GATEWAY_OTHER ++ : AllocateSamples(std::vector<ElementFqId> elements_to_allocate)
+return Result<std::vector<SampleAllocateePtr<void>>
+return std::vector<void*>
+TRANSPORT_LAYER -> TRANSPORT_LAYER_OTHER ++ : Bulk-Copy sample data to allocated storage
+TRANSPORT_LAYER_OTHER -> GATEWAY_OTHER ++ : SendOrUpdateSamples(std::vector<SampleAllocateePtr<void>)
+return Result<void>
+return Result<void>
+return Result<void>
+
+@enduml

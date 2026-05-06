@@ -1,0 +1,26 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+participant "GenericSkeleton::instance" as GENERIC_SKELETON
+participant "Generalized Gateway::Domain B" as GATEWAY order 10
+participant "TransportLayer::Domain B" as TRANSPORT_LAYER order 20
+participant "TransportLayer::Domain A" as TRANSPORT_LAYER_OTHER order 30
+participant "Generalized Gateway::Domain A" as GATEWAY_OTHER order 40
+participant "GenericProxy::instance" as GENERIC_PROXY order 50
+
+activate GENERIC_SKELETON
+GENERIC_SKELETON -> GATEWAY ++ : UpdateNotificationRegistered(ElementFqId)
+
+GATEWAY -> TRANSPORT_LAYER ++ : RegisterUpdateNotification(ElementFqId)
+TRANSPORT_LAYER -> TRANSPORT_LAYER_OTHER ++ : forward RegisterUpdateNotification
+TRANSPORT_LAYER_OTHER -> GATEWAY_OTHER ++ : RegisterUpdateNotification(ElementFqId)
+GATEWAY_OTHER -> GENERIC_PROXY ++ : GetEvents().at(ElementFqId).SetReceiveHandler(handler)
+return
+return
+return
+return
+return
+
+@enduml

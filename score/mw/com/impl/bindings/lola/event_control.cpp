@@ -19,8 +19,9 @@ EventControl::EventControl(const SlotIndexType number_of_slots,
                            const SubscriberCountType max_subscribers,
                            const bool enforce_max_samples,
                            score::memory::shared::ManagedMemoryResource& resource) noexcept
-    : data_control{number_of_slots, resource, max_subscribers},
-      subscription_control{number_of_slots, max_subscribers, enforce_max_samples}
+    : data_control{number_of_slots, resource},
+      subscription_control{number_of_slots, max_subscribers, enforce_max_samples},
+      transaction_log_set_{max_subscribers, number_of_slots, resource}
 {
 }
 

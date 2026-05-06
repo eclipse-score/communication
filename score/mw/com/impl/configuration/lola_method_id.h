@@ -13,12 +13,12 @@
 #ifndef SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_METHOD_ID_H
 #define SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_METHOD_ID_H
 
-#include <cstdint>
+#include "score/mw/com/impl/configuration/lola_service_element_id.h"
 
 namespace score::mw::com::impl
 {
 
-using LolaMethodId = std::uint16_t;
+using LolaMethodId = LolaServiceElementId;
 
 }  // namespace score::mw::com::impl
 

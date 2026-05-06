@@ -13,11 +13,23 @@
 
 """Integration test for service_discovery_during_consumer_crash."""
 
+NUMBER_RESTART_CYCLES = 1
+TEST_DIRECTORY_NAME = "service_discovery_during_consumer_crash"
 
-def test_service_discovery_during_consumer_crash(sut):
+
+def controller_process(target, number_restart_cycles, **kwargs):
+    args = [
+        "--iterations",
+        f"{number_restart_cycles}",
+        "--service_instance_manifest",
+        "etc/mw_com_config.json",
+    ]
+    return target.wrap_exec(
+        f"bin/{TEST_DIRECTORY_NAME}_application", args, cwd=f"/opt/{TEST_DIRECTORY_NAME}", wait_on_exit=True, **kwargs
+    )
+
+
+def test_service_discovery_during_consumer_crash(target):
     """Test service discovery behavior when consumer crashes and restarts."""
-    with sut.start_process(
-        "./bin/service_discovery_during_consumer_crash_application -service_instance_manifest ./etc/mw_com_config.json -t 1",
-        cwd="/opt/service_discovery_during_consumer_crash",
-    ) as process:
-        assert process.wait_for_exit() == 0
+    with controller_process(target, NUMBER_RESTART_CYCLES, wait_timeout=60):
+        pass

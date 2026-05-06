@@ -1,0 +1,22 @@
+@startuml
+
+autonumber "<b>[00]"
+
+actor "User Application" as UA
+participant "Proxy" as PROXY
+participant "OS::RAMFS" as OSRAMFS_disco <<tmp_discovery>>
+
+activate UA
+
+UA -> PROXY ++: StartFindService (Callback)
+
+PROXY -> OSRAMFS_disco: Open Folder and File Structure
+activate OSRAMFS_disco
+OSRAMFS_disco --> PROXY
+PROXY -> OSRAMFS_disco: Watch file
+OSRAMFS_disco --> PROXY
+deactivate OSRAMFS_disco
+
+PROXY --> UA: Callback (FindServiceHandle)
+
+@enduml

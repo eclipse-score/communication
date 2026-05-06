@@ -16,26 +16,33 @@ module(name = "score_communication")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boost.interprocess", version = "1.83.0.bcr.4")
 bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
+bazel_dep(name = "download_utils", version = "1.2.2")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.1.5")
 bazel_dep(name = "rules_python", version = "1.5.1")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
-bazel_dep(name = "score_baselibs", version = "0.2.5")
+bazel_dep(name = "score_baselibs", version = "0.2.6")
 bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.9", repo_name = "score_communication_crate_index")
-bazel_dep(name = "score_logging", version = "0.1.0")
 
-# TODO: Remove once new logging release is available https://github.com/eclipse-score/logging/issues/80
-git_override(
-    module_name = "score_logging",
-    commit = "38e8762881d512c89ae5c2e5e5238fd791d327df",
-    remote = "https://github.com/eclipse-score/logging.git",
+download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
+
+download_archive(
+    name = "jsonschema",
+    build = "//third_party/jsonschema:jsonschema.BUILD",
+    strip_prefix = "jsonschema-4.23.0",
+    urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
-bazel_dep(name = "score_tooling", version = "1.1.2")
+bazel_dep(name = "score_tooling")
+git_override(
+    module_name = "score_tooling",
+    commit = "0160d13fff81ee20643769339036505b853e2bb0",
+    remote = "https://github.com/eclipse-score/tooling.git",
+)
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
@@ -104,6 +111,8 @@ use_repo(
     "score_qcc_x86_64_toolchain",
 )
 
+bazel_dep(name = "score_itf", version = "0.3.0", dev_dependency = True)
+
 # For the moment we still need the old toolchain for ifs generation.
 # Migrate once rules_imagefs is ready to be used (https://github.com/eclipse-score/rules_imagefs/pull/1).
 bazel_dep(name = "score_toolchains_qnx", version = "0.0.7", dev_dependency = True)
@@ -151,7 +160,7 @@ llvm.toolchain(
 )
 use_repo(llvm, "llvm_toolchain")
 
-bazel_dep(name = "score_toolchains_rust", version = "0.7.0", dev_dependency = True)
+bazel_dep(name = "score_toolchains_rust", version = "0.8.0", dev_dependency = True)
 
 gcc_ferrocene = use_extension(
     "@score_toolchains_rust//extensions:ferrocene_toolchain_ext.bzl",
@@ -189,6 +198,7 @@ download_file = use_repo_rule("@download_utils//download/file:defs.bzl", "downlo
 
 download_file(
     name = "clang_format",
+    dev_dependency = True,
     executable = True,
     output = "executable",
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
@@ -197,7 +207,6 @@ download_file(
 bazel_dep(name = "aspect_rules_lint", version = "2.2.0", dev_dependency = True)
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
-bazel_dep(name = "download_utils", version = "1.2.2", dev_dependency = True)
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
     module_name = "hedron_compile_commands",
@@ -205,20 +214,12 @@ git_override(
     remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
 )
 
-download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
-
 download_archive(
     name = "json_schema_validator",
     build = "//third_party/json_schema_validator:json_schema_validator.BUILD",
+    dev_dependency = True,
     strip_prefix = "json-schema-validator-2.1.0",
     urls = ["https://github.com/pboettch/json-schema-validator/archive/refs/tags/2.1.0.tar.gz"],
-)
-
-download_archive(
-    name = "jsonschema",
-    build = "//third_party/jsonschema:jsonschema.BUILD",
-    strip_prefix = "jsonschema-4.23.0",
-    urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
 bazel_dep(name = "rules_doxygen", version = "2.6.1", dev_dependency = True)
@@ -267,12 +268,17 @@ use_repo(pip, "codeql_coding_standards_pip_hub")
 bazel_dep(name = "trlc", version = "0.0.0", dev_dependency = True)
 git_override(
     module_name = "trlc",
-    commit = "a4f7e95210d8093ba208b91cbc5b681eae8d502b",  # trlc-2.0.3 release
+    commit = "3a71fd56001b95dfbb5270a49449ec0a631cd56c",  #TRLC 2.0.4
     remote = "https://github.com/bmw-software-engineering/trlc.git",
 )
 
-lobster_ext = use_extension("//third_party/lobster:lobster.bzl", "lobster_ext")
-use_repo(lobster_ext, "lobster")
+# Lobster dependency for requirements traceability
+bazel_dep(name = "lobster", version = "0.0.0", dev_dependency = True)
+git_override(
+    module_name = "lobster",
+    commit = "d528fbdec2cd72ff7967b51546fb0bd935810258",
+    remote = "https://github.com/bmw-software-engineering/lobster.git",
+)
 
 # Use lobster's upstream requirements.txt directly for this module's Python hub
 pip.parse(
@@ -282,18 +288,7 @@ pip.parse(
 )
 use_repo(pip, "lobster_dependencies")
 
-bazel_dep(name = "rules_oci", version = "1.8.0", dev_dependency = True)
-
-oci = use_extension("@rules_oci//oci:extensions.bzl", "oci", dev_dependency = True)
-oci.pull(
-    name = "ubuntu_24_04",
-    digest = "sha256:2e863c44b718727c860746568e1d54afd13b2fa71b160f5cd9058fc436217b30",
-    image = "ubuntu",
-    platforms = ["linux/amd64"],
-    tag = "24.04",
-)
-use_repo(oci, "ubuntu_24_04")
-
+bazel_dep(name = "rules_oci", version = "2.2.7", dev_dependency = True)
 bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
 
 apt = use_extension(
@@ -326,4 +321,9 @@ git_repository(
     build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
     commit = "781f1eecfa2fc9970fb08447588a0b4d19a7908d",
     remote = "https://github.com/github/codeql-coding-standards.git",
+)
+
+register_toolchains(
+    "//bazel/toolchains:sphinx_toolchain",
+    dev_dependency = True,
 )

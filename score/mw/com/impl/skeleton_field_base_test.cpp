@@ -77,7 +77,7 @@ class MyDummyField : public SkeletonFieldBase
         return is_initial_value_saved_;
     }
 
-    ResultBlank DoDeferredUpdate() noexcept override
+    Result<void> DoDeferredUpdate() noexcept override
     {
         was_deferred_update_called_ = true;
         return {};
@@ -95,7 +95,7 @@ class MyDummyField : public SkeletonFieldBase
 class MyDummyFieldFailingDeferredUpdate final : public MyDummyField
 {
   public:
-    ResultBlank DoDeferredUpdate() noexcept override
+    Result<void> DoDeferredUpdate() noexcept override
     {
         return MakeUnexpected(ComErrc::kCommunicationLinkError);
     }
@@ -127,7 +127,7 @@ TEST_F(SkeletonFieldBaseFixture, PrepareOfferDispatchesToBinding)
     CreateSkeletonField();
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(Result<void>{}));
 
     // When offering the event
     const auto result = skeleton_field_->PrepareOffer();
@@ -142,7 +142,7 @@ TEST_F(SkeletonFieldBaseFixture, PrepareStopOfferDispatchesToBinding)
     CreateSkeletonField();
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(Result<void>{}));
 
     // and expecting that PrepareStopOffer() is called on the binding
     EXPECT_CALL(*mock_event_binding_, PrepareStopOffer());
@@ -161,7 +161,7 @@ TEST_F(SkeletonFieldBaseFixture, PrepareOfferCallsInitialUpdateCallback)
     CreateSkeletonField();
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(Result<void>{}));
 
     // When offering the event
     EXPECT_FALSE(skeleton_field_->was_deferred_update_called_);
@@ -233,7 +233,7 @@ TEST(SkeletonFieldBaseTest, PrepareOfferPropagatesErrorFromInitialValueUpdateCal
     ASSERT_NE(mock_event_binding, nullptr);
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding, PrepareOffer()).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(*mock_event_binding, PrepareOffer()).WillOnce(Return(Result<void>{}));
 
     // When offering the event
     const auto result = skeleton_field.PrepareOffer();

@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/proxy_base.h"
 
@@ -46,7 +47,8 @@ class IProxyMethodBindingFactory
     /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
     virtual auto Create(HandleType parent_handle,
                         ProxyBinding* parent_binding,
-                        const std::string_view method_name) noexcept -> std::unique_ptr<ProxyMethodBinding> = 0;
+                        const std::string_view method_name,
+                        MethodType method_type) noexcept -> std::unique_ptr<ProxyMethodBinding> = 0;
 };
 
 }  // namespace score::mw::com::impl

@@ -53,9 +53,11 @@ def _generate_api_rst_impl(ctx):
         "api_members.rst",
     ]
 
-    # Declare output files
+    # Declare output files in the output_dir subdirectory (e.g. "generated/")
+    # so they match the toctree references in index.rst
+    output_prefix = ctx.attr.output_dir + "/" if ctx.attr.output_dir else ""
     outputs = [
-        ctx.actions.declare_file(ctx.attr.output_dir + "/" + name)
+        ctx.actions.declare_file(output_prefix + name)
         for name in output_filenames
     ]
 

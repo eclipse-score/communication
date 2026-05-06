@@ -1,4 +1,5 @@
 bazel-*
+examples/bazel-*
 MODULE.bazel.lock
 user.bazelrc
 .clwb_aspects

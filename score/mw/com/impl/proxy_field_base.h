@@ -58,7 +58,7 @@ class ProxyFieldBase
      *                          be able to offer to the using application.
      * \return On failure, returns an error code.
      */
-    ResultBlank Subscribe(const std::size_t max_sample_count) noexcept
+    Result<void> Subscribe(const std::size_t max_sample_count) noexcept
     {
         return proxy_event_base_dispatch_->Subscribe(max_sample_count);
     }
@@ -127,7 +127,7 @@ class ProxyFieldBase
      *            already running ReceiveHandler. We also see no use cases for it and won't support it therefore.
      * \param handler user provided handler to be called
      */
-    ResultBlank SetReceiveHandler(EventReceiveHandler handler) noexcept
+    Result<void> SetReceiveHandler(EventReceiveHandler handler) noexcept
     {
         return proxy_event_base_dispatch_->SetReceiveHandler(std::move(handler));
     }
@@ -136,7 +136,7 @@ class ProxyFieldBase
      * \api
      * \brief Removes any ReceiveHandler registered via SetReceiveHandler.
      */
-    ResultBlank UnsetReceiveHandler() noexcept
+    Result<void> UnsetReceiveHandler() noexcept
     {
         return proxy_event_base_dispatch_->UnsetReceiveHandler();
     }

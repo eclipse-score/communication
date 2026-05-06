@@ -15,7 +15,10 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
-#include "score/mw/com/impl/plumbing/proxy_service_element_binding_factory_impl.h"
+#include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
+#include "score/mw/com/impl/service_element_type.h"
+
+#include "score/mw/log/logging.h"
 
 namespace score::mw::com::impl
 {
@@ -32,8 +35,15 @@ std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::C
     ProxyBase& parent,
     const std::string_view event_name) noexcept
 {
-    return CreateProxyServiceElement<GenericProxyEventBinding, lola::GenericProxyEvent, ServiceElementType::EVENT>(
-        parent, event_name);
+    const auto lookup = LookupLolaProxyElement(parent, event_name, ServiceElementType::EVENT);
+    if (!lookup.has_value())
+    {
+        score::mw::log::LogError("lola")
+            << "GenericProxyEvent binding could not be created for event" << event_name
+            << "because the parent proxy binding is not a lola binding or the element could not be resolved.";
+        return nullptr;
+    }
+    return std::make_unique<lola::GenericProxyEvent>(lookup->parent, lookup->element_fq_id, event_name);
 }
 
 }  // namespace score::mw::com::impl

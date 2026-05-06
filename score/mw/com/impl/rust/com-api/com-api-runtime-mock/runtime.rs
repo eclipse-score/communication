@@ -63,9 +63,9 @@ pub struct MockConsumerInfo {
 }
 
 impl Runtime for MockRuntimeImpl {
-    type ServiceDiscovery<I: Interface + Send> = SampleConsumerDiscovery<I>;
+    type ServiceDiscovery<I: Interface + Send> = MockConsumerDiscovery<I>;
     type Subscriber<T: CommData + Debug> = SubscribableImpl<T>;
-    type ProducerBuilder<I: Interface> = SampleProducerBuilder<I>;
+    type ProducerBuilder<I: Interface> = MockProducerBuilder<I>;
     type Publisher<T: CommData + Debug> = Publisher<T>;
     type ProviderInfo = MockProviderInfo;
     type ConsumerInfo = MockConsumerInfo;
@@ -74,7 +74,7 @@ impl Runtime for MockRuntimeImpl {
         &self,
         _instance_specifier: FindServiceSpecifier,
     ) -> Self::ServiceDiscovery<I> {
-        SampleConsumerDiscovery {
+        MockConsumerDiscovery {
             _interface: PhantomData,
         }
     }
@@ -83,7 +83,7 @@ impl Runtime for MockRuntimeImpl {
         &self,
         instance_specifier: InstanceSpecifier,
     ) -> Self::ProducerBuilder<I> {
-        SampleProducerBuilder::new(self, instance_specifier)
+        MockProducerBuilder::new(self, instance_specifier)
     }
 }
 
@@ -383,11 +383,11 @@ where
     }
 }
 
-pub struct SampleConsumerDiscovery<I> {
+pub struct MockConsumerDiscovery<I> {
     _interface: PhantomData<I>,
 }
 
-impl<I> SampleConsumerDiscovery<I> {
+impl<I> MockConsumerDiscovery<I> {
     fn new(_runtime: &MockRuntimeImpl, _instance_specifier: InstanceSpecifier) -> Self {
         Self {
             _interface: PhantomData,
@@ -395,12 +395,12 @@ impl<I> SampleConsumerDiscovery<I> {
     }
 }
 
-impl<I: Interface + Send> ServiceDiscovery<I, MockRuntimeImpl> for SampleConsumerDiscovery<I>
+impl<I: Interface + Send> ServiceDiscovery<I, MockRuntimeImpl> for MockConsumerDiscovery<I>
 where
-    SampleConsumerBuilder<I>: ConsumerBuilder<I, MockRuntimeImpl>,
+    MockConsumerBuilder<I>: ConsumerBuilder<I, MockRuntimeImpl>,
 {
-    type ConsumerBuilder = SampleConsumerBuilder<I>;
-    type ServiceEnumerator = Vec<SampleConsumerBuilder<I>>;
+    type ConsumerBuilder = MockConsumerBuilder<I>;
+    type ServiceEnumerator = Vec<MockConsumerBuilder<I>>;
 
     fn get_available_instances(&self) -> com_api_concept::Result<Self::ServiceEnumerator> {
         Ok(Vec::new())
@@ -414,12 +414,12 @@ where
     }
 }
 
-pub struct SampleProducerBuilder<I: Interface> {
+pub struct MockProducerBuilder<I: Interface> {
     instance_specifier: InstanceSpecifier,
     _interface: PhantomData<I>,
 }
 
-impl<I: Interface> SampleProducerBuilder<I> {
+impl<I: Interface> MockProducerBuilder<I> {
     fn new(_runtime: &MockRuntimeImpl, instance_specifier: InstanceSpecifier) -> Self {
         Self {
             instance_specifier,
@@ -428,9 +428,9 @@ impl<I: Interface> SampleProducerBuilder<I> {
     }
 }
 
-impl<I: Interface> ProducerBuilder<I, MockRuntimeImpl> for SampleProducerBuilder<I> {}
+impl<I: Interface> ProducerBuilder<I, MockRuntimeImpl> for MockProducerBuilder<I> {}
 
-impl<I: Interface> Builder<I::Producer<MockRuntimeImpl>> for SampleProducerBuilder<I> {
+impl<I: Interface> Builder<I::Producer<MockRuntimeImpl>> for MockProducerBuilder<I> {
     fn build(self) -> Result<I::Producer<MockRuntimeImpl>> {
         let instance_info = MockProviderInfo {
             instance_specifier: self.instance_specifier.clone(),
@@ -451,20 +451,20 @@ impl<I: Interface> Clone for SampleConsumerDescriptor<I> {
     }
 }
 
-pub struct SampleConsumerBuilder<I: Interface> {
+pub struct MockConsumerBuilder<I: Interface> {
     instance_specifier: InstanceSpecifier,
     _interface: PhantomData<I>,
 }
 
-impl<I: Interface> ConsumerDescriptor<MockRuntimeImpl> for SampleConsumerBuilder<I> {
+impl<I: Interface> ConsumerDescriptor<MockRuntimeImpl> for MockConsumerBuilder<I> {
     fn get_instance_identifier(&self) -> &InstanceSpecifier {
         todo!()
     }
 }
 
-impl<I: Interface> ConsumerBuilder<I, MockRuntimeImpl> for SampleConsumerBuilder<I> {}
+impl<I: Interface> ConsumerBuilder<I, MockRuntimeImpl> for MockConsumerBuilder<I> {}
 
-impl<I: Interface> Builder<I::Consumer<MockRuntimeImpl>> for SampleConsumerBuilder<I> {
+impl<I: Interface> Builder<I::Consumer<MockRuntimeImpl>> for MockConsumerBuilder<I> {
     fn build(self) -> com_api_concept::Result<I::Consumer<MockRuntimeImpl>> {
         let instance_info = MockConsumerInfo {
             instance_specifier: self.instance_specifier.clone(),

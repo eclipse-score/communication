@@ -130,10 +130,10 @@ deactivate ServiceDataControl
 LolaSkeleton --> LolaSkeletonEvent: return EventDataStorage, EventDataControl
 deactivate LolaSkeleton
 
-LolaSkeletonEvent --> SkeletonEvent: return ResultBlank
+LolaSkeletonEvent --> SkeletonEvent: return Result<void>
 deactivate LolaSkeletonEvent
 
-SkeletonEvent --> SkeletonBase: return ResultBlank
+SkeletonEvent --> SkeletonBase: return Result<void>
 deactivate SkeletonEvent
 
 end loop
@@ -143,7 +143,7 @@ deactivate SkeletonEvent
 
 SkeletonBase -> ServiceDiscovery: OfferService(InstanceIdentifier)
 activate ServiceDiscovery
-ServiceDiscovery --> SkeletonBase: return ResultBlank
+ServiceDiscovery --> SkeletonBase: return Result<void>
 deactivate ServiceDiscovery
 
 SkeletonBase --> GenSkeleton

@@ -57,7 +57,7 @@ class GenericProxyEvent final : public GenericProxyEventBinding
 
     ~GenericProxyEvent() noexcept override = default;
 
-    ResultBlank Subscribe(const std::size_t max_sample_count) noexcept override;
+    Result<void> Subscribe(const std::size_t max_sample_count) noexcept override;
     void Unsubscribe() noexcept override;
 
     SubscriptionState GetSubscriptionState() const noexcept override;
@@ -66,8 +66,8 @@ class GenericProxyEvent final : public GenericProxyEventBinding
     std::size_t GetSampleSize() const noexcept override;
     bool HasSerializedFormat() const noexcept override;
 
-    ResultBlank SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override;
-    ResultBlank UnsetReceiveHandler() noexcept override;
+    Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override;
+    Result<void> UnsetReceiveHandler() noexcept override;
     pid_t GetEventSourcePid() const noexcept;
     ElementFqId GetElementFQId() const noexcept;
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;

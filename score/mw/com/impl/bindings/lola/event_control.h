@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -23,7 +24,7 @@ namespace score::mw::com::impl::lola
 class EventControl
 {
   public:
-    using SubscriberCountType = EventSubscriptionControl::SubscriberCountType;
+    using SubscriberCountType = EventSubscriptionControl<>::SubscriberCountType;
     EventControl(const SlotIndexType number_of_slots,
                  const SubscriberCountType max_subscribers,
                  const bool enforce_max_samples,
@@ -34,8 +35,12 @@ class EventControl
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
     EventDataControl data_control;
+
     // coverity[autosar_cpp14_m11_0_1_violation]
-    EventSubscriptionControl subscription_control;
+    EventSubscriptionControl<> subscription_control;
+
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    TransactionLogSet transaction_log_set_;
 };
 
 }  // namespace score::mw::com::impl::lola

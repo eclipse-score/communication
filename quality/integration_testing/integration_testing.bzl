@@ -11,11 +11,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
-load("@rules_python//python:defs.bzl", "py_test")
-load("@score_communication_pip//:requirements.bzl", "requirement")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@score_itf//:defs.bzl", "py_itf_test")
 load("@score_toolchains_qnx//rules/fs:ifs.bzl", "qnx_ifs")
-load("//quality/integration_testing/environments:run_as_exec.bzl", "test_as_exec")
 
 def _extend_list_in_kwargs(kwargs, key, values):
     kwargs[key] = kwargs.get(key, []) + values
@@ -30,10 +28,8 @@ def _extend_list_in_kwargs_without_duplicates(kwargs, key, values):
     return kwargs
 
 def integration_test(name, srcs, filesystem, **kwargs):
-    pytest_bootstrap = Label("//quality/integration_testing:main.py")
-    pytest_toml = Label("//quality/integration_testing:pytest.toml")
     image_name = "_image_{}".format(name)
-    image_tarball = "_image_{}_tarball".format(name)
+    image_loader = "_image_{}_loader".format(name)
     repo_tag = "{}:latest".format(name)
 
     LINUX_TARGET_COMPATIBLE_WITH = select({
@@ -65,8 +61,8 @@ def integration_test(name, srcs, filesystem, **kwargs):
         target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
     )
 
-    oci_tarball(
-        name = image_tarball,
+    oci_load(
+        name = image_loader,
         image = image_name,
         repo_tags = [repo_tag],
         target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
@@ -91,9 +87,11 @@ def integration_test(name, srcs, filesystem, **kwargs):
         target_compatible_with = QNX_TARGET_COMPATIBLE_WITH,
     )
 
+    qemu_config = Label("//quality/integration_testing/environments/qnx8_qemu:qemu_config")
+
     _extend_list_in_kwargs(kwargs, "data", select({
-        "//conditions:default": [image_tarball],
-        "@platforms//os:qnx": [qemu_image],
+        "//conditions:default": [image_loader],
+        "@platforms//os:qnx": [qemu_image, qemu_config],
     }))
     _extend_list_in_kwargs(
         kwargs,
@@ -101,19 +99,13 @@ def integration_test(name, srcs, filesystem, **kwargs):
         select({
             "//conditions:default": [
                 "--log-cli-level=DEBUG",
-                "--capture=tee-sys",
-                "--show-capture=all",
-                "--docker-image-bootstrap=$(location {})".format(image_tarball),
+                "--docker-image-bootstrap=$(location {})".format(image_loader),
                 "--docker-image={}".format(repo_tag),
-                "-p no:cacheprovider",
-                "-p quality.integration_testing.environments.ubuntu24_04_docker.docker",
             ],
             "@platforms//os:qnx": [
                 "--log-cli-level=DEBUG",
-                "--show-capture=all",
-                "--qemu_image=$(location {})".format(qemu_image),
-                "-p no:cacheprovider",
-                "-p quality.integration_testing.environments.qnx8_qemu.qemu",
+                "--qemu-config=$(location {})".format(qemu_config),
+                "--qemu-image=$(location {})".format(qemu_image),
             ],
         }),
     )
@@ -126,43 +118,6 @@ def integration_test(name, srcs, filesystem, **kwargs):
     if "timeout" not in kwargs:
         kwargs["timeout"] = "short"
 
-    _extend_list_in_kwargs(
-        kwargs,
-        "data",
-        [pytest_toml],
-    )
-
-    py_test(
-        name = "_test_internal_docker_{}".format(name),
-        srcs = [
-            pytest_bootstrap,
-        ] + srcs,
-        main = pytest_bootstrap,
-        env_inherit = ["DOCKER_HOST"],
-        deps = [
-            requirement("bazel-runfiles"),
-            requirement("pytest"),
-            "//quality/integration_testing/environments/ubuntu24_04_docker:docker",
-        ],
-        tags = ["manual"],
-        **kwargs
-    )
-
-    py_test(
-        name = "_test_internal_qemu_{}".format(name),
-        srcs = [
-            pytest_bootstrap,
-        ] + srcs,
-        main = pytest_bootstrap,
-        deps = [
-            requirement("bazel-runfiles"),
-            requirement("pytest"),
-            "//quality/integration_testing/environments/qnx8_qemu:qemu",
-        ],
-        tags = ["manual"],
-        **kwargs
-    )
-
     # FIXME: Integration tests are highly flaky with TSAN. (Ticket-249859)
     _extend_list_in_kwargs_without_duplicates(
         kwargs,
@@ -170,17 +125,17 @@ def integration_test(name, srcs, filesystem, **kwargs):
         ["//quality/sanitizer/constraints:no_tsan"],
     )
 
-    _extend_list_in_kwargs_without_duplicates(
-        kwargs,
-        "env_inherit",
-        ["DOCKER_HOST"],
-    )
-
-    test_as_exec(
+    py_itf_test(
         name = name,
-        executable = select({
-            "//conditions:default": "_test_internal_docker_{}".format(name),
-            "@platforms//os:qnx": "_test_internal_qemu_{}".format(name),
+        srcs = srcs,
+        plugins = select({
+            "//conditions:default": [
+                "@score_itf//score/itf/plugins:docker_plugin",
+            ],
+            "@platforms//os:qnx": [
+                "@score_itf//score/itf/plugins:qemu_plugin",
+            ],
         }),
+        env = {"DOCKER_HOST": ""},
         **kwargs
     )

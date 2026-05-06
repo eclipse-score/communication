@@ -32,13 +32,13 @@ class IProxyEventBase
     IProxyEventBase() = default;
     virtual ~IProxyEventBase() = default;
 
-    virtual ResultBlank Subscribe(const std::size_t) = 0;
+    virtual Result<void> Subscribe(const std::size_t) = 0;
     virtual void Unsubscribe() = 0;
     virtual SubscriptionState GetSubscriptionState() const = 0;
     virtual std::size_t GetFreeSampleCount() const = 0;
     virtual Result<std::size_t> GetNumNewSamplesAvailable() = 0;
-    virtual ResultBlank SetReceiveHandler(EventReceiveHandler) = 0;
-    virtual ResultBlank UnsetReceiveHandler() = 0;
+    virtual Result<void> SetReceiveHandler(EventReceiveHandler) = 0;
+    virtual Result<void> UnsetReceiveHandler() = 0;
 
   protected:
     IProxyEventBase(const IProxyEventBase&) = default;

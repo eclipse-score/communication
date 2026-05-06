@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/skeleton_base.h"
 
@@ -45,7 +46,8 @@ class ISkeletonMethodBindingFactory
     /// \return An instance of SkeletonMethodBinding or nullptr in case of an error.
     virtual auto Create(const InstanceIdentifier& instance_identifier,
                         SkeletonBinding* parent_binding,
-                        const std::string_view method_name) -> std::unique_ptr<SkeletonMethodBinding> = 0;
+                        const std::string_view method_name,
+                        MethodType method_type) -> std::unique_ptr<SkeletonMethodBinding> = 0;
 };
 
 }  // namespace score::mw::com::impl

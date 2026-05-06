@@ -91,7 +91,8 @@ TEST_F(SkeletonMethodFactoryFixture, CanConstructSkeletonMethod)
     InitialiseSkeleton(instance_identifier);
 
     // When creating a SkeletonMethod using MethodBindingFactory
-    auto skeleton_method = SkeletonMethodBindingFactory::Create(instance_identifier, skeleton_.get(), kDummyMethodName);
+    auto skeleton_method = SkeletonMethodBindingFactory::Create(
+        instance_identifier, skeleton_.get(), kDummyMethodName, MethodType::kMethod);
 
     // Then a valid binding can be created
     ASSERT_NE(skeleton_method, nullptr);
@@ -105,7 +106,8 @@ TEST_F(SkeletonMethodFactoryFixture, CannotCreateSkeletonServiceWhenSkeletonBind
     auto skeleton_base{nullptr};
 
     // When creating a SkeletonMethod using MethodBindingFactory
-    auto skeleton_method = SkeletonMethodBindingFactory::Create(instance_identifier, skeleton_base, kDummyMethodName);
+    auto skeleton_method =
+        SkeletonMethodBindingFactory::Create(instance_identifier, skeleton_base, kDummyMethodName, MethodType::kMethod);
 
     // Then a nullptr is returned
     ASSERT_EQ(skeleton_method, nullptr);
@@ -119,8 +121,8 @@ TEST_F(SkeletonMethodFactoryFixture, CannotConstructEventFromSomeIpBinding)
     auto skeleton_binding = GetBindingFromInstanceIdentifier(instance_identifier);
 
     // When creating a SkeletonMethod using MethodBindingFactory
-    auto skeleton_method =
-        SkeletonMethodBindingFactory::Create(instance_identifier, skeleton_binding, kDummyMethodName);
+    auto skeleton_method = SkeletonMethodBindingFactory::Create(
+        instance_identifier, skeleton_binding, kDummyMethodName, MethodType::kMethod);
 
     // Then a nullptr is returned
     EXPECT_EQ(skeleton_method, nullptr);
@@ -134,8 +136,8 @@ TEST_F(SkeletonMethodFactoryFixture, CannotConstructEventFromBlankBinding)
     auto skeleton_binding = GetBindingFromInstanceIdentifier(instance_identifier);
 
     // When creating a SkeletonMethod using MethodBindingFactory
-    auto skeleton_method =
-        SkeletonMethodBindingFactory::Create(instance_identifier, skeleton_binding, kDummyMethodName);
+    auto skeleton_method = SkeletonMethodBindingFactory::Create(
+        instance_identifier, skeleton_binding, kDummyMethodName, MethodType::kMethod);
 
     // Then a nullptr is returned
     EXPECT_EQ(skeleton_method, nullptr);

@@ -82,9 +82,9 @@ class SkeletonBinding
     ///  mechanism, it must call this callback for each shm-object it will use.
     ///
     /// \return expects void
-    virtual ResultBlank PrepareOffer(SkeletonEventBindings&,
-                                     SkeletonFieldBindings&,
-                                     std::optional<RegisterShmObjectTraceCallback>) = 0;
+    virtual Result<void> PrepareOffer(SkeletonEventBindings&,
+                                      SkeletonFieldBindings&,
+                                      std::optional<RegisterShmObjectTraceCallback>) = 0;
 
     /**
      * \brief In case there are any binding specifics with regards to service withdrawals, this can be implemented

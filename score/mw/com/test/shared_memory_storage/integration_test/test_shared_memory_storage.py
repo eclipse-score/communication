@@ -14,9 +14,14 @@
 """Integration test for shared_memory_storage."""
 
 
-def test_shared_memory_storage(sut):
+def shared_memory_storage(target, mode, **kwargs):
+    args = ["--mode", mode]
+    return target.wrap_exec(
+        "bin/shared_memory_storage", args, cwd="/opt/shared_memory_storage", wait_on_exit=True, **kwargs
+    )
+
+
+def test_shared_memory_storage(target):
     """Test shared memory storage functionality with sender and receiver."""
-    # Sender and receiver test memory storage mechanisms
-    with sut.start_process("./bin/shared_memory_storage -m send -t 40 -n 30", cwd="/opt/shared_memory_storage/") as sender:
-        with sut.start_process("./bin/shared_memory_storage -m recv -n 25", cwd="/opt/shared_memory_storage/") as receiver:
-            assert receiver.wait_for_exit() == 0
+    with shared_memory_storage(target, "send"), shared_memory_storage(target, "recv", wait_timeout=15):
+        pass

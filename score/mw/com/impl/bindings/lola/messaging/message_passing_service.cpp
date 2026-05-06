@@ -23,11 +23,7 @@
 #include "score/os/errno_logging.h"
 #include "score/result/result.h"
 
-#ifdef __QNX__
-#include "score/message_passing/qnx_dispatch/qnx_dispatch_engine.h"
-#else
-#include "score/message_passing/unix_domain/unix_domain_engine.h"
-#endif
+#include "score/message_passing/engine.h"
 
 #include <memory>
 #include <optional>
@@ -200,7 +196,7 @@ void MessagePassingService::UnregisterEventNotificationExistenceChangedCallback(
     instance.UnregisterEventNotificationExistenceChangedCallback(event_id);
 }
 
-ResultBlank MessagePassingService::SubscribeServiceMethod(
+Result<void> MessagePassingService::SubscribeServiceMethod(
     const QualityType asil_level,
     const SkeletonInstanceIdentifier& skeleton_instance_identifier,
     const ProxyInstanceIdentifier& proxy_instance_identifier,
@@ -211,10 +207,10 @@ ResultBlank MessagePassingService::SubscribeServiceMethod(
     return instance.SubscribeServiceMethod(skeleton_instance_identifier, proxy_instance_identifier, target_node_id);
 }
 
-ResultBlank MessagePassingService::CallMethod(const QualityType asil_level,
-                                              const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
-                                              std::size_t queue_position,
-                                              const pid_t target_node_id)
+Result<void> MessagePassingService::CallMethod(const QualityType asil_level,
+                                               const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+                                               std::size_t queue_position,
+                                               const pid_t target_node_id)
 {
     auto& instance = GetMessagePassingServiceInstance(asil_level);
 

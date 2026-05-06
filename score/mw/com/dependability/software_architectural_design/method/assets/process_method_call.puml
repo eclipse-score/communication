@@ -1,0 +1,39 @@
+@startuml
+
+autonumber "<b>[00]"
+skinparam stereotypePosition bottom
+
+participant "Message Passing" as MP
+participant "Skeleton::instance" as SKELETON
+participant "User Provided\nService Method\nImplementation" as SMI
+database "OS::RAMFS" as OSRAMFS_methods <<dev/shmem>>
+
+note over of SKELETON
+    Call in Context of Message Passing Thread
+end note
+
+activate MP
+MP -> SKELETON --: Notify(method-id, shmem-object, position)
+
+activate SKELETON
+opt if shm-object not mapped [lazy-opening]
+    SKELETON -> OSRAMFS_methods ++: open and mmap
+    OSRAMFS_methods --> SKELETON --
+end
+
+SKELETON -> SKELETON: translate shmem-object, position\nto (const InArgs&, OutArgs&)
+SKELETON -> SMI **: Call (const InArgs&, OutArgs&)
+
+activate SMI
+SMI -> OSRAMFS_methods ++: read InArgs& from shmem-object
+OSRAMFS_methods --> SMI --: &InArgs
+SMI -> SMI: calculate
+SMI -> OSRAMFS_methods ++: write OutArgs&
+OSRAMFS_methods --> SMI --
+
+SMI --> SKELETON --: score::result<blank>
+
+SKELETON --> MP --: Notify Finished
+activate MP
+
+@enduml

@@ -22,8 +22,48 @@ pkg_tar(
 )
 
 integration_test(
-    name = "provider_restart",
-    srcs = ["test_provider_restart.py"],
+    name = "provider_restart_graceful_no_proxy",
+    timeout = "moderate",
+    srcs = [
+        "provider_restart_test_fixture.py",
+        "test_provider_restart_graceful_no_proxy.py",
+    ],
+    filesystem = ":filesystem",
+    # Disabled for thread sanitizer because of detected race (Ticket-246892)
+    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
+)
+
+integration_test(
+    name = "provider_restart_graceful",
+    timeout = "moderate",
+    srcs = [
+        "provider_restart_test_fixture.py",
+        "test_provider_restart_graceful.py",
+    ],
+    filesystem = ":filesystem",
+    # Disabled for thread sanitizer because of detected race (Ticket-246892)
+    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
+)
+
+integration_test(
+    name = "provider_restart_kill_no_proxy",
+    timeout = "moderate",
+    srcs = [
+        "provider_restart_test_fixture.py",
+        "test_provider_restart_kill_no_proxy.py",
+    ],
+    filesystem = ":filesystem",
+    # Disabled for thread sanitizer because of detected race (Ticket-246892)
+    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
+)
+
+integration_test(
+    name = "provider_restart_kill",
+    timeout = "moderate",
+    srcs = [
+        "provider_restart_test_fixture.py",
+        "test_provider_restart_kill.py",
+    ],
     filesystem = ":filesystem",
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],

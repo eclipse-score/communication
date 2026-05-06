@@ -16,7 +16,7 @@ use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use crate::{
-    LolaConsumerInfo, LolaProviderInfo, Publisher, SampleConsumerDiscovery, SampleProducerBuilder,
+    LolaConsumerInfo, LolaProviderInfo, Publisher, LolaConsumerDiscovery, LolaProducerBuilder,
     SubscribableImpl,
 };
 use com_api_concept::{
@@ -26,9 +26,9 @@ use com_api_concept::{
 pub struct LolaRuntimeImpl {}
 
 impl Runtime for LolaRuntimeImpl {
-    type ServiceDiscovery<I: Interface + Send> = SampleConsumerDiscovery<I>;
+    type ServiceDiscovery<I: Interface + Send> = LolaConsumerDiscovery<I>;
     type Subscriber<T: CommData + Debug> = SubscribableImpl<T>;
-    type ProducerBuilder<I: Interface> = SampleProducerBuilder<I>;
+    type ProducerBuilder<I: Interface> = LolaProducerBuilder<I>;
     type Publisher<T: CommData + Debug> = Publisher<T>;
     type ProviderInfo = LolaProviderInfo;
     type ConsumerInfo = LolaConsumerInfo;
@@ -37,7 +37,7 @@ impl Runtime for LolaRuntimeImpl {
         &self,
         instance_specifier: FindServiceSpecifier,
     ) -> Self::ServiceDiscovery<I> {
-        SampleConsumerDiscovery {
+        LolaConsumerDiscovery {
             instance_specifier: match instance_specifier {
                 FindServiceSpecifier::Any => panic!(
                     "FindServiceSpecifier::Any is not supported in LolaRuntimeImpl,
@@ -53,7 +53,7 @@ impl Runtime for LolaRuntimeImpl {
         &self,
         instance_specifier: InstanceSpecifier,
     ) -> Self::ProducerBuilder<I> {
-        SampleProducerBuilder::new(self, instance_specifier)
+        LolaProducerBuilder::new(self, instance_specifier)
     }
 }
 

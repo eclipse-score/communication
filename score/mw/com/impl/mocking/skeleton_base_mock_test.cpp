@@ -44,14 +44,14 @@ TEST_F(SkeletonMockFixture, OfferServiceDispatchesToMockAfterInjectingMock)
     // SkeletonBaseMock
 
     // Expecting that OfferService will be called on the mock which returns a valid result
-    EXPECT_CALL(skeleton_mock_, OfferService()).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(skeleton_mock_, OfferService()).WillOnce(Return(Result<void>{}));
 
     // When OfferService is called on the SkeletonBase
     auto result = unit_.OfferService();
 
     // Then the result is valid
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result, ResultBlank{});
+    EXPECT_EQ(result, Result<void>{});
 }
 
 TEST_F(SkeletonMockFixture, OfferServiceReturnsErrorWhenMockReturnsError)

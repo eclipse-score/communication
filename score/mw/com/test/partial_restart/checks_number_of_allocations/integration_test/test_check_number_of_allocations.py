@@ -14,10 +14,14 @@
 """Integration test for checks_number_of_allocations."""
 
 
-def test_checks_number_of_allocations(sut):
+def check_number_of_allocations(target, **kwargs):
+    args = []
+    return target.wrap_exec(
+        "bin/check_number_of_allocations", args, cwd="/opt/check_number_of_allocations", wait_on_exit=True, **kwargs
+    )
+
+
+def test_check_no_of_allocations(target):
     """Test checks number of allocations functionality."""
-    with sut.start_process(
-        "./bin/check_number_of_allocations",
-        cwd="/opt/check_number_of_allocations",
-    ) as process:
-        assert process.wait_for_exit() == 0
+    with check_number_of_allocations(target):
+        pass

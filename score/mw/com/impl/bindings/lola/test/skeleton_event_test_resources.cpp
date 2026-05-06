@@ -30,13 +30,6 @@ using ::testing::ReturnRef;
 SkeletonEventFixture::SkeletonEventFixture() : SkeletonMockedMemoryFixture{}
 {
     ON_CALL(runtime_mock_, GetServiceDiscovery()).WillByDefault(ReturnRef(service_discovery_mock_));
-
-    InitialiseSkeleton(GetValidInstanceIdentifier());
-
-    SkeletonBinding::SkeletonEventBindings events{};
-    SkeletonBinding::SkeletonFieldBindings fields{};
-    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback{};
-    std::ignore = skeleton_->PrepareOffer(events, fields, std::move(register_shm_object_trace_callback));
 }
 
 void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_id,
@@ -46,6 +39,15 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
                                                    const bool enforce_max_samples,
                                                    impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data)
 {
+    // We defer initialisation of the Skeleton to InitialiseSkeletonEvent to allow test fixtures to set any mocked
+    // expectations before creating the skeleton.
+    InitialiseSkeleton(GetValidInstanceIdentifier());
+
+    SkeletonBinding::SkeletonEventBindings events{};
+    SkeletonBinding::SkeletonFieldBindings fields{};
+    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback{};
+    std::ignore = skeleton_->PrepareOffer(events, fields, std::move(register_shm_object_trace_callback));
+
     skeleton_event_ = std::make_unique<SkeletonEvent<test::TestSampleType>>(
         *skeleton_,
         element_fq_id,

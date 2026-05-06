@@ -74,7 +74,7 @@ class ProxyBaseFixture : public ::testing::Test
     {
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetServiceDiscovery())
             .WillByDefault(testing::ReturnRef(service_discovery_mock_));
-        ON_CALL(service_discovery_mock_, StopFindService(_)).WillByDefault(Return(ResultBlank{}));
+        ON_CALL(service_discovery_mock_, StopFindService(_)).WillByDefault(Return(Result<void>{}));
     }
 
     ProxyBaseFixture& WithAProxyBaseWithMockBinding(const HandleType& handle_type)
@@ -337,7 +337,7 @@ TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillDispatchToBinding)
 
     // Expecting that StopFindService is called on the Proxy binding with the handle provided to StopFindService
     const FindServiceHandle handle{make_FindServiceHandle(0)};
-    EXPECT_CALL(service_discovery_mock_, StopFindService(handle)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(service_discovery_mock_, StopFindService(handle)).WillOnce(Return(Result<void>{}));
 
     // When calling StartFindService
     score::cpp::ignore = ProxyBase::StopFindService(handle);
@@ -555,6 +555,19 @@ class MyProxy : public ProxyBase
     }
 };
 
+// Since ProxyMethodBase is an abstract class, we create a dummy ProxyMethod which has a dummy implementation of the
+// pure virtual method which is not required in these tests. We use this class instead of a real ProxyMethod since we
+// want to explicitly call RegisterMethod in the tests, and ProxyMethod already calls this on construction.
+class DummyProxyMethod : public ProxyMethodBase
+{
+  public:
+    using ProxyMethodBase::ProxyMethodBase;
+    Result<void> InitializeInArgsAndReturnValues() override
+    {
+        return {};
+    }
+};
+
 /// Note. Technically, these tests are testing internals of ProxyBase. While we generally strive to test only the public
 /// interface, we make an exception in this case since the reference updating of service elements is complex and can
 /// lead to dangling references if not done correctly, which can be hard to test using the public interface alone.
@@ -599,8 +612,8 @@ class ProxyBaseServiceElementReferencesFixture : public ::testing::Test
     ProxyFieldBase field_0_{proxy_, &field_event_dispatch_0_, field_name_0_};
     ProxyFieldBase field_1_{proxy_, &field_event_dispatch_1_, field_name_1_};
 
-    ProxyMethodBase method_0_{proxy_, std::make_unique<mock_binding::ProxyMethod>(), method_name_0_};
-    ProxyMethodBase method_1_{proxy_, std::make_unique<mock_binding::ProxyMethod>(), method_name_1_};
+    DummyProxyMethod method_0_{proxy_, std::make_unique<mock_binding::ProxyMethod>(), method_name_0_};
+    DummyProxyMethod method_1_{proxy_, std::make_unique<mock_binding::ProxyMethod>(), method_name_1_};
 };
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringServiceElementStoresReferenceInMap)
@@ -698,7 +711,7 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     ProxyEventBase field_event_dispatch{
         proxy_2, &proxy_binding_mock, std::make_unique<mock_binding::ProxyEventBase>(), other_field_name};
     ProxyFieldBase field{proxy_2, &field_event_dispatch, other_field_name};
-    ProxyMethodBase method{proxy_2, std::make_unique<mock_binding::ProxyMethod>(), other_method_name};
+    DummyProxyMethod method{proxy_2, std::make_unique<mock_binding::ProxyMethod>(), other_method_name};
     ProxyBaseView{proxy_2}.RegisterEvent(other_event_name, event);
     ProxyBaseView{proxy_2}.RegisterField(other_field_name, field);
     ProxyBaseView{proxy_2}.RegisterMethod(other_method_name, method);

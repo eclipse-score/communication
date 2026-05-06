@@ -16,6 +16,8 @@
 
 name: Bazel Build & Test communication module (target-platforms)
 on:
+  push:
+    branches: [main]
   pull_request_target:
     types: [opened, reopened, synchronize, labeled, unlabeled]
   merge_group:
@@ -30,11 +32,13 @@ on:
         required: true
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  group: build_and_test_qnx-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request_target'}}
 
 env:
   LICENSE_DIR: "/opt/score_qnx/license"
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
 jobs:
     precheck:
       runs-on: ubuntu-24.04
@@ -123,12 +127,13 @@ jobs:
           with:
             level: 4
         - name: Setup Bazel
-          uses: bazel-contrib/setup-bazel@0.18.0
+          uses: castler/setup-bazel@8818d35864b4088fb3a12e7a3191777dc418fd69
           with:
             bazelisk-cache: true
             disk-cache: build_and_test_qnx
+            disk-cache-key: "main"
             repository-cache: true
-            cache-save: ${{ github.event_name == 'merge_group' }}
+            cache-save: ${{ github.ref == 'refs/heads/main' }}
         - name: Allow linux-sandbox
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Setup QNX License
@@ -144,7 +149,7 @@ jobs:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           run: |
-            bazel build --config qnx_arm64 -- //score/... -//score/mw/com/requirements/... -//score/mw/com/performance_benchmarks/... -//docs/... -//score/mw/com/design/...
+            bazel build --config qnx_arm64 -- //score/... -//score/mw/com/dependability/... -//score/mw/com/performance_benchmarks/... -//docs/... -//score/mw/com/design/...
         - name: Cleanup QNX License
           if: ${{ !cancelled() }}
           run: sudo rm -rf ${{ env.LICENSE_DIR }}

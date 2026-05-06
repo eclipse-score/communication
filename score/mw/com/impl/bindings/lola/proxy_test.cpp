@@ -315,7 +315,43 @@ TEST_F(ProxyCreationDeathTest, GettingEventDataControlWithoutInitialisedEventDat
     // Then trying to get the event data control for an event that was not registered in the ServiceDataStorage
     // Will terminate
     const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
-    EXPECT_DEATH(proxy_->GetEventControl(uninitialised_element_fq_id), ".*");
+    EXPECT_DEATH(proxy_->GetConsumerEventDataControlLocalView(uninitialised_element_fq_id), ".*");
+}
+
+TEST_F(ProxyCreationFixture, ProxyCreationOpensSharedMemoryWithEmptyProvidersWhenStrictAndNoAllowedProviderConfigured)
+{
+    // Given a deployment with strict permission-checks but no allowedProvider configured
+    LolaServiceInstanceDeployment lola_service_instance_deployment{LolaServiceInstanceId{kLolaServiceInstanceId}};
+    lola_service_instance_deployment.strict_permissions_ = true;
+    // Note: allowed_provider_ is intentionally left empty to test that strict_permissions_ being true causes an empty
+    // provider list to be used when opening shared memory
+
+    const auto service_instance_deployment_strict =
+        ServiceInstanceDeployment{service, lola_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+    const auto identifier = make_InstanceIdentifier(service_instance_deployment_strict, kServiceTypeDeployment);
+
+    // Expecting that shared memory is opened with an empty (not nullopt) provider list,
+    // so that the factory rejects any provider, consistent with an explicit empty allowedProvider list
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Open(StartsWith(kShmControlPathPrefix), true, _))
+        .WillOnce(
+            WithArg<2>(Invoke([](const auto& provider_list) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                EXPECT_TRUE(provider_list.has_value());
+                EXPECT_TRUE(provider_list.value().empty());
+                return nullptr;
+            })));
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Open(StartsWith(kShmDataPathPrefix), false, _))
+        .WillOnce(
+            WithArg<2>(Invoke([](const auto& provider_list) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                EXPECT_TRUE(provider_list.has_value());
+                EXPECT_TRUE(provider_list.value().empty());
+                return nullptr;
+            })));
+
+    // When creating a proxy
+    InitialiseProxyWithCreate(identifier);
+
+    // Then no proxy is created (same behaviour as an explicit empty allowedProvider list with strict)
+    EXPECT_EQ(proxy_, nullptr);
 }
 
 TEST_F(ProxyCreationDeathTest, GettingRawDataStorageWithoutInitialisedEventDataStorageTerminates)
@@ -687,12 +723,14 @@ class ProxyTransactionLogRollbackFixture : public ProxyMockedMemoryFixture
     ProxyTransactionLogRollbackFixture() noexcept
     {
         InitialiseDummySkeletonEvent(kDummyElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
+        transaction_log_set_ = &event_control_->transaction_log_set_;
     }
 
     static constexpr std::uint32_t kDummyApplicationId{665U};
     TransactionLogId transaction_log_id_{kDummyApplicationId};
     const InstanceIdentifier instance_identifier_{
         make_InstanceIdentifier(kServiceInstanceDeployment, kServiceTypeDeployment)};
+    TransactionLogSet* transaction_log_set_{nullptr};
 
     const TransactionLog::MaxSampleCountType subscription_max_sample_count_{5U};
 };
@@ -702,9 +740,12 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeCalledOnExistingTransac
     // Given a fake Skeleton and SkeletonEvent which sets up an EventDataControl containing a TransactionLogSet
 
     // When inserting a TransactionLog into the created TransactionLogSet which contains valid transactions
-    InsertProxyTransactionLogWithValidTransactions(
-        *event_control_, subscription_max_sample_count_, transaction_log_id_);
-    EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*event_control_, transaction_log_id_));
+    InsertProxyTransactionLogWithValidTransactions(*consumer_event_data_control_local_,
+                                                   event_control_->subscription_control,
+                                                   event_control_->transaction_log_set_,
+                                                   subscription_max_sample_count_,
+                                                   transaction_log_id_);
+    EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 
     ON_CALL(binding_runtime_, GetApplicationId()).WillByDefault(Return(transaction_log_id_));
 
@@ -713,7 +754,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeCalledOnExistingTransac
     EXPECT_NE(proxy_, nullptr);
 
     // Then the TransactionLog should be rollbacked during construction and removed
-    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*event_control_, transaction_log_id_));
+    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 }
 
 TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeNotBeCalledOnNonExistingTransactionLogOnCreation)
@@ -721,7 +762,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeNotBeCalledOnNonExistin
     // Given a fake Skeleton and SkeletonEvent which sets up an EventDataControl containing a TransactionLogSet
 
     // When no TransactionLog exists in the created TransactionLogSet
-    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*event_control_, transaction_log_id_));
+    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 
     // Given a valid deployment information
 
@@ -730,7 +771,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeNotBeCalledOnNonExistin
     EXPECT_NE(proxy_, nullptr);
 
     // Then there should still be no transaction log and we shouldn't crash
-    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*event_control_, transaction_log_id_));
+    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 }
 
 TEST_F(ProxyTransactionLogRollbackFixture, FailureInRollingBackExistingTransactionLogWillReturnEmptyProxyBinding)
@@ -745,9 +786,12 @@ TEST_F(ProxyTransactionLogRollbackFixture, FailureInRollingBackExistingTransacti
     // Given a fake Skeleton and SkeletonEvent which sets up an EventDataControl containing a TransactionLogSet
 
     // When inserting a TransactionLog into the created TransactionLogSet which contains invalid transactions
-    InsertProxyTransactionLogWithInvalidTransactions(
-        *event_control_, subscription_max_sample_count_, transaction_log_id_);
-    EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*event_control_, transaction_log_id_));
+    InsertProxyTransactionLogWithInvalidTransactions(*consumer_event_data_control_local_,
+                                                     event_control_->subscription_control,
+                                                     event_control_->transaction_log_set_,
+                                                     subscription_max_sample_count_,
+                                                     transaction_log_id_);
+    EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 
     EXPECT_CALL(binding_runtime_, GetApplicationId()).WillOnce(Return(transaction_log_id_));
 

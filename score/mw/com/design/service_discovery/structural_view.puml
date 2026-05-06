@@ -57,7 +57,7 @@ interface "score::mw::com::impl::IServiceDiscovery" as IServiceDiscovery {
   + StartFindService(FindServiceHandler, const InstanceSpecifier): FindServiceHandle
   + StartFindService(FindServiceHandler, InstanceIdentifier): FindServiceHandle>
   + StartFindService(FindServiceHandler, EnrichedInstanceIdentifier): FindServiceHandle
-  + StopFindService(const FindServiceHandle): ResultBlank
+  + StopFindService(const FindServiceHandle): Result<void>
 }
 
 class "os::IONotify" as IONotify {

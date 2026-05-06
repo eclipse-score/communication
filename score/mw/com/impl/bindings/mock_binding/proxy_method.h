@@ -27,9 +27,9 @@ class ProxyMethod : public ProxyMethodBinding
   public:
     ~ProxyMethod() override = default;
 
-    MOCK_METHOD(score::Result<score::cpp::span<std::byte>>, AllocateInArgs, (std::size_t), (override));
-    MOCK_METHOD(score::Result<score::cpp::span<std::byte>>, AllocateReturnType, (std::size_t), (override));
-    MOCK_METHOD(ResultBlank, DoCall, (std::size_t), (override));
+    MOCK_METHOD(score::Result<score::cpp::span<std::byte>>, GetInArgsBuffer, (std::size_t), (override));
+    MOCK_METHOD(score::Result<score::cpp::span<std::byte>>, GetReturnValueBuffer, (std::size_t), (override));
+    MOCK_METHOD(Result<void>, DoCall, (std::size_t), (override));
 };
 
 class ProxyMethodFacade : public ProxyMethodBinding
@@ -38,17 +38,17 @@ class ProxyMethodFacade : public ProxyMethodBinding
     ProxyMethodFacade(ProxyMethod& proxy_method) : ProxyMethodBinding{}, proxy_method_{proxy_method} {}
     ~ProxyMethodFacade() override = default;
 
-    score::Result<score::cpp::span<std::byte>> AllocateInArgs(std::size_t queue_position) override
+    score::Result<score::cpp::span<std::byte>> GetInArgsBuffer(std::size_t queue_position) override
     {
-        return proxy_method_.AllocateInArgs(queue_position);
+        return proxy_method_.GetInArgsBuffer(queue_position);
     }
 
-    score::Result<score::cpp::span<std::byte>> AllocateReturnType(std::size_t queue_position) override
+    score::Result<score::cpp::span<std::byte>> GetReturnValueBuffer(std::size_t queue_position) override
     {
-        return proxy_method_.AllocateReturnType(queue_position);
+        return proxy_method_.GetReturnValueBuffer(queue_position);
     }
 
-    score::ResultBlank DoCall(std::size_t queue_position) override
+    score::Result<void> DoCall(std::size_t queue_position) override
     {
         return proxy_method_.DoCall(queue_position);
     }

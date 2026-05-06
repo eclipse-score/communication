@@ -64,10 +64,10 @@ Result<FindServiceHandle> StartFindService(const std::string_view message_prefix
 }
 
 template <typename ProxyEventInterface>
-ResultBlank SubscribeProxyEvent(const std::string_view message_prefix,
-                                ProxyEventInterface& proxy_event,
-                                std::size_t max_sample_count,
-                                CheckPointControl& check_point_control)
+Result<void> SubscribeProxyEvent(const std::string_view message_prefix,
+                                 ProxyEventInterface& proxy_event,
+                                 std::size_t max_sample_count,
+                                 CheckPointControl& check_point_control)
 {
     const auto subscribe_result = proxy_event.Subscribe(max_sample_count);
     if (!(subscribe_result.has_value()))
@@ -81,10 +81,10 @@ ResultBlank SubscribeProxyEvent(const std::string_view message_prefix,
 }
 
 template <typename ProxyEventInterface>
-ResultBlank SetBasicNotifierReceiveHandler(const std::string_view message_prefix,
-                                           ProxyEventInterface& proxy_event,
-                                           concurrency::Notification& event_received,
-                                           CheckPointControl& check_point_control)
+Result<void> SetBasicNotifierReceiveHandler(const std::string_view message_prefix,
+                                            ProxyEventInterface& proxy_event,
+                                            concurrency::Notification& event_received,
+                                            CheckPointControl& check_point_control)
 {
     const auto set_receive_handler_result = proxy_event.SetReceiveHandler([&event_received, message_prefix] {
         std::cerr << message_prefix << ": Event receive handler called" << std::endl;

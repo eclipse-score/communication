@@ -18,15 +18,14 @@
 
 #include "score/language/safecpp/scoped_function/move_only_scoped_function.h"
 #include "score/language/safecpp/scoped_function/scope.h"
-#include "score/utils/src/scoped_operation.h"
+#include "score/scope_exit/scope_exit.h"
 
 namespace score::mw::com::impl::lola
 {
 
 class IMessagePassingService;
 
-using MethodSubscriptionRegistrationGuard =
-    std::unique_ptr<utils::ScopedOperation<safecpp::MoveOnlyScopedFunction<void()>>>;
+using MethodSubscriptionRegistrationGuard = utils::ScopeExit<safecpp::MoveOnlyScopedFunction<void()>>;
 
 /// \brief RAII class which will call UnregisterOnServiceMethodSubscribedHandler on destruction.
 ///

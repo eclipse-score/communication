@@ -41,7 +41,7 @@ cc_binary(
         "//score/mw/com",
         "@google_benchmark//:benchmark_main",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -60,7 +60,7 @@ cc_binary(
         "//score/mw/com",
         "@google_benchmark//:benchmark_main",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -81,6 +81,6 @@ cc_binary(
         "//score/mw/com",
         "@google_benchmark//:benchmark_main",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )

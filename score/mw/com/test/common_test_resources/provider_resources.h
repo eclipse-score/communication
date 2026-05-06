@@ -56,9 +56,9 @@ Result<SkeletonInterface> CreateSkeleton(const std::string_view message_prefix,
 }
 
 template <typename SkeletonInterface>
-ResultBlank OfferService(const std::string_view message_prefix,
-                         SkeletonInterface& skeleton,
-                         CheckPointControl& check_point_control) noexcept
+Result<void> OfferService(const std::string_view message_prefix,
+                          SkeletonInterface& skeleton,
+                          CheckPointControl& check_point_control) noexcept
 {
     const auto offer_service_result = skeleton.OfferService();
     std::cerr << message_prefix << ": After Skeleton Offered." << std::endl;

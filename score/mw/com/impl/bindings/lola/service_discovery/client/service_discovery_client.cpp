@@ -143,7 +143,7 @@ ServiceDiscoveryClient::~ServiceDiscoveryClient() noexcept
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_identifier) noexcept -> ResultBlank
+auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_identifier) noexcept -> Result<void>
 {
     const EnrichedInstanceIdentifier enriched_instance_identifier{instance_identifier};
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
@@ -223,7 +223,7 @@ auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_iden
 
 auto ServiceDiscoveryClient::StopOfferService(
     const InstanceIdentifier instance_identifier,
-    const IServiceDiscovery::QualityTypeSelector quality_type_selector) noexcept -> ResultBlank
+    const IServiceDiscovery::QualityTypeSelector quality_type_selector) noexcept -> Result<void>
 {
     const EnrichedInstanceIdentifier enriched_instance_identifier{instance_identifier};
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
@@ -263,7 +263,7 @@ auto ServiceDiscoveryClient::StopOfferService(
     return {};
 }
 
-auto ServiceDiscoveryClient::StopFindService(const FindServiceHandle find_service_handle) noexcept -> ResultBlank
+auto ServiceDiscoveryClient::StopFindService(const FindServiceHandle find_service_handle) noexcept -> Result<void>
 {
     {
         // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced
@@ -701,7 +701,7 @@ auto ServiceDiscoveryClient::UnlinkWatchWithSearchRequest(
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank ServiceDiscoveryClient::StartFindService(
+Result<void> ServiceDiscoveryClient::StartFindService(
     const FindServiceHandle find_service_handle,
     FindServiceHandler<HandleType> handler,
     const EnrichedInstanceIdentifier enriched_instance_identifier) noexcept

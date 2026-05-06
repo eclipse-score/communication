@@ -339,7 +339,10 @@ unsafe fn native_get_new_samples<T: EventOps>(
 ///
 /// This function must be called with a pointer to a valid event of the type `T`. The event behind
 /// the pointer must not have been deleted already.
-unsafe fn native_set_receive_handler<T: EventOps, F>(native: *mut NativeProxyEvent<T>, handler: F) -> bool
+unsafe fn native_set_receive_handler<T: EventOps, F>(
+    native: *mut NativeProxyEvent<T>,
+    handler: F,
+) -> bool
 where
     F: FnMut() + Send + 'static,
 {
@@ -349,9 +352,7 @@ where
     // SAFETY: Since the pointer is unmodified from what we get from C++ and the FFI function
     // calls SetReceiveHandler on the event with the provided data, there is no undefined
     // behavior.
-    unsafe {
-        ffi::mw_com_impl_proxy_event_set_receive_handler(&mut (*native).base, &fat_ptr)
-    }
+    unsafe { ffi::mw_com_impl_proxy_event_set_receive_handler(&mut (*native).base, &fat_ptr) }
 }
 
 /// Unset the receive handler, if any is set.
@@ -363,9 +364,7 @@ where
 unsafe fn native_unset_receive_handler<T>(native: *mut NativeProxyEvent<T>) -> bool {
     // SAFETY: Since the pointer is unmodified from what we get from C++ and the FFI function
     // calls UnsetReceiveHandler on the event, there is no undefined behavior expected.
-    unsafe {
-        ffi::mw_com_impl_proxy_event_unset_receive_handler(&mut (*native).base)
-    }
+    unsafe { ffi::mw_com_impl_proxy_event_unset_receive_handler(&mut (*native).base) }
 }
 
 /// This struct represents a proxy event that can be used to subscribe to events and receive data.
@@ -551,9 +550,7 @@ impl<T: EventOps, P: Clone> SubscribedProxyEvent<T, P> {
         // SAFETY: This call is safe since the pointer is unmodified from what we get from C++.
         // Since this is the same pointer that we received during initialization (which is, by its
         // signature) of the same type, we're allowed to use it here safely.
-        unsafe {
-            native_unset_receive_handler(self.native)
-        }
+        unsafe { native_unset_receive_handler(self.native) }
     }
 
     pub fn as_stream(&mut self) -> Result<ProxyEventStream<'_, T, P>, &'static str> {
@@ -863,7 +860,7 @@ pub fn initialize(manifest_location: Option<&Path>) {
 
     let mut options = vec![CString::new(b"executable").unwrap()];
     if let Some(manifest_location) = manifest_location {
-        options.push(CString::new(b"-service_instance_manifest").unwrap());
+        options.push(CString::new(b"--service_instance_manifest").unwrap());
         options.push(CString::new(manifest_location.to_string_lossy().as_ref()).unwrap());
     }
 

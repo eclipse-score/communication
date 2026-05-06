@@ -39,6 +39,20 @@ class ProxyFieldBindingFactory final
         return instance().CreateEventBinding(parent, field_name);
     }
 
+    /// \brief See documentation in IProxyFieldBindingFactory.
+    static std::unique_ptr<ProxyMethodBinding> CreateGetMethodBinding(ProxyBase& parent,
+                                                                      std::string_view field_name) noexcept
+    {
+        return instance().CreateGetMethodBinding(parent, field_name);
+    }
+
+    /// \brief See documentation in IProxyFieldBindingFactory.
+    static std::unique_ptr<ProxyMethodBinding> CreateSetMethodBinding(ProxyBase& parent,
+                                                                      std::string_view field_name) noexcept
+    {
+        return instance().CreateSetMethodBinding(parent, field_name);
+    }
+
     /// \brief Inject a mock IProxyFieldBindingFactory. If a mock is injected, then all calls on
     /// ProxyFieldBindingFactory will be dispatched to the mock.
     static void InjectMockBinding(IProxyFieldBindingFactory<SampleType>* const mock) noexcept

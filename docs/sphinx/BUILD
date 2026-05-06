@@ -11,48 +11,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_python//python:defs.bzl", "py_binary")
-load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
+load(
+    "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "filter_execpath",
+    "sphinx_module",
+)
 load("//docs/sphinx/utils:defs.bzl", "generate_api_rst")
-
-# Create the sphinx-build binary with required dependencies
-# This wrapper approach is used for older environments (e.g. Sphinx <=7.2.* and rules_python 1.2)
-py_binary(
-    name = "sphinx-build-wrapper",
-    srcs = ["//docs/sphinx/utils:sphinx_build_wrapper"],
-    main = "sphinx_build_wrapper.py",
-    deps = [
-        "//third_party/breathe",
-        "//third_party/myst_parser",
-        "//third_party/pydata_sphinx_theme",
-        "//third_party/sphinx",
-        "//third_party/sphinx_rtd_theme",
-    ],
-)
-
-# Native sphinx_build_binary for newer environments (e.g. Sphinx 9.*, rules_python 1.5)
-sphinx_build_binary(
-    name = "sphinx-build-native",
-    deps = [
-        "//third_party/breathe",
-        "//third_party/myst_parser",
-        "//third_party/pydata_sphinx_theme",
-        "//third_party/sphinx",
-        "//third_party/sphinx_rtd_theme",
-    ],
-)
-
-# Alias to select  appropriate sphinx-build implementation based on feature flag
-# Default: uses wrapper approach for compatibility with older environment
-# Use --//path/to/sphinx/utils:use_native_sphinx_build for native binary
-alias(
-    name = "sphinx-build",
-    actual = select({
-        "//docs/sphinx/utils:use_native": ":sphinx-build-native",
-        "//docs/sphinx/utils:use_wrapper": ":sphinx-build-wrapper",
-    }),
-)
 
 # Capture the Doxygen XML output for Breathe
 sphinx_docs_library(
@@ -74,22 +39,39 @@ generate_api_rst(
     project_name = "mw::com",
 )
 
+filter_execpath(
+    name = "breathe_doxygen_xml",
+    filter_pattern = "doxygen_build/xml",
+    flag = "-Dbreathe_projects.doxygen_build",
+    target = "//docs/sphinx:doxygen_xml",
+)
+
 # Build Sphinx documentation
-sphinx_docs(
-    name = "docs",
-    srcs = [
-        "how_to_document.rst",
-        "index.rst",
-        "introduction.rst",
-        "message_passing.rst",
-        ":generate_api_rst",
-        ":static_assets",
-    ],
-    config = "conf.py",
-    formats = ["html"],
-    sphinx = ":sphinx-build",
-    deps = [
-        ":doxygen_xml",
+sphinx_module(
+    name = "sphinx_doc",
+    srcs =
+        [
+            "how_to_document.rst",
+            "index.rst",
+            "introduction.rst",
+            "message_passing.rst",
+            "safety_reports.rst",
+            ":doxygen_xml",
+            ":generate_api_rst",
+            ":static_assets",
+        ],
+    docs_library_deps = [
         "//score/mw/com:readme_md",
+    ],
+    extra_opts = [
+        "-Dbreathe_default_project=doxygen_build",
+    ],
+    extra_opts_targets = [
+        # Pass location of Doxygen XML output to Breathe via -D option
+        ":breathe_doxygen_xml",
+    ],
+    index = "index.rst",
+    visibility = ["//visibility:public"],
+    deps = [
     ],
 )

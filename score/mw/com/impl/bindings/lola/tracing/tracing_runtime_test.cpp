@@ -773,7 +773,7 @@ TEST_F(RegisterWithGenericTraceApiFixture, Registration_OK)
     // and expect, that it calls then RegisterTraceDoneCB at the GenericTraceAPI with the trace client id, which has
     // been returned by the RegisterClient call
     EXPECT_CALL(*generic_trace_api_mock_.get(), RegisterTraceDoneCB(trace_client_id_, _))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
 
     // expect the UuT to return true, when we call RegisterWithGenericTraceApi on it
     EXPECT_TRUE(tracing_runtime_.RegisterWithGenericTraceApi());
@@ -826,7 +826,7 @@ class TraceDoneCallbackFixture : public RegisterWithGenericTraceApiFixture
                 Invoke([this](auto trace_done_callback) -> analysis::tracing::RegisterTraceDoneCallBackResult {
                     trace_done_callback_ = std::move(trace_done_callback);
                     static_cast<void>(trace_done_callback);
-                    return score::ResultBlank{};
+                    return score::Result<void>{};
                 })));
     }
 
@@ -1035,13 +1035,13 @@ TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementFixture,
         major_version_number_,
         minor_version_number_,
         static_cast<ServiceInstanceElement::InstanceIdType>(instance_id_),
-        static_cast<ServiceInstanceElement::EventIdType>(event_id_)};
+        ServiceInstanceElement::StdVariantType{ServiceInstanceElement::EventId{event_id_}}};
     const ServiceInstanceElement expected_service_instance_element_field{
         static_cast<ServiceInstanceElement::ServiceIdType>(service_id_),
         major_version_number_,
         minor_version_number_,
         static_cast<ServiceInstanceElement::InstanceIdType>(instance_id_),
-        static_cast<ServiceInstanceElement::FieldIdType>(field_id_)};
+        ServiceInstanceElement::StdVariantType{ServiceInstanceElement::FieldId{field_id_}}};
 
     // Given a TracingRuntimeObject with a provided configuration object
     TracingRuntime tracing_runtime{kNumberOfTotalConfiguredTracingSlots, configuration};

@@ -33,7 +33,7 @@ namespace score::mw::com::impl::lola
 {
 
 ProxyMethod::ProxyMethod(Proxy& proxy,
-                         const ElementFqId element_fq_id,
+                         ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
                          const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info)
     : ProxyMethodBinding{},
       asil_level_{proxy.GetQualityType()},
@@ -41,14 +41,14 @@ ProxyMethod::ProxyMethod(Proxy& proxy,
       type_erased_element_info_{type_erased_element_info},
       in_args_storage_{},
       return_storage_{},
-      proxy_method_instance_identifier_{proxy.GetProxyInstanceIdentifier(), element_fq_id.element_id_},
+      proxy_method_instance_identifier_{proxy_method_instance_identifier},
       is_subscribed_{false},
       proxy_{proxy}
 {
-    proxy.RegisterMethod(element_fq_id.element_id_, *this);
+    proxy.RegisterMethod(proxy_method_instance_identifier_.unique_method_identifier, *this);
 }
 
-score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateInArgs(std::size_t queue_position)
+score::Result<score::cpp::span<std::byte>> ProxyMethod::GetInArgsBuffer(std::size_t queue_position)
 {
     if (!is_subscribed_)
     {
@@ -65,7 +65,7 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateInArgs(std::size
     return GetInArgValuesElementStorage(queue_position, in_args_storage_.value(), type_erased_element_info_);
 }
 
-score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateReturnType(std::size_t queue_position)
+score::Result<score::cpp::span<std::byte>> ProxyMethod::GetReturnValueBuffer(std::size_t queue_position)
 {
     if (!is_subscribed_)
     {
@@ -83,7 +83,7 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateReturnType(std::
     return GetReturnValueElementStorage(queue_position, return_storage_.value(), type_erased_element_info_);
 }
 
-score::ResultBlank ProxyMethod::DoCall(std::size_t queue_position)
+score::Result<void> ProxyMethod::DoCall(std::size_t queue_position)
 {
     if (!is_subscribed_)
     {

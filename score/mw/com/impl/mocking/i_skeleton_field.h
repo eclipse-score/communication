@@ -29,8 +29,8 @@ class ISkeletonField
     ISkeletonField() = default;
     virtual ~ISkeletonField() = default;
 
-    virtual ResultBlank Update(const SampleType&) = 0;
-    virtual ResultBlank Update(SampleAllocateePtr<SampleType>) = 0;
+    virtual Result<void> Update(const SampleType&) = 0;
+    virtual Result<void> Update(SampleAllocateePtr<SampleType>) = 0;
     virtual Result<SampleAllocateePtr<SampleType>> Allocate() = 0;
 
   protected:

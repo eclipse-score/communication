@@ -1,0 +1,25 @@
+' *******************************************************************************
+' Copyright (c) {year} Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+
+$TopEvent("Failure freeing resources on destruction", "Communication.MethodSignatureElementPtrFailsToFree")
+
+$OrGate("Gate1", "TopEvent")
+$BasicEvent("Does not free method signature element", "Event1", "Gate1")
+$IntermediateEvent("Frees wrong method signature element", "Event2", "Gate1")
+$BasicEvent("Overwrite of element in use", "Communication.ChangingStateFails", "Event2")
+
+@enduml

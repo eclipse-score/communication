@@ -28,7 +28,7 @@ cc_binary(
         "//score/mw/com",
         "@boost.interprocess",
         "@boost.program_options",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

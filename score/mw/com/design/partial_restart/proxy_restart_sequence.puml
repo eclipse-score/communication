@@ -59,7 +59,7 @@ group Restart Detection && Recovery
         TransactionLogSet -[#white]> TransactionLogSet
         activate TransactionLogSet
         RollbackExecutor -> TransactionLogSet: RollbackProxyTransactions()
-        RollbackExecutor <-- TransactionLogSet: return ResultBlank
+        RollbackExecutor <-- TransactionLogSet: return Result<void>
         deactivate TransactionLogSet
 
         opt if transaction log rollback failed

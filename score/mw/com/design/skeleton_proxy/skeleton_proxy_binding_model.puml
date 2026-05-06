@@ -23,7 +23,7 @@ abstract class "SkeletonBinding" {
   using SkeletonEventBindings = std::unordered_map<std::string_view, SkeletonEventBindingBase&>
   using SkeletonFieldBindings = std::unordered_map<std::string_view, std::tuple<SkeletonEventBindingBase&, SkeletonServiceMethodBinding, SkeletonServiceMethodBinding>>
 
-  +{abstract} PrepareOffer(SkeletonEventBindings&, SkeletonFieldBindings&) = 0: ResultBlank
+  +{abstract} PrepareOffer(SkeletonEventBindings&, SkeletonFieldBindings&) = 0: Result<void>
   +{abstract} PrepareStopOffer() = 0: void
   --
   Notes:
@@ -32,7 +32,7 @@ abstract class "SkeletonBinding" {
 
 class "lola::Skeleton" as LolaSkeleton {
   Skeleton(InstanceIdentifier, SkeletonEvents&
-  +PrepareOffer(SkeletonBinding::SkeletonEventBindings&, SkeletonBinding::SkeletonFieldBindings&): ResultBlank
+  +PrepareOffer(SkeletonBinding::SkeletonEventBindings&, SkeletonBinding::SkeletonFieldBindings&): Result<void>
   +PrepareStopOffer(): void
 
   +template <typename SampleType>\n Register(ElementFqId, size_t num_slots): std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>>
@@ -73,7 +73,7 @@ class "score::mw::com::impl::SkeletonEventBase" as ScoreMwComImplSkeletonEventBa
   - binding_: std::unique_ptr<SkeletonEventBindingBase>
   --
   +SkeletonEventBase(std::unique_ptr<SkeletonEventBindingBase> binding)
-  +PrepareOffer(): score::ResultBlank
+  +PrepareOffer(): score::Result<void>
   +PrepareStopOffer(): void
   +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
   --
@@ -90,7 +90,7 @@ class "score::mw::com::impl::SkeletonEventBase" as ScoreMwComImplSkeletonEventBa
 
 class "score::mw::com::impl::SkeletonFieldBase" as ScoreMwComImplSkeletonFieldBase {
   +SkeletonFieldBase(SkeletonBase&, std::string_view field_name, std::unique_ptr<impl::SkeletonEventBase>)
-  +PrepareOffer(): ResultBlank
+  +PrepareOffer(): Result<void>
   +PrepareStopOffer(): void
   +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
   --
@@ -100,7 +100,7 @@ class "score::mw::com::impl::SkeletonFieldBase" as ScoreMwComImplSkeletonFieldBa
   #was_prepare_offer_called_ : bool
   --
   +{abstract} IsInitialValueSaved(): bool = 0
-  +{abstract} DoDeferredUpdate(): ResultBlank = 0
+  +{abstract} DoDeferredUpdate(): Result<void> = 0
   -is_initial_value_set_: bool
   --
   In production, the constructor receives a SkeletonEvent<SampleType> from
@@ -111,7 +111,7 @@ class "score::mw::com::impl::SkeletonFieldBase" as ScoreMwComImplSkeletonFieldBa
 }
 
 abstract class "SkeletonEventBindingBase" as SkeletonEventBindingBase {
-  +{abstract} PrepareOffer() = 0: score::ResultBlank
+  +{abstract} PrepareOffer() = 0: score::Result<void>
   +{abstract} PrepareStopOffer() = 0: void
   +{abstract} GetMaxSize() = 0: std::size_t
 }
@@ -137,7 +137,7 @@ class "lola::SkeletonEvent<SampleType>" as LolaSkeletonEventTemplate {
   +Send(SampleType const&): void
   +Send(SampleAllocateePtr<SampleType>): void
   +Allocate(): SampleAllocateePtr<SampleType>
-  +PrepareOffer(): score::ResultBlank
+  +PrepareOffer(): score::Result<void>
   +PrepareStopOffer(): void
 }
 
@@ -147,14 +147,14 @@ class "SkeletonEventBindingFactory<SampleType>" as SkeletonEventBindingFactoryTe
 
 class "score::mw::com::impl::SkeletonField<SampleType>" as ScoreMwComImplSkeletonFieldTemplate {
   +SkeletonField(SkeletonBase& parent, std::string field_name)
-  +Update(const SampleType& data): ResultBlank
-  +Update(SampleAllocateePtr<SampleType>): ResultBlank
+  +Update(const SampleType& data): Result<void>
+  +Update(SampleAllocateePtr<SampleType>): Result<void>
   +Allocate(): SampleAllocateePtr<SampleType>
   +RegisterGetHandler(std::function<Future<SampleType>()> getHandler): Result<void>
   +RegisterSetHandler(std::function<Future<SampleType>(const SampleType& data)> setHandler):Result<void>
   --
   -IsInitialValueSaved(): bool
-  -DoDeferredUpdate(): ResultBlank
+  -DoDeferredUpdate(): Result<void>
   -skeleton_service_method_dispatch_get_: SkeletonServiceMethod<Future<SampleType>, void>
   -skeleton_service_method_dispatch_set_: SkeletonServiceMethod <void, SampleType>
   --
@@ -200,7 +200,7 @@ abstract class "score::mw::com::impl::ProxyBase" as ScoreMwComImplProxyBase {
   +{static} FindService(InstanceIdentifier): Result<ServiceHandleContainer<HandleType>>
   +{static} StartFindService(FindServiceHandler<HandleType>, InstanceSpecifier): Result<FindServiceHandle>
   +{static} StartFindService(FindServiceHandler<HandleType>, InstanceIdentifier): Result<FindServiceHandle>
-  +{static} StopFindService(FindServiceHandle): ResultBlank
+  +{static} StopFindService(FindServiceHandle): Result<void>
 
   +GetHandle() : const HandleType&
   --
@@ -237,13 +237,13 @@ class "lola::Proxy" as LolaProxy {
 class "score::mw::com::impl::ProxyEventBase" as ScoreMwComImplProxyEventBase {
   +ProxyEventBase(std::unique_ptr<ProxyEventBindingBase> proxy_event_binding)
 
-  +Subscribe(size_t max_sample_count): ResultBlank
+  +Subscribe(size_t max_sample_count): Result<void>
   +GetSubscriptionState() : SubscriptionState
   +Unsubscribe(): void
   +GetFreeSampleCount(): Result<size_t>
   +GetNumNewSamplesAvailable(): Result<std::size_t>
-  +SetReceiveHandler(EventReceiveHandler handler) : ResultBlank
-  +UnsetReceiveHandler() : ResultBlank
+  +SetReceiveHandler(EventReceiveHandler handler) : Result<void>
+  +UnsetReceiveHandler() : Result<void>
   +IsBindingValid() : bool
 }
 
@@ -315,13 +315,13 @@ class "lola::SubscriptionStateMachine" as LolaSubscriptionStateMachine {
 }
 
 class "mw::com::impl::ProxyField<SampleType>" as MwComImplProxyFieldTemplate {
-  +Subscribe(size_t max_sample_count): ResultBlank
+  +Subscribe(size_t max_sample_count): Result<void>
   +GetSubscriptionState() : SubscriptionState
   +Unsubscribe(): void
   +GetFreeSampleCount(): Result<size_t>
   +GetNumNewSamplesAvailable(): Result<std::size_t>
-  +SetReceiveHandler(EventReceiveHandler handler) : ResultBlank
-  +UnsetReceiveHandler() : ResultBlank
+  +SetReceiveHandler(EventReceiveHandler handler) : Result<void>
+  +UnsetReceiveHandler() : Result<void>
   +template <typename F>\n GetNewSamples(F&& receiver, size_t max_num_samples): Result<size_t>
   +Get(): Future<SampleType>
   +Set(const SampleType& value): Future<SampleType>

@@ -22,7 +22,6 @@ unsafe extern "C" {
     safe fn ffi_get_sample_ptr_variant_u8_size() -> SizeInfo;
     safe fn ffi_get_sample_ptr_variant_u64_size() -> SizeInfo;
     safe fn ffi_get_sample_ptr_variant_user_defined_type_size() -> SizeInfo;
-    safe fn ffi_get_control_slot_indicator_size() -> SizeInfo;
     safe fn ffi_get_slot_decrementer_size() -> SizeInfo;
     safe fn ffi_get_sample_ptr_size() -> SizeInfo;
     safe fn ffi_get_mock_binding_sample_ptr_size() -> SizeInfo;
@@ -34,7 +33,6 @@ unsafe extern "C" {
     safe fn ffi_get_sample_allocatee_variant_ptr_u8_size() -> SizeInfo;
     safe fn ffi_get_sample_allocatee_variant_ptr_u64_size() -> SizeInfo;
     safe fn ffi_get_sample_allocatee_variant_ptr_user_defined_type_size() -> SizeInfo;
-    safe fn ffi_get_control_slot_composite_indicator_size() -> SizeInfo;
     safe fn ffi_get_event_data_control_composite_size() -> SizeInfo;
     safe fn ffi_get_std_unique_ptr_size() -> SizeInfo;
     safe fn ffi_get_sample_allocatee_ptr_size() -> SizeInfo;
@@ -58,10 +56,6 @@ impl SampleAllocateePtrLola {
 
     pub fn get_variant_user_defined_type() -> SizeInfo {
         ffi_get_sample_allocatee_variant_ptr_user_defined_type_size()
-    }
-
-    pub fn get_control_slot_composite_indicator_size() -> SizeInfo {
-        ffi_get_control_slot_composite_indicator_size()
     }
 
     pub fn get_event_data_control_composite_size() -> SizeInfo {
@@ -95,10 +89,6 @@ impl SamplePtrLola {
 
     pub fn get_variant_user_defined_type() -> SizeInfo {
         ffi_get_sample_ptr_variant_user_defined_type_size()
-    }
-
-    pub fn get_control_slot_indicator_size() -> SizeInfo {
-        ffi_get_control_slot_indicator_size()
     }
 
     pub fn get_slot_decrementer_size() -> SizeInfo {

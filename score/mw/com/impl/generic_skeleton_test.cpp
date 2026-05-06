@@ -74,7 +74,7 @@ class GenericSkeletonTest : public ::testing::Test
             .WillByDefault(Invoke([this](const auto&) {
                 auto mock = std::make_unique<NiceMock<mock_binding::Skeleton>>();
                 this->skeleton_binding_mock_ = mock.get();
-                ON_CALL(*mock, PrepareOffer(_, _, _)).WillByDefault(Return(score::ResultBlank{}));
+                ON_CALL(*mock, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));
                 return mock;
             }));
     }
@@ -264,8 +264,8 @@ TEST_F(GenericSkeletonTest, OfferServicePropagatesToBindingAndDiscovery)
 
     // Expecting OfferService to trigger binding and discovery
     EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
-    EXPECT_CALL(*skeleton_binding_mock_, PrepareOffer(_, _, _)).WillOnce(Return(score::ResultBlank{}));
-    EXPECT_CALL(service_discovery_mock_, OfferService(identifier)).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*skeleton_binding_mock_, PrepareOffer(_, _, _)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(service_discovery_mock_, OfferService(identifier)).WillOnce(Return(score::Result<void>{}));
 
     // When offering service
     auto result = skeleton.OfferService();
@@ -285,8 +285,8 @@ TEST_F(GenericSkeletonTest, StopOfferServicePropagatesToBindingAndDiscovery)
 
     // And given the service is already Offered
     EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
-    EXPECT_CALL(*skeleton_binding_mock_, PrepareOffer(_, _, _)).WillOnce(Return(score::ResultBlank{}));
-    EXPECT_CALL(service_discovery_mock_, OfferService(identifier)).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*skeleton_binding_mock_, PrepareOffer(_, _, _)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(service_discovery_mock_, OfferService(identifier)).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton.OfferService().has_value());
 
     // Expecting StopOffer to trigger binding and discovery

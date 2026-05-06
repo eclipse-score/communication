@@ -14,15 +14,18 @@
 """Integration test for subscribe_handler."""
 
 
-def test_subscribe_handler(sut):
+def subscribe_handler(target, mode):
+    args = ["--mode", mode]
+    return target.wrap_exec(
+        "bin/subscribe_handler", args, cwd="/opt/subscribe_handler", wait_on_exit=True, wait_timeout=15
+    )
+
+
+def test_subscribe_handler(target):
     """Test subscription state callback handling when proxy is destroyed before callback.
-    
+
     This test ensures that if a proxy event is destroyed before a subscription state
     callback is called, the subscription is revoked and the program doesn't crash.
     """
-    with sut.start_process("./bin/subscribe_handler -m send", cwd="/opt/subscribe_handler/") as sender:
-        with sut.start_process("./bin/subscribe_handler -m recv", cwd="/opt/subscribe_handler/") as receiver:
-            # Receiver should complete first (it destroys proxy before callback)
-            assert receiver.wait_for_exit() == 0
-            # Sender should also complete successfully
-            assert sender.wait_for_exit() == 0
+    with subscribe_handler(target, "send"), subscribe_handler(target, "recv"):
+        pass

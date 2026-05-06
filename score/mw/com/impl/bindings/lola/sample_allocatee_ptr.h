@@ -13,9 +13,11 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SAMPLE_ALLOCATEE_PTR_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SAMPLE_ALLOCATEE_PTR_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 
+#include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -67,7 +69,10 @@ class SampleAllocateePtr
     // reference. So we need to have two different class initializations. coverity[autosar_cpp14_m3_2_2_violation]
     // coverity[autosar_cpp14_a12_1_5_violation]
     explicit SampleAllocateePtr(std::nullptr_t /* ptr */) noexcept
-        : managed_object_{nullptr}, event_slot_indicator_{}, event_data_control_{std::nullopt}
+        : managed_object_{nullptr},
+          event_slot_index_{kUninitialisedEventSlotIndex},
+          event_data_control_{std::nullopt},
+          consumer_event_data_control_local_view_{nullptr}
     {
     }
 
@@ -75,10 +80,14 @@ class SampleAllocateePtr
     /// \param ptr pointer to managed object
     /// \param event_data_ctrl event data control structure, which manages the underlying event/sample in shmem.
     /// \param slot_index index of event slot
-    explicit SampleAllocateePtr(pointer ptr,
-                                const EventDataControlComposite<>& event_data_ctrl,
-                                ControlSlotCompositeIndicator slot_indicator) noexcept
-        : managed_object_{ptr}, event_slot_indicator_{slot_indicator}, event_data_control_{event_data_ctrl}
+    SampleAllocateePtr(pointer ptr,
+                       const EventDataControlComposite<>& event_data_ctrl,
+                       ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view,
+                       const SlotIndexType slot_index) noexcept
+        : managed_object_{ptr},
+          event_slot_index_{slot_index},
+          event_data_control_{event_data_ctrl},
+          consumer_event_data_control_local_view_{&consumer_event_data_control_local_view}
     {
     }
 
@@ -118,8 +127,9 @@ class SampleAllocateePtr
         using std::swap;
 
         swap(this->managed_object_, other.managed_object_);
-        swap(this->event_slot_indicator_, other.event_slot_indicator_);
+        swap(this->event_slot_index_, other.event_slot_index_);
         swap(this->event_data_control_, other.event_data_control_);
+        swap(this->consumer_event_data_control_local_view_, other.consumer_event_data_control_local_view_);
     }
 
     /// \brief check validity.
@@ -159,34 +169,35 @@ class SampleAllocateePtr
         return *this;
     };
 
-    /// \brief access to internal control-slot-indicator
-    /// \return ControlSlotCompositeIndicator pointing to the underlying shmem event slot.
-    ControlSlotCompositeIndicator GetReferencedSlot() const noexcept
+    /// \brief access to internal slot index
+    /// \return slot index of underlying shmem event slot.
+    SlotIndexType GetReferencedSlot() const noexcept
     {
-        return event_slot_indicator_;
+        return event_slot_index_;
     };
 
   private:
+    static constexpr SlotIndexType kUninitialisedEventSlotIndex = std::numeric_limits<SlotIndexType>::max();
+
     void internal_delete()
     {
         managed_object_ = nullptr;
-        if (event_slot_indicator_.IsValidQM() || event_slot_indicator_.IsValidAsilB())
+        if (event_slot_index_ < kUninitialisedEventSlotIndex)
         {
-            // LCOV_EXCL_BR_START: Defensive programming: The only time that event_data_control_ does not have a value
-            // is if the SampleAllocateePtr is default initialised or initialised with a nullptr. In both these cases
-            // IsValidQM/IsValidAsilB will return false, so we will never enter this branch.
-            if (event_data_control_.has_value())
-            {
-                // LCOV_EXCL_BR_STOP
-                event_data_control_->Discard(event_slot_indicator_);
-            }
-            event_slot_indicator_.Reset();
+            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+                event_data_control_.has_value(),
+                "The only time that event_data_control_ does not have a value is if the SampleAllocateePtr is default "
+                "initialised or initialised with a nullptr. In both these, cases event_slot_index_ == "
+                "kUninitialisedEventSlotIndex so we will never enter this branch.");
+            event_data_control_->Discard(event_slot_index_);
+            event_slot_index_ = kUninitialisedEventSlotIndex;
         }
     }
 
     pointer managed_object_;
-    ControlSlotCompositeIndicator event_slot_indicator_;
+    SlotIndexType event_slot_index_;
     std::optional<EventDataControlComposite<>> event_data_control_;
+    ConsumerEventDataControlLocalView<>* consumer_event_data_control_local_view_;
 };
 
 /// \brief Specializes the std::swap algorithm for SampleAllocateePtr. Swaps the contents of lhs and rhs. Calls
@@ -228,6 +239,18 @@ class SampleAllocateePtrMutableView
     const std::optional<EventDataControlComposite<>>& GetEventDataControlComposite() const noexcept
     {
         return ptr_.event_data_control_;
+    }
+
+    std::optional<EventDataControlComposite<>>& GetEventDataControlComposite() noexcept
+    {
+        return ptr_.event_data_control_;
+    }
+
+    [[nodiscard]]
+    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView()
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(ptr_.consumer_event_data_control_local_view_ != nullptr);
+        return *ptr_.consumer_event_data_control_local_view_;
     }
 
   private:
