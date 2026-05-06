@@ -317,7 +317,7 @@ fn main() {
     let num_cycles = args.num_cycles;
 
     // Initialise the Lola runtime.
-    let mut runtime_builder = LolaRuntimeBuilderImpl::new();
+    let mut runtime_builder: LolaRuntimeBuilderImpl = LolaRuntimeBuilderImpl::new();
     runtime_builder.load_config(Path::new(CONFIG_PATH));
     let runtime = runtime_builder
         .build()
