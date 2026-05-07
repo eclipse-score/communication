@@ -136,6 +136,32 @@ Checks: >
   readability-simplify-boolean-expr,
   readability-use-anyofallof,
   readability-use-std-min-max,
+  # --- style-readability ---
+  misc-confusable-identifiers,
+  misc-misleading-bidirectional,
+  misc-misleading-identifier,
+  misc-uniqueptr-reset-release,
+  misc-unused-alias-decls,
+  misc-unused-using-decls,
+  readability-avoid-nested-conditional-operator,
+  readability-avoid-return-with-void-value,
+  readability-const-return-type,
+  readability-container-size-empty,
+  readability-delete-null-pointer,
+  readability-enum-initial-value,
+  readability-make-member-function-const,
+  readability-misleading-indentation,
+  readability-non-const-parameter,
+  readability-qualified-auto,
+  readability-redundant-smartptr-get,
+  readability-redundant-string-cstr,
+  readability-redundant-string-init,
+  readability-reference-to-constructed-temporary,
+  readability-simplify-subscript-expr,
+  readability-static-definition-in-anonymous-namespace,
+  readability-string-compare,
+  readability-uniqueptr-delete-release,
+  readability-uppercase-literal-suffix,
 
 WarningsAsErrors: >
   clang-analyzer-*,
@@ -175,9 +201,7 @@ CheckOptions:
   - key: bugprone-suspicious-stringview-data-usage.StringViewTypes
     value: >
       ::score::cpp::basic_string_view;
-      ::score::cpp::span;
-      ::std::basic_string_view;
-      ::std::span
+      ::std::basic_string_view
   - key: modernize-loop-convert.UseCxx20ReverseRanges
     value: false
   - key: modernize-loop-convert.IncludeStyle
@@ -222,4 +246,41 @@ CheckOptions:
   - key: readability-redundant-casting.IgnoreTypeAliases
     value: true
   - key: readability-redundant-inline-specifier.StrictMode
+    value: true
+  - key: misc-uniqueptr-reset-release.IncludeStyle
+    value: "llvm"
+  - key: readability-avoid-return-with-void-value.StrictMode
+    value: true
+  - key: readability-enum-initial-value.AllowExplicitZeroFirstInitialValue
+    value: true
+  - key: readability-enum-initial-value.AllowExplicitSequentialInitialValues
+    value: true
+  - key: readability-qualified-auto.AddConstToQualified
+    value: true
+  - key: readability-redundant-string-init.StringNames
+    value: >
+      ::score::cpp::basic_string_view;
+      ::score::cpp::pmr::basic_string;
+      ::score::safecpp::basic_zstring_view;
+      ::std::basic_string_view;
+      ::std::basic_string
+  - key: readability-simplify-subscript-expr.Types
+    value: >
+      ::score::cpp::basic_string_view;
+      ::score::cpp::pmr::basic_string;
+      ::score::cpp::pmr::vector;
+      ::score::cpp::span;
+      ::score::safecpp::basic_zstring_view;
+      ::std::array;
+      ::std::basic_string_view;
+      ::std::basic_string;
+      ::std::vector;
+      ::std::span
+  - key: readability-string-compare.StringLikeClasses
+    value: >
+      ::score::cpp::basic_string_view;
+      ::score::safecpp::basic_zstring_view;
+      ::std::basic_string_view;
+      ::std::basic_string
+  - key: readability-uniqueptr-delete-release.PreferResetCall
     value: true
