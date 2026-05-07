@@ -555,6 +555,38 @@ where
     // requiring the returned future to be explicitly bound to the lifetime of `&self`.
     // we do not need to cancle timeout future when receive future resolved,
     // because ReceiveFuture drop will take care of cancelling the timeout future.
+    //
+    /// Demonstrates passing a struct future that is `Unpin` via a `PhantomData` field
+    /// to `receive_with_timeout`.
+    ///
+    /// A struct with only a `PhantomData<T>` field has no self-referential state, so
+    /// the compiler derives `Unpin` automatically.
+    ///
+    /// ```
+    /// use com_api_concept::{CommData, SampleContainer, Subscription};
+    /// use com_api_runtime_lola::LolaRuntimeImpl;
+    /// use core::marker::PhantomData;
+    ///
+    /// struct UnpinTimeout<T>(PhantomData<T>);
+    ///
+    /// impl<T: Send + 'static> std::future::Future for UnpinTimeout<T> {
+    ///     type Output = ();
+    ///     fn poll(
+    ///         self: std::pin::Pin<&mut Self>,
+    ///         _cx: &mut std::task::Context<'_>,
+    ///     ) -> std::task::Poll<()> {
+    ///         std::task::Poll::Ready(())
+    ///     }
+    /// }
+    ///
+    /// fn demonstrate<'a, T, S>(sub: &'a S, scratch: SampleContainer<S::Sample<'a>>)
+    /// where
+    ///     T: CommData + std::fmt::Debug,
+    ///     S: Subscription<T, LolaRuntimeImpl>,
+    /// {
+    ///     let _future = sub.receive_with_timeout(scratch, 1, 1, UnpinTimeout::<u8>(PhantomData));
+    /// }
+    /// ```
     #[allow(clippy::manual_async_fn)]
     fn receive_with_timeout<'a>(
         &'a self,
