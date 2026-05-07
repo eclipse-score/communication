@@ -1326,7 +1326,7 @@ void MessagePassingServiceInstance::RegisterEventNotificationRemote(const Elemen
         {
             score::mw::log::LogError("lola")
                 << "MessagePassingService: RegisterEventNotificationRemote called for event" << event_id.ToString()
-                << "and node_id" << target_node_id << "although event is " << " currently located at node"
+                << "and node_id" << target_node_id << "although event is currently located at node"
                 << registration_count_inserted.first->second.node_id;
             registration_count_inserted.first->second.node_id = target_node_id;
             registration_count_inserted.first->second.counter = 1U;

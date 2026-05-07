@@ -147,8 +147,8 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     enum class MessageWithReplyType : std::uint8_t
     {
         kSubscribeServiceMethod = 1U,
-        kCallMethod = 2U,
-        kUnsubscribeServiceMethod = 3U,
+        kCallMethod,
+        kUnsubscribeServiceMethod,
     };
 
     struct RegisteredNotificationHandler

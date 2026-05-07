@@ -92,12 +92,10 @@ class IMessagePassingService
     /// service method.
     ///
     /// When a Proxy is destroyed, it will call UnsubscribeServiceMethod which will send a message to the Skeleton
-    /// process. The Skeleton process will then call the ServiceMethodUnsubscribedHandler registered in
-    /// RegisterOnServiceMethodUnsubscribedHandler. The handler should close the proxy's shared memory region and
-    /// unregister the method call handler corresponding to the proxy's ProxyMethodInstanceIdentifier from each
-    /// SkeletonMethod.
+    /// process. The Skeleton process will then call the ServiceMethodUnsubscribedHandler to close the proxy's shared
+    /// memory region and unregister the method call handler corresponding to the proxy's ProxyMethodInstanceIdentifier
+    /// from each SkeletonMethod.
     ///
-    /// \param proxy_instance_identifier unique identifier of the Proxy instance which unsubscribed from the method.
     using ServiceMethodUnsubscribedHandler =
         safecpp::CopyableScopedFunction<score::ResultBlank(ProxyInstanceIdentifier proxy_instance_identifier)>;
 

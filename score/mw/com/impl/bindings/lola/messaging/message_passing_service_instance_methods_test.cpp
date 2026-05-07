@@ -1360,7 +1360,8 @@ TEST_F(MessagePassingServiceInstanceUnregisterSubscribeMethodHandlerTest,
 }
 
 using MessagePassingServiceInstanceRegisterUnsubscribeHandlerTest = MessagePassingServiceInstanceMethodsFixture;
-TEST_F(MessagePassingServiceInstanceRegisterUnsubscribeHandlerTest, ReregisteringHandlerReturnsError)
+TEST_F(MessagePassingServiceInstanceRegisterUnsubscribeHandlerTest,
+       ReregisteringHandlerWhenOneIsAlreadyRegisteredReturnsError)
 {
     ::testing::MockFunction<score::ResultBlank(ProxyInstanceIdentifier)> mock_unsubscribe_method_handler_2{};
     safecpp::Scope<> unsubscribe_method_handler_scope_2{};

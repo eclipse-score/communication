@@ -69,10 +69,9 @@ TEST_F(MethodUnsubscriptionRegistrationGuardFixture, MethodUnsubscriptionRegistr
 
 TEST_F(MethodUnsubscriptionRegistrationGuardFixture, CreatingGuardDoesNotCallUnregister)
 {
-    // When creating a MethodUnsubscriptionRegistrationGuard
     GivenAMethodUnsubscriptionRegistrationGuard();
 
-    // Expecting that UnregisterOnServiceMethodUnsubscribedHandler is never called
+    // When UnregisterOnServiceMethodUnsubscribedHandler is never called
     EXPECT_CALL(message_passing_service_mock_, UnregisterOnServiceMethodUnsubscribedHandler(_, _)).Times(0);
 
     // Then UnregisterOnServiceMethodUnsubscribedHandler is not called
@@ -83,8 +82,7 @@ TEST_F(MethodUnsubscriptionRegistrationGuardFixture, DestroyingGuardCallsUnregis
 {
     GivenAMethodUnsubscriptionRegistrationGuard();
 
-    // Expecting that UnregisterOnServiceMethodUnsubscribedHandler is called with the asil_level and
-    // SkeletonInstanceIdentifier used to create the guard
+    // Expecting that UnregisterOnServiceMethodUnsubscribedHandler is called
     EXPECT_CALL(message_passing_service_mock_,
                 UnregisterOnServiceMethodUnsubscribedHandler(kAsilLevel, kSkeletonInstanceIdentifier));
 

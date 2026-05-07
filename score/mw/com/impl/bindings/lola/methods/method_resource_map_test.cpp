@@ -266,10 +266,9 @@ TEST_F(MethodResourceMapRemoveFixture, RemoveForNonExistentEntryIsANoOp)
                                                    kDummyPid1);
 
     // When removing an element that was never inserted (different process identifier)
-    // Then the program should not terminate and should remain a no-op
     method_resource_map_->Remove(ProxyInstanceIdentifier{kProcessIdentifier2, kProxyInstanceCounter1});
 
-    // and the originally inserted element should still be contained in the map
+    // Then the program should not terminate and the originally inserted element should still be contained in the map
     EXPECT_TRUE(method_resource_map_->Contains(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
                                                kDummyPid1));
 }

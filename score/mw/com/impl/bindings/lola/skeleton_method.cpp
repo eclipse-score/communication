@@ -28,10 +28,12 @@
 #include <score/assert.hpp>
 #include <score/span.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <optional>
 #include <utility>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -152,22 +154,32 @@ void SkeletonMethod::Call(const std::optional<score::cpp::span<std::byte>> in_ar
 void SkeletonMethod::CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid)
 {
     const std::lock_guard lock{registration_guards_mutex_};
+    const bool already_registered = std::any_of(
+        registration_guards_.cbegin(), registration_guards_.cend(), [&application_id, proxy_pid](const auto& entry) {
+            return entry.first.proxy_instance_identifier.application_id == application_id &&
+                   entry.second.first == proxy_pid;
+        });
+
+    if (already_registered)
+    {
+        return;
+    }
+
     // Linear scan to erase all stale guards from a crashed application (same application_id, different pid).
     // If benchmarking identifies this as a bottleneck, the data structure can be revisited.
-    for (auto it = registration_guards_.begin(); it != registration_guards_.end();)
+    // NOTE: this can be replaced with erase_if in c++20
+    std::vector<ProxyMethodInstanceIdentifier> keys_to_erase;
+    for (const auto& entry : registration_guards_)
     {
-        if (it->first.proxy_instance_identifier.application_id == application_id)
+        if (entry.first.proxy_instance_identifier.application_id == application_id)
         {
-            if (it->second.first == proxy_pid)
-            {
-                return;
-            }
-            it = registration_guards_.erase(it);
+            keys_to_erase.push_back(entry.first);
         }
-        else
-        {
-            ++it;
-        }
+    }
+
+    for (const auto& key : keys_to_erase)
+    {
+        registration_guards_.erase(key);
     }
 }
 

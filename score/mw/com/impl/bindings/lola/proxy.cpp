@@ -748,8 +748,6 @@ void Proxy::TeardownMethods() noexcept
     if (is_subscribed)
     {
         // Best-effort: notify the Skeleton to clean up its registration guards for this Proxy's methods.
-        // On failure the guards remain until the Skeleton stops offering or restarts, at which point
-        // they will be cleaned up.
         auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
         auto& lola_message_passing = lola_runtime.GetLolaMessaging();
         const SkeletonInstanceIdentifier skeleton_instance_identifier{
