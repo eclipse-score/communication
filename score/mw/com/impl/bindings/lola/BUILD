@@ -1140,6 +1140,16 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "skeleton_event_common_test",
+    srcs = ["skeleton_event_common_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":skeleton",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
+    ],
+)
+
+cc_unit_test(
     name = "proxy_test",
     srcs = ["proxy_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [

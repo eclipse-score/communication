@@ -121,12 +121,16 @@ class "mw::com::impl::GenericSkeletonEvent" #yellow {
   +Send(SampleAllocateePtr<void> sample): Result<void>
   +Allocate(): Result<SampleAllocateePtr<void>>
   +GetSizeInfo() const : DataTypeMetaInfo
+  +SetReceiveHandlerRegistrationChangedHandler(score::cpp::callback<void(bool)> callback): Result<void>
+  +UnsetReceiveHandlerRegistrationChangedHandler(): Result<void>
 }
 
 abstract class "GenericSkeletonEventBinding" #yellow {
   +{abstract} Send(SampleAllocateePtr<void> sample) = 0: Result<void>
   +{abstract} Allocate() = 0: Result<SampleAllocateePtr<void>>
   +{abstract} GetSizeInfo() const = 0: std::pair<size_t, size_t>
+  +{abstract} SetReceiveHandlerRegistrationChangedHandler(score::cpp::callback<void(bool)> callback) = 0: Result<void>
+  +{abstract} UnsetReceiveHandlerRegistrationChangedHandler() = 0: Result<void>
 }
 
 class "lola::SkeletonEventCommon" #yellow {
@@ -134,6 +138,7 @@ class "lola::SkeletonEventCommon" #yellow {
   -element_fq_id_: ElementFqId
   -control_: score::cpp::optional<EventDataControlComposite>&
   -current_timestamp_: EventSlotStatus::EventTimeStamp&
+  -receive_handler_registration_changed_callback_: std::optional<lola::IMessagePassingService::HandlerStatusChangeCallback>
   +SkeletonEventCommon(lola::Skeleton&, const ElementFqId&, score::cpp::optional<EventDataControlComposite>&, EventSlotStatus::EventTimeStamp&, impl::tracing::SkeletonEventTracingData)
   +PrepareOfferCommon(): void
   +PrepareStopOfferCommon(): void
@@ -142,6 +147,8 @@ class "lola::SkeletonEventCommon" #yellow {
   +IsQmNotificationsRegistered(): bool
   +IsAsilBNotificationsRegistered(): bool
   +GetTracingData(): impl::tracing::SkeletonEventTracingData&
+  +SetReceiveHandlerRegistrationChangedHandler(score::cpp::callback<void(bool)>): Result<void>
+  +UnsetReceiveHandlerRegistrationChangedHandler(): Result<void>
 }
 
 class "lola::GenericSkeletonEvent" #yellow {
@@ -154,6 +161,8 @@ class "lola::GenericSkeletonEvent" #yellow {
   +GetBindingType(): BindingType
   +SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data): void
   +GetMaxSize() const : std::size_t
+  +SetReceiveHandlerNotificationCallback(score::cpp::callback<void(bool)>): Result<void>
+  +UnsetReceiveHandlerRegistrationChangedHandler(): Result<void>
   -skeleton_event_common_ : lola::SkeletonEventCommon
 }
 
