@@ -88,6 +88,19 @@ Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
     return result;
 }
 
+Result<void> GenericSkeletonEvent::Notify() noexcept
+{
+    if (!service_offered_flag_.IsSet())
+    {
+        score::mw::log::LogError("lola")
+            << "GenericSkeletonEvent::Notify failed as Event has not yet been offered or has been stop offered";
+        return MakeUnexpected(ComErrc::kNotOffered);
+    }
+    auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding != nullptr, "Binding is not initialized!");
+    return binding->Notify();
+}
+
 DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
 {
     const auto* const binding = static_cast<const GenericSkeletonEventBinding*>(binding_.get());

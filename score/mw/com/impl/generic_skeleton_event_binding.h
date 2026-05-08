@@ -31,6 +31,9 @@ class GenericSkeletonEventBinding : public SkeletonEventBindingBase
 
     virtual Result<SampleAllocateePtr<void>> Allocate() noexcept = 0;
 
+    /// \brief Get Notification when new sample is available.
+    virtual Result<void> Notify() noexcept = 0;
+
     virtual std::pair<size_t, size_t> GetSizeInfo() const noexcept = 0;
 };
 

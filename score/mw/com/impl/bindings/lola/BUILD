@@ -944,6 +944,16 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "generic_skeleton_event_test",
+    srcs = ["generic_skeleton_event_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":generic_skeleton_event",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
+    ],
+)
+
+cc_unit_test(
     name = "skeleton_method_test",
     srcs = ["skeleton_method_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [

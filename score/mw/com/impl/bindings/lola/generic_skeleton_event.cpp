@@ -75,6 +75,11 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
     return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
 }
 
+Result<void> GenericSkeletonEvent::Notify() noexcept
+{
+    return skeleton_event_common_.NotifyConsumersIfHandlersRegistered();
+}
+
 std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
 {
     return {size_info_.size, size_info_.alignment};

@@ -76,6 +76,10 @@ class SkeletonEventCommon
     Result<SlotIndexType> AllocateSlot() noexcept;
     Result<void> Send(impl::SampleAllocateePtr<SampleType>& sample) noexcept;
 
+    /// \brief Dispatches NotifyEvent() to QM and ASIL consumers if their respective
+    ///        receive-handler registration flags are set.
+    Result<void> NotifyConsumersIfHandlersRegistered() noexcept;
+
     // Accessors for members used by PrepareOfferCommon/PrepareStopOfferCommon
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept
     {
@@ -315,7 +319,13 @@ Result<void> SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<Samp
     // coverity[autosar_cpp14_a4_7_1_violation]
     ++current_timestamp_;
     event_data_control_composite_->EventReady(slot, current_timestamp_);
+    NotifyConsumersIfHandlersRegistered();
+    return {};
+}
 
+template <typename SampleType>
+Result<void> SkeletonEventCommon<SampleType>::NotifyConsumersIfHandlersRegistered() noexcept
+{
     // Only call NotifyEvent if there are any registered receive handlers for each quality level.
     // This avoids the expensive lock operation in the common case where no handlers are registered.
     // Using memory_order_relaxed is safe here as this is an optimisation, if we miss a very recent

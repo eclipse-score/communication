@@ -44,6 +44,8 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 
     Result<score::mw::com::impl::SampleAllocateePtr<void>> Allocate() noexcept override;
 
+    Result<void> Notify() noexcept override;
+
     std::pair<size_t, size_t> GetSizeInfo() const noexcept override;
 
     Result<void> PrepareOffer() noexcept override;
