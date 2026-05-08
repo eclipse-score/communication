@@ -1,0 +1,78 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: Coverity Analysis
+
+on:
+  workflow_call:
+    outputs:
+      duration-seconds:
+        description: Runtime of the Coverity check in seconds.
+        value: ${{ jobs.coverity.outputs.duration-seconds }}
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverity_analysis-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+
+jobs:
+  coverity:
+    runs-on: ubuntu-24.04
+    outputs:
+      duration-seconds: ${{ steps.timer.outputs.duration-seconds }}
+    steps:
+      - name: Start timer
+        id: start_time
+        run: echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - uses: castler/setup-bazel@8818d35864b4088fb3a12e7a3191777dc418fd69
+        with:
+          bazelisk-cache: true
+          disk-cache: "coverity_analysis"
+          disk-cache-key: "main"
+          repository-cache: true
+          cache-save: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Run Coverity scan
+        run: |
+          echo "Coverity integration placeholder"
+          echo "To enable: configure Coverity account and API token in secrets"
+          bazel build //...
+
+      - name: End timer
+        if: ${{ always() }}
+        id: timer
+        run: |
+          end=$(date +%s)
+          start=${{ steps.start_time.outputs.start }}
+          duration=$((end - start))
+          echo "duration-seconds=$duration" >> "$GITHUB_OUTPUT"
+          echo "Coverity duration: ${duration}s" >> "$GITHUB_STEP_SUMMARY"
