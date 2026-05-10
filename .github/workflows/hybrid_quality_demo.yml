@@ -14,6 +14,8 @@
 name: Hybrid Quality Demo
 
 on:
+  pull_request:
+    types: [opened, reopened, synchronize]
   workflow_dispatch:
     inputs:
       run_nightly_checks:
@@ -42,37 +44,37 @@ jobs:
 
   coverage:
     name: Coverage report
-    if: ${{ github.event_name == 'schedule' || inputs.run_nightly_checks }}
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && inputs.run_nightly_checks }}
     needs: pr_checks
     uses: ./.github/workflows/coverage_report.yml
 
   thread_sanitizer:
     name: Thread sanitizer
-    if: ${{ github.event_name == 'schedule' || inputs.run_nightly_checks }}
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && inputs.run_nightly_checks }}
     needs: pr_checks
     uses: ./.github/workflows/thread_sanitizer.yml
 
   address_sanitizer:
     name: Address/UB/leak sanitizer
-    if: ${{ github.event_name == 'schedule' || inputs.run_nightly_checks }}
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && inputs.run_nightly_checks }}
     needs: pr_checks
     uses: ./.github/workflows/address_undefined_behavior_leak_sanitizer.yml
 
   codeql:
     name: CodeQL analysis
-    if: ${{ github.event_name == 'schedule' || inputs.run_nightly_checks }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && inputs.run_nightly_checks }}
     needs: pr_checks
     uses: ./.github/workflows/codeql_analysis.yml
 
   clang_tidy:
     name: Clang-Tidy analysis
-    if: ${{ github.event_name == 'schedule' || inputs.run_nightly_checks }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && inputs.run_nightly_checks }}
     needs: pr_checks
     uses: ./.github/workflows/clang_tidy_analysis.yml
 
   coverity:
     name: Coverity analysis
-    if: ${{ github.event_name == 'schedule' || inputs.run_nightly_checks }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && inputs.run_nightly_checks }}
     needs: pr_checks
     uses: ./.github/workflows/coverity_analysis.yml
 
