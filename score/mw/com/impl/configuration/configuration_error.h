@@ -27,8 +27,6 @@ enum class configuration_errc : score::result::ErrorCode
     serialization_deploymentinformation_invalid = 0,
     serialization_no_shmbindinginformation = 1,
     serialization_shmbindinginformation_invalid = 2,
-    serialization_someipbindinginformation_invalid = 3,
-    serialization_no_someipbindinginformation = 4,
 };
 
 /// \brief See above explanation in configuration_errc
@@ -60,13 +58,6 @@ class ConfigurationErrorDomain final : public score::result::ErrorDomain
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(configuration_errc::serialization_shmbindinginformation_invalid):
                 return "serialization of <LoLaShmBindingInfo> is invalid";
-            // coverity[autosar_cpp14_m6_4_5_violation]
-            case static_cast<score::result::ErrorCode>(configuration_errc::serialization_no_someipbindinginformation):
-                return "no serialization of <SomeIpBindingInfo>";
-            // coverity[autosar_cpp14_m6_4_5_violation]
-            case static_cast<score::result::ErrorCode>(
-                configuration_errc::serialization_someipbindinginformation_invalid):
-                return "serialization of <SomeIpBindingInfo> is invalid";
             // coverity[autosar_cpp14_m6_4_5_violation]
             default:
                 return "unknown configuration error";

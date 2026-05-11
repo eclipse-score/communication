@@ -85,9 +85,6 @@ std::string ToHashStringImpl(const ServiceInstanceId::BindingInformation& bindin
         [](const LolaServiceInstanceId& instance_id) noexcept -> std::string_view {
             return instance_id.ToHashString();
         },
-        [](const SomeIpServiceInstanceId& instance_id) noexcept -> std::string_view {
-            return instance_id.ToHashString();
-        },
         [](const score::cpp::blank&) noexcept -> std::string_view {
             return "";
         });
@@ -135,9 +132,6 @@ score::json::Object ServiceInstanceId::Serialize() const noexcept
         [&json_object](const LolaServiceInstanceId& instance_id) {
             json_object[kBindingInfoKeySerInstID] = instance_id.Serialize();
         },
-        [&json_object](const SomeIpServiceInstanceId& instance_id) {
-            json_object[kBindingInfoKeySerInstID] = instance_id.Serialize();
-        },
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, binding_info_);
     return json_object;
@@ -161,16 +155,8 @@ bool operator==(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs) noex
             }
             return lhs_lola == *rhs_lola;
         },
-        [lhs, rhs](const SomeIpServiceInstanceId& lhs_someip) noexcept -> bool {
-            const auto* const rhs_someip = std::get_if<SomeIpServiceInstanceId>(&rhs.binding_info_);
-            if (rhs_someip == nullptr)
-            {
-                return false;
-            }
-            return lhs_someip == *rhs_someip;
-        },
-        [](const score::cpp::blank&) noexcept -> bool {
-            return true;
+        [&rhs](const score::cpp::blank&) noexcept -> bool {
+            return std::holds_alternative<score::cpp::blank>(rhs.binding_info_);
         });
     return std::visit(visitor, lhs.binding_info_);
 }
@@ -188,18 +174,10 @@ bool operator<(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs) noexc
             }
             return lhs_lola < *rhs_lola;
         },
-        [lhs, rhs](const SomeIpServiceInstanceId& lhs_someip) noexcept -> bool {
-            const auto* const rhs_someip = std::get_if<SomeIpServiceInstanceId>(&rhs.binding_info_);
-            if (rhs_someip == nullptr)
-            {
-                return false;
-            }
-            return lhs_someip < *rhs_someip;
-        },
         // FP: only one statement in this line
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const score::cpp::blank&) noexcept -> bool {
-            return true;
+        [&rhs](const score::cpp::blank&) noexcept -> bool {
+            return !std::holds_alternative<score::cpp::blank>(rhs.binding_info_);
         });
     return std::visit(visitor, lhs.binding_info_);
 }

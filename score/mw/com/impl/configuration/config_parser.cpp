@@ -101,7 +101,6 @@ constexpr auto kNumberOfIpcTracingSlotsDefault = static_cast<NumberOfIpcTracingS
 
 constexpr auto kPermissionChecksKey = "permission-checks"sv;
 
-constexpr auto kSomeIpBinding = "SOME/IP"sv;
 constexpr auto kShmBinding = "SHM"sv;
 constexpr auto kShmSizeCalcModeSimulation = "SIMULATION"sv;
 
@@ -705,12 +704,7 @@ auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
             SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(bindingValue_result.has_value(),
                                                               "Configuration corrupted, check with json schema");
             const auto& bindingValue = bindingValue_result.value().get();
-            if (bindingValue == kSomeIpBinding)
-            {
-                score::mw::log::LogFatal("lola") << "Provided SOME/IP binding, which can not be parsed.";
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-            }
-            else if (bindingValue == kShmBinding)
+            if (bindingValue == kShmBinding)
             {
                 // Return Value not needed in this context
                 score::cpp::ignore = deployments.emplace_back(service,
@@ -1024,10 +1018,6 @@ auto ParseServiceTypeDeployment(const score::json::Object& json_map) -> ServiceT
         {
             LolaServiceTypeDeployment lola_deployment = ParseLoLaServiceTypeDeployments(binding_map);
             return ServiceTypeDeployment{lola_deployment};
-        }
-        else if (value == kSomeIpBinding)
-        {
-            // we skip this, because we don't support SOME/IP right now.
         }
         else
         {

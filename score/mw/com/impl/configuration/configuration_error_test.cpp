@@ -50,18 +50,6 @@ TEST_F(ConfigurationErrorTest, MessageForSerializationShmbindinginformationInval
                      "serialization of <LoLaShmBindingInfo> is invalid");
 }
 
-TEST_F(ConfigurationErrorTest, MessageForSerializationSomeipbindinginformationInvalid)
-{
-    testErrorMessage(configuration_errc::serialization_someipbindinginformation_invalid,
-                     "serialization of <SomeIpBindingInfo> is invalid");
-}
-
-TEST_F(ConfigurationErrorTest, MessageForSerializationNoSomeipbindinginformationInvalid)
-{
-    testErrorMessage(configuration_errc::serialization_no_someipbindinginformation,
-                     "no serialization of <SomeIpBindingInfo>");
-}
-
 TEST_F(ConfigurationErrorTest, MessageForDefault)
 {
     testErrorMessage(static_cast<configuration_errc>(-1), "unknown configuration error");

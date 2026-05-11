@@ -111,24 +111,6 @@ LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
     return unit;
 }
 
-SomeIpServiceInstanceDeployment MakeSomeIpServiceInstanceDeployment(
-    const score::cpp::optional<SomeIpServiceInstanceId> instance_id) noexcept
-{
-    const SomeIpEventInstanceDeployment event_instance_deployment_1{};
-    const SomeIpEventInstanceDeployment event_instance_deployment_2{};
-
-    const SomeIpFieldInstanceDeployment field_instance_deployment_1{};
-    const SomeIpFieldInstanceDeployment field_instance_deployment_2{};
-
-    const SomeIpServiceInstanceDeployment::EventInstanceMapping events{{kDummyEventName1, event_instance_deployment_1},
-                                                                       {kDummyEventName2, event_instance_deployment_2}};
-
-    const SomeIpServiceInstanceDeployment::FieldInstanceMapping fields{{kDummyFieldName1, field_instance_deployment_1},
-                                                                       {kDummyFieldName2, field_instance_deployment_2}};
-
-    return SomeIpServiceInstanceDeployment(instance_id, events, fields);
-}
-
 LolaServiceTypeDeployment MakeLolaServiceTypeDeployment(const std::uint16_t service_id) noexcept
 {
     const LolaEventId event_type_deployment_1{33U};
@@ -179,18 +161,6 @@ void ConfigurationStructsFixture::ExpectLolaMethodInstanceDeploymentObjectsEqual
     const LolaMethodInstanceDeployment& rhs) const noexcept
 {
     EXPECT_EQ(lhs.queue_size_, rhs.queue_size_);
-}
-
-void ConfigurationStructsFixture::ExpectSomeIpEventInstanceDeploymentObjectsEqual(
-    const SomeIpEventInstanceDeployment& /* lhs */,
-    const SomeIpEventInstanceDeployment& /* rhs */) const noexcept
-{
-}
-
-void ConfigurationStructsFixture::ExpectSomeIpFieldInstanceDeploymentObjectsEqual(
-    const SomeIpFieldInstanceDeployment& /* lhs */,
-    const SomeIpFieldInstanceDeployment& /* rhs */) const noexcept
-{
 }
 
 void ConfigurationStructsFixture::ExpectLolaServiceInstanceDeploymentObjectsEqual(
@@ -257,29 +227,6 @@ void ConfigurationStructsFixture::ExpectLolaServiceInstanceDeploymentObjectsEqua
     }
 }
 
-void ConfigurationStructsFixture::ExpectSomeIpServiceInstanceDeploymentObjectsEqual(
-    const SomeIpServiceInstanceDeployment& lhs,
-    const SomeIpServiceInstanceDeployment& rhs) const noexcept
-{
-    EXPECT_EQ(lhs.instance_id_, rhs.instance_id_);
-
-    ASSERT_EQ(lhs.events_.size(), rhs.events_.size());
-    for (const auto& lhs_it : lhs.events_)
-    {
-        auto rhs_it = rhs.events_.find(lhs_it.first);
-        ASSERT_NE(rhs_it, rhs.events_.end());
-        ExpectSomeIpEventInstanceDeploymentObjectsEqual(lhs_it.second, rhs_it->second);
-    }
-
-    ASSERT_EQ(lhs.fields_.size(), rhs.fields_.size());
-    for (const auto& lhs_it : lhs.fields_)
-    {
-        auto rhs_it = rhs.fields_.find(lhs_it.first);
-        ASSERT_NE(rhs_it, rhs.fields_.end());
-        ExpectSomeIpFieldInstanceDeploymentObjectsEqual(lhs_it.second, rhs_it->second);
-    }
-}
-
 void ConfigurationStructsFixture::ExpectServiceInstanceDeploymentObjectsEqual(
     const ServiceInstanceDeployment& lhs,
     const ServiceInstanceDeployment& rhs) const noexcept
@@ -293,11 +240,6 @@ void ConfigurationStructsFixture::ExpectServiceInstanceDeploymentObjectsEqual(
             const auto* const rhs_deployment = std::get_if<LolaServiceInstanceDeployment>(&rhs.bindingInfo_);
             ASSERT_NE(rhs_deployment, nullptr);
             ExpectLolaServiceInstanceDeploymentObjectsEqual(lhs_deployment, *rhs_deployment);
-        },
-        [this, lhs, rhs](const SomeIpServiceInstanceDeployment& lhs_deployment) {
-            const auto* const rhs_deployment = std::get_if<SomeIpServiceInstanceDeployment>(&rhs.bindingInfo_);
-            ASSERT_NE(rhs_deployment, nullptr);
-            ExpectSomeIpServiceInstanceDeploymentObjectsEqual(lhs_deployment, *rhs_deployment);
         },
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, lhs.bindingInfo_);
@@ -376,11 +318,6 @@ void ConfigurationStructsFixture::ExpectServiceInstanceIdObjectsEqual(const Serv
             ASSERT_NE(rhs_instance_id, nullptr);
             ExpectLolaServiceInstanceIdObjectsEqual(lhs_instance_id, *rhs_instance_id);
         },
-        [this, rhs](const SomeIpServiceInstanceId& lhs_instance_id) {
-            const auto* const rhs_instance_id = std::get_if<SomeIpServiceInstanceId>(&rhs.binding_info_);
-            ASSERT_NE(rhs_instance_id, nullptr);
-            ExpectSomeIpServiceInstanceIdObjectsEqual(lhs_instance_id, *rhs_instance_id);
-        },
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, lhs.binding_info_);
 }
@@ -388,13 +325,6 @@ void ConfigurationStructsFixture::ExpectServiceInstanceIdObjectsEqual(const Serv
 void ConfigurationStructsFixture::ExpectLolaServiceInstanceIdObjectsEqual(
     const LolaServiceInstanceId& lhs,
     const LolaServiceInstanceId& rhs) const noexcept
-{
-    EXPECT_EQ(lhs.GetId(), rhs.GetId());
-}
-
-void ConfigurationStructsFixture::ExpectSomeIpServiceInstanceIdObjectsEqual(
-    const SomeIpServiceInstanceId& lhs,
-    const SomeIpServiceInstanceId& rhs) const noexcept
 {
     EXPECT_EQ(lhs.GetId(), rhs.GetId());
 }

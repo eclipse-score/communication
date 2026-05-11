@@ -14,7 +14,6 @@
 #define SCORE_MW_COM_IMPL_CONFIGURATION_SERVICE_INSTANCE_ID_H
 
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
-#include "score/mw/com/impl/configuration/someip_service_instance_id.h"
 
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
@@ -31,7 +30,7 @@ namespace score::mw::com::impl
 class ServiceInstanceId
 {
   public:
-    using BindingInformation = std::variant<LolaServiceInstanceId, SomeIpServiceInstanceId, score::cpp::blank>;
+    using BindingInformation = std::variant<LolaServiceInstanceId, score::cpp::blank>;
 
     explicit ServiceInstanceId(const score::json::Object& json_object) noexcept;
     explicit ServiceInstanceId(BindingInformation binding_info) noexcept;
@@ -54,8 +53,7 @@ class ServiceInstanceId
      */
     // Variable is used in a test case -> so this line is tested and prepared for easier reuse
     // coverity[autosar_cpp14_a0_1_1_violation]
-    constexpr static std::size_t hashStringSize{
-        std::max(LolaServiceInstanceId::hashStringSize, SomeIpServiceInstanceId::hashStringSize) + 1U};
+    constexpr static std::size_t hashStringSize{LolaServiceInstanceId::hashStringSize + 1U};
 
     constexpr static std::uint32_t serializationVersion = 1U;
 
@@ -74,8 +72,8 @@ const ServiceInstanceIdBinding& GetServiceInstanceIdBinding(const ServiceInstanc
 {
     const auto* service_instance_id_binding = std::get_if<ServiceInstanceIdBinding>(&service_instance_id.binding_info_);
     // LCOV_EXCL_BR_START False positive: The tool is reporting that the true decision is never taken. We have tests in
-    // service_instance_deployment_test.cpp (GettingLolaBindingFromServiceInstanceIdNotContainingLolaBindingTerminates
-    // and GettingSomeIpBindingFromServiceInstanceIdNotContainingSomeIpBindingTerminates) which test the true branch of
+    // service_instance_deployment_test.cpp (GettingLolaBindingFromServiceInstanceIdNotContainingLolaBindingTerminates)
+    // which test the true branch of
     // this condition. This is a bug with the tool to be fixed in (Ticket-219132). This suppression should be removed
     // when the tool is fixed.
     if (service_instance_id_binding == nullptr)

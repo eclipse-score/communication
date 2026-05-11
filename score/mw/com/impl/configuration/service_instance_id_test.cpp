@@ -12,7 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/service_instance_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
-#include "score/mw/com/impl/configuration/someip_service_instance_id.h"
 
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 
@@ -31,14 +30,6 @@ TEST(ServiceInstanceIdTest, LolaBindingCanBeCopiedAndEqualCompared)
     ASSERT_EQ(unit, unitCopy);
 }
 
-TEST(ServiceInstanceIdTest, SomeIpBindingCanBeCopiedAndEqualCompared)
-{
-    const auto unit = ServiceInstanceId{SomeIpServiceInstanceId{10U}};
-    const auto unitCopy = unit;
-
-    ASSERT_EQ(unit, unitCopy);
-}
-
 TEST(ServiceInstanceIdTest, EmptyBindingCanBeCopiedAndEqualCompared)
 {
     const auto unit = ServiceInstanceId{score::cpp::blank{}};
@@ -50,7 +41,7 @@ TEST(ServiceInstanceIdTest, EmptyBindingCanBeCopiedAndEqualCompared)
 TEST(ServiceInstanceIdTest, ComparingDifferentBindingsReturnsFalse)
 {
     const auto unit = ServiceInstanceId{LolaServiceInstanceId{10U}};
-    const auto unit_2 = ServiceInstanceId{SomeIpServiceInstanceId{10U}};
+    const auto unit_2 = ServiceInstanceId{score::cpp::blank{}};
 
     // Note: The code being executed depends on the type of lhs. As a result we need to cover both "directions"
     ASSERT_FALSE(unit == unit_2);
@@ -63,28 +54,6 @@ TEST(ServiceInstanceIdTest, LessThanOperatorLolaServiceBindings)
     const auto unit_2 = ServiceInstanceId{LolaServiceInstanceId{11U}};
 
     EXPECT_TRUE(unit < unit_2);
-    EXPECT_FALSE(unit_2 < unit);
-}
-
-TEST(ServiceInstanceIdTest, LessThanOperatorSomeIpServiceBindings)
-{
-    // Given ServiceInstanceId objects containing SomeIpServiceInstanceId
-    const auto unit = ServiceInstanceId{SomeIpServiceInstanceId{10U}};
-    const auto unit_2 = ServiceInstanceId{SomeIpServiceInstanceId{11U}};
-
-    // When comparing them via the less-than operator
-    EXPECT_TRUE(unit < unit_2);
-    EXPECT_FALSE(unit_2 < unit);
-
-    // Then the expecations above must be fulfilled
-}
-
-TEST(ServiceInstanceIdTest, LessThanOperatorDifferentBindingsIsAlwaysFalse)
-{
-    const auto unit = ServiceInstanceId{LolaServiceInstanceId{10U}};
-    const auto unit_2 = ServiceInstanceId{SomeIpServiceInstanceId{11U}};
-
-    EXPECT_FALSE(unit < unit_2);
     EXPECT_FALSE(unit_2 < unit);
 }
 
@@ -112,16 +81,6 @@ TEST_F(ServiceInstanceIdFixture, CanConstructFromLolaServiceInstanceId)
     ExpectLolaServiceInstanceIdObjectsEqual(*binding_ptr, lola_service_instance_id);
 }
 
-TEST_F(ServiceInstanceIdFixture, CanConstructFromSomeIpServiceInstanceId)
-{
-    SomeIpServiceInstanceId someip_service_instance_id{10U};
-    ServiceInstanceId unit{someip_service_instance_id};
-
-    const auto* const binding_ptr = std::get_if<SomeIpServiceInstanceId>(&unit.binding_info_);
-    ASSERT_NE(binding_ptr, nullptr);
-    ExpectSomeIpServiceInstanceIdObjectsEqual(*binding_ptr, someip_service_instance_id);
-}
-
 TEST_F(ServiceInstanceIdFixture, CanConstructFromBlankInstanceDeployment)
 {
     ServiceInstanceId unit{score::cpp::blank{}};
@@ -135,21 +94,6 @@ TEST_F(ServiceInstanceIdFixture, CanCreateFromSerializedLolaObject)
     LolaServiceInstanceId lola_service_instance_deployment{LolaServiceInstanceId{10U}};
 
     ServiceInstanceId unit{lola_service_instance_deployment};
-
-    const auto serialized_unit{unit.Serialize()};
-
-    ServiceInstanceId reconstructed_unit{serialized_unit};
-
-    ExpectServiceInstanceIdObjectsEqual(reconstructed_unit, unit);
-}
-
-TEST_F(ServiceInstanceIdFixture, CanCreateFromSerializedSomeIpObject)
-{
-    const std::uint16_t instance_id{123U};
-
-    SomeIpServiceInstanceId someip_service_instance_deployment{instance_id};
-
-    ServiceInstanceId unit{someip_service_instance_deployment};
 
     const auto serialized_unit{unit.Serialize()};
 
@@ -204,13 +148,7 @@ const std::vector<std::tuple<ServiceInstanceId, std::string_view>> instance_id_t
     {ServiceInstanceId{LolaServiceInstanceId{1U}}, "00001"},
     {ServiceInstanceId{LolaServiceInstanceId{10U}}, "0000a"},
     {ServiceInstanceId{LolaServiceInstanceId{255U}}, "000ff"},
-    {ServiceInstanceId{LolaServiceInstanceId{std::numeric_limits<LolaServiceInstanceId::InstanceId>::max()}}, "0ffff"},
-    {ServiceInstanceId{SomeIpServiceInstanceId{0U}}, "10000"},
-    {ServiceInstanceId{SomeIpServiceInstanceId{1U}}, "10001"},
-    {ServiceInstanceId{SomeIpServiceInstanceId{10U}}, "1000a"},
-    {ServiceInstanceId{SomeIpServiceInstanceId{255U}}, "100ff"},
-    {ServiceInstanceId{SomeIpServiceInstanceId{std::numeric_limits<SomeIpServiceInstanceId::InstanceId>::max()}},
-     "1ffff"}};
+    {ServiceInstanceId{LolaServiceInstanceId{std::numeric_limits<LolaServiceInstanceId::InstanceId>::max()}}, "0ffff"}};
 INSTANTIATE_TEST_SUITE_P(ServiceInstanceIdHashFixture,
                          ServiceInstanceIdHashFixture,
                          ::testing::ValuesIn(instance_id_to_hash_string_variations));
@@ -229,40 +167,14 @@ TEST(ServiceInstanceIdTest, CanGetLolaBindingFromServiceInstanceIdContainingLola
     EXPECT_EQ(lola_service_instance_id, returned_service_instance_id_binding);
 }
 
-TEST(ServiceInstanceIdTest, CanGetSomeIpBindingFromServiceInstanceIdContainingSomeIpBinding)
-{
-    // Given a ServiceInstanceId containing a SomeIp binding
-    const SomeIpServiceInstanceId some_ip_service_instance_id{10U};
-    const ServiceInstanceId service_instance_id{some_ip_service_instance_id};
-
-    // When getting the SomeIpServiceInstanceId
-    const auto returned_service_instance_id_binding =
-        GetServiceInstanceIdBinding<SomeIpServiceInstanceId>(service_instance_id);
-
-    // Then the SomeIp binding of the ServiceInstanceId is returned
-    EXPECT_EQ(some_ip_service_instance_id, returned_service_instance_id_binding);
-}
-
 TEST(ServiceInstanceIdDeathTest, GettingLolaBindingFromServiceInstanceIdNotContainingLolaBindingTerminates)
 {
-    // Given a ServiceInstanceId containing a SomeIp binding
-    const SomeIpServiceInstanceId some_ip_service_instance_id{10U};
-    ServiceInstanceId service_instance_id{some_ip_service_instance_id};
+    // Given a ServiceInstanceId containing a blank binding
+    ServiceInstanceId service_instance_id{score::cpp::blank{}};
 
     // When getting the LolaServiceInstanceId
     // Then the program terminates
     EXPECT_DEATH(score::cpp::ignore = GetServiceInstanceIdBinding<LolaServiceInstanceId>(service_instance_id), ".*");
-}
-
-TEST(ServiceInstanceIdDeathTest, GettingSomeIpBindingFromServiceInstanceIdNotContainingSomeIpBindingTerminates)
-{
-    // Given a ServiceInstanceId containing a Lola binding
-    const LolaServiceInstanceId lola_service_instance_id{10U};
-    ServiceInstanceId service_instance_id{lola_service_instance_id};
-
-    // When getting the SomeIpServiceInstanceId
-    // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = GetServiceInstanceIdBinding<SomeIpServiceInstanceId>(service_instance_id), ".*");
 }
 
 }  // namespace
