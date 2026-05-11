@@ -27,7 +27,7 @@ on:
     - cron: '0 2 * * *'
 
 permissions:
-  actions: read
+  actions: write
   contents: read
   security-events: write
 
