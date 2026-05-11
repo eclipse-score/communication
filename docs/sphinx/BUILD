@@ -63,6 +63,7 @@ sphinx_module(
     docs_library_deps = [
         "//score/mw/com:readme_md",
     ],
+    exec_compatible_with = ["@platforms//os:linux"],
     extra_opts = [
         "-Dbreathe_default_project=doxygen_build",
     ],
@@ -71,6 +72,7 @@ sphinx_module(
         ":breathe_doxygen_xml",
     ],
     index = "index.rst",
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
     deps = [
     ],

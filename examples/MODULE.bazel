@@ -10,7 +10,7 @@ bazel_dep(name = "score_baselibs", version = "0.2.6")
 # Needed because we do not have a current release of score_tooling (as we are in dev phase of safety sentinel)
 git_override(
     module_name = "score_tooling",
-    commit = "0160d13fff81ee20643769339036505b853e2bb0",
+    commit = "549c7ee315cfbc27a42247b11cb70c953eac75dc",
     remote = "https://github.com/eclipse-score/tooling.git",
 )
 

@@ -32,5 +32,6 @@ trlc_requirements_test(
     reqs = [
         ":component_requirements_ipc",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
 )

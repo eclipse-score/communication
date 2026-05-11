@@ -46,6 +46,10 @@ common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_toolchains
 #   license included is created, when you install the QNX Software Development Platform (SDP) for QNX 8. Thus, you 1st
 #   have to install the QNX Software Center and then via the Software Center the QNX SDP for QNX 8.
 #   After the installation, you can find the directory ~/.qnx/license/licenses with the license file(s) in it.
+# If you get errors, when downloading files from the QNX server (e.g. WARNING: Download from
+# https://www.qnx.com/download/download/79858/installation.tgz failed) then the reason might be, that you did not yet
+# accept the "Download Center Usage Policy". In this case do the download once in the browser, which redirects you to
+# the acceptance page once.
 common:qnx_x86_64 --credential_helper_timeout="60s" # QNX credential helper can be slow
 common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
 common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_x86_64
@@ -61,6 +65,8 @@ common:qnx_arm64 --extra_toolchains=@score_qcc_aarch64_toolchain//:aarch64-qnx-s
 common:qnx_arm64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_aarch64_unknown_nto_qnx800
 common:qnx_arm64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_arm64 --sandbox_writable_path=/var/tmp
+
+common:qnx --config=qnx_x86_64
 
 # unshare /dev/shm and /tmp
 test --sandbox_tmpfs_path=/dev/shm

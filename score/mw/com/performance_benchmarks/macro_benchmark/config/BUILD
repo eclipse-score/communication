@@ -24,6 +24,7 @@ validate_json_schema_test(
     json = "//score/mw/com/performance_benchmarks/macro_benchmark/config:mw_com_config_json",
     schema = "//score/mw/com:config_schema",
     tags = ["lint"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 validate_json_schema_test(
@@ -31,6 +32,7 @@ validate_json_schema_test(
     json = "joined_benchmark_config.json",
     schema = "joined_benchmark_config_schema.json",
     tags = ["lint"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 filegroup(

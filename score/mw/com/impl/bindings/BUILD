@@ -19,6 +19,7 @@ component(
         "//score/mw/com/impl/bindings/mock_binding:mock_component",
     ],
     requirements = [],
+    target_compatible_with = ["@platforms//os:linux"],
     tests = [],
     visibility = ["//score/mw/com/dependability:__pkg__"],
 )

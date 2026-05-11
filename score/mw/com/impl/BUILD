@@ -24,6 +24,7 @@ component(
         ":frontend_proxy",
     ],
     requirements = [],
+    target_compatible_with = ["@platforms//os:linux"],
     tests = [],
     visibility = ["//score/mw/com/dependability:__pkg__"],
 )

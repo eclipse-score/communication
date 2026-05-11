@@ -116,6 +116,7 @@ jobs:
       permissions:
         contents: read
         pull-requests: read
+        actions: write
       steps:
         - name: Checkout repository
           uses: actions/checkout@v6.0.2
@@ -127,12 +128,12 @@ jobs:
           with:
             level: 4
         - name: Setup Bazel
-          uses: castler/setup-bazel@8818d35864b4088fb3a12e7a3191777dc418fd69
+          uses: castler/setup-bazel@cache-optimized
           with:
             bazelisk-cache: true
             disk-cache: build_and_test_qnx
-            disk-cache-key: "main"
             repository-cache: true
+            cache-optimized: true
             cache-save: ${{ github.ref == 'refs/heads/main' }}
         - name: Allow linux-sandbox
           uses: ./actions/unblock_user_namespace_for_linux_sandbox

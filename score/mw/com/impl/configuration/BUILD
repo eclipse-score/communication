@@ -21,6 +21,7 @@ validate_json_schema_test(
     json = "example/mw_com_config.json",
     schema = ":mw_com_config_schema",
     tags = ["lint"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 filegroup(

@@ -31,6 +31,7 @@ trlc_requirements_test(
     reqs = [
         ":failure_modes",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
 )
 
@@ -64,5 +65,6 @@ trlc_requirements_test(
     reqs = [
         ":control_measures",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
 )

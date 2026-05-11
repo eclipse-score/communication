@@ -24,5 +24,6 @@ dependable_element(
     integrity_level = "B",
     maturity = "development",
     requirements = [],
+    target_compatible_with = ["@platforms//os:linux"],
     tests = [],
 )

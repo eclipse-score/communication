@@ -10,7 +10,9 @@ py_binary(
     name = "sphinx_build",
     srcs = ["@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py"],
     data = [],
+    exec_compatible_with = ["@platforms//os:linux"],
     main = "@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py",
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//:__subpackages__"],
     deps = [
         "//third_party/breathe",
@@ -32,6 +34,7 @@ sphinx_toolchain(
     name = "score_sphinx_toolchain",
     conf_template = "template/conf.template.py",
     sphinx = ":sphinx_build",
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 toolchain(
