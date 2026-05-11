@@ -18,7 +18,6 @@
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
-#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
@@ -42,11 +41,9 @@ class DummyInstanceIdentifierBuilder
     InstanceIdentifier CreateLolaInstanceIdentifierWithoutInstanceId();
     InstanceIdentifier CreateLolaInstanceIdentifierWithoutTypeDeployment();
     InstanceIdentifier CreateBlankBindingInstanceIdentifier();
-    InstanceIdentifier CreateSomeIpBindingInstanceIdentifier();
 
   private:
     LolaServiceInstanceDeployment service_instance_deployment_;
-    SomeIpServiceInstanceDeployment some_ip_service_instance_deployment_information_;
 
     LolaServiceTypeDeployment service_type_deployment_;
     ServiceTypeDeployment type_deployment_;

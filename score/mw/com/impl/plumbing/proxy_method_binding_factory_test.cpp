@@ -87,11 +87,6 @@ class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
         return kConfigStoreAsilB.GetHandle();
     }
 
-    HandleType GetValidSomIpHandle()
-    {
-        const auto instance_identifier = dummy_instance_identifier_builder_.CreateSomeIpBindingInstanceIdentifier();
-        return make_HandleType(instance_identifier, ServiceInstanceId{LolaServiceInstanceId{kInstanceId}});
-    }
     HandleType GetBlankBindingHandle()
     {
         const auto instance_identifier = dummy_instance_identifier_builder_.CreateBlankBindingInstanceIdentifier();
@@ -153,23 +148,6 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotCreateProxyServiceWhenProxyBind
 
     // Then a nullptr is returned
     ASSERT_EQ(proxy_method, nullptr);
-}
-
-TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromSomeIpBinding)
-{
-
-    const auto handle = this->GetValidSomIpHandle();
-
-    // Given a valid someip binding
-    auto proxy_binding = this->CreateBindingFromHandle(handle);
-
-    // When creating a ProxyMethod using MethodBindingFactory
-    using MethodSignature = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
-
-    // Then a nullptr is returned
-    EXPECT_EQ(proxy_method, nullptr);
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)

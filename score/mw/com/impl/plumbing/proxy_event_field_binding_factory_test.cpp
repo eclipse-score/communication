@@ -174,20 +174,6 @@ TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CanConstructProxyS
     ASSERT_NE(proxy_event, nullptr);
 }
 
-TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CannotConstructEventFromSomeIpBinding)
-{
-    // Given a ProxyBase that contains a SomeIp binding
-    const auto instance_identifier = dummy_instance_identifier_builder_.CreateSomeIpBindingInstanceIdentifier();
-    const auto handle = make_HandleType(instance_identifier, ServiceInstanceId{LolaServiceInstanceId{kInstanceId}});
-    WithAProxyBaseWithValidBinding(handle);
-
-    // When constructing a proxy service element
-    const auto unit = CreateServiceElementBinding();
-
-    // Then a nullptr is returned
-    EXPECT_EQ(unit, nullptr);
-}
-
 TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CannotCreateProxyServiceWhenProxyBindingIsNullptr)
 {
     // Given a ProxyBase that does not contain a valid binding i.e. the binding is a nullptr

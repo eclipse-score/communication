@@ -69,13 +69,6 @@ auto SkeletonBindingFactoryImpl::Create(const InstanceIdentifier& identifier) no
             return lola::Skeleton::Create(
                 identifier, filesystem, std::move(shm_path_builder), std::move(partial_restart_path_builder));
         },
-        [](const SomeIpServiceInstanceDeployment&) noexcept -> std::unique_ptr<SkeletonBinding> {
-            return nullptr; /* not yet implemented */
-        },
-        // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
-        // expression statement and identifier declaration shall be placed on a
-        // separate line.". Following line statement is fine, this happens due to
-        // clang formatting.
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> std::unique_ptr<SkeletonBinding> {
             return nullptr;

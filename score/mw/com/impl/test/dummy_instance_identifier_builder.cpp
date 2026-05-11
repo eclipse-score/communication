@@ -23,7 +23,6 @@ namespace score::mw::com::impl
 
 DummyInstanceIdentifierBuilder::DummyInstanceIdentifierBuilder()
     : service_instance_deployment_{},
-      some_ip_service_instance_deployment_information_{},
       service_type_deployment_{0x0},
       type_deployment_{score::cpp::blank{}},
       type_{make_ServiceIdentifierType("foo")},
@@ -106,13 +105,6 @@ InstanceIdentifier DummyInstanceIdentifierBuilder::CreateBlankBindingInstanceIde
 {
     instance_deployment_ = std::make_unique<ServiceInstanceDeployment>(
         type_, score::cpp::blank{}, QualityType::kASIL_QM, instance_specifier_);
-    return make_InstanceIdentifier(*instance_deployment_, type_deployment_);
-}
-
-InstanceIdentifier DummyInstanceIdentifierBuilder::CreateSomeIpBindingInstanceIdentifier()
-{
-    instance_deployment_ = std::make_unique<ServiceInstanceDeployment>(
-        type_, some_ip_service_instance_deployment_information_, QualityType::kASIL_QM, instance_specifier_);
     return make_InstanceIdentifier(*instance_deployment_, type_deployment_);
 }
 

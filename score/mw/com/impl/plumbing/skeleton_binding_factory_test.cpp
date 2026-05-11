@@ -49,13 +49,13 @@ TEST_F(SkeletonBindingFactoryFixture, CanCreateLoLaBinding)
 
 TEST_F(SkeletonBindingFactoryFixture, CanNotCreateOtherBinding)
 {
-    // Given an InstanceIdentifier with a SomeIp binding
-    auto instance_id = instance_identifier_builder_.CreateSomeIpBindingInstanceIdentifier();
+    // Given an InstanceIdentifier with a blank binding
+    auto instance_id = instance_identifier_builder_.CreateBlankBindingInstanceIdentifier();
 
     // When creating the binding
     auto unit = SkeletonBindingFactory::Create(instance_id);
 
-    // That it is not null and a LoLa Skeleton
+    // That it is null
     EXPECT_EQ(unit, nullptr);
 }
 

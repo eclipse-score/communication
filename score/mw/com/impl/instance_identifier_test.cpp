@@ -173,8 +173,7 @@ struct DeploymentPair
     using ServiceInstanceIdType = ServiceInstanceIdT;
 };
 
-using DeploymentTypes = ::testing::Types<DeploymentPair<LolaServiceInstanceDeployment, LolaServiceInstanceId>,
-                                         DeploymentPair<SomeIpServiceInstanceDeployment, SomeIpServiceInstanceId>>;
+using DeploymentTypes = ::testing::Types<DeploymentPair<LolaServiceInstanceDeployment, LolaServiceInstanceId>>;
 
 template <typename T>
 class InstanceIdentifierViewTypedTest : public ::testing::Test

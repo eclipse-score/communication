@@ -157,19 +157,6 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture, CanConstructSer
     EXPECT_NE(unit, nullptr);
 }
 
-TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture, CannotConstructServiceElementFromSomeIpBinding)
-{
-    // Given a SkeletonBase that uses a someip binding
-    const auto instance_identifier = dummy_instance_identifier_builder.CreateSomeIpBindingInstanceIdentifier();
-    WithASkeletonBaseWithValidBinding(instance_identifier);
-
-    // When constructing a service element
-    const auto unit = CreateServiceElementBinding(instance_identifier);
-
-    // Then a valid binding cannot be created
-    EXPECT_EQ(unit, nullptr);
-}
-
 TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture, CannotConstructServiceElementFromBlankBinding)
 {
     // Given a SkeletonBase that uses a blank binding

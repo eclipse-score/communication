@@ -30,10 +30,6 @@ const LolaServiceInstanceId kLolaInstanceId{16U};
 const LolaServiceInstanceId kLolaInstanceId2{15U};
 LolaServiceInstanceDeployment kLolaServiceInstanceDeployment{kLolaInstanceId};
 LolaServiceInstanceDeployment kLolaServiceInstanceDeployment2{kLolaInstanceId2};
-const SomeIpServiceInstanceId kSomeIpInstanceId{16U};
-const SomeIpServiceInstanceId kSomeIpInstanceId2{15U};
-const SomeIpServiceInstanceDeployment kSomeIpServiceInstanceDeployment{kSomeIpInstanceId};
-const SomeIpServiceInstanceDeployment kSomeIpServiceInstanceDeployment2{kSomeIpInstanceId2};
 const ServiceInstanceDeployment kServiceInstanceDeployment1{kService1,
                                                             kLolaServiceInstanceDeployment,
                                                             QualityType::kASIL_QM,
@@ -317,30 +313,6 @@ INSTANTIATE_TEST_CASE_P(
                                                     kTestTypeDeployment)),
             make_HandleType(make_InstanceIdentifier(ServiceInstanceDeployment{kService1,
                                                                               kLolaServiceInstanceDeployment2,
-                                                                              QualityType::kASIL_QM,
-                                                                              kInstanceSpecifier},
-                                                    kTestTypeDeployment))},
-
-        std::array<HandleType, 2>{
-            make_HandleType(make_InstanceIdentifier(ServiceInstanceDeployment{kService1,
-                                                                              kSomeIpServiceInstanceDeployment,
-                                                                              QualityType::kASIL_QM,
-                                                                              kInstanceSpecifier},
-                                                    kTestTypeDeployment)),
-            make_HandleType(make_InstanceIdentifier(ServiceInstanceDeployment{kService1,
-                                                                              kSomeIpServiceInstanceDeployment2,
-                                                                              QualityType::kASIL_QM,
-                                                                              kInstanceSpecifier},
-                                                    kTestTypeDeployment))},
-
-        std::array<HandleType, 2>{
-            make_HandleType(make_InstanceIdentifier(ServiceInstanceDeployment{kService1,
-                                                                              kSomeIpServiceInstanceDeployment,
-                                                                              QualityType::kASIL_QM,
-                                                                              kInstanceSpecifier},
-                                                    kTestTypeDeployment)),
-            make_HandleType(make_InstanceIdentifier(ServiceInstanceDeployment{kService1,
-                                                                              kLolaServiceInstanceDeployment,
                                                                               QualityType::kASIL_QM,
                                                                               kInstanceSpecifier},
                                                     kTestTypeDeployment))}));

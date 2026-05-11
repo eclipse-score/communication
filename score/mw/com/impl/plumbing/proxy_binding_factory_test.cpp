@@ -137,23 +137,6 @@ TEST_F(ProxyBindingFactoryCreateFixture, CannotCreateBlank)
     EXPECT_EQ(result, nullptr);
 }
 
-TEST_F(ProxyBindingFactoryCreateFixture, CannotCreateSomeIpBinding)
-{
-    // Given a SomeIp binding
-    DummyInstanceIdentifierBuilder instance_identifier_builder{};
-    auto identifier = instance_identifier_builder.CreateSomeIpBindingInstanceIdentifier();
-    auto handle = make_HandleType(identifier, ServiceInstanceId{LolaServiceInstanceId{1}});
-
-    ON_CALL(service_discovery_mock_, StartFindService(_, EnrichedInstanceIdentifier{handle}))
-        .WillByDefault(Return(make_FindServiceHandle(10U)));
-
-    // When creating a proxy with that
-    const auto result = ProxyBindingFactory::Create(handle);
-
-    // Then a nullptr is returned
-    EXPECT_EQ(result, nullptr);
-}
-
 using ProxyBindingFactoryCreateDeathTest = ProxyBindingFactoryCreateFixture;
 TEST_F(ProxyBindingFactoryCreateDeathTest, MissingLoLaTypeDeployment)
 {
