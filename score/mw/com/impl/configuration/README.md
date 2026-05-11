@@ -88,14 +88,13 @@ exist, but has no functional effect yet!
 Our `mw::com` architecture foresees, that a `service-type` might be provided via several technical transport mechanisms,
 which we call a `binding`. The decision, which technical transport mechanisms to be used is finally taken by the
 `service-instances`. I.e. a `service-instance` might be configured to support an ECU local
-transport mechanism, like our shared-memory based mechanism, and also a network based mechanism (like `SOME/IP`) to
+transport mechanism, like our shared-memory based mechanism, and also a network based mechanism to
 support cross-ECU communication.
 
 However, the `service-type` on which the `service-instance` is based on, needs to support the technical transport
 mechanism (`binding`) and needs to configure the instance `independent` parts of the binding.
 
 Currently, the only supported binding is the shared-memory binding, which is represented as `SHM` in the json.
-The other binding `SOME/IP`, which the schema allows, is only a placeholder right now.
 In the corresponding snippet from our example configuration:
 
     "bindings": [
