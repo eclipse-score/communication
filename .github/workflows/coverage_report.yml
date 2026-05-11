@@ -13,6 +13,14 @@
 name: Coverage Report
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+  # Allows manual triggering from the Actions tab on any branch before merging
+  workflow_dispatch:
   workflow_call:
     outputs:
       artifact-name:

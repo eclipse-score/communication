@@ -1,0 +1,97 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow configuration for Clang-Tidy static analysis.
+# This workflow runs Clang-Tidy on all C++ targets via Bazel when triggered by
+# pull request events, pushes to main, and merge queue checks.
+#
+# The clang-tidy configuration is taken from .clang-tidy at the workspace root.
+# The Bazel aspect is defined in tools/lint/linters.bzl and activated via the
+# --config=clang-tidy flag (see quality/static_analysis/static_analysis.bazelrc).
+#
+# NON-VOTING: This job is configured with continue-on-error: true, meaning a
+# failure is reported but does NOT block PR merge. To enforce this check as a
+# required gate, add it to the branch protection "Required status checks" list
+# and remove the continue-on-error flag.
+
+name: Clang-Tidy Static Analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+  # Allows manual triggering from the Actions tab on any branch before merging
+  workflow_dispatch:
+
+concurrency:
+  group: clang_tidy-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+
+permissions:
+  contents: read
+
+jobs:
+  clang_tidy:
+    name: Clang-Tidy (C++)
+    runs-on: ubuntu-24.04
+    # NON-VOTING: job failure does not block PR merge
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          disk-cache: "clang_tidy"
+          repository-cache: true
+          cache-save: ${{ github.event_name == 'merge_group' }}
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      # Runs clang-tidy on all C++ targets via the Bazel aspect defined in
+      # tools/lint/linters.bzl. The --config=clang-tidy flag loads the settings
+      # from quality/static_analysis/static_analysis.bazelrc.
+      - name: Run Clang-Tidy
+        run: |
+          bazel test --config=clang-tidy //... --build_tests_only
+
+      - name: Collect Clang-Tidy lint reports
+        if: always()
+        run: |
+          mkdir -p clang_tidy_reports
+          find bazel-out/ \( -name "*clang_tidy*" -o -name "*.aspect_rules_lint" \) \
+            -exec cp --parents {} clang_tidy_reports/ \; 2>/dev/null || true
+
+      - name: Upload Clang-Tidy reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy-report-${{ github.sha }}
+          path: clang_tidy_reports/
+          if-no-files-found: ignore

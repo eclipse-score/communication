@@ -1,0 +1,128 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow configuration for CodeQL static analysis (MISRA C++ compliance).
+# Uses the project's own Bazel target (//quality/static_analysis:codeql_lint)
+# which handles database init, compilation tracing, finalize, and analysis
+# internally — including correct --config=codeql and --action_env forwarding.
+#
+# NON-VOTING: This job is configured with continue-on-error: true, meaning a
+# failure is reported but does NOT block PR merge. To enforce this check as a
+# required gate, add it to the branch protection "Required status checks" list
+# and remove the continue-on-error flag.
+
+name: CodeQL Analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+  # Allows manual triggering from the Actions tab on any branch before merging
+  workflow_dispatch:
+
+concurrency:
+  group: codeql_analysis-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+
+permissions:
+  contents: read
+  # Required to upload SARIF results to the GitHub Security tab
+  security-events: write
+
+jobs:
+  codeql_analysis:
+    name: CodeQL Analysis (C++)
+    runs-on: ubuntu-24.04
+    # NON-VOTING: job failure does not block PR merge
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          disk-cache: "codeql_analysis"
+          repository-cache: true
+          # --config=codeql sets --disk_cache= (disabled), so saving the disk cache
+          # would always write an empty entry. Bazelisk cache and repo cache are still useful.
+          cache-save: false
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      # Runs the project's own CodeQL Bazel target, which:
+      #   1. Inits the CodeQL database with --begin-tracing
+      #   2. Builds //... with --config=codeql and the correct --action_env flags
+      #      so the tracer intercepts every compilation inside the Bazel sandbox
+      #   3. Finalizes the database
+      #   4. Runs the MISRA C++ query pack and writes:
+      #        <bazel output_path>/codeql.sarif
+      #        <bazel output_path>/codeql.csv
+      - name: Run CodeQL via Bazel
+        run: |
+          bazel run //quality/static_analysis:codeql_lint -- --target=//...
+
+      # Resolve the Bazel output path where codeql_lint.py wrote the SARIF and CSV files
+      - name: Locate SARIF output
+        if: always()
+        id: sarif_path
+        run: |
+          OUTPUT_PATH="$(bazel info output_path)"
+          echo "sarif=${OUTPUT_PATH}/codeql.sarif" >> "$GITHUB_OUTPUT"
+          echo "csv=${OUTPUT_PATH}/codeql.csv" >> "$GITHUB_OUTPUT"
+
+      # Check whether codeql_lint produced a SARIF file before uploading
+      - name: Check SARIF file exists
+        if: always()
+        id: sarif_check
+        run: |
+          if [ -f "${{ steps.sarif_path.outputs.sarif }}" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "No SARIF file found at ${{ steps.sarif_path.outputs.sarif }} — skipping upload."
+          fi
+
+      # Upload results to the GitHub Security tab (Code Scanning Alerts)
+      - name: Upload SARIF to GitHub Security tab
+        if: always() && steps.sarif_check.outputs.exists == 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.sarif_path.outputs.sarif }}
+          category: codeql-misra-cpp
+
+      # Keep the SARIF and CSV as downloadable artifacts on every run
+      - name: Upload CodeQL artifacts
+        if: always() && steps.sarif_check.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-results-${{ github.sha }}
+          path: |
+            ${{ steps.sarif_path.outputs.sarif }}
+            ${{ steps.sarif_path.outputs.csv }}
+          if-no-files-found: ignore
