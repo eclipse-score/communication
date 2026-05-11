@@ -18,11 +18,6 @@ This design has served us well for the initial implementation, but several drive
 5. **Debuggability**: On-target debugging requires a human-readable format (JSON), even when FlatBuffer
    is the primary format.
 
-### Out of Scope
-
-Implementation is initiated in work item #98800. This document defines the
-concept and architecture that, the following work items will implement.
-
 ### Related Work
 
 - [Community Discussion](https://github.com/orgs/eclipse-score/discussions/2459): CFT Weekly alignment
@@ -44,7 +39,7 @@ into this concept:
 
 ---
 
-## Resolved Open Questions from PI-1
+## Resolved Open Questions
 
 ### 1. String-View Handling in FlatBuffer Context
 
@@ -101,9 +96,8 @@ Structural and syntactic validation that ensures the configuration file is well-
 
 #### Phase 2: Generic Rule Validation (after parsing, before use)
 
-Semantic cross-checks that apply regardless of whether the configuration is used by a proxy or
-skeleton. These rules are currently embedded in `config_parser.cpp` and will be extracted into
-dedicated validation functions.
+Semantic cross-checks that apply regardless of how the configuration is used in the process. 
+These rules are currently embedded in `config_parser.cpp` and will be extracted into dedicated validation functions.
 
 Current rules that move to this phase:
 
@@ -126,11 +120,11 @@ instantiation.
 
 Examples of skeleton-specific checks:
 - Offered service instance configuration is complete (all required events/fields/methods present)
-- Provider permissions (`allowedProvider`) are configured if strict permission mode is enabled
+- Consumer permissions (`allowedConsumer`) are configured if strict permission mode is enabled
 
 Examples of proxy-specific checks:
 - Required service instance is properly configured for consumption
-- Consumer permissions (`allowedConsumer`) are configured if strict permission mode is enabled
+- Provider permissions (`allowedProvider`) are configured if strict permission mode is enabled
 
 **Failure mode**: Returns error result (not fatal), allowing the caller to handle gracefully.
 
@@ -328,7 +322,7 @@ is unchanged; only its location moves.
 
 ## Phased Rollout Plan
 
-### Phase 1: Format & Parsing (Initial work in #98800)
+### Phase 1: Format & Parsing
 
 **Goal**: Introduce the strategy pattern and FlatBuffer support without changing validation behavior.
 
@@ -342,7 +336,7 @@ is unchanged; only its location moves.
 4. Update `Runtime::Initialize()` to select strategy based on feature flag
 5. Preserve backward compatibility: default behavior is JSON parsing, identical to current
 
-### Phase 2: Validation & Views (Work Items shall be planned in #98800)
+### Phase 2: Validation & Views
 
 **Goal**: Separate validation from parsing and introduce typed views.
 
