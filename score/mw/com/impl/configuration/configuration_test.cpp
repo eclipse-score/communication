@@ -204,6 +204,8 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
     binding_info.shared_memory_size_ = shared_memory_size;
     binding_info.control_asil_b_memory_size_ = control_asil_b_memory_size;
     binding_info.control_qm_memory_size_ = control_qm_memory_size;
+    binding_info.inter_vm_support_ = true;
+    binding_info.inter_vm_forwarded_ = true;
     const QualityType asil_level{QualityType::kASIL_B};
 
     ServiceInstanceDeployment manual_service_instance(

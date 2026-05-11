@@ -95,6 +95,8 @@ constexpr auto kTracingGloballyEnabledDefaultValue = false;
 constexpr auto kTracingApplicationInstanceIDKey = "applicationInstanceID"sv;
 constexpr auto kApplicationIdKey = "applicationID"sv;
 constexpr auto kTracingTraceFilterConfigPathKey = "traceFilterConfigPath"sv;
+constexpr auto kInterVmSupport = "interVmSupport"sv;
+constexpr auto kInterVmForwarded = "interVmForwarded"sv;
 constexpr auto kNumberOfIpcTracingSlotsKey = "numberOfIpcTracingSlots"sv;
 using NumberOfIpcTracingSlots_t = std::uint8_t;
 constexpr auto kNumberOfIpcTracingSlotsDefault = static_cast<NumberOfIpcTracingSlots_t>(0U);
@@ -657,6 +659,28 @@ auto ParseLolaServiceInstanceDeployment(const score::json::Object& json_map) -> 
                                                           "Configuration corrupted, check with json schema");
         const auto instance_id_value = instance_id_casted.value();
         service.instance_id_ = LolaServiceInstanceId{instance_id_value};
+    }
+
+    const auto& inter_vm_support = json_map.find(kInterVmSupport.data());
+    if (inter_vm_support != json_map.cend())
+    {
+        service.inter_vm_support_ = inter_vm_support->second.As<bool>().value();
+    }
+
+    // No need to check that binding is SHM for now, because this method is only called if binding is SHM.
+
+    const auto& inter_vm_forwarded = json_map.find(kInterVmForwarded.data());
+    if (inter_vm_forwarded != json_map.cend())
+    {
+        service.inter_vm_forwarded_ = inter_vm_forwarded->second.As<bool>().value();
+    }
+
+    if (service.inter_vm_forwarded_)
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            service.inter_vm_support_,
+            "Configuration corrupted: Service instance is interVmForwarded but is not "
+            "configured for interVmSupport");
     }
 
     ParseLolaEventInstanceDeployment(json_map, service);

@@ -44,14 +44,15 @@ class LolaServiceInstanceDeployment
 
     LolaServiceInstanceDeployment() = default;
     explicit LolaServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
-    explicit LolaServiceInstanceDeployment(
-        const score::cpp::optional<LolaServiceInstanceId> instance_id,
-        EventInstanceMapping events = {},
-        FieldInstanceMapping fields = {},
-        MethodInstanceMapping methods = {},
-        const bool strict_permission = false,
-        std::unordered_map<QualityType, std::vector<uid_t>> allowed_consumer = {},
-        std::unordered_map<QualityType, std::vector<uid_t>> allowed_provider = {}) noexcept;
+    explicit LolaServiceInstanceDeployment(const score::cpp::optional<LolaServiceInstanceId> instance_id,
+                                           EventInstanceMapping events = {},
+                                           FieldInstanceMapping fields = {},
+                                           MethodInstanceMapping methods = {},
+                                           const bool strict_permission = false,
+                                           std::unordered_map<QualityType, std::vector<uid_t>> allowed_consumer = {},
+                                           std::unordered_map<QualityType, std::vector<uid_t>> allowed_provider = {},
+                                           const bool inter_vm_support = false,
+                                           const bool inter_vm_forwarded = false) noexcept;
 
     // Finding States that: A project shall not contain instances of non-volatile variables being given values that are
     // not subsequently used.
@@ -81,6 +82,8 @@ class LolaServiceInstanceDeployment
     std::unordered_map<QualityType, std::vector<uid_t>> allowed_consumer_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::unordered_map<QualityType, std::vector<uid_t>> allowed_provider_;
+    bool inter_vm_support_{false};
+    bool inter_vm_forwarded_{false};
 
     score::json::Object Serialize() const noexcept;
     bool ContainsEvent(const std::string& event_name) const noexcept;

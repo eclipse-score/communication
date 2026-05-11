@@ -4728,5 +4728,181 @@ TEST_F(ConfigParserFixture, ParseWithMalformedPermissionChecksHandledGracefully)
     });
 }
 
+using ConfigParserFixtureDeathTest = ConfigParserFixture;
+TEST_F(ConfigParserFixtureDeathTest, InvalidInterVmConfigurationWillDie)
+{
+    // Given a JSON where service instance is configured to be inter-VM forwarded but is not configured to have
+    // interVM support, which is invalid
+    auto config_with_invalid_vm_configuration = R"(
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 30
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft"
+                        }
+                    ],
+                    "interVmSupport": false,
+                    "interVmForwarded": true
+                }
+            ]
+        }
+    ]
+}
+)"_json;
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = score::mw::com::impl::configuration::Parse(
+                                                          std::move(config_with_invalid_vm_configuration)));
+}
+
+TEST_F(ConfigParserFixtureDeathTest, NoInterVmSupportWillNotDie)
+{
+    // Given a JSON where service instance is not configured to have inter VM support is fine
+    auto config_with_inter_vm_support_disabled = R"(
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 30
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft"
+                        }
+                    ],
+                    "interVmSupport": false,
+                    "interVmForwarded": false
+                }
+            ]
+        }
+    ]
+}
+)"_json;
+    // When parsing the JSON
+    // That the application will not terminate
+    score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_inter_vm_support_disabled));
+}
+
+TEST_F(ConfigParserFixtureDeathTest, InterVmSupportButNotInterVmForwardedWillNotDie)
+{
+    // Given a JSON where service instance is configured for inter VM support but will not forward it via inter VM is
+    // fine
+    auto config_with_inter_vm_support_no_vm_forwarding = R"(
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 30
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft"
+                        }
+                    ],
+                    "interVmSupport": true,
+                    "interVmForwarded": false
+                }
+            ]
+        }
+    ]
+}
+)"_json;
+    // When parsing the JSON
+    // That the application will not terminate
+    score::cpp::ignore =
+        score::mw::com::impl::configuration::Parse(std::move(config_with_inter_vm_support_no_vm_forwarding));
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

@@ -34,6 +34,8 @@ constexpr auto kMethodsKeyInstDepl = "methods";
 constexpr auto kStrictKeyInstDepl = "strict";
 constexpr auto kAllowedConsumerKeyInstDepl = "allowedConsumer";
 constexpr auto kAllowedProviderKeyInstDepl = "allowedProvider";
+constexpr auto kInterVmSupport = "interVmSupport";
+constexpr auto kInterVmForwarded = "interVmForwarded";
 
 // Note 1:
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall not be called
@@ -149,7 +151,9 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::json::
           ConvertJsonToServiceElementMap<MethodInstanceMapping>(json_object, kMethodsKeyInstDepl),
           GetValueFromJson<bool>(json_object, kStrictKeyInstDepl),
           ConvertJsonToUidMap(json_object, kAllowedConsumerKeyInstDepl),
-          ConvertJsonToUidMap(json_object, kAllowedProviderKeyInstDepl)}
+          ConvertJsonToUidMap(json_object, kAllowedProviderKeyInstDepl),
+          GetValueFromJson<bool>(json_object, kInterVmSupport),
+          GetValueFromJson<bool>(json_object, kInterVmForwarded)}
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKeyInstDepl);
     if (serialization_version != serializationVersion)
@@ -193,7 +197,9 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(
     MethodInstanceMapping methods,
     const bool strict_permission,
     std::unordered_map<QualityType, std::vector<uid_t>> allowed_consumer,
-    std::unordered_map<QualityType, std::vector<uid_t>> allowed_provider) noexcept
+    std::unordered_map<QualityType, std::vector<uid_t>> allowed_provider,
+    const bool inter_vm_support,
+    const bool inter_vm_forwarded) noexcept
     : instance_id_{instance_id},
       shared_memory_size_{},
       control_asil_b_memory_size_{},
@@ -203,7 +209,9 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(
       methods_{std::move(methods)},
       strict_permissions_{strict_permission},
       allowed_consumer_{std::move(allowed_consumer)},
-      allowed_provider_{std::move(allowed_provider)}
+      allowed_provider_{std::move(allowed_provider)},
+      inter_vm_support_{inter_vm_support},
+      inter_vm_forwarded_{inter_vm_forwarded}
 {
 }
 
@@ -237,6 +245,8 @@ score::json::Object LolaServiceInstanceDeployment::Serialize() const noexcept
     json_object[kMethodsKeyInstDepl] = ConvertServiceElementMapToJson(methods_);
 
     json_object[kStrictKeyInstDepl] = strict_permissions_;
+    json_object[kInterVmSupport] = inter_vm_support_;
+    json_object[kInterVmForwarded] = inter_vm_forwarded_;
 
     json_object[kAllowedConsumerKeyInstDepl] = ConvertUidMapToJson(allowed_consumer_);
     json_object[kAllowedProviderKeyInstDepl] = ConvertUidMapToJson(allowed_provider_);

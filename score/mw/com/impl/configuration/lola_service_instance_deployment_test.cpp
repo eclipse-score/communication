@@ -135,6 +135,30 @@ TEST(LolaServiceInstanceDeployment, ContainsFieldReturnsFalseIfEventMissing)
     EXPECT_FALSE(unit.ContainsField("def"));
 }
 
+TEST(LolaServiceInstanceDeployment, InterVMSupportReturnsFalseByDefault)
+{
+    LolaServiceInstanceDeployment unit{LolaServiceInstanceId{2U}};
+    EXPECT_FALSE(unit.inter_vm_support_);
+}
+
+TEST(LolaServiceInstanceDeployment, InterVMForwardedReturnsFalseByDefault)
+{
+    LolaServiceInstanceDeployment unit{LolaServiceInstanceId{2U}};
+    EXPECT_FALSE(unit.inter_vm_forwarded_);
+}
+
+TEST(LolaServiceInstanceDeployment, InterVMSupportConstructedAsExpected)
+{
+    LolaServiceInstanceDeployment unit{LolaServiceInstanceId{2U}, {}, {}, {}, false, {}, {}, true, false};
+    EXPECT_TRUE(unit.inter_vm_support_);
+}
+
+TEST(LolaServiceInstanceDeployment, InterVMForwardedConstructedAsExpected)
+{
+    LolaServiceInstanceDeployment unit{LolaServiceInstanceId{2U}, {}, {}, {}, false, {}, {}, false, true};
+    EXPECT_TRUE(unit.inter_vm_forwarded_);
+}
+
 TEST(LolaServiceInstanceDeployment, ContainsMethodReturnsTrueIfMethodPresent)
 {
     // Given a LolaServiceInstanceDeployment containing a method

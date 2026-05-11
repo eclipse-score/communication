@@ -341,6 +341,13 @@ dependent properties.
   some heuristics, configured in the  [global section](#shm-size-calc-mode).
   Using this property is not encouraged. It is rather a fallback, in case the preferred size calculation fails or in
   case the temporary heap-memory allocation done by the size calculation, needs to be avoided.
+- `interVmSupport`: This is a `SHM` `binding` specific optional setting, which controls whether the shared-memory 
+  objects for this instance are created so that they can be shared among VMs on the same ECU. In this case the SHM 
+  implementation potentially uses different mechanisms/path-names to create/open shm-objects. 
+- `interVmForwarded`: This is a `SHM` `binding` specific optional setting, which controls if the `service-instance` is 
+  expected to be shared between VM instances. In this case the provider of this service instance in the target 
+  gateway domain is not creating an SHM-object, but instead opens an SHM-object that has been created on the actual 
+  provider domain side. In order to use `interVmForwarded`, `interVmSupport` has to be enabled for this instance.
 
 ###### events and fields within an instance
 
