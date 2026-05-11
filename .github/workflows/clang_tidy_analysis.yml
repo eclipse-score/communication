@@ -63,7 +63,7 @@ jobs:
 
       - name: Run clang-tidy analysis
         run: |
-          bazel build //... --aspects //tools/lint:clang_tidy_aspect
+          bazel build //... --aspects=//:tools/lint/linters.bzl%clang_tidy_aspect
 
       - name: End timer
         if: ${{ always() }}

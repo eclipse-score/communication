@@ -52,31 +52,58 @@ jobs:
         with:
           level: 4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: c-cpp
-          build-mode: manual
-
-      - uses: castler/setup-bazel@8818d35864b4088fb3a12e7a3191777dc418fd69
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.18.0
         with:
           bazelisk-cache: true
           disk-cache: "codeql_analysis"
-          disk-cache-key: "main"
           repository-cache: true
-          cache-save: ${{ github.ref == 'refs/heads/main' }}
+          # --config=codeql sets --disk_cache= (disabled), so saving the disk cache
+          # would always write an empty entry. Bazelisk cache and repo cache are still useful.
+          cache-save: false
 
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
-      - name: Build for CodeQL extraction
+      - name: Run CodeQL via Bazel
         run: |
-          bazel build //...
+          bazel run //quality/static_analysis:codeql_lint -- --target=//...
 
-      - name: Analyze with CodeQL
-        uses: github/codeql-action/analyze@v3
+      - name: Locate SARIF output
+        if: always()
+        id: sarif_path
+        run: |
+          OUTPUT_PATH="$(bazel info output_path)"
+          echo "sarif=${OUTPUT_PATH}/codeql.sarif" >> "$GITHUB_OUTPUT"
+          echo "csv=${OUTPUT_PATH}/codeql.csv" >> "$GITHUB_OUTPUT"
+
+      - name: Check SARIF file exists
+        if: always()
+        id: sarif_check
+        run: |
+          if [ -f "${{ steps.sarif_path.outputs.sarif }}" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "No SARIF file found — skipping upload."
+          fi
+
+      - name: Upload SARIF to GitHub Security tab
+        if: always() && steps.sarif_check.outputs.exists == 'true'
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          category: /language:c-cpp
+          sarif_file: ${{ steps.sarif_path.outputs.sarif }}
+          category: codeql-misra-cpp
+
+      - name: Upload CodeQL artifacts
+        if: always() && steps.sarif_check.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-results-${{ github.sha }}
+          path: |
+            ${{ steps.sarif_path.outputs.sarif }}
+            ${{ steps.sarif_path.outputs.csv }}
+          if-no-files-found: ignore
 
       - name: End timer
         if: ${{ always() }}

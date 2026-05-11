@@ -88,16 +88,10 @@ def main() -> int:
             "Clang static code analysis and linting.",
         ),
         (
-            "Coverity analysis",
-            normalize_status(os.environ.get("COVERITY_RESULT", "skipped")),
-            format_duration(os.environ.get("COVERITY_DURATION_SECONDS", "")),
-            "Coverity static code analysis.",
-        ),
-        (
             "Coverage report",
             normalize_status(os.environ.get("COVERAGE_RESULT", "skipped")),
-            "-",
-            "Nightly-style coverage generation."
+            format_duration(os.environ.get("COVERAGE_DURATION_SECONDS", "")),
+            "Code coverage analysis and reporting."
             + (f" Artifact: {coverage_artifact_name}." if coverage_artifact_name else ""),
         ),
         (
@@ -131,7 +125,7 @@ def main() -> int:
     markdown_lines.extend(
         [
             "",
-            "This demo shows the hybrid model: fast PR checks run first, and heavier quality checks (CodeQL, clang-tidy, Coverity, coverage, and sanitizers) run separately for nightly-style visibility.",
+            "This demo shows the hybrid model: fast PR checks run first, and heavier quality checks (CodeQL, clang-tidy, and coverage) run on demand or nightly for visibility.",
         ]
     )
     (output_dir / "summary.md").write_text("\n".join(markdown_lines) + "\n", encoding="utf-8")
