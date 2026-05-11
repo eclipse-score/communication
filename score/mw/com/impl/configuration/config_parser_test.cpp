@@ -113,11 +113,19 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
 
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").GetNumberOfTracingSlots(), 7);
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").GetNumberOfSampleSlots().value(), 60 + 7);
-    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").max_subscribers_.value(), 6);
-    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").enforce_max_samples_, true);
-    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").max_concurrent_allocations_.value(), 1);
+    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft")
+                  .lola_event_instance_deployment_.max_subscribers_.value(),
+              6);
+    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft")
+                  .lola_event_instance_deployment_.enforce_max_samples_,
+              true);
+    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft")
+                  .lola_event_instance_deployment_.max_concurrent_allocations_.value(),
+              1);
     EXPECT_FALSE(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
     EXPECT_FALSE(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+    ASSERT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_.has_value());
+    EXPECT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_.value());
 
     const auto service_deployment = config.GetServiceTypes().at(deployments.service_);
     const auto* const lola_service_type_deployment =
@@ -1735,7 +1743,8 @@ TEST(ConfigParser, NoFieldMaxSubscribersLeavesValueOptional)
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
     // That the max_subscribers_ in the field has no value
-    EXPECT_FALSE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").max_subscribers_.has_value());
+    EXPECT_FALSE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft")
+                     .lola_event_instance_deployment_.max_subscribers_.has_value());
 }
 
 TEST(ConfigParser, NoSHMInstanceIdLeavesValueOptional)
@@ -2102,7 +2111,9 @@ TEST(ConfigParser, LolaFieldOptionalEnforceMaxSamples)
         config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").enforce_max_samples_, false);
+    EXPECT_EQ(
+        deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").lola_event_instance_deployment_.enforce_max_samples_,
+        false);
 }
 
 TEST(ConfigParser, LolaFieldUseGetIfAvailableSetToTrue)

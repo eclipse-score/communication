@@ -52,9 +52,9 @@ class GenericSkeletonEventBindingFactory
         // B. Otherwise (in Production), use the Real Implementation.
         const auto& instance_identifier = SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier();
 
-        return CreateGenericSkeletonServiceElement<GenericSkeletonEventBinding,
-                                                   lola::GenericSkeletonEvent,
-                                                   ServiceElementType::EVENT>(
+        return CreateGenericSkeletonEventOrField<GenericSkeletonEventBinding,
+                                                 lola::GenericSkeletonEvent,
+                                                 ServiceElementType::EVENT>(
             instance_identifier, skeleton_base, event_name, meta_info);
     }
 };

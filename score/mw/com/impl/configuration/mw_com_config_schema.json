@@ -50,15 +50,14 @@
                                     "title": "Type of binding",
                                     "type": "string",
                                     "enum": [
-                                        "SHM",
-                                        "SOME/IP"
+                                        "SHM"
                                     ],
                                     "description": "Binding technology"
                                 },
                                 "serviceId": {
                                     "type": "integer",
                                     "title": "Service Id",
-                                    "description": "Binding technology specific service id, it might be 16 or 64 bit. For LoLa/Shm and SOME/IP we have 16 bit values."
+                                    "description": "Binding technology specific service id, it might be 16 or 64 bit. For LoLa/Shm we have 16 bit values."
                                 },
                                 "events": {
                                     "type": "array",
@@ -82,7 +81,7 @@
                                             "eventId": {
                                                 "type": "integer",
                                                 "title": "Service Event Id",
-                                                "description": "Binding technology specific event id. LoLa supports 8 bit, while SOME/IP supports 15 bit."
+                                                "description": "Binding technology specific event id. LoLa supports 8 bit."
                                             }
                                         }
                                     }
@@ -109,7 +108,7 @@
                                             "fieldId": {
                                                 "type": "integer",
                                                 "title": "Service Field Id",
-                                                "description": "Binding technology specific field id. LoLa supports 8 bit, while SOME/IP supports 15 bit."
+                                                "description": "Binding technology specific field id. LoLa supports 8 bit."
                                             },
                                             "Get": {
                                                 "type": "boolean",
@@ -144,7 +143,7 @@
                                             },
                                             "methodId": {
                                                 "type": "integer",
-                                                "description": "Binding technology specific method id. LoLa supports 8 bit, while SOME/IP supports 15 bit."
+                                                "description": "Binding technology specific method id. LoLa supports 8 bit."
                                             }
                                         }
                                     }
@@ -215,8 +214,7 @@
                                 "binding": {
                                     "type": "string",
                                     "enum": [
-                                        "SHM",
-                                        "SOME/IP"
+                                        "SHM"
                                     ],
                                     "title": "Binding",
                                     "description": "Binding technology"
@@ -394,13 +392,13 @@
                                                 "type": "boolean",
                                                 "title": "Use Field Getter If Available",
                                                 "description": "When true, the getter for this field will be used if the service type declares one in the C++ service interface. Applicable for proxy/consumer side.",
-                                                "default": true
+                                                "default": false
                                             },
                                             "useSetIfAvailable": {
                                                 "type": "boolean",
                                                 "title": "Use Field Setter If Available",
                                                 "description": "When true, the setter for this field will be used if the service type declares one in the C++ service interface. Applicable for proxy/consumer side.",
-                                                "default": true
+                                                "default": false
                                             }
                                         }
                                     }

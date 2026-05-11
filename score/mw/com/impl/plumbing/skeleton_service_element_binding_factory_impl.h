@@ -67,6 +67,12 @@ lola::SkeletonEventProperties GetSkeletonEventProperties(
                                          lola_service_element_instance_deployment.enforce_max_samples_};
 }
 
+inline lola::SkeletonEventProperties GetSkeletonEventProperties(
+    const LolaFieldInstanceDeployment& lola_service_element_instance_deployment)
+{
+    return GetSkeletonEventProperties(lola_service_element_instance_deployment.lola_event_instance_deployment_);
+}
+
 }  // namespace detail
 
 template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
@@ -78,12 +84,12 @@ template <typename SkeletonServiceElementBinding, typename SkeletonServiceElemen
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
-                                  SkeletonBase& parent,
-                                  const std::string_view service_element_name) noexcept
+auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
+                                SkeletonBase& parent,
+                                const std::string_view service_element_name) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
-    static_assert(element_type != ServiceElementType::INVALID);
+    static_assert((element_type == ServiceElementType::EVENT) || (element_type == ServiceElementType::FIELD));
 
     const InstanceIdentifierView identifier_view{identifier};
 
@@ -129,13 +135,13 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
 /// @brief Overload for typed skeletons (which do not have a DataTypeMetaInfo).
 template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto CreateGenericSkeletonServiceElement(const InstanceIdentifier& identifier,
-                                         SkeletonBase& parent,
-                                         const std::string_view service_element_name,
-                                         const DataTypeMetaInfo& meta_info) noexcept
+auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
+                                       SkeletonBase& parent,
+                                       const std::string_view service_element_name,
+                                       const DataTypeMetaInfo& meta_info) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
-    static_assert(element_type != ServiceElementType::INVALID);
+    static_assert((element_type == ServiceElementType::EVENT) || (element_type == ServiceElementType::FIELD));
 
     const InstanceIdentifierView identifier_view{identifier};
 

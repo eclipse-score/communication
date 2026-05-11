@@ -500,13 +500,14 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
         const auto use_set_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey)
                                               .value_or(kFieldUseSetIfAvailableDefault);
 
-        auto field_deployment = LolaFieldInstanceDeployment(number_of_sample_slots,
-                                                            max_subscribers,
-                                                            kMaxConcurrentAllocationsDefault,
-                                                            enforce_max_samples,
-                                                            number_of_tracing_slots,
-                                                            use_get_if_available,
-                                                            use_set_if_available);
+        auto field_deployment =
+            LolaFieldInstanceDeployment(LolaEventInstanceDeployment(number_of_sample_slots,
+                                                                    max_subscribers,
+                                                                    kMaxConcurrentAllocationsDefault,
+                                                                    enforce_max_samples,
+                                                                    number_of_tracing_slots),
+                                        use_get_if_available,
+                                        use_set_if_available);
         const auto emplace_result = service.fields_.emplace(std::piecewise_construct,
                                                             std::forward_as_tuple(std::move(field_name_value)),
                                                             std::forward_as_tuple(field_deployment));

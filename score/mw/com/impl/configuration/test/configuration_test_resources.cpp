@@ -53,13 +53,9 @@ LolaFieldInstanceDeployment MakeLolaFieldInstanceDeployment(
     const bool use_get_if_available,
     const bool use_set_if_available) noexcept
 {
-    const LolaFieldInstanceDeployment unit{max_samples,
-                                           max_subscribers,
-                                           max_concurrent_allocations,
-                                           enforce_max_samples,
-                                           number_of_tracing_slots,
-                                           use_get_if_available,
-                                           use_set_if_available};
+    const LolaEventInstanceDeployment event_deployment{
+        max_samples, max_subscribers, max_concurrent_allocations, enforce_max_samples, number_of_tracing_slots};
+    const LolaFieldInstanceDeployment unit{event_deployment, use_get_if_available, use_set_if_available};
     return unit;
 }
 
@@ -157,10 +153,8 @@ void ConfigurationStructsFixture::ExpectLolaFieldInstanceDeploymentObjectsEqual(
     const LolaFieldInstanceDeployment& lhs,
     const LolaFieldInstanceDeployment& rhs) const noexcept
 {
-    EXPECT_EQ(lhs.max_subscribers_, rhs.max_subscribers_);
-    EXPECT_EQ(lhs.max_concurrent_allocations_, rhs.max_concurrent_allocations_);
-    EXPECT_EQ(lhs.enforce_max_samples_, rhs.enforce_max_samples_);
-    EXPECT_EQ(lhs.GetNumberOfSampleSlotsExcludingTracingSlot(), rhs.GetNumberOfSampleSlotsExcludingTracingSlot());
+    ExpectLolaEventInstanceDeploymentObjectsEqual(lhs.lola_event_instance_deployment_,
+                                                  rhs.lola_event_instance_deployment_);
     EXPECT_EQ(lhs.use_get_if_available_, rhs.use_get_if_available_);
     EXPECT_EQ(lhs.use_set_if_available_, rhs.use_set_if_available_);
 }

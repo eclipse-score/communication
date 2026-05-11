@@ -53,9 +53,9 @@ auto SkeletonFieldBindingFactoryImpl<SampleType>::CreateEventBinding(const Insta
                                                                      const std::string_view field_name) noexcept
     -> std::unique_ptr<SkeletonEventBinding<SampleType>>
 {
-    return CreateSkeletonServiceElement<SkeletonEventBinding<SampleType>,
-                                        lola::SkeletonEvent<SampleType>,
-                                        ServiceElementType::FIELD>(identifier, parent, field_name);
+    return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
+                                      lola::SkeletonEvent<SampleType>,
+                                      ServiceElementType::FIELD>(identifier, parent, field_name);
 }
 
 }  // namespace score::mw::com::impl

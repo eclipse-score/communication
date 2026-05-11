@@ -143,6 +143,7 @@ static constexpr LolaServiceInstanceId::InstanceId kDefaultLolaInstanceId{16U};
 static const auto kFooEventName{"fooEvent"};
 static const auto kDumbEventName{"dumbEvent"};
 static const auto kFooFieldName{"fooField"};
+static const auto kDumbFieldName{"dumbField"};
 static const auto kFooMethodName{"fooMethod"};
 static const auto kDumbMethodName{"barMethod"};
 
@@ -151,8 +152,9 @@ static const SkeletonEventProperties kDefaultEventProperties{10, 5, true};
 static constexpr std::uint16_t kFooEventId{1U};
 static constexpr std::uint16_t kDumbEventId{2U};
 static constexpr std::uint16_t kFooFieldId{3U};
-static constexpr std::uint16_t kFooMethodId{4U};
-static constexpr std::uint16_t kDumbMethodId{5U};
+static constexpr std::uint16_t kDumbFieldId{4U};
+static constexpr std::uint16_t kFooMethodId{5U};
+static constexpr std::uint16_t kDumbMethodId{6U};
 
 static constexpr LolaMethodInstanceDeployment::QueueSize kFooMethodQueueSize{5U};
 static constexpr LolaMethodInstanceDeployment::QueueSize kDumbMethodQueueSize{6U};
@@ -239,7 +241,8 @@ static const ServiceInstanceDeployment kValidInstanceDeploymentWithField{
     CreateLolaServiceInstanceDeployment(
         kDefaultLolaInstanceId,
         {},
-        {{test::kFooEventName, LolaFieldInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0, false, false}}},
+        {{test::kFooFieldName,
+          LolaFieldInstanceDeployment{LolaEventInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0}, false, false}}},
         {},
         {},
         {},
@@ -284,7 +287,8 @@ static const ServiceInstanceDeployment kValidAsilInstanceDeploymentWithField{
     CreateLolaServiceInstanceDeployment(
         kDefaultLolaInstanceId,
         {},
-        {{test::kFooEventName, LolaFieldInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0, false, false}}},
+        {{test::kFooFieldName,
+          LolaFieldInstanceDeployment{LolaEventInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0}, false, false}}},
         {},
         {},
         {},
@@ -325,7 +329,7 @@ static const ServiceTypeDeployment kValidTypeDeploymentWithEvent{
     CreateTypeDeployment(kLolaServiceId, {{kFooEventName, kFooEventId}})};
 
 static const ServiceTypeDeployment kValidTypeDeploymentWithField{
-    CreateTypeDeployment(kLolaServiceId, {{kFooEventName, kFooEventId}})};
+    CreateTypeDeployment(kLolaServiceId, {}, {{kFooFieldName, kFooFieldId}})};
 
 static const ServiceTypeDeployment kValidTypeDeploymentWithMethods{
     CreateTypeDeployment(kLolaServiceId, {}, {}, {{kFooMethodName, kFooMethodId}, {kDumbMethodName, kDumbMethodId}})};

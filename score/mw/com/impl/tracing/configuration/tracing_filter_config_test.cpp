@@ -583,7 +583,9 @@ class ConfigurationFixture : public ::testing::Test
     {
         if constexpr (std::is_same<Instance, LolaFieldInstanceDeployment>::value)
         {
-            return Instance(number_of_sample_slots, 1U, 1U, false, number_of_tracing_slots, false, false);
+            return Instance(LolaEventInstanceDeployment(number_of_sample_slots, 1U, 1U, false, number_of_tracing_slots),
+                            false,
+                            false);
         }
         else
         {
