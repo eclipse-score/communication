@@ -73,7 +73,9 @@ pkg_application(
     app_name = "proxy_restart_shall_not_affect_other_proxies",
     bin = [":proxy_restart_shall_not_affect_other_proxies"],
     etc = [
-        "mw_com_config.json",
+        "mw_com_config_provider.json",
+        "mw_com_config_consumer_1.json",
+        "mw_com_config_consumer_2.json",
         "logging.json",
     ],
     visibility = [

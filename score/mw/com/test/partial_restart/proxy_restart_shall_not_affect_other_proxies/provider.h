@@ -18,6 +18,8 @@
 
 namespace score::mw::com::test
 {
-void PerformProviderActions(CheckPointControl& check_point_control, score::cpp::stop_token stop_token);
+void PerformProviderActions(CheckPointControl& check_point_control,
+                            std::string_view mw_com_config_path,
+                            score::cpp::stop_token stop_token);
 }
 #endif  // SCORE_MW_COM_TEST_PARTIAL_RESTART_PROXY_RESTART_SHALL_NOT_AFFECT_OTHER_PROXIES_PROVIDER_H

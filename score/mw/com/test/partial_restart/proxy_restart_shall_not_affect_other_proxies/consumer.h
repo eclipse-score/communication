@@ -17,9 +17,12 @@
 
 namespace score::mw::com::test
 {
-void PerformFirstConsumerActions(CheckPointControl& check_point_control, score::cpp::stop_token stop_token);
+void PerformFirstConsumerActions(CheckPointControl& check_point_control,
+                                 std::string_view mw_com_config_path,
+                                 score::cpp::stop_token stop_token);
 
 void PerformSecondConsumerActions(CheckPointControl& check_point_control,
+                                  std::string_view mw_com_config_path,
                                   score::cpp::stop_token stop_token,
                                   const size_t create_proxy_and_receive_M_times);
 }  // namespace score::mw::com::test

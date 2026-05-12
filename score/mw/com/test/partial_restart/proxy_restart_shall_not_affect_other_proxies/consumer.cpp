@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
+#include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/check_point_control.h"
 #include "score/mw/com/test/common_test_resources/consumer_resources.h"
 #include "score/mw/com/test/common_test_resources/general_resources.h"
@@ -49,10 +50,10 @@ bool StartFindServiceAndWait(const std::string& tag,
     std::cout << "Consumer Step: Call StartFindService" << std::endl;
     auto find_service_callback = [&tag, &check_point_control, &handle_notification_data](
                                      auto service_handle_container, auto find_service_handle) noexcept {
-        std::cerr << tag << ": find service handler called" << std::endl;
+        std::cout << tag << ": find service handler called" << std::endl;
         if (service_handle_container.size() != 1)
         {
-            std::cerr << tag
+            std::cout << tag
                       << ": Error - StartFindService() is expected to find 1 service instance "
                          "but found: "
                       << service_handle_container.size() << std::endl;
@@ -62,7 +63,7 @@ bool StartFindServiceAndWait(const std::string& tag,
         std::lock_guard lock{handle_notification_data.mutex};
         handle_notification_data.handle = std::make_unique<TestServiceProxy::HandleType>(service_handle_container[0]);
         handle_notification_data.condition_variable.notify_all();
-        std::cerr << tag << ": FindServiceHandler handler done - found one service instance." << std::endl;
+        std::cout << tag << ": FindServiceHandler handler done - found one service instance." << std::endl;
 
         std::ignore = TestServiceProxy::StopFindService(find_service_handle);
     };
@@ -88,7 +89,7 @@ bool StartFindServiceAndWait(const std::string& tag,
     lock.unlock();
     if (!wait_result)
     {
-        std::cerr << tag << ": Did not receive handle in time!" << std::endl;
+        std::cout << tag << ": Did not receive handle in time!" << std::endl;
         check_point_control.ErrorOccurred();
         return false;
     }
@@ -98,10 +99,12 @@ bool StartFindServiceAndWait(const std::string& tag,
 
 }  // namespace
 
-void PerformFirstConsumerActions(CheckPointControl& check_point_control, score::cpp::stop_token stop_token)
+void PerformFirstConsumerActions(CheckPointControl& check_point_control,
+                                 std::string_view mw_com_config_path,
+                                 score::cpp::stop_token stop_token)
 {
     //***************************************************
-    // Step (1)- setuid
+    // Step (1)- initialize mw::com Runtime with correct config
     //***************************************************
     // LoLa requires that processes shall have distinct UIDs.
     // After fork. Parent and child proccess will have same UID.
@@ -111,13 +114,12 @@ void PerformFirstConsumerActions(CheckPointControl& check_point_control, score::
     // resmgr_attach() (used by LoLa message passing) works after setuid.
     procmgr_ability(0, PROCMGR_ADN_NONROOT | PROCMGR_AOP_ALLOW | PROCMGR_AID_PATHSPACE, PROCMGR_AID_EOL);
 #endif
-    const auto ret_setuid = setuid(kUidFirstConsumer);
-    if (ret_setuid != 0)
-    {
-        std::cerr << "set uid fails: " << errno << std::strerror(errno) << "\n";
-        check_point_control.ErrorOccurred();
-        return;
-    }
+
+    std::cout << "Consumer: Starting actions! mw_com_config_path: " << mw_com_config_path << std::endl;
+    // Initialize mw::com runtime with our explicit configuration
+    const char* argv[2U] = {"--service_instance_manifest", mw_com_config_path.data()};
+    runtime::InitializeRuntime(2, argv);
+
     //***************************************************************************
     // Step (2)- start find service and wait till it is found.
     //***************************************************************************
@@ -186,7 +188,7 @@ void PerformFirstConsumerActions(CheckPointControl& check_point_control, score::
 
     if (proceed_instruction != CheckPointControl::ProceedInstruction::FINISH_ACTIONS)
     {
-        std::cerr << "Provider Step (P.3): Unexpected proceed instruction received: "
+        std::cout << "Provider Step (P.3): Unexpected proceed instruction received: "
                   << static_cast<int>(proceed_instruction) << std::endl;
         check_point_control.ErrorOccurred();
         return;
@@ -194,12 +196,14 @@ void PerformFirstConsumerActions(CheckPointControl& check_point_control, score::
 }
 
 void PerformSecondConsumerActions(CheckPointControl& check_point_control,
+                                  std::string_view mw_com_config_path,
                                   score::cpp::stop_token stop_token,
                                   const size_t create_proxy_and_receive_M_times)
 {
     //***************************************************
-    // Step (1)- setuid
+    // Step (1)- initialize mw::com Runtime with correct config
     //***************************************************
+
     // LoLa requires that processes shall have distinct UIDs.
     // After fork. Parent and child proccess will have same UID.
     // setuid is used to make child proccess UID distinct.
@@ -208,13 +212,12 @@ void PerformSecondConsumerActions(CheckPointControl& check_point_control,
     // resmgr_attach() (used by LoLa message passing) works after setuid.
     procmgr_ability(0, PROCMGR_ADN_NONROOT | PROCMGR_AOP_ALLOW | PROCMGR_AID_PATHSPACE, PROCMGR_AID_EOL);
 #endif
-    const auto ret_setuid = setuid(kUidSecondConsumer);
-    if (ret_setuid != 0)
-    {
-        std::cerr << "Second Consumer Step (1): set uid fails: " << errno << std::strerror(errno) << "\n";
-        check_point_control.ErrorOccurred();
-        return;
-    }
+
+    std::cout << "Consumer: Starting actions! mw_com_config_path: " << mw_com_config_path << std::endl;
+    // Initialize mw::com runtime with our explicit configuration
+    const char* argv[2U] = {"--service_instance_manifest", mw_com_config_path.data()};
+    runtime::InitializeRuntime(2, argv);
+
     //*********************************************************
     // Step (2)- start find service and wait till it is found.
     //*********************************************************
@@ -286,13 +289,13 @@ void PerformSecondConsumerActions(CheckPointControl& check_point_control,
         //***************************************************
         // Step (8)- wait for controller command to proceed
         //***************************************************
-        std::cout << "Second Consumer Step (8): waiting for parent command to proceed\n";
+        std::cout << "Second Consumer Step (8): waiting for parent command to proceed" << std::endl;
         const auto proceed_instruction = WaitForChildProceed(check_point_control, stop_token);
-        std::cout << "Second Consumer Step (8): received parent command\n";
+        std::cout << "Second Consumer Step (8): received parent command" << std::endl;
 
         if (proceed_instruction != CheckPointControl::ProceedInstruction::PROCEED_NEXT_CHECKPOINT)
         {
-            std::cerr << "Second Consumer Step (8): Unexpected instruction received: "
+            std::cout << "Second Consumer Step (8): Unexpected instruction received: "
                       << static_cast<int>(proceed_instruction) << std::endl;
             check_point_control.ErrorOccurred();
             return;
@@ -304,12 +307,12 @@ void PerformSecondConsumerActions(CheckPointControl& check_point_control,
     //***************************************************
     // Step (9)- wait for controller command to finish
     //***************************************************
-    std::cout << "Second Consumer Step (9): waiting for parent command to finish\n";
+    std::cout << "Second Consumer Step (9): waiting for parent command to finish" << std::endl;
     const auto proceed_instruction = WaitForChildProceed(check_point_control, stop_token);
-    std::cout << "Second Consumer Step (9): received parent command\n";
+    std::cout << "Second Consumer Step (9): received parent command" << std::endl;
     if (proceed_instruction != CheckPointControl::ProceedInstruction::FINISH_ACTIONS)
     {
-        std::cerr << "Second Consumer Step (9): Unexpected instruction received: "
+        std::cout << "Second Consumer Step (9): Unexpected instruction received: "
                   << static_cast<int>(proceed_instruction) << std::endl;
         check_point_control.ErrorOccurred();
         return;

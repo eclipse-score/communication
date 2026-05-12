@@ -19,5 +19,6 @@ def proxy_restart_shall_not_affect_other_proxies(target, number_of_consumer_rest
         args,
         cwd="/opt/proxy_restart_shall_not_affect_other_proxies",
         wait_on_exit=True,
+        wait_timeout=120,
         **kwargs,
     )
