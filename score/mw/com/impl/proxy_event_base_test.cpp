@@ -172,39 +172,6 @@ TYPED_TEST(ProxyEventBaseCreationFixture, CreatingServiceElementWithValidEventBi
     EXPECT_TRUE(dummy_proxy.AreBindingsValid());
 }
 
-TYPED_TEST(ProxyEventBaseCreationFixture, CreatingServiceElementWithInvalidEventBindingMarksProxyBindingInvalid)
-{
-    // Given a proxy with a valid binding
-    DummyProxy dummy_proxy(std::make_unique<mock_binding::Proxy>(),
-                           make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
-
-    // When creating a ProxyEvent with an invalid binding
-    auto service_element = std::make_unique<typename ProxyEventBaseCreationFixture<TypeParam>::ServiceElementType>(
-        dummy_proxy,
-        std::unique_ptr<typename ProxyEventBaseCreationFixture<TypeParam>::MockServiceElementType>(nullptr),
-        kEventName);
-
-    // Then the proxy should report that all bindings are not valid
-    EXPECT_FALSE(dummy_proxy.AreBindingsValid());
-}
-
-TYPED_TEST(ProxyEventBaseCreationFixture, CreatingServiceElementWithInvalidProxyBindingMarksProxyBindingInvalid)
-{
-    auto valid_proxy_event_binding =
-        std::make_unique<typename ProxyEventBaseCreationFixture<TypeParam>::MockServiceElementType>();
-
-    // Given a proxy with a valid binding
-    DummyProxy dummy_proxy(nullptr,
-                           make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
-
-    // When creating a ProxyEvent with a valid binding
-    auto service_element = std::make_unique<typename ProxyEventBaseCreationFixture<TypeParam>::ServiceElementType>(
-        dummy_proxy, std::move(valid_proxy_event_binding), kEventName);
-
-    // Then the proxy should report that all bindings are not valid
-    EXPECT_FALSE(dummy_proxy.AreBindingsValid());
-}
-
 TYPED_TEST(ProxyEventBaseCreationFixture,
            CreatingServiceElementWithValidProxyEventBindingWillRegisterAndUnregisterEventBinding)
 {

@@ -75,7 +75,12 @@ Result<GenericProxy> GenericProxy::Create(HandleType instance_handle) noexcept
     const auto& instance_identifier = generic_proxy.handle_.GetInstanceIdentifier();
     const auto event_names = GetEventNameList(instance_identifier);
     generic_proxy.FillEventMap(event_names);
-    if (!generic_proxy.AreBindingsValid())
+    auto generic_proxy_events = generic_proxy.GetEvents();
+    const bool are_event_bindings_valid =
+        std::all_of(generic_proxy_events.cbegin(), generic_proxy_events.cend(), [](const auto& element) {
+            return ProxyEventBaseView{element.second}.GetBinding() != nullptr;
+        });
+    if (!are_event_bindings_valid)
     {
         ::score::mw::log::LogError("lola") << "Could not create GenericProxy as binding is invalid.";
         return MakeUnexpected(ComErrc::kBindingFailure);

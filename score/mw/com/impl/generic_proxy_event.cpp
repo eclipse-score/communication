@@ -25,12 +25,6 @@ GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const std::string_view eve
                      GenericProxyEventBindingFactory::Create(base, event_name),
                      event_name}
 {
-    ProxyBaseView proxy_base_view{base};
-    if (!binding_base_)
-    {
-        proxy_base_view.MarkServiceElementBindingInvalid();
-        return;
-    }
 }
 
 GenericProxyEvent::GenericProxyEvent(ProxyBase& base,
@@ -38,12 +32,6 @@ GenericProxyEvent::GenericProxyEvent(ProxyBase& base,
                                      const std::string_view event_name)
     : ProxyEventBase{base, ProxyBaseView{base}.GetBinding(), std::move(proxy_binding), event_name}
 {
-    ProxyBaseView proxy_base_view{base};
-    if (!binding_base_)
-    {
-        proxy_base_view.MarkServiceElementBindingInvalid();
-        return;
-    }
 }
 
 std::size_t GenericProxyEvent::GetSampleSize() const noexcept

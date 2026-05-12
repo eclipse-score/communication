@@ -28,19 +28,13 @@ namespace score::mw::com::impl
 {
 
 ProxyBase::ProxyBase(std::unique_ptr<ProxyBinding> proxy_binding, HandleType handle)
-    : proxy_binding_{std::move(proxy_binding)},
-      handle_{std::move(handle)},
-      are_service_element_bindings_valid_{true},
-      events_{},
-      fields_{},
-      methods_{}
+    : proxy_binding_{std::move(proxy_binding)}, handle_{std::move(handle)}, events_{}, fields_{}, methods_{}
 {
 }
 
 ProxyBase::ProxyBase(ProxyBase&& other) noexcept
     : proxy_binding_(std::move(other.proxy_binding_)),
       handle_(std::move(other.handle_)),
-      are_service_element_bindings_valid_(other.are_service_element_bindings_valid_),
       events_(std::move(other.events_)),
       fields_(std::move(other.fields_)),
       methods_(std::move(other.methods_))
@@ -72,7 +66,6 @@ ProxyBase& ProxyBase::operator=(ProxyBase&& other) noexcept
 
     proxy_binding_ = std::move(other.proxy_binding_);
     handle_ = std::move(other.handle_);
-    are_service_element_bindings_valid_ = other.are_service_element_bindings_valid_;
     events_ = std::move(other.events_);
     fields_ = std::move(other.fields_);
     methods_ = std::move(other.methods_);
@@ -158,6 +151,23 @@ score::Result<void> ProxyBase::StopFindService(const FindServiceHandle handle) n
     return stop_find_service_result;
 }
 
+bool ProxyBase::AreBindingsValid() const noexcept
+{
+    const bool is_proxy_binding_valid{proxy_binding_ != nullptr};
+
+    const bool are_event_bindings_valid = std::all_of(events_.begin(), events_.end(), [](const auto& element) {
+        return ProxyEventBaseView{element.second.get()}.GetBinding() != nullptr;
+    });
+    const bool are_field_bindings_valid = std::all_of(fields_.begin(), fields_.end(), [](const auto& element) {
+        return ProxyFieldBaseView{element.second.get()}.GetEventBinding() != nullptr;
+    });
+    const bool are_method_bindings_valid = std::all_of(methods_.begin(), methods_.end(), [](const auto& element) {
+        return ProxyMethodBaseView{element.second.get()}.GetMethodBinding() != nullptr;
+    });
+
+    return is_proxy_binding_valid && are_event_bindings_valid && are_field_bindings_valid && are_method_bindings_valid;
+}
+
 Result<void> ProxyBase::SetupMethods()
 {
     const auto result = proxy_binding_->SetupMethods();
@@ -204,11 +214,6 @@ ProxyBinding* ProxyBaseView::GetBinding() noexcept
 const HandleType& ProxyBaseView::GetAssociatedHandleType() const noexcept
 {
     return proxy_base_.handle_;
-}
-
-void ProxyBaseView::MarkServiceElementBindingInvalid() noexcept
-{
-    proxy_base_.are_service_element_bindings_valid_ = false;
 }
 
 void ProxyBaseView::RegisterEvent(const std::string_view event_name, ProxyEventBase& event)

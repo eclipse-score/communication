@@ -68,11 +68,6 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, *this);
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
     }
 
     ~ProxyMethod() final = default;

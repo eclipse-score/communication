@@ -36,6 +36,7 @@ namespace score::mw::com::impl
 
 class EventBindingRegistrationGuard;
 class ProxyBase;
+class ProxyEventBaseView;
 
 /// \brief This is the user-visible class of an event that is part of a proxy. It contains ProxyEvent functionality that
 /// is agnostic of the data type that is transferred by the event.
@@ -49,6 +50,11 @@ class ProxyEventBase
     // private members and used for testing purposes only.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyEventBaseAttorney;
+
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision. This class provides a view to the private members of this class.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend ProxyEventBaseView;
 
   public:
     /// \brief Constructs a ProxyEventBase with the given proxy event binding.
@@ -238,6 +244,20 @@ class ProxyEventBase
     ///          EventReceiveHandler call context or not and thus to call scope.expire() or not. This thread local
     ///          variable enables this detection.
     static thread_local bool is_in_receive_handler_context;
+};
+
+class ProxyEventBaseView
+{
+  public:
+    explicit ProxyEventBaseView(const ProxyEventBase& proxy_event_base) : proxy_event_base_{proxy_event_base} {}
+
+    const ProxyEventBindingBase* GetBinding() const
+    {
+        return proxy_event_base_.binding_base_.get();
+    }
+
+  private:
+    const ProxyEventBase& proxy_event_base_;
 };
 
 }  // namespace score::mw::com::impl

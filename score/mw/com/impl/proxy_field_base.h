@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/proxy_event_base.h"
 
+#include "score/mw/com/impl/proxy_event_binding_base.h"
 #include "score/result/result.h"
 
 #include <score/assert.hpp>
@@ -27,8 +28,15 @@
 namespace score::mw::com::impl
 {
 
+class ProxyFieldBaseView;
+
 class ProxyFieldBase
 {
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision. This class provides a view to the private members of this class.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend ProxyFieldBaseView;
+
   public:
     ProxyFieldBase(ProxyBase& proxy_base, ProxyEventBase* proxy_event_base_dispatch, std::string_view field_name)
         : proxy_base_{proxy_base}, proxy_event_base_dispatch_{proxy_event_base_dispatch}, field_name_{field_name}
@@ -167,6 +175,24 @@ class ProxyFieldBase
     std::reference_wrapper<ProxyBase> proxy_base_;
     ProxyEventBase* proxy_event_base_dispatch_;
     std::string_view field_name_;
+};
+
+class ProxyFieldBaseView
+{
+  public:
+    explicit ProxyFieldBaseView(const ProxyFieldBase& proxy_field_base) : proxy_field_base_{proxy_field_base} {}
+
+    const ProxyEventBindingBase* GetEventBinding() const noexcept
+    {
+        if (proxy_field_base_.proxy_event_base_dispatch_ == nullptr)
+        {
+            return nullptr;
+        }
+        return ProxyEventBaseView{*proxy_field_base_.proxy_event_base_dispatch_}.GetBinding();
+    }
+
+  private:
+    const ProxyFieldBase& proxy_field_base_;
 };
 
 }  // namespace score::mw::com::impl
