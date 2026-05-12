@@ -436,6 +436,11 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
 
     void ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed() noexcept;
 
+    void ExpectControlSegmentOpened(ServiceDataControl& service_data_control_qm,
+                                    ServiceDataControl* service_data_control_asil_b = nullptr) noexcept;
+
+    void ExpectDataSegmentOpened(ServiceDataStorage& service_data_storage) noexcept;
+
     std::unique_ptr<ServiceDataControl> CreateServiceDataControlWithEvent(ElementFqId element_fq_id,
                                                                           QualityType quality_type) noexcept;
     static EventControl& GetEventControlFromServiceDataControl(ElementFqId element_fq_id,
