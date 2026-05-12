@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/i_partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_unsubscription_registration_guard.h"
@@ -27,6 +28,7 @@
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
@@ -177,6 +179,11 @@ class Skeleton final : public SkeletonBinding
                                             const pid_t proxy_pid);
 
     ResultBlank OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier);
+
+    Result<std::pair<MethodSubscriptionRegistrationGuard, MethodUnsubscriptionRegistrationGuard>>
+    RegisterMethodHandlers(const QualityType asil_level,
+                           const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                           IMessagePassingService& lola_message_passing);
 
     using MethodIdsToUnsubscribe = std::vector<UniqueMethodIdentifier>;
 

@@ -742,8 +742,9 @@ void Proxy::TeardownMethods() noexcept
         return;
     }
 
-    // Subscription state is tracked directly in Proxy (not via ProxyMethod references) because ProxyMethod
-    // objects may have already been destroyed by the time TeardownMethods() is called from ~Proxy().
+    // Skip if never subscribed (SubscribeServiceMethod failed) or skeleton already stopped offering
+    // (ServiceAvailabilityChangeHandler cleared this flag). Safe to read without a lock: find_service_guard_
+    // is already destroyed, so no concurrent ServiceAvailabilityChangeHandler callbacks can run.
     const bool is_subscribed = are_proxy_methods_subscribed_.load();
     if (is_subscribed)
     {
@@ -767,7 +768,6 @@ void Proxy::TeardownMethods() noexcept
     const auto method_shm_path_name = GetMethodChannelShmName();
     memory::shared::SharedMemoryFactory::Remove(method_shm_path_name);
     method_shm_resource_.reset();
-    memory::shared::SharedMemoryFactory::RemoveStaleArtefacts(method_shm_path_name);
 }
 
 memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermissions() const

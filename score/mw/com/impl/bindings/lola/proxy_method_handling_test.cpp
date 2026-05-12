@@ -425,10 +425,10 @@ TEST_F(ProxySetupMethodsPartialRestartFixture, RemovesStaleArtefactsIfShmFileAlr
     // which returns that it already exists (indicating that a previous Proxy was created which then crashed).
     EXPECT_CALL(filesystem_fake_.GetStandard(), Exists(StartsWith(kMethodShmChannelPrefix))).WillOnce(Return(true));
 
-    // Expecting that RemoveStaleArtefacts will be called with the same shm path on setup (partial restart cleanup)
-    // and again on proxy destruction (TeardownMethods cleanup).
+    // Expecting that RemoveStaleArtefacts is called once during SetupMethods (partial restart cleanup).
+    // On destruction, TeardownMethods only calls Remove (not RemoveStaleArtefacts).
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, RemoveStaleArtefacts(StartsWith(kMethodChannelPrefix)))
-        .Times(2);
+        .Times(1);
 
     // When calling SetupMethods with the name of the registered ProxyMethod
     score::cpp::ignore = proxy_->SetupMethods();
@@ -1182,10 +1182,8 @@ TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSetupMethodsRemovesShmRe
               TypeErasedCallQueue::TypeErasedElementInfo{
                   kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
-    // Expecting that a Remove call and a RemoveStaleArtefacts call are made for the method SHM region on destruction
+    // Expecting that Remove is called exactly once on destruction to unlink the method SHM.
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Remove(StartsWith(kMethodChannelPrefix))).Times(1);
-    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, RemoveStaleArtefacts(StartsWith(kMethodChannelPrefix)))
-        .Times(1);
 
     score::cpp::ignore = proxy_->SetupMethods();
 
@@ -1207,6 +1205,49 @@ TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoe
     // Expecting that Remove and RemoveStaleArtefacts are never called because the SHM was never created
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Remove(_)).Times(0);
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, RemoveStaleArtefacts(_)).Times(0);
+
+    // When the proxy is destroyed
+    proxy_.reset();
+}
+
+TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSkeletonStopOfferedDoesNotCallUnsubscribeServiceMethod)
+{
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that UnsubscribeServiceMethod is NOT called on destruction because the skeleton already
+    // cleaned up its side when it stopped offering (the subscribed flag was cleared by StopOffer).
+    EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _)).Times(0);
+
+    score::cpp::ignore = proxy_->SetupMethods();
+    StopOfferService();
+
+    // When the proxy is destroyed
+    proxy_.reset();
+}
+
+TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSetupMethodsWithFailedSubscriptionStillRemovesShmRegion)
+{
+    GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
+        .GivenAProxy()
+        .GivenAMockedSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyMethodId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that Remove is still called to clean up the SHM even though subscription failed,
+    // because the SHM was successfully created during SetupMethods.
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kCommunicationLinkError)));
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Remove(StartsWith(kMethodChannelPrefix))).Times(1);
+
+    score::cpp::ignore = proxy_->SetupMethods();
 
     // When the proxy is destroyed
     proxy_.reset();

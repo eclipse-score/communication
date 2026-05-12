@@ -312,96 +312,32 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     on_service_method_subscribed_handler_scope_ = score::safecpp::Scope<>();
     method_call_handler_scope_ = score::safecpp::Scope<>();
 
-    // Register a handler with message passing which will open methods shared memory regions when the proxy notifies via
-    // message passing that it has finished setting up the regions. We always register a handler for QM proxies and also
-    // register a handler for ASIL-B proxies if this skeleton is ASIL-B.
-    auto allowed_consumers_qm = GetAllowedConsumers(QualityType::kASIL_QM);
-    auto qm_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
-        QualityType::kASIL_QM,
-        skeleton_instance_identifier,
-        IMessagePassingService::ServiceMethodSubscribedHandler{
-            on_service_method_subscribed_handler_scope_,
-            [this](const ProxyInstanceIdentifier proxy_instance_identifier,
-                   const uid_t proxy_uid,
-                   const pid_t proxy_pid) -> Result<void> {
-                return OnServiceMethodsSubscribed(
-                    proxy_instance_identifier, proxy_uid, QualityType::kASIL_QM, proxy_pid);
-            }},
-        allowed_consumers_qm);
-    if (!(qm_registration_result.has_value()))
+    // Register subscribe and unsubscribe handlers for QM proxies. Always required when methods are present.
+    auto qm_handlers_result =
+        RegisterMethodHandlers(QualityType::kASIL_QM, skeleton_instance_identifier, lola_message_passing);
+    if (!qm_handlers_result.has_value())
     {
-        score::mw::log::LogError("lola") << "Could not register QM service method handler. Returning error.";
-        return MakeUnexpected<void>(qm_registration_result.error());
+        return MakeUnexpected<void>(qm_handlers_result.error());
     }
-    method_subscription_registration_guard_qm_.emplace(std::move(qm_registration_result).value());
-
-    // Register an unsubscription handler for QM proxies. The handler uses the same scope as the subscribe handler
-    // (on_service_method_subscribed_handler_scope_) so that unsubscriptions arriving after StopOffer are silently
-    // ignored (the scope will have been expired).
-    auto qm_unsubscription_result = lola_message_passing.RegisterOnServiceMethodUnsubscribedHandler(
-        QualityType::kASIL_QM,
-        skeleton_instance_identifier,
-        IMessagePassingService::ServiceMethodUnsubscribedHandler{
-            on_service_method_subscribed_handler_scope_,
-            [this](const ProxyInstanceIdentifier proxy_instance_identifier) -> ResultBlank {
-                return OnServiceMethodsUnsubscribed(proxy_instance_identifier);
-            }});
-    if (!(qm_unsubscription_result.has_value()))
-    {
-        method_subscription_registration_guard_qm_.reset();
-        score::mw::log::LogError("lola")
-            << "Could not register QM service method unsubscription handler. Returning error.";
-        return MakeUnexpected<Blank>(qm_unsubscription_result.error());
-    }
-    method_unsubscription_registration_guard_qm_.emplace(std::move(qm_unsubscription_result).value());
 
     if (quality_type_ == QualityType::kASIL_B)
     {
-        auto allowed_consumers_asil_b = GetAllowedConsumers(QualityType::kASIL_B);
-        auto asil_b_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
-            QualityType::kASIL_B,
-            skeleton_instance_identifier,
-            IMessagePassingService::ServiceMethodSubscribedHandler{
-                on_service_method_subscribed_handler_scope_,
-                [this](const ProxyInstanceIdentifier proxy_instance_identifier,
-                       const uid_t proxy_uid,
-                       const pid_t proxy_pid) -> Result<void> {
-                    return OnServiceMethodsSubscribed(
-                        proxy_instance_identifier, proxy_uid, QualityType::kASIL_B, proxy_pid);
-                }},
-            allowed_consumers_asil_b);
-        if (!(asil_b_registration_result))
+        auto asil_b_handlers_result =
+            RegisterMethodHandlers(QualityType::kASIL_B, skeleton_instance_identifier, lola_message_passing);
+        if (!asil_b_handlers_result.has_value())
         {
-            method_subscription_registration_guard_qm_.reset();
-            method_unsubscription_registration_guard_qm_.reset();
-            score::mw::log::LogError("lola") << "Could not register ASIL-B service method handler. Returning error.";
-            return MakeUnexpected<void>(asil_b_registration_result.error());
+            return MakeUnexpected<void>(asil_b_handlers_result.error());
         }
-        score::cpp::ignore =
-            method_subscription_registration_guard_asil_b_.emplace(std::move(asil_b_registration_result).value());
-
-        auto asil_b_unsubscription_result = lola_message_passing.RegisterOnServiceMethodUnsubscribedHandler(
-            QualityType::kASIL_B,
-            skeleton_instance_identifier,
-            IMessagePassingService::ServiceMethodUnsubscribedHandler{
-                on_service_method_subscribed_handler_scope_,
-                [this](const ProxyInstanceIdentifier proxy_instance_identifier) -> ResultBlank {
-                    return OnServiceMethodsUnsubscribed(proxy_instance_identifier);
-                }});
-        if (!(asil_b_unsubscription_result.has_value()))
-        {
-            method_subscription_registration_guard_qm_.reset();
-            method_unsubscription_registration_guard_qm_.reset();
-            method_subscription_registration_guard_asil_b_.reset();
-            score::mw::log::LogError("lola")
-                << "Could not register ASIL-B service method unsubscription handler. Returning error.";
-            return MakeUnexpected<Blank>(asil_b_unsubscription_result.error());
-        }
-        score::cpp::ignore =
-            method_unsubscription_registration_guard_asil_b_.emplace(std::move(asil_b_unsubscription_result).value());
+        auto asil_b_handlers = std::move(asil_b_handlers_result).value();
+        method_subscription_registration_guard_asil_b_.emplace(std::move(asil_b_handlers.first));
+        method_unsubscription_registration_guard_asil_b_.emplace(std::move(asil_b_handlers.second));
     }
 
+    auto qm_handlers = std::move(qm_handlers_result).value();
+    method_subscription_registration_guard_qm_.emplace(std::move(qm_handlers.first));
+    method_unsubscription_registration_guard_qm_.emplace(std::move(qm_handlers.second));
     prepare_offer_called_ = true;
+
     return {};
 }
 
@@ -586,6 +522,56 @@ auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
         memory_manager_.CreateEventControlsInCreatedSharedMemory(element_fq_id, element_properties);
 
     return GenericRegistrationResult{type_erased_event_data_storage, event_data_control_qm, event_data_control_asil_b};
+}
+
+auto Skeleton::RegisterMethodHandlers(const QualityType asil_level,
+                                      const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                      IMessagePassingService& lola_message_passing)
+    -> Result<std::pair<MethodSubscriptionRegistrationGuard, MethodUnsubscriptionRegistrationGuard>>
+{
+    auto allowed_consumers = GetAllowedConsumers(asil_level);
+    // Register a handler with message passing which will open methods shared memory regions when the proxy notifies via
+    // message passing that it has finished setting up the regions. We always register a handler for QM proxies and also
+    // register a handler for ASIL-B proxies if this skeleton is ASIL-B.
+    auto subscription_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
+        asil_level,
+        skeleton_instance_identifier,
+        IMessagePassingService::ServiceMethodSubscribedHandler{
+            on_service_method_subscribed_handler_scope_,
+            [this, asil_level](const ProxyInstanceIdentifier proxy_instance_identifier,
+                               const uid_t proxy_uid,
+                               const pid_t proxy_pid) -> Result<void> {
+                return OnServiceMethodsSubscribed(proxy_instance_identifier, proxy_uid, asil_level, proxy_pid);
+            }},
+        allowed_consumers);
+    if (!subscription_result.has_value())
+    {
+        score::mw::log::LogError("lola") << "Could not register " << ToString(asil_level)
+                                         << " service method subscribed handler. Returning error.";
+        return MakeUnexpected<std::pair<MethodSubscriptionRegistrationGuard, MethodUnsubscriptionRegistrationGuard>>(
+            subscription_result.error());
+    }
+
+    // Register an unsubscription handler for QM proxies. The handler uses the same scope as the subscribe handler
+    // (on_service_method_subscribed_handler_scope_) so that unsubscriptions arriving after StopOffer are silently
+    // ignored (the scope will have been expired).
+    auto unsubscription_result = lola_message_passing.RegisterOnServiceMethodUnsubscribedHandler(
+        asil_level,
+        skeleton_instance_identifier,
+        IMessagePassingService::ServiceMethodUnsubscribedHandler{
+            on_service_method_subscribed_handler_scope_,
+            [this](const ProxyInstanceIdentifier proxy_instance_identifier) -> ResultBlank {
+                return OnServiceMethodsUnsubscribed(proxy_instance_identifier);
+            }});
+    if (!unsubscription_result.has_value())
+    {
+        score::mw::log::LogError("lola") << "Could not register " << ToString(asil_level)
+                                         << " service method unsubscribed handler. Returning error.";
+        return MakeUnexpected<std::pair<MethodSubscriptionRegistrationGuard, MethodUnsubscriptionRegistrationGuard>>(
+            unsubscription_result.error());
+    }
+
+    return std::make_pair(std::move(subscription_result).value(), std::move(unsubscription_result).value());
 }
 
 Result<void> Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
