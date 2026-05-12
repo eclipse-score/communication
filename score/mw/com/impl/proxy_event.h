@@ -207,7 +207,7 @@ auto ProxyEvent<SampleType>::operator=(ProxyEvent&& other) & noexcept -> ProxyEv
 {
     if (this != &other)
     {
-        ProxyEvent::operator=(std::move(other));
+        ProxyEventBase::operator=(std::move(static_cast<ProxyEventBase&&>(other)));
         proxy_event_mock_ = std::move(other.proxy_event_mock_);
         // Since the address of this event has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};

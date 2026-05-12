@@ -528,6 +528,37 @@ TEST(ProxyEventTest, IsMoveable)
     static_assert(std::is_move_assignable<ProxyEvent<SampleType>>::value, "Is not move assignable");
 }
 
+using ProxyEventMoveAssignmentTest = ProxyEventFixture<ProxyEventStruct>;
+TEST_F(ProxyEventMoveAssignmentTest, MoveAssignmentTransfersBindingFromSourceToDestination)
+{
+    RecordProperty("Verifies", "SCR-5897869");  // SWS_CM_00135
+    RecordProperty("Description",
+                   "After move-assigning one ProxyEvent into another the destination delegates calls to the source's "
+                   "binding");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    StrictMock<mock_binding::ProxyEvent<SampleType>> second_binding_mock{};
+    auto second_binding_facade = std::make_unique<mock_binding::ProxyEventFacade<SampleType>>(second_binding_mock);
+
+    // Given two registered ProxyEvents, each with their own binding mock
+    ProxyEventType second_event{empty_proxy_, std::move(second_binding_facade), kEventName2};
+    ProxyBaseView{empty_proxy_}.RegisterEvent(kEventName, proxy_event_);
+    ProxyBaseView{empty_proxy_}.RegisterEvent(kEventName2, second_event);
+
+    constexpr std::size_t max_sample_count{7U};
+    EXPECT_CALL(second_binding_mock, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kNotSubscribed));
+    EXPECT_CALL(second_binding_mock, Subscribe(max_sample_count)).WillOnce(Return(score::Result<void>{}));
+
+    // When move-assigning the first into the second
+    proxy_event_ = std::move(second_event);
+
+    // Then subsequent calls on the destination dispatch to the source's binding (proving the binding was transferred)
+    const auto subscribe_result = proxy_event_.Subscribe(max_sample_count);
+    ASSERT_TRUE(subscribe_result.has_value());
+}
+
 TEST(ProxyEventTest, ClassTypeDependsOnEventDataType)
 {
     RecordProperty("Verifies", "SCR-29235350");
