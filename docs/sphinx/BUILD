@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_python//sphinxdocs:readthedocs.bzl", "readthedocs_install")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
@@ -78,4 +79,11 @@ sphinx_module(
     deps = [
         "//score/message_passing/dependability:dependable_element_message_passing_doc",
     ],
+)
+
+readthedocs_install(
+    name = "readthedocs_install",
+    testonly = True,
+    docs = [":sphinx_doc"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
