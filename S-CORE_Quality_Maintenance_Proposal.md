@@ -69,9 +69,10 @@ Block merges in CI if quality thresholds are not met.
 
 Use both: dashboard for visibility and CI for enforcement of the most important checks.
 
-Heavy checks (CodeQL, clang-tidy, coverage) run in one of two ways:
+Heavy checks (CodeQL, clang-tidy, coverage) run in one of three ways:
 - **Manual trigger** — developer triggers once after review is done, before merge
 - **Nightly schedule** — runs automatically every night for continuous monitoring
+- **Mandatory on PR** — selected critical checks (e.g. clang-tidy) run automatically on every PR, while expensive checks (e.g. CodeQL, coverage) run only nightly or manually
 
 This means expensive jobs do not run on every commit, but still run before merge.
 
@@ -92,9 +93,10 @@ These times were measured from a real CI run on this repository (PR #398):
 |-------|--------------|
 | CodeQL analysis | ~5 hours 56 minutes |
 | Clang-Tidy analysis | ~44 minutes |
-| Coverage analysis | ~33 minutes |
+| Coverage analysis | ~38 minutes |
 
 **Key observations:**
+- These timings are not fixed values. They can change from run to run based on code changes, cache hits/misses, runner load, and workflow configuration.
 - CodeQL is very slow (~6 hours) because it traces all compilations, builds a security database, and runs queries. Running it on every commit is not practical.
 - Clang-tidy and coverage analysis are moderately fast but still too slow for every PR commit.
 - The manual post-review trigger is the best fit — runs once when it matters, does not slow down normal development.
@@ -133,9 +135,6 @@ PR feedback stays fast (5–10 minutes). Heavy checks only run once after review
 
 **How do we handle findings?**
 Critical findings block merge. High severity fixed in 1–2 days. Medium and low tracked in backlog with owner and due date.
-
-**Is coverage timing final?**
-The 33-minute time is from the current setup. If test scope or coverage tools change, runtime may change. We will re-measure after configuration changes.
 
 **How do we know the approach is working?**
 We track per-job duration, pass/fail results, and findings count over time. We review whether quality improves and whether developer wait time is acceptable.
@@ -180,7 +179,10 @@ Start with the hybrid model. Run heavy checks manually after review and nightly.
 | Option | Cost | Best For |
 |--------|------|---------|
 | **Grafana** | Free (open source) | Trend charts, team dashboards |
+| **Sphinx (Static Site Dashboard)** | Free (open source) | Publishing KPI summary pages from CI artifacts in a documentation-style site |
 | **Static HTML Dashboard** | Free | Simple KPI reports, low setup effort |
+| **GitHub Pages (with Static HTML/Sphinx)** | Free for public repositories | Hosting a permanent dashboard URL directly from CI output |
+| **MkDocs + Material Theme** | Free (open source) | Clean documentation-style KPI dashboard with easy navigation |
 | **SonarQube Community** | Free (self-hosted) | Code quality and coverage reporting |
 | **Power BI** | Free desktop, paid cloud | Good visualization if company license exists |
 
