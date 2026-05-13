@@ -734,6 +734,14 @@ impl<S> SampleContainer<S> {
     {
         self.inner.front().map(<S as Deref>::deref)
     }
+
+    /// Returns the maximum capacity of the container.
+    /// 
+    /// # Returns
+    /// The maximum number of samples that the container can hold.
+    pub fn capacity(&self) -> usize {
+        self.inner.capacity()
+    }
 }
 
 /// Active event subscription with polling and async receive capabilities.
@@ -940,8 +948,6 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// # Errors
     /// Returns an error if a problem occurs during sample reception
     fn to_stream<'a>(
-        //TODO: We may take self by value and consume it in the stream and can be recover before dropping the stream.
-        //Based on implementation complexity, we can decide whether to take self by value or by reference.
         &'a self,
         max_samples: usize,
     ) -> impl Stream<Item = Result<Self::Sample<'a>>> + 'a;

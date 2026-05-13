@@ -77,6 +77,8 @@ pub enum ReceiveFailedReason {
     Cancelled,
     #[error("Input value out of bounds, maximum sample {max}, but new sample is {requested}")]
     InputValueOutOfBounds { max: usize, requested: usize },
+    #[error("Stream buffer overflow: capacity is {max}, excess samples were discarded")]
+    BufferOverflow { max: usize },
 }
 
 /// Comprehensive error reasons for event-related failures
