@@ -178,6 +178,7 @@ py_binary(
         ":make_configs",
     ],
     env = {"MW_LOG_CONFIG_FILE": "$(location logging.json)"},
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 cc_gtest_unit_test(

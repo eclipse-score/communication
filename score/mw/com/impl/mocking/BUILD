@@ -48,6 +48,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:event_receive_handler",
         "//score/mw/com/impl:subscription_state",
+        "//score/mw/com/impl:subscription_state_change_handler",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",

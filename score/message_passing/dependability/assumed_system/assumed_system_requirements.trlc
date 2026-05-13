@@ -1,0 +1,27 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package MessagePassingSEooC
+
+import ScoreReq
+
+///////////////////////////////
+// Assumed System Requirements
+// System level requirements for MessagePassing SEooC
+///////////////////////////////
+
+ScoreReq.AssumedSystemReq ASR_MP_001 {
+    description = "The system shall provide a mechanism for inter-process communication via a client-server messaging protocol."
+    safety = ScoreReq.Asil.B
+    rationale = "Application processes need to exchange requests and responses reliably across process boundaries."
+    version = 1
+}

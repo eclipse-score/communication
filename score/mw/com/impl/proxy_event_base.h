@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/proxy_event_binding_base.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/subscription_state.h"
+#include "score/mw/com/impl/subscription_state_change_handler.h"
 #include "score/mw/com/impl/tracing/proxy_event_tracing_data.h"
 
 #include "score/mw/com/impl/mocking/i_proxy_event.h"
@@ -118,6 +119,22 @@ class ProxyEventBase
      *          After a call to this method, the event behaves as if it had just been constructed.
      */
     void Unsubscribe() noexcept;
+
+    /**
+     * \api
+     * \brief Sets/Registers a SubscriptionStateChangeHandler for this event. This handler will be called whenever the
+     * subscription state of this event changes.
+     * \note An already set/registered SubscriptionStateChangeHandler will be silently overridden.
+     * \param handler
+     */
+    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept;
+
+    /**
+     * \api
+     * \brief Unsets/Unregisters a SubscriptionStateChangeHandler for this event. After this method returns, it is
+     *        guaranteed, that the previously registered handler is neither active nor will be called anymore.
+     */
+    Result<void> UnsetSubscriptionStateChangeHandler() noexcept;
 
     /**
      * \api

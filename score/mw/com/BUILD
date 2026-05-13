@@ -14,7 +14,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
-load("@score_baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # Capture README.md for Sphinx documentation at convenient location
@@ -170,9 +169,4 @@ cc_unit_test_suites_for_host_and_qnx(
     visibility = [
         "//platform/aas/mw:__pkg__",
     ],
-)
-
-clang_tidy_extra_checks(
-    name = "clang_tidy_extra_checks",
-    tidy_config_file = ".clang-tidy-extra",
 )

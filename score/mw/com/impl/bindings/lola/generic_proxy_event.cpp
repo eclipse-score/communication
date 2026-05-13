@@ -97,6 +97,16 @@ Result<void> GenericProxyEvent::UnsetReceiveHandler() noexcept
     return proxy_event_common_.UnsetReceiveHandler();
 }
 
+Result<void> GenericProxyEvent::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
+{
+    return proxy_event_common_.SetSubscriptionStateChangeHandler(std::move(handler));
+}
+
+Result<void> GenericProxyEvent::UnsetSubscriptionStateChangeHandler() noexcept
+{
+    return proxy_event_common_.UnsetSubscriptionStateChangeHandler();
+}
+
 pid_t GenericProxyEvent::GetEventSourcePid() const noexcept
 {
     return proxy_event_common_.GetEventSourcePid();

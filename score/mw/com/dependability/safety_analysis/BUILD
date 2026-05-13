@@ -11,27 +11,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@lobster//:lobster.bzl", "lobster_trlc")
-load("@trlc//:trlc.bzl", "trlc_requirements", "trlc_requirements_test")
-
-# Failures Modes
-trlc_requirements(
-    name = "failure_modes",
-    srcs = [
-        "failure_modes.trlc",
-    ],
-    spec = [
-        "@score_tooling//bazel/rules/rules_score/trlc/config:score_requirements_model",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-trlc_requirements_test(
-    name = "failure_modes_test",
-    reqs = [
-        ":failure_modes",
-    ],
-    visibility = ["//visibility:public"],
+load(
+    "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "fmea",
 )
 
 # Root Causes
@@ -46,23 +28,11 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-# Control Measures
-# AoUs
-trlc_requirements(
-    name = "control_measures",
-    srcs = [
-        "aou.trlc",
-    ],
-    spec = [
-        "@score_tooling//bazel/rules/rules_score/trlc/config:score_requirements_model",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-trlc_requirements_test(
-    name = "control_measures_test",
-    reqs = [
-        ":control_measures",
-    ],
+fmea(
+    name = "mw_com_fmea",
+    arch_design = "//score/mw/com/dependability/software_architectural_design:software_architectural_design",
+    controlmeasures = ["aou.trlc"],
+    failuremodes = ["failure_modes.trlc"],
+    root_causes = [":root_causes"],
     visibility = ["//visibility:public"],
 )

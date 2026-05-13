@@ -659,6 +659,9 @@ class DummyField : public SkeletonFieldBase
 {
   public:
     using SkeletonFieldBase::SkeletonFieldBase;
+
+    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
+
     bool IsInitialValueSaved() const noexcept override
     {
         return false;
@@ -668,7 +671,7 @@ class DummyField : public SkeletonFieldBase
         return Result<void>{};
     };
 
-    bool IsSetHandlerRegistered() const noexcept override
+    bool IsSetHandlerMissing() const noexcept override
     {
         return false;
     }

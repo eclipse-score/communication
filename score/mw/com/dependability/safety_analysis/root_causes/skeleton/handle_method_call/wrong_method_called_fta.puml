@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Wrong method called", "Communication.WrongMethodCalled")
 
@@ -21,7 +21,7 @@ $OrGate("Gate1", "TopEvent")
 $IntermediateEvent("MethodId mismatch provider/consumer", "Event2", "Gate1")
 $IntermediateEvent("Wrong user handler called", "Event4", "Gate1")
 $IntermediateEvent("Wrongly configured", "Event3", "Event2")
-$TransferIn("Transfer2", "Event3")
+$TransferInGate("Transfer2", "Event3")
 $BasicEvent("User Handler assignment wrong", "Communication.UserMethodCallHandlerAssignmentWrong", "Event4")
 $BasicEvent("MethodId corrupted", "Event5", "Event2")
 

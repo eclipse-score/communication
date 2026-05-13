@@ -99,6 +99,14 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
     {
         return proxy_event_common_.UnsetReceiveHandler();
     }
+    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override
+    {
+        return proxy_event_common_.SetSubscriptionStateChangeHandler(std::move(handler));
+    }
+    Result<void> UnsetSubscriptionStateChangeHandler() noexcept override
+    {
+        return proxy_event_common_.UnsetSubscriptionStateChangeHandler();
+    }
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override
     {
         return proxy_event_common_.GetMaxSampleCount();

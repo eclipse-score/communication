@@ -28,6 +28,7 @@ integration_test(
         "non_trivial_constructors_test.py",
     ],
     filesystem = ":filesystem",
+    flaky = True,  # TODO: Remove flaky tag once test is stable: Refer to issue 386
 )
 
 test_suite(

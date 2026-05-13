@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Service is offered under wrong IDs", "Communication.ServiceOfferedUnderWrongIds")
 
@@ -22,9 +22,9 @@ $IntermediateEvent("Instance Identifier contains wrong values", "Event1", "Gate1
 $OrGate("Gate2", "Event1")
 $BasicEvent("Instance Specifier resolution faulty", "Communication.InstanceSpecifierResolutionFaulty", "Gate2")
 $IntermediateEvent("Configuration broken", "Event7", "Gate2")
-$TransferIn("Transfer1", "Event7")
+$TransferInGate("Transfer1", "Event7")
 $IntermediateEvent("Service Discovery Marker files have been incorrectly created", "Event3", "Gate1")
-$TransferIn("Transfer2", "Event3")
+$TransferInGate("Transfer2", "Event3")
 $IntermediateEvent("Shared Memory file name wrong", "Event2", "Gate1")
 $OrGate("Gate3", "Event2")
 $BasicEvent("Filename creation from config failed", "Communication.FilenameCreationFromConfigFailed", "Gate3")

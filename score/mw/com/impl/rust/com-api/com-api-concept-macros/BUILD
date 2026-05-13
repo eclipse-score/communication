@@ -29,4 +29,5 @@ rust_proc_macro(
 rust_doc_test(
     name = "com-api-concept-macros-tests",
     crate = ":com-api-concept-macros",
+    target_compatible_with = ["@platforms//os:linux"],
 )

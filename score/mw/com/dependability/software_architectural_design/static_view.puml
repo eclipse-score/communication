@@ -14,21 +14,22 @@
 
 interface "mw_com" as mw_com_public_api
 
-component "mw::com" as mw_com <<SEooC>> {
+' @todo: Support in parser that this is a component!
+package "mw::com" as mw_com <<SEooC>> {
 
-    component "Frontend" as frontend <<component>> {
+    component "Frontend" as frontend_component <<component>> {
         component "Proxy" as frontend_proxy <<unit>>
         component "Skeleton" as frontend_skeleton <<unit>>
         component "Service Discovery" as frontend_sd <<unit>>
     }
 
     component "Bindings" as bindings <<component>> {
-        component "LoLa" as lola <<component>> {
+        component "LoLa" as lola_component <<component>> {
             component "Proxy" as lola_proxy <<unit>>
             component "Skeleton" as lola_skeleton <<unit>>
             component "Service Discovery" as lola_sd <<unit>>
         }
-        component "Mock" as mock_binding <<component>> {
+        component "Mock" as mock_component <<component>> {
         }
     }
 
@@ -57,5 +58,5 @@ public_api -left-() mw_com_public_api
 memory -[hidden]down- lola_sd
 frontend_proxy -[hidden]left- frontend_skeleton
 frontend_skeleton -[hidden]left- frontend_sd
-frontend -[hidden]down- bindings
+frontend_component -[hidden]down- bindings
 @enduml

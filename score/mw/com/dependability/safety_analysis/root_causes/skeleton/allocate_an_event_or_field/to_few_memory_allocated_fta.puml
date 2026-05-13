@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("To few memory allocated", "Communication.TooFewMemoryAllocated")
 
@@ -26,7 +26,7 @@ $IntermediateEvent("To few slots allocated", "Event12", "Gate2")
 $OrGate("Gate4", "Event12")
 $BasicEvent("Literaly wrong number of slots reserved", "Communication.LiteralyWrongNumberOfSlotsReserved", "Gate4")
 $IntermediateEvent("Configuration issue", "Event17", "Gate4")
-$TransferIn("Transfer1", "Event17")
+$TransferInGate("Transfer1", "Event17")
 $IntermediateEvent("Proxy violates contract", "Event11", "Gate2")
 $OrGate("Gate6", "Event11")
 $BasicEvent("Holds more SamplePtr than announced", "Communication.HoldsMoreSampleptrThanAnnounced", "Gate6")
@@ -41,7 +41,7 @@ $IntermediateEvent("Dynamic Memory for containers in slots cannot be allocated",
 $OrGate("Gate5", "Event1")
 $BasicEvent("Allocate claims to few memory", "Communication.AllocateClaimsToFewMemory", "Gate5")
 $IntermediateEvent("Configuration broken", "Event9", "Gate5")
-$TransferIn("Transfer2", "Event9")
+$TransferInGate("Transfer2", "Event9")
 $BasicEvent("Necessary size calculation retreives wrong value", "Communication.NecessarySizeCalculationRetreivesWrongValue", "Gate5")
 $BasicEvent("Shared memory truncation fails", "Communication.SharedMemoryTruncationFails", "Gate5")
 

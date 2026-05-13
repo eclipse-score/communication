@@ -84,6 +84,9 @@ class ProxyEventCommon final
     Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler);
     Result<void> UnsetReceiveHandler();
 
+    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept;
+    Result<void> UnsetSubscriptionStateChangeHandler() noexcept;
+
     pid_t GetEventSourcePid() const noexcept;
     ElementFqId GetElementFQId() const noexcept
     {

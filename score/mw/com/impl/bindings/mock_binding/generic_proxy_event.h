@@ -56,6 +56,11 @@ class GenericProxyEvent : public GenericProxyEventBinding
                 (noexcept, override));
     MOCK_METHOD(Result<void>, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
     MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (noexcept, override));
+    MOCK_METHOD(Result<void>,
+                SetSubscriptionStateChangeHandler,
+                (SubscriptionStateChangeHandler),
+                (noexcept, override));
+    MOCK_METHOD(Result<void>, UnsetSubscriptionStateChangeHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));

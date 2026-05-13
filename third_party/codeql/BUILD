@@ -15,5 +15,7 @@ load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 compile_pip_requirements(
     name = "pip_requirements",
     src = ":requirements.in",
+    exec_compatible_with = ["@platforms//os:linux"],
     requirements_txt = "requirements_lock.txt",
+    target_compatible_with = ["@platforms//os:linux"],
 )

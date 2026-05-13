@@ -2,11 +2,14 @@ bazel-*
 examples/bazel-*
 MODULE.bazel.lock
 user.bazelrc
-.clwb_aspects
-.clwb
+_build
+
 # ignore folders created by IDEs
 .vscode
 .idea
+.clwb_aspects
+.clwb
+
 # Ignore clangd's config
 .clangd
 
@@ -14,3 +17,6 @@ user.bazelrc
 .cache/*
 compile_commands.json
 rust-project.json
+
+# docs-as-code
+docs/ubproject.toml

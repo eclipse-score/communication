@@ -24,6 +24,7 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
+#include "score/mw/com/impl/subscription_state_change_handler.h"
 
 #include "score/result/result.h"
 
@@ -99,10 +100,12 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     void StopOfferEvent() noexcept;
     void ReOfferEvent(const pid_t new_event_source_pid) noexcept;
 
-    // State Machine Methods. These are not modelled by the state machine UML and do not cause transitions between
+    // State Machine Methods. These are not modeled by the state machine UML and do not cause transitions between
     // states.
     void SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept;
     void UnsetReceiveHandler() noexcept;
+    void SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept;
+    void UnsetSubscriptionStateChangeHandler() noexcept;
 
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept;
 
@@ -139,6 +142,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     // Data used by states
     SubscriptionData subscription_data_;
     std::optional<std::weak_ptr<ScopedEventReceiveHandler>> event_receiver_handler_;
+    std::optional<SubscriptionStateChangeHandler> subscription_state_change_handler_;
     EventReceiveHandlerManager event_receive_handler_manager_;
     ConsumerEventDataControlLocalView<>& event_data_control_local_;
     EventSubscriptionControl<>& subscription_control_;

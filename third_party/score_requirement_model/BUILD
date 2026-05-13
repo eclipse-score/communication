@@ -13,4 +13,5 @@ trlc_requirements_test(
     reqs = [
         ":requirement_metamodel",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
 )

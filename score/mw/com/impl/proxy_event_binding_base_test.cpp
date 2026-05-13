@@ -40,6 +40,14 @@ class DummyProxyEventBinding final : public ProxyEventBindingBase
     {
         return {};
     }
+    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override
+    {
+        return {};
+    }
+    Result<void> UnsetSubscriptionStateChangeHandler() noexcept override
+    {
+        return {};
+    }
     Result<std::size_t> GetNumNewSamplesAvailable() const noexcept override
     {
         return {};

@@ -9,8 +9,12 @@ load(
 py_binary(
     name = "sphinx_build",
     srcs = ["@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py"],
-    data = [],
+    data = [
+        "@score_tooling//tools/sphinx:plantuml",
+    ],
+    exec_compatible_with = ["@platforms//os:linux"],
     main = "@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py",
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//:__subpackages__"],
     deps = [
         "//third_party/breathe",
@@ -21,6 +25,7 @@ py_binary(
         "//third_party/sphinx:sphinx-needs",
         "//third_party/sphinx:sphinxcontrib-plantuml",
         "//third_party/sphinx_rtd_theme",
+        "@rules_python//python/runfiles",
         "@score_tooling//bazel/rules/rules_score:bazel_sphinx_needs",
         "@score_tooling//bazel/rules/rules_score:sphinx_module_ext",
         "@score_tooling//plantuml/sphinx/clickable_plantuml",
@@ -32,6 +37,7 @@ sphinx_toolchain(
     name = "score_sphinx_toolchain",
     conf_template = "template/conf.template.py",
     sphinx = ":sphinx_build",
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 toolchain(

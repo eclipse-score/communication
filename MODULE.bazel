@@ -13,17 +13,26 @@
 module(name = "score_communication")
 
 # Dependencies that will get propagated to our users as transitive dependencies
-bazel_dep(name = "bazel_skylib", version = "1.8.1")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
 bazel_dep(name = "boost.interprocess", version = "1.83.0.bcr.4")
 bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
 bazel_dep(name = "download_utils", version = "1.2.2")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_cc", version = "0.1.5")
-bazel_dep(name = "rules_python", version = "1.5.1")
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
-bazel_dep(name = "score_baselibs", version = "0.2.6")
+
+# Patch baselibs with a QNX8 workaround for poll
+# until a fix is provided by the QNX SDP
+bazel_dep(name = "score_baselibs", version = "0.2.7")
+single_version_override(
+    module_name = "score_baselibs",
+    patch_strip = 1,
+    patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
+)
+
 bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.9", repo_name = "score_communication_crate_index")
@@ -37,10 +46,10 @@ download_archive(
     urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
-bazel_dep(name = "score_tooling", dev_dependency = True)
+bazel_dep(name = "score_tooling")
 git_override(
     module_name = "score_tooling",
-    commit = "4c83c578069768c6133e4268b63929646754f6a6",
+    commit = "549c7ee315cfbc27a42247b11cb70c953eac75dc",
     remote = "https://github.com/eclipse-score/tooling.git",
 )
 
@@ -63,12 +72,7 @@ gcc_toolchains.toolchain(
 )
 use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
 
-bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.3.0", dev_dependency = True)
-git_override(
-    module_name = "score_bazel_cpp_toolchains",
-    commit = "79982259df6dfa9d82cc458163a6d9b08bd24471",
-    remote = "https://github.com/eclipse-score/bazel_cpp_toolchains.git",
-)
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.1", dev_dependency = True)
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
 score_gcc.toolchain(
@@ -89,7 +93,7 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
-    sdp_version = "8.0.0",
+    sdp_version = "8.0.3",
     target_cpu = "x86_64",
     target_os = "qnx",
     use_default_package = True,
@@ -97,7 +101,7 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
-    sdp_version = "8.0.0",
+    sdp_version = "8.0.3",
     target_cpu = "aarch64",
     target_os = "qnx",
     use_default_package = True,
@@ -123,9 +127,9 @@ toolchains_qnx = use_extension(
     dev_dependency = True,
 )
 toolchains_qnx.sdp(
-    sha256 = "f2e0cb21c6baddbcb65f6a70610ce498e7685de8ea2e0f1648f01b327f6bac63",
-    strip_prefix = "installation",
-    url = "https://www.qnx.com/download/download/79858/installation.tgz",
+    sha256 = "9039fd6a4a639f06ea977afb93963a6fe8f8c46db727066709370d999c7232e0",
+    strip_prefix = "",
+    url = "https://www.qnx.com/download/download/87174/installation_qnx_803_260305.tar.xz",
 )
 use_repo(toolchains_qnx, "toolchains_qnx_ifs")
 
@@ -204,9 +208,9 @@ download_file(
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
 )
 
-bazel_dep(name = "aspect_rules_lint", version = "2.2.0", dev_dependency = True)
+bazel_dep(name = "aspect_rules_lint", version = "2.3.0", dev_dependency = True)
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
-bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
+bazel_dep(name = "buildifier_prebuilt", version = "8.5.1", dev_dependency = True)
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
     module_name = "hedron_compile_commands",
@@ -268,7 +272,7 @@ use_repo(pip, "codeql_coding_standards_pip_hub")
 bazel_dep(name = "trlc", version = "0.0.0", dev_dependency = True)
 git_override(
     module_name = "trlc",
-    commit = "3a71fd56001b95dfbb5270a49449ec0a631cd56c",  #TRLC 2.0.4
+    commit = "8bdcb1fe6d5af97b69a293673815592371bdbb20",  #TRLC 2.0.5 dev
     remote = "https://github.com/bmw-software-engineering/trlc.git",
 )
 

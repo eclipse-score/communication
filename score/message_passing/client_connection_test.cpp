@@ -332,6 +332,7 @@ class ClientConnectionTest : public ::testing::Test
 
 TEST_F(ClientConnectionTest, Constructed)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassingComponent.REQ_MP_COMP_001");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     EXPECT_EQ(connection.GetState(), State::kStopped);
     EXPECT_EQ(connection.GetStopReason(), StopReason::kInit);

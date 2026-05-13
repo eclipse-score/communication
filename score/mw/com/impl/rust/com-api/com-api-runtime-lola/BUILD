@@ -44,5 +44,6 @@ rust_test(
 rust_doc_test(
     name = "com-api-runtime-lola-doc-tests",
     crate = ":com-api-runtime-lola",
+    target_compatible_with = ["@platforms//os:linux"],
     deps = [":com-api-runtime-lola"],
 )

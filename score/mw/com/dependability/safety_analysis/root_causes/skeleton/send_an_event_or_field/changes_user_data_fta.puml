@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Changes User-Data", "Communication.SendingEventChangesUserData")
 
@@ -24,10 +24,10 @@ $IntermediateEvent("Send via AllocateePtr", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
 $BasicEvent("Generic TraceAPI changes data", "Communication.GenericTraceapiChangesData", "Gate2")
 $IntermediateEvent("Wrongly allocated memory", "Event5", "Gate2")
-$TransferIn("Transfer1", "Event5")
+$TransferInGate("Transfer1", "Event5")
 $IntermediateEvent("Same slot is written via different send call", "Event4", "Gate2")
 $IntermediateEvent("Slot allocation logic broken", "Event8", "Event4")
-$TransferIn("Transfer2", "Event8")
+$TransferInGate("Transfer2", "Event8")
 $BasicEvent("Direct access to data", "Communication.DirectAccessToData", "Gate2")
 
 @enduml

@@ -137,6 +137,7 @@ cc_test(
         "exclusive",  # Sandboxing is not properly working with LoLa message passing 2.0 (Ticket-217341)
         "unit",
     ],
+    target_compatible_with = ["@platforms//os:linux"],  # @todo: This should also work under QNX, convert to integration test
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -163,6 +164,7 @@ cc_test(
         "exclusive",  # Sandboxing is not properly working with LoLa message passing 2.0 (Ticket-217341)
         "unit",
     ],
+    target_compatible_with = ["@platforms//os:linux"],  # @todo: This should also work under QNX, convert to integration test
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -193,6 +195,7 @@ cc_test(
         "exclusive",  # Sandboxing is not properly working with LoLa message passing 2.0 (Ticket-217341)
         "unit",
     ],
+    target_compatible_with = ["@platforms//os:linux"],  # @todo: This should also work under QNX, convert to integration test
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],

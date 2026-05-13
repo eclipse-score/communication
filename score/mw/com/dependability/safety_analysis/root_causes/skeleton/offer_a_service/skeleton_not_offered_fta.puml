@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Skeleton Not offered", "Communication.ServiceNotOffered")
 
@@ -34,6 +34,6 @@ $BasicEvent("Instance Specifier resolution broken", "Communication.InstanceSpeci
 $BasicEvent("Differently configured between skleton and proxy side", "Communication.DifferentlyConfiguredBetweenSkletonAndProxySide", "Gate2")
 $IntermediateEvent("Wrongly configured on Skeleton / Proxy side", "Event8", "Gate2")
 $IntermediateEvent("Defect configuration", "Event13", "Event8")
-$TransferIn("Transfer1", "Event13")
+$TransferInGate("Transfer1", "Event13")
 
 @enduml

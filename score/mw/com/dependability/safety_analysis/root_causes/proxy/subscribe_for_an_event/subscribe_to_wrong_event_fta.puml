@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Subscribe to Wrong Event or Field", "Communication.SubscribeToWrongEvent")
 
@@ -22,6 +22,6 @@ $IntermediateEvent("Generic Proxy\nMapping Error", "Event1", "Gate1")
 $BasicEvent("Event/Field name mapping clash", "Communication.EventFieldNameMappingClash", "Event1")
 $BasicEvent("Event/Field ID references wrong storage.", "Communication.EventFieldIdReferencesWrongStorage", "Gate1")
 $IntermediateEvent("Configuration error", "Event3", "Gate1")
-$TransferIn("Transfer1", "Event3")
+$TransferInGate("Transfer1", "Event3")
 
 @enduml

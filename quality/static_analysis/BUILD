@@ -24,6 +24,7 @@ py_binary(
     ],
     main = "codeql_lint.py",
     tags = ["local"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 filegroup(

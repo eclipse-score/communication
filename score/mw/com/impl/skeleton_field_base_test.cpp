@@ -64,6 +64,8 @@ class MyDummyField : public SkeletonFieldBase
     {
     }
 
+    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
+
     StrictMock<mock_binding::SkeletonEventBase>* GetMockEventBinding() noexcept
     {
         auto* const skeleton_field_base_binding = SkeletonFieldBaseView{*this}.GetEventBinding();
@@ -83,9 +85,9 @@ class MyDummyField : public SkeletonFieldBase
         return {};
     }
 
-    bool IsSetHandlerRegistered() const noexcept override
+    bool IsSetHandlerMissing() const noexcept override
     {
-        return true;
+        return false;
     }
 
     bool was_deferred_update_called_{false};
@@ -95,14 +97,16 @@ class MyDummyField : public SkeletonFieldBase
 class MyDummyFieldFailingDeferredUpdate final : public MyDummyField
 {
   public:
+    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
+
     Result<void> DoDeferredUpdate() noexcept override
     {
         return MakeUnexpected(ComErrc::kCommunicationLinkError);
     }
 
-    bool IsSetHandlerRegistered() const noexcept override
+    bool IsSetHandlerMissing() const noexcept override
     {
-        return true;
+        return false;
     }
 };
 

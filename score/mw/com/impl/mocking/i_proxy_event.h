@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/event_receive_handler.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/subscription_state.h"
+#include "score/mw/com/impl/subscription_state_change_handler.h"
 
 #include "score/result/result.h"
 
@@ -39,6 +40,8 @@ class IProxyEventBase
     virtual Result<std::size_t> GetNumNewSamplesAvailable() = 0;
     virtual Result<void> SetReceiveHandler(EventReceiveHandler) = 0;
     virtual Result<void> UnsetReceiveHandler() = 0;
+    virtual Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) = 0;
+    virtual Result<void> UnsetSubscriptionStateChangeHandler() = 0;
 
   protected:
     IProxyEventBase(const IProxyEventBase&) = default;

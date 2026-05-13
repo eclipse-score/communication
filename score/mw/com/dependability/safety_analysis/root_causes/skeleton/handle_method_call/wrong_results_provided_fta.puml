@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Wrong call result provided", "Communication.WrongResultsProvided")
 $OrGate("Gate1", "TopEvent")

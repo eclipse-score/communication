@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine_states.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
+#include "score/mw/com/impl/subscription_state.h"
 
 #include <score/callback.hpp>
 #include <score/optional.hpp>
@@ -86,6 +87,8 @@ class SubscriptionData
 std::string CreateLoggingString(std::string&& string,
                                 const ElementFqId& element_fq_id,
                                 const SubscriptionStateMachineState current_state);
+
+SubscriptionState SubscriptionStateMachineStateToSubscriptionState(SubscriptionStateMachineState state) noexcept;
 
 }  // namespace score::mw::com::impl::lola
 

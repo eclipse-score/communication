@@ -64,20 +64,7 @@ void ProxyEventCommon::Unsubscribe()
 SubscriptionState ProxyEventCommon::GetSubscriptionState() const noexcept
 {
     const auto current_state = subscription_event_state_machine_.GetCurrentState();
-    if (current_state == SubscriptionStateMachineState::NOT_SUBSCRIBED_STATE)
-    {
-        return SubscriptionState::kNotSubscribed;
-    }
-    else if (current_state == SubscriptionStateMachineState::SUBSCRIPTION_PENDING_STATE)
-    {
-        return SubscriptionState::kSubscriptionPending;
-    }
-    else
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(current_state == SubscriptionStateMachineState::SUBSCRIBED_STATE,
-                                                    "Invalid subscription state machine state.");
-        return SubscriptionState::kSubscribed;
-    }
+    return SubscriptionStateMachineStateToSubscriptionState(current_state);
 }
 
 Result<std::size_t> ProxyEventCommon::GetNumNewSamplesAvailable() const noexcept
@@ -111,6 +98,18 @@ Result<void> ProxyEventCommon::SetReceiveHandler(std::weak_ptr<ScopedEventReceiv
 Result<void> ProxyEventCommon::UnsetReceiveHandler()
 {
     subscription_event_state_machine_.UnsetReceiveHandler();
+    return {};
+}
+
+Result<void> ProxyEventCommon::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
+{
+    subscription_event_state_machine_.SetSubscriptionStateChangeHandler(std::move(handler));
+    return {};
+}
+
+Result<void> ProxyEventCommon::UnsetSubscriptionStateChangeHandler() noexcept
+{
+    subscription_event_state_machine_.UnsetSubscriptionStateChangeHandler();
     return {};
 }
 

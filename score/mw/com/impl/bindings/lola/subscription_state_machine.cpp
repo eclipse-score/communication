@@ -110,6 +110,18 @@ void SubscriptionStateMachine::UnsetReceiveHandler() noexcept
     GetCurrentEventState().UnsetReceiveHandler();
 }
 
+void SubscriptionStateMachine::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
+{
+    std::lock_guard<std::mutex> lock{state_mutex_};
+    subscription_state_change_handler_ = std::move(handler);
+}
+
+void SubscriptionStateMachine::UnsetSubscriptionStateChangeHandler() noexcept
+{
+    std::lock_guard<std::mutex> lock{state_mutex_};
+    subscription_state_change_handler_.reset();
+}
+
 std::optional<std::uint16_t> SubscriptionStateMachine::GetMaxSampleCount() const noexcept
 {
     std::lock_guard<std::mutex> lock{state_mutex_};
@@ -136,6 +148,17 @@ void SubscriptionStateMachine::TransitionToState(const SubscriptionStateMachineS
     GetCurrentEventState().OnExit();
     current_state_idx_ = newState;
     GetCurrentEventState().OnEntry();
+    if (subscription_state_change_handler_.has_value())
+    {
+        // We call the user-provided handler under state_mutex_ lock, which has always been acquired within this method.
+        // This is documented in the AoUs of SubscriptionStateChangeHandler!
+        const auto keep_handler =
+            subscription_state_change_handler_.value()(SubscriptionStateMachineStateToSubscriptionState(newState));
+        if (!keep_handler)
+        {
+            subscription_state_change_handler_.reset();
+        }
+    }
 }
 
 }  // namespace score::mw::com::impl::lola

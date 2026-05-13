@@ -19,7 +19,9 @@ py_binary(
         "__init__.py",
         "config_generator.py",
     ],
+    exec_compatible_with = ["@platforms//os:linux"],
     main = "config_generator.py",
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = [
         "//platform/aas/performance/tests/tools/artificial_load:__subpackages__",
         "//score/mw/com/performance_benchmarks/macro_benchmark:__subpackages__",

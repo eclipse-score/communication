@@ -20,6 +20,7 @@ sphinx_build_settings(visibility = ["//docs/sphinx:__subpackages__"])
 py_library(
     name = "sphinx_build_wrapper",
     srcs = ["sphinx_build_wrapper.py"],
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//docs/sphinx:__pkg__"],
 )
 
@@ -27,5 +28,6 @@ py_binary(
     name = "generate_api_rst_bin",
     srcs = ["extract_api_items.py"],
     main = "extract_api_items.py",
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//docs/sphinx:__pkg__"],
 )

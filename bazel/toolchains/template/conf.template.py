@@ -20,6 +20,14 @@ Template variables like {PROJECT_NAME} are replaced during Bazel build.
 
 import bazel_sphinx_needs
 
+from pathlib import Path
+import os
+
+from python.runfiles import Runfiles
+from sphinx.util import logging
+
+logger = logging.getLogger(__name__)
+
 # Project configuration - {PROJECT_NAME} will be replaced by the module name during build
 project = "{PROJECT_NAME}"
 author = "S-CORE"
@@ -113,7 +121,32 @@ numfig = True
 needs_external_needs = bazel_sphinx_needs.load_external_needs()
 bazel_sphinx_needs.log_config_info(project)
 
+# Resolve the PlantUML binary via Bazel runfiles.
+# The plantuml java_binary target is in data of the local sphinx_build binary
+# (//bazel/toolchains:sphinx_build), so it is accessible under the _main repo.
+r = Runfiles.Create()
+if r is None:
+    raise ValueError("Could not initialize Bazel runfiles.")
+
+_plantuml_path = None
+# Use source_repo="" (the root module's canonical source repo key in repo_mapping)
+# so Bazel resolves the apparent name "score_tooling" to the correct canonical
+# name regardless of how the dep is declared (local_path_override → "score_tooling+",
+# BCR/git_repository → "score_tooling").
+_candidate = r.Rlocation("score_tooling/tools/sphinx/plantuml", source_repo="")
+if _candidate and Path(_candidate).exists():
+    _plantuml_path = Path(_candidate)
+    logger.info(f"PlantUML resolved from runfiles: {_plantuml_path}")
+
+if _plantuml_path is None:
+    logger.warning(
+        "PlantUML binary not found in runfiles — diagrams will not be rendered. "
+        "Ensure @score_tooling//tools/sphinx:plantuml is in sphinx_build data."
+    )
+else:
+    plantuml = str(_plantuml_path)
+    plantuml_output_format = "svg_obj"
+
 
 def setup(app):
     return bazel_sphinx_needs.setup_sphinx_extension(app, needs_external_needs)
-

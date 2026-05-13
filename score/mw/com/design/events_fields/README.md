@@ -346,6 +346,36 @@ The structural model of the state machine design is as follows:
 
 <img alt="PROXY_EVENT_STATE_MACHINE_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/proxy_event_state_machine_model.puml">
 
+#### User access to the subscription state
+
+The user can access the subscription state of a `ProxyEvent` or `ProxyField` instance via method `GetSubscriptionState()`.
+This method dispatches to the binding (`ProxyEventBindingBase::GetSubscriptionState()`), which in the case of the `LoLa`
+binding dispatches to `lola::SubscriptionStateMachine` (method `GetCurrentState()`) shown above.
+
+Additionally a user can register a callback, which gets called as soon as the subscription state changes. This is done
+via method `ProxyEvent::SetSubscriptionStateChangeHandler`. This method dispatches to the binding
+(`ProxyEventBindingBase::SetSubscriptionStateChangeHandler()`), which in the case of the `LoLa` binding dispatches to
+`lola::SubscriptionStateMachine` (method `SetSubscriptionStateChangeHandler()`) shown above. The
+`lola::SubscriptionStateMachine` stores the user provided callback and calls it as soon as the subscription state changes.
+
+The call to the user-provided handler happens under the same lock, which protects the state change and the state change
+notification. Thus, there are two important implications:
+1. The user provided handler gets called synchronously within the state change call. This means, that the state change
+   call only returns after the user provided handler has returned.
+2. Since the user provided handler gets called under the lock, it must not do any call, which could lead to a deadlock. E.g.
+   it must not call `ProxyEvent::Unsubscribe` or `ProxyEvent::Subscribe` again, as these calls also acquire the same
+   lock.
+
+The implications/recommendations are given in the public API description of the `SubscriptionStateChangeHandler`.
+We explicitly allow, that the user unsets/unregisters the `SubscriptionStateChangeHandler` from within the handler itself.
+To avoid any potential deadlock, we do **not** allow to unset the `SubscriptionStateChangeHandler` via the
+`UnsetSubscriptionStateChangeHandler()`! Instead the `SubscriptionStateChangeHandler` signature is designed to control
+the unsetting via its return value. I.e. if the handler returns `false`, it will be automatically unset after it has been
+called. This avoids introduction of recursive mutexes/locking on the existing mutex of the state machine, which would
+add a lot of complexity and potential for deadlocks. The solution via the return code is very lightweight: After the state
+machine called the handler, and before it releases the lock, it checks the return value. If it is `false`, it just resets
+&ndash; still under state-machine mutex lock &ndash; the internal `std::optional`, which holds the handler.
+
 ### Event Update Notification
 
 Event Notification is a good showcase for the "smart" behavior of `lola::MessagePassingFacade` as already mentioned (see

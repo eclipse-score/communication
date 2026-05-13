@@ -13,18 +13,18 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Wrong service found", "Communication.WrongServiceFound")
 
 $OrGate("Gate1", "TopEvent")
 $IntermediateEvent("Service is offered under wrong IDs", "Event2", "Gate1")
-$TransferIn("Transfer2", "Event2")
+$TransferInGate("Transfer2", "Event2")
 $IntermediateEvent("Wrong service discovery marker file searched for", "Event3", "Gate1")
 $OrGate("Gate2", "Event3")
 $BasicEvent("Wrong path resolved from InstanceIdentifier", "Communication.WrongPathResolvedFromInstanceidentifier", "Gate2")
 $BasicEvent("InstanceSpecifier resolved to wrong InstanceIdentifier", "Communication.InstancespecifierResolvedToWrongInstanceidentifier", "Gate2")
 $IntermediateEvent("Wrongly configured", "Event1", "Gate1")
-$TransferIn("Transfer1", "Event1")
+$TransferInGate("Transfer1", "Event1")
 
 @enduml

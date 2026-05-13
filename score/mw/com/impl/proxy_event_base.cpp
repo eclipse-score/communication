@@ -30,7 +30,7 @@
 namespace score::mw::com::impl
 {
 
-// Initialization of static thread_local variable!
+// Initialization of static thread_local variables!
 thread_local bool ProxyEventBase::is_in_receive_handler_context = false;
 
 /// \brief Helper class which registers the ProxyEventBindingBase with its parent proxy (ProxyBinding) and unregisters
@@ -169,6 +169,18 @@ void ProxyEventBase::Unsubscribe() noexcept
             std::terminate();
         }
     }
+}
+
+Result<void> ProxyEventBase::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
+{
+    binding_base_->SetSubscriptionStateChangeHandler(std::move(handler));
+    return {};
+}
+
+Result<void> ProxyEventBase::UnsetSubscriptionStateChangeHandler() noexcept
+{
+    binding_base_->UnsetSubscriptionStateChangeHandler();
+    return {};
 }
 
 std::size_t ProxyEventBase::GetFreeSampleCount() const noexcept

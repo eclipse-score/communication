@@ -68,6 +68,9 @@ class GenericProxyEvent final : public GenericProxyEventBinding
 
     Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override;
     Result<void> UnsetReceiveHandler() noexcept override;
+    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override;
+    Result<void> UnsetSubscriptionStateChangeHandler() noexcept override;
+
     pid_t GetEventSourcePid() const noexcept;
     ElementFqId GetElementFQId() const noexcept;
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;

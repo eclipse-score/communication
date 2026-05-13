@@ -33,6 +33,8 @@ class ProxyEventMock : public IProxyEvent<SampleType>
     MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (override));
     MOCK_METHOD(Result<void>, SetReceiveHandler, (EventReceiveHandler), (override));
     MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (override));
+    MOCK_METHOD(Result<void>, SetSubscriptionStateChangeHandler, (SubscriptionStateChangeHandler), (override));
+    MOCK_METHOD(Result<void>, UnsetSubscriptionStateChangeHandler, (), (override));
 
     MOCK_METHOD(Result<std::size_t>, GetNewSamples, (Callback&&, const std::size_t), (override));
 };

@@ -88,6 +88,28 @@ class ProxyFieldBase
 
     /**
      * \api
+     * \brief Sets/Registers a SubscriptionStateChangeHandler for this event. This handler will be called whenever the
+     * subscription state of this event changes.
+     * \note An already set/registered SubscriptionStateChangeHandler will be silently overridden.
+     * \param handler
+     */
+    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
+    {
+        return proxy_event_base_dispatch_->SetSubscriptionStateChangeHandler(std::move(handler));
+    }
+
+    /**
+     * \api
+     * \brief Unsets/Unregisters a SubscriptionStateChangeHandler for this field. After this method returns, it is
+     *        guaranteed, that the previously registered handler is neither active nor will be called anymore.
+     */
+    Result<void> UnsetSubscriptionStateChangeHandler() noexcept
+    {
+        return proxy_event_base_dispatch_->UnsetSubscriptionStateChangeHandler();
+    }
+
+    /**
+     * \api
      * \brief Get the number of samples that can still be received by the user of this field.
      * \details If this returns 0, the user first has to drop at least one SamplePtr before it is possible to receive
      *          data via GetNewSamples again. If there is no subscription for this field, the returned value is

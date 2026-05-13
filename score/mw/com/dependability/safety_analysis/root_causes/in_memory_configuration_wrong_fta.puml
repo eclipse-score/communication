@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("In-Memory configuration wrong", "Communication.InMemoryConfigurationWrong")
 

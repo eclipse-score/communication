@@ -12,7 +12,7 @@
 ' *******************************************************************************
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Does not unsubscribe", "Communication.DoesNotUnsubscribe")
 

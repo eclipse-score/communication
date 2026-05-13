@@ -9,5 +9,6 @@ Safety documentation reports
 
    * - Report
      - Description
-     ... Add references to safety reports in the style of <safety_software_seooc_example_doc/index.html>
+   * - `Message Passing Dependable Element <dependable_element_message_passing_doc/index.html>`_
+     - Message Passing
 

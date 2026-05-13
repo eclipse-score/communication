@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Sends to wrong consumer", "Communication.SendingEventSendsToWrongConsumer")
 
@@ -21,7 +21,7 @@ $OrGate("Gate1", "TopEvent")
 $IntermediateEvent("Writing Data into totally wrong Shared Memory segment", "Event1", "Gate1")
 $IntermediateEvent("Writing data into wrong slot", "Event2", "Gate1")
 
-$TransferIn("Transfer1", "Event1")
-$TransferIn("Transfer2", "Event2")
+$TransferInGate("Transfer1", "Event1")
+$TransferInGate("Transfer2", "Event2")
 
 @enduml

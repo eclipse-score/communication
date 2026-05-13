@@ -13,13 +13,13 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Skeleton is offered without initial field values", "Communication.ServiceOfferedWithoutInitialFieldValue")
 
 $OrGate("Gate1", "TopEvent")
 $BasicEvent("Offer call did not check, if user provided field values", "Communication.OfferCallDidNotCheckIfUserProvidedFieldValues", "Gate1")
 $IntermediateEvent("Update functionality did not work", "Event2", "Gate1")
-$TransferIn("Transfer1", "Event2")
+$TransferInGate("Transfer1", "Event2")
 
 @enduml

@@ -20,6 +20,10 @@
 
 #include <string>
 
+#if defined(__QNXNTO__)
+#include <sys/procmgr.h>
+#endif
+
 namespace score::mw::com::test
 {
 
@@ -102,6 +106,11 @@ void PerformFirstConsumerActions(CheckPointControl& check_point_control, score::
     // LoLa requires that processes shall have distinct UIDs.
     // After fork. Parent and child proccess will have same UID.
     // setuid is used to make child proccess UID distinct.
+#if defined(__QNXNTO__)
+    // Grant pathspace ability for nonroot domain before setuid, so that
+    // resmgr_attach() (used by LoLa message passing) works after setuid.
+    procmgr_ability(0, PROCMGR_ADN_NONROOT | PROCMGR_AOP_ALLOW | PROCMGR_AID_PATHSPACE, PROCMGR_AID_EOL);
+#endif
     const auto ret_setuid = setuid(kUidFirstConsumer);
     if (ret_setuid != 0)
     {
@@ -191,10 +200,15 @@ void PerformSecondConsumerActions(CheckPointControl& check_point_control,
     //***************************************************
     // Step (1)- setuid
     //***************************************************
-    const auto ret_setuid = setuid(kUidSecondConsumer);
     // LoLa requires that processes shall have distinct UIDs.
     // After fork. Parent and child proccess will have same UID.
     // setuid is used to make child proccess UID distinct.
+#if defined(__QNXNTO__)
+    // Grant pathspace ability for nonroot domain before setuid, so that
+    // resmgr_attach() (used by LoLa message passing) works after setuid.
+    procmgr_ability(0, PROCMGR_ADN_NONROOT | PROCMGR_AOP_ALLOW | PROCMGR_AID_PATHSPACE, PROCMGR_AID_EOL);
+#endif
+    const auto ret_setuid = setuid(kUidSecondConsumer);
     if (ret_setuid != 0)
     {
         std::cerr << "Second Consumer Step (1): set uid fails: " << errno << std::strerror(errno) << "\n";

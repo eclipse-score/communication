@@ -285,6 +285,7 @@ sshd                                     # SSH daemon (ITF test harness communic
 sysctl                                   # View/modify kernel parameters
 
 /usr/lib/ssh/sftp-server=${QNX_TARGET}/${PROCESSOR}/usr/libexec/sftp-server  # SFTP server (file transfer for ITF)
+/usr/libexec/sshd-session=${QNX_TARGET}/${PROCESSOR}/usr/libexec/sshd-session  # SSH session handler (required by OpenSSH 9.8+)
 
 #############################################
 ### PCI COMPONENTS ###

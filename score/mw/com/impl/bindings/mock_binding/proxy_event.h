@@ -40,6 +40,11 @@ class ProxyEventBase : public ProxyEventBindingBase
     MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (const, noexcept, override));
     MOCK_METHOD(Result<void>, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
     MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (noexcept, override));
+    MOCK_METHOD(Result<void>,
+                SetSubscriptionStateChangeHandler,
+                (SubscriptionStateChangeHandler),
+                (noexcept, override));
+    MOCK_METHOD(Result<void>, UnsetSubscriptionStateChangeHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));
@@ -74,6 +79,11 @@ class ProxyEvent : public ProxyEventBinding<SampleType>
                 (noexcept, override));
     MOCK_METHOD(Result<void>, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
     MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (noexcept, override));
+    MOCK_METHOD(Result<void>,
+                SetSubscriptionStateChangeHandler,
+                (SubscriptionStateChangeHandler),
+                (noexcept, override));
+    MOCK_METHOD(Result<void>, UnsetSubscriptionStateChangeHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));
@@ -159,6 +169,14 @@ class ProxyEventFacade : public ProxyEventBinding<SampleType>
     Result<void> UnsetReceiveHandler() noexcept override
     {
         return proxy_event_.UnsetReceiveHandler();
+    }
+    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override
+    {
+        return proxy_event_.SetSubscriptionStateChangeHandler(std::move(handler));
+    }
+    Result<void> UnsetSubscriptionStateChangeHandler() noexcept override
+    {
+        return proxy_event_.UnsetSubscriptionStateChangeHandler();
     }
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override
     {

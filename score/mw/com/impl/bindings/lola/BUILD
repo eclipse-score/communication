@@ -13,7 +13,46 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+component(
+    name = "lola_component",
+    components = [
+        ":lola_sd",
+        ":lola_skeleton",
+        ":lola_proxy",
+    ],
+    requirements = [
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    visibility = ["//score/mw/com/impl/bindings:__pkg__"],
+)
+
+unit(
+    name = "lola_sd",
+    scope = [],
+    tests = [],
+    unit_design = [],
+    implementation = [],
+)
+
+unit(
+    name = "lola_skeleton",
+    scope = [],
+    tests = [],
+    unit_design = [],
+    implementation = [],
+)
+
+unit(
+    name = "lola_proxy",
+    scope = [],
+    tests = [],
+    unit_design = [],
+    implementation = [],
+)
 
 cc_library(
     name = "lola",
@@ -471,6 +510,8 @@ cc_library(
         ":transaction_log_set",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:scoped_event_receive_handler",
+        "//score/mw/com/impl:subscription_state",
+        "//score/mw/com/impl:subscription_state_change_handler",
         "//score/mw/com/impl/bindings/lola/messaging:i_message_passing_service",
     ],
 )

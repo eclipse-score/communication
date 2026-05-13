@@ -21,7 +21,9 @@ compile_pip_requirements(
     data = [
         "//quality/integration_testing:pip_requirements",
     ],
+    exec_compatible_with = ["@platforms//os:linux"],
     requirements_txt = "requirements_lock.txt",
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 copyright_checker(
@@ -47,6 +49,7 @@ format_multirun(
     name = "format",
     cc = "@clang_format//:executable",
     starlark = "@buildifier_prebuilt//:buildifier",
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 format_test(
@@ -54,5 +57,6 @@ format_test(
     cc = "@clang_format//:executable",
     no_sandbox = True,
     starlark = "@buildifier_prebuilt//:buildifier",
+    target_compatible_with = ["@platforms//os:linux"],
     workspace = "//:LICENSE",
 )

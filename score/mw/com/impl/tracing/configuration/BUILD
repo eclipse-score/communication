@@ -21,6 +21,7 @@ validate_json_schema_test(
     json = "example/comtrace_filter_config_small.json",
     schema = ":comtrace_filter_config_schema",
     tags = ["lint"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 # schema will be moved later to @score_baselibs//score/analysis/common

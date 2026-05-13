@@ -14,6 +14,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test")
 load("@score_baselibs//third_party/itf:py_unittest_qnx_test.bzl", "py_unittest_qnx_test")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 
 py_unittest_qnx_test(
     name = "unit_tests_qnx",
@@ -41,7 +42,10 @@ test_suite(
         "@score_communication//score/message_passing/log:unit_test_suite_host",
         "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_host",
     ],
-    visibility = ["//score/message_passing:__pkg__"],
+    visibility = [
+        "//score/message_passing:__pkg__",
+        "//score/message_passing/dependability:__pkg__",
+    ],
 )
 
 cc_library(
@@ -124,6 +128,21 @@ cc_library(
     ],
 )
 
+unit(
+    name = "client_connection",
+    scope = [
+        ":message_passing_common",
+    ],
+    tests = [
+        "//score/message_passing:client_connection_test",
+    ],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:client_connection_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = [
+        "//score/message_passing:message_passing_common",
+    ],
+)
+
 cc_library(
     name = "message_passing_unix_domain",
     srcs = [
@@ -154,6 +173,21 @@ cc_library(
         "@score_baselibs//score/os:sys_poll",
         "@score_baselibs//score/os:unistd",
         "@score_baselibs//score/os/utils:signal",
+    ],
+)
+
+unit(
+    name = "unix_domain",
+    scope = [
+        ":message_passing_unix_domain",
+    ],
+    tests = [
+        ":unix_domain_test",
+    ],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:unix_domain_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = [
+        ":message_passing_unix_domain",
     ],
 )
 
@@ -211,6 +245,21 @@ cc_library(
         "@score_baselibs//score/os/qnx:iofunc",
         "@score_baselibs//score/os/qnx:timer",
         "@score_baselibs//score/os/utils:signal",
+    ],
+)
+
+unit(
+    name = "qnx_dispatch",
+    scope = [
+        "//score/message_passing:message_passing_qnx_dispatch",
+    ],
+    tests = [
+        ":qnx_dispatch_test",
+    ],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = [
+        ":message_passing_qnx_dispatch",
     ],
 )
 
@@ -283,6 +332,7 @@ cc_gtest_unit_test(
         "resource_manager_fixture_base.h",
     ],
     target_compatible_with = ["@platforms//os:qnx"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
     deps = [
         ":message_passing_qnx_dispatch",
         "@score_baselibs//score/concurrency",

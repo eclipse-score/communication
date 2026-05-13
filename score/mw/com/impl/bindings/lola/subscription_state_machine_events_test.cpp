@@ -59,6 +59,7 @@ class StateMachineEventsFixture : public LolaProxyEventResources
 
     void TearDown() override
     {
+        state_machine_.UnsetSubscriptionStateChangeHandler();
         // We call Unsubscribe in the tear down to make sure that the state machine is correctly cleaned up.
         // Specifically, it's important that the Unsubscribe is recorded so that when ~TransactionLogRegistrationGuard
         // unregisters the TransactionLog, there are no open transactions.
@@ -124,6 +125,7 @@ class StateMachineEventsFixture : public LolaProxyEventResources
     SubscriptionStateMachine state_machine_;
     std::vector<TransactionLogRegistrationGuard> transaction_log_registration_guards_{};
     pid_t new_event_source_pid_{kDummyPid + 1};
+    std::optional<SubscriptionState> observed_subscription_state_{};
 };
 
 using StateMachineNotSubscribedStateFixture = StateMachineEventsFixture;
@@ -389,6 +391,139 @@ TEST_F(StateMachineSubscribedStateFixture, CallingReOfferEventDoesNothing)
 
     state_machine_.ReOfferEvent(new_event_source_pid_);
     EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::SUBSCRIBED_STATE);
+}
+
+using StateMachineStateChangeFixture = StateMachineEventsFixture;
+TEST_F(StateMachineStateChangeFixture, CallingSetSubscriptionStateChangeHandlerSucceeds)
+{
+    // Given a state-machine in its default state and a subscription-state-change-handler
+    auto subscription_state_change_handler = [](SubscriptionState new_subscription_state) {
+        return true;
+    };
+
+    // Calling SetSubscriptionStateChangeHandler doesn't crash.
+    state_machine_.SetSubscriptionStateChangeHandler(subscription_state_change_handler);
+}
+
+TEST_F(StateMachineStateChangeFixture, CallingUnsetSubscriptionStateChangeHandlerSucceeds)
+{
+    // Given a state-machine in its default state
+
+    // Calling UnsetSubscriptionStateChangeHandler without having set a handler before doesn't crash.
+    state_machine_.UnsetSubscriptionStateChangeHandler();
+}
+
+TEST_F(StateMachineStateChangeFixture, SubscriptionStateChangeHandlerGetsInvoked)
+{
+
+    // Given a state-machine with a set subscription-state-change-handler
+    auto subscription_state_change_handler = [this](SubscriptionState new_subscription_state) {
+        observed_subscription_state_ = new_subscription_state;
+        return true;
+    };
+    state_machine_.SetSubscriptionStateChangeHandler(subscription_state_change_handler);
+
+    // when the state-machine switches to SUBSCRIBED
+    EnterSubscribed(max_num_slots_);
+
+    // expect, that the handler has been called with the new state SUBSCRIBED
+    EXPECT_TRUE(observed_subscription_state_.has_value());
+    EXPECT_EQ(observed_subscription_state_, SubscriptionState::kSubscribed);
+}
+
+TEST_F(StateMachineStateChangeFixture, SubscriptionStateChangeHandlerNotInvokedInCaseNoStateChange)
+{
+    // Given a state machine already in SUBSCRIBED state
+    EnterSubscribed(max_num_slots_);
+
+    // and a set subscription-state-change-handler
+    auto subscription_state_change_handler = [this](SubscriptionState new_subscription_state) {
+        observed_subscription_state_ = new_subscription_state;
+        return true;
+    };
+    state_machine_.SetSubscriptionStateChangeHandler(subscription_state_change_handler);
+
+    // when the state-machine gets again a subscribe-event
+    EnterSubscribed(max_num_slots_);
+
+    // expect, that the handler has NOT been called as no state change happened.
+    EXPECT_FALSE(observed_subscription_state_.has_value());
+}
+
+TEST_F(StateMachineStateChangeFixture, SubscriptionStateChangeHandlerStaysRegisteredWhenReturningTrue)
+{
+    // Given a state-machine with a set subscription-state-change-handler
+    auto subscription_state_change_handler = [this](SubscriptionState new_subscription_state) {
+        observed_subscription_state_ = new_subscription_state;
+        return true;
+    };
+    state_machine_.SetSubscriptionStateChangeHandler(subscription_state_change_handler);
+
+    // when the state-machine switches to SUBSCRIBED
+    EnterSubscribed(max_num_slots_);
+
+    // expect, that the handler has been called with the new state SUBSCRIBED
+    EXPECT_TRUE(observed_subscription_state_.has_value());
+    EXPECT_EQ(observed_subscription_state_, SubscriptionState::kSubscribed);
+
+    // and when another state-change happens
+    observed_subscription_state_.reset();
+    state_machine_.StopOfferEvent();
+
+    // expect, that the handler has been called with the new state kSubscriptionPending
+    EXPECT_TRUE(observed_subscription_state_.has_value());
+    EXPECT_EQ(observed_subscription_state_, SubscriptionState::kSubscriptionPending);
+}
+
+TEST_F(StateMachineStateChangeFixture, SubscriptionStateChangeHandlerGetsUnsetWhenReturningFalse)
+{
+    // Given a state-machine with a set subscription-state-change-handler, which returns false after being called
+    auto subscription_state_change_handler = [this](SubscriptionState new_subscription_state) {
+        observed_subscription_state_ = new_subscription_state;
+        return false;
+    };
+    state_machine_.SetSubscriptionStateChangeHandler(subscription_state_change_handler);
+
+    // when the state-machine switches to SUBSCRIBED
+    EnterSubscribed(max_num_slots_);
+
+    // expect, that the handler has been called with the new state SUBSCRIBED
+    EXPECT_TRUE(observed_subscription_state_.has_value());
+    EXPECT_EQ(observed_subscription_state_, SubscriptionState::kSubscribed);
+
+    // and when another state-change happens
+    observed_subscription_state_.reset();
+    state_machine_.StopOfferEvent();
+
+    // expect, that the handler has not been called anymore as it was unregistered.
+    EXPECT_FALSE(observed_subscription_state_.has_value());
+}
+
+TEST_F(StateMachineStateChangeFixture, UnsetSubscriptionStateChangeHandlerWorks)
+{
+    // Given a state-machine with a set subscription-state-change-handler, which returns true after being called
+    auto subscription_state_change_handler = [this](SubscriptionState new_subscription_state) {
+        observed_subscription_state_ = new_subscription_state;
+        return true;
+    };
+    state_machine_.SetSubscriptionStateChangeHandler(subscription_state_change_handler);
+
+    // when the state-machine switches to SUBSCRIBED
+    EnterSubscribed(max_num_slots_);
+
+    // expect, that the handler has been called with the new state SUBSCRIBED
+    EXPECT_TRUE(observed_subscription_state_.has_value());
+    EXPECT_EQ(observed_subscription_state_, SubscriptionState::kSubscribed);
+
+    // and after unsetting the handler
+    state_machine_.UnsetSubscriptionStateChangeHandler();
+
+    // and when another state-change happens
+    observed_subscription_state_.reset();
+    state_machine_.StopOfferEvent();
+
+    // expect, that the handler has not been called anymore as it was unregistered.
+    EXPECT_FALSE(observed_subscription_state_.has_value());
 }
 
 }  // namespace

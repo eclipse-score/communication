@@ -13,13 +13,13 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Service not found", "Communication.ServiceNotFound")
 
 $OrGate("Gate1", "TopEvent")
 $BasicEvent("Wrong service discovery marker file searched for", "Communication.WrongServiceDiscoveryMarkerFileSearchedFor", "Gate1")
 $IntermediateEvent("Skeleton Not offered", "Event1", "Gate1")
-$TransferIn("Transfer1", "Event1")
+$TransferInGate("Transfer1", "Event1")
 
 @enduml

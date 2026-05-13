@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Skeleton offered on wrong binding", "Communication.ServiceOfferedOnWrongBinding")
 
@@ -22,7 +22,7 @@ $IntermediateEvent("Instance Identifier refers to wrong binding", "Event1", "Gat
 $OrGate("Gate2", "Event1")
 $BasicEvent("Instance Specifier resolution broken", "Communication.InstanceSpecifierResolutionBroken", "Gate2")
 $IntermediateEvent("Configuration broken", "Event3", "Gate2")
-$TransferIn("Transfer1", "Event3")
+$TransferInGate("Transfer1", "Event3")
 $BasicEvent("Binding selection faulty", "Communication.BindingSelectionFaulty", "Gate1")
 
 @enduml

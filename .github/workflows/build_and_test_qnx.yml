@@ -116,6 +116,7 @@ jobs:
       permissions:
         contents: read
         pull-requests: read
+        actions: write
       steps:
         - name: Checkout repository
           uses: actions/checkout@v6.0.2
@@ -127,12 +128,12 @@ jobs:
           with:
             level: 4
         - name: Setup Bazel
-          uses: castler/setup-bazel@8818d35864b4088fb3a12e7a3191777dc418fd69
+          uses: castler/setup-bazel@cache-optimized
           with:
             bazelisk-cache: true
             disk-cache: build_and_test_qnx
-            disk-cache-key: "main"
             repository-cache: true
+            cache-optimized: true
             cache-save: ${{ github.ref == 'refs/heads/main' }}
         - name: Allow linux-sandbox
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
@@ -149,8 +150,25 @@ jobs:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           run: |
-            bazel build --config qnx_arm64 -- //score/... -//score/mw/com/dependability/... -//score/mw/com/performance_benchmarks/... -//docs/... -//score/mw/com/design/...
+            bazel build --config=qnx -- //score/...
+        - name: Install qemu
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y qemu-system
+        - name: Enable KVM group perms
+          run: |
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+            sudo udevadm control --reload-rules
+            sudo udevadm trigger --name-match=kvm
+        - name: Allow unprivileged user namespaces
+          run: |
+            sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
+        - name: Test targets
+          env:
+            SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+            SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+          run: |
+            bazel test --config=qnx -- //score/mw/com/test/... #todo also execute unit tests
         - name: Cleanup QNX License
           if: ${{ !cancelled() }}
           run: sudo rm -rf ${{ env.LICENSE_DIR }}
-          # TODO Run tests on QNX QEMU

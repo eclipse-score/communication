@@ -23,11 +23,7 @@
 #include "score/os/errno_logging.h"
 #include "score/result/result.h"
 
-#ifdef __QNX__
-#include "score/message_passing/qnx_dispatch/qnx_dispatch_engine.h"
-#else
-#include "score/message_passing/unix_domain/unix_domain_engine.h"
-#endif
+#include "score/message_passing/engine.h"
 
 #include <memory>
 #include <optional>

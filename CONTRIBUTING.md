@@ -64,7 +64,13 @@ To work around this issue, you can run the following bash script:
 bash actions/unblock_user_namespace_for_linux_sandbox/action_callable.sh
 ```
 
-Note. This must be rerun whenever the bazel version is updated.
+Note. To take this into effect force, a bazel restart by shutting it down 1st
+
+```bash
+bazel shutdown
+```
+
+These steps must be rerun whenever the bazel version is updated.
 
 ### Build Instructions
 

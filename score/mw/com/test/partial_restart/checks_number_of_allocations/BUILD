@@ -35,6 +35,7 @@ validate_json_schema_test(
     json = "mw_com_config.json",
     schema = "//score/mw/com/impl/configuration:mw_com_config_schema",
     tags = ["lint"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 pkg_application(

@@ -648,7 +648,7 @@ section "com" {
 
                 /* broken_link_c/issue/14137269 */
                 ScoreReq.CompReq ProxyEventCopySemantics {
-                    description = '''The ﻿{{ProxyEvent}} class shall neither be copy-constructable nor copy-assignable.'''
+                    description = '''The {{ProxyEvent}} class shall neither be copy-constructable nor copy-assignable.'''
                     safety = ScoreReq.Asil.B
                     derived_from = [Communication.EventType@1, Communication.DataLoss@1]
                     version = 1
@@ -1590,7 +1590,7 @@ section "com" {
 
                 The signature of an SubscriptionStateChangeHandler is:
 
-                {{{void(SubscriptionState)}}}
+                {{{bool(SubscriptionState)}}}
 
                 The type chosen for {{SubscriptionStateChangeHandler}} by the {{mw::com}} provider shall allow construction from any callable, with the given signature.'''
                 safety = ScoreReq.Asil.B
@@ -2307,8 +2307,7 @@ section "com" {
         /* broken_link_c/issue/21466369 */
         ScoreReq.CompReq BehaviourOfSetSubscriptionStateChangeHandler {
             description = '''The {{SubscriptionStateChangeHandler}} (See SubscriptionStateChangeHandler)
-            {{SetSubscriptionStateChangeHandler}}
-            that is passed to shall be called every time the {{SubscriptionState}} (See SubscriptionState) changes according to the requirements:
+            that is passed to {{SetSubscriptionStateChangeHandler}} shall be called every time the {{SubscriptionState}} (See SubscriptionState) changes according to the requirements:
 
             *  Calls to SubscriptionStateChangeHandler with kSubscriptionPending
 
@@ -2356,9 +2355,17 @@ section "com" {
             version = 1
         }
 
+        ScoreReq.CompReq SubscriptionStateChangeHandlerReturnValue {
+            description = '''In case the user provided handler returns true, the {{SubscriptionStateChangeHandler}} will be kept registered and will be called on the next {{SubscriptionState}} change again.
+            In case the user provided handler returns false, the {{SubscriptionStateChangeHandler}} will be unregistered and won't be called on the next {{SubscriptionState}} change again.'''
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            version = 1
+        }
+
         /* broken_link_c/issue/21466236 */
         ScoreReq.CompReq BehaviourOfUnsetSubscriptionStateChangeHandler {
-            description = '''{{UnsetSubscriptionStateChangeHandler}} {{UnsetSubscriptionStateChangeHandler}}{{SubscriptionStateChangeHandler}}will unregister the {{SubscriptionStateChangeHandler}} (See SubscriptionStateChangeHandler) that was registered by the class instance with a call to {{SetSubscriptionStateChangeHandler}} After calling  the  will no longer be triggered when the {{SubscriptionState}} (See progress-cursor SubscriptionState changes.
+            description = '''{{UnsetSubscriptionStateChangeHandler}} will unregister the {{SubscriptionStateChangeHandler}} (See SubscriptionStateChangeHandler) that was registered by the class instance with a call to {{SetSubscriptionStateChangeHandler}} After calling  the  will no longer be triggered when the {{SubscriptionState}} (See progress-cursor SubscriptionState changes.
 
             {{UnsetSubscriptionStateChangeHandler}} shall fulfill the following requirement: Explicit Lifetime ending by API calls.'''
             safety = ScoreReq.Asil.B

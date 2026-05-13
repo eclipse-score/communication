@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Creation of Skeleton not possible", "Communication.CreationOfSkeletonNotPossible")
 
@@ -23,6 +23,6 @@ $IntermediateEvent("InstanceSpecifier cannot be resolved", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
 $BasicEvent("Instance Specifier resolution logic broken", "Communication.InstanceSpecifierResolutionLogicBroken", "Gate2")
 $IntermediateEvent("Configuration broken", "Event3", "Gate2")
-$TransferIn("Transfer1", "Event3")
+$TransferInGate("Transfer1", "Event3")
 
 @enduml

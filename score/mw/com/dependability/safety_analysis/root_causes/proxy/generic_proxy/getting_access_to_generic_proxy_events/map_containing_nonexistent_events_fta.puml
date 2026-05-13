@@ -13,11 +13,11 @@
 
 @startuml
 
-!include ../../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+!include fta_metamodel.puml
 
 $TopEvent("Map containing non-existent events", "Communication.MapContainingNonexistentEvents")
 
 $IntermediateEvent("Configuration is wrong", "Event1", "TopEvent")
-$TransferIn("Transfer1", "Event1")
+$TransferInGate("Transfer1", "Event1")
 
 @enduml

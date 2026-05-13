@@ -57,6 +57,21 @@ void EventReceiveHandlerManager::Unregister() noexcept
     }
 }
 
+SubscriptionState SubscriptionStateMachineStateToSubscriptionState(SubscriptionStateMachineState state) noexcept
+{
+    switch (state)
+    {
+        case SubscriptionStateMachineState::NOT_SUBSCRIBED_STATE:
+            return SubscriptionState::kNotSubscribed;
+        case SubscriptionStateMachineState::SUBSCRIBED_STATE:
+            return SubscriptionState::kSubscribed;
+        case SubscriptionStateMachineState::SUBSCRIPTION_PENDING_STATE:
+            return SubscriptionState::kSubscriptionPending;
+        default:
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Invalid subscription state");
+    }
+}
+
 std::string CreateLoggingString(std::string&& string,
                                 const ElementFqId& element_fq_id,
                                 const SubscriptionStateMachineState current_state)

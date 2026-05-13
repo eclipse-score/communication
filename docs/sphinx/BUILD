@@ -49,6 +49,7 @@ filter_execpath(
 # Build Sphinx documentation
 sphinx_module(
     name = "sphinx_doc",
+    testonly = True,
     srcs =
         [
             "how_to_document.rst",
@@ -64,6 +65,7 @@ sphinx_module(
     docs_library_deps = [
         "//score/mw/com:readme_md",
     ],
+    exec_compatible_with = ["@platforms//os:linux"],
     extra_opts = [
         "-Dbreathe_default_project=doxygen_build",
     ],
@@ -72,7 +74,9 @@ sphinx_module(
         ":breathe_doxygen_xml",
     ],
     index = "index.rst",
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
     deps = [
+        "//score/message_passing/dependability:dependable_element_message_passing_doc",
     ],
 )

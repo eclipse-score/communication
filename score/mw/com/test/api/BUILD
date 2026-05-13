@@ -30,6 +30,7 @@ cc_gtest_unit_test(
     name = "generated_api_test",
     srcs = ["generated_api_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
+    target_compatible_with = ["@platforms//os:linux"],
     deps = [
         ":api",
         "@score_baselibs//score/mw/log",

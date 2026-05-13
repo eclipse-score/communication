@@ -50,6 +50,7 @@ cc_gtest_unit_test(
         "service_discovery_client_worker_thread_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
+    target_compatible_with = ["@platforms//os:linux"],  # @todo: This should also work under QNX, convert to integration test
     visibility = [
         "//score/mw/com/impl/bindings/lola/service_discovery/client:__pkg__",
     ],

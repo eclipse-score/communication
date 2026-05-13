@@ -13,7 +13,45 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+component(
+    name = "frontend_component",
+    components = [
+        ":frontend_sd",
+        ":frontend_skeleton",
+        ":frontend_proxy",
+    ],
+    requirements = [],
+    target_compatible_with = ["@platforms//os:linux"],
+    tests = [],
+    visibility = ["//score/mw/com/dependability:__pkg__"],
+)
+
+unit(
+    name = "frontend_sd",
+    scope = [],
+    tests = [],
+    unit_design = [],
+    implementation = [],
+)
+
+unit(
+    name = "frontend_skeleton",
+    scope = [],
+    tests = [],
+    unit_design = [],
+    implementation = [],
+)
+
+unit(
+    name = "frontend_proxy",
+    scope = [],
+    tests = [],
+    unit_design = [],
+    implementation = [],
+)
 
 package(default_visibility = [
     "//score/mw/com/impl:__subpackages__",
@@ -446,7 +484,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
-        "//score/mw/com/impl/mocking:__pkg__",
+        "//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -547,6 +585,7 @@ cc_library(
         ":sample_reference_tracker",
         ":scoped_event_receive_handler",
         ":subscription_state",
+        ":subscription_state_change_handler",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:i_tracing_runtime",
@@ -794,6 +833,21 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = ["@score_baselibs//score/language/futurecpp"],
+)
+
+cc_library(
+    name = "subscription_state_change_handler",
+    srcs = ["subscription_state_change_handler.cpp"],
+    hdrs = ["subscription_state_change_handler.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":subscription_state",
+        "@score_baselibs//score/language/futurecpp",
+    ],
 )
 
 cc_library(

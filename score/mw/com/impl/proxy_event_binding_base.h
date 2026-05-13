@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 #include "score/mw/com/impl/subscription_state.h"
+#include "score/mw/com/impl/subscription_state_change_handler.h"
 
 #include "score/result/result.h"
 
@@ -72,6 +73,15 @@ class ProxyEventBindingBase
 
     /// \brief Remove any receive handler registered via SetReceiveHandler()
     virtual Result<void> UnsetReceiveHandler() noexcept = 0;
+
+    /// \brief Sets/Registers a SubscriptionStateChangeHandler for this event. This handler will be called whenever the
+    /// subscription state of this event changes.
+    /// \note An already set/registered SubscriptionStateChangeHandler will be silently overridden.
+    /// @param handler The callback to be called in case of a subscription state change.
+    virtual Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept = 0;
+
+    /// \brief Remove any receive handler registered via SetSubscriptionStateChangeHandler()
+    virtual Result<void> UnsetSubscriptionStateChangeHandler() noexcept = 0;
 
     /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
     /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.
