@@ -1,0 +1,165 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow: Run nightly quality jobs and publish results to GitHub Pages.
+#
+# Runs every night at midnight UTC (and on workflow_dispatch for manual runs).
+#
+# Jobs:
+#   - coverage   : full C++ test suite with gcov/lcov → HTML report
+#   - codeql     : TODO – will be added when CodeQL workflow is available
+#   - clang-tidy : TODO – will be added when clang-tidy workflow is available
+#
+# After all quality jobs complete, a `deploy-quality-reports` job:
+#   1. Downloads the coverage HTML artifact
+#   2. Creates a quality dashboard index page
+#   3. Deploys everything to  <pages-url>/latest/quality/  on the gh-pages branch
+#
+# Deployed URL structure:
+#   https://<owner>.github.io/<repo>/latest/quality/index.html    ← dashboard
+#   https://<owner>.github.io/<repo>/latest/quality/coverage/     ← lcov HTML
+
+name: Nightly Quality Jobs
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # every day at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+
+jobs:
+  # --------------------------------------------------------------------
+  # Quality job: Coverage
+  # --------------------------------------------------------------------
+  run-coverage:
+    uses: ./.github/workflows/coverage_report.yml
+    permissions:
+      contents: read
+
+  # TODO: add CodeQL job here once .github/workflows/codeql.yml exists
+  # run-codeql:
+  #   uses: ./.github/workflows/codeql.yml
+  #   permissions:
+  #     contents: read
+  #     security-events: write
+
+  # TODO: add clang-tidy job here once .github/workflows/clang_tidy.yml exists
+  # run-clang-tidy:
+  #   uses: ./.github/workflows/clang_tidy.yml
+  #   permissions:
+  #     contents: read
+
+  # --------------------------------------------------------------------
+  # Collect results and deploy to GitHub Pages
+  # --------------------------------------------------------------------
+  deploy-quality-reports:
+    needs: [run-coverage]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-coverage.outputs.artifact-name }}
+          path: /tmp/coverage_zip
+
+      - name: Extract coverage HTML report
+        run: |
+          cd /tmp/coverage_zip
+          unzip *.zip -d extracted
+          mkdir -p ${GITHUB_WORKSPACE}/_quality/coverage
+          cp -r /tmp/coverage_zip/extracted/artifacts/cpp_coverage/. \
+                ${GITHUB_WORKSPACE}/_quality/coverage/
+
+      - name: Create quality dashboard index page
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          RUN_URL="https://github.com/${OWNER}/${REPO}/actions/runs/${{ github.run_id }}"
+          BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
+
+          mkdir -p _quality
+
+          cat > _quality/index.html << EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <title>Quality Reports — ${REPO}</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                     max-width: 860px; margin: 40px auto; padding: 0 20px; color: #24292e; }
+              h1   { border-bottom: 2px solid #e1e4e8; padding-bottom: 10px; }
+              .meta { color: #586069; font-size: 0.9em; margin: -10px 0 24px; }
+              table { border-collapse: collapse; width: 100%; }
+              th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #e1e4e8; }
+              th    { background: #f6f8fa; font-weight: 600; }
+              a     { color: #0366d6; text-decoration: none; }
+              a:hover { text-decoration: underline; }
+              .badge-ok   { color: #28a745; font-weight: 600; }
+              .badge-todo { color: #6a737d; }
+            </style>
+          </head>
+          <body>
+            <h1>Nightly Quality Reports</h1>
+            <p class="meta">
+              Last updated: <strong>${BUILD_DATE}</strong> &mdash;
+              <a href="${RUN_URL}">View workflow run →</a>
+            </p>
+            <table>
+              <thead>
+                <tr><th>Job</th><th>Status</th><th>Report</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Coverage</td>
+                  <td class="badge-ok">&#10003; Available</td>
+                  <td><a href="coverage/index.html">Open report →</a></td>
+                  <td>Line &amp; branch coverage from C++ unit tests (gcov/lcov)</td>
+                </tr>
+                <tr>
+                  <td>CodeQL</td>
+                  <td class="badge-todo">Not yet configured</td>
+                  <td>—</td>
+                  <td>Static security and quality analysis</td>
+                </tr>
+                <tr>
+                  <td>Clang-Tidy</td>
+                  <td class="badge-todo">Not yet configured</td>
+                  <td>—</td>
+                  <td>C++ static analysis</td>
+                </tr>
+              </tbody>
+            </table>
+          </body>
+          </html>
+          EOF
+
+      - name: Deploy quality reports to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_quality
+          destination_dir: latest/quality
+          keep_files: true
