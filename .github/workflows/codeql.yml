@@ -1,0 +1,188 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Reusable workflow: run CodeQL analysis and upload the SARIF report as an artifact.
+#
+# Called by nightly_quality.yml. Uses the codeql Bazel config defined in
+# quality/static_analysis/static_analysis.bazelrc and the CodeQL bundle from
+# the Bazel third_party integration.
+
+name: CodeQL Analysis
+
+on:
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: "Name of the CodeQL report artifact"
+        value: ${{ jobs.codeql.outputs.artifact-name }}
+      conclusion:
+        description: "Job conclusion: success or failure"
+        value: ${{ jobs.codeql.outputs.conclusion }}
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  codeql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    outputs:
+      artifact-name: ${{ steps.set-artifact-name.outputs.artifact-name }}
+      conclusion: ${{ steps.set-conclusion.outputs.conclusion }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          disk-cache: "codeql"
+          repository-cache: true
+          cache-save: ${{ github.event_name == 'schedule' }}
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Run CodeQL via Bazel
+        id: run-codeql
+        continue-on-error: true
+        run: |
+          bazel run --config=codeql //quality/static_analysis:codeql_lint \
+            -- --target //score/... 2>&1 | tee codeql_raw.log
+
+      - name: Collect CodeQL results
+        run: |
+          mkdir -p codeql_report
+
+          # Copy raw log
+          cp codeql_raw.log codeql_report/
+
+          # Find SARIF output.
+          # codeql_lint.py writes to {bazel output_path}/codeql.sarif (inside bazel-out/).
+          # Also search /var/tmp/codeql_databases as a fallback.
+          find ./bazel-out /var/tmp/codeql_databases /tmp \
+            -name "*.sarif" 2>/dev/null \
+            | xargs -I{} cp {} codeql_report/ 2>/dev/null || true
+
+          # Generate HTML summary from SARIF files (or raw log fallback)
+          python3 - << 'PYEOF'
+          import json, pathlib, html, datetime, glob
+
+          generated = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+          findings = []
+
+          for sarif_path in glob.glob("codeql_report/*.sarif"):
+              try:
+                  data = json.loads(pathlib.Path(sarif_path).read_text())
+                  for run in data.get("runs", []):
+                      rules = {r["id"]: r for r in
+                               run.get("tool", {}).get("driver", {}).get("rules", [])}
+                      for result in run.get("results", []):
+                          rule_id = result.get("ruleId", "unknown")
+                          rule = rules.get(rule_id, {})
+                          message = result.get("message", {}).get("text", "")
+                          severity = result.get("level", "warning")
+                          locs = result.get("locations", [{}])
+                          loc = locs[0].get("physicalLocation", {})
+                          uri = loc.get("artifactLocation", {}).get("uri", "")
+                          line = loc.get("region", {}).get("startLine", "")
+                          findings.append((uri, str(line), severity, rule_id, message))
+              except Exception:
+                  pass
+
+          rows = ""
+          for uri, line, severity, rule_id, msg in findings:
+              sev_cls = "error" if severity in ("error",) else "warning"
+              rows += (
+                  f"<tr class='{sev_cls}'>"
+                  f"<td>{html.escape(uri)}:{html.escape(line)}</td>"
+                  f"<td>{html.escape(severity)}</td>"
+                  f"<td>{html.escape(rule_id)}</td>"
+                  f"<td>{html.escape(msg[:120])}</td></tr>\n"
+              )
+
+          total   = len(findings)
+          errors  = sum(1 for *_, s, __, ___ in findings if s == "error")
+          warnings = total - errors
+
+          html_out = f"""<!DOCTYPE html>
+          <html lang="en"><head><meta charset="utf-8">
+          <title>CodeQL Report</title>
+          <style>
+            body {{ font-family: -apple-system, sans-serif; max-width: 1100px;
+                   margin: 32px auto; padding: 0 16px; color: #24292e; }}
+            h1   {{ border-bottom: 2px solid #e1e4e8; padding-bottom: 8px; }}
+            .summary {{ display: flex; gap: 24px; margin: 16px 0 24px; }}
+            .stat {{ background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px;
+                    padding: 12px 20px; text-align: center; }}
+            .stat .num {{ font-size: 2em; font-weight: 700; }}
+            .stat.err .num {{ color: #d73a49; }}
+            .stat.warn .num {{ color: #e36209; }}
+            table {{ border-collapse: collapse; width: 100%; font-size: 0.88em; }}
+            th, td {{ text-align: left; padding: 6px 10px;
+                      border-bottom: 1px solid #e1e4e8; }}
+            th {{ background: #f6f8fa; font-weight: 600; }}
+            tr.error td {{ background: #fff0f0; }}
+            tr.warning td {{ background: #fffbf0; }}
+            .meta {{ color: #586069; font-size: 0.85em; margin-bottom: 16px; }}
+          </style></head><body>
+          <h1>CodeQL Report</h1>
+          <p class="meta">Generated: {generated}</p>
+          <div class="summary">
+            <div class="stat err"><div class="num">{errors}</div>Errors</div>
+            <div class="stat warn"><div class="num">{warnings}</div>Warnings</div>
+            <div class="stat"><div class="num">{total}</div>Total findings</div>
+          </div>
+          <table>
+            <thead><tr><th>Location</th><th>Severity</th><th>Rule</th><th>Message</th></tr></thead>
+            <tbody>{rows if rows else "<tr><td colspan='4'>No SARIF findings. See codeql_raw.log for details.</td></tr>"}</tbody>
+          </table>
+          </body></html>"""
+
+          pathlib.Path("codeql_report/index.html").write_text(html_out)
+          print(f"CodeQL HTML report: {total} findings")
+          PYEOF
+
+      - name: Set artifact name
+        id: set-artifact-name
+        run: |
+          NAME="${{ github.event.repository.name }}_codeql_${{ github.sha }}"
+          echo "artifact-name=${NAME}" >> $GITHUB_OUTPUT
+
+      - name: Set conclusion
+        id: set-conclusion
+        run: |
+          if [[ "${{ steps.run-codeql.outcome }}" == "success" ]]; then
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload CodeQL report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-artifact-name.outputs.artifact-name }}
+          path: codeql_report/

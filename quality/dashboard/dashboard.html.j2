@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Quality Dashboard</title>
+<style>
+  :root { --bg:#0d1117; --surface:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; padding:2rem; }
+  h1 { font-size:1.6rem; margin-bottom:.25rem; }
+  .meta { color:var(--muted); font-size:.85rem; margin-bottom:1.5rem; }
+  .cards { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.9rem 1.25rem; min-width:110px; text-align:center; }
+  .card .num { font-size:1.8rem; font-weight:700; }
+  .card .label { color:var(--muted); font-size:.75rem; text-transform:uppercase; margin-top:4px; }
+  .card .delta { font-size:.8rem; min-height:1.1em; margin-top:2px; }
+  .tabs { display:flex; border-bottom:2px solid var(--border); margin-bottom:1.5rem; }
+  .tab-btn { background:none; border:none; border-bottom:3px solid transparent; margin-bottom:-2px; padding:.6rem 1.25rem; color:var(--muted); cursor:pointer; font-size:.95rem; font-weight:500; }
+  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .tab-btn:hover { color:var(--text); }
+  .panel { display:none; } .panel.active { display:block; }
+  .controls { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:.75rem; }
+  .controls input, .controls select { background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:.4rem .8rem; font-size:.9rem; }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  thead th { background:var(--surface); border-bottom:2px solid var(--border); padding:.6rem .8rem; text-align:left; color:var(--muted); text-transform:uppercase; font-size:.75rem; cursor:pointer; user-select:none; white-space:nowrap; }
+  thead th:hover { color:var(--accent); }
+  tbody tr { border-bottom:1px solid var(--border); }
+  tbody tr:hover { background:var(--surface); }
+  td { padding:.5rem .8rem; vertical-align:top; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.75rem; font-weight:600; color:#fff; white-space:nowrap; }
+  .mono { font-family:monospace; font-size:.82rem; }
+  .muted { color:var(--muted); }
+  .empty-msg { text-align:center; padding:3rem; color:var(--muted); }
+  .cov-bar-wrap { display:inline-block; background:var(--border); border-radius:4px; height:6px; width:80px; vertical-align:middle; margin-right:6px; }
+  .cov-bar { height:6px; border-radius:4px; }
+  .cov-summary { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.25rem; }
+  .cov-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1rem 1.5rem; text-align:center; min-width:140px; }
+  .cov-box .big { font-size:2rem; font-weight:700; }
+  .cov-box .sub { color:var(--muted); font-size:.8rem; margin-top:2px; }
+  .cov-box .detail { color:var(--muted); font-size:.75rem; margin-top:2px; }
+  .trend-up { color:#e74c3c; font-weight:700; font-size:.75rem; margin-left:2px; }
+  .trend-dn { color:#27ae60; font-weight:700; font-size:.75rem; margin-left:2px; }
+  .trend-eq { color:#8b949e; font-weight:700; font-size:.75rem; margin-left:2px; }
+  .section-title { color:var(--muted); font-size:.85rem; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.75rem; font-weight:600; margin-top:1.25rem; }
+  .spark-wrap { display:flex; align-items:flex-end; gap:3px; height:32px; background:var(--surface); padding:4px 6px; border-radius:4px; }
+  .spark-bar { width:10px; border-radius:2px 2px 0 0; min-height:2px; cursor:default; transition:opacity .15s; }
+  .spark-bar:hover { opacity:.7; }
+</style>
+</head>
+<body>
+<h1>Quality Dashboard</h1>
+<p class="meta">Generated: {{ timestamp }}</p>
+
+{# ── Summary cards ── #}
+<div class="cards">
+  {% for sev in ['critical','high','error','warning','medium','low','recommendation','note'] %}
+    {% set n = codeql_counts[sev] %}
+    {% if n %}
+      <div class="card">
+        <div class="num" style="color:{{ sev_colour(sev) }}">{{ n }}</div>
+        <div class="label">CodeQL {{ sev }}</div>
+      </div>
+    {% endif %}
+  {% endfor %}
+  {% if not codeql_rows %}
+    <div class="card">
+      <div class="num" style="color:#27ae60">0</div>
+      {% if prev %}<div class="delta">{{ delta(0, prev.codeql, false) }}</div>{% endif %}
+      <div class="label">CodeQL findings</div>
+    </div>
+  {% elif prev %}
+    <div class="card" style="border-style:dashed;min-width:80px">
+      <div class="num" style="font-size:1.25rem">{{ delta(codeql_rows|length, prev.codeql, false) }}</div>
+      <div class="label">CodeQL Δ</div>
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="num" style="color:{{ '#e74c3c' if clang_errors else ('#e67e22' if clang_rows else '#27ae60') }}">{{ clang_rows|length }}</div>
+    {% if prev %}<div class="delta">{{ delta(clang_rows|length, prev.clang_tidy, false) }}</div>{% endif %}
+    <div class="label">Clang-Tidy</div>
+  </div>
+
+  {% if cov %}
+    {% for key, hk, label in [('line_pct','line_cov','Line Cov'),('func_pct','func_cov','Func Cov'),('branch_pct','branch_cov','Branch Cov')] %}
+      <div class="card">
+        <div class="num" style="color:{{ cov_colour(cov[key]) }}">{{ '%.1f'|format(cov[key]) }}%</div>
+        {% if prev and prev[hk] is not none %}<div class="delta">{{ delta(cov[key], prev[hk], true) }}</div>{% endif %}
+        <div class="label">{{ label }}</div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="card"><div class="num" style="color:#95a5a6">N/A</div><div class="label">Coverage</div></div>
+  {% endif %}
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('codeql',this)">CodeQL ({{ codeql_rows|length }})</button>
+  <button class="tab-btn" onclick="showTab('clang',this)">Clang-Tidy ({{ clang_rows|length }})</button>
+  <button class="tab-btn" onclick="showTab('coverage',this)">Coverage ({{ ('%.1f'|format(cov.line_pct) ~ '%') if cov else 'N/A' }})</button>
+  <button class="tab-btn" onclick="showTab('kpi',this)">KPI / Trends ({{ history|length }} runs)</button>
+</div>
+
+{# ── CodeQL tab ── #}
+<div id="tab-codeql" class="panel active">
+  {% if codeql_rows %}
+  <div class="controls">
+    <input id="cq-search" type="text" placeholder="Search message or path…" oninput="cqFilter()" style="flex:1;min-width:200px"/>
+    <select id="cq-sev" onchange="cqFilter()">
+      <option value="">All severities</option>
+      {% for sev in ['critical','high','error','warning','medium','low','recommendation','note'] %}
+        {% if codeql_counts[sev] %}<option value="{{ sev }}">{{ sev|capitalize }} ({{ codeql_counts[sev] }})</option>{% endif %}
+      {% endfor %}
+    </select>
+  </div>
+  <table>
+    <thead><tr><th onclick="cqSort(0)">Severity &#8597;</th><th onclick="cqSort(1)">Rule &#8597;</th><th onclick="cqSort(2)">Message &#8597;</th><th onclick="cqSort(3)">Location &#8597;</th></tr></thead>
+    <tbody id="cq-tbody">
+      {% for r in codeql_rows %}
+      <tr data-sev="{{ r.severity|lower }}">
+        <td><span class="badge" style="background:{{ sev_colour(r.severity) }}">{{ r.severity|upper }}</span></td>
+        <td class="mono">{{ r.name }}</td>
+        <td>{{ r.message }}</td>
+        <td class="mono muted">{{ r.path }}{% if r.start_line %}:{{ r.start_line }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-msg">No CodeQL findings — clean code!</p>
+  {% endif %}
+</div>
+
+{# ── Clang-Tidy tab ── #}
+<div id="tab-clang" class="panel">
+  {% if clang_rows %}
+  <div class="controls">
+    <input id="ct-search" type="text" placeholder="Search message or check…" oninput="ctFilter()" style="flex:1;min-width:200px"/>
+    <select id="ct-sev" onchange="ctFilter()">
+      <option value="">All severities</option>
+      {% for sev in ['error','warning'] %}
+        {% if clang_counts[sev] %}<option value="{{ sev }}">{{ sev|capitalize }} ({{ clang_counts[sev] }})</option>{% endif %}
+      {% endfor %}
+    </select>
+  </div>
+  <table>
+    <thead><tr><th onclick="ctSort(0)">Severity &#8597;</th><th onclick="ctSort(1)">Check &#8597;</th><th onclick="ctSort(2)">Message &#8597;</th><th onclick="ctSort(3)">Location &#8597;</th></tr></thead>
+    <tbody id="ct-tbody">
+      {% for r in clang_rows %}
+      <tr data-sev="{{ r.severity|lower }}">
+        <td><span class="badge" style="background:{{ sev_colour(r.severity) }}">{{ r.severity|upper }}</span></td>
+        <td class="mono">{{ r.check }}</td>
+        <td>{{ r.message }}</td>
+        <td class="mono muted">{{ r.path }}{% if r.line %}:{{ r.line }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-msg">No Clang-Tidy warnings — clean code!</p>
+  {% endif %}
+</div>
+
+{# ── Coverage tab ── #}
+<div id="tab-coverage" class="panel">
+  {% if cov %}
+  <div class="cov-summary">
+    {% for key, label, detail_key in [('line_pct','Line Coverage','lines'),('func_pct','Function Coverage','funcs'),('branch_pct','Branch Coverage','branches')] %}
+    <div class="cov-box">
+      <div class="big" style="color:{{ cov_colour(cov[key]) }}">{{ '%.1f'|format(cov[key]) }}%</div>
+      <div class="sub">{{ label }}</div>
+      <div class="detail">{{ cov[detail_key] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% if cov_files %}
+  <table>
+    <thead><tr><th>File</th><th onclick="cvSort(1)" style="cursor:pointer">Lines &#8597;</th><th onclick="cvSort(2)" style="cursor:pointer">Functions &#8597;</th><th onclick="cvSort(3)" style="cursor:pointer">Branches &#8597;</th><th>Lines (hit/total)</th></tr></thead>
+    <tbody id="cv-tbody">
+      {% for f in cov_files %}
+      <tr>
+        <td class="mono">{{ f.file|basename }}</td>
+        <td data-val="{{ f.line_pct }}">
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:{{ [f.line_pct,100]|min }}%;background:{{ cov_colour(f.line_pct) }}"></div></div>
+          <span style="color:{{ cov_colour(f.line_pct) }};font-weight:600">{{ '%.1f'|format(f.line_pct) }}%</span>
+        </td>
+        <td data-val="{{ f.func_pct }}">
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:{{ [f.func_pct,100]|min }}%;background:{{ cov_colour(f.func_pct) }}"></div></div>
+          <span style="color:{{ cov_colour(f.func_pct) }};font-weight:600">{{ '%.1f'|format(f.func_pct) }}%</span>
+        </td>
+        <td data-val="{{ f.branch_pct }}">
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:{{ [f.branch_pct,100]|min }}%;background:{{ cov_colour(f.branch_pct) }}"></div></div>
+          <span style="color:{{ cov_colour(f.branch_pct) }};font-weight:600">{{ '%.1f'|format(f.branch_pct) }}%</span>
+        </td>
+        <td class="mono muted">{{ f.lh }}/{{ f.lf }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% else %}
+  <p class="empty-msg">No coverage data.<br>Run <code>bazel coverage //:calculator_test</code></p>
+  {% endif %}
+</div>
+
+{# ── KPI tab ── #}
+<div id="tab-kpi" class="panel">
+  {% if history|length < 2 %}
+  <p class="empty-msg">{{ history|length }} run(s) recorded. Trends appear after 2+ runs.</p>
+  {% else %}
+  <h3 class="section-title">Error Fix KPIs</h3>
+  <div class="cards" style="margin-bottom:2rem">
+    {% for label, key, hib, unit in [('CodeQL Findings','codeql',false,''),('Clang-Tidy Warnings','clang_tidy',false,''),('Line Coverage','line_cov',true,'%'),('Branch Coverage','branch_cov',true,'%')] %}
+    {% set curr = history[-1][key] %}
+    {% set prv  = history[-2][key] %}
+    {% set orig = history[0][key] %}
+    <div class="card">
+      <div class="num">{% if curr is not none %}{{ ('%.1f'|format(curr) ~ unit) if curr is float else (curr|string ~ unit) }}{% else %}N/A{% endif %}</div>
+      {% if curr is not none and prv is not none %}<div class="delta">{{ delta(curr, prv, hib) }} vs prev</div>{% endif %}
+      <div class="label">{{ label }}
+        {% if curr is not none and orig is not none and orig != 0 %}
+          {% set rate = ((orig - curr) / orig * 100) if not hib else ((curr - orig) / orig * 100) %}
+          <br><span style="color:{{ '#27ae60' if rate >= 0 else '#e74c3c' }};font-size:.78rem">{{ '%+.1f'|format(rate) }}% vs start</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h3 class="section-title">Trend Sparklines</h3>
+  <div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:2rem">
+    {% set max_cq = [history|map(attribute='codeql')|select('number')|list|max, 1]|max %}
+    <div>
+      <div class="muted" style="font-size:.8rem;margin-bottom:4px">CodeQL findings</div>
+      <div class="spark-wrap">
+        {% for s in history %}
+          {% set h = ((s.codeql or 0) / max_cq * 30)|int %}
+          <div class="spark-bar" style="height:{{ [h,2]|max }}px;background:{{ '#e74c3c' if (s.codeql or 0) > 0 else '#27ae60' }}" title="{{ s.date }} — {{ s.codeql or 0 }} findings"></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:.8rem;margin-bottom:4px">Line coverage %</div>
+      <div class="spark-wrap">
+        {% for s in history %}
+          {% set h = ((s.line_cov or 0) / 100 * 30)|int %}
+          <div class="spark-bar" style="height:{{ [h,2]|max }}px;background:{{ cov_colour(s.line_cov or 0) }}" title="{{ s.date }} — {{ '%.1f'|format(s.line_cov or 0) }}%"></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <h3 class="section-title">Run History</h3>
+  <table>
+    <thead><tr><th>Date</th><th>CodeQL</th><th>Clang-Tidy</th><th>Line Cov</th><th>Func Cov</th><th>Branch Cov</th></tr></thead>
+    <tbody>
+      {% for snap in history|reverse %}
+      {% set idx = (history|length - 1) - loop.index0 %}
+      {% set ps = history[idx - 1] if idx > 0 else none %}
+      {% set is_latest = loop.first %}
+      <tr{% if is_latest %} style="background:var(--surface)"{% endif %}>
+        <td class="mono">{{ snap.date }}{% if is_latest %}&nbsp;<span style="font-size:.72rem;color:var(--accent)">now</span>{% endif %}</td>
+        <td>{{ snap.codeql if snap.codeql is not none else 'N/A' }}{% if ps and snap.codeql is not none and ps.codeql is not none %} {{ delta(snap.codeql, ps.codeql, false) }}{% endif %}</td>
+        <td>{{ snap.clang_tidy if snap.clang_tidy is not none else 'N/A' }}{% if ps and snap.clang_tidy is not none and ps.clang_tidy is not none %} {{ delta(snap.clang_tidy, ps.clang_tidy, false) }}{% endif %}</td>
+        <td>{% if snap.line_cov is not none %}<span style="color:{{ cov_colour(snap.line_cov) }}">{{ '%.1f'|format(snap.line_cov) }}%</span>{% if ps and ps.line_cov is not none %} {{ delta(snap.line_cov, ps.line_cov, true) }}{% endif %}{% else %}N/A{% endif %}</td>
+        <td>{% if snap.func_cov is not none %}<span style="color:{{ cov_colour(snap.func_cov) }}">{{ '%.1f'|format(snap.func_cov) }}%</span>{% if ps and ps.func_cov is not none %} {{ delta(snap.func_cov, ps.func_cov, true) }}{% endif %}{% else %}N/A{% endif %}</td>
+        <td>{% if snap.branch_cov is not none %}<span style="color:{{ cov_colour(snap.branch_cov) }}">{{ '%.1f'|format(snap.branch_cov) }}%</span>{% if ps and ps.branch_cov is not none %} {{ delta(snap.branch_cov, ps.branch_cov, true) }}{% endif %}{% else %}N/A{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+const cqRows = Array.from(document.querySelectorAll('#cq-tbody tr'));
+function cqFilter() {
+  const q = document.getElementById('cq-search').value.toLowerCase();
+  const s = document.getElementById('cq-sev').value;
+  cqRows.forEach(r => { r.style.display = ((!q || r.textContent.toLowerCase().includes(q)) && (!s || r.dataset.sev === s)) ? '' : 'none'; });
+}
+let cqDir=1; function cqSort(c) { const tb=document.getElementById('cq-tbody');
+  [...tb.querySelectorAll('tr')].sort((a,b)=>(a.cells[c]?.textContent||'').localeCompare(b.cells[c]?.textContent||'')*cqDir).forEach(r=>tb.appendChild(r)); cqDir*=-1; }
+const ctRows = Array.from(document.querySelectorAll('#ct-tbody tr'));
+function ctFilter() {
+  const q = document.getElementById('ct-search').value.toLowerCase();
+  const s = document.getElementById('ct-sev').value;
+  ctRows.forEach(r => { r.style.display = ((!q || r.textContent.toLowerCase().includes(q)) && (!s || r.dataset.sev === s)) ? '' : 'none'; });
+}
+let ctDir=1; function ctSort(c) { const tb=document.getElementById('ct-tbody');
+  [...tb.querySelectorAll('tr')].sort((a,b)=>(a.cells[c]?.textContent||'').localeCompare(b.cells[c]?.textContent||'')*ctDir).forEach(r=>tb.appendChild(r)); ctDir*=-1; }
+let cvDir=1; function cvSort(c) { const tb=document.getElementById('cv-tbody');
+  [...tb.querySelectorAll('tr')].sort((a,b)=>(parseFloat(a.cells[c]?.dataset.val||0)-parseFloat(b.cells[c]?.dataset.val||0))*cvDir).forEach(r=>tb.appendChild(r)); cvDir*=-1; }
+</script>
+</body>
+</html>

@@ -27,6 +27,7 @@ on:
 env:
   ANDROID_HOME: ""
   ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   create-draft-release:

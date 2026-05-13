@@ -60,13 +60,25 @@ def main():
             bazel_command += _get_action_env_extension(necessary_codeql_environment)
             subprocess.run(f"{bazel_command} {target}", shell=True, env=env, cwd=source_root, check=True)
 
-            os.system(f"{code_ql_path} database finalize -j=0 -- {database_location}")
+            # Finalize: compile tracing data into the queryable database.
+            subprocess.run(
+                f"{code_ql_path} database finalize -j=0 -- {database_location}",
+                shell=True, check=False)
 
             output_base = _get_bazel_info(source_root).get('output_path')
-            os.system(
-                f"{code_ql_path} database analyze -j=0 {database_location} --format=sarifv2.1.0 --output={output_base}/codeql.sarif")
-            os.system(
-                f"{code_ql_path} database analyze -j=0 {database_location} --format=csv --output={output_base}/codeql.csv")
+
+            # Analyze: run MISRA/AUTOSAR queries and produce SARIF.
+            # --ram:     cap at 5 GB to prevent swap thrashing on GitHub runners (7 GB total)
+            # --timeout: skip any single query that exceeds 20 minutes instead of hanging
+            # -j 2:      match GitHub runner core count explicitly
+            # CSV output removed — SARIF is sufficient for the CI report.
+            subprocess.run(
+                f"{code_ql_path} database analyze"
+                f" -j 2 --ram 5000 --timeout 20"
+                f" {database_location}"
+                f" --format=sarifv2.1.0 --output={output_base}/codeql.sarif",
+                shell=True, check=False,
+                timeout=5400)  # 90-minute hard ceiling as a last-resort safety net
 
             # @todo it is possible to generate here also a full MISRA compliance report, which we could do in the future.
             # path/to/<output_database_name> <name-of-results-file>.sarif <output_directory>

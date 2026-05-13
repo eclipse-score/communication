@@ -13,21 +13,21 @@
 
 # Workflow: Run nightly quality jobs and publish results to GitHub Pages.
 #
-# Runs every night at midnight UTC (and on workflow_dispatch for manual runs).
+# Runs every night at midnight UTC. Three quality jobs run in parallel:
+#   - Coverage   : full C++ test suite with gcov/lcov → HTML report
+#   - CodeQL     : static security/MISRA analysis → HTML report
+#   - Clang-Tidy : C++ static analysis → HTML report
 #
-# Jobs:
-#   - coverage   : full C++ test suite with gcov/lcov → HTML report
-#   - codeql     : TODO – will be added when CodeQL workflow is available
-#   - clang-tidy : TODO – will be added when clang-tidy workflow is available
-#
-# After all quality jobs complete, a `deploy-quality-reports` job:
-#   1. Downloads the coverage HTML artifact
-#   2. Creates a quality dashboard index page
-#   3. Deploys everything to  <pages-url>/latest/quality/  on the gh-pages branch
+# After all three complete (pass or fail), a final deploy-quality-reports job:
+#   1. Downloads all three HTML artifacts
+#   2. Runs create_dashboard.py to produce the dashboard index page
+#   3. Deploys everything to <pages-url>/latest/quality/ on the gh-pages branch
 #
 # Deployed URL structure:
-#   https://<owner>.github.io/<repo>/latest/quality/index.html    ← dashboard
-#   https://<owner>.github.io/<repo>/latest/quality/coverage/     ← lcov HTML
+#   https://<owner>.github.io/<repo>/latest/quality/index.html         ← dashboard
+#   https://<owner>.github.io/<repo>/latest/quality/coverage/          ← lcov HTML
+#   https://<owner>.github.io/<repo>/latest/quality/codeql/            ← CodeQL HTML
+#   https://<owner>.github.io/<repo>/latest/quality/clang_tidy/        ← Clang-Tidy HTML
 
 name: Nightly Quality Jobs
 
@@ -42,34 +42,42 @@ permissions:
 env:
   ANDROID_HOME: ""
   ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # --------------------------------------------------------------------
-  # Quality job: Coverage
+  # Quality job 1: Coverage
   # --------------------------------------------------------------------
   run-coverage:
     uses: ./.github/workflows/coverage_report.yml
     permissions:
       contents: read
 
-  # TODO: add CodeQL job here once .github/workflows/codeql.yml exists
-  # run-codeql:
-  #   uses: ./.github/workflows/codeql.yml
-  #   permissions:
-  #     contents: read
-  #     security-events: write
-
-  # TODO: add clang-tidy job here once .github/workflows/clang_tidy.yml exists
-  # run-clang-tidy:
-  #   uses: ./.github/workflows/clang_tidy.yml
-  #   permissions:
-  #     contents: read
+  # --------------------------------------------------------------------
+  # Quality job 2: CodeQL
+  # --------------------------------------------------------------------
+  run-codeql:
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      contents: read
+      security-events: write
 
   # --------------------------------------------------------------------
-  # Collect results and deploy to GitHub Pages
+  # Quality job 3: Clang-Tidy
+  # --------------------------------------------------------------------
+  run-clang-tidy:
+    uses: ./.github/workflows/clang_tidy.yml
+    permissions:
+      contents: read
+
+  # --------------------------------------------------------------------
+  # Collect all results, build the dashboard, deploy to GitHub Pages
   # --------------------------------------------------------------------
   deploy-quality-reports:
-    needs: [run-coverage]
+    needs: [run-coverage, run-codeql, run-clang-tidy]
+    # Always run even if individual quality jobs fail, so the dashboard
+    # still reflects which jobs passed and which failed.
+    if: always()
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -78,13 +86,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
 
+      # ------------------------------------------------------------------
+      # Determine job conclusions (needs.*.result = success|failure|skipped|cancelled)
+      # ------------------------------------------------------------------
+      - name: Resolve job conclusions
+        id: conclusions
+        run: |
+          map_conclusion() {
+            case "$1" in
+              success)   echo "success" ;;
+              failure)   echo "failure" ;;
+              *)         echo "skipped" ;;
+            esac
+          }
+          echo "coverage=$(map_conclusion '${{ needs.run-coverage.result }}')"     >> $GITHUB_OUTPUT
+          echo "codeql=$(map_conclusion '${{ needs.run-codeql.result }}')"         >> $GITHUB_OUTPUT
+          echo "clang_tidy=$(map_conclusion '${{ needs.run-clang-tidy.result }}')" >> $GITHUB_OUTPUT
+
+      # ------------------------------------------------------------------
+      # Download artifacts (continue-on-error: artifacts may not exist if job failed)
+      # ------------------------------------------------------------------
       - name: Download coverage artifact
+        if: needs.run-coverage.result == 'success'
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.run-coverage.outputs.artifact-name }}
           path: /tmp/coverage_zip
 
       - name: Extract coverage HTML report
+        if: needs.run-coverage.result == 'success'
+        continue-on-error: true
         run: |
           cd /tmp/coverage_zip
           unzip *.zip -d extracted
@@ -92,70 +124,62 @@ jobs:
           cp -r /tmp/coverage_zip/extracted/artifacts/cpp_coverage/. \
                 ${GITHUB_WORKSPACE}/_quality/coverage/
 
-      - name: Create quality dashboard index page
+      - name: Download CodeQL artifact
+        if: needs.run-codeql.result == 'success'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-codeql.outputs.artifact-name }}
+          path: _quality/codeql
+
+      - name: Download Clang-Tidy artifact
+        if: needs.run-clang-tidy.result == 'success'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-clang-tidy.outputs.artifact-name }}
+          path: _quality/clang_tidy
+
+      # ------------------------------------------------------------------
+      # Generate dashboard index page via generate_dashboard.py
+      # ------------------------------------------------------------------
+
+      # Install Jinja2 (already in requirements_lock.txt; just ensure it is
+      # available on the runner before running the dashboard script).
+      - name: Install dashboard dependencies
+        if: always() && steps.conclusions.outcome == 'success'
+        run: pip install jinja2 markupsafe
+
+      # Restore KPI history from the previous gh-pages deployment so the
+      # dashboard can show delta badges and trend sparklines across runs.
+      - name: Restore KPI history
+        if: always() && steps.conclusions.outcome == 'success'
         run: |
-          OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.event.repository.name }}"
-          RUN_URL="https://github.com/${OWNER}/${REPO}/actions/runs/${{ github.run_id }}"
-          BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
+          mkdir -p _quality/data
+          git fetch origin gh-pages 2>/dev/null || true
+          git show origin/gh-pages:latest/quality/data/quality_history.json \
+            > _quality/data/quality_history.json 2>/dev/null || true
 
-          mkdir -p _quality
+      - name: Generate quality dashboard
+        if: always() && steps.conclusions.outcome == 'success'
+        run: |
+          # The LCOV .dat file is inside the extracted coverage zip at a known
+          # path; pass it unconditionally — generate_dashboard.py handles the
+          # case where the file is absent (returns empty coverage data).
+          python3 quality/dashboard/generate_dashboard.py \
+            --sarif-dir      _quality/codeql \
+            --clang-tidy-dir _quality/clang_tidy \
+            --lcov           /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
+            --history        _quality/data/quality_history.json \
+            --html           _quality/index.html \
+            --github-summary
 
-          cat > _quality/index.html << EOF
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <title>Quality Reports — ${REPO}</title>
-            <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-                     max-width: 860px; margin: 40px auto; padding: 0 20px; color: #24292e; }
-              h1   { border-bottom: 2px solid #e1e4e8; padding-bottom: 10px; }
-              .meta { color: #586069; font-size: 0.9em; margin: -10px 0 24px; }
-              table { border-collapse: collapse; width: 100%; }
-              th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #e1e4e8; }
-              th    { background: #f6f8fa; font-weight: 600; }
-              a     { color: #0366d6; text-decoration: none; }
-              a:hover { text-decoration: underline; }
-              .badge-ok   { color: #28a745; font-weight: 600; }
-              .badge-todo { color: #6a737d; }
-            </style>
-          </head>
-          <body>
-            <h1>Nightly Quality Reports</h1>
-            <p class="meta">
-              Last updated: <strong>${BUILD_DATE}</strong> &mdash;
-              <a href="${RUN_URL}">View workflow run →</a>
-            </p>
-            <table>
-              <thead>
-                <tr><th>Job</th><th>Status</th><th>Report</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Coverage</td>
-                  <td class="badge-ok">&#10003; Available</td>
-                  <td><a href="coverage/index.html">Open report →</a></td>
-                  <td>Line &amp; branch coverage from C++ unit tests (gcov/lcov)</td>
-                </tr>
-                <tr>
-                  <td>CodeQL</td>
-                  <td class="badge-todo">Not yet configured</td>
-                  <td>—</td>
-                  <td>Static security and quality analysis</td>
-                </tr>
-                <tr>
-                  <td>Clang-Tidy</td>
-                  <td class="badge-todo">Not yet configured</td>
-                  <td>—</td>
-                  <td>C++ static analysis</td>
-                </tr>
-              </tbody>
-            </table>
-          </body>
-          </html>
-          EOF
+          echo "Dashboard generated. Contents of _quality/:"
+          find _quality -type f | sort
 
+      # ------------------------------------------------------------------
+      # Deploy to GitHub Pages
+      # ------------------------------------------------------------------
       - name: Deploy quality reports to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -163,3 +187,9 @@ jobs:
           publish_dir: ./_quality
           destination_dir: latest/quality
           keep_files: true
+
+      - name: Print dashboard URL
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          echo "::notice::Quality dashboard → https://${OWNER}.github.io/${REPO}/latest/quality/index.html"
