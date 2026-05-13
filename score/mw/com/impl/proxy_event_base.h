@@ -35,8 +35,6 @@
 namespace score::mw::com::impl
 {
 
-class EventBindingRegistrationGuard;
-
 /// \brief This is the user-visible class of an event that is part of a proxy. It contains ProxyEvent functionality that
 /// is agnostic of the data type that is transferred by the event.
 ///
@@ -187,8 +185,6 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     std::unique_ptr<SampleReferenceTracker> tracker_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     tracing::ProxyEventTracingData tracing_data_;
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    std::unique_ptr<EventBindingRegistrationGuard> event_binding_registration_guard_;
 
     IProxyEventBase* proxy_event_base_mock_;
 
