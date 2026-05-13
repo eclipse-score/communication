@@ -28,6 +28,7 @@ concurrency:
 env:
   ANDROID_HOME: ""
   ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   coverage_report:
     runs-on: ubuntu-24.04
@@ -79,6 +80,10 @@ jobs:
           mkdir -p artifacts
           find bazel-testlogs/score/ -name 'test.xml' -print0 | xargs -0 -I{} cp --parents {} artifacts/
           cp -r cpp_coverage artifacts/
+          # Include raw LCOV .dat file so the quality dashboard can read actual
+          # line/function/branch percentages directly without re-running genhtml.
+          LCOV_DAT="$(bazel info output_path)/_coverage/_coverage_report.dat"
+          [ -f "$LCOV_DAT" ] && cp "$LCOV_DAT" artifacts/coverage_report.dat || true
           zip -r ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip artifacts/
         shell: bash
 
