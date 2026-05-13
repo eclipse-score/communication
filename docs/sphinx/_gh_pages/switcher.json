@@ -1,0 +1,7 @@
+[
+  {"name": "latest", "version": "latest", "url": "https://eclipse-score.github.io/communication/latest/"},
+  {"name": "stable", "version": "stable", "url": "https://eclipse-score.github.io/communication/stable/", "preferred": true},
+  {"name": "v0.2.1", "version": "v0.2.1", "url": "https://eclipse-score.github.io/communication/v0.2.1/"},
+  {"name": "v0.2.0", "version": "v0.2.0", "url": "https://eclipse-score.github.io/communication/v0.2.0/"},
+  {"name": "v0.1.4", "version": "v0.1.4", "url": "https://eclipse-score.github.io/communication/v0.1.4/"}
+]

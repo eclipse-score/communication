@@ -1,0 +1,194 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow to build and deploy Sphinx documentation to GitHub Pages with versioning
+name: Deploy Documentation to GitHub Pages
+
+on:
+  push:
+    branches: [main, amsh_github_io_for_com]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/deploy_docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: deploy-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "is_tag=true" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
+            echo "version=latest" >> "$GITHUB_OUTPUT"
+            echo "is_tag=false" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            # Feature branch or PR — deploy to preview/<branch-name>
+            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+            BRANCH_NAME="${BRANCH_NAME//\//-}"
+            echo "version=preview/${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
+            echo "is_tag=false" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Sphinx documentation
+        env:
+          DOCS_BASE_URL: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          DOCS_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          bazel build //docs/sphinx:sphinx_doc
+
+      - name: Prepare documentation output
+        run: |
+          mkdir -p docs_output
+          cp -r bazel-bin/docs/sphinx/sphinx_doc/html/* docs_output/ || \
+          cp -r bazel-out/k8-fastbuild/bin/docs/sphinx/sphinx_doc/html/* docs_output/ || true
+
+      - name: Include switcher.json in output
+        run: |
+          REPO_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          cat > docs_output/switcher.json << EOF
+          [
+            {"name": "latest", "version": "latest", "url": "${REPO_URL}/latest/"},
+            {"name": "stable", "version": "stable", "url": "${REPO_URL}/stable/"},
+            {"name": "preview", "version": "preview/amsh_github_io_for_com", "url": "${REPO_URL}/preview/amsh_github_io_for_com/"}
+          ]
+          EOF
+          # Also prepare a root-level copy
+          mkdir -p root_deploy
+          cp docs_output/switcher.json root_deploy/switcher.json
+          cp docs/sphinx/_gh_pages/index.html root_deploy/index.html
+
+      - name: Deploy switcher.json and index.html to root
+        if: github.event_name != 'pull_request'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./root_deploy
+          keep_files: true
+
+      - name: Verify build output
+        run: |
+          if [ ! -f docs_output/index.html ]; then
+            echo "::error::Documentation build failed - no index.html found"
+            exit 1
+          fi
+          echo "Documentation built successfully"
+          echo "Files generated:"
+          find docs_output -type f | head -20
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs_output
+          destination_dir: ${{ steps.version.outputs.version }}
+          keep_files: true
+
+      - name: Deploy as stable (for tags only)
+        if: steps.version.outputs.is_tag == 'true' && github.event_name != 'pull_request'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs_output
+          destination_dir: stable
+          keep_files: true
+
+      - name: Print preview URL
+        if: github.event_name != 'pull_request'
+        run: |
+          REPO_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          echo "::notice::Documentation deployed to: ${REPO_URL}/${{ steps.version.outputs.version }}/"
+
+  update-root:
+    needs: build-docs
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Update root index.html and switcher.json
+        run: |
+          cp docs/sphinx/_gh_pages/index.html gh-pages/index.html
+
+          # Build switcher.json from existing version directories
+          REPO_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+
+          # Start building the JSON array
+          echo "[" > gh-pages/switcher.json
+
+          # Always include latest
+          echo "  {\"name\": \"latest\", \"version\": \"latest\", \"url\": \"${REPO_URL}/latest/\"}," >> gh-pages/switcher.json
+
+          # Add stable if it exists
+          if [ -d "gh-pages/stable" ]; then
+            echo "  {\"name\": \"stable\", \"version\": \"stable\", \"url\": \"${REPO_URL}/stable/\", \"preferred\": true}," >> gh-pages/switcher.json
+          fi
+
+          # Add tagged versions (sorted descending)
+          for dir in $(find gh-pages -maxdepth 1 -type d -name "v*" | sort -rV); do
+            ver=$(basename "$dir")
+            echo "  {\"name\": \"${ver}\", \"version\": \"${ver}\", \"url\": \"${REPO_URL}/${ver}/\"}," >> gh-pages/switcher.json
+          done
+
+          # Remove trailing comma and close array
+          sed -i '$ s/,$//' gh-pages/switcher.json
+          echo "]" >> gh-pages/switcher.json
+
+      - name: Deploy updated root files
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages
+          keep_files: true

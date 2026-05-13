@@ -28,6 +28,12 @@ copyright = '2026, Eclipse S-CORE Contributors'
 author = 'Eclipse Foundation'
 release = '1.0.0'
 
+# GitHub Pages base URL (update org/repo as needed)
+GITHUB_PAGES_URL = os.environ.get(
+    'DOCS_BASE_URL',
+    'https://aambuj.github.io/communication'
+)
+
 # -- General configuration ---
 extensions = [
     'sphinx.ext.autodoc',      # Auto-generate documentation from docstrings
@@ -81,7 +87,7 @@ html_theme_options = {
     'navbar_align': 'left',
     'navbar_start': ['navbar-logo'],
     'navbar_center': ['navbar-nav'],
-    'navbar_end': ['navbar-icon-links', 'theme-switcher'],
+    'navbar_end': ['version-switcher', 'navbar-icon-links', 'theme-switcher'],
 
     # Search configuration
     'search_bar_text': 'Search documentation...',
@@ -106,6 +112,12 @@ html_theme_options = {
             'icon': 'fab fa-github',
         }
     ],
+
+    # Version switcher configuration
+    'switcher': {
+        'json_url': f'{GITHUB_PAGES_URL}/switcher.json',
+        'version_match': os.environ.get('DOCS_VERSION', 'preview/amsh_github_io_for_com'),
+    },
 }
 
 # Add custom styling
