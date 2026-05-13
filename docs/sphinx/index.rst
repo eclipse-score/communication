@@ -27,6 +27,12 @@ including the LoLa (Low Latency) implementation and Message Passing library.
 
    safety_reports
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Quality Reports:
+
+   quality_reports
+
 .. Note: safety_reports.rst contains links to pre-built HTML reports from external targets.
 
 About This Documentation
