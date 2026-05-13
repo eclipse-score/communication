@@ -167,24 +167,6 @@ class Proxy : public ProxyBinding
     /// \return True if the event name exists, otherwise, false
     bool IsEventProvided(const std::string_view event_name) const noexcept override;
 
-    /// \brief Adds a reference to a Proxy service element binding to an internal map
-    ///
-    /// Will insert the provided ProxyEventBindingBase& into a map stored within the class which will be used to call
-    /// NotifyServiceInstanceChangedAvailability on all saved Proxy service elements by the FindServiceHandler of
-    /// find_service_guard_. It will then call NotifyServiceInstanceChangedAvailability on the provided
-    /// ProxyEventBindingBase. Since this function first locks proxy_event_registration_mutex_, it is ensured that the
-    /// provided Proxy service element will be notified synchronously about the availability of the provider and will
-    /// then be notified of any future changes via the callback, without missing any notifications.
-    void RegisterEventBinding(const std::string_view service_element_name,
-                              ProxyEventBindingBase& proxy_event_binding) noexcept override;
-
-    /// \brief Removes the reference to a Proxy service element binding from an internal map
-    ///
-    /// This must be called by a Proxy service element before destructing to ensure that the FindService handler in
-    /// find_service_guard_ does not call NotifyServiceInstanceChangedAvailability on a Proxy service element after it's
-    /// been destructed.
-    void UnregisterEventBinding(const std::string_view service_element_name) noexcept override;
-
     score::Result<void> SetupMethods() override;
 
     QualityType GetQualityType() const noexcept;
@@ -198,6 +180,8 @@ class Proxy : public ProxyBinding
         return proxy_instance_identifier_;
     }
 
+    void RegisterEvent(const std::string_view service_element_name,
+                       ProxyEventBindingBase& proxy_event_binding) noexcept;
     void RegisterMethod(const UniqueMethodIdentifier method_id, ProxyMethod& proxy_method) noexcept;
 
     /// \brief Stops auto-reconnect for this proxy and marks it ready for destruction.
@@ -243,7 +227,7 @@ class Proxy : public ProxyBinding
     HandleType handle_;
     std::unordered_map<std::string_view, std::reference_wrapper<ProxyEventBindingBase>> event_bindings_;
 
-    /// Mutex which synchronises registration of Proxy service elements via Proxy::RegisterEventBinding with the
+    /// Mutex which synchronises registration of Proxy service elements via Proxy::RegisterEvent with the
     /// FindServiceHandler in find_service_guard_ which will call NotifyServiceInstanceChangedAvailability on all
     /// currently registered Proxy service elements.
     std::mutex proxy_event_registration_mutex_;
