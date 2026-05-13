@@ -28,11 +28,10 @@ copyright = '2026, Eclipse S-CORE Contributors'
 author = 'Eclipse Foundation'
 release = '1.0.0'
 
-# GitHub Pages base URL (update org/repo as needed)
-GITHUB_PAGES_URL = os.environ.get(
-    'DOCS_BASE_URL',
-    'https://eclipse-score.github.io/communication'
-)
+# Version and base URL injected by the docs.yml GitHub Actions workflow.
+# Falls back to sensible defaults for local builds.
+docs_version = os.environ.get('DOCS_VERSION', 'latest')
+docs_base_url = os.environ.get('DOCS_BASE_URL', '').rstrip('/')
 
 # -- General configuration ---
 extensions = [
@@ -75,6 +74,10 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # -- Options for HTML output --
 html_theme = 'pydata_sphinx_theme'
 
+# Canonical base URL for this version (helps search engines and the switcher)
+if docs_base_url:
+    html_baseurl = f"{docs_base_url}/{docs_version}/"
+
 # Professional theme configuration inspired by modern open-source projects
 html_theme_options = {
     # Navigation settings
@@ -88,6 +91,12 @@ html_theme_options = {
     'navbar_start': ['navbar-logo'],
     'navbar_center': ['navbar-nav'],
     'navbar_end': ['version-switcher', 'navbar-icon-links', 'theme-switcher'],
+
+    # Version switcher — reads versions.json from the GitHub Pages root
+    'switcher': {
+        'json_url': f"{docs_base_url}/versions.json" if docs_base_url else '/versions.json',
+        'version_match': docs_version,
+    },
 
     # Search configuration
     'search_bar_text': 'Search documentation...',
@@ -113,11 +122,6 @@ html_theme_options = {
         }
     ],
 
-    # Version switcher configuration
-    'switcher': {
-        'json_url': f'{GITHUB_PAGES_URL}/switcher.json',
-        'version_match': os.environ.get('DOCS_VERSION', 'latest'),
-    },
 }
 
 # Add custom styling

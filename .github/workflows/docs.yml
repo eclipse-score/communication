@@ -1,0 +1,179 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow: Build and deploy Sphinx documentation to GitHub Pages.
+#
+# Triggers:
+#   - Push to main  → deploys to  <pages-url>/latest/
+#   - Release published → deploys to  <pages-url>/<tag>/  and  <pages-url>/stable/
+#   - workflow_dispatch → manual re-run (deploys as "latest")
+#
+# URL structure on GitHub Pages:
+#   https://<owner>.github.io/<repo>/              ← root redirect to latest/
+#   https://<owner>.github.io/<repo>/latest/       ← built from main
+#   https://<owner>.github.io/<repo>/stable/       ← copy of newest release
+#   https://<owner>.github.io/<repo>/v1.2.3/       ← per-release snapshot
+
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+
+jobs:
+  build-and-deploy-docs:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      # ------------------------------------------------------------------
+      # Determine deployment target (latest vs release tag)
+      # ------------------------------------------------------------------
+      - name: Set deployment variables
+        id: vars
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          BASE_URL="https://${OWNER}.github.io/${REPO}"
+
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION="${{ github.ref_name }}"
+            DEST_DIR="${{ github.ref_name }}"
+            IS_RELEASE="true"
+          else
+            VERSION="latest"
+            DEST_DIR="latest"
+            IS_RELEASE="false"
+          fi
+
+          echo "version=${VERSION}"   >> $GITHUB_OUTPUT
+          echo "dest_dir=${DEST_DIR}" >> $GITHUB_OUTPUT
+          echo "base_url=${BASE_URL}" >> $GITHUB_OUTPUT
+          echo "is_release=${IS_RELEASE}" >> $GITHUB_OUTPUT
+
+      # ------------------------------------------------------------------
+      # Build environment setup
+      # ------------------------------------------------------------------
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          disk-cache: "docs"
+          repository-cache: true
+          cache-save: ${{ github.event_name != 'pull_request' }}
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      # ------------------------------------------------------------------
+      # Generate Sphinx artifacts via Bazel (mirrors .readthedocs.yaml)
+      # ------------------------------------------------------------------
+      - name: Generate documentation artifacts via Bazel
+        run: |
+          bazel build //docs/sphinx:generate_api_rst
+          cp -f score/mw/com/README.md docs/sphinx/README.md
+          mkdir -p docs/sphinx/generated
+          cp -f bazel-bin/docs/sphinx/generated/*.rst docs/sphinx/generated/
+          mkdir -p score/mw/com/design/doxygen_build/xml
+          cp -rf bazel-bin/score/mw/com/design/doxygen_build/xml/* \
+                 score/mw/com/design/doxygen_build/xml/
+
+      - name: Install Python dependencies
+        run: pip install -r requirements_lock.txt
+
+      # ------------------------------------------------------------------
+      # Build Sphinx HTML
+      # ------------------------------------------------------------------
+      - name: Build Sphinx documentation
+        env:
+          DOCS_VERSION: ${{ steps.vars.outputs.version }}
+          DOCS_BASE_URL: ${{ steps.vars.outputs.base_url }}
+        run: sphinx-build docs/sphinx _sphinx_output
+
+      # ------------------------------------------------------------------
+      # Assemble the deploy directory
+      #   _deploy/
+      #     <dest_dir>/        ← sphinx HTML output
+      #     stable/            ← copy of sphinx output (releases only)
+      #     versions.json      ← version list for the navbar switcher
+      #     index.html         ← root redirect to latest/
+      #     .nojekyll          ← disable GitHub Pages Jekyll processing
+      # ------------------------------------------------------------------
+      - name: Assemble deploy directory
+        env:
+          DEST_DIR: ${{ steps.vars.outputs.dest_dir }}
+          IS_RELEASE: ${{ steps.vars.outputs.is_release }}
+          BASE_URL: ${{ steps.vars.outputs.base_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p _deploy
+
+          # Sphinx output into the version subfolder
+          cp -r _sphinx_output _deploy/${DEST_DIR}
+
+          # For releases: also publish as stable/
+          if [[ "${IS_RELEASE}" == "true" ]]; then
+            cp -r _sphinx_output _deploy/stable
+          fi
+
+          # Root index.html: redirect to latest/
+          cat > _deploy/index.html << 'REDIRECT'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="0; url=latest/">
+            <title>Redirecting to latest documentation...</title>
+          </head>
+          <body>
+            <p>Redirecting to <a href="latest/">latest documentation</a>...</p>
+          </body>
+          </html>
+          REDIRECT
+
+          # Prevent Jekyll from processing the site
+          touch _deploy/.nojekyll
+
+          # Generate versions.json for the pydata-sphinx-theme version switcher
+          python3 docs/sphinx/utils/update_versions_json.py \
+            --owner "${{ github.repository_owner }}" \
+            --repo  "${{ github.event.repository.name }}" \
+            --base-url "${BASE_URL}" \
+            --output _deploy/versions.json
+
+      # ------------------------------------------------------------------
+      # Deploy to gh-pages branch (keep_files preserves other versions)
+      # ------------------------------------------------------------------
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_deploy
+          keep_files: true
