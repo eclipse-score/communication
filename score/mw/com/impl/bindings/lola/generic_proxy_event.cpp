@@ -31,6 +31,7 @@ GenericProxyEvent::GenericProxyEvent(Proxy& parent, const ElementFqId element_fq
       proxy_event_common_{parent, element_fq_id, event_name},
       meta_info_{parent.GetEventMetaInfo(element_fq_id)}
 {
+    parent.RegisterEvent(event_name, *this);
 }
 
 Result<void> GenericProxyEvent::Subscribe(const std::size_t max_sample_count) noexcept

@@ -34,7 +34,6 @@
 namespace score::mw::com::impl
 {
 
-class EventBindingRegistrationGuard;
 class ProxyBase;
 class ProxyEventBaseView;
 
@@ -217,8 +216,6 @@ class ProxyEventBase
     std::unique_ptr<SampleReferenceTracker> tracker_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     tracing::ProxyEventTracingData tracing_data_;
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    std::unique_ptr<EventBindingRegistrationGuard> event_binding_registration_guard_;
 
     IProxyEventBase* proxy_event_base_mock_;
 

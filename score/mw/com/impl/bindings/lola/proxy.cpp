@@ -600,32 +600,6 @@ bool Proxy::IsEventProvided(const std::string_view event_name) const noexcept
     return event_exists;
 }
 
-void Proxy::RegisterEventBinding(const std::string_view service_element_name,
-                                 ProxyEventBindingBase& proxy_event_binding) noexcept
-{
-    // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced initialization.
-    // This is a false positive, we don't use auto here
-    // coverity[autosar_cpp14_a8_5_3_violation : FALSE]
-    std::lock_guard lock{proxy_event_registration_mutex_};
-    const auto insert_result = event_bindings_.emplace(service_element_name, proxy_event_binding);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second,
-                                                "Failed to insert proxy event binding into event binding map.");
-    proxy_event_binding.NotifyServiceInstanceChangedAvailability(is_service_instance_available_, GetSourcePid());
-}
-
-void Proxy::UnregisterEventBinding(const std::string_view service_element_name) noexcept
-{
-    // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced initialization.
-    // This is a false positive, we don't use auto here
-    // coverity[autosar_cpp14_a8_5_3_violation : FALSE]
-    std::lock_guard lock{proxy_event_registration_mutex_};
-    const auto number_of_elements_removed = event_bindings_.erase(service_element_name);
-    if (number_of_elements_removed == 0U)
-    {
-        score::mw::log::LogWarn("lola") << "UnregisterEventBinding that was never registered. Ignoring.";
-    }
-}
-
 score::Result<void> Proxy::SetupMethods()
 {
     auto enabled_method_data = GetMethodIdAndQueueSizeForEnabledMethods();
@@ -917,6 +891,16 @@ pid_t Proxy::GetSourcePid() const noexcept
                                                       "Proxy::GetSourcePid: Managed memory data pointer is Null");
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
     return service_data_storage.skeleton_pid_;
+}
+
+void Proxy::RegisterEvent(const std::string_view service_element_name,
+                          ProxyEventBindingBase& proxy_event_binding) noexcept
+{
+    std::lock_guard lock{proxy_event_registration_mutex_};
+    const auto insert_result = event_bindings_.emplace(service_element_name, proxy_event_binding);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second,
+                                                "Failed to insert proxy event binding into event binding map.");
+    proxy_event_binding.NotifyServiceInstanceChangedAvailability(is_service_instance_available_, GetSourcePid());
 }
 
 void Proxy::RegisterMethod(const UniqueMethodIdentifier method_id, ProxyMethod& proxy_method) noexcept
