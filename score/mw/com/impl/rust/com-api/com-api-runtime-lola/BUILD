@@ -21,6 +21,7 @@ rust_library(
         "producer.rs",
         "runtime.rs",
     ],
+    edition = "2024",
     visibility = [
         "//visibility:public",  # platform_only
     ],
@@ -38,6 +39,7 @@ rust_library(
 rust_test(
     name = "com-api-runtime-lola-tests",
     crate = ":com-api-runtime-lola",
+    edition = "2024",
     #tag will be removed wwhen sanitizer issue resolved for this
     tags = ["manual"],
     deps = [

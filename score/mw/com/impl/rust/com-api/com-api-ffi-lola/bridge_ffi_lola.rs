@@ -25,7 +25,7 @@ pub struct LolaFFIBridge;
 /// # Safety
 /// - `ptr` must point to a valid FatPtr
 /// - `sample_ptr` must point to valid placement-new storage containing SamplePtr<T>
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_sample(
     ptr: *const FatPtr,
     sample_ptr: *mut std::ffi::c_void,
@@ -39,7 +39,7 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_sample(
     // and represents a valid dynamic trait object (dyn FnMut). The transmute is safe because
     // FatPtr is a binary representation of a trait object's fat pointer (data + vtable).
     // The caller must ensure the lifetime of the closure outlives this call.
-    let callable: &mut dyn FnMut(*mut std::ffi::c_void) = std::mem::transmute(*ptr);
+    let callable: &mut dyn FnMut(*mut std::ffi::c_void) = unsafe { std::mem::transmute(*ptr) };
 
     // Invoke the closure with the void* sample pointer
     callable(sample_ptr);
@@ -56,7 +56,7 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_sample(
 ///   in a HandleContainer.
 /// - `find_service_handle` must point to valid FindServiceHandle data that can be safely wrapped
 ///   in a NativeFindServiceHandle.
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_find_service(
     ptr: *const FatPtr,
     service_handles: *mut NativeHandleContainer,
@@ -68,7 +68,7 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_find_service(
 
     // Reconstruct the closure from FatPtr
     let callable: &mut dyn FnMut(HandleContainer, NativeFindServiceHandle) =
-        std::mem::transmute(*ptr);
+        unsafe { std::mem::transmute(*ptr) };
 
     // Invoke with correct types
     callable(
@@ -78,7 +78,7 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_find_service(
 }
 
 // FFI declarations for C++ functions implemented in registry_bridge_macro.cpp
-extern "C" {
+unsafe extern "C" {
 
     /// Subscribe to event to start receiving samples
     ///
@@ -353,7 +353,7 @@ impl FFIBridge for LolaFFIBridge {
         // SAFETY: event_ptr is valid which is created using create_skeleton()
         // and allocatee_ptr has enough memory allocated for the construction of allocatee instance.
         let event_type = StringView::from(event_type);
-        mw_com_get_allocatee_ptr(event_ptr, allocatee_ptr, event_type)
+        unsafe { mw_com_get_allocatee_ptr(event_ptr, allocatee_ptr, event_type) }
     }
 
     /// Delete allocatee pointer of SampleAllocateePtr<T>
@@ -368,7 +368,7 @@ impl FFIBridge for LolaFFIBridge {
         // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // type_name is constructed using static str.
         let type_name = StringView::from(type_name);
-        mw_com_delete_allocatee_ptr(allocatee_ptr, type_name);
+        unsafe { mw_com_delete_allocatee_ptr(allocatee_ptr, type_name); }
     }
 
     /// Get allocatee data pointer from allocatee of specific type
@@ -389,7 +389,7 @@ impl FFIBridge for LolaFFIBridge {
         // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // type_name is constructed using static str.
         let type_name = StringView::from(type_name);
-        mw_com_get_allocatee_data_ptr(allocatee_ptr, type_name)
+        unsafe { mw_com_get_allocatee_data_ptr(allocatee_ptr, type_name) }
     }
 
     /// Send event via skeleton using allocatee pointer of specific type
@@ -414,7 +414,7 @@ impl FFIBridge for LolaFFIBridge {
         // SAFETY: event_ptr is valid which is created using create_skeleton() and allocatee_ptr is
         // valid which is created using get_allocatee_ptr().
         let event_type = StringView::from(event_type);
-        mw_com_skeleton_send_event_allocatee(event_ptr, event_type, allocatee_ptr)
+        unsafe { mw_com_skeleton_send_event_allocatee(event_ptr, event_type, allocatee_ptr) }
     }
 
     /// Get SamplePtr<T> data pointer
@@ -434,7 +434,7 @@ impl FFIBridge for LolaFFIBridge {
         // SAFETY: sample_ptr is guaranteed to be valid per the caller's contract.
         // The C++ implementation handles type checking and data retrieval safely.
         let type_name = StringView::from(type_name);
-        mw_com_get_sample_ptr(sample_ptr, type_name)
+        unsafe { mw_com_get_sample_ptr(sample_ptr, type_name) }
     }
 
     /// Delete SamplePtr<T>
@@ -448,7 +448,7 @@ impl FFIBridge for LolaFFIBridge {
         // SAFETY: sample_ptr is guaranteed to be valid per the caller's contract.
         // The C++ implementation handles type checking and deletion safely.
         let type_name = StringView::from(type_name);
-        mw_com_delete_sample_ptr(sample_ptr, type_name);
+        unsafe { mw_com_delete_sample_ptr(sample_ptr, type_name); }
     }
 
     /// Unsafe wrapper around mw_com_skeleton_offer_service
@@ -466,7 +466,7 @@ impl FFIBridge for LolaFFIBridge {
     unsafe fn skeleton_offer_service(skeleton_ptr: *mut SkeletonBase) -> bool {
         // SAFETY: skeleton_ptr is guaranteed to be valid per the caller's contract.
         // The C++ implementation handles service offering safely.
-        mw_com_skeleton_offer_service(skeleton_ptr)
+        unsafe { mw_com_skeleton_offer_service(skeleton_ptr) }
     }
 
     /// Unsafe wrapper around mw_com_skeleton_stop_offer_service
@@ -481,7 +481,7 @@ impl FFIBridge for LolaFFIBridge {
     unsafe fn skeleton_stop_offer_service(skeleton_ptr: *mut SkeletonBase) {
         // SAFETY: skeleton_ptr is guaranteed to be valid per the caller's contract.
         // The C++ implementation handles stopping the service safely.
-        mw_com_skeleton_stop_offer_service(skeleton_ptr);
+        unsafe { mw_com_skeleton_stop_offer_service(skeleton_ptr); }
     }
 
     /// Unsafe wrapper around mw_com_create_proxy
@@ -501,7 +501,7 @@ impl FFIBridge for LolaFFIBridge {
         // per the caller's contract.
         // The C++ implementation creates and returns a valid proxy pointer or nullptr on failure.
         let c_uid = StringView::from(interface_id);
-        mw_com_create_proxy(c_uid, handle_ptr)
+        unsafe { mw_com_create_proxy(c_uid, handle_ptr) }
     }
 
     /// Unsafe wrapper around mw_com_create_skeleton
@@ -524,7 +524,7 @@ impl FFIBridge for LolaFFIBridge {
         // valid per the caller's contract.
         // The C++ implementation creates and returns a valid skeleton pointer or nullptr on failure.
         let c_uid = StringView::from(interface_id);
-        mw_com_create_skeleton(c_uid, instance_spec)
+        unsafe { mw_com_create_skeleton(c_uid, instance_spec) }
     }
 
     /// Unsafe wrapper around mw_com_destroy_proxy
@@ -538,7 +538,7 @@ impl FFIBridge for LolaFFIBridge {
     unsafe fn destroy_proxy(proxy_ptr: *mut ProxyBase) {
         // SAFETY: proxy_ptr is guaranteed to be valid per the caller's contract.
         // The C++ implementation safely deallocates the proxy.
-        mw_com_destroy_proxy(proxy_ptr);
+        unsafe { mw_com_destroy_proxy(proxy_ptr); }
     }
 
     /// Unsafe wrapper around mw_com_destroy_skeleton
@@ -553,7 +553,7 @@ impl FFIBridge for LolaFFIBridge {
     unsafe fn destroy_skeleton(skeleton_ptr: *mut SkeletonBase) {
         // SAFETY: skeleton_ptr is guaranteed to be valid per the caller's contract.
         // The C++ implementation safely deallocates the skeleton.
-        mw_com_destroy_skeleton(skeleton_ptr);
+        unsafe { mw_com_destroy_skeleton(skeleton_ptr); }
     }
 
     /// Unsafe wrapper around mw_com_get_event_from_proxy
@@ -578,7 +578,7 @@ impl FFIBridge for LolaFFIBridge {
         // The C++ implementation returns a valid pointer or nullptr if the event is not found.
         let c_id = StringView::from(interface_id);
         let c_name = StringView::from(event_id);
-        mw_com_get_event_from_proxy(proxy_ptr, c_id, c_name)
+        unsafe { mw_com_get_event_from_proxy(proxy_ptr, c_id, c_name) }
     }
 
     /// Unsafe wrapper around mw_com_get_event_from_skeleton
@@ -604,7 +604,7 @@ impl FFIBridge for LolaFFIBridge {
         // The C++ implementation returns a valid pointer or nullptr if the event is not found.
         let c_id = StringView::from(interface_id);
         let c_name = StringView::from(event_id);
-        mw_com_get_event_from_skeleton(skeleton_ptr, c_id, c_name)
+        unsafe { mw_com_get_event_from_skeleton(skeleton_ptr, c_id, c_name) }
     }
 
     /// Unsafe wrapper around mw_com_get_samples_from_event
@@ -633,7 +633,7 @@ impl FFIBridge for LolaFFIBridge {
         // to be valid per the caller's contract.
         // The C++ implementation handles sample retrieval and callback invocation safely.
         let c_name = StringView::from(event_type);
-        mw_com_type_registry_get_samples_from_event(event_ptr, c_name, callback, max_samples)
+        unsafe { mw_com_type_registry_get_samples_from_event(event_ptr, c_name, callback, max_samples) }
     }
 
     /// Unsafe wrapper around mw_com_skeleton_send_event
@@ -656,7 +656,7 @@ impl FFIBridge for LolaFFIBridge {
         // SAFETY: event_ptr and data_ptr are guaranteed to be valid per the caller's contract.
         // The C++ implementation handles type matching and data sending safely.
         let c_name = StringView::from(event_type);
-        mw_com_skeleton_send_event(event_ptr, c_name, data_ptr)
+        unsafe { mw_com_skeleton_send_event(event_ptr, c_name, data_ptr) }
     }
 
     /// Unsafe wrapper around mw_com_proxy_event_subscribe
@@ -675,7 +675,7 @@ impl FFIBridge for LolaFFIBridge {
     unsafe fn subscribe_to_event(event_ptr: *mut ProxyEventBase, max_sample_count: u32) -> bool {
         // SAFETY: event_ptr is guaranteed to be valid per the caller's contract.
         // The C++ implementation handles subscription and buffer allocation safely.
-        mw_com_proxy_event_subscribe(event_ptr, max_sample_count)
+        unsafe { mw_com_proxy_event_subscribe(event_ptr, max_sample_count) }
     }
 
     /// Unsafe wrapper around mw_com_proxy_event_unsubscribe
@@ -689,7 +689,7 @@ impl FFIBridge for LolaFFIBridge {
     unsafe fn unsubscribe_to_event(event_ptr: *mut ProxyEventBase) {
         // SAFETY: event_ptr is guaranteed to be valid per the caller's contract.
         // The C++ implementation handles unsubscription and buffer cleanup safely.
-        mw_com_proxy_event_unsubscribe(event_ptr);
+        unsafe { mw_com_proxy_event_unsubscribe(event_ptr); }
     }
 
     /// Unsafe wrapper around mw_com_proxy_set_event_receive_handler
@@ -714,7 +714,7 @@ impl FFIBridge for LolaFFIBridge {
         // and handler must be a valid FatPtr referencing a callable compatible with the callback
         // signature expected by the C++ implementation.
         let c_name = StringView::from(event_type);
-        mw_com_proxy_set_event_receive_handler(proxy_event_ptr, handler, c_name)
+        unsafe { mw_com_proxy_set_event_receive_handler(proxy_event_ptr, handler, c_name) }
     }
 
     /// Unsafe wrapper around mw_com_proxy_clear_event_receive_handler
@@ -730,7 +730,7 @@ impl FFIBridge for LolaFFIBridge {
     unsafe fn clear_event_receive_handler(proxy_event_ptr: *mut ProxyEventBase, event_type: &str) {
         // SAFETY: proxy_event_ptr must be valid per the caller's contract.
         let c_name = StringView::from(event_type);
-        mw_com_proxy_clear_event_receive_handler(proxy_event_ptr, c_name);
+        unsafe { mw_com_proxy_clear_event_receive_handler(proxy_event_ptr, c_name); }
     }
 
     /// Unsafe wrapper around mw_com_start_find_service
@@ -751,7 +751,7 @@ impl FFIBridge for LolaFFIBridge {
     ) -> *mut FindServiceHandle {
         // SAFETY: callback and instance_spec are guaranteed to be valid per the caller's contract.
         // The C++ implementation handles the find service operation and callback invocation safely.
-        mw_com_start_find_service(callback, instance_spec.as_native())
+        unsafe { mw_com_start_find_service(callback, instance_spec.as_native()) }
     }
 
     /// Unsafe wrapper around mw_com_stop_find_service
@@ -765,7 +765,7 @@ impl FFIBridge for LolaFFIBridge {
     unsafe fn stop_find_service(handle: *mut FindServiceHandle) {
         // SAFETY: handle is valid per the caller's contract and has not been stopped yet.
         // The C++ implementation handles stopping the find service safely.
-        mw_com_stop_find_service(handle);
+        unsafe { mw_com_stop_find_service(handle); }
     }
 
     /// Get the number of service handles in the container

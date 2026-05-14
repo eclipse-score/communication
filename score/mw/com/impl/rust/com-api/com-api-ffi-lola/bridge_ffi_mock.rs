@@ -63,7 +63,7 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         if size == 0 {
             return false;
         }
-        std::ptr::write_bytes(allocatee_ptr as *mut u8, 0, size);
+       unsafe { std::ptr::write_bytes(allocatee_ptr as *mut u8, 0, size) };
         true
     }
 
@@ -123,27 +123,27 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
     unsafe fn skeleton_stop_offer_service(_skeleton_ptr: *mut SkeletonBase) {}
 
     unsafe fn create_proxy(_interface_id: &str, _handle_ptr: &HandleType) -> *mut ProxyBase {
-        Box::into_raw(Box::new(std::mem::zeroed::<ProxyBase>()))
+        unsafe { Box::into_raw(Box::new(std::mem::zeroed::<ProxyBase>())) }
     }
 
     unsafe fn create_skeleton(
         _interface_id: &str,
         _instance_spec: *const NativeInstanceSpecifier,
     ) -> *mut SkeletonBase {
-        Box::into_raw(Box::new(std::mem::zeroed::<SkeletonBase>()))
+        unsafe { Box::into_raw(Box::new(std::mem::zeroed::<SkeletonBase>())) }
     }
 
     unsafe fn destroy_proxy(proxy_ptr: *mut ProxyBase) {
         if !proxy_ptr.is_null() {
             // SAFETY: proxy_ptr was allocated by create_proxy via Box::into_raw
-            drop(Box::from_raw(proxy_ptr));
+            unsafe { drop(Box::from_raw(proxy_ptr)) };
         }
     }
 
     unsafe fn destroy_skeleton(skeleton_ptr: *mut SkeletonBase) {
         if !skeleton_ptr.is_null() {
             // SAFETY: skeleton_ptr was allocated by create_skeleton via Box::into_raw
-            drop(Box::from_raw(skeleton_ptr));
+            unsafe { drop(Box::from_raw(skeleton_ptr)) };
         }
     }
 
@@ -218,13 +218,13 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         _callback: &FatPtr,
         _instance_spec: InstanceSpecifier,
     ) -> *mut FindServiceHandle {
-        Box::into_raw(Box::new(std::mem::zeroed::<FindServiceHandle>()))
+       unsafe { Box::into_raw(Box::new(std::mem::zeroed::<FindServiceHandle>())) }
     }
 
     unsafe fn stop_find_service(handle: *mut FindServiceHandle) {
         if !handle.is_null() {
             // SAFETY: handle was allocated by start_find_service via Box::into_raw
-            drop(Box::from_raw(handle));
+           unsafe { drop(Box::from_raw(handle)) };
         }
     }
 

@@ -35,6 +35,7 @@ cc_library(
 rust_library(
     name = "bridge_ffi_rs",
     srcs = ["bridge_ffi.rs"],
+    edition = "2024",
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
@@ -48,6 +49,7 @@ rust_library(
 rust_library(
     name = "bridge_ffi_mock",
     srcs = ["bridge_ffi_mock.rs"],
+    edition = "2024",
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
@@ -60,6 +62,7 @@ rust_library(
 rust_library(
     name = "bridge_ffi_lola",
     srcs = ["bridge_ffi_lola.rs"],
+    edition = "2024",
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
