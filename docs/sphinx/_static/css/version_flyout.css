@@ -1,0 +1,125 @@
+/* RTD-style version flyout panel */
+.version-flyout {
+    position: fixed;
+    bottom: 0;
+    right: 20px;
+    z-index: 9999;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+}
+
+.version-flyout__toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #1f1f2e;
+    color: #fff;
+    border: none;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.version-flyout__toggle:hover {
+    background: #2a2a3d;
+}
+
+.version-flyout__toggle .flyout-icon {
+    font-size: 16px;
+}
+
+.version-flyout__toggle .flyout-current {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.version-flyout__toggle .flyout-arrow {
+    margin-left: auto;
+    transition: transform 0.2s;
+}
+
+.version-flyout__toggle.active .flyout-arrow {
+    transform: rotate(180deg);
+}
+
+.version-flyout__panel {
+    display: none;
+    background: #1f1f2e;
+    color: #ccc;
+    padding: 16px;
+    border-radius: 6px 6px 0 0;
+    min-width: 260px;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.version-flyout__panel.open {
+    display: block;
+}
+
+.version-flyout__panel h4 {
+    color: #fff;
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.version-flyout__panel .flyout-section {
+    margin-bottom: 12px;
+}
+
+.version-flyout__panel .flyout-versions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.version-flyout__panel .flyout-versions a {
+    color: #55b4d4;
+    text-decoration: none;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.version-flyout__panel .flyout-versions a:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #7dd3fc;
+}
+
+.version-flyout__panel .flyout-versions a.active {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.version-flyout__panel .flyout-links {
+    border-top: 1px solid #333;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.version-flyout__panel .flyout-links a {
+    display: inline-block;
+    color: #55b4d4;
+    text-decoration: none;
+    margin-right: 12px;
+    font-size: 13px;
+}
+
+.version-flyout__panel .flyout-links a:hover {
+    color: #7dd3fc;
+}
+
+.version-flyout__footer {
+    font-size: 11px;
+    color: #888;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.version-flyout__footer a {
+    color: #55b4d4;
+    text-decoration: none;
+}

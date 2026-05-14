@@ -1,0 +1,193 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow to build and deploy Sphinx documentation to GitHub Pages with versioning
+name: Deploy Documentation to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/deploy_docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "is_tag=true" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
+            echo "version=latest" >> "$GITHUB_OUTPUT"
+            echo "is_tag=false" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            # Feature branch or PR - deploy to preview/<branch-name>
+            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+            BRANCH_NAME="${BRANCH_NAME//\//-}"
+            echo "version=preview/${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
+            echo "is_tag=false" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Sphinx documentation
+        env:
+          DOCS_BASE_URL: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          DOCS_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          bazel build //docs/sphinx:sphinx_doc
+
+      - name: Prepare documentation output
+        run: |
+          mkdir -p docs_output
+          cp -r bazel-bin/docs/sphinx/sphinx_doc/html/* docs_output/ || \
+          cp -r bazel-out/k8-fastbuild/bin/docs/sphinx/sphinx_doc/html/* docs_output/ || true
+          # Fix read-only permissions from Bazel output
+          chmod -R u+w docs_output/
+          # Prevent Jekyll from ignoring _static directories
+          touch docs_output/.nojekyll
+          # Inject version flyout CSS and JS into all HTML files
+          # Use shared path so all versions use the same files
+          REPO_NAME="${{ github.event.repository.name }}"
+          CSS_TAG="<link rel=\"stylesheet\" type=\"text/css\" href=\"/${REPO_NAME}/_shared/css/version_flyout.css\" />"
+          JS_TAG="<script src=\"/${REPO_NAME}/_shared/js/version_flyout.js\"></script>"
+          find docs_output -name '*.html' -exec sed -i \
+            "s|</head>|${CSS_TAG}\n</head>|" {} +
+          find docs_output -name '*.html' -exec sed -i \
+            "s|</body>|${JS_TAG}\n</body>|" {} +
+
+      - name: Verify build output
+        run: |
+          if [ ! -f docs_output/index.html ]; then
+            echo "::error::Documentation build failed - no index.html found"
+            exit 1
+          fi
+          echo "Documentation built successfully"
+          echo "Files generated:"
+          find docs_output -type f | head -20
+
+      - name: Restore previous publish tree
+        if: github.event_name != 'pull_request'
+        uses: actions/cache/restore@v4
+        with:
+          path: publish
+          key: docs-publish-${{ github.run_id }}
+          restore-keys: docs-publish-
+
+      - name: Assemble publish tree
+        if: github.event_name != 'pull_request'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          IS_TAG="${{ steps.version.outputs.is_tag }}"
+          REPO_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+
+          mkdir -p publish
+
+          rm -rf "publish/${VERSION}"
+          mkdir -p "publish/${VERSION}"
+          cp -a docs_output/. "publish/${VERSION}/"
+
+          if [[ "${IS_TAG}" == "true" ]]; then
+            rm -rf publish/stable
+            cp -a docs_output/. publish/stable/
+          fi
+
+          mkdir -p publish/_shared/css publish/_shared/js
+          cp docs/sphinx/_static/css/version_flyout.css publish/_shared/css/
+          cp docs/sphinx/_static/js/version_flyout.js publish/_shared/js/
+
+          cp docs/sphinx/_gh_pages/index.html publish/index.html
+          touch publish/.nojekyll
+
+          echo "[" > publish/switcher.json
+          echo "  {\"name\": \"latest\", \"version\": \"latest\", \"url\": \"${REPO_URL}/latest/\"}," >> publish/switcher.json
+
+          if [ -d "publish/stable" ]; then
+            echo "  {\"name\": \"stable\", \"version\": \"stable\", \"url\": \"${REPO_URL}/stable/\", \"preferred\": true}," >> publish/switcher.json
+          fi
+
+          for dir in $(find publish -maxdepth 1 -mindepth 1 -type d -name "v*" | sort -rV); do
+            ver=$(basename "$dir")
+            echo "  {\"name\": \"${ver}\", \"version\": \"${ver}\", \"url\": \"${REPO_URL}/${ver}/\"}," >> publish/switcher.json
+          done
+
+          sed -i '$ s/,$//' publish/switcher.json
+          echo "]" >> publish/switcher.json
+
+      - name: Save publish tree to cache
+        if: github.event_name != 'pull_request'
+        uses: actions/cache/save@v4
+        with:
+          path: publish
+          key: docs-publish-${{ github.run_id }}
+
+      - name: Setup Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: publish
+
+      - name: Print preview URL
+        if: github.event_name != 'pull_request'
+        run: |
+          REPO_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          echo "::notice::Documentation deployed to: ${REPO_URL}/${{ steps.version.outputs.version }}/"
+
+  deploy-pages:
+    needs: build-docs
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
