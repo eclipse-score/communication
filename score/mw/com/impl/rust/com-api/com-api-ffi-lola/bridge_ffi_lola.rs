@@ -774,10 +774,7 @@ impl FFIBridge for LolaFFIBridge {
     /// * `container` - HandleContainer wrapping the native service handle container
     /// # Returns
     /// The number of service handles in the container
-    ///
-    /// # Safety
-    /// `container` must wrap a valid C++ `ServiceHandleContainer` pointer.
-    unsafe fn handle_container_size(container: &HandleContainer) -> usize {
+    fn handle_container_size(container: &HandleContainer) -> usize {
         container.len()
     }
     /// Get a reference to the service handle at the specified index in the container
@@ -789,10 +786,7 @@ impl FFIBridge for LolaFFIBridge {
     /// # Returns
     /// Some reference to the service handle at the specified index,
     /// or None if the index is out of bounds
-    ///
-    /// # Safety
-    /// `container` must wrap a valid C++ `ServiceHandleContainer` pointer.
-    unsafe fn handle_container_get_at(
+    fn handle_container_get_at(
         container: &HandleContainer,
         index: usize,
     ) -> Option<&HandleType> {

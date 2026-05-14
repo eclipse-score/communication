@@ -66,7 +66,7 @@ impl<B: FFIBridge> LolaConsumerInfo<B> {
     pub fn get_handle(&self) -> Option<&HandleType> {
         // SAFETY: handle_container was produced by the bridge or a trusted mock;
         // both implementations uphold the contract of handle_container_get_at.
-        unsafe { B::handle_container_get_at(&self.handle_container, self.handle_index) }
+        B::handle_container_get_at(&self.handle_container, self.handle_index)
     }
 }
 

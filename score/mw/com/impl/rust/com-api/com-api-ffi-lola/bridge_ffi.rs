@@ -250,12 +250,12 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// `container` must be a valid reference to a `HandleContainer` that was produced by the
     /// bridge (e.g. from `start_find_service` callback). Calling this on a sentinel mock pointer
     /// is only safe when the mock implementation ignores the inner pointer.
-    unsafe fn handle_container_size(container: &HandleContainer) -> usize;
+    fn handle_container_size(container: &HandleContainer) -> usize;
 
     /// # Safety
     /// Same as `handle_container_size`. `index` need not be in-bounds; the method must return
     /// `None` when `index >= handle_container_size(container)`.
-    unsafe fn handle_container_get_at(
+    fn handle_container_get_at(
         container: &HandleContainer,
         index: usize,
     ) -> Option<&HandleType>;

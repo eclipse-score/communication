@@ -26,8 +26,14 @@ use bridge_ffi_rs::{
 };
 use std::cell::RefCell;
 
-// Type alias for the heap-pointer + drop-glue pair stored in backing thread-locals.
-type BackingEntry = (*mut std::ffi::c_void, fn(*mut std::ffi::c_void));
+/// Holds a heap-allocated pointer and its associated drop function.
+/// Used for type-erased heap allocations in the mock FFI bridge.
+struct BackingEntry {
+    /// Pointer to the heap-allocated data
+    ptr: *mut std::ffi::c_void,
+    /// Drop function that knows how to properly free the data
+    drop_fn: fn(*mut std::ffi::c_void),
+}
 
 // The thread-local storage is used to hold the backing data for the mock FFI bridge.
 thread_local! {
@@ -63,8 +69,8 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
 
     unsafe fn delete_allocatee_ptr(_allocatee_ptr: *mut std::ffi::c_void, _type_name: &str) {
         DATA_BACKING.with(|d| {
-            if let Some((ptr, drop_fn)) = d.borrow_mut().take() {
-                drop_fn(ptr);
+            if let Some(entry) = d.borrow_mut().take() {
+                (entry.drop_fn)(entry.ptr);
             }
         });
         ALLOC_SIZE.with(|s| *s.borrow_mut() = 0);
@@ -77,7 +83,7 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         DATA_BACKING.with(|d| {
             d.borrow()
                 .as_ref()
-                .map(|(ptr, _)| *ptr)
+                .map(|entry| entry.ptr)
                 .unwrap_or(std::ptr::null_mut())
         })
     }
@@ -97,15 +103,15 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         SAMPLE_BACKING.with(|s| {
             s.borrow()
                 .as_ref()
-                .map(|(ptr, _)| *ptr as *const std::ffi::c_void)
+                .map(|entry| entry.ptr as *const std::ffi::c_void)
                 .unwrap_or(std::ptr::null())
         })
     }
 
     unsafe fn sample_ptr_delete(_sample_ptr: *mut std::ffi::c_void, _type_name: &str) {
         SAMPLE_BACKING.with(|s| {
-            if let Some((ptr, drop_fn)) = s.borrow_mut().take() {
-                drop_fn(ptr);
+            if let Some(entry) = s.borrow_mut().take() {
+                (entry.drop_fn)(entry.ptr);
             }
         });
     }
@@ -222,11 +228,11 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         }
     }
 
-    unsafe fn handle_container_size(_container: &HandleContainer) -> usize {
+    fn handle_container_size(_container: &HandleContainer) -> usize {
         0
     }
 
-    unsafe fn handle_container_get_at(
+    fn handle_container_get_at(
         _container: &HandleContainer,
         _index: usize,
     ) -> Option<&HandleType> {
@@ -280,8 +286,8 @@ impl MockFFIBridge {
         };
         // Replace any previous backing (prevents leaks on repeated calls).
         DATA_BACKING.with(|d| {
-            if let Some((old_ptr, old_drop)) = d.borrow_mut().replace((data_ptr, drop_fn)) {
-                old_drop(old_ptr);
+            if let Some(old_entry) = d.borrow_mut().replace(BackingEntry { ptr: data_ptr, drop_fn }) {
+                (old_entry.drop_fn)(old_entry.ptr);
             }
         });
         ALLOC_SIZE.with(|s| *s.borrow_mut() = std::mem::size_of::<SampleAllocateePtr<T>>());
@@ -301,8 +307,8 @@ impl MockFFIBridge {
         };
         // Replace any previous backing (prevents leaks on repeated calls).
         SAMPLE_BACKING.with(|s| {
-            if let Some((old_ptr, old_drop)) = s.borrow_mut().replace((ptr, drop_fn)) {
-                old_drop(old_ptr);
+            if let Some(old_entry) = s.borrow_mut().replace(BackingEntry { ptr, drop_fn }) {
+                (old_entry.drop_fn)(old_entry.ptr);
             }
         });
     }
@@ -311,14 +317,14 @@ impl MockFFIBridge {
     // to zero.
     fn reset() {
         DATA_BACKING.with(|d| {
-            if let Some((ptr, drop_fn)) = d.borrow_mut().take() {
-                drop_fn(ptr);
+            if let Some(entry) = d.borrow_mut().take() {
+                (entry.drop_fn)(entry.ptr);
             }
         });
         ALLOC_SIZE.with(|s| *s.borrow_mut() = 0);
         SAMPLE_BACKING.with(|s| {
-            if let Some((ptr, drop_fn)) = s.borrow_mut().take() {
-                drop_fn(ptr);
+            if let Some(entry) = s.borrow_mut().take() {
+                (entry.drop_fn)(entry.ptr);
             }
         });
     }
