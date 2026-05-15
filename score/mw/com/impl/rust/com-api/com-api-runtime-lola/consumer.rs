@@ -22,9 +22,6 @@
 //! The implementation ensures proper memory management and resource handling
 //! through Rust's ownership model and FFI safety practices.
 
-// Cloning to bridge is fine here because LolaFFIBridge is ZST and has no internal state,
-// so all clones are identical and stateless.
-
 //lifetime warning for all the Sample struct impl block, it is required for the Sample struct
 // event lifetime parameter
 // and mentaining lifetime of instances and data reference
@@ -61,7 +58,9 @@ pub struct LolaConsumerInfo<B: FFIBridge> {
     handle_container: Arc<mw_com::proxy::HandleContainer>,
     handle_index: usize,
     interface_id: &'static str,
-    bridge: B,
+    // Bridge is Arc-wrapped at creation for optimized cloning throughout the consumer lifecycle.
+    // For LolaFFIBridge (ZST), Arc overhead is minimal rather than cloning directly.
+    bridge: Arc<B>,
 }
 
 impl<B: FFIBridge> LolaConsumerInfo<B> {
@@ -81,7 +80,7 @@ where
     T: CommData + Debug,
 {
     data: ManuallyDrop<sample_ptr_rs::SamplePtr<T>>,
-    bridge: B,
+    bridge: Arc<B>,
 }
 
 impl<T, B: FFIBridge> Drop for LolaBinding<T, B>
@@ -315,8 +314,11 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
         let handle = instance_info.get_handle().ok_or(Error::ConsumerError(
             ConsumerFailedReason::ServiceHandleNotFound,
         ))?;
-        let native_proxy =
-            NativeProxyBase::new(&instance_info.bridge, instance_info.interface_id, handle)?;
+        let native_proxy = NativeProxyBase::new(
+            instance_info.bridge.as_ref(),
+            instance_info.interface_id,
+            handle,
+        )?;
         let proxy_instance = ProxyInstanceManager(Arc::new(native_proxy));
         Ok(Self {
             identifier,
@@ -704,10 +706,7 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future for R
         let new_samples = self.new_samples;
         let max_num_samples = self.max_num_samples;
         let total_received = self.total_received;
-        // Clone bridge to avoid borrow checker conflict:
-        // We need an immutable reference to bridge while also mutably borrowing self.scratch and self.event_guard.
-        // For LolaFFIBridge (ZST), clone is free.
-        let bridge = self.bridge.clone();
+        let bridge = Arc::clone(&self.bridge);
 
         // Poll the cancellation future first to ensure prompt handling of cancellation requests.
         if self.cancellation.as_mut().poll(ctx).is_ready() {
@@ -890,13 +889,14 @@ where
             .map_err(|_| Error::ServiceError(ServiceFailedReason::ServiceNotFound))?;
 
         let service_handle_arc = Arc::new(service_handle);
+        let bridge_arc = Arc::new(self.bridge.clone());
         let available_instances = (0..service_handle_arc.len())
             .map(|handle_index| {
                 let instance_info = LolaConsumerInfo {
                     handle_container: Arc::clone(&service_handle_arc),
                     handle_index,
                     interface_id: I::INTERFACE_ID,
-                    bridge: self.bridge.clone(),
+                    bridge: Arc::clone(&bridge_arc),
                 };
                 LolaConsumerBuilder {
                     instance_info,
@@ -1049,13 +1049,14 @@ impl<I: Interface, B: FFIBridge> Future for ServiceDiscoveryFuture<I, B> {
             //create Arc for service handle to share between instances
             let service_handle_arc = Arc::new(service_handle);
             // Build the response from discovered handles
+            let bridge_arc = Arc::new(self.bridge.clone());
             let available_instances = (0..service_handle_arc.len())
                 .map(|handle_index| {
                     let instance_info = LolaConsumerInfo {
                         handle_container: Arc::clone(&service_handle_arc),
                         handle_index,
                         interface_id: I::INTERFACE_ID,
-                        bridge: self.bridge.clone(),
+                        bridge: Arc::clone(&bridge_arc),
                     };
                     LolaConsumerBuilder {
                         instance_info,
@@ -1113,7 +1114,7 @@ impl<I: Interface, B: FFIBridge> ConsumerDescriptor<LolaRuntimeImpl<B>>
 /// * `max_num_samples` - Maximum allowed samples for this subscription
 /// * `max_samples` - How many samples to fetch in this call
 fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
-    bridge: &B,
+    bridge: &Arc<B>,
     event: &mut ProxyEventBase,
     scratch: &mut SampleContainer<Sample<T, B>>,
     max_num_samples: usize,
@@ -1177,10 +1178,11 @@ fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
 /// * `scratch` - Mutable reference to the sample container
 /// * `max_samples` - Maximum number of samples to maintain in the container
 pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
-    bridge: &'a B,
+    bridge: &Arc<B>,
     scratch: &'a mut SampleContainer<Sample<T, B>>,
     max_samples: usize,
 ) -> impl FnMut(*mut sample_ptr_rs::SamplePtr<T>) + 'a {
+    let bridge = Arc::clone(bridge);
     move |raw_sample: *mut sample_ptr_rs::SamplePtr<T>| {
         if !raw_sample.is_null() {
             //SAFETY: It is safe to read the sample pointer because
@@ -1193,7 +1195,7 @@ pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
                 id: ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
                 inner: LolaBinding {
                     data: ManuallyDrop::new(sample_ptr),
-                    bridge: bridge.clone(),
+                    bridge: Arc::clone(&bridge),
                 },
             };
 
@@ -1246,7 +1248,7 @@ mod test {
             handle_container: MockFFIBridge::make_handle_container(),
             handle_index: 0,
             interface_id: "TestInterface",
-            bridge: MockFFIBridge,
+            bridge: Arc::new(MockFFIBridge),
         }
     }
 
@@ -1266,7 +1268,7 @@ mod test {
                 data: ManuallyDrop::new(unsafe {
                     core::mem::zeroed::<sample_ptr_rs::SamplePtr<TestData>>()
                 }),
-                bridge: MockFFIBridge,
+                bridge: Arc::new(MockFFIBridge),
             },
         };
         assert_eq!(sample.id, 1);
@@ -1301,7 +1303,6 @@ mod test {
             waker_storage: Arc::new(AtomicWaker::new()),
             async_init_status: std::sync::OnceLock::new(),
             _proxy: make_proxy_instance("TestInterface"),
-            bridge: MockFFIBridge,
             _phantom: PhantomData,
         };
         let mut sample_container = SampleContainer::new(5);

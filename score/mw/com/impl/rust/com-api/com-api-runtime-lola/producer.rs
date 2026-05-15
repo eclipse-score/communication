@@ -53,7 +53,9 @@ pub struct LolaProviderInfo<B: FFIBridge> {
     instance_specifier: InstanceSpecifier,
     interface_id: &'static str,
     skeleton_handle: SkeletonInstanceManager<B>,
-    bridge: B,
+    // Bridge is Arc-wrapped at creation for optimized cloning throughout the producer lifecycle.
+    // For LolaFFIBridge (ZST), Arc overhead is minimal rather than cloning directly.
+    bridge: Arc<B>,
 }
 
 impl<B: FFIBridge> ProviderInfo for LolaProviderInfo<B> {
@@ -91,7 +93,7 @@ where
     T: CommData + Debug,
 {
     pub inner: ManuallyDrop<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>,
-    pub bridge: B,
+    pub bridge: Arc<B>,
 }
 
 impl<T, B: FFIBridge> Drop for AllocateePtrWrapper<T, B>
@@ -393,6 +395,7 @@ pub struct Publisher<T, B: FFIBridge> {
     skeleton_event: NativeSkeletonEventBase,
     _data: PhantomData<T>,
     skeleton_instance: SkeletonInstanceManager<B>,
+    bridge: Arc<B>,
 }
 
 impl<T, B: FFIBridge> com_api_concept::Publisher<T, LolaRuntimeImpl<B>> for Publisher<T, B>
@@ -430,7 +433,7 @@ where
             skeleton_event: self.skeleton_event.clone(),
             allocatee_ptr: AllocateePtrWrapper {
                 inner: ManuallyDrop::new(allocatee_ptr),
-                bridge: self.skeleton_instance.0.bridge.clone(),
+                bridge: Arc::clone(&self.bridge),
             },
             lifetime: PhantomData,
         })
@@ -442,6 +445,7 @@ where
             skeleton_event,
             _data: PhantomData,
             skeleton_instance: instance_info.skeleton_handle.clone(),
+            bridge: Arc::clone(&instance_info.bridge),
         })
     }
 }
@@ -486,7 +490,7 @@ impl<I: Interface, B: FFIBridge> Builder<I::Producer<LolaRuntimeImpl<B>>>
             instance_specifier: self.instance_specifier,
             interface_id: I::INTERFACE_ID,
             skeleton_handle: SkeletonInstanceManager::<B>(Arc::new(skeleton_handle)),
-            bridge: self.bridge,
+            bridge: Arc::new(self.bridge),
         };
 
         I::Producer::new(instance_info)
@@ -531,7 +535,7 @@ mod test {
                 .expect("valid instance specifier"),
             interface_id,
             skeleton_handle: SkeletonInstanceManager(Arc::new(make_skeleton_handle())),
-            bridge: MockFFIBridge,
+            bridge: Arc::new(MockFFIBridge),
         }
     }
 

@@ -33,8 +33,9 @@ struct BackingEntry {
     drop_fn: fn(*mut std::ffi::c_void),
 }
 
-// SAFETY: BackingEntry is only used within MockFFIBridge which controls access via Mutex.
-// The pointer is heap-allocated and the drop_fn ensures proper cleanup.
+// SAFETY: BackingEntry is safe to Send and Sync because,
+// each test will typically use its own instance of MockFFIBridge and thus its own BackingEntry,
+// so there is no shared mutable state across threads.
 unsafe impl Send for BackingEntry {}
 unsafe impl Sync for BackingEntry {}
 
@@ -72,13 +73,9 @@ pub struct MockFFIBridge {
     sample_backing: RefCell<Option<BackingEntry>>,
 }
 
-// SAFETY: MockFFIBridge is safe to Send because each test will typically use its own instance of MockFFIBridge,
+// SAFETY: MockFFIBridge is safe to Send and Sync because each test will typically use its own instance of MockFFIBridge,
 // so there is no shared mutable state across threads.
 unsafe impl Send for MockFFIBridge {}
-
-// SAFETY: MockFFIBridge is safe to Sync because it uses RefCell for interior mutability,
-// which is not thread-safe.
-// However, each test will use its own instance of MockFFIBridge and will not share it across threads.
 unsafe impl Sync for MockFFIBridge {}
 
 impl Default for MockFFIBridge {
@@ -366,14 +363,11 @@ impl MockFFIBridge {
             // SAFETY: p was allocated as Box<MaybeUninit<T>> by set_alloc_backing::<T>.
             drop(unsafe { Box::from_raw(p as *mut std::mem::MaybeUninit<T>) });
         };
-        // Replace any previous backing (prevents leaks on repeated calls).
-        let mut data_backing = self.data_backing.borrow_mut();
-        if let Some(old_entry) = data_backing.replace(BackingEntry {
+        // Replace any previous backing - Drop trait automatically cleans up the old entry
+        *self.data_backing.borrow_mut() = Some(BackingEntry {
             ptr: data_ptr,
             drop_fn,
-        }) {
-            (old_entry.drop_fn)(old_entry.ptr);
-        }
+        });
         *self.alloc_size.borrow_mut() = std::mem::size_of::<SampleAllocateePtr<T>>();
     }
 
@@ -389,10 +383,7 @@ impl MockFFIBridge {
             // SAFETY: p was allocated as Box<T> by set_sample_backing::<T>.
             drop(unsafe { Box::from_raw(p as *mut T) });
         };
-        // Replace any previous backing (prevents leaks on repeated calls).
-        let mut sample_backing = self.sample_backing.borrow_mut();
-        if let Some(old_entry) = sample_backing.replace(BackingEntry { ptr, drop_fn }) {
-            (old_entry.drop_fn)(old_entry.ptr);
-        }
+        // Replace any previous backing - Drop trait automatically cleans up the old entry
+        *self.sample_backing.borrow_mut() = Some(BackingEntry { ptr, drop_fn });
     }
 }
