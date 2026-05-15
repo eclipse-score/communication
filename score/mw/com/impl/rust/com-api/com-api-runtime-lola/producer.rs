@@ -48,16 +48,22 @@ use crate::LolaRuntimeImpl;
 
 #[derive(Clone, Debug)]
 pub struct LolaProviderInfo<B: FFIBridge> {
-    pub instance_specifier: InstanceSpecifier,
-    pub interface_id: &'static str,
-    pub skeleton_handle: SkeletonInstanceManager<B>,
+    //instance_specifier is currently not used in LolaProviderInfo but it will be used in future for better error handling and logging
+    #[allow(unused)]
+    instance_specifier: InstanceSpecifier,
+    interface_id: &'static str,
+    skeleton_handle: SkeletonInstanceManager<B>,
+    bridge: B,
 }
 
 impl<B: FFIBridge> ProviderInfo for LolaProviderInfo<B> {
     fn offer_service(&self) -> Result<()> {
         //SAFETY: it is safe as we are passing valid skeleton handle to offer service
         // the skeleton handle is created during building the provider info instance
-        let status = unsafe { B::skeleton_offer_service(self.skeleton_handle.0.handle.as_ptr()) };
+        let status = unsafe {
+            self.bridge
+                .skeleton_offer_service(self.skeleton_handle.0.handle.as_ptr())
+        };
         if !status {
             return Err(Error::ServiceError(ServiceFailedReason::OfferServiceFailed));
         }
@@ -67,7 +73,10 @@ impl<B: FFIBridge> ProviderInfo for LolaProviderInfo<B> {
     fn stop_offer_service(&self) -> Result<()> {
         //SAFETY: it is safe as we are passing valid skeleton handle to stop offer service
         // the skeleton handle is created during building the provider info instance
-        unsafe { B::skeleton_stop_offer_service(self.skeleton_handle.0.handle.as_ptr()) };
+        unsafe {
+            self.bridge
+                .skeleton_stop_offer_service(self.skeleton_handle.0.handle.as_ptr())
+        };
         Ok(())
     }
 }
@@ -82,7 +91,7 @@ where
     T: CommData + Debug,
 {
     pub inner: ManuallyDrop<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>,
-    pub _bridge: PhantomData<B>,
+    pub bridge: B,
 }
 
 impl<T, B: FFIBridge> Drop for AllocateePtrWrapper<T, B>
@@ -94,7 +103,7 @@ where
         //SampleAllocateePtr created by FFI
         unsafe {
             let mut allocatee_ptr = ManuallyDrop::take(&mut self.inner);
-            B::delete_allocatee_ptr(
+            self.bridge.delete_allocatee_ptr(
                 std::ptr::from_mut(&mut allocatee_ptr) as *mut std::ffi::c_void,
                 T::ID,
             );
@@ -130,7 +139,7 @@ where
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         unsafe {
-            let data_ptr = B::get_allocatee_data_ptr(
+            let data_ptr = self.allocatee_ptr.bridge.get_allocatee_data_ptr(
                 std::ptr::from_ref(&(*self.allocatee_ptr.inner)) as *const std::ffi::c_void,
                 T::ID,
             );
@@ -142,7 +151,7 @@ where
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         unsafe {
-            let data_ptr = B::get_allocatee_data_ptr(
+            let data_ptr = self.allocatee_ptr.bridge.get_allocatee_data_ptr(
                 std::ptr::from_mut(&mut (*self.allocatee_ptr.inner)) as *mut std::ffi::c_void,
                 T::ID,
             );
@@ -183,11 +192,13 @@ where
         // We've taken ownership via self (consumed, not borrowed), and
         // FFI call will complete before drop run on AllocateePtrWrapper and NativeSkeletonEventBase
         let status = unsafe {
-            B::skeleton_event_send_sample_allocatee(
-                self.skeleton_event.skeleton_event_ptr.as_ptr(),
-                T::ID,
-                std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
-            )
+            self.allocatee_ptr
+                .bridge
+                .skeleton_event_send_sample_allocatee(
+                    self.skeleton_event.skeleton_event_ptr.as_ptr(),
+                    T::ID,
+                    std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
+                )
         };
         if !status {
             return Err(Error::EventError(EventFailedReason::SendingDataFailed));
@@ -214,7 +225,7 @@ where
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         let data_ptr = unsafe {
-            B::get_allocatee_data_ptr(
+            self.allocatee_ptr.bridge.get_allocatee_data_ptr(
                 std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
                 T::ID,
             ) as *mut core::mem::MaybeUninit<T>
@@ -290,7 +301,7 @@ impl<B: FFIBridge> std::fmt::Debug for SkeletonInstanceManager<B> {
 /// As it has Send and Sync unsafe impls, it must not expose any mutable access to the skeleton handle
 pub struct NativeSkeletonHandle<B: FFIBridge> {
     handle: NonNull<SkeletonBase>,
-    _marker: PhantomData<B>,
+    bridge: B,
 }
 
 //SAFETY: NativeSkeletonHandle is safe to share between threads because:
@@ -301,16 +312,20 @@ unsafe impl<B: FFIBridge> Sync for NativeSkeletonHandle<B> {}
 unsafe impl<B: FFIBridge> Send for NativeSkeletonHandle<B> {}
 
 impl<B: FFIBridge> NativeSkeletonHandle<B> {
-    pub fn new(interface_id: &str, instance_specifier: &mw_com::InstanceSpecifier) -> Result<Self> {
+    pub fn new(
+        bridge: &B,
+        interface_id: &str,
+        instance_specifier: &mw_com::InstanceSpecifier,
+    ) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
         let raw_handle =
-            unsafe { B::create_skeleton(interface_id, instance_specifier.as_native()) };
+            unsafe { bridge.create_skeleton(interface_id, instance_specifier.as_native()) };
         let handle = std::ptr::NonNull::new(raw_handle).ok_or(Error::ProducerError(
             ProducerFailedReason::SkeletonCreationFailed,
         ))?;
         Ok(Self {
             handle,
-            _marker: PhantomData,
+            bridge: bridge.clone(),
         })
     }
 }
@@ -320,7 +335,7 @@ impl<B: FFIBridge> Drop for NativeSkeletonHandle<B> {
         //SAFETY: It is safe as we are passing valid skeleton handle to destroy skeleton
         // the handle was created using create_skeleton
         unsafe {
-            B::destroy_skeleton(self.handle.as_ptr());
+            self.bridge.destroy_skeleton(self.handle.as_ptr());
         }
     }
 }
@@ -346,7 +361,7 @@ impl NativeSkeletonEventBase {
         //SAFETY: It is safe as we are passing valid skeleton handle and interface id to get event
         // skeleton handle is created during producer offer call
         let raw_event_ptr = unsafe {
-            B::get_event_from_skeleton(
+            instance_info.bridge.get_event_from_skeleton(
                 instance_info.skeleton_handle.0.handle.as_ptr(),
                 instance_info.interface_id,
                 identifier,
@@ -377,7 +392,7 @@ impl std::fmt::Debug for NativeSkeletonEventBase {
 pub struct Publisher<T, B: FFIBridge> {
     skeleton_event: NativeSkeletonEventBase,
     _data: PhantomData<T>,
-    _skeleton_instance: SkeletonInstanceManager<B>,
+    skeleton_instance: SkeletonInstanceManager<B>,
 }
 
 impl<T, B: FFIBridge> com_api_concept::Publisher<T, LolaRuntimeImpl<B>> for Publisher<T, B>
@@ -398,7 +413,7 @@ where
         let allocatee_ptr = unsafe {
             let mut sample =
                 core::mem::MaybeUninit::<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>::uninit();
-            let status = B::get_allocatee_ptr(
+            let status = self.skeleton_instance.0.bridge.get_allocatee_ptr(
                 self.skeleton_event.skeleton_event_ptr.as_ptr(),
                 sample.as_mut_ptr() as *mut std::ffi::c_void,
                 T::ID,
@@ -415,7 +430,7 @@ where
             skeleton_event: self.skeleton_event.clone(),
             allocatee_ptr: AllocateePtrWrapper {
                 inner: ManuallyDrop::new(allocatee_ptr),
-                _bridge: PhantomData,
+                bridge: self.skeleton_instance.0.bridge.clone(),
             },
             lifetime: PhantomData,
         })
@@ -426,7 +441,7 @@ where
         Ok(Self {
             skeleton_event,
             _data: PhantomData,
-            _skeleton_instance: instance_info.skeleton_handle.clone(),
+            skeleton_instance: instance_info.skeleton_handle.clone(),
         })
     }
 }
@@ -434,15 +449,15 @@ where
 pub struct LolaProducerBuilder<I: Interface, B: FFIBridge> {
     pub instance_specifier: InstanceSpecifier,
     pub _interface: PhantomData<I>,
-    pub _bridge: PhantomData<B>,
+    pub bridge: B,
 }
 
 impl<I: Interface, B: FFIBridge> LolaProducerBuilder<I, B> {
-    pub fn new(_runtime: &LolaRuntimeImpl<B>, instance_specifier: InstanceSpecifier) -> Self {
+    pub fn new(runtime: &LolaRuntimeImpl<B>, instance_specifier: InstanceSpecifier) -> Self {
         Self {
             instance_specifier,
             _interface: PhantomData,
-            _bridge: PhantomData,
+            bridge: runtime.bridge.clone(),
         }
     }
 }
@@ -462,12 +477,16 @@ impl<I: Interface, B: FFIBridge> Builder<I::Producer<LolaRuntimeImpl<B>>>
         )
         .map_err(|_| Error::ProducerError(ProducerFailedReason::InstanceSpecifierInvalid))?;
 
-        let skeleton_handle =
-            NativeSkeletonHandle::<B>::new(I::INTERFACE_ID, &instance_specifier_runtime)?;
+        let skeleton_handle = NativeSkeletonHandle::<B>::new(
+            &self.bridge,
+            I::INTERFACE_ID,
+            &instance_specifier_runtime,
+        )?;
         let instance_info = LolaProviderInfo {
             instance_specifier: self.instance_specifier,
             interface_id: I::INTERFACE_ID,
             skeleton_handle: SkeletonInstanceManager::<B>(Arc::new(skeleton_handle)),
+            bridge: self.bridge,
         };
 
         I::Producer::new(instance_info)
@@ -477,7 +496,7 @@ impl<I: Interface, B: FFIBridge> Builder<I::Producer<LolaRuntimeImpl<B>>>
 #[cfg(test)]
 mod test {
     use super::*;
-    use bridge_ffi_mock::{MockFFIBridge, MockFFIBridgeGuard};
+    use bridge_ffi_mock::MockFFIBridge;
     use com_api_concept::InstanceSpecifier;
     // Bring trait methods into scope without shadowing local struct names.
     use com_api_concept::Publisher as _;
@@ -498,9 +517,10 @@ mod test {
 
     // Creates a `NativeSkeletonHandle<MockFFIBridge>` .
     fn make_skeleton_handle() -> NativeSkeletonHandle<MockFFIBridge> {
+        let bridge = MockFFIBridge;
         let spec = mw_com::InstanceSpecifier::try_from("/test_instance")
             .expect("valid instance specifier");
-        NativeSkeletonHandle::<MockFFIBridge>::new("", &spec)
+        NativeSkeletonHandle::<MockFFIBridge>::new(&bridge, "", &spec)
             .expect("MockFFIBridge::create_skeleton should not fail")
     }
 
@@ -511,6 +531,7 @@ mod test {
                 .expect("valid instance specifier"),
             interface_id,
             skeleton_handle: SkeletonInstanceManager(Arc::new(make_skeleton_handle())),
+            bridge: MockFFIBridge,
         }
     }
 
@@ -530,7 +551,7 @@ mod test {
     #[test]
     fn test_publisher_allocate_and_send() {
         //this is for cleanup of thread local state.
-        let _guard = MockFFIBridgeGuard;
+        // MockFFIBridge instance will clean up automatically on drop
         MockFFIBridge::set_alloc_backing::<TestData>();
         let instance_info = make_provider_info("TestData");
         let publisher: Publisher<TestData, MockFFIBridge> =

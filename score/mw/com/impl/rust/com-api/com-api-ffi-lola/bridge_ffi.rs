@@ -88,12 +88,13 @@ pub use mw_com::InstanceSpecifier;
 /// e.g., Lola bridge, mock bridge for testing.
 /// All this trait bound required because runtime types which use this bridge has these bounds,
 /// an because of that this bridge also need to be bound by these traits to be used in runtime implementation.
-pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
+pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// # Safety
     /// `event_ptr` must be a valid, non-null pointer to a `SkeletonEventBase` obtained from
     /// `get_event_from_skeleton`. `allocatee_ptr` must point to valid memory large enough to
     /// hold the allocatee instance for `event_type`.
     unsafe fn get_allocatee_ptr(
+        &self,
         event_ptr: *mut SkeletonEventBase,
         allocatee_ptr: *mut std::ffi::c_void,
         event_type: &str,
@@ -102,12 +103,13 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// # Safety
     /// `allocatee_ptr` must be a valid pointer previously returned by `get_allocatee_ptr`
     /// with the same `type_name`, and must not be used after this call.
-    unsafe fn delete_allocatee_ptr(allocatee_ptr: *mut std::ffi::c_void, type_name: &str);
+    unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_name: &str);
 
     /// # Safety
     /// `allocatee_ptr` must be a valid pointer to a `SampleAllocateePtr<T>` of the specified
     /// `type_name`, previously obtained from `get_allocatee_ptr`.
     unsafe fn get_allocatee_data_ptr(
+        &self,
         allocatee_ptr: *const std::ffi::c_void,
         type_name: &str,
     ) -> *mut std::ffi::c_void;
@@ -117,6 +119,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// `get_event_from_skeleton`. `allocatee_ptr` must be a valid `SampleAllocateePtr<T>`
     /// whose type matches `event_type`.
     unsafe fn skeleton_event_send_sample_allocatee(
+        &self,
         event_ptr: *mut SkeletonEventBase,
         event_type: &str,
         allocatee_ptr: *const std::ffi::c_void,
@@ -125,6 +128,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// # Safety
     /// `sample_ptr` must be a valid pointer to a `SamplePtr<T>` of the specified `type_name`.
     unsafe fn sample_ptr_get(
+        &self,
         sample_ptr: *const std::ffi::c_void,
         type_name: &str,
     ) -> *const std::ffi::c_void;
@@ -132,27 +136,28 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// # Safety
     /// `sample_ptr` must be a valid pointer to a `SamplePtr<T>` of the specified `type_name`,
     /// and must not be used after this call.
-    unsafe fn sample_ptr_delete(sample_ptr: *mut std::ffi::c_void, type_name: &str);
+    unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_name: &str);
 
     /// # Safety
     /// `skeleton_ptr` must be a valid, non-null pointer to a `SkeletonBase` previously created
     /// with `create_skeleton` and not yet destroyed.
-    unsafe fn skeleton_offer_service(skeleton_ptr: *mut SkeletonBase) -> bool;
+    unsafe fn skeleton_offer_service(&self, skeleton_ptr: *mut SkeletonBase) -> bool;
 
     /// # Safety
     /// `skeleton_ptr` must be a valid, non-null pointer to a `SkeletonBase` previously created
     /// with `create_skeleton` and not yet destroyed.
-    unsafe fn skeleton_stop_offer_service(skeleton_ptr: *mut SkeletonBase);
+    unsafe fn skeleton_stop_offer_service(&self, skeleton_ptr: *mut SkeletonBase);
 
     /// # Safety
     /// `handle_ptr` must be a valid reference to a `HandleType`. The returned pointer must
     /// eventually be destroyed via `destroy_proxy`.
-    unsafe fn create_proxy(interface_id: &str, handle_ptr: &HandleType) -> *mut ProxyBase;
+    unsafe fn create_proxy(&self, interface_id: &str, handle_ptr: &HandleType) -> *mut ProxyBase;
 
     /// # Safety
     /// `instance_spec` must be a valid pointer to a `NativeInstanceSpecifier`. The returned
     /// pointer must eventually be destroyed via `destroy_skeleton`.
     unsafe fn create_skeleton(
+        &self,
         interface_id: &str,
         instance_spec: *const NativeInstanceSpecifier,
     ) -> *mut SkeletonBase;
@@ -160,17 +165,18 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// # Safety
     /// `proxy_ptr` must be a valid pointer returned from `create_proxy` that has not been
     /// destroyed yet. No other references to this proxy may be used after this call.
-    unsafe fn destroy_proxy(proxy_ptr: *mut ProxyBase);
+    unsafe fn destroy_proxy(&self, proxy_ptr: *mut ProxyBase);
 
     /// # Safety
     /// `skeleton_ptr` must be a valid pointer returned from `create_skeleton` that has not
     /// been destroyed yet. No other references to this skeleton may be used after this call.
-    unsafe fn destroy_skeleton(skeleton_ptr: *mut SkeletonBase);
+    unsafe fn destroy_skeleton(&self, skeleton_ptr: *mut SkeletonBase);
 
     /// # Safety
     /// `proxy_ptr` must be a valid pointer to a `ProxyBase` previously created with
     /// `create_proxy`. The returned pointer remains valid only as long as the proxy is alive.
     unsafe fn get_event_from_proxy(
+        &self,
         proxy_ptr: *mut ProxyBase,
         interface_id: &str,
         event_id: &str,
@@ -180,6 +186,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// `skeleton_ptr` must be a valid pointer to a `SkeletonBase` previously created with
     /// `create_skeleton`. The returned pointer remains valid only as long as the skeleton is alive.
     unsafe fn get_event_from_skeleton(
+        &self,
         skeleton_ptr: *mut SkeletonBase,
         interface_id: &str,
         event_id: &str,
@@ -190,6 +197,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// `get_event_from_proxy`, and the event must have been subscribed via `subscribe_to_event`.
     /// `callback` must be a valid `FatPtr` referencing a callable compatible with `event_type`.
     unsafe fn get_samples_from_event(
+        &self,
         event_ptr: *mut ProxyEventBase,
         event_type: &str,
         callback: &FatPtr,
@@ -201,6 +209,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// `get_event_from_skeleton`. `data_ptr` must point to valid data whose type matches
     /// `event_type` and must remain valid for the duration of this call.
     unsafe fn skeleton_send_event(
+        &self,
         event_ptr: *mut SkeletonEventBase,
         event_type: &str,
         data_ptr: *const std::ffi::c_void,
@@ -209,19 +218,24 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// # Safety
     /// `event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
     /// `get_event_from_proxy`. Must be called before `get_samples_from_event`.
-    unsafe fn subscribe_to_event(event_ptr: *mut ProxyEventBase, max_sample_count: u32) -> bool;
+    unsafe fn subscribe_to_event(
+        &self,
+        event_ptr: *mut ProxyEventBase,
+        max_sample_count: u32,
+    ) -> bool;
 
     /// # Safety
     /// `event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
     /// `get_event_from_proxy`. Must be called only when no `SamplePtr` for this event is
     /// still held by the caller.
-    unsafe fn unsubscribe_to_event(event_ptr: *mut ProxyEventBase);
+    unsafe fn unsubscribe_to_event(&self, event_ptr: *mut ProxyEventBase);
 
     /// # Safety
     /// `proxy_event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
     /// `get_event_from_proxy`. `handler` must be a valid `FatPtr` referencing a callable
     /// compatible with the receive-handler signature expected by the implementation.
     unsafe fn set_event_receive_handler(
+        &self,
         proxy_event_ptr: *mut ProxyEventBase,
         handler: &FatPtr,
         event_type: &str,
@@ -230,13 +244,18 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// # Safety
     /// `proxy_event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
     /// `get_event_from_proxy`. `event_type` must match the type used when the handler was set.
-    unsafe fn clear_event_receive_handler(proxy_event_ptr: *mut ProxyEventBase, event_type: &str);
+    unsafe fn clear_event_receive_handler(
+        &self,
+        proxy_event_ptr: *mut ProxyEventBase,
+        event_type: &str,
+    );
 
     /// # Safety
     /// `callback` must be a valid `FatPtr` referencing a callable compatible with the
     /// find-service callback signature. `instance_spec` must be a valid `InstanceSpecifier`.
     /// The returned handle must eventually be passed to `stop_find_service`.
     unsafe fn start_find_service(
+        &self,
         callback: &FatPtr,
         instance_spec: InstanceSpecifier,
     ) -> *mut FindServiceHandle;
@@ -244,21 +263,22 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin {
     /// # Safety
     /// `handle` must be a valid pointer returned from `start_find_service` that has not
     /// been stopped yet. The handle must not be used after this call.
-    unsafe fn stop_find_service(handle: *mut FindServiceHandle);
+    unsafe fn stop_find_service(&self, handle: *mut FindServiceHandle);
 
     /// # Safety
     /// `container` must be a valid reference to a `HandleContainer` that was produced by the
     /// bridge (e.g. from `start_find_service` callback). Calling this on a sentinel mock pointer
     /// is only safe when the mock implementation ignores the inner pointer.
-    fn handle_container_size(container: &HandleContainer) -> usize;
+    fn handle_container_size(&self, container: &HandleContainer) -> usize;
 
     /// # Safety
     /// Same as `handle_container_size`. `index` need not be in-bounds; the method must return
     /// `None` when `index >= handle_container_size(container)`.
-    fn handle_container_get_at(
-        container: &HandleContainer,
+    fn handle_container_get_at<'a>(
+        &self,
+        container: &'a HandleContainer,
         index: usize,
-    ) -> Option<&HandleType>;
+    ) -> Option<&'a HandleType>;
 }
 
 /// Opaque proxy base struct

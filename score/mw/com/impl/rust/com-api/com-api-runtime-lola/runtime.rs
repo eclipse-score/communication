@@ -16,18 +16,18 @@ use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use crate::{
-    LolaConsumerInfo, LolaProviderInfo, Publisher, LolaConsumerDiscovery, LolaProducerBuilder,
+    LolaConsumerDiscovery, LolaConsumerInfo, LolaProducerBuilder, LolaProviderInfo, Publisher,
     SubscribableImpl,
 };
 use com_api_concept::{
     Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime,
 };
 
-use bridge_ffi_rs::FFIBridge;
 use bridge_ffi_lola::LolaFFIBridge;
+use bridge_ffi_rs::FFIBridge;
 
 pub struct LolaRuntimeImpl<B: FFIBridge = LolaFFIBridge> {
-    _marker: PhantomData<B>,
+    pub(crate) bridge: B,
 }
 
 impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
@@ -51,7 +51,7 @@ impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
                 FindServiceSpecifier::Specific(spec) => spec,
             },
             _interface: PhantomData,
-            _bridge: PhantomData,
+            bridge: self.bridge.clone(),
         }
     }
 
@@ -72,7 +72,7 @@ impl<B: FFIBridge> Builder<LolaRuntimeImpl<B>> for RuntimeBuilderImpl<B> {
     fn build(self) -> Result<LolaRuntimeImpl<B>> {
         mw_com::initialize(self.config_path.as_deref());
         Ok(LolaRuntimeImpl {
-            _marker: PhantomData,
+            bridge: B::default(),
         })
     }
 }

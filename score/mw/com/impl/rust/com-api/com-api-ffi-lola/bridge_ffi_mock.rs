@@ -16,9 +16,6 @@
 // As of now, it just provide basic mock implementation and returning values based on
 // input parameters. In future, we will enhance this mock implementation to verify
 // all the test cases and scenarios.
-#![doc(hidden)]
-#![allow(clippy::missing_safety_doc)]
-
 use bridge_ffi_rs::{
     FatPtr, FindServiceHandle, HandleContainer, HandleType, InstanceSpecifier,
     NativeHandleContainer, NativeInstanceSpecifier, ProxyBase, ProxyEventBase, SkeletonBase,
@@ -26,32 +23,79 @@ use bridge_ffi_rs::{
 };
 use std::cell::RefCell;
 
-/// Holds a heap-allocated pointer and its associated drop function.
-/// Used for type-erased heap allocations in the mock FFI bridge.
+// Holds a heap-allocated pointer and its associated drop function.
+// Used for type-erased heap allocations in the mock FFI bridge.
+#[derive(Clone)]
 struct BackingEntry {
-    /// Pointer to the heap-allocated data
+    // Pointer to the heap-allocated data
     ptr: *mut std::ffi::c_void,
-    /// Drop function that knows how to properly free the data
+    // Drop function that knows how to properly free the data
     drop_fn: fn(*mut std::ffi::c_void),
 }
 
-// The thread-local storage is used to hold the backing data for the mock FFI bridge.
-thread_local! {
-    //DATA_BACKING holds a pointer to the heap-allocated backing data and a drop function to free it.
-    //We are using this when user calls get_allocatee_data_ptr to return a pointer to this backing data.
-    static DATA_BACKING: RefCell<Option<BackingEntry>> = RefCell::new(None);
-    //ALLOC_SIZE holds the size of the allocatee type for the next get_allocatee_ptr call, allowing
-    //the mock to zero-fill the caller's slot correctly.
-    static ALLOC_SIZE: RefCell<usize> = const { RefCell::new(0) };
-    //SAMPLE_BACKING holds a pointer to the heap-allocated sample data and a drop function to free it.
-    static SAMPLE_BACKING: RefCell<Option<BackingEntry>> = RefCell::new(None);
+// SAFETY: BackingEntry is only used within MockFFIBridge which controls access via Mutex.
+// The pointer is heap-allocated and the drop_fn ensures proper cleanup.
+unsafe impl Send for BackingEntry {}
+unsafe impl Sync for BackingEntry {}
+
+impl std::fmt::Debug for BackingEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BackingEntry").finish()
+    }
 }
 
+impl Drop for BackingEntry {
+    fn drop(&mut self) {
+        // SAFETY: The drop_fn knows the actual type of the pointer and was stored
+        // when the pointer was allocated (in set_alloc_backing or set_sample_backing).
+        // The drop_fn will properly free the heap allocation.
+        (self.drop_fn)(self.ptr);
+    }
+}
+
+// Mock FFI Bridge with instance state for testing.
+//
+// FFIBridge trait requires Clone - when Runtime creates a consumer/producer, it clones
+// the bridge instance.
+// RefCell<...> provides interior mutability: FFIBridge trait methods take &self (not &mut self)
+// To match this signature while mutating internal state (e.g., storing/retrieving mock data),
+// we need interior mutability.
 #[derive(Debug, Clone)]
-pub struct MockFFIBridge;
+pub struct MockFFIBridge {
+    //DATA_BACKING holds a pointer to the heap-allocated backing data and a drop function to free it.
+    //We are using this when user calls get_allocatee_data_ptr to return a pointer to this backing data.
+    data_backing: RefCell<Option<BackingEntry>>,
+    //ALLOC_SIZE holds the size of the allocatee type for the next get_allocatee_ptr call, allowing
+    //the mock to zero-fill the caller's slot correctly.
+    alloc_size: RefCell<usize>,
+    //SAMPLE_BACKING holds a pointer to the heap-allocated sample data and a drop function to free it.
+    sample_backing: RefCell<Option<BackingEntry>>,
+}
+
+// SAFETY: MockFFIBridge is safe to Send because each test will typically use its own instance of MockFFIBridge,
+// so there is no shared mutable state across threads.
+unsafe impl Send for MockFFIBridge {}
+
+// SAFETY: MockFFIBridge is safe to Sync because it uses RefCell for interior mutability,
+// which is not thread-safe.
+// However, each test will use its own instance of MockFFIBridge and will not share it across threads.
+unsafe impl Sync for MockFFIBridge {}
+
+impl Default for MockFFIBridge {
+    fn default() -> Self {
+        Self {
+            data_backing: RefCell::new(None),
+            alloc_size: RefCell::new(0),
+            sample_backing: RefCell::new(None),
+        }
+    }
+}
 
 impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
+    // Return value based on null-check of input pointers, simulating success/failure of FFI calls.
+    // Also alloc_ptr is zero-filled if size is set.
     unsafe fn get_allocatee_ptr(
+        &self,
         event_ptr: *mut SkeletonEventBase,
         allocatee_ptr: *mut std::ffi::c_void,
         _event_type: &str,
@@ -59,36 +103,38 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         if event_ptr.is_null() || allocatee_ptr.is_null() {
             return false;
         }
-        let size = ALLOC_SIZE.with(|s| *s.borrow());
+        let size = *self.alloc_size.borrow();
         if size == 0 {
             return false;
         }
-       unsafe { std::ptr::write_bytes(allocatee_ptr as *mut u8, 0, size) };
+        unsafe { std::ptr::write_bytes(allocatee_ptr as *mut u8, 0, size) };
         true
     }
 
-    unsafe fn delete_allocatee_ptr(_allocatee_ptr: *mut std::ffi::c_void, _type_name: &str) {
-        DATA_BACKING.with(|d| {
-            if let Some(entry) = d.borrow_mut().take() {
-                (entry.drop_fn)(entry.ptr);
-            }
-        });
-        ALLOC_SIZE.with(|s| *s.borrow_mut() = 0);
+    // Deletes the heap-allocated backing data for the current allocatee, if any, and resets alloc_size.
+    unsafe fn delete_allocatee_ptr(&self, _allocatee_ptr: *mut std::ffi::c_void, _type_name: &str) {
+        if let Some(entry) = self.data_backing.borrow_mut().take() {
+            (entry.drop_fn)(entry.ptr);
+        }
+        *self.alloc_size.borrow_mut() = 0;
     }
 
+    // Returns a pointer to the heap-allocated backing data for the current allocatee, if any.
     unsafe fn get_allocatee_data_ptr(
+        &self,
         _allocatee_ptr: *const std::ffi::c_void,
         _type_name: &str,
     ) -> *mut std::ffi::c_void {
-        DATA_BACKING.with(|d| {
-            d.borrow()
-                .as_ref()
-                .map(|entry| entry.ptr)
-                .unwrap_or(std::ptr::null_mut())
-        })
+        self.data_backing
+            .borrow()
+            .as_ref()
+            .map(|entry| entry.ptr)
+            .unwrap_or(std::ptr::null_mut())
     }
 
+    // Returns true if event_ptr is non-null, simulating successful event sending.
     unsafe fn skeleton_event_send_sample_allocatee(
+        &self,
         event_ptr: *mut SkeletonEventBase,
         _event_type: &str,
         _allocatee_ptr: *const std::ffi::c_void,
@@ -96,58 +142,70 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         !event_ptr.is_null()
     }
 
+    // Returns a pointer to the heap-allocated sample data for the current sample from the mock, if any.
     unsafe fn sample_ptr_get(
+        &self,
         _sample_ptr: *const std::ffi::c_void,
         _type_name: &str,
     ) -> *const std::ffi::c_void {
-        SAMPLE_BACKING.with(|s| {
-            s.borrow()
-                .as_ref()
-                .map(|entry| entry.ptr as *const std::ffi::c_void)
-                .unwrap_or(std::ptr::null())
-        })
+        self.sample_backing
+            .borrow()
+            .as_ref()
+            .map(|entry| entry.ptr as *const std::ffi::c_void)
+            .unwrap_or(std::ptr::null())
     }
 
-    unsafe fn sample_ptr_delete(_sample_ptr: *mut std::ffi::c_void, _type_name: &str) {
-        SAMPLE_BACKING.with(|s| {
-            if let Some(entry) = s.borrow_mut().take() {
-                (entry.drop_fn)(entry.ptr);
-            }
-        });
+    // Deletes the heap-allocated sample backing data for the current sample, if any.
+    unsafe fn sample_ptr_delete(&self, _sample_ptr: *mut std::ffi::c_void, _type_name: &str) {
+        if let Some(entry) = self.sample_backing.borrow_mut().take() {
+            (entry.drop_fn)(entry.ptr);
+        }
     }
 
-    unsafe fn skeleton_offer_service(skeleton_ptr: *mut SkeletonBase) -> bool {
+    // The following methods simulate success/failure based on null-checks of input pointers.
+    unsafe fn skeleton_offer_service(&self, skeleton_ptr: *mut SkeletonBase) -> bool {
         !skeleton_ptr.is_null()
     }
 
-    unsafe fn skeleton_stop_offer_service(_skeleton_ptr: *mut SkeletonBase) {}
+    // This mock does not track offered services, so stop_offer_service is a no-op.
+    unsafe fn skeleton_stop_offer_service(&self, _skeleton_ptr: *mut SkeletonBase) {}
 
-    unsafe fn create_proxy(_interface_id: &str, _handle_ptr: &HandleType) -> *mut ProxyBase {
+    // Creates a new ProxyBase instance and returns a pointer to it.
+    // The actual content is not important for the mock, so we return zeroed instances.
+    unsafe fn create_proxy(&self, _interface_id: &str, _handle_ptr: &HandleType) -> *mut ProxyBase {
         unsafe { Box::into_raw(Box::new(std::mem::zeroed::<ProxyBase>())) }
     }
 
+    // Creates a new SkeletonBase instance and returns a pointer to it.
+    // The actual content is not important for the mock, so we return zeroed instances.
     unsafe fn create_skeleton(
+        &self,
         _interface_id: &str,
         _instance_spec: *const NativeInstanceSpecifier,
     ) -> *mut SkeletonBase {
         unsafe { Box::into_raw(Box::new(std::mem::zeroed::<SkeletonBase>())) }
     }
 
-    unsafe fn destroy_proxy(proxy_ptr: *mut ProxyBase) {
+    // Destroys a ProxyBase instance created by create_proxy.
+    unsafe fn destroy_proxy(&self, proxy_ptr: *mut ProxyBase) {
         if !proxy_ptr.is_null() {
             // SAFETY: proxy_ptr was allocated by create_proxy via Box::into_raw
             unsafe { drop(Box::from_raw(proxy_ptr)) };
         }
     }
 
-    unsafe fn destroy_skeleton(skeleton_ptr: *mut SkeletonBase) {
+    // Destroys a SkeletonBase instance created by create_skeleton.
+    unsafe fn destroy_skeleton(&self, skeleton_ptr: *mut SkeletonBase) {
         if !skeleton_ptr.is_null() {
             // SAFETY: skeleton_ptr was allocated by create_skeleton via Box::into_raw
             unsafe { drop(Box::from_raw(skeleton_ptr)) };
         }
     }
 
+    // The following methods return non-null sentinel pointers for events
+    // if the input proxy/skeleton pointer is non-null, simulating successful event retrieval.
     unsafe fn get_event_from_proxy(
+        &self,
         proxy_ptr: *mut ProxyBase,
         _interface_id: &str,
         _event_id: &str,
@@ -162,7 +220,10 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         std::ptr::NonNull::<ProxyEventBase>::dangling().as_ptr()
     }
 
+    // The following method returns a non-null sentinel pointer for the event
+    // if the input skeleton pointer is non-null, simulating successful event retrieval.
     unsafe fn get_event_from_skeleton(
+        &self,
         _skeleton_ptr: *mut SkeletonBase,
         _interface_id: &str,
         _event_id: &str,
@@ -174,7 +235,9 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         std::ptr::NonNull::<SkeletonEventBase>::dangling().as_ptr()
     }
 
+    // The following methods simulate event subscription and handling based on null-checks of input pointers.
     unsafe fn get_samples_from_event(
+        &self,
         event_ptr: *mut ProxyEventBase,
         _event_type: &str,
         _callback: &FatPtr,
@@ -186,7 +249,9 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         0
     }
 
+    // The following method simulates event sending based on null-check of the event pointer.
     unsafe fn skeleton_send_event(
+        &self,
         event_ptr: *mut SkeletonEventBase,
         _event_type: &str,
         _data_ptr: *const std::ffi::c_void,
@@ -194,13 +259,22 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         !event_ptr.is_null()
     }
 
-    unsafe fn subscribe_to_event(event_ptr: *mut ProxyEventBase, _max_sample_count: u32) -> bool {
+    // The following methods simulate event subscription and
+    // handler registration based on null-checks of input pointers.
+    unsafe fn subscribe_to_event(
+        &self,
+        event_ptr: *mut ProxyEventBase,
+        _max_sample_count: u32,
+    ) -> bool {
         !event_ptr.is_null()
     }
 
-    unsafe fn unsubscribe_to_event(_event_ptr: *mut ProxyEventBase) {}
+    // The following method simulates event unsubscription. Since this is a mock,
+    // it does not track subscriptions.
+    unsafe fn unsubscribe_to_event(&self, _event_ptr: *mut ProxyEventBase) {}
 
     unsafe fn set_event_receive_handler(
+        &self,
         proxy_event_ptr: *mut ProxyEventBase,
         _handler: &FatPtr,
         _event_type: &str,
@@ -208,34 +282,42 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         !proxy_event_ptr.is_null()
     }
 
+    // The following method simulates clearing the event receive handler. Since this is a mock,
+    // it does not track handlers, so this is a no-op.
     unsafe fn clear_event_receive_handler(
+        &self,
         _proxy_event_ptr: *mut ProxyEventBase,
         _event_type: &str,
     ) {
     }
 
+    // The following methods simulate service discovery based on null-checks of input pointers.
     unsafe fn start_find_service(
+        &self,
         _callback: &FatPtr,
         _instance_spec: InstanceSpecifier,
     ) -> *mut FindServiceHandle {
-       unsafe { Box::into_raw(Box::new(std::mem::zeroed::<FindServiceHandle>())) }
+        unsafe { Box::into_raw(Box::new(std::mem::zeroed::<FindServiceHandle>())) }
     }
 
-    unsafe fn stop_find_service(handle: *mut FindServiceHandle) {
+    unsafe fn stop_find_service(&self, handle: *mut FindServiceHandle) {
         if !handle.is_null() {
             // SAFETY: handle was allocated by start_find_service via Box::into_raw
-           unsafe { drop(Box::from_raw(handle)) };
+            unsafe { drop(Box::from_raw(handle)) };
         }
     }
 
-    fn handle_container_size(_container: &HandleContainer) -> usize {
+    // Returns the handle count of the container, which is always zero in this mock implementation.
+    fn handle_container_size(&self, _container: &HandleContainer) -> usize {
         0
     }
 
-    fn handle_container_get_at(
-        _container: &HandleContainer,
+    // Returns None for any index, since the container is always empty in this mock implementation.
+    fn handle_container_get_at<'a>(
+        &self,
+        _container: &'a HandleContainer,
         _index: usize,
-    ) -> Option<&HandleType> {
+    ) -> Option<&'a HandleType> {
         None
     }
 }
@@ -275,7 +357,7 @@ impl MockFFIBridge {
     // Heap-allocates a `MaybeUninit<T>` buffer whose address is returned by
     // `get_allocatee_data_ptr`, and records `size_of::<SampleAllocateePtr<T>>()` so that
     // `get_allocatee_ptr` can zero-fill the caller's slot (making `assume_init()` safe).
-    pub fn set_alloc_backing<T: 'static>() {
+    pub fn set_alloc_backing<T: 'static>(&self) {
         use sample_allocatee_ptr_rs::SampleAllocateePtr;
         let data_ptr =
             Box::into_raw(Box::new(std::mem::MaybeUninit::<T>::uninit())) as *mut std::ffi::c_void;
@@ -285,12 +367,14 @@ impl MockFFIBridge {
             drop(unsafe { Box::from_raw(p as *mut std::mem::MaybeUninit<T>) });
         };
         // Replace any previous backing (prevents leaks on repeated calls).
-        DATA_BACKING.with(|d| {
-            if let Some(old_entry) = d.borrow_mut().replace(BackingEntry { ptr: data_ptr, drop_fn }) {
-                (old_entry.drop_fn)(old_entry.ptr);
-            }
-        });
-        ALLOC_SIZE.with(|s| *s.borrow_mut() = std::mem::size_of::<SampleAllocateePtr<T>>());
+        let mut data_backing = self.data_backing.borrow_mut();
+        if let Some(old_entry) = data_backing.replace(BackingEntry {
+            ptr: data_ptr,
+            drop_fn,
+        }) {
+            (old_entry.drop_fn)(old_entry.ptr);
+        }
+        *self.alloc_size.borrow_mut() = std::mem::size_of::<SampleAllocateePtr<T>>();
     }
 
     // Registers `data` as the backing value for the next `sample_ptr_get` /
@@ -299,42 +383,16 @@ impl MockFFIBridge {
     // Heap-allocates `data` and stores a typed drop-glue so `sample_ptr_delete`
     // can free it without knowing `T`. `sample_ptr_get` returns the pointer to
     // the heap `T`, making `get_data()` return a valid `&T`.
-    pub fn set_sample_backing<T: 'static>(data: T) {
+    pub fn set_sample_backing<T: 'static>(&self, data: T) {
         let ptr = Box::into_raw(Box::new(data)) as *mut std::ffi::c_void;
         let drop_fn: fn(*mut std::ffi::c_void) = |p| {
             // SAFETY: p was allocated as Box<T> by set_sample_backing::<T>.
             drop(unsafe { Box::from_raw(p as *mut T) });
         };
         // Replace any previous backing (prevents leaks on repeated calls).
-        SAMPLE_BACKING.with(|s| {
-            if let Some(old_entry) = s.borrow_mut().replace(BackingEntry { ptr, drop_fn }) {
-                (old_entry.drop_fn)(old_entry.ptr);
-            }
-        });
-    }
-
-    // Drops all heap-allocated backing data stored in thread-locals and resets ALLOC_SIZE
-    // to zero.
-    fn reset() {
-        DATA_BACKING.with(|d| {
-            if let Some(entry) = d.borrow_mut().take() {
-                (entry.drop_fn)(entry.ptr);
-            }
-        });
-        ALLOC_SIZE.with(|s| *s.borrow_mut() = 0);
-        SAMPLE_BACKING.with(|s| {
-            if let Some(entry) = s.borrow_mut().take() {
-                (entry.drop_fn)(entry.ptr);
-            }
-        });
-    }
-}
-
-// RAII guard that resets all `MockFFIBridge` thread-local state when it goes out of scope.
-pub struct MockFFIBridgeGuard;
-
-impl Drop for MockFFIBridgeGuard {
-    fn drop(&mut self) {
-        MockFFIBridge::reset();
+        let mut sample_backing = self.sample_backing.borrow_mut();
+        if let Some(old_entry) = sample_backing.replace(BackingEntry { ptr, drop_fn }) {
+            (old_entry.drop_fn)(old_entry.ptr);
+        }
     }
 }
