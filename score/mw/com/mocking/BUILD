@@ -1,5 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -53,7 +53,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "runtime_mock_test",
     srcs = ["runtime_mock_test.cpp"],
     deps = [
@@ -62,13 +62,4 @@ cc_gtest_unit_test(
         "//score/mw/com:runtime",
         "//score/mw/com/impl/mocking:test_type_utilities",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":runtime_mock_test",
-    ],
-    test_suites_from_sub_packages = [],
-    visibility = ["//score/mw/com:__pkg__"],
 )

@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -201,7 +201,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "test_type_utilities_test",
     srcs = ["test_type_utilities_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -210,7 +210,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_base_mock_test",
     srcs = ["skeleton_base_mock_test.cpp"],
     deps = [
@@ -220,7 +220,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_event_mock_test",
     srcs = ["skeleton_event_mock_test.cpp"],
     deps = [
@@ -230,7 +230,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_field_mock_test",
     srcs = ["skeleton_field_mock_test.cpp"],
     deps = [
@@ -240,7 +240,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_event_mock_test",
     srcs = ["proxy_event_mock_test.cpp"],
     deps = [
@@ -251,7 +251,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_wrapper_class_test_view_test",
     srcs = ["skeleton_wrapper_class_test_view_test.cpp"],
     deps = [
@@ -264,7 +264,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_wrapper_class_test_view_test",
     srcs = ["proxy_wrapper_class_test_view_test.cpp"],
     deps = [
@@ -272,19 +272,4 @@ cc_gtest_unit_test(
         ":proxy_wrapper_class_test_view",
         "//score/mw/com:test_types",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":skeleton_event_mock_test",
-        ":skeleton_field_mock_test",
-        ":skeleton_base_mock_test",
-        ":test_type_utilities_test",
-        ":proxy_event_mock_test",
-        ":proxy_wrapper_class_test_view_test",
-        ":skeleton_wrapper_class_test_view_test",
-    ],
-    test_suites_from_sub_packages = [],
-    visibility = ["//score/mw/com/impl:__pkg__"],
 )

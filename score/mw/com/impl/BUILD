@@ -12,8 +12,8 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 component(
@@ -1010,9 +1010,8 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_unit_test(
     name = "unit_test_runtime_single_exec",
-    timeout = "moderate",
     srcs = ["runtime_single_exec_test.cpp"],
     data = [
         "//score/mw/com/impl/configuration:mw_com_config.json",
@@ -1025,18 +1024,15 @@ cc_test(
     features = [
         "aborts_upon_exception",
     ],
-    tags = ["unit"],
     deps = [
         ":impl",
         ":runtime",
-        "@googletest//:gtest_main",
-        "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/utils/meyer_singleton/test:single_test_per_process_fixture",
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_discovery_test",
     srcs = ["service_discovery_test.cpp"],
     deps = [
@@ -1050,7 +1046,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "generic_proxy_test",
     srcs = ["generic_proxy_test.cpp"],
     deps = [
@@ -1065,7 +1061,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "sample_reference_tracker_test",
     srcs = ["sample_reference_tracker_test.cpp"],
     deps = [
@@ -1074,7 +1070,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "flag_owner_test",
     srcs = ["flag_owner_test.cpp"],
     deps = [
@@ -1082,7 +1078,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_element_type_test",
     srcs = ["service_element_type_test.cpp"],
     deps = [
@@ -1110,14 +1106,13 @@ cc_unit_test(
         "//score/mw/com/impl/tracing/configuration:skeleton_event_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config",
         "@googletest//:gtest",
-        "@googletest//:gtest_main",
         "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/mw/log",
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "find_service_handle_test",
     srcs = ["find_service_handle_test.cpp"],
     deps = [
@@ -1127,7 +1122,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_field_test",
     srcs = ["proxy_field_test.cpp"],
     deps = [
@@ -1139,7 +1134,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_event_test",
     srcs = ["proxy_event_test.cpp"],
     deps = [
@@ -1152,7 +1147,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_base_test",
     srcs = ["proxy_base_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [
@@ -1173,7 +1168,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "generic_skeleton_test",
     srcs = ["generic_skeleton_test.cpp"],
     deps = [
@@ -1190,7 +1185,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "generic_skeleton_event_test",
     srcs = [
         "generic_skeleton_event_test.cpp",
@@ -1209,7 +1204,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "traits_test",
     srcs = [
         "traits_test.cpp",
@@ -1230,7 +1225,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_base_test",
     srcs = [
         "skeleton_base_test.cpp",
@@ -1246,7 +1241,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "com_error_test",
     srcs = [
         "com_error_test.cpp",
@@ -1262,7 +1257,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "error_serializer_test",
     srcs = [
         "error_serializer_test.cpp",
@@ -1280,10 +1275,8 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_test(
+cc_unit_test(
     name = "unit_test",
-    # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
-    timeout = "moderate",
     srcs = [
         "enriched_instance_identifier_test.cpp",
         "generic_proxy_event_test.cpp",
@@ -1305,7 +1298,6 @@ cc_test(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    tags = ["unit"],
     deps = [
         ":enriched_instance_identifier",
         ":impl",
@@ -1328,44 +1320,9 @@ cc_test(
         "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
         "//score/mw/com/impl/tracing:tracing_test_resources",
-        "@googletest//:gtest_main",
         "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_baselibs//score/os/mocklib:mman_mock",
         "@score_baselibs//score/os/mocklib:stat_mock",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":com_error_test",
-        ":flag_owner_test",
-        ":find_service_handle_test",
-        ":generic_skeleton_test",
-        ":generic_skeleton_event_test",
-        ":generic_proxy_test",
-        ":proxy_field_test",
-        ":runtime_test",
-        ":proxy_base_test",
-        ":sample_reference_tracker_test",
-        ":error_serializer_test",
-        ":service_discovery_test",
-        ":service_element_type_test",
-        ":skeleton_base_test",
-        ":unit_test",
-        ":traits_test",
-        ":unit_test_runtime_single_exec",
-    ],
-    test_suites_from_sub_packages = [
-        "//score/mw/com/impl/bindings/lola:unit_test_suite",
-        "//score/mw/com/impl/configuration:unit_test_suite",
-        "//score/mw/com/impl/plumbing:unit_test_suite",
-        "//score/mw/com/impl/tracing:unit_test_suite",
-        "//score/mw/com/impl/util:unit_test_suite",
-        "//score/mw/com/impl/methods:unit_test_suite",
-        "//score/mw/com/impl/mocking:unit_test_suite",
-    ],
-    visibility = ["//score/mw/com:__pkg__"],
 )

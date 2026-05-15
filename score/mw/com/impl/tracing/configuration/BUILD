@@ -12,8 +12,8 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 validate_json_schema_test(
@@ -237,7 +237,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_element_identifier_test",
     srcs = ["service_element_identifier_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -250,7 +250,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_element_identifier_view_test",
     srcs = ["service_element_identifier_view_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -263,7 +263,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_element_instance_identifier_view_test",
     srcs = ["service_element_instance_identifier_view_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -275,7 +275,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "trace_point_key_test",
     srcs = ["trace_point_key_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -289,7 +289,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "tracing_filter_config_test",
     srcs = ["tracing_filter_config_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -302,7 +302,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_event_trace_point_type_test",
     srcs = ["skeleton_event_trace_point_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -314,7 +314,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_field_trace_point_type_test",
     srcs = ["skeleton_field_trace_point_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -326,7 +326,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_event_trace_point_type_test",
     srcs = ["proxy_event_trace_point_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -338,7 +338,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_field_trace_point_type_test",
     srcs = ["proxy_field_trace_point_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -350,7 +350,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "tracing_filter_config_parser_test",
     srcs = ["tracing_filter_config_parser_test.cpp"],
     data = ["example/comtrace_filter_config_small.json"],
@@ -365,7 +365,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "hash_helper_utility_test",
     srcs = ["hash_helper_utility_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -375,24 +375,6 @@ cc_gtest_unit_test(
     deps = [
         ":hash_helper_utility",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":hash_helper_utility_test",
-        ":proxy_event_trace_point_type_test",
-        ":proxy_field_trace_point_type_test",
-        ":service_element_identifier_test",
-        ":service_element_identifier_view_test",
-        ":service_element_instance_identifier_view_test",
-        ":skeleton_event_trace_point_type_test",
-        ":skeleton_field_trace_point_type_test",
-        ":trace_point_key_test",
-        ":tracing_filter_config_parser_test",
-        ":tracing_filter_config_test",
-    ],
-    visibility = ["//score/mw/com/impl/tracing:__pkg__"],
 )
 
 filegroup(

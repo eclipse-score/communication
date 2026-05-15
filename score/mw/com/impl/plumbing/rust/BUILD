@@ -11,7 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//quality/unit_testing:unit_testing.bzl", "rust_unit_test")
 
 rust_library(
     name = "common_rs",
@@ -45,7 +46,7 @@ rust_library(
     ],
 )
 
-rust_test(
+rust_unit_test(
     name = "sample_allocatee_ptr_test_rs",
     srcs = ["sample_allocatee_ptr.rs"],
     features = ["link_std_cpp_lib"],
@@ -58,7 +59,7 @@ rust_test(
     ],
 )
 
-rust_test(
+rust_unit_test(
     name = "sample_ptr_test_rs",
     srcs = ["sample_ptr.rs"],
     features = ["link_std_cpp_lib"],

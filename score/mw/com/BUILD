@@ -13,7 +13,7 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # Capture README.md for Sphinx documentation at convenient location
@@ -122,7 +122,7 @@ alias(
     visibility = ["//visibility:public"],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "unit_test",
     srcs = [
         "runtime_test.cpp",
@@ -145,28 +145,11 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "runtime_configuration_test",
     srcs = ["runtime_configuration_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
         "runtime_configuration",
-    ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":unit_test",
-        ":runtime_configuration_test",
-    ],
-    test_suites_from_sub_packages = [
-        "//score/mw/com/impl:unit_test_suite",
-        "//score/mw/com/mocking:unit_test_suite",
-        "//score/mw/com/performance_benchmarks/macro_benchmark:unit_test_suite",
-        # "//score/mw/com/test/api:unit_test_suite", Remove until API tests are open sourced Ticket-196988
-    ],
-    visibility = [
-        "//platform/aas/mw:__pkg__",
     ],
 )

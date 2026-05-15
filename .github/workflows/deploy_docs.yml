@@ -26,13 +26,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write  # needed for uploading release assets
   pages: write
   id-token: write
 
 concurrency:
   group: "pages"
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   ANDROID_HOME: ""
@@ -84,7 +84,7 @@ jobs:
         run: |
           mkdir -p docs_output
           cp -r bazel-bin/docs/sphinx/sphinx_doc/html/* docs_output/ || \
-          cp -r bazel-out/k8-fastbuild/bin/docs/sphinx/sphinx_doc/html/* docs_output/ || true
+            cp -r bazel-out/k8-fastbuild/bin/docs/sphinx/sphinx_doc/html/* docs_output/ || true
           # Fix read-only permissions from Bazel output
           chmod -R u+w docs_output/
           # Prevent Jekyll from ignoring _static directories
@@ -109,16 +109,20 @@ jobs:
           echo "Files generated:"
           find docs_output -type f | head -20
 
-      - name: Restore previous publish tree
-        if: github.event_name != 'pull_request'
-        uses: actions/cache/restore@v4
-        with:
-          path: publish
-          key: docs-publish-${{ github.run_id }}
-          restore-keys: docs-publish-
+      - name: Upload docs to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          tar czf "docs-${VERSION}.tar.gz" -C docs_output .
+          gh release create "${VERSION}" --draft=false --notes "Release ${VERSION}" 2>/dev/null || true
+          gh release upload "${VERSION}" "docs-${VERSION}.tar.gz" --clobber
 
       - name: Assemble publish tree
         if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           IS_TAG="${{ steps.version.outputs.is_tag }}"
@@ -126,22 +130,47 @@ jobs:
 
           mkdir -p publish
 
-          rm -rf "publish/${VERSION}"
+          # Place current build
           mkdir -p "publish/${VERSION}"
           cp -a docs_output/. "publish/${VERSION}/"
 
+          # Download previously released versions
+          for tag in $(gh api "repos/${{ github.repository }}/releases" --paginate --jq '.[].tag_name' | grep '^v'); do
+            if [ "${tag}" = "${VERSION}" ]; then
+              continue
+            fi
+            if gh release download "${tag}" --pattern "docs-${tag}.tar.gz" --dir /tmp 2>/dev/null; then
+              mkdir -p "publish/${tag}"
+              tar xzf "/tmp/docs-${tag}.tar.gz" -C "publish/${tag}"
+              rm -f "/tmp/docs-${tag}.tar.gz"
+              echo "Restored ${tag} from release artifact"
+            else
+              echo "::warning::No docs artifact found for release ${tag}"
+            fi
+          done
+
+          # stable = newest tagged version that has docs
           if [[ "${IS_TAG}" == "true" ]]; then
             rm -rf publish/stable
             cp -a docs_output/. publish/stable/
+          else
+            NEWEST_TAG=$(find publish -maxdepth 1 -mindepth 1 -type d -name "v*" -printf '%f\n' | sort -rV | head -1)
+            if [ -n "${NEWEST_TAG}" ]; then
+              rm -rf publish/stable
+              cp -a "publish/${NEWEST_TAG}/." publish/stable/
+            fi
           fi
 
+          # Shared assets
           mkdir -p publish/_shared/css publish/_shared/js
           cp docs/sphinx/_static/css/version_flyout.css publish/_shared/css/
           cp docs/sphinx/_static/js/version_flyout.js publish/_shared/js/
 
+          # Root index and Jekyll bypass
           cp docs/sphinx/_gh_pages/index.html publish/index.html
           touch publish/.nojekyll
 
+          # Generate switcher.json from actual directory contents
           echo "[" > publish/switcher.json
           echo "  {\"name\": \"latest\", \"version\": \"latest\", \"url\": \"${REPO_URL}/latest/\"}," >> publish/switcher.json
 
@@ -156,17 +185,6 @@ jobs:
 
           sed -i '$ s/,$//' publish/switcher.json
           echo "]" >> publish/switcher.json
-
-      - name: Save publish tree to cache
-        if: github.event_name != 'pull_request'
-        uses: actions/cache/save@v4
-        with:
-          path: publish
-          key: docs-publish-${{ github.run_id }}
-
-      - name: Setup Pages
-        if: github.event_name != 'pull_request'
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'

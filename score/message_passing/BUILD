@@ -12,9 +12,9 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test")
 load("@score_baselibs//third_party/itf:py_unittest_qnx_test.bzl", "py_unittest_qnx_test")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 py_unittest_qnx_test(
     name = "unit_tests_qnx",
@@ -26,8 +26,8 @@ py_unittest_qnx_test(
         ":unix_domain_test",
     ],
     test_suites = [
-        "@score_communication//score/message_passing/log:unit_test_suite_qnx",
-        "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_qnx",
+        "@score_communication//score/message_passing/log:log_test_qnx",
+        "@score_communication//score/message_passing/non_allocating_future:non_allocating_future_test_qnx",
     ],
     visibility = ["//score/message_passing:__pkg__"],
 )
@@ -39,8 +39,8 @@ test_suite(
         ":qnx_resource_path_test",
         ":timed_command_queue_test",
         ":unix_domain_test",
-        "@score_communication//score/message_passing/log:unit_test_suite_host",
-        "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_host",
+        "@score_communication//score/message_passing/log:log_test",
+        "@score_communication//score/message_passing/non_allocating_future:non_allocating_future_test",
     ],
     visibility = [
         "//score/message_passing:__pkg__",
@@ -134,7 +134,7 @@ unit(
         ":message_passing_common",
     ],
     tests = [
-        "//score/message_passing:client_connection_test",
+        "//score/message_passing:client_connection_test_linux",
     ],
     unit_design = ["//score/message_passing/dependability/software_unit_design:client_connection_unit_design"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
@@ -182,7 +182,7 @@ unit(
         ":message_passing_unix_domain",
     ],
     tests = [
-        ":unix_domain_test",
+        ":unix_domain_test_linux",
     ],
     unit_design = ["//score/message_passing/dependability/software_unit_design:unix_domain_unit_design"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
@@ -254,7 +254,7 @@ unit(
         "//score/message_passing:message_passing_qnx_dispatch",
     ],
     tests = [
-        ":qnx_dispatch_test",
+        ":qnx_dispatch_test_linux",
     ],
     unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_unit_design"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
@@ -290,7 +290,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "client_connection_test",
     srcs = [
         "client_connection_test.cpp",
@@ -306,7 +306,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "unix_domain_test",
     srcs = [
         "unix_domain_server_test.cpp",
@@ -322,7 +322,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "qnx_dispatch_test",
     srcs = [
         "qnx_dispatch_engine_test.cpp",
@@ -347,7 +347,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "qnx_resource_path_test",
     srcs = [
         "qnx_resource_path_test.cpp",
@@ -358,7 +358,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "timed_command_queue_test",
     srcs = [
         "timed_command_queue_test.cpp",

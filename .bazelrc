@@ -57,6 +57,7 @@ common:qnx_x86_64 --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sd
 common:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_pc_nto_qnx800
 common:qnx_x86_64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_x86_64 --sandbox_writable_path=/var/tmp
+common:qnx_x86_64 --test_env=QEMU_CPU=Cascadelake-Server-v5
 
 common:qnx_arm64 --credential_helper_timeout="60s" # QNX credential helper can be slow
 common:qnx_arm64 --platforms=@score_bazel_platforms//:aarch64-qnx-sdp_8.0.0-posix
@@ -65,6 +66,7 @@ common:qnx_arm64 --extra_toolchains=@score_qcc_aarch64_toolchain//:aarch64-qnx-s
 common:qnx_arm64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_aarch64_unknown_nto_qnx800
 common:qnx_arm64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_arm64 --sandbox_writable_path=/var/tmp
+common:qnx_arm64 --test_env=QEMU_CPU=Cascadelake-Server-v5
 
 common:qnx --config=qnx_x86_64
 

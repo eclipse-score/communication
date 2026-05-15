@@ -168,7 +168,7 @@ jobs:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           run: |
-            bazel test --config=qnx -- //score/mw/com/test/... #todo also execute unit tests
+            bazel test --config=qnx -- //score/...
         - name: Cleanup QNX License
           if: ${{ !cancelled() }}
           run: sudo rm -rf ${{ env.LICENSE_DIR }}

@@ -24,6 +24,9 @@ bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
 
+# Cannot be dev-dependency due to being required in "load" statements
+bazel_dep(name = "score_qnx_unit_tests", version = "0.1.0")
+
 # Patch baselibs with a QNX8 workaround for poll
 # until a fix is provided by the QNX SDP
 bazel_dep(name = "score_baselibs", version = "0.2.7")

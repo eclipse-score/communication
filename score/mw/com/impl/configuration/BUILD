@@ -12,8 +12,8 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 validate_json_schema_test(
@@ -448,7 +448,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "config_parser_test",
     srcs = ["config_parser_test.cpp"],
     data = ["example/mw_com_config.json"],
@@ -462,7 +462,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "config_parser_methods_test",
     srcs = ["config_parser_methods_test.cpp"],
     data = ["example/mw_com_config.json"],
@@ -476,32 +476,27 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_test(
+cc_unit_test(
     name = "configuration_common_resources_test",
-    size = "small",
-    timeout = "long",
     srcs = ["configuration_common_resources_test.cpp"],
     features = [
         "aborts_upon_exception",
     ],
-    tags = ["unit"],
     deps = [
         ":configuration_common_resources",
-        "@googletest//:gtest_main",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/language/safecpp/coverage_termination_handler",
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "configuration_error_test",
     srcs = ["configuration_error_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [":configuration_error"],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "configuration_test",
     srcs = ["configuration_test.cpp"],
     data = ["example/mw_com_config.json"],
@@ -514,7 +509,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "lola_service_instance_deployment_test",
     srcs = ["lola_service_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -525,7 +520,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "lola_event_instance_deployment_test",
     srcs = ["lola_event_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -535,7 +530,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "lola_field_instance_deployment_test",
     srcs = ["lola_field_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -545,7 +540,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "lola_method_instance_deployment_test",
     srcs = ["lola_method_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -554,14 +549,14 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "quality_type_test",
     srcs = ["quality_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [":quality_type"],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_identifier_type_test",
     srcs = ["service_identifier_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -571,7 +566,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_instance_deployment_test",
     srcs = ["service_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -581,7 +576,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_version_type_test",
     srcs = ["service_version_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -591,7 +586,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_type_deployment_test",
     srcs = ["service_type_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -601,7 +596,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "someip_service_instance_deployment_test",
     srcs = ["someip_service_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -611,7 +606,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "lola_service_type_deployment_test",
     srcs = ["lola_service_type_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -621,7 +616,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_instance_id_test",
     srcs = ["service_instance_id_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -631,7 +626,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "lola_service_instance_id_test",
     srcs = ["lola_service_instance_id_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -641,7 +636,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "someip_service_instance_id_test",
     srcs = ["someip_service_instance_id_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -651,7 +646,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "global_configuration_test",
     srcs = ["global_configuration_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -660,7 +655,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "tracing_configuration_test",
     srcs = ["tracing_configuration_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -669,56 +664,25 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "someip_field_instance_deployment_test",
     srcs = ["someip_field_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [":someip_field_instance_deployment"],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "someip_event_instance_deployment_test",
     srcs = ["someip_event_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [":someip_event_instance_deployment"],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "shm_size_calc_mode_test",
     srcs = ["shm_size_calc_mode_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [":shm_size_calc_mode"],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        "shm_size_calc_mode_test",
-        ":config_parser_test",
-        ":config_parser_methods_test",
-        ":configuration_common_resources_test",
-        ":configuration_error_test",
-        ":configuration_test",
-        ":global_configuration_test",
-        ":lola_event_instance_deployment_test",
-        ":lola_field_instance_deployment_test",
-        ":lola_method_instance_deployment_test",
-        ":lola_service_instance_deployment_test",
-        ":lola_service_instance_id_test",
-        ":lola_service_type_deployment_test",
-        ":quality_type_test",
-        ":service_identifier_type_test",
-        ":service_instance_deployment_test",
-        ":service_instance_id_test",
-        ":service_type_deployment_test",
-        ":service_version_type_test",
-        ":someip_event_instance_deployment_test",
-        ":someip_field_instance_deployment_test",
-        ":someip_service_instance_deployment_test",
-        ":someip_service_instance_id_test",
-        ":tracing_configuration_test",
-    ],
-    visibility = ["//score/mw/com/impl:__pkg__"],
 )
 
 filegroup(
