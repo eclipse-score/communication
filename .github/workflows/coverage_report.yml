@@ -62,7 +62,7 @@ jobs:
           bazelisk-cache: true
           disk-cache: "coverage_report"
           repository-cache: true
-          cache-save: ${{ github.ref == 'refs/heads/main' }}
+          cache-save: ${{ github.event_name == 'merge_group' }}
 
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox

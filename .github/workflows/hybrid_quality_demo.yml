@@ -14,8 +14,6 @@
 name: Hybrid Quality Demo
 
 on:
-  push:
-    branches: [main]
   pull_request:
     types: [opened, reopened, synchronize]
   workflow_dispatch:
@@ -46,7 +44,7 @@ jobs:
 
   coverage:
     name: Coverage report
-    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
     needs: pr_checks
     uses: ./.github/workflows/coverage_report.yml
 
@@ -64,13 +62,13 @@ jobs:
 
   codeql:
     name: CodeQL analysis
-    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
     needs: pr_checks
     uses: ./.github/workflows/codeql_analysis.yml
 
   clang_tidy:
     name: Clang-Tidy analysis
-    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
     needs: pr_checks
     uses: ./.github/workflows/clang_tidy_analysis.yml
 
