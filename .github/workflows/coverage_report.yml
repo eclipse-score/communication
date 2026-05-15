@@ -18,6 +18,9 @@ on:
       artifact-name:
         description: 'Name of the coverage report artifact'
         value: ${{ jobs.coverage_report.outputs.artifact-name }}
+      duration-seconds:
+        description: Runtime of the coverage check in seconds.
+        value: ${{ jobs.coverage_report.outputs.duration-seconds }}
 
 permissions:
   contents: read
@@ -33,8 +36,13 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       artifact-name: ${{ steps.set-artifact-name.outputs.artifact-name }}
+      duration-seconds: ${{ steps.timer.outputs.duration-seconds }}
 
     steps:
+      - name: Start timer
+        id: start_time
+        run: echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       - name: Checkout Repository
         uses: actions/checkout@v6.0.2
 
@@ -54,14 +62,27 @@ jobs:
           bazelisk-cache: true
           disk-cache: "coverage_report"
           repository-cache: true
-          cache-save: ${{ github.event_name == 'merge_group' }}
+          cache-save: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Configure QNX credentials
+        if: ${{ secrets.SCORE_QNX_USER != '' && secrets.SCORE_QNX_PASSWORD != '' }}
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: |
+          umask 077
+          {
+            echo "machine qnx.com"
+            echo "  login ${SCORE_QNX_USER}"
+            echo "  password ${SCORE_QNX_PASSWORD}"
+          } > "$HOME/.netrc"
 
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
       - name: Run Unit Test with Coverage for C++
         run: |
-          bazel coverage //... --build_tests_only
+          bazel --credential_helper= coverage //... --build_tests_only
 
       - name: Generate HTML Coverage Report
         # FIXME: "--ignore-errors category,inconsistent" is a workaround to cope with gcov messing up hit counts because of internal data races
@@ -92,5 +113,15 @@ jobs:
         with:
           name: ${{ steps.set-artifact-name.outputs.artifact-name }}
           path: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip
+
+      - name: End timer
+        if: ${{ always() }}
+        id: timer
+        run: |
+          end=$(date +%s)
+          start=${{ steps.start_time.outputs.start }}
+          duration=$((end - start))
+          echo "duration-seconds=$duration" >> "$GITHUB_OUTPUT"
+          echo "Coverage duration: ${duration}s" >> "$GITHUB_STEP_SUMMARY"
 
 

@@ -1,0 +1,118 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: Hybrid Quality Demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      run_nightly_checks:
+        description: Run nightly quality checks in addition to fast PR checks.
+        required: false
+        type: boolean
+        default: true
+  schedule:
+    - cron: '0 2 * * *'
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: hybrid_quality_demo-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  pr_checks:
+    name: Fast PR checks
+    uses: ./.github/workflows/build_and_test_host.yml
+    with:
+      run_all_configurations: false
+
+  coverage:
+    name: Coverage report
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
+    needs: pr_checks
+    uses: ./.github/workflows/coverage_report.yml
+    secrets: inherit
+
+  thread_sanitizer:
+    name: Thread sanitizer
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
+    needs: pr_checks
+    uses: ./.github/workflows/thread_sanitizer.yml
+
+  address_sanitizer:
+    name: Address/UB/leak sanitizer
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
+    needs: pr_checks
+    uses: ./.github/workflows/address_undefined_behavior_leak_sanitizer.yml
+
+  clang_tidy:
+    name: Clang-Tidy analysis
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
+    needs: pr_checks
+    uses: ./.github/workflows/clang_tidy_analysis.yml
+    secrets: inherit
+
+  dashboard:
+    name: Generate quality dashboard with timing
+    if: ${{ always() }}
+    needs:
+      - pr_checks
+      - coverage
+      - thread_sanitizer
+      - address_sanitizer
+      - clang_tidy
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Generate dashboard files with timing
+        env:
+          PR_CHECKS_RESULT: ${{ needs.pr_checks.result }}
+          COVERAGE_RESULT: ${{ needs.coverage.result || 'skipped' }}
+          THREAD_SANITIZER_RESULT: ${{ needs.thread_sanitizer.result || 'skipped' }}
+          ADDRESS_SANITIZER_RESULT: ${{ needs.address_sanitizer.result || 'skipped' }}
+          CLANG_TIDY_RESULT: ${{ needs.clang_tidy.result || 'skipped' }}
+          CLANG_TIDY_DURATION_SECONDS: ${{ needs.clang_tidy.outputs.duration-seconds || '' }}
+          COVERAGE_DURATION_SECONDS: ${{ needs.coverage.outputs.duration-seconds || '' }}
+          COVERAGE_ARTIFACT_NAME: ${{ needs.coverage.outputs.artifact-name }}
+          REPOSITORY_NAME: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          REF_NAME: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 tools/ci/generate_hybrid_quality_dashboard.py dashboard
+
+      - name: Publish workflow summary
+        run: cat dashboard/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Show timing report
+        if: ${{ always() }}
+        run: |
+          echo "## Quality Check Timing Report" >> "$GITHUB_STEP_SUMMARY"
+          cat dashboard/timing.txt >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "Timing data generated." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload dashboard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hybrid_quality_dashboard_${{ github.run_id }}
+          path: dashboard/
