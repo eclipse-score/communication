@@ -118,6 +118,17 @@ An example of such a mapping is shown here:
             },
             "bindings": [
                 {
+                    "binding": "SOME/IP",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 633
+                        }
+                    ],
+                    "fields": []
+                },
+                {
                     "binding": "SHM",
                     "serviceId": 1234,
                     "events": [
@@ -136,6 +147,11 @@ An example of such a mapping is shown here:
             "instanceSpecifier": "abc/abc/TirePressurePort",
             "serviceTypeName": "/score/ncar/services/TirePressureService",
             "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SOME/IP"
+                },
                 {
                     "instanceId": 62,
                     "asil-level": "ASIL-B",

@@ -598,6 +598,7 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [":shm_size_calc_mode"],
 )
+
 filegroup(
     name = "mw_com_config.json",
     srcs = ["example/mw_com_config.json"],
