@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(
@@ -249,7 +249,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "trace_error_test",
     srcs = ["trace_error_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -261,7 +261,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "tracing_runtime_test",
     srcs = [
         "tracing_runtime_test.cpp",
@@ -281,7 +281,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "type_erased_sample_ptr_test",
     srcs = ["type_erased_sample_ptr_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -291,7 +291,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_element_tracing_data_test",
     srcs = ["service_element_tracing_data_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -300,7 +300,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_tracing_test",
     srcs = ["skeleton_tracing_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -314,7 +314,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_event_tracing_data_test",
     srcs = ["skeleton_event_tracing_data_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -323,7 +323,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_event_tracing_data_test",
     srcs = ["proxy_event_tracing_data_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -332,7 +332,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "common_event_tracing_test",
     srcs = ["common_event_tracing_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -344,7 +344,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_event_tracing_test",
     srcs = ["skeleton_event_tracing_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -358,7 +358,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_event_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -368,25 +368,4 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:runtime_mock_guard",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":common_event_tracing_test",
-        ":proxy_event_tracing_data_test",
-        ":proxy_event_tracing_test",
-        ":service_element_tracing_data_test",
-        ":skeleton_event_tracing_data_test",
-        ":skeleton_event_tracing_test",
-        ":skeleton_tracing_test",
-        ":trace_error_test",
-        ":tracing_runtime_test",
-        ":type_erased_sample_ptr_test",
-    ],
-    test_suites_from_sub_packages = [
-        "//score/mw/com/impl/tracing/configuration:unit_test_suite",
-        "//score/mw/com/impl/tracing/test:unit_test_suite",
-    ],
-    visibility = ["//score/mw/com/impl:__pkg__"],
 )

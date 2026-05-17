@@ -39,11 +39,12 @@ def pkg_application(name, app_name, bin = [], etc = [], etc_deps = [], **kwargs)
         prefix = "/opt/{}/etc".format(app_name),
     )
 
-    pkg_tar(
+    pkg_filegroup(
         name = name,
         srcs = [
             "{}_binary".format(name),
             "{}_etc".format(name),
         ],
+        prefix = "/",
         **kwargs
     )

@@ -1,7 +1,8 @@
 {
     "name": "eclipse-s-core",
-    "image": "ghcr.io/eclipse-score/devcontainer:1.0.0",
+    "image": "ghcr.io/eclipse-score/devcontainer:v1.5.0",
     "runArgs": [
         "--privileged"
-    ]
+    ],
+    "features": { "ghcr.io/devcontainers/features/docker-in-docker:2": {} }
 }

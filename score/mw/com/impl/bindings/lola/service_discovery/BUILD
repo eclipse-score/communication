@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
@@ -34,7 +34,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "flag_file_test",
     srcs = ["flag_file_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -66,7 +66,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "flag_file_crawler_test",
     srcs = ["flag_file_crawler_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -93,7 +93,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "known_instances_container_test",
     srcs = ["known_instances_container_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -113,7 +113,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "lola_service_instance_identifier_test",
     srcs = ["lola_service_instance_identifier_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -127,18 +127,4 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":flag_file_crawler_test",
-        ":flag_file_test",
-        ":known_instances_container_test",
-        ":lola_service_instance_identifier_test",
-    ],
-    test_suites_from_sub_packages = [
-        "//score/mw/com/impl/bindings/lola/service_discovery/client:unit_test_suite",
-    ],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
 )

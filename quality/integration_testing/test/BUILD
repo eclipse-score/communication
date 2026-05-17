@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
 cc_binary(
@@ -24,12 +24,16 @@ cc_binary(
     srcs = ["main2.cpp"],
 )
 
-pkg_tar(
+pkg_files(
     name = "example-app-pkg",
     srcs = [
         ":example-app",
         ":example-app2",
     ],
+    attributes = pkg_attributes(
+        mode = "0777",
+    ),
+    prefix = "/",
 )
 
 integration_test(

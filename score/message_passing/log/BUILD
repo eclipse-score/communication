@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "log",
@@ -38,7 +38,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "log_test",
     srcs = [
         "log_on_timeout_test.cpp",
@@ -48,12 +48,4 @@ cc_gtest_unit_test(
     deps = [
         ":log",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":log_test",
-    ],
-    visibility = ["//score:__subpackages__"],
 )

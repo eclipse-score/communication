@@ -62,8 +62,22 @@ cc_library(
 )
 
 validate_json_schema_test(
-    name = "validate_mw_com_config_schema",
-    json = "mw_com_config.json",
+    name = "validate_mw_com_config_schema_provider",
+    json = "mw_com_config_provider.json",
+    schema = "//score/mw/com/impl/configuration:mw_com_config_schema",
+    tags = ["lint"],
+)
+
+validate_json_schema_test(
+    name = "validate_mw_com_config_schema_consumer_1",
+    json = "mw_com_config_consumer_1.json",
+    schema = "//score/mw/com/impl/configuration:mw_com_config_schema",
+    tags = ["lint"],
+)
+
+validate_json_schema_test(
+    name = "validate_mw_com_config_schema_consumer_2",
+    json = "mw_com_config_consumer_2.json",
     schema = "//score/mw/com/impl/configuration:mw_com_config_schema",
     tags = ["lint"],
 )
@@ -73,7 +87,9 @@ pkg_application(
     app_name = "proxy_restart_shall_not_affect_other_proxies",
     bin = [":proxy_restart_shall_not_affect_other_proxies"],
     etc = [
-        "mw_com_config.json",
+        "mw_com_config_consumer_1.json",
+        "mw_com_config_consumer_2.json",
+        "mw_com_config_provider.json",
         "logging.json",
     ],
     visibility = [

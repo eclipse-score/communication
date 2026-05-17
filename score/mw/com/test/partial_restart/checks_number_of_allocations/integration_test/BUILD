@@ -11,19 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
-
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/partial_restart/checks_number_of_allocations:check_number_of_allocations-pkg",
-    ],
-)
 
 integration_test(
     name = "check_number_of_allocations",
     timeout = "moderate",
     srcs = ["test_check_number_of_allocations.py"],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/partial_restart/checks_number_of_allocations:check_number_of_allocations-pkg",
 )

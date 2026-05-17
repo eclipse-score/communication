@@ -12,6 +12,7 @@
 # *******************************************************************************
 
 load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_library", "rust_test")
+load("//quality/unit_testing:unit_testing.bzl", "rust_unit_test")
 
 rust_library(
     name = "com-api-concept",
@@ -54,7 +55,7 @@ rust_doc_test(
     deps = ["//score/mw/com/impl/rust/com-api/com-api"],
 )
 
-rust_test(
+rust_unit_test(
     name = "com-api-concept-macros-unit-tests",
     srcs = ["interface_macros.rs"],
     features = ["link_std_cpp_lib"],

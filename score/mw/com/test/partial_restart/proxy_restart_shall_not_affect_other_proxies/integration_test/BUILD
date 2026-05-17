@@ -11,15 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
-
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/partial_restart/proxy_restart_shall_not_affect_other_proxies:proxy_restart_shall_not_affect_other_proxies-pkg",
-    ],
-)
 
 integration_test(
     name = "proxy_restart_shall_not_affect_other_proxies_graceful",
@@ -28,7 +20,7 @@ integration_test(
         "proxy_restart_shall_not_affect_other_proxies_test_fixture.py",
         "test_proxy_restart_shall_not_affect_other_proxies_graceful.py",
     ],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/partial_restart/proxy_restart_shall_not_affect_other_proxies:proxy_restart_shall_not_affect_other_proxies-pkg",
 )
 
 integration_test(
@@ -38,5 +30,5 @@ integration_test(
         "proxy_restart_shall_not_affect_other_proxies_test_fixture.py",
         "test_proxy_restart_shall_not_affect_other_proxies_kill.py",
     ],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/partial_restart/proxy_restart_shall_not_affect_other_proxies:proxy_restart_shall_not_affect_other_proxies-pkg",
 )

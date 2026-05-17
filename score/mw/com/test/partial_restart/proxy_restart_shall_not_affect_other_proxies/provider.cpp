@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
+#include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/check_point_control.h"
 #include "score/mw/com/test/common_test_resources/general_resources.h"
 #include "score/mw/com/test/common_test_resources/provider_resources.h"
@@ -28,8 +29,15 @@ const auto kInstanceSpecifier =
 const std::chrono::milliseconds kDelayBetweenSendEvents{20U};
 }  // namespace
 
-void PerformProviderActions(CheckPointControl& check_point_control, score::cpp::stop_token stop_token)
+void PerformProviderActions(CheckPointControl& check_point_control,
+                            std::string_view mw_com_config_path,
+                            score::cpp::stop_token stop_token)
 {
+    std::cout << "Provider: Starting actions! mw_com_config_path: " << mw_com_config_path << std::endl;
+    // Initialize mw::com runtime with our explicit configuration
+    const char* argv[2U] = {"--service_instance_manifest", mw_com_config_path.data()};
+    runtime::InitializeRuntime(2, argv);
+
     //***************************************************
     // Step (1)- create and offer service
     //***************************************************

@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
 # NOTE: This target requires visibility fix in the main BUILD file
@@ -22,14 +21,7 @@ integration_test(
     name = "service_discovery_during_consumer_crash",
     timeout = "moderate",
     srcs = ["test_service_discovery_during_consumer_crash.py"],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/service_discovery_during_consumer_crash:service_discovery_during_consumer_crash-pkg",
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
-)
-
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/service_discovery_during_consumer_crash:service_discovery_during_consumer_crash-pkg",
-    ],
 )

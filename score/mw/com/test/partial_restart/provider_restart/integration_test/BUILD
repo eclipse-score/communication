@@ -11,15 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
-
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/partial_restart/provider_restart:provider_restart-pkg",
-    ],
-)
 
 integration_test(
     name = "provider_restart_graceful_no_proxy",
@@ -28,7 +20,7 @@ integration_test(
         "provider_restart_test_fixture.py",
         "test_provider_restart_graceful_no_proxy.py",
     ],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/partial_restart/provider_restart:provider_restart-pkg",
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )
@@ -40,7 +32,7 @@ integration_test(
         "provider_restart_test_fixture.py",
         "test_provider_restart_graceful.py",
     ],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/partial_restart/provider_restart:provider_restart-pkg",
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )
@@ -52,7 +44,7 @@ integration_test(
         "provider_restart_test_fixture.py",
         "test_provider_restart_kill_no_proxy.py",
     ],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/partial_restart/provider_restart:provider_restart-pkg",
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )
@@ -64,7 +56,7 @@ integration_test(
         "provider_restart_test_fixture.py",
         "test_provider_restart_kill.py",
     ],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/partial_restart/provider_restart:provider_restart-pkg",
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )

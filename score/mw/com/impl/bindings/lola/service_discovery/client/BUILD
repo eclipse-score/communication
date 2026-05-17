@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -38,7 +38,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "service_discovery_client_test",
     srcs = [
         "service_discovery_client_find_service_test.cpp",
@@ -65,12 +65,4 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/configuration/test:configuration_store",
         "@score_baselibs//score/os/utils/inotify:inotify_instance_mock",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":service_discovery_client_test",
-    ],
-    visibility = ["//score/mw/com/impl/bindings/lola/service_discovery:__pkg__"],
 )

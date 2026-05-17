@@ -10,15 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
-
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/bigdata:bigdata-pkg",
-    ],
-)
 
 integration_test(
     name = "test_bigdata_exchange",
@@ -26,5 +18,5 @@ integration_test(
     srcs = [
         "test_bigdata.py",
     ],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/bigdata:bigdata-pkg",
 )

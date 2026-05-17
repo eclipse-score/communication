@@ -407,9 +407,3 @@ UseDNS no
 MaxAuthTries 3
 LoginGraceTime 30
 }
-
-# Package provided filesystem to root
-/=${FOLDER}
-
-# QEMU environment configuration (qcrypto.conf for the random service)
-/etc/qcrypto.conf=${QEMU_CONFIG}/etc/qcrypto.conf

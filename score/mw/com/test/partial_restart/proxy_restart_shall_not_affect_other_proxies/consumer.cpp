@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
+#include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/check_point_control.h"
 #include "score/mw/com/test/common_test_resources/consumer_resources.h"
 #include "score/mw/com/test/common_test_resources/general_resources.h"
@@ -98,26 +99,17 @@ bool StartFindServiceAndWait(const std::string& tag,
 
 }  // namespace
 
-void PerformFirstConsumerActions(CheckPointControl& check_point_control, score::cpp::stop_token stop_token)
+void PerformFirstConsumerActions(CheckPointControl& check_point_control,
+                                 std::string_view mw_com_config_path,
+                                 score::cpp::stop_token stop_token)
 {
     //***************************************************
-    // Step (1)- setuid
+    // Step (1)- initialize mw::com Runtime with correct config
     //***************************************************
-    // LoLa requires that processes shall have distinct UIDs.
-    // After fork. Parent and child proccess will have same UID.
-    // setuid is used to make child proccess UID distinct.
-#if defined(__QNXNTO__)
-    // Grant pathspace ability for nonroot domain before setuid, so that
-    // resmgr_attach() (used by LoLa message passing) works after setuid.
-    procmgr_ability(0, PROCMGR_ADN_NONROOT | PROCMGR_AOP_ALLOW | PROCMGR_AID_PATHSPACE, PROCMGR_AID_EOL);
-#endif
-    const auto ret_setuid = setuid(kUidFirstConsumer);
-    if (ret_setuid != 0)
-    {
-        std::cerr << "set uid fails: " << errno << std::strerror(errno) << "\n";
-        check_point_control.ErrorOccurred();
-        return;
-    }
+    std::cout << "First Consumer Step(1) - mw_com_config_path: " << mw_com_config_path << std::endl;
+    // Initialize mw::com runtime with our explicit configuration
+    const char* argv[2U] = {"--service_instance_manifest", mw_com_config_path.data()};
+    runtime::InitializeRuntime(2U, argv);
     //***************************************************************************
     // Step (2)- start find service and wait till it is found.
     //***************************************************************************
@@ -194,27 +186,17 @@ void PerformFirstConsumerActions(CheckPointControl& check_point_control, score::
 }
 
 void PerformSecondConsumerActions(CheckPointControl& check_point_control,
+                                  std::string_view mw_com_config_path,
                                   score::cpp::stop_token stop_token,
                                   const size_t create_proxy_and_receive_M_times)
 {
     //***************************************************
-    // Step (1)- setuid
+    // Step (1)- initialize mw::com Runtime with correct config
     //***************************************************
-    // LoLa requires that processes shall have distinct UIDs.
-    // After fork. Parent and child proccess will have same UID.
-    // setuid is used to make child proccess UID distinct.
-#if defined(__QNXNTO__)
-    // Grant pathspace ability for nonroot domain before setuid, so that
-    // resmgr_attach() (used by LoLa message passing) works after setuid.
-    procmgr_ability(0, PROCMGR_ADN_NONROOT | PROCMGR_AOP_ALLOW | PROCMGR_AID_PATHSPACE, PROCMGR_AID_EOL);
-#endif
-    const auto ret_setuid = setuid(kUidSecondConsumer);
-    if (ret_setuid != 0)
-    {
-        std::cerr << "Second Consumer Step (1): set uid fails: " << errno << std::strerror(errno) << "\n";
-        check_point_control.ErrorOccurred();
-        return;
-    }
+    std::cout << "Second Consumer Step(1) - mw_com_config_path: " << mw_com_config_path << std::endl;
+    // Initialize mw::com runtime with our explicit configuration
+    const char* argv[2U] = {"--service_instance_manifest", mw_com_config_path.data()};
+    runtime::InitializeRuntime(2U, argv);
     //*********************************************************
     // Step (2)- start find service and wait till it is found.
     //*********************************************************

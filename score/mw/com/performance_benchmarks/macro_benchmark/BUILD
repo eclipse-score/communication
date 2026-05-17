@@ -13,8 +13,8 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw/com/performance_benchmarks/macro_benchmark/config_generator:config_generator_rule.bzl", "make_configs")
 
 alias(
@@ -181,7 +181,7 @@ py_binary(
     target_compatible_with = ["@platforms//os:linux"],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "json_parsing_convenience_wrappers_test",
     srcs = ["json_parsing_convenience_wrappers_test.cpp"],
     data = [
@@ -198,19 +198,10 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "common_resources_test",
     srcs = ["common_resources_test.cpp"],
     deps = [
         ":common_resources",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":common_resources_test",
-        ":json_parsing_convenience_wrappers_test",
-    ],
-    visibility = ["//score/mw/com:__pkg__"],
 )

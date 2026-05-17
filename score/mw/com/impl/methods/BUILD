@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -103,7 +103,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "method_signature_element_ptr_test",
     srcs = ["method_signature_element_ptr_test.cpp"],
     deps = [
@@ -124,7 +124,6 @@ cc_unit_test(
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/plumbing:proxy_method_binding_factory_mock",
         "@googletest//:gtest",
-        "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
@@ -178,7 +177,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_method_test",
     srcs = [
         "skeleton_method_test.cpp",
@@ -192,7 +191,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "skeleton_method_base_test",
     srcs = [
         "skeleton_method_base_test.cpp",
@@ -204,15 +203,4 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/mock_binding",
         "@score_baselibs//score/language/futurecpp",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":method_signature_element_ptr_test",
-        ":proxy_method_test",
-        "skeleton_method_base_test",
-        "skeleton_method_test",
-    ],
-    visibility = ["//score/mw/com/impl:__pkg__"],
 )

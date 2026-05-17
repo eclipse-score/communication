@@ -11,27 +11,20 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
-
-pkg_tar(
-    name = "same_processes_filesystem",
-    deps = [
-        "//score/mw/com/test/methods/basic_acceptance_test:main_consumer_and_provider-pkg",
-    ],
-)
 
 integration_test(
     name = "basic_acceptance_same_process_test",
     srcs = [
         "basic_acceptance_same_process_test.py",
     ],
-    filesystem = ":same_processes_filesystem",
+    filesystem = "//score/mw/com/test/methods/basic_acceptance_test:main_consumer_and_provider-pkg",
 )
 
-pkg_tar(
+pkg_filegroup(
     name = "different_processes_filesystem",
-    deps = [
+    srcs = [
         "//score/mw/com/test/methods/basic_acceptance_test:main_consumer-pkg",
         "//score/mw/com/test/methods/basic_acceptance_test:main_provider-pkg",
     ],

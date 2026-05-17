@@ -12,8 +12,9 @@
 # *******************************************************************************
 
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@score_itf//:defs.bzl", "py_itf_test")
-load("@score_toolchains_qnx//rules/fs:ifs.bzl", "qnx_ifs")
+load("@score_rules_imagefs//rules/qnx:ifs.bzl", "qnx_ifs")
 
 def _extend_list_in_kwargs(kwargs, key, values):
     kwargs[key] = kwargs.get(key, []) + values
@@ -39,6 +40,11 @@ def integration_test(name, srcs, filesystem, **kwargs):
         "@platforms//os:linux",
     ]
 
+    pkg_tar(
+        name = "_oci_filesystem_{}".format(name),
+        srcs = [filesystem],
+    )
+
     oci_image(
         name = image_name,
         architecture = select({
@@ -51,7 +57,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
             "//quality/sanitizer/flags:any_sanitizer": "//quality/sanitizer:absolute_env",
         }),
         tars = [
-            filesystem,
+            "_oci_filesystem_{}".format(name),
         ] + select({
             "//quality/sanitizer/flags:none": [],
             "//quality/sanitizer/flags:any_sanitizer": ["//quality/sanitizer:suppressions_pkg"],
@@ -80,10 +86,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
         name = qemu_image,
         out = "init_ifs_{}".format(name),
         build_file = "//quality/integration_testing/environments/qnx8_qemu:init_build",
-        tars = {
-            "FOLDER": filesystem,
-            "QEMU_CONFIG": "//quality/integration_testing/environments/qnx8_qemu:qnx_config",
-        },
+        srcs = [filesystem, "//quality/integration_testing/environments/qnx8_qemu:qnx_config"],
         target_compatible_with = QNX_TARGET_COMPATIBLE_WITH,
     )
 

@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -40,7 +40,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "tracing_runtime_test",
     srcs = ["tracing_runtime_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -52,12 +52,4 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
         "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":tracing_runtime_test",
-    ],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
 )

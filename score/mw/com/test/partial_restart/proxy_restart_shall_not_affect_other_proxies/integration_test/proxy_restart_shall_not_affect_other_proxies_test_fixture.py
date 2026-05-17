@@ -15,7 +15,7 @@
 def proxy_restart_shall_not_affect_other_proxies(target, number_of_consumer_restarts, kill_consumer, **kwargs):
     args = ["--kill", f"{kill_consumer}", "--number-consumer-restarts", f"{number_of_consumer_restarts}"]
     return target.wrap_exec(
-        "bin/proxy_restart_shall_not_affect_other_proxies",
+        "./bin/proxy_restart_shall_not_affect_other_proxies",
         args,
         cwd="/opt/proxy_restart_shall_not_affect_other_proxies",
         wait_on_exit=True,

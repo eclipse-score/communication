@@ -87,7 +87,55 @@ Checks: >
   # --- qnx-checks ---
   bugprone-reserved-identifier,
   # --- extra ---
+  bugprone-assert-side-effect,
+  bugprone-copy-constructor-init,
+  bugprone-dangling-handle,
+  bugprone-suspicious-stringview-data-usage,
+  misc-include-cleaner,
+  misc-use-anonymous-namespace,
+  misc-use-internal-linkage,
+  modernize-avoid-bind,
   modernize-concat-nested-namespaces,
+  modernize-loop-convert,
+  modernize-make-unique,
+  modernize-min-max-use-initializer-list,
+  modernize-pass-by-value,
+  modernize-raw-string-literal,
+  modernize-redundant-void-arg,
+  modernize-return-braced-init-list,
+  modernize-shrink-to-fit,
+  modernize-type-traits,
+  modernize-unary-static-assert,
+  modernize-use-bool-literals,
+  modernize-use-emplace,
+  modernize-use-equals-delete,
+  modernize-use-integer-sign-comparison,
+  modernize-use-nodiscard,
+  modernize-use-nullptr,
+  modernize-use-transparent-functors,
+  performance-faster-string-find,
+  performance-for-range-copy,
+  performance-implicit-conversion-in-loop,
+  performance-inefficient-algorithm,
+  performance-inefficient-string-concatenation,
+  performance-inefficient-vector-operation,
+  performance-move-const-arg,
+  performance-move-constructor-init,
+  performance-no-automatic-move,
+  performance-no-int-to-ptr,
+  performance-noexcept-swap,
+  performance-trivially-destructible,
+  performance-unnecessary-copy-initialization,
+  performance-unnecessary-value-param,
+  readability-container-data-pointer,
+  readability-else-after-return,
+  readability-magic-numbers,
+  readability-math-missing-parentheses,
+  readability-redundant-casting,
+  readability-redundant-inline-specifier,
+  readability-simplify-boolean-expr,
+  readability-use-anyofallof,
+  readability-use-std-min-max,
 
 WarningsAsErrors: >
   clang-analyzer-*,
@@ -111,3 +159,67 @@ CheckOptions:
     value: false
   - key: readability-braces-around-statements.ShortStatementLines
     value: 0
+  - key: bugprone-assert-side-effect.AssertMacros
+    value: "assert,SCORE_LANGUAGE_FUTURECPP_ASSERT,SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG,SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD,SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE,SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE,SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE,SCORE_LANGUAGE_FUTURECPP_PRECONDITION,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_DBG,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_MESSAGE,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_DBG_MESSAGE,SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE"
+  - key: bugprone-assert-side-effect.CheckFunctionCalls
+    value: true
+  - key: bugprone-dangling-handle.HandleClasses
+    value: >
+      ::score::cpp::basic_string_view;
+      ::score::cpp::span;
+      ::score::safecpp::basic_zstring_view;
+      ::std::basic_string_view;
+      ::std::span
+  - key: bugprone-suspicious-stringview-data-usage.AllowedCallees
+    value: ""
+  - key: bugprone-suspicious-stringview-data-usage.StringViewTypes
+    value: >
+      ::score::cpp::basic_string_view;
+      ::score::cpp::span;
+      ::std::basic_string_view;
+      ::std::span
+  - key: modernize-loop-convert.UseCxx20ReverseRanges
+    value: false
+  - key: modernize-loop-convert.IncludeStyle
+    value: "llvm"
+  - key: modernize-make-unique.IncludeStyle
+    value: "llvm"
+  - key: modernize-min-max-use-initializer-list.IncludeStyle
+    value: "llvm"
+  - key: modernize-pass-by-value.IncludeStyle
+    value: "llvm"
+  - key: modernize-use-emplace.ContainersWithPushBack
+    value: "::score::cpp::inplace_vector;::score::cpp::pmr::deque;::score::cpp::pmr::list;::score::cpp::pmr::vector;::std::vector;::std::list;::std::deque"
+  - key: modernize-use-emplace.IgnoreImplicitConstructors
+    value: false
+  - key: modernize-use-emplace.SmartPointers
+    value: "::score::cpp::pmr::unique_ptr;::std::shared_ptr;::std::unique_ptr;::std::weak_ptr"
+  - key: modernize-use-emplace.TupleTypes
+    value: "::std::pair;::std::tuple"
+  - key: modernize-use-emplace.TupleMakeFunctions
+    value: "::std::make_pair;::std::make_tuple"
+  - key: modernize-use-integer-sign-comparison.IncludeStyle
+    value: "llvm"
+  - key: modernize-use-nodiscard.ReplacementString
+    value: "[[nodiscard]]"
+  - key: modernize-use-transparent-functors.SafeMode
+    value: true
+  - key: performance-faster-string-find.StringLikeClasses
+    value: >
+      ::score::cpp::basic_string_view;
+      ::score::safecpp::basic_zstring_view;
+      ::score::cpp::pmr::basic_string;
+      ::std::basic_string_view;
+      ::std::basic_string
+  - key: performance-move-const-arg.CheckTriviallyCopyableMove
+    value: true
+  - key: performance-move-const-arg.CheckMoveToConstRef
+    value: true
+  - key: performance-unnecessary-value-param.IncludeStyle
+    value: "llvm"
+  - key: readability-container-data-pointer.IgnoredContainers
+    value: ""
+  - key: readability-redundant-casting.IgnoreTypeAliases
+    value: true
+  - key: readability-redundant-inline-specifier.StrictMode
+    value: true

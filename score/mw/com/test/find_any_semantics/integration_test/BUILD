@@ -11,12 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
-pkg_tar(
+pkg_filegroup(
     name = "filesystem",
-    deps = [
+    srcs = [
         "//score/mw/com/test/find_any_semantics:client-pkg",
         "//score/mw/com/test/find_any_semantics:service-pkg",
     ],

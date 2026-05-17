@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -139,7 +139,7 @@ cc_library(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "unique_method_identifier_test",
     srcs = ["unique_method_identifier_test.cpp"],
     deps = [":unique_method_identifier"],
@@ -157,9 +157,7 @@ cc_unit_test(
     deps = [
         ":type_erased_call_queue",
         "@googletest//:gtest",
-        "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/memory/shared:memory_resource_proxy",
         "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
@@ -168,7 +166,7 @@ cc_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "proxy_method_instance_identifier_test",
     srcs = ["proxy_method_instance_identifier_test.cpp"],
     deps = [
@@ -176,7 +174,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "method_data_test",
     srcs = [
         "method_data_test.cpp",
@@ -187,7 +185,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "method_error_test",
     srcs = [
         "method_error_test.cpp",
@@ -202,7 +200,7 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "method_resource_map_test",
     srcs = [
         "method_resource_map_test.cpp",
@@ -228,23 +226,6 @@ cc_unit_test(
     deps = [
         ":offered_state_machine",
         "@googletest//:gtest",
-        "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-    ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":proxy_method_instance_identifier_test",
-        ":unique_method_identifier_test",
-        ":type_erased_call_queue_test",
-        ":method_data_test",
-        ":method_error_test",
-        ":method_resource_map_test",
-        ":offered_state_machine_test",
-    ],
-    visibility = [
-        "//score/mw/com/impl/bindings/lola:__pkg__",
     ],
 )

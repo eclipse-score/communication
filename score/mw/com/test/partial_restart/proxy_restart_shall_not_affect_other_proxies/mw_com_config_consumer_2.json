@@ -60,6 +60,7 @@
     }
   ],
   "global": {
-    "asil-level": "B"
+    "asil-level": "B",
+    "applicationID": 41
   }
 }

@@ -11,19 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
-
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/subscribe_handler:subscribe_handler-pkg",
-    ],
-)
 
 integration_test(
     name = "subscribe_handler",
     timeout = "moderate",
     srcs = ["test_subscribe_handler.py"],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/subscribe_handler:subscribe_handler-pkg",
 )

@@ -35,6 +35,10 @@ const std::string_view kConsumer2CheckpointControlName = "Consumer_2";
 const std::string_view kProviderCheckpointControlName = "Skeleton";
 const std::chrono::seconds kMaxWaitTimeToReachCheckpoint{30U};
 
+const std::string_view kProviderConfigurationPath = "./etc/mw_com_config_provider.json";
+const std::string_view kConsumer1ConfigurationPath = "./etc/mw_com_config_consumer_1.json";
+const std::string_view kConsumer2ConfigurationPath = "./etc/mw_com_config_consumer_2.json";
+
 struct TestParameters
 {
     std::size_t number_consumer_restart{};
@@ -65,7 +69,7 @@ bool DoControllerActions(const TestParameters& test_parameters, score::cpp::stop
     //***************************************************
     auto provider_pid_guard = ForkProcessAndRunInChildProcess(
         "Controller Step (2):", "Provider:", [&provider_checkpoint_control, &stop_token]() {
-            PerformProviderActions(provider_checkpoint_control, stop_token);
+            PerformProviderActions(provider_checkpoint_control, kProviderConfigurationPath, stop_token);
         });
     if (!provider_pid_guard.has_value())
     {
@@ -93,7 +97,7 @@ bool DoControllerActions(const TestParameters& test_parameters, score::cpp::stop
     //***************************************************
     auto consumer_1_pid_guard = ForkProcessAndRunInChildProcess(
         "Controller Step (4):", "Consumer:", [&consumer_1_checkpoint_control, &stop_token]() {
-            PerformFirstConsumerActions(consumer_1_checkpoint_control, stop_token);
+            PerformFirstConsumerActions(consumer_1_checkpoint_control, kConsumer1ConfigurationPath, stop_token);
         });
     if (!consumer_1_pid_guard.has_value())
     {
@@ -133,8 +137,10 @@ bool DoControllerActions(const TestParameters& test_parameters, score::cpp::stop
     //***************************************************
     auto consumer_2_pid_guard = ForkProcessAndRunInChildProcess(
         "Controller Step (7):", "Consumer 2:", [&consumer_2_checkpoint_control, &stop_token, &test_parameters]() {
-            PerformSecondConsumerActions(
-                consumer_2_checkpoint_control, stop_token, test_parameters.number_consumer_restart + 1);
+            PerformSecondConsumerActions(consumer_2_checkpoint_control,
+                                         kConsumer2ConfigurationPath,
+                                         stop_token,
+                                         test_parameters.number_consumer_restart + 1);
         });
     if (!consumer_2_pid_guard.has_value())
     {
@@ -192,7 +198,7 @@ bool DoControllerActions(const TestParameters& test_parameters, score::cpp::stop
         //***************************************************
         consumer_1_pid_guard = ForkProcessAndRunInChildProcess(
             "Controller Step (11):", "Consumer 1:", [&consumer_1_checkpoint_control, &stop_token]() {
-                PerformFirstConsumerActions(consumer_1_checkpoint_control, stop_token);
+                PerformFirstConsumerActions(consumer_1_checkpoint_control, kConsumer1ConfigurationPath, stop_token);
             });
         if (!consumer_1_pid_guard.has_value())
         {

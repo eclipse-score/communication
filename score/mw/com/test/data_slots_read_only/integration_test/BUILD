@@ -11,19 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
-
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/data_slots_read_only:data_slots_read_only-pkg",
-    ],
-)
 
 integration_test(
     name = "data_slots_read_only",
     timeout = "moderate",
     srcs = ["test_data_slots_read_only.py"],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/data_slots_read_only:data_slots_read_only-pkg",
 )

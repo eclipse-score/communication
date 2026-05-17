@@ -10,15 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
-
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/basic_rust_api/consumer_async_apis:bigdata-com-api-async-pkg",
-    ],
-)
 
 integration_test(
     name = "test_com_api_async",
@@ -26,5 +18,5 @@ integration_test(
     srcs = [
         "com_api_async_api_test.py",
     ],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/basic_rust_api/consumer_async_apis:bigdata-com-api-async-pkg",
 )

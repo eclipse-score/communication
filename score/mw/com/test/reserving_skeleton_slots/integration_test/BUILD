@@ -11,19 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
-
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/reserving_skeleton_slots:reserving_skeleton_slots-pkg",
-    ],
-)
 
 integration_test(
     name = "reserving_skeleton_slots",
     timeout = "moderate",
     srcs = ["test_reserving_skeleton_slots.py"],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/reserving_skeleton_slots:reserving_skeleton_slots-pkg",
 )

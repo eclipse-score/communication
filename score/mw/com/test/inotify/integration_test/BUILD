@@ -11,18 +11,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
-
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/inotify:inotify-test-pkg",
-    ],
-)
 
 integration_test(
     name = "inotify",
     srcs = ["test_inotify.py"],
-    filesystem = ":filesystem",
+    filesystem = "//score/mw/com/test/inotify:inotify-test-pkg",
 )

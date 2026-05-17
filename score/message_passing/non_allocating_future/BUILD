@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
     name = "non_allocating_future",
@@ -31,7 +31,7 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
-cc_gtest_unit_test(
+cc_unit_test(
     name = "non_allocating_future_test",
     srcs = [
         "non_allocating_future_samples_test.cpp",
@@ -41,12 +41,4 @@ cc_gtest_unit_test(
     deps = [
         ":non_allocating_future",
     ],
-)
-
-cc_unit_test_suites_for_host_and_qnx(
-    name = "unit_test_suite",
-    cc_unit_tests = [
-        ":non_allocating_future_test",
-    ],
-    visibility = ["//visibility:public"],
 )
