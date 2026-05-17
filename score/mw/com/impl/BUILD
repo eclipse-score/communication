@@ -68,6 +68,7 @@ cc_library(
         ":generic_proxy",
         ":generic_proxy_event",
         ":generic_skeleton",
+        ":generic_skeleton_field",
         ":proxy_event",
         ":proxy_field",
         ":skeleton_event",
@@ -169,6 +170,7 @@ cc_library(
     deps = [
         ":data_type_meta_info",
         ":generic_skeleton_event",
+        ":generic_skeleton_field",
         ":instance_identifier",
         ":instance_specifier",
         ":runtime",
@@ -197,6 +199,27 @@ cc_library(
         ":skeleton_event_binding",
         "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "generic_skeleton_field",
+    srcs = ["generic_skeleton_field.cpp"],
+    hdrs = ["generic_skeleton_field.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":error",
+        ":generic_skeleton_event",
+        ":skeleton_base",
+        ":skeleton_field_base",
+        "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
     ],
 )
