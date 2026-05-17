@@ -81,6 +81,15 @@ InstanceIdentifier DummyInstanceIdentifierBuilder::CreateValidLolaInstanceIdenti
     service_instance_deployment_.instance_id_ = LolaServiceInstanceId{0x42};
     service_instance_deployment_.allowed_consumer_ = {{QualityType::kASIL_QM, {42}}};
     service_instance_deployment_.fields_ = fields;
+
+    // The GenericSkeleton needs the field names to be present in the Type Deployment
+    // to perform the stable string lookup. We sync it here.
+    service_type_deployment_.fields_.clear();
+    for (const auto& field_pair : fields)
+    {
+        service_type_deployment_.fields_[field_pair.first] = {};
+    }
+
     type_deployment_.binding_info_ = service_type_deployment_;
     instance_deployment_ = std::make_unique<ServiceInstanceDeployment>(
         type_, service_instance_deployment_, QualityType::kASIL_QM, instance_specifier_);
