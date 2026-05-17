@@ -89,7 +89,7 @@ Result<void> GenericSkeletonField::Update(score::cpp::span<const uint8_t> raw_va
     auto alloc_res = Allocate();
     if (!alloc_res.has_value())
     {
-        return MakeUnexpected(alloc_res.error());
+        return score::Unexpected{alloc_res.error()};
     }
 
     auto sample = std::move(alloc_res.value());
@@ -98,7 +98,7 @@ Result<void> GenericSkeletonField::Update(score::cpp::span<const uint8_t> raw_va
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(raw_value.size() <= size_info.size,
                                                 "Raw value payload exceeds configured generic field size.");
 
-    std::memcpy(sample.Get(), raw_value.data(), raw_value.size()); // Fixed sample.get() -> sample.Get()
+    std::memcpy(sample.Get(), raw_value.data(), raw_value.size()); 
     return Update(std::move(sample));
 }
 
@@ -154,11 +154,10 @@ Result<void> GenericSkeletonField::DoDeferredUpdate() noexcept
         return Result<void>{};
     }
 
-    // Directly process internal memory into event to avoid span self-assignment cycle via Update(span)
     auto alloc_res = Allocate();
     if (!alloc_res.has_value())
     {
-        return MakeUnexpected(alloc_res.error());
+        return score::Unexpected{alloc_res.error()};
     }
 
     auto sample = std::move(alloc_res.value());

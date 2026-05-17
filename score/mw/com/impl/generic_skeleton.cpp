@@ -184,7 +184,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
         if (!update_result.has_value())
         {
             score::mw::log::LogError("GenericSkeleton") << "Failed to set initial value for field: " << info.name;
-            return MakeUnexpected(update_result.error());
+            return score::Unexpected{update_result.error()};
         }
     }
 
