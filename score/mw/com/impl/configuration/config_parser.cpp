@@ -46,11 +46,6 @@ namespace
 
 using std::string_view_literals::operator""sv;
 
-// binding_service_type_deployment_impl.h
-// config_parser.cpp
-// lola_service_instance_deployment.cpp
-// someip_service_instance_deployment.cpp
-// tracing_filter_config_parser.cpp
 constexpr auto kServiceInstancesKey = "serviceInstances"sv;
 constexpr auto kInstanceSpecifierKey = "instanceSpecifier"sv;
 constexpr auto kServiceTypeNameKey = "serviceTypeName"sv;
@@ -82,10 +77,10 @@ constexpr auto kEventMaxSubscribersKey = "maxSubscribers"sv;
 constexpr auto kEventEnforceMaxSamplesKey = "enforceMaxSamples"sv;
 constexpr auto kEventMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;
 constexpr auto kMaxConcurrentAllocationsDefault = static_cast<std::uint8_t>(1U);
-constexpr auto kFieldNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;  //TM: duplicate of kEventNumberOfSampleSlotsKey, Line 71
+constexpr auto kFieldNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;
 constexpr auto kFieldMaxSubscribersKey = "maxSubscribers"sv;
 constexpr auto kFieldEnforceMaxSamplesKey = "enforceMaxSamples"sv;
-constexpr auto kFieldMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;    //TM: duplicate of kEventMaxConcurrentAllocationsKey, Line 75
+constexpr auto kFieldMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;
 constexpr auto kLolaShmSizeKey = "shm-size"sv;
 constexpr auto kLolaControlAsilBShmSizeKey = "control-asil-b-shm-size"sv;
 constexpr auto kLolaControlQmShmSizeKey = "control-qm-shm-size"sv;
@@ -486,7 +481,7 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
 
         const auto number_of_sample_slots =
             deployment_parser.RetrieveJsonElement<LolaFieldInstanceDeployment::SampleSlotCountType>(
-                kFieldNumberOfSampleSlotsKey);  // different handling than Events which xor-ing with numberOfSampleSlots (using GetNumberOfSampleSlots()) Line 405
+                kFieldNumberOfSampleSlotsKey);
         const auto max_subscribers =
             deployment_parser.RetrieveJsonElement<LolaFieldInstanceDeployment::SubscriberCountType>(
                 kFieldMaxSubscribersKey);
@@ -518,6 +513,7 @@ auto ParseLolaMethodInstanceDeployment(const score::json::Object& json_map, Lola
     {
         return;
     }
+
     const auto methods_list_result = methods->second.As<score::json::List>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(methods_list_result.has_value(),
                                                       "Configuration corrupted, check with json schema");
@@ -990,7 +986,7 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Object& json_map) -> Lol
         score::mw::log::LogFatal("lola") << "Configuration should contain at least one event, field, or method.";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
-    if (!AreEventFieldAndMethodIdsUnique(lola)) 
+    if (!AreEventFieldAndMethodIdsUnique(lola))
     {
         score::mw::log::LogFatal("lola") << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
@@ -1131,7 +1127,7 @@ auto ParseSenderQueueSize(const score::json::Object& global_config_map) -> std::
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(queue_size_obj.has_value(),
                                                           "Configuration corrupted, check with json schema");
         const auto& queue_size_map = queue_size_obj.value().get();
-        const auto& asil_tx_queue_size = queue_size_map.find("B-sender");   //TM: No QM-sender
+        const auto& asil_tx_queue_size = queue_size_map.find("B-sender");
         if (asil_tx_queue_size != queue_size_map.cend())
         {
             return score::ResultToOptionalOrElse(asil_tx_queue_size->second.As<std::int32_t>(), [](const auto&) {

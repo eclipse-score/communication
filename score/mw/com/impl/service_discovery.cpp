@@ -302,7 +302,7 @@ auto ServiceDiscovery::GetServiceDiscoveryClient(const InstanceIdentifier& insta
         mw::log::LogFatal("lola") << "Service discovery failed to find fitting binding for"
                                   << instance_identifier.ToString();
     }
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_runtime != nullptr, "Unsupported binding"); 
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_runtime != nullptr, "Unsupported binding");
 
     return binding_runtime->GetServiceDiscoveryClient();
 }

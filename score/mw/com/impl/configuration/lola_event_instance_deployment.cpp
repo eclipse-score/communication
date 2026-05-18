@@ -146,7 +146,6 @@ auto LolaEventInstanceDeployment::GetNumberOfTracingSlots() const noexcept -> Tr
     return number_of_tracing_slots_;
 }
 
-// Is this intended that it overwrites the json config value? if yes, at least a check against 0 value is needed
 void LolaEventInstanceDeployment::SetNumberOfSampleSlots(SampleSlotCountType number_of_sample_slots) noexcept
 {
 

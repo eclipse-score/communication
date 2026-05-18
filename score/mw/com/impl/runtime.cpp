@@ -220,7 +220,6 @@ std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specif
         // instance is available, there is also a matching service type available. Because parsing of the configuration
         // is automatically done before instantiating the runtime, this condition is always positive. To increase the
         // robustness of the code, we still check for this condition.
-
         if (type_deployment != configuration_.GetServiceTypes().cend())
         {
             result.push_back(make_InstanceIdentifier(instanceSearch->second, type_deployment->second));
