@@ -343,7 +343,7 @@ where
     fn to_stream<'a>(
         &'a self,
         _max_samples: usize,
-    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + 'a {
+    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         stream::empty()
     }
 }

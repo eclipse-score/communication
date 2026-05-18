@@ -736,7 +736,7 @@ impl<S> SampleContainer<S> {
     }
 
     /// Returns the maximum capacity of the container.
-    /// 
+    ///
     /// # Returns
     /// The maximum number of samples that the container can hold.
     pub fn capacity(&self) -> usize {
@@ -939,6 +939,14 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// The stream manages its own internal `SampleContainer`, so it does not take one as a parameter.
     /// Instead, it yields the updated container each time you poll for new samples.
     ///
+    /// Why we need Unpin bound? -
+    /// We need to add the Unpin bound because the next method of stream required unpin stream to be polled,
+    /// but the stream return with impl trait does not return as Unpin by default,
+    /// even though the actual stream implementation might be Unpin.
+    /// Compiler cannot guarantee that the returned stream is Unpint without the explicit Unpin bound,
+    /// so we need to add the Unpin bound to ensure that the returned stream can be safely polled without
+    /// additinal pinning at user side.
+    ///
     /// # Parameters
     /// * `max_samples` - Maximum capacity of the internal buffer
     ///
@@ -950,7 +958,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     fn to_stream<'a>(
         &'a self,
         max_samples: usize,
-    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + 'a;
+    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.

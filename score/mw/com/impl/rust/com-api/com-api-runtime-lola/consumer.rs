@@ -36,8 +36,7 @@ use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
 use core::panic;
 use core::ptr::NonNull;
-use futures::future::Either;
-use futures::stream::{self, Stream};
+use futures::stream::Stream;
 use futures::task::{AtomicWaker, Context, Poll};
 use std::cmp::Ordering;
 use std::pin::Pin;
@@ -616,19 +615,18 @@ where
     fn to_stream<'a>(
         &'a self,
         max_samples: usize,
-    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + 'a {
+    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         // Validate max_samples up front
-        if max_samples > self.max_num_samples {
-            // This is a single error stream, so it yields only once and populated the error then ends the stream.
-            return Either::Left(stream::once(async move {
-                Err(Error::ReceiveError(
-                    ReceiveFailedReason::SampleCountOutOfBounds {
-                        max: self.max_num_samples,
-                        requested: max_samples,
-                    },
-                ))
-            }));
-        }
+        let initial_error = if max_samples > self.max_num_samples {
+            Some(Error::ReceiveError(
+                ReceiveFailedReason::SampleCountOutOfBounds {
+                    max: self.max_num_samples,
+                    requested: max_samples,
+                },
+            ))
+        } else {
+            None
+        };
 
         // Get the event guard to ensure no concurrent receive calls
         // on the same subscriber instance.
@@ -641,12 +639,13 @@ where
         });
         drop(event_guard);
         // Return stream that yields samples one at a time, fetching new batches as needed.
-        Either::Right(ToStreamFuture {
+        ToStreamFuture {
             subscriber: self,
             max_samples,
             sample_container: SampleContainer::new(max_samples),
             overflow_occurred: false,
-        })
+            initial_error,
+        }
     }
 }
 
@@ -760,6 +759,7 @@ struct ToStreamFuture<'a, T: CommData + Debug> {
     max_samples: usize,
     sample_container: SampleContainer<Sample<T>>,
     overflow_occurred: bool,
+    initial_error: Option<Error>,
 }
 
 impl<'a, T: CommData + Debug> Stream for ToStreamFuture<'a, T> {
@@ -768,6 +768,11 @@ impl<'a, T: CommData + Debug> Stream for ToStreamFuture<'a, T> {
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         //extarcting self from pin to access the fields and modify the fields in the function
         let this = self.get_mut();
+
+        // Return validation error first if present, then end the stream
+        if let Some(error) = this.initial_error.take() {
+            return Poll::Ready(Some(Err(error)));
+        }
 
         // Yield any buffered samples from a previous batch fetch first.
         if let Some(sample) = this.sample_container.pop_front() {
