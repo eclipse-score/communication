@@ -19,7 +19,6 @@
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
-#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/data_type_meta_info.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
@@ -120,14 +119,6 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
             return std::make_unique<SkeletonServiceElement>(
                 *lola_parent, element_fq_id, service_element_name, skeleton_event_properties);
         },
-        [](const SomeIpServiceInstanceDeployment&) noexcept -> ReturnType {
-            return nullptr;
-        },
-        // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
-        // expression statement and identifier declaration shall be placed on a
-        // separate line.". Following line statement is fine, this happens due to
-        // clang formatting.
-        // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
         });
@@ -182,9 +173,6 @@ auto CreateGenericSkeletonServiceElement(const InstanceIdentifier& identifier,
                                                             element_fq_id,
                                                             meta_info,
                                                             tracing::SkeletonEventTracingData{});
-        },
-        [](const SomeIpServiceInstanceDeployment&) noexcept -> ReturnType {
-            return nullptr;
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;

@@ -65,20 +65,12 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
         return std::make_unique<lola::SkeletonMethod>(*lola_parent, unique_method_identifier);
     };
 
-    auto deployment_info_visitor = score::cpp::overload(
-        lola_deployment_handler,
-        [](const score::cpp::blank&) noexcept -> LambdaReturnType {
-            // coverage false positive. Covered by the test:
-            // SkeletonMethodFactoryFixture.CannotConstructEventFromSomeIpBinding
-            // inside score/mw/com/impl/plumbing/skeleton_method_binding_factory_test.cpp
-            // LCOV_EXCL_BR_LINE (false positive. See justification above).
-            return nullptr;
-        },
-        [](const SomeIpServiceInstanceDeployment&) noexcept -> LambdaReturnType {
+    auto deployment_info_visitor =
+        score::cpp::overload(lola_deployment_handler, [](const score::cpp::blank&) noexcept -> LambdaReturnType {
             // coverage false positive. Covered by the test:
             // SkeletonMethodFactoryFixture.CannotConstructEventFromBlankBinding
             // inside score/mw/com/impl/plumbing/skeleton_method_binding_factory_test.cpp
-            // LCOV_EXCL_BR_LINE(false positive. See justification above).
+            // LCOV_EXCL_BR_LINE (false positive. See justification above).
             return nullptr;
         });
 

@@ -1056,7 +1056,7 @@ TEST_F(ConfigParserFixture, DuplicateServiceInstanceWillDie)
             "instances": [
                 {
                   "asil-level": "QM",
-                  "binding": "SOME/IP"
+                  "binding": "SHM"
                 }
             ]
         }
@@ -2475,61 +2475,6 @@ TEST(ConfigParser, InvalidQualityTypeForAllowedConsumersWillDie)
     // When parsing the JSON
     // Then the application will terminate
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
-}
-
-TEST(ConfigParser, TerminateOnParsingSomeIP)
-{
-    // Give a SOME/IP binding configuration
-    auto config_with_some_ip_binding = R"(
-    {
-        "serviceTypes": [
-            {
-            "serviceTypeName": "/score/ncar/services/TirePressureService",
-            "version": {
-                "major": 12,
-                "minor": 34
-            },
-            "bindings": [
-                {
-                "serviceId": 1234,
-                "binding": "SOME/IP",
-                "events": [],
-                "fields": []
-                }
-            ]
-            }
-        ],
-        "serviceInstances": [
-            {
-                "instanceSpecifier": "abc/abc/TirePressurePort",
-                "serviceTypeName": "/score/ncar/services/TirePressureService",
-                "version": {
-                    "major": 12,
-                    "minor": 34
-                },
-                "instances": [
-                    {
-                    "instanceId": 1,
-                    "asil-level": "B",
-                    "binding": "SOME/IP",
-                    "events": [],
-                    "fields": []
-                    }
-                ]
-            }
-        ],
-        "global": {
-        "asil-level": "B"
-        }
-    }
-    )";
-    const score::json::JsonParser json_parser_obj;
-    auto json = json_parser_obj.FromBuffer(config_with_some_ip_binding);
-
-    // When parsing such a configuration
-    // Fail and abort
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::Parse(std::move(json).value()));
 }
 
 class ShmSizeCalcMode : public ::testing::TestWithParam<std::tuple<std::string, ShmSizeCalculationMode>>

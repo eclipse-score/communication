@@ -2,8 +2,7 @@
 
 The main configuration items we have to deal with in `mw::com` are mappings from "logical" service instances to real
 existing service instances with their concrete used technical binding.
-Currently, we prepare our configuration to support the following technical bindings:
-- SOME/IP
+Currently, our configuration supports the following technical bindings:
 - Shared Memory IPC
 
 Of course, we do foresee arbitrary extensions.
@@ -36,13 +35,12 @@ The `ServiceTypeDeployment` aka `Service Interface Deployment` in AUTOSAR speech
 The binding independent `ServiceType` is defined within AUTOSAR metamodel by its Service Interface and its
 corresponding [service type identification](#service-type-identification).
 So within the configuration we might need to express, how a certain abstract `ServiceType` shall be represented in a
-`SOME/IP` or a `LoLa` binding. For instance, both bindings might use their own, distinct service ID
-for identification and also the embedded service parts (events, fields, methods) might have different identification and
-properties between a `SOME/IP` and a `LoLa` binding.
+`LoLa` binding. For instance, the binding uses its own distinct service ID
+for identification and also configuration of the embedded service parts (events, fields, methods).
 
 Note here, that these `ServiceTypeDeployment`s are independent of their concrete instances! E.g. an AUTOSAR service
-`/a/b/c/InterfaceName` will be once mapped to a `SOME/IP` service id **_SIDn_** and this applies then to ALL instances of
-this `/a/b/c/InterfaceName` service with a `SOME/IP` mapping!
+`/a/b/c/InterfaceName` will be once mapped to a `LoLa` service id **_SIDn_** and this applies then to ALL instances of
+this `/a/b/c/InterfaceName` service with a `LoLa` mapping!
 
 ### `ServiceInstanceDeployment`
 The `ServiceInstanceDeployment` maps concrete instances (identified by an [Instance Specifier](#instance-specifiers)) of
@@ -69,8 +67,7 @@ config artifacts with the applications.
 
 For `ServiceTypeDeployment` this is not so clear. In case of `ServiceTypeDeployments` for local only communication,
 which is the case of our `LoLa` binding, it is also the job of the ECU integrator, as it is only a local ECU
-optimization. Without any effect to the boardnet. In case of `SOME/IP` `ServiceTypeDeployments`, it might be expected
-for the future, that parts of `ServiceTypeDeployment` come from central toolchains (Symphony).
+optimization. Without any effect to the boardnet.
 
 ## Instance Specifiers
 
@@ -184,8 +181,8 @@ instances.
 What is **not** visible here: Whether `"abc/abc/TirePressurePort"` is a provided or required service instance. Both
 could be possible, since we do support 1 to n mappings in both cases.
 Here we have a mapping of `"abc/abc/TirePressurePort"` to two different concrete technical instances: The first one is a
-SOME/IP based instance (so it is most likely used for inter ECU, network communication) and the second is a concrete
-instance based on our shared memory IPC for ECU local communication.
+hypothetical SOME/IP based instance (so it is most likely used for inter-ECU network communication) and the second is a
+concrete instance based on our shared-memory IPC for ECU-local communication.
 
 #### C++ representation of configuration and mappings
 The JSON representation of the configuration shown above gets read and parsed at application startup within call to one

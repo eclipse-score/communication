@@ -18,7 +18,6 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
-#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
 #include "score/json/json_parser.h"
@@ -38,8 +37,7 @@ namespace score::mw::com::impl
 class ServiceInstanceDeployment
 {
   public:
-    using BindingInformation =
-        std::variant<LolaServiceInstanceDeployment, SomeIpServiceInstanceDeployment, score::cpp::blank>;
+    using BindingInformation = std::variant<LolaServiceInstanceDeployment, score::cpp::blank>;
 
     explicit ServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
     ServiceInstanceDeployment(const ServiceIdentifierType service,
@@ -91,8 +89,7 @@ const ServiceInstanceDeploymentBinding& GetServiceInstanceDeploymentBinding(
 
     // LCOV_EXCL_BR_START False positive: The tool is reporting that the true decision is never taken. We have tests in
     // service_instance_deployment_test.cpp
-    // (GettingLolaBindingFromServiceInstanceDeploymentNotContainingLolaBindingTerminates,
-    // GettingSomeIpBindingFromServiceInstanceDeploymentNotContainingSomeIpBindingTerminates and
+    // (GettingLolaBindingFromServiceInstanceDeploymentNotContainingLolaBindingTerminates and
     // GettingBlankBindingFromServiceInstanceDeploymentNotContainingBlankBindingTerminates) which test the true branch
     // of this condition. This is a bug with the tool to be fixed in (Ticket-219132). This suppression should be removed
     // when the tool is fixed.

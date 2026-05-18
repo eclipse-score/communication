@@ -26,11 +26,6 @@ package "configuration" {
     + ToString() : std::string const&
   }
 
-  class "score::mw::com::impl::SomeIpServiceInstanceDeployment" {
-    + instanceId: score::cpp::optional<std::uint16_t> const
-    + ToString() const : std::string
-  }
-
   class "score::mw::com::impl::LolaServiceInstanceDeployment" {
     + events : std::unordered_map<std::string, LolaEventInstanceDeployment> const
     + fields : std::unordered_map<std::string, LolaFieldInstanceDeployment> const
@@ -47,7 +42,7 @@ package "configuration" {
   class "score::mw::com::impl::ServiceInstanceDeployment" {
     + service: ServiceIdentifierType
     + asilLevel: QualityType
-    + bindingInfo_ : std::variant<LolaServiceInstanceDeployment, SomeIpServiceInstanceDeployment, FakeBindingInformation, score::cpp::blank> const
+    + bindingInfo_ : std::variant<LolaServiceInstanceDeployment, FakeBindingInformation, score::cpp::blank> const
     + ServiceInstanceDeployment(service : ServiceIdentifierType const, binding : BindingInformation, asil_level: QualityType const)
     + ToString() : std::string const
   }
@@ -224,7 +219,6 @@ class "score::mw::com::impl::Runtime" {
 "score::mw::com::impl::ServiceInstanceDeployment" *-- "QualityType"
 "score::mw::com::impl::ServiceInstanceDeployment" *-- "score::mw::com::ServiceIdentifierType"
 "score::mw::com::impl::ServiceInstanceDeployment" *-- "score::mw::com::impl::LolaServiceInstanceDeployment"
-"score::mw::com::impl::ServiceInstanceDeployment" *-- "score::mw::com::impl::SomeIpServiceInstanceDeployment"
 "score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaEventInstanceDeployment" : 0..1
 "score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaFieldInstanceDeployment" : 0..1
 "score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaMethodInstanceDeployment" : 0..1

@@ -26,9 +26,6 @@
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_id.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
-#include "score/mw/com/impl/configuration/someip_event_instance_deployment.h"
-#include "score/mw/com/impl/configuration/someip_field_instance_deployment.h"
-#include "score/mw/com/impl/configuration/someip_service_instance_id.h"
 
 #include <score/optional.hpp>
 #include <score/overload.hpp>
@@ -68,9 +65,6 @@ LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
     const score::cpp::optional<std::size_t> control_asil_b_memory_size = 3000U,
     const score::cpp::optional<std::size_t> control_qm_memory_size = 4000U) noexcept;
 
-SomeIpServiceInstanceDeployment MakeSomeIpServiceInstanceDeployment(
-    const score::cpp::optional<SomeIpServiceInstanceId> instance_id = 22U) noexcept;
-
 LolaServiceTypeDeployment MakeLolaServiceTypeDeployment(const std::uint16_t service_id = 31U) noexcept;
 
 class ConfigurationStructsFixture : public ::testing::Test
@@ -85,17 +79,8 @@ class ConfigurationStructsFixture : public ::testing::Test
     void ExpectLolaMethodInstanceDeploymentObjectsEqual(const LolaMethodInstanceDeployment& lhs,
                                                         const LolaMethodInstanceDeployment& rhs) const noexcept;
 
-    void ExpectSomeIpEventInstanceDeploymentObjectsEqual(const SomeIpEventInstanceDeployment& lhs,
-                                                         const SomeIpEventInstanceDeployment& rhs) const noexcept;
-
-    void ExpectSomeIpFieldInstanceDeploymentObjectsEqual(const SomeIpFieldInstanceDeployment& lhs,
-                                                         const SomeIpFieldInstanceDeployment& rhs) const noexcept;
-
     void ExpectLolaServiceInstanceDeploymentObjectsEqual(const LolaServiceInstanceDeployment& lhs,
                                                          const LolaServiceInstanceDeployment& rhs) const noexcept;
-
-    void ExpectSomeIpServiceInstanceDeploymentObjectsEqual(const SomeIpServiceInstanceDeployment& lhs,
-                                                           const SomeIpServiceInstanceDeployment& rhs) const noexcept;
 
     void ExpectServiceInstanceDeploymentObjectsEqual(const ServiceInstanceDeployment& lhs,
                                                      const ServiceInstanceDeployment& rhs) const noexcept;
@@ -116,9 +101,6 @@ class ConfigurationStructsFixture : public ::testing::Test
 
     void ExpectLolaServiceInstanceIdObjectsEqual(const LolaServiceInstanceId& lhs,
                                                  const LolaServiceInstanceId& rhs) const noexcept;
-
-    void ExpectSomeIpServiceInstanceIdObjectsEqual(const SomeIpServiceInstanceId& lhs,
-                                                   const SomeIpServiceInstanceId& rhs) const noexcept;
 };
 
 }  // namespace score::mw::com::impl

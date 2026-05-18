@@ -50,10 +50,6 @@ std::unique_ptr<ProxyBinding> ProxyBindingFactoryImpl::Create(const HandleType& 
             return lola::Proxy::Create(handle);
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const SomeIpServiceInstanceDeployment&) noexcept -> ReturnType {
-            return nullptr;
-        },
-        // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
         });

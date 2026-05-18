@@ -16,7 +16,6 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
-#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
@@ -49,8 +48,7 @@ TEST(ServiceInstanceDeploymentTest, DifferentBindingsAreNotCompatible)
     ASSERT_FALSE(areCompatible(
         ServiceInstanceDeployment{
             kDummyService, LolaServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier},
-        ServiceInstanceDeployment{
-            kDummyService, SomeIpServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier}));
+        ServiceInstanceDeployment{kDummyService, score::cpp::blank{}, QualityType::kASIL_QM, kInstanceSpecifier}));
 }
 
 TEST(ServiceInstanceDeploymentTest, DifferentShmBindingsAreCompatible)
@@ -62,21 +60,12 @@ TEST(ServiceInstanceDeploymentTest, DifferentShmBindingsAreCompatible)
             kDummyService, LolaServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier}));
 }
 
-TEST(ServiceInstanceDeploymentTest, DifferentSomeIpBindingsAreCompatible)
-{
-    ASSERT_TRUE(areCompatible(
-        ServiceInstanceDeployment{
-            kDummyService, SomeIpServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier},
-        ServiceInstanceDeployment{
-            kDummyService, SomeIpServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier}));
-}
-
 TEST(ServiceInstanceDeploymentTest, Equality)
 {
     const auto unit1 = ServiceInstanceDeployment{
-        kDummyService, SomeIpServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier};
+        kDummyService, LolaServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier};
     const auto unit2 = ServiceInstanceDeployment{
-        kDummyService, SomeIpServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier};
+        kDummyService, LolaServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier};
     EXPECT_EQ(unit1, unit2);
 }
 
@@ -89,17 +78,6 @@ TEST_F(ServiceInstanceDeploymentFixture, CanConstructFromLolaServiceInstanceDepl
     ASSERT_EQ(unit.asilLevel_, QualityType::kASIL_QM);
     ExpectServiceIdentifierTypeObjectsEqual(unit.service_, kDummyService);
     const auto* const binding_ptr = std::get_if<LolaServiceInstanceDeployment>(&unit.bindingInfo_);
-    ASSERT_NE(binding_ptr, nullptr);
-}
-
-TEST_F(ServiceInstanceDeploymentFixture, CanConstructFromSomeIpServiceInstanceDeployment)
-{
-    ServiceInstanceDeployment unit{
-        kDummyService, SomeIpServiceInstanceDeployment{16U}, QualityType::kASIL_QM, kInstanceSpecifier};
-
-    ASSERT_EQ(unit.asilLevel_, QualityType::kASIL_QM);
-    ExpectServiceIdentifierTypeObjectsEqual(unit.service_, kDummyService);
-    const auto* const binding_ptr = std::get_if<SomeIpServiceInstanceDeployment>(&unit.bindingInfo_);
     ASSERT_NE(binding_ptr, nullptr);
 }
 
@@ -119,22 +97,6 @@ TEST_F(ServiceInstanceDeploymentFixture, CanCreateFromSerializedLolaObject)
 
     ServiceInstanceDeployment unit{
         kDummyService, lola_service_instance_deployment, QualityType::kASIL_B, kInstanceSpecifier};
-
-    const auto serialized_unit{unit.Serialize()};
-
-    ServiceInstanceDeployment reconstructed_unit{serialized_unit};
-
-    ExpectServiceInstanceDeploymentObjectsEqual(reconstructed_unit, unit);
-}
-
-TEST_F(ServiceInstanceDeploymentFixture, CanCreateFromSerializedSomeIpObject)
-{
-    const std::uint16_t instance_id{123U};
-
-    SomeIpServiceInstanceDeployment someip_service_instance_deployment{instance_id};
-
-    ServiceInstanceDeployment unit{
-        kDummyService, someip_service_instance_deployment, QualityType::kASIL_B, kInstanceSpecifier};
 
     const auto serialized_unit{unit.Serialize()};
 
@@ -167,21 +129,6 @@ TEST_F(ServiceInstanceDeploymentFixture, CanGetLolaBindingFromServiceInstanceDep
     EXPECT_EQ(lola_service_instance_deployment, returned_service_instance_deployment_binding);
 }
 
-TEST_F(ServiceInstanceDeploymentFixture, CanGetSomeIpBindingFromServiceInstanceDeploymentContainingSomeIpBinding)
-{
-    // Given a ServiceInstanceDeployment containing a SomeIp binding
-    const auto& someip_service_instance_deployment = MakeSomeIpServiceInstanceDeployment();
-    ServiceInstanceDeployment service_instance_deployment{
-        kDummyService, someip_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
-
-    // When getting the SomeIpServiceInstanceDeployment
-    const auto returned_service_instance_deployment_binding =
-        GetServiceInstanceDeploymentBinding<SomeIpServiceInstanceDeployment>(service_instance_deployment);
-
-    // Then the SomeIp binding of the ServiceInstanceDeployment is returned
-    EXPECT_EQ(someip_service_instance_deployment, returned_service_instance_deployment_binding);
-}
-
 TEST_F(ServiceInstanceDeploymentFixture, CanGetBlankBindingFromServiceInstanceDeploymentContainingBlankBinding)
 {
     // Given a ServiceInstanceDeployment containing a blank binding
@@ -200,10 +147,9 @@ using ServiceInstanceDeploymentDeathTest = ServiceInstanceDeploymentFixture;
 TEST_F(ServiceInstanceDeploymentDeathTest,
        GettingLolaBindingFromServiceInstanceDeploymentNotContainingLolaBindingTerminates)
 {
-    // Given a ServiceInstanceDeployment containing a SomeIp binding
-    const auto& someip_service_instance_deployment = MakeSomeIpServiceInstanceDeployment();
+    // Given a ServiceInstanceDeployment containing a blank binding
     ServiceInstanceDeployment service_instance_deployment{
-        kDummyService, someip_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+        kDummyService, score::cpp::blank{}, QualityType::kASIL_QM, kInstanceSpecifier};
 
     // When getting the LolaServiceInstanceDeployment
     // Then the program terminates
@@ -213,27 +159,11 @@ TEST_F(ServiceInstanceDeploymentDeathTest,
 }
 
 TEST_F(ServiceInstanceDeploymentDeathTest,
-       GettingSomeIpBindingFromServiceInstanceDeploymentNotContainingSomeIpBindingTerminates)
-{
-    // Given a ServiceInstanceDeployment containing a Lola binding
-    const auto& lola_service_instance_deployment = MakeLolaServiceInstanceDeployment();
-    ServiceInstanceDeployment service_instance_deployment{
-        kDummyService, lola_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
-
-    // When getting the SomeIpServiceInstanceDeployment
-    // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore =
-                     GetServiceInstanceDeploymentBinding<SomeIpServiceInstanceDeployment>(service_instance_deployment),
-                 ".*");
-}
-
-TEST_F(ServiceInstanceDeploymentDeathTest,
        GettingBlankBindingFromServiceInstanceDeploymentNotContainingBlankBindingTerminates)
 {
-    // Given a ServiceInstanceDeployment containing a SomeIp binding
-    const auto& someip_service_instance_deployment = MakeSomeIpServiceInstanceDeployment();
+    // Given a ServiceInstanceDeployment containing a Lola binding
     ServiceInstanceDeployment service_instance_deployment{
-        kDummyService, someip_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+        kDummyService, MakeLolaServiceInstanceDeployment(), QualityType::kASIL_QM, kInstanceSpecifier};
 
     // When getting a blank binding
     // Then the program terminates
@@ -257,17 +187,6 @@ TEST_F(ServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMisma
     it->second = json::Any{invalid_serialization_version};
 
     EXPECT_DEATH(ServiceInstanceDeployment reconstructed_unit{serialized_unit}, ".*");
-}
-
-TEST(ServiceInstanceDeploymentTest, GetBindingTypeReturnsSomeIpForSomeIpBinding)
-{
-    // Given a ServiceInstanceDeployment
-    const auto unit = ServiceInstanceDeployment{
-        kDummyService, SomeIpServiceInstanceDeployment{16U}, QualityType::kASIL_QM, kInstanceSpecifier};
-
-    // When getting the binding type
-    // Then it should return BindingType::kSomeIp
-    EXPECT_EQ(unit.GetBindingType(), BindingType::kSomeIp);
 }
 
 TEST(ServiceInstanceDeploymentTest, GetBindingTypeReturnsFakeForBlankBinding)
@@ -377,77 +296,46 @@ TEST_P(ServiceInstanceDeploymentLessThanParamaterisedFixture, DifferentDeploymen
     EXPECT_FALSE(service_type_deployment_2 < service_type_deployment_1);
 }
 
-INSTANTIATE_TEST_CASE_P(
-    ServiceInstanceDeploymentLessThanParamaterisedFixture,
-    ServiceInstanceDeploymentLessThanParamaterisedFixture,
-    ::testing::Values(
-        // Comparing two ServiceInstanceDeployments with equal bindings compares based on Asil level
-        std::make_pair(ServiceInstanceDeployment{kDummyService,
-                                                 LolaServiceInstanceDeployment{1U},
-                                                 QualityType::kASIL_QM,
-                                                 kInstanceSpecifier},
-                       ServiceInstanceDeployment{kDummyService,
-                                                 LolaServiceInstanceDeployment{1U},
-                                                 QualityType::kASIL_B,
-                                                 kInstanceSpecifier}),
+INSTANTIATE_TEST_CASE_P(ServiceInstanceDeploymentLessThanParamaterisedFixture,
+                        ServiceInstanceDeploymentLessThanParamaterisedFixture,
+                        ::testing::Values(
+                            // Comparing two ServiceInstanceDeployments with equal bindings compares based on Asil level
+                            std::make_pair(ServiceInstanceDeployment{kDummyService,
+                                                                     LolaServiceInstanceDeployment{1U},
+                                                                     QualityType::kASIL_QM,
+                                                                     kInstanceSpecifier},
+                                           ServiceInstanceDeployment{kDummyService,
+                                                                     LolaServiceInstanceDeployment{1U},
+                                                                     QualityType::kASIL_B,
+                                                                     kInstanceSpecifier}),
 
-        // Comparing two LolaServiceInstanceDeployments compares based on InstanceId only
-        std::make_pair(ServiceInstanceDeployment{kDummyService,
-                                                 LolaServiceInstanceDeployment{1U},
-                                                 QualityType::kASIL_QM,
-                                                 kInstanceSpecifier},
-                       ServiceInstanceDeployment{kDummyService,
-                                                 LolaServiceInstanceDeployment{2U},
-                                                 QualityType::kASIL_B,
-                                                 kInstanceSpecifier}),
-        std::make_pair(ServiceInstanceDeployment{kDummyService,
-                                                 LolaServiceInstanceDeployment{1U},
-                                                 QualityType::kASIL_B,
-                                                 kInstanceSpecifier},
-                       ServiceInstanceDeployment{kDummyService,
-                                                 LolaServiceInstanceDeployment{2U},
-                                                 QualityType::kASIL_QM,
-                                                 kInstanceSpecifier}),
+                            // Comparing two LolaServiceInstanceDeployments compares based on InstanceId only
+                            std::make_pair(ServiceInstanceDeployment{kDummyService,
+                                                                     LolaServiceInstanceDeployment{1U},
+                                                                     QualityType::kASIL_QM,
+                                                                     kInstanceSpecifier},
+                                           ServiceInstanceDeployment{kDummyService,
+                                                                     LolaServiceInstanceDeployment{2U},
+                                                                     QualityType::kASIL_B,
+                                                                     kInstanceSpecifier}),
+                            std::make_pair(ServiceInstanceDeployment{kDummyService,
+                                                                     LolaServiceInstanceDeployment{1U},
+                                                                     QualityType::kASIL_B,
+                                                                     kInstanceSpecifier},
+                                           ServiceInstanceDeployment{kDummyService,
+                                                                     LolaServiceInstanceDeployment{2U},
+                                                                     QualityType::kASIL_QM,
+                                                                     kInstanceSpecifier}),
 
-        // Comparing two SomeIpServiceInstanceDeployments compares based on InstanceId only
-        std::make_pair(ServiceInstanceDeployment{kDummyService,
-                                                 SomeIpServiceInstanceDeployment{1U},
-                                                 QualityType::kASIL_QM,
-                                                 kInstanceSpecifier},
-                       ServiceInstanceDeployment{kDummyService,
-                                                 SomeIpServiceInstanceDeployment{2U},
-                                                 QualityType::kASIL_B,
-                                                 kInstanceSpecifier}),
-        std::make_pair(ServiceInstanceDeployment{kDummyService,
-                                                 SomeIpServiceInstanceDeployment{1U},
-                                                 QualityType::kASIL_B,
-                                                 kInstanceSpecifier},
-                       ServiceInstanceDeployment{kDummyService,
-                                                 SomeIpServiceInstanceDeployment{2U},
-                                                 QualityType::kASIL_QM,
-                                                 kInstanceSpecifier}),
-
-        // Comparing difference ServiceInstanceDeployment bindings compares based on variant index
-        std::make_pair(ServiceInstanceDeployment{kDummyService,
-                                                 LolaServiceInstanceDeployment{2U},
-                                                 QualityType::kASIL_QM,
-                                                 kInstanceSpecifier},
-                       ServiceInstanceDeployment{kDummyService,
-                                                 SomeIpServiceInstanceDeployment{1U},
-                                                 QualityType::kASIL_B,
-                                                 kInstanceSpecifier}),
-        std::make_pair(
-            ServiceInstanceDeployment{kDummyService,
-                                      LolaServiceInstanceDeployment{2U},
-                                      QualityType::kASIL_QM,
-                                      kInstanceSpecifier},
-            ServiceInstanceDeployment{kDummyService, score::cpp::blank{}, QualityType::kASIL_B, kInstanceSpecifier}),
-        std::make_pair(
-            ServiceInstanceDeployment{kDummyService,
-                                      SomeIpServiceInstanceDeployment{2U},
-                                      QualityType::kASIL_QM,
-                                      kInstanceSpecifier},
-            ServiceInstanceDeployment{kDummyService, score::cpp::blank{}, QualityType::kASIL_B, kInstanceSpecifier})));
+                            // Comparing difference ServiceInstanceDeployment bindings compares based on variant index
+                            std::make_pair(ServiceInstanceDeployment{kDummyService,
+                                                                     LolaServiceInstanceDeployment{2U},
+                                                                     QualityType::kASIL_QM,
+                                                                     kInstanceSpecifier},
+                                           ServiceInstanceDeployment{kDummyService,
+                                                                     score::cpp::blank{},
+                                                                     QualityType::kASIL_B,
+                                                                     kInstanceSpecifier})));
 
 }  // namespace
 }  // namespace score::mw::com::impl

@@ -14,7 +14,6 @@
 
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
-#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
@@ -93,9 +92,6 @@ std::optional<LoLaProxyElementBuildingBlocks> LookupLolaProxyElement(const Handl
             return LookupForLola(handle, parent_binding, lola_deployment, service_element_name, element_type);
         },
         [](const score::cpp::blank&) noexcept -> std::optional<LoLaProxyElementBuildingBlocks> {
-            return std::nullopt;
-        },
-        [](const SomeIpServiceInstanceDeployment&) noexcept -> std::optional<LoLaProxyElementBuildingBlocks> {
             return std::nullopt;
         });
 

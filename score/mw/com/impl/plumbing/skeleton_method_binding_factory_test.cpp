@@ -61,11 +61,6 @@ class SkeletonMethodFactoryFixture : public lola::SkeletonMockedMemoryFixture
         return kConfigStoreAsilB.GetInstanceIdentifier();
     }
 
-    InstanceIdentifier GetValidSomeIpInstanceIdentifier()
-    {
-        return dummy_instance_identifier_builder_.CreateSomeIpBindingInstanceIdentifier();
-    }
-
     InstanceIdentifier GetBlankBindingInstanceIdentifier()
     {
         return dummy_instance_identifier_builder_.CreateBlankBindingInstanceIdentifier();
@@ -111,21 +106,6 @@ TEST_F(SkeletonMethodFactoryFixture, CannotCreateSkeletonServiceWhenSkeletonBind
 
     // Then a nullptr is returned
     ASSERT_EQ(skeleton_method, nullptr);
-}
-
-TEST_F(SkeletonMethodFactoryFixture, CannotConstructEventFromSomeIpBinding)
-{
-    const auto instance_identifier = GetValidSomeIpInstanceIdentifier();
-
-    // Given a valid SomeIp binding
-    auto skeleton_binding = GetBindingFromInstanceIdentifier(instance_identifier);
-
-    // When creating a SkeletonMethod using MethodBindingFactory
-    auto skeleton_method = SkeletonMethodBindingFactory::Create(
-        instance_identifier, skeleton_binding, kDummyMethodName, MethodType::kMethod);
-
-    // Then a nullptr is returned
-    EXPECT_EQ(skeleton_method, nullptr);
 }
 
 TEST_F(SkeletonMethodFactoryFixture, CannotConstructEventFromBlankBinding)
