@@ -50,6 +50,9 @@ class SkeletonFieldBase
 
     virtual ~SkeletonFieldBase() = default;
 
+    SkeletonFieldBase(const SkeletonFieldBase&) = delete;
+    SkeletonFieldBase& operator=(const SkeletonFieldBase&) & = delete;
+
     /// \brief Updates the reference to SkeletonBase held by the SkeletonField and also the owned methods.
     ///
     /// This must happen in the derived class since the derived class owns the methods (this is required since they are
@@ -94,10 +97,7 @@ class SkeletonFieldBase
             }
             return update_field_result;
         }
-        else
-        {
-            return skeleton_event_dispatch_->PrepareOffer();
-        }
+        return skeleton_event_dispatch_->PrepareOffer();
     }
 
     void PrepareStopOffer() noexcept
@@ -106,9 +106,6 @@ class SkeletonFieldBase
     }
 
   protected:
-    SkeletonFieldBase(const SkeletonFieldBase&) = delete;
-    SkeletonFieldBase& operator=(const SkeletonFieldBase&) & = delete;
-
     SkeletonFieldBase(SkeletonFieldBase&&) noexcept = default;
     SkeletonFieldBase& operator=(SkeletonFieldBase&&) & noexcept = default;
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
@@ -130,11 +127,11 @@ class SkeletonFieldBase
 
   private:
     /// \brief Returns whether the initial value has been saved by the user to be used by DoDeferredUpdate
-    virtual bool IsInitialValueSaved() const noexcept = 0;
+    [[nodiscard]] virtual bool IsInitialValueSaved() const noexcept = 0;
 
     /// \brief Returns true if a setter has been enabled in the interface and a set handler was not registered via
     /// RegisterSetHandler. Otherwise, returns false.
-    virtual bool IsSetHandlerMissing() const noexcept = 0;
+    [[nodiscard]] virtual bool IsSetHandlerMissing() const noexcept = 0;
 
     /// \brief Sets the initial value of the field.
     ///
