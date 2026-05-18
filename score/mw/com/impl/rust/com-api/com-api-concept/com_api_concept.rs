@@ -943,7 +943,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// We need to add the Unpin bound because the next method of stream required unpin stream to be polled,
     /// but the stream return with impl trait does not return as Unpin by default,
     /// even though the actual stream implementation might be Unpin.
-    /// Compiler cannot guarantee that the returned stream is Unpint without the explicit Unpin bound,
+    /// Compiler cannot guarantee that the returned stream is Unpin without the explicit Unpin bound,
     /// so we need to add the Unpin bound to ensure that the returned stream can be safely polled without
     /// additinal pinning at user side.
     ///
