@@ -87,7 +87,9 @@
                         "B": [
                             15
                         ]
-                    }
+                    },
+                    "interVmSupport": true,
+                    "interVmForwarded": true
                 }
             ]
         }

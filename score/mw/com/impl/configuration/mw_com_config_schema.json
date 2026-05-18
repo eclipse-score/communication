@@ -419,6 +419,18 @@
                                             }
                                         }
                                     }
+                                },
+                                "interVmSupport": {
+                                    "type": "boolean",
+                                    "title": "Enable inter VM support",
+                                    "description": "Optional parameter. interVmSupport property is only supported in case binding property is set to SHM. If it is set to true, then the provider/consumer of this instance expects, that shared-memory-objects used by this service instance are visible cross-VM. The SHM implementation potentially uses different mechanisms/path-names to create/open shm-objects.",
+                                    "default": false
+                                },
+                                "interVmForwarded": {
+                                    "type": "boolean",
+                                    "title": "Enable forwarding of service instance across VM boundaries",
+                                    "description": "Optional parameter. interVmForwarded property is only supported in case binding property is set to SHM. If it is set to true, then also interVmSupport has to be set to true. If it is set to true then a provider setting up the corresponding instance with SHM binding, will expect, that the underlying shm-objects already exist, because they have been created already in the source domain (VM) and only need to be opened in its own domain (VM).",
+                                    "default": false
                                 }
                             }
                         }
