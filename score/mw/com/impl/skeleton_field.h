@@ -120,7 +120,7 @@ class SkeletonField : public SkeletonFieldBase
     //         void(FieldType& new_value)
     //   - new_value : the value requested by the proxy. This value will be modified in place by the registered handler
     //   and the new value will be used to update the field.
-    template <bool ES = EnableSet, typename std::enable_if<ES, int>::type = 0, typename CallableType>
+    template <bool ES = EnableSet, std::enable_if_t<ES, int> = 0, typename CallableType>
     Result<void> RegisterSetHandler(CallableType&& set_handler)
     {
         static_assert(std::is_invocable_v<CallableType, FieldType&>,
@@ -179,7 +179,7 @@ class SkeletonField : public SkeletonFieldBase
                   std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch,
                   const std::string_view field_name);
 
-    bool IsInitialValueSaved() const noexcept override
+    [[nodiscard]] bool IsInitialValueSaved() const noexcept override
     {
         return initial_field_value_ != nullptr;
     }
@@ -191,7 +191,7 @@ class SkeletonField : public SkeletonFieldBase
 
     SkeletonEvent<FieldType>* GetTypedEvent() const noexcept;
 
-    bool IsSetHandlerMissing() const noexcept override
+    [[nodiscard]] bool IsSetHandlerMissing() const noexcept override
     {
         if constexpr (!EnableSet)
         {
@@ -304,7 +304,7 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(Skeleton
       // coverity[autosar_cpp14_a12_8_3_violation] This is a false-positive.
       initial_field_value_{std::move(other.initial_field_value_)},
       skeleton_field_mock_{other.skeleton_field_mock_},
-      is_set_handler_registered_{std::move(other.is_set_handler_registered_)},
+      is_set_handler_registered_{other.is_set_handler_registered_},
       set_method_{std::move(other.set_method_)},
       get_method_{std::move(other.get_method_)}
 {
@@ -322,7 +322,7 @@ auto SkeletonField<SampleDataType, EnableSet, EnableNotifier>::operator=(Skeleto
 
         initial_field_value_ = std::move(other.initial_field_value_);
         skeleton_field_mock_ = std::move(other.skeleton_field_mock_);
-        is_set_handler_registered_ = std::move(other.is_set_handler_registered_);
+        is_set_handler_registered_ = other.is_set_handler_registered_;
         set_method_ = std::move(other.set_method_);
         get_method_ = std::move(other.get_method_);
         SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
