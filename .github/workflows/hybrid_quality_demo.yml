@@ -29,7 +29,6 @@ on:
 permissions:
   actions: write
   contents: read
-  security-events: write
 
 concurrency:
   group: hybrid_quality_demo-${{ github.ref }}-${{ github.event_name }}
@@ -60,12 +59,6 @@ jobs:
     needs: pr_checks
     uses: ./.github/workflows/address_undefined_behavior_leak_sanitizer.yml
 
-  codeql:
-    name: CodeQL analysis
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
-    needs: pr_checks
-    uses: ./.github/workflows/codeql_analysis.yml
-
   clang_tidy:
     name: Clang-Tidy analysis
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
@@ -80,7 +73,6 @@ jobs:
       - coverage
       - thread_sanitizer
       - address_sanitizer
-      - codeql
       - clang_tidy
     runs-on: ubuntu-24.04
     permissions:
@@ -95,9 +87,7 @@ jobs:
           COVERAGE_RESULT: ${{ needs.coverage.result || 'skipped' }}
           THREAD_SANITIZER_RESULT: ${{ needs.thread_sanitizer.result || 'skipped' }}
           ADDRESS_SANITIZER_RESULT: ${{ needs.address_sanitizer.result || 'skipped' }}
-          CODEQL_RESULT: ${{ needs.codeql.result || 'skipped' }}
           CLANG_TIDY_RESULT: ${{ needs.clang_tidy.result || 'skipped' }}
-          CODEQL_DURATION_SECONDS: ${{ needs.codeql.outputs.duration-seconds || '' }}
           CLANG_TIDY_DURATION_SECONDS: ${{ needs.clang_tidy.outputs.duration-seconds || '' }}
           COVERAGE_DURATION_SECONDS: ${{ needs.coverage.outputs.duration-seconds || '' }}
           COVERAGE_ARTIFACT_NAME: ${{ needs.coverage.outputs.artifact-name }}

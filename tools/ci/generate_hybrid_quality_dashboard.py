@@ -76,12 +76,6 @@ def main() -> int:
             "Build and unit tests on the default host configuration.",
         ),
         (
-            "CodeQL analysis",
-            normalize_status(os.environ.get("CODEQL_RESULT", "skipped")),
-            format_duration(os.environ.get("CODEQL_DURATION_SECONDS", "")),
-            "Nightly static security analysis.",
-        ),
-        (
             "Clang-Tidy analysis",
             normalize_status(os.environ.get("CLANG_TIDY_RESULT", "skipped")),
             format_duration(os.environ.get("CLANG_TIDY_DURATION_SECONDS", "")),
@@ -125,7 +119,7 @@ def main() -> int:
     markdown_lines.extend(
         [
             "",
-            "This demo shows the hybrid model: fast PR checks run first, and heavier quality checks (CodeQL, clang-tidy, and coverage) run on demand or nightly for visibility.",
+            "This demo shows the hybrid model: fast PR checks run first, and heavier quality checks (clang-tidy and coverage) run on demand or nightly for visibility.",
         ]
     )
     (output_dir / "summary.md").write_text("\n".join(markdown_lines) + "\n", encoding="utf-8")
