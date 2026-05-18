@@ -14,6 +14,12 @@ name: Coverage Report
 
 on:
   workflow_call:
+    inputs:
+      use_cache:
+        description: Whether to use Bazel disk cache.
+        required: false
+        type: boolean
+        default: true
     outputs:
       artifact-name:
         description: 'Name of the coverage report artifact'
@@ -63,14 +69,14 @@ jobs:
           disk-cache: "coverage_report"
           disk-cache-key: "main"
           repository-cache: true
-          cache-save: ${{ github.ref == 'refs/heads/main' }}
+          cache-save: ${{ github.ref == 'refs/heads/main' && (inputs.use_cache == true || inputs.use_cache == '') }}
 
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
       - name: Run Unit Test with Coverage for C++
         run: |
-          bazel coverage //... --build_tests_only
+          bazel coverage //... --build_tests_only ${{ (inputs.use_cache == false) && '--disk_cache=' || '' }}
 
       - name: Generate HTML Coverage Report
         # FIXME: "--ignore-errors category,inconsistent" is a workaround to cope with gcov messing up hit counts because of internal data races

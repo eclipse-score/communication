@@ -38,14 +38,15 @@ def format_duration(duration_value: str) -> str:
     return f"{minutes}m {remaining_seconds}s ({seconds}s)"
 
 
-def render_markdown_row(name: str, status: str, duration: str, notes: str) -> str:
-    return f"| {name} | {STATUS_LABELS[status]} | {duration} | {notes} |"
+def render_markdown_row(name: str, status: str, duration: str, duration_no_cache: str, notes: str) -> str:
+    return f"| {name} | {STATUS_LABELS[status]} | {duration} | {duration_no_cache} | {notes} |"
 
 
-def render_html_row(name: str, status: str, duration: str, notes: str) -> str:
+def render_html_row(name: str, status: str, duration: str, duration_no_cache: str, notes: str) -> str:
     safe_name = html.escape(name)
     safe_notes = html.escape(notes)
     safe_duration = html.escape(duration)
+    safe_duration_no_cache = html.escape(duration_no_cache)
     label = html.escape(STATUS_LABELS[status])
     color = STATUS_COLORS[status]
     return (
@@ -53,6 +54,7 @@ def render_html_row(name: str, status: str, duration: str, notes: str) -> str:
         f"<td>{safe_name}</td>"
         f"<td><span class=\"badge\" style=\"background:{color};\">{label}</span></td>"
         f"<td>{safe_duration}</td>"
+        f"<td>{safe_duration_no_cache}</td>"
         f"<td>{safe_notes}</td>"
         "</tr>"
     )
@@ -73,30 +75,35 @@ def main() -> int:
             "Fast PR checks",
             normalize_status(os.environ.get("PR_CHECKS_RESULT", "skipped")),
             "-",
+            "-",
             "Build and unit tests on the default host configuration.",
         ),
         (
-            "Clang-Tidy analysis",
+            "Clang-Tidy (with cache)",
             normalize_status(os.environ.get("CLANG_TIDY_RESULT", "skipped")),
             format_duration(os.environ.get("CLANG_TIDY_DURATION_SECONDS", "")),
-            "Clang static code analysis and linting.",
+            format_duration(os.environ.get("CLANG_TIDY_NO_CACHE_DURATION_SECONDS", "")),
+            "Clang static code analysis and linting — using Bazel disk cache.",
         ),
         (
-            "Coverage report",
+            "Coverage (with cache)",
             normalize_status(os.environ.get("COVERAGE_RESULT", "skipped")),
             format_duration(os.environ.get("COVERAGE_DURATION_SECONDS", "")),
-            "Code coverage analysis and reporting."
+            format_duration(os.environ.get("COVERAGE_NO_CACHE_DURATION_SECONDS", "")),
+            "Code coverage analysis and reporting — using Bazel disk cache."
             + (f" Artifact: {coverage_artifact_name}." if coverage_artifact_name else ""),
         ),
         (
             "Thread sanitizer",
             normalize_status(os.environ.get("THREAD_SANITIZER_RESULT", "skipped")),
             "-",
+            "-",
             "Nightly thread sanitizer run.",
         ),
         (
             "Address/UB/leak sanitizer",
             normalize_status(os.environ.get("ADDRESS_SANITIZER_RESULT", "skipped")),
+            "-",
             "-",
             "Nightly address, undefined behavior, and leak sanitizer run.",
         ),
@@ -110,11 +117,11 @@ def main() -> int:
         f"- Event: `{event_name}`",
         f"- Run: `{run_id}`",
         "",
-        "| Check | Status | Runtime | Notes |",
-        "| --- | --- | --- | --- |",
+        "| Check | Status | Runtime (cached) | Runtime (no cache) | Notes |",
+        "| --- | --- | --- | --- | --- |",
     ]
     markdown_lines.extend(
-        render_markdown_row(name, status, duration, notes) for name, status, duration, notes in checks
+        render_markdown_row(name, status, duration, duration_no_cache, notes) for name, status, duration, duration_no_cache, notes in checks
     )
     markdown_lines.extend(
         [
@@ -129,15 +136,15 @@ def main() -> int:
         "",
         "## Measured Runtime",
         "",
-        "| Check | Status | Runtime |",
-        "| --- | --- | --- |",
+        "| Check | Status | Runtime (cached) | Runtime (no cache) |",
+        "| --- | --- | --- | --- |",
     ]
-    for name, status, duration, _ in checks:
-        timing_lines.append(f"| {name} | {STATUS_LABELS[status]} | {duration} |")
+    for name, status, duration, duration_no_cache, _ in checks:
+        timing_lines.append(f"| {name} | {STATUS_LABELS[status]} | {duration} | {duration_no_cache} |")
     (output_dir / "timing.txt").write_text("\n".join(timing_lines) + "\n", encoding="utf-8")
 
     html_rows = "\n".join(
-        render_html_row(name, status, duration, notes) for name, status, duration, notes in checks
+        render_html_row(name, status, duration, duration_no_cache, notes) for name, status, duration, duration_no_cache, notes in checks
     )
     html_document = f"""<!DOCTYPE html>
 <html lang=\"en\">
@@ -163,7 +170,7 @@ def main() -> int:
       <p>This dashboard shows measured runtime for quality checks.</p>
       <div class=\"table-wrap\">
         <table>
-          <thead><tr><th>Check</th><th>Status</th><th>Runtime</th><th>Notes</th></tr></thead>
+          <thead><tr><th>Check</th><th>Status</th><th>Runtime (cached)</th><th>Runtime (no cache)</th><th>Notes</th></tr></thead>
           <tbody>{html_rows}</tbody>
         </table>
       </div>

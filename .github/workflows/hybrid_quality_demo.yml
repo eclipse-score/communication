@@ -44,10 +44,20 @@ jobs:
       run_all_configurations: false
 
   coverage:
-    name: Coverage report
+    name: Coverage report (with cache)
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
     needs: pr_checks
     uses: ./.github/workflows/coverage_report.yml
+    with:
+      use_cache: true
+
+  coverage_no_cache:
+    name: Coverage report (no cache)
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
+    needs: pr_checks
+    uses: ./.github/workflows/coverage_report.yml
+    with:
+      use_cache: false
 
   thread_sanitizer:
     name: Thread sanitizer
@@ -62,10 +72,20 @@ jobs:
     uses: ./.github/workflows/address_undefined_behavior_leak_sanitizer.yml
 
   clang_tidy:
-    name: Clang-Tidy analysis
+    name: Clang-Tidy analysis (with cache)
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
     needs: pr_checks
     uses: ./.github/workflows/clang_tidy_analysis.yml
+    with:
+      use_cache: true
+
+  clang_tidy_no_cache:
+    name: Clang-Tidy analysis (no cache)
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.run_nightly_checks == 'true') }}
+    needs: pr_checks
+    uses: ./.github/workflows/clang_tidy_analysis.yml
+    with:
+      use_cache: false
 
   dashboard:
     name: Generate quality dashboard with timing
@@ -73,9 +93,11 @@ jobs:
     needs:
       - pr_checks
       - coverage
+      - coverage_no_cache
       - thread_sanitizer
       - address_sanitizer
       - clang_tidy
+      - clang_tidy_no_cache
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -87,11 +109,15 @@ jobs:
         env:
           PR_CHECKS_RESULT: ${{ needs.pr_checks.result }}
           COVERAGE_RESULT: ${{ needs.coverage.result || 'skipped' }}
+          COVERAGE_NO_CACHE_RESULT: ${{ needs.coverage_no_cache.result || 'skipped' }}
           THREAD_SANITIZER_RESULT: ${{ needs.thread_sanitizer.result || 'skipped' }}
           ADDRESS_SANITIZER_RESULT: ${{ needs.address_sanitizer.result || 'skipped' }}
           CLANG_TIDY_RESULT: ${{ needs.clang_tidy.result || 'skipped' }}
+          CLANG_TIDY_NO_CACHE_RESULT: ${{ needs.clang_tidy_no_cache.result || 'skipped' }}
           CLANG_TIDY_DURATION_SECONDS: ${{ needs.clang_tidy.outputs.duration-seconds || '' }}
+          CLANG_TIDY_NO_CACHE_DURATION_SECONDS: ${{ needs.clang_tidy_no_cache.outputs.duration-seconds || '' }}
           COVERAGE_DURATION_SECONDS: ${{ needs.coverage.outputs.duration-seconds || '' }}
+          COVERAGE_NO_CACHE_DURATION_SECONDS: ${{ needs.coverage_no_cache.outputs.duration-seconds || '' }}
           COVERAGE_ARTIFACT_NAME: ${{ needs.coverage.outputs.artifact-name }}
           REPOSITORY_NAME: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
