@@ -30,6 +30,7 @@ GenericSkeletonField::GenericSkeletonField(SkeletonBase& skeleton_base,
       has_setter_{has_setter},
       has_notifier_{has_notifier}
 {
+    // Register this field instance with the parent skeleton's element map
     SkeletonBaseView skeleton_base_view{skeleton_base};
     skeleton_base_view.RegisterField(field_name, *this);
 }
@@ -40,8 +41,10 @@ GenericSkeletonField::GenericSkeletonField(GenericSkeletonField&& other) noexcep
       has_initial_value_{std::exchange(other.has_initial_value_, false)},
       has_getter_{other.has_getter_},
       has_setter_{other.has_setter_},
-      has_notifier_{other.has_notifier_}
+      has_notifier_{other.has_notifier_},
+      is_set_handler_registered_{std::exchange(other.is_set_handler_registered_, false)}
 {
+    // Update the parent skeleton's reference to point to this newly moved instance
     SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
     skeleton_base_view.UpdateField(field_name_, *this);
 }
@@ -56,7 +59,9 @@ GenericSkeletonField& GenericSkeletonField::operator=(GenericSkeletonField&& oth
         has_getter_ = other.has_getter_;
         has_setter_ = other.has_setter_;
         has_notifier_ = other.has_notifier_;
+        is_set_handler_registered_ = std::exchange(other.is_set_handler_registered_, false);
 
+        // Update the parent skeleton's reference to point to this newly moved instance
         SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
         skeleton_base_view.UpdateField(field_name_, *this);
     }
@@ -65,6 +70,7 @@ GenericSkeletonField& GenericSkeletonField::operator=(GenericSkeletonField&& oth
 
 Result<void> GenericSkeletonField::Update(SampleAllocateePtr<void> sample) noexcept
 {
+    // If the field is not configured with a notifier, pushing updates is a no-op.
     if (!has_notifier_)
     {
         return Result<void>{};
@@ -74,13 +80,14 @@ Result<void> GenericSkeletonField::Update(SampleAllocateePtr<void> sample) noexc
 
 Result<void> GenericSkeletonField::Update(score::cpp::span<const uint8_t> raw_value) noexcept
 {
-    // Cache the initial value
+    // Cache the initial value if we are updating from a new raw_value payload
     if (raw_value.data() != initial_field_value_.data())
     {
         initial_field_value_.assign(raw_value.begin(), raw_value.end());
         has_initial_value_ = true;
     }
 
+    // If we haven't offered the service yet, just cache it for DoDeferredUpdate()
     if (!was_prepare_offer_called_ || !has_notifier_)
     {
         return Result<void>{};
@@ -95,9 +102,11 @@ Result<void> GenericSkeletonField::Update(score::cpp::span<const uint8_t> raw_va
     auto sample = std::move(alloc_res.value());
     const auto size_info = GetGenericEvent()->GetSizeInfo();
 
+    // Ensure the payload fits in the allocated sample memory
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(raw_value.size() <= size_info.size,
                                                 "Raw value payload exceeds configured generic field size.");
 
+    // Copy the raw bytes into the shared memory slot and immediately push to subscribers
     std::memcpy(sample.Get(), raw_value.data(), raw_value.size()); 
     return Update(std::move(sample));
 }
@@ -112,6 +121,7 @@ Result<SampleAllocateePtr<void>> GenericSkeletonField::Allocate() noexcept
 
     if (!was_prepare_offer_called_)
     {
+        // Shared memory backing the sample allocator isn't active until OfferService is called.
         score::mw::log::LogWarn("GenericSkeletonField")
             << "Cannot allocate memory for Generic Field before OfferService() is called.";
         return MakeUnexpected(ComErrc::kBindingFailure);
@@ -161,6 +171,7 @@ Result<void> GenericSkeletonField::DoDeferredUpdate() noexcept
     }
 
     auto sample = std::move(alloc_res.value());
+    // Transfer the cached initial bytes into the shared memory slot
     std::memcpy(sample.Get(), initial_field_value_.data(), initial_field_value_.size());
     
     auto res = Update(std::move(sample));
@@ -168,6 +179,7 @@ Result<void> GenericSkeletonField::DoDeferredUpdate() noexcept
     if (res.has_value())
     {
         has_initial_value_ = false;
+        // Clean up cached buffer to free process memory since initial state is now distributed
         initial_field_value_.clear();
     }
     
@@ -176,7 +188,11 @@ Result<void> GenericSkeletonField::DoDeferredUpdate() noexcept
 
 bool GenericSkeletonField::IsSetHandlerRegistered() const noexcept
 {
-    return true;
+    if (has_setter_)
+    {
+        return is_set_handler_registered_;
+    }
+    return true; // If no setter is required by config, it's virtually "registered" (OfferService passes)
 }
 
 GenericSkeletonEvent* GenericSkeletonField::GetGenericEvent() const noexcept
