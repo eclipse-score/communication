@@ -29,8 +29,8 @@ namespace score::mw::com::impl
 
 /// @brief Represents a generic, type-erased skeleton field.
 ///
-/// This class provides runtime-configurable field support for `GenericSkeleton`. 
-/// It manages notifications via an underlying `GenericSkeletonEvent` and serves 
+/// This class provides runtime-configurable field support for `GenericSkeleton`.
+/// It manages notifications via an underlying `GenericSkeletonEvent` and serves
 /// as a facade for field Get and Set operations based on the provided configuration.
 class GenericSkeletonField : public SkeletonFieldBase
 {
@@ -56,8 +56,11 @@ class GenericSkeletonField : public SkeletonFieldBase
     GenericSkeletonField(GenericSkeletonField&& other) noexcept;
     GenericSkeletonField& operator=(GenericSkeletonField&& other) & noexcept;
 
+    /// @brief Updates the reference to the parent skeleton when the skeleton is moved.
+    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override;
+
     /// @brief Updates the field value using a raw byte payload and notifies subscribers.
-    /// @details If `OfferService()` has not been called yet, the payload is cached as 
+    /// @details If `OfferService()` has not been called yet, the payload is cached as
     ///          the initial value and deferred until the service is offered.
     /// @param raw_value The type-erased payload representing the new field value.
     /// @return A result indicating success or an error code on failure.
@@ -69,7 +72,7 @@ class GenericSkeletonField : public SkeletonFieldBase
     Result<void> Update(SampleAllocateePtr<void> sample) noexcept;
 
     /// @brief Allocates a zero-copy sample buffer for this field.
-    /// @return The allocated sample pointer, or an error if allocation fails or 
+    /// @return The allocated sample pointer, or an error if allocation fails or
     ///         if the field does not support notifications.
     Result<SampleAllocateePtr<void>> Allocate() noexcept;
 
@@ -79,7 +82,7 @@ class GenericSkeletonField : public SkeletonFieldBase
     Result<void> RegisterGetHandler(std::function<std::vector<uint8_t>()> get_handler);
 
     /// @brief Registers a handler for answering Set requests from proxies.
-    /// @param set_handler The user-provided handler callback accepting raw bytes and returning 
+    /// @param set_handler The user-provided handler callback accepting raw bytes and returning
     ///        the accepted/modified field value as raw bytes.
     /// @return A result indicating success or an error code.
     Result<void> RegisterSetHandler(std::function<std::vector<uint8_t>(score::cpp::span<const uint8_t>)> set_handler);
@@ -89,7 +92,7 @@ class GenericSkeletonField : public SkeletonFieldBase
     bool IsInitialValueSaved() const noexcept override;
     /// @brief Allocates and sends the cached initial value after the service is successfully offered.
     Result<void> DoDeferredUpdate() noexcept override;
-    bool IsSetHandlerRegistered() const noexcept override;
+    [[nodiscard]] bool IsSetHandlerMissing() const noexcept override;
 
     GenericSkeletonEvent* GetGenericEvent() const noexcept;
 
