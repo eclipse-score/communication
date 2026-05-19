@@ -6,6 +6,7 @@ local_path_override(
 
 bazel_dep(name = "rules_cc", version = "0.1.5")
 bazel_dep(name = "score_baselibs", version = "0.2.6")
+bazel_dep(name = "rules_rust", version = "0.68.1-score")
 
 # Needed because we do not have a current release of score_tooling (as we are in dev phase of safety sentinel)
 git_override(

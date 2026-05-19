@@ -9,3 +9,5 @@ common --registry=https://bcr.bazel.build
 common --@score_baselibs//score/json:base_library=nlohmann
 
 common --@score_communication//score/mw/com/flags:tracing_library=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
+
+common --@rules_rust//:extra_rustc_flags=-Clink-arg=-no-pie,-Clink-arg=-lgcc
