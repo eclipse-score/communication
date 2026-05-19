@@ -271,7 +271,7 @@ cc_library(
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         "@googletest//:gtest",
-        "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
+        "@score_baselibs//score/analysis/tracing/generic_trace_library:mock",
         "@score_baselibs//score/language/futurecpp",
     ],
 )

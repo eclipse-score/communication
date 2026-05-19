@@ -50,6 +50,6 @@ cc_unit_test(
     deps = [
         ":tracing_runtime",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
-        "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
+        "@score_baselibs//score/analysis/tracing/generic_trace_library:mock",
     ],
 )

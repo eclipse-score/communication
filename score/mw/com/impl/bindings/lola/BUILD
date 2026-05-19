@@ -1248,6 +1248,8 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":runtime",
+        # TODO: Change for mock once it provides all symbols (see https://github.com/eclipse-score/baselibs/issues/198)
+        "@score_baselibs//score/analysis/tracing/generic_trace_library:implementation",
         "@score_baselibs//score/os/mocklib:unistd_mock",
     ],
 )
@@ -1429,6 +1431,8 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":runtime",
+        # TODO: Change for mock once it provides all symbols (see https://github.com/eclipse-score/baselibs/issues/198)
+        "@score_baselibs//score/analysis/tracing/generic_trace_library:implementation",
         "@score_baselibs//score/os/mocklib:unistd_mock",
     ],
 )
