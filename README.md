@@ -31,10 +31,9 @@ The module consists of two main components:
 - **Zero-Copy**: Shared-memory based data exchange [`score/mw/com/message_passing/`](score/mw/com/message_passing/)
 
 ### 2. Message Passing (Low-Level Foundation)
-- **Asynchronous Communication**: Non-blocking message exchange [`score/mw/com/message_passing/design/`](score/mw/com/message_passing/design/)
-- **Multi-Channel**: Multiple senders to single receiver communication (unidirectional n-to-1) [`score/mw/com/message_passing/`](score/mw/com/message_passing/)
-- **OS Abstraction**: POSIX and QNX-specific implementations [`score/mw/com/message_passing/mqueue/`](score/mw/com/message_passing/mqueue/) | [`score/mw/com/message_passing/qnx/`](score/mw/com/message_passing/qnx/)
-- **Message Types**: Support for short messages (~8 bytes payload) and medium messages (~16 bytes payload) [`score/mw/com/message_passing/design/`](score/mw/com/message_passing/design/)
+- **Asynchronous Communication**: Non-blocking message exchange [`score/message_passing/dependability/software_architectural_design/`](score/message_passing/dependability/software_architectural_design/client-server.md)
+- **Multi-Channel**: Multiple senders to single receiver communication (unidirectional n-to-1) [`score/message_passing/`](score/message_passing/)
+- **OS Abstraction**: POSIX and QNX-specific implementations [`score/message_passing/unix_domain/`](score/message_passing/unix_domain/) | [`score/message_passing/qnx_dispatch/`](score/message_passing/qnx_dispatch/)
 
 ## System Flow Diagram
 
