@@ -30,6 +30,25 @@ build --incompatible_strict_action_env
 test --test_output=errors
 build --experimental_retain_test_configuration_across_testonly #https://github.com/bazelbuild/bazel/issues/6842
 
+# Do not treat as errors the warnings from external libraries that are known
+build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
+build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
+build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch-enum
+build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch-enum
+build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=range-loop-construct
+build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=range-loop-construct
+build --per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
+build --host_per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
+build --per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
+build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
+build --per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
+build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
+
+# Places with warnings that we need to fix
+build --per_file_copt=score/mw/com/impl/bindings/lola/slot_decrementer.*@-Wno-error=self-move
+build --per_file_copt=score/mw/com/impl/bindings/lola/messaging/message_passing_service_instance_methods_test.*@-Wno-error=unused-but-set-variable
+build --per_file_copt=score/mw/com/impl/skeleton_base_test.*@-Wno-error=self-move
+
 common:linux_x86_64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:x86_64-linux-gcc_12.2.0-posix
 common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux
 common:linux_aarch64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:aarch64-linux-gcc_12.2.0-posix
