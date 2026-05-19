@@ -68,6 +68,15 @@ GenericSkeletonField& GenericSkeletonField::operator=(GenericSkeletonField&& oth
     return *this;
 }
 
+void GenericSkeletonField::UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept
+{
+    skeleton_base_ = skeleton_base;
+    if (skeleton_event_dispatch_ != nullptr)
+    {
+        skeleton_event_dispatch_->UpdateSkeletonReference(skeleton_base);
+    }
+}
+
 Result<void> GenericSkeletonField::Update(SampleAllocateePtr<void> sample) noexcept
 {
     // If the field is not configured with a notifier, pushing updates is a no-op.
@@ -107,7 +116,7 @@ Result<void> GenericSkeletonField::Update(score::cpp::span<const uint8_t> raw_va
                                                 "Raw value payload exceeds configured generic field size.");
 
     // Copy the raw bytes into the shared memory slot and immediately push to subscribers
-    std::memcpy(sample.Get(), raw_value.data(), raw_value.size()); 
+    std::memcpy(sample.Get(), raw_value.data(), raw_value.size());
     return Update(std::move(sample));
 }
 
@@ -164,7 +173,7 @@ Result<void> GenericSkeletonField::DoDeferredUpdate() noexcept
         return Result<void>{};
     }
 
-    auto alloc_res = Allocate();
+    auto alloc_res = GetGenericEvent()->Allocate();
     if (!alloc_res.has_value())
     {
         return score::Unexpected{alloc_res.error()};
@@ -173,7 +182,7 @@ Result<void> GenericSkeletonField::DoDeferredUpdate() noexcept
     auto sample = std::move(alloc_res.value());
     // Transfer the cached initial bytes into the shared memory slot
     std::memcpy(sample.Get(), initial_field_value_.data(), initial_field_value_.size());
-    
+
     auto res = Update(std::move(sample));
 
     if (res.has_value())
@@ -182,17 +191,17 @@ Result<void> GenericSkeletonField::DoDeferredUpdate() noexcept
         // Clean up cached buffer to free process memory since initial state is now distributed
         initial_field_value_.clear();
     }
-    
+
     return res;
 }
 
-bool GenericSkeletonField::IsSetHandlerRegistered() const noexcept
+bool GenericSkeletonField::IsSetHandlerMissing() const noexcept
 {
     if (has_setter_)
     {
-        return is_set_handler_registered_;
+        return !is_set_handler_registered_;
     }
-    return true; // If no setter is required by config, it's virtually "registered" (OfferService passes)
+    return false;  // If no setter is required by config, it's not "missing" (OfferService passes)
 }
 
 GenericSkeletonEvent* GenericSkeletonField::GetGenericEvent() const noexcept

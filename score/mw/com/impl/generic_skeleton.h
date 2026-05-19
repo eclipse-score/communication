@@ -61,7 +61,7 @@ class GenericSkeleton : public SkeletonBase
 {
   public:
     using EventMapView = ServiceElementMapView<GenericSkeletonEvent>;
-    using FieldMap = ServiceElementMap<GenericSkeletonField>;
+    using FieldMapView = ServiceElementMapView<GenericSkeletonField>;
     /// @brief Creates a GenericSkeleton and all its service elements (events + fields) atomically.
     ///
     /// \contract
@@ -85,9 +85,9 @@ class GenericSkeleton : public SkeletonBase
     /// \note The returned view is valid as long as the GenericSkeleton lives.
     [[nodiscard]] EventMapView GetEvents() const noexcept;
 
-    /// @brief Returns a const reference to the name-keyed map of fields.
-    /// @note The returned reference is valid as long as the GenericSkeleton lives.
-    [[nodiscard]] const FieldMap& GetFields() const noexcept;
+    /// @brief Returns a read-only view to the name-keyed map of fields.
+    /// @note The returned view is valid as long as the GenericSkeleton lives.
+    [[nodiscard]] FieldMapView GetFields() const noexcept;
 
     /// @brief Offers the service instance.
     /// @return A blank result, or an error if offering fails.
@@ -106,7 +106,7 @@ class GenericSkeleton : public SkeletonBase
     /// even after the GenericSkeleton instance has been moved.
     std::unique_ptr<ServiceElementMapViewFactory<GenericSkeletonEvent>::map_type> events_;
     /// @brief This map owns all GenericSkeletonField instances.
-    FieldMap fields_;
+    std::unique_ptr<ServiceElementMapViewFactory<GenericSkeletonField>::map_type> fields_;
 };
 }  // namespace score::mw::com::impl
 

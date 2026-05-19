@@ -1248,6 +1248,24 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "generic_skeleton_field_test",
+    srcs = ["generic_skeleton_field_test.cpp"],
+    deps = [
+        ":generic_skeleton",
+        ":generic_skeleton_field",
+        ":runtime_mock",
+        ":service_discovery_client_mock",
+        ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding:generic_skeleton_event",
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory",
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory_mock",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "//score/mw/com/impl/test:runtime_mock_guard",
+    ],
+)
+
+cc_unit_test(
     name = "traits_test",
     srcs = [
         "traits_test.cpp",
