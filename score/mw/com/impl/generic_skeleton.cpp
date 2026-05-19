@@ -159,7 +159,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
     for (const auto& info : in.fields)
     {
         // Check for duplicates
-        if (skeleton.fields_.find(info.name) != skeleton.fields_.cend())
+        if (skeleton.fields_->find(info.name) != skeleton.fields_->cend())
         {
             score::mw::log::LogError("GenericSkeleton") << "Duplicate field name provided: " << info.name;
             return MakeUnexpected(ComErrc::kServiceElementAlreadyExists);
@@ -181,12 +181,18 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        auto generic_event = std::make_unique<GenericSkeletonEvent>(skeleton, stable_name, std::move(field_binding_result).value());
+        // Use the hidden constructor tag so the event doesn't register itself in the events_ map
+        auto generic_event =
+            std::make_unique<GenericSkeletonEvent>(skeleton,
+                                                   stable_name,
+                                                   std::move(field_binding_result).value(),
+                                                   GenericSkeletonEvent::FieldOnlyConstructorEnabler{});
 
-        const auto emplace_result = skeleton.fields_.emplace(
+        const auto emplace_result = skeleton.fields_->emplace(
             std::piecewise_construct,
             std::forward_as_tuple(stable_name),
-            std::forward_as_tuple(skeleton, stable_name, std::move(generic_event), info.has_getter, info.has_setter, info.has_notifier));
+            std::forward_as_tuple(
+                skeleton, stable_name, std::move(generic_event), info.has_getter, info.has_setter, info.has_notifier));
 
         if (!emplace_result.second)
         {
@@ -198,7 +204,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
         if (!update_result.has_value())
         {
             score::mw::log::LogError("GenericSkeleton") << "Failed to set initial value for field: " << info.name;
-            return score::Unexpected{update_result.error()};
+            return score::Unexpected(update_result.error());
         }
     }
 
@@ -210,9 +216,9 @@ ServiceElementMapView<GenericSkeletonEvent> GenericSkeleton::GetEvents() const n
     return ServiceElementMapViewFactory<GenericSkeletonEvent>::Create(*events_);
 }
 
-const GenericSkeleton::FieldMap& GenericSkeleton::GetFields() const noexcept
+GenericSkeleton::FieldMapView GenericSkeleton::GetFields() const noexcept
 {
-    return fields_;
+    return ServiceElementMapViewFactory<GenericSkeletonField>::Create(*fields_);
 }
 
 Result<void> GenericSkeleton::OfferService() noexcept
@@ -227,7 +233,8 @@ void GenericSkeleton::StopOfferService() noexcept
 
 GenericSkeleton::GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding)
     : SkeletonBase(std::move(binding), identifier),
-      events_(std::make_unique<std::map<std::string_view, GenericSkeletonEvent>>())
+      events_(std::make_unique<std::map<std::string_view, GenericSkeletonEvent>>()),
+      fields_(std::make_unique<std::map<std::string_view, GenericSkeletonField>>())
 {
 }
 
