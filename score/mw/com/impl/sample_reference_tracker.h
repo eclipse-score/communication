@@ -151,7 +151,7 @@ class SampleReferenceGuard final
     explicit SampleReferenceGuard(SampleReferenceTracker& tracker) noexcept;
     void Deallocate() noexcept;
 
-    /// Reference to the tracker. It must not move, otherwise the pointer will be dangling.
+    /// Pointer to the tracker. It must not move, otherwise the pointer will be dangling.
     SampleReferenceTracker* tracker_{nullptr};
     static_assert((std::is_move_assignable<SampleReferenceTracker>::value == false) &&
                       (std::is_move_constructible<SampleReferenceTracker>::value == false),
