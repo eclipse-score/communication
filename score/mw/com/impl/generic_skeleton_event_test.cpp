@@ -209,7 +209,7 @@ TEST_F(GenericSkeletonEventTest, AllocateAndSendDispatchesToBindingAfterOffer)
 
     // When calling Allocate()
     mock_binding::SampleAllocateePtr<void> dummy_alloc{nullptr, [](void*) {}};
-    EXPECT_CALL(*mock_event_binding_ptr, Allocate())
+    EXPECT_CALL(*mock_event_binding_ptr, Allocate(_))
         .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
 
     auto alloc_result = event->Allocate();
@@ -255,7 +255,7 @@ TEST_F(GenericSkeletonEventTest, AllocateReturnsErrorWhenBindingFails)
     ASSERT_TRUE(skeleton.OfferService().has_value());
 
     // Expect the binding to fail allocation
-    EXPECT_CALL(*mock_event_binding_ptr, Allocate())
+    EXPECT_CALL(*mock_event_binding_ptr, Allocate(_))
         .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kSampleAllocationFailure))));
 
     // When calling Allocate()
