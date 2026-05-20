@@ -16,12 +16,17 @@
 // As of now, it just provide basic mock implementation and returning values based on
 // input parameters. In future, we will enhance this mock implementation to verify
 // all the test cases and scenarios.
+
+// This mock back-end (FFIBridge implementation) is used for unit testing of Lola-Runtime
+// So we do not want to expose this mock in the public API docs and crate level documentation, hence the `doc(hidden)` attribute.
+#![doc(hidden)]
+
 use bridge_ffi_rs::{
     FatPtr, FindServiceHandle, HandleContainer, HandleType, InstanceSpecifier,
     NativeHandleContainer, NativeInstanceSpecifier, ProxyBase, ProxyEventBase, SkeletonBase,
     SkeletonEventBase,
 };
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 // Holds a heap-allocated pointer and its associated drop function.
 // Used for type-erased heap allocations in the mock FFI bridge.
@@ -33,11 +38,11 @@ struct BackingEntry {
     drop_fn: fn(*mut std::ffi::c_void),
 }
 
-// SAFETY: BackingEntry is safe to Send and Sync because,
-// each test will typically use its own instance of MockFFIBridge and thus its own BackingEntry,
-// so there is no shared mutable state across threads.
+// SAFETY: BackingEntry is safe to Send because the drop_fn ensures that the heap allocation is properly freed,
+// and the pointer is only accessed through the mock's controlled methods which enforce thread safety via Mutex.
+// No mutbale operation on the pointer is exposed to the caller,
+// and the mock's internal methods ensure that any access to the pointer is thread-safe.
 unsafe impl Send for BackingEntry {}
-unsafe impl Sync for BackingEntry {}
 
 impl std::fmt::Debug for BackingEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -58,32 +63,28 @@ impl Drop for BackingEntry {
 //
 // FFIBridge trait requires Clone - when Runtime creates a consumer/producer, it clones
 // the bridge instance.
-// RefCell<...> provides interior mutability: FFIBridge trait methods take &self (not &mut self)
+// Arc<Mutex<...>> provides thread-safe interior mutability: FFIBridge trait methods take &self (not &mut self)
 // To match this signature while mutating internal state (e.g., storing/retrieving mock data),
-// we need interior mutability.
+// we need interior mutability. Arc<Mutex<...>> ensures thread safety at the cost of some performance,
+// which is acceptable for test code where safety is more important than performance.
 #[derive(Debug, Clone)]
 pub struct MockFFIBridge {
     //DATA_BACKING holds a pointer to the heap-allocated backing data and a drop function to free it.
     //We are using this when user calls get_allocatee_data_ptr to return a pointer to this backing data.
-    data_backing: RefCell<Option<BackingEntry>>,
+    data_backing: Arc<Mutex<Option<BackingEntry>>>,
     //ALLOC_SIZE holds the size of the allocatee type for the next get_allocatee_ptr call, allowing
     //the mock to zero-fill the caller's slot correctly.
-    alloc_size: RefCell<usize>,
+    alloc_size: Arc<Mutex<usize>>,
     //SAMPLE_BACKING holds a pointer to the heap-allocated sample data and a drop function to free it.
-    sample_backing: RefCell<Option<BackingEntry>>,
+    sample_backing: Arc<Mutex<Option<BackingEntry>>>,
 }
-
-// SAFETY: MockFFIBridge is safe to Send and Sync because each test will typically use its own instance of MockFFIBridge,
-// so there is no shared mutable state across threads.
-unsafe impl Send for MockFFIBridge {}
-unsafe impl Sync for MockFFIBridge {}
 
 impl Default for MockFFIBridge {
     fn default() -> Self {
         Self {
-            data_backing: RefCell::new(None),
-            alloc_size: RefCell::new(0),
-            sample_backing: RefCell::new(None),
+            data_backing: Arc::new(Mutex::new(None)),
+            alloc_size: Arc::new(Mutex::new(0)),
+            sample_backing: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -100,7 +101,7 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         if event_ptr.is_null() || allocatee_ptr.is_null() {
             return false;
         }
-        let size = *self.alloc_size.borrow();
+        let size = *self.alloc_size.lock().expect("Failed to lock alloc_size");
         if size == 0 {
             return false;
         }
@@ -110,10 +111,15 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
 
     // Deletes the heap-allocated backing data for the current allocatee, if any, and resets alloc_size.
     unsafe fn delete_allocatee_ptr(&self, _allocatee_ptr: *mut std::ffi::c_void, _type_name: &str) {
-        if let Some(entry) = self.data_backing.borrow_mut().take() {
+        if let Some(entry) = self
+            .data_backing
+            .lock()
+            .expect("Failed to lock data_backing")
+            .take()
+        {
             (entry.drop_fn)(entry.ptr);
         }
-        *self.alloc_size.borrow_mut() = 0;
+        *self.alloc_size.lock().expect("Failed to lock alloc_size") = 0;
     }
 
     // Returns a pointer to the heap-allocated backing data for the current allocatee, if any.
@@ -123,7 +129,8 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         _type_name: &str,
     ) -> *mut std::ffi::c_void {
         self.data_backing
-            .borrow()
+            .lock()
+            .expect("Failed to lock data_backing")
             .as_ref()
             .map(|entry| entry.ptr)
             .unwrap_or(std::ptr::null_mut())
@@ -146,7 +153,8 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
         _type_name: &str,
     ) -> *const std::ffi::c_void {
         self.sample_backing
-            .borrow()
+            .lock()
+            .expect("Failed to lock sample_backing")
             .as_ref()
             .map(|entry| entry.ptr as *const std::ffi::c_void)
             .unwrap_or(std::ptr::null())
@@ -154,7 +162,12 @@ impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
 
     // Deletes the heap-allocated sample backing data for the current sample, if any.
     unsafe fn sample_ptr_delete(&self, _sample_ptr: *mut std::ffi::c_void, _type_name: &str) {
-        if let Some(entry) = self.sample_backing.borrow_mut().take() {
+        if let Some(entry) = self
+            .sample_backing
+            .lock()
+            .expect("Failed to lock sample_backing")
+            .take()
+        {
             (entry.drop_fn)(entry.ptr);
         }
     }
@@ -364,11 +377,15 @@ impl MockFFIBridge {
             drop(unsafe { Box::from_raw(p as *mut std::mem::MaybeUninit<T>) });
         };
         // Replace any previous backing - Drop trait automatically cleans up the old entry
-        *self.data_backing.borrow_mut() = Some(BackingEntry {
+        *self
+            .data_backing
+            .lock()
+            .expect("Failed to lock data_backing") = Some(BackingEntry {
             ptr: data_ptr,
             drop_fn,
         });
-        *self.alloc_size.borrow_mut() = std::mem::size_of::<SampleAllocateePtr<T>>();
+        *self.alloc_size.lock().expect("Failed to lock alloc_size") =
+            std::mem::size_of::<SampleAllocateePtr<T>>();
     }
 
     // Registers `data` as the backing value for the next `sample_ptr_get` /
@@ -384,6 +401,9 @@ impl MockFFIBridge {
             drop(unsafe { Box::from_raw(p as *mut T) });
         };
         // Replace any previous backing - Drop trait automatically cleans up the old entry
-        *self.sample_backing.borrow_mut() = Some(BackingEntry { ptr, drop_fn });
+        *self
+            .sample_backing
+            .lock()
+            .expect("Failed to lock sample_backing") = Some(BackingEntry { ptr, drop_fn });
     }
 }

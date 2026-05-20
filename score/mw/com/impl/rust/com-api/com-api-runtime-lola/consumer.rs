@@ -58,9 +58,11 @@ pub struct LolaConsumerInfo<B: FFIBridge> {
     handle_container: Arc<mw_com::proxy::HandleContainer>,
     handle_index: usize,
     interface_id: &'static str,
-    // Bridge is Arc-wrapped at creation for optimized cloning throughout the consumer lifecycle.
-    // For LolaFFIBridge (ZST), Arc overhead is minimal rather than cloning directly.
-    bridge: Arc<B>,
+    // LolaFFIBridge (Production case) is a ZST, so cloning it is not overhead,
+    // But if in future we add some state in the bridge type then we need to ensure that
+    // it is properly cloned and does not cause any overhead.
+    // In that case suggested to implement Arc for the type or FFIBridge itself.
+    bridge: B,
 }
 
 impl<B: FFIBridge> LolaConsumerInfo<B> {
@@ -80,7 +82,7 @@ where
     T: CommData + Debug,
 {
     data: ManuallyDrop<sample_ptr_rs::SamplePtr<T>>,
-    bridge: Arc<B>,
+    bridge: B,
 }
 
 impl<T, B: FFIBridge> Drop for LolaBinding<T, B>
@@ -314,11 +316,8 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
         let handle = instance_info.get_handle().ok_or(Error::ConsumerError(
             ConsumerFailedReason::ServiceHandleNotFound,
         ))?;
-        let native_proxy = NativeProxyBase::new(
-            instance_info.bridge.as_ref(),
-            instance_info.interface_id,
-            handle,
-        )?;
+        let native_proxy =
+            NativeProxyBase::new(&instance_info.bridge, instance_info.interface_id, handle)?;
         let proxy_instance = ProxyInstanceManager(Arc::new(native_proxy));
         Ok(Self {
             identifier,
@@ -693,7 +692,10 @@ struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBrid
     new_samples: usize,
     max_samples: usize,
     total_received: usize,
+<<<<<<< HEAD
     cancellation: Pin<&'a mut F>,
+=======
+>>>>>>> d1f2a252 (Rust::com Update FFI mock)
     bridge: B,
 }
 
@@ -706,7 +708,7 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future for R
         let new_samples = self.new_samples;
         let max_num_samples = self.max_num_samples;
         let total_received = self.total_received;
-        let bridge = Arc::clone(&self.bridge);
+        let bridge = self.bridge.clone();
 
         // Poll the cancellation future first to ensure prompt handling of cancellation requests.
         if self.cancellation.as_mut().poll(ctx).is_ready() {
@@ -889,14 +891,13 @@ where
             .map_err(|_| Error::ServiceError(ServiceFailedReason::ServiceNotFound))?;
 
         let service_handle_arc = Arc::new(service_handle);
-        let bridge_arc = Arc::new(self.bridge.clone());
         let available_instances = (0..service_handle_arc.len())
             .map(|handle_index| {
                 let instance_info = LolaConsumerInfo {
                     handle_container: Arc::clone(&service_handle_arc),
                     handle_index,
                     interface_id: I::INTERFACE_ID,
-                    bridge: Arc::clone(&bridge_arc),
+                    bridge: self.bridge.clone(),
                 };
                 LolaConsumerBuilder {
                     instance_info,
@@ -1049,14 +1050,13 @@ impl<I: Interface, B: FFIBridge> Future for ServiceDiscoveryFuture<I, B> {
             //create Arc for service handle to share between instances
             let service_handle_arc = Arc::new(service_handle);
             // Build the response from discovered handles
-            let bridge_arc = Arc::new(self.bridge.clone());
             let available_instances = (0..service_handle_arc.len())
                 .map(|handle_index| {
                     let instance_info = LolaConsumerInfo {
                         handle_container: Arc::clone(&service_handle_arc),
                         handle_index,
                         interface_id: I::INTERFACE_ID,
-                        bridge: Arc::clone(&bridge_arc),
+                        bridge: self.bridge.clone(),
                     };
                     LolaConsumerBuilder {
                         instance_info,
@@ -1114,7 +1114,7 @@ impl<I: Interface, B: FFIBridge> ConsumerDescriptor<LolaRuntimeImpl<B>>
 /// * `max_num_samples` - Maximum allowed samples for this subscription
 /// * `max_samples` - How many samples to fetch in this call
 fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
-    bridge: &Arc<B>,
+    bridge: &B,
     event: &mut ProxyEventBase,
     scratch: &mut SampleContainer<Sample<T, B>>,
     max_num_samples: usize,
@@ -1178,11 +1178,11 @@ fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
 /// * `scratch` - Mutable reference to the sample container
 /// * `max_samples` - Maximum number of samples to maintain in the container
 pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
-    bridge: &Arc<B>,
+    bridge: &B,
     scratch: &'a mut SampleContainer<Sample<T, B>>,
     max_samples: usize,
 ) -> impl FnMut(*mut sample_ptr_rs::SamplePtr<T>) + 'a {
-    let bridge = Arc::clone(bridge);
+    let bridge = bridge.clone();
     move |raw_sample: *mut sample_ptr_rs::SamplePtr<T>| {
         if !raw_sample.is_null() {
             //SAFETY: It is safe to read the sample pointer because
@@ -1195,7 +1195,7 @@ pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
                 id: ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
                 inner: LolaBinding {
                     data: ManuallyDrop::new(sample_ptr),
-                    bridge: Arc::clone(&bridge),
+                    bridge: bridge.clone(),
                 },
             };
 
@@ -1248,7 +1248,7 @@ mod test {
             handle_container: MockFFIBridge::make_handle_container(),
             handle_index: 0,
             interface_id: "TestInterface",
-            bridge: Arc::new(MockFFIBridge),
+            bridge: MockFFIBridge,
         }
     }
 
@@ -1268,7 +1268,7 @@ mod test {
                 data: ManuallyDrop::new(unsafe {
                     core::mem::zeroed::<sample_ptr_rs::SamplePtr<TestData>>()
                 }),
-                bridge: Arc::new(MockFFIBridge),
+                bridge: MockFFIBridge,
             },
         };
         assert_eq!(sample.id, 1);
