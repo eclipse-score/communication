@@ -77,5 +77,6 @@ sphinx_module(
     visibility = ["//visibility:public"],
     deps = [
         "//score/message_passing/dependability:dependable_element_message_passing_doc",
+        "//score/mw/com/dependability:mw_com_doc",
     ],
 )
