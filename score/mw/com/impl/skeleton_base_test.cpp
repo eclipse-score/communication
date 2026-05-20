@@ -206,7 +206,7 @@ TEST_F(SkeletonBaseOfferFixture, OfferService)
     ExpectOfferService();
 
     // and expecting that Send is called on the event binding with the initial value
-    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _));
+    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _, _));
 
     // and the initial field value is set
     std::ignore = skeleton_->dummy_field.Update(kInitialFieldValue);
@@ -394,7 +394,7 @@ TEST_F(SkeletonBaseStopOfferFixture, PrepareStopOffer)
     ExpectStopOfferService();
 
     // and expecting that Send is called on the event binding with the initial value
-    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _));
+    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _, _));
 
     // and the initial field value is set
     std::ignore = skeleton_->dummy_field.Update(kInitialFieldValue);
@@ -503,7 +503,7 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingServi
     EXPECT_CALL(service_discovery_mock_, OfferService(_)).Times(2);
 
     // and expecting that Send is called on the event binding once with the initial value
-    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _));
+    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _, _));
 
     // and the initial field value is set
     std::ignore = skeleton.dummy_field.Update(kInitialFieldValue);
@@ -578,7 +578,7 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterCallingStopOfferServi
         EXPECT_CALL(service_discovery_mock_, OfferService(_)).Times(2);
 
         // and expecting that Send is called on the event binding with the initial value
-        EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _));
+        EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _, _));
 
         // and the initial field value is set
         std::ignore = skeleton.dummy_field.Update(kInitialFieldValue);

@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -33,7 +34,8 @@ class MyEvent final : public SkeletonEventBinding<SampleType>
     }
     void PrepareStopOffer() noexcept override {}
     Result<void> Send(const SampleType&,
-                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>) noexcept override
+                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>,
+                      SampleAllocateeGuard) noexcept override
     {
         return {};
     }
@@ -42,9 +44,9 @@ class MyEvent final : public SkeletonEventBinding<SampleType>
     {
         return {};
     }
-    Result<SampleAllocateePtr<SampleType>> Allocate() noexcept override
+    Result<SampleAllocateePtr<SampleType>> Allocate(SampleAllocateeGuard guard) noexcept override
     {
-        return MakeSampleAllocateePtr(std::make_unique<SampleType>());
+        return MakeSampleAllocateePtr(std::make_unique<SampleType>(), std::move(guard));
     }
     BindingType GetBindingType() const noexcept override
     {

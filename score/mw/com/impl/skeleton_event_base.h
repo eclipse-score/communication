@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_SKELETON_EVENT_BASE_H
 
 #include "score/mw/com/impl/flag_owner.h"
+#include "score/mw/com/impl/sample_allocatee_tracker.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
@@ -49,7 +50,8 @@ class SkeletonEventBase
           skeleton_base_{skeleton_base},
           event_name_{event_name},
           tracing_data_{},
-          service_offered_flag_{}
+          service_offered_flag_{},
+          sample_allocatee_tracker_{std::make_unique<SampleAllocateeTracker>()}
     {
     }
 
@@ -108,6 +110,13 @@ class SkeletonEventBase
     tracing::SkeletonEventTracingData tracing_data_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     FlagOwner service_offered_flag_;
+    /// \brief Tracker for outstanding SampleAllocateePtr instances.
+    /// \details This tracker ensures that all SampleAllocateePtr instances created via Allocate() are destroyed
+    /// before the SkeletonEvent is destroyed. If any SampleAllocateePtr outlives the SkeletonEvent, the destructor
+    /// will terminate the application (symmetric with ProxyEventBase behavior for SamplePtr).
+    /// A unique_ptr is used since SampleAllocateeTracker is not moveable.
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    std::unique_ptr<SampleAllocateeTracker> sample_allocatee_tracker_;
 };
 
 class SkeletonEventBaseView

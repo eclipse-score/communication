@@ -14,6 +14,7 @@
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 
 #include "score/filesystem/filesystem.h"
 
@@ -60,7 +61,7 @@ TEST_F(SkeletonEventAllocateFixture, CannotAllocateBeforeCallingOffer)
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
 
     // When allocating and sending the allocated event
-    auto ptr = skeleton_event_->Allocate();
+    auto ptr = skeleton_event_->Allocate(SampleAllocateeGuard{});
 
     // Then we should get a nullptr
     EXPECT_FALSE(ptr);
@@ -87,7 +88,7 @@ TEST_F(SkeletonEventAllocateFixture, AllocateErrorLeadsToNullptr)
     std::vector<impl::SampleAllocateePtr<test::TestSampleType>> pointer_collection{max_samples_};
     for (std::size_t counter = 0; counter < max_samples_; ++counter)
     {
-        auto allocate_result = skeleton_event_->Allocate();
+        auto allocate_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
         ASSERT_TRUE(allocate_result.has_value());
         pointer_collection[counter] = std::move(allocate_result).value();
     }
@@ -97,7 +98,7 @@ TEST_F(SkeletonEventAllocateFixture, AllocateErrorLeadsToNullptr)
     EXPECT_CALL(service_discovery_mock_, StopOfferService(_, IServiceDiscovery::QualityTypeSelector::kAsilQm)).Times(1);
 
     // When allocating a sixth (max_samples_ + 1) slot
-    auto allocate_result = skeleton_event_->Allocate();
+    auto allocate_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
 
     // Then the slot cannot be allocated
     ASSERT_FALSE(allocate_result.has_value());
@@ -116,7 +117,7 @@ TEST_F(SkeletonEventAllocateFixture, SkeletonEventWithNotMaxSamplesEnforcementAl
     std::vector<impl::SampleAllocateePtr<test::TestSampleType>> pointer_collection{max_samples_};
     for (std::size_t counter = 0; counter < max_samples_; ++counter)
     {
-        auto allocate_result = skeleton_event_->Allocate();
+        auto allocate_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
         ASSERT_TRUE(allocate_result.has_value());
         pointer_collection[counter] = std::move(allocate_result).value();
     }
@@ -126,7 +127,7 @@ TEST_F(SkeletonEventAllocateFixture, SkeletonEventWithNotMaxSamplesEnforcementAl
     EXPECT_CALL(service_discovery_mock_, StopOfferService(_, IServiceDiscovery::QualityTypeSelector::kAsilQm)).Times(1);
 
     // When allocating a sixth slot
-    auto allocate_result = skeleton_event_->Allocate();
+    auto allocate_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
 
     // Then the slot cannot be allocated
     ASSERT_FALSE(allocate_result.has_value());
@@ -152,7 +153,7 @@ TEST_F(SkeletonEventAllocateFixture, AllocateReturnsUniquePointersForMultipleCal
 
     for (size_t i = 0; i < num_allocations; ++i)
     {
-        auto alloc_result = skeleton_event_->Allocate();
+        auto alloc_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
         ASSERT_TRUE(alloc_result.has_value()) << "Allocation " << i << " failed";
 
         // Store the raw pointer to check for uniqueness
@@ -408,7 +409,7 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
     std::ignore = skeleton_event_->PrepareOffer();
 
     // WHEN we allocate and send a first sample
-    auto first_allocated_slot_result = skeleton_event_->Allocate();
+    auto first_allocated_slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(first_allocated_slot_result.has_value());
     auto first_allocated_slot = std::move(first_allocated_slot_result).value();
 
@@ -428,7 +429,7 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
     EXPECT_EQ(first_timestamp, 2U);
 
     // AND WHEN we allocate and send a second sample
-    auto second_allocated_slot_result = skeleton_event_->Allocate();
+    auto second_allocated_slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(second_allocated_slot_result.has_value());
     auto second_allocated_slot = std::move(second_allocated_slot_result).value();
 
@@ -479,7 +480,7 @@ TEST_F(SkeletonEventTimestampFixture, PrepareOfferInitializesCurrentTimestampFro
 
     std::ignore = skeleton_event_->PrepareOffer();
 
-    auto allocated_slot_result = skeleton_event_->Allocate();
+    auto allocated_slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(allocated_slot_result.has_value());
     auto allocated_slot = std::move(allocated_slot_result).value();
 
