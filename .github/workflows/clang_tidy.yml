@@ -1,0 +1,179 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Reusable workflow: run clang-tidy via Bazel and upload the report as an artifact.
+#
+# Called by nightly_quality.yml. Uses the clang-tidy Bazel config defined in
+# quality/static_analysis/static_analysis.bazelrc:
+#   bazel test --config=clang-tidy //...
+
+name: Clang-Tidy
+
+on:
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: "Name of the clang-tidy report artifact"
+        value: ${{ jobs.clang-tidy.outputs.artifact-name }}
+      conclusion:
+        description: "Job conclusion: success or failure"
+        value: ${{ jobs.clang-tidy.outputs.conclusion }}
+
+permissions:
+  contents: read
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  clang-tidy:
+    runs-on: ubuntu-24.04
+    outputs:
+      artifact-name: ${{ steps.set-artifact-name.outputs.artifact-name }}
+      conclusion: ${{ steps.set-conclusion.outputs.conclusion }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          disk-cache: "clang_tidy"
+          repository-cache: true
+          cache-save: ${{ github.event_name == 'schedule' }}
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Run clang-tidy via Bazel
+        id: run-clang-tidy
+        # Continue on error so we can collect and upload the report even on findings
+        continue-on-error: true
+        run: |
+          bazel test --config=clang-tidy //... \
+            2>&1 | tee clang_tidy_raw.log
+
+      - name: Collect clang-tidy reports
+        run: |
+          mkdir -p clang_tidy_report
+
+          # aspect_rules_lint v2 writes {label}.AspectRulesLintClangTidy.out per target.
+          # -L is required because bazel-bin is a symlink.
+          find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
+            | xargs -I{} cp {} clang_tidy_report/ 2>/dev/null || true
+
+          # Also save the raw log
+          cp clang_tidy_raw.log clang_tidy_report/
+
+          # Count findings from the .out files (verbose=False means findings are only
+          # in the per-file .out files, not in the bazel terminal output)
+          FINDINGS=$(cat clang_tidy_report/*.AspectRulesLintClangTidy.out 2>/dev/null \
+            | grep -c "warning:\|error:" || true)
+          echo "Total clang-tidy findings: ${FINDINGS}"
+          echo "findings=${FINDINGS}" >> $GITHUB_OUTPUT
+
+          # Generate a simple HTML summary
+          python3 - << 'PYEOF'
+          import re, pathlib, html, datetime, glob
+
+          # Read all .out files (findings are per source file, not in bazel terminal output)
+          findings = []
+          for out_file in glob.glob("clang_tidy_report/*.AspectRulesLintClangTidy.out"):
+              log = pathlib.Path(out_file).read_text(errors="replace")
+              for m in re.finditer(
+                  r"^(.*?):(\d+):\d+:\s+(warning|error):\s+(.+?)(?:\s+\[.+?\])?$",
+                  log, re.MULTILINE):
+                  findings.append(m.groups())
+
+          rows = ""
+          for path, line, severity, msg in findings:
+              sev_cls = "error" if severity == "error" else "warning"
+              rows += (
+                  f"<tr class='{sev_cls}'>"
+                  f"<td>{html.escape(path)}:{html.escape(line)}</td>"
+                  f"<td>{html.escape(severity)}</td>"
+                  f"<td>{html.escape(msg)}</td></tr>\n"
+              )
+
+          total = len(findings)
+          errors = sum(1 for _, _, s, _ in findings if s == "error")
+          warnings = total - errors
+          generated = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+
+          html_out = f"""<!DOCTYPE html>
+          <html lang="en"><head><meta charset="utf-8">
+          <title>Clang-Tidy Report</title>
+          <style>
+          body {{ font-family: -apple-system, sans-serif; max-width: 1100px;
+              margin: 32px auto; padding: 0 16px; color: #24292e; }}
+          h1 {{ border-bottom: 2px solid #e1e4e8; padding-bottom: 8px; }}
+          .summary {{ display: flex; gap: 24px; margin: 16px 0 24px; }}
+          .stat {{ background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px;
+              padding: 12px 20px; text-align: center; }}
+          .stat .num {{ font-size: 2em; font-weight: 700; }}
+          .stat.err .num {{ color: #d73a49; }}
+          .stat.warn .num {{ color: #e36209; }}
+          table {{ border-collapse: collapse; width: 100%; font-size: 0.88em; }}
+          th, td {{ text-align: left; padding: 6px 10px;
+              border-bottom: 1px solid #e1e4e8; }}
+          th {{ background: #f6f8fa; font-weight: 600; }}
+          tr.error td {{ background: #fff0f0; }}
+          tr.warning td {{ background: #fffbf0; }}
+          .meta {{ color: #586069; font-size: 0.85em; margin-bottom: 16px; }}
+          </style></head><body>
+          <h1>Clang-Tidy Report</h1>
+          <p class="meta">Generated: {generated}</p>
+          <div class="summary">
+          <div class="stat err"><div class="num">{errors}</div>Errors</div>
+          <div class="stat warn"><div class="num">{warnings}</div>Warnings</div>
+          <div class="stat"><div class="num">{total}</div>Total findings</div>
+          </div>
+          <table>
+          <thead><tr><th>Location</th><th>Severity</th><th>Message</th></tr></thead>
+          <tbody>{rows if rows else "<tr><td colspan='3'>No findings.</td></tr>"}</tbody>
+          </table>
+          </body></html>"""
+
+          pathlib.Path("clang_tidy_report/index.html").write_text(html_out)
+          print(f"Report written: {total} findings ({errors} errors, {warnings} warnings)")
+          PYEOF
+
+      - name: Set artifact name
+        id: set-artifact-name
+        run: |
+          NAME="${{ github.event.repository.name }}_clang_tidy_${{ github.sha }}"
+          echo "artifact-name=${NAME}" >> $GITHUB_OUTPUT
+
+      - name: Set conclusion
+        id: set-conclusion
+        run: |
+          if [[ "${{ steps.run-clang-tidy.outcome }}" == "success" ]]; then
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload clang-tidy report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-artifact-name.outputs.artifact-name }}
+          path: clang_tidy_report/

@@ -1,0 +1,170 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow: Clang-Tidy PR check (voting).
+#
+# Runs clang-tidy on every pull_request and push to main.
+# - Reports findings in a PR comment (creates or updates on re-run).
+# - Writes a job summary with error/warning counts.
+# - Fails the check if any clang-tidy *errors* are found.
+#   Warnings are reported but do not block merging.
+#
+# Cache is saved only on pushes to main (not on PRs) to avoid
+# cache poisoning from unreviewed code.
+
+name: Clang-Tidy Check
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write  # required for posting / updating PR comments
+
+concurrency:
+  group: clang-tidy-pr-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  clang-tidy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          disk-cache: "clang_tidy"
+          repository-cache: true
+          # Only persist cache from trusted code on main; never from PRs.
+          cache-save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Run clang-tidy via Bazel
+        id: run-clang-tidy
+        # continue-on-error so we can collect findings and post a comment
+        # even when the Bazel invocation exits non-zero.
+        continue-on-error: true
+        run: |
+          bazel test --config=clang-tidy //... \
+            2>&1 | tee clang_tidy_raw.log
+
+      - name: Collect findings
+        id: findings
+        run: |
+          # aspect_rules_lint writes one .out file per target under bazel-bin.
+          # -L is needed because bazel-bin is a symlink.
+          ERRORS=$(find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
+            | xargs cat 2>/dev/null \
+            | grep -c "error:" || true)
+          WARNINGS=$(find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
+            | xargs cat 2>/dev/null \
+            | grep -c "warning:" || true)
+          TOTAL=$((ERRORS + WARNINGS))
+
+          echo "errors=${ERRORS}"   >> $GITHUB_OUTPUT
+          echo "warnings=${WARNINGS}" >> $GITHUB_OUTPUT
+          echo "total=${TOTAL}"     >> $GITHUB_OUTPUT
+
+          # ── Job summary ──────────────────────────────────────────────────
+          {
+            echo "## Clang-Tidy Results"
+            echo ""
+            echo "| Metric | Count |"
+            echo "|--------|------:|"
+            echo "| :x: Errors      | **${ERRORS}**   |"
+            echo "| :warning: Warnings | **${WARNINGS}** |"
+            echo "| Total           | **${TOTAL}**    |"
+            if [[ "${ERRORS}" -gt 0 ]]; then
+              echo ""
+              echo "> :x: **Check failed** — fix all errors before merging."
+            else
+              echo ""
+              echo "> :white_check_mark: **Check passed** — no errors found."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post or update PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const errors   = parseInt('${{ steps.findings.outputs.errors }}');
+            const warnings = parseInt('${{ steps.findings.outputs.warnings }}');
+            const sha      = context.sha.substring(0, 7);
+            const icon     = errors === 0 ? 'PASS' : 'FAIL';
+
+            const body = [
+              `### Clang-Tidy Report [${icon}] — \`${sha}\``,
+              '',
+              '| Metric | Count |',
+              '|--------|------:|',
+              `| Errors   | **${errors}**   |`,
+              `| Warnings | **${warnings}** |`,
+              '',
+              errors > 0
+                ? '> **Check failed** — please fix all clang-tidy errors before merging.'
+                : '> **Check passed** — no clang-tidy errors found.','
+            ].join('\n');
+
+            // Create a new comment or update the existing one from a previous run.
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.includes('Clang-Tidy Report')
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail check if clang-tidy errors found
+        if: steps.findings.outputs.errors != '0'
+        run: |
+          echo "::error::Clang-tidy found ${{ steps.findings.outputs.errors }} error(s). \
+          Fix them before merging. See the job summary and PR comment for details."
+          exit 1
