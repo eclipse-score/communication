@@ -144,7 +144,9 @@ if _plantuml_path is None:
         "Ensure @score_tooling//tools/sphinx:plantuml is in sphinx_build data."
     )
 else:
-    plantuml = str(_plantuml_path)
+    # Use PlantUML's built-in Smetana layout engine (Java port of Graphviz).
+    # This avoids requiring an external dot binary in the Bazel sandbox.
+    plantuml = f"{_plantuml_path} -Playout=smetana"
     plantuml_output_format = "svg_obj"
 
 
