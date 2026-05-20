@@ -36,6 +36,9 @@ class GenericSkeletonEvent : public SkeletonEventBase
 
     Result<SampleAllocateePtr<void>> Allocate() noexcept;
 
+    /// \brief Explicitly trigger event-update-notifications without sending new data.
+    /// \note Caller must have already committed data to shared memory (gateway use).
+    Result<void> Notify() noexcept;
     DataTypeMetaInfo GetSizeInfo() const noexcept;
 };
 

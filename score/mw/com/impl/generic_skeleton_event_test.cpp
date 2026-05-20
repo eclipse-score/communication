@@ -343,5 +343,73 @@ TEST_F(GenericSkeletonEventTest, GetSizeInfoDispatchesToBinding)
     EXPECT_EQ(result_info.alignment, expected_size_info.second);
 }
 
+TEST_F(GenericSkeletonEventTest, NotifyBeforeOfferReturnsError)
+{
+    RecordProperty("Description", "Checks that calling Notify() before OfferService() returns kNotOffered.");
+    RecordProperty("TestType", "Requirements-based test");
+
+    // Given a skeleton created with one event "test_event"
+    const std::string event_name = "test_event";
+
+    GenericSkeletonServiceElementInfo create_params;
+    std::vector<EventInfo> events;
+    events.push_back({event_name, {16, 8}});
+    create_params.events = events;
+
+    EXPECT_CALL(generic_event_binding_factory_mock_, Create(_, event_name, _))
+        .WillOnce(Return(ByMove(std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>())));
+
+    auto skeleton_result = GenericSkeleton::Create(
+        dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithEvent(), create_params);
+    ASSERT_TRUE(skeleton_result.has_value());
+
+    auto& skeleton = skeleton_result.value();
+    auto* event = const_cast<GenericSkeletonEvent*>(&skeleton.GetEvents().find(event_name)->second);
+
+    // When calling Notify() before OfferService()
+    auto notify_result = event->Notify();
+
+    // Then it fails with kNotOffered
+    ASSERT_FALSE(notify_result.has_value());
+    EXPECT_EQ(notify_result.error(), ComErrc::kNotOffered);
+}
+
+TEST_F(GenericSkeletonEventTest, NotifyDispatchesToBindingAfterOffer)
+{
+    RecordProperty("Description", "Checks that Notify() dispatches to the binding when the service is offered.");
+    RecordProperty("TestType", "Requirements-based test");
+
+    // Given a skeleton configured with an event binding mock
+    const std::string event_name = "test_event";
+    auto mock_event_binding = std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
+    auto* mock_event_binding_ptr = mock_event_binding.get();
+
+    EXPECT_CALL(generic_event_binding_factory_mock_, Create(_, event_name, _))
+        .WillOnce(Return(ByMove(std::move(mock_event_binding))));
+
+    GenericSkeletonServiceElementInfo create_params;
+    std::vector<EventInfo> events;
+    events.push_back({event_name, {16, 8}});
+    create_params.events = events;
+
+    auto skeleton_result = GenericSkeleton::Create(
+        dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithEvent(), create_params);
+    ASSERT_TRUE(skeleton_result.has_value());
+    auto& skeleton = skeleton_result.value();
+    auto* event = const_cast<GenericSkeletonEvent*>(&skeleton.GetEvents().find(event_name)->second);
+
+    // And Given the service is Offered
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    ASSERT_TRUE(skeleton.OfferService().has_value());
+
+    // When calling Notify()
+    EXPECT_CALL(*mock_event_binding_ptr, Notify()).WillOnce(Return(score::Result<void>{}));
+    auto notify_result = event->Notify();
+
+    // Then it succeeds
+    ASSERT_TRUE(notify_result.has_value());
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl
