@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 #include "score/result/result.h"
 
 #include <cstddef>
@@ -30,7 +31,7 @@ class GenericSkeletonEventBinding : public SkeletonEventBindingBase
   public:
     virtual Result<void> Send(SampleAllocateePtr<void> sample) noexcept = 0;
 
-    virtual Result<SampleAllocateePtr<void>> Allocate() noexcept = 0;
+    virtual Result<SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) noexcept = 0;
 
     /// \brief Get Notification when new sample is available.
     virtual Result<void> Notify() noexcept = 0;

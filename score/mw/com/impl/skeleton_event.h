@@ -196,7 +196,8 @@ Result<void> SkeletonEvent<SampleDataType>::Send(const EventType& sample_value) 
     }
     auto tracing_handler = impl::tracing::CreateTracingSendCallback<SampleDataType>(tracing_data_, *binding_);
 
-    const auto send_result = GetTypedEventBinding()->Send(sample_value, std::move(tracing_handler));
+    const auto send_result =
+        GetTypedEventBinding()->Send(sample_value, std::move(tracing_handler), sample_allocatee_tracker_->Allocate());
     if (!send_result.has_value())
     {
         score::mw::log::LogError("lola") << "SkeletonEvent::Send with copy failed: " << send_result.error().Message()
@@ -249,7 +250,7 @@ Result<SampleAllocateePtr<SampleDataType>> SkeletonEvent<SampleDataType>::Alloca
         return MakeUnexpected(ComErrc::kNotOffered);
     }
 
-    auto allocate_result = GetTypedEventBinding()->Allocate();
+    auto allocate_result = GetTypedEventBinding()->Allocate(sample_allocatee_tracker_->Allocate());
     if (!allocate_result.has_value())
     {
         score::mw::log::LogError("lola") << "SkeletonEvent::Allocate failed: " << allocate_result.error().Message()

@@ -12,8 +12,8 @@
  ********************************************************************************/
 
 #include "score/mw/com/impl/bindings/lola/generic_skeleton_event.h"
-
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -193,7 +193,7 @@ TEST_F(GenericSkeletonEventFixture, CannotAllocateBeforePrepareOffer)
         fake_element_fq_id_, fake_event_name_, max_samples, max_subscribers, enforce_max_samples);
 
     // When trying to allocate without PrepareOffer
-    auto ptr = generic_skeleton_event_->Allocate();
+    auto ptr = generic_skeleton_event_->Allocate(SampleAllocateeGuard{});
 
     // Then allocation fails
     EXPECT_FALSE(ptr.has_value());
@@ -220,7 +220,7 @@ TEST_F(GenericSkeletonEventFixture, CanAllocateAfterPrepareOffer)
     std::ignore = generic_skeleton_event_->PrepareOffer();
 
     // And allocating a sample
-    auto ptr = generic_skeleton_event_->Allocate();
+    auto ptr = generic_skeleton_event_->Allocate(SampleAllocateeGuard{});
 
     // Then allocation succeeds
     EXPECT_TRUE(ptr.has_value());
@@ -250,7 +250,7 @@ TEST_F(GenericSkeletonEventFixture, MultipleAllocationsWork)
     std::vector<impl::SampleAllocateePtr<void>> pointers;
     for (std::size_t i = 0; i < max_samples; ++i)
     {
-        auto ptr = generic_skeleton_event_->Allocate();
+        auto ptr = generic_skeleton_event_->Allocate(SampleAllocateeGuard{});
         EXPECT_TRUE(ptr.has_value());
         pointers.push_back(std::move(ptr).value());
     }
@@ -283,7 +283,7 @@ TEST_F(GenericSkeletonEventFixture, AllocationFailsWhenSlotsFull)
     std::vector<impl::SampleAllocateePtr<void>> pointers;
     for (std::size_t i = 0; i < max_samples; ++i)
     {
-        auto ptr = generic_skeleton_event_->Allocate();
+        auto ptr = generic_skeleton_event_->Allocate(SampleAllocateeGuard{});
         EXPECT_TRUE(ptr.has_value());
         pointers.push_back(std::move(ptr).value());
     }
@@ -292,7 +292,7 @@ TEST_F(GenericSkeletonEventFixture, AllocationFailsWhenSlotsFull)
     EXPECT_CALL(service_discovery_mock_, StopOfferService(testing::_, IServiceDiscovery::QualityTypeSelector::kAsilQm))
         .Times(1);
 
-    auto overflow_ptr = generic_skeleton_event_->Allocate();
+    auto overflow_ptr = generic_skeleton_event_->Allocate(SampleAllocateeGuard{});
 
     // Then allocation fails
     EXPECT_FALSE(overflow_ptr.has_value());
@@ -319,7 +319,7 @@ TEST_F(GenericSkeletonEventFixture, CanSendAfterAllocate)
     std::ignore = generic_skeleton_event_->PrepareOffer();
 
     // And allocating a sample
-    auto ptr = generic_skeleton_event_->Allocate();
+    auto ptr = generic_skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(ptr.has_value());
 
     auto sample = std::move(ptr).value();
@@ -425,7 +425,7 @@ TEST_F(GenericSkeletonEventFixture, PrepareStopOffer)
     std::ignore = generic_skeleton_event_->PrepareOffer();
 
     // And allocating a sample
-    auto ptr = generic_skeleton_event_->Allocate();
+    auto ptr = generic_skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(ptr.has_value());
 
     // When calling PrepareStopOffer
@@ -484,7 +484,7 @@ TEST_F(GenericSkeletonEventFixture, FullEventLifecycle)
     EXPECT_TRUE(offer_result.has_value());
 
     // And allocating a sample
-    auto alloc_result = generic_skeleton_event_->Allocate();
+    auto alloc_result = generic_skeleton_event_->Allocate(SampleAllocateeGuard{});
     EXPECT_TRUE(alloc_result.has_value());
 
     auto sample = std::move(alloc_result).value();

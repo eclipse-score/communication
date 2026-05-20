@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 
 #include "score/filesystem/filesystem.h"
 
@@ -67,7 +68,7 @@ TEST_F(SkeletonEventAllocateFixture, CannotAllocateBeforeCallingOffer)
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
 
     // When allocating and sending the allocated event
-    auto ptr = skeleton_event_->Allocate();
+    auto ptr = skeleton_event_->Allocate(SampleAllocateeGuard{});
 
     // Then we should get a nullptr
     EXPECT_FALSE(ptr);
@@ -94,7 +95,7 @@ TEST_F(SkeletonEventAllocateFixture, AllocateErrorLeadsToNullptr)
     std::vector<impl::SampleAllocateePtr<test::TestSampleType>> pointer_collection{max_samples_};
     for (std::size_t counter = 0; counter < max_samples_; ++counter)
     {
-        auto allocate_result = skeleton_event_->Allocate();
+        auto allocate_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
         ASSERT_TRUE(allocate_result.has_value());
         pointer_collection[counter] = std::move(allocate_result).value();
     }
@@ -104,7 +105,7 @@ TEST_F(SkeletonEventAllocateFixture, AllocateErrorLeadsToNullptr)
     EXPECT_CALL(service_discovery_mock_, StopOfferService(_, IServiceDiscovery::QualityTypeSelector::kAsilQm)).Times(1);
 
     // When allocating a sixth (max_samples_ + 1) slot
-    auto allocate_result = skeleton_event_->Allocate();
+    auto allocate_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
 
     // Then the slot cannot be allocated
     ASSERT_FALSE(allocate_result.has_value());
@@ -123,7 +124,7 @@ TEST_F(SkeletonEventAllocateFixture, SkeletonEventWithNotMaxSamplesEnforcementAl
     std::vector<impl::SampleAllocateePtr<test::TestSampleType>> pointer_collection{max_samples_};
     for (std::size_t counter = 0; counter < max_samples_; ++counter)
     {
-        auto allocate_result = skeleton_event_->Allocate();
+        auto allocate_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
         ASSERT_TRUE(allocate_result.has_value());
         pointer_collection[counter] = std::move(allocate_result).value();
     }
@@ -133,7 +134,7 @@ TEST_F(SkeletonEventAllocateFixture, SkeletonEventWithNotMaxSamplesEnforcementAl
     EXPECT_CALL(service_discovery_mock_, StopOfferService(_, IServiceDiscovery::QualityTypeSelector::kAsilQm)).Times(1);
 
     // When allocating a sixth slot
-    auto allocate_result = skeleton_event_->Allocate();
+    auto allocate_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
 
     // Then the slot cannot be allocated
     ASSERT_FALSE(allocate_result.has_value());
@@ -159,7 +160,7 @@ TEST_F(SkeletonEventAllocateFixture, AllocateReturnsUniquePointersForMultipleCal
 
     for (size_t i = 0; i < num_allocations; ++i)
     {
-        auto alloc_result = skeleton_event_->Allocate();
+        auto alloc_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
         ASSERT_TRUE(alloc_result.has_value()) << "Allocation " << i << " failed";
 
         // Store the raw pointer to check for uniqueness
@@ -450,10 +451,10 @@ TEST_P(SkeletonEventAsilBGetLatestSampleFixture, GetLatestSampleReturnsMostRecen
     std::ignore = skeleton_event_->PrepareOffer();
 
     const test::TestSampleType first_sent_value{11U};
-    ASSERT_TRUE(skeleton_event_->Send(first_sent_value, std::nullopt).has_value());
+    ASSERT_TRUE(skeleton_event_->Send(first_sent_value, std::nullopt, SampleAllocateeGuard{}).has_value());
 
     const test::TestSampleType second_sent_value{42U};
-    ASSERT_TRUE(skeleton_event_->Send(second_sent_value, std::nullopt).has_value());
+    ASSERT_TRUE(skeleton_event_->Send(second_sent_value, std::nullopt, SampleAllocateeGuard{}).has_value());
 
     // When getting the latest sample
     const auto latest_sample = skeleton_event_->GetLatestSample(quality_type);
@@ -479,7 +480,7 @@ TEST_P(SkeletonEventAsilBGetLatestSampleFixture, GetLatestSampleReturnsErrorWhen
     std::ignore = skeleton_event_->PrepareOffer();
 
     const test::TestSampleType sent_value{42U};
-    ASSERT_TRUE(skeleton_event_->Send(sent_value, std::nullopt).has_value());
+    ASSERT_TRUE(skeleton_event_->Send(sent_value, std::nullopt, SampleAllocateeGuard{}).has_value());
 
     // And given that GetLatestSample has been called and the returned SamplePtr is still alive
     auto first_sample = skeleton_event_->GetLatestSample(quality_type);
@@ -510,7 +511,7 @@ TEST_P(SkeletonEventAsilBGetLatestSampleFixture, GetLatestSampleSucceedsAfterPre
     std::ignore = skeleton_event_->PrepareOffer();
 
     const test::TestSampleType sent_value{42U};
-    ASSERT_TRUE(skeleton_event_->Send(sent_value, std::nullopt).has_value());
+    ASSERT_TRUE(skeleton_event_->Send(sent_value, std::nullopt, SampleAllocateeGuard{}).has_value());
 
     {
         auto first_sample = skeleton_event_->GetLatestSample(quality_type);
@@ -543,7 +544,7 @@ TEST_P(SkeletonEventAsilBGetLatestSampleFixture,
     std::ignore = skeleton_event_->PrepareOffer();
 
     const test::TestSampleType sent_value{42U};
-    ASSERT_TRUE(skeleton_event_->Send(sent_value, std::nullopt).has_value());
+    ASSERT_TRUE(skeleton_event_->Send(sent_value, std::nullopt, SampleAllocateeGuard{}).has_value());
 
     // And given that GetLatestSample has been called with quality_type and the returned SamplePtr is still alive
     auto first_sample = skeleton_event_->GetLatestSample(quality_type);
@@ -604,10 +605,10 @@ TEST_F(SkeletonEventQmGetLatestSampleFixture, GetLatestSampleReturnsMostRecently
     std::ignore = skeleton_event_->PrepareOffer();
 
     const test::TestSampleType first_sent_value{11U};
-    ASSERT_TRUE(skeleton_event_->Send(first_sent_value, std::nullopt).has_value());
+    ASSERT_TRUE(skeleton_event_->Send(first_sent_value, std::nullopt, SampleAllocateeGuard{}).has_value());
 
     const test::TestSampleType second_sent_value{42U};
-    ASSERT_TRUE(skeleton_event_->Send(second_sent_value, std::nullopt).has_value());
+    ASSERT_TRUE(skeleton_event_->Send(second_sent_value, std::nullopt, SampleAllocateeGuard{}).has_value());
 
     // When getting the latest sample for QM quality type
     const auto latest_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
@@ -631,7 +632,7 @@ TEST_F(SkeletonEventQmGetLatestSampleFixture, GetLatestSampleReturnsErrorWhenCal
     std::ignore = skeleton_event_->PrepareOffer();
 
     const test::TestSampleType sent_value{42U};
-    ASSERT_TRUE(skeleton_event_->Send(sent_value, std::nullopt).has_value());
+    ASSERT_TRUE(skeleton_event_->Send(sent_value, std::nullopt, SampleAllocateeGuard{}).has_value());
 
     // And given that GetLatestSample has been called and the returned SamplePtr is still alive for QM quality type
     auto first_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
@@ -660,7 +661,7 @@ TEST_F(SkeletonEventQmGetLatestSampleFixture, GetLatestSampleSucceedsAfterPrevio
     std::ignore = skeleton_event_->PrepareOffer();
 
     const test::TestSampleType sent_value{42U};
-    ASSERT_TRUE(skeleton_event_->Send(sent_value, std::nullopt).has_value());
+    ASSERT_TRUE(skeleton_event_->Send(sent_value, std::nullopt, SampleAllocateeGuard{}).has_value());
 
     {
         auto first_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
@@ -707,7 +708,7 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
     std::ignore = skeleton_event_->PrepareOffer();
 
     // WHEN we allocate and send a first sample
-    auto first_allocated_slot_result = skeleton_event_->Allocate();
+    auto first_allocated_slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(first_allocated_slot_result.has_value());
     auto first_allocated_slot = std::move(first_allocated_slot_result).value();
 
@@ -727,7 +728,7 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
     EXPECT_EQ(first_timestamp, 1U);
 
     // AND WHEN we allocate and send a second sample
-    auto second_allocated_slot_result = skeleton_event_->Allocate();
+    auto second_allocated_slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(second_allocated_slot_result.has_value());
     auto second_allocated_slot = std::move(second_allocated_slot_result).value();
 
@@ -778,7 +779,7 @@ TEST_F(SkeletonEventTimestampFixture, PrepareOfferInitializesCurrentTimestampFro
 
     std::ignore = skeleton_event_->PrepareOffer();
 
-    auto allocated_slot_result = skeleton_event_->Allocate();
+    auto allocated_slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(allocated_slot_result.has_value());
     auto allocated_slot = std::move(allocated_slot_result).value();
 
