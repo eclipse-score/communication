@@ -66,6 +66,9 @@ gcc_toolchains.toolchain(
     name = "gcc_toolchain_x86_64",
     extra_cxxflags = [
         "-fdiagnostics-color=always",  # Adds copt to always use coloring in build output
+        "-Wswitch-enum",
+        "-Werror",
+        "-Wno-error=deprecated-declarations",
     ],
     extra_ldflags = [
         "-lstdc++",

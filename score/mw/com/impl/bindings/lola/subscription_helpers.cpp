@@ -67,6 +67,7 @@ SubscriptionState SubscriptionStateMachineStateToSubscriptionState(SubscriptionS
             return SubscriptionState::kSubscribed;
         case SubscriptionStateMachineState::SUBSCRIPTION_PENDING_STATE:
             return SubscriptionState::kSubscriptionPending;
+        case SubscriptionStateMachineState::STATE_COUNT:
         default:
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Invalid subscription state");
     }
