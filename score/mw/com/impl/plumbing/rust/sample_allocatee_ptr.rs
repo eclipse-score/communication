@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -19,13 +19,33 @@ use std::mem::ManuallyDrop;
 
 use common_rs::{
     BlankBinding,
+    ConsumerEventDataControlLocalView,
     CxxOptional,
-    ConsumerEventDataControlLocalView, 
+    CustomDeleter,
     ProviderEventDataControlLocalView,
     SlotIndexType,
-    UniquePtr,
-    CustomDeleter
 };
+
+#[repr(C)]
+struct SampleAllocateeTracker {
+    _data: [u8; 0],
+}
+
+#[repr(C)]
+struct SampleAllocateeGuard {
+    _tracker: *mut SampleAllocateeTracker,
+}
+
+#[repr(C)]
+struct MockBinding<T> {
+    _deleter: CustomDeleter,
+    _ptr: *mut T,
+}
+
+#[repr(C)]
+union MockBindingVariant<T> {
+    _variant: ManuallyDrop<MockBinding<T>>,
+}
 
 #[repr(C)]
 struct EventDataControlComposite {
@@ -38,21 +58,14 @@ struct EventDataControlComposite {
 struct LolaSampleAllocateePtrBinding<T> {
     _managed_object: *mut T,
     _event_slot_index: SlotIndexType,
-    _event_data_control: CxxOptional<EventDataControlComposite<>>,
+    _event_data_control_ptr: *mut EventDataControlComposite,
     _consumer_data_control_local_: *mut ConsumerEventDataControlLocalView,
-}
-
-type UniquePtrBinding<T> = UniquePtr<T, CustomDeleter>;
-
-#[repr(C)]
-union UniquePtrVariant<T> {
-    _variant: ManuallyDrop<UniquePtrBinding<T>>,
 }
 
 #[repr(C)]
 union LolaSampleAllocateePtrVariant<T> {
     _variant: ManuallyDrop<LolaSampleAllocateePtrBinding<T>>,
-    _unique_ptr: ManuallyDrop<UniquePtrVariant<T>>,
+    _mock_binding: ManuallyDrop<MockBindingVariant<T>>,
 }
 
 #[repr(C)]
@@ -70,6 +83,7 @@ struct AllocationVariant<T> {
 #[repr(C, align(16))]
 pub struct SampleAllocateePtr<T> {
     _internal: AllocationVariant<T>,
+    _allocatee_guard: CxxOptional<SampleAllocateeGuard>,
 }
 
 // SAFETY: There is no connection of any data to a particular thread, also not on C++ side.
@@ -133,12 +147,6 @@ mod tests {
             cpp_size,
             "EventDataControlComposite"
         );
-    }
-
-    #[test]
-    fn test_std_unique_ptr_size() {
-        let cpp_size = SampleAllocateePtrLola::get_std_unique_ptr_size();
-        verify_size_and_align!(UniquePtrBinding<i32>, cpp_size, "std::unique_ptr<i32>");
     }
 
     #[test]
