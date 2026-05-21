@@ -24,11 +24,15 @@ on:
       - 'docs/**'
       - '.github/workflows/deploy_docs.yml'
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Nightly Quality Jobs"]
+    types: [completed]
 
 permissions:
   contents: write  # needed for uploading release assets
   pages: write
   id-token: write
+  actions: read    # needed to download artifacts from the nightly workflow_run
 
 concurrency:
   group: "pages"
@@ -37,6 +41,7 @@ concurrency:
 env:
   ANDROID_HOME: ""
   ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-docs:
@@ -74,9 +79,6 @@ jobs:
           fi
 
       - name: Build Sphinx documentation
-        env:
-          DOCS_BASE_URL: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
-          DOCS_VERSION: ${{ steps.version.outputs.version }}
         run: |
           bazel build //docs/sphinx:sphinx_doc
 
@@ -119,22 +121,13 @@ jobs:
           gh release create "${VERSION}" --draft=false --notes "Release ${VERSION}" 2>/dev/null || true
           gh release upload "${VERSION}" "docs-${VERSION}.tar.gz" --clobber
 
-      - name: Assemble publish tree
+      - name: Download previously released versions
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          IS_TAG="${{ steps.version.outputs.is_tag }}"
-          REPO_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
-
           mkdir -p publish
-
-          # Place current build
-          mkdir -p "publish/${VERSION}"
-          cp -a docs_output/. "publish/${VERSION}/"
-
-          # Download previously released versions
           for tag in $(gh api "repos/${{ github.repository }}/releases" --paginate --jq '.[].tag_name' | grep '^v'); do
             if [ "${tag}" = "${VERSION}" ]; then
               continue
@@ -149,42 +142,28 @@ jobs:
             fi
           done
 
-          # stable = newest tagged version that has docs
-          if [[ "${IS_TAG}" == "true" ]]; then
-            rm -rf publish/stable
-            cp -a docs_output/. publish/stable/
-          else
-            NEWEST_TAG=$(find publish -maxdepth 1 -mindepth 1 -type d -name "v*" -printf '%f\n' | sort -rV | head -1)
-            if [ -n "${NEWEST_TAG}" ]; then
-              rm -rf publish/stable
-              cp -a "publish/${NEWEST_TAG}/." publish/stable/
-            fi
-          fi
+      - name: Assemble publish tree
+        if: github.event_name != 'pull_request'
+        run: |
+          bazel run //docs/sphinx/utils:assemble_publish_tree -- \
+            --version     "${{ steps.version.outputs.version }}" \
+            --is-tag      "${{ steps.version.outputs.is_tag }}" \
+            --docs-output docs_output \
+            --publish-dir publish \
+            --repo-url    "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}" \
+            --shared-css  docs/sphinx/_static/css/version_flyout.css \
+            --shared-js   docs/sphinx/_static/js/version_flyout.js \
+            --root-index  docs/sphinx/_gh_pages/index.html
 
-          # Shared assets
-          mkdir -p publish/_shared/css publish/_shared/js
-          cp docs/sphinx/_static/css/version_flyout.css publish/_shared/css/
-          cp docs/sphinx/_static/js/version_flyout.js publish/_shared/js/
-
-          # Root index and Jekyll bypass
-          cp docs/sphinx/_gh_pages/index.html publish/index.html
-          touch publish/.nojekyll
-
-          # Generate switcher.json from actual directory contents
-          echo "[" > publish/switcher.json
-          echo "  {\"name\": \"latest\", \"version\": \"latest\", \"url\": \"${REPO_URL}/latest/\"}," >> publish/switcher.json
-
-          if [ -d "publish/stable" ]; then
-            echo "  {\"name\": \"stable\", \"version\": \"stable\", \"url\": \"${REPO_URL}/stable/\", \"preferred\": true}," >> publish/switcher.json
-          fi
-
-          for dir in $(find publish -maxdepth 1 -mindepth 1 -type d -name "v*" | sort -rV); do
-            ver=$(basename "$dir")
-            echo "  {\"name\": \"${ver}\", \"version\": \"${ver}\", \"url\": \"${REPO_URL}/${ver}/\"}," >> publish/switcher.json
-          done
-
-          sed -i '$ s/,$//' publish/switcher.json
-          echo "]" >> publish/switcher.json
+      - name: Bundle quality reports into latest/
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bash quality/scripts/bundle_quality_reports.sh \
+            "${{ github.event_name }}" \
+            "${{ github.event.workflow_run.id }}" \
+            "${{ github.repository }}"
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'

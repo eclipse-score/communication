@@ -25,6 +25,13 @@ py_library(
 )
 
 py_binary(
+    name = "assemble_publish_tree",
+    srcs = ["assemble_publish_tree.py"],
+    main = "assemble_publish_tree.py",
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
     name = "generate_api_rst_bin",
     srcs = ["extract_api_items.py"],
     main = "extract_api_items.py",
