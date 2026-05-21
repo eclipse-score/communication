@@ -9,6 +9,7 @@ Safety documentation reports
 
    * - Report
      - Description
-   * - `Message Passing Dependable Element <dependable_element_message_passing_doc/index.html>`_
-     - Message Passing
-
+   * - `Message Passing <dependable_element_message_passing_doc/index.html>`_
+     - Dependable Element
+   * - `MW::COM <mw_com_doc/index.html>`_
+     - Dependable Element

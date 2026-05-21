@@ -15,6 +15,10 @@ load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
     "component_requirements",
 )
+load(
+    "@score_tooling//validation/ai_checker:ai_checker.bzl",
+    "trlc_requirements_ai_test",
+)
 
 component_requirements(
     name = "component_requirements_ipc",
@@ -28,4 +32,11 @@ component_requirements(
         "//score/mw/com/dependability/requirements/assumed_system_requirements",
         "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_ipc",
     ],
+)
+
+trlc_requirements_ai_test(
+    name = "requirements_ai_check",
+    batch_size = 10,
+    reqs = [":component_requirements_ipc"],
+    tags = ["manual"],
 )
