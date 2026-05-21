@@ -142,6 +142,49 @@ T& DereferenceWithNullCheck(std::unique_ptr<T>& ptr)
 
 }  // namespace
 
+Skeleton::ShmReuseStrategy Skeleton::DetermineShmReuseStrategy(
+    const bool previous_shm_region_unused_by_proxies) const noexcept
+{
+    // In case of inter-VM forwarded services, always open existing SHM created by the gateway on the other VM
+    if (lola_service_instance_deployment_.inter_vm_support_ && lola_service_instance_deployment_.inter_vm_forwarded_)
+    {
+        return ShmReuseStrategy::kOpenGatewayForwardedShm;
+    }
+
+    // If we can exclusively lock the usage marker file, the previous SHM region is not being used by proxies.
+    // This means either:
+    // (1) Previous skeleton stopped cleanly with no proxies, or
+    // (2) Previous skeleton crashed
+    // In both cases, we recreate the SHM to ensure a clean state.
+    if (previous_shm_region_unused_by_proxies)
+    {
+        return ShmReuseStrategy::kRecreateShm;
+    }
+
+    // If we cannot lock the usage marker file, proxies are still using the previous SHM region.
+    // This means the previous skeleton crashed while proxies were subscribed, so we reuse the existing SHM.
+    return ShmReuseStrategy::kReuseExistingShm;
+}
+
+Skeleton::ShmRemovalStrategy Skeleton::DetermineShmRemovalStrategy(
+    const bool can_exclusively_lock_usage_file) const noexcept
+{
+    // If we cannot lock the usage marker file that means that the proxies are still subscribed and using the SHM
+    if (!can_exclusively_lock_usage_file)
+    {
+        return ShmRemovalStrategy::kRemoveNeitherShmNorMarkerFile;
+    }
+
+    // Gateway-forwarded services don't own the SHM (it's on the other VM), so only remove the marker file
+    if (IsGatewayForwardedSkeleton())
+    {
+        return ShmRemovalStrategy::kRemoveMarkerFileOnly;
+    }
+
+    // Regular skeleton: we own the SHM, so remove both SHM and marker file
+    return ShmRemovalStrategy::kRemoveShmAndMarkerFile;
+}
+
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
 // called implicitly". std::terminate() is implicitly called from 'service_instance_existence_marker_file.value()'
 // in case the 'service_instance_existence_marker_file' doesn't have value but as we check before with 'has_value()'
@@ -210,6 +253,7 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
       quality_type_{InstanceIdentifierView{identifier_}.GetServiceInstanceDeployment().asilLevel_},
       lola_instance_id_{lola_service_instance_deployment.instance_id_.value().GetId()},
       lola_service_id_{lola_service_type_deployment.service_id_},
+      lola_service_instance_deployment_{lola_service_instance_deployment},
       shm_path_builder_{std::move(shm_path_builder)},
       memory_manager_{GetInstanceQualityType(),
                       DereferenceWithNullCheck(shm_path_builder_),
@@ -227,6 +271,7 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
       method_subscription_registration_guard_qm_{},
       method_subscription_registration_guard_asil_b_{},
       was_old_shm_region_reopened_{false},
+      use_gateway_forwarded_shm_{false},
       filesystem_{std::move(filesystem)},
       prepare_offer_called_{false},
       prepare_stop_offer_called_{false},
@@ -258,43 +303,69 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     std::unique_lock<memory::shared::ExclusiveFlockMutex> service_instance_usage_lock{service_instance_usage_mutex,
                                                                                       std::defer_lock};
     const bool previous_shm_region_unused_by_proxies = service_instance_usage_lock.try_lock();
-    was_old_shm_region_reopened_ = !previous_shm_region_unused_by_proxies;
-    if (previous_shm_region_unused_by_proxies)
+    const auto strategy = DetermineShmReuseStrategy(previous_shm_region_unused_by_proxies);
+
+    Result<void> shm_setup_result{};
+    switch (strategy)
     {
-
-        score::mw::log::LogDebug("lola") << "Recreating SHM of Skeleton (S:" << lola_service_id_
-                                         << "I:" << lola_instance_id_ << ")";
-        // Since the previous shared memory region is not being currently used by proxies, this can mean 2 things:
-        // (1) The previous shared memory was properly created and OfferService finished (the SkeletonBinding and
-        // all Skeleton service elements finished their PrepareOffer calls) and either no Proxies subscribed or they
-        // have all since unsubscribed. Or, (2), the previous Skeleton crashed while setting up the shared memory.
-        // Since we don't differentiate between the 2 cases and because it's unused anyway, we simply remove the old
-        // memory region and re-create it.
-        memory_manager_.RemoveStaleSharedMemoryArtefacts();
-
-        const auto create_result =
-            memory_manager_.CreateSharedMemory(events, fields, std::move(register_shm_object_trace_callback));
-        if (!(create_result.has_value()))
+        case ShmReuseStrategy::kOpenGatewayForwardedShm:
         {
-            score::mw::log::LogError("lola") << "Could not create shared memory region for Skeleton.";
-            return create_result;
+            score::mw::log::LogDebug("lola") << "Using SHM of Skeleton (S:" << lola_service_id_
+                                             << "I:" << lola_instance_id_ << ") for gateway-forwarded service";
+            shm_setup_result = memory_manager_.OpenExistingSharedMemory(std::move(register_shm_object_trace_callback));
+            if (!shm_setup_result.has_value())
+            {
+                score::mw::log::LogError("lola")
+                    << "Could not open existing shared memory region for gateway-forwarded service.";
+                return MakeUnexpected(ComErrc::kBindingFailure,
+                                      "Could not open existing shared memory region for gateway-forwarded service.");
+            }
+            was_old_shm_region_reopened_ = false;
+            use_gateway_forwarded_shm_ = true;
+            break;
         }
+
+        case ShmReuseStrategy::kRecreateShm:
+            score::mw::log::LogDebug("lola")
+                << "Recreating SHM of Skeleton (S:" << lola_service_id_ << "I:" << lola_instance_id_ << ")";
+            memory_manager_.RemoveStaleSharedMemoryArtefacts();
+            shm_setup_result =
+                memory_manager_.CreateSharedMemory(events, fields, std::move(register_shm_object_trace_callback));
+            if (!(shm_setup_result.has_value()))
+            {
+                score::mw::log::LogError("lola") << "Could not create shared memory region for Skeleton.";
+            }
+            was_old_shm_region_reopened_ = false;
+            use_gateway_forwarded_shm_ = false;
+            break;
+
+        case ShmReuseStrategy::kReuseExistingShm:
+            score::mw::log::LogDebug("lola")
+                << "Reusing SHM of Skeleton (S:" << lola_service_id_ << "I:" << lola_instance_id_ << ")";
+            shm_setup_result = memory_manager_.OpenExistingSharedMemory(std::move(register_shm_object_trace_callback));
+            if (!shm_setup_result.has_value())
+            {
+                score::mw::log::LogError("lola") << "Could not open existing shared memory region for Skeleton.";
+            }
+            else
+            {
+                memory_manager_.CleanupSharedMemoryAfterCrash();
+            }
+            was_old_shm_region_reopened_ = true;
+            use_gateway_forwarded_shm_ = false;
+            break;
+
+        // LCOV_EXCL_START (DetermineShmReuseStrategy always returns a valid strategy; kUnknownStrategy is unreachable)
+        case ShmReuseStrategy::kUnknownStrategy:
+        default:
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Unknown SHM reuse strategy.");
+            break;
+            // LCOV_EXCL_STOP
     }
-    else
+
+    if (!shm_setup_result.has_value())
     {
-        score::mw::log::LogDebug("lola") << "Reusing SHM of Skeleton (S:" << lola_service_id_
-                                         << "I:" << lola_instance_id_ << ")";
-        // Since the previous shared memory region is being currently used by proxies, it must have been properly
-        // created and OfferService finished. Therefore, we can simply re-open it and cleanup any previous
-        // in-writing transactions by the previous skeleton.
-        const auto open_result =
-            memory_manager_.OpenExistingSharedMemory(std::move(register_shm_object_trace_callback));
-        if (!open_result.has_value())
-        {
-            score::mw::log::LogError("lola") << "Could not open existing shared memory region for Skeleton.";
-            return open_result;
-        }
-        memory_manager_.CleanupSharedMemoryAfterCrash();
+        return shm_setup_result;
     }
 
     // If there are no registered SkeletonMethods, then we don't need to register a method subscribed handler and
@@ -422,27 +493,42 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     memory::shared::ExclusiveFlockMutex service_instance_usage_mutex{*service_instance_usage_marker_file_};
     std::unique_lock<memory::shared::ExclusiveFlockMutex> service_instance_usage_lock{service_instance_usage_mutex,
                                                                                       std::defer_lock};
-    if (!service_instance_usage_lock.try_lock())
+    const bool can_exclusively_lock_usage_file = service_instance_usage_lock.try_lock();
+    const auto strategy = DetermineShmRemovalStrategy(can_exclusively_lock_usage_file);
+    switch (strategy)
     {
-        score::mw::log::LogInfo("lola")
-            << "Skeleton::RemoveSharedMemory(): Could not exclusively lock service instance usage "
-               "marker file indicating that some proxies are still subscribed. Will not remove shared memory and "
-               "will "
-               "keep the service-instance-usage-marker-file for future skeletons to reuse.";
-        return;
-    }
-    else
-    {
-        // Since we were able to exclusively lock the usage marker file, it means that no proxies are currently
-        // using the shared memory region.
-        memory_manager_.RemoveSharedMemory();
-        // We take ownership of the usage marker file so that it gets unlinked from the fs, when we destroy it.
-        service_instance_usage_marker_file_.value().TakeOwnership();
-        // Unlock the usage marker file before destroying it so that the destructor doesn't try to unlock an already
-        // invalid file/fd.
-        service_instance_usage_lock.unlock();
-        // this effectively deletes the usage marker file from filesystem
-        service_instance_usage_marker_file_.reset();
+        case ShmRemovalStrategy::kRemoveNeitherShmNorMarkerFile:
+            score::mw::log::LogInfo("lola")
+                << "Skeleton::PrepareStopOffer(): Could not exclusively lock service instance usage "
+                   "marker file indicating that some proxies are still subscribed. Will not remove shared memory.";
+            return;
+
+        case ShmRemovalStrategy::kRemoveMarkerFileOnly:
+            score::mw::log::LogDebug("lola")
+                << "Skeleton::PrepareStopOffer(): Gateway-forwarded service - removing marker file only (S:"
+                << lola_service_id_ << " I:" << lola_instance_id_ << ")";
+            service_instance_usage_marker_file_.value().TakeOwnership();
+            service_instance_usage_lock.unlock();
+            service_instance_usage_marker_file_.reset();
+            break;
+
+        case ShmRemovalStrategy::kRemoveShmAndMarkerFile:
+            score::mw::log::LogDebug("lola")
+                << "Skeleton::PrepareStopOffer(): Removing SHM and marker file (S:" << lola_service_id_
+                << " I:" << lola_instance_id_ << ")";
+            memory_manager_.RemoveSharedMemory();
+            service_instance_usage_marker_file_.value().TakeOwnership();
+            service_instance_usage_lock.unlock();
+            service_instance_usage_marker_file_.reset();
+            break;
+
+        // LCOV_EXCL_START (DetermineShmRemovalStrategy always returns a valid strategy; kUnknownStrategy is
+        // unreachable)
+        case ShmRemovalStrategy::kUnknownStrategy:
+        default:
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Unknown SHM removal strategy.");
+            break;
+            // LCOV_EXCL_STOP
     }
 
     memory_manager_.Reset();
@@ -515,22 +601,25 @@ auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
                                const size_t sample_size,
                                const size_t sample_alignment) noexcept -> GenericRegistrationResult
 {
-    if (was_old_shm_region_reopened_)
+    if (use_gateway_forwarded_shm_ || was_old_shm_region_reopened_)
     {
         auto [event_data_control_qm, event_data_control_asil_b] =
             memory_manager_.RetrieveEventControlsFromOpenedSharedMemory(element_fq_id);
 
-        // We can have transactions in the TransactionLogs relating to tracing (QM only) or field getter logic (QM and /
-        // or ASIL-B). We try rolling back all TransactionLogSets which are found.
-        // We rollback any transactions in the TransactionLog that correspond to the SkeletonEvent even if
-        // tracing is disabled in the current process. It's possible that we could have tracing disabled in this process
-        // but the crashed process had tracing enabled and therefore may have transactions that need to be rolled back.
-        // If tracing was also disabled in the previous process or if there are no transactions to rollback,
-        // RollbackSkeletonTracingTransactions will simply do nothing.
-        memory_manager_.RollbackSkeletonTracingTransactions(event_data_control_qm);
-        if (event_data_control_asil_b != nullptr)
+        if (was_old_shm_region_reopened_)
         {
-            memory_manager_.RollbackSkeletonTracingTransactions(*event_data_control_asil_b);
+            // We can have transactions in the TransactionLogs relating to tracing (QM only) or field getter logic (QM
+            // and / or ASIL-B). We try rolling back all TransactionLogSets which are found.
+            // We rollback any transactions in the TransactionLog that correspond to the SkeletonEvent even if
+            // tracing is disabled in the current process. It's possible that we could have tracing disabled in this
+            // process but the crashed process had tracing enabled and therefore may have transactions that need to be
+            // rolled back. If tracing was also disabled in the previous process or if there are no transactions to
+            // rollback, RollbackSkeletonTracingTransactions will simply do nothing.
+            memory_manager_.RollbackSkeletonTracingTransactions(event_data_control_qm);
+            if (event_data_control_asil_b != nullptr)
+            {
+                memory_manager_.RollbackSkeletonTracingTransactions(*event_data_control_asil_b);
+            }
         }
 
         auto& event_data_storage = memory_manager_.RetrieveEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);

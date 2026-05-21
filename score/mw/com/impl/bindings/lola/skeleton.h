@@ -170,6 +170,42 @@ class Skeleton final : public SkeletonBinding
     bool VerifyAllMethodsRegistered() const override;
 
   private:
+    /// \brief Strategies for handling shared memory during PrepareOffer
+    enum class ShmReuseStrategy : std::uint8_t
+    {
+        kUnknownStrategy = 0U,
+        kOpenGatewayForwardedShm,
+        kRecreateShm,
+        kReuseExistingShm
+    };
+
+    /// \brief Strategies for handling shared memory during PrepareStopOffer
+    enum class ShmRemovalStrategy : std::uint8_t
+    {
+        kUnknownStrategy = 0U,
+        kRemoveNeitherShmNorMarkerFile,
+        kRemoveMarkerFileOnly,
+        kRemoveShmAndMarkerFile
+    };
+
+    /// \brief Determines which shared memory reuse strategy to apply
+    /// \param previous_shm_region_unused_by_proxies Whether we could exclusively lock the usage marker file
+    /// \return The appropriate SHM reuse strategy
+    ShmReuseStrategy DetermineShmReuseStrategy(bool previous_shm_region_unused_by_proxies) const noexcept;
+
+    /// \brief Determines which shared memory removal strategy to apply during StopOffer
+    /// \param can_exclusively_lock_usage_file Whether we could exclusively lock the usage marker file
+    /// \return The appropriate SHM removal strategy
+    ShmRemovalStrategy DetermineShmRemovalStrategy(bool can_exclusively_lock_usage_file) const noexcept;
+
+    /// \brief Checks if this skeleton is forwarding a service from another VM via gateway
+    /// \return true if this skeleton mirrors SHM from another VM (read-only access), false if it owns the SHM
+    /// (read-write)
+    bool IsGatewayForwardedSkeleton() const noexcept
+    {
+        return lola_service_instance_deployment_.inter_vm_forwarded_;
+    }
+
     Result<void> OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
                                             const uid_t proxy_uid,
                                             const QualityType asil_level,
@@ -195,6 +231,7 @@ class Skeleton final : public SkeletonBinding
     QualityType quality_type_;
     LolaServiceInstanceId::InstanceId lola_instance_id_;
     LolaServiceTypeDeployment::ServiceId lola_service_id_;
+    const LolaServiceInstanceDeployment& lola_service_instance_deployment_;
 
     std::unique_ptr<IShmPathBuilder> shm_path_builder_;
 
@@ -226,6 +263,7 @@ class Skeleton final : public SkeletonBinding
     std::optional<MethodSubscriptionRegistrationGuard> method_subscription_registration_guard_asil_b_;
 
     bool was_old_shm_region_reopened_;
+    bool use_gateway_forwarded_shm_;
 
     score::filesystem::Filesystem filesystem_;
 
@@ -252,8 +290,16 @@ auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties
     -> RegistrationResult<SampleType>
 {
     // If the skeleton previously crashed and there are active proxies connected to the old shared memory, then we
-    // re-open that shared memory in PrepareOffer(). In that case, we should retrieved the EventDataControl and
+    // re-open that shared memory in PrepareOffer(). In that case, we should retrieve the EventDataControl and
     // EventDataStorage from the shared memory and attempt to rollback the Skeleton tracing transaction log.
+    // use_gateway_forwarded_shm_ is only ever set in inter-VM gateway setups, where a GenericSkeleton
+    // (type-erased) is used exclusively. A GenericSkeleton registers events via RegisterGeneric(), NOT
+    // via this typed template. Therefore reaching this function with use_gateway_forwarded_shm_ == true
+    // is a programming error: a typed Skeleton must never be used in a gateway-forwarding context.
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!use_gateway_forwarded_shm_,
+                                                "Register<SampleType> must not be called for a gateway-forwarded "
+                                                "skeleton — use GenericSkeleton/RegisterGeneric instead");
+
     if (was_old_shm_region_reopened_)
     {
         auto [event_data_control_qm, event_data_control_asil_b] =
