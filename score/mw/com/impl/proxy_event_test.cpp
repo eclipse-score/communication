@@ -249,32 +249,32 @@ TYPED_TEST(ProxyEventDeathTest, DieOnUnsubscribingWhileHoldingSamplePtrs)
     using Base = ProxyEventFixture<TypeParam>;
 
     Base::RecordProperty("Verifies", "SCR-5898007");  // SWS_CM_00151
-    Base::RecordProperty("Description",
-                         "Checks whether if a user unsubscribes an event, which still holds sample ptr, that we die.");
+    Base::RecordProperty("Description", "Unsubscribing while still holding SamplePtr instances terminates.");
     Base::RecordProperty("TestType", "Requirements-based test");
     Base::RecordProperty("Priority", "1");
     Base::RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    const std::size_t max_num_samples{1};
-
-    EXPECT_CALL(Base::mock_proxy_event_, Subscribe(max_num_samples));
+    // Given a subscribed proxy event that has delivered a sample which is still held
+    EXPECT_CALL(Base::mock_proxy_event_, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))      // called by Subscribe
+        .WillRepeatedly(Return(SubscriptionState::kSubscribed));  // called by Unsubscribe
+    EXPECT_CALL(Base::mock_proxy_event_, Subscribe(1U));
     EXPECT_CALL(Base::mock_proxy_event_, GetNewSamples(_, _));
-    EXPECT_CALL(Base::mock_proxy_event_, Unsubscribe()).Times(::testing::AtMost(1));
+    EXPECT_CALL(Base::mock_proxy_event_, Unsubscribe()).Times(AtMost(1));
 
     Base::mock_proxy_event_.PushFakeSample(3U);
-    EXPECT_CALL(Base::mock_proxy_event_, GetSubscriptionState())
-        .WillOnce(::testing::Return(SubscriptionState::kNotSubscribed));
+    std::ignore = Base::proxy_event_.Subscribe(1U);
 
-    score::cpp::optional<SamplePtr<typename Base::SampleType>> ptr{};
-    std::ignore = Base::proxy_event_.Subscribe(max_num_samples);
-    Result<std::size_t> num_samples = Base::proxy_event_.GetNewSamples(
-        [&ptr](SamplePtr<typename Base::SampleType> new_sample) {
-            ptr = std::move(new_sample);
+    score::cpp::optional<SamplePtr<typename Base::SampleType>> held_sample{};
+    std::ignore = Base::proxy_event_.GetNewSamples(
+        [&held_sample](SamplePtr<typename Base::SampleType> sample) {
+            held_sample = std::move(sample);
         },
         1U);
-    ASSERT_TRUE(num_samples.has_value());
-    ASSERT_TRUE(ptr.has_value());
-    EXPECT_EQ(*num_samples, 1U);
+    ASSERT_TRUE(held_sample.has_value());
+
+    // When Unsubscribe is called while still holding the sample
+    // Then the process terminates
     EXPECT_DEATH(Base::proxy_event_.Unsubscribe(), ".*");
 }
 
@@ -282,9 +282,24 @@ TYPED_TEST(ProxyEventFixture, UnsubscribeWhileNotHoldingSamplePtrs)
 {
     using Base = ProxyEventFixture<TypeParam>;
 
-    Base::mock_proxy_event_.PushFakeSample(3U);
+    // Given a subscribed proxy event that received a sample but no longer holds it
     EXPECT_CALL(Base::mock_proxy_event_, GetSubscriptionState())
-        .WillOnce(::testing::Return(SubscriptionState::kNotSubscribed));
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
+        .WillRepeatedly(Return(SubscriptionState::kSubscribed));
+    EXPECT_CALL(Base::mock_proxy_event_, Subscribe(1U));
+    EXPECT_CALL(Base::mock_proxy_event_, GetNewSamples(_, _));
+    EXPECT_CALL(Base::mock_proxy_event_, Unsubscribe());
+
+    Base::mock_proxy_event_.PushFakeSample(3U);
+    std::ignore = Base::proxy_event_.Subscribe(1U);
+
+    std::ignore = Base::proxy_event_.GetNewSamples(
+        [](SamplePtr<typename Base::SampleType>) noexcept {
+            // The sample goes out of the scope here. so, nothing is held when Unsubscribe is called next.
+        },
+        1U);
+
+    // When Unsubscribe is called while NOT holding any sample
     Base::proxy_event_.Unsubscribe();
 
     // Then nothing bad happens

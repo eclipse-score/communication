@@ -47,6 +47,8 @@ class ProxyEventFieldMockFixture : public ::testing::Test
     ProxyEventFieldMockFixture()
     {
         unit_.InjectMock(proxy_service_element_mock_);
+
+        ON_CALL(this->proxy_service_element_mock_, Subscribe(_)).WillByDefault(Return(Result<void>{}));
     }
 
     ProxyEventFieldMock proxy_service_element_mock_{};
@@ -104,7 +106,8 @@ TYPED_TEST(ProxyEventFieldMockFixture, SubscribeReturnsErrorWhenMockReturnsError
 
 TYPED_TEST(ProxyEventFieldMockFixture, UnsubscribeDispatchesToMockAfterInjectingMock)
 {
-    // Given a ProxyEvent constructed with an empty binding and an injected mock
+    // Given a ProxyEvent constructed with an empty binding and an injected mock which is currently subscribed
+    std::ignore = this->unit_.Subscribe(kDummyMaxSampleCount);
 
     // Expecting that Unsubscribe will be called on the mock
     EXPECT_CALL(this->proxy_service_element_mock_, Unsubscribe());

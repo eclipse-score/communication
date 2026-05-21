@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 #include "score/mw/com/impl/tracing/proxy_event_tracing.h"
+#include "score/scope_exit/scope_exit.h"
 
 #include "score/mw/log/logging.h"
 #include "score/result/result.h"
@@ -88,6 +89,7 @@ ProxyEventBase::ProxyEventBase(ProxyBase& proxy_base,
       event_binding_registration_guard_{
           std::make_unique<EventBindingRegistrationGuard>(proxy_binding_ptr, binding_base_.get(), event_name)},
       proxy_event_base_mock_{nullptr},
+      is_subscribed_flag_{false},
       receive_handler_scope_{}
 {
 }
@@ -116,7 +118,12 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count) noexc
 {
     if (proxy_event_base_mock_ != nullptr)
     {
-        return proxy_event_base_mock_->Subscribe(max_sample_count);
+        auto mock_result = proxy_event_base_mock_->Subscribe(max_sample_count);
+        if (mock_result.has_value())
+        {
+            is_subscribed_flag_.Set();
+        }
+        return mock_result;
     }
 
     tracing::TraceSubscribe(tracing_data_, *binding_base_, max_sample_count);
@@ -142,16 +149,30 @@ Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count) noexc
             return MakeUnexpected(ComErrc::kMaxSampleCountNotRealizable);
         }
     }
+    is_subscribed_flag_.Set();
     return {};
 }
 
 void ProxyEventBase::Unsubscribe() noexcept
 {
+    // Unsubscribe before a successful Subscribe is a silent no-op.
+    if (!is_subscribed_flag_.IsSet())
+    {
+        return;
+    }
+
+    utils::ScopeExit clear_subscribed_flag_on_exit{[&is_subscribed_flag_ = is_subscribed_flag_] {
+        is_subscribed_flag_.Clear();
+    }};
+
     if (proxy_event_base_mock_ != nullptr)
     {
         proxy_event_base_mock_->Unsubscribe();
         return;
     }
+
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_base_ != nullptr,
+                                                "binding_base_ must be set if Subscribe completed successfully.");
 
     tracing::TraceUnsubscribe(tracing_data_, *binding_base_);
 
