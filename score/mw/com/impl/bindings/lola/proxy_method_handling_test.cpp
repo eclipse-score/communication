@@ -148,6 +148,11 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
 
     void TearDown() override
     {
+        if (proxy_ != nullptr)
+        {
+            proxy_->PrepareDeinitialize();
+            proxy_->FinalizeDeinitialize();
+        }
         proxy_.reset();
     }
 
@@ -426,7 +431,7 @@ TEST_F(ProxySetupMethodsPartialRestartFixture, RemovesStaleArtefactsIfShmFileAlr
     EXPECT_CALL(filesystem_fake_.GetStandard(), Exists(StartsWith(kMethodShmChannelPrefix))).WillOnce(Return(true));
 
     // Expecting that RemoveStaleArtefacts is called once during SetupMethods (partial restart cleanup).
-    // On destruction, TeardownMethods only calls Remove (not RemoveStaleArtefacts).
+    // On destruction, CleanupMethods only calls Remove (not RemoveStaleArtefacts).
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, RemoveStaleArtefacts(StartsWith(kMethodChannelPrefix)))
         .Times(1);
 
@@ -1058,9 +1063,9 @@ TEST_F(ProxyMethodHandlingFixture, EnablingMethodThatDoesNotContainQueueSizeInCo
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods());
 }
 
-using ProxyTeardownMethodsFixture = ProxyMethodHandlingFixture;
+using ProxyCleanupMethodsFixture = ProxyMethodHandlingFixture;
 
-TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoesNotCallUnsubscribeServiceMethod)
+TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoesNotCallUnsubscribeServiceMethod)
 {
     // Given a proxy with registered methods but SetupMethods was never called
     GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
@@ -1074,11 +1079,11 @@ TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoe
     // Expecting that UnsubscribeServiceMethod is never called when methods were not set up
     EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _)).Times(0);
 
-    // When the proxy is destroyed
-    proxy_.reset();
+    // When the proxy is cleaned up
+    TearDown();
 }
 
-TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSetupMethodsCallsUnsubscribeServiceMethod)
+TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSetupMethodsCallsUnsubscribeServiceMethod)
 {
     // Given a proxy that has set up methods
     GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
@@ -1094,11 +1099,11 @@ TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSetupMethodsCallsUnsubsc
 
     score::cpp::ignore = proxy_->SetupMethods();
 
-    // When the proxy is destroyed
-    proxy_.reset();
+    // When the proxy is cleaned up
+    TearDown();
 }
 
-TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyCallsUnsubscribeServiceMethodWithCorrectSkeletonIdentifierAndPid)
+TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyCallsUnsubscribeServiceMethodWithCorrectSkeletonIdentifierAndPid)
 {
     // Given a proxy that has set up methods
     GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
@@ -1121,11 +1126,11 @@ TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyCallsUnsubscribeServiceMethod
 
     score::cpp::ignore = proxy_->SetupMethods();
 
-    // When the proxy is destroyed
-    proxy_.reset();
+    // When the proxy is cleaned up
+    TearDown();
 }
 
-TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyCompletesNormallyEvenWhenUnsubscribeServiceMethodFails)
+TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyCompletesNormallyEvenWhenUnsubscribeServiceMethodFails)
 {
     // Given a proxy that has set up methods
     GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
@@ -1142,11 +1147,11 @@ TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyCompletesNormallyEvenWhenUnsu
 
     score::cpp::ignore = proxy_->SetupMethods();
 
-    // When the proxy is destroyed, TeardownMethods is best-effort and should not crash or throw
-    EXPECT_NO_FATAL_FAILURE(proxy_.reset());
+    // When the proxy is cleaned up, CleanupMethods is best-effort and should not crash or throw
+    EXPECT_NO_FATAL_FAILURE(TearDown());
 }
 
-TEST_F(ProxyTeardownMethodsFixture,
+TEST_F(ProxyCleanupMethodsFixture,
        DestroyingProxyAfterSetupMethodsWithFailedSubscriptionDoesNotCallUnsubscribeServiceMethod)
 {
     // Given a proxy that has set up methods but whose initial SubscribeServiceMethod failed (e.g. skeleton crashed
@@ -1167,11 +1172,11 @@ TEST_F(ProxyTeardownMethodsFixture,
 
     score::cpp::ignore = proxy_->SetupMethods();
 
-    // When the proxy is destroyed
-    proxy_.reset();
+    // When the proxy is cleaned up
+    TearDown();
 }
 
-TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSetupMethodsRemovesShmRegion)
+TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSetupMethodsRemovesShmRegion)
 {
     // Given a proxy that has successfully set up methods
     GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
@@ -1187,11 +1192,11 @@ TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSetupMethodsRemovesShmRe
 
     score::cpp::ignore = proxy_->SetupMethods();
 
-    // When the proxy is destroyed
-    proxy_.reset();
+    // When the proxy is cleaned up
+    TearDown();
 }
 
-TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoesNotRemoveShmRegion)
+TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoesNotRemoveShmRegion)
 {
     // Given a proxy with registered methods but SetupMethods was never called
     GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
@@ -1206,11 +1211,11 @@ TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoe
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Remove(_)).Times(0);
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, RemoveStaleArtefacts(_)).Times(0);
 
-    // When the proxy is destroyed
-    proxy_.reset();
+    // When the proxy is cleaned up
+    TearDown();
 }
 
-TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSkeletonStopOfferedDoesNotCallUnsubscribeServiceMethod)
+TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSkeletonStopOfferedDoesNotCallUnsubscribeServiceMethod)
 {
     GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
         .GivenAProxy()
@@ -1227,11 +1232,11 @@ TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSkeletonStopOfferedDoesN
     score::cpp::ignore = proxy_->SetupMethods();
     StopOfferService();
 
-    // When the proxy is destroyed
-    proxy_.reset();
+    // When the proxy is cleaned up
+    TearDown();
 }
 
-TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSetupMethodsWithFailedSubscriptionStillRemovesShmRegion)
+TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSetupMethodsWithFailedSubscriptionStillRemovesShmRegion)
 {
     GivenAConfigurationWithEnabledMethods({kDummyMethodName0})
         .GivenAProxy()
@@ -1249,8 +1254,8 @@ TEST_F(ProxyTeardownMethodsFixture, DestroyingProxyAfterSetupMethodsWithFailedSu
 
     score::cpp::ignore = proxy_->SetupMethods();
 
-    // When the proxy is destroyed
-    proxy_.reset();
+    // When the proxy is cleaned up
+    TearDown();
 }
 
 }  // namespace
