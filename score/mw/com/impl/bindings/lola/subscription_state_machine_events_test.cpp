@@ -397,7 +397,7 @@ using StateMachineStateChangeFixture = StateMachineEventsFixture;
 TEST_F(StateMachineStateChangeFixture, CallingSetSubscriptionStateChangeHandlerSucceeds)
 {
     // Given a state-machine in its default state and a subscription-state-change-handler
-    auto subscription_state_change_handler = [](SubscriptionState new_subscription_state) {
+    auto subscription_state_change_handler = [](SubscriptionState) {
         return true;
     };
 

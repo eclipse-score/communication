@@ -347,5 +347,77 @@ TYPED_TEST(LolaProxyEventCommonFixture, UnsetReceiveHandlerWithoutBeingSubscribe
     EXPECT_NO_FATAL_FAILURE(action());
 }
 
+TYPED_TEST(LolaProxyEventCommonFixture, RegisterSubscriptionStateChangeHandler)
+{
+    // Given a valid proxy with state change callback (persistent) that is not subscribed yet
+    this->InitialiseProxyAndEvent();
+    SubscriptionState last_subscription_state = SubscriptionState::kNotSubscribed;
+    auto subscription_state_callback = [&last_subscription_state](SubscriptionState new_state) -> bool {
+        last_subscription_state = new_state;
+        return true;
+    };
+    this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
+
+    // When subscribed
+    this->proxy_event_->Subscribe(1U);
+
+    // Then the callback is triggered with kSubscribed new status
+    EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
+    EXPECT_EQ(last_subscription_state, SubscriptionState::kSubscribed);
+
+    // and when unsubscribed
+    this->proxy_event_->Unsubscribe();
+
+    // Then the callback is triggered with kNotSubscribed new status
+    EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kNotSubscribed);
+    EXPECT_EQ(last_subscription_state, SubscriptionState::kNotSubscribed);
+}
+
+TYPED_TEST(LolaProxyEventCommonFixture, RegisterSubscriptionStateChangeHandlerSelfRemoving)
+{
+    // Given a valid proxy with state change callback (self-removing at subscription) that is not subscribed yet
+    this->InitialiseProxyAndEvent();
+    SubscriptionState last_subscription_state = SubscriptionState::kNotSubscribed;
+    auto subscription_state_callback = [&last_subscription_state](SubscriptionState new_state) -> bool {
+        last_subscription_state = new_state;
+        return new_state != SubscriptionState::kSubscribed;
+    };
+    this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
+
+    // When subscribed
+    this->proxy_event_->Subscribe(1U);
+
+    // Then the callback is triggered with kSubscribed new status
+    EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
+    EXPECT_EQ(last_subscription_state, SubscriptionState::kSubscribed);
+
+    // and when unsubscribed
+    this->proxy_event_->Unsubscribe();
+
+    // Then the callback is not triggered with the new status
+    EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kNotSubscribed);
+    EXPECT_EQ(last_subscription_state, SubscriptionState::kSubscribed);
+}
+
+TYPED_TEST(LolaProxyEventCommonFixture, RegisterAndRemoveSubscriptionStateChangeHandler)
+{
+    // Given a valid proxy with state change callback that is not subscribed yet
+    this->InitialiseProxyAndEvent();
+    SubscriptionState last_subscription_state = SubscriptionState::kNotSubscribed;
+    auto subscription_state_callback = [&last_subscription_state](SubscriptionState new_state) -> bool {
+        last_subscription_state = new_state;
+        return true;
+    };
+    this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
+
+    // When removing the callback and subscribing
+    this->proxy_event_->UnsetSubscriptionStateChangeHandler();
+    this->proxy_event_->Subscribe(1U);
+
+    // Then the callback is not triggered
+    EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
+    EXPECT_EQ(last_subscription_state, SubscriptionState::kNotSubscribed);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

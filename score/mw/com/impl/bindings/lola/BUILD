@@ -1345,6 +1345,17 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "subscription_helpers_test",
+    srcs = [
+        "subscription_helpers_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":subscription_state_machine",
+    ],
+)
+
+cc_unit_test(
     name = "subscription_state_machine_events_test",
     srcs = [
         "subscription_state_machine_events_test.cpp",
