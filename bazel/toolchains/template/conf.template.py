@@ -73,6 +73,11 @@ source_suffix = {
 
 # -- Options for HTML output --
 html_theme = 'pydata_sphinx_theme'
+html_static_path = ["_static"]
+html_css_files = [
+    "css/default_custom.css",
+]
+html_js_files = []
 
 # Professional theme configuration inspired by modern open-source projects
 html_theme_options = {

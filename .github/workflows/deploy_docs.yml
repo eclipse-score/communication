@@ -22,6 +22,10 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'tools/generate_code_analysis.py'
+      - 'tools/BUILD'
+      - 'quality/coverage.bazelrc'
+      - 'quality/static_analysis/**'
       - '.github/workflows/deploy_docs.yml'
   workflow_dispatch:
 
@@ -72,6 +76,23 @@ jobs:
             echo "is_tag=false" >> "$GITHUB_OUTPUT"
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov
+
+      - name: Generate Coverage Report
+        run: |
+          bazel run //tools:generate_code_analysis -- --coverage
+
+      - name: Generate CodeQL Report
+        run: |
+          bazel run //tools:generate_code_analysis -- --codeql
+
+      - name: Generate Clang-Tidy Report
+        run: |
+          bazel run //tools:generate_code_analysis -- --clang-tidy
 
       - name: Build Sphinx documentation
         env:
@@ -149,6 +170,24 @@ jobs:
             fi
           done
 
+          # Inject shared CSS/JS into old versions that lack them
+          REPO_NAME="${{ github.event.repository.name }}"
+          CUSTOM_CSS="<link rel=\"stylesheet\" type=\"text/css\" href=\"/${REPO_NAME}/_shared/css/default_custom.css\" />"
+          FLYOUT_CSS="<link rel=\"stylesheet\" type=\"text/css\" href=\"/${REPO_NAME}/_shared/css/version_flyout.css\" />"
+          FLYOUT_JS="<script src=\"/${REPO_NAME}/_shared/js/version_flyout.js\"></script>"
+          for dir in publish/v*/; do
+            [ -d "$dir" ] || continue
+            while IFS= read -r -d '' f; do
+              if ! grep -q 'default_custom' "$f"; then
+                sed -i "s|</head>|${CUSTOM_CSS}\n</head>|" "$f"
+              fi
+              if ! grep -q 'version_flyout' "$f"; then
+                sed -i "s|</head>|${FLYOUT_CSS}\n</head>|" "$f"
+                sed -i "s|</body>|${FLYOUT_JS}\n</body>|" "$f"
+              fi
+            done < <(find "$dir" -name '*.html' -print0)
+          done
+
           # stable = newest tagged version that has docs
           if [[ "${IS_TAG}" == "true" ]]; then
             rm -rf publish/stable
@@ -163,6 +202,7 @@ jobs:
 
           # Shared assets
           mkdir -p publish/_shared/css publish/_shared/js
+          cp docs/sphinx/_static/css/default_custom.css publish/_shared/css/
           cp docs/sphinx/_static/css/version_flyout.css publish/_shared/css/
           cp docs/sphinx/_static/js/version_flyout.js publish/_shared/js/
 

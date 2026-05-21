@@ -11,6 +11,7 @@ including the LoLa (Low Latency) implementation and Message Passing library.
    introduction
    README
    message_passing
+   code_analysis
    how_to_document
 
 .. toctree::

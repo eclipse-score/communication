@@ -26,7 +26,7 @@ sphinx_docs_library(
 )
 
 # Static assets for Sphinx documentation
-filegroup(
+sphinx_docs_library(
     name = "static_assets",
     srcs = glob(["_static/**/*"]),
 )
@@ -52,6 +52,10 @@ sphinx_module(
     testonly = True,
     srcs =
         [
+            "code_analysis.rst",
+            "code_analysis/clang_tidy.rst",
+            "code_analysis/codeql.rst",
+            "code_analysis/coverage.rst",
             "how_to_document.rst",
             "index.rst",
             "introduction.rst",
@@ -59,9 +63,9 @@ sphinx_module(
             "safety_reports.rst",
             ":doxygen_xml",
             ":generate_api_rst",
-            ":static_assets",
         ],
     docs_library_deps = [
+        ":static_assets",
         "//score/mw/com:readme_md",
     ],
     exec_compatible_with = ["@platforms//os:linux"],
