@@ -94,6 +94,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":flag_owner",
         ":generic_proxy_event",
         ":handle_type",
         ":proxy_base",
