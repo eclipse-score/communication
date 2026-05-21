@@ -35,6 +35,8 @@ class MyProxy final : public ProxyBinding
     {
         return {};
     }
+    void PrepareDeinitialize() override {}
+    void FinalizeDeinitialize() override {}
 };
 
 TEST(ProxyBindingTest, ProxyBindingShouldNotBeCopyable)
