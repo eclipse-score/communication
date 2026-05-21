@@ -18,6 +18,9 @@ on:
       artifact-name:
         description: 'Name of the coverage report artifact'
         value: ${{ jobs.coverage_report.outputs.artifact-name }}
+      conclusion:
+        description: 'Job conclusion: success or failure'
+        value: ${{ jobs.coverage_report.outputs.conclusion }}
 
 permissions:
   contents: read
@@ -28,11 +31,13 @@ concurrency:
 env:
   ANDROID_HOME: ""
   ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   coverage_report:
     runs-on: ubuntu-24.04
     outputs:
       artifact-name: ${{ steps.set-artifact-name.outputs.artifact-name }}
+      conclusion: ${{ steps.set-conclusion.outputs.conclusion }}
 
     steps:
       - name: Checkout Repository
@@ -54,33 +59,38 @@ jobs:
           bazelisk-cache: true
           disk-cache: "coverage_report"
           repository-cache: true
-          cache-save: ${{ github.event_name == 'merge_group' }}
+          cache-save: true
 
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
       - name: Run Unit Test with Coverage for C++
+        id: run-coverage
+        continue-on-error: true
         run: |
           bazel coverage //... --build_tests_only
 
       - name: Generate HTML Coverage Report
-        # FIXME: "--ignore-errors category,inconsistent" is a workaround to cope with gcov messing up hit counts because of internal data races
+        if: steps.run-coverage.outcome == 'success'
         run: |
-          genhtml "$(bazel info output_path)/_coverage/_coverage_report.dat" \
-            -o=cpp_coverage \
-            --show-details \
-            --legend \
-            --function-coverage \
-            --branch-coverage \
-            --ignore-errors category,inconsistent
+          bash quality/scripts/generate_coverage_html.sh \
+            "$(bazel info output_path)/_coverage/_coverage_report.dat" \
+            cpp_coverage
 
       - name: Create archive of test report
+        if: steps.run-coverage.outcome == 'success'
         run: |
-          mkdir -p artifacts
-          find bazel-testlogs/score/ -name 'test.xml' -print0 | xargs -0 -I{} cp --parents {} artifacts/
-          cp -r cpp_coverage artifacts/
-          zip -r ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip artifacts/
-        shell: bash
+          bash quality/scripts/create_coverage_archive.sh \
+            "${{ github.event.repository.name }}_coverage_report_${{ github.sha }}"
+
+      - name: Set conclusion
+        id: set-conclusion
+        run: |
+          if [[ "${{ steps.run-coverage.outcome }}" == "success" ]]; then
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set artifact name
         id: set-artifact-name
