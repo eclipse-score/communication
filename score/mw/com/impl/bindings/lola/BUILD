@@ -397,6 +397,7 @@ cc_library(
         ":subscription_state_machine",
         ":transaction_log_id",
         ":transaction_log_rollback_executor",
+        "//score/mw/com/impl:find_service_handle",
         "//score/mw/com/impl:generic_proxy_event_binding",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:instance_specifier",

@@ -218,9 +218,34 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
 
     SkeletonMethodHandlingFixture& WhichIsOffered()
     {
-        score::cpp::ignore = skeleton_->PrepareOffer(
-            kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+        const auto result = PrepareOffer();
+        EXPECT_TRUE(result.has_value());
         return *this;
+    }
+
+    void TearDown() override
+    {
+        if (skeleton_ != nullptr && prepare_offer_called_ && !prepare_stop_offer_called_)
+        {
+            skeleton_->PrepareStopOffer({});
+        }
+    }
+
+    Result<void> PrepareOffer()
+    {
+        auto result = skeleton_->PrepareOffer(
+            kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+        if (result.has_value())
+        {
+            prepare_offer_called_ = true;
+        }
+        return result;
+    }
+
+    void PrepareStopOffer()
+    {
+        skeleton_->PrepareStopOffer({});
+        prepare_stop_offer_called_ = true;
     }
 
     ProxyInstanceIdentifier proxy_instance_identifier_qm_{kDummyApplicationId, kDummyProxyInstanceCounterQm};
@@ -258,6 +283,10 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
     std::optional<IMessagePassingService::ServiceMethodSubscribedHandler> captured_method_subscribed_handler_b_{};
 
     safecpp::Scope<> method_call_registration_guard_scope_{};
+
+  private:
+    bool prepare_offer_called_{false};
+    bool prepare_stop_offer_called_{false};
 };
 
 using SkeletonPrepareOfferFixture = SkeletonMethodHandlingFixture;
@@ -274,8 +303,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillRegisterServiceMethodSubscri
         .Times(0);
 
     // When calling PrepareOffer
-    const auto result = skeleton_->PrepareOffer(
-        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+    const auto result = PrepareOffer();
 
     // Then a valid result is returned
     EXPECT_TRUE(result.has_value());
@@ -293,8 +321,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOnAsilBSkeletonWillRegisterQmAnd
                 RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _));
 
     // When calling PrepareOffer
-    const auto result = skeleton_->PrepareOffer(
-        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+    const auto result = PrepareOffer();
 
     // Then a valid result is returned
     EXPECT_TRUE(result.has_value());
@@ -311,8 +338,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferReturnsErrorIfRegisterServiceMet
         .WillOnce(Return(ByMove(MakeUnexpected(error_code))));
 
     // When calling PrepareOffer
-    const auto result = skeleton_->PrepareOffer(
-        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+    const auto result = PrepareOffer();
 
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
@@ -333,8 +359,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferReturnsErrorIfAsilBRegisterServi
         .WillOnce(Return(ByMove(MakeUnexpected(error_code))));
 
     // When calling PrepareOffer
-    const auto result = skeleton_->PrepareOffer(
-        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+    const auto result = PrepareOffer();
 
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
@@ -350,9 +375,7 @@ TEST_F(SkeletonPrepareOfferFixture, FailingToGetBindingRuntimeInPrepareOfferTerm
 
     // When calling PrepareOffer
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::cpp::ignore = skeleton_->PrepareOffer(
-            kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = PrepareOffer());
 }
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillNotRegisterServiceMethodSubscribedHandlerWhenNoMethodsExistQm)
@@ -368,8 +391,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillNotRegisterServiceMethodSubs
         .Times(0);
 
     // When calling PrepareOffer
-    const auto result = skeleton_->PrepareOffer(
-        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+    const auto result = PrepareOffer();
 
     // Then a valid result is returned
     EXPECT_TRUE(result.has_value());
@@ -388,8 +410,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillNotRegisterServiceMethodSubs
         .Times(0);
 
     // When calling PrepareOffer
-    const auto result = skeleton_->PrepareOffer(
-        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+    const auto result = PrepareOffer();
 
     // Then a valid result is returned
     EXPECT_TRUE(result.has_value());
@@ -405,12 +426,18 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillNotCallUnregisterSubscribedM
     EXPECT_CALL(message_passing_mock_,
                 RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _));
 
-    // Expecting that UnregisterOnServiceMethodSubscribedHandler will not be called for each method for QM and ASIL-B
-    EXPECT_CALL(message_passing_mock_, UnregisterOnServiceMethodSubscribedHandler(_, _)).Times(0);
+    // and given that UnregisterOnServiceMethodSubscribedHandler flips a flag so we can verify that it is not called
+    auto unregister_called = std::make_shared<bool>(false);
+    ON_CALL(message_passing_mock_, UnregisterOnServiceMethodSubscribedHandler(_, _))
+        .WillByDefault(InvokeWithoutArgs([unregister_called] {
+            *unregister_called = true;
+        }));
 
     // When calling PrepareOffer
-    score::cpp::ignore = skeleton_->PrepareOffer(
-        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+    const auto result = PrepareOffer();
+
+    // Then UnregisterOnServiceMethodSubscribedHandler was not called during PrepareOffer
+    EXPECT_FALSE(*unregister_called);
 }
 
 TEST_F(SkeletonPrepareOfferFixture, CallingAsilBWillUnregisterQmHandlerOnAsilBRegistrationFailure)
@@ -430,8 +457,7 @@ TEST_F(SkeletonPrepareOfferFixture, CallingAsilBWillUnregisterQmHandlerOnAsilBRe
                 UnregisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_));
 
     // When calling PrepareOffer
-    score::cpp::ignore = skeleton_->PrepareOffer(
-        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+    score::cpp::ignore = PrepareOffer();
 }
 
 using SkeletonPrepareStopOfferFixture = SkeletonMethodHandlingFixture;
@@ -469,7 +495,7 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCall
                                      kDummyPid);
 
     // and given that PrepareStopOffer was called
-    skeleton_->PrepareStopOffer({});
+    PrepareStopOffer();
 
     // When calling the method call handlers
     const auto method_call_handler_result_1 = std::invoke(method_call_handler_1.value(), 0U);
@@ -485,7 +511,7 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfSubscribeM
     GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // and given that PrepareStopOffer was called
-    skeleton_->PrepareStopOffer({});
+    PrepareStopOffer();
 
     // When calling a ServiceMethodSubscribedHandler
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
@@ -511,7 +537,7 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDestroysPointerToSharedM
 
     // When calling PrepareStopOffer
     const auto shm_resource_ref_counter_after_opening = mock_method_memory_resource_qm_.use_count();
-    skeleton_->PrepareStopOffer({});
+    PrepareStopOffer();
 
     // Then the reference counter for the methods SharedMemoryResource should be decremented, indicating that it's
     // been deleted from the Skeleton's state
@@ -529,7 +555,7 @@ TEST_F(SkeletonPrepareStopOfferFixture, UnregistersQmAndAsilBSubscribedMethodHan
                 UnregisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_));
 
     // When calling PrepareStopOffer
-    skeleton_->PrepareStopOffer({});
+    PrepareStopOffer();
 }
 
 TEST_F(SkeletonPrepareStopOfferFixture, UnregistersAllRegisteredMethodCallHandlers)
@@ -561,7 +587,7 @@ TEST_F(SkeletonPrepareStopOfferFixture, UnregistersAllRegisteredMethodCallHandle
     EXPECT_TRUE(scoped_handler_result_2.has_value());
 
     // When calling PrepareStopOffer
-    skeleton_->PrepareStopOffer({});
+    PrepareStopOffer();
 }
 
 using SkeletonOnServiceMethodsSubscribedFixture = SkeletonMethodHandlingFixture;
@@ -1002,14 +1028,17 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBWillNotCallUnregis
                 RegisterMethodCallHandler(QualityType::kASIL_QM, foo_proxy_method_identifier_qm_, _, _));
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(QualityType::kASIL_QM, dumb_proxy_method_identifier_qm_, _, _));
-
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(QualityType::kASIL_B, foo_proxy_method_identifier_b_, _, _));
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(QualityType::kASIL_B, dumb_proxy_method_identifier_b_, _, _));
 
-    // Expecting that UnregisterMethodCallHandler will not be called for each method for QM and ASIL-B
-    EXPECT_CALL(message_passing_mock_, UnregisterMethodCallHandler(_, _)).Times(0);
+    // and given that UnregisterMethodCallHandler flips a flag so we can verify that it is not called
+    auto unregister_called = std::make_shared<bool>(false);
+    ON_CALL(message_passing_mock_, UnregisterMethodCallHandler(_, _))
+        .WillByDefault(InvokeWithoutArgs([unregister_called] {
+            *unregister_called = true;
+        }));
 
     // When calling the registered method subscribed handler for both QM and AsilB
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
@@ -1025,6 +1054,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBWillNotCallUnregis
                                                      test::kAllowedAsilBMethodConsumer,
                                                      kDummyPid);
     EXPECT_TRUE(scoped_handler_result_2.has_value());
+
+    // Then UnregisterMethodCallHandler was not called during handler invocation
+    EXPECT_FALSE(*unregister_called);
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingWillUnregisterRegisteredMethodCallHandlersOnSubscriptionError)
