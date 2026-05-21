@@ -144,7 +144,25 @@ if _plantuml_path is None:
         "Ensure @score_tooling//tools/sphinx:plantuml is in sphinx_build data."
     )
 else:
-    plantuml = str(_plantuml_path)
+    # Locate the Graphviz dot binary so PlantUML can render diagrams that
+    # require a layout engine (class, state, component diagrams, etc.).
+    import shutil
+
+    _dot_path = (
+        os.environ.get("GRAPHVIZ_DOT")
+        or shutil.which("dot")
+        or "/usr/bin/dot"
+    )
+    if Path(_dot_path).exists():
+        plantuml = f"{_plantuml_path} -graphvizdot {_dot_path}"
+        logger.info(f"PlantUML will use Graphviz dot at: {_dot_path}")
+    else:
+        plantuml = str(_plantuml_path)
+        logger.warning(
+            "Graphviz dot binary not found — diagrams requiring layout "
+            "engines (class, state, etc.) may fail to render. "
+            "Install it with: sudo apt-get install graphviz"
+        )
     plantuml_output_format = "svg_obj"
 
 

@@ -73,6 +73,10 @@ jobs:
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Install Graphviz
+        run: |
+          sudo apt-get update && sudo apt-get install -y graphviz
+
       - name: Build Sphinx documentation
         env:
           DOCS_BASE_URL: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
