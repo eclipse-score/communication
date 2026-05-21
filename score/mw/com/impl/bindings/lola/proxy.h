@@ -27,6 +27,7 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/find_service_handle.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding_base.h"
@@ -62,7 +63,6 @@ namespace score::mw::com::impl::lola
 {
 
 class IShmPathBuilder;
-class FindServiceGuard;
 
 namespace detail_proxy
 {
@@ -200,8 +200,19 @@ class Proxy : public ProxyBinding
 
     void RegisterMethod(const UniqueMethodIdentifier method_id, ProxyMethod& proxy_method) noexcept;
 
+    /// \brief Stops auto-reconnect for this proxy and marks it ready for destruction.
+    /// \pre Must be called exactly once on a given Proxy. Calling it a second time will terminate.
+    void PrepareDeinitialize() override;
+
+    /// \brief Clears event and method registration state and marks the proxy ready for destruction.
+    /// \note Idempotent: calling it more than once is safe.
+    void FinalizeDeinitialize() override;
+
   private:
     static std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> current_proxy_instance_counter_;
+
+    void StartProxyAutoReconnect();
+    void StopProxyAutoReconnect();
 
     void ServiceAvailabilityChangeHandler(const bool is_service_available);
     void InitializeSharedMemoryForMethods(
@@ -261,9 +272,13 @@ class Proxy : public ProxyBinding
 
     score::filesystem::Filesystem filesystem_;
 
-    // We make find_service_guard_ the last member variable since it registers a handler which accesses member variables
-    // of this class, so they should be initialised first.
-    std::unique_ptr<FindServiceGuard> find_service_guard_;
+    /// Handle returned by ServiceDiscovery::StartFindService which is called for proxy auto reconnect, Held so we can
+    /// call StopFindService later from StopProxyAutoReconnect().
+    std::optional<FindServiceHandle> find_service_handle_;
+
+    /// Set by PrepareDeinitialize / FinalizeDeinitialize respectively. ~Proxy terminates unless both were called.
+    bool prepare_deinitialize_called_;
+    bool finalize_deinitialize_called_;
 };
 
 template <typename EventSampleType>

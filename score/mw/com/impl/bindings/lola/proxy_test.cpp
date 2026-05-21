@@ -26,6 +26,8 @@
 
 #include "score/result/result.h"
 
+#include <score/assert_support.hpp>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <chrono>
@@ -550,6 +552,60 @@ TEST_F(ProxyAutoReconnectDeathTest, ProxyCreateWillTerminateIfStartFindServiceRe
         InitialiseProxyWithConstructor(identifier_);
     };
     EXPECT_DEATH(start_find_service_fails(), ".*");
+}
+
+TEST_F(ProxyAutoReconnectDeathTest, PrepareDeinitializeTerminatesWhenCalledTwice)
+{
+    // Given a proxy on which PrepareDeinitialize has already been called
+    InitialiseProxyWithConstructor(identifier_);
+    PrepareDeinitialize();
+
+    // When calling PrepareDeinitialize a second time
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(proxy_->PrepareDeinitialize());
+}
+
+TEST_F(ProxyAutoReconnectDeathTest, FinalizeDeinitializeTerminatesWhenCalledTwice)
+{
+    // Given a proxy on which PrepareDeinitialize and FinalizeDeinitialize has already been called
+    InitialiseProxyWithConstructor(identifier_);
+    PrepareDeinitialize();
+    FinalizeDeinitialize();
+
+    // When calling FinalizeDeinitialize a second time
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(proxy_->FinalizeDeinitialize());
+}
+
+TEST_F(ProxyAutoReconnectDeathTest, ProxyDestructionTerminatesWhenPrepareDeinitializeNotCalled)
+{
+    // Given a proxy on which PrepareDeinitialize has NOT been called
+    InitialiseProxyWithConstructor(identifier_);
+
+    // When the proxy is destroyed
+    // Then ~Proxy terminates because PrepareDeinitialize was never called
+    EXPECT_DEATH(proxy_.reset(), ".*");
+}
+
+TEST_F(ProxyAutoReconnectDeathTest, ProxyDestructionTerminatesWhenFinalizeDeinitializeNotCalled)
+{
+    // Given a proxy on which PrepareDeinitialize has been called
+    InitialiseProxyWithConstructor(identifier_);
+    PrepareDeinitialize();
+
+    // When the proxy is destroyed
+    // Then ~Proxy terminates because FinalizeDeinitialize was never called
+    EXPECT_DEATH(proxy_.reset(), ".*");
+}
+
+TEST_F(ProxyAutoReconnectDeathTest, FinalizeDeinitializeBeforeCallingPrepareDeinitializeTerminates)
+{
+    // Given a proxy on which PrepareDeinitialize has not been called
+    InitialiseProxyWithConstructor(identifier_);
+
+    // When calling FinalizeDeinitialize before PrepareDeinitialize
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(proxy_->FinalizeDeinitialize());
 }
 
 TEST_F(ProxyEventBindingFixture, RegisteringEventBindingWillCallNotifyServiceInstanceChangedAvailabilityOnBinding)

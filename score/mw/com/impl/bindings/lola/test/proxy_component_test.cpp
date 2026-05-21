@@ -92,6 +92,12 @@ class ProxyWithRealMemFixture : public ::testing::Test
 
     void TearDown() override
     {
+        if (created_proxy_ != nullptr)
+        {
+            created_proxy_->PrepareDeinitialize();
+            created_proxy_->FinalizeDeinitialize();
+        }
+
         for (const auto& file : shm_files_)
         {
             std::ignore = score::filesystem::IStandardFilesystem::instance().Remove(std::string{"/dev/shm"} + file);
@@ -165,6 +171,8 @@ class ProxyWithRealMemFixture : public ::testing::Test
 
     std::unique_ptr<ConfigurationStore> config_store_{nullptr};
 
+    std::unique_ptr<Proxy> created_proxy_{nullptr};
+
     std::vector<std::string> shm_files_{};
     RuntimeMockGuard runtime_mock_{};
     lola::RuntimeMock lola_runtime_mock_{};
@@ -191,10 +199,10 @@ TEST_F(ProxyWithRealMemFixture, IsEventProvidedOnlyReturnsTrueIfEventIsInSharedM
     ON_CALL(service_discovery_mock_, StartFindService(::testing::_, EnrichedInstanceIdentifier{handle}))
         .WillByDefault(::testing::Return(make_FindServiceHandle(10U)));
 
-    auto proxy = Proxy::Create(handle);
-    ASSERT_NE(proxy, nullptr);
-    EXPECT_TRUE(proxy->IsEventProvided(kEventName));
-    EXPECT_FALSE(proxy->IsEventProvided(kNonProvidedEventName));
+    created_proxy_ = Proxy::Create(handle);
+    ASSERT_NE(created_proxy_, nullptr);
+    EXPECT_TRUE(created_proxy_->IsEventProvided(kEventName));
+    EXPECT_FALSE(created_proxy_->IsEventProvided(kNonProvidedEventName));
 }
 
 class ProxyServiceDiscoveryFixture : public ProxyWithRealMemFixture

@@ -1117,7 +1117,10 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_test",
     srcs = ["proxy_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
+    features = COMPILER_WARNING_FEATURES + [
+        # SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED catches an exception, so disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
     deps = [
         ":proxy",
         ":shm_path_builder_mock",
@@ -1125,6 +1128,7 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/result",
     ],
 )
