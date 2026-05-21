@@ -122,7 +122,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
     return skeleton;
 }
 
-const GenericSkeleton::EventMap& GenericSkeleton::GetEvents() const noexcept
+GenericSkeleton::EventMap& GenericSkeleton::GetEvents() noexcept
 {
     return events_;
 }

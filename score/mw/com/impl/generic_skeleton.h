@@ -70,9 +70,9 @@ class GenericSkeleton : public SkeletonBase
     [[nodiscard]] static Result<GenericSkeleton> Create(const InstanceSpecifier& specifier,
                                                         const GenericSkeletonServiceElementInfo& in) noexcept;
 
-    /// @brief Returns a const reference to the name-keyed map of events.
+    /// @brief Returns a reference to the name-keyed map of events.
     /// @note The returned reference is valid as long as the GenericSkeleton lives.
-    [[nodiscard]] const EventMap& GetEvents() const noexcept;
+    [[nodiscard]] EventMap& GetEvents() noexcept;
 
     /// @brief Offers the service instance.
     /// @return A blank result, or an error if offering fails.

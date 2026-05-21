@@ -199,7 +199,7 @@ TEST_F(GenericSkeletonTest, CreateWithEventsInitializesEventBindings)
 
     // Then the skeleton contains the event
     ASSERT_TRUE(result.has_value());
-    const auto& events = result.value().GetEvents();
+    auto& events = result.value().GetEvents();
     ASSERT_EQ(events.size(), 1);
 
     EXPECT_NE(events.find(event_name), events.cend());
