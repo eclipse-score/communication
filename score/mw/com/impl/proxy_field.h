@@ -252,15 +252,13 @@ class ProxyField final : public ProxyFieldBase
         return proxy_event_dispatch_->GetNewSamples(std::forward<F>(receiver), max_num_samples);
     }
 
-    template <typename T = SampleDataType,
-              typename = std::enable_if_t<EnableGet && std::is_same<T, SampleDataType>::value>>
+    template <typename T = SampleDataType, typename = std::enable_if_t<EnableGet && std::is_same_v<T, SampleDataType>>>
     score::Result<MethodReturnTypePtr<T>> Get() noexcept
     {
         return proxy_method_get_dispatch_->operator()();
     }
 
-    template <typename T = SampleDataType,
-              typename = std::enable_if_t<EnableSet && std::is_same<T, SampleDataType>::value>>
+    template <typename T = SampleDataType, typename = std::enable_if_t<EnableSet && std::is_same_v<T, SampleDataType>>>
     score::Result<MethodReturnTypePtr<T>> Set(SampleDataType& new_field_value) noexcept
     {
         return proxy_method_set_dispatch_->operator()(new_field_value);
@@ -348,7 +346,7 @@ class ProxyField final : public ProxyFieldBase
     ProxyGetMethodType proxy_method_get_dispatch_;
     ProxySetMethodType proxy_method_set_dispatch_;
 
-    static_assert(std::is_same<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>::value,
+    static_assert(std::is_same_v<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>,
                   "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "
                   "we must ensure that it doesn't move when the ProxyField is moved to avoid dangling references. ");
 };
