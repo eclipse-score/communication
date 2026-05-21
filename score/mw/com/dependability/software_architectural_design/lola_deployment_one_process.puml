@@ -1,0 +1,57 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+    @startuml Example Deployment Diagram
+
+    '
+    node "Process 1" as Process1 {
+        component "Skeleton" as FRONTENDSKELETON <<MW::COM::Frontend>> <<ASIL_B>> {
+        }
+        component "Proxy" as FRONTENDPROXY <<MW::COM::Frontend>> <<ASIL_B>> {
+        }
+        component "Skeleton" as LOLASKELETON <<MW::COM::Lola>> <<ASIL_B>> {
+        }
+        component "Proxy" as LOLAPROXY <<MW::COM::Lola>> <<ASIL_B>> {
+        }
+        component "Runtime" as RUNTIME <<MW::COM::Runtime>> <<ASIL_B>> {
+        }
+    }
+
+    FRONTENDSKELETON -r[hidden]-> FRONTENDPROXY
+    LOLASKELETON -r[hidden]-> LOLAPROXY
+    LOLASKELETON -u[hidden]-> FRONTENDSKELETON
+    LOLAPROXY -u[hidden]-> FRONTENDPROXY
+    RUNTIME -d[hidden]-> FRONTENDSKELETON
+
+    folder "/dev/shm/" as SampleFolder <<shared_resource>> {
+            ' These 3 files per Skeleton
+            file "shm_servicedatacontrol_qm" as SERVICEDATACONTROLQM
+            file "shm_servicedatacontrol_asilb" as SERVICEDATACONTROLASILB
+            file "shm_servicedatastorage" as SERVICEDATASTORAGE
+            ' Per Proxy which contains methods
+            file "shm_methodstorage" as METHODSTORAGEASILB
+    }
+
+    ' Allocate / Open / Create / Write via Lib/Memory/Shared
+    ' Read -> Direct Access through pointer
+    LOLASKELETON -[#blue]-> SERVICEDATACONTROLQM : <<Lib/Memory/Shared>> {write}\n<<ptr>>{read}
+    LOLASKELETON -[#blue]-> SERVICEDATACONTROLASILB : <<Lib/Memory/Shared>> {write}\n<<ptr>>{read}
+    LOLASKELETON -l[#blue]-> SERVICEDATASTORAGE : <<Lib/Memory/Shared>> {write}\n<<ptr>>{read}
+    LOLASKELETON -l[#blue]-> METHODSTORAGEASILB : <<Lib/Memory/Shared>> {write}\n<<ptr>>{read}
+
+    LOLAPROXY -[#green]-> SERVICEDATACONTROLQM : <<Lib/Memory/Shared>> {write}\n<<ptr>>{read}
+    LOLAPROXY -[#green]-> SERVICEDATACONTROLASILB : <<Lib/Memory/Shared>> {write}\n<<ptr>>{read}
+    LOLAPROXY -r[#green].> SERVICEDATASTORAGE : <<ptr>>{read}
+    LOLAPROXY -r[#green]-> METHODSTORAGEASILB : <<Lib/Memory/Shared>> {write}\n<<ptr>>{read}
+
+    @enduml
