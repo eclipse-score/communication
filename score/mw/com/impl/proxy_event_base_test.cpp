@@ -1086,5 +1086,49 @@ TEST(ProxyEventBaseTest, MoveAssigningProxyEventDoesNotCrash)
     ASSERT_TRUE(subscribe_result.has_value());
 }
 
+TEST(ProxyEventBaseTest, SetSubscriptionStateChangeHandlerWorks)
+{
+    auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEventBase>>();
+    auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
+
+    DummyProxy empty_proxy(std::make_unique<mock_binding::Proxy>(),
+                           make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
+
+    // Given a Service Element, that is connected to a mock binding
+    ProxyEventBase dummy_event{
+        empty_proxy, ProxyBaseView{empty_proxy}.GetBinding(), std::move(mock_proxy_event_binding_ptr), kEventName};
+
+    // Expect that SetSubscriptionStateChangeHandler is called
+    EXPECT_CALL(mock_proxy_event_binding, SetSubscriptionStateChangeHandler).WillOnce(Return(score::Result<void>{}));
+
+    // When calling SetSubscriptionStateChangeHandler
+    const auto result = dummy_event.SetSubscriptionStateChangeHandler({});
+
+    // and then no errors are returned
+    ASSERT_TRUE(result.has_value());
+}
+
+TEST(ProxyEventBaseTest, UnsetSubscriptionStateChangeHandlerWorks)
+{
+    auto mock_proxy_event_binding_ptr = std::make_unique<StrictMock<mock_binding::ProxyEventBase>>();
+    auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
+
+    DummyProxy empty_proxy(std::make_unique<mock_binding::Proxy>(),
+                           make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
+
+    // Given a Service Element, that is connected to a mock binding
+    ProxyEventBase dummy_event{
+        empty_proxy, ProxyBaseView{empty_proxy}.GetBinding(), std::move(mock_proxy_event_binding_ptr), kEventName};
+
+    // Expect that UnsetSubscriptionStateChangeHandler is called
+    EXPECT_CALL(mock_proxy_event_binding, UnsetSubscriptionStateChangeHandler).WillOnce(Return(score::Result<void>{}));
+
+    // When calling UnsetSubscriptionStateChangeHandler
+    const auto result = dummy_event.UnsetSubscriptionStateChangeHandler();
+
+    // and then no errors are returned
+    ASSERT_TRUE(result.has_value());
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

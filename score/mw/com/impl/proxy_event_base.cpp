@@ -173,14 +173,12 @@ void ProxyEventBase::Unsubscribe() noexcept
 
 Result<void> ProxyEventBase::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
 {
-    binding_base_->SetSubscriptionStateChangeHandler(std::move(handler));
-    return {};
+    return binding_base_->SetSubscriptionStateChangeHandler(std::move(handler));
 }
 
 Result<void> ProxyEventBase::UnsetSubscriptionStateChangeHandler() noexcept
 {
-    binding_base_->UnsetSubscriptionStateChangeHandler();
-    return {};
+    return binding_base_->UnsetSubscriptionStateChangeHandler();
 }
 
 std::size_t ProxyEventBase::GetFreeSampleCount() const noexcept

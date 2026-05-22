@@ -143,6 +143,10 @@ const ElementFqId& SubscriptionStateMachine::GetElementFqId() const noexcept
     return element_fq_id_;
 }
 
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have a value but as we check
+// before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void SubscriptionStateMachine::TransitionToState(const SubscriptionStateMachineState newState) noexcept
 {
     GetCurrentEventState().OnExit();
