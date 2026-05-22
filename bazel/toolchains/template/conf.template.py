@@ -99,8 +99,14 @@ html_theme_options = {
     'show_prev_next': True,
 
     # Logo configuration
+    # Sub-doc builds (e.g. dependable_element) are embedded one level deep
+    # inside the main docs output.  Add 'link': '../index.html' so the logo
+    # navigates back to the main docs.  The main docs build has a 'docs/'
+    # directory sibling in the Bazel sandbox; sub-doc builds do not — use that
+    # to distinguish the two cases.
     'logo': {
         'text': 'Eclipse S-CORE',
+        **({} if (Path(__file__).parent / "docs").is_dir() else {'link': '../index.html'}),
     },
 
     # External links - S-CORE GitHub
@@ -111,11 +117,31 @@ html_theme_options = {
             'icon': 'fab fa-github',
         }
     ],
+
 }
 
 
 # Enable numref for cross-references
 numfig = True
+
+# Static assets and custom CSS
+# html_static_path is relative to confdir (where this conf.py lives).
+# In a local build confdir == the docs source dir, so '_static' is a direct
+# sibling.  In the Bazel sandbox the generated conf.py sits one level above the
+# actual source tree (sphinx_doc/conf.py vs sphinx_doc/docs/sphinx/_static),
+# so we search for the _static directory instead of hard-coding the path.
+_conf_dir = Path(__file__).parent
+_static_local = _conf_dir / "_static"
+if _static_local.exists():
+    html_static_path = ["_static"]
+else:
+    _static_found = next(
+        (p for p in _conf_dir.rglob("_static") if p.is_dir()), None
+    )
+    html_static_path = [str(_static_found)] if _static_found else []
+
+# html_css_files is populated after the runfiles section below once we know
+# whether default_custom.css is reachable (local _static or runfiles).
 
 # Load external needs and log configuration
 needs_external_needs = bazel_sphinx_needs.load_external_needs()
@@ -147,6 +173,51 @@ else:
     plantuml = str(_plantuml_path)
     plantuml_output_format = "svg_obj"
 
+# Resolve default_custom.css so that sub-doc builds (e.g. dependable_element
+# docs) which run in a separate Bazel sandbox also get the project CSS theme.
+# The file is declared as data on the sphinx_build binary so it is always
+# present in the runfiles tree.
+_custom_css_src = None
+_css_rloc = r.Rlocation(
+    "_main/docs/sphinx/_static/css/default_custom.css", source_repo=""
+)
+if _css_rloc and Path(_css_rloc).exists():
+    _custom_css_src = Path(_css_rloc)
+    logger.info(f"Custom CSS resolved from runfiles: {_custom_css_src}")
+else:
+    # Fallback: already present in the locally discovered _static tree
+    for _sp in html_static_path:
+        _candidate_css = Path(_sp) / "css" / "default_custom.css"
+        if _candidate_css.exists():
+            _custom_css_src = _candidate_css
+            break
+
+# Only generate the <link> tag when we are certain the file will be available.
+html_css_files = ["css/default_custom.css"] if _custom_css_src else []
+
+
+def _inject_custom_css(app, exception):
+    """Write default_custom.css directly into the Sphinx output _static/css/
+    directory after the build finishes.
+
+    Using build-finished (rather than builder-inited + tempfile) avoids any
+    sandbox write-permission issues in CI: app.outdir is the declared Bazel
+    output tree, which is always writable during an action.  Sphinx has already
+    run copy_static_files() before this event fires, so our file is not
+    overwritten, but the <link> tag generated via html_css_files is already
+    present in every page."""
+    if exception is not None or _custom_css_src is None:
+        return
+    import shutil
+
+    css_dir = Path(app.outdir) / "_static" / "css"
+    css_dir.mkdir(parents=True, exist_ok=True)
+    dest = css_dir / "default_custom.css"
+    if not dest.exists():
+        shutil.copy(str(_custom_css_src), str(dest))
+        logger.info(f"Custom CSS written to output: {dest}")
+
 
 def setup(app):
+    app.connect("build-finished", _inject_custom_css)
     return bazel_sphinx_needs.setup_sphinx_extension(app, needs_external_needs)

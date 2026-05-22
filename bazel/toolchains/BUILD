@@ -11,6 +11,10 @@ py_binary(
     srcs = ["@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py"],
     data = [
         "@score_tooling//tools/sphinx:plantuml",
+        # Expose the project-level custom CSS to all sub-doc Sphinx builds
+        # (e.g. dependable_element docs) which run in separate Bazel sandboxes
+        # and cannot access docs/sphinx/_static directly.
+        "//docs/sphinx:custom_css",
     ],
     exec_compatible_with = ["@platforms//os:linux"],
     main = "@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py",

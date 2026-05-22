@@ -74,9 +74,6 @@ jobs:
           fi
 
       - name: Build Sphinx documentation
-        env:
-          DOCS_BASE_URL: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
-          DOCS_VERSION: ${{ steps.version.outputs.version }}
         run: |
           bazel build //docs/sphinx:sphinx_doc
 

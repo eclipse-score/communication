@@ -25,10 +25,28 @@ sphinx_docs_library(
     srcs = ["//score/mw/com/design/doxygen_build:generate_doxygen"],
 )
 
+# Expose version flyout assets so docs/sphinx/utils targets can reference them
+exports_files(
+    [
+        "_static/css/version_flyout.css",
+        "_static/js/version_flyout.js",
+    ],
+    visibility = ["//docs/sphinx/utils:__pkg__"],
+)
+
 # Static assets for Sphinx documentation
 filegroup(
     name = "static_assets",
     srcs = glob(["_static/**/*"]),
+)
+
+# Custom CSS exposed so it can be added to the sphinx_build runfiles and
+# therefore be available to sub-doc builds (e.g. dependable_element docs)
+# that are built in a separate Bazel sandbox.
+filegroup(
+    name = "custom_css",
+    srcs = ["_static/css/default_custom.css"],
+    visibility = ["//bazel/toolchains:__pkg__"],
 )
 
 # Generate RST files from @api tagged items using custom Starlark rule
