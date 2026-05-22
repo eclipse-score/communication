@@ -150,9 +150,9 @@ auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::GetLatestSlot() no
 {
     for (std::size_t retry_counter{0U}; retry_counter < MAX_REFERENCE_RETRIES; ++retry_counter)
     {
-        EventSlotStatus::EventTimeStamp latest_time_stamp{1U};
+        EventSlotStatus::EventTimeStamp latest_time_stamp{EventSlotStatus::FIRST_VALID_TIMESTAMP};
         std::optional<SlotIndexType> latest_slot_index{};
-        EventSlotStatus latest_slot_status{EventSlotStatus::UNINITIALIZED_TIMESTAMP, 0U};
+        EventSlotStatus latest_slot_status{};
 
         SlotIndexType current_index = 0U;
         for (const auto& slot : state_slots_)

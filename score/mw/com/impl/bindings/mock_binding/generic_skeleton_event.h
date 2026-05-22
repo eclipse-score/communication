@@ -44,6 +44,8 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
                 (ReceiveHandlerRegistrationChangedCallback),
                 (noexcept, override));
     MOCK_METHOD(Result<void>, UnsetReceiveHandlerRegistrationChangedHandler, (), (noexcept, override));
+    // GenericSkeletonEvent does not support getter functionality; no-op.
+    void SetGetterEnabled(bool /*getter_enabled*/) noexcept override {}
 };
 
 }  // namespace score::mw::com::impl::mock_binding

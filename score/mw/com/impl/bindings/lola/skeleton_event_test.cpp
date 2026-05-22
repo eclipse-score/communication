@@ -425,6 +425,8 @@ TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleReturnsMostRecentlySe
 {
     const bool enforce_max_samples{true};
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+    // Getter must be enabled so that the transaction log is set up in PrepareOffer
+    skeleton_event_->SetGetterEnabled(true);
     std::ignore = skeleton_event_->PrepareOffer();
 
     auto first_allocated_slot_result = skeleton_event_->Allocate();
