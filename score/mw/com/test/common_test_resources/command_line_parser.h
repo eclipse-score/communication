@@ -112,6 +112,20 @@ auto GetValueIfProvided(const CommandLineArgsMapType& args, const std::string& a
     }
 }
 
+/// \brief Get a value represented as a string, from an arguments map and parse it into the appropriate type.
+///
+/// Same as `GetValueIfProvided`, but terminates the program if the argument is not provided or could not be parsed.
+template <typename ReturnType>
+auto GetValue(const CommandLineArgsMapType& args, const std::string& arg_string) -> ReturnType
+{
+    auto value_opt = GetValueIfProvided<ReturnType>(args, arg_string);
+    if (!value_opt.has_value())
+    {
+        FailTest("Failed to get value for argument. Error: ", value_opt.error());
+    }
+    return value_opt.value();
+}
+
 /// \brief A generic command line parser which can parse any kind of arguments and return an argument value map.
 ///
 /// Every argument is parsed as a string and stored in the map with the argument name as key.
