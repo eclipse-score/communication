@@ -40,7 +40,7 @@ class DummyProxyEventBinding final : public ProxyEventBindingBase
     {
         return {};
     }
-    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override
+    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler) noexcept override
     {
         return {};
     }

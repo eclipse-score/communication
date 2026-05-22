@@ -15,6 +15,10 @@ load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
     "feature_requirements",
 )
+load(
+    "@score_tooling//validation/ai_checker:ai_checker.bzl",
+    "trlc_requirements_ai_test",
+)
 
 feature_requirements(
     name = "feature_requirements_ipc",
@@ -22,4 +26,11 @@ feature_requirements(
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
     deps = ["//score/mw/com/dependability/requirements/assumed_system_requirements"],
+)
+
+trlc_requirements_ai_test(
+    name = "requirements_ai_check",
+    batch_size = 10,
+    reqs = [":feature_requirements_ipc"],
+    tags = ["manual"],
 )

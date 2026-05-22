@@ -74,6 +74,7 @@ sphinx_module(
             "index.rst",
             "introduction.rst",
             "message_passing.rst",
+            "quality_reports.rst",
             "safety_reports.rst",
             ":doxygen_xml",
             ":generate_api_rst",
@@ -95,5 +96,6 @@ sphinx_module(
     visibility = ["//visibility:public"],
     deps = [
         "//score/message_passing/dependability:dependable_element_message_passing_doc",
+        "//score/mw/com/dependability:mw_com_doc",
     ],
 )

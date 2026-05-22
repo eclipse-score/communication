@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Coverage Dashboard</title>
+<style>
+  :root { --bg:#0d1117; --surface:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; padding:2rem; }
+  h1 { font-size:1.6rem; margin-bottom:.25rem; }
+  h2 { font-size:1.1rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:2rem 0 .75rem; font-weight:600; }
+  .meta { color:var(--muted); font-size:.85rem; margin-bottom:1.5rem; }
+  .cards { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.9rem 1.25rem; min-width:120px; text-align:center; }
+  .card .num { font-size:1.8rem; font-weight:700; }
+  .card .label { color:var(--muted); font-size:.75rem; text-transform:uppercase; margin-top:4px; }
+  .card .delta { font-size:.8rem; min-height:1.1em; margin-top:2px; }
+  .cov-bar-wrap { display:inline-block; background:var(--border); border-radius:4px; height:6px; width:80px; vertical-align:middle; margin-right:6px; }
+  .cov-bar { height:6px; border-radius:4px; }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  thead th { background:var(--surface); border-bottom:2px solid var(--border); padding:.6rem .8rem; text-align:left; color:var(--muted); text-transform:uppercase; font-size:.75rem; cursor:pointer; user-select:none; white-space:nowrap; }
+  thead th:hover { color:var(--accent); }
+  tbody tr { border-bottom:1px solid var(--border); }
+  tbody tr:hover { background:var(--surface); }
+  td { padding:.5rem .8rem; vertical-align:top; }
+  .mono { font-family:monospace; font-size:.82rem; }
+  .muted { color:var(--muted); }
+  .empty-msg { text-align:center; padding:3rem; color:var(--muted); }
+  .trend-up { color:#e74c3c; font-weight:700; font-size:.75rem; margin-left:2px; }
+  .trend-dn { color:#27ae60; font-weight:700; font-size:.75rem; margin-left:2px; }
+  .trend-eq { color:#8b949e; font-weight:700; font-size:.75rem; margin-left:2px; }
+  .spark-wrap { display:flex; align-items:flex-end; gap:3px; height:32px; background:var(--surface); padding:4px 6px; border-radius:4px; }
+  .spark-bar { width:10px; border-radius:2px 2px 0 0; min-height:2px; cursor:default; transition:opacity .15s; }
+  .spark-bar:hover { opacity:.7; }
+</style>
+</head>
+<body>
+<h1>Coverage Dashboard</h1>
+<p class="meta">Generated: {{ timestamp }}</p>
+
+{# ── Summary cards ── #}
+{% if cov %}
+<div class="cards">
+  {% for key, hk, label in [('line_pct','line_cov','Line Coverage'),('func_pct','func_cov','Function Coverage'),('branch_pct','branch_cov','Branch Coverage')] %}
+  <div class="card">
+    <div class="num" style="color:{{ cov_colour(cov[key]) }}">{{ '%.1f'|format(cov[key]) }}%</div>
+    {% if prev and prev[hk] is not none %}<div class="delta">{{ delta(cov[key], prev[hk], true) }}</div>{% endif %}
+    <div class="label">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted" style="margin-bottom:1.5rem">No coverage data available.</p>
+{% endif %}
+
+{# ── Per-file coverage table ── #}
+<h2>Per-File Coverage</h2>
+{% if cov_files %}
+<table>
+  <thead>
+    <tr>
+      <th>File</th>
+      <th onclick="cvSort(1)">Lines &#8597;</th>
+      <th onclick="cvSort(2)">Functions &#8597;</th>
+      <th onclick="cvSort(3)">Branches &#8597;</th>
+      <th>Lines (hit/total)</th>
+    </tr>
+  </thead>
+  <tbody id="cv-tbody">
+    {% for f in cov_files %}
+    <tr>
+      <td class="mono">{{ f.file|basename }}</td>
+      <td data-val="{{ f.line_pct }}">
+        <div class="cov-bar-wrap"><div class="cov-bar" style="width:{{ [f.line_pct,100]|min }}%;background:{{ cov_colour(f.line_pct) }}"></div></div>
+        <span style="color:{{ cov_colour(f.line_pct) }};font-weight:600">{{ '%.1f'|format(f.line_pct) }}%</span>
+      </td>
+      <td data-val="{{ f.func_pct }}">
+        <div class="cov-bar-wrap"><div class="cov-bar" style="width:{{ [f.func_pct,100]|min }}%;background:{{ cov_colour(f.func_pct) }}"></div></div>
+        <span style="color:{{ cov_colour(f.func_pct) }};font-weight:600">{{ '%.1f'|format(f.func_pct) }}%</span>
+      </td>
+      <td data-val="{{ f.branch_pct }}">
+        <div class="cov-bar-wrap"><div class="cov-bar" style="width:{{ [f.branch_pct,100]|min }}%;background:{{ cov_colour(f.branch_pct) }}"></div></div>
+        <span style="color:{{ cov_colour(f.branch_pct) }};font-weight:600">{{ '%.1f'|format(f.branch_pct) }}%</span>
+      </td>
+      <td class="mono muted">{{ f.lh }}/{{ f.lf }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-msg">No per-file coverage data available.</p>
+{% endif %}
+
+{# ── KPI Trends ── #}
+{% if history|length >= 2 %}
+<h2>Coverage Trend</h2>
+<div class="cards" style="margin-bottom:1.5rem">
+  {% for label, key in [('Line Coverage','line_cov'),('Function Coverage','func_cov'),('Branch Coverage','branch_cov')] %}
+  {% set curr = history[-1][key] %}
+  {% set prv  = history[-2][key] %}
+  <div class="card">
+    <div class="num" style="color:{{ cov_colour(curr or 0) }}">
+      {% if curr is not none %}{{ '%.1f'|format(curr) }}%{% else %}N/A{% endif %}
+    </div>
+    {% if curr is not none and prv is not none %}<div class="delta">{{ delta(curr, prv, true) }} vs prev</div>{% endif %}
+    <div class="label">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:1.5rem">
+  {% for label, key in [('Line %','line_cov'),('Function %','func_cov'),('Branch %','branch_cov')] %}
+  <div>
+    <div class="muted" style="font-size:.8rem;margin-bottom:4px">{{ label }}</div>
+    <div class="spark-wrap">
+      {% for s in history %}
+        {% set h = ((s[key] or 0) / 100 * 30)|int %}
+        <div class="spark-bar" style="height:{{ [h,2]|max }}px;background:{{ cov_colour(s[key] or 0) }}" title="{{ s.date }} — {{ '%.1f'|format(s[key] or 0) }}%"></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<h2>Run History</h2>
+<table>
+  <thead>
+    <tr><th>Date</th><th>Line Cov</th><th>Function Cov</th><th>Branch Cov</th></tr>
+  </thead>
+  <tbody>
+    {% for snap in history|reverse %}
+    {% set idx = (history|length - 1) - loop.index0 %}
+    {% set ps = history[idx - 1] if idx > 0 else none %}
+    {% set is_latest = loop.first %}
+    <tr{% if is_latest %} style="background:var(--surface)"{% endif %}>
+      <td class="mono">{{ snap.date }}{% if is_latest %}&nbsp;<span style="font-size:.72rem;color:var(--accent)">now</span>{% endif %}</td>
+      {% for key in ['line_cov','func_cov','branch_cov'] %}
+      <td>
+        {% if snap[key] is not none %}
+          <span style="color:{{ cov_colour(snap[key]) }}">{{ '%.1f'|format(snap[key]) }}%</span>
+          {% if ps and ps[key] is not none %} {{ delta(snap[key], ps[key], true) }}{% endif %}
+        {% else %}N/A{% endif %}
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<script>
+let cvDir = 1;
+function cvSort(c) {
+  const tb = document.getElementById('cv-tbody');
+  [...tb.querySelectorAll('tr')]
+    .sort((a, b) => (parseFloat(a.cells[c]?.dataset.val || 0) - parseFloat(b.cells[c]?.dataset.val || 0)) * cvDir)
+    .forEach(r => tb.appendChild(r));
+  cvDir *= -1;
+}
+</script>
+</body>
+</html>

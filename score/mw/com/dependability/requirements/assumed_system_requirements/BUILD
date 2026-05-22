@@ -15,10 +15,21 @@ load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
     "assumed_system_requirements",
 )
+load(
+    "@score_tooling//validation/ai_checker:ai_checker.bzl",
+    "trlc_requirements_ai_test",
+)
 
 assumed_system_requirements(
     name = "assumed_system_requirements",
     srcs = ["assumed_system_requirements.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
+)
+
+trlc_requirements_ai_test(
+    name = "requirements_ai_check",
+    batch_size = 10,
+    reqs = [":assumed_system_requirements"],
+    tags = ["manual"],
 )

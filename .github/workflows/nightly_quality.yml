@@ -1,0 +1,145 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow: Run nightly coverage job and publish results to GitHub Pages.
+#
+# Runs every night at midnight UTC:
+#   - Coverage : full C++ test suite with gcov/lcov → HTML report + KPI dashboard
+#
+# After coverage completes, a deploy-quality-reports job:
+#   1. Downloads the coverage HTML artifact
+#   2. Runs `bazel run //quality/dashboard:generate_dashboard` to produce the coverage KPI index page
+#   3. Uploads everything as nightly-quality-reports artifact for docs.yml to deploy
+#
+# Deployed URL structure:
+#   https://eclipse-score.github.io/communication/latest/quality/index.html          ← dashboard
+#   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html ← lcov HTML
+
+name: Nightly Quality Jobs
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # every day at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # --------------------------------------------------------------------
+  # Quality job 1: Coverage
+  # --------------------------------------------------------------------
+  run-coverage:
+    uses: ./.github/workflows/coverage_report.yml
+    permissions:
+      contents: read
+
+  # --------------------------------------------------------------------
+  # Collect results, build the dashboard, upload artifact for docs.yml
+  # --------------------------------------------------------------------
+  deploy-quality-reports:
+    needs: [run-coverage]
+    # Always run even if individual quality jobs fail, so the dashboard
+    # still reflects which jobs passed and which failed.
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          repository-cache: true
+          cache-save: true
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      # ------------------------------------------------------------------
+      # Determine job conclusions (needs.*.result = success|failure|skipped|cancelled)
+      # ------------------------------------------------------------------
+      - name: Resolve job conclusions
+        id: conclusions
+        run: |
+          map_conclusion() {
+            case "$1" in
+              success)   echo "success" ;;
+              failure)   echo "failure" ;;
+              *)         echo "skipped" ;;
+            esac
+          }
+          echo "coverage=$(map_conclusion '${{ needs.run-coverage.result }}')" >> $GITHUB_OUTPUT
+
+      # ------------------------------------------------------------------
+      # Download artifacts (only if the upstream job succeeded)
+      # ------------------------------------------------------------------
+      - name: Download coverage artifact
+        if: needs.run-coverage.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-coverage.outputs.artifact-name }}
+          path: /tmp/coverage_zip
+
+      - name: Extract coverage HTML report
+        if: needs.run-coverage.result == 'success'
+        run: |
+          bash quality/scripts/extract_coverage_artifact.sh \
+            /tmp/coverage_zip \
+            "${GITHUB_WORKSPACE}/_quality/coverage"
+
+      # ------------------------------------------------------------------
+      # Generate coverage KPI dashboard via generate_dashboard py_binary
+      # ------------------------------------------------------------------
+
+      - name: Generate quality dashboard
+        if: always() && steps.conclusions.outcome == 'success'
+        run: |
+          # The LCOV .dat file is inside the extracted coverage zip at a known
+          # path; pass it unconditionally — generate_dashboard handles the
+          # case where the file is absent (returns empty coverage data).
+          bazel run //quality/dashboard:generate_dashboard -- \
+            --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
+            --html     _quality/index.html \
+            --github-summary
+
+          echo "Dashboard generated. Contents of _quality/:"
+          find _quality -type f | sort
+
+      # ------------------------------------------------------------------
+      # Upload all quality reports as a single artifact for docs.yml to
+      # pick up and deploy as part of the unified Sphinx site.
+      # ------------------------------------------------------------------
+      - name: Upload quality reports artifact
+        if: always() && steps.conclusions.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-quality-reports
+          path: _quality/
+          retention-days: 7
+
+      - name: Print dashboard URL
+        if: always()
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          echo "::notice::Quality reports will be published at https://${OWNER}.github.io/${REPO}/latest/quality/index.html once docs.yml completes."
