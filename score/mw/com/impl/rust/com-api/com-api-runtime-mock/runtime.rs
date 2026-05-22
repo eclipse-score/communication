@@ -328,23 +328,13 @@ where
     }
 
     #[allow(clippy::manual_async_fn)]
-    fn receive<'a>(
-        &'a self,
-        _scratch: SampleContainer<Self::Sample<'a>>,
-        _new_samples: usize,
-        _max_samples: usize,
-    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
-        async { todo!() }
-    }
-
-    #[allow(clippy::manual_async_fn)]
-    fn receive_with_timeout<'a>(
+    fn receive_timeout<'a>(
         &'a self,
         _scratch: SampleContainer<Self::Sample<'a>>,
         _new_samples: usize,
         _max_samples: usize,
         _timeout: impl Future<Output = ()> + Send + 'static,
-    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
         async { todo!() }
     }
 }

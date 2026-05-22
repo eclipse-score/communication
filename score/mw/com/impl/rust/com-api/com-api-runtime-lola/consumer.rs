@@ -536,21 +536,6 @@ where
         )
     }
 
-    #[allow(clippy::manual_async_fn)]
-    fn receive<'a>(
-        &'a self,
-        scratch: SampleContainer<Self::Sample<'a>>,
-        new_samples: usize,
-        max_samples: usize,
-    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
-        self.receive_with_timeout(
-            scratch,
-            new_samples,
-            max_samples,
-            core::future::pending::<()>(),
-        )
-    }
-
     // Cannot use `async fn` because the trait mandates `-> impl Future + 'a`,
     // requiring the returned future to be explicitly bound to the lifetime of `&self`.
     // we do not need to cancle timeout future when receive future resolved,
@@ -584,17 +569,17 @@ where
     ///     T: CommData + std::fmt::Debug,
     ///     S: Subscription<T, LolaRuntimeImpl>,
     /// {
-    ///     let _future = sub.receive_with_timeout(scratch, 1, 1, UnpinTimeout::<u8>(PhantomData));
+    ///     let _future = sub.receive_timeout(scratch, 1, 1, UnpinTimeout::<u8>(PhantomData));
     /// }
     /// ```
     #[allow(clippy::manual_async_fn)]
-    fn receive_with_timeout<'a>(
+    fn receive_timeout<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
         timeout: impl Future<Output = ()> + Send + 'static,
-    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a {
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
         async move {
             match new_samples {
                 0 => {
@@ -675,7 +660,7 @@ struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()> + Unpin> {
 }
 
 impl<'a, T: CommData + Debug, F: Future<Output = ()> + Unpin> Future for ReceiveFuture<'a, T, F> {
-    type Output = (SampleContainer<Sample<T>>, Result<()>);
+    type Output = (SampleContainer<Sample<T>>, Result<usize>);
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
         // Extract all immutable values upfront to avoid borrow conflicts with self in the callback
@@ -731,7 +716,7 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()> + Unpin> Future for Receive
                         self.scratch.take().expect(
                             "SampleContainer is not available when returning Future result",
                         ),
-                        Ok(()),
+                        Ok(self.total_received),
                     ));
                 }
                 // Have some samples but not enough yet, wait for more via waker

@@ -396,17 +396,13 @@ mod test {
         for _ in 0..5 {
             let (returned_buf, result) = if is_timeout {
                 let timeout = tokio::time::sleep(Duration::from_millis(1000));
-                subscribed.receive_with_timeout(buffer, 2, 3, timeout).await
+                subscribed.receive_timeout(buffer, 2, 3, timeout).await
             } else {
                 subscribed.receive(buffer, 2, 3).await
             };
-            if let Err(e) = result {
-                println!("[RECEIVER] Error receiving data: {:?}", e);
-            } else {
-                let count = returned_buf.sample_count();
-                if count > 0 {
-                    println!("[RECEIVER] Received {} samples", count);
-                }
+            match result {
+                Ok(count) => println!("[RECEIVER] Received {} samples", count),
+                Err(e) => eprintln!("[RECEIVER] Failed to receive samples: {:?}", e),
             }
             let mut buf = returned_buf;
             while let Some(sample) = buf.pop_front() {

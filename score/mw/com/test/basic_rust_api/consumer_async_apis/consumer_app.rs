@@ -96,6 +96,10 @@ async fn async_main() {
             eprintln!("[bigdata-consumer] Receive error: {:?}", e);
             return;
         }
+        // Process the received samples and prepare the buffer for the next call to `receive`.
+        // We are retuning the same buffer instance to `receive` to avoid unnecessary allocations.
+        // So emptying buffer means processing, and if user required it can pass with samples still in buffer
+        // and `receive` will add new samples to it until it reaches the max capacity of the buffer.
         sample_buf = {
             let count = returned_buf.sample_count();
             let mut buf = returned_buf;

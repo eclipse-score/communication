@@ -232,7 +232,9 @@ impl InstanceSpecifier {
         }
 
         // Remove the single leading slash
-        let service_name = service_name.strip_prefix('/').unwrap();
+        let Some(service_name) = service_name.strip_prefix('/') else {
+            return false;
+        };
 
         // Check each character
         // Allowed: digits, lowercase, uppercase, underscore
@@ -828,10 +830,12 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     ///   buffer and transferred to the container, 0 value is treated as error
     ///
     /// # Returns
-    /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<()>)`.
-    /// The container is **always** returned (even on error or cancellation) so the caller
-    /// never loses samples that were collected before the future resolved.
-    /// `Ok(())` means at least `new_samples` were received; `Err(_)` describes the failure.
+    /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<usize>)`.
+    /// SampleContainer is **always** returned (even on error or cancellation)
+    /// Success case return contains the number of newly added samples to the container with
+    /// number of samples.
+    /// Failure case return the SampleContainer which user passed to the function and
+    /// an 'Error' indicating the reason for failure of the receive operation.
     ///
     /// # Important Notes
     /// User can not concurrenly call `receive` on the same subscription instance from
@@ -846,12 +850,20 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     // The `Future` cannot have a `'static` lifetime. If we enforced `'static`, then `self` would
     // also need to be `'static`, which is not semantically correct for this use case.
     // Multiple threads cannot concurrently read the same event from a single subscription.
+    #[allow(clippy::manual_async_fn)]
     fn receive<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a;
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
+        self.receive_timeout(
+            scratch,
+            new_samples,
+            max_samples,
+            core::future::pending::<()>(),
+        )
+    }
 
     /// This method is extension of `receive` with timeout support.
     /// It returns a future that resolves as soon as at least `new_samples` samples have been transferred
@@ -867,26 +879,27 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// considered to have timed out.
     ///
     /// # Returns
-    /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<()>)`.
-    /// The container is **always** returned (even on error, timeout, or cancellation) so the caller
-    /// never loses samples that were collected before the future resolved.
-    /// Error is returned if the receive operation fails or if the timeout future resolves before the required
-    /// number of samples are received.
+    /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<usize>)`.
+    /// SampleContainer is **always** returned (even on error or cancellation)
+    /// Success case return contains the number of newly added samples to the container with
+    /// number of samples.
+    /// Failure case return the SampleContainer which user passed to the function and
+    /// an 'Error' indicating the reason for failure of the receive operation.
     ///
     /// # Important Notes
-    /// User can not concurrenly call `receive_with_timeout` on the same subscription instance from
+    /// User can not concurrenly call `receive_timeout` on the same subscription instance from
     /// multiple threads or tasks.
     /// `timeout` must be `'static` because timeout futures (e.g. `tokio::time::sleep`) own all
     /// their state and do not borrow anything from the caller's scope.
     /// And if you change to `'a` lifetime then it create lifetime bound not satisfied
     /// error from rust (see issue <https://github.com/rust-lang/rust/issues/100013> for more information)
-    fn receive_with_timeout<'a>(
+    fn receive_timeout<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
         timeout: impl Future<Output = ()> + Send + 'static,
-    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<()>)> + 'a;
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.
