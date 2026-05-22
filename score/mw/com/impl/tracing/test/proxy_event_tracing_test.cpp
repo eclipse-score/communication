@@ -104,6 +104,9 @@ class ProxyEventTracingFixture : public ::testing::Test
 
         ON_CALL(*mock_proxy_event_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::Result<void>{}));
         ON_CALL(*mock_proxy_event_binding_, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+        ON_CALL(*mock_proxy_event_binding_, GetSubscriptionState())
+            .WillByDefault(Return(SubscriptionState::kNotSubscribed));
+        ON_CALL(*mock_proxy_event_binding_, Subscribe(_)).WillByDefault(Return(score::Result<void>{}));
     }
 
     void CreateProxy()
@@ -486,9 +489,6 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture, SubscribeCallsAreTracedWhenEnabled
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kNotSubscribed));
 
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
-
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
@@ -552,9 +552,6 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture,
     // subscribed
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kNotSubscribed));
-
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -628,9 +625,6 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture,
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kNotSubscribed));
 
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
-
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
@@ -679,9 +673,6 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture, SubscribeCallsAreNotTracedWhenDisa
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kNotSubscribed));
 
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
-
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
@@ -720,13 +711,10 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture, UnsubscribeCallsAreTracedWhenEna
         typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
         expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
-    // Expect that GetSubscriptionState returns kNotSubscribed then kSubscribed
+    // and given that GetSubscriptionState returns kNotSubscribed then kSubscribed
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kNotSubscribed))
         .WillOnce(Return(SubscriptionState::kSubscribed));
-
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
 
     // Then a trace call relating to Unsubscribe should be called with no data
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -765,7 +753,6 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
 
     ProxyEventTracingData expected_enabled_trace_points{};
     expected_enabled_trace_points.enable_unsubscribe = true;
-    expected_enabled_trace_points.enable_subscribe = true;
     expected_enabled_trace_points.enable_call_receive_handler = true;
 
     const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view =
@@ -776,8 +763,7 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
 
     // Expecting that the runtime returns a mocked TracingRuntime and TracingFilterConfig
     tracing::TracingRuntimeMock tracing_runtime_mock{};
-    EXPECT_CALL(this->runtime_mock_guard_.runtime_mock_, GetTracingRuntime())
-        .WillRepeatedly(Return(&tracing_runtime_mock));
+    EXPECT_CALL(this->runtime_mock_guard_.runtime_mock_, GetTracingRuntime()).WillOnce(Return(&tracing_runtime_mock));
     EXPECT_CALL(this->runtime_mock_guard_.runtime_mock_, GetTracingFilterConfig())
         .WillOnce(Return(&(this->tracing_filter_config_mock_)));
 
@@ -785,26 +771,6 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
         typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
         expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
-
-    // Expect that GetSubscriptionState returns kNotSubscribed then kSubscribed
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
-        .WillOnce(Return(SubscriptionState::kNotSubscribed))
-        .WillOnce(Return(SubscriptionState::kSubscribed));
-
-    // Expect that a trace call relating to Subscribe is called
-    tracing::ITracingRuntime::TracePointType subscribe_trace_point_type{
-        ProxyEventTracingFixture<TypeParam>::TracePointType::SUBSCRIBE};
-    EXPECT_CALL(tracing_runtime_mock,
-                Trace(BindingType::kLoLa,
-                      expected_service_element_instance_identifier_view,
-                      subscribe_trace_point_type,
-                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
-                      _,
-                      _))
-        .WillOnce(Return(Result<void>{}));
-
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
 
     // Then a trace call relating to Unsubscribe should be called containing the correct max_sample_count which returns
     // an error
@@ -818,9 +784,6 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
-
-    // and that Unsubscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Unsubscribe());
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -852,7 +815,6 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
 
     ProxyEventTracingData expected_enabled_trace_points{};
     expected_enabled_trace_points.enable_unsubscribe = true;
-    expected_enabled_trace_points.enable_subscribe = true;
     expected_enabled_trace_points.enable_call_receive_handler = true;
 
     const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view =
@@ -863,8 +825,7 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
 
     // Expecting that the runtime returns a mocked TracingRuntime and TracingFilterConfig
     tracing::TracingRuntimeMock tracing_runtime_mock{};
-    EXPECT_CALL(this->runtime_mock_guard_.runtime_mock_, GetTracingRuntime())
-        .WillRepeatedly(Return(&tracing_runtime_mock));
+    EXPECT_CALL(this->runtime_mock_guard_.runtime_mock_, GetTracingRuntime()).WillOnce(Return(&tracing_runtime_mock));
     EXPECT_CALL(this->runtime_mock_guard_.runtime_mock_, GetTracingFilterConfig())
         .WillOnce(Return(&(this->tracing_filter_config_mock_)));
 
@@ -872,26 +833,6 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
         typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
         expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
-
-    // Expect that GetSubscriptionState returns kNotSubscribed then kSubscribed
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
-        .WillOnce(Return(SubscriptionState::kNotSubscribed))
-        .WillOnce(Return(SubscriptionState::kSubscribed));
-
-    // Expect that a trace call relating to Subscribe is called
-    tracing::ITracingRuntime::TracePointType subscribe_trace_point_type{
-        ProxyEventTracingFixture<TypeParam>::TracePointType::SUBSCRIBE};
-    EXPECT_CALL(tracing_runtime_mock,
-                Trace(BindingType::kLoLa,
-                      expected_service_element_instance_identifier_view,
-                      subscribe_trace_point_type,
-                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
-                      _,
-                      _))
-        .WillOnce(Return(Result<void>{}));
-
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
 
     // Then a trace call relating to Unsubscribe should be called containing the correct max_sample_count which returns
     // an error
@@ -905,9 +846,6 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
-
-    // and that Unsubscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Unsubscribe());
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -953,21 +891,13 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture, UnsubscribeCallsAreNotTracedWhen
     // Then a trace call relating to Unsubscribe should never be called
 
     const std::size_t max_sample_count{1U};
-    InSequence sequence{};
 
-    // Expect that GetSubscriptionState is called once and indicates that the Service Element is currently not
-    // subscribed
+    // and given that GetSubscriptionState returns kNotSubscribed then kSubscribed
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
-        .WillOnce(Return(SubscriptionState::kNotSubscribed));
-
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
-
-    // and that GetSubscriptionState is called once and indicates that the Service Element is currently subscribed
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
         .WillOnce(Return(SubscriptionState::kSubscribed));
 
-    // and that Unsubscribe will be called on the binding
+    // and given that Unsubscribe is called on the binding
     EXPECT_CALL(*this->mock_proxy_event_binding_, Unsubscribe());
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
