@@ -39,6 +39,7 @@ Usage (called from deploy_docs.yml):
 
 import argparse
 import json
+import os
 import pathlib
 import shutil
 import sys
@@ -47,6 +48,18 @@ import sys
 _STATIC = pathlib.Path(__file__).parent.parent / "_static"
 _CSS = _STATIC / "css" / "version_flyout.css"
 _JS  = _STATIC / "js"  / "version_flyout.js"
+
+# When run via `bazel run`, the CWD is not necessarily the workspace root.
+# Bazel sets BUILD_WORKSPACE_DIRECTORY to the workspace root so that scripts
+# can resolve relative paths passed from the workflow correctly.
+_WORKSPACE = pathlib.Path(os.environ.get("BUILD_WORKSPACE_DIRECTORY", os.getcwd()))
+
+
+def _resolve(p: str) -> pathlib.Path:
+    """Resolve a path relative to the Bazel workspace root if not absolute."""
+    path = pathlib.Path(p)
+    return path if path.is_absolute() else _WORKSPACE / path
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -66,8 +79,8 @@ def main() -> int:
                         help="Path to the root index.html (redirect page)")
     args = parser.parse_args()
 
-    publish  = pathlib.Path(args.publish_dir)
-    docs_out = pathlib.Path(args.docs_output)
+    publish  = _resolve(args.publish_dir)
+    docs_out = _resolve(args.docs_output)
     version  = args.version
     is_tag   = args.is_tag == "true"
     repo_url = args.repo_url.rstrip("/")
@@ -107,7 +120,7 @@ def main() -> int:
     shutil.copy2(_JS,  shared_js_dir  / _JS.name)
 
     # ── Root files ────────────────────────────────────────────────────────────
-    shutil.copy2(args.root_index, publish / "index.html")
+    shutil.copy2(_resolve(args.root_index), publish / "index.html")
     (publish / ".nojekyll").touch()
 
     # ── switcher.json ─────────────────────────────────────────────────────────
