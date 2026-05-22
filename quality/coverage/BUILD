@@ -11,16 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
-py_binary(
-    name = "generate_dashboard",
-    srcs = ["generate_dashboard.py"],
-    data = ["dashboard.html.j2"],
-    main = "generate_dashboard.py",
+sh_binary(
+    name = "generate_coverage_html",
+    srcs = ["generate_coverage_html.sh"],
+    data = ["@lcov_deb//:srcs"],
     visibility = ["//visibility:private"],
-    deps = [
-        "@score_communication_pip//jinja2",
-        "@score_communication_pip//markupsafe",
-    ],
 )

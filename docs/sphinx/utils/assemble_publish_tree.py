@@ -34,8 +34,6 @@ Usage (called from deploy_docs.yml):
         --docs-output docs_output \\
         --publish-dir publish \\
         --repo-url    https://eclipse-score.github.io/communication \\
-        --shared-css  docs/sphinx/_static/css/version_flyout.css \\
-        --shared-js   docs/sphinx/_static/js/version_flyout.js \\
         --root-index  docs/sphinx/_gh_pages/index.html
 """
 
@@ -45,6 +43,10 @@ import pathlib
 import shutil
 import sys
 
+# Static assets bundled as Bazel data dependencies — resolved via runfiles.
+_STATIC = pathlib.Path(__file__).parent.parent / "_static"
+_CSS = _STATIC / "css" / "version_flyout.css"
+_JS  = _STATIC / "js"  / "version_flyout.js"
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -60,10 +62,6 @@ def main() -> int:
                         help="Root publish directory (default: publish/)")
     parser.add_argument("--repo-url",    required=True,
                         help="Base GitHub Pages URL without trailing slash")
-    parser.add_argument("--shared-css",  required=True,
-                        help="Path to version_flyout.css to copy into _shared/css/")
-    parser.add_argument("--shared-js",   required=True,
-                        help="Path to version_flyout.js to copy into _shared/js/")
     parser.add_argument("--root-index",  required=True,
                         help="Path to the root index.html (redirect page)")
     args = parser.parse_args()
@@ -105,8 +103,8 @@ def main() -> int:
     shared_js_dir  = publish / "_shared" / "js"
     shared_css_dir.mkdir(parents=True, exist_ok=True)
     shared_js_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(args.shared_css, shared_css_dir / pathlib.Path(args.shared_css).name)
-    shutil.copy2(args.shared_js,  shared_js_dir  / pathlib.Path(args.shared_js).name)
+    shutil.copy2(_CSS, shared_css_dir / _CSS.name)
+    shutil.copy2(_JS,  shared_js_dir  / _JS.name)
 
     # ── Root files ────────────────────────────────────────────────────────────
     shutil.copy2(args.root_index, publish / "index.html")

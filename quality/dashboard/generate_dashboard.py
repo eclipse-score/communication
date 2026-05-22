@@ -19,7 +19,6 @@ the dashboard.html.j2 Jinja2 template.
 Usage (CI, called from nightly_quality.yml):
     bazel run //quality/dashboard:generate_dashboard -- \\
         --lcov           /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \\
-        --history        _quality/data/quality_history.json \\
         --html           _quality/index.html \\
         --github-summary
 """

@@ -151,8 +151,6 @@ jobs:
             --docs-output docs_output \
             --publish-dir publish \
             --repo-url    "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}" \
-            --shared-css  docs/sphinx/_static/css/version_flyout.css \
-            --shared-js   docs/sphinx/_static/js/version_flyout.js \
             --root-index  docs/sphinx/_gh_pages/index.html
 
       - name: Bundle quality reports into latest/

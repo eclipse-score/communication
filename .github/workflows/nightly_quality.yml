@@ -69,9 +69,8 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.18.0
         with:
           bazelisk-cache: true
-          disk-cache: "quality_dashboard"
           repository-cache: true
-          cache-save: ${{ github.event_name == 'schedule' }}
+          cache-save: true
 
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
@@ -92,11 +91,10 @@ jobs:
           echo "coverage=$(map_conclusion '${{ needs.run-coverage.result }}')" >> $GITHUB_OUTPUT
 
       # ------------------------------------------------------------------
-      # Download artifacts (continue-on-error: artifacts may not exist if job failed)
+      # Download artifacts (only if the upstream job succeeded)
       # ------------------------------------------------------------------
       - name: Download coverage artifact
         if: needs.run-coverage.result == 'success'
-        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.run-coverage.outputs.artifact-name }}
@@ -104,7 +102,6 @@ jobs:
 
       - name: Extract coverage HTML report
         if: needs.run-coverage.result == 'success'
-        continue-on-error: true
         run: |
           bash quality/scripts/extract_coverage_artifact.sh \
             /tmp/coverage_zip \
@@ -123,7 +120,6 @@ jobs:
           bazel run //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
             --html     _quality/index.html \
-            --history  _quality/data/quality_history.json \
             --github-summary
 
           echo "Dashboard generated. Contents of _quality/:"
@@ -142,6 +138,7 @@ jobs:
           retention-days: 7
 
       - name: Print dashboard URL
+        if: always()
         run: |
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"

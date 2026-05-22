@@ -48,11 +48,7 @@ jobs:
         with:
           level: 4
 
-      - name: Install lcov
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lcov
-
+      # TODO(follow-up PR): align setup-bazel version with the other workflows.
       - name: Setup Bazel with shared caching
         uses: bazel-contrib/setup-bazel@0.18.0
         with:
@@ -70,12 +66,12 @@ jobs:
         run: |
           bazel coverage //... --build_tests_only
 
+      # TODO(follow-up PR): merge generate_coverage_html and create_coverage_archive
+      # into a single sh_binary with a --archive flag.
       - name: Generate HTML Coverage Report
         if: steps.run-coverage.outcome == 'success'
         run: |
-          bash quality/scripts/generate_coverage_html.sh \
-            "$(bazel info output_path)/_coverage/_coverage_report.dat" \
-            cpp_coverage
+          bazel run //quality/coverage:generate_coverage_html -- cpp_coverage
 
       - name: Create archive of test report
         if: steps.run-coverage.outcome == 'success'
@@ -94,10 +90,12 @@ jobs:
 
       - name: Set artifact name
         id: set-artifact-name
+        if: steps.run-coverage.outcome == 'success'
         run: |
           echo "artifact-name=${{ github.event.repository.name }}_coverage_report_${{ github.sha }}" >> $GITHUB_OUTPUT
 
       - name: Upload coverage artifacts
+        if: steps.run-coverage.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.set-artifact-name.outputs.artifact-name }}

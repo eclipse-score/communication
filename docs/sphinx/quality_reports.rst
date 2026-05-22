@@ -17,4 +17,11 @@ nightly run of the `Nightly Quality Jobs`_ workflow.
 
 `Open Quality Dashboard <quality/index.html>`_
 
+.. note::
+
+   The report links above are relative to the deployed GitHub Pages site and
+   only resolve under ``latest/``. They will not work in local Sphinx builds
+   or in versioned release archives (e.g. ``v1.2.3/``), as quality reports
+   are published exclusively alongside the ``latest`` docs.
+
 .. _Nightly Quality Jobs: https://github.com/eclipse-score/communication/actions/workflows/nightly_quality.yml

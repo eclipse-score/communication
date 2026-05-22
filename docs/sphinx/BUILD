@@ -31,6 +31,11 @@ filegroup(
     srcs = glob(["_static/**/*"]),
 )
 
+exports_files(
+    glob(["_static/**/*"]),
+    visibility = ["//docs/sphinx/utils:__pkg__"],
+)
+
 # Generate RST files from @api tagged items using custom Starlark rule
 generate_api_rst(
     name = "generate_api_rst",

@@ -27,8 +27,12 @@ py_library(
 py_binary(
     name = "assemble_publish_tree",
     srcs = ["assemble_publish_tree.py"],
+    data = [
+        "//docs/sphinx:_static/css/version_flyout.css",
+        "//docs/sphinx:_static/js/version_flyout.js",
+    ],
     main = "assemble_publish_tree.py",
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:private"],
 )
 
 py_binary(

@@ -14,17 +14,46 @@
 # Generates an HTML coverage report from an LCOV .dat file using genhtml.
 #
 # Usage:
-#   bash quality/scripts/generate_coverage_html.sh <lcov.dat> [output-dir]
+#   bazel run //quality/coverage:generate_coverage_html [-- [output-dir]]
 #
 # Arguments:
-#   lcov.dat    Path to the LCOV .dat coverage data file (required)
 #   output-dir  Directory to write the HTML report to (default: cpp_coverage)
 
 set -euo pipefail
 
-LCOV_DAT="${1:?Usage: $0 <lcov.dat> [output-dir]}"
-OUTPUT_DIR="${2:-cpp_coverage}"
+LCOV_DAT="$(bazel info output_path)/_coverage/_coverage_report.dat"
+OUTPUT_DIR="${1:-$(mktemp -d)}"
 
+# ---------------------------------------------------------------------------
+# Resolve genhtml: prefer Bazel-managed binary from @lcov_deb runfiles so
+# that no system lcov installation is required.  Fall back to PATH.
+# ---------------------------------------------------------------------------
+_tool_path() {
+  local name="$1"
+  local found=""
+  if [[ -n "${RUNFILES_DIR:-}" ]]; then
+    found=$(find "${RUNFILES_DIR}" -path "*/lcov_deb/usr/bin/${name}" -type f 2>/dev/null | head -1)
+  fi
+  if [[ -z "${found}" ]]; then
+    found=$(command -v "${name}" 2>/dev/null || true)
+  fi
+  echo "${found}"
+}
+
+GENHTML="$(_tool_path genhtml)"
+
+if [[ -z "$GENHTML" ]]; then
+  echo "ERROR: 'genhtml' not found. Run via 'bazel run //quality/coverage:generate_coverage_html' or install 'lcov'." >&2
+  exit 1
+fi
+
+# When using the Bazel-managed tool, set PERL5LIB so Perl finds lcovutil.pm.
+if [[ -n "${RUNFILES_DIR:-}" ]]; then
+  lcov_lib=$(find "${RUNFILES_DIR}" -path "*/lcov_deb/usr/lib/lcov" -type d 2>/dev/null | head -1)
+  if [[ -n "${lcov_lib}" ]]; then
+    export PERL5LIB="${lcov_lib}${PERL5LIB:+:${PERL5LIB}}"
+  fi
+fi
 # NOTE: "--ignore-errors category,inconsistent"
 # Root cause: when Bazel runs tests in parallel, multiple test processes can
 # write to the same .gcda counter files concurrently. The overlapping writes
@@ -44,10 +73,12 @@ OUTPUT_DIR="${2:-cpp_coverage}"
 #      llvm-cov writes per-process .profraw files → no shared-file races by
 #      design, accurate counts, no slowdown.
 #      Trade-off: requires building with Clang — a broader toolchain change.
-genhtml "${LCOV_DAT}" \
+"${GENHTML}" "${LCOV_DAT}" \
   --output-directory "${OUTPUT_DIR}" \
   --show-details \
   --legend \
   --function-coverage \
   --branch-coverage \
   --ignore-errors category,inconsistent
+
+echo "Coverage report written to: ${OUTPUT_DIR}"
