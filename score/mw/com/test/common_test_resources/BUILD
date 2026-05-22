@@ -160,6 +160,7 @@ cc_library(
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
+        ":fail_test",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:test_error_domain",
         "@boost.program_options",
