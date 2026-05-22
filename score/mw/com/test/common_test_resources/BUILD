@@ -67,6 +67,9 @@ cc_library(
     visibility = [
         "//score/mw/com/test:__subpackages__",
     ],
+    deps = [
+        "@score_baselibs//score/result",
+    ],
 )
 
 cc_library(

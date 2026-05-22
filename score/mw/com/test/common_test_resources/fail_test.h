@@ -13,6 +13,8 @@
 #ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_FAIL_TEST_H
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_FAIL_TEST_H
 
+#include "score/result/error.h"
+
 #include <functional>
 #include <sstream>
 #include <utility>
@@ -28,7 +30,17 @@ void FailTest(std::stringstream&& strstr);
 template <typename Start, typename... Tail>
 void FailTest(std::stringstream&& strstr, Start&& start, Tail&&... tail)
 {
-    strstr << std::forward<Start>(start);
+    // Since score::result::Error does not have an operator<< overload for a stringstream and no method to convert it to
+    // a string, we manually stringify it here.
+    if constexpr (std::is_same_v<std::decay_t<Start>, score::result::Error>)
+    {
+        strstr << start.Message() << " / " << start.UserMessage();
+    }
+    else
+    {
+        strstr << std::forward<Start>(start);
+    }
+
     if constexpr (sizeof...(Tail) > 0U)
     {
         FailTest(std::move(strstr), std::forward<Tail>(tail)...);
