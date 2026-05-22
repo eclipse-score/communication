@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_FAIL_TEST_H
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_FAIL_TEST_H
 
+#include <functional>
 #include <sstream>
 #include <utility>
 
@@ -21,6 +22,7 @@ namespace score::mw::com::test
 
 namespace detail
 {
+
 void FailTest(std::stringstream&& strstr);
 
 template <typename Start, typename... Tail>
@@ -36,7 +38,24 @@ void FailTest(std::stringstream&& strstr, Start&& start, Tail&&... tail)
         FailTest(std::move(strstr));
     }
 }
+
 }  // namespace detail
+
+/// \brief RAII guard to set a test exit function that will be called when FailTest is invoked or when the guard is
+/// destroyed.
+class ExitFunctionGuard
+{
+  public:
+    using ExitFunction = std::function<void()>;
+
+    explicit ExitFunctionGuard(ExitFunction exit_function);
+    ~ExitFunctionGuard();
+
+    ExitFunctionGuard(const ExitFunctionGuard&) = delete;
+    ExitFunctionGuard& operator=(const ExitFunctionGuard&) = delete;
+    ExitFunctionGuard(ExitFunctionGuard&&) = delete;
+    ExitFunctionGuard& operator=(ExitFunctionGuard&&) = delete;
+};
 
 /// \brief Fail a test by exiting the program with EXIT_FAILURE and printing a message to stderr.
 /// \param args variadic number of arguments, each one must be streamable to a standard stringstream.

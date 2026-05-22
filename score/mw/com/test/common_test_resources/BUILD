@@ -61,6 +61,9 @@ cc_library(
         "fail_test.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
     visibility = [
         "//score/mw/com/test:__subpackages__",
     ],
