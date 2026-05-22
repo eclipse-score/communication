@@ -47,9 +47,6 @@ class EventSlotStatus final
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
     static constexpr EventTimeStamp TIMESTAMP_MAX = std::numeric_limits<EventTimeStamp>::max();
 
-    /// \brief Timestamp value indicating that a slot was never written.
-    static constexpr EventTimeStamp UNINITIALIZED_TIMESTAMP{0U};
-
     /// \brief First valid timestamp value that can appear in shared memory.
     static constexpr EventTimeStamp FIRST_VALID_TIMESTAMP{1U};
 
@@ -88,6 +85,9 @@ class EventSlotStatus final
     bool IsTimeStampBetween(const EventTimeStamp min_timestamp, const EventTimeStamp max_timestamp) const noexcept;
 
   private:
+    /// \brief Timestamp value indicating that a slot was never written.
+    static constexpr EventTimeStamp UNINITIALIZED_TIMESTAMP{0U};
+
     value_type data_;
 };
 
