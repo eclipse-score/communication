@@ -25,6 +25,17 @@ py_library(
 )
 
 py_binary(
+    name = "assemble_publish_tree",
+    srcs = ["assemble_publish_tree.py"],
+    data = [
+        "//docs/sphinx:_static/css/version_flyout.css",
+        "//docs/sphinx:_static/js/version_flyout.js",
+    ],
+    main = "assemble_publish_tree.py",
+    visibility = ["//visibility:private"],
+)
+
+py_binary(
     name = "generate_api_rst_bin",
     srcs = ["extract_api_items.py"],
     main = "extract_api_items.py",
