@@ -157,8 +157,6 @@ int run_consumer()
 
     while (received < kSamplesToProcess)
     {
-        // std::cout << "[CONSUMER] " << PAYLOAD_SIZE << "-byte Waking up, calling GetNewSamples..." << std::endl;
-
         // The receiver callback operates on type-erased memory (SamplePtr<const void>)
         generic_event.GetNewSamples(
             [&](auto sample) {
