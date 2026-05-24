@@ -87,6 +87,11 @@ class SkeletonEventCommon
         tracing_data_ = tracing_data;
     }
 
+    void SetGetterEnabled(bool getter_enabled) noexcept
+    {
+        getter_enabled_ = getter_enabled;
+    }
+
     const ElementFqId& GetElementFQId() const
     {
         return element_fq_id_;
@@ -136,6 +141,7 @@ class SkeletonEventCommon
     EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
     bool qm_disconnect_;
+    bool getter_enabled_{false};
 
     /// \brief Atomic flags indicating whether any receive handlers are currently registered for this event
     ///        at each quality level (QM and ASIL-B).
@@ -206,9 +212,12 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(EventControl& event_con
         DisableAllTracePoints(tracing_data_);
     }
 
-    EmplaceTransactionLogRegistrationGuard(event_control_qm.transaction_log_set_);
     const bool tracing_for_skeleton_event_enabled =
         tracing_data_.enable_send || tracing_data_.enable_send_with_allocate;
+    if (tracing_for_skeleton_event_enabled || getter_enabled_)
+    {
+        EmplaceTransactionLogRegistrationGuard(event_control_qm.transaction_log_set_);
+    }
     // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
     // both branches (true / false) being covered. "Decision couldn't be analyzed" only appeared after changing the code
     // within the if statement (without changing the condition / tests). Suppression can be removed when bug is fixed in
@@ -376,7 +385,7 @@ void SkeletonEventCommon<SampleType>::EmplaceTransactionLogRegistrationGuard(Tra
     auto transaction_log_registration_guard =
         transaction_log_set.RegisterSkeletonTracingElement(consumer_control_local_view_qm_.value());
 
-    if (consumer_control_local_view_asil_.has_value())
+    if (getter_enabled_ && consumer_control_local_view_asil_.has_value())
     {
         auto& transaction_log =
             transaction_log_set.GetTransactionLog(transaction_log_registration_guard.GetTransactionLogIndex());
