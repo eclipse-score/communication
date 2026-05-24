@@ -39,6 +39,8 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
     MOCK_METHOD(std::size_t, GetMaxSize, (), (const, noexcept, override));
+    // GenericSkeletonEvent does not support getter functionality; no-op.
+    void SetGetterEnabled(bool /*getter_enabled*/) noexcept override {}
 };
 
 }  // namespace score::mw::com::impl::mock_binding

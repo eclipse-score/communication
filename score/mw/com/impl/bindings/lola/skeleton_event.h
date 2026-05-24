@@ -110,6 +110,11 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
         skeleton_event_common_.SetSkeletonEventTracingData(tracing_data);
     }
 
+    void SetGetterEnabled(bool getter_enabled) noexcept override
+    {
+        skeleton_event_common_.SetGetterEnabled(getter_enabled);
+    }
+
   private:
     EventDataStorage<SampleType>* event_data_storage_;
     SkeletonEventCommon<SampleType> skeleton_event_common_;

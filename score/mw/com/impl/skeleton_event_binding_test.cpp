@@ -58,6 +58,7 @@ class MyEvent final : public SkeletonEventBinding<SampleType>
         return BindingType::kFake;
     }
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData) noexcept override {}
+    void SetGetterEnabled(bool) noexcept override {}
 };
 
 TEST(SkeletonEventBindingTest, CanGetMaxSizeOfLiteralType)
