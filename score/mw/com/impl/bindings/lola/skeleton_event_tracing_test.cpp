@@ -470,6 +470,9 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture, DisablingTracingWillRegisterTran
                             enforce_max_samples,
                             expected_enabled_trace_points);
 
+    // Getter must be enabled so that the transaction log is set up even when tracing is disabled
+    skeleton_event_->SetGetterEnabled(true);
+
     // Given an offered event in an offered service
     std::ignore = skeleton_event_->PrepareOffer();
 
@@ -478,6 +481,26 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture, DisablingTracingWillRegisterTran
     const auto skeleton_transaction_log_result =
         TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog();
     ASSERT_TRUE(skeleton_transaction_log_result.has_value());
+}
+
+TEST_F(SkeletonEventTracingPrepareOfferFixture, DisablingTracingAndGetterWillNotRegisterTransactionLog)
+{
+    const bool enforce_max_samples{true};
+    impl::tracing::SkeletonEventTracingData expected_enabled_trace_points{};
+
+    InitialiseSkeletonEvent(fake_element_fq_id_,
+                            fake_event_name_,
+                            max_samples_,
+                            max_subscribers_,
+                            enforce_max_samples,
+                            expected_enabled_trace_points);
+
+    std::ignore = skeleton_event_->PrepareOffer();
+
+    auto& transaction_log_set = GetTransactionLogSet();
+    const auto skeleton_transaction_log_result =
+        TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog();
+    ASSERT_FALSE(skeleton_transaction_log_result.has_value());
 }
 
 TEST_F(SkeletonEventTracingPrepareOfferFixture, EnablingSendTracingWillRegisterTransactionLog)
@@ -577,6 +600,9 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillRemoveTr
                             max_subscribers_,
                             enforce_max_samples,
                             expected_enabled_trace_points);
+
+    // Getter must be enabled so that the transaction log is set up even when tracing is disabled
+    skeleton_event_->SetGetterEnabled(true);
 
     // Given an offered event in an offered service
     std::ignore = skeleton_event_->PrepareOffer();
