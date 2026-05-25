@@ -340,10 +340,7 @@ where
     }
 
     #[allow(clippy::manual_async_fn)]
-    fn to_stream<'a>(
-        &'a self,
-        _max_samples: usize,
-    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
+    fn to_stream<'a>(&'a self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         stream::empty()
     }
 }

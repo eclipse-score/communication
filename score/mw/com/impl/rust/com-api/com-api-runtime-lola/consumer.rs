@@ -567,7 +567,6 @@ where
             scratch,
             self.max_num_samples,
             max_samples,
-            false,
         )
     }
 
@@ -612,22 +611,7 @@ where
         }
     }
 
-    fn to_stream<'a>(
-        &'a self,
-        max_samples: usize,
-    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
-        // Validate max_samples up front
-        let initial_error = if max_samples > self.max_num_samples {
-            Some(Error::ReceiveError(
-                ReceiveFailedReason::SampleCountOutOfBounds {
-                    max: self.max_num_samples,
-                    requested: max_samples,
-                },
-            ))
-        } else {
-            None
-        };
-
+    fn to_stream<'a>(&'a self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         // Get the event guard to ensure no concurrent receive calls
         // on the same subscriber instance.
         let mut event_guard = self.event.get_proxy_event();
@@ -641,10 +625,7 @@ where
         // Return stream that yields samples one at a time, fetching new batches as needed.
         ToStreamFuture {
             subscriber: self,
-            max_samples,
-            sample_container: SampleContainer::new(max_samples),
-            overflow_occurred: false,
-            initial_error,
+            sample_container: SampleContainer::new(self.max_num_samples),
         }
     }
 }
@@ -699,7 +680,6 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
                         &mut scratch,
                         max_num_samples,
                         max_samples - total_received,
-                        false,
                     );
                     self.scratch = Some(scratch);
                     result
@@ -743,93 +723,46 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
 }
 
 /// A `Stream` that continuously delivers one sample at a time from the subscription.
-///
-/// Internally maintains a `SampleContainer` whose lifetime equals the stream's lifetime.
-/// On each `poll_next`:
-/// - Buffered samples (leftover from a previous batch fetch) are yielded first.
-/// - Once the buffer is drained, if a previous fetch detected overflow (more samples arrived
-///   than `max_samples`), `Err(BufferOverflow)` is returned once, then the stream resumes.
-/// - Otherwise the waker is registered, new samples are fetched from the FFI layer, and the
-///   first sample is returned.  `Pending` is returned when no samples are currently available.
-///
-/// The lifetime `'a` ties all yielded `Sample<'a>` to the subscription borrow, ensuring
-/// samples cannot outlive the subscription that manages the underlying C++ proxy.
+/// It maintains an internal `SampleContainer` to buffer samples received from the FFI callback.
+/// On each poll, it first yields any buffered samples before attempting to receive more from the FFI callback.
 struct ToStreamFuture<'a, T: CommData + Debug> {
     subscriber: &'a SubscriberImpl<T>,
-    max_samples: usize,
     sample_container: SampleContainer<Sample<T>>,
-    overflow_occurred: bool,
-    initial_error: Option<Error>,
 }
 
 impl<'a, T: CommData + Debug> Stream for ToStreamFuture<'a, T> {
     type Item = Result<Sample<T>>;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        //extarcting self from pin to access the fields and modify the fields in the function
-        let this = self.get_mut();
-
-        // Return validation error first if present, then end the stream
-        if let Some(error) = this.initial_error.take() {
-            return Poll::Ready(Some(Err(error)));
-        }
-
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // Yield any buffered samples from a previous batch fetch first.
-        if let Some(sample) = this.sample_container.pop_front() {
+        if let Some(sample) = self.sample_container.pop_front() {
             return Poll::Ready(Some(Ok(sample)));
-        }
-
-        // This is condition is rare because already we are yeilding samples and once the buffer is
-        // empty then only we are fetching again but if C++ side we get more sample then the current
-        // buffer can hold then we are setting the overflow_occurred flag and once the avaiable
-        // samples are yeilded then we are populating error to user and reset the flag.
-        // Why we are not ruturnig error immediately or next call because we have already buffered
-        // sample which is valid so retuning those sample first and then returning error
-        // to user and then resuming the stream for next incoming sample.
-        if this.overflow_occurred {
-            this.overflow_occurred = false;
-            return Poll::Ready(Some(Err(Error::ReceiveError(
-                ReceiveFailedReason::BufferOverflow {
-                    max: this.max_samples,
-                },
-            ))));
         }
 
         // Register the waker before attempting to receive so that a concurrent FFI
         // callback cannot fire between the receive attempt and registering the waker,
         // which would cause a missed wake-up.
-        this.subscriber.waker_storage.register(cx.waker());
-        let max_samples = this.max_samples;
-        let max_num_samples = this.subscriber.max_num_samples;
+        self.subscriber.waker_storage.register(cx.waker());
+        let max_num_samples = self.subscriber.max_num_samples;
 
         // Acquire exclusive access to the proxy event for this poll.
-        let mut event_guard = this.subscriber.event.get_proxy_event();
-        // Fetch new samples into the container. Excess samples (beyond max_samples) are
-        // skipped by the callback, the raw FFI count lets us detect the overflow.
+        let mut event_guard = self.subscriber.event.get_proxy_event();
+        // Fetch new samples into the container
         let result = try_receive_samples::<T>(
             event_guard.deref_mut(),
-            &mut this.sample_container,
+            &mut self.sample_container,
             max_num_samples,
-            max_samples,
-            true,
+            max_num_samples,
         );
 
         // Release exclusive event access before yielding control.
         drop(event_guard);
 
         match result {
-            Ok(count) => {
-                // FFI delivered more samples than the buffer can hold — overflow.
-                // Remaining buffered samples are yielded first (top of this function);
-                // the error is surfaced once the buffer is fully drained.
-                if count > max_samples {
-                    this.overflow_occurred = true;
-                }
-                match this.sample_container.pop_front() {
-                    Some(sample) => Poll::Ready(Some(Ok(sample))),
-                    None => Poll::Pending,
-                }
-            }
+            Ok(_count) => match self.sample_container.pop_front() {
+                Some(sample) => Poll::Ready(Some(Ok(sample))),
+                None => Poll::Pending,
+            },
             Err(e) => Poll::Ready(Some(Err(e))),
         }
     }
@@ -1105,15 +1038,11 @@ impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for LolaConsumerBuilder<I
 /// * `scratch` - Mutable reference to the sample container
 /// * `max_num_samples` - Maximum allowed samples for this subscription
 /// * `max_samples` - How many samples to fetch in this call
-/// * `buffer_overflow_check` - When `true`, incoming samples are skipped when the buffer is full
-///   so the caller can detect overflow via the returned count.  When `false`, the oldest sample
-///   is dropped to make room (sliding-window behaviour for `try_receive`/`receive`).
 fn try_receive_samples<T: CommData + Debug>(
     event: &mut ProxyEventBase,
     scratch: &mut SampleContainer<Sample<T>>,
     max_num_samples: usize,
     max_samples: usize,
-    buffer_overflow_check: bool,
 ) -> Result<usize> {
     if max_samples == 0 {
         return Err(Error::ReceiveError(
@@ -1132,7 +1061,7 @@ fn try_receive_samples<T: CommData + Debug>(
         ));
     }
     // Create a callback that will be called by the C++ side for each new sample arrival
-    let mut callback = create_sample_callback(scratch, max_samples, buffer_overflow_check);
+    let mut callback = create_sample_callback(scratch, max_samples);
     // Convert closure to FatPtr for C++ callback
     let dyn_callback: &mut dyn FnMut(*mut sample_ptr_rs::SamplePtr<T>) = &mut callback;
     // SAFETY: it is safe to transmute the closure reference to a FatPtr because
@@ -1172,13 +1101,9 @@ fn try_receive_samples<T: CommData + Debug>(
 /// # Parameters
 /// * `scratch` - Mutable reference to the sample container
 /// * `max_samples` - Maximum number of samples to maintain in the container
-/// * `buffer_overflow_check` - When `true`, incoming samples are **skipped** when the buffer is
-///   full, so the caller can detect overflow from the FFI count.  When `false`, the oldest
-///   sample is **dropped** to make room for the new one (sliding-window behaviour).
 pub fn create_sample_callback<'a, T: CommData + Debug>(
     scratch: &'a mut SampleContainer<Sample<T>>,
     max_samples: usize,
-    buffer_overflow_check: bool,
 ) -> impl FnMut(*mut sample_ptr_rs::SamplePtr<T>) + 'a {
     move |raw_sample: *mut sample_ptr_rs::SamplePtr<T>| {
         if !raw_sample.is_null() {
@@ -1194,26 +1119,18 @@ pub fn create_sample_callback<'a, T: CommData + Debug>(
                     data: ManuallyDrop::new(sample_ptr),
                 },
             };
-            if buffer_overflow_check {
-                // Stream path: skip the incoming sample when full so the caller
-                // can detect overflow from the FFI count.
-                if scratch.sample_count() < scratch.capacity() {
-                    assert!(
-                        scratch.push_back(wrapped_sample).is_ok(),
-                        "Failed to push sample into buffer"
-                    );
-                }
-            } else {
-                // try_receive / receive path: drop the oldest sample to make room
-                // so the buffer always contains the newest samples (sliding window).
-                while scratch.sample_count() >= max_samples {
-                    scratch.pop_front();
-                }
-                assert!(
-                    scratch.push_back(wrapped_sample).is_ok(),
-                    "Failed to push sample after making room in buffer"
-                );
+
+            // try_receive / receive path: drop the oldest sample to make room
+            // so the buffer always contains the newest samples (sliding window).
+            // But for stream container already empty the buffer before receiving new samples,
+            // so it will not drop old samples when new samples arrive.
+            while scratch.sample_count() >= max_samples {
+                scratch.pop_front();
             }
+            assert!(
+                scratch.push_back(wrapped_sample).is_ok(),
+                "Failed to push sample after making room in buffer"
+            );
         }
     }
 }

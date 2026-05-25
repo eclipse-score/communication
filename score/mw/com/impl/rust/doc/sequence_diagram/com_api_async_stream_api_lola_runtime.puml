@@ -18,24 +18,21 @@ participant "Subscription" as Subscription
 participant "SampleContainer" as SampleContainer
 participant "Lola" as Lola
 
-User -> Subscription: stream(new_samples, max_samples)
-Subscription --> SampleContainer: Create with max_samples capacity
+User -> Subscription: Subscription::to_stream()
+Subscription --> SampleContainer: Create internal buffer (fixed capacity)
 
-Note over Lola: Backend asynchronously\npushes samples in the SampleContainer
-
+Note over SampleContainer: No background push, samples are fetched during poll and stored in the buffer
 loop User polls the stream
     User -> Subscription: poll_next().await
     activate Subscription
-    Subscription -> SampleContainer: Check samples >= 1
+    Subscription -> SampleContainer: Check for >= 1 sample
 
-    alt Samples available
-        Subscription --> User: Ready(Samples)
-    else Waiting for Samples
+    alt Sample available in buffer
+        Subscription --> User: Ready(Sample)
+    else No samples available
         Subscription --> User: Pending
     end
     deactivate Subscription
 end
-
-Note over SampleContainer: Oldest samples dropped\nwhen buffer full
 
 @enduml

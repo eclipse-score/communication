@@ -414,21 +414,26 @@ mod test {
     }
 
     async fn stream_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>) {
-        let mut stream = subscribed.to_stream(5);
-        let mut cnt = 5;
+        let mut stream = subscribed.to_stream();
+        let mut cnt = 5usize;
         println!("[RECEIVER] Stream processor started");
-        while let Some(sample_result) = stream.next().await {
-            match sample_result {
-                Ok(sample) => println!(
-                    "[RECEIVER] Stream received sample: {:.2} psi",
-                    sample.pressure
-                ),
-                Err(e) => eprintln!("[RECEIVER] Stream error: {:?}", e),
+        while cnt > 0 {
+            // Use timeout to avoid waiting indefinitely in case of issues with the producer or subscription
+            match tokio::time::timeout(tokio::time::Duration::from_secs(3), stream.next()).await {
+                Ok(Some(Ok(sample))) => {
+                    println!(
+                        "[RECEIVER] Stream received sample: {:.2} psi",
+                        sample.pressure
+                    )
+                }
+                Ok(Some(Err(e))) => eprintln!("[RECEIVER] Stream error: {:?}", e),
+                Ok(None) => break,
+                Err(_) => {
+                    eprintln!("[RECEIVER] Timeout while waiting for stream sample");
+                    break;
+                }
             }
             cnt -= 1;
-            if cnt == 0 {
-                break;
-            }
         }
     }
 

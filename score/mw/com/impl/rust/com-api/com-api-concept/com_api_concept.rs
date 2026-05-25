@@ -921,44 +921,38 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         cancellation: impl Future<Output = ()> + Send + 'static,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a;
 
-    /// Returns a stream that continuously yields `SampleContainer` whenever at least `new_samples` are available.
+    /// This method returns a stream that yields samples from the subscription as they become available.
     ///
     /// The stream creates and maintains an internal `SampleContainer` buffer during its lifetime,
-    /// automatically collecting samples from the communication buffer. The buffer is created when
-    /// the stream is created and persists until the subscription is dropped.
+    /// and the buffer is created when the stream is created and persists until the stream is dropped.
+    /// The internal buffer has a maximum capacity of subscribed slots size (max_num_sample).
+    /// It does not fetch the samples in background,
+    /// samples only get fetched when the stream is polled and the internal buffer is empty,
+    /// otherwise the stream will yield samples from the internal buffer.
     ///
     /// **Polling Behavior:**
-    /// When user poll the stream, it checks if the internal buffer contains at least `1` sample.
-    /// If yes, it yields those samples to user. If not, it returns pending and waits for samples.
+    /// On each `poll_next()`:
+    /// - First, any buffered samples from a previous batch fetch are yielded (one sample at a time).
+    /// - Otherwise, new samples are fetched from the communication buffer. If at least one sample
+    ///   is available, the first one is yielded. If no samples are available, `Poll::Pending` is
+    ///   returned and the waker is registered to be notified when new samples arrive.
     ///
-    /// **Buffer Management:**
-    /// The internal buffer has a maximum capacity of `max_samples`. When the buffer is full and
-    /// new samples arrive, the oldest samples are automatically dropped to make room. This allows
-    /// continuous sample flow without requiring repeated `receive()` calls.
-    ///
-    /// The stream manages its own internal `SampleContainer`, so it does not take one as a parameter.
-    /// Instead, it yields the updated container each time you poll for new samples.
+    /// The lifetime `'a` ties all yielded `Sample<'a>` to the subscription borrow, ensuring
+    /// samples cannot outlive the subscription that manages the underlying proxy connection.
     ///
     /// Why we need Unpin bound? -
-    /// We need to add the Unpin bound because the next method of stream required unpin stream to be polled,
-    /// but the stream return with impl trait does not return as Unpin by default,
-    /// even though the actual stream implementation might be Unpin.
-    /// Compiler cannot guarantee that the returned stream is Unpin without the explicit Unpin bound,
-    /// so we need to add the Unpin bound to ensure that the returned stream can be safely polled without
-    /// additinal pinning at user side.
-    ///
-    /// # Parameters
-    /// * `max_samples` - Maximum capacity of the internal buffer
+    /// We need to add the Unpin bound because the `next()` method of `Stream` requires the stream
+    /// to be polled, but the stream returned with `impl Trait` does not return as `Unpin` by default,
+    /// even though the actual stream implementation might be `Unpin`. The compiler cannot guarantee
+    /// that the returned stream is `Unpin` without the explicit bound, so we add it to ensure that
+    /// the returned stream can be safely polled without additional pinning at the user side.
     ///
     /// # Returns
-    /// A stream that yields `Sample` with at least `1` event each poll
+    /// A stream that yields individual `Sample<'a>` items one at a time.
     ///
     /// # Errors
-    /// Returns an error if a problem occurs during sample reception
-    fn to_stream<'a>(
-        &'a self,
-        max_samples: usize,
-    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
+    /// Returns an error if a problem occurs during sample reception.
+    fn to_stream<'a>(&'a self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.
