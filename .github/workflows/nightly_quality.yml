@@ -46,6 +46,10 @@ jobs:
   # --------------------------------------------------------------------
   run-coverage:
     uses: ./.github/workflows/coverage_report.yml
+    # Allow the nightly workflow to succeed even when coverage fails so that
+    # deploy-quality-reports can still upload the dashboard artifact and
+    # deploy_docs.yml can publish it to GitHub Pages.
+    continue-on-error: true
     permissions:
       contents: read
 
@@ -117,9 +121,11 @@ jobs:
           # The LCOV .dat file is inside the extracted coverage zip at a known
           # path; pass it unconditionally — generate_dashboard handles the
           # case where the file is absent (returns empty coverage data).
+          # Use absolute paths so the output lands in the GitHub workspace
+          # regardless of where Bazel's Python launcher sets the working directory.
           bazel run //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
-            --html     _quality/index.html \
+            --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
             --github-summary
 
           echo "Dashboard generated. Contents of _quality/:"
