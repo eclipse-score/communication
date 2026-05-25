@@ -305,6 +305,9 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
         })
     }
     fn subscribe(self, max_num_samples: usize) -> Result<Self::Subscription> {
+        if max_num_samples == 0 {
+            return Err(Error::EventError(EventFailedReason::InvalidMaxSamples));
+        }
         let instance_info = self.instance_info.clone();
         let event_instance = NativeProxyEventBase::new(
             &self.proxy_instance.0.proxy,
@@ -613,19 +616,20 @@ where
 
     fn to_stream<'a>(&'a self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         // Get the event guard to ensure no concurrent receive calls
-        // on the same subscriber instance.
-        let mut event_guard = self.event.get_proxy_event();
+        // on the same subscriber instance. This guard is held for the lifetime of the stream.
+        let mut proxy_event_guard = self.event.get_proxy_event();
         // Initialize the async receive callback only once when the first receive call is made
         // We are using std::sync::Once to ensure that the callback is set only once.
         self.async_init_status.call_once(|| {
-            self.init_async_receive(&mut event_guard)
+            self.init_async_receive(&mut proxy_event_guard)
                 .expect("Failed to initialize async receive callback");
         });
-        drop(event_guard);
         // Return stream that yields samples one at a time, fetching new batches as needed.
-        ToStreamFuture {
+        // The guard is moved into the stream and held for its lifetime to prevent concurrent receives.
+        SampleStream {
             subscriber: self,
-            sample_container: SampleContainer::new(self.max_num_samples),
+            sample_container: Some(SampleContainer::new(self.max_num_samples)),
+            event_guard: Some(proxy_event_guard),
         }
     }
 }
@@ -724,19 +728,26 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
 
 /// A `Stream` that continuously delivers one sample at a time from the subscription.
 /// It maintains an internal `SampleContainer` to buffer samples received from the FFI callback.
+/// It also holds an exclusive `ProxyEventManagerGuard` for the lifetime of the stream to prevent
+/// concurrent receives on the same subscriber instance.
 /// On each poll, it first yields any buffered samples before attempting to receive more from the FFI callback.
-struct ToStreamFuture<'a, T: CommData + Debug> {
+struct SampleStream<'a, T: CommData + Debug> {
     subscriber: &'a SubscriberImpl<T>,
-    sample_container: SampleContainer<Sample<T>>,
+    sample_container: Option<SampleContainer<Sample<T>>>,
+    event_guard: Option<ProxyEventManagerGuard<'a>>,
 }
 
-impl<'a, T: CommData + Debug> Stream for ToStreamFuture<'a, T> {
+impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
     type Item = Result<Sample<T>>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // Yield any buffered samples from a previous batch fetch first.
-        if let Some(sample) = self.sample_container.pop_front() {
-            return Poll::Ready(Some(Ok(sample)));
+        if let Some(mut container) = self.sample_container.take() {
+            if let Some(sample) = container.pop_front() {
+                self.sample_container = Some(container);
+                return Poll::Ready(Some(Ok(sample)));
+            }
+            self.sample_container = Some(container);
         }
 
         // Register the waker before attempting to receive so that a concurrent FFI
@@ -745,24 +756,43 @@ impl<'a, T: CommData + Debug> Stream for ToStreamFuture<'a, T> {
         self.subscriber.waker_storage.register(cx.waker());
         let max_num_samples = self.subscriber.max_num_samples;
 
-        // Acquire exclusive access to the proxy event for this poll.
-        let mut event_guard = self.subscriber.event.get_proxy_event();
-        // Fetch new samples into the container
-        let result = try_receive_samples::<T>(
-            event_guard.deref_mut(),
-            &mut self.sample_container,
-            max_num_samples,
-            max_num_samples,
-        );
+        let samples_received = {
+            // Temporarily take ownership of scratch to avoid borrow issues
+            if let Some(mut scratch) = self.sample_container.take() {
+                if let Some(event_guard) = self.event_guard.as_mut() {
+                    let result = try_receive_samples::<T>(
+                        event_guard.deref_mut(),
+                        &mut scratch,
+                        max_num_samples,
+                        max_num_samples,
+                    );
+                    self.sample_container = Some(scratch);
+                    result
+                } else {
+                    Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError))
+                }
+            } else {
+                Err(Error::ReceiveError(ReceiveFailedReason::BufferUnavailable))
+            }
+        };
 
-        // Release exclusive event access before yielding control.
-        drop(event_guard);
-
-        match result {
-            Ok(_count) => match self.sample_container.pop_front() {
-                Some(sample) => Poll::Ready(Some(Ok(sample))),
-                None => Poll::Pending,
-            },
+        match samples_received {
+            Ok(_count) => {
+                if let Some(mut container) = self.sample_container.take() {
+                    match container.pop_front() {
+                        Some(sample) => {
+                            self.sample_container = Some(container);
+                            Poll::Ready(Some(Ok(sample)))
+                        }
+                        None => {
+                            self.sample_container = Some(container);
+                            Poll::Pending
+                        }
+                    }
+                } else {
+                    Poll::Pending
+                }
+            }
             Err(e) => Poll::Ready(Some(Err(e))),
         }
     }

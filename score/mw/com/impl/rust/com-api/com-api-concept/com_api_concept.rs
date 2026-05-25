@@ -734,14 +734,6 @@ impl<S> SampleContainer<S> {
     {
         self.inner.front().map(<S as Deref>::deref)
     }
-
-    /// Returns the maximum capacity of the container.
-    ///
-    /// # Returns
-    /// The maximum number of samples that the container can hold.
-    pub fn capacity(&self) -> usize {
-        self.inner.capacity()
-    }
 }
 
 /// Active event subscription with polling and async receive capabilities.
