@@ -52,11 +52,13 @@ class NamedSkeletonEventMock
     SkeletonEventMock<EventType> mock;
 };
 
-template <typename FieldType>
+template <typename FieldType, typename... Tags>
 class NamedSkeletonFieldMock
 {
   public:
     NamedSkeletonFieldMock(const std::string_view field_name_in) : field_name{field_name_in}, mock{} {}
+
+    using SampleType = FieldType;
 
     std::string_view field_name;
     SkeletonFieldMock<FieldType> mock;
@@ -79,22 +81,23 @@ class SkeletonWrapperClassTestView
     /// fields_tuple);
     ///
     /// @tparam EventTypes Variadic template pack containing the types of ALL events specified in the interface
-    /// @tparam FieldTypes Variadic template pack containing the types of ALL fields specified in the interface
+    /// @tparam FieldMocks Variadic pack of NamedSkeletonFieldMock instantiations, one per field in the interface.
     /// @param skeleton_mock SkeletonBaseMock which will be injected into the SkeletonBase of the constructed
     /// SkeletonWrapperClass
     /// @param event_mocks A tuple containing a NamedEventMock per event in the interface.
     /// @param field_mocks A tuple containing a NamedFieldMock per event in the interface.
     /// @return SkeletonWrapperClass containing mocked skeleton and mocked events / fields.
-    template <typename... EventTypes, typename... FieldTypes>
+    template <typename... EventTypes, typename... FieldMocks>
     static SkeletonWrapperClass Create(SkeletonBaseMock& skeleton_mock,
                                        std::tuple<NamedSkeletonEventMock<EventTypes>...>& event_mocks,
-                                       std::tuple<NamedSkeletonFieldMock<FieldTypes>...>& field_mocks)
+                                       std::tuple<FieldMocks...>& field_mocks)
     {
         // Create service element binding factory guards which inject mocks into the binding factories. We rely on the
         // default behaviour that calls to Create on the factories will return nullptrs. This is required since the real
         // factories try to parse required information from a config file.
         [[maybe_unused]] std::tuple<SkeletonEventBindingFactoryMockGuard<EventTypes>...> event_binding_factories{};
-        [[maybe_unused]] std::tuple<SkeletonFieldBindingFactoryMockGuard<FieldTypes>...> field_binding_factories{};
+        [[maybe_unused]] std::tuple<SkeletonFieldBindingFactoryMockGuard<typename FieldMocks::SampleType>...>
+            field_binding_factories{};
 
         SkeletonWrapperClass skeleton{MakeFakeInstanceIdentifier(0U), nullptr};
 
@@ -117,9 +120,8 @@ class SkeletonWrapperClassTestView
     }
 
     /// @brief Test-only Create call which can be used when an interface does not contain any events.
-    template <typename... FieldTypes>
-    static SkeletonWrapperClass Create(SkeletonBaseMock& skeleton_mock,
-                                       std::tuple<NamedSkeletonFieldMock<FieldTypes>...>& field_mocks)
+    template <typename... FieldMocks>
+    static SkeletonWrapperClass Create(SkeletonBaseMock& skeleton_mock, std::tuple<FieldMocks...>& field_mocks)
     {
         // Since empty_event_mocks is passed to Create as a non-const reference, when this function returns, the
         // reference to empty_event_mocks will be dangling. However, since its empty, the tuple and its contents are not
@@ -156,29 +158,29 @@ class SkeletonWrapperClassTestView
         typed_event->InjectMock(mock);
     }
 
-    template <typename SampleType>
-    static void InjectFieldMock(SkeletonFieldBase& field_base, SkeletonFieldMock<SampleType>& mock)
+    template <typename SampleType, typename... Tags>
+    static void InjectFieldMock(SkeletonFieldBase& field_base, NamedSkeletonFieldMock<SampleType, Tags...>& named_mock)
     {
-        auto* typed_field = dynamic_cast<SkeletonField<SampleType>*>(&field_base);
+        auto* typed_field = dynamic_cast<SkeletonField<SampleType, Tags...>*>(&field_base);
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(typed_field != nullptr,
                                                           "field_base should always be a fully typed SkeletonField");
-        typed_field->InjectMock(mock);
+        typed_field->InjectMock(named_mock.mock);
     }
 
-    template <typename... EventTypes, typename... FieldTypes>
+    template <typename... EventTypes, typename... FieldMocks>
     static void InjectEventAndFieldMocks(SkeletonWrapperClass& skeleton,
                                          std::tuple<NamedSkeletonEventMock<EventTypes>...>& event_mocks,
-                                         std::tuple<NamedSkeletonFieldMock<FieldTypes>...>& field_mocks)
+                                         std::tuple<FieldMocks...>& field_mocks)
     {
         auto& events = SkeletonBaseView{skeleton}.GetEvents();
         auto& fields = SkeletonBaseView{skeleton}.GetFields();
 
-        // Note. this assert only checks if there were additional EventTypes / FieldTypes provided (or if an there are
-        // multiple EventTypes / FieldTypes of the same type, but at least one event / field of that type is not
+        // Note. this assert only checks if there were additional EventTypes / FieldMocks provided (or if an there are
+        // multiple EventTypes / FieldMocks of the same type, but at least one event / field of that type is not
         // provided). If the type of an Event or Field was not provided, then a Event/Field binding factory would not
         // have been created so the program likely would have crashed already when creating SkeletonWrapperClass.
         SCORE_LANGUAGE_FUTURECPP_ASSERT(events.size() == sizeof...(EventTypes));
-        SCORE_LANGUAGE_FUTURECPP_ASSERT(fields.size() == sizeof...(FieldTypes));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(fields.size() == sizeof...(FieldMocks));
 
         // std::apply takes a callable and a tuple. It calls the callable with the arguments from the unpacked tuple.
         // E.g. In this case, it will call the lambda, fn, with: `fn(get<0>(args), get<1>(args), ..., get<n>(args))`
@@ -205,7 +207,7 @@ class SkeletonWrapperClassTestView
                         auto field_base_it = fields.find(std::string{field_mock_pair.field_name});
                         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(field_base_it != fields.end());
                         auto& field_base = field_base_it->second.get();
-                        InjectFieldMock(field_base, field_mock_pair.mock);
+                        InjectFieldMock(field_base, field_mock_pair);
                     }(unpacked_tuple),
                     ...);
             },
