@@ -318,6 +318,8 @@ class MemberOperation
     /// \param skeleton_ptr Pointer to SkeletonBase instance
     /// \return Pointer to SkeletonEventBase if found, nullptr otherwise
     virtual SkeletonEventBase* GetSkeletonEvent(SkeletonBase* skeleton_ptr) = 0;
+
+    virtual TypeOperations* GetTypeOps() = 0;
 };
 
 /// \brief Template implementation of MemberOperation for specific ProxyType and SkeletonType
@@ -331,6 +333,10 @@ template <typename ProxyType,
 class MemberOperationImpl : public MemberOperation
 {
   public:
+    /// Constructor to accept cached TypeOperations pointer
+    //TODO: Why explicit constructor we need to do ?
+    explicit MemberOperationImpl(TypeOperations* type_ops) : type_ops_ptr_(type_ops) {}
+
     ProxyEventBase* GetProxyEvent(ProxyBase* proxy_ptr) override
     {
         auto proxy = dynamic_cast<ProxyType*>(proxy_ptr);
@@ -357,6 +363,14 @@ class MemberOperationImpl : public MemberOperation
 
         return static_cast<SkeletonEventBase*>(&(skeleton->*skeleton_event_member));
     }
+
+    TypeOperations* GetTypeOps() override
+    {
+        return type_ops_ptr_;
+    }
+
+  private:
+    TypeOperations* type_ops_ptr_;
 };
 
 /// \brief Interface for type-erased proxy and skeleton creation operations
@@ -672,21 +686,22 @@ class RustBoxedCallable<void,
     {                                                                                                               \
         event_member##_EventRegistrationHelper()                                                                    \
         {                                                                                                           \
+            /* Get or create shared TypeOperations for this event_type */                                           \
+            static ::score::mw::com::impl::rust::TypeOperationImpl<event_type> s_shared_type_ops;                   \
                                                                                                                     \
             auto event_info =                                                                                       \
                 std::make_unique<::score::mw::com::impl::rust::MemberOperationImpl<ProxyType,                       \
                                                                                    SkeletonType,                    \
                                                                                    event_type,                      \
                                                                                    &ProxyType::event_member,        \
-                                                                                   &SkeletonType::event_member>>(); \
+                                                                                   &SkeletonType::event_member>>(   \
+                    &s_shared_type_ops);  /* ← Pass shared instance */                                             \
                                                                                                                     \
-            /* Register this event in the LOCAL interface registry (not global) */                                  \
             ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterMemberOperation(                           \
                 std::string_view(id_interface), std::string_view(#event_member), std::move(event_info));            \
         }                                                                                                           \
     };                                                                                                              \
                                                                                                                     \
-    /* Force instantiation at startup */                                                                            \
     static event_member##_EventRegistrationHelper event_member##_event_reg_instance;
 
 #define END_EXPORT_MW_COM_INTERFACE() }  // namespace id##_detail
