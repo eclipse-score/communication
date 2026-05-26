@@ -33,7 +33,7 @@ class Transport
 
     /// \brief Returns whether this transport implementation supports memory sharing between source and destination.
     /// \return true if shared memory transport is supported, false otherwise.
-    virtual bool IsMemorySharingSupported() = 0;
+    virtual bool IsMemorySharingSupported() const = 0;
 
     /// \brief Sets up the transport layer (e.g. establishes connections or allocates resources).
     /// \return result indicating success or failure.

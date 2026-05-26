@@ -57,7 +57,10 @@ cc_library(
     hdrs = ["dummy_instance_identifier_builder.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/language/futurecpp"],
-    visibility = ["//score/mw/com/impl:__subpackages__"],
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
+    ],
     deps = ["//score/mw/com/impl"],
 )
 
