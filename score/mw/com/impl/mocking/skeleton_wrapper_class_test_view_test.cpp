@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/mocking/skeleton_wrapper_class_test_view.h"
 
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/mocking/skeleton_base_mock.h"

@@ -52,14 +52,14 @@ class NamedSkeletonEventMock
     SkeletonEventMock<EventType> mock;
 };
 
-template <typename FieldType>
+template <typename FieldType, typename... Tags>
 class NamedSkeletonFieldMock
 {
   public:
     NamedSkeletonFieldMock(const std::string_view field_name_in) : field_name{field_name_in}, mock{} {}
 
     std::string_view field_name;
-    SkeletonFieldMock<FieldType> mock;
+    SkeletonFieldMock<FieldType, Tags...> mock;
 };
 
 template <typename SkeletonWrapperClass>
@@ -85,10 +85,10 @@ class SkeletonWrapperClassTestView
     /// @param event_mocks A tuple containing a NamedEventMock per event in the interface.
     /// @param field_mocks A tuple containing a NamedFieldMock per event in the interface.
     /// @return SkeletonWrapperClass containing mocked skeleton and mocked events / fields.
-    template <typename... EventTypes, typename... FieldTypes>
+    template <typename... EventTypes, typename... FieldTypes, typename... Tags>
     static SkeletonWrapperClass Create(SkeletonBaseMock& skeleton_mock,
                                        std::tuple<NamedSkeletonEventMock<EventTypes>...>& event_mocks,
-                                       std::tuple<NamedSkeletonFieldMock<FieldTypes>...>& field_mocks)
+                                       std::tuple<NamedSkeletonFieldMock<FieldTypes, Tags...>...>& field_mocks)
     {
         // Create service element binding factory guards which inject mocks into the binding factories. We rely on the
         // default behaviour that calls to Create on the factories will return nullptrs. This is required since the real
@@ -117,9 +117,9 @@ class SkeletonWrapperClassTestView
     }
 
     /// @brief Test-only Create call which can be used when an interface does not contain any events.
-    template <typename... FieldTypes>
+    template <typename... FieldTypes, typename... Tags>
     static SkeletonWrapperClass Create(SkeletonBaseMock& skeleton_mock,
-                                       std::tuple<NamedSkeletonFieldMock<FieldTypes>...>& field_mocks)
+                                       std::tuple<NamedSkeletonFieldMock<FieldTypes, Tags...>...>& field_mocks)
     {
         // Since empty_event_mocks is passed to Create as a non-const reference, when this function returns, the
         // reference to empty_event_mocks will be dangling. However, since its empty, the tuple and its contents are not
@@ -156,19 +156,20 @@ class SkeletonWrapperClassTestView
         typed_event->InjectMock(mock);
     }
 
-    template <typename SampleType>
-    static void InjectFieldMock(SkeletonFieldBase& field_base, SkeletonFieldMock<SampleType>& mock)
+    template <typename SampleType, typename... Tags>
+    static void InjectFieldMock(SkeletonFieldBase& field_base, SkeletonFieldMock<SampleType, Tags...>& mock)
     {
-        auto* typed_field = dynamic_cast<SkeletonField<SampleType>*>(&field_base);
+        auto* typed_field = dynamic_cast<SkeletonField<SampleType, Tags...>*>(&field_base);
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(typed_field != nullptr,
                                                           "field_base should always be a fully typed SkeletonField");
         typed_field->InjectMock(mock);
     }
 
-    template <typename... EventTypes, typename... FieldTypes>
+    template <typename... EventTypes, typename... FieldTypes, typename... Tags>
     static void InjectEventAndFieldMocks(SkeletonWrapperClass& skeleton,
                                          std::tuple<NamedSkeletonEventMock<EventTypes>...>& event_mocks,
-                                         std::tuple<NamedSkeletonFieldMock<FieldTypes>...>& field_mocks)
+                                         std::tuple<NamedSkeletonFieldMock<FieldTypes, Tags...>...>& field_mocks)
+
     {
         auto& events = SkeletonBaseView{skeleton}.GetEvents();
         auto& fields = SkeletonBaseView{skeleton}.GetFields();
