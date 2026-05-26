@@ -12,6 +12,7 @@
  ********************************************************************************/
 
 use bridge_ffi_rs::*;
+use std::ptr::NonNull;
 
 #[derive(Debug, Clone, Default)]
 /// unit struct representing the FFI bridge for Lola runtime
@@ -124,7 +125,7 @@ unsafe extern "C" {
     ///
     /// # Arguments
     /// * `event_ptr` - Opaque event pointer
-    /// * `event_type` - Event type name string
+    /// * `type_ops` - Pointer to TypeOperations instance
     /// * `callback` - FatPtr to callback function
     /// * `max_samples` - Maximum number of samples to retrieve
     ///
@@ -132,7 +133,7 @@ unsafe extern "C" {
     /// Number of samples retrieved
     fn mw_com_type_registry_get_samples_from_event(
         event_ptr: *mut ProxyEventBase,
-        event_type: StringView,
+        type_ops: *const TypeOperations,
         callback: *const FatPtr,
         max_samples: u32,
     ) -> u32;
@@ -141,14 +142,14 @@ unsafe extern "C" {
     ///
     /// # Arguments
     /// * `event_ptr` - Opaque skeleton event pointer
-    /// * `event_type` - Event type name string
+    /// * `type_ops` - Pointer to TypeOperations instance
     /// * `data_ptr` - Pointer to event data
     ///
     /// # Returns
     /// None (void function)
     fn mw_com_skeleton_send_event(
         event_ptr: *mut SkeletonEventBase,
-        event_type: StringView,
+        type_ops: *const TypeOperations,
         data_ptr: CVoidPtr,
     ) -> bool;
 
@@ -215,21 +216,21 @@ unsafe extern "C" {
     ///
     /// # Arguments
     /// * `sample_ptr` - Opaque sample pointer
-    /// * `type_name` - Type name string
+    /// * `type_ops` - Pointer to TypeOperations instance
     ///
     /// # Returns
     /// Pointer to sample data, or nullptr if type mismatch
     fn mw_com_get_sample_ptr(
         sample_ptr: *const std::ffi::c_void,
-        type_name: StringView,
+        type_ops: *const TypeOperations,
     ) -> *const std::ffi::c_void;
 
     /// Delete sample pointer of SamplePtr<T>'
     ///
     /// # Arguments
     /// * `sample_ptr` - Opaque sample pointer
-    /// * `type_name` - Type name string
-    fn mw_com_delete_sample_ptr(sample_ptr: *mut std::ffi::c_void, type_name: StringView);
+    /// * `type_ops` - Pointer to TypeOperations instance
+    fn mw_com_delete_sample_ptr(sample_ptr: *mut std::ffi::c_void, type_ops: *const TypeOperations);
 
     /// Get allocatee pointer from skeleton event of specific type
     ///
@@ -250,34 +251,37 @@ unsafe extern "C" {
     ///
     /// # Arguments
     /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
-    /// * `type_name` - Type name string
-    fn mw_com_delete_allocatee_ptr(allocatee_ptr: *mut std::ffi::c_void, type_name: StringView);
+    /// * `type_ops` - Pointer to TypeOperations instance
+    fn mw_com_delete_allocatee_ptr(
+        allocatee_ptr: *mut std::ffi::c_void,
+        type_ops: *const TypeOperations,
+    );
 
     /// Get allocatee data pointer from allocatee of specific type
     ///
     /// # Arguments
     /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
-    /// * `type_name` - Type name string
+    /// * `type_ops` - Pointer to TypeOperations instance
     ///
     /// # Returns
     /// Pointer to allocatee data, or nullptr if type mismatch
     fn mw_com_get_allocatee_data_ptr(
         allocatee_ptr: *const std::ffi::c_void,
-        type_name: StringView,
+        type_ops: *const TypeOperations,
     ) -> *mut std::ffi::c_void;
 
     /// Send event via skeleton using allocatee pointer of specific type
     ///
     /// # Arguments
     /// * `event_ptr` - Opaque skeleton event pointer
-    /// * `event_type` - Type name string
+    /// * `type_ops` - Pointer to TypeOperations instance
     /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
     ///
     /// # Returns
     /// True if event was sent successfully, false otherwise
     fn mw_com_skeleton_send_event_allocatee(
         event_ptr: *mut SkeletonEventBase,
-        event_type: StringView,
+        type_ops: *const TypeOperations,
         allocatee_ptr: *const std::ffi::c_void,
     ) -> bool;
 
@@ -292,17 +296,13 @@ unsafe extern "C" {
     fn mw_com_proxy_set_event_receive_handler(
         proxy_event_ptr: *mut ProxyEventBase,
         handler: *const FatPtr,
-        event_type: StringView,
     ) -> bool;
 
     /// Clear event receive handler for proxy event
     ///
     /// # Arguments
     /// * `proxy_event_ptr` - Opaque proxy event pointer
-    fn mw_com_proxy_clear_event_receive_handler(
-        proxy_event_ptr: *mut ProxyEventBase,
-        event_type: StringView,
-    );
+    fn mw_com_proxy_clear_event_receive_handler(proxy_event_ptr: *mut ProxyEventBase);
 
     /// Start finding services with callback for results
     ///
@@ -328,6 +328,19 @@ unsafe extern "C" {
     /// # Arguments
     /// * `event_ptr` - Opaque event pointer
     fn mw_com_proxy_event_unsubscribe(event_ptr: *mut ProxyEventBase);
+
+    /// Get type operations instance for a given interface and member
+    ///
+    /// # Arguments
+    /// * `interface_id` - UTF-8 string view of interface ID
+    /// * `member_name` - UTF-8 string view of member name (event name Id)
+    ///
+    /// # Returns
+    /// Pointer to TypeOperations instance, or nullptr on failure
+    fn mw_com_get_type_ops_instance(
+        interface_id: StringView,
+        member_name: StringView,
+    ) -> *mut TypeOperations;
 }
 
 impl FFIBridge for LolaFFIBridge {
@@ -361,16 +374,20 @@ impl FFIBridge for LolaFFIBridge {
     ///
     /// # Arguments
     /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
-    /// * `type_name` - Type name string
+    /// * `type_ops` - Reference to TypeOperationsManager for the type
     ///
     /// # Safety
-    /// allocatee_ptr must point to a valid SampleAllocateePtr<T> of the specified type.
-    unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_name: &str) {
+    /// `allocatee_ptr` must be a valid pointer previously returned by `get_allocatee_ptr`
+    /// and `type_ops` must be the corresponding `TypeOperationsManager` for the type T.
+    unsafe fn delete_allocatee_ptr(
+        &self,
+        allocatee_ptr: *mut std::ffi::c_void,
+        type_ops: &TypeOperationsManager,
+    ) {
         // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
-        // type_name is constructed using static str.
-        let type_name = StringView::from(type_name);
+        // type_ops provides the correct type operations for this allocatee.
         unsafe {
-            mw_com_delete_allocatee_ptr(allocatee_ptr, type_name);
+            mw_com_delete_allocatee_ptr(allocatee_ptr, type_ops.as_ptr());
         }
     }
 
@@ -378,84 +395,90 @@ impl FFIBridge for LolaFFIBridge {
     ///
     /// # Arguments
     /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
-    /// * `type_name` - Type name string
+    /// * `type_ops` - Reference to TypeOperationsManager for the type
     ///
     /// # Returns
     /// Pointer to allocatee data, or nullptr if type mismatch
     ///
     /// # Safety
-    /// allocatee_ptr must point to a valid SampleAllocateePtr<T> of the specified type
+    /// `allocatee_ptr` must be a valid pointer previously returned by `get_allocatee_ptr`
+    /// and `type_ops` must be the corresponding `TypeOperationsManager` for type T.
     unsafe fn get_allocatee_data_ptr(
         &self,
         allocatee_ptr: *const std::ffi::c_void,
-        type_name: &str,
+        type_ops: &TypeOperationsManager,
     ) -> *mut std::ffi::c_void {
         // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
-        // type_name is constructed using static str.
-        let type_name = StringView::from(type_name);
-        unsafe { mw_com_get_allocatee_data_ptr(allocatee_ptr, type_name) }
+        // type_ops provides the correct type operations for this allocatee.
+        unsafe { mw_com_get_allocatee_data_ptr(allocatee_ptr, type_ops.as_ptr()) }
     }
 
     /// Send event via skeleton using allocatee pointer of specific type
     ///
     /// # Arguments
     /// * `event_ptr` - Opaque skeleton event pointer
-    /// * `event_type` - Type name string
+    /// * `type_ops` - Reference to TypeOperationsManager for the type
     /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
     ///
     /// # Returns
     /// True if event was sent successfully, false otherwise
     ///
     /// # Safety
-    /// event_ptr must point to a valid SkeletonEventBase,
-    /// allocatee_ptr must point to a valid SampleAllocateePtr<T>,
-    /// and event_type must be a valid UTF-8 string representing the event type.
+    /// `event_ptr` must be a valid pointer to a `SkeletonEventBase` obtained from
+    /// `get_event_from_skeleton`. `allocatee_ptr` must be a valid `SampleAllocateePtr<T>`
+    /// previously returned by `get_allocatee_ptr` for the same event and type T, and `type_ops`
+    /// must be the corresponding `TypeOperationsManager` for type T.
     unsafe fn skeleton_event_send_sample_allocatee(
         &self,
         event_ptr: *mut SkeletonEventBase,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
         allocatee_ptr: *const std::ffi::c_void,
     ) -> bool {
-        // SAFETY: event_ptr is valid which is created using create_skeleton() and allocatee_ptr is
-        // valid which is created using get_allocatee_ptr().
-        let event_type = StringView::from(event_type);
-        unsafe { mw_com_skeleton_send_event_allocatee(event_ptr, event_type, allocatee_ptr) }
+        // SAFETY: event_ptr is valid which is created using create_skeleton(), allocatee_ptr is
+        // valid which is created using get_allocatee_ptr(), and type_ops provides the correct
+        // type operations for this allocatee.
+        unsafe { mw_com_skeleton_send_event_allocatee(event_ptr, type_ops.as_ptr(), allocatee_ptr) }
     }
 
     /// Get SamplePtr<T> data pointer
     ///
     /// # Arguments
     /// * `sample_ptr` - Opaque sample pointer
-    /// * `type_name` - Type name string
+    /// * `type_ops` - Reference to TypeOperationsManager for the type
     ///
     /// # Returns
     /// Pointer to sample data, or nullptr if type mismatch
+    ///
     /// # Safety
-    /// sample_ptr must point to a valid SamplePtr<T> of the specified type.
+    /// `sample_ptr` must be a valid pointer to a `SamplePtr<T>` of the specified `type_name`.
     unsafe fn sample_ptr_get(
         &self,
         sample_ptr: *const std::ffi::c_void,
-        type_name: &str,
+        type_ops: &TypeOperationsManager,
     ) -> *const std::ffi::c_void {
         // SAFETY: sample_ptr is guaranteed to be valid per the caller's contract.
-        // The C++ implementation handles type checking and data retrieval safely.
-        let type_name = StringView::from(type_name);
-        unsafe { mw_com_get_sample_ptr(sample_ptr, type_name) }
+        // The C++ implementation handles type checking and data retrieval safely using type_ops.
+        unsafe { mw_com_get_sample_ptr(sample_ptr, type_ops.as_ptr()) }
     }
 
     /// Delete SamplePtr<T>
     ///
     /// # Arguments
     /// * `sample_ptr` - Opaque sample pointer
-    /// * `type_name` - Type name string
+    /// * `type_ops` - Reference to TypeOperationsManager for the type
+    ///
     /// # Safety
-    /// sample_ptr must point to a valid SamplePtr<T> of the specified type.
-    unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_name: &str) {
+    /// `sample_ptr` must be a valid pointer to a `SamplePtr<T>` of the specified `type_name`,
+    /// and must not be used after this call.
+    unsafe fn sample_ptr_delete(
+        &self,
+        sample_ptr: *mut std::ffi::c_void,
+        type_ops: &TypeOperationsManager,
+    ) {
         // SAFETY: sample_ptr is guaranteed to be valid per the caller's contract.
-        // The C++ implementation handles type checking and deletion safely.
-        let type_name = StringView::from(type_name);
+        // The C++ implementation handles type checking and deletion safely using type_ops.
         unsafe {
-            mw_com_delete_sample_ptr(sample_ptr, type_name);
+            mw_com_delete_sample_ptr(sample_ptr, type_ops.as_ptr());
         }
     }
 
@@ -628,7 +651,7 @@ impl FFIBridge for LolaFFIBridge {
     ///
     /// # Arguments
     /// * `event_ptr` - Opaque event pointer
-    /// * `event_type` - Event type name string
+    /// * `type_ops` - Reference to TypeOperationsManager for the type
     /// * `callback` - FatPtr to callback function
     /// * `max_samples` - Maximum number of samples to retrieve
     ///
@@ -636,23 +659,26 @@ impl FFIBridge for LolaFFIBridge {
     /// Number of samples retrieved, or u32::MAX on error
     ///
     /// # Safety
-    /// event_ptr must be a valid pointer to a ProxyEventBase previously obtained
-    /// from get_event_from_proxy().
-    /// callback must be a valid FatPtr referencing a callable compatible with the event type.
-    /// The event must have been subscribed to via subscribe_to_event() before calling this function.
+    /// `event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
+    /// `get_event_from_proxy`. `callback` must be a valid `FatPtr` referencing a callable
+    /// compatible with `event_type`. The event must have been subscribed via `subscribe_to_event`.
     unsafe fn get_samples_from_event(
         &self,
         event_ptr: *mut ProxyEventBase,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
         callback: &FatPtr,
         max_samples: u32,
     ) -> u32 {
-        // SAFETY: event_ptr, callback, and event_type are guaranteed
-        // to be valid per the caller's contract.
+        // SAFETY: event_ptr and callback are guaranteed to be valid per the caller's contract.
+        // type_ops provides the correct type operations for sample handling.
         // The C++ implementation handles sample retrieval and callback invocation safely.
-        let c_name = StringView::from(event_type);
         unsafe {
-            mw_com_type_registry_get_samples_from_event(event_ptr, c_name, callback, max_samples)
+            mw_com_type_registry_get_samples_from_event(
+                event_ptr,
+                type_ops.as_ptr(),
+                callback,
+                max_samples,
+            )
         }
     }
 
@@ -660,24 +686,23 @@ impl FFIBridge for LolaFFIBridge {
     ///
     /// # Arguments
     /// * `event_ptr` - Opaque skeleton event pointer
-    /// * `event_type` - Event type name string
+    /// * `type_ops` - Reference to TypeOperationsManager for the type
     /// * `data_ptr` - Pointer to event data of the matching type
     ///
     /// # Safety
-    /// event_ptr must be a valid pointer to a SkeletonEventBase previously obtained
-    /// from get_event_from_skeleton().
-    /// data_ptr must point to valid data whose type matches the event_type.
-    /// The lifetime of the data must extend through this function call.
+    /// `event_ptr` must be a valid pointer to a `SkeletonEventBase` obtained from
+    /// `get_event_from_skeleton`. `data_ptr` must point to valid data whose type matches
+    /// `event_type` and must remain valid for the duration of this call.
     unsafe fn skeleton_send_event(
         &self,
         event_ptr: *mut SkeletonEventBase,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
         data_ptr: *const std::ffi::c_void,
     ) -> bool {
         // SAFETY: event_ptr and data_ptr are guaranteed to be valid per the caller's contract.
+        // type_ops provides the correct type operations for this event.
         // The C++ implementation handles type matching and data sending safely.
-        let c_name = StringView::from(event_type);
-        unsafe { mw_com_skeleton_send_event(event_ptr, c_name, data_ptr) }
+        unsafe { mw_com_skeleton_send_event(event_ptr, type_ops.as_ptr(), data_ptr) }
     }
 
     /// Unsafe wrapper around mw_com_proxy_event_subscribe
@@ -729,41 +754,32 @@ impl FFIBridge for LolaFFIBridge {
     /// true if handler was set successfully, false otherwise
     ///
     /// # Safety
-    /// proxy_event_ptr must be a valid pointer to a ProxyEventBase previously obtained
-    /// from get_event_from_proxy().
-    /// handler must be a valid FatPtr which is used for notifying the proxy of incoming events.
+    /// `proxy_event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
+    /// `get_event_from_proxy`. `handler` must be a valid `FatPtr` referencing a callable
+    /// compatible with the receive-handler signature expected by the implementation.
     unsafe fn set_event_receive_handler(
         &self,
         proxy_event_ptr: *mut ProxyEventBase,
         handler: &FatPtr,
-        event_type: &str,
     ) -> bool {
         // SAFETY: proxy_event_ptr must be valid per the caller's contract,
         // and handler must be a valid FatPtr referencing a callable compatible with the callback
         // signature expected by the C++ implementation.
-        let c_name = StringView::from(event_type);
-        unsafe { mw_com_proxy_set_event_receive_handler(proxy_event_ptr, handler, c_name) }
+        unsafe { mw_com_proxy_set_event_receive_handler(proxy_event_ptr, handler) }
     }
 
     /// Unsafe wrapper around mw_com_proxy_clear_event_receive_handler
     ///
     /// # Arguments
     /// * `proxy_event_ptr` - Opaque proxy event pointer
-    /// * `event_type` - Event type name string
     ///
     /// # Safety
-    /// proxy_event_ptr must be a valid pointer to a ProxyEventBase previously obtained
-    /// from get_event_from_proxy().
-    /// event_type must be a valid string corresponding to the event type.
-    unsafe fn clear_event_receive_handler(
-        &self,
-        proxy_event_ptr: *mut ProxyEventBase,
-        event_type: &str,
-    ) {
+    /// `proxy_event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
+    /// `get_event_from_proxy`. `event_type` must match the type used when the handler was set.
+    unsafe fn clear_event_receive_handler(&self, proxy_event_ptr: *mut ProxyEventBase) {
         // SAFETY: proxy_event_ptr must be valid per the caller's contract.
-        let c_name = StringView::from(event_type);
         unsafe {
-            mw_com_proxy_clear_event_receive_handler(proxy_event_ptr, c_name);
+            mw_com_proxy_clear_event_receive_handler(proxy_event_ptr);
         }
     }
 
@@ -803,5 +819,29 @@ impl FFIBridge for LolaFFIBridge {
         unsafe {
             mw_com_stop_find_service(handle);
         }
+    }
+
+    /// Get type operations instance for a given interface and member ID
+    ///
+    /// # Arguments
+    /// * `interface_id` - Interface ID string
+    /// * `member_name` - Member name string (e.g., event name)
+    ///
+    /// # Returns
+    /// Option<TypeOperationsManager> instance wrapping the pointer to TypeOperations, or None if retrieval fails
+    ///
+    /// # Safety
+    /// Caller must ensure that the provided interface_id and member_name correspond to
+    /// a valid TypeOperations instance in the C++ registry. The returned TypeOperationsManager
+    /// must not be used after the underlying TypeOperations instance is destroyed on the C++ side.
+    unsafe fn get_type_ops_instance(
+        interface_id: &str,
+        member_name: &str,
+    ) -> Option<TypeOperationsManager> {
+        let interface_id = StringView::from(interface_id);
+        let member_name = StringView::from(member_name);
+        // SAFETY: interface_id and member_name are valid ids that correspond to a TypeOperations instance in the C++ registry, as per the caller's contract.
+        let ptr = unsafe { mw_com_get_type_ops_instance(interface_id, member_name) };
+        NonNull::new(ptr).map(|inner| TypeOperationsManager::new(inner))
     }
 }

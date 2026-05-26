@@ -329,65 +329,41 @@ void mw_com_delete_sample_ptr(void* sample_ptr, StringView type_name)
 /// @param event_type Type name string
 /// @param allocatee_ptr Pointer to pre-allocated memory for allocatee
 /// @return True if allocatee pointer was retrieved successfully, false otherwise
-bool mw_com_get_allocatee_ptr(SkeletonEventBase* event_ptr, void* allocatee_ptr, StringView event_type)
+bool mw_com_get_allocatee_ptr(SkeletonEventBase* event_ptr, void* allocatee_ptr, TypeOperations* type_ops)
 {
-    if (event_ptr == nullptr || event_type.data == nullptr)
+    if (event_ptr == nullptr || type_ops == nullptr)
     {
         return false;
     }
 
-    auto name = static_cast<std::string_view>(event_type);
-
-    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
-
-    if (registry == nullptr)
-    {
-        return false;
-    }
-    return registry->GetAllocateePtr(event_ptr, allocatee_ptr);
+    return type_ops->GetAllocateePtr(event_ptr, allocatee_ptr);
 }
 
 /// @brief Delete allocatee pointer of specific type
 /// @param allocatee_ptr Pointer to SampleAllocateePtr<T>
 /// @param event_type Type name string
-void mw_com_delete_allocatee_ptr(void* allocatee_ptr, StringView event_type)
+void mw_com_delete_allocatee_ptr(void* allocatee_ptr, TypeOperations* type_ops)
 {
-    if (allocatee_ptr == nullptr || event_type.data == nullptr)
+    if (allocatee_ptr == nullptr || type_ops == nullptr)
     {
         return;
     }
 
-    auto name = static_cast<std::string_view>(event_type);
-
-    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
-
-    if (registry == nullptr)
-    {
-        return;
-    }
-    registry->DeleteAllocateePtr(allocatee_ptr);
+    type_ops->DeleteAllocateePtr(allocatee_ptr);
 }
 
 /// @brief Get allocatee data pointer from allocatee of specific type
 /// @param allocatee_ptr Pointer to SampleAllocateePtr<T>
 /// @param event_type Type name string
 /// @return Pointer to allocatee data, or nullptr if type mismatch
-void* mw_com_get_allocatee_data_ptr(void* allocatee_ptr, StringView event_type)
+void* mw_com_get_allocatee_data_ptr(void* allocatee_ptr, TypeOperations* type_ops)
 {
-    if (allocatee_ptr == nullptr || event_type.data == nullptr)
+    if (allocatee_ptr == nullptr || type_ops == nullptr)
     {
         return nullptr;
     }
 
-    auto name = static_cast<std::string_view>(event_type);
-
-    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
-
-    if (registry == nullptr)
-    {
-        return nullptr;
-    }
-    return registry->GetAllocateeDataPtr(allocatee_ptr);
+    return type_ops->GetAllocateeDataPtr(allocatee_ptr);
 }
 
 /// @brief  Send event via skeleton using allocatee pointer of specific type
@@ -395,22 +371,14 @@ void* mw_com_get_allocatee_data_ptr(void* allocatee_ptr, StringView event_type)
 /// @param event_type Type name string
 /// @param allocatee_ptr Pointer to SampleAllocateePtr<T>
 /// @return True if event was sent successfully, false otherwise
-bool mw_com_skeleton_send_event_allocatee(SkeletonEventBase* event_ptr, StringView event_type, void* allocatee_ptr)
+bool mw_com_skeleton_send_event_allocatee(SkeletonEventBase* event_ptr, TypeOperations* type_ops, void* allocatee_ptr)
 {
-    if (event_type.data == nullptr || allocatee_ptr == nullptr)
+    if (type_ops == nullptr || allocatee_ptr == nullptr)
     {
         return false;
     }
 
-    auto name = static_cast<std::string_view>(event_type);
-
-    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
-
-    if (registry == nullptr)
-    {
-        return false;
-    }
-    return registry->SkeletonSendEventAllocatee(event_ptr, allocatee_ptr);
+    return type_ops->SkeletonSendEventAllocatee(event_ptr, allocatee_ptr);
 }
 
 /// \brief Set event receive handler for proxy event
@@ -505,6 +473,26 @@ void mw_com_stop_find_service(void* find_service_handle_ptr)
     }
 
     delete find_service_handle;
+}
+
+void* mw_com_get_type_ops_instance(StringView interface_id, StringView member_name)
+{
+    if (interface_id.data == nullptr || member_name.data == nullptr)
+    {
+        return nullptr;
+    }
+
+    auto id = static_cast<std::string_view>(interface_id);
+    auto member = static_cast<std::string_view>(member_name);
+
+    auto registry = GlobalRegistryMapping::FindMemberOperation(id, member);
+
+    if (registry == nullptr)
+    {
+        return nullptr;
+    }
+
+    return registry->GetTypeOps();
 }
 
 }  // extern "C"
