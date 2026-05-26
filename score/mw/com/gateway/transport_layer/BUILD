@@ -57,6 +57,9 @@ cc_library(
     deps = [
         ":transport",
         "//score/mw/com/gateway/gateway_application:gateway_core",
+        "//score/mw/com/gateway/transport_layer/sample:bidirectional_transport",
+        "//score/mw/com/gateway/transport_layer/sample:sample_hypervisor_transport",
+        "//score/mw/com/gateway/transport_layer/sample/configuration:hypervisor_socket_configuration",
         "//score/mw/com/gateway/transport_layer/sample/configuration:sample_transport_config_parser",
     ],
 )
