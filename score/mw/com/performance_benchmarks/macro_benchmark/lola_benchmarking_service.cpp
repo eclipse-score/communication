@@ -10,11 +10,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/performance_benchmarks/common_test_resources/shared_memory_object_creator.h"
-#include "score/mw/com/performance_benchmarks/common_test_resources/shared_memory_object_guard.h"
 #include "score/mw/com/performance_benchmarks/macro_benchmark/common_resources.h"
 #include "score/mw/com/performance_benchmarks/macro_benchmark/config_parser.h"
 #include "score/mw/com/performance_benchmarks/macro_benchmark/lola_interface.h"
+#include "score/mw/com/test/common_test_resources/shared_memory_object_creator.h"
+#include "score/mw/com/test/common_test_resources/shared_memory_object_guard.h"
 #include "score/mw/com/types.h"
 #include "score/mw/log/logging.h"
 

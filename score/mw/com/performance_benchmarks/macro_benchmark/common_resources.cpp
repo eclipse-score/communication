@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/performance_benchmarks/macro_benchmark/common_resources.h"
-#include "score/mw/com/performance_benchmarks/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/runtime.h"
+#include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/log/logging.h"
 
 #include <score/stop_token.hpp>

@@ -76,6 +76,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/performance_benchmarks:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
@@ -96,6 +97,7 @@ cc_library(
         "@score_baselibs//score/language/safecpp/string_view:null_termination_check",
     ],
     visibility = [
+        "//score/mw/com/performance_benchmarks:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
@@ -118,6 +120,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/performance_benchmarks:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
