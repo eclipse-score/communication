@@ -255,23 +255,16 @@ void mw_com_destroy_skeleton(SkeletonBase* skeleton_ptr)
 /// \param max_samples Maximum number of samples to retrieve
 /// \return Number of samples retrieved, or std::numeric_limits<std::uint32_t>::max() on error
 std::uint32_t mw_com_type_registry_get_samples_from_event(ProxyEventBase* event_ptr,
-                                                          StringView event_type,
+                                                         TypeOperations* type_ops,
                                                           const FatPtr* callback,
                                                           uint32_t max_samples)
 {
-    if (event_ptr == nullptr || event_type.data == nullptr || callback == nullptr)
+    if (event_ptr == nullptr || type_ops == nullptr || callback == nullptr)
     {
         return std::numeric_limits<std::uint32_t>::max();
     }
 
-    auto id = static_cast<std::string_view>(event_type);
-    auto registry = GlobalRegistryMapping::FindTypeInformation(id);
-    if (registry == nullptr)
-    {
-        return std::numeric_limits<std::uint32_t>::max();
-    }
-
-    auto result = registry->GetSamplesFromEvent(event_ptr, max_samples, *callback);
+    auto result = type_ops->GetSamplesFromEvent(event_ptr, max_samples, *callback);
 
     if (result.has_value() == false)
     {
@@ -283,45 +276,29 @@ std::uint32_t mw_com_type_registry_get_samples_from_event(ProxyEventBase* event_
 
 /// @brief Get sample data pointer from SamplePtr<T>
 /// @param sample_ptr Opaque sample pointer
-/// @param type_name Type name string
+/// @param type_ops Type operations pointer
 /// @return Pointer to sample data, or nullptr if type mismatch
-const void* mw_com_get_sample_ptr(const void* sample_ptr, StringView type_name)
+const void* mw_com_get_sample_ptr(const void* sample_ptr, TypeOperations* type_ops)
 {
-    if (sample_ptr == nullptr || type_name.data == nullptr)
+    if (sample_ptr == nullptr || type_ops == nullptr)
     {
         return nullptr;
     }
 
-    auto name = static_cast<std::string_view>(type_name);
-
-    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
-    if (registry == nullptr)
-    {
-        return nullptr;
-    }
-
-    return registry->GetSamplePtrData(sample_ptr);
+    return type_ops->GetSamplePtrData(sample_ptr);
 }
 
 /// @brief Delete sample pointer of specific type
 /// @param sample_ptr Opaque sample pointer
-/// @param type_name Type name string
-void mw_com_delete_sample_ptr(void* sample_ptr, StringView type_name)
+/// @param type_ops Type operations pointer
+void mw_com_delete_sample_ptr(void* sample_ptr, TypeOperations* type_ops)
 {
-    if (sample_ptr == nullptr || type_name.data == nullptr)
+    if (sample_ptr == nullptr || type_ops == nullptr)
     {
         return;
     }
 
-    auto name = static_cast<std::string_view>(type_name);
-
-    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
-    if (registry == nullptr)
-    {
-        return;
-    }
-
-    registry->DeleteSamplePtr(sample_ptr);
+    type_ops->DeleteSamplePtr(sample_ptr);
 }
 
 /// @brief Get allocatee pointer from skeleton event of specific type

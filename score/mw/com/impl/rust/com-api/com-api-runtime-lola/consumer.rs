@@ -82,6 +82,7 @@ where
 {
     data: ManuallyDrop<sample_ptr_rs::SamplePtr<T>>,
     bridge: B,
+    type_ops: TypeOperationsManager,
 }
 
 impl<T, B: FFIBridge> Drop for LolaBinding<T, B>
@@ -95,7 +96,7 @@ where
             let mut sample_ptr = ManuallyDrop::take(&mut self.data);
             self.bridge.sample_ptr_delete(
                 std::ptr::from_mut(&mut sample_ptr) as *mut std::ffi::c_void,
-                T::ID,
+                &self.type_ops,
             );
         }
     }
@@ -124,7 +125,7 @@ where
         unsafe {
             let data_ptr = self.inner.bridge.sample_ptr_get(
                 std::ptr::from_ref(&(*self.inner.data)) as *const std::ffi::c_void,
-                T::ID,
+                &self.inner.type_ops,
             );
             (data_ptr as *const T)
                 .as_ref()
@@ -352,6 +353,9 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
         if !status {
             return Err(Error::EventError(EventFailedReason::EventNotAvailable));
         }
+        let type_ops = unsafe {
+            self.instance_info.bridge.get_type_ops_instance(self.instance_info.interface_id, self.identifier)
+        };
         // Store in SubscriberImpl with event, max_num_samples
         Ok(SubscriberImpl {
             event: ProxyEventManager::new(
@@ -362,6 +366,7 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
             instance_info,
             waker_storage: Arc::default(),
             async_init_status: std::sync::OnceLock::new(),
+            type_ops,
             _proxy: self.proxy_instance.clone(),
             _phantom: PhantomData,
         })
@@ -468,6 +473,7 @@ where
     instance_info: LolaConsumerInfo<B>,
     waker_storage: Arc<AtomicWaker>,
     async_init_status: std::sync::OnceLock<()>,
+    type_ops: TypeOperationsManager,
     _proxy: ProxyInstanceManager<B>,
     _phantom: PhantomData<T>,
 }
@@ -486,7 +492,7 @@ impl<T: CommData + Debug, B: FFIBridge> Drop for SubscriberImpl<T, B> {
             {
                 self.instance_info
                     .bridge
-                    .clear_event_receive_handler(guard.deref_mut(), T::ID);
+                    .clear_event_receive_handler(guard.deref_mut());
             }
             self.instance_info
                 .bridge
@@ -514,7 +520,6 @@ impl<T: CommData + Debug, B: FFIBridge> SubscriberImpl<T, B> {
             self.instance_info.bridge.set_event_receive_handler(
                 event_guard.deref_mut(),
                 &fat_ptr,
-                T::ID,
             )
         };
         if !status {
@@ -613,6 +618,7 @@ where
             scratch,
             self.max_num_samples,
             max_samples,
+            &self.type_ops,
         )
     }
 
@@ -659,6 +665,7 @@ where
                 total_received: 0,
                 cancellation: core::pin::pin!(cancellation),
                 bridge: self.instance_info.bridge.clone(),
+                type_ops: Some(self.type_ops.clone()),
             }
             .await
         }
@@ -695,6 +702,7 @@ struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBrid
     total_received: usize,
     cancellation: Pin<&'a mut F>,
     bridge: B,
+    type_ops: Option<TypeOperationsManager>,
 }
 
 impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future
@@ -725,25 +733,30 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future
         self.waker_storage.register(ctx.waker());
 
         let samples_received = {
-            // Temporarily take ownership of scratch to avoid borrow checker conflicts
-            // when passing to try_receive_samples
-            if let Some(mut scratch) = self.scratch.take() {
-                if let Some(event_guard) = self.event_guard.as_mut() {
-                    let result = try_receive_samples::<T, B>(
-                        &bridge,
-                        event_guard.deref_mut(),
-                        &mut scratch,
-                        max_num_samples,
-                        max_samples - total_received,
-                    );
-                    self.scratch = Some(scratch);
-                    result
+            // Take type_ops FIRST, before any other borrows
+            if let Some(type_ops) = self.type_ops.take() {
+                // Temporarily take ownership of scratch to avoid borrow issues
+                if let Some(mut scratch) = self.scratch.take() {
+                    if let Some(event_guard) = self.event_guard.as_mut() {
+                        let result = try_receive_samples::<T,B>(
+                            &bridge,
+                            event_guard.deref_mut(),
+                            &mut scratch,
+                            max_num_samples,
+                            max_samples - total_received,
+                            &type_ops,
+                        );
+                        self.scratch = Some(scratch);
+                        self.type_ops = Some(type_ops);
+                        result
+                    } else {
+                        Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError))
+                    }
                 } else {
-                    self.scratch = Some(scratch);
-                    Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError))
+                    Err(Error::ReceiveError(ReceiveFailedReason::BufferUnavailable))
                 }
             } else {
-                Err(Error::ReceiveError(ReceiveFailedReason::BufferUnavailable))
+                Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError))
             }
         };
         match samples_received {
@@ -1115,6 +1128,7 @@ fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
     scratch: &mut SampleContainer<Sample<T, B>>,
     max_num_samples: usize,
     max_samples: usize,
+    type_ops: &TypeOperationsManager,
 ) -> Result<usize> {
     if max_samples == 0 {
         return Err(Error::ReceiveError(
@@ -1133,7 +1147,7 @@ fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
         ));
     }
     // Create a callback that will be called by the C++ side for each new sample arrival
-    let mut callback = create_sample_callback::<T, B>(bridge, scratch, max_samples);
+    let mut callback = create_sample_callback::<T, B>(bridge, scratch, max_samples, type_ops);
     // Convert closure to FatPtr for C++ callback
     let dyn_callback: &mut dyn FnMut(*mut sample_ptr_rs::SamplePtr<T>) = &mut callback;
     // SAFETY: it is safe to transmute the closure reference to a FatPtr because
@@ -1144,7 +1158,7 @@ fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
     let count = unsafe {
         bridge.get_samples_from_event(
             event as *mut ProxyEventBase,
-            T::ID,
+            type_ops,
             &fat_ptr,
             max_num_samples as u32,
         )
@@ -1177,6 +1191,7 @@ pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
     bridge: &B,
     scratch: &'a mut SampleContainer<Sample<T, B>>,
     max_samples: usize,
+    type_ops: &'a TypeOperationsManager,
 ) -> impl FnMut(*mut sample_ptr_rs::SamplePtr<T>) + 'a {
     let bridge = bridge.clone();
     move |raw_sample: *mut sample_ptr_rs::SamplePtr<T>| {
@@ -1192,6 +1207,7 @@ pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
                 inner: LolaBinding {
                     data: ManuallyDrop::new(sample_ptr),
                     bridge: bridge.clone(),
+                    type_ops: type_ops.clone(),
                 },
             };
 

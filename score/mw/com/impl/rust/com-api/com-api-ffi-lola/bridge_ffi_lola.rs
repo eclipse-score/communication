@@ -835,6 +835,7 @@ impl FFIBridge for LolaFFIBridge {
     /// a valid TypeOperations instance in the C++ registry. The returned TypeOperationsManager
     /// must not be used after the underlying TypeOperations instance is destroyed on the C++ side.
     unsafe fn get_type_ops_instance(
+        &self,
         interface_id: &str,
         member_name: &str,
     ) -> Option<TypeOperationsManager> {

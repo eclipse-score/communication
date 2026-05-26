@@ -191,6 +191,7 @@ mock! {
         unsafe fn stop_find_service(&self, handle: *mut FindServiceHandle);
 
         unsafe fn get_type_ops_instance(
+        &self,
         interface_id: &str,
         member_name: &str,) -> Option<TypeOperationsManager>;
 }
@@ -425,6 +426,7 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     }
 
     unsafe fn get_type_ops_instance(
+        &self,
         interface_id: &str,
         member_name: &str,
     ) -> Option<TypeOperationsManager> {
