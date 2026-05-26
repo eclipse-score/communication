@@ -29,6 +29,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <optional>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -69,10 +70,13 @@ class MyInterface : public InterfaceTrait::Base
   public:
     using InterfaceTrait::Base::Base;
 
+    static constexpr bool kEnableSet{std::is_same_v<InterfaceTrait, SkeletonTrait>};
+
     typename InterfaceTrait::template Event<TestSampleType> some_event{*this, kEventName};
-    typename InterfaceTrait::template Field<TestSampleType, true> some_field{*this, kFieldName};
+    typename InterfaceTrait::template Field<TestSampleType, false, kEnableSet> some_field{*this, kFieldName};
     typename InterfaceTrait::template Method<TestMethodType> some_method{*this, kMethodName};
 };
+
 using MyProxy = AsProxy<MyInterface>;
 using MySkeleton = AsSkeleton<MyInterface>;
 
