@@ -275,7 +275,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// Caller must ensure that the provided interface_id and member_name correspond to
     /// a valid TypeOperations instance in the C++ registry. The returned TypeOperationsManager
     /// must not be used after the underlying TypeOperations instance is destroyed on the C++ side.
-    unsafe fn get_type_ops_instance(
+    unsafe fn get_type_ops_instance(&self,
         interface_id: &str,
         member_name: &str,
     ) -> Option<TypeOperationsManager>;
@@ -370,6 +370,7 @@ impl TypeOperationsManager {
 }
 
 unsafe impl Send for TypeOperationsManager {}
+unsafe impl Sync for TypeOperationsManager {}
 
 impl Debug for TypeOperationsManager {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
