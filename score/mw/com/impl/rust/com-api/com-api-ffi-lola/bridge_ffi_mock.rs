@@ -92,7 +92,7 @@ mock! {
             &self,
             event_ptr: *mut SkeletonEventBase,
             allocatee_ptr: *mut std::ffi::c_void,
-            event_type: &str,
+            type_ops: &TypeOperationsManager,
         ) -> bool;
 
         unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_ops: &TypeOperationsManager);
@@ -240,12 +240,12 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         &self,
         event_ptr: *mut SkeletonEventBase,
         allocatee_ptr: *mut std::ffi::c_void,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
     ) -> bool {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
             self.locked()
-                .get_allocatee_ptr(event_ptr, allocatee_ptr, event_type)
+                .get_allocatee_ptr(event_ptr, allocatee_ptr, type_ops)
         }
     }
 

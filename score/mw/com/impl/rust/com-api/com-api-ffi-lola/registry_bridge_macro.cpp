@@ -342,7 +342,7 @@ void* mw_com_get_allocatee_data_ptr(void* allocatee_ptr, TypeOperations* type_op
 /// @return True if event was sent successfully, false otherwise
 bool mw_com_skeleton_send_event_allocatee(SkeletonEventBase* event_ptr, TypeOperations* type_ops, void* allocatee_ptr)
 {
-    if (type_ops == nullptr || allocatee_ptr == nullptr)
+    if (event_ptr == nullptr || type_ops == nullptr || allocatee_ptr == nullptr)
     {
         return false;
     }

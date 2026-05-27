@@ -828,6 +828,7 @@ impl<'a, T: CommData + Debug, B: FFIBridge> Stream for SampleStream<'a, T, B> {
             &mut this.sample_container,
             max_num_samples,
             max_num_samples,
+            &this.subscriber.type_ops,
         );
 
         match samples_received {

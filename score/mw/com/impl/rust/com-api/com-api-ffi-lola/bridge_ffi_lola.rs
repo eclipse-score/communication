@@ -244,7 +244,7 @@ unsafe extern "C" {
     fn mw_com_get_allocatee_ptr(
         event_ptr: *mut SkeletonEventBase,
         allocatee_ptr: *mut std::ffi::c_void,
-        event_type: StringView,
+        type_ops: *const TypeOperations,
     ) -> bool;
 
     /// Delete allocatee pointer of SampleAllocateePtr<T>
@@ -362,12 +362,11 @@ impl FFIBridge for LolaFFIBridge {
         &self,
         event_ptr: *mut SkeletonEventBase,
         allocatee_ptr: *mut std::ffi::c_void,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
     ) -> bool {
         // SAFETY: event_ptr is valid which is created using create_skeleton()
         // and allocatee_ptr has enough memory allocated for the construction of allocatee instance.
-        let event_type = StringView::from(event_type);
-        unsafe { mw_com_get_allocatee_ptr(event_ptr, allocatee_ptr, event_type) }
+        unsafe { mw_com_get_allocatee_ptr(event_ptr, allocatee_ptr, type_ops.as_ptr()) }
     }
 
     /// Delete allocatee pointer of SampleAllocateePtr<T>

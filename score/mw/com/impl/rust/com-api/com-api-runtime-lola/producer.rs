@@ -133,7 +133,6 @@ where
 {
     skeleton_event: NativeSkeletonEventBase,
     allocatee_ptr: AllocateePtrWrapper<T, B>,
-    type_ops: TypeOperationsManager,
     lifetime: PhantomData<&'a T>,
 }
 
@@ -147,7 +146,7 @@ where
         unsafe {
             let data_ptr = self.allocatee_ptr.bridge.get_allocatee_data_ptr(
                 std::ptr::from_ref(&(*self.allocatee_ptr.inner)) as *const std::ffi::c_void,
-                &self.type_ops,
+                &self.allocatee_ptr.type_ops,
             );
             (data_ptr as *const T).as_ref()
         }
@@ -159,7 +158,7 @@ where
         unsafe {
             let data_ptr = self.allocatee_ptr.bridge.get_allocatee_data_ptr(
                 std::ptr::from_mut(&mut (*self.allocatee_ptr.inner)) as *mut std::ffi::c_void,
-                &self.type_ops,
+                &self.allocatee_ptr.type_ops,
             );
             (data_ptr as *mut T).as_mut()
         }
@@ -198,13 +197,13 @@ where
         // We've taken ownership via self (consumed, not borrowed), and
         // FFI call will complete before drop run on AllocateePtrWrapper and NativeSkeletonEventBase
         let status = unsafe {
-            self.allocatee_ptr
+          self.allocatee_ptr
                 .bridge
                 .skeleton_event_send_sample_allocatee(
-                    self.skeleton_event.skeleton_event_ptr.as_ptr(),
-                    &self.type_ops,
-                    std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
-                )
+                self.skeleton_event.skeleton_event_ptr.as_ptr(),
+                &self.allocatee_ptr.type_ops,
+                std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
+            )
         };
         if !status {
             return Err(Error::EventError(EventFailedReason::SendingDataFailed));
@@ -220,7 +219,6 @@ where
 {
     skeleton_event: NativeSkeletonEventBase,
     allocatee_ptr: AllocateePtrWrapper<T, B>,
-    type_ops: TypeOperationsManager,
     lifetime: PhantomData<&'a T>,
 }
 
@@ -234,7 +232,7 @@ where
         let data_ptr = unsafe {
             self.allocatee_ptr.bridge.get_allocatee_data_ptr(
                 std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
-                &self.type_ops,
+                &self.allocatee_ptr.type_ops,
             ) as *mut core::mem::MaybeUninit<T>
         };
         unsafe { data_ptr.as_mut() }
@@ -259,7 +257,6 @@ where
         SampleMut {
             skeleton_event: self.skeleton_event,
             allocatee_ptr: self.allocatee_ptr,
-            type_ops: self.type_ops,
             lifetime: PhantomData,
         }
     }
@@ -268,7 +265,6 @@ where
         SampleMut {
             skeleton_event: self.skeleton_event,
             allocatee_ptr: self.allocatee_ptr,
-            type_ops: self.type_ops,
             lifetime: PhantomData,
         }
     }
@@ -438,7 +434,6 @@ where
 
         Ok(SampleMaybeUninit {
             skeleton_event: self.skeleton_event.clone(),
-            type_ops: self.type_ops.clone(),
             allocatee_ptr: AllocateePtrWrapper {
                 inner: ManuallyDrop::new(allocatee_ptr),
                 bridge: self.skeleton_instance.0.bridge.clone(),

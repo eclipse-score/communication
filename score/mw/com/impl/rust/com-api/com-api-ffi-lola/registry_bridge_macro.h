@@ -30,31 +30,31 @@
 //  - We can not rely on static macros alone to achieve runtime independence
 //
 //  Key design elements:
-//  - GlobalRegistryMapping: Central registry that maps string identifiers to type/interface operations
+//  - GlobalRegistryMapping: Central registry that maps interface identifiers to InterfaceOperations
 //    - InterfaceOperationMap: Maps interface_id (string) -> InterfaceOperations (proxy/skeleton creation)
-//    - TypeOperationMap: Maps type_name (string) -> TypeOperations (sample handling, event sending)
+//    - get_type_operations<T>(): Template function providing per-type singleton TypeOperationImpl<T>
 //
 //  How it works:
-//  - Registry is filled at COMPILE TIME using macros (BEGIN_EXPORT_MW_COM_INTERFACE, EXPORT_MW_COM_EVENT,
-//  EXPORT_MW_COM_TYPE)
-//  - Macros create static helper structs that register operations in GlobalRegistryMapping at program startup
-//  - Operations are looked up at RUNTIME using string keys (interface_id, event_id, type_name)
-//  - Rust calls FFI functions with string identifiers
-//  - C++ resolves actual types via registry and invokes appropriate virtual methods
+//  - Registry is filled at COMPILE TIME using macros (BEGIN_EXPORT_MW_COM_INTERFACE, EXPORT_MW_COM_EVENT)
+//  - Macros create static helper structs that register InterfaceOperationImpl and MemberOperationImpl at startup
+//  - Type operations are resolved at COMPILE TIME via template specialization (get_type_operations<T>)
+//  - Each type T has a single static TypeOperationImpl<T> instance shared across all events of that type
+//  - Interface and member lookups use string keys (interface_id, event_id), type dispatch uses direct pointers
 //
 //  Example flow for event subscription:
-//  - Rust calls: get_event_from_proxy(proxy_ptr, "VehicleInterface", "TireEvent")
-//  - C++: FindMemberOperation("VehicleInterface", "TireEvent") -> returns MemberOperationImpl<VehicleProxy,
+//  - Rust calls: get_event_from_proxy(proxy_ptr, "VehicleInterface", "left_tire")
+//  - C++: FindMemberOperation("VehicleInterface", "left_tire") -> returns MemberOperationImpl<VehicleProxy,
 //  VehicleSkeleton, Tire, ...>
 //  - C++: Calls GetProxyEvent() on the returned MemberOperation
 //  - C++: Returns ProxyEventBase* which is actually ProxyEvent<Tire>*
-//  - Rust receives opaque ProxyEventBase* and can use it with type-name strings in subsequent calls
+//  - Rust receives opaque ProxyEventBase* and uses get_type_ops_instance() to retrieve TypeOperations pointer
+//  - Direct pointer dispatch avoids string-based type lookup overhead on every send/receive operation
 //
 //  Template specialization pattern:
-//  - EXPORT_MW_COM_TYPE macro specializes RustRefMutCallable template for each type
-//  - This allows C++ to invoke Rust FnMut closures with type-specific SamplePtr<T>
+//  - get_type_operations<T>() provides singleton access to TypeOperationImpl<T> via function-scoped static
+//  - Each template specialization (e.g., get_type_operations<Tire>, get_type_operations<Exhaust>) has one instance
+//  - EXPORT_MW_COM_TYPE macro specializes RustRefMutCallable template for closure invocation with SamplePtr<T>
 //  - SamplePtr<T> is wrapped in placement-new storage and passed to mw_com_impl_call_dyn_ref_fnmut_sample()
-//  - The Rust side reconstructs the FatPtr and invokes the original closure
 //
 //  Application side usage:
 //  - Generated C++ code invokes these macros to fill registry for each interface and type
@@ -319,6 +319,8 @@ class MemberOperation
     /// \return Pointer to SkeletonEventBase if found, nullptr otherwise
     virtual SkeletonEventBase* GetSkeletonEvent(SkeletonBase* skeleton_ptr) = 0;
 
+    /// \brief Get TypeOperations for type-erased sample handling
+    /// \return Pointer to TypeOperations instance for the event data type
     virtual TypeOperations* GetTypeOps() = 0;
 };
 
@@ -334,11 +336,6 @@ class MemberOperationImpl : public MemberOperation
 {
   public:
     /// Constructor to cache TypeOperations pointer for efficient member access
-    /// 
-    /// This clarifies the ownership contract, the caller must explicitly construct MemberOperationImpl
-    /// and is responsible for ensuring the TypeOperations* pointer remains valid for the lifetime of
-    /// this MemberOperationImpl instance. The TypeOperations pointer is managed by the registry and
-    /// remains valid as long as the global registry exists (static lifetime).
     explicit MemberOperationImpl(TypeOperations* type_ops) : type_ops_ptr_(type_ops) {}
 
     ProxyEventBase* GetProxyEvent(ProxyBase* proxy_ptr) override
@@ -613,6 +610,14 @@ class RustBoxedCallable<void,
     static void dispose(FatPtr) noexcept {}
 };
 
+/// Helper function to get singleton TypeOperations instance for each type T
+template <typename T>
+inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
+{
+    static ::score::mw::com::impl::rust::TypeOperationImpl<T> ops;
+    return ops;
+}
+
 /// \brief Macro to begin registration of interface operations
 /// \details Creates registry and type aliases for a specific interface. Uses a static struct to register
 /// interface operations at startup/before main(). Declares the Rust FFI function for closure invocation.
@@ -647,17 +652,19 @@ class RustBoxedCallable<void,
 
 /// \brief Macro to register event member operations
 /// \details Creates registry for event member operations for a specific interface and event name.
-/// Uses a static struct to register member operations at startup/before main().
-/// \param event_type Data type of the event
-/// \param event_member Event member name in Proxy and Skeleton classes
+/// Uses a static struct to register MemberOperationImpl at startup/before main().
+/// All events with the same event_type share a single TypeOperationImpl<event_type> instance obtained via
+/// get_type_operations<event_type>(), eliminating per-event type operation overhead.
+/// \param event_type Data type of the event (e.g., Tire, Exhaust)
+/// \param event_member Event member name in Proxy and Skeleton classes (e.g., left_tire, right_tire)
 /// \note Example usage: EXPORT_MW_COM_EVENT(Tire, left_tire)
 #define EXPORT_MW_COM_EVENT(event_type, event_member)                                                             \
     struct event_member##_EventRegistrationHelper                                                                 \
     {                                                                                                             \
         event_member##_EventRegistrationHelper()                                                                  \
         {                                                                                                         \
-            /* Get or create shared TypeOperations for this event_type */                                         \
-            static ::score::mw::com::impl::rust::TypeOperationImpl<event_type> s_shared_type_ops;                 \
+            /* Get reference to shared TypeOperations - same for all events of same type */                       \
+            auto& type_ops = ::score::mw::com::impl::rust::get_type_operations<event_type>();                     \
                                                                                                                   \
             auto event_info =                                                                                     \
                 std::make_unique<::score::mw::com::impl::rust::MemberOperationImpl<ProxyType,                     \
@@ -665,7 +672,7 @@ class RustBoxedCallable<void,
                                                                                    event_type,                    \
                                                                                    &ProxyType::event_member,      \
                                                                                    &SkeletonType::event_member>>( \
-                    &s_shared_type_ops);                                                                          \
+                    &type_ops);                                                                                   \
                                                                                                                   \
             ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterMemberOperation(                         \
                 std::string_view(id_interface), std::string_view(#event_member), std::move(event_info));          \
@@ -679,7 +686,7 @@ class RustBoxedCallable<void,
 /// \brief Macro to create type specific class and support functions
 /// \details RustRefMutCallable template is specialized for SamplePtr<type> to allow C++ to call Rust closures with
 /// type-erased sample pointers.
-/// \param type_tag Type name tag used in macros as the registry key
+/// \param type_tag Type name tag is currently not used but we may need for method and field.
 /// \param type Actual C++ type for which operations are registered
 /// \note Example usage: EXPORT_MW_COM_TYPE(TireType, Tire)
 #define EXPORT_MW_COM_TYPE(type_tag, type)                                                                    \
