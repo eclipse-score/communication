@@ -18,7 +18,7 @@
 namespace score::mw::com::test
 {
 
-bool run_provider(const score::cpp::stop_token& stop_token);
+void run_provider(const score::cpp::stop_token& stop_token);
 
 }  // namespace score::mw::com::test
 

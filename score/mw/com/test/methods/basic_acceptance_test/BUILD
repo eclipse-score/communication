@@ -41,8 +41,8 @@ cc_library(
     implementation_deps = [
         ":test_method_datatype",
         "//score/mw/com",
-        "//score/mw/com/test/methods/methods_test_resources:method_consumer",
         "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
+        "//score/mw/com/test/methods/methods_test_resources:proxy_container",
     ],
 )
 
@@ -54,8 +54,8 @@ cc_library(
     implementation_deps = [
         ":test_method_datatype",
         "//score/mw/com",
-        "//score/mw/com/test/methods/methods_test_resources:method_provider",
         "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
+        "//score/mw/com/test/methods/methods_test_resources:skeleton_container",
     ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -144,10 +144,4 @@ pkg_application(
     visibility = [
         "//score/mw/com/test/methods/basic_acceptance_test:__subpackages__",
     ],
-)
-
-test_suite(
-    name = "component_tests",
-    tests = [],
-    visibility = ["//score/mw/com/test/methods:__pkg__"],
 )

@@ -12,9 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/test/methods/basic_acceptance_test/consumer.h"
 
+#include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/methods/basic_acceptance_test/test_method_datatype.h"
-#include "score/mw/com/test/methods/methods_test_resources/method_consumer.h"
 #include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
+#include "score/mw/com/test/methods/methods_test_resources/proxy_container.h"
 #include "score/mw/com/types.h"
 
 #include <score/stop_token.hpp>
@@ -35,50 +36,103 @@ constexpr std::int32_t kTestValueB = 17;
 const InstanceSpecifier kInstanceSpecifier =
     InstanceSpecifier::Create(std::string{"test/methods/basic_acceptance_test/TestMethods"}).value();
 
+void CallMethodWithCopy(TestMethodProxy& proxy)
+{
+    std::cout << "\n=== Test: with_in_args_and_return (copy call) ===" << std::endl;
+    auto method_return_result = proxy.with_in_args_and_return(kTestValueA, kTestValueB);
+    if (!(method_return_result.has_value()))
+    {
+        FailTest("Consumer: with_in_args_and_return call failed: ", method_return_result.error());
+        return;
+    }
+    const auto actual_return_value = *(method_return_result.value());
+
+    const auto expected_result_value = kTestValueA + kTestValueB;
+    if (actual_return_value != expected_result_value)
+    {
+        FailTest(
+            "Consumer: with_in_args_and_return expected ", expected_result_value, " but got ", actual_return_value);
+        return;
+    }
+
+    std::cout << "Consumer: with_in_args_and_return returned correct result: " << actual_return_value << std::endl;
+}
+
+void CallMethodZeroCopy(TestMethodProxy& proxy)
+{
+    std::cout << "\n=== Test: with_in_args_and_return (zero-copy) ===" << std::endl;
+    auto allocated_args_result = proxy.with_in_args_and_return.Allocate();
+    if (!allocated_args_result.has_value())
+    {
+        FailTest("Consumer: Could not allocate method args: ", allocated_args_result.error());
+        return;
+    }
+
+    auto& [arg1_ptr, arg2_ptr] = allocated_args_result.value();
+    *arg1_ptr = kTestValueA;
+    *arg2_ptr = kTestValueB;
+
+    auto method_return_result = proxy.with_in_args_and_return(std::move(arg1_ptr), std::move(arg2_ptr));
+    if (!(method_return_result.has_value()))
+    {
+        FailTest("Consumer: with_in_args_and_return zero-copy call failed: ", method_return_result.error());
+        return;
+    }
+    const auto actual_return_value = *(method_return_result.value());
+
+    const auto expected_result_value = kTestValueA + kTestValueB;
+    if (actual_return_value != expected_result_value)
+    {
+        FailTest("Consumer: with_in_args_and_return zero-copy expected ",
+                 expected_result_value,
+                 " but got ",
+                 actual_return_value);
+        return;
+    }
+
+    std::cout << "Consumer: with_in_args_and_return zero-copy returned correct result: " << actual_return_value
+              << std::endl;
+}
+
 }  // namespace
 
-int run_consumer()
+void run_consumer()
 {
-    MethodConsumer<TestMethodProxy> consumer{};
     auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
     if (!(process_synchronizer_result.has_value()))
     {
-        std::cerr << "Methods basic_acceptance_test consumer failed: Could not create ProcessSynchronizer" << std::endl;
-        return EXIT_FAILURE;
+        FailTest("Methods basic_acceptance_test consumer failed: Could not create ProcessSynchronizer");
+        return;
     }
+
+    // Set an exit function to notify the provider in case of failure in calls to FailTest, so that it does not wait
+    // indefinitely for the consumer to finish.
+    ExitFunction process_synchronizer_guard{[&process_synchronizer_result]() {
+        process_synchronizer_result->Notify();
+    }};
+    SetFailTestExitFunction(process_synchronizer_guard);
+
+    // Create a scope exit guard to clear the fail test exit function, so that it cannot be called after the
+    // process_synchronizer has been destroyed.
+    utils::ScopeExit fail_test_exit_function_guard{[&process_synchronizer_result]() {
+        ClearTestExitFunction();
+        process_synchronizer_result->Notify();
+    }};
+
+    ProxyContainer<TestMethodProxy> proxy_container{};
 
     // Step 1. Find service and create proxy
     std::cout << "\nConsumer: Step 1" << std::endl;
-    if (!consumer.CreateProxy(kInstanceSpecifier))
-    {
-        std::cerr << "Methods basic_acceptance_test consumer failed: CreateProxy" << std::endl;
-        process_synchronizer_result->Notify();
-        return EXIT_FAILURE;
-    }
+    proxy_container.CreateProxy(kInstanceSpecifier, "basic_acceptance_test");
+    auto& proxy = proxy_container.GetProxy();
 
     // Step 2. Call method with copy
     std::cout << "\nConsumer: Step 2" << std::endl;
-    if (!consumer.CallMethodWithInArgsAndReturn(
-            kTestValueA, kTestValueB, MethodConsumer<TestMethodProxy>::CopyMode::WITH_COPY))
-    {
-        std::cerr << "Methods basic_acceptance_test consumer failed: CallMethodWithCopy" << std::endl;
-        process_synchronizer_result->Notify();
-        return EXIT_FAILURE;
-    }
+    CallMethodWithCopy(proxy);
 
     // Step 3. Call zero-copy method
     std::cout << "\nConsumer: Step 3" << std::endl;
-    if (!consumer.CallMethodWithInArgsAndReturn(
-            kTestValueA, kTestValueB, MethodConsumer<TestMethodProxy>::CopyMode::ZERO_COPY))
-    {
-        std::cerr << "Methods basic_acceptance_test consumer failed: CallZeroCopyMethod" << std::endl;
-        process_synchronizer_result->Notify();
-        return EXIT_FAILURE;
-    }
-
-    process_synchronizer_result->Notify();
-
-    return EXIT_SUCCESS;
+    CallMethodZeroCopy(proxy);
 }
 
 }  // namespace score::mw::com::test
