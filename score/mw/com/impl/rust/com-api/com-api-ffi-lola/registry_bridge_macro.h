@@ -464,26 +464,6 @@ class GlobalRegistryMapping
   public:
     using InterfaceOperationMap = std::unordered_map<std::string_view, std::unique_ptr<InterfaceOperations>>;
 
-    using TypeOperationMap = std::unordered_map<std::string_view, std::unique_ptr<TypeOperations>>;
-
-    /// \brief Get the type operation map
-    /// \details Creates static map on first call and returns reference to it for subsequent calls.
-    /// \return Reference to the static type operation map
-    static TypeOperationMap& GetTypeOperationMap()
-    {
-        static TypeOperationMap s_type_operation_map;
-        return s_type_operation_map;
-    }
-
-    /// \brief Register type operation for a specific type name
-    /// \details Called by EXPORT_MW_COM_TYPE macro to register type operations.
-    /// \param type_name Name of the type used as key in registry
-    /// \param impl Unique pointer to TypeOperations implementation
-    static void RegisterTypeOperation(const std::string_view type_name, std::unique_ptr<TypeOperations> impl)
-    {
-        GetTypeOperationMap()[type_name] = std::move(impl);
-    }
-
     /// \brief Get the interface operation map
     /// \details Creates static map on first call and returns reference to it for subsequent calls.
     /// \return Reference to the static interface operation map
@@ -526,20 +506,6 @@ class GlobalRegistryMapping
     {
         auto it = GetInterfaceOperationMap().find(interface_id);
         if (it != GetInterfaceOperationMap().end())
-        {
-            return it->second.get();
-        }
-        return nullptr;
-    }
-
-    /// \brief Get type operation for a specific type name
-    /// \param type_name Name of the type used as registry key
-    /// \return Pointer to TypeOperations implementation if found, nullptr otherwise
-    static TypeOperations* FindTypeInformation(const std::string_view type_name)
-    {
-        auto& type_ops_map = GetTypeOperationMap();
-        auto it = type_ops_map.find(type_name);
-        if (it != type_ops_map.end())
         {
             return it->second.get();
         }
@@ -695,7 +661,7 @@ class RustBoxedCallable<void,
                                                                                    event_type,                    \
                                                                                    &ProxyType::event_member,      \
                                                                                    &SkeletonType::event_member>>( \
-                    &s_shared_type_ops); /* ← Pass shared instance */                                             \
+                    &s_shared_type_ops);                                                                          \
                                                                                                                   \
             ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterMemberOperation(                         \
                 std::string_view(id_interface), std::string_view(#event_member), std::move(event_info));          \
@@ -706,9 +672,9 @@ class RustBoxedCallable<void,
 
 #define END_EXPORT_MW_COM_INTERFACE() }  // namespace id##_detail
 
-/// \brief Macro to register type operations
-/// \details Creates registry for type operations for a specific type name. Specializes the
-/// RustRefMutCallable template and uses a static struct to register type operations at startup/before main().
+/// \brief Macro to create type specific class and support functions
+/// \details RustRefMutCallable template is specialized for SamplePtr<type> to allow C++ to call Rust closures with
+/// type-erased sample pointers.
 /// \param type_tag Type name tag used in macros as the registry key
 /// \param type Actual C++ type for which operations are registered
 /// \note Example usage: EXPORT_MW_COM_TYPE(TireType, Tire)
@@ -727,19 +693,8 @@ class RustBoxedCallable<void,
             ::score::mw::com::impl::rust::mw_com_impl_call_dyn_ref_fnmut_sample(&ptr_, placement_sample);     \
         }                                                                                                     \
         static void dispose(::score::mw::com::impl::rust::FatPtr) noexcept {}                                 \
-    };                                                                                                        \
-                                                                                                              \
-    struct type_tag##_TypeRegistrationHelper                                                                  \
-    {                                                                                                         \
-        type_tag##_TypeRegistrationHelper()                                                                   \
-        {                                                                                                     \
-            auto type_ops = std::make_unique<::score::mw::com::impl::rust::TypeOperationImpl<type>>();        \
-            ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterTypeOperation(#type_tag,             \
-                                                                                       std::move(type_ops));  \
-        }                                                                                                     \
-    };                                                                                                        \
-                                                                                                              \
-    static type_tag##_TypeRegistrationHelper type_tag##_type_reg_instance;
+    };
+
 }  // namespace score::mw::com::impl::rust
 
 #endif  // SCORE_MW_COM_REGISTRY_BRIDGE_MACROS_H
