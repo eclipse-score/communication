@@ -355,7 +355,9 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
         }
         let type_ops = unsafe {
             self.instance_info.bridge.get_type_ops_instance(self.instance_info.interface_id, self.identifier)
-        };
+        }
+        .ok_or(Error::EventError(EventFailedReason::EventNotAvailable))?;
+
         // Store in SubscriberImpl with event, max_num_samples
         Ok(SubscriberImpl {
             event: ProxyEventManager::new(
