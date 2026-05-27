@@ -355,7 +355,7 @@ impl Debug for TypeOperations {
     }
 }
 
-/// This struct wraps a raw pointer to a TypeOperations instance obtained from C++ and provides
+/// This struct manages the pointer to TypeOperations instance retrieved from C++ registry.
 pub struct TypeOperationsManager {
     inner: NonNull<TypeOperations>,
 }
@@ -369,6 +369,11 @@ impl TypeOperationsManager {
     }
 }
 
+// SAFETY: TypeOperationsManager can be sent and shared between threads because it does not provide
+// any interior mutability and the instance is statically allocated and managed on the C++ side.
+// Sharing the pointer across threads is safe as this is used with event insatnce of proxy or skeleton instance
+// which already handles the concurrent scenario.
+// Note: Sync is required by consumer SubscriberImpl type.
 unsafe impl Send for TypeOperationsManager {}
 unsafe impl Sync for TypeOperationsManager {}
 
