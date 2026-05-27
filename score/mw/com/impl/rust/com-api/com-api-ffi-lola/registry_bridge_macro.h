@@ -333,8 +333,12 @@ template <typename ProxyType,
 class MemberOperationImpl : public MemberOperation
 {
   public:
-    /// Constructor to accept cached TypeOperations pointer
-    // TODO: Why explicit constructor we need to do ?
+    /// Constructor to cache TypeOperations pointer for efficient member access
+    /// 
+    /// This clarifies the ownership contract, the caller must explicitly construct MemberOperationImpl
+    /// and is responsible for ensuring the TypeOperations* pointer remains valid for the lifetime of
+    /// this MemberOperationImpl instance. The TypeOperations pointer is managed by the registry and
+    /// remains valid as long as the global registry exists (static lifetime).
     explicit MemberOperationImpl(TypeOperations* type_ops) : type_ops_ptr_(type_ops) {}
 
     ProxyEventBase* GetProxyEvent(ProxyBase* proxy_ptr) override

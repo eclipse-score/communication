@@ -448,13 +448,12 @@ where
         })
     }
 
-    fn new(identifier: &str, instance_info: LolaProviderInfo<B>) -> Result<Self> {
+   fn new(identifier: &str, instance_info: LolaProviderInfo<B>) -> Result<Self> {
         let skeleton_event = NativeSkeletonEventBase::new::<B>(&instance_info, identifier)?;
         let type_ops = unsafe {
             instance_info
-                .bridge
-                .get_type_ops_instance(instance_info.interface_id, identifier)
-        };
+                .bridge.get_type_ops_instance(instance_info.interface_id, identifier) }
+                .ok_or(Error::EventError(EventFailedReason::EventNotAvailable))?;
         Ok(Self {
             skeleton_event,
             type_ops,
