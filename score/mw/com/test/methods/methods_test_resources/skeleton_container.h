@@ -13,10 +13,12 @@
 #ifndef SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_SKELETON_CONTAINER_H
 #define SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_SKELETON_CONTAINER_H
 
+#include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/types.h"
 
 #include <iostream>
 #include <memory>
+#include <string>
 
 namespace score::mw::com::test
 {
@@ -25,10 +27,8 @@ template <typename Skeleton>
 class SkeletonContainer
 {
   public:
-    SkeletonContainer(std::string instance_specifier_string);
-
-    bool CreateSkeleton();
-    bool OfferService();
+    void CreateSkeleton(InstanceSpecifier instance_specifier, const std::string& failure_message_prefix);
+    void OfferService(const std::string& failure_message_prefix);
 
     Skeleton& GetSkeleton()
     {
@@ -38,50 +38,35 @@ class SkeletonContainer
     }
 
   private:
-    std::string instance_specifier_string_;
     std::unique_ptr<Skeleton> skeleton_;
 };
 
 template <typename Skeleton>
-SkeletonContainer<Skeleton>::SkeletonContainer(std::string instance_specifier_string)
-    : instance_specifier_string_{std::move(instance_specifier_string)}
+void SkeletonContainer<Skeleton>::CreateSkeleton(InstanceSpecifier instance_specifier,
+                                                 const std::string& failure_message_prefix)
 {
-}
-
-template <typename Skeleton>
-bool SkeletonContainer<Skeleton>::CreateSkeleton()
-{
-    auto instance_specifier = InstanceSpecifier::Create(std::string{instance_specifier_string_});
-    if (!instance_specifier.has_value())
-    {
-        std::cerr << "Provider: Could not create InstanceSpecifier from: " << instance_specifier_string_ << std::endl;
-        return false;
-    }
-
-    auto skeleton_result = Skeleton::Create(instance_specifier.value());
+    auto skeleton_result = Skeleton::Create(std::move(instance_specifier));
     if (!skeleton_result.has_value())
     {
-        std::cerr << "Provider: Could not create skeleton: " << skeleton_result.error() << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Provider: Could not create skeleton: ", skeleton_result.error());
+        return;
     }
     skeleton_ = std::make_unique<Skeleton>(std::move(skeleton_result).value());
-    return true;
 }
 
 template <typename Skeleton>
-bool SkeletonContainer<Skeleton>::OfferService()
+void SkeletonContainer<Skeleton>::OfferService(const std::string& failure_message_prefix)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_ != nullptr);
 
     auto offer_result = skeleton_->OfferService();
     if (!(offer_result.has_value()))
     {
-        std::cerr << "Provider: Could not offer service: " << offer_result.error() << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Provider: Could not offer service: ", offer_result.error());
+        return;
     }
 
     std::cout << "Provider: Service offered successfully" << std::endl;
-    return true;
 }
 
 }  // namespace score::mw::com::test
