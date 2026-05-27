@@ -39,6 +39,7 @@ Usage (called from deploy_docs.yml):
 
 import argparse
 import json
+import os
 import pathlib
 import shutil
 import sys
@@ -66,11 +67,19 @@ def main() -> int:
                         help="Path to the root index.html (redirect page)")
     args = parser.parse_args()
 
-    publish  = pathlib.Path(args.publish_dir)
-    docs_out = pathlib.Path(args.docs_output)
-    version  = args.version
-    is_tag   = args.is_tag == "true"
-    repo_url = args.repo_url.rstrip("/")
+    # Resolve relative paths against BUILD_WORKSPACE_DIRECTORY (set by bazel run).
+    workspace = pathlib.Path(os.environ.get("BUILD_WORKSPACE_DIRECTORY", "."))
+
+    def _ws(p: str) -> pathlib.Path:
+        path = pathlib.Path(p)
+        return path if path.is_absolute() else workspace / path
+
+    publish    = _ws(args.publish_dir)
+    docs_out   = _ws(args.docs_output)
+    root_index = _ws(args.root_index)
+    version    = args.version
+    is_tag     = args.is_tag == "true"
+    repo_url   = args.repo_url.rstrip("/")
 
     # ── Place current build ───────────────────────────────────────────────────
     version_dir = publish / version
@@ -107,7 +116,7 @@ def main() -> int:
     shutil.copy2(_JS,  shared_js_dir  / _JS.name)
 
     # ── Root files ────────────────────────────────────────────────────────────
-    shutil.copy2(args.root_index, publish / "index.html")
+    shutil.copy2(root_index, publish / "index.html")
     (publish / ".nojekyll").touch()
 
     # ── switcher.json ─────────────────────────────────────────────────────────
