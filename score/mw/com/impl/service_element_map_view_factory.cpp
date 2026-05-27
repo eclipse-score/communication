@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -10,8 +10,5 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-///
-/// @file
-/// @copyright Copyright (C) 2023, Bayerische Motoren Werke Aktiengesellschaft (BMW AG)
-///
-#include "score/mw/com/impl/service_element_map.h"
+
+#include "score/mw/com/impl/service_element_map_view_factory.h"

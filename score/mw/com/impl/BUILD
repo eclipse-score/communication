@@ -98,7 +98,8 @@ cc_library(
         ":handle_type",
         ":proxy_base",
         ":proxy_binding",
-        ":service_element_map",
+        ":service_element_map_view",
+        ":service_element_map_view_factory",
         "@score_baselibs//score/result",
     ],
 )
@@ -170,7 +171,8 @@ cc_library(
         ":instance_identifier",
         ":instance_specifier",
         ":runtime",
-        ":service_element_map",
+        ":service_element_map_view",
+        ":service_element_map_view_factory",
         ":skeleton_base",
         ":skeleton_binding",
         "@score_baselibs//score/result",
@@ -218,6 +220,7 @@ cc_library(
 
 cc_library(
     name = "data_type_meta_info",
+    srcs = ["data_type_meta_info.cpp"],
     hdrs = ["data_type_meta_info.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
@@ -970,9 +973,23 @@ cc_library(
 )
 
 cc_library(
-    name = "service_element_map",
-    srcs = ["service_element_map.cpp"],
-    hdrs = ["service_element_map.h"],
+    name = "service_element_map_view_factory",
+    srcs = ["service_element_map_view_factory.cpp"],
+    hdrs = ["service_element_map_view_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":service_element_map_view",
+    ],
+)
+
+cc_library(
+    name = "service_element_map_view",
+    srcs = ["service_element_map_view.cpp"],
+    hdrs = ["service_element_map_view.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
@@ -1287,7 +1304,7 @@ cc_unit_test(
         "proxy_event_base_test.cpp",
         "proxy_event_binding_base_test.cpp",
         "proxy_event_test.cpp",
-        "service_element_map_test.cpp",
+        "service_element_map_view_test.cpp",
         "skeleton_binding_test.cpp",
         "skeleton_event_base_test.cpp",
         "skeleton_event_binding_test.cpp",
@@ -1303,7 +1320,7 @@ cc_unit_test(
         ":impl",
         ":runtime_mock",
         ":service_discovery_mock",
-        ":service_element_map",
+        ":service_element_map_view",
         "//score/mw/com:types",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/bindings/lola/test_doubles",

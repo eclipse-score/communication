@@ -23,6 +23,7 @@
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_id.h"
 #include "score/mw/com/impl/generic_proxy.h"
+
 #include "score/mw/com/impl/generic_proxy_event.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_specifier.h"
@@ -33,6 +34,7 @@
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
+#include "service_element_map_view_factory.h"
 
 #include <score/utility.hpp>
 
@@ -145,9 +147,10 @@ TEST(GenericProxyTest, ServiceElementsAreIndexedUsingElementFqId)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    using ActualEventMapType = GenericProxy::EventMap::map_type;
-    using ExpectedEventMapType = std::map<std::string_view, GenericProxyEvent>;
-    static_assert(std::is_same_v<ActualEventMapType, ExpectedEventMapType>, "GenericProxy Event map is not a std::map");
+    using ActualEventMapViewType = ServiceElementMapViewFactory<GenericProxyEvent>::map_type;
+    using ExpectedEventMapViewType = std::map<std::string_view, GenericProxyEvent>;
+    static_assert(std::is_same_v<ActualEventMapViewType, ExpectedEventMapViewType>,
+                  "GenericProxy Event map view is not a std::map");
 }
 
 class GenericProxyFixture : public ::testing::Test
@@ -434,6 +437,33 @@ TEST_F(GenericProxyFixture, GenericProxyWillLogErrorMessageForEventsProvidedInCo
     EXPECT_TRUE(log_output.find(text_snippet, text_location) != log_output.npos);
 }
 
+TEST_F(GenericProxyFixture, MovingGenericProxyLeavesEventMapIntact)
+{
+    std::optional<GenericProxy> moved_generic_proxy;
+    std::optional<GenericProxy::EventMapView> events;
+
+    {
+        // Given a valid GenericProxy with some GenericProxyEvents
+        CreateAHandle({kEventName1, kEventName2, kEventName3});
+        auto generic_proxy_result = GenericProxy::Create(*handle_);
+        EXPECT_TRUE(generic_proxy_result.has_value());
+
+        // and given a ServiceElementMapView of the event map
+        auto& generic_proxy = generic_proxy_result.value();
+        events = generic_proxy.GetEvents();
+        // when moving the GenericProxy
+        moved_generic_proxy = std::move(generic_proxy);
+        // and destroying the moved-from GenericProxy
+    }
+
+    // Then the ServiceElementMapView acquired previously from the moved-from GenericProxy still points to the events
+    // now owned by the moved-to GenericProxy.
+    EXPECT_TRUE(events.value().find(kEventName1) != events.value().cend());
+    // and that the moved-to GenericProxy also contains the events.
+    auto events_from_moved_proxy = moved_generic_proxy.value().GetEvents();
+    EXPECT_TRUE(events_from_moved_proxy.find(kEventName1) != events_from_moved_proxy.cend());
+}
+
 using GenericProxyDeathTest = GenericProxyFixture;
 TEST_F(GenericProxyDeathTest, FillingEventMapWithDuplicateEventNamesWillTerminate)
 {
@@ -573,29 +603,32 @@ TEST(GenericProxyEventMapTest, GenericProxyContainsEventMapClass)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    static_assert(std::is_class<GenericProxy::EventMap>::value, "GenericProxy does not contain public EventMap class");
+    static_assert(std::is_class<GenericProxy::EventMapView>::value,
+                  "GenericProxy does not contain public EventMapView class");
 }
 
 TEST(GenericProxyEventMapTest, CheckEventMapClassInterface)
 {
     RecordProperty("Verifies", "SCR-14031544");
-    RecordProperty("Description",
-                   "Checks that the EventMap class adheres to the required interface and that EventMap is a "
-                   "ServiceElementMap. ServiceElementMap unit tests check that EventMap behaves like std::map.");
+    RecordProperty(
+        "Description",
+        "Checks that the EventMapView class adheres to the required interface and that EventMapView is a "
+        "ServiceElementMapView. ServiceElementMap unit tests check that EventMapView behaves like std::map.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    static_assert(std::is_same<GenericProxy::EventMap, ServiceElementMap<GenericProxyEvent>>::value,
+    static_assert(std::is_same<GenericProxy::EventMapView, ServiceElementMapView<GenericProxyEvent>>::value,
                   "EventMap type is incorrect");
-    using EventMapValueType = GenericProxy::EventMap::value_type;
+    using EventMapValueType = GenericProxy::EventMapView::value_type;
     static_assert(std::is_same<EventMapValueType::first_type, const std::string_view>::value,
                   "EventMap key type is incorrect");
     static_assert(std::is_same<EventMapValueType::second_type, GenericProxyEvent>::value,
                   "EventMap value type is incorrect");
 
     // Check that GenericProxy::EventMap contains the required functions
-    GenericProxy::EventMap event_map{};
+    ServiceElementMapViewFactory<GenericProxyEvent>::map_type initial_map;
+    auto event_map = ServiceElementMapViewFactory<GenericProxyEvent>::Create(initial_map);
     score::cpp::ignore = event_map.cbegin();
     score::cpp::ignore = event_map.cend();
     score::cpp::ignore = event_map.find(std::string_view{""});

@@ -10,10 +10,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-///
-/// @file
-/// @copyright Copyright (C) 2023, Bayerische Motoren Werke Aktiengesellschaft (BMW AG)
-///
 
 #ifndef SCORE_MW_COM_IMPL_GENERIC_PROXY_H
 #define SCORE_MW_COM_IMPL_GENERIC_PROXY_H
@@ -22,7 +18,8 @@
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_binding.h"
-#include "score/mw/com/impl/service_element_map.h"
+#include "score/mw/com/impl/service_element_map_view.h"
+#include "score/mw/com/impl/service_element_map_view_factory.h"
 
 #include "score/result/result.h"
 
@@ -53,13 +50,13 @@ class GenericProxyAttorney;
 class GenericProxy : public ProxyBase
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // Design dessision: The "*Attorney" class is a helper, which sets the internal state of this class accessing
+    // Design decision: The "*Attorney" class is a helper, which sets the internal state of this class accessing
     // private members and used for testing purposes only.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class test::GenericProxyAttorney;
 
   public:
-    using EventMap = ServiceElementMap<GenericProxyEvent>;
+    using EventMapView = ServiceElementMapView<GenericProxyEvent>;
 
     /**
      * \api
@@ -71,17 +68,22 @@ class GenericProxy : public ProxyBase
 
     /**
      * \api
-     * \brief Returns a reference to the event map.
-     * \return Reference to the event map.
+     * \brief Returns a read-only view to the name-keyed map of events.
+     * \note The returned view is valid as long as the GenericProxy lives.
+     * \return View to the event map.
      */
-    EventMap& GetEvents() noexcept;
+    EventMapView GetEvents() const noexcept;
 
   private:
     GenericProxy(std::unique_ptr<ProxyBinding> proxy_binding, HandleType instance_handle);
 
     void FillEventMap(const std::vector<std::string_view>& event_names) noexcept;
 
-    EventMap events_;
+    /// \brief This map owns all GenericProxyEvent instances.
+    /// \details This map needs to be covered in a unique_ptr as it shall not be relocated by a move of the
+    /// GenericProxy. This is required as we hand out views to this map (see GetEvents()), which need to be valid
+    /// even after the GenericProxy instance has been moved.
+    std::unique_ptr<ServiceElementMapViewFactory<GenericProxyEvent>::map_type> events_;
 };
 
 }  // namespace score::mw::com::impl
