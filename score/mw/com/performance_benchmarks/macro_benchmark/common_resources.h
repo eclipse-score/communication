@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_PERFORMANCE_BENCHMARKS_MACRO_BENCHMARK_COMMON_RESOURCES_H
 #define SCORE_MW_COM_PERFORMANCE_BENCHMARKS_MACRO_BENCHMARK_COMMON_RESOURCES_H
 
-#include "score/mw/com/performance_benchmarks/common_test_resources/shared_memory_object_creator.h"
+#include "score/mw/com/test/common_test_resources/shared_memory_object_creator.h"
 
 #include <score/stop_token.hpp>
 
