@@ -61,7 +61,7 @@ class MethodConsumer
         WITH_COPY
     };
 
-    bool CreateProxy(InstanceSpecifier instance_specifier);
+    void CreateProxy(InstanceSpecifier instance_specifier, const std::string& failure_message_prefix);
 
     bool CallMethodWithInArgsAndReturn(const std::int32_t input_argument_a,
                                        const std::int32_t input_argument_b,
@@ -80,9 +80,9 @@ class MethodConsumer
 };
 
 template <typename Proxy>
-bool MethodConsumer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier)
+void MethodConsumer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier, const std::string& failure_message_prefix)
 {
-    return proxy_container_.CreateProxy(std::move(instance_specifier));
+    proxy_container_.CreateProxy(std::move(instance_specifier), failure_message_prefix);
 }
 
 template <typename Proxy>

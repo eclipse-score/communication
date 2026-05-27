@@ -73,7 +73,6 @@ void ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier, co
     if (!start_find_service_result.has_value())
     {
         FailTest(failure_message_prefix, " Consumer: StartFindService() failed: ", start_find_service_result.error());
-        return;
     }
     std::cout << "Consumer: StartFindService called" << std::endl;
 
@@ -87,7 +86,6 @@ void ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier, co
     if (!service_found || handle_ == nullptr)
     {
         FailTest(failure_message_prefix, " Consumer: StartFindService() failed to get handle");
-        return;
     }
 
     auto proxy_result = Proxy::Create(*handle_);
@@ -95,7 +93,6 @@ void ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier, co
     if (!proxy_result.has_value())
     {
         FailTest(failure_message_prefix, " Consumer: Unable to construct proxy: ", proxy_result.error());
-        return;
     }
     proxy_ = std::make_unique<Proxy>(std::move(proxy_result).value());
 

@@ -43,7 +43,6 @@ void CallMethodWithCopy(TestMethodProxy& proxy)
     if (!(method_return_result.has_value()))
     {
         FailTest("Consumer: with_in_args_and_return call failed: ", method_return_result.error());
-        return;
     }
     const auto actual_return_value = *(method_return_result.value());
 
@@ -52,7 +51,6 @@ void CallMethodWithCopy(TestMethodProxy& proxy)
     {
         FailTest(
             "Consumer: with_in_args_and_return expected ", expected_result_value, " but got ", actual_return_value);
-        return;
     }
 
     std::cout << "Consumer: with_in_args_and_return returned correct result: " << actual_return_value << std::endl;
@@ -65,7 +63,6 @@ void CallMethodZeroCopy(TestMethodProxy& proxy)
     if (!allocated_args_result.has_value())
     {
         FailTest("Consumer: Could not allocate method args: ", allocated_args_result.error());
-        return;
     }
 
     auto& [arg1_ptr, arg2_ptr] = allocated_args_result.value();
@@ -76,7 +73,6 @@ void CallMethodZeroCopy(TestMethodProxy& proxy)
     if (!(method_return_result.has_value()))
     {
         FailTest("Consumer: with_in_args_and_return zero-copy call failed: ", method_return_result.error());
-        return;
     }
     const auto actual_return_value = *(method_return_result.value());
 
@@ -87,7 +83,6 @@ void CallMethodZeroCopy(TestMethodProxy& proxy)
                  expected_result_value,
                  " but got ",
                  actual_return_value);
-        return;
     }
 
     std::cout << "Consumer: with_in_args_and_return zero-copy returned correct result: " << actual_return_value
@@ -102,20 +97,12 @@ void run_consumer()
     if (!(process_synchronizer_result.has_value()))
     {
         FailTest("Methods basic_acceptance_test consumer failed: Could not create ProcessSynchronizer");
-        return;
     }
 
     // Set an exit function to notify the provider in case of failure in calls to FailTest, so that it does not wait
-    // indefinitely for the consumer to finish.
-    ExitFunction process_synchronizer_guard{[&process_synchronizer_result]() {
-        process_synchronizer_result->Notify();
-    }};
-    SetFailTestExitFunction(process_synchronizer_guard);
-
-    // Create a scope exit guard to clear the fail test exit function, so that it cannot be called after the
-    // process_synchronizer has been destroyed.
-    utils::ScopeExit fail_test_exit_function_guard{[&process_synchronizer_result]() {
-        ClearTestExitFunction();
+    // indefinitely for the consumer to finish. Will also be called when the guard goes out of scope at the end of this
+    // function.
+    ExitFunctionGuard process_synchronizer_guard{[&process_synchronizer_result]() {
         process_synchronizer_result->Notify();
     }};
 

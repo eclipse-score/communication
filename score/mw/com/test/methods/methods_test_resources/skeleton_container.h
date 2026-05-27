@@ -49,7 +49,6 @@ void SkeletonContainer<Skeleton>::CreateSkeleton(InstanceSpecifier instance_spec
     if (!skeleton_result.has_value())
     {
         FailTest(failure_message_prefix, " Provider: Could not create skeleton: ", skeleton_result.error());
-        return;
     }
     skeleton_ = std::make_unique<Skeleton>(std::move(skeleton_result).value());
 }
@@ -63,7 +62,6 @@ void SkeletonContainer<Skeleton>::OfferService(const std::string& failure_messag
     if (!(offer_result.has_value()))
     {
         FailTest(failure_message_prefix, " Provider: Could not offer service: ", offer_result.error());
-        return;
     }
 
     std::cout << "Provider: Service offered successfully" << std::endl;

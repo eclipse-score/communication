@@ -44,7 +44,6 @@ void run_provider(const score::cpp::stop_token& stop_token)
     if (!(process_synchronizer_result.has_value()))
     {
         FailTest("Methods basic_acceptance_test provider failed: Could not create ProcessSynchronizer");
-        return;
     }
 
     // Step 1. Create skeleton
@@ -63,7 +62,6 @@ void run_provider(const score::cpp::stop_token& stop_token)
     if (!register_result)
     {
         FailTest("Provider: Failed to register with_in_args_and_return handler");
-        return;
     }
 
     // Step 3. Offer service
@@ -78,7 +76,6 @@ void run_provider(const score::cpp::stop_token& stop_token)
         FailTest(
             "Methods basic_acceptance_test provider failed: WaitForProxyTestToFinish was stopped by "
             "stop_token instead of notification");
-        return;
     }
 
     std::cout << "Provider: Shutting down" << std::endl;

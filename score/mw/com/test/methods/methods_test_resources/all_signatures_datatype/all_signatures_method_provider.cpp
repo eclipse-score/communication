@@ -44,7 +44,6 @@ void AllSignaturesMethodProvider::RegisterMethodHandlerWithInArgsAndReturn(const
     if (!register_result)
     {
         FailTest(failure_message_prefix, " Provider: Failed to register with_in_args_and_return handler");
-        return;
     }
 
     std::cout << "Provider: Successfully registered with_in_args_and_return handler" << std::endl;
@@ -65,7 +64,6 @@ void AllSignaturesMethodProvider::RegisterMethodHandlerWithInArgsOnly(const std:
     if (!register_result)
     {
         FailTest(failure_message_prefix, " Provider: Failed to register with_in_args_only handler");
-        return;
     }
 
     std::cout << "Provider: Successfully registered with_in_args_only handler" << std::endl;
@@ -83,7 +81,6 @@ void AllSignaturesMethodProvider::RegisterMethodHandlerWithReturnOnly(const std:
     if (!register_result)
     {
         FailTest(failure_message_prefix, " Provider: Failed to register with_return_only handler");
-        return;
     }
 
     std::cout << "Provider: Successfully registered with_return_only handler" << std::endl;
@@ -99,7 +96,6 @@ void AllSignaturesMethodProvider::RegisterWithoutInArgsOrReturn(const std::strin
     if (!register_result)
     {
         FailTest(failure_message_prefix, " Provider: Failed to register without_args_or_return handler");
-        return;
     }
 
     std::cout << "Provider: Successfully registered without_args_or_return handler" << std::endl;
