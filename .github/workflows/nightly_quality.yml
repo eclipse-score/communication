@@ -119,11 +119,11 @@ jobs:
           # case where the file is absent (returns empty coverage data).
           bazel run //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
-            --html     _quality/index.html \
+            --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
             --github-summary
 
           echo "Dashboard generated. Contents of _quality/:"
-          find _quality -type f | sort
+          find "${GITHUB_WORKSPACE}/_quality" -type f | sort
 
       # ------------------------------------------------------------------
       # Upload all quality reports as a single artifact for docs.yml to
