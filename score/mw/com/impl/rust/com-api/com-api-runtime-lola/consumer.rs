@@ -702,6 +702,7 @@ struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBrid
     total_received: usize,
     cancellation: Pin<&'a mut F>,
     bridge: B,
+    // We need to store in Option because of borrow checker issues in poll method.
     type_ops: Option<TypeOperationsManager>,
 }
 

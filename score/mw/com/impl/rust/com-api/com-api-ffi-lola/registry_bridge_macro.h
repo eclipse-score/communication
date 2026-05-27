@@ -334,7 +334,7 @@ class MemberOperationImpl : public MemberOperation
 {
   public:
     /// Constructor to accept cached TypeOperations pointer
-    //TODO: Why explicit constructor we need to do ?
+    // TODO: Why explicit constructor we need to do ?
     explicit MemberOperationImpl(TypeOperations* type_ops) : type_ops_ptr_(type_ops) {}
 
     ProxyEventBase* GetProxyEvent(ProxyBase* proxy_ptr) override
@@ -681,27 +681,27 @@ class RustBoxedCallable<void,
 /// \param event_type Data type of the event
 /// \param event_member Event member name in Proxy and Skeleton classes
 /// \note Example usage: EXPORT_MW_COM_EVENT(Tire, left_tire)
-#define EXPORT_MW_COM_EVENT(event_type, event_member)                                                               \
-    struct event_member##_EventRegistrationHelper                                                                   \
-    {                                                                                                               \
-        event_member##_EventRegistrationHelper()                                                                    \
-        {                                                                                                           \
-            /* Get or create shared TypeOperations for this event_type */                                           \
-            static ::score::mw::com::impl::rust::TypeOperationImpl<event_type> s_shared_type_ops;                   \
-                                                                                                                    \
-            auto event_info =                                                                                       \
-                std::make_unique<::score::mw::com::impl::rust::MemberOperationImpl<ProxyType,                       \
-                                                                                   SkeletonType,                    \
-                                                                                   event_type,                      \
-                                                                                   &ProxyType::event_member,        \
-                                                                                   &SkeletonType::event_member>>(   \
-                    &s_shared_type_ops);  /* ← Pass shared instance */                                             \
-                                                                                                                    \
-            ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterMemberOperation(                           \
-                std::string_view(id_interface), std::string_view(#event_member), std::move(event_info));            \
-        }                                                                                                           \
-    };                                                                                                              \
-                                                                                                                    \
+#define EXPORT_MW_COM_EVENT(event_type, event_member)                                                             \
+    struct event_member##_EventRegistrationHelper                                                                 \
+    {                                                                                                             \
+        event_member##_EventRegistrationHelper()                                                                  \
+        {                                                                                                         \
+            /* Get or create shared TypeOperations for this event_type */                                         \
+            static ::score::mw::com::impl::rust::TypeOperationImpl<event_type> s_shared_type_ops;                 \
+                                                                                                                  \
+            auto event_info =                                                                                     \
+                std::make_unique<::score::mw::com::impl::rust::MemberOperationImpl<ProxyType,                     \
+                                                                                   SkeletonType,                  \
+                                                                                   event_type,                    \
+                                                                                   &ProxyType::event_member,      \
+                                                                                   &SkeletonType::event_member>>( \
+                    &s_shared_type_ops); /* ← Pass shared instance */                                             \
+                                                                                                                  \
+            ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterMemberOperation(                         \
+                std::string_view(id_interface), std::string_view(#event_member), std::move(event_info));          \
+        }                                                                                                         \
+    };                                                                                                            \
+                                                                                                                  \
     static event_member##_EventRegistrationHelper event_member##_event_reg_instance;
 
 #define END_EXPORT_MW_COM_INTERFACE() }  // namespace id##_detail
