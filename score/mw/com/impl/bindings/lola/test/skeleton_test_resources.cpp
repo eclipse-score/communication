@@ -313,6 +313,32 @@ void SkeletonMockedMemoryFixture::ExpectServiceUsageMarkerFileCreatedOrOpenedAnd
     EXPECT_CALL(*unistd_mock_, unlink(StrEq(test::kServiceInstanceUsageFilePath))).Times(0);
 }
 
+void SkeletonMockedMemoryFixture::ExpectControlSegmentOpened(
+    ServiceDataControl& service_data_control_qm,
+    ServiceDataControl* const service_data_control_asil_b) noexcept
+{
+    ON_CALL(*control_qm_shared_memory_resource_mock_, getUsableBaseAddress())
+        .WillByDefault(Return(static_cast<void*>(&service_data_control_qm)));
+    ON_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _))
+        .WillByDefault(Return(control_qm_shared_memory_resource_mock_));
+
+    if (service_data_control_asil_b != nullptr)
+    {
+        ON_CALL(*control_asil_b_shared_memory_resource_mock_, getUsableBaseAddress())
+            .WillByDefault(Return(static_cast<void*>(service_data_control_asil_b)));
+        ON_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathAsilB, true, _))
+            .WillByDefault(Return(control_asil_b_shared_memory_resource_mock_));
+    }
+}
+
+void SkeletonMockedMemoryFixture::ExpectDataSegmentOpened(ServiceDataStorage& service_data_storage) noexcept
+{
+    ON_CALL(*data_shared_memory_resource_mock_, getUsableBaseAddress())
+        .WillByDefault(Return(static_cast<void*>(&service_data_storage)));
+    ON_CALL(shared_memory_factory_mock_, Open(test::kDataChannelPath, true, _))
+        .WillByDefault(Return(data_shared_memory_resource_mock_));
+}
+
 std::unique_ptr<ServiceDataControl> SkeletonMockedMemoryFixture::CreateServiceDataControlWithEvent(
     ElementFqId element_fq_id,
     QualityType quality_type) noexcept

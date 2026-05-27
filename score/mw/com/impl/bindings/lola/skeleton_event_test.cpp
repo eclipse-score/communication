@@ -445,5 +445,56 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
         << "The second timestamp should be exactly one greater than the first.";
 }
 
+TEST_F(SkeletonEventTimestampFixture, PrepareOfferInitializesCurrentTimestampFromReopenedControlData)
+{
+    RecordProperty("Description",
+                   "Checks that a SkeletonEvent which reopens existing shared memory continues the timestamp sequence "
+                   "from the latest timestamp already present in the event control data.");
+    RecordProperty("TestType", "Unit Test");
+
+    constexpr bool enforce_max_samples{true};
+    constexpr SlotIndexType existing_slot_index{0U};
+    constexpr EventSlotStatus::EventTimeStamp existing_latest_timestamp{42U};
+
+    auto existing_service_data_control_qm =
+        CreateServiceDataControlWithEvent(fake_element_fq_id_, QualityType::kASIL_QM);
+    auto existing_service_data_control_asil_b =
+        CreateServiceDataControlWithEvent(fake_element_fq_id_, QualityType::kASIL_B);
+    auto existing_service_data_storage = CreateServiceDataStorageWithEvent<test::TestSampleType>(fake_element_fq_id_);
+
+    auto& existing_event_control_qm =
+        GetEventControlFromServiceDataControl(fake_element_fq_id_, *existing_service_data_control_qm);
+    auto& existing_event_control_asil_b =
+        GetEventControlFromServiceDataControl(fake_element_fq_id_, *existing_service_data_control_asil_b);
+    ProviderEventDataControlLocalView<> existing_provider_control_qm{existing_event_control_qm.data_control};
+    ProviderEventDataControlLocalView<> existing_provider_control_asil_b{existing_event_control_asil_b.data_control};
+    existing_provider_control_qm.EventReady(existing_slot_index, existing_latest_timestamp);
+    existing_provider_control_asil_b.EventReady(existing_slot_index, existing_latest_timestamp);
+
+    ExpectControlSegmentOpened(*existing_service_data_control_qm, existing_service_data_control_asil_b.get());
+    ExpectDataSegmentOpened(existing_service_data_storage);
+    WithAlreadyConnectedProxy();
+
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+
+    std::ignore = skeleton_event_->PrepareOffer();
+
+    auto allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(allocated_slot_result.has_value());
+    auto allocated_slot = std::move(allocated_slot_result).value();
+
+    const impl::SampleAllocateePtrView<test::TestSampleType> allocated_slot_view{allocated_slot};
+    const auto* const lola_allocated_slot =
+        allocated_slot_view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
+    ASSERT_NE(lola_allocated_slot, nullptr);
+    const auto allocated_slot_index = lola_allocated_slot->GetReferencedSlot();
+
+    const auto send_result = skeleton_event_->Send(std::move(allocated_slot), std::nullopt);
+    ASSERT_TRUE(send_result.has_value());
+
+    const EventSlotStatus final_slot_status{existing_provider_control_qm[allocated_slot_index]};
+    EXPECT_EQ(final_slot_status.GetTimeStamp(), existing_latest_timestamp + 1U);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola
