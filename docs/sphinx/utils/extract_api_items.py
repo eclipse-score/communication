@@ -261,6 +261,76 @@ class RSTGenerator: # pylint: disable=too-few-public-methods
         self.project_name = project_name
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self._documented_template_classes: set = set()
+
+    @staticmethod
+    def _extract_template_class(base_name: str) -> Optional[str]:
+        """Detect if a function is a member of a template class.
+
+        If the qualified name contains '<' before the last '::', the
+        function belongs to a template class.  Return the class name
+        without template parameters so it can be used with the
+        doxygenclass directive.
+
+        Args:
+            base_name: Fully qualified function name without parameters,
+                       e.g. "ns::Class<T>::Method"
+
+        Returns:
+            The qualified class name (without template args) if the
+            function is a template-class member, otherwise None.
+        """
+        # Must be a qualified member (contains top-level ::)
+        if '::' not in base_name:
+            return None
+
+        # Find the last top-level '::' (outside angle brackets) to
+        # correctly split the member name from the class portion.
+        angle_bracket_depth = 0
+        last_scope_separator_pos = -1
+        pos = 0
+        while pos < len(base_name) - 1:
+            char = base_name[pos]
+            if char == '<':
+                angle_bracket_depth += 1
+            elif char == '>':
+                angle_bracket_depth = max(angle_bracket_depth - 1, 0)
+            elif base_name[pos:pos+2] == '::' and angle_bracket_depth == 0:
+                last_scope_separator_pos = pos
+                pos += 2
+                continue
+            pos += 1
+
+        if last_scope_separator_pos == -1:
+            return None
+
+        qualified_class_part = base_name[:last_scope_separator_pos]
+
+        # Check if the class portion contains template parameters
+        if '<' not in qualified_class_part:
+            return None
+
+        # Single-pass: emit only top-level non-template characters and
+        # scope separators, effectively stripping all template args
+        # while respecting '::' inside '<...>'.
+        cleaned_name_parts: List[str] = []
+        angle_bracket_depth = 0
+        pos = 0
+        while pos < len(qualified_class_part):
+            char = qualified_class_part[pos]
+            if char == '<':
+                angle_bracket_depth += 1
+            elif char == '>':
+                angle_bracket_depth = max(angle_bracket_depth - 1, 0)
+            elif angle_bracket_depth == 0:
+                if qualified_class_part[pos:pos+2] == '::':
+                    cleaned_name_parts.append('::')
+                    pos += 2
+                    continue
+                cleaned_name_parts.append(char)
+            pos += 1
+
+        return ''.join(cleaned_name_parts)
 
     def generate_rst_files(
             self, api_items: Dict[str, List[Dict[str, str]]]
@@ -508,6 +578,24 @@ This section contains all {category} tagged with @api.
 
             # Use the kind to determine the appropriate directive
             if kind in ('function', 'friend'):
+                # Check if this is a member of a template class.
+                # Template class members often lack standalone XML
+                # entries in Doxygen output, so Breathe cannot find
+                # them via doxygenfunction. Use doxygenclass instead.
+                template_class = self._extract_template_class(
+                    base_name
+                )
+                if template_class is not None:
+                    if template_class in self._documented_template_classes:
+                        return ""
+                    self._documented_template_classes.add(template_class)
+                    return f"""
+.. doxygenclass:: {template_class}
+   :members:
+   :undoc-members:
+
+"""
+
                 # For functions and friend functions, always use signature
                 # if available for better precision
                 # This helps Breathe resolve overloaded functions,
