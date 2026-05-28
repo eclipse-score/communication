@@ -84,6 +84,7 @@ cc_library(
         "//score/mw/com/test/methods:__subpackages__",
     ],
     deps = [
+        "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/test/common_test_resources:shared_memory_object_guard",
         "@score_baselibs//score/mw/log",
