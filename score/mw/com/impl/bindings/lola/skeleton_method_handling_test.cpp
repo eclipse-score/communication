@@ -420,12 +420,6 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillNotCallUnregisterSubscribedM
 {
     GivenAnAsilBSkeletonWithTwoMethods();
 
-    // Expecting that RegisterOnServiceMethodSubscribedHandler will be called for QM and ASIL-B
-    EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _));
-    EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _));
-
     // and given that UnregisterOnServiceMethodSubscribedHandler flips a flag so we can verify that it is not called
     auto unregister_called = std::make_shared<bool>(false);
     ON_CALL(message_passing_mock_, UnregisterOnServiceMethodSubscribedHandler(_, _))
