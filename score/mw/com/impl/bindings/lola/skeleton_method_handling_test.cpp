@@ -1019,7 +1019,7 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBWithoutInArgsOrRet
     EXPECT_TRUE(scoped_handler_result.has_value());
 }
 
-TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBWillNotCallUnregisterMethodCallHandler)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingForBothAsilAndQmDoesNotCallUnregisterMethodCallHandler)
 {
     GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
