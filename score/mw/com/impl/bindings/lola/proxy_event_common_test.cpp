@@ -27,7 +27,9 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-using TestSampleType = std::uint16_t;
+// Keep this aligned with ProxyMockedMemoryFixture::SampleType because the fixture initializes
+// EventMetaInfo from its typed EventDataStorage backing storage.
+using TestSampleType = std::uint32_t;
 
 using namespace ::score::memory::shared;
 using ::testing::Return;

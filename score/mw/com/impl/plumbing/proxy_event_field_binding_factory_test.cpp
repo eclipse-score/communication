@@ -37,7 +37,9 @@ namespace score::mw::com::impl
 
 using namespace ::testing;
 
-using TestSampleType = std::uint8_t;
+// Keep this aligned with lola::ProxyMockedMemoryFixture::SampleType because the fixture initializes
+// EventMetaInfo from its typed EventDataStorage backing storage.
+using TestSampleType = std::uint32_t;
 
 constexpr auto kDummyEventName{"Event1"};
 constexpr auto kDummyFieldName{"Field1"};

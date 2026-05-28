@@ -693,6 +693,31 @@ TYPED_TEST(LolaProxyEventDeathTest, FailOnEventNotFound)
 }
 
 using LoLaTypedProxyEventTestFixture = LolaProxyEventFixture<ProxyEventStruct>;
+
+TEST_F(LoLaTypedProxyEventTestFixture, GetNewSamplesReturnsTypedSampleFromProviderStorage)
+{
+    // Given a typed LoLa ProxyEvent that is subscribed to a provider event containing one sample
+    const std::size_t max_sample_count_subscription{5U};
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(max_sample_count_subscription)
+        .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
+
+    // When GetNewSamples is called
+    const std::size_t max_samples{1U};
+    TestSampleType received_sample{0U};
+    const auto receiver = [&received_sample](impl::SamplePtr<TestSampleType> sample,
+                                             const tracing::ITracingRuntime::TracePointDataId) {
+        received_sample = *sample;
+    };
+
+    const auto num_callbacks_result = this->GetNewSamples(receiver, max_samples);
+
+    // Then one sample is returned to the typed proxy with the data written by the provider
+    ASSERT_TRUE(num_callbacks_result.has_value());
+    EXPECT_EQ(num_callbacks_result.value(), 1U);
+    EXPECT_EQ(received_sample, kDummySampleValue);
+}
+
 TEST_F(LoLaTypedProxyEventTestFixture, SampleConstness)
 {
     RecordProperty("Verifies", "SCR-6340729");
@@ -700,11 +725,21 @@ TEST_F(LoLaTypedProxyEventTestFixture, SampleConstness)
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
+    using SamplePtrDataType = std::remove_pointer_t<decltype(std::declval<impl::SamplePtr<TestSampleType>>().get())>;
+    static_assert(std::is_const<SamplePtrDataType>::value, "Proxy should expose const sample data.");
+}
+
+TEST_F(LoLaTypedProxyEventTestFixture, HoldsEventMetaInfoAsConstReference)
+{
+    // Given a typed LoLa ProxyEvent
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
 
+    // When accessing the proxy event through the test attorney
     ProxyEventAttorney<TestSampleType> proxy_event_attorney{*test_proxy_event_};
-    using SamplesMemberType = typename std::remove_reference<decltype(proxy_event_attorney.GetSamplesMember())>::type;
-    static_assert(std::is_const<SamplesMemberType>::value, "Proxy should hold const slot data.");
+
+    // Then the proxy stores EventMetaInfo as const data
+    using MetaInfoMemberType = typename std::remove_reference<decltype(proxy_event_attorney.GetMetaInfoMember())>::type;
+    static_assert(std::is_const<MetaInfoMemberType>::value, "Proxy should hold const event meta info.");
 }
 
 }  // namespace

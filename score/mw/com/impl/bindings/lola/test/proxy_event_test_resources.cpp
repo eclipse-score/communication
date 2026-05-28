@@ -125,6 +125,9 @@ void ProxyMockedMemoryFixture::InitialiseDummySkeletonEvent(const ElementFqId el
     std::tie(event_control_, event_data_storage_) =
         fake_data_->AddEvent<SampleType>(element_fq_id, skeleton_event_properties);
     SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control_ != nullptr);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_data_storage_ != nullptr);
+    event_slots_raw_array_ = event_data_storage_->data();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_slots_raw_array_ != nullptr);
     consumer_event_data_control_local_.emplace(event_control_->data_control);
     provider_event_data_control_local_.emplace(event_control_->data_control);
 }
