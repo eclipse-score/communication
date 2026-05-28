@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TEST_PROXY_EVENT_TEST_RESOURCES_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TEST_PROXY_EVENT_TEST_RESOURCES_H
 
+#include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
 #include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
@@ -94,9 +95,14 @@ class ProxyEventAttorney
 
     ProxyEventAttorney(ProxyEvent<T>& proxy_event) noexcept : proxy_event_{proxy_event} {}
 
+    auto& GetMetaInfoMember()
+    {
+        return proxy_event_.meta_info_;
+    }
+
     auto& GetSamplesMember()
     {
-        return proxy_event_.samples_;
+        return proxy_event_.event_slots_raw_array_;
     }
 
   private:
@@ -215,6 +221,7 @@ class ProxyMockedMemoryFixture : public ::testing::Test
     std::optional<ProviderEventDataControlLocalView<>> provider_event_data_control_local_{};
     std::optional<ConsumerEventDataControlLocalView<>> consumer_event_data_control_local_{};
     EventDataStorage<SampleType>* event_data_storage_{nullptr};
+    void* event_slots_raw_array_{nullptr};
     RollbackSynchronization rollback_synchronization_{};
 
     std::shared_ptr<MessagePassingServiceMock> mock_service_{std::make_shared<MessagePassingServiceMock>()};

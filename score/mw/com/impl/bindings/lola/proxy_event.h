@@ -14,7 +14,11 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_H
 
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
+#include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event_common.h"
+
+#include "score/language/safecpp/safe_math/safe_math.h"
+#include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/subscription_state.h"
@@ -26,6 +30,7 @@
 #include <score/assert.hpp>
 #include <score/optional.hpp>
 
+#include <cstdint>
 #include <exception>
 #include <iostream>
 #include <limits>
@@ -64,7 +69,9 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
     ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
         : ProxyEventBinding<SampleType>{},
           proxy_event_common_{parent, element_fq_id, event_name},
-          samples_{parent.GetEventDataStorage<SampleType>(element_fq_id)}
+          meta_info_{parent.GetEventMetaInfo(element_fq_id)},
+          aligned_sample_size_{memory::shared::CalculateAlignedSize(sizeof(SampleType), alignof(SampleType))},
+          event_slots_raw_array_{InitialiseEventSlotsRawArray()}
     {
     }
 
@@ -130,12 +137,35 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
     };
 
   private:
+    const std::uint8_t* InitialiseEventSlotsRawArray();
+
     Result<std::size_t> GetNewSamplesImpl(Callback&& receiver, TrackerGuardFactory& tracker) noexcept;
     Result<std::size_t> GetNumNewSamplesAvailableImpl() const noexcept;
 
     ProxyEventCommon proxy_event_common_;
-    const EventDataStorage<SampleType>& samples_;
+    const EventMetaInfo& meta_info_;
+    const std::size_t aligned_sample_size_;
+    const std::uint8_t* const event_slots_raw_array_;
 };
+
+template <typename SampleType>
+inline const std::uint8_t* ProxyEvent<SampleType>::InitialiseEventSlotsRawArray()
+{
+    auto& event_data_control_local = proxy_event_common_.GetConsumerEventDataControlLocal();
+
+    const auto event_slots_raw_array_size = safe_math::Multiply<safe_math::ReturnMode::kAbortOnError>(
+        aligned_sample_size_, event_data_control_local.GetMaxSampleSlots());
+
+    const void* const event_slots_raw_array = meta_info_.event_slots_raw_array_.get(event_slots_raw_array_size);
+
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(nullptr != event_slots_raw_array, "Null event slot array");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(meta_info_.data_type_info_.size == sizeof(SampleType),
+                                                      "Event sample size mismatch");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(meta_info_.data_type_info_.alignment == alignof(SampleType),
+                                                      "Event sample alignment mismatch");
+
+    return static_cast<const std::uint8_t*>(event_slots_raw_array);
+}
 
 template <typename SampleType>
 inline Result<std::size_t> ProxyEvent<SampleType>::GetNumNewSamplesAvailable() const noexcept
@@ -191,10 +221,26 @@ inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamplesImpl(Callback&& 
     const auto slot_indices = proxy_event_common_.GetNewSamplesSlotIndices(max_sample_count);
 
     auto& event_data_control_local = proxy_event_common_.GetConsumerEventDataControlLocal();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(nullptr != event_slots_raw_array_, "Null event slot array");
 
     for (auto slot_index_it = slot_indices.begin; slot_index_it != slot_indices.end; ++slot_index_it)
     {
-        const SampleType& sample_data{samples_.at(static_cast<std::size_t>(*slot_index_it))};
+        // TODO: Replace this temporary raw-slot access when the LoLa binding layer is type-erased.
+        // This is temporary fix: avoids interpreting GenericSkeleton-created storage as EventDataStorage<SampleType>,
+        // since the DynamicArray element count may not match the typed proxy sample type.
+        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic) The pointer event_slots_raw_array_ points to
+        // the first byte of the type-erased event sample storage in shared memory. Samples may originate from either a
+        // typed SkeletonEvent or a GenericSkeletonEvent, therefore slot lookup must use the stable EventMetaInfo raw
+        // storage address and SampleType stride instead of interpreting the shared-memory DynamicArray object type.
+        const auto* const object_start_address = &event_slots_raw_array_[aligned_sample_size_ * (*slot_index_it)];
+        // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
+        // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall
+        // not be converted to an object with pointer type.".
+        // The raw storage address is provided through EventMetaInfo. The regular typed proxy validates the expected
+        // type at construction time and calculates the slot offset with sizeof(SampleType)/alignof(SampleType).
+        // coverity[autosar_cpp14_m5_2_8_violation]
+        const SampleType& sample_data{*reinterpret_cast<const SampleType*>(object_start_address)};
         const EventSlotStatus event_slot_status{event_data_control_local[*slot_index_it]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
