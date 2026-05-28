@@ -27,7 +27,11 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-using TestSampleType = std::uint16_t;
+// TestSampleType must have the same size and alignment as lola::ProxyMockedMemoryFixture::SampleType.
+// The fixture derives EventMetaInfo (element size and alignment) from its EventDataStorage<SampleType>,
+// and ProxyEvent<T> validates sizeof(T) and alignof(T) against that EventMetaInfo at construction time.
+// Using a type with different size or alignment would trigger a precondition failure.
+using TestSampleType = ProxyMockedMemoryFixture::SampleType;
 
 using namespace ::score::memory::shared;
 using ::testing::Return;
