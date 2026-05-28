@@ -40,6 +40,7 @@ namespace
 using ::testing::_;
 using ::testing::ByMove;
 using ::testing::Invoke;
+using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::ReturnRef;
 
@@ -88,8 +89,8 @@ class RuntimeMockGuard
         Runtime::InjectMock(nullptr);
     }
 
-    RuntimeMock runtime_mock_;
-    ServiceDiscoveryMock service_discovery_mock_{};
+    NiceMock<RuntimeMock> runtime_mock_;
+    NiceMock<ServiceDiscoveryMock> service_discovery_mock_{};
 };
 
 class ProxyCreationFixture : public ::testing::Test
@@ -151,12 +152,12 @@ class ProxyCreationFixture : public ::testing::Test
     ProxyEventBindingFactoryMockGuard<TestSampleType> proxy_event_binding_factory_mock_guard_{};
     ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard_{};
     ProxyMethodBindingFactoryMockGuard<TestMethodType> proxy_method_binding_factory_mock_guard_{};
-    mock_binding::Proxy proxy_binding_mock_{};
-    mock_binding::ProxyEvent<TestSampleType> proxy_event_binding_mock_{};
-    mock_binding::ProxyEvent<TestSampleType> proxy_field_binding_mock_{};
-    mock_binding::ProxyMethod proxy_method_binding_mock_{};
-    mock_binding::ProxyMethod proxy_field_set_binding_mock_{};
-    mock_binding::ProxyMethod proxy_field_get_binding_mock_{};
+    NiceMock<mock_binding::Proxy> proxy_binding_mock_{};
+    NiceMock<mock_binding::ProxyEvent<TestSampleType>> proxy_event_binding_mock_{};
+    NiceMock<mock_binding::ProxyEvent<TestSampleType>> proxy_field_binding_mock_{};
+    NiceMock<mock_binding::ProxyMethod> proxy_method_binding_mock_{};
+    NiceMock<mock_binding::ProxyMethod> proxy_field_set_binding_mock_{};
+    NiceMock<mock_binding::ProxyMethod> proxy_field_get_binding_mock_{};
 };
 
 TEST(GeneratedProxyTest, NotCopyable)
@@ -661,12 +662,12 @@ class SkeletonCreationFixture : public ::testing::Test
     SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard_{};
     SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard_{};
     SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard_{};
-    mock_binding::Skeleton skeleton_binding_mock_{};
-    mock_binding::SkeletonEvent<TestSampleType> skeleton_event_binding_mock_{};
-    mock_binding::SkeletonEvent<TestSampleType> skeleton_field_binding_mock_{};
-    mock_binding::SkeletonMethod skeleton_method_binding_mock_{};
-    mock_binding::SkeletonMethod skeleton_field_set_binding_mock_{};
-    mock_binding::SkeletonMethod skeleton_field_get_binding_mock_{};
+    NiceMock<mock_binding::Skeleton> skeleton_binding_mock_{};
+    NiceMock<mock_binding::SkeletonEvent<TestSampleType>> skeleton_event_binding_mock_{};
+    NiceMock<mock_binding::SkeletonEvent<TestSampleType>> skeleton_field_binding_mock_{};
+    NiceMock<mock_binding::SkeletonMethod> skeleton_method_binding_mock_{};
+    NiceMock<mock_binding::SkeletonMethod> skeleton_field_set_binding_mock_{};
+    NiceMock<mock_binding::SkeletonMethod> skeleton_field_get_binding_mock_{};
 };
 
 using GeneratedSkeletonCreationInstanceSpecifierTestFixture = SkeletonCreationFixture;
@@ -1151,12 +1152,12 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
     bool skeleton_event_stop_offer_called_2_{false};
     bool skeleton_field_stop_offer_called_2_{false};
 
-    mock_binding::Skeleton skeleton_binding_mock_2_{};
-    mock_binding::SkeletonEvent<TestSampleType> skeleton_event_binding_mock_2_{};
-    mock_binding::SkeletonEvent<TestSampleType> skeleton_field_binding_mock_2_{};
-    mock_binding::SkeletonMethod skeleton_method_binding_mock_2_{};
-    mock_binding::SkeletonMethod skeleton_field_set_binding_mock_2_{};
-    mock_binding::SkeletonMethod skeleton_field_get_binding_mock_2_{};
+    NiceMock<mock_binding::Skeleton> skeleton_binding_mock_2_{};
+    NiceMock<mock_binding::SkeletonEvent<TestSampleType>> skeleton_event_binding_mock_2_{};
+    NiceMock<mock_binding::SkeletonEvent<TestSampleType>> skeleton_field_binding_mock_2_{};
+    NiceMock<mock_binding::SkeletonMethod> skeleton_method_binding_mock_2_{};
+    NiceMock<mock_binding::SkeletonMethod> skeleton_field_set_binding_mock_2_{};
+    NiceMock<mock_binding::SkeletonMethod> skeleton_field_get_binding_mock_2_{};
 
     std::optional<MySkeleton> skeleton_{};
     std::optional<MySkeleton> skeleton_2_{};
