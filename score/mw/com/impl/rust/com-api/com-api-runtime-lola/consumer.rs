@@ -480,6 +480,39 @@ impl<T: CommData + Debug> SubscriberImpl<T> {
         }
         Ok(())
     }
+
+    /// Validates the parameters for the receive operation, ensuring that the requested number of samples
+    /// does not exceed the maximum allowed and that the input values are within acceptable bounds.
+    fn validate_receive_params(&self, new_samples: usize, max_samples: usize) -> Result<()> {
+        if new_samples == 0 {
+            return Err(Error::ReceiveError(
+                ReceiveFailedReason::InputValueOutOfBounds {
+                    max: self.max_num_samples,
+                    requested: 0,
+                },
+            ));
+        }
+
+        if new_samples > max_samples {
+            return Err(Error::ReceiveError(
+                ReceiveFailedReason::InputValueOutOfBounds {
+                    max: max_samples,
+                    requested: new_samples,
+                },
+            ));
+        }
+
+        if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
+            return Err(Error::ReceiveError(
+                ReceiveFailedReason::InputValueOutOfBounds {
+                    max: self.max_num_samples,
+                    requested: max_samples.max(new_samples),
+                },
+            ));
+        }
+
+        Ok(())
+    }
 }
 
 impl<T> Subscription<T, LolaRuntimeImpl> for SubscriberImpl<T>
@@ -569,11 +602,11 @@ where
     ///     T: CommData + std::fmt::Debug,
     ///     S: Subscription<T, LolaRuntimeImpl>,
     /// {
-    ///     let _future = sub.receive_timeout(scratch, 1, 1, UnpinTimeout::<u8>(PhantomData));
+    ///     let _future = sub.cancellable_receive(scratch, 1, 1, UnpinTimeout::<u8>(PhantomData));
     /// }
     /// ```
     #[allow(clippy::manual_async_fn)]
-    fn receive_timeout<'a>(
+    fn cancellable_receive<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
@@ -581,41 +614,9 @@ where
         timeout: impl Future<Output = ()> + Send + 'static,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
         async move {
-            match new_samples {
-                0 => {
-                    return (
-                        scratch,
-                        Err(Error::ReceiveError(
-                            ReceiveFailedReason::InputValueOutOfBounds {
-                                max: self.max_num_samples,
-                                requested: 0,
-                            },
-                        )),
-                    )
-                }
-                _ if new_samples > max_samples => {
-                    return (
-                        scratch,
-                        Err(Error::ReceiveError(
-                            ReceiveFailedReason::InputValueOutOfBounds {
-                                max: max_samples,
-                                requested: new_samples,
-                            },
-                        )),
-                    );
-                }
-                _ if max_samples > self.max_num_samples || new_samples > self.max_num_samples => {
-                    return (
-                        scratch,
-                        Err(Error::ReceiveError(
-                            ReceiveFailedReason::InputValueOutOfBounds {
-                                max: self.max_num_samples,
-                                requested: max_samples.max(new_samples),
-                            },
-                        )),
-                    );
-                }
-                _ => {}
+            // Validate parameters before proceeding with receive logic
+            if let Err(e) = self.validate_receive_params(new_samples, max_samples) {
+                return (scratch, Err(e));
             }
             // Get the event guard to ensure no concurrent receive calls
             // on the same subscriber instance.
@@ -648,7 +649,7 @@ where
 // which attempts to receive samples and manages the state of the receive operation.
 // Unpin bound is required for the timeout future to allow it to be safely pinned on the stack without
 // heap allocation.
-struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()> + Unpin> {
+struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>> {
     event_guard: Option<ProxyEventManagerGuard<'a>>,
     waker_storage: Arc<AtomicWaker>,
     max_num_samples: usize,
@@ -656,10 +657,10 @@ struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()> + Unpin> {
     new_samples: usize,
     max_samples: usize,
     total_received: usize,
-    timeout: F,
+    timeout: Pin<&'a mut F>,
 }
 
-impl<'a, T: CommData + Debug, F: Future<Output = ()> + Unpin> Future for ReceiveFuture<'a, T, F> {
+impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'a, T, F> {
     type Output = (SampleContainer<Sample<T>>, Result<usize>);
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -669,8 +670,8 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()> + Unpin> Future for Receive
         let max_num_samples = self.max_num_samples;
         let total_received = self.total_received;
 
-        // Poll cancel/timeout future first — F: Unpin so Pin::new is safe, no allocation
-        if Pin::new(&mut self.timeout).poll(ctx).is_ready() {
+        // Poll cancel/timeout future first to ensure prompt cancellation if requested
+        if self.timeout.as_mut().poll(ctx).is_ready() {
             self.event_guard = None;
             return Poll::Ready((
                 self.scratch

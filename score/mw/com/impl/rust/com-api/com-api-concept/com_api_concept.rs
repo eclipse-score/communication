@@ -857,7 +857,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         new_samples: usize,
         max_samples: usize,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
-        self.receive_timeout(
+        self.cancellable_receive(
             scratch,
             new_samples,
             max_samples,
@@ -865,7 +865,8 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         )
     }
 
-    /// This method is extension of `receive` with timeout support.
+    /// This method is extension of `receive` with an additional `timeout` parameter
+    /// which allows the caller to specify a future that can be used to cancel the receive operation.
     /// It returns a future that resolves as soon as at least `new_samples` samples have been transferred
     /// from the communication buffer to the sample container or the `timeout` future resolves.
     ///
@@ -873,10 +874,10 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// * `scratch` - Container for events from this subscription
     /// * `new_samples` - Minimum number of new events before resolution, 0 value is treated as error
     /// * `max_samples` - Maximum number of events that shall be received from the communication
-    ///  buffer and transferred to the container, 0 value is treated as error
+    ///   buffer and transferred to the container, 0 value is treated as error
     /// * `timeout` - Future that resolves when the receive operation should time out. If the timeout
-    ///  future resolves before the required number of samples are received, the receive operation is
-    /// considered to have timed out.
+    ///   future resolves before the required number of samples are received, the receive operation is
+    ///   considered to have timed out.
     ///
     /// # Returns
     /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<usize>)`.
@@ -887,13 +888,17 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// an 'Error' indicating the reason for failure of the receive operation.
     ///
     /// # Important Notes
-    /// User can not concurrenly call `receive_timeout` on the same subscription instance from
+    /// User can not concurrenly call `cancellable_receive` on the same subscription instance from
     /// multiple threads or tasks.
     /// `timeout` must be `'static` because timeout futures (e.g. `tokio::time::sleep`) own all
     /// their state and do not borrow anything from the caller's scope.
     /// And if you change to `'a` lifetime then it create lifetime bound not satisfied
     /// error from rust (see issue <https://github.com/rust-lang/rust/issues/100013> for more information)
-    fn receive_timeout<'a>(
+    ///
+    /// The `timeout` future currently has `Output = ()` and returns nothing. However, it could be
+    /// enhanced in the future to return a value that would be propagated to the caller, as per the use-case.
+    /// No use case for this enhancement has been identified yet, so it is deferred for later implementation.
+    fn cancellable_receive<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,

@@ -396,7 +396,7 @@ mod test {
         for _ in 0..5 {
             let (returned_buf, result) = if is_timeout {
                 let timeout = tokio::time::sleep(Duration::from_millis(1000));
-                subscribed.receive_timeout(buffer, 2, 3, timeout).await
+                subscribed.cancellable_receive(buffer, 2, 3, timeout).await
             } else {
                 subscribed.receive(buffer, 2, 3).await
             };

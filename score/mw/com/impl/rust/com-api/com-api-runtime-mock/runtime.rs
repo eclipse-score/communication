@@ -328,7 +328,7 @@ where
     }
 
     #[allow(clippy::manual_async_fn)]
-    fn receive_timeout<'a>(
+    fn cancellable_receive<'a>(
         &'a self,
         _scratch: SampleContainer<Self::Sample<'a>>,
         _new_samples: usize,
