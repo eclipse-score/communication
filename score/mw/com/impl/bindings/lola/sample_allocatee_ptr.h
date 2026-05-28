@@ -20,7 +20,6 @@
 #include <functional>
 #include <limits>
 #include <memory>
-#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -36,7 +35,7 @@ namespace score::mw::com::impl::lola
 template <typename SampleType>
 class SampleAllocateePtr
 {
-    // friends to the View wrapper; is used to acces managed obj and event_data_control_
+    // friends to the View wrapper; is used to access managed obj and event_data_control_ptr_
     template <typename T>
     // coverity[autosar_cpp14_a11_3_1_violation] see above
     friend class SampleAllocateePtrView;
@@ -71,7 +70,7 @@ class SampleAllocateePtr
     explicit SampleAllocateePtr(std::nullptr_t /* ptr */) noexcept
         : managed_object_{nullptr},
           event_slot_index_{kUninitialisedEventSlotIndex},
-          event_data_control_{std::nullopt},
+          event_data_control_ptr_{nullptr},
           consumer_event_data_control_local_view_{nullptr}
     {
     }
@@ -81,12 +80,12 @@ class SampleAllocateePtr
     /// \param event_data_ctrl event data control structure, which manages the underlying event/sample in shmem.
     /// \param slot_index index of event slot
     SampleAllocateePtr(pointer ptr,
-                       const EventDataControlComposite<>& event_data_ctrl,
+                       EventDataControlComposite<>& event_data_ctrl,
                        ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view,
                        const SlotIndexType slot_index) noexcept
         : managed_object_{ptr},
           event_slot_index_{slot_index},
-          event_data_control_{event_data_ctrl},
+          event_data_control_ptr_{&event_data_ctrl},
           consumer_event_data_control_local_view_{&consumer_event_data_control_local_view}
     {
     }
@@ -128,7 +127,7 @@ class SampleAllocateePtr
 
         swap(this->managed_object_, other.managed_object_);
         swap(this->event_slot_index_, other.event_slot_index_);
-        swap(this->event_data_control_, other.event_data_control_);
+        swap(this->event_data_control_ptr_, other.event_data_control_ptr_);
         swap(this->consumer_event_data_control_local_view_, other.consumer_event_data_control_local_view_);
     }
 
@@ -185,18 +184,23 @@ class SampleAllocateePtr
         if (event_slot_index_ < kUninitialisedEventSlotIndex)
         {
             SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-                event_data_control_.has_value(),
-                "The only time that event_data_control_ does not have a value is if the SampleAllocateePtr is default "
+                event_data_control_ptr_ != nullptr,
+                "The only time that event_data_control_ptr_ is nullptr is if the SampleAllocateePtr is default "
                 "initialised or initialised with a nullptr. In both these, cases event_slot_index_ == "
                 "kUninitialisedEventSlotIndex so we will never enter this branch.");
-            event_data_control_->Discard(event_slot_index_);
+            event_data_control_ptr_->Discard(event_slot_index_);
             event_slot_index_ = kUninitialisedEventSlotIndex;
         }
     }
 
     pointer managed_object_;
     SlotIndexType event_slot_index_;
-    std::optional<EventDataControlComposite<>> event_data_control_;
+    /// \brief Pointer to EventDataControlComposite owned by the SkeletonEvent.
+    /// \details This is a non-owning pointer. The SkeletonEvent owns the EventDataControlComposite and must outlive
+    /// any SampleAllocateePtr instances created from it. The SampleAllocateeTracker ensures this by terminating
+    /// if SampleAllocateePtr instances outlive the SkeletonEvent. Can only be a nullptr if SampleAllocateePtr is
+    /// default constructed.
+    EventDataControlComposite<>* event_data_control_ptr_;
     ConsumerEventDataControlLocalView<>* consumer_event_data_control_local_view_;
 };
 
@@ -215,9 +219,10 @@ class SampleAllocateePtrView
   public:
     explicit SampleAllocateePtrView(const SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
 
-    const std::optional<EventDataControlComposite<>>& GetEventDataControlComposite() const noexcept
+    const EventDataControlComposite<>& GetEventDataControlComposite() const noexcept
     {
-        return ptr_.event_data_control_;
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(ptr_.event_data_control_ptr_ != nullptr);
+        return *ptr_.event_data_control_ptr_;
     }
 
     typename SampleAllocateePtr<SampleType>::pointer GetManagedObject() const noexcept
@@ -236,14 +241,10 @@ class SampleAllocateePtrMutableView
   public:
     explicit SampleAllocateePtrMutableView(SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
 
-    const std::optional<EventDataControlComposite<>>& GetEventDataControlComposite() const noexcept
+    EventDataControlComposite<>& GetEventDataControlComposite() const noexcept
     {
-        return ptr_.event_data_control_;
-    }
-
-    std::optional<EventDataControlComposite<>>& GetEventDataControlComposite() noexcept
-    {
-        return ptr_.event_data_control_;
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(ptr_.event_data_control_ptr_ != nullptr);
+        return *ptr_.event_data_control_ptr_;
     }
 
     [[nodiscard]]
@@ -256,6 +257,23 @@ class SampleAllocateePtrMutableView
   private:
     SampleAllocateePtr<SampleType>& ptr_;
 };
+
+// SampleAllocateePtr stores a raw pointer to EventDataControlComposite. If the composite were
+// moved or copied while a SampleAllocateePtr is alive, that pointer would become invalid (UB).
+// These assertions enforce at compile time that EventDataControlComposite remains non-copyable
+// and non-moveable.
+static_assert(!std::is_copy_constructible_v<EventDataControlComposite<>>,
+              "EventDataControlComposite must not be copy constructible - SampleAllocateePtr holds a "
+              "raw pointer to it and a copy would silently invalidate that pointer");
+static_assert(!std::is_move_constructible_v<EventDataControlComposite<>>,
+              "EventDataControlComposite must not be move constructible - SampleAllocateePtr holds a "
+              "raw pointer to it and a move would silently invalidate that pointer");
+static_assert(!std::is_copy_assignable_v<EventDataControlComposite<>>,
+              "EventDataControlComposite must not be copy assignable - SampleAllocateePtr holds a "
+              "raw pointer to it and a copy would silently invalidate that pointer");
+static_assert(!std::is_move_assignable_v<EventDataControlComposite<>>,
+              "EventDataControlComposite must not be move assignable - SampleAllocateePtr holds a "
+              "raw pointer to it and a move would silently invalidate that pointer");
 
 }  // namespace score::mw::com::impl::lola
 

@@ -31,7 +31,10 @@ rust_library(
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
-    deps = [":common_rs"],
+    deps = [
+        ":common_rs",
+        "@score_communication_crate_index//:libc",
+    ],
 )
 
 rust_library(
@@ -56,6 +59,7 @@ rust_unit_test(
         ":common_rs",
         "//score/mw/com/impl/plumbing/rust/test_support:test_helper_size_ffi_rs",
         "//score/mw/com/impl/plumbing/rust/test_support:test_utils_rs",
+        "@score_communication_crate_index//:libc",
     ],
 )
 

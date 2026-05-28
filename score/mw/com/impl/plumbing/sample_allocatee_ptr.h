@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/mock_binding/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/sample_allocatee_tracker.h"
 
 #include <score/blank.hpp>
 #include <score/overload.hpp>
@@ -22,6 +23,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -123,7 +125,14 @@ class SampleAllocateePtr
     // namespace, or static function with internal linkage, or private member function shall be used.".
     // False-positive, method is used as a delegation constructor.
     // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
-    explicit SampleAllocateePtr(T ptr) : internal_{std::move(ptr)}
+    explicit SampleAllocateePtr(T ptr) : internal_{std::move(ptr)}, allocatee_guard_{}
+    {
+    }
+
+    template <typename T>
+    // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
+    explicit SampleAllocateePtr(T ptr, SampleAllocateeGuard guard)
+        : internal_{std::move(ptr)}, allocatee_guard_{std::move(guard)}
     {
     }
 
@@ -138,6 +147,11 @@ class SampleAllocateePtr
 
     template <typename T>
     // coverity[autosar_cpp14_a11_3_1_violation]
+    friend auto MakeSampleAllocateePtr(T ptr, SampleAllocateeGuard guard) noexcept
+        -> SampleAllocateePtr<typename T::element_type>;
+
+    template <typename T>
+    // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SampleAllocateePtrView;
 
     template <typename T>
@@ -148,6 +162,10 @@ class SampleAllocateePtr
     // Stores either the LoLa pointer or the Mock Binding pointer (which handles void safely)
     std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, mock_binding::SampleAllocateePtr<SampleType>>
         internal_;
+    /// \brief Guard that tracks this allocation's lifetime in the SampleAllocateeTracker.
+    /// Stored in an optional to handle both cases default-constructed SampleAllocateePtr (which don't track any
+    /// allocation) and allocated SampleAllocateePtr (which are tracked).
+    std::optional<SampleAllocateeGuard> allocatee_guard_;
 };
 
 template <typename SampleType>
@@ -191,6 +209,10 @@ void SampleAllocateePtr<SampleType>::reset() noexcept
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> void {});
     std::visit(visitor, internal_);
+    // Release the guard immediately so the tracker count reflects only currently held allocations.
+    // Without this, the counter would remain elevated until the SampleAllocateePtr object is destroyed,
+    // causing SampleAllocateeTracker's destructor to abort even though no slot is actually outstanding.
+    allocatee_guard_.reset();
 }
 
 template <typename SampleType>
@@ -199,6 +221,7 @@ void SampleAllocateePtr<SampleType>::Swap(SampleAllocateePtr<SampleType>& other)
     // Search for custom swap functions via ADL, and use std::swap if none are found.
     using std::swap;
     swap(internal_, other.internal_);
+    swap(allocatee_guard_, other.allocatee_guard_);
 }
 
 template <typename SampleType>
@@ -346,11 +369,21 @@ void swap(SampleAllocateePtr<T>& lhs, SampleAllocateePtr<T>& rhs) noexcept
     lhs.Swap(rhs);
 }
 
-/// \brief Helper function to create a SampleAllocateePtr within the middleware (not to be used by the user)
+/// \brief Helper function to create a SampleAllocateePtr for use in tests (not to be used in production code).
+/// In production, guards must be obtained from SampleAllocateeTracker::Allocate(); use MakeSampleAllocateePtr
+/// with a guard instead.
 template <typename T>
 auto MakeSampleAllocateePtr(T ptr) noexcept -> SampleAllocateePtr<typename T::element_type>
 {
     return SampleAllocateePtr<typename T::element_type>{std::move(ptr)};
+}
+
+/// \brief Helper function to create a SampleAllocateePtr with a lifetime-tracking guard within the middleware (not to
+/// be used by the user)
+template <typename T>
+auto MakeSampleAllocateePtr(T ptr, SampleAllocateeGuard guard) noexcept -> SampleAllocateePtr<typename T::element_type>
+{
+    return SampleAllocateePtr<typename T::element_type>{std::move(ptr), std::move(guard)};
 }
 
 /// \brief SampleAllocateePtr is user facing, in order to interact with its internals we provide a view towards it

@@ -189,6 +189,7 @@ cc_library(
     deps = [
         ":data_type_meta_info",
         ":generic_skeleton_event_binding",
+        ":sample_allocatee_tracker",
         ":skeleton_base",
         ":skeleton_event_base",
         ":skeleton_event_binding",
@@ -347,6 +348,7 @@ cc_library(
     ],
     deps = [
         ":flag_owner",
+        ":sample_allocatee_tracker",
         ":skeleton_event_binding",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "//score/mw/com/impl/tracing:skeleton_event_tracing_data",
@@ -533,6 +535,7 @@ cc_library(
     ],
     deps = [
         ":binding_type",
+        ":sample_allocatee_tracker",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing_data",
         "@score_baselibs//score/language/futurecpp",
@@ -970,6 +973,26 @@ cc_library(
 )
 
 cc_library(
+    name = "sample_allocatee_tracker",
+    srcs = [
+        "sample_allocatee_guard.cpp",
+        "sample_allocatee_tracker.cpp",
+    ],
+    hdrs = [
+        "sample_allocatee_guard.h",
+        "sample_allocatee_tracker.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_library(
     name = "service_element_map",
     srcs = ["service_element_map.cpp"],
     hdrs = ["service_element_map.h"],
@@ -1067,6 +1090,20 @@ cc_unit_test(
     deps = [
         ":sample_reference_tracker",
         "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_unit_test(
+    name = "sample_allocatee_tracker_test",
+    srcs = ["sample_allocatee_tracker_test.cpp"],
+    deps = [":sample_allocatee_tracker"],
+)
+
+cc_unit_test(
+    name = "sample_allocatee_guard_test",
+    srcs = ["sample_allocatee_guard_test.cpp"],
+    deps = [
+        ":sample_allocatee_tracker",
     ],
 )
 

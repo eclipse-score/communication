@@ -20,6 +20,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/data_type_meta_info.h"
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 
 #include <optional>
 
@@ -42,7 +43,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 
     Result<void> Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
 
-    Result<score::mw::com::impl::SampleAllocateePtr<void>> Allocate() noexcept override;
+    Result<score::mw::com::impl::SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) noexcept override;
 
     Result<void> Notify() noexcept override;
 

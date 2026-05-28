@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
@@ -269,7 +270,7 @@ TEST_F(SkeletonEventComponentTestFixture, CanAllocateAndSendEvent)
     attorney.SetHandlerAvailability(true, true);  // Enable both QM and ASIL-B handler availability
 
     // When allocating and sending the allocated event
-    auto slot_result = skeleton_event_.Allocate();
+    auto slot_result = skeleton_event_.Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(slot_result.has_value());
     auto slot = std::move(slot_result).value();
 
@@ -301,7 +302,7 @@ TEST_F(SkeletonEventComponentTestFixture, CanSendByValue)
     auto free_slots_before = GetFreeSampleSlots();
 
     // When  sending by value
-    std::ignore = skeleton_event_.Send(5, {});
+    std::ignore = skeleton_event_.Send(5, {}, SampleAllocateeGuard{});
 
     // Then the send event in shared memory can be found by a proxy
     EXPECT_EQ(GetLastSendEvent(), 5);
@@ -343,7 +344,7 @@ TEST_F(SkeletonEventComponentDeathTest, CallingSendWillTerminateWhenLolaRuntimeD
         ASSERT_TRUE(prepare_offer_result.has_value());
 
         // When sending by value
-        score::cpp::ignore = skeleton_event_.Send(5, {});
+        score::cpp::ignore = skeleton_event_.Send(5, {}, SampleAllocateeGuard{});
     };
     // Then the program terminates
     EXPECT_DEATH(test_function(), ".*");
@@ -357,11 +358,11 @@ TEST_F(SkeletonEventSingleSlotComponentTestFixture, SendByValueReturnsErrorIfSlo
     ASSERT_TRUE(prepare_offer_result.has_value());
 
     // Allocate a slot so that there are no free slots remaining
-    const auto slot_result = skeleton_event_.Allocate();
+    const auto slot_result = skeleton_event_.Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(slot_result.has_value());
 
     // When sending by value
-    const auto send_result = skeleton_event_.Send(5, {});
+    const auto send_result = skeleton_event_.Send(5, {}, SampleAllocateeGuard{});
 
     // Then the result should contain an error indicating that the allocation failes
     ASSERT_FALSE(send_result.has_value());
@@ -386,8 +387,8 @@ TEST_F(SkeletonEventSingleSlotComponentTestFixture, SendByValueFreesSampleAlloca
     EXPECT_EQ(GetFreeSampleSlots(), 1);
 
     // and when calling Send twice
-    const auto send_result_1 = skeleton_event_.Send(5, {});
-    const auto send_result_2 = skeleton_event_.Send(5, {});
+    const auto send_result_1 = skeleton_event_.Send(5, {}, SampleAllocateeGuard{});
+    const auto send_result_2 = skeleton_event_.Send(5, {}, SampleAllocateeGuard{});
 
     // Then both sends return no errors indicating that each call allocated a slot and freed it before returning
     ASSERT_TRUE(send_result_1.has_value());
@@ -404,7 +405,7 @@ TEST_F(SkeletonEventComponentTestFixture, CallingAllocateWhenQmSlotsCannotBeAllo
     AllocateQmSlots(kNumberMaxSamples);
 
     // When allocating the allocated event
-    auto slot_result = skeleton_event_.Allocate();
+    auto slot_result = skeleton_event_.Allocate(SampleAllocateeGuard{});
 
     // Then a slot can still be allocated
     ASSERT_TRUE(slot_result.has_value());
@@ -420,7 +421,7 @@ TEST_F(SkeletonEventComponentTestFixture, CallingSendAfterAllocateWhenQmSlotsCan
     AllocateQmSlots(kNumberMaxSamples);
 
     // and given that a slot was allocated
-    auto slot_result = skeleton_event_.Allocate();
+    auto slot_result = skeleton_event_.Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(slot_result.has_value());
 
     // When calling Send
@@ -445,7 +446,7 @@ TEST_F(SkeletonEventComponentTestFixture,
     AllocateQmSlots(kNumberMaxSamples);
 
     // and given that a slot was allocated
-    auto slot_result = skeleton_event_.Allocate();
+    auto slot_result = skeleton_event_.Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(slot_result.has_value());
 
     // When calling Send
