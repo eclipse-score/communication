@@ -1,0 +1,89 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow: CodeQL analysis on push to main and on demand.
+#
+# Runs CodeQL via Bazel on all relevant C++ targets under //score/...
+# and uploads the resulting SARIF file to GitHub Code Scanning so that:
+#   - GitHub tracks findings over time with a stable baseline on main.
+#   - New PRs are compared against that baseline to surface new findings.
+#
+# Why not run on pull_request?
+#   The full CodeQL analysis (169 MISRA rules over //score/...) exceeds
+#   GitHub's 6-hour runner limit and is cancelled before producing output.
+#   Running on push to main ensures a complete, uploadable baseline exists.
+#   GitHub Code Scanning then uses that baseline to flag new findings per PR.
+#
+# Reference: https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/uploading-a-sarif-file-to-github
+
+name: CodeQL Analysis
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Allow maintainers to trigger manually when needed
+
+permissions:
+  contents: read
+  security-events: write  # Required to upload SARIF results to GitHub Code Scanning
+
+concurrency:
+  group: codeql-${{ github.run_id }}
+  cancel-in-progress: false  # Never cancel an in-progress CodeQL run; it takes hours
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  codeql:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Setup Bazel
+        uses: castler/setup-bazel@cache-optimized
+        with:
+          bazelisk-cache: true
+          disk-cache: "codeql"
+          repository-cache: true
+          cache-optimized: true
+          cache-save: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Run CodeQL via Bazel
+        run: |
+          bazel run //quality/static_analysis:codeql_lint -- \
+            --target //score/...
+
+      - name: Locate SARIF output
+        id: sarif
+        run: |
+          SARIF_PATH="$(bazel info output_path)/codeql.sarif"
+          echo "path=${SARIF_PATH}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.sarif.outputs.path }}
+          category: codeql-bazel
