@@ -258,8 +258,9 @@ impl NativeProxyEventBase {
     pub fn new(proxy: &NonNull<ProxyBase>, interface_id: &str, identifier: &str) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid proxy pointer and interface id to get event
         // proxy pointer is created during consumer creation
-        let raw_event_ptr =
-            unsafe { bridge_ffi_rs::get_event_from_proxy(proxy.as_ptr(), interface_id, identifier) };
+        let raw_event_ptr = unsafe {
+            bridge_ffi_rs::get_event_from_proxy(proxy.as_ptr(), interface_id, identifier)
+        };
         let proxy_event_ptr = std::ptr::NonNull::new(raw_event_ptr)
             .ok_or(Error::EventError(EventFailedReason::EventCreationFailed))?;
         Ok(Self { proxy_event_ptr })
@@ -479,6 +480,39 @@ impl<T: CommData + Debug> SubscriberImpl<T> {
         }
         Ok(())
     }
+
+    /// Validates the parameters for the receive operation, ensuring that the requested number of samples
+    /// does not exceed the maximum allowed and that the input values are within acceptable bounds.
+    fn validate_receive_params(&self, new_samples: usize, max_samples: usize) -> Result<()> {
+        if new_samples == 0 {
+            return Err(Error::ReceiveError(
+                ReceiveFailedReason::InputValueOutOfBounds {
+                    max: self.max_num_samples,
+                    requested: 0,
+                },
+            ));
+        }
+
+        if new_samples > max_samples {
+            return Err(Error::ReceiveError(
+                ReceiveFailedReason::InputValueOutOfBounds {
+                    max: max_samples,
+                    requested: new_samples,
+                },
+            ));
+        }
+
+        if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
+            return Err(Error::ReceiveError(
+                ReceiveFailedReason::InputValueOutOfBounds {
+                    max: self.max_num_samples,
+                    requested: max_samples.max(new_samples),
+                },
+            ));
+        }
+
+        Ok(())
+    }
 }
 
 impl<T> Subscription<T, LolaRuntimeImpl> for SubscriberImpl<T>
@@ -537,21 +571,21 @@ where
 
     // Cannot use `async fn` because the trait mandates `-> impl Future + 'a`,
     // requiring the returned future to be explicitly bound to the lifetime of `&self`.
+    // Note: We do not need to explicitly cancel the cancellation future when the receive future
+    // resolves, because the `ReceiveFuture` drop will take care of dropping the cancellation
+    // future when this future completes.
     #[allow(clippy::manual_async_fn)]
-    fn receive<'a>(
+    fn cancellable_receive<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-    ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a {
+        cancellation: impl Future<Output = ()> + Send + 'static,
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
         async move {
-            if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
-                return Err(Error::ReceiveError(
-                    ReceiveFailedReason::SampleCountOutOfBounds {
-                        max: self.max_num_samples,
-                        requested: max_samples.max(new_samples),
-                    },
-                ));
+            // Validate parameters before proceeding with receive logic
+            if let Err(e) = self.validate_receive_params(new_samples, max_samples) {
+                return (scratch, Err(e));
             }
             // Get the event guard to ensure no concurrent receive calls
             // on the same subscriber instance.
@@ -570,6 +604,7 @@ where
                 new_samples,
                 max_samples,
                 total_received: 0,
+                cancellation: core::pin::pin!(cancellation),
             }
             .await
         }
@@ -581,7 +616,7 @@ where
 // a waker storage for async notifications, and parameters for managing the receive operation.
 // The Future implementation for ReceiveFuture defines the polling logic,
 // which attempts to receive samples and manages the state of the receive operation.
-struct ReceiveFuture<'a, T: CommData + Debug> {
+struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>> {
     event_guard: Option<ProxyEventManagerGuard<'a>>,
     waker_storage: Arc<AtomicWaker>,
     max_num_samples: usize,
@@ -589,10 +624,11 @@ struct ReceiveFuture<'a, T: CommData + Debug> {
     new_samples: usize,
     max_samples: usize,
     total_received: usize,
+    cancellation: Pin<&'a mut F>,
 }
 
-impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
-    type Output = Result<SampleContainer<Sample<T>>>;
+impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'a, T, F> {
+    type Output = (SampleContainer<Sample<T>>, Result<usize>);
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
         // Extract all immutable values upfront to avoid borrow conflicts with self in the callback
@@ -601,11 +637,23 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
         let max_num_samples = self.max_num_samples;
         let total_received = self.total_received;
 
+        // Poll the cancellation future first to ensure prompt handling of cancellation requests.
+        if self.cancellation.as_mut().poll(ctx).is_ready() {
+            self.event_guard = None;
+            return Poll::Ready((
+                self.scratch
+                    .take()
+                    .expect("SampleContainer missing on cancellation"),
+                Err(Error::ReceiveError(ReceiveFailedReason::Cancelled)),
+            ));
+        }
+
         // Register the current waker to be notified when new samples arrive via FFI callback
         self.waker_storage.register(ctx.waker());
 
         let samples_received = {
-            // Temporarily take ownership of scratch to avoid borrow issues
+            // Temporarily take ownership of scratch to avoid borrow checker conflicts
+            // when passing to try_receive_samples
             if let Some(mut scratch) = self.scratch.take() {
                 if let Some(event_guard) = self.event_guard.as_mut() {
                     let result = try_receive_samples::<T>(
@@ -617,6 +665,7 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
                     self.scratch = Some(scratch);
                     result
                 } else {
+                    self.scratch = Some(scratch);
                     Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError))
                 }
             } else {
@@ -629,18 +678,27 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
 
                 // Check if we've received enough samples
                 if self.total_received >= new_samples {
-                    //event_guard will be dropped here, allowing new receive calls to access the
-                    // proxy event
+                    // Release the event guard to allow new receive calls to access the proxy event
                     self.event_guard = None;
-                    return Poll::Ready(Ok(self
-                        .scratch
-                        .take()
-                        .expect("SampleContainer is not available when returning Future result")));
+                    return Poll::Ready((
+                        self.scratch.take().expect(
+                            "SampleContainer is not available when returning Future result",
+                        ),
+                        Ok(self.total_received),
+                    ));
                 }
                 // Have some samples but not enough yet, wait for more via waker
                 Poll::Pending
             }
-            Err(e) => Poll::Ready(Err(e)),
+            Err(e) => {
+                self.event_guard = None;
+                Poll::Ready((
+                    self.scratch.take().expect(
+                        "SampleContainer unavailable on error; was receive polled after completion?",
+                    ),
+                    Err(e),
+                ))
+            }
         }
     }
 }
@@ -921,6 +979,14 @@ fn try_receive_samples<T: CommData + Debug>(
     max_num_samples: usize,
     max_samples: usize,
 ) -> Result<usize> {
+    if max_samples == 0 {
+        return Err(Error::ReceiveError(
+            ReceiveFailedReason::InputValueOutOfBounds {
+                max: max_num_samples,
+                requested: 0,
+            },
+        ));
+    }
     if max_samples > max_num_samples {
         return Err(Error::ReceiveError(
             ReceiveFailedReason::SampleCountOutOfBounds {
