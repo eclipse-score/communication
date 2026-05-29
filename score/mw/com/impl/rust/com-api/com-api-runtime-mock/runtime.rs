@@ -333,7 +333,7 @@ where
         _scratch: SampleContainer<Self::Sample<'a>>,
         _new_samples: usize,
         _max_samples: usize,
-        _timeout: impl Future<Output = ()> + Send + 'static,
+        _cancellation: impl Future<Output = ()> + Send + 'static,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
         async { todo!() }
     }

@@ -865,19 +865,25 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         )
     }
 
-    /// This method is extension of `receive` with an additional `timeout` parameter
+    /// This method is an extension of `receive` with an additional `cancellation` parameter
     /// which allows the caller to specify a future that can be used to cancel the receive operation.
     /// It returns a future that resolves as soon as at least `new_samples` samples have been transferred
-    /// from the communication buffer to the sample container or the `timeout` future resolves.
+    /// from the communication buffer to the sample container or the `cancellation` future resolves.
     ///
     /// # Parameters
     /// * `scratch` - Container for events from this subscription
     /// * `new_samples` - Minimum number of new events before resolution, 0 value is treated as error
     /// * `max_samples` - Maximum number of events that shall be received from the communication
     ///   buffer and transferred to the container, 0 value is treated as error
-    /// * `timeout` - Future that resolves when the receive operation should time out. If the timeout
-    ///   future resolves before the required number of samples are received, the receive operation is
-    ///   considered to have timed out.
+    /// * `cancellation` - Future that resolves when the receive operation should be cancelled. If the
+    ///   cancellation future resolves before the required number of samples are received, the receive
+    ///   operation is considered to have been cancelled.
+    ///   This can be used to implement various cancellation strategies, such as:
+    ///   - **Timeouts**: `tokio::time::sleep(Duration::from_secs(5))`
+    ///   - **Channel-based cancellation**: Waiting for a signal on a channel to indicate cancellation
+    ///   - **User-triggered cancellation**: Waiting for a keyboard interrupt or UI signal or any other user input to trigger cancellation
+    ///   - **External event cancellation**: Any other future that signals when cancellation is needed like shutdown signal, etc.
+    ///
     ///
     /// # Returns
     /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<usize>)`.
@@ -890,12 +896,12 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// # Important Notes
     /// User can not concurrenly call `cancellable_receive` on the same subscription instance from
     /// multiple threads or tasks.
-    /// `timeout` must be `'static` because timeout futures (e.g. `tokio::time::sleep`) own all
+    /// `cancellation` must be `'static` because cancellation futures (e.g. `tokio::time::sleep`) own all
     /// their state and do not borrow anything from the caller's scope.
     /// And if you change to `'a` lifetime then it create lifetime bound not satisfied
     /// error from rust (see issue <https://github.com/rust-lang/rust/issues/100013> for more information)
     ///
-    /// The `timeout` future currently has `Output = ()` and returns nothing. However, it could be
+    /// The `cancellation` future currently has `Output = ()` and returns nothing. However, it could be
     /// enhanced in the future to return a value that would be propagated to the caller, as per the use-case.
     /// No use case for this enhancement has been identified yet, so it is deferred for later implementation.
     fn cancellable_receive<'a>(
@@ -903,7 +909,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-        timeout: impl Future<Output = ()> + Send + 'static,
+        cancellation: impl Future<Output = ()> + Send + 'static,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a;
 }
 

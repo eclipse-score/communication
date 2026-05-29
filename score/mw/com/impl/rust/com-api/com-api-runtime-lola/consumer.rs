@@ -571,47 +571,16 @@ where
 
     // Cannot use `async fn` because the trait mandates `-> impl Future + 'a`,
     // requiring the returned future to be explicitly bound to the lifetime of `&self`.
-    // we do not need to cancle timeout future when receive future resolved,
-    // because ReceiveFuture drop will take care of cancelling the timeout future.
-    //
-    /// Demonstrates passing a struct future that is `Unpin` via a `PhantomData` field
-    /// to `receive_with_timeout`.
-    ///
-    /// A struct with only a `PhantomData<T>` field has no self-referential state, so
-    /// the compiler derives `Unpin` automatically.
-    ///
-    /// ```
-    /// use com_api_concept::{CommData, SampleContainer, Subscription};
-    /// use com_api_runtime_lola::LolaRuntimeImpl;
-    /// use core::marker::PhantomData;
-    ///
-    /// struct UnpinTimeout<T>(PhantomData<T>);
-    ///
-    /// impl<T: Send + 'static> std::future::Future for UnpinTimeout<T> {
-    ///     type Output = ();
-    ///     fn poll(
-    ///         self: std::pin::Pin<&mut Self>,
-    ///         _cx: &mut std::task::Context<'_>,
-    ///     ) -> std::task::Poll<()> {
-    ///         std::task::Poll::Ready(())
-    ///     }
-    /// }
-    ///
-    /// fn demonstrate<'a, T, S>(sub: &'a S, scratch: SampleContainer<S::Sample<'a>>)
-    /// where
-    ///     T: CommData + std::fmt::Debug,
-    ///     S: Subscription<T, LolaRuntimeImpl>,
-    /// {
-    ///     let _future = sub.cancellable_receive(scratch, 1, 1, UnpinTimeout::<u8>(PhantomData));
-    /// }
-    /// ```
+    // Note: We do not need to explicitly cancel the cancellation future when the receive future
+    // resolves, because the `ReceiveFuture` drop will take care of dropping the cancellation
+    // future when this future completes.
     #[allow(clippy::manual_async_fn)]
     fn cancellable_receive<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-        timeout: impl Future<Output = ()> + Send + 'static,
+        cancellation: impl Future<Output = ()> + Send + 'static,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
         async move {
             // Validate parameters before proceeding with receive logic
@@ -635,7 +604,7 @@ where
                 new_samples,
                 max_samples,
                 total_received: 0,
-                timeout: core::pin::pin!(timeout),
+                cancellation: core::pin::pin!(cancellation),
             }
             .await
         }
@@ -647,8 +616,6 @@ where
 // a waker storage for async notifications, and parameters for managing the receive operation.
 // The Future implementation for ReceiveFuture defines the polling logic,
 // which attempts to receive samples and manages the state of the receive operation.
-// Unpin bound is required for the timeout future to allow it to be safely pinned on the stack without
-// heap allocation.
 struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>> {
     event_guard: Option<ProxyEventManagerGuard<'a>>,
     waker_storage: Arc<AtomicWaker>,
@@ -657,7 +624,7 @@ struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>> {
     new_samples: usize,
     max_samples: usize,
     total_received: usize,
-    timeout: Pin<&'a mut F>,
+    cancellation: Pin<&'a mut F>,
 }
 
 impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'a, T, F> {
@@ -670,13 +637,13 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
         let max_num_samples = self.max_num_samples;
         let total_received = self.total_received;
 
-        // Poll cancel/timeout future first to ensure prompt cancellation if requested
-        if self.timeout.as_mut().poll(ctx).is_ready() {
+        // Poll the cancellation future first to ensure prompt handling of cancellation requests.
+        if self.cancellation.as_mut().poll(ctx).is_ready() {
             self.event_guard = None;
             return Poll::Ready((
                 self.scratch
                     .take()
-                    .expect("SampleContainer missing on timeout/cancel"),
+                    .expect("SampleContainer missing on cancellation"),
                 Err(Error::ReceiveError(ReceiveFailedReason::Cancelled)),
             ));
         }
@@ -685,7 +652,8 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
         self.waker_storage.register(ctx.waker());
 
         let samples_received = {
-            // Temporarily take ownership of scratch to avoid borrow issues
+            // Temporarily take ownership of scratch to avoid borrow checker conflicts
+            // when passing to try_receive_samples
             if let Some(mut scratch) = self.scratch.take() {
                 if let Some(event_guard) = self.event_guard.as_mut() {
                     let result = try_receive_samples::<T>(
@@ -710,8 +678,7 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
 
                 // Check if we've received enough samples
                 if self.total_received >= new_samples {
-                    //event_guard will be dropped here, allowing new receive calls to access the
-                    // proxy event
+                    // Release the event guard to allow new receive calls to access the proxy event
                     self.event_guard = None;
                     return Poll::Ready((
                         self.scratch.take().expect(
