@@ -83,7 +83,7 @@ struct GenericProxyEventStruct
 struct ProxyFieldStruct
 {
     using SampleType = TestSampleType;
-    using ProxyEventType = ProxyField<TestSampleType>;
+    using ProxyEventType = ProxyField<TestSampleType, WithGetter, WithNotifier, WithSetter>;
     using MockProxyEventType = NiceMock<mock_binding::ProxyEvent<TestSampleType>>;
 };
 

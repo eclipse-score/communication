@@ -70,7 +70,9 @@ class MyInterface : public InterfaceTrait::Base
     using InterfaceTrait::Base::Base;
 
     typename InterfaceTrait::template Event<TestSampleType> some_event{*this, kEventName};
-    typename InterfaceTrait::template Field<TestSampleType, true> some_field{*this, kFieldName};
+    typename InterfaceTrait::template Field<TestSampleType, WithGetter, WithSetter, WithNotifier> some_field{
+        *this,
+        kFieldName};
     typename InterfaceTrait::template Method<TestMethodType> some_method{*this, kMethodName};
 };
 using MyProxy = AsProxy<MyInterface>;
@@ -127,13 +129,15 @@ class ProxyCreationFixture : public ::testing::Test
         ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
             .WillByDefault(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
 
+        // By default the Create call on the ProxyFieldBindingFactory returns valid method bindings.
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, kFieldName))
+            .WillByDefault(Return(ByMove(std::move(proxy_field_get_binding_mock_ptr))));
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateSetMethodBinding(_, kFieldName))
+            .WillByDefault(Return(ByMove(std::move(proxy_field_set_binding_mock_ptr))));
+
         // By default the Create call on the ProxyMethodBindingFactory returns valid bindings.
         ON_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kMethodName, MethodType::kMethod))
             .WillByDefault(Return(ByMove(std::move(proxy_method_binding_mock_ptr))));
-        ON_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kFieldName, MethodType::kSet))
-            .WillByDefault(Return(ByMove(std::move(proxy_field_set_binding_mock_ptr))));
-        ON_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kFieldName, MethodType::kGet))
-            .WillByDefault(Return(ByMove(std::move(proxy_field_get_binding_mock_ptr))));
 
         // By default that the proxy_binding can successfully call SetupMethods
         ON_CALL(proxy_binding_mock_, SetupMethods()).WillByDefault(Return(score::Result<void>{}));
