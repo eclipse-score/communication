@@ -1,0 +1,94 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/methods/edge_cases_test/MethodSignature",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 2000,
+          "methods": [
+            {
+              "methodName": "with_in_args_and_return",
+              "methodId": 1
+            },
+            {
+              "methodName": "with_in_args_only",
+              "methodId": 2
+            },
+            {
+              "methodName": "with_return_only",
+              "methodId": 3
+            },
+            {
+              "methodName": "without_args_or_return",
+              "methodId": 4
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/methods/edge_cases_test/MethodSignature",
+      "serviceTypeName": "/test/methods/edge_cases_test/MethodSignature",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "B",
+          "binding": "SHM",
+          "methods": [
+            {
+              "methodName": "with_in_args_and_return",
+              "queueSize": 1,
+              "use": false
+            },
+            {
+              "methodName": "with_in_args_only",
+              "queueSize": 1,
+              "use": false
+            },
+            {
+              "methodName": "with_return_only",
+              "queueSize": 1,
+              "use": false
+            },
+            {
+              "methodName": "without_args_or_return",
+              "queueSize": 1,
+              "use": false
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          }
+
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "B"
+  }
+}
