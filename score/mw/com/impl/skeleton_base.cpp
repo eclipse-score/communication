@@ -23,6 +23,7 @@
 
 #include "score/mw/log/logging.h"
 
+#include <score/assert.hpp>
 #include <score/utility.hpp>
 
 #include <algorithm>
@@ -104,22 +105,7 @@ SkeletonBase::SkeletonBase(SkeletonBase&& other) noexcept
       skeleton_mock_{std::move(other.skeleton_mock_)},
       service_offered_flag_{std::move(other.service_offered_flag_)}
 {
-    // Since the address of this skeleton has changed, we need update the address stored in each of the events and
-    // fields belonging to the skeleton.
-    for (auto& event : events_)
-    {
-        event.second.get().UpdateSkeletonReference(*this);
-    }
-
-    for (auto& field : fields_)
-    {
-        field.second.get().UpdateSkeletonReference(*this);
-    }
-
-    for (auto& method : methods_)
-    {
-        method.second.get().UpdateSkeletonReference(*this);
-    }
+    UpdateAllServiceElementReferences();
 }
 
 // Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
@@ -142,21 +128,8 @@ SkeletonBase& SkeletonBase::operator=(SkeletonBase&& other) noexcept
     skeleton_mock_ = std::move(other.skeleton_mock_);
     service_offered_flag_ = std::move(other.service_offered_flag_);
 
-    // Since the address of this skeleton has changed, we need update the address stored in each of the events and
-    // fields belonging to the skeleton.
-    for (auto& event : events_)
-    {
-        event.second.get().UpdateSkeletonReference(*this);
-    }
+    UpdateAllServiceElementReferences();
 
-    for (auto& field : fields_)
-    {
-        field.second.get().UpdateSkeletonReference(*this);
-    }
-    for (auto& method : methods_)
-    {
-        method.second.get().UpdateSkeletonReference(*this);
-    }
     return *this;
 }
 
@@ -317,6 +290,105 @@ auto SkeletonBase::AreBindingsValid() const noexcept -> bool
         });
 
     return is_skeleton_binding_valid && are_service_element_bindings_valid;
+}
+
+void SkeletonBase::UpdateAllServiceElementReferences() noexcept
+{
+    for (auto& event : events_)
+    {
+        event.second.get().UpdateSkeletonReference(*this);
+    }
+    for (auto& field : fields_)
+    {
+        field.second.get().UpdateSkeletonReference(*this);
+    }
+    for (auto& method : methods_)
+    {
+        method.second.get().UpdateSkeletonReference(*this);
+    }
+}
+
+SkeletonBaseView::SkeletonBaseView(SkeletonBase& skeleton_base) : skeleton_base_{skeleton_base} {}
+
+InstanceIdentifier SkeletonBaseView::GetAssociatedInstanceIdentifier() const
+{
+    return skeleton_base_.instance_id_;
+}
+
+SkeletonBinding* SkeletonBaseView::GetBinding() const
+{
+    return skeleton_base_.binding_.get();
+}
+
+void SkeletonBaseView::RegisterEvent(const std::string_view event_name, SkeletonEventBase& event)
+{
+    const auto result = skeleton_base_.events_.emplace(event_name, event);
+    const bool was_event_inserted = result.second;
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_event_inserted, "Event cannot be registered as it already exists.");
+}
+
+void SkeletonBaseView::RegisterField(const std::string_view field_name, SkeletonFieldBase& field)
+{
+    const auto result = skeleton_base_.fields_.emplace(field_name, field);
+    const bool was_field_inserted = result.second;
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_field_inserted, "Field cannot be registered as it already exists.");
+}
+
+void SkeletonBaseView::RegisterMethod(const std::string_view method_name, SkeletonMethodBase& method)
+{
+    const auto result = skeleton_base_.methods_.emplace(method_name, method);
+    const bool was_method_inserted = result.second;
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_method_inserted, "Method cannot be registered as it already exists.");
+}
+
+void SkeletonBaseView::UpdateEvent(const std::string_view event_name, SkeletonEventBase& event) noexcept
+{
+    auto event_name_it = skeleton_base_.events_.find(event_name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
+        event_name_it != skeleton_base_.events_.cend(),
+        "SkeletonBaseView::UpdateEvent failed to update event because the requested event doesn't exist");
+
+    event_name_it->second = event;
+}
+
+void SkeletonBaseView::UpdateField(const std::string_view field_name, SkeletonFieldBase& field) noexcept
+{
+    auto field_name_it = skeleton_base_.fields_.find(field_name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
+        field_name_it != skeleton_base_.fields_.cend(),
+        "SkeletonBaseView::UpdateField failed to update field because the requested field doesn't exist");
+
+    field_name_it->second = field;
+}
+
+void SkeletonBaseView::UpdateMethod(const std::string_view method_name, SkeletonMethodBase& method) noexcept
+{
+    auto method_it = skeleton_base_.methods_.find(method_name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
+        method_it != skeleton_base_.methods_.cend(),
+        "SkeletonBaseView::UpdateMethod failed to update method because the requested method doesn't exist");
+
+    method_it->second = method;
+}
+
+const SkeletonBase::SkeletonEvents& SkeletonBaseView::GetEvents() const noexcept
+{
+    return skeleton_base_.events_;
+}
+
+const SkeletonBase::SkeletonFields& SkeletonBaseView::GetFields() const noexcept
+{
+    return skeleton_base_.fields_;
+}
+
+const SkeletonBase::SkeletonMethods& SkeletonBaseView::GetMethods() const noexcept
+{
+    return skeleton_base_.methods_;
+}
+
+bool SkeletonBaseView::AreBindingsValid() const
+{
+    return skeleton_base_.AreBindingsValid();
 }
 
 score::cpp::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpecifier& specifier)

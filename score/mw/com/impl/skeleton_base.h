@@ -23,9 +23,6 @@
 
 #include "score/result/result.h"
 
-#include "score/mw/log/logging.h"
-
-#include <score/assert.hpp>
 #include <score/optional.hpp>
 #include <score/span.hpp>
 
@@ -87,7 +84,7 @@ class SkeletonBase
     }
 
   protected:
-    bool AreBindingsValid() const noexcept;
+    [[nodiscard]] bool AreBindingsValid() const noexcept;
 
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Design decision. This class provides a view to the private members of this class.
@@ -111,107 +108,39 @@ class SkeletonBase
     [[nodiscard]] score::Result<void> OfferServiceEvents() const noexcept;
     [[nodiscard]] score::Result<void> OfferServiceFields() const noexcept;
 
+    void UpdateAllServiceElementReferences() noexcept;
+
     FlagOwner service_offered_flag_;
 };
 
 class SkeletonBaseView
 {
   public:
-    explicit SkeletonBaseView(SkeletonBase& skeleton_base) : skeleton_base_{skeleton_base} {}
+    explicit SkeletonBaseView(SkeletonBase& skeleton_base);
 
-    InstanceIdentifier GetAssociatedInstanceIdentifier() const
-    {
-        return skeleton_base_.instance_id_;
-    }
+    [[nodiscard]] InstanceIdentifier GetAssociatedInstanceIdentifier() const;
 
-    SkeletonBinding* GetBinding() const
-    {
-        return skeleton_base_.binding_.get();
-    }
+    [[nodiscard]] SkeletonBinding* GetBinding() const;
 
-    void RegisterEvent(const std::string_view event_name, SkeletonEventBase& event)
-    {
-        const auto result = skeleton_base_.events_.emplace(event_name, event);
-        const bool was_event_inserted = result.second;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_event_inserted, "Event cannot be registered as it already exists.");
-    }
+    void RegisterEvent(std::string_view event_name, SkeletonEventBase& event);
 
-    void RegisterField(const std::string_view field_name, SkeletonFieldBase& field)
-    {
-        const auto result = skeleton_base_.fields_.emplace(field_name, field);
-        const bool was_field_inserted = result.second;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_field_inserted, "Field cannot be registered as it already exists.");
-    }
+    void RegisterField(std::string_view field_name, SkeletonFieldBase& field);
 
-    void RegisterMethod(const std::string_view method_name, SkeletonMethodBase& method)
-    {
-        const auto result = skeleton_base_.methods_.emplace(method_name, method);
-        const bool was_method_inserted = result.second;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_method_inserted,
-                                                "Method cannot be registered as it already exists.");
-    }
+    void RegisterMethod(std::string_view method_name, SkeletonMethodBase& method);
 
-    // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
-    // called implicitly". std::terminate() is implicitly called from std::map::at in case the container doesn't
-    // have the mapped element. This function is called by the move constructor and as we register the event name in
-    // the events_ container during SkeletonEvent construction so we are sure that the event_name already exists, so
-    // no way for throwing std::out_of_range which leds to std::terminate().
-    // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    void UpdateEvent(const std::string_view event_name, SkeletonEventBase& event) noexcept
-    {
-        // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "If a function is declared to be
-        // noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"
-        // This function is indirectly called by the move constructor and as we register the event name in the
-        // events_ container during SkeletonEvent construction so we are sure the event name already exists, so no
-        // way for throwing std::out_of_range which leds to std::terminate().
-        // coverity[autosar_cpp14_a15_4_2_violation] : FALSE]
-        skeleton_base_.events_.at(event_name) = event;
-    }
+    void UpdateEvent(std::string_view event_name, SkeletonEventBase& event) noexcept;
 
-    void UpdateField(const std::string_view field_name, SkeletonFieldBase& field) noexcept
-    {
-        auto field_name_it = skeleton_base_.fields_.find(field_name);
-        if (field_name_it == skeleton_base_.fields_.cend())
-        {
-            score::mw::log::LogError("lola")
-                << "SkeletonBaseView::UpdateField failed to update field because the requested field doesn't exist";
-            std::terminate();
-        }
+    void UpdateField(std::string_view field_name, SkeletonFieldBase& field) noexcept;
 
-        field_name_it->second = field;
-    }
+    void UpdateMethod(std::string_view method_name, SkeletonMethodBase& method) noexcept;
 
-    void UpdateMethod(const std::string_view method_name, SkeletonMethodBase& method) noexcept
-    {
-        auto method_it = skeleton_base_.methods_.find(method_name);
-        if (method_it == skeleton_base_.methods_.cend())
-        {
-            score::mw::log::LogError("lola")
-                << "SkeletonBaseView::UpdateMethod failed to update method because the requested method doesn't exist";
-            std::terminate();
-        }
-        method_it->second = method;
-    }
+    [[nodiscard]] const SkeletonBase::SkeletonEvents& GetEvents() const noexcept;
 
-    const SkeletonBase::SkeletonEvents& GetEvents() const noexcept
-    {
-        return skeleton_base_.events_;
-    }
+    [[nodiscard]] const SkeletonBase::SkeletonFields& GetFields() const noexcept;
 
-    const SkeletonBase::SkeletonFields& GetFields() const noexcept
-    {
-        return skeleton_base_.fields_;
-    }
+    [[nodiscard]] const SkeletonBase::SkeletonMethods& GetMethods() const noexcept;
 
-    const SkeletonBase::SkeletonMethods& GetMethods() const noexcept
-    {
-        return skeleton_base_.methods_;
-    }
-
-    bool AreBindingsValid() const
-    {
-        return skeleton_base_.AreBindingsValid();
-    }
+    [[nodiscard]] bool AreBindingsValid() const;
 
   private:
     SkeletonBase& skeleton_base_;
