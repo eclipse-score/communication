@@ -748,6 +748,14 @@ cc_library(
     visibility = ["//score/mw/com:__subpackages__"],
 )
 
+cc_unit_test(
+    name = "field_tags_test",
+    srcs = ["field_tags_test.cpp"],
+    deps = [
+        ":field_tags",
+    ],
+)
+
 cc_library(
     name = "service_element_type",
     srcs = ["service_element_type.cpp"],
