@@ -12,11 +12,12 @@
  *******************************************************************************/
 
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
-#include "score/mw/com/test/field_initial_value/test_datatype.h"
+#include "score/mw/com/test/fields/field_initial_value/test_datatype.h"
 
 #include <score/stop_token.hpp>
 
 #include <chrono>
+#include <iostream>
 #include <thread>
 #include <utility>
 
@@ -25,8 +26,6 @@ namespace score::mw::com::test
 
 namespace
 {
-
-using namespace std::chrono_literals;
 
 int run_service(const std::chrono::milliseconds& cycle_time, const score::cpp::stop_token& stop_token)
 {

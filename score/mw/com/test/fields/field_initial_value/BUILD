@@ -40,7 +40,7 @@ cc_binary(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    visibility = ["//score/mw/com/test/field_initial_value:__pkg__"],
+    visibility = ["//score/mw/com/test/fields/field_initial_value:__pkg__"],
     deps = [
         ":test_datatype",
         "//score/mw/com",
@@ -56,7 +56,7 @@ cc_binary(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    visibility = ["//score/mw/com/test/field_initial_value:__pkg__"],
+    visibility = ["//score/mw/com/test/fields/field_initial_value:__pkg__"],
     deps = [
         ":test_datatype",
         "//score/mw/com",
@@ -75,7 +75,7 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/field_initial_value:__subpackages__",
+        "//score/mw/com/test/fields/field_initial_value:__subpackages__",
     ],
 )
 
@@ -89,6 +89,14 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/field_initial_value:__subpackages__",
+        "//score/mw/com/test/fields/field_initial_value:__subpackages__",
     ],
+)
+
+test_suite(
+    name = "component_tests",
+    tests = [
+        "//score/mw/com/test/fields/field_initial_value/integration_test:test_field_initial_value",
+    ],
+    visibility = ["//score/mw/com/test/fields:__pkg__"],
 )

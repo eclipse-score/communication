@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#ifndef SCORE_MW_COM_TEST_FIELD_INITIAL_VALUE_TEST_DATATYPE_H
-#define SCORE_MW_COM_TEST_FIELD_INITIAL_VALUE_TEST_DATATYPE_H
+#ifndef SCORE_MW_COM_TEST_FIELDS_FIELD_INITIAL_VALUE_TEST_DATATYPE_H
+#define SCORE_MW_COM_TEST_FIELDS_FIELD_INITIAL_VALUE_TEST_DATATYPE_H
 
 #include "score/mw/com/types.h"
 
@@ -22,7 +22,7 @@
 namespace score::mw::com::test
 {
 
-constexpr const char* const kInstanceSpecifierString = "test/field_initial_value";
+constexpr const char* const kInstanceSpecifierString = "test/fields/field_initial_value";
 const std::int32_t kTestValue = 18;
 
 template <typename T>
@@ -39,4 +39,4 @@ using TestDataSkeleton = score::mw::com::AsSkeleton<TestInterface>;
 
 }  // namespace score::mw::com::test
 
-#endif  // SCORE_MW_COM_TEST_FIELD_RECEIVE_HANDLER_SRC_LOLA_H
+#endif  // SCORE_MW_COM_TEST_FIELDS_FIELD_INITIAL_VALUE_TEST_DATATYPE_H
