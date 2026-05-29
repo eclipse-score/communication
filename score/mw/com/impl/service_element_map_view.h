@@ -75,7 +75,7 @@ class ServiceElementMapView
     }
 
   private:
-    using map_type = std::map<std::string_view, Value>;
+    using map_type = std::map<key, Value>;
 
     /// \brief Creates a ServiceElementMapView that provides "read-only" access to the provided map. That is no elements
     ///        can be added or removed from the map via the ServiceElementMapView, but changes to the map elements is

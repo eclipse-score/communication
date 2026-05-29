@@ -31,14 +31,16 @@ abstract class "SkeletonBinding" {
 }
 
 class "mw::com::impl::GenericSkeleton" #yellow {
-  using EventMap = ServiceElementMap<GenericSkeletonEvent>
+  using EventMapView = ServiceElementMapView<GenericSkeletonEvent>
   ..
-  +GenericSkeleton(const InstanceIdentifier&, std::unique_ptr<SkeletonBinding>, MethodCallProcessingMode)
-  +Create(const InstanceIdentifier&, const GenericSkeletonServiceElementInfo&, MethodCallProcessingMode): Result<GenericSkeleton>
-  +Create(const InstanceSpecifier&, const GenericSkeletonServiceElementInfo&, MethodCallProcessingMode): Result<GenericSkeleton>
-  +events_ : EventMap
+  +Create(const InstanceIdentifier&, const GenericSkeletonServiceElementInfo&): Result<GenericSkeleton>
+  +Create(const InstanceSpecifier&, const GenericSkeletonServiceElementInfo&): Result<GenericSkeleton>
+  +GetEvents() : EventMapView
   +OfferService(): Result<void>
   +StopOfferService(): void
+  ..
+  -GenericSkeleton(const InstanceIdentifier&, std::unique_ptr<SkeletonBinding>)
+  -events_ : std::unique_ptr<ServiceElementMapViewFactory<GenericSkeletonEvent>::map_type> events_
 }
 
 class "lola::Skeleton" {
@@ -87,11 +89,19 @@ class "GenericSkeletonEventBindingFactory" {
   +{static} Create(SkeletonBase& parent, std::string_view event_name, const DataTypeMetaInfo& size_info): Result<std::unique_ptr<GenericSkeletonEventBinding>>
 }
 
-class "ServiceElementMap" {
-  using key_type = score::cpp::stringview
-  using mapped_type = GenericSkeletonEvent
-  using value_type = std::pair<const key_type, mapped_type>
-  using const_iterator = LegacyBidirectionalIterator to const value_type
+class "ServiceElementMapViewFactory<ElementType>" {
+  using map_type = typename ServiceElementMapView<ElementType>::map_type
+  ..
+  +Create(map_type&) : ServiceElementMapView<ElementType>
+}
+
+class "ServiceElementMapView<ElementType>" {
+  using key = std::string_view;
+  using value_type = std::pair<const key, Value>
+  using iterator = typename std::map<key, Value>::iterator
+  using const_iterator = typename std::map<key, Value>::const_iterator
+  using size_type = typename std::map<key, Value>::size_type
+  using map_type = std::map<key, Value>
   ..
   +cbegin() : const_iterator
   +cend() : const_iterator
@@ -156,7 +166,6 @@ class "DummySkeleton" <<generated>>  {
 "score::mw::com::impl::SkeletonBase" *--> "SkeletonBinding"
 "score::mw::com::impl::SkeletonBase" <|-- "DummySkeleton"
 "score::mw::com::impl::SkeletonBase" <|-- "mw::com::impl::GenericSkeleton"
-"mw::com::impl::GenericSkeleton" *-- "ServiceElementMap"
 "SkeletonBindingFactory" ..> "SkeletonBinding" : creates
 "SkeletonBinding" <|-- "lola::Skeleton"
 
@@ -179,5 +188,8 @@ class "DummySkeleton" <<generated>>  {
 
 "DummySkeleton" *--> "mw::com::impl::SkeletonEvent<SampleType>" : "0..n"
 "mw::com::impl::GenericSkeleton" *--> "mw::com::impl::GenericSkeletonEvent" : "0..n"
+"mw::com::impl::GenericSkeleton" ..> "ServiceElementMapViewFactory<ElementType>" : uses
+"ServiceElementMapViewFactory<ElementType>" ..> "ServiceElementMapView<ElementType>" : creates
+"ServiceElementMapView<ElementType>" o-- "mw::com::impl::GenericSkeletonEvent" : "0..n"
 
 @enduml

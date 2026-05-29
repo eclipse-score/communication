@@ -25,7 +25,7 @@ This comprises the following items:
 * `GenericProxy` class: We will provide a class `GenericProxy`, but opposed to the concept (linked above) **not** in
   the `ara::com`, but in the `mw::com` namespace.
 * This `GenericProxy` class will (in relation to the concept) **only** provide a public method `GetEvents()`, which
-  returns a `GenericProxy::EventMap` (which is a stripped down `std::map`)
+  returns a `GenericProxy::EventMapView` (which is a read-only view to a `std::map`)
 * this map returned by `GetEvents()` will only contain all the events mentioned in the service deployment. Later (when
   our fields get extended with get/set method functionality), this will change
   (broken_link_j/Ticket-156027)
