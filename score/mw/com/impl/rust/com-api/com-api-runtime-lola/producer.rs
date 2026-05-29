@@ -521,7 +521,7 @@ mod test {
 
     // Creates a `NativeSkeletonHandle<MockFFIBridge>` .
     fn make_skeleton_handle() -> NativeSkeletonHandle<MockFFIBridge> {
-        let bridge = MockFFIBridge;
+        let bridge = MockFFIBridge::new();
         let spec = mw_com::InstanceSpecifier::try_from("/test_instance")
             .expect("valid instance specifier");
         NativeSkeletonHandle::<MockFFIBridge>::new(&bridge, "", &spec)
@@ -535,7 +535,7 @@ mod test {
                 .expect("valid instance specifier"),
             interface_id,
             skeleton_handle: SkeletonInstanceManager(Arc::new(make_skeleton_handle())),
-            bridge: MockFFIBridge,
+            bridge: MockFFIBridge::new(),
         }
     }
 
@@ -556,8 +556,25 @@ mod test {
     fn test_publisher_allocate_and_send() {
         //this is for cleanup of thread local state.
         // MockFFIBridge instance will clean up automatically on drop
-        MockFFIBridge::set_alloc_backing::<TestData>();
-        let instance_info = make_provider_info("TestData");
+        let bridge = MockFFIBridge::new();
+        // Use T::ID ("TestData") as the key for allocatee backing
+        bridge.set_allocatee_backing::<TestData>("TestData", TestData { value: 0 });
+
+        // Create provider info with the same bridge instance
+        let spec = mw_com::InstanceSpecifier::try_from("/test_instance")
+            .expect("valid instance specifier");
+        let skeleton_handle =
+            NativeSkeletonHandle::<MockFFIBridge>::new(&bridge, "TestData", &spec)
+                .expect("MockFFIBridge::create_skeleton should not fail");
+
+        let instance_info = LolaProviderInfo {
+            instance_specifier: InstanceSpecifier::new("/test_instance")
+                .expect("valid instance specifier"),
+            interface_id: "TestData",
+            skeleton_handle: SkeletonInstanceManager(Arc::new(skeleton_handle)),
+            bridge: bridge.clone(),
+        };
+
         let publisher: Publisher<TestData, MockFFIBridge> =
             Publisher::<TestData, MockFFIBridge>::new("TestEvent", instance_info)
                 .expect("Failed to create publisher");

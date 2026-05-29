@@ -641,9 +641,11 @@ where
             // Initialize the async receive callback only once when the first receive call is made.
             // ProxyEventManager already prevents concurrent receive calls, so the check-then-set
             // sequence is race-free. Using get/set instead of get_or_try_init avoids the
-            // unstable `once_cell_try` feature while still propagating errors via `?`.
+            // unstable `once_cell_try` feature while still propagating errors.
             if self.async_init_status.get().is_none() {
-                self.init_async_receive(&mut event_guard)?;
+                if let Err(e) = self.init_async_receive(&mut event_guard) {
+                    return (scratch, Err(e));
+                }
                 // Ignore Err: the only way set() fails is if another thread raced us,
                 // which cannot happen because ProxyEventManager panics on concurrent access.
                 let _ = self.async_init_status.set(());
@@ -692,10 +694,7 @@ struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBrid
     new_samples: usize,
     max_samples: usize,
     total_received: usize,
-<<<<<<< HEAD
     cancellation: Pin<&'a mut F>,
-=======
->>>>>>> d1f2a252 (Rust::com Update FFI mock)
     bridge: B,
 }
 
@@ -1233,42 +1232,49 @@ mod test {
     }
 
     // Builds a ProxyInstanceManager<MockFFIBridge>
-    fn make_proxy_instance(interface_id: &'static str) -> ProxyInstanceManager<MockFFIBridge> {
+    fn make_proxy_instance(
+        bridge: &MockFFIBridge,
+        interface_id: &'static str,
+    ) -> ProxyInstanceManager<MockFFIBridge> {
         // SAFETY: HandleType is a ZST; zeroed() produces a valid value.
         let handle: HandleType = unsafe { core::mem::zeroed() };
-        let native_proxy =
-            NativeProxyBase::<MockFFIBridge>::new(&MockFFIBridge, interface_id, &handle)
-                .expect("MockFFIBridge::create_proxy should not fail");
+        let native_proxy = NativeProxyBase::<MockFFIBridge>::new(bridge, interface_id, &handle)
+            .expect("MockFFIBridge::create_proxy should not fail");
         ProxyInstanceManager(Arc::new(native_proxy))
     }
 
     // Builds a `LolaConsumerInfo<MockFFIBridge>` backed by a mock handle container.
-    fn make_instance_info() -> LolaConsumerInfo<MockFFIBridge> {
+    fn make_instance_info(bridge: MockFFIBridge) -> LolaConsumerInfo<MockFFIBridge> {
+        // Create mock bridge and empty handle container (null pointer for testing)
+        let handle_container = Arc::new(HandleContainer::new(std::ptr::null_mut()));
         LolaConsumerInfo::<MockFFIBridge> {
-            handle_container: MockFFIBridge::make_handle_container(),
+            handle_container,
             handle_index: 0,
             interface_id: "TestInterface",
-            bridge: MockFFIBridge,
+            bridge,
         }
     }
 
     #[test]
     fn test_lola_consumer_info() {
-        let instance_info = make_instance_info();
+        let bridge = MockFFIBridge::new();
+        bridge.set_proxy("TestInterface");
+        let instance_info = make_instance_info(bridge);
         assert!(instance_info.get_handle().is_none());
     }
     #[test]
     fn test_sample() {
         //this is for cleanup of thread local state.
         // MockFFIBridge instance will clean up automatically on drop
-        MockFFIBridge::set_sample_backing::<TestData>(TestData { value: 42 });
+        let bridge = MockFFIBridge::new();
+        bridge.set_sample_backing::<TestData>("TestData", TestData { value: 42 });
         let sample = Sample::<TestData, MockFFIBridge> {
             id: 1,
             inner: LolaBinding::<TestData, MockFFIBridge> {
                 data: ManuallyDrop::new(unsafe {
                     core::mem::zeroed::<sample_ptr_rs::SamplePtr<TestData>>()
                 }),
-                bridge: MockFFIBridge,
+                bridge,
             },
         };
         assert_eq!(sample.id, 1);
@@ -1277,11 +1283,13 @@ mod test {
 
     #[test]
     fn test_subscribable_impl() {
+        let bridge = MockFFIBridge::new();
+        bridge.set_proxy("TestInterface");
+        bridge.set_proxy_event("TestInterface", "TestEvent");
         let subscribable = SubscribableImpl::<TestData, MockFFIBridge> {
             identifier: "TestEvent",
-            instance_info: make_instance_info(),
-            proxy_instance: make_proxy_instance("TestInterface"),
-            bridge: MockFFIBridge,
+            instance_info: make_instance_info(bridge.clone()),
+            proxy_instance: make_proxy_instance(&bridge, "TestInterface"),
             data: PhantomData,
         };
         assert!(
@@ -1292,17 +1300,25 @@ mod test {
 
     #[test]
     fn test_subscriber_impl() {
+        let bridge = MockFFIBridge::new();
+        bridge.set_proxy("TestInterface");
+        bridge.set_proxy_event("TestInterface", "TestEvent");
+        let event_ptr = unsafe {
+            let handle: HandleType = core::mem::zeroed();
+            let proxy = bridge.create_proxy("TestInterface", &handle);
+            bridge.get_event_from_proxy(proxy, "TestInterface", "TestEvent")
+        };
         let subscriber = SubscriberImpl::<TestData, MockFFIBridge> {
             event: ProxyEventManager {
-                event: MockFFIBridge::make_proxy_event_ptr(),
+                event: event_ptr,
                 in_progress: AtomicBool::new(false),
             },
             event_id: "TestEvent",
             max_num_samples: 10,
-            instance_info: make_instance_info(),
+            instance_info: make_instance_info(bridge.clone()),
             waker_storage: Arc::new(AtomicWaker::new()),
             async_init_status: std::sync::OnceLock::new(),
-            _proxy: make_proxy_instance("TestInterface"),
+            _proxy: make_proxy_instance(&bridge, "TestInterface"),
             _phantom: PhantomData,
         };
         let mut sample_container = SampleContainer::new(5);
