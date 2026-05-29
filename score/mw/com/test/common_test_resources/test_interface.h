@@ -14,6 +14,8 @@
 #ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_TEST_INTERFACE_H
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_TEST_INTERFACE_H
 
+#include "score/mw/com/types.h"
+
 #include <cstdint>
 #include <vector>
 
@@ -26,7 +28,10 @@ class TestInterface : public T::Base
   public:
     using T::Base::Base;
 
-    typename T::template Field<std::int32_t> test_field{*this, "test_field"};
+    // Only WithNotifier is needed since the proxy subscribes to receive the initial value the skeleton
+    // publishes via Update(). No Get/Set so, WithGetter and WithSetter must stay absent until we add tests that require
+    // them.
+    typename T::template Field<std::int32_t, score::mw::com::WithNotifier> test_field{*this, "test_field"};
 };
 
 }  // namespace score::mw::com::test

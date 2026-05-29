@@ -73,7 +73,7 @@ class MyDummySkeleton : public SkeletonBase
   public:
     using SkeletonBase::SkeletonBase;
 
-    SkeletonField<TestSampleType> my_dummy_field_{*this, kFieldName};
+    SkeletonField<TestSampleType, WithGetter, WithNotifier, WithSetter> my_dummy_field_{*this, kFieldName};
 };
 
 TEST(SkeletonFieldTracingTest, TracePointsAreDisabledIfConfigNotReturnedByRuntime)
