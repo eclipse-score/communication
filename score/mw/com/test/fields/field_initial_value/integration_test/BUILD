@@ -16,8 +16,8 @@ load("//quality/integration_testing:integration_testing.bzl", "integration_test"
 pkg_filegroup(
     name = "filesystem",
     srcs = [
-        "//score/mw/com/test/field_initial_value:client-pkg",
-        "//score/mw/com/test/field_initial_value:service-pkg",
+        "//score/mw/com/test/fields/field_initial_value:client-pkg",
+        "//score/mw/com/test/fields/field_initial_value:service-pkg",
     ],
 )
 

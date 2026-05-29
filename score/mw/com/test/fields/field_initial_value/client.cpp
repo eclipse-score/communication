@@ -12,7 +12,7 @@
  *******************************************************************************/
 
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
-#include "score/mw/com/test/field_initial_value/test_datatype.h"
+#include "score/mw/com/test/fields/field_initial_value/test_datatype.h"
 #include "score/mw/com/types.h"
 
 #include <optional>
@@ -122,7 +122,6 @@ int main(int argc, const char** argv)
     const auto& run_parameters = test_runner.GetRunParameters();
     const auto num_retries = run_parameters.GetNumRetries();
     const auto retry_backoff_time = run_parameters.GetRetryBackoffTime();
-    const auto stop_token = test_runner.GetStopToken();
 
     return score::mw::com::test::run_client(num_retries, retry_backoff_time);
 }
