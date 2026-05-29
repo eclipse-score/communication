@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 
 #include "score/mw/com/impl/event_receive_handler.h"
+#include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/find_service_handle.h"
 #include "score/mw/com/impl/find_service_handler.h"
 #include "score/mw/com/impl/generic_proxy.h"
@@ -104,6 +105,12 @@ using MethodInArgTypePtr = impl::MethodInArgPtr<ReturnType>;
 /// \brief Callback for event notifications on proxy side.
 /// \requirement SWS_CM_00309
 using EventReceiveHandler = impl::EventReceiveHandler;
+
+/// \api
+/// \brief Field tag types used in service-interface definitions to enable Get/Set/Notifier on a field.
+using WithGetter = impl::WithGetter;
+using WithSetter = impl::WithSetter;
+using WithNotifier = impl::WithNotifier;
 
 /// \api
 /// \brief Interpret an interface that follows our traits as proxy (cf. impl/traits.h)
