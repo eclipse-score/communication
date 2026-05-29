@@ -79,20 +79,6 @@ void FailTest(Args&&... args)
     detail::FailTest(std::move(strstr), std::forward<Args>(args)...);
 }
 
-/// \brief Fail a test if a condition is true, by exiting the program with EXIT_FAILURE and printing a message to
-/// stderr.
-/// \tparam Args variadic number of argument types, each one must be streamable to a standard stringstream.
-/// \param condition if true, the program will exit with EXIT_FAILURE and print the message created from args to stderr.
-/// \param args variadic number of arguments, each one must be streamable to a standard stringstream.
-template <typename... Args>
-void FailTestIf(bool condition, Args&&... args)
-{
-    if (condition)
-    {
-        FailTest(std::forward<Args>(args)...);
-    }
-}
-
 }  // namespace score::mw::com::test
 
 #endif  // SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_FAIL_TEST_H
