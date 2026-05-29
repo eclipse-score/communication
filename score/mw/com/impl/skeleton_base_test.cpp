@@ -63,7 +63,8 @@ class MyDummySkeleton final : public SkeletonBase
     SkeletonEvent<TestSampleType> dummy_event{*this, kDummyEventName};
     SkeletonEvent<TestSampleType> dummy_event2{*this, kDummyEventName2};
 
-    SkeletonField<TestSampleType> dummy_field{*this, kDummyFieldName};
+    // Explicity not having WithGetter/Setter tags since Get/Set functionality is tested in skeleton_field_test.cpp..
+    SkeletonField<TestSampleType, WithNotifier> dummy_field{*this, kDummyFieldName};
 };
 
 mock_binding::Skeleton* GetMockBinding(MyDummySkeleton& skeleton) noexcept
