@@ -54,7 +54,8 @@ class MyInterface : public InterfaceTrait::Base
 
     typename InterfaceTrait::template Event<TestEventType> some_event{*this, kEventName};
     typename InterfaceTrait::template Event<TestEventType2> some_event_2{*this, kEventName2};
-    typename InterfaceTrait::template Field<TestFieldType> some_field{*this, kFieldName};
+    typename InterfaceTrait::template Field<TestFieldType, WithGetter, WithNotifier, WithSetter> some_field{*this,
+                                                                                                            kFieldName};
 };
 using MyProxy = AsProxy<MyInterface>;
 
@@ -244,7 +245,8 @@ class FieldOnlyInterface : public InterfaceTrait::Base
   public:
     using InterfaceTrait::Base::Base;
 
-    typename InterfaceTrait::template Field<TestFieldType> some_field{*this, kFieldName};
+    typename InterfaceTrait::template Field<TestFieldType, WithGetter, WithNotifier, WithSetter> some_field{*this,
+                                                                                                            kFieldName};
 };
 using FieldOnlyProxy = AsProxy<FieldOnlyInterface>;
 
