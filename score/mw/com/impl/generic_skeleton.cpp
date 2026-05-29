@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
 #include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/impl/service_element_map_view_factory.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
 #include <score/overload.hpp>
@@ -84,7 +85,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
     for (const auto& info : in.events)
     {
         // Check for duplicates
-        if (skeleton.events_.find(info.name) != skeleton.events_.cend())
+        if (skeleton.events_->find(info.name) != skeleton.events_->cend())
         {
             score::mw::log::LogError("GenericSkeleton") << "Duplicate event name provided: " << info.name;
             return MakeUnexpected(ComErrc::kServiceElementAlreadyExists);
@@ -107,7 +108,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        const auto emplace_result = skeleton.events_.emplace(
+        const auto emplace_result = skeleton.events_->emplace(
             std::piecewise_construct,
             std::forward_as_tuple(stable_name),
             std::forward_as_tuple(skeleton, stable_name, std::move(event_binding_result).value()));
@@ -122,9 +123,9 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
     return skeleton;
 }
 
-const GenericSkeleton::EventMap& GenericSkeleton::GetEvents() const noexcept
+ServiceElementMapView<GenericSkeletonEvent> GenericSkeleton::GetEvents() const noexcept
 {
-    return events_;
+    return ServiceElementMapViewFactory<GenericSkeletonEvent>::Create(*events_);
 }
 
 Result<void> GenericSkeleton::OfferService() noexcept
@@ -138,7 +139,8 @@ void GenericSkeleton::StopOfferService() noexcept
 }
 
 GenericSkeleton::GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding)
-    : SkeletonBase(std::move(binding), identifier)
+    : SkeletonBase(std::move(binding), identifier),
+      events_(std::make_unique<std::map<std::string_view, GenericSkeletonEvent>>())
 {
 }
 
