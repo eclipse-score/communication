@@ -44,5 +44,3 @@ struct is_tag_enabled : std::conjunction<contains_type<TargetTag, Tags...>, std:
 };
 
 }  // namespace score::mw::com::impl
-
-#endif  // SCORE_MW_COM_IMPL_FIELD_TAGS_H
