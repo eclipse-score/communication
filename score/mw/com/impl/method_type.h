@@ -19,26 +19,6 @@
 namespace score::mw::com::impl
 {
 
-namespace detail
-{
-
-/// \brief Tag types used on ProxyField/SkeletonField level to accomplish overload-resolution for various signatures,
-/// which depend on the availability of Get/Set/Notifier.
-struct EnableBothTag
-{
-};
-struct EnableGetOnlyTag
-{
-};
-struct EnableSetOnlyTag
-{
-};
-struct EnableNeitherTag
-{
-};
-
-}  // namespace detail
-
 /// \brief Enum used to differentiate between regular service methods and field Get/Set methods.
 enum class MethodType : std::uint8_t
 {
