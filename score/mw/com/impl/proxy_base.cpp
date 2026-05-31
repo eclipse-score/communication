@@ -191,7 +191,7 @@ void ProxyBase::Deinitialize()
     }
     for (auto& field : fields_)
     {
-        field.second.get().Unsubscribe();
+        ProxyFieldBaseView{field.second.get()}.Unsubscribe();
     }
     if (proxy_binding_ != nullptr)
     {
