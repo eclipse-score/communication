@@ -944,7 +944,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     ///
     /// # Errors
     /// Returns an error if a problem occurs during sample reception.
-    fn to_stream<'a>(&'a self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
+    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.

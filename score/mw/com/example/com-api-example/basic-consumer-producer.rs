@@ -413,7 +413,7 @@ mod test {
         }
     }
 
-    async fn stream_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>) {
+    async fn stream_processor_fn<R: Runtime>(mut subscribed: impl Subscription<Tire, R>) {
         let mut stream = subscribed.to_stream();
         let mut cnt = 5usize;
         println!("[RECEIVER] Stream processor started");

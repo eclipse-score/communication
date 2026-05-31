@@ -614,7 +614,7 @@ where
         }
     }
 
-    fn to_stream<'a>(&'a self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
+    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         // Get the event guard to ensure no concurrent receive calls
         // on the same subscriber instance. This guard is held for the lifetime of the stream.
         let mut proxy_event_guard = self.event.get_proxy_event();
@@ -628,8 +628,8 @@ where
         // The guard is moved into the stream and held for its lifetime to prevent concurrent receives.
         SampleStream {
             subscriber: self,
-            sample_container: Some(SampleContainer::new(self.max_num_samples)),
-            event_guard: Some(proxy_event_guard),
+            sample_container: SampleContainer::new(self.max_num_samples),
+            event_guard: proxy_event_guard,
         }
     }
 }
@@ -733,8 +733,8 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
 /// On each poll, it first yields any buffered samples before attempting to receive more from the FFI callback.
 struct SampleStream<'a, T: CommData + Debug> {
     subscriber: &'a SubscriberImpl<T>,
-    sample_container: Option<SampleContainer<Sample<T>>>,
-    event_guard: Option<ProxyEventManagerGuard<'a>>,
+    sample_container: SampleContainer<Sample<T>>,
+    event_guard: ProxyEventManagerGuard<'a>,
 }
 
 impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
@@ -742,12 +742,8 @@ impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // Yield any buffered samples from a previous batch fetch first.
-        if let Some(mut container) = self.sample_container.take() {
-            if let Some(sample) = container.pop_front() {
-                self.sample_container = Some(container);
-                return Poll::Ready(Some(Ok(sample)));
-            }
-            self.sample_container = Some(container);
+        if let Some(sample) = self.sample_container.pop_front() {
+            return Poll::Ready(Some(Ok(sample)));
         }
 
         // Register the waker before attempting to receive so that a concurrent FFI
@@ -756,41 +752,22 @@ impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
         self.subscriber.waker_storage.register(cx.waker());
         let max_num_samples = self.subscriber.max_num_samples;
 
-        let samples_received = {
-            // Temporarily take ownership of scratch to avoid borrow issues
-            if let Some(mut scratch) = self.sample_container.take() {
-                if let Some(event_guard) = self.event_guard.as_mut() {
-                    let result = try_receive_samples::<T>(
-                        event_guard.deref_mut(),
-                        &mut scratch,
-                        max_num_samples,
-                        max_num_samples,
-                    );
-                    self.sample_container = Some(scratch);
-                    result
-                } else {
-                    Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError))
-                }
-            } else {
-                Err(Error::ReceiveError(ReceiveFailedReason::BufferUnavailable))
-            }
-        };
+        // get a mutable reference of pinned self, with this 
+        // we can avoid borrow checker issue for self in try_receive_samples function call
+        let this = self.as_mut().get_mut();
+        
+        let samples_received = try_receive_samples::<T>(
+            this.event_guard.deref_mut(),
+            &mut this.sample_container,
+            max_num_samples,
+            max_num_samples,
+        );
 
         match samples_received {
             Ok(_count) => {
-                if let Some(mut container) = self.sample_container.take() {
-                    match container.pop_front() {
-                        Some(sample) => {
-                            self.sample_container = Some(container);
-                            Poll::Ready(Some(Ok(sample)))
-                        }
-                        None => {
-                            self.sample_container = Some(container);
-                            Poll::Pending
-                        }
-                    }
-                } else {
-                    Poll::Pending
+                match self.sample_container.pop_front() {
+                    Some(sample) => Poll::Ready(Some(Ok(sample))),
+                    None => Poll::Pending,
                 }
             }
             Err(e) => Poll::Ready(Some(Err(e))),
