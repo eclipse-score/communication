@@ -185,7 +185,7 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
 
     const LolaEventInstanceDeployment lola_event_instance{event_max_samples, event_max_subscribers, 1U, true, 0};
     const LolaFieldInstanceDeployment lola_field_instance{
-        LolaEventInstanceDeployment{field_max_samples, field_max_subscribers, 1U, true, 7}, false, false};
+        LolaEventInstanceDeployment{field_max_samples, field_max_subscribers, 1U, true, 7}, true, true};
     const LolaMethodInstanceDeployment lola_method_instance{method_queue_size, true};
 
     const LolaServiceInstanceDeployment::EventInstanceMapping instance_events{

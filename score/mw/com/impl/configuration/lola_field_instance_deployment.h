@@ -39,8 +39,8 @@ class LolaFieldInstanceDeployment
 
     void SetNumberOfSampleSlots(LolaEventInstanceDeployment::SampleSlotCountType number_of_sample_slots) noexcept;
 
-    [[nodiscard]] std::optional<LolaEventInstanceDeployment::SampleSlotCountType> GetNumberOfSampleSlots() const
-      noexcept;
+    [[nodiscard]] std::optional<LolaEventInstanceDeployment::SampleSlotCountType> GetNumberOfSampleSlots()
+        const noexcept;
     [[nodiscard]] std::optional<LolaEventInstanceDeployment::SampleSlotCountType>
     GetNumberOfSampleSlotsExcludingTracingSlot() const noexcept;
 

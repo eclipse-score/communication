@@ -230,10 +230,9 @@ std::size_t FindNumberOfTracingSlots(
 
             const std::string service_element_name{service_element.service_element_name};
 
-            const auto get_number_of_tracing_slots =
-                [](const auto& service_elements_map,
-                   const std::string& service_element_name,
-                   const ServiceElementIdentifierView service_element) noexcept
+            const auto get_number_of_tracing_slots = [](const auto& service_elements_map,
+                                                        const std::string& service_element_name,
+                                                        const ServiceElementIdentifierView service_element) noexcept
                 -> LolaEventInstanceDeployment::TracingSlotSizeType {
                 const auto it = service_elements_map.find(service_element_name);
                 if (it == service_elements_map.end())

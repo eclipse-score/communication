@@ -2182,7 +2182,8 @@ TEST(ConfigParser, LolaFieldUseGetIfAvailableSetToTrue)
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
     // Then use_get_if_available_ is true and use_set_if_available_ is not set
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, std::optional<bool>{true});
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_,
+              std::optional<bool>{true});
     EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, std::nullopt);
 }
 
@@ -2251,7 +2252,8 @@ TEST(ConfigParser, LolaFieldUseSetIfAvailableSetToTrue)
 
     // Then use_set_if_available_ is true and use_get_if_available_ is not set
     EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, std::nullopt);
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, std::optional<bool>{true});
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_,
+              std::optional<bool>{true});
 }
 
 TEST(ConfigParser, LolaFieldOmittingBothFlagsKeepsBothUnset)
