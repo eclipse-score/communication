@@ -13,12 +13,12 @@
 
 # Workflow: CodeQL analysis on pull_request, push to main, merge_group, and on demand.
 #
-# Runs CodeQL via Bazel on all relevant C++ targets under //score/...
-# and uploads the resulting SARIF file to GitHub Code Scanning so that:
+# Runs CodeQL via Bazel on relevant C++ targets under //score/... and uploads
+# the resulting SARIF file to GitHub Code Scanning so that:
 #   - CodeQL is executed on every PR (acceptance criteria).
+#   - PR and merge_group runs use a smart target-picker based on changed files.
+#   - Pushes to main and manual runs always scan full //score/... for baseline.
 #   - GitHub tracks findings over time with a stable baseline on main.
-#   - New PRs are compared against that baseline to surface new findings.
-#   - Gate (merge_group) runs use the same scope as PR runs for consistency.
 #
 # Reference: https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/uploading-a-sarif-file-to-github
 
@@ -72,18 +72,101 @@ jobs:
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
+      - name: Pick CodeQL targets
+        id: targets
+        run: |
+          set -euo pipefail
+
+          DEFAULT_TARGET="//score/..."
+          EVENT_NAME="${GITHUB_EVENT_NAME}"
+          TARGET="${DEFAULT_TARGET}"
+          REASON="main_or_manual_full_scan"
+
+          if [[ "${EVENT_NAME}" == "pull_request" || "${EVENT_NAME}" == "merge_group" ]]; then
+            BASE_BRANCH="${GITHUB_BASE_REF:-main}"
+            git fetch --no-tags --depth=1 origin "${BASE_BRANCH}"
+
+            CHANGED_FILES="$(git diff --name-only "origin/${BASE_BRANCH}...HEAD" || true)"
+
+            if [[ -z "${CHANGED_FILES}" ]]; then
+              TARGET="${DEFAULT_TARGET}"
+              REASON="no_changes_detected_fallback_full_scan"
+            elif echo "${CHANGED_FILES}" | grep -Eq '^(WORKSPACE|MODULE\.bazel|BUILD|\.bazelrc|bazel/|quality/static_analysis/|third_party/|tools/|\.github/workflows/codeql\.yml)'; then
+              TARGET="${DEFAULT_TARGET}"
+              REASON="infra_or_tooling_change_full_scan"
+            else
+              mapfile -t SCORE_FILES < <(echo "${CHANGED_FILES}" | grep -E '^score/.*' || true)
+
+              if [[ "${#SCORE_FILES[@]}" -eq 0 ]]; then
+                TARGET=""
+                REASON="no_score_changes_skip_scan"
+              else
+                : > affected_targets.txt
+
+                for file_path in "${SCORE_FILES[@]}"; do
+                  label="//$(dirname "${file_path}"):$(basename "${file_path}")"
+                  bazel query "kind('.* rule', rdeps(//score/..., ${label}))" 2>/dev/null >> affected_targets.txt || true
+                done
+
+                sort -u affected_targets.txt -o affected_targets.txt
+
+                if [[ ! -s affected_targets.txt ]]; then
+                  TARGET="${DEFAULT_TARGET}"
+                  REASON="empty_query_result_fallback_full_scan"
+                else
+                  TARGET_COUNT="$(wc -l < affected_targets.txt | tr -d ' ')"
+                  if [[ "${TARGET_COUNT}" -gt 300 ]]; then
+                    TARGET="${DEFAULT_TARGET}"
+                    REASON="too_many_targets_fallback_full_scan"
+                  else
+                    TARGET="$(tr '\n' ' ' < affected_targets.txt | sed 's/[[:space:]]*$//')"
+                    REASON="smart_target_picker"
+                  fi
+                fi
+              fi
+            fi
+          fi
+
+          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
+          echo "reason=${REASON}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## CodeQL Target Selection"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Event | ${EVENT_NAME} |"
+            echo "| Reason | ${REASON} |"
+
+            if [[ -z "${TARGET}" ]]; then
+              echo "| Targets | _none_ (skipped: no score/ changes) |"
+            elif [[ "${TARGET}" == "${DEFAULT_TARGET}" ]]; then
+              echo "| Targets | ${DEFAULT_TARGET} |"
+            else
+              echo "| Targets | smart-picked subset |"
+              echo ""
+              echo "### Picked Targets"
+              echo '```'
+              cat affected_targets.txt
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run CodeQL via Bazel
+        if: ${{ steps.targets.outputs.target != '' }}
         run: |
           bazel run //quality/static_analysis:codeql_lint -- \
-            --target //score/...
+            --target "${{ steps.targets.outputs.target }}"
 
       - name: Locate SARIF output
         id: sarif
+        if: ${{ steps.targets.outputs.target != '' }}
         run: |
           SARIF_PATH="$(bazel info output_path)/codeql.sarif"
           echo "path=${SARIF_PATH}" >> "$GITHUB_OUTPUT"
 
       - name: Upload SARIF to GitHub Code Scanning
+        if: ${{ steps.targets.outputs.target != '' }}
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ steps.sarif.outputs.path }}
