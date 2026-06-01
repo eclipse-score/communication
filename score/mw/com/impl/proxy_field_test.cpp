@@ -19,13 +19,16 @@
 
 #include "score/mw/com/impl/proxy_field.h"
 
-#include "score/mw/com/impl/runtime.h"
-#include "score/mw/com/impl/runtime_mock.h"
-#include "score/mw/com/impl/test/binding_factory_resources.h"
-#include "score/mw/com/impl/test/proxy_resources.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy_event.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
+#include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/test/runtime_mock_guard.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <cstddef>
+#include <memory>
+#include <string_view>
 #include <type_traits>
 
 namespace score::mw::com::impl
@@ -36,6 +39,11 @@ namespace
 using namespace ::testing;
 
 using TestSampleType = std::uint8_t;
+
+constexpr std::string_view kFieldName{"Field1"};
+
+constexpr TestSampleType kDummyFieldValue{42U};
+constexpr TestSampleType kDummyFieldReturnValue{47U};
 
 namespace
 {
@@ -328,6 +336,159 @@ TEST(ProxyFieldNotifierGatingTest, OnlyNotifierApiExistsWhenNoTagsArePresent)
     static_assert(has_inject_mock<DefaultField>::value);
     static_assert(!has_get<DefaultField>::value);
     static_assert(!has_set<DefaultField>::value);
+}
+
+/// \brief Test fixture for the runtime behavior of ProxyField's Get / Set API.
+class ProxyFieldGetSetFixture : public ::testing::Test
+{
+  public:
+    void SetUp() override
+    {
+        ON_CALL(runtime_mock_guard_.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+        ON_CALL(get_method_binding_mock_, GetReturnValueBuffer(0))
+            .WillByDefault(Return(score::Result<score::cpp::span<std::byte>>{score::cpp::span{
+                reinterpret_cast<std::byte*>(&getter_return_storage_), sizeof(getter_return_storage_)}}));
+        ON_CALL(get_method_binding_mock_, DoCall(0)).WillByDefault(Return(score::ResultBlank{}));
+
+        ON_CALL(set_method_binding_mock_, GetReturnValueBuffer(0))
+            .WillByDefault(Return(score::Result<score::cpp::span<std::byte>>{score::cpp::span{
+                reinterpret_cast<std::byte*>(&setter_return_storage_), sizeof(setter_return_storage_)}}));
+        ON_CALL(set_method_binding_mock_, GetInArgsBuffer(0))
+            .WillByDefault(Return(score::Result<score::cpp::span<std::byte>>{score::cpp::span{
+                reinterpret_cast<std::byte*>(&setter_in_arg_storage_), sizeof(setter_in_arg_storage_)}}));
+        ON_CALL(set_method_binding_mock_, DoCall(0)).WillByDefault(Return(score::ResultBlank{}));
+    }
+
+    ProxyField<TestSampleType, WithGetter> CreateFieldWithGetOnly()
+    {
+        return ProxyField<TestSampleType, WithGetter>{
+            kFieldName,
+            std::make_unique<mock_binding::ProxyEvent<TestSampleType>>(),
+            nullptr,
+            std::make_unique<mock_binding::ProxyMethodFacade>(get_method_binding_mock_)};
+    }
+
+    ProxyField<TestSampleType, WithSetter, WithNotifier> CreateFieldWithSet()
+    {
+        return ProxyField<TestSampleType, WithSetter, WithNotifier>{
+            kFieldName,
+            std::make_unique<mock_binding::ProxyEvent<TestSampleType>>(),
+            std::make_unique<mock_binding::ProxyMethodFacade>(set_method_binding_mock_)};
+    }
+
+    TestSampleType getter_return_storage_{};
+
+    TestSampleType setter_in_arg_storage_{};
+    score::Result<TestSampleType> setter_return_storage_{};
+
+    RuntimeMockGuard runtime_mock_guard_{};
+    mock_binding::ProxyMethod get_method_binding_mock_{};
+    mock_binding::ProxyMethod set_method_binding_mock_{};
+};
+
+using ProxyFieldGetFixture = ProxyFieldGetSetFixture;
+TEST_F(ProxyFieldGetFixture, GetDelegatesToProxyMethodBinding)
+{
+    // Given a Get-enabled ProxyField and a mock method binding with a value pre-written into the return buffer
+    auto field = CreateFieldWithGetOnly();
+    const TestSampleType expected_value{123U};
+    getter_return_storage_ = expected_value;
+
+    // Expecting that the binding returns a buffer for the return value and then calls the method
+    EXPECT_CALL(get_method_binding_mock_, GetReturnValueBuffer(0U));
+    EXPECT_CALL(get_method_binding_mock_, DoCall(0U));
+
+    // When calling Get()
+    auto result = field.Get();
+
+    // Then the call succeeds and returns the buffered value
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(*result.value(), expected_value);
+}
+
+TEST_F(ProxyFieldGetFixture, GetPropagatesBindingError)
+{
+    // Given a Get-enabled ProxyField (WithGetter)
+    auto field = CreateFieldWithGetOnly();
+
+    // Expecting that the binding returns an error when asked for the return value buffer
+    EXPECT_CALL(get_method_binding_mock_, GetReturnValueBuffer(0U))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When calling Get()
+    auto result = field.Get();
+
+    // Then the error is propagated back to the caller
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+using ProxyFieldSetFixture = ProxyFieldGetSetFixture;
+TEST_F(ProxyFieldSetFixture, SetCallsMethodWithProvidedValueAsInArg)
+{
+    // Given a ProxyField with a setter
+    auto field = CreateFieldWithSet();
+
+    // Expecting that the binding returns a buffer for the in-arg
+    EXPECT_CALL(set_method_binding_mock_, GetInArgsBuffer(0U));
+
+    // When Set is called
+    score::cpp::ignore = field.Set(kDummyFieldValue);
+
+    // Then the setter fills the method in arg storage with the value provided to Set()
+    EXPECT_EQ(setter_in_arg_storage_, kDummyFieldValue);
+}
+
+TEST_F(ProxyFieldSetFixture, SetReturnsValueReturnedByMethod)
+{
+    // Given a ProxyField with a setter
+    auto field = CreateFieldWithSet();
+
+    // Expecting that the binding returns a buffer for the return value which contains a valid value
+    setter_return_storage_ = kDummyFieldReturnValue;
+    EXPECT_CALL(set_method_binding_mock_, GetReturnValueBuffer(0U));
+
+    // When Set is called
+    auto result = field.Set(kDummyFieldValue);
+
+    // Then the set call returns the value in the method return value buffer
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(*result.value(), kDummyFieldReturnValue);
+}
+
+TEST_F(ProxyFieldSetFixture, SetPropagatesErrorFromMethodCall)
+{
+    // Given a ProxyField with a setter
+    auto field = CreateFieldWithSet();
+
+    // Expecting that the method returns an error when GetInArgsBuffer is invoked
+    EXPECT_CALL(set_method_binding_mock_, GetInArgsBuffer(0U))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kCommunicationLinkError)));
+
+    // When Set is called
+    auto result = field.Set(kDummyFieldValue);
+
+    // Then the error from the method call is propagated back to the caller
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kCommunicationLinkError);
+}
+
+TEST_F(ProxyFieldSetFixture, SetPropagatesErrorStoredInMethodReturnValue)
+{
+    // Given a ProxyField with a setter
+    auto field = CreateFieldWithSet();
+
+    // Expecting that the binding returns a buffer for the return value which contains an error
+    setter_return_storage_ = MakeUnexpected(ComErrc::kCommunicationLinkError);
+    EXPECT_CALL(set_method_binding_mock_, GetReturnValueBuffer(0U));
+
+    // When Set is called
+    auto result = field.Set(kDummyFieldValue);
+
+    // Then the error from the method return value is propagated back to the caller
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kCommunicationLinkError);
 }
 
 }  // namespace
