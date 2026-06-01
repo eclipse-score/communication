@@ -19,13 +19,27 @@
 
 #include "score/mw/com/impl/proxy_field.h"
 
+#include "score/mw/com/impl/bindings/mock_binding/proxy.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy_event.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
+#include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/configuration/service_identifier_type.h"
+#include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 #include "score/mw/com/impl/test/proxy_resources.h"
+#include "score/mw/com/impl/test/runtime_mock_guard.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <array>
+#include <cstddef>
+#include <memory>
+#include <string_view>
 #include <type_traits>
 
 namespace score::mw::com::impl
@@ -36,6 +50,20 @@ namespace
 using namespace ::testing;
 
 using TestSampleType = std::uint8_t;
+
+class TestProxyBase : public ProxyBase
+{
+  public:
+    using ProxyBase::ProxyBase;
+    const ProxyBase::ProxyMethods& GetMethods()
+    {
+        return methods_;
+    }
+    const ProxyBase::ProxyFields& GetFields()
+    {
+        return fields_;
+    }
+};
 
 namespace
 {
@@ -280,6 +308,162 @@ TEST(ProxyFieldSetterGatingTest, SetIsAbsentWhenWithSetterTagIsMissing)
     // Then Set should be absent
     using GetterOnlyField = ProxyField<TestSampleType, WithGetter>;
     static_assert(!has_set<GetterOnlyField>::value);
+}
+
+/// \brief Test fixture for the runtime behavior of ProxyField's Get / Set / notifier surface.
+class ProxyFieldGetSetFixture : public ::testing::Test
+{
+  public:
+    void SetUp() override
+    {
+        ON_CALL(runtime_mock_guard_.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+        ON_CALL(proxy_method_binding_mock_, GetReturnValueBuffer(0))
+            .WillByDefault(Return(score::Result<score::cpp::span<std::byte>>{
+                score::cpp::span{return_type_buffer_.data(), return_type_buffer_.size()}}));
+        ON_CALL(proxy_method_binding_mock_, GetInArgsBuffer(0))
+            .WillByDefault(Return(score::Result<score::cpp::span<std::byte>>{
+                score::cpp::span{in_args_buffer_.data(), in_args_buffer_.size()}}));
+        ON_CALL(proxy_method_binding_mock_, DoCall(0)).WillByDefault(Return(score::ResultBlank{}));
+
+        ON_CALL(set_method_binding_mock_, GetReturnValueBuffer(0))
+            .WillByDefault(Return(score::Result<score::cpp::span<std::byte>>{
+                score::cpp::span{return_type_buffer_.data(), return_type_buffer_.size()}}));
+        ON_CALL(set_method_binding_mock_, GetInArgsBuffer(0))
+            .WillByDefault(Return(score::Result<score::cpp::span<std::byte>>{
+                score::cpp::span{in_args_buffer_.data(), in_args_buffer_.size()}}));
+        ON_CALL(set_method_binding_mock_, DoCall(0)).WillByDefault(Return(score::ResultBlank{}));
+    }
+
+    ProxyField<TestSampleType, WithGetter> MakeFieldWithGetOnly(const std::string_view name = "TestField")
+    {
+        return ProxyField<TestSampleType, WithGetter>{
+            proxy_base_,
+            name,
+            std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_event_mock_),
+            nullptr,
+            std::make_unique<mock_binding::ProxyMethodFacade>(proxy_method_binding_mock_)};
+    }
+
+    ProxyField<TestSampleType, WithSetter, WithNotifier> MakeFieldWithSetAndNotifier(
+        const std::string_view name = "TestField")
+    {
+        return ProxyField<TestSampleType, WithSetter, WithNotifier>{
+            proxy_base_,
+            name,
+            std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_event_mock_),
+            std::make_unique<mock_binding::ProxyMethodFacade>(set_method_binding_mock_)};
+    }
+
+    ProxyField<TestSampleType, WithNotifier> MakeFieldWithNotifierOnly(const std::string_view name = "TestField")
+    {
+        return ProxyField<TestSampleType, WithNotifier>{
+            proxy_base_, name, std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_event_mock_)};
+    }
+
+    alignas(8) std::array<std::byte, 1024> return_type_buffer_{};
+    alignas(8) std::array<std::byte, 1024> in_args_buffer_{};
+    RuntimeMockGuard runtime_mock_guard_{};
+    ConfigurationStore config_store_{InstanceSpecifier::Create(std::string{"/my_dummy_instance_specifier"}).value(),
+                                     make_ServiceIdentifierType("foo"),
+                                     QualityType::kASIL_QM,
+                                     LolaServiceTypeDeployment{42U},
+                                     LolaServiceInstanceDeployment{1U}};
+    TestProxyBase proxy_base_{std::make_unique<mock_binding::Proxy>(), config_store_.GetHandle()};
+    mock_binding::ProxyEvent<TestSampleType> proxy_event_mock_{};
+    mock_binding::ProxyMethod proxy_method_binding_mock_{};
+    mock_binding::ProxyMethod set_method_binding_mock_{};
+};
+
+TEST_F(ProxyFieldGetSetFixture, GetDelegatesToProxyMethodBinding)
+{
+    // Given a Get-enabled ProxyField (WithGetter) and a mock method binding
+    auto field = MakeFieldWithGetOnly();
+
+    // When calling Get()
+    EXPECT_CALL(proxy_method_binding_mock_, GetReturnValueBuffer(0));
+    EXPECT_CALL(proxy_method_binding_mock_, DoCall(0));
+    auto result = field.Get();
+
+    // Then the call is delegated to the underlying method binding
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(ProxyFieldGetSetFixture, SetDelegatesToProxyMethodBindingAndCopiesValueIntoInArgsBuffer)
+{
+    // Given a ProxyField with a setter (WithSetter, WithNotifier)
+    auto field = MakeFieldWithSetAndNotifier();
+    TestSampleType value{42U};
+    EXPECT_CALL(set_method_binding_mock_, GetInArgsBuffer(0));
+    EXPECT_CALL(set_method_binding_mock_, GetReturnValueBuffer(0));
+    EXPECT_CALL(set_method_binding_mock_, DoCall(0));
+
+    // When Set is called
+    auto result = field.Set(value);
+
+    // Then the call delegates to the binding and the value lands in the in-args buffer
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(static_cast<TestSampleType>(in_args_buffer_[0]), value);
+}
+
+TEST_F(ProxyFieldGetSetFixture, GetPropagatesBindingError)
+{
+    // Given a Get-enabled ProxyField (WithGetter) where the binding returns an error
+    auto field = MakeFieldWithGetOnly();
+
+    // When calling Get() and the binding reports an error
+    EXPECT_CALL(proxy_method_binding_mock_, GetReturnValueBuffer(0))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+    auto result = field.Get();
+
+    // Then the error is propagated back to the caller
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(ProxyFieldGetSetFixture, SetPropagatesBindingError)
+{
+    // Given a Set-enabled ProxyField (WithSetter, WithNotifier) where the binding returns an error
+    auto field = MakeFieldWithSetAndNotifier();
+
+    // When calling Set() and the binding reports an error
+    TestSampleType value{42U};
+    EXPECT_CALL(set_method_binding_mock_, GetInArgsBuffer(0))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+    auto result = field.Set(value);
+
+    // Then the error is propagated back to the caller
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(ProxyFieldGetSetFixture, GetMethodIsNotRegisteredAsRegularMethod)
+{
+    // When constructing a Get-only ProxyField
+    auto field = MakeFieldWithGetOnly();
+
+    // Then the field shows up on the parent proxy, but the Get method does not get registered as a regular method
+    EXPECT_EQ(proxy_base_.GetFields().size(), 1U);
+    EXPECT_TRUE(proxy_base_.GetMethods().empty());
+}
+
+TEST_F(ProxyFieldGetSetFixture, SetMethodIsNotRegisteredAsRegularMethod)
+{
+    // When constructing a Set+Notifier ProxyField
+    auto field = MakeFieldWithSetAndNotifier();
+
+    // Then the field shows up on the parent proxy, but the Set method does not get registered as a regular method
+    EXPECT_EQ(proxy_base_.GetFields().size(), 1U);
+    EXPECT_TRUE(proxy_base_.GetMethods().empty());
+}
+
+TEST_F(ProxyFieldGetSetFixture, NotifierOnlyFieldRegistersAsField)
+{
+    // When constructing a ProxyField with WithNotifier only (no Get, no Set)
+    auto field = MakeFieldWithNotifierOnly();
+
+    // Then the field is still registered on the parent proxy.
+    EXPECT_EQ(proxy_base_.GetFields().size(), 1U);
 }
 
 }  // namespace
