@@ -76,7 +76,21 @@ class SkeletonBindingGuard
     std::unique_ptr<SkeletonBinding> skeleton_binding_;
 };
 
-using ProxyBindingFactoryCreateFixture = lola::ProxyMockedMemoryFixture;
+class ProxyBindingFactoryCreateFixture : public lola::ProxyMockedMemoryFixture
+{
+  protected:
+    void TearDown() override
+    {
+        if (created_binding_ != nullptr)
+        {
+            created_binding_->PrepareDeinitialize();
+            created_binding_->FinalizeDeinitialize();
+        }
+        lola::ProxyMockedMemoryFixture::TearDown();
+    }
+
+    std::unique_ptr<ProxyBinding> created_binding_{nullptr};
+};
 score::cpp::optional<LolaServiceInstanceId> GetInstanceId(score::mw::com::impl::InstanceIdentifier identifier)
 {
     const InstanceIdentifierView identifier_view{identifier};
@@ -108,10 +122,10 @@ TEST_F(ProxyBindingFactoryCreateFixture, CanCreateLoLaProxy)
         .WillByDefault(Return(make_FindServiceHandle(10U)));
 
     // When creating a proxy with that
-    const auto result = ProxyBindingFactory::Create(handle);
+    created_binding_ = ProxyBindingFactory::Create(handle);
 
     // Then no nullptr is returned
-    EXPECT_NE(result, nullptr);
+    EXPECT_NE(created_binding_, nullptr);
 }
 
 TEST_F(ProxyBindingFactoryCreateFixture, CannotCreateBlank)

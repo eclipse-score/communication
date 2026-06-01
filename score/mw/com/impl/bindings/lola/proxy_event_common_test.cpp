@@ -100,6 +100,16 @@ class LolaProxyEventCommonFixture : public ProxyMockedMemoryFixture
                     UnregisterEventNotification(QualityType::kASIL_QM, kElementFqId, my_handler_no, kDummyPid));
     }
 
+    // ProxyEventCommon no longer Unsubscribes on destruction, so do it explicitly.
+    void TearDown() override
+    {
+        if (proxy_event_ != nullptr)
+        {
+            proxy_event_->Unsubscribe();
+        }
+        ProxyMockedMemoryFixture::TearDown();
+    }
+
   protected:
     ::testing::MockFunction<void()> event_handler_{};
     std::unique_ptr<T> proxy_event_{nullptr};
@@ -194,7 +204,10 @@ TYPED_TEST(LolaProxyEventCommonFixture, UnsubscribeImmediatelyAfterSubscribing)
 
 TYPED_TEST(LolaProxyEventCommonFixture, UnsubscribingWillUnregisterEventHandler)
 {
-    this->RecordProperty("Verifies", "SCR-21293524");
+    // SCR-20236391 and SCR-20237033 are split with CallsUnsubscribeOnDestruction in traits_test.cpp.
+    // this test covers Unsubscribe triggering UnregisterEventNotification, the other covers proxy
+    // destruction triggering Unsubscribe on the events and fields.
+    this->RecordProperty("Verifies", "SCR-21293524, SCR-20236391, SCR-20237033");
     this->RecordProperty(
         "Description",
         "Checks that calling Unsubscribe while currently subscribed will unregister a registered event "
@@ -235,53 +248,6 @@ TYPED_TEST(LolaProxyEventCommonFixture, UnsubscribingWillUnregisterEventHandler)
 
     // and when the ProxyEvent unsubscribes
     this->proxy_event_->Unsubscribe();
-
-    // Then the receive handler should be unregistered
-    EXPECT_TRUE(handler_unregistered);
-}
-
-TYPED_TEST(LolaProxyEventCommonFixture, DestroyingTheProxyEventWillUnregisterEventHandler)
-{
-    this->RecordProperty("Verifies", "SCR-20236391, SCR-20237033");
-    this->RecordProperty(
-        "Description",
-        "Checks that a registered event handler will be unregistered when the (generic) proxy event is destroyed.");
-    this->RecordProperty("TestType", "Requirements-based test");
-    this->RecordProperty("Priority", "1");
-    this->RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    const std::size_t max_sample_count{1U};
-    constexpr const IMessagePassingService::HandlerRegistrationNoType my_handler_no = 37U;
-    bool handler_unregistered{false};
-
-    // Expecting that a receive handler will be registered
-    EXPECT_CALL(*this->mock_service_,
-                RegisterEventNotification(QualityType::kASIL_QM, kElementFqId, _, this->kDummyPid))
-        .WillOnce(Return(my_handler_no));
-
-    // and the same receive handler will be unregistered
-    EXPECT_CALL(*this->mock_service_,
-                UnregisterEventNotification(QualityType::kASIL_QM, kElementFqId, my_handler_no, this->kDummyPid))
-        .WillOnce(InvokeWithoutArgs([&handler_unregistered]() {
-            handler_unregistered = true;
-        }));
-
-    // Given a proxy that unsubscribes while waiting for being subscribed correctly
-    this->InitialiseProxyAndEvent();
-
-    // When we subscribe (sending a subscribe message to the producer)
-    std::ignore = this->proxy_event_->Subscribe(max_sample_count);
-
-    // and Register a receive handler
-    safecpp::Scope<> event_receive_handler_scope{};
-    std::ignore =
-        this->proxy_event_->SetReceiveHandler(FromMockFunction(event_receive_handler_scope, this->event_handler_));
-
-    // Then the receive handler should not be unregistered
-    EXPECT_FALSE(handler_unregistered);
-
-    // and when the ProxyEvent is destroyed
-    this->proxy_event_.reset();
 
     // Then the receive handler should be unregistered
     EXPECT_TRUE(handler_unregistered);

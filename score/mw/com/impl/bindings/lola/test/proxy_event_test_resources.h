@@ -169,8 +169,16 @@ class ProxyMockedMemoryFixture : public ::testing::Test
 
     ProxyMockedMemoryFixture() noexcept;
 
+    void TearDown() override;
+
     void InitialiseProxyWithConstructor(const InstanceIdentifier& instance_identifier);
     void InitialiseProxyWithCreate(const InstanceIdentifier& instance_identifier);
+
+    /// \brief Calls PrepareDeinitialize on proxy_ and marks it so TearDown skips its own call.
+    void PrepareDeinitialize();
+
+    /// \brief Calls FinalizeDeinitialize on proxy_ and marks it so TearDown skips its own call.
+    void FinalizeDeinitialize();
 
     void ExpectControlSegmentOpened();
     void ExpectDataSegmentOpened();
@@ -213,6 +221,10 @@ class ProxyMockedMemoryFixture : public ::testing::Test
     ::testing::NiceMock<LolaRuntimeMock<std::shared_ptr>> binding_runtime_{false, mock_service_};
 
     std::unique_ptr<Proxy> proxy_{nullptr};
+
+  private:
+    bool prepare_deinitialize_called_in_test_{false};
+    bool finalize_deinitialize_called_in_test_{false};
 };
 
 class LolaProxyEventResources : public ProxyMockedMemoryFixture

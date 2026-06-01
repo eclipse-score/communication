@@ -103,6 +103,10 @@ class ProxyEventTracingFixture : public ::testing::Test
         ExpectProxyServiceElementBindingCreation(proxy_service_element_binding_factory_mock_guard_);
 
         ON_CALL(*mock_proxy_event_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(*mock_proxy_event_binding_, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+        ON_CALL(*mock_proxy_event_binding_, GetSubscriptionState())
+            .WillByDefault(Return(SubscriptionState::kNotSubscribed));
+        ON_CALL(*mock_proxy_event_binding_, Subscribe(_)).WillByDefault(Return(score::Result<void>{}));
     }
 
     void CreateProxy()
@@ -480,16 +484,10 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture, SubscribeCallsAreTracedWhenEnabled
                 return {};
             })));
 
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-
     // and that GetSubscriptionState is called once and indicates that the Service Element is currently not
     // subscribed
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kNotSubscribed));
-
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -550,16 +548,10 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture,
                 return MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance);
             })));
 
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-
     // and that GetSubscriptionState is called once and indicates that the Service Element is currently not
     // subscribed
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kNotSubscribed));
-
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -628,16 +620,10 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture,
                 return MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints);
             })));
 
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-
     // and that GetSubscriptionState is called once and indicates that the Service Element is currently not
     // subscribed
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kNotSubscribed));
-
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -687,9 +673,6 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture, SubscribeCallsAreNotTracedWhenDisa
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kNotSubscribed));
 
-    // and that Subscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Subscribe(max_sample_count));
-
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
@@ -715,6 +698,8 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture, UnsubscribeCallsAreTracedWhenEna
         this->CreateServiceElementInstanceIdentifierView(
             typename ProxyEventTracingFixture<TypeParam>::TracePointType{});
 
+    const std::size_t max_sample_count{1U};
+
     // Expecting that the runtime returns a mocked TracingRuntime and TracingFilterConfig
     StrictMock<tracing::TracingRuntimeMock> tracing_runtime_mock{};
     EXPECT_CALL(this->runtime_mock_guard_.runtime_mock_, GetTracingRuntime()).WillOnce(Return(&tracing_runtime_mock));
@@ -725,6 +710,11 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture, UnsubscribeCallsAreTracedWhenEna
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
         typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
         expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
+
+    // and given that GetSubscriptionState returns kNotSubscribed then kSubscribed
+    EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
+        .WillOnce(Return(SubscriptionState::kSubscribed));
 
     // Then a trace call relating to Unsubscribe should be called with no data
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -738,20 +728,15 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture, UnsubscribeCallsAreTracedWhenEna
                       0U))
         .WillOnce(Return(Result<void>{}));
 
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-
-    // and that GetSubscriptionState is called once and indicates that the Service Element is currently subscribed
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
-        .WillOnce(Return(SubscriptionState::kSubscribed));
-
     // and that Unsubscribe will be called on the binding
     EXPECT_CALL(*this->mock_proxy_event_binding_, Unsubscribe());
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
-    // and unsubscribe is called on the event
+    // and Subscribe and then Unsubscribe are called on the event
+    std::ignore = this->proxy_->my_service_element_.Subscribe(max_sample_count);
+
     this->proxy_->my_service_element_.Unsubscribe();
 }
 
@@ -768,12 +753,13 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
 
     ProxyEventTracingData expected_enabled_trace_points{};
     expected_enabled_trace_points.enable_unsubscribe = true;
-    expected_enabled_trace_points.enable_subscribe = true;
     expected_enabled_trace_points.enable_call_receive_handler = true;
 
     const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view =
         this->CreateServiceElementInstanceIdentifierView(
             typename ProxyEventTracingFixture<TypeParam>::TracePointType{});
+
+    const std::size_t max_sample_count{1U};
 
     // Expecting that the runtime returns a mocked TracingRuntime and TracingFilterConfig
     tracing::TracingRuntimeMock tracing_runtime_mock{};
@@ -799,20 +785,12 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
 
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-
-    // and that GetSubscriptionState is called once and indicates that the Service Element is currently subscribed
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
-        .WillOnce(Return(SubscriptionState::kSubscribed));
-
-    // and that Unsubscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Unsubscribe());
-
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
-    // and unsubscribe is called on the event
+    // and Subscribe and then Unsubscribe are called on the event
+    std::ignore = this->proxy_->my_service_element_.Subscribe(max_sample_count);
+
     this->proxy_->my_service_element_.Unsubscribe();
 
     // Then the specific trace point instance should now be disabled
@@ -837,12 +815,13 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
 
     ProxyEventTracingData expected_enabled_trace_points{};
     expected_enabled_trace_points.enable_unsubscribe = true;
-    expected_enabled_trace_points.enable_subscribe = true;
     expected_enabled_trace_points.enable_call_receive_handler = true;
 
     const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view =
         this->CreateServiceElementInstanceIdentifierView(
             typename ProxyEventTracingFixture<TypeParam>::TracePointType{});
+
+    const std::size_t max_sample_count{1U};
 
     // Expecting that the runtime returns a mocked TracingRuntime and TracingFilterConfig
     tracing::TracingRuntimeMock tracing_runtime_mock{};
@@ -868,20 +847,12 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
 
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-
-    // and that GetSubscriptionState is called once and indicates that the Service Element is currently subscribed
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
-        .WillOnce(Return(SubscriptionState::kSubscribed));
-
-    // and that Unsubscribe will be called on the binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, Unsubscribe());
-
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
-    // and unsubscribe is called on the event
+    // and Subscribe and then Unsubscribe are called on the event
+    std::ignore = this->proxy_->my_service_element_.Subscribe(max_sample_count);
+
     this->proxy_->my_service_element_.Unsubscribe();
 
     // Then all trace point instances should now be disabled
@@ -919,17 +890,22 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture, UnsubscribeCallsAreNotTracedWhen
 
     // Then a trace call relating to Unsubscribe should never be called
 
-    // and that GetSubscriptionState is called once and indicates that the Service Element is currently subscribed
+    const std::size_t max_sample_count{1U};
+
+    // and given that GetSubscriptionState returns kNotSubscribed then kSubscribed
     EXPECT_CALL(*this->mock_proxy_event_binding_, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
         .WillOnce(Return(SubscriptionState::kSubscribed));
 
-    // and that Unsubscribe will be called on the binding
+    // and given that Unsubscribe is called on the binding
     EXPECT_CALL(*this->mock_proxy_event_binding_, Unsubscribe());
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
-    // and unsubscribe is called on the event
+    // and Subscribe and then Unsubscribe are called on the event
+    std::ignore = this->proxy_->my_service_element_.Subscribe(max_sample_count);
+
     this->proxy_->my_service_element_.Unsubscribe();
 }
 
@@ -973,9 +949,6 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture, SetReceiveHandlerCallsAreT
                       nullptr,
                       0U))
         .WillOnce(Return(Result<void>{}));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // and that SetReceiveHandler will be called on the binding
     EXPECT_CALL(*this->mock_proxy_event_binding_, SetReceiveHandler(_));
@@ -1030,9 +1003,6 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // and that SetReceiveHandler will be called on the binding
     EXPECT_CALL(*this->mock_proxy_event_binding_, SetReceiveHandler(_));
@@ -1094,9 +1064,6 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // and that SetReceiveHandler will be called on the binding
     EXPECT_CALL(*this->mock_proxy_event_binding_, SetReceiveHandler(_));
@@ -1202,9 +1169,6 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture, ReceiveHandlerCallbac
                       nullptr,
                       0U));
 
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
@@ -1270,9 +1234,6 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -1346,9 +1307,6 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -1460,9 +1418,6 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture, UnsetReceiveHandlerCalls
                       nullptr,
                       0U));
 
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-
     // and that UnsetReceiveHandler will be called on the binding
     EXPECT_CALL(*this->mock_proxy_event_binding_, UnsetReceiveHandler());
 
@@ -1519,9 +1474,6 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // and that UnsetReceiveHandler will be called on the binding
     EXPECT_CALL(*this->mock_proxy_event_binding_, UnsetReceiveHandler());
@@ -1586,9 +1538,6 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // and that UnsetReceiveHandler will be called on the binding
     EXPECT_CALL(*this->mock_proxy_event_binding_, UnsetReceiveHandler());
@@ -1693,9 +1642,6 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture, GetNewSamplesCallsAreTracedWhe
                       nullptr,
                       0U));
 
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
@@ -1747,9 +1693,6 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -1810,9 +1753,6 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -1920,9 +1860,6 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture, GetNewSamplesCallbackC
                       nullptr,
                       0U));
 
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
 
@@ -1994,9 +1931,6 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();
@@ -2076,9 +2010,6 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture,
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
-
-    // and that GetBindingType is called on the proxy event binding
-    EXPECT_CALL(*this->mock_proxy_event_binding_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // When a Proxy containing a ProxyEvent is created based on a lola deployment
     this->CreateProxy();

@@ -39,6 +39,16 @@ class LolaGenericProxyEventFixture : public LolaProxyEventResources
         return *this;
     }
 
+    // ProxyEventCommon no longer Unsubscribes on destruction, so do it explicitly.
+    void TearDown() override
+    {
+        if (generic_proxy_event_ != nullptr)
+        {
+            generic_proxy_event_->Unsubscribe();
+        }
+        ProxyMockedMemoryFixture::TearDown();
+    }
+
     std::unique_ptr<GenericProxyEvent> generic_proxy_event_{nullptr};
 };
 TEST_F(LolaGenericProxyEventFixture, CanConstructAGenericProxyEvent)

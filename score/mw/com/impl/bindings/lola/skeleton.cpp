@@ -228,6 +228,8 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
       method_subscription_registration_guard_asil_b_{},
       was_old_shm_region_reopened_{false},
       filesystem_{std::move(filesystem)},
+      prepare_offer_called_{false},
+      prepare_stop_offer_called_{false},
       method_call_handler_scope_{},
       on_service_method_subscribed_handler_scope_{}
 {
@@ -358,6 +360,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
             method_subscription_registration_guard_asil_b_.emplace(std::move(asil_b_registration_result).value());
     }
 
+    prepare_offer_called_ = true;
     return {};
 }
 
@@ -370,6 +373,8 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
 auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> unregister_shm_object_callback) noexcept
     -> void
 {
+    prepare_stop_offer_called_ = true;
+
     if (unregister_shm_object_callback.has_value())
     {
         // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "I a function is declared to be
@@ -441,6 +446,16 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     }
 
     memory_manager_.Reset();
+}
+
+Skeleton::~Skeleton() noexcept
+{
+    if (prepare_offer_called_ && !prepare_stop_offer_called_)
+    {
+        score::mw::log::LogFatal("lola")
+            << "Skeleton was offered but destroyed without prior PrepareStopOffer. Terminating.";
+        std::terminate();
+    }
 }
 
 QualityType Skeleton::GetInstanceQualityType() const

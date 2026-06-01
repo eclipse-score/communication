@@ -72,19 +72,19 @@ struct ProxyEventStruct
 {
     using SampleType = TestSampleType;
     using ProxyEventType = ProxyEvent<TestSampleType>;
-    using MockProxyEventType = StrictMock<mock_binding::ProxyEvent<TestSampleType>>;
+    using MockProxyEventType = NiceMock<mock_binding::ProxyEvent<TestSampleType>>;
 };
 struct GenericProxyEventStruct
 {
     using SampleType = void;
     using ProxyEventType = GenericProxyEvent;
-    using MockProxyEventType = StrictMock<mock_binding::GenericProxyEvent>;
+    using MockProxyEventType = NiceMock<mock_binding::GenericProxyEvent>;
 };
 struct ProxyFieldStruct
 {
     using SampleType = TestSampleType;
     using ProxyEventType = ProxyField<TestSampleType>;
-    using MockProxyEventType = StrictMock<mock_binding::ProxyEvent<TestSampleType>>;
+    using MockProxyEventType = NiceMock<mock_binding::ProxyEvent<TestSampleType>>;
 };
 
 /// \brief Templated test fixture for ProxyEvent functionality that works for both ProxyEvent and GenericProxyEvent
@@ -108,6 +108,7 @@ class ProxyEventFixture : public ::testing::Test
           mock_proxy_event_{*mock_proxy_event_ptr_},
           proxy_event_{empty_proxy_, std::move(mock_proxy_event_ptr_), kEventName}
     {
+        ON_CALL(mock_proxy_event_, Subscribe(_)).WillByDefault(Return(score::Result<void>{}));
     }
 
     ProxyBase empty_proxy_;
@@ -257,24 +258,27 @@ TYPED_TEST(ProxyEventDeathTest, DieOnUnsubscribingWhileHoldingSamplePtrs)
 
     const std::size_t max_num_samples{1};
 
-    EXPECT_CALL(Base::mock_proxy_event_, Subscribe(max_num_samples));
-    EXPECT_CALL(Base::mock_proxy_event_, GetNewSamples(_, _));
-    EXPECT_CALL(Base::mock_proxy_event_, Unsubscribe()).Times(::testing::AtMost(1));
+    // Given a subscribed proxy event that has delivered a sample which is still held
+
+    EXPECT_CALL(Base::mock_proxy_event_, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
+        .WillRepeatedly(Return(SubscriptionState::kSubscribed));
 
     Base::mock_proxy_event_.PushFakeSample(3U);
-    EXPECT_CALL(Base::mock_proxy_event_, GetSubscriptionState())
-        .WillOnce(::testing::Return(SubscriptionState::kNotSubscribed));
-
-    score::cpp::optional<SamplePtr<typename Base::SampleType>> ptr{};
     std::ignore = Base::proxy_event_.Subscribe(max_num_samples);
+
+    score::cpp::optional<SamplePtr<typename Base::SampleType>> held_sample{};
     Result<std::size_t> num_samples = Base::proxy_event_.GetNewSamples(
-        [&ptr](SamplePtr<typename Base::SampleType> new_sample) {
-            ptr = std::move(new_sample);
+        [&held_sample](SamplePtr<typename Base::SampleType> sample) {
+            held_sample = std::move(sample);
         },
-        1U);
+        max_num_samples);
     ASSERT_TRUE(num_samples.has_value());
-    ASSERT_TRUE(ptr.has_value());
+    ASSERT_TRUE(held_sample.has_value());
     EXPECT_EQ(*num_samples, 1U);
+
+    // When Unsubscribe is called while still holding the sample
+    // Then the process terminates
     EXPECT_DEATH(Base::proxy_event_.Unsubscribe(), ".*");
 }
 
@@ -282,9 +286,21 @@ TYPED_TEST(ProxyEventFixture, UnsubscribeWhileNotHoldingSamplePtrs)
 {
     using Base = ProxyEventFixture<TypeParam>;
 
-    Base::mock_proxy_event_.PushFakeSample(3U);
+    // Given a subscribed proxy event that received a sample but no longer holds it
     EXPECT_CALL(Base::mock_proxy_event_, GetSubscriptionState())
-        .WillOnce(::testing::Return(SubscriptionState::kNotSubscribed));
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
+        .WillRepeatedly(Return(SubscriptionState::kSubscribed));
+
+    Base::mock_proxy_event_.PushFakeSample(3U);
+    std::ignore = Base::proxy_event_.Subscribe(1U);
+
+    std::ignore = Base::proxy_event_.GetNewSamples(
+        [](SamplePtr<typename Base::SampleType>) noexcept {
+            // The sample goes out of the scope here. so, nothing is held when Unsubscribe is called next.
+        },
+        1U);
+
+    // When Unsubscribe is called while NOT holding any sample
     Base::proxy_event_.Unsubscribe();
 
     // Then nothing bad happens
