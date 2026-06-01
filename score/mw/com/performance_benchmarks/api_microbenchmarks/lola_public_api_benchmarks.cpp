@@ -58,8 +58,9 @@ std::atomic<bool> LolaBenchmarkFixture::fixture_initialized_{false};
 
 BENCHMARK_F(LolaBenchmarkFixture, LoLaInstanceSpecifierCreate)(benchmark::State& state)
 {
-    for (auto _ : state)
+    for (auto ignore : state)
     {
+        static_cast<void>(ignore);
         auto result = score::mw::com::InstanceSpecifier::Create(std::string{kBenchmarkInstanceSpecifier});
         benchmark::DoNotOptimize(result);
     }
@@ -70,8 +71,9 @@ BENCHMARK_F(LolaBenchmarkFixture, LoLaInstanceSpecifierCreatePartialLoopBenchmar
     // this benchmark is doing the same thing as LoLaInstanceSpecifierCreate, just with a different approach where we
     // time only part of the loop core and not the whole loop. This is just here to demonstrate and document this
     // teqnique.
-    for (auto _ : state)
+    for (auto ignore : state)
     {
+        static_cast<void>(ignore);
         // other work could be done here which would not be part of the benchmarked time
 
         auto start = std::chrono::high_resolution_clock::now();

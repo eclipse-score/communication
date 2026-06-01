@@ -328,33 +328,25 @@ mod test {
                 for attempt in 0..MAX_ATTEMPTS {
                     println!("[RECEIVER] Attempt {}", attempt);
 
-                    // Match and immediately reassign in all branches
-                    sample_buf = match subscribed.receive(sample_buf, 1, 3).await {
-                        Ok(returned_buf) => {
-                            let count = returned_buf.sample_count();
-
-                            if count > 0 {
-                                total_received += count;
-                                println!(
-                                    "[RECEIVER] Received {} samples (total: {})",
-                                    count, total_received
-                                );
-
-                                // Create a mutable version to pop from
-                                let mut buf = returned_buf;
-                                while let Some(sample) = buf.pop_front() {
-                                    println!("[RECEIVER]   Sample: {:.2} psi", sample.pressure);
-                                }
-                                buf
-                            } else {
-                                returned_buf
-                            }
-                        }
-                        Err(e) => {
+                    // Destructure tuple - container is always returned even on error
+                    let (returned_buf, result) = subscribed.receive(sample_buf, 1, 3).await;
+                    sample_buf = {
+                        let count = returned_buf.sample_count();
+                        if let Err(e) = result {
                             println!("[RECEIVER] Error on attempt {}: {:?}", attempt, e);
-                            // Create a fresh buffer if there's an error
-                            SampleContainer::new(5)
+                        } else if count > 0 {
+                            total_received += count;
+                            println!(
+                                "[RECEIVER] Received {} samples (total: {})",
+                                count, total_received
+                            );
                         }
+                        // Drain printed samples
+                        let mut buf = returned_buf;
+                        while let Some(sample) = buf.pop_front() {
+                            println!("[RECEIVER]   Sample: {:.2} psi", sample.pressure);
+                        }
+                        buf
                     };
                 }
 
@@ -376,7 +368,7 @@ mod test {
             let uninit_sample = match offered_producer.left_tire.allocate() {
                 Ok(sample) => sample,
                 Err(e) => {
-                    eprintln!("Failed to allocate sample: {:?}", e);
+                    eprintln!("[SENDER] Failed to allocate sample: {:?}", e);
                     continue;
                 }
             };
@@ -385,9 +377,9 @@ mod test {
             });
             match sample.send() {
                 Ok(_) => (),
-                Err(e) => eprintln!("Failed to send sample: {:?}", e),
+                Err(e) => eprintln!("[SENDER] Failed to send sample: {:?}", e),
             }
-            println!("Sent sample with pressure: {}", 1.0 + i as f32);
+            println!("[SENDER] Sent sample with pressure: {}", 1.0 + i as f32);
             tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
         }
         offered_producer
@@ -395,29 +387,28 @@ mod test {
 
     //receiver function which use async receive to get data, it waits for new data and process it once it arrives,
     //it will receive data 10 times and print the received samples
-    async fn async_data_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>) {
+    async fn async_data_processor_fn<R: Runtime>(
+        subscribed: impl Subscription<Tire, R>,
+        is_timeout: bool,
+    ) {
         println!("[RECEIVER] Async data processor started");
         let mut buffer = SampleContainer::new(5);
         for _ in 0..5 {
-            buffer = match subscribed.receive(buffer, 2, 3).await {
-                Ok(returned_buf) => {
-                    let count = returned_buf.sample_count();
-                    if count > 0 {
-                        println!("[RECEIVER] Received {} samples", count);
-                        let mut buf = returned_buf;
-                        while let Some(sample) = buf.pop_front() {
-                            println!("[RECEIVER]   Sample: {:.2} psi", sample.pressure);
-                        }
-                        buf
-                    } else {
-                        returned_buf
-                    }
-                }
-                Err(e) => {
-                    println!("[RECEIVER] Error receiving data: {:?}", e);
-                    SampleContainer::new(5)
-                }
+            let (returned_buf, result) = if is_timeout {
+                let timeout = tokio::time::sleep(Duration::from_millis(1000));
+                subscribed.cancellable_receive(buffer, 2, 3, timeout).await
+            } else {
+                subscribed.receive(buffer, 2, 3).await
+            };
+            match result {
+                Ok(count) => println!("[RECEIVER] Received {} samples", count),
+                Err(e) => eprintln!("[RECEIVER] Failed to receive samples: {:?}", e),
             }
+            let mut buf = returned_buf;
+            while let Some(sample) = buf.pop_front() {
+                println!("[RECEIVER]   Sample: {:.2} psi", sample.pressure);
+            }
+            buffer = buf;
         }
     }
 
@@ -444,8 +435,45 @@ mod test {
         let consumer = consumer.await.expect("Failed to create consumer");
         // Subscribe to one event
         let subscribed = consumer.left_tire.subscribe(5).unwrap();
-        // Spawn async data processor
-        let processor_join_handle = tokio::spawn(async_data_processor_fn(subscribed));
+
+        let processor_join_handle = tokio::spawn(async_data_processor_fn(subscribed, false));
+        processor_join_handle
+            .await
+            .expect("Error returned from task");
+        let producer = sender_join_handle.await.expect("Error returned from task");
+
+        match producer.unoffer() {
+            Ok(_) => println!("Successfully unoffered the service"),
+            Err(e) => eprintln!("Failed to unoffer: {:?}", e),
+        }
+
+        println!("=== Async subscription test with Lola runtime completed ===\n");
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn receive_with_timeout_and_send_using_multi_thread() {
+        println!("Starting async subscription test with Lola runtime");
+        //Intentionally using service instance of test1, if you face issue add new service instance in config file and use it here.
+        let service_id = InstanceSpecifier::new("/Vehicle/Service1/Instance")
+            .expect("Failed to create InstanceSpecifier");
+        let service_id_clone = service_id.clone();
+        //consumer create
+        let consumer_runtime = get_test_runtime();
+        //starting service discovery in async way, so that it can be discovered when producer offer service after some delay, and consumer is waiting for discovery result
+        let consumer = tokio::spawn(create_consumer_async(consumer_runtime, service_id));
+        //simulate some delay before producer offer service, so that consumer is waiting for discovery
+        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+        //Producer create
+        let producer_runtime = get_test_runtime();
+        let producer = create_producer(producer_runtime, service_id_clone);
+        // Spawn async data sender
+        let sender_join_handle = tokio::spawn(async_data_sender_fn(producer));
+        // Await consumer creation and subscribe to events
+        let consumer = consumer.await.expect("Failed to create consumer");
+        // Subscribe to one event
+        let subscribed = consumer.left_tire.subscribe(5).unwrap();
+
+        let processor_join_handle = tokio::spawn(async_data_processor_fn(subscribed, true));
         processor_join_handle
             .await
             .expect("Error returned from task");

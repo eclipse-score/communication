@@ -17,15 +17,14 @@
 #include "score/mw/com/impl/generic_skeleton_event.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/service_element_map.h"
+#include "score/mw/com/impl/service_element_map_view.h"
+#include "score/mw/com/impl/service_element_map_view_factory.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/result/result.h"
 #include <score/span.hpp>
 
-#include <cstdint>
 #include <memory>
 #include <string_view>
-#include <vector>
 
 namespace score::mw::com::impl
 {
@@ -49,10 +48,10 @@ struct GenericSkeletonServiceElementInfo
 class GenericSkeleton : public SkeletonBase
 {
   public:
-    using EventMap = ServiceElementMap<GenericSkeletonEvent>;
-    /// @brief Creates a GenericSkeleton and all its service elements (events + fields) atomically.
+    using EventMapView = ServiceElementMapView<GenericSkeletonEvent>;
+    /// \brief Creates a GenericSkeleton and all its service elements (events + fields) atomically.
     ///
-    /// @contract
+    /// \contract
     /// - Empty spans are allowed for `in.events` and/or `in.fields`
     /// - Each provided name must exist in the binding deployment for this instance (events/fields respectively).
     /// - All element names must be unique across all element kinds within this skeleton.
@@ -62,31 +61,33 @@ class GenericSkeleton : public SkeletonBase
     [[nodiscard]] static Result<GenericSkeleton> Create(const InstanceIdentifier& identifier,
                                                         const GenericSkeletonServiceElementInfo& in) noexcept;
 
-    /// @brief Same as Create(InstanceIdentifier, ...) but resolves the specifier first.
-    /// @param specifier The instance specifier.
-    /// @param in Input parameters for creation.
-    /// @param mode The method call processing mode.
-    /// @return A GenericSkeleton or an error.
+    /// \brief Same as Create(InstanceIdentifier, ...) but resolves the specifier first.
+    /// \param specifier The instance specifier.
+    /// \param in Input parameters for creation.
+    /// \return A GenericSkeleton or an error.
     [[nodiscard]] static Result<GenericSkeleton> Create(const InstanceSpecifier& specifier,
                                                         const GenericSkeletonServiceElementInfo& in) noexcept;
 
-    /// @brief Returns a const reference to the name-keyed map of events.
-    /// @note The returned reference is valid as long as the GenericSkeleton lives.
-    [[nodiscard]] const EventMap& GetEvents() const noexcept;
+    /// \brief Returns a read-only view to the name-keyed map of events.
+    /// \note The returned view is valid as long as the GenericSkeleton lives.
+    [[nodiscard]] EventMapView GetEvents() const noexcept;
 
-    /// @brief Offers the service instance.
-    /// @return A blank result, or an error if offering fails.
+    /// \brief Offers the service instance.
+    /// \return A blank result, or an error if offering fails.
     [[nodiscard]] Result<void> OfferService() noexcept;
 
-    /// @brief Stops offering the service instance.
+    /// \brief Stops offering the service instance.
     void StopOfferService() noexcept;
 
   private:
     // Private constructor, only callable by static Create methods.
     GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding);
 
-    /// @brief This map owns all GenericSkeletonEvent instances.
-    EventMap events_;
+    /// \brief This map owns all GenericSkeletonEvent instances.
+    /// \details This map needs to be covered in a unique_ptr as it shall not be relocated by a move of the
+    /// GenericSkeleton. This is required as we hand out views to this map (see GetEvents()), which need to be valid
+    /// even after the GenericSkeleton instance has been moved.
+    std::unique_ptr<ServiceElementMapViewFactory<GenericSkeletonEvent>::map_type> events_;
 };
 }  // namespace score::mw::com::impl
 

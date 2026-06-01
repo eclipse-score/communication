@@ -11,12 +11,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Workflow: Clang-Tidy PR check (voting).
+# Workflow: Clang-Tidy PR check (blocking on changed files).
 #
-# Runs clang-tidy on every pull_request and push to main.
-# - Writes a job summary with error/warning counts.
-# - Uploads findings as a downloadable artifact (clang-tidy-findings).
-# - Fails the check if any clang-tidy *errors* are found.
+# Runs clang-tidy on every pull_request, push to main, and merge_group.
+# - Fails if clang-tidy errors are found in C++ files changed by the PR.
+# - The same changed-files scope is applied for both pull_request and
+#   merge_group (gate) so that a passing PR check guarantees a passing gate.
+# - Writes a job summary with error/warning counts and the first 20 error lines.
+# - Uploads full findings + errors-only file as a downloadable artifact.
 #
 # Cache is saved only on pushes to main (not on PRs) to avoid
 # cache poisoning from unreviewed code.
@@ -89,34 +91,36 @@ jobs:
             | grep -c "warning:" || true)
           TOTAL=$((ERRORS + WARNINGS))
 
-          echo "errors=${ERRORS}"   >> $GITHUB_OUTPUT
-          echo "warnings=${WARNINGS}" >> $GITHUB_OUTPUT
-          echo "total=${TOTAL}"     >> $GITHUB_OUTPUT
+          # Scope blocking errors to C++ files changed in this PR / merge-group
+          # commit set. The same logic is applied for all event types
+          # (pull_request, merge_group, push to main) so that a check passing on
+          # a PR is guaranteed to also pass at gate — no late-feedback surprises.
+          #
+          # GITHUB_BASE_REF is set by GitHub for both pull_request and
+          # merge_group events (it is the name of the target branch, e.g. main).
+          CHANGED_CPP=$(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" 2>/dev/null \
+            | grep -E '\.(cpp|h|cc|cxx|hpp)$' || true)
 
-          # ── Count errors only in C++ files changed by this PR ─────────────
-          # For push to main: all errors are blocking.
-          # For pull_request with no C++ changes: nothing to block on.
-          # For pull_request with C++ changes: only errors in changed files block.
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            CHANGED_CPP=$(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" 2>/dev/null \
-              | grep -E '\.(cpp|h|cc|cxx|hpp)$' || true)
-            if [[ -z "$CHANGED_CPP" ]]; then
-              ERRORS_BLOCKING=0
-            else
-              PATTERN=$(echo "$CHANGED_CPP" | tr '\n' '|' | sed 's/|$//')
-              ERRORS_BLOCKING=$(find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
-                | xargs cat 2>/dev/null \
-                | grep -E "(${PATTERN})" \
-                | grep -c "error:" || true)
-            fi
+          if [[ -z "$CHANGED_CPP" ]]; then
+            ERRORS_BLOCKING=0
           else
-            ERRORS_BLOCKING=$ERRORS
+            PATTERN=$(echo "$CHANGED_CPP" | tr '\n' '|' | sed 's/|$//')
+            ERRORS_BLOCKING=$(find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
+              | xargs cat 2>/dev/null \
+              | grep -E "(${PATTERN})" \
+              | grep -c "error:" || true)
           fi
+
+          echo "errors=${ERRORS}"                   >> $GITHUB_OUTPUT
+          echo "warnings=${WARNINGS}"               >> $GITHUB_OUTPUT
+          echo "total=${TOTAL}"                     >> $GITHUB_OUTPUT
           echo "errors_blocking=${ERRORS_BLOCKING}" >> $GITHUB_OUTPUT
 
-          # ── Write findings to file for artifact ───────────────────────────
+          # ── Write full findings and errors-only files for artifact ────────
           find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
             | xargs cat 2>/dev/null > clang_tidy_findings.txt || true
+
+          grep "error:" clang_tidy_findings.txt > clang_tidy_errors.txt || true
 
           # ── Job summary ──────────────────────────────────────────────────
           {
@@ -124,16 +128,20 @@ jobs:
             echo ""
             echo "| Metric | Count |"
             echo "|--------|------:|"
-            echo "| :x: Errors (total)      | **${ERRORS}**   |"
-            echo "| :x: Errors (in changed files) | **${ERRORS_BLOCKING}** |"
+            echo "| :x: Errors | **${ERRORS}** |"
             echo "| :warning: Warnings | **${WARNINGS}** |"
-            echo "| Total           | **${TOTAL}**    |"
+            echo "| Total | **${TOTAL}** |"
             if [[ "${ERRORS_BLOCKING}" -gt 0 ]]; then
               echo ""
               echo "> :x: **Check failed** — clang-tidy errors found in changed files. Fix before merging."
+              echo ""
+              echo "### First 20 errors in changed files"
+              echo '```'
+              head -20 clang_tidy_errors.txt || true
+              echo '```'
             else
               echo ""
-              echo "> :white_check_mark: **Check passed** — no errors in changed files."
+              echo "> :white_check_mark: **Check passed** — no clang-tidy errors in changed files."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -144,6 +152,7 @@ jobs:
           name: clang-tidy-findings
           path: |
             clang_tidy_findings.txt
+            clang_tidy_errors.txt
             clang_tidy_raw.log
           if-no-files-found: ignore
           retention-days: 7
@@ -152,4 +161,7 @@ jobs:
         if: steps.findings.outputs.errors_blocking != '0'
         run: |
           echo "::error::Clang-tidy found ${{ steps.findings.outputs.errors_blocking }} error(s) in changed files. See the 'clang-tidy-findings' artifact for details."
+          echo ""
+          echo "=== Clang-tidy errors ==="
+          cat clang_tidy_errors.txt || true
           exit 1

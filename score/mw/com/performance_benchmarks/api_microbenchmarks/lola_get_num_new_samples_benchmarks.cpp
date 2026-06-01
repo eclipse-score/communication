@@ -129,8 +129,9 @@ std::atomic<bool> LolaGetNumNewSamplesAvailableBenchmarkFixture::fixture_initial
 
 BENCHMARK_F(LolaGetNumNewSamplesAvailableBenchmarkFixture, GetNumNewSamplesAvailable)(benchmark::State& state)
 {
-    for (auto _ : state)
+    for (auto ignore : state)
     {
+        static_cast<void>(ignore);
         benchmark::DoNotOptimize(proxy_->test_event.GetNumNewSamplesAvailable());
     }
 }

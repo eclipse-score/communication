@@ -232,7 +232,9 @@ impl InstanceSpecifier {
         }
 
         // Remove the single leading slash
-        let service_name = service_name.strip_prefix('/').unwrap();
+        let Some(service_name) = service_name.strip_prefix('/') else {
+            return false;
+        };
 
         // Check each character
         // Allowed: digits, lowercase, uppercase, underscore
@@ -800,7 +802,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// # Parameters
     /// * `scratch` - Container for events from this subscription; must not be reused across
     ///   different subscriptions
-    /// * `max_samples` - Maximum number of events to transfer
+    /// * `max_samples` - Maximum number of events to transfer, 0 value is treated as error
     ///
     /// # Returns
     ///
@@ -823,13 +825,17 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// TODO: See above for C++ limitations.
     /// # Parameters
     /// * `scratch` - Container for events from this subscription
-    /// * `new_samples` - Minimum number of new events before resolution
+    /// * `new_samples` - Minimum number of new events before resolution, 0 value is treated as error
     /// * `max_samples` - Maximum number of events that shall be received from the communication
-    ///   buffer and transferred to the container
+    ///   buffer and transferred to the container, 0 value is treated as error
     ///
     /// # Returns
-    /// Future that resolves to the number of newly added events to the container with at least
-    /// `new_samples` number of new events.
+    /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<usize>)`.
+    /// SampleContainer is **always** returned (even on error or cancellation)
+    /// Success case return contains the number of newly added samples to the container with
+    /// number of samples.
+    /// Failure case return the SampleContainer which user passed to the function and
+    /// an 'Error' indicating the reason for failure of the receive operation.
     ///
     /// # Important Notes
     /// User can not concurrenly call `receive` on the same subscription instance from
@@ -844,12 +850,67 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     // The `Future` cannot have a `'static` lifetime. If we enforced `'static`, then `self` would
     // also need to be `'static`, which is not semantically correct for this use case.
     // Multiple threads cannot concurrently read the same event from a single subscription.
+    #[allow(clippy::manual_async_fn)]
     fn receive<'a>(
         &'a self,
         scratch: SampleContainer<Self::Sample<'a>>,
         new_samples: usize,
         max_samples: usize,
-    ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a;
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
+        self.cancellable_receive(
+            scratch,
+            new_samples,
+            max_samples,
+            core::future::pending::<()>(),
+        )
+    }
+
+    /// This method is an extension of `receive` with an additional `cancellation` parameter
+    /// which allows the caller to specify a future that can be used to cancel the receive operation.
+    /// It returns a future that resolves as soon as at least `new_samples` samples have been transferred
+    /// from the communication buffer to the sample container or the `cancellation` future resolves.
+    ///
+    /// # Parameters
+    /// * `scratch` - Container for events from this subscription
+    /// * `new_samples` - Minimum number of new events before resolution, 0 value is treated as error
+    /// * `max_samples` - Maximum number of events that shall be received from the communication
+    ///   buffer and transferred to the container, 0 value is treated as error
+    /// * `cancellation` - Future that resolves when the receive operation should be cancelled. If the
+    ///   cancellation future resolves before the required number of samples are received, the receive
+    ///   operation is considered to have been cancelled.
+    ///   This can be used to implement various cancellation strategies, such as:
+    ///   - **Timeouts**: `tokio::time::sleep(Duration::from_secs(5))`
+    ///   - **Channel-based cancellation**: Waiting for a signal on a channel to indicate cancellation
+    ///   - **User-triggered cancellation**: Waiting for a keyboard interrupt or UI signal or any other user input to trigger cancellation
+    ///   - **External event cancellation**: Any other future that signals when cancellation is needed like shutdown signal, etc.
+    ///
+    ///
+    /// # Returns
+    /// Future that resolves to `(SampleContainer<Self::Sample<'a>>, Result<usize>)`.
+    /// SampleContainer is **always** returned (even on error or cancellation)
+    /// Success case return contains the number of newly added samples to the container with
+    /// number of samples.
+    /// Failure case return the SampleContainer which user passed to the function and
+    /// an 'Error' indicating the reason for failure of the receive operation.
+    ///
+    /// # Important Notes
+    /// User can not concurrenly call `cancellable_receive` on the same subscription instance from
+    /// multiple threads or tasks.
+    /// `cancellation` must be `'static` because cancellation futures (e.g. `tokio::time::sleep`) own all
+    /// their state and do not borrow anything from the caller's scope.
+    /// And if you change to `'a` lifetime then it create lifetime bound not satisfied
+    /// error from rust (see issue <https://github.com/rust-lang/rust/issues/100013> for more information)
+    ///
+    /// The `cancellation` future currently has `Output = ()` and returns nothing. However, it could be
+    /// enhanced in the future to return a value that would be propagated to the caller, as per the use-case.
+    /// No use case for this enhancement has been identified yet, so it is deferred for later implementation.
+    fn cancellable_receive<'a>(
+        &'a self,
+        scratch: SampleContainer<Self::Sample<'a>>,
+        new_samples: usize,
+        max_samples: usize,
+        cancellation: impl Future<Output = ()> + Send + 'static,
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.

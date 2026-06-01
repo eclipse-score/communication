@@ -128,7 +128,6 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
     //            subscription-pending. If detected notify controller, that
     //            checkpoint (2) has been reached.
     // ********************************************************************************
-    auto subscription_state = lola_proxy.simple_event_.GetSubscriptionState();
     std::cerr << "Consumer: Now waiting for event switch to kSubscriptionPending!" << std::endl;
 
     // In step (10) we have a poll-loop based on the event-subscription-state.
@@ -162,7 +161,7 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
     //            subscribed again. If detected notify controller, that
     //            checkpoint (3) has been reached.
     // ********************************************************************************
-    subscription_state = lola_proxy.simple_event_.GetSubscriptionState();
+    auto subscription_state = lola_proxy.simple_event_.GetSubscriptionState();
     while (subscription_state != SubscriptionState::kSubscribed)
     {
         if (test_stop_token.stop_requested())

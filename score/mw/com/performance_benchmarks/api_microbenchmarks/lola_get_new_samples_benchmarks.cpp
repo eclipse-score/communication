@@ -154,8 +154,9 @@ BENCHMARK_F(LolaGetNewSamplesBenchmarkFixture, GetNewSamples)(benchmark::State& 
     score::cpp::stop_source stopper{};
     MakeSenderThread(stopper.get_token());
 
-    for (auto _ : state)
+    for (auto ignore : state)
     {
+        static_cast<void>(ignore);
         benchmark::DoNotOptimize(proxy_->test_event.GetNewSamples(
             [](SamplePtr<DataType> /*sample*/) noexcept {
                 // we receive the sample and do nothing with it.

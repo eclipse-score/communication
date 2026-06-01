@@ -114,7 +114,7 @@
 //! }
 //!
 //! // 6. Or wait asynchronously for events
-//! let n = subscription.receive(&mut container, 1, 3).await?;
+//! let (container, result) = subscription.receive(container, 1, 3).await;
 //! ```
 //! # Further reading
 //! - `com_api_concept` crate — trait definitions and full API documentation

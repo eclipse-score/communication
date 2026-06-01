@@ -10,14 +10,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-///
-/// @file
-/// @copyright Copyright (C) 2023, Bayerische Motoren Werke Aktiengesellschaft (BMW AG)
-///
+
 #include "score/mw/com/impl/generic_proxy.h"
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/plumbing/proxy_binding_factory.h"
+#include "score/mw/com/impl/service_element_map_view_factory.h"
 
 #include "score/mw/log/logging.h"
 
@@ -86,7 +84,8 @@ Result<GenericProxy> GenericProxy::Create(HandleType instance_handle) noexcept
 }
 
 GenericProxy::GenericProxy(std::unique_ptr<ProxyBinding> proxy_binding, HandleType instance_handle)
-    : ProxyBase{std::move(proxy_binding), std::move(instance_handle)}
+    : ProxyBase{std::move(proxy_binding), std::move(instance_handle)},
+      events_(std::make_unique<std::map<std::string_view, GenericProxyEvent>>())
 {
 }
 
@@ -96,7 +95,7 @@ void GenericProxy::FillEventMap(const std::vector<std::string_view>& event_names
     {
         if (proxy_binding_->IsEventProvided(event_name))
         {
-            const auto emplace_result = events_.emplace(
+            const auto emplace_result = events_->emplace(
                 std::piecewise_construct, std::forward_as_tuple(event_name), std::forward_as_tuple(*this, event_name));
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(emplace_result.second,
                                                         "Could not emplace GenericProxyEvent in map.");
@@ -110,12 +109,9 @@ void GenericProxy::FillEventMap(const std::vector<std::string_view>& event_names
     }
 }
 
-GenericProxy::EventMap& GenericProxy::GetEvents() noexcept
+GenericProxy::EventMapView GenericProxy::GetEvents() const noexcept
 {
-    // The signature of this function is part of the public API of the GenericProxy, specified in this requirement:
-    // broken_link_c/issue/14006006
-    // coverity[autosar_cpp14_a9_3_1_violation]
-    return events_;
+    return ServiceElementMapViewFactory<GenericProxyEvent>::Create(*events_);
 }
 
 }  // namespace score::mw::com::impl

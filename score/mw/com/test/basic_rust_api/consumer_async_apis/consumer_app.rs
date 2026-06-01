@@ -89,33 +89,31 @@ async fn async_main() {
     let mut sample_buf = SampleContainer::new(MAX_SAMPLES_PER_CALL);
     // `receive` awaits until at least `min_samples` (1) are available.
     while received_total < num_cycles {
-        sample_buf = match subscription
+        let (returned_buf, result) = subscription
             .receive(sample_buf, 1, MAX_SAMPLES_PER_CALL)
-            .await
-        {
-            Ok(returned_buf) => {
-                let count = returned_buf.sample_count();
-                if count > 0 {
-                    let mut buf = returned_buf;
-                    for _ in 0..count {
-                        if let Some(sample) = buf.pop_front() {
-                            println!("[bigdata-consumer] Received sample x={}", sample.x);
-                        }
-                    }
-                    received_total += count;
-                    println!(
-                        "[bigdata-consumer] Progress: {}/{}",
-                        received_total, num_cycles
-                    );
-                    buf
-                } else {
-                    returned_buf
+            .await;
+        if let Err(e) = result {
+            eprintln!("[bigdata-consumer] Receive error: {:?}", e);
+            return;
+        }
+        // Process the received samples and prepare the buffer for the next call to `receive`.
+        // We are retuning the same buffer instance to `receive` to avoid unnecessary allocations.
+        // So emptying buffer means processing, and if user required it can pass with samples still in buffer
+        // and `receive` will add new samples to it until it reaches the max capacity of the buffer.
+        sample_buf = {
+            let count = returned_buf.sample_count();
+            let mut buf = returned_buf;
+            for _ in 0..count {
+                if let Some(sample) = buf.pop_front() {
+                    println!("[bigdata-consumer] Received sample x={}", sample.x);
                 }
             }
-            Err(e) => {
-                eprintln!("[bigdata-consumer] Receive error: {:?}", e);
-                return;
-            }
+            received_total += count;
+            println!(
+                "[bigdata-consumer] Progress: {}/{}",
+                received_total, num_cycles
+            );
+            buf
         };
     }
 
