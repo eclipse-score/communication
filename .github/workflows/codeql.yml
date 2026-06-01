@@ -11,26 +11,26 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Workflow: CodeQL analysis on push to main and on demand.
+# Workflow: CodeQL analysis on pull_request, push to main, merge_group, and on demand.
 #
 # Runs CodeQL via Bazel on all relevant C++ targets under //score/...
 # and uploads the resulting SARIF file to GitHub Code Scanning so that:
+#   - CodeQL is executed on every PR (acceptance criteria).
 #   - GitHub tracks findings over time with a stable baseline on main.
 #   - New PRs are compared against that baseline to surface new findings.
-#
-# Why not run on pull_request?
-#   The full CodeQL analysis (169 MISRA rules over //score/...) exceeds
-#   GitHub's 6-hour runner limit and is cancelled before producing output.
-#   Running on push to main ensures a complete, uploadable baseline exists.
-#   GitHub Code Scanning then uses that baseline to flag new findings per PR.
+#   - Gate (merge_group) runs use the same scope as PR runs for consistency.
 #
 # Reference: https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/uploading-a-sarif-file-to-github
 
 name: CodeQL Analysis
 
 on:
+  pull_request:
+    types: [opened, reopened, synchronize]
   push:
     branches: [main]
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:  # Allow maintainers to trigger manually when needed
 
 permissions:
@@ -49,6 +49,7 @@ env:
 jobs:
   codeql:
     runs-on: ubuntu-24.04
+    timeout-minutes: 340  # CodeQL full scan is long; cap below GitHub's 6-hour hard limit
 
     steps:
       - name: Checkout repository
