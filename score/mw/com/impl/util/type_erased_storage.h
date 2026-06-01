@@ -245,6 +245,19 @@ auto DeserializeArgs(score::cpp::span<std::byte> src_buffer) -> std::tuple<typen
     return detail::Deserialize<Args...>(memory_buffer_accessor);
 }
 
+/// \brief Overload of DeserializeArgs which takes a single argument type.
+///
+/// This overload is added for convenience since it returns Arg* instead of a tuple with one element. See docstring of
+/// DeserializeArgs for more details.
+template <typename Arg>
+auto DeserializeArg(score::cpp::span<std::byte> src_buffer) -> typename std::add_pointer<Arg>::type
+{
+    detail::MemoryBufferAccessor memory_buffer_accessor{src_buffer};
+    auto tuple_of_args = detail::Deserialize<Arg>(memory_buffer_accessor);
+    static_assert(std::tuple_size_v<decltype(tuple_of_args)> == 1, "Expected exactly one argument in the buffer");
+    return std::get<0>(tuple_of_args);
+}
+
 }  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_UTIL_TYPE_ERASED_STORAGE_H
