@@ -138,7 +138,7 @@ score::Result<std::tuple<impl::MethodInArgPtr<ArgTypes>...>> AllocateImpl(
     {
         return Unexpected(allocated_in_args_storage.error());
     }
-    const auto deserialized_arg_pointers = impl::Deserialize<ArgTypes...>(allocated_in_args_storage.value());
+    const auto deserialized_arg_pointers = impl::DeserializeArgs<ArgTypes...>(allocated_in_args_storage.value());
     auto method_in_arg_ptr_tuple = CreateMethodInArgPtrTuple(
         deserialized_arg_pointers, in_arg_ptr_flags, queue_index, std::make_index_sequence<sizeof...(ArgTypes)>());
 
@@ -160,7 +160,7 @@ Result<void> InitializeInArgs(ProxyMethodBinding& binding, const std::size_t que
         {
             return Unexpected(allocated_in_args_storage.error());
         }
-        const auto deserialized_arg_pointers = impl::Deserialize<ArgTypes...>(allocated_in_args_storage.value());
+        const auto deserialized_arg_pointers = impl::DeserializeArgs<ArgTypes...>(allocated_in_args_storage.value());
 
         // std::apply takes a callable and a tuple. It calls the callable with the arguments from the unpacked tuple.
         // E.g. In this case, it will call the lambda, fn, with: `fn(get<0>(args), get<1>(args), ..., get<n>(args))`

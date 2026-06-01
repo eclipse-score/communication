@@ -183,7 +183,7 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
                     type_erased_in_args.has_value(),
                     "ArgTypes is non void. Thus, type_erased_in_args needs to have a value!");
-                typed_in_arg_ptrs = Deserialize<ArgTypes...>(type_erased_in_args.value());
+                typed_in_arg_ptrs = DeserializeArgs<ArgTypes...>(type_erased_in_args.value());
             }
 
             constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;

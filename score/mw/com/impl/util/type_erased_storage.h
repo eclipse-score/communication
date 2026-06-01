@@ -239,7 +239,7 @@ void SerializeArgs(score::cpp::span<std::byte> target_buffer, T& arg, Args&... a
 /// \param src_buffer memory buffer containing the "type erased" storage.
 /// \return Tuple of pointers to the arguments.
 template <typename... Args>
-auto Deserialize(score::cpp::span<std::byte> src_buffer) -> std::tuple<typename std::add_pointer<Args>::type...>
+auto DeserializeArgs(score::cpp::span<std::byte> src_buffer) -> std::tuple<typename std::add_pointer<Args>::type...>
 {
     detail::MemoryBufferAccessor memory_buffer_accessor{src_buffer};
     return detail::Deserialize<Args...>(memory_buffer_accessor);
