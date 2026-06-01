@@ -64,7 +64,7 @@ bazel coverage //...
 To run coverage for a specific target:
 
 ```bash
-bazel coverage //score/message_passing:client_connection_test
+bazel coverage --combined_report=lcov //score/message_passing:client_connection_test_linux
 ```
 
 When [`quality/coverage.bazelrc`](coverage.bazelrc) is active, the combined LCOV report is written to
@@ -73,7 +73,7 @@ When [`quality/coverage.bazelrc`](coverage.bazelrc) is active, the combined LCOV
 To generate an HTML report from the LCOV data:
 
 ```bash
-genhtml bazel-out/_coverage/_coverage_report.dat --output-directory coverage_html
+genhtml --ignore-errors inconsistent bazel-out/_coverage/_coverage_report.dat --output-directory coverage_html
 ```
 
 Then open `coverage_html/index.html` in a browser.
