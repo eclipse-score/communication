@@ -230,10 +230,11 @@ std::size_t FindNumberOfTracingSlots(
 
             const std::string service_element_name{service_element.service_element_name};
 
-            const auto get_number_of_tracing_slots = [](const auto& service_elements_map,
-                                                        const std::string& service_element_name,
-                                                        const ServiceElementIdentifierView service_element) noexcept
-                -> LolaEventInstanceDeployment::TracingSlotSizeType {
+            const auto get_number_of_tracing_slots =
+                [](const auto& service_elements_map,
+                   const std::string& service_element_name,
+                   const ServiceElementIdentifierView service_element,
+                   const auto& get_tracing_slots) noexcept -> LolaEventInstanceDeployment::TracingSlotSizeType {
                 const auto it = service_elements_map.find(service_element_name);
                 if (it == service_elements_map.end())
                 {
@@ -241,19 +242,29 @@ std::size_t FindNumberOfTracingSlots(
                         << "Requested service element (" << service_element << ") does not exist.";
                     std::terminate();
                 }
-                return it->second.GetNumberOfTracingSlots();
+                return get_tracing_slots(it->second);
             };
 
             LolaEventInstanceDeployment::TracingSlotSizeType slots_per_tracing_point{0U};
             if (service_element_type == ServiceElementType::EVENT)
             {
-                slots_per_tracing_point = get_number_of_tracing_slots(
-                    lola_service_instance_deployment->events_, service_element_name, service_element);
+                slots_per_tracing_point =
+                    get_number_of_tracing_slots(lola_service_instance_deployment->events_,
+                                                service_element_name,
+                                                service_element,
+                                                [](const LolaEventInstanceDeployment& e) noexcept {
+                                                    return e.GetNumberOfTracingSlots();
+                                                });
             }
             else if (service_element_type == ServiceElementType::FIELD)
             {
-                slots_per_tracing_point = get_number_of_tracing_slots(
-                    lola_service_instance_deployment->fields_, service_element_name, service_element);
+                slots_per_tracing_point =
+                    get_number_of_tracing_slots(lola_service_instance_deployment->fields_,
+                                                service_element_name,
+                                                service_element,
+                                                [](const LolaFieldInstanceDeployment& f) noexcept {
+                                                    return f.lola_event_instance_deployment_.GetNumberOfTracingSlots();
+                                                });
             }
             else
             {

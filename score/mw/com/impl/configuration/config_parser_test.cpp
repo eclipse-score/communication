@@ -111,8 +111,13 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
     EXPECT_EQ(secondDeploymentInfo.events_.at("CurrentPressureFrontLeft").enforce_max_samples_, true);
     EXPECT_EQ(secondDeploymentInfo.events_.at("CurrentPressureFrontLeft").max_concurrent_allocations_.value(), 1);
 
-    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").GetNumberOfTracingSlots(), 7);
-    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").GetNumberOfSampleSlots().value(), 60 + 7);
+    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft")
+                  .lola_event_instance_deployment_.GetNumberOfTracingSlots(),
+              7);
+    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft")
+                  .lola_event_instance_deployment_.GetNumberOfSampleSlots()
+                  .value(),
+              60 + 7);
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft")
                   .lola_event_instance_deployment_.max_subscribers_.value(),
               6);
@@ -3571,7 +3576,7 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, CorrectlyParseAJsonContainingN
     const auto& field = lola_service_instance_depl.fields_.at(field_name_str);
 
     // Then the retreived Number of tracing slots matches the original number.
-    EXPECT_EQ(number_of_tracing_slots, field.GetNumberOfTracingSlots());
+    EXPECT_EQ(number_of_tracing_slots, field.lola_event_instance_deployment_.GetNumberOfTracingSlots());
 }
 
 TEST(TracingFilterConfigGetNumberOfTraceingSlots, FailParsingAJsonContainingNumberOfTracingSlotsOutOfRange)

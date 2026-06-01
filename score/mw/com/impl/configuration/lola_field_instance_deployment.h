@@ -37,15 +37,6 @@ class LolaFieldInstanceDeployment
 
     score::json::Object Serialize() const noexcept;
 
-    void SetNumberOfSampleSlots(LolaEventInstanceDeployment::SampleSlotCountType number_of_sample_slots) noexcept;
-
-    [[nodiscard]] std::optional<LolaEventInstanceDeployment::SampleSlotCountType> GetNumberOfSampleSlots()
-        const noexcept;
-    [[nodiscard]] std::optional<LolaEventInstanceDeployment::SampleSlotCountType>
-    GetNumberOfSampleSlotsExcludingTracingSlot() const noexcept;
-
-    [[nodiscard]] LolaEventInstanceDeployment::TracingSlotSizeType GetNumberOfTracingSlots() const noexcept;
-
     // Note the struct is not compliant to POD type containing non-POD member.
     // The struct is used as a config storage obtained by performing the parsing json object.
     // Public access is more convenient to reach the following members of the struct.

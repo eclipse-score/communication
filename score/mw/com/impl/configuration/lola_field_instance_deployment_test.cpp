@@ -44,16 +44,6 @@ enum class Setter
     ENABLED,
     DISABLED
 };
-
-constexpr bool IsEnabled(const Getter getter) noexcept
-{
-    return getter == Getter::ENABLED;
-}
-
-constexpr bool IsEnabled(const Setter setter) noexcept
-{
-    return setter == Setter::ENABLED;
-}
 }  // namespace
 TEST_F(LolaFieldInstanceDeploymentFixture, CanCreateFromSerializedObjectWithOptionals)
 {
@@ -97,8 +87,8 @@ TEST_P(LolaFieldInstanceDeploymentUseGetSetPairParamFixture,
        UseGetAndUseSetFlagsArePreservedAfterRoundTripSerialisation)
 {
     const auto [getter, setter] = GetParam();
-    const auto use_get_if_available = IsEnabled(getter);
-    const auto use_set_if_available = IsEnabled(setter);
+    const auto use_get_if_available = (getter == Getter::ENABLED);
+    const auto use_set_if_available = (setter == Setter::ENABLED);
 
     const LolaFieldInstanceDeployment unit{MakeLolaFieldInstanceDeployment(kMaxSamples,
                                                                            kMaxSubscribers,

@@ -43,11 +43,10 @@ namespace score::mw::com::impl
 namespace detail
 {
 
-template <typename LolaServiceElementInstanceDeployment>
-lola::SkeletonEventProperties GetSkeletonEventProperties(
-    const LolaServiceElementInstanceDeployment& lola_service_element_instance_deployment)
+inline lola::SkeletonEventProperties GetSkeletonEventProperties(
+    const LolaEventInstanceDeployment& lola_event_instance_deployment)
 {
-    if (!lola_service_element_instance_deployment.GetNumberOfSampleSlots().has_value())
+    if (!lola_event_instance_deployment.GetNumberOfSampleSlots().has_value())
     {
         score::mw::log::LogFatal("lola")
             << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Number of sample slots "
@@ -55,16 +54,22 @@ lola::SkeletonEventProperties GetSkeletonEventProperties(
         std::terminate();
     }
 
-    if (!lola_service_element_instance_deployment.max_subscribers_.has_value())
+    if (!lola_event_instance_deployment.max_subscribers_.has_value())
     {
         score::mw::log::LogFatal("lola")
             << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Max subscribers was "
                "not specified in the configuration. Terminating.";
         std::terminate();
     }
-    return lola::SkeletonEventProperties{lola_service_element_instance_deployment.GetNumberOfSampleSlots().value(),
-                                         lola_service_element_instance_deployment.max_subscribers_.value(),
-                                         lola_service_element_instance_deployment.enforce_max_samples_};
+    return lola::SkeletonEventProperties{lola_event_instance_deployment.GetNumberOfSampleSlots().value(),
+                                         lola_event_instance_deployment.max_subscribers_.value(),
+                                         lola_event_instance_deployment.enforce_max_samples_};
+}
+
+inline lola::SkeletonEventProperties GetSkeletonEventProperties(
+    const LolaFieldInstanceDeployment& lola_field_instance_deployment)
+{
+    return GetSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_);
 }
 
 }  // namespace detail
@@ -106,17 +111,8 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
             const std::string service_element_name_str{service_element_name};
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_str);
-            lola::SkeletonEventProperties skeleton_event_properties{};
-            if constexpr (element_type == ServiceElementType::FIELD)
-            {
-                skeleton_event_properties = detail::GetSkeletonEventProperties(
-                    lola_service_element_instance_deployment.lola_event_instance_deployment_);
-            }
-            else
-            {
-                skeleton_event_properties =
-                    detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
-            }
+            const lola::SkeletonEventProperties skeleton_event_properties =
+                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_str);
@@ -166,17 +162,8 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
 
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, std::string{service_element_name});
-            lola::SkeletonEventProperties skeleton_event_properties{};
-            if constexpr (element_type == ServiceElementType::FIELD)
-            {
-                skeleton_event_properties = detail::GetSkeletonEventProperties(
-                    lola_service_element_instance_deployment.lola_event_instance_deployment_);
-            }
-            else
-            {
-                skeleton_event_properties =
-                    detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
-            }
+            const lola::SkeletonEventProperties skeleton_event_properties =
+                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, std::string{service_element_name});

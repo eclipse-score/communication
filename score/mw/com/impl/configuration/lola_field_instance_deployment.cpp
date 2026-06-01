@@ -71,30 +71,6 @@ score::json::Object LolaFieldInstanceDeployment::Serialize() const noexcept
     return json_object;
 }
 
-auto LolaFieldInstanceDeployment::GetNumberOfSampleSlots() const noexcept
-    -> std::optional<LolaEventInstanceDeployment::SampleSlotCountType>
-{
-    return lola_event_instance_deployment_.GetNumberOfSampleSlots();
-}
-
-auto LolaFieldInstanceDeployment::GetNumberOfSampleSlotsExcludingTracingSlot() const noexcept
-    -> std::optional<LolaEventInstanceDeployment::SampleSlotCountType>
-{
-    return lola_event_instance_deployment_.GetNumberOfSampleSlotsExcludingTracingSlot();
-}
-
-auto LolaFieldInstanceDeployment::GetNumberOfTracingSlots() const noexcept
-    -> LolaEventInstanceDeployment::TracingSlotSizeType
-{
-    return lola_event_instance_deployment_.GetNumberOfTracingSlots();
-}
-
-void LolaFieldInstanceDeployment::SetNumberOfSampleSlots(
-    LolaEventInstanceDeployment::SampleSlotCountType number_of_sample_slots) noexcept
-{
-    lola_event_instance_deployment_.SetNumberOfSampleSlots(number_of_sample_slots);
-}
-
 bool operator==(const LolaFieldInstanceDeployment& lhs, const LolaFieldInstanceDeployment& rhs) noexcept
 {
     const bool use_get_if_available_equal = (lhs.use_get_if_available_ == rhs.use_get_if_available_);
