@@ -88,6 +88,7 @@ pub use mw_com::InstanceSpecifier;
 /// e.g., Lola bridge, mock bridge for testing.
 /// All this trait bound required because runtime types which use this bridge has these bounds,
 /// an because of that this bridge also need to be bound by these traits to be used in runtime implementation.
+// In bridge_ffi_rs crate (where FFIBridge trait is defined):
 pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// # Safety
     /// `event_ptr` must be a valid, non-null pointer to a `SkeletonEventBase` obtained from
@@ -264,31 +265,18 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// `handle` must be a valid pointer returned from `start_find_service` that has not
     /// been stopped yet. The handle must not be used after this call.
     unsafe fn stop_find_service(&self, handle: *mut FindServiceHandle);
-
-    /// # Safety
-    /// `container` must be a valid reference to a `HandleContainer` that was produced by the
-    /// bridge (e.g. from `start_find_service` callback). Calling this on a sentinel mock pointer
-    /// is only safe when the mock implementation ignores the inner pointer.
-    fn handle_container_size(&self, container: &HandleContainer) -> usize;
-
-    /// # Safety
-    /// Same as `handle_container_size`. `index` need not be in-bounds; the method must return
-    /// `None` when `index >= handle_container_size(container)`.
-    fn handle_container_get_at<'a>(
-        &self,
-        container: &'a HandleContainer,
-        index: usize,
-    ) -> Option<&'a HandleType>;
 }
 
 /// Opaque proxy base struct
 #[repr(C)]
+#[derive(Default)]
 pub struct ProxyBase {
     dummy: [u8; 0],
 }
 
 /// Opaque skeleton base struct
 #[repr(C)]
+#[derive(Default)]
 pub struct SkeletonBase {
     dummy: [u8; 0],
 }
@@ -330,6 +318,7 @@ unsafe impl Send for NativeFindServiceHandle {}
 
 /// Opaque skeleton event base struct
 #[repr(C)]
+#[derive(Default)]
 pub struct SkeletonEventBase {
     dummy: [u8; 0],
 }

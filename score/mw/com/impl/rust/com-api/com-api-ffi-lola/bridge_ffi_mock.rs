@@ -11,505 +11,469 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-// This file provides a mock implementation of the FFIBridge trait for testing purposes.
-// It allows pre-configuring responses for FFI calls and simulates success/failure based on the
-// presence of pre-configured data or null-checks of input pointers.
-// The mock maintains internal state for allocatee backing data, sample backing data, proxies, skeletons, and events.
-// It Provide the ability to set up expected data and behavior for tests using setter methods of the MockFFIBridge struct.
-// We have Skeleton, Proxy and Event unit structs as placeholders for the pointers returned by the mock, allowing us to track and manage these resources in tests
-// and in future we can extend these structs to hold additional metadata if needed for more complex test scenarios.
-// We ensure that all heap-allocated resources are properly freed by implementing Drop for BackingEntry and MockFFIBridgeState,
-// and by using the drop functions stored in BackingEntry to free the correct types of data.
-// This Mock can work as a real FFIBridge implementation and
-// each test can configure the mock with the expected data and behavior for that test,
-// allowing us to test the LolaRuntime and related components in isolation from the actual FFI layer.
-
-// This mock back-end (FFIBridge implementation) is used for unit testing of Lola-Runtime
-// So we do not want to expose this mock in the public API docs and crate level documentation, hence the `doc(hidden)` attribute.
+// This is for internal use only, not part of public API, so we can hide it from crate level docs.
 #![doc(hidden)]
 
+//! Mock implementation of FFIBridge using mockall for type-safe, per-test configuration.
+//!
+//! This provides a mockall-based mock where tests can configure expectations locally.
+//! Uses a hybrid approach: mockall for most methods, with a wrapper for lifetime constraints.
+//! The SharedMockBridge wrapper allows all clones to share the same underlying mock instance and expectations,
+//! eliminating the need for complex clone expectation setup in tests.
+//! Tests can create a SharedMockBridge with a configured MockFFIBridge, and all clones will automatically share the same expectations.
+//! Example usage in a test:
+//! ```rust,ignore
+//! let mut mock = MockFFIBridge::new();
+//! mock.expect_create_proxy()
+//!     .returning(|_, _| Box::into_raw(Box::new(unsafe { std::mem::zeroed() }))); // this is just an example, configure expectations as needed
+//! let bridge = SharedMockBridge::new(mock);
+//! let clone1 = bridge.clone();
+//! let clone2 = bridge.clone();
+//! ```
+//!
+//! This mock back-end is used for unit testing of Lola-Runtime.
+
 use bridge_ffi_rs::{
-    FatPtr, FindServiceHandle, HandleContainer, HandleType, InstanceSpecifier,
-    NativeInstanceSpecifier, ProxyBase, ProxyEventBase, SkeletonBase, SkeletonEventBase,
+    FatPtr, FindServiceHandle, HandleType, InstanceSpecifier, NativeInstanceSpecifier, ProxyBase,
+    ProxyEventBase, SkeletonBase, SkeletonEventBase,
 };
-use std::collections::HashMap;
-use std::ffi::c_void;
-use std::mem::size_of;
-use std::num::NonZeroUsize;
-use std::sync::{Arc, Mutex};
+use mockall::mock;
 
-// Unit types for mock objects, kept for future extensibility and clarity
-struct Event {}
+// Internal mockall-generated mock (without the lifetime method)
+mock! {
+    // This is type name for mock macro, it is not the same as FFIBridge trait,
+    // This will produce a struct named MockFFIBridge which implements FFIBridge trait.
+    #[derive(Debug)]
+    pub FFIBridge {}
 
-struct Proxy {}
-
-struct Skeleton {}
-
-// Holds a heap-allocated pointer and its associated drop function.
-// Used for type-erased heap allocations in the mock FFI bridge.
-#[derive(Clone)]
-struct BackingEntry {
-    // Pointer to the heap-allocated data
-    ptr: *mut std::ffi::c_void,
-    // Drop function that knows how to properly free the data
-    drop_fn: fn(*mut std::ffi::c_void),
-    // Size of the allocation
-    size: usize,
-}
-
-// SAFETY: BackingEntry is safe to Send because the drop_fn ensures that the heap allocation is properly freed,
-// and the pointer is only accessed through the mock's controlled methods which enforce thread safety via Mutex.
-// No mutbale operation on the pointer is exposed to the caller,
-// and the mock's internal methods ensure that any access to the pointer is thread-safe.
-unsafe impl Send for BackingEntry {}
-
-impl std::fmt::Debug for BackingEntry {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("BackingEntry").finish()
+    impl Clone for FFIBridge {
+        fn clone(&self) -> Self;
     }
+    // SAFETY comment for unsafe function already provided in the trait definition, it is impl block of that trait, so we don't need to repeat it here.
+    impl bridge_ffi_rs::FFIBridge for FFIBridge {
+        unsafe fn get_allocatee_ptr(
+            &self,
+            event_ptr: *mut SkeletonEventBase,
+            allocatee_ptr: *mut std::ffi::c_void,
+            event_type: &str,
+        ) -> bool;
+
+        unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_name: &str);
+
+        unsafe fn get_allocatee_data_ptr(
+            &self,
+            allocatee_ptr: *const std::ffi::c_void,
+            type_name: &str,
+        ) -> *mut std::ffi::c_void;
+
+        unsafe fn skeleton_event_send_sample_allocatee(
+            &self,
+            event_ptr: *mut SkeletonEventBase,
+            event_type: &str,
+            allocatee_ptr: *const std::ffi::c_void,
+        ) -> bool;
+
+        unsafe fn sample_ptr_get(
+            &self,
+            sample_ptr: *const std::ffi::c_void,
+            type_name: &str,
+        ) -> *const std::ffi::c_void;
+
+        unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_name: &str);
+
+        unsafe fn skeleton_offer_service(&self, skeleton_ptr: *mut SkeletonBase) -> bool;
+
+        unsafe fn skeleton_stop_offer_service(&self, skeleton_ptr: *mut SkeletonBase);
+
+        unsafe fn create_proxy(&self, interface_id: &str, handle_ptr: &HandleType) -> *mut ProxyBase;
+
+        unsafe fn create_skeleton(
+            &self,
+            interface_id: &str,
+            instance_spec: *const NativeInstanceSpecifier,
+        ) -> *mut SkeletonBase;
+
+        unsafe fn destroy_proxy(&self, proxy_ptr: *mut ProxyBase);
+
+        unsafe fn destroy_skeleton(&self, skeleton_ptr: *mut SkeletonBase);
+
+        unsafe fn get_event_from_proxy(
+            &self,
+            proxy_ptr: *mut ProxyBase,
+            interface_id: &str,
+            event_id: &str,
+        ) -> *mut ProxyEventBase;
+
+        unsafe fn get_event_from_skeleton(
+            &self,
+            skeleton_ptr: *mut SkeletonBase,
+            interface_id: &str,
+            event_id: &str,
+        ) -> *mut SkeletonEventBase;
+
+        unsafe fn get_samples_from_event(
+            &self,
+            event_ptr: *mut ProxyEventBase,
+            event_type: &str,
+            callback: &FatPtr,
+            max_samples: u32,
+        ) -> u32;
+
+        unsafe fn skeleton_send_event(
+            &self,
+            event_ptr: *mut SkeletonEventBase,
+            event_type: &str,
+            data_ptr: *const std::ffi::c_void,
+        ) -> bool;
+
+        unsafe fn subscribe_to_event(
+            &self,
+            event_ptr: *mut ProxyEventBase,
+            max_sample_count: u32,
+        ) -> bool;
+
+        unsafe fn unsubscribe_to_event(&self, event_ptr: *mut ProxyEventBase);
+
+        unsafe fn set_event_receive_handler(
+            &self,
+            proxy_event_ptr: *mut ProxyEventBase,
+            handler: &FatPtr,
+            event_type: &str,
+        ) -> bool;
+
+        unsafe fn clear_event_receive_handler(
+            &self,
+            proxy_event_ptr: *mut ProxyEventBase,
+            event_type: &str,
+        );
+
+        unsafe fn start_find_service(
+            &self,
+            callback: &FatPtr,
+            instance_spec: InstanceSpecifier,
+        ) -> *mut FindServiceHandle;
+
+        unsafe fn stop_find_service(&self, handle: *mut FindServiceHandle);
+}
 }
 
-impl Drop for BackingEntry {
-    fn drop(&mut self) {
-        // SAFETY: The drop_fn knows the actual type of the pointer and was stored
-        // when the pointer was allocated (in set_alloc_backing or set_sample_backing).
-        // The drop_fn will properly free the heap allocation.
-        (self.drop_fn)(self.ptr);
-    }
-}
-
-// Mock FFI Bridge with instance state for testing.
-//
-// FFIBridge trait requires Clone - when Runtime creates a consumer/producer, it clones
-// the bridge instance.
-// Arc<Mutex<...>> provides thread-safe interior mutability: FFIBridge trait methods take &self (not &mut self)
-// To match this signature while mutating internal state (e.g., storing/retrieving mock data),
-// we need interior mutability. Arc<Mutex<...>> ensures thread safety at the cost of some performance,
-// which is acceptable for test code where safety is more important than performance.
-/// Thread-safe, test-isolated FFI bridge mock
-#[derive(Debug, Clone, Default)]
-pub struct MockFFIBridge {
-    state: Arc<Mutex<MockFFIBridgeState>>,
-}
-
+/// A shared wrapper around MockFFIBridge that automatically shares expectations across clones.
+///
+/// This wrapper uses Arc<Mutex<MockFFIBridge>> internally, allowing all clones to share
+/// the same underlying mock instance and its expectations. This eliminates the need for
+/// complex clone expectation setup in tests.
+///
+/// # Usage
+/// ```rust,ignore
+/// let mut mock = MockFFIBridge::new();
+/// mock.expect_create_proxy()
+///     .returning(|_, _| Box::into_raw(Box::new(unsafe { std::mem::zeroed() })));
+///
+/// let bridge = SharedMockBridge::new(mock);
+/// // All clones automatically share the same expectations
+/// let clone1 = bridge.clone();
+/// let clone2 = bridge.clone();
+/// ```
 #[derive(Debug, Default)]
-struct MockFFIBridgeState {
-    allocatee_backing: HashMap<String, BackingEntry>,
-    sample_backing: HashMap<String, BackingEntry>,
-    max_sample_count: Option<NonZeroUsize>,
-    proxies: HashMap<String, *mut ProxyBase>,
-    skeletons: HashMap<String, *mut SkeletonBase>,
-    proxy_events: HashMap<String, *mut ProxyEventBase>,
-    skeleton_events: HashMap<String, *mut SkeletonEventBase>,
-}
+pub struct SharedMockBridge(std::sync::Arc<std::sync::Mutex<MockFFIBridge>>);
 
-// SAFETY: MockFFIBridgeState is safe to Send because all access to its internal state is protected by a Mutex,
-// Implementation in runtime handles the concurrent access and mutable access.
-unsafe impl Send for MockFFIBridgeState {}
-
-impl MockFFIBridge {
-    pub fn new() -> Self {
-        Self {
-            state: Arc::new(Mutex::new(MockFFIBridgeState::default())),
-        }
-    }
-    /// Pre-configure heap-allocated backing data for an allocatee of a specific event type.
-    pub fn set_allocatee_backing<T: 'static>(&self, event_type: &str, value: T) {
-        let boxed = Box::new(value);
-        let ptr = Box::into_raw(boxed) as *mut c_void;
-
-        let entry = BackingEntry {
-            ptr,
-            drop_fn: |p| unsafe {
-                drop(Box::from_raw(p as *mut T));
-            },
-            size: size_of::<T>(),
-        };
-
-        let mut state = self.state.lock().expect("Failed to lock state");
-        state
-            .allocatee_backing
-            .insert(event_type.to_string(), entry);
+impl SharedMockBridge {
+    /// Create a new SharedMockBridge wrapping the given MockFFIBridge
+    pub fn new(mock: MockFFIBridge) -> Self {
+        Self(std::sync::Arc::new(std::sync::Mutex::new(mock)))
     }
 
-    /// Pre-configure heap-allocated backing data for a sample of a specific type.
-    pub fn set_sample_backing<T: 'static>(&self, type_name: &str, value: T) {
-        let boxed = Box::new(value);
-        let ptr = Box::into_raw(boxed) as *mut c_void;
-
-        let entry = BackingEntry {
-            ptr,
-            drop_fn: |p| unsafe {
-                drop(Box::from_raw(p as *mut T));
-            },
-            size: size_of::<T>(),
-        };
-
-        let mut state = self.state.lock().expect("Failed to lock state");
-        state.sample_backing.insert(type_name.to_string(), entry);
-    }
-
-    /// Configure the maximum sample count.
-    pub fn set_max_sample_count(&self, count: Option<NonZeroUsize>) {
-        self.state
-            .lock()
-            .expect("Failed to lock state")
-            .max_sample_count = count;
-    }
-
-    /// Pre-configure a proxy for a specific interface type.
-    /// Returns the pointer that will be returned by create_proxy for this interface_id.
-    pub fn set_proxy(&self, interface_id: &str) -> *mut ProxyBase {
-        let proxy = Box::new(Proxy {});
-        let ptr = Box::into_raw(proxy) as *mut ProxyBase;
-        self.state
-            .lock()
-            .expect("Failed to lock state")
-            .proxies
-            .insert(interface_id.to_string(), ptr);
-        ptr
-    }
-
-    /// Pre-configure a skeleton for a specific interface type.
-    /// Returns the pointer that will be returned by create_skeleton for this interface_id.
-    pub fn set_skeleton(&self, interface_id: &str) -> *mut SkeletonBase {
-        let skeleton = Box::new(Skeleton {});
-        let ptr = Box::into_raw(skeleton) as *mut SkeletonBase;
-        self.state
-            .lock()
-            .expect("Failed to lock state")
-            .skeletons
-            .insert(interface_id.to_string(), ptr);
-        ptr
-    }
-
-    /// Pre-configure a proxy event.
-    /// Returns the pointer that can be used for proxy event operations.
-    pub fn set_proxy_event(&self, interface_id: &str, event_id: &str) -> *mut ProxyEventBase {
-        let event = Box::new(Event {});
-        let ptr = Box::into_raw(event) as *mut ProxyEventBase;
-        let event_key = format!("{}::{}", interface_id, event_id);
-        self.state
-            .lock()
-            .expect("Failed to lock state")
-            .proxy_events
-            .insert(event_key.to_string(), ptr);
-        ptr
-    }
-
-    /// Pre-configure a skeleton event.
-    /// Returns the pointer that will be returned by create_skeleton_event for this interface_id and event_id.
-    pub fn set_skeleton_event(&self, interface_id: &str, event_id: &str) -> *mut SkeletonEventBase {
-        let event = Box::new(Event {});
-        let ptr = Box::into_raw(event) as *mut SkeletonEventBase;
-        let event_key = format!("{}::{}", interface_id, event_id);
-        self.state
-            .lock()
-            .expect("Failed to lock state")
-            .skeleton_events
-            .insert(event_key.to_string(), ptr);
-        ptr
+    /// Access the inner MockFFIBridge for verification and assertions.
+    ///
+    /// This is useful for calling mockall's methods like `assert` on the inner mock after the test actions.
+    pub fn with_mock<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&mut MockFFIBridge) -> R,
+    {
+        let mut guard = self.0.lock().expect("Failed to acquire lock");
+        f(&mut *guard)
     }
 }
 
-impl Drop for MockFFIBridgeState {
-    fn drop(&mut self) {
-        // Cleanup any leaked resources
-        unsafe {
-            for (_key, ptr) in self.proxies.drain() {
-                drop(Box::from_raw(ptr));
-            }
-            for (_key, ptr) in self.skeletons.drain() {
-                drop(Box::from_raw(ptr));
-            }
-            for (_key, ptr) in self.proxy_events.drain() {
-                drop(Box::from_raw(ptr));
-            }
-            for (_key, ptr) in self.skeleton_events.drain() {
-                drop(Box::from_raw(ptr));
-            }
-        }
+impl Clone for SharedMockBridge {
+    fn clone(&self) -> Self {
+        Self(std::sync::Arc::clone(&self.0))
     }
 }
 
-impl bridge_ffi_rs::FFIBridge for MockFFIBridge {
-    // Return value based on null-check of input pointers, simulating success/failure of FFI calls.
-    // Also alloc_ptr is zero-filled if size is set.
+// Implement FFIBridge by forwarding all calls to the inner MockFFIBridge
+// SAFETY comment for unsafe function already provided in the trait definition, it is impl block of that trait, so we don't need to repeat it here.
+impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     unsafe fn get_allocatee_ptr(
         &self,
         event_ptr: *mut SkeletonEventBase,
         allocatee_ptr: *mut std::ffi::c_void,
-        _event_type: &str,
+        event_type: &str,
     ) -> bool {
-        if event_ptr.is_null() {
-            return false;
-        }
-        // If we have backing data for this allocatee, copy it into the provided pointer.
-        let state = self.state.lock().expect("Failed to lock state");
-        if let Some(entry) = state.allocatee_backing.get(_event_type) {
-            unsafe {
-                std::ptr::copy_nonoverlapping(entry.ptr, allocatee_ptr, entry.size);
-            }
-            return true;
-        } else {
-            return false;
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .get_allocatee_ptr(event_ptr, allocatee_ptr, event_type)
         }
     }
 
-    // Deletes the heap-allocated backing data for the current allocatee, if any, and resets alloc_size.
-    unsafe fn delete_allocatee_ptr(&self, _allocatee_ptr: *mut std::ffi::c_void, type_name: &str) {
-        let mut state = self.state.lock().expect("Failed to lock state");
-        // Removing the entry from the HashMap will call BackingEntry::drop automatically
-        state.allocatee_backing.remove(type_name);
+    unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_name: &str) {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .delete_allocatee_ptr(allocatee_ptr, type_name)
+        }
     }
 
-    // Returns a pointer to the heap-allocated backing data for the current allocatee, if any.
     unsafe fn get_allocatee_data_ptr(
         &self,
-        _allocatee_ptr: *const std::ffi::c_void,
+        allocatee_ptr: *const std::ffi::c_void,
         type_name: &str,
     ) -> *mut std::ffi::c_void {
-        let state = self.state.lock().expect("Failed to lock state");
-        if let Some(entry) = state.allocatee_backing.get(type_name) {
-            entry.ptr
-        } else {
-            std::ptr::null_mut()
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .get_allocatee_data_ptr(allocatee_ptr, type_name)
         }
     }
 
-    // Returns true if event_ptr is non-null, simulating successful event sending.
     unsafe fn skeleton_event_send_sample_allocatee(
         &self,
         event_ptr: *mut SkeletonEventBase,
-        _event_type: &str,
-        _allocatee_ptr: *const std::ffi::c_void,
+        event_type: &str,
+        allocatee_ptr: *const std::ffi::c_void,
     ) -> bool {
-        !event_ptr.is_null()
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .skeleton_event_send_sample_allocatee(event_ptr, event_type, allocatee_ptr)
+        }
     }
 
-    // Returns a pointer to the heap-allocated sample data for the current sample from the mock, if any.
     unsafe fn sample_ptr_get(
         &self,
-        _sample_ptr: *const std::ffi::c_void,
-        _type_name: &str,
+        sample_ptr: *const std::ffi::c_void,
+        type_name: &str,
     ) -> *const std::ffi::c_void {
-        let state = self.state.lock().expect("Failed to lock state");
-        if let Some(entry) = state.sample_backing.get(_type_name) {
-            entry.ptr
-        } else {
-            std::ptr::null()
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .sample_ptr_get(sample_ptr, type_name)
         }
     }
 
-    // Deletes the heap-allocated sample backing data for the current sample, if any.
-    unsafe fn sample_ptr_delete(&self, _sample_ptr: *mut std::ffi::c_void, type_name: &str) {
-        let mut state = self.state.lock().expect("Failed to lock state");
-        // Removing the entry from the HashMap will call BackingEntry::drop automatically
-        state.sample_backing.remove(type_name);
+    unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_name: &str) {
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .sample_ptr_delete(sample_ptr, type_name)
+        }
     }
 
-    // The following methods simulate success/failure based on null-checks of input pointers.
     unsafe fn skeleton_offer_service(&self, skeleton_ptr: *mut SkeletonBase) -> bool {
-        !skeleton_ptr.is_null()
-    }
-
-    // This mock does not track offered services, so stop_offer_service is a no-op.
-    unsafe fn skeleton_stop_offer_service(&self, _skeleton_ptr: *mut SkeletonBase) {}
-
-    // Creates a new ProxyBase instance and returns a pointer to it.
-    // If a proxy was pre-configured via set_proxy for this interface_id, returns that.
-    // Otherwise allocates a new one and tracks it.
-    unsafe fn create_proxy(&self, interface_id: &str, _handle_ptr: &HandleType) -> *mut ProxyBase {
-        let mut state = self.state.lock().expect("Failed to lock state");
-        // Check if pre-configured
-        if let Some(&ptr) = state.proxies.get(interface_id) {
-            return ptr;
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .skeleton_offer_service(skeleton_ptr)
         }
-        // Allocate new
-        let proxy = Box::new(Proxy {});
-        let ptr = Box::into_raw(proxy) as *mut ProxyBase;
-        state.proxies.insert(interface_id.to_string(), ptr);
-        ptr
     }
 
-    // Creates a new SkeletonBase instance and returns a pointer to it.
-    // If a skeleton was pre-configured via set_skeleton for this interface_id, returns that.
-    // Otherwise allocates a new one and tracks it.
+    unsafe fn skeleton_stop_offer_service(&self, skeleton_ptr: *mut SkeletonBase) {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .skeleton_stop_offer_service(skeleton_ptr)
+        }
+    }
+
+    unsafe fn create_proxy(&self, interface_id: &str, handle_ptr: &HandleType) -> *mut ProxyBase {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .create_proxy(interface_id, handle_ptr)
+        }
+    }
+
     unsafe fn create_skeleton(
         &self,
         interface_id: &str,
-        _instance_spec: *const NativeInstanceSpecifier,
+        instance_spec: *const NativeInstanceSpecifier,
     ) -> *mut SkeletonBase {
-        let mut state = self.state.lock().expect("Failed to lock state");
-        // Check if pre-configured
-        if let Some(&ptr) = state.skeletons.get(interface_id) {
-            return ptr;
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .create_skeleton(interface_id, instance_spec)
         }
-        // Allocate new
-        let skeleton = Box::new(Skeleton {});
-        let ptr = Box::into_raw(skeleton) as *mut SkeletonBase;
-        state.skeletons.insert(interface_id.to_string(), ptr);
-        ptr
     }
 
-    // Destroys a ProxyBase instance created by create_proxy.
     unsafe fn destroy_proxy(&self, proxy_ptr: *mut ProxyBase) {
-        if !proxy_ptr.is_null() {
-            let mut state = self.state.lock().expect("Failed to lock state");
-            // Find and remove by value
-            state.proxies.retain(|_k, &mut v| v != proxy_ptr);
-            // Now safe to drop
-            unsafe { drop(Box::from_raw(proxy_ptr)) };
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .destroy_proxy(proxy_ptr)
         }
     }
 
-    // Destroys a SkeletonBase instance created by create_skeleton.
     unsafe fn destroy_skeleton(&self, skeleton_ptr: *mut SkeletonBase) {
-        if !skeleton_ptr.is_null() {
-            let mut state = self.state.lock().expect("Failed to lock state");
-            // Find and remove by value
-            state.skeletons.retain(|_k, &mut v| v != skeleton_ptr);
-            // Now safe to drop
-            unsafe { drop(Box::from_raw(skeleton_ptr)) };
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .destroy_skeleton(skeleton_ptr)
         }
     }
 
-    // The following methods return non-null sentinel pointers for events
-    // if the input proxy/skeleton pointer is non-null, simulating successful event retrieval.
     unsafe fn get_event_from_proxy(
         &self,
         proxy_ptr: *mut ProxyBase,
         interface_id: &str,
         event_id: &str,
     ) -> *mut ProxyEventBase {
-        if proxy_ptr.is_null() {
-            return std::ptr::null_mut();
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .get_event_from_proxy(proxy_ptr, interface_id, event_id)
         }
-        let mut state = self.state.lock().expect("Failed to lock state");
-        let event_key = format!("{}::{}", interface_id, event_id);
-        // Check if pre-configured
-        if let Some(&ptr) = state.proxy_events.get(&event_key) {
-            return ptr;
-        }
-        // Allocate new
-        let event = Box::new(Event {});
-        let ptr = Box::into_raw(event) as *mut ProxyEventBase;
-        state.proxy_events.insert(event_key, ptr);
-        ptr
     }
 
-    // The following method returns a non-null sentinel pointer for the event
-    // if the input skeleton pointer is non-null, simulating successful event retrieval.
     unsafe fn get_event_from_skeleton(
         &self,
         skeleton_ptr: *mut SkeletonBase,
         interface_id: &str,
         event_id: &str,
     ) -> *mut SkeletonEventBase {
-        if skeleton_ptr.is_null() {
-            return std::ptr::null_mut();
-        }
-        let mut state = self.state.lock().expect("Failed to lock state");
-        let event_key = format!("{}::{}", interface_id, event_id);
-        // Check if pre-configured
-        if let Some(&ptr) = state.skeleton_events.get(&event_key) {
-            return ptr;
-        }
-        // Allocate new
-        let event = Box::new(Event {});
-        let ptr = Box::into_raw(event) as *mut SkeletonEventBase;
-        state.skeleton_events.insert(event_key, ptr);
-        ptr
-    }
-
-    // The following methods simulate event subscription and handling based on null-checks of input pointers.
-    unsafe fn get_samples_from_event(
-        &self,
-        event_ptr: *mut ProxyEventBase,
-        _event_type: &str,
-        _callback: &FatPtr,
-        _max_samples: u32,
-    ) -> u32 {
-        match self
-            .state
-            .lock()
-            .expect("Failed to lock state")
-            .max_sample_count
-        {
-            Some(count) if !event_ptr.is_null() => count.get() as u32,
-            _ => 0,
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .get_event_from_skeleton(skeleton_ptr, interface_id, event_id)
         }
     }
 
-    // The following method simulates event sending based on null-check of the event pointer.
-    unsafe fn skeleton_send_event(
-        &self,
-        event_ptr: *mut SkeletonEventBase,
-        _event_type: &str,
-        _data_ptr: *const std::ffi::c_void,
-    ) -> bool {
-        !event_ptr.is_null()
-    }
-
-    // The following methods simulate event subscription and
-    // handler registration based on null-checks of input pointers.
     unsafe fn subscribe_to_event(
         &self,
         event_ptr: *mut ProxyEventBase,
-        _max_sample_count: u32,
+        max_num_samples: u32,
     ) -> bool {
-        !event_ptr.is_null()
-    }
-
-    // The following method simulates event unsubscription. Since this is a mock,
-    // it does not track subscriptions.
-    unsafe fn unsubscribe_to_event(&self, _event_ptr: *mut ProxyEventBase) {}
-
-    unsafe fn set_event_receive_handler(
-        &self,
-        proxy_event_ptr: *mut ProxyEventBase,
-        _handler: &FatPtr,
-        _event_type: &str,
-    ) -> bool {
-        !proxy_event_ptr.is_null()
-    }
-
-    // The following method simulates clearing the event receive handler. Since this is a mock,
-    // it does not track handlers, so this is a no-op.
-    unsafe fn clear_event_receive_handler(
-        &self,
-        _proxy_event_ptr: *mut ProxyEventBase,
-        _event_type: &str,
-    ) {
-    }
-
-    // The following methods simulate service discovery based on null-checks of input pointers.
-    unsafe fn start_find_service(
-        &self,
-        _callback: &FatPtr,
-        _instance_spec: InstanceSpecifier,
-    ) -> *mut FindServiceHandle {
-        Box::into_raw(Box::new(unsafe { std::mem::zeroed::<FindServiceHandle>() }))
-    }
-
-    // The following method simulates stopping service discovery. Since this is a mock, it simply drops the handle.
-    unsafe fn stop_find_service(&self, handle: *mut FindServiceHandle) {
-        if !handle.is_null() {
-            unsafe { drop(Box::from_raw(handle)) };
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .subscribe_to_event(event_ptr, max_num_samples)
         }
     }
 
-    // Returns the handle count of the container, which is always zero in this mock implementation.
-    fn handle_container_size(&self, _container: &HandleContainer) -> usize {
-        0
+    unsafe fn unsubscribe_to_event(&self, event_ptr: *mut ProxyEventBase) {
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .unsubscribe_to_event(event_ptr)
+        }
     }
 
-    // Returns None for any index, since the container is always empty in this mock implementation.
-    fn handle_container_get_at<'a>(
+    unsafe fn get_samples_from_event(
         &self,
-        _container: &'a HandleContainer,
-        _index: usize,
-    ) -> Option<&'a HandleType> {
-        None
+        event_ptr: *mut ProxyEventBase,
+        event_type: &str,
+        callback: &FatPtr,
+        max_num_samples: u32,
+    ) -> u32 {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .get_samples_from_event(event_ptr, event_type, callback, max_num_samples)
+        }
+    }
+
+    unsafe fn skeleton_send_event(
+        &self,
+        event_ptr: *mut SkeletonEventBase,
+        event_type: &str,
+        data_ptr: *const std::ffi::c_void,
+    ) -> bool {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .skeleton_send_event(event_ptr, event_type, data_ptr)
+        }
+    }
+
+    unsafe fn set_event_receive_handler(
+        &self,
+        event_ptr: *mut ProxyEventBase,
+        callback: &FatPtr,
+        event_type: &str,
+    ) -> bool {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .set_event_receive_handler(event_ptr, callback, event_type)
+        }
+    }
+
+    unsafe fn clear_event_receive_handler(&self, event_ptr: *mut ProxyEventBase, event_type: &str) {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .clear_event_receive_handler(event_ptr, event_type)
+        }
+    }
+
+    unsafe fn start_find_service(
+        &self,
+        callback: &FatPtr,
+        instance_spec: InstanceSpecifier,
+    ) -> *mut FindServiceHandle {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .start_find_service(callback, instance_spec)
+        }
+    }
+
+    unsafe fn stop_find_service(&self, find_service_handle: *mut FindServiceHandle) {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.0
+                .lock()
+                .expect("Failed to acquire lock")
+                .stop_find_service(find_service_handle)
+        }
     }
 }

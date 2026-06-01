@@ -45,6 +45,7 @@ rust_test(
     deps = [
         ":com-api-runtime-lola",
         "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_mock",
+        "@score_communication_crate_index//:mockall",
     ],
 )
 

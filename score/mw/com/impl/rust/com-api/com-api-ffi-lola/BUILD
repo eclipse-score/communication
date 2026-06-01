@@ -56,6 +56,7 @@ rust_library(
     deps = [
         ":bridge_ffi_rs",
         "//score/mw/com/impl/plumbing/rust:sample_allocatee_ptr_rs",
+        "@score_communication_crate_index//:mockall",
     ],
 )
 

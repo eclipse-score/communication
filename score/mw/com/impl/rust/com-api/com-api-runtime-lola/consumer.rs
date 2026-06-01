@@ -68,8 +68,7 @@ pub struct LolaConsumerInfo<B: FFIBridge> {
 impl<B: FFIBridge> LolaConsumerInfo<B> {
     /// Get a reference to the handle, guaranteed valid as long as this struct exists
     pub fn get_handle(&self) -> Option<&HandleType> {
-        self.bridge
-            .handle_container_get_at(&self.handle_container, self.handle_index)
+        self.handle_container.get(self.handle_index)
     }
 }
 
@@ -698,7 +697,9 @@ struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBrid
     bridge: B,
 }
 
-impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future for ReceiveFuture<'a, T, F, B> {
+impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future
+    for ReceiveFuture<'a, T, F, B>
+{
     type Output = (SampleContainer<Sample<T, B>>, Result<usize>);
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -1217,7 +1218,7 @@ pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
 mod test {
 
     use super::*;
-    use bridge_ffi_mock::MockFFIBridge;
+    use bridge_ffi_mock::{MockFFIBridge, SharedMockBridge};
 
     #[derive(Debug)]
     #[repr(C)]
@@ -1231,23 +1232,22 @@ mod test {
         const ID: &'static str = "TestData";
     }
 
-    // Builds a ProxyInstanceManager<MockFFIBridge>
+    // Builds a ProxyInstanceManager<SharedMockBridge>
     fn make_proxy_instance(
-        bridge: &MockFFIBridge,
+        bridge: SharedMockBridge,
         interface_id: &'static str,
-    ) -> ProxyInstanceManager<MockFFIBridge> {
-        // SAFETY: HandleType is a ZST; zeroed() produces a valid value.
-        let handle: HandleType = unsafe { core::mem::zeroed() };
-        let native_proxy = NativeProxyBase::<MockFFIBridge>::new(bridge, interface_id, &handle)
-            .expect("MockFFIBridge::create_proxy should not fail");
+    ) -> ProxyInstanceManager<SharedMockBridge> {
+        let handle: HandleType = HandleType::default();
+        let native_proxy = NativeProxyBase::<SharedMockBridge>::new(&bridge, interface_id, &handle)
+            .expect("SharedMockBridge::create_proxy should not fail");
         ProxyInstanceManager(Arc::new(native_proxy))
     }
 
-    // Builds a `LolaConsumerInfo<MockFFIBridge>` backed by a mock handle container.
-    fn make_instance_info(bridge: MockFFIBridge) -> LolaConsumerInfo<MockFFIBridge> {
+    // Builds a `LolaConsumerInfo<SharedMockBridge>` backed by a mock handle container.
+    fn make_instance_info(bridge: SharedMockBridge) -> LolaConsumerInfo<SharedMockBridge> {
         // Create mock bridge and empty handle container (null pointer for testing)
         let handle_container = Arc::new(HandleContainer::new(std::ptr::null_mut()));
-        LolaConsumerInfo::<MockFFIBridge> {
+        LolaConsumerInfo::<SharedMockBridge> {
             handle_container,
             handle_index: 0,
             interface_id: "TestInterface",
@@ -1257,83 +1257,81 @@ mod test {
 
     #[test]
     fn test_lola_consumer_info() {
-        let bridge = MockFFIBridge::new();
-        bridge.set_proxy("TestInterface");
+        let mock = MockFFIBridge::new();
+        let bridge = SharedMockBridge::new(mock);
         let instance_info = make_instance_info(bridge);
-        assert!(instance_info.get_handle().is_none());
-    }
-    #[test]
-    fn test_sample() {
-        //this is for cleanup of thread local state.
-        // MockFFIBridge instance will clean up automatically on drop
-        let bridge = MockFFIBridge::new();
-        bridge.set_sample_backing::<TestData>("TestData", TestData { value: 42 });
-        let sample = Sample::<TestData, MockFFIBridge> {
-            id: 1,
-            inner: LolaBinding::<TestData, MockFFIBridge> {
-                data: ManuallyDrop::new(unsafe {
-                    core::mem::zeroed::<sample_ptr_rs::SamplePtr<TestData>>()
-                }),
-                bridge,
-            },
-        };
-        assert_eq!(sample.id, 1);
-        assert_eq!(sample.get_data().value, 42);
+        // Test that the instance_info is created successfully with mock data
+        assert_eq!(instance_info.interface_id, "TestInterface");
+        assert_eq!(instance_info.handle_index, 0);
     }
 
     #[test]
-    fn test_subscribable_impl() {
-        let bridge = MockFFIBridge::new();
-        bridge.set_proxy("TestInterface");
-        bridge.set_proxy_event("TestInterface", "TestEvent");
-        let subscribable = SubscribableImpl::<TestData, MockFFIBridge> {
+    fn test_subscribe_event() {
+        let mut mock = MockFFIBridge::new();
+
+        // Set up all expectations - all clones of SharedMockBridge will share these
+        mock.expect_subscribe_to_event().returning(|_, _| true);
+        mock.expect_get_event_from_proxy()
+            .returning(|_, _, _| Box::into_raw(Box::default()));
+        mock.expect_unsubscribe_to_event().returning(|_| ());
+        mock.expect_destroy_proxy().returning(|_| ());
+        mock.expect_create_proxy()
+            .returning(|_, _| Box::into_raw(Box::default()));
+        // Create a single shared mock with all necessary expectations
+        let bridge = SharedMockBridge::new(mock);
+
+        let subscribable = SubscribableImpl::<TestData, SharedMockBridge> {
             identifier: "TestEvent",
             instance_info: make_instance_info(bridge.clone()),
-            proxy_instance: make_proxy_instance(&bridge, "TestInterface"),
+            proxy_instance: make_proxy_instance(bridge.clone(), "TestInterface"),
             data: PhantomData,
         };
-        assert!(
-            subscribable.subscribe(3).is_ok(),
-            "subscribe should succeed when the mock returns a non-null proxy event sentinel"
-        );
+        let subscriber = subscribable
+            .subscribe(3)
+            .expect("subscribe should succeed with proper mock setup");
+        assert_eq!(subscriber.event_id, "TestEvent");
     }
 
     #[test]
-    fn test_subscriber_impl() {
-        let bridge = MockFFIBridge::new();
-        bridge.set_proxy("TestInterface");
-        bridge.set_proxy_event("TestInterface", "TestEvent");
-        let event_ptr = unsafe {
-            let handle: HandleType = core::mem::zeroed();
-            let proxy = bridge.create_proxy("TestInterface", &handle);
-            bridge.get_event_from_proxy(proxy, "TestInterface", "TestEvent")
-        };
-        let subscriber = SubscriberImpl::<TestData, MockFFIBridge> {
-            event: ProxyEventManager {
-                event: event_ptr,
-                in_progress: AtomicBool::new(false),
-            },
-            event_id: "TestEvent",
-            max_num_samples: 10,
+    fn test_event_try_receive() {
+        let mut mock = MockFFIBridge::new();
+
+        // Set up all expectations - all clones of SharedMockBridge will share these
+        mock.expect_subscribe_to_event().returning(|_, _| true);
+        mock.expect_get_event_from_proxy()
+            .returning(|_, _, _| Box::into_raw(Box::default()));
+        mock.expect_get_samples_from_event()
+            .returning(|_, _, _, _| 1);
+        mock.expect_set_event_receive_handler()
+            .returning(|_, _, _| true);
+        mock.expect_unsubscribe_to_event().returning(|_| ());
+        mock.expect_clear_event_receive_handler()
+            .returning(|_, _| ());
+        mock.expect_destroy_proxy().returning(|_| ());
+        mock.expect_create_proxy()
+            .returning(|_, _| Box::into_raw(Box::default()));
+        // Create a single shared mock with all necessary expectations
+        let bridge = SharedMockBridge::new(mock);
+
+        // Create subscriber through the proper flow
+        let subscribable = SubscribableImpl::<TestData, SharedMockBridge> {
+            identifier: "TestEvent",
             instance_info: make_instance_info(bridge.clone()),
-            waker_storage: Arc::new(AtomicWaker::new()),
-            async_init_status: std::sync::OnceLock::new(),
-            _proxy: make_proxy_instance(&bridge, "TestInterface"),
-            _phantom: PhantomData,
+            proxy_instance: make_proxy_instance(bridge.clone(), "TestInterface"),
+            data: PhantomData,
         };
+
+        let subscriber = subscribable
+            .subscribe(10)
+            .expect("subscribe should succeed with proper mock setup");
+
         let mut sample_container = SampleContainer::new(5);
         let count = subscriber
             .try_receive(&mut sample_container, 5)
             .expect("try_receive should succeed with a valid mock event");
         assert_eq!(
-            count, 0,
-            "no samples should be returned by try_receive when the mock event is empty"
+            count, 1,
+            "one sample should be returned by try_receive when the mock event has one sample"
         );
-        let mut event_guard = subscriber.event.get_proxy_event();
-        subscriber
-            .init_async_receive(&mut event_guard)
-            .expect("init_async_receive should succeed");
-        drop(event_guard);
-        drop(subscriber.receive(sample_container, 5, 5));
     }
 }

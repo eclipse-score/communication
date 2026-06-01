@@ -804,30 +804,4 @@ impl FFIBridge for LolaFFIBridge {
             mw_com_stop_find_service(handle);
         }
     }
-
-    /// Get the number of service handles in the container
-    ///
-    /// # Arguments
-    /// * `container` - HandleContainer wrapping the native service handle container
-    /// # Returns
-    /// The number of service handles in the container
-    fn handle_container_size(&self, container: &HandleContainer) -> usize {
-        container.len()
-    }
-    /// Get a reference to the service handle at the specified index in the container
-    ///
-    /// # Arguments
-    /// * `container` - HandleContainer wrapping the native service handle container
-    /// * `index` - Index of the service handle to retrieve
-    ///
-    /// # Returns
-    /// Some reference to the service handle at the specified index,
-    /// or None if the index is out of bounds
-    fn handle_container_get_at<'a>(
-        &self,
-        container: &'a HandleContainer,
-        index: usize,
-    ) -> Option<&'a HandleType> {
-        container.get(index)
-    }
 }
