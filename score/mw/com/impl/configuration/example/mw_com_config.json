@@ -62,8 +62,8 @@
                             "numberOfSampleSlots": 60,
                             "maxSubscribers": 6,
                             "numberOfIpcTracingSlots": 7,
-                            "useGetIfAvailable": false,
-                            "useSetIfAvailable": false
+                            "useGetIfAvailable": true,
+                            "useSetIfAvailable": true
                         }
                     ],
                     "methods": [

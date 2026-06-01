@@ -83,8 +83,6 @@ constexpr auto kFieldEnforceMaxSamplesKey = "enforceMaxSamples"sv;
 constexpr auto kFieldMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;
 constexpr auto kFieldUseGetIfAvailableKey = "useGetIfAvailable"sv;
 constexpr auto kFieldUseSetIfAvailableKey = "useSetIfAvailable"sv;
-constexpr auto kFieldUseGetIfAvailableDefault = false;
-constexpr auto kFieldUseSetIfAvailableDefault = false;
 constexpr auto kLolaShmSizeKey = "shm-size"sv;
 constexpr auto kLolaControlAsilBShmSizeKey = "control-asil-b-shm-size"sv;
 constexpr auto kLolaControlQmShmSizeKey = "control-qm-shm-size"sv;
@@ -485,20 +483,18 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
         auto field_name_value = deployment_parser.GetName(field_name_it);
 
         const auto number_of_sample_slots =
-            deployment_parser.RetrieveJsonElement<LolaFieldInstanceDeployment::SampleSlotCountType>(
+            deployment_parser.RetrieveJsonElement<LolaEventInstanceDeployment::SampleSlotCountType>(
                 kFieldNumberOfSampleSlotsKey);
         const auto max_subscribers =
-            deployment_parser.RetrieveJsonElement<LolaFieldInstanceDeployment::SubscriberCountType>(
+            deployment_parser.RetrieveJsonElement<LolaEventInstanceDeployment::SubscriberCountType>(
                 kFieldMaxSubscribersKey);
         const auto enforce_max_samples =
             deployment_parser.RetrieveJsonElement<bool>(kFieldEnforceMaxSamplesKey).value_or(true);
         const auto number_of_tracing_slots =
             deployment_parser.RetrieveJsonElement<NumberOfIpcTracingSlots_t>(kNumberOfIpcTracingSlotsKey)
                 .value_or(kNumberOfIpcTracingSlotsDefault);
-        const auto use_get_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseGetIfAvailableKey)
-                                              .value_or(kFieldUseGetIfAvailableDefault);
-        const auto use_set_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey)
-                                              .value_or(kFieldUseSetIfAvailableDefault);
+        const auto use_get_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseGetIfAvailableKey);
+        const auto use_set_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey);
 
         auto field_deployment =
             LolaFieldInstanceDeployment(LolaEventInstanceDeployment(number_of_sample_slots,

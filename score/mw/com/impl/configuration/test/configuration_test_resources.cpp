@@ -50,8 +50,8 @@ LolaFieldInstanceDeployment MakeLolaFieldInstanceDeployment(
     const std::optional<std::uint8_t> max_concurrent_allocations,
     bool enforce_max_samples,
     std::uint8_t number_of_tracing_slots,
-    const bool use_get_if_available,
-    const bool use_set_if_available) noexcept
+    const std::optional<bool> use_get_if_available,
+    const std::optional<bool> use_set_if_available) noexcept
 {
     const LolaEventInstanceDeployment event_deployment{
         max_samples, max_subscribers, max_concurrent_allocations, enforce_max_samples, number_of_tracing_slots};

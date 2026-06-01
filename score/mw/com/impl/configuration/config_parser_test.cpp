@@ -122,8 +122,10 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft")
                   .lola_event_instance_deployment_.max_concurrent_allocations_.value(),
               1);
-    EXPECT_FALSE(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
-    EXPECT_FALSE(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_,
+              std::optional<bool>{true});
+    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_,
+              std::optional<bool>{true});
     ASSERT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_.has_value());
     EXPECT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_.value());
 
@@ -2179,9 +2181,9 @@ TEST(ConfigParser, LolaFieldUseGetIfAvailableSetToTrue)
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
-    // Then use_get_if_available_ is true and use_set_if_available_ defaults to false
-    EXPECT_TRUE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
-    EXPECT_FALSE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+    // Then use_get_if_available_ is true and use_set_if_available_ is not set
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, std::optional<bool>{true});
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, std::nullopt);
 }
 
 TEST(ConfigParser, LolaFieldUseSetIfAvailableSetToTrue)
@@ -2247,12 +2249,12 @@ TEST(ConfigParser, LolaFieldUseSetIfAvailableSetToTrue)
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
-    // Then use_set_if_available_ is true and use_get_if_available_ defaults to false
-    EXPECT_FALSE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
-    EXPECT_TRUE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+    // Then use_set_if_available_ is true and use_get_if_available_ is not set
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, std::nullopt);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, std::optional<bool>{true});
 }
 
-TEST(ConfigParser, LolaFieldOmittingBothFlagsDefaultsBothToFalse)
+TEST(ConfigParser, LolaFieldOmittingBothFlagsKeepsBothUnset)
 {
     // Given a JSON for a field without `useGetIfAvailable` or `useSetIfAvailable`
     auto j2 = R"(
@@ -2314,9 +2316,9 @@ TEST(ConfigParser, LolaFieldOmittingBothFlagsDefaultsBothToFalse)
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
-    // Then both flags default to false
-    EXPECT_FALSE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
-    EXPECT_FALSE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+    // Then both flags are not set
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, std::nullopt);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, std::nullopt);
 }
 
 TEST(ConfigParser, LolaFieldBothFlagsSetToTrue)
@@ -2382,8 +2384,10 @@ TEST(ConfigParser, LolaFieldBothFlagsSetToTrue)
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
     // Then both flags are true
-    EXPECT_TRUE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
-    EXPECT_TRUE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_,
+              std::optional<bool>{true});
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_,
+              std::optional<bool>{true});
 }
 
 TEST(ConfigParser, EmptyServiceTypes)

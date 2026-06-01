@@ -53,8 +53,8 @@ LolaFieldInstanceDeployment MakeLolaFieldInstanceDeployment(
     const std::optional<std::uint8_t> max_concurrent_allocations = 14U,
     const bool enforce_max_samples = true,
     std::uint8_t number_of_tracing_slots = 1U,
-    const bool use_get_if_available = false,
-    const bool use_set_if_available = false) noexcept;
+    const std::optional<bool> use_get_if_available = std::nullopt,
+    const std::optional<bool> use_set_if_available = std::nullopt) noexcept;
 
 LolaMethodInstanceDeployment MakeDefaultLolaMethodInstanceDeployment() noexcept;
 

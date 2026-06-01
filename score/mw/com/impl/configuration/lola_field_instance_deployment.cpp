@@ -30,8 +30,8 @@ constexpr auto kUseSetIfAvailableKey = "useSetIfAvailable";
 }  // namespace
 
 LolaFieldInstanceDeployment::LolaFieldInstanceDeployment(LolaEventInstanceDeployment event_deployment,
-                                                         const bool use_get_if_available,
-                                                         const bool use_set_if_available) noexcept
+                                                         const std::optional<bool> use_get_if_available,
+                                                         const std::optional<bool> use_set_if_available) noexcept
     : lola_event_instance_deployment_{std::move(event_deployment)},
       use_get_if_available_{use_get_if_available},
       use_set_if_available_{use_set_if_available}
@@ -48,11 +48,8 @@ LolaFieldInstanceDeployment LolaFieldInstanceDeployment::CreateFromJson(const sc
     // Delegate event-specific parsing to LolaEventInstanceDeployment (which also checks serialization version).
     auto event_deployment = LolaEventInstanceDeployment::CreateFromJson(json_object);
 
-    // getter and setters are optional fields. If not provided, we set them to false as default value.
-    const auto use_get_if_available =
-        GetOptionalValueFromJson<bool>(json_object, kUseGetIfAvailableKey).value_or(false);
-    const auto use_set_if_available =
-        GetOptionalValueFromJson<bool>(json_object, kUseSetIfAvailableKey).value_or(false);
+    const auto use_get_if_available = GetOptionalValueFromJson<bool>(json_object, kUseGetIfAvailableKey);
+    const auto use_set_if_available = GetOptionalValueFromJson<bool>(json_object, kUseSetIfAvailableKey);
 
     return LolaFieldInstanceDeployment(std::move(event_deployment), use_get_if_available, use_set_if_available);
 }
@@ -61,29 +58,39 @@ score::json::Object LolaFieldInstanceDeployment::Serialize() const noexcept
 {
     auto json_object = lola_event_instance_deployment_.Serialize();
 
-    json_object[kUseGetIfAvailableKey] = score::json::Any{use_get_if_available_};
-    json_object[kUseSetIfAvailableKey] = score::json::Any{use_set_if_available_};
+    if (use_get_if_available_.has_value())
+    {
+        json_object[kUseGetIfAvailableKey] = score::json::Any{use_get_if_available_.value()};
+    }
+
+    if (use_set_if_available_.has_value())
+    {
+        json_object[kUseSetIfAvailableKey] = score::json::Any{use_set_if_available_.value()};
+    }
 
     return json_object;
 }
 
-auto LolaFieldInstanceDeployment::GetNumberOfSampleSlots() const noexcept -> std::optional<SampleSlotCountType>
+auto LolaFieldInstanceDeployment::GetNumberOfSampleSlots() const noexcept
+    -> std::optional<LolaEventInstanceDeployment::SampleSlotCountType>
 {
     return lola_event_instance_deployment_.GetNumberOfSampleSlots();
 }
 
 auto LolaFieldInstanceDeployment::GetNumberOfSampleSlotsExcludingTracingSlot() const noexcept
-    -> std::optional<SampleSlotCountType>
+    -> std::optional<LolaEventInstanceDeployment::SampleSlotCountType>
 {
     return lola_event_instance_deployment_.GetNumberOfSampleSlotsExcludingTracingSlot();
 }
 
-auto LolaFieldInstanceDeployment::GetNumberOfTracingSlots() const noexcept -> TracingSlotSizeType
+auto LolaFieldInstanceDeployment::GetNumberOfTracingSlots() const noexcept
+    -> LolaEventInstanceDeployment::TracingSlotSizeType
 {
     return lola_event_instance_deployment_.GetNumberOfTracingSlots();
 }
 
-void LolaFieldInstanceDeployment::SetNumberOfSampleSlots(SampleSlotCountType number_of_sample_slots) noexcept
+void LolaFieldInstanceDeployment::SetNumberOfSampleSlots(
+    LolaEventInstanceDeployment::SampleSlotCountType number_of_sample_slots) noexcept
 {
     lola_event_instance_deployment_.SetNumberOfSampleSlots(number_of_sample_slots);
 }

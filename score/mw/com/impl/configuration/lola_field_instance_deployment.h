@@ -27,13 +27,9 @@ namespace score::mw::com::impl
 class LolaFieldInstanceDeployment
 {
   public:
-    using SampleSlotCountType = std::uint16_t;
-    using SubscriberCountType = std::uint8_t;
-    using TracingSlotSizeType = std::uint8_t;
-
     explicit LolaFieldInstanceDeployment(LolaEventInstanceDeployment event_deployment,
-                                         const bool use_get_if_available,
-                                         const bool use_set_if_available) noexcept;
+                                         const std::optional<bool> use_get_if_available,
+                                         const std::optional<bool> use_set_if_available) noexcept;
 
     explicit LolaFieldInstanceDeployment(const score::json::Object& json_object) noexcept;
 
@@ -41,12 +37,14 @@ class LolaFieldInstanceDeployment
 
     score::json::Object Serialize() const noexcept;
 
-    void SetNumberOfSampleSlots(SampleSlotCountType number_of_sample_slots) noexcept;
+    void SetNumberOfSampleSlots(LolaEventInstanceDeployment::SampleSlotCountType number_of_sample_slots) noexcept;
 
-    [[nodiscard]] std::optional<SampleSlotCountType> GetNumberOfSampleSlots() const noexcept;
-    [[nodiscard]] std::optional<SampleSlotCountType> GetNumberOfSampleSlotsExcludingTracingSlot() const noexcept;
+    [[nodiscard]] std::optional<LolaEventInstanceDeployment::SampleSlotCountType> GetNumberOfSampleSlots() const
+      noexcept;
+    [[nodiscard]] std::optional<LolaEventInstanceDeployment::SampleSlotCountType>
+    GetNumberOfSampleSlotsExcludingTracingSlot() const noexcept;
 
-    [[nodiscard]] TracingSlotSizeType GetNumberOfTracingSlots() const noexcept;
+    [[nodiscard]] LolaEventInstanceDeployment::TracingSlotSizeType GetNumberOfTracingSlots() const noexcept;
 
     // Note the struct is not compliant to POD type containing non-POD member.
     // The struct is used as a config storage obtained by performing the parsing json object.
@@ -54,9 +52,9 @@ class LolaFieldInstanceDeployment
     // coverity[autosar_cpp14_m11_0_1_violation]
     LolaEventInstanceDeployment lola_event_instance_deployment_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    bool use_get_if_available_;
+    std::optional<bool> use_get_if_available_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    bool use_set_if_available_;
+    std::optional<bool> use_set_if_available_;
 
     // False positive, variable is used outside of the file.
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
