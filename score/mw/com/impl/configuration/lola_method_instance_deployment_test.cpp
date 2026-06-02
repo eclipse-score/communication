@@ -108,9 +108,9 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithoutEnabled
 
 TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithEnabledFalseDisablesMethod)
 {
-    // Given a JSON object with enabled set to false
+    // Given a JSON object with use set to false
     score::json::Object json_object{};
-    json_object["enabled"] = score::json::Any{false};
+    json_object["use"] = score::json::Any{false};
 
     // When creating from JSON
     auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
@@ -122,9 +122,9 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithEnabledFal
 
 TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithEnabledTrueEnablesMethod)
 {
-    // Given a JSON object with enabled set to true
+    // Given a JSON object with use set to true
     score::json::Object json_object{};
-    json_object["enabled"] = score::json::Any{true};
+    json_object["use"] = score::json::Any{true};
 
     // When creating from JSON
     auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
@@ -170,16 +170,16 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeIncludesQueueSize)
 
 TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeAndDeserializePreservesEnabled)
 {
-    // Given a LolaMethodInstanceDeployment with enabled set to false
+    // Given a LolaMethodInstanceDeployment with use set to false
     score::json::Object json_object{};
-    json_object["enabled"] = score::json::Any{false};
+    json_object["use"] = score::json::Any{false};
     auto original_unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
 
     // When serializing and deserializing
     auto serialized = original_unit.Serialize();
     auto reconstructed_unit = LolaMethodInstanceDeployment::CreateFromJson(serialized);
 
-    // Then the enabled state should be preserved
+    // Then the use state should be preserved
     ASSERT_TRUE(reconstructed_unit.enabled_.has_value());
     EXPECT_FALSE(reconstructed_unit.enabled_.value());
     EXPECT_EQ(reconstructed_unit, original_unit);
@@ -187,16 +187,16 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeAndDeserializePrese
 
 TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeIncludesEnabled)
 {
-    // Given a LolaMethodInstanceDeployment with enabled set to false
+    // Given a LolaMethodInstanceDeployment with use set to false
     score::json::Object json_object{};
-    json_object["enabled"] = score::json::Any{false};
+    json_object["use"] = score::json::Any{false};
     auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
 
     // When serializing
     auto serialized = unit.Serialize();
 
-    // Then the serialized object should contain the enabled key and the value is correct
-    auto enabled_iter = serialized.find("enabled");
+    // Then the serialized object should contain the use key and the value is correct
+    auto enabled_iter = serialized.find("use");
     ASSERT_NE(enabled_iter, serialized.end());
     EXPECT_FALSE(enabled_iter->second.As<bool>().value());
 }

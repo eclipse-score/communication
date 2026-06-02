@@ -412,7 +412,7 @@
                                                 "minimum": 1,
                                                 "maximum": 255
                                             },
-                                            "enabled": {
+                                            "use": {
                                                 "type": "boolean",
                                                 "description": "Optional flag to disable/enable method. Default value is true, which means the method is enabled. This flag is only relevant on the proxy side and is ignored if specified in skeleton configuration.",
                                                 "default": true
