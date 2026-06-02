@@ -61,8 +61,14 @@ cc_library(
         "fail_test.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
     visibility = [
         "//score/mw/com/test:__subpackages__",
+    ],
+    deps = [
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -157,6 +163,7 @@ cc_library(
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
+        ":fail_test",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:test_error_domain",
         "@boost.program_options",

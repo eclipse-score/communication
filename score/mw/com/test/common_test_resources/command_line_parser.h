@@ -14,13 +14,14 @@
 #ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_COMMAND_LINE_PARSER_H
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_COMMAND_LINE_PARSER_H
 
+#include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/common_test_resources/test_error_domain.h"
-#include <boost/program_options.hpp>
-
-#include <charconv>
-#include <score/optional.hpp>
 
 #include "score/result/result.h"
+
+#include <boost/program_options.hpp>
+#include <charconv>
+#include <iostream>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -30,7 +31,8 @@ namespace score::mw::com::test
 
 using CommandLineArgsMapType = std::unordered_map<std::string, std::string>;
 
-/// \brief Get a value represented as a string, from an arguments map and parse it into the appropriate type
+/// \brief Get a value represented as a string (if it exists), from an arguments map and parse it into the appropriate
+/// type
 ///
 /// \tparam ReturnType Target type of the parsed argument. Must be std::string, integral or floating point type.
 /// \param args Map of provided command line arguments, where the key is the argument name and the value is the argument
@@ -41,11 +43,11 @@ using CommandLineArgsMapType = std::unordered_map<std::string, std::string>;
 template <typename ReturnType>
 auto GetValueIfProvided(const CommandLineArgsMapType& args, const std::string& arg_string) -> Result<ReturnType>
 {
+    std::cout << "Trying to get value for argument: " << arg_string << std::endl;
     if (args.count(arg_string) == 0U)
     {
-        std::string error_msg = "could not find the requested parameter: " + arg_string;
         return score::MakeUnexpected<ReturnType>(
-            MakeError(TestErrorCode::kParsingCommandLineArgumentFailed, error_msg));
+            MakeError(TestErrorCode::kParsingCommandLineArgumentFailed, "Could not find the requested parameter."));
     }
 
     std::string value_str = args.at(arg_string);
@@ -66,9 +68,8 @@ auto GetValueIfProvided(const CommandLineArgsMapType& args, const std::string& a
         }
         return score::MakeUnexpected<ReturnType>(
             MakeError(TestErrorCode::kParsingCommandLineArgumentFailed,
-                      "Failed during parsing of: " + arg_string + " . Provided value " + value_str +
-                          "could not be parsed into bool! Boolean fields can only have one of the following values: "
-                          "true, 1, false, 0 \n"));
+                      "Failed during parsing. Provided value could not be parsed into bool! Boolean fields can only "
+                      "have one of the following values: true, 1, false, 0."));
     }
     else if constexpr (std::is_integral_v<ReturnType>)
     {
@@ -81,26 +82,23 @@ auto GetValueIfProvided(const CommandLineArgsMapType& args, const std::string& a
 
         if (conversion_result.ec == std::errc::invalid_argument)
         {
-            return score::MakeUnexpected<ReturnType>(MakeError(TestErrorCode::kParsingCommandLineArgumentFailed,
-                                                               "Failed during parsing of: " + arg_string +
-                                                                   " . Provided value " + value_str +
-                                                                   "could not be parsed into the required type!\n"));
+            return score::MakeUnexpected<ReturnType>(
+                MakeError(TestErrorCode::kParsingCommandLineArgumentFailed,
+                          "Failed during parsing. Provided value could not be parsed into the required type!"));
         }
 
         if (conversion_result.ec == std::errc::result_out_of_range)
         {
-            return score::MakeUnexpected<ReturnType>(MakeError(TestErrorCode::kParsingCommandLineArgumentFailed,
-                                                               "Failed during parsing of: " + arg_string +
-                                                                   " . Provided value " + value_str +
-                                                                   "Is Larger than requested type!\n"));
+            return score::MakeUnexpected<ReturnType>(
+                MakeError(TestErrorCode::kParsingCommandLineArgumentFailed,
+                          "Failed during parsing. Provided value is Larger than requested type!"));
         }
 
         if (conversion_result.ec != std::errc{})
         {
-            return score::MakeUnexpected<ReturnType>(
-                MakeError(TestErrorCode::kParsingCommandLineArgumentFailed,
-                          "Failed during parsing of: " + arg_string + " . Provided value " + value_str +
-                              "could not be parsed into the required type for an unknown reason!\n"));
+            return score::MakeUnexpected<ReturnType>(MakeError(TestErrorCode::kParsingCommandLineArgumentFailed,
+                                                               "Failed during parsing. Provided value could not be "
+                                                               "parsed into the required type for an unknown reason!"));
         }
 
         return parsed_value;
@@ -110,6 +108,20 @@ auto GetValueIfProvided(const CommandLineArgsMapType& args, const std::string& a
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false,
                                                     "Return type can only be a string, bool or an integral type!");
     }
+}
+
+/// \brief Get a value represented as a string, from an arguments map and parse it into the appropriate type.
+///
+/// Same as `GetValueIfProvided`, but terminates the program if the argument is not provided or could not be parsed.
+template <typename ReturnType>
+auto GetValue(const CommandLineArgsMapType& args, const std::string& arg_string) -> ReturnType
+{
+    auto value_opt = GetValueIfProvided<ReturnType>(args, arg_string);
+    if (!value_opt.has_value())
+    {
+        FailTest("Failed to get value for argument. Error: ", value_opt.error());
+    }
+    return value_opt.value();
 }
 
 /// \brief A generic command line parser which can parse any kind of arguments and return an argument value map.
