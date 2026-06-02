@@ -52,8 +52,21 @@ if [[ -n "${RUN_ID}" ]]; then
             --name nightly-quality-reports \
             --dir "${TEMP_DIR}" \
             --repo "${REPOSITORY}"; then
-        cp -r "${TEMP_DIR}/nightly-quality-reports/." "${PUBLISH_DIR}/"
-        echo "Quality reports bundled into ${PUBLISH_DIR}/"
+        ARTIFACT_DIR="${TEMP_DIR}/nightly-quality-reports"
+        if [[ -d "${ARTIFACT_DIR}" ]]; then
+            cp -r "${ARTIFACT_DIR}/." "${PUBLISH_DIR}/"
+            echo "Quality reports bundled into ${PUBLISH_DIR}/"
+        else
+            # gh run download may place files directly in TEMP_DIR when the
+            # artifact has a flat structure, try that fallback.
+            FOUND=$(find "${TEMP_DIR}" -maxdepth 1 -mindepth 1 -type d | head -1)
+            if [[ -n "${FOUND}" ]]; then
+                cp -r "${FOUND}/." "${PUBLISH_DIR}/"
+                echo "Quality reports bundled from ${FOUND} into ${PUBLISH_DIR}/"
+            else
+                echo "::warning::Quality artifact downloaded but expected directory not found — skipping."
+            fi
+        fi
     else
         echo "Quality artifact not available for run ${RUN_ID} — skipping."
     fi
