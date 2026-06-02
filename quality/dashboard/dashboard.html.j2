@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Coverage Dashboard</title>
+<title>Quality Dashboard</title>
 <style>
   :root { --bg:#0d1117; --surface:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -36,7 +36,7 @@
 </style>
 </head>
 <body>
-<h1>Coverage Dashboard</h1>
+<h1>Quality Dashboard</h1>
 <p class="meta">Generated: {{ timestamp }}</p>
 
 {# ── Summary cards ── #}
@@ -52,6 +52,29 @@
 </div>
 {% else %}
 <p class="muted" style="margin-bottom:1.5rem">No coverage data available.</p>
+{% endif %}
+
+{# ── Clang-Tidy summary cards ── #}
+<h2>Clang-Tidy</h2>
+{% if clang_tidy %}
+<div class="cards">
+  <div class="card">
+    <div class="num" style="color:{% if clang_tidy.errors == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ clang_tidy.errors }}</div>
+    {% if prev and prev.ct_errors is not none %}<div class="delta">{{ delta(clang_tidy.errors, prev.ct_errors, false) }}</div>{% endif %}
+    <div class="label">Errors</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:{% if clang_tidy.warnings == 0 %}#27ae60{% else %}#e67e22{% endif %}">{{ clang_tidy.warnings }}</div>
+    {% if prev and prev.ct_warnings is not none %}<div class="delta">{{ delta(clang_tidy.warnings, prev.ct_warnings, false) }}</div>{% endif %}
+    <div class="label">Warnings</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:var(--muted)">{{ clang_tidy.total }}</div>
+    <div class="label">Total Findings</div>
+  </div>
+</div>
+{% else %}
+<p class="muted" style="margin-bottom:1.5rem">No clang-tidy data available.</p>
 {% endif %}
 
 {# ── Per-file coverage table ── #}
@@ -126,7 +149,7 @@
 <h2>Run History</h2>
 <table>
   <thead>
-    <tr><th>Date</th><th>Line Cov</th><th>Function Cov</th><th>Branch Cov</th></tr>
+    <tr><th>Date</th><th>Line Cov</th><th>Function Cov</th><th>Branch Cov</th><th>CT Errors</th><th>CT Warnings</th><th>CQ Errors</th><th>CQ Warnings</th></tr>
   </thead>
   <tbody>
     {% for snap in history|reverse %}
@@ -140,6 +163,14 @@
         {% if snap[key] is not none %}
           <span style="color:{{ cov_colour(snap[key]) }}">{{ '%.1f'|format(snap[key]) }}%</span>
           {% if ps and ps[key] is not none %} {{ delta(snap[key], ps[key], true) }}{% endif %}
+        {% else %}N/A{% endif %}
+      </td>
+      {% endfor %}
+      {% for key, higher_better in [('ct_errors', false), ('ct_warnings', false), ('cq_errors', false), ('cq_warnings', false)] %}
+      <td>
+        {% if snap[key] is not none %}
+          <span style="color:{% if snap[key] == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ snap[key] }}</span>
+          {% if ps and ps[key] is not none %} {{ delta(snap[key], ps[key], higher_better) }}{% endif %}
         {% else %}N/A{% endif %}
       </td>
       {% endfor %}
