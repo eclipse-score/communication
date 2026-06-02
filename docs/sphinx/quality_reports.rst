@@ -19,6 +19,9 @@ nightly run of the `Nightly Quality Jobs`_ workflow.
    * - Clang-Tidy
      - Static analysis findings (errors and warnings) across all C++ targets
      - |clang_tidy_report_link|
+   * - CodeQL
+     - MISRA C++ static analysis findings (SARIF format)
+     - |codeql_report_link|
 
 |quality_dashboard_link|
 
