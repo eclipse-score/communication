@@ -39,7 +39,10 @@ cc_library(
     hdrs = ["quality_type.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola/messaging:__pkg__"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
+        "//score/mw/com/impl/methods:__pkg__",
+    ],
 )
 
 cc_library(

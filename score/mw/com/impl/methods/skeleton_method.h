@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/method_handler_checker.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
@@ -112,7 +113,15 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     template <typename Callable>
     Result<void> RegisterHandler(Callable&& callback);
 
+    /// \brief Overload for callables that accept QualityType.
+    template <typename Callable>
+    Result<void> RegisterHandler(Callable&& callback, QualityType);
+
     void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept;
+
+  private:
+    template <typename Callable>
+    Result<void> RegisterHandlerImpl(Callable&& callback);
 };
 
 template <typename ReturnType, typename... ArgTypes>
@@ -163,9 +172,51 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
                   "Callbeck provided to register has to be an rvalue reference");
     AssertCallableMatchesMethodSignature<Callable, ReturnType, ArgTypes...>();
 
+    constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
+    if constexpr (is_return_type_not_void)
+    {
+        auto wrapped_handler = [cb = std::forward<Callable>(callback)](
+                                   QualityType /*quality_type*/, ReturnType& ret, const ArgTypes&... args) {
+            std::invoke(cb, ret, args...);
+        };
+        return RegisterHandlerImpl(std::move(wrapped_handler));
+    }
+    else
+    {
+        auto wrapped_handler = [cb = std::forward<Callable>(callback)](QualityType /*quality_type*/,
+                                                                       const ArgTypes&... args) {
+            std::invoke(cb, args...);
+        };
+        return RegisterHandlerImpl(std::move(wrapped_handler));
+    }
+}
+
+template <typename ReturnType, typename... ArgTypes>
+template <typename Callable>
+Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& callback, QualityType)
+{
+    constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
+    if constexpr (is_return_type_not_void)
+    {
+        static_assert(std::is_invocable_r_v<void, Callable, QualityType, ReturnType&, const ArgTypes&...>,
+                      "Callable must have signature void(QualityType, ReturnType&, const ArgTypes&...)");
+    }
+    else
+    {
+        static_assert(std::is_invocable_r_v<void, Callable, QualityType, const ArgTypes&...>,
+                      "Callable must have signature void(QualityType, const ArgTypes&...)");
+    }
+    return RegisterHandlerImpl(std::forward<Callable>(callback));
+}
+
+template <typename ReturnType, typename... ArgTypes>
+template <typename Callable>
+Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandlerImpl(Callable&& callback)
+{
     SkeletonMethodBinding::TypeErasedHandler type_erased_callable =
         [callback = std::forward<Callable>(callback)](std::optional<score::cpp::span<std::byte>> type_erased_in_args,
-                                                      std::optional<score::cpp::span<std::byte>> type_erased_return) {
+                                                      std::optional<score::cpp::span<std::byte>> type_erased_return,
+                                                      QualityType quality_type) {
             using InArgPtrTuple = std::tuple<ArgTypes*...>;
             InArgPtrTuple typed_in_arg_ptrs{};
 
@@ -179,30 +230,30 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
                 typed_in_arg_ptrs = Deserialize<ArgTypes...>(type_erased_in_args.value());
             }
 
-            constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
-            if constexpr (is_return_type_not_void)
+            constexpr bool is_return_type_not_void_impl = !std::is_same_v<ReturnType, void>;
+            if constexpr (is_return_type_not_void_impl)
             {
-                const auto typed_return_ptr_tuple = Deserialize<ReturnType>(type_erased_return.value());
-                auto* const typed_return_ptr = std::get<0>(typed_return_ptr_tuple);
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
                     type_erased_return.has_value(),
                     "ReturnType is non void. Thus, type_erased_result needs to have a value!");
+                const auto typed_return_ptr_tuple = Deserialize<ReturnType>(type_erased_return.value());
+                auto* const typed_return_ptr = std::get<0>(typed_return_ptr_tuple);
 
-                // Call the callable with the typed_return_ptr and the typed_in_arg_ptrs which are unpacked from the
-                // tuple into individual arguments.
+                // Call the callable with quality_type, typed_return_ptr and the typed_in_arg_ptrs which are
+                // unpacked from the tuple into individual arguments.
                 std::apply(
-                    [&callback, typed_return_ptr](ArgTypes*... typed_in_arg_ptrs) {
-                        std::invoke(callback, *typed_return_ptr, *typed_in_arg_ptrs...);
+                    [&callback, typed_return_ptr, quality_type](ArgTypes*... typed_in_arg_ptrs) {
+                        std::invoke(callback, quality_type, *typed_return_ptr, *typed_in_arg_ptrs...);
                     },
                     typed_in_arg_ptrs);
             }
             else
             {
-                // Call the callable with the typed_in_arg_ptrs which are unpacked from the tuple into individual
-                // arguments.
+                // Call the callable with quality_type and the typed_in_arg_ptrs which are unpacked from the tuple
+                // into individual arguments.
                 std::apply(
-                    [&callback](ArgTypes*... typed_in_arg_ptrs) {
-                        std::invoke(callback, *typed_in_arg_ptrs...);
+                    [&callback, quality_type](ArgTypes*... typed_in_arg_ptrs) {
+                        std::invoke(callback, quality_type, *typed_in_arg_ptrs...);
                     },
                     typed_in_arg_ptrs);
             }

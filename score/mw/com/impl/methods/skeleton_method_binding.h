@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_BINDING_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_BINDING_H
 
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/result/result.h"
 
 #include <score/callback.hpp>
@@ -29,7 +30,8 @@ class SkeletonMethodBinding
 {
   public:
     using TypeErasedCallbackSignature = void(std::optional<score::cpp::span<std::byte>>,
-                                             std::optional<score::cpp::span<std::byte>>);
+                                             std::optional<score::cpp::span<std::byte>>,
+                                             QualityType);
     // size of storred callback should be the base size of amp callback and a unique_ptr
     // this way the user can pass any information to the callback through the pointer.
     //
