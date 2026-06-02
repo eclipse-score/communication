@@ -16,6 +16,9 @@ nightly run of the `Nightly Quality Jobs`_ workflow.
    * - Coverage
      - Line, function, and branch coverage from C++ unit tests (gcov/lcov)
      - |coverage_report_link|
+   * - Clang-Tidy
+     - Static analysis findings (errors and warnings) across all C++ targets
+     - |clang_tidy_report_link|
 
 |quality_dashboard_link|
 
