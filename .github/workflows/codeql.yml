@@ -1,0 +1,114 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow: CodeQL / MISRA C++ static analysis (nightly reporting).
+#
+# Runs the Bazel-managed CodeQL analysis against all C++ targets:
+#   bazel run //quality/static_analysis:codeql_lint -- --target //...
+#
+# Produces a SARIF report and a CSV summary. Both are uploaded as an artifact
+# and the CSV is parsed to expose error/warning counts to the caller.
+#
+# This workflow is designed to be called from nightly_quality.yml via
+# workflow_call. It does NOT gate pull requests (CodeQL analysis is too slow
+# and resource-intensive to run on every PR).
+
+name: CodeQL Analysis
+
+on:
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: 'Name of the CodeQL findings artifact'
+        value: ${{ jobs.codeql-analysis.outputs.artifact-name }}
+      errors:
+        description: 'Total CodeQL error count'
+        value: ${{ jobs.codeql-analysis.outputs.errors }}
+      warnings:
+        description: 'Total CodeQL warning count'
+        value: ${{ jobs.codeql-analysis.outputs.warnings }}
+      conclusion:
+        description: 'Job conclusion: success or failure'
+        value: ${{ jobs.codeql-analysis.outputs.conclusion }}
+
+permissions:
+  contents: read
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  codeql-analysis:
+    runs-on: ubuntu-24.04
+    outputs:
+      artifact-name: codeql-findings
+      errors:    ${{ steps.findings.outputs.errors }}
+      warnings:  ${{ steps.findings.outputs.warnings }}
+      conclusion: ${{ steps.set-conclusion.outputs.conclusion }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Setup Bazel with shared caching
+        uses: castler/setup-bazel@cache-optimized
+        with:
+          bazelisk-cache: true
+          disk-cache: "codeql"
+          repository-cache: true
+          cache-optimized: true
+          cache-save: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Run CodeQL analysis via Bazel
+        id: run-codeql
+        # continue-on-error so we can collect findings and upload the artifact
+        # even when the Bazel invocation exits non-zero.
+        continue-on-error: true
+        run: |
+          bazel run //quality/static_analysis:codeql_lint -- --target //...
+
+      - name: Collect findings
+        id: findings
+        run: |
+          bash quality/scripts/collect_codeql_findings.sh
+
+      - name: Upload CodeQL findings as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-findings
+          path: |
+            codeql_findings.sarif
+            codeql_findings.csv
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Set conclusion
+        id: set-conclusion
+        if: always()
+        run: |
+          if [[ "${{ steps.run-codeql.outcome }}" == "success" ]]; then
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          fi
