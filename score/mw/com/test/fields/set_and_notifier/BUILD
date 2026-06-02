@@ -24,8 +24,8 @@ validate_json_schema_test(
 )
 
 cc_binary(
-    name = "main_service",
-    srcs = ["main_service.cpp"],
+    name = "provider",
+    srcs = ["provider.cpp"],
     data = ["config/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -33,15 +33,17 @@ cc_binary(
     visibility = ["//score/mw/com/test/fields:__pkg__"],
     deps = [
         "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:sctf_test_runner",
+        "//score/mw/com/test/common_test_resources:command_line_parser",
+        "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
         "//score/mw/com/test/fields/set_and_notifier/fields_test_resources:field_provider",
         "@score_baselibs//score/mw/log",
     ],
 )
 
 cc_binary(
-    name = "main_client",
-    srcs = ["main_client.cpp"],
+    name = "consumer",
+    srcs = ["consumer.cpp"],
     data = ["config/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -49,16 +51,17 @@ cc_binary(
     visibility = ["//score/mw/com/test/fields:__pkg__"],
     deps = [
         "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:sctf_test_runner",
+        "//score/mw/com/test/common_test_resources:command_line_parser",
+        "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/fields/set_and_notifier/fields_test_resources:field_consumer",
         "@score_baselibs//score/mw/log",
     ],
 )
 
 pkg_application(
-    name = "main_service-pkg",
-    app_name = "MainServiceApp",
-    bin = [":main_service"],
+    name = "provider-pkg",
+    app_name = "MainProviderApp",
+    bin = [":provider"],
     etc = [
         "config/mw_com_config.json",
         "config/logging.json",
@@ -70,9 +73,9 @@ pkg_application(
 )
 
 pkg_application(
-    name = "main_client-pkg",
-    app_name = "MainClientApp",
-    bin = [":main_client"],
+    name = "consumer-pkg",
+    app_name = "MainConsumerApp",
+    bin = [":consumer"],
     etc = [
         "config/mw_com_config.json",
         "config/logging.json",
@@ -81,12 +84,4 @@ pkg_application(
         "//platform/aas/test/mw/com:__pkg__",
         "//score/mw/com/test/fields/set_and_notifier:__subpackages__",
     ],
-)
-
-test_suite(
-    name = "component_tests",
-    tests = [
-        "//score/mw/com/test/fields/set_and_notifier/integration_test:test_field_set_and_notifier",
-    ],
-    visibility = ["//score/mw/com/test/fields:__pkg__"],
 )

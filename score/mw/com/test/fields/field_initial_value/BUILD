@@ -44,7 +44,9 @@ cc_binary(
     deps = [
         ":test_datatype",
         "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:sctf_test_runner",
+        "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
+        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -61,6 +63,7 @@ cc_binary(
         ":test_datatype",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
+        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -91,12 +94,4 @@ pkg_application(
         "//platform/aas/test/mw/com:__pkg__",
         "//score/mw/com/test/fields/field_initial_value:__subpackages__",
     ],
-)
-
-test_suite(
-    name = "component_tests",
-    tests = [
-        "//score/mw/com/test/fields/field_initial_value/integration_test:test_field_initial_value",
-    ],
-    visibility = ["//score/mw/com/test/fields:__pkg__"],
 )

@@ -16,15 +16,12 @@
 
 #include <score/stop_token.hpp>
 
-#include <chrono>
 #include <string>
 
 namespace score::mw::com::test
 {
 
-int run_service(const std::chrono::milliseconds& cycle_time,
-                const score::cpp::stop_token& stop_token,
-                const std::string& mode);
+void run_provider(const score::cpp::stop_token& stop_token, const std::string& mode);
 
 }  // namespace score::mw::com::test
 

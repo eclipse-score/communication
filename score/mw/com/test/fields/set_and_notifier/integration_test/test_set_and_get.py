@@ -11,19 +11,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+from test_fixture import consumer, provider
 
-def client(target, **kwargs):
-    args = ["--num-retries", "20", "--backoff-time", "50"]
-    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True, **kwargs)
-
-
-def service(target, **kwargs):
-    args = []
-    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp", **kwargs)
-
-
-def test_field_initial_value(target):
-    """Test field initial value exchange between service and client."""
-    with service(target):
-        with client(target):
-            pass
+# TODO: Implement once set_and_get mode is supported by the provider and consumer binaries.
+# Scenarios to cover:
+# 1. calling set with valid value -> calling get returns value set with setter
+# 2. calling set with invalid value (set handler clamps the value) -> calling get returns clamped value
+# 3. calling Update / send -> calling get returns value set with send
