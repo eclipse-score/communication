@@ -134,10 +134,12 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodHandlersRegisteredS
     GivenASkeletonWithTwoMethods();
 
     // When a callback is registered to both methods
-    auto fooo_callback = [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {};
-    auto dumb_callback = [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {
-        std::cout << "bla\n";
-    };
+    auto fooo_callback =
+        [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>, QualityType) {};
+    auto dumb_callback =
+        [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>, QualityType) {
+            std::cout << "bla\n";
+        };
 
     std::ignore = fooo_method_->RegisterHandler(fooo_callback);
     std::ignore = dumb_method_->RegisterHandler(dumb_callback);
@@ -151,7 +153,8 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodHandlersRegisteredF
     GivenASkeletonWithTwoMethods();
 
     // When one of the methods does not have a callback registered
-    auto fooo_callback = [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {};
+    auto fooo_callback =
+        [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>, QualityType) {};
 
     std::ignore = fooo_method_->RegisterHandler(fooo_callback);
 

@@ -245,10 +245,9 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandlerImpl(Callab
     else
     {
         SkeletonMethodBinding::TypeErasedHandler type_erased_handler =
-            [callback = std::move(callback)](
-                std::optional<score::cpp::span<std::byte>> type_erased_in_args,
-                std::optional<score::cpp::span<std::byte>> type_erased_return,
-                QualityType quality_type) mutable {
+            [callback = std::move(callback)](std::optional<score::cpp::span<std::byte>> type_erased_in_args,
+                                             std::optional<score::cpp::span<std::byte>> type_erased_return,
+                                             QualityType quality_type) mutable {
                 return stateless_type_erased_handler(callback, type_erased_in_args, type_erased_return, quality_type);
             };
         return binding_->RegisterHandler(std::move(type_erased_handler));

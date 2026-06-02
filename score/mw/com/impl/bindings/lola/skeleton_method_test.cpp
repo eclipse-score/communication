@@ -203,7 +203,7 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingRegistersRegisteredC
     // Expecting that RegisterMethodCallHandler will be called on message passing with the
     // registered callback. We check this by calling the subscribed callback and checking that the registered
     // callback was called.
-    EXPECT_CALL(registered_type_erased_callback_, Call(_, _));
+    EXPECT_CALL(registered_type_erased_callback_, Call(_, _, _));
     EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(_, _, _, _))
         .WillOnce(WithArgs<0, 1, 2>(Invoke([this](auto asil_level,
                                                   auto proxy_method_instance_identifier,
@@ -451,8 +451,8 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndStorageDispatchesTo
     GivenASkeletonMethod().WithARegisteredCallback().WhichCapturesRegisteredMethodCallHandler();
 
     // Expecting that the registered type erased callback is called with only InArgs storage
-    EXPECT_CALL(registered_type_erased_callback_, Call(_, _))
-        .WillOnce(Invoke([](auto in_arg_storage, auto result_storage) {
+    EXPECT_CALL(registered_type_erased_callback_, Call(_, _, _))
+        .WillOnce(Invoke([](auto in_arg_storage, auto result_storage, auto /*quality_type*/) {
             EXPECT_TRUE(in_arg_storage.has_value());
             EXPECT_FALSE(result_storage.has_value());
         }));
@@ -479,8 +479,8 @@ TEST_F(SkeletonMethodCallFixture,
     GivenASkeletonMethod().WithARegisteredCallback().WhichCapturesRegisteredMethodCallHandler();
 
     // Expecting that the registered type erased callback is called with only Return storage
-    EXPECT_CALL(registered_type_erased_callback_, Call(_, _))
-        .WillOnce(Invoke([](auto in_arg_storage, auto result_storage) {
+    EXPECT_CALL(registered_type_erased_callback_, Call(_, _, _))
+        .WillOnce(Invoke([](auto in_arg_storage, auto result_storage, auto /*quality_type*/) {
             EXPECT_FALSE(in_arg_storage.has_value());
             EXPECT_TRUE(result_storage.has_value());
         }));
@@ -507,8 +507,8 @@ TEST_F(SkeletonMethodCallFixture,
     GivenASkeletonMethod().WithARegisteredCallback().WhichCapturesRegisteredMethodCallHandler();
 
     // Expecting that the registered type erased callback is called with InArgs and Return storage
-    EXPECT_CALL(registered_type_erased_callback_, Call(_, _))
-        .WillOnce(Invoke([](auto in_arg_storage, auto result_storage) {
+    EXPECT_CALL(registered_type_erased_callback_, Call(_, _, _))
+        .WillOnce(Invoke([](auto in_arg_storage, auto result_storage, auto /*quality_type*/) {
             EXPECT_TRUE(in_arg_storage.has_value());
             EXPECT_TRUE(result_storage.has_value());
         }));
@@ -535,8 +535,8 @@ TEST_F(SkeletonMethodCallFixture, CallingWithNoTypeInfosAndStoragesDispatchesToR
     GivenASkeletonMethod().WithARegisteredCallback().WhichCapturesRegisteredMethodCallHandler();
 
     // Expecting that the registered type erased callback is called with no InArgs or Return storage
-    EXPECT_CALL(registered_type_erased_callback_, Call(_, _))
-        .WillOnce(Invoke([](auto in_arg_storage, auto result_storage) {
+    EXPECT_CALL(registered_type_erased_callback_, Call(_, _, _))
+        .WillOnce(Invoke([](auto in_arg_storage, auto result_storage, auto /*quality_type*/) {
             EXPECT_FALSE(in_arg_storage.has_value());
             EXPECT_FALSE(result_storage.has_value());
         }));
@@ -598,7 +598,7 @@ TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeEras
     method_call_handler_scope_.Expire();
 
     // Expecting that the registered type erased callback will not be called
-    EXPECT_CALL(registered_type_erased_callback_, Call(_, _)).Times(0);
+    EXPECT_CALL(registered_type_erased_callback_, Call(_, _, _)).Times(0);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
