@@ -11,18 +11,23 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#ifndef SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_FIELD_CONSUMER_H
-#define SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_FIELD_CONSUMER_H
+#ifndef SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_INITIAL_ONLY_INTERFACE_H
+#define SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_INITIAL_ONLY_INTERFACE_H
 
-#include <chrono>
-#include <cstddef>
-#include <string>
+#include <cstdint>
 
 namespace score::mw::com::test
 {
 
-void run_consumer(std::size_t num_retries, std::chrono::milliseconds retry_backoff_time, const std::string& mode);
+template <typename T>
+class InitialOnlyInterface : public T::Base
+{
+  public:
+    using T::Base::Base;
+
+    typename T::template Field<std::int32_t> test_field{*this, "test_field"};
+};
 
 }  // namespace score::mw::com::test
 
-#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_FIELD_CONSUMER_H
+#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_INITIAL_ONLY_INTERFACE_H

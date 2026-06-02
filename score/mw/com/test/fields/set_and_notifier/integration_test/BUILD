@@ -17,16 +17,32 @@ load("//quality/integration_testing:integration_testing.bzl", "integration_test"
 pkg_filegroup(
     name = "filesystem",
     srcs = [
-        "//score/mw/com/test/fields/set_and_notifier:main_client-pkg",
-        "//score/mw/com/test/fields/set_and_notifier:main_service-pkg",
+        "//score/mw/com/test/fields/set_and_notifier:consumer-pkg",
+        "//score/mw/com/test/fields/set_and_notifier:provider-pkg",
     ],
 )
 
+py_library(
+    name = "test_fixture",
+    srcs = ["test_fixture.py"],
+)
+
 integration_test(
-    name = "test_field_set_and_notifier",
+    name = "test_notifier",
     timeout = "moderate",
     srcs = [
-        "test_field_set_and_notifier.py",
+        "test_notifier.py",
+        ":test_fixture",
+    ],
+    filesystem = ":filesystem",
+)
+
+integration_test(
+    name = "test_set_and_notifier",
+    timeout = "moderate",
+    srcs = [
+        "test_set_and_notifier.py",
+        ":test_fixture",
     ],
     filesystem = ":filesystem",
 )

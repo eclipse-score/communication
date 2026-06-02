@@ -11,19 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-
-def client(target, **kwargs):
-    args = ["--num-retries", "20", "--backoff-time", "50"]
-    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True, **kwargs)
+from test_fixture import consumer, provider
 
 
-def service(target, **kwargs):
-    args = []
-    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp", **kwargs)
-
-
-def test_field_initial_value(target):
-    """Test field initial value exchange between service and client."""
-    with service(target):
-        with client(target):
+def test_field_notifier_initial_value(target):
+    """Test field initial value exchange between provider and consumer."""
+    with provider(target, "notifier"):
+        with consumer(target, "notifier"):
             pass

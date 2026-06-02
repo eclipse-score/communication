@@ -10,12 +10,3 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-
-test_suite(
-    name = "component_tests",
-    tests = [
-        "//score/mw/com/test/fields/field_initial_value:component_tests",
-        "//score/mw/com/test/fields/set_and_notifier:component_tests",
-    ],
-    visibility = ["//score/mw/com/test:__pkg__"],
-)

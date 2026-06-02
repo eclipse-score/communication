@@ -17,7 +17,12 @@ load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER
 cc_library(
     name = "test_datatype",
     srcs = ["test_datatype.cpp"],
-    hdrs = ["test_datatype.h"],
+    hdrs = [
+        "initial_only_interface.h",
+        "set_enabled_interface.h",
+        "test_constants.h",
+        "test_datatype.h",
+    ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/test/fields/set_and_notifier:__subpackages__",
@@ -38,6 +43,9 @@ cc_library(
     deps = [
         ":test_datatype",
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:proxy_container",
+        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
     ],
 )
 
@@ -52,5 +60,8 @@ cc_library(
     deps = [
         ":test_datatype",
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:skeleton_container",
+        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
     ],
 )

@@ -12,18 +12,12 @@
 # *******************************************************************************
 
 
-def client(target, **kwargs):
-    args = ["--num-retries", "20", "--backoff-time", "50"]
-    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True, **kwargs)
+def consumer(target, mode, **kwargs):
+    args = ["--num-retries", "20", "--backoff-time", "50", "--mode", mode,
+            "--service-instance-manifest", "./etc/mw_com_config.json"]
+    return target.wrap_exec("bin/consumer", args, cwd="/opt/MainConsumerApp", wait_on_exit=True, **kwargs)
 
 
-def service(target, **kwargs):
-    args = []
-    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp", **kwargs)
-
-
-def test_field_initial_value(target):
-    """Test field initial value exchange between service and client."""
-    with service(target):
-        with client(target):
-            pass
+def provider(target, mode, **kwargs):
+    args = ["--mode", mode, "--service-instance-manifest", "./etc/mw_com_config.json"]
+    return target.wrap_exec("bin/provider", args, cwd="/opt/MainProviderApp", **kwargs)

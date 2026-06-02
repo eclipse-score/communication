@@ -13,12 +13,15 @@
 
 #include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/field_provider.h"
 
+#include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/skeleton_container.h"
+#include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/test_constants.h"
 #include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/test_datatype.h"
+#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 
 #include <chrono>
 #include <iostream>
 #include <string>
-#include <thread>
 #include <utility>
 
 namespace score::mw::com::test
@@ -26,66 +29,57 @@ namespace score::mw::com::test
 namespace
 {
 
-int run_notifier_service(const std::chrono::milliseconds& cycle_time, const score::cpp::stop_token& stop_token)
+const std::string kInterprocessNotificationShmPath{"/fields_set_and_notifier_interprocess_notification"};
+
+void run_notifier_provider(const score::cpp::stop_token& stop_token)
 {
-    auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
-    if (!instance_specifier_result.has_value())
+    auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
+    if (!process_synchronizer_result.has_value())
     {
-        std::cerr << "Unable to create instance specifier, terminating\n";
-        return -3;
-    }
-    auto instance_specifier = std::move(instance_specifier_result).value();
-
-    auto service_result = InitialOnlySkeleton::Create(std::move(instance_specifier));
-    if (!service_result.has_value())
-    {
-        std::cerr << "Unable to construct InitialOnlySkeleton: " << service_result.error() << ", bailing!\n";
-        return -4;
+        FailTest("Provider: Could not create ProcessSynchronizer");
     }
 
-    InitialOnlySkeleton& service{service_result.value()};
+    SkeletonContainer<InitialOnlySkeleton> skeleton_container{kInstanceSpecifierString};
+    if (!skeleton_container.CreateSkeleton())
+    {
+        FailTest("Provider: Unable to construct InitialOnlySkeleton");
+    }
+
+    auto& service = skeleton_container.GetSkeleton();
 
     const auto update_result = service.test_field.Update(kInitialValue);
     if (!update_result.has_value())
     {
-        std::cerr << "Unable to update initial field value: " << update_result.error() << ", bailing!\n";
-        return -6;
+        FailTest("Provider: Unable to update initial field value: ", update_result.error());
     }
-    const auto offer_result = service.OfferService();
-    if (!offer_result.has_value())
+    if (!skeleton_container.OfferService())
     {
-        std::cerr << "Unable to offer InitialOnlySkeleton: " << offer_result.error() << ", bailing!\n";
-        return -5;
+        FailTest("Provider: Unable to offer InitialOnlySkeleton");
     }
 
-    while (!stop_token.stop_requested())
+    if (!process_synchronizer_result->WaitWithAbort(stop_token))
     {
-        std::this_thread::sleep_for(cycle_time);
+        FailTest("Provider: WaitWithAbort was stopped by stop_token instead of notification");
     }
 
     service.StopOfferService();
-
-    return 0;
 }
 
-int run_set_service(const std::chrono::milliseconds& cycle_time, const score::cpp::stop_token& stop_token)
+void run_set_provider(const score::cpp::stop_token& stop_token)
 {
-    auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
-    if (!instance_specifier_result.has_value())
+    auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
+    if (!process_synchronizer_result.has_value())
     {
-        std::cerr << "Unable to create instance specifier, terminating\n";
-        return -13;
-    }
-    auto instance_specifier = std::move(instance_specifier_result).value();
-
-    auto service_result = SetEnabledSkeleton::Create(std::move(instance_specifier));
-    if (!service_result.has_value())
-    {
-        std::cerr << "Unable to construct SetEnabledSkeleton: " << service_result.error() << ", bailing!\n";
-        return -14;
+        FailTest("Provider: Could not create ProcessSynchronizer");
     }
 
-    SetEnabledSkeleton& service{service_result.value()};
+    SkeletonContainer<SetEnabledSkeleton> skeleton_container{kInstanceSpecifierString};
+    if (!skeleton_container.CreateSkeleton())
+    {
+        FailTest("Provider: Unable to construct SetEnabledSkeleton");
+    }
+
+    auto& service = skeleton_container.GetSkeleton();
     const auto register_handler_result = service.test_field.RegisterSetHandler([](std::int32_t& value) noexcept {
         if (value > kSetAcceptedValue)
         {
@@ -98,52 +92,45 @@ int run_set_service(const std::chrono::milliseconds& cycle_time, const score::cp
     });
     if (!register_handler_result.has_value())
     {
-        std::cerr << "Unable to register set handler: " << register_handler_result.error() << ", bailing!\n";
-        return -15;
+        FailTest("Provider: Unable to register set handler: ", register_handler_result.error());
     }
 
     const auto update_result = service.test_field.Update(kInitialValue);
     if (!update_result.has_value())
     {
-        std::cerr << "Unable to update initial field value: " << update_result.error() << ", bailing!\n";
-        return -16;
+        FailTest("Provider: Unable to update initial field value: ", update_result.error());
     }
 
-    const auto offer_result = service.OfferService();
-    if (!offer_result.has_value())
+    if (!skeleton_container.OfferService())
     {
-        std::cerr << "Unable to offer SetEnabledSkeleton: " << offer_result.error() << ", bailing!\n";
-        return -17;
+        FailTest("Provider: Unable to offer SetEnabledSkeleton");
     }
 
-    while (!stop_token.stop_requested())
+    if (!process_synchronizer_result->WaitWithAbort(stop_token))
     {
-        std::this_thread::sleep_for(cycle_time);
+        FailTest("Provider: WaitWithAbort was stopped by stop_token instead of notification");
     }
 
     service.StopOfferService();
-
-    return 0;
 }
 
 }  // namespace
 
-int run_service(const std::chrono::milliseconds& cycle_time,
-                const score::cpp::stop_token& stop_token,
-                const std::string& mode)
+void run_provider(const score::cpp::stop_token& stop_token, const std::string& mode)
 {
     if (mode == "notifier")
     {
-        return run_notifier_service(cycle_time, stop_token);
+        run_notifier_provider(stop_token);
+        return;
     }
     if (mode == "set")
     {
-        return run_set_service(cycle_time, stop_token);
+        run_set_provider(stop_token);
+        return;
     }
 
-    // TODO: Add "get" mode service scenario coverage once getter-enabled field variant is introduced.
-    std::cerr << "Unsupported mode passed to service: " << mode << "\n";
-    return -1;
+    // TODO: Add "get" mode provider scenario coverage once getter-enabled field variant is introduced.
+    FailTest("Provider: Unsupported mode: ", mode);
 }
 
 }  // namespace score::mw::com::test
