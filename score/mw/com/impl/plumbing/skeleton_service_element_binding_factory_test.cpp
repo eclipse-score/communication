@@ -45,7 +45,8 @@ const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"/my_dummy
 const LolaServiceInstanceDeployment kLolaServiceInstanceDeployment{
     LolaServiceInstanceId{kInstanceId},
     {{kDummyEventName, LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0U}}},
-    {{kDummyFieldName, LolaFieldInstanceDeployment{{1U}, {3U}, 1U, true, 0U}}}};
+    {{kDummyFieldName,
+      LolaFieldInstanceDeployment{LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0U}, false, false}}}};
 const LolaServiceTypeDeployment kLolaServiceTypeDeployment{kServiceId,
                                                            {{kDummyEventName, kDummyEventId}},
                                                            {{kDummyFieldName, kDummyFieldId}}};
@@ -227,7 +228,8 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
     const LolaServiceInstanceDeployment lola_service_instance_deployment_with_invalid_names{
         LolaServiceInstanceId{kInstanceId},
         {{incorrect_event_name, LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0U}}},
-        {{incorrect_field_name, LolaFieldInstanceDeployment{{1U}, {3U}, 1U, true, 0U}}}};
+        {{incorrect_field_name,
+          LolaFieldInstanceDeployment{LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0U}, false, false}}}};
 
     ConfigurationStore config_store_with_invalid_service_element_names{
         kInstanceSpecifier,
@@ -255,7 +257,8 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
     const LolaServiceInstanceDeployment lola_service_instance_deployment_without_event_sample_slots{
         LolaServiceInstanceId{kInstanceId},
         {{kDummyEventName, LolaEventInstanceDeployment{{}, {3U}, 1U, true, 0U}}},
-        {{kDummyFieldName, LolaFieldInstanceDeployment{{}, {3U}, 1U, true, 0U}}}};
+        {{kDummyFieldName,
+          LolaFieldInstanceDeployment{LolaEventInstanceDeployment{{}, {3U}, 1U, true, 0U}, false, false}}}};
 
     ConfigurationStore config_store_with_invalid_service_element_names{
         kInstanceSpecifier,
@@ -284,7 +287,8 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
     const LolaServiceInstanceDeployment lola_service_instance_deployment_without_max_subscribers{
         LolaServiceInstanceId{kInstanceId},
         {{kDummyEventName, LolaEventInstanceDeployment{{1U}, {}, 1U, true, 0U}}},
-        {{kDummyFieldName, LolaFieldInstanceDeployment{{2U}, {}, 1U, true, 0U}}}};
+        {{kDummyFieldName,
+          LolaFieldInstanceDeployment{LolaEventInstanceDeployment{{2U}, {}, 1U, true, 0U}, false, false}}}};
 
     ConfigurationStore config_store_with_invalid_service_element_names{
         kInstanceSpecifier,

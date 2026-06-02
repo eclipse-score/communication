@@ -16,12 +16,35 @@
 
 #include <gtest/gtest.h>
 
+#include <utility>
+
 namespace score::mw::com::impl
 {
 namespace
 {
 
 using LolaFieldInstanceDeploymentFixture = ConfigurationStructsFixture;
+
+namespace
+{
+constexpr std::uint16_t kMaxSamples{12U};
+constexpr std::uint8_t kMaxSubscribers{13U};
+constexpr std::uint8_t kMaxConcurrentAllocations{14U};
+constexpr bool kEnforceMaxSamples{true};
+constexpr std::uint8_t kNumberOfTracingSlots{1U};
+
+enum class Getter
+{
+    ENABLED,
+    DISABLED
+};
+
+enum class Setter
+{
+    ENABLED,
+    DISABLED
+};
+}  // namespace
 TEST_F(LolaFieldInstanceDeploymentFixture, CanCreateFromSerializedObjectWithOptionals)
 {
     const LolaFieldInstanceDeployment unit{MakeLolaFieldInstanceDeployment()};
@@ -35,13 +58,17 @@ TEST_F(LolaFieldInstanceDeploymentFixture, CanCreateFromSerializedObjectWithOpti
 
 TEST_F(LolaFieldInstanceDeploymentFixture, CanCreateFromSerializedObjectWithoutOptionals)
 {
-    const std::uint16_t max_samples{12};
-    const std::optional<std::uint8_t> max_subscribers{13};
-    const std::optional<std::uint8_t> max_concurrent_allocations{};
-    const bool enforce_max_samples{true};
 
-    const LolaFieldInstanceDeployment unit{
-        MakeLolaFieldInstanceDeployment(max_samples, max_subscribers, max_concurrent_allocations, enforce_max_samples)};
+    const std::optional<std::uint8_t> kNoMaxConcurrentAllocations{};
+    constexpr std::uint8_t kNoTracingSlots{0U};
+
+    const LolaFieldInstanceDeployment unit{MakeLolaFieldInstanceDeployment(kMaxSamples,
+                                                                           kMaxSubscribers,
+                                                                           kNoMaxConcurrentAllocations,
+                                                                           kEnforceMaxSamples,
+                                                                           kNoTracingSlots,
+                                                                           /*use_get*/ false,
+                                                                           /*use_set*/ false)};
 
     const auto serialized_unit{unit.Serialize()};
 
@@ -49,6 +76,41 @@ TEST_F(LolaFieldInstanceDeploymentFixture, CanCreateFromSerializedObjectWithoutO
 
     ExpectLolaFieldInstanceDeploymentObjectsEqual(reconstructed_unit, unit);
 }
+
+class LolaFieldInstanceDeploymentUseGetSetPairParamFixture
+    : public LolaFieldInstanceDeploymentFixture,
+      public ::testing::WithParamInterface<std::pair<Getter, Setter>>
+{
+};
+
+TEST_P(LolaFieldInstanceDeploymentUseGetSetPairParamFixture,
+       UseGetAndUseSetFlagsArePreservedAfterRoundTripSerialisation)
+{
+    const auto [getter, setter] = GetParam();
+    const auto use_get_if_available = (getter == Getter::ENABLED);
+    const auto use_set_if_available = (setter == Setter::ENABLED);
+
+    const LolaFieldInstanceDeployment unit{MakeLolaFieldInstanceDeployment(kMaxSamples,
+                                                                           kMaxSubscribers,
+                                                                           kMaxConcurrentAllocations,
+                                                                           kEnforceMaxSamples,
+                                                                           kNumberOfTracingSlots,
+                                                                           use_get_if_available,
+                                                                           use_set_if_available)};
+
+    const auto serialized_unit{unit.Serialize()};
+    const LolaFieldInstanceDeployment reconstructed_unit{serialized_unit};
+
+    EXPECT_EQ(reconstructed_unit.use_get_if_available_, std::optional<bool>{use_get_if_available});
+    EXPECT_EQ(reconstructed_unit.use_set_if_available_, std::optional<bool>{use_set_if_available});
+}
+
+INSTANTIATE_TEST_SUITE_P(UseGetAndSetCombinations,
+                         LolaFieldInstanceDeploymentUseGetSetPairParamFixture,
+                         ::testing::Values(std::pair<Getter, Setter>{Getter::ENABLED, Setter::ENABLED},
+                                           std::pair<Getter, Setter>{Getter::ENABLED, Setter::DISABLED},
+                                           std::pair<Getter, Setter>{Getter::DISABLED, Setter::ENABLED},
+                                           std::pair<Getter, Setter>{Getter::DISABLED, Setter::DISABLED}));
 
 TEST(LolaFieldInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
 {

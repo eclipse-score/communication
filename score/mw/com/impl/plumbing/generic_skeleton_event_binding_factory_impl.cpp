@@ -24,8 +24,8 @@ score::mw::com::impl::GenericSkeletonEventBindingFactoryImpl::Create(SkeletonBas
 {
     const auto& instance_identifier = SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier();
 
-    return CreateGenericSkeletonServiceElement<GenericSkeletonEventBinding,
-                                               lola::GenericSkeletonEvent,
-                                               ServiceElementType::EVENT>(
+    return CreateGenericSkeletonEventOrField<GenericSkeletonEventBinding,
+                                             lola::GenericSkeletonEvent,
+                                             ServiceElementType::EVENT>(
         instance_identifier, parent, event_name, meta_info);
 }

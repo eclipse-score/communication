@@ -54,11 +54,13 @@ package "configuration" {
   }
 
   class "score::mw::com::impl::LolaFieldInstanceDeployment" {
-    + max_samples_: std::uint16_t
-    + max_subscribers_: std::uint8_t
-    + enforce_max_samples_ : score::cpp::optional<bool>
-    + is_set_configured: bool
-    + is_get_configured: bool
+    {static} + constexpr serializationVersion : std::uint32_t
+    + lola_event_instance_deployment_ : LolaEventInstanceDeployment
+    + use_get_if_available_ : bool
+    + use_set_if_available_ : bool
+    __
+    {static} + CreateFromJson(json_object : const score::json::Object&) : LolaFieldInstanceDeployment
+    + Serialize() const : score::json::Object
   }
 
   class "score::mw::com::impl::LolaMethodInstanceDeployment" {
