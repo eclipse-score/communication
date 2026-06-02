@@ -38,7 +38,7 @@ class SkeletonFieldBindingFactoryImpl : public ISkeletonFieldBindingFactory<Samp
         const InstanceIdentifier& identifier,
         SkeletonBase& parent,
         const std::string_view field_name,
-      std::size_t additional_slots_for_field_get_set = 0U) noexcept override;
+        std::size_t additional_slots_for_field_get_set = 0U) noexcept override;
 };
 
 template <typename SampleType>
@@ -50,15 +50,16 @@ template <typename SampleType>
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonFieldBindingFactoryImpl<SampleType>::CreateEventBinding(const InstanceIdentifier& identifier,
-                                   SkeletonBase& parent,
-                                   const std::string_view field_name,
-                                   std::size_t additional_slots_for_field_get_set) noexcept
-  -> std::unique_ptr<SkeletonEventBinding<SampleType>>
+auto SkeletonFieldBindingFactoryImpl<SampleType>::CreateEventBinding(
+    const InstanceIdentifier& identifier,
+    SkeletonBase& parent,
+    const std::string_view field_name,
+    std::size_t additional_slots_for_field_get_set) noexcept -> std::unique_ptr<SkeletonEventBinding<SampleType>>
 {
     return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
-                                        lola::SkeletonEvent<SampleType>,
-                                        ServiceElementType::FIELD>(identifier, parent, field_name, additional_slots_for_field_get_set);
+                                      lola::SkeletonEvent<SampleType>,
+                                      ServiceElementType::FIELD>(
+        identifier, parent, field_name, additional_slots_for_field_get_set);
 }
 
 }  // namespace score::mw::com::impl

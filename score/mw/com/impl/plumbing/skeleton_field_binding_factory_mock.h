@@ -34,10 +34,10 @@ class SkeletonFieldBindingFactoryMock : public ISkeletonFieldBindingFactory<Samp
     auto CreateEventBinding(const InstanceIdentifier& identifier,
                             SkeletonBase& parent,
                             const std::string_view field_name,
-                std::size_t additional_slots_for_field_get_set) noexcept
+                            std::size_t additional_slots_for_field_get_set) noexcept
         -> std::unique_ptr<SkeletonEventBinding<SampleType>> override
     {
-      static_cast<void>(additional_slots_for_field_get_set);
+        static_cast<void>(additional_slots_for_field_get_set);
         return CreateEventBinding(identifier, parent, field_name);
     }
 };

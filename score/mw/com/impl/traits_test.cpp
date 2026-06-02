@@ -70,7 +70,7 @@ class MyInterface : public InterfaceTrait::Base
     using InterfaceTrait::Base::Base;
 
     typename InterfaceTrait::template Event<TestSampleType> some_event{*this, kEventName};
-    typename InterfaceTrait::template Field<TestSampleType, true> some_field{*this, kFieldName};
+    typename InterfaceTrait::template Field<TestSampleType, true, false, true> some_field{*this, kFieldName};
     typename InterfaceTrait::template Method<TestMethodType> some_method{*this, kMethodName};
 };
 using MyProxy = AsProxy<MyInterface>;

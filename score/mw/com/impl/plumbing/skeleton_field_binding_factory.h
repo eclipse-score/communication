@@ -22,8 +22,8 @@
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
-#include <functional>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <string_view>
 #include <utility>
@@ -38,10 +38,11 @@ class SkeletonFieldBindingFactory final
 {
   public:
     /// \brief See documentation in ISkeletonFieldBindingFactory.
-    static std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(const InstanceIdentifier& identifier,
-                                                                                SkeletonBase& parent,
-                                                                                const std::string_view field_name,
-                                                                                std::size_t additional_slots_for_field_get_set = 0U)
+    static std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(
+        const InstanceIdentifier& identifier,
+        SkeletonBase& parent,
+        const std::string_view field_name,
+        std::size_t additional_slots_for_field_get_set = 0U)
     {
         return instance().CreateEventBinding(identifier, parent, field_name, additional_slots_for_field_get_set);
     }

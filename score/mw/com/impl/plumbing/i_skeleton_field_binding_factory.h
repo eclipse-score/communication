@@ -48,10 +48,10 @@ class ISkeletonFieldBindingFactory
     /// \param additional_slots_for_field_get_set Additional slots to reserve on top of configured sample slots.
     /// \return An instance of SkeletonEventBinding or nullptr in case of an error.
     virtual auto CreateEventBinding(const InstanceIdentifier& identifier,
-                    SkeletonBase& parent,
-                    const std::string_view field_name,
-                std::size_t additional_slots_for_field_get_set = 0U) noexcept
-      -> std::unique_ptr<SkeletonEventBinding<SampleType>> = 0;
+                                    SkeletonBase& parent,
+                                    const std::string_view field_name,
+                                    std::size_t additional_slots_for_field_get_set = 0U) noexcept
+        -> std::unique_ptr<SkeletonEventBinding<SampleType>> = 0;
 };
 
 }  // namespace score::mw::com::impl

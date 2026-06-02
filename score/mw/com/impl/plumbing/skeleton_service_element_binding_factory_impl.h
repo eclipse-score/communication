@@ -63,8 +63,8 @@ inline lola::SkeletonEventProperties GetSkeletonEventProperties(
                "not specified in the configuration. Terminating.";
         std::terminate();
     }
-    const auto number_of_slots = static_cast<std::size_t>(
-        lola_service_element_instance_deployment.GetNumberOfSampleSlots().value()) +
+    const auto number_of_slots =
+        static_cast<std::size_t>(lola_event_instance_deployment.GetNumberOfSampleSlots().value()) +
         additional_slots_for_field_get_set;
 
     return lola::SkeletonEventProperties{number_of_slots,
@@ -73,9 +73,11 @@ inline lola::SkeletonEventProperties GetSkeletonEventProperties(
 }
 
 inline lola::SkeletonEventProperties GetSkeletonEventProperties(
-    const LolaFieldInstanceDeployment& lola_field_instance_deployment)
+    const LolaFieldInstanceDeployment& lola_field_instance_deployment,
+    std::size_t additional_slots_for_field_get_set = 0U)
 {
-    return GetSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_);
+    return GetSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_,
+                                      additional_slots_for_field_get_set);
 }
 
 }  // namespace detail
@@ -118,8 +120,8 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
             const std::string service_element_name_str{service_element_name};
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_str);
-            const lola::SkeletonEventProperties skeleton_event_properties =
-                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment, additional_slots_for_field_get_set);
+            const lola::SkeletonEventProperties skeleton_event_properties = detail::GetSkeletonEventProperties(
+                lola_service_element_instance_deployment, additional_slots_for_field_get_set);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_str);

@@ -142,7 +142,9 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture, CanConstructFix
 class SkeletonServiceElementBindingFactoryFixture : public ::testing::Test
 {
   protected:
-    const LolaFieldInstanceDeployment field_deployment_{{2U}, {3U}, 1U, true, 0U};
+    const LolaFieldInstanceDeployment field_deployment_{LolaEventInstanceDeployment{{2U}, {3U}, {1U}, true, 0U},
+                                                        false,
+                                                        false};
 
     auto GetSkeletonEventProperties(const std::size_t additional_slots_for_field_get_set = 0U) const
     {
