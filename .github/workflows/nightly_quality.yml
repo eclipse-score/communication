@@ -58,10 +58,18 @@ jobs:
       contents: read
 
   # --------------------------------------------------------------------
+  # Quality job 3: CodeQL / MISRA C++ static analysis
+  # --------------------------------------------------------------------
+  run-codeql:
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      contents: read
+
+  # --------------------------------------------------------------------
   # Collect results, build the dashboard, upload artifact for docs.yml
   # --------------------------------------------------------------------
   deploy-quality-reports:
-    needs: [run-coverage, run-clang-tidy]
+    needs: [run-coverage, run-clang-tidy, run-codeql]
     # Always run even if individual quality jobs fail, so the dashboard
     # still reflects which jobs passed and which failed.
     if: always()
@@ -128,17 +136,28 @@ jobs:
           path: /tmp/clang_tidy
 
       # ------------------------------------------------------------------
+      # Download CodeQL findings artifact
+      # ------------------------------------------------------------------
+      - name: Download CodeQL findings
+        if: needs.run-codeql.outputs.conclusion == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-codeql.outputs.artifact-name }}
+          path: /tmp/codeql
+
+      # ------------------------------------------------------------------
       # Generate coverage KPI dashboard via generate_dashboard py_binary
       # ------------------------------------------------------------------
 
       - name: Generate quality dashboard
         if: always() && steps.conclusions.outcome == 'success'
         run: |
-          # Pass LCOV data and clang-tidy findings, generate_dashboard handles
+          # Pass LCOV data, clang-tidy findings, and CodeQL findings, generate_dashboard handles
           # absent files gracefully (shows N/A for that metric).
           bazel run //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
             --clang-tidy /tmp/clang_tidy/clang_tidy_findings.txt \
+            --codeql   /tmp/codeql/codeql_findings.csv \
             --html     _quality/index.html \
             --github-summary
 
