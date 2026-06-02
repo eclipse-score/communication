@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/method_traits_checker.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
@@ -107,6 +108,14 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     /// \return score::cpp::blank on success and ComErrc code specified by the binding on failiure
     template <typename Callable>
     Result<void> RegisterHandler(Callable&& callback);
+
+    /// \brief Overload for callables that accept QualityType.
+    template <typename Callable>
+    Result<void> RegisterHandler(Callable&& callback, QualityType);
+
+  private:
+    template <typename Callable>
+    Result<void> RegisterHandlerImpl(Callable&& callback);
 };
 
 template <typename ReturnType, typename... ArgTypes>
@@ -123,18 +132,64 @@ SkeletonMethod<ReturnType(ArgTypes...)>::SkeletonMethod(SkeletonBase& skeleton_b
 
 template <typename ReturnType, typename... ArgTypes>
 template <typename Callable>
-Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& user_callback)
+Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& callback)
 {
     AssertMethodCallableIsNotStdBind<FailureMode::COMPILE_TIME, Callable>();
     AssertMethodHandlerSupportsMethodSignature<FailureMode::COMPILE_TIME, Callable, ReturnType, ArgTypes...>();
 
-    // Since user_callback can be an lvalue reference or an rvalue reference, we ideally would store it as a universal
-    // reference in the type_erased_handler. However, in C++17, this is not supported. Instead, we create an callable
+    constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
+    if constexpr (is_return_type_not_void)
+    {
+        // Wrap the callable to accept, then call it with the typed_return_ptr and
+        // the typed_in_arg_ptrs which are unpacked from the tuple into individual arguments.
+        auto wrapped_handler = [cb = std::forward<Callable>(callback)](
+                                   QualityType /*quality_type*/, ReturnType& ret, const ArgTypes&... args) {
+            std::invoke(cb, ret, args...);
+        };
+        return RegisterHandlerImpl(std::move(wrapped_handler));
+    }
+    else
+    {
+        // Wrap the callable to accept, then call it with the typed_in_arg_ptrs
+        // which are unpacked from the tuple into individual arguments.
+        auto wrapped_handler = [cb = std::forward<Callable>(callback)](QualityType /*quality_type*/,
+                                                                       const ArgTypes&... args) {
+            std::invoke(cb, args...);
+        };
+        return RegisterHandlerImpl(std::move(wrapped_handler));
+    }
+}
+
+template <typename ReturnType, typename... ArgTypes>
+template <typename Callable>
+Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& callback, QualityType)
+{
+    constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
+    if constexpr (is_return_type_not_void)
+    {
+        static_assert(std::is_invocable_r_v<void, Callable, QualityType, ReturnType&, const ArgTypes&...>,
+                      "Callable must have signature void(QualityType, ReturnType&, const ArgTypes&...)");
+    }
+    else
+    {
+        static_assert(std::is_invocable_r_v<void, Callable, QualityType, const ArgTypes&...>,
+                      "Callable must have signature void(QualityType, const ArgTypes&...)");
+    }
+    return RegisterHandlerImpl(std::forward<Callable>(callback));
+}
+
+template <typename ReturnType, typename... ArgTypes>
+template <typename Callable>
+Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandlerImpl(Callable&& callback)
+{
+    // Since callback can be an lvalue reference or an rvalue reference, we ideally would store it as a universal
+    // reference in the type_erased_handler. However, in C++17, this is not supported. Instead, we create a callable
     // here which will be called below by another lambda which explicitly stores the callback as either an lvalue
     // reference or an rvalue reference depending on how it was passed in.
     static auto stateless_type_erased_handler = [](Callable& actual_callback,
                                                    std::optional<score::cpp::span<std::byte>> type_erased_in_args,
-                                                   std::optional<score::cpp::span<std::byte>> type_erased_return) {
+                                                   std::optional<score::cpp::span<std::byte>> type_erased_return,
+                                                   QualityType quality_type) {
         using InArgPtrTuple = std::tuple<ArgTypes*...>;
         InArgPtrTuple typed_in_arg_ptrs{};
 
@@ -148,29 +203,30 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
             typed_in_arg_ptrs = DeserializeArgs<ArgTypes...>(type_erased_in_args.value());
         }
 
-        constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
-        if constexpr (is_return_type_not_void)
+        constexpr bool is_return_type_not_void_impl = !std::is_same_v<ReturnType, void>;
+        if constexpr (is_return_type_not_void_impl)
         {
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
                 type_erased_return.has_value(),
                 "ReturnType is non void. Thus, type_erased_result needs to have a value!");
-            auto* const typed_return_ptr = DeserializeArg<ReturnType>(type_erased_return.value());
+            const auto typed_return_ptr_tuple = Deserialize<ReturnType>(type_erased_return.value());
+            auto* const typed_return_ptr = std::get<0>(typed_return_ptr_tuple);
 
-            // Call the callable with the typed_return_ptr and the typed_in_arg_ptrs which are unpacked from the
-            // tuple into individual arguments.
+            // Call the callable with quality_type, typed_return_ptr and the typed_in_arg_ptrs which are
+            // unpacked from the tuple into individual arguments.
             std::apply(
-                [&actual_callback, typed_return_ptr](ArgTypes*... typed_in_arg_ptrs) {
-                    std::invoke(actual_callback, *typed_return_ptr, *typed_in_arg_ptrs...);
+                [&actual_callback, typed_return_ptr, quality_type](ArgTypes*... typed_in_arg_ptrs) {
+                    std::invoke(actual_callback, quality_type, *typed_return_ptr, *typed_in_arg_ptrs...);
                 },
                 typed_in_arg_ptrs);
         }
         else
         {
-            // Call the callable with the typed_in_arg_ptrs which are unpacked from the tuple into individual
-            // arguments.
+            // Call the callable with quality_type and the typed_in_arg_ptrs which are unpacked from the tuple
+            // into individual arguments.
             std::apply(
-                [&actual_callback](ArgTypes*... typed_in_arg_ptrs) {
-                    std::invoke(actual_callback, *typed_in_arg_ptrs...);
+                [&actual_callback, quality_type](ArgTypes*... typed_in_arg_ptrs) {
+                    std::invoke(actual_callback, quality_type, *typed_in_arg_ptrs...);
                 },
                 typed_in_arg_ptrs);
         }
@@ -179,19 +235,21 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
     if constexpr (std::is_lvalue_reference_v<Callable>)
     {
         SkeletonMethodBinding::TypeErasedHandler type_erased_handler =
-            [&user_callback](std::optional<score::cpp::span<std::byte>> type_erased_in_args,
-                             std::optional<score::cpp::span<std::byte>> type_erased_return) mutable {
-                return stateless_type_erased_handler(user_callback, type_erased_in_args, type_erased_return);
+            [&callback](std::optional<score::cpp::span<std::byte>> type_erased_in_args,
+                        std::optional<score::cpp::span<std::byte>> type_erased_return,
+                        QualityType quality_type) mutable {
+                return stateless_type_erased_handler(callback, type_erased_in_args, type_erased_return, quality_type);
             };
         return binding_->RegisterHandler(std::move(type_erased_handler));
     }
     else
     {
         SkeletonMethodBinding::TypeErasedHandler type_erased_handler =
-            [callback = std::move(user_callback)](
+            [callback = std::move(callback)](
                 std::optional<score::cpp::span<std::byte>> type_erased_in_args,
-                std::optional<score::cpp::span<std::byte>> type_erased_return) mutable {
-                return stateless_type_erased_handler(callback, type_erased_in_args, type_erased_return);
+                std::optional<score::cpp::span<std::byte>> type_erased_return,
+                QualityType quality_type) mutable {
+                return stateless_type_erased_handler(callback, type_erased_in_args, type_erased_return, quality_type);
             };
         return binding_->RegisterHandler(std::move(type_erased_handler));
     }
