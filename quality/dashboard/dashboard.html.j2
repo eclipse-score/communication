@@ -77,6 +77,29 @@
 <p class="muted" style="margin-bottom:1.5rem">No clang-tidy data available.</p>
 {% endif %}
 
+{# ── CodeQL summary cards ── #}
+<h2>CodeQL</h2>
+{% if codeql %}
+<div class="cards">
+  <div class="card">
+    <div class="num" style="color:{% if codeql.errors == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ codeql.errors }}</div>
+    {% if prev and prev.cq_errors is not none %}<div class="delta">{{ delta(codeql.errors, prev.cq_errors, false) }}</div>{% endif %}
+    <div class="label">Errors</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:{% if codeql.warnings == 0 %}#27ae60{% else %}#e67e22{% endif %}">{{ codeql.warnings }}</div>
+    {% if prev and prev.cq_warnings is not none %}<div class="delta">{{ delta(codeql.warnings, prev.cq_warnings, false) }}</div>{% endif %}
+    <div class="label">Warnings</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:var(--muted)">{{ codeql.total }}</div>
+    <div class="label">Total Findings</div>
+  </div>
+</div>
+{% else %}
+<p class="muted" style="margin-bottom:1.5rem">No CodeQL data available.</p>
+{% endif %}
+
 {# ── Per-file coverage table ── #}
 <h2>Per-File Coverage</h2>
 {% if cov_files %}
