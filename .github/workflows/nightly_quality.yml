@@ -29,7 +29,7 @@ name: Nightly Quality Jobs
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # every day at midnight UTC
+    - cron: "0 0 * * *" # every day at midnight UTC
   workflow_dispatch:
 
 permissions:
@@ -50,10 +50,18 @@ jobs:
       contents: read
 
   # --------------------------------------------------------------------
+  # Quality job 2: Clang-Tidy
+  # --------------------------------------------------------------------
+  run-clang-tidy:
+    uses: ./.github/workflows/clang_tidy.yml
+    permissions:
+      contents: read
+
+  # --------------------------------------------------------------------
   # Collect results, build the dashboard, upload artifact for docs.yml
   # --------------------------------------------------------------------
   deploy-quality-reports:
-    needs: [run-coverage]
+    needs: [run-coverage, run-clang-tidy]
     # Always run even if individual quality jobs fail, so the dashboard
     # still reflects which jobs passed and which failed.
     if: always()
@@ -110,18 +118,28 @@ jobs:
             "${GITHUB_WORKSPACE}/_quality/coverage"
 
       # ------------------------------------------------------------------
+      # Download clang-tidy findings artifact
+      # ------------------------------------------------------------------
+      - name: Download clang-tidy findings
+        if: needs.run-clang-tidy.outputs.conclusion == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-clang-tidy.outputs.artifact-name }}
+          path: /tmp/clang_tidy
+
+      # ------------------------------------------------------------------
       # Generate coverage KPI dashboard via generate_dashboard py_binary
       # ------------------------------------------------------------------
 
       - name: Generate quality dashboard
         if: always() && steps.conclusions.outcome == 'success'
         run: |
-          # The LCOV .dat file is inside the extracted coverage zip at a known
-          # path; pass it unconditionally — generate_dashboard handles the
-          # case where the file is absent (returns empty coverage data).
+          # Pass LCOV data and clang-tidy findings, generate_dashboard handles
+          # absent files gracefully (shows N/A for that metric).
           bazel run //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
-            --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
+            --clang-tidy /tmp/clang_tidy/clang_tidy_findings.txt \
+            --html     _quality/index.html \
             --github-summary
 
           echo "Dashboard generated. Contents of _quality/:"
