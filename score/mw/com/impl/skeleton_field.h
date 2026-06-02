@@ -234,12 +234,22 @@ class SkeletonField : public SkeletonFieldBase
         {
             return;
         }
-        const auto result = get_method_.get()->RegisterHandler([this]() -> Result<FieldType> {
-            // need to serialize access to Get. In case of concurrent Get calls,
-            // we want to ensure that they are processed sequentially.
-            std::lock_guard<std::mutex> lock{get_handler_mutex_};
-            return SkeletonEventView<FieldType>{*GetTypedEvent()}.GetLatestSample();
-        });
+        const auto result = get_method_.get()->RegisterHandler(
+            [this](QualityType quality_type, FieldType& return_value) {
+                // need to serialize access to Get. In case of concurrent Get calls,
+                // we want to ensure that they are processed sequentially.
+                std::lock_guard<std::mutex> lock{get_handler_mutex_};
+                const auto sample_ptr_result =
+                    SkeletonEventView<FieldType>{*GetTypedEvent()}.GetLatestSample(quality_type);
+                if (!sample_ptr_result.has_value())
+                {
+                    score::mw::log::LogError("lola")
+                        << "Get handler: failed to get latest sample: " << sample_ptr_result.error();
+                    return;
+                }
+                return_value = *sample_ptr_result.value();
+            },
+            QualityType{});
         if (!result.has_value())
         {
             score::mw::log::LogError("lola")

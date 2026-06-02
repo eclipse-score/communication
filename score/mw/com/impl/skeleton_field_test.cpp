@@ -1111,7 +1111,7 @@ TEST_F(SkeletonFieldSetHandlerTest, UserCallbackIsInvokedByWrappedHandler)
     // We replicate that serialization here for the single TestSampleType argument.
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
-    capturing_binding_ref.captured_handler_(in_span, out_span);
+    capturing_binding_ref.captured_handler_(in_span, out_span, QualityType{});
 
     // Verify the user callback was called
     EXPECT_TRUE(user_callback_called);
@@ -1157,7 +1157,7 @@ TEST_F(SkeletonFieldSetHandlerTest, UserCallbackCanModifyValueInPlace)
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
     // The handler shall call Send with 20, not 10
-    capturing_binding_ref.captured_handler_(in_span, out_span);
+    capturing_binding_ref.captured_handler_(in_span, out_span, QualityType{});
 }
 
 TEST_F(SkeletonFieldSetHandlerTest, WrappedHandlerLogsWhenUpdateFails)
@@ -1200,7 +1200,7 @@ TEST_F(SkeletonFieldSetHandlerTest, WrappedHandlerLogsWhenUpdateFails)
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
     // Handler must complete normally even when Update() returns an error
-    capturing_binding_ref.captured_handler_(in_span, out_span);
+    capturing_binding_ref.captured_handler_(in_span, out_span, QualityType{});
 
     // The user callback was invoked before the failed Update()
     EXPECT_TRUE(user_callback_called);
@@ -1287,7 +1287,7 @@ TEST_F(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
     // Invoke the most-recently captured handler (from the second registration)
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
-    capturing_binding_ref.captured_handler_(in_span, out_span);
+    capturing_binding_ref.captured_handler_(in_span, out_span, QualityType{});
 
     // Only the second callback must have been called
     EXPECT_FALSE(first_callback_called);
