@@ -176,8 +176,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      # Clang-tidy findings are always collected and uploaded as an artifact,
+      # but they should only block merging when a developer is actively
+      # submitting code — not during nightly reporting runs.
       - name: Fail check if clang-tidy errors found in changed files
-        if: steps.findings.outputs.errors_blocking != '0'
+        if: (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'merge_group') && steps.findings.outputs.errors_blocking != '0'
         run: |
           echo "::error::Clang-tidy found ${{ steps.findings.outputs.errors_blocking }} error(s) in changed files. See the 'clang-tidy-findings' artifact for details."
           echo ""
