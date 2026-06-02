@@ -263,50 +263,6 @@ ServiceDataStorage& GetServiceDataStorage(const memory::shared::ManagedMemoryRes
 
 }  // namespace detail_proxy
 
-class FindServiceGuard final
-{
-  public:
-    // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
-    // called implicitly". std::terminate() is implicitly called from 'find_service_handle_result.value()' in case
-    // find_service_handle_result doesn't have a value but as we check before with 'has_value()' so no way for throwing
-    // std::bad_optional_access which leds to std::terminate().
-    // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    FindServiceGuard(FindServiceHandler<HandleType> find_service_handler,
-                     EnrichedInstanceIdentifier enriched_instance_identifier)
-        : service_availability_change_handle_{nullptr}
-    {
-        auto& service_discovery = impl::Runtime::getInstance().GetServiceDiscovery();
-        const auto find_service_handle_result = service_discovery.StartFindService(
-            std::move(find_service_handler), std::move(enriched_instance_identifier));
-        if (!find_service_handle_result.has_value())
-        {
-            score::mw::log::LogFatal("lola")
-                << "StartFindService failed with error" << find_service_handle_result.error() << ". Terminating.";
-            std::terminate();
-        }
-        service_availability_change_handle_ = std::make_unique<FindServiceHandle>(find_service_handle_result.value());
-    }
-
-    ~FindServiceGuard() noexcept
-    {
-        auto& service_discovery = impl::Runtime::getInstance().GetServiceDiscovery();
-        const auto stop_find_service_result = service_discovery.StopFindService(*service_availability_change_handle_);
-        if (!stop_find_service_result.has_value())
-        {
-            score::mw::log::LogError("lola")
-                << "StopFindService failed with error" << stop_find_service_result.error() << ". Ignoring error.";
-        }
-    }
-
-    FindServiceGuard(const FindServiceGuard&) = delete;
-    FindServiceGuard& operator=(const FindServiceGuard&) = delete;
-    FindServiceGuard(FindServiceGuard&& other) = delete;
-    FindServiceGuard& operator=(FindServiceGuard&& other) = delete;
-
-  private:
-    std::unique_ptr<FindServiceHandle> service_availability_change_handle_;
-};
-
 std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> Proxy::current_proxy_instance_counter_{0U};
 
 ElementFqId Proxy::EventNameToElementFqIdConverter::Convert(const std::string_view event_name) const noexcept
@@ -430,20 +386,22 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
       offered_state_machine_{},
       are_proxy_methods_setup_{false},
       filesystem_{filesystem},
-      find_service_guard_{std::make_unique<FindServiceGuard>(
-          [this](ServiceHandleContainer<HandleType> service_handle_container, FindServiceHandle) {
-              // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced
-              // initialization. This is a false positive, we don't use auto here
-              // coverity[autosar_cpp14_a8_5_3_violation : FALSE]
-              std::lock_guard lock{proxy_event_registration_mutex_};
-              is_service_instance_available_ = !service_handle_container.empty();
-              ServiceAvailabilityChangeHandler(is_service_instance_available_);
-          },
-          EnrichedInstanceIdentifier{handle_})}
+      find_service_handle_{},
+      prepare_deinitialize_called_{false},
+      finalize_deinitialize_called_{false}
 {
+    StartProxyAutoReconnect();
 }
 
-Proxy::~Proxy() = default;
+Proxy::~Proxy()
+{
+    if (!prepare_deinitialize_called_ || !finalize_deinitialize_called_)
+    {
+        score::mw::log::LogFatal("lola")
+            << "Proxy destroyed without prior PrepareDeinitialize + FinalizeDeinitialize. Terminating.";
+        std::terminate();
+    }
+}
 
 void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 {
@@ -927,6 +885,72 @@ void Proxy::RegisterMethod(const UniqueMethodIdentifier method_id, ProxyMethod& 
     const auto [ignorable, was_inserted] = proxy_methods_.insert({method_id, proxy_method});
     score::cpp::ignore = ignorable;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");
+}
+
+void Proxy::PrepareDeinitialize()
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!prepare_deinitialize_called_,
+                                                "PrepareDeinitialize must only be called once.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        !finalize_deinitialize_called_,
+        "Defensive programming: FinalizeDeinitialize must not have been called before PrepareDeinitialize (This should "
+        "never fail since we check this in FinalizeDeinitialize).");
+
+    StopProxyAutoReconnect();
+    prepare_deinitialize_called_ = true;
+}
+
+void Proxy::FinalizeDeinitialize()
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!finalize_deinitialize_called_,
+                                                "FinalizeDeinitialize must only be called once.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        prepare_deinitialize_called_, "PrepareDeinitialize must have been called before FinalizeDeinitialize.");
+
+    {
+        std::lock_guard lock{proxy_event_registration_mutex_};
+        event_bindings_.clear();
+        is_service_instance_available_ = false;
+    }
+    {
+        std::lock_guard lock{proxy_method_registration_mutex_};
+        proxy_methods_.clear();
+    }
+    finalize_deinitialize_called_ = true;
+}
+
+void Proxy::StartProxyAutoReconnect()
+{
+    auto& service_discovery = impl::Runtime::getInstance().GetServiceDiscovery();
+    const auto find_service_handle_result = service_discovery.StartFindService(
+        [this](ServiceHandleContainer<HandleType> service_handle_container, FindServiceHandle) {
+            std::lock_guard lock{proxy_event_registration_mutex_};
+            is_service_instance_available_ = !service_handle_container.empty();
+            ServiceAvailabilityChangeHandler(is_service_instance_available_);
+        },
+        EnrichedInstanceIdentifier{handle_});
+    if (!find_service_handle_result.has_value())
+    {
+        score::mw::log::LogFatal("lola") << "StartFindService failed with error" << find_service_handle_result.error()
+                                         << ". Terminating.";
+        std::terminate();
+    }
+    find_service_handle_ = find_service_handle_result.value();
+}
+
+void Proxy::StopProxyAutoReconnect()
+{
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        find_service_handle_.has_value(),
+        "StopProxyAutoReconnect: find_service_handle_ must be set in StartProxyAutoReconnect");
+    auto& service_discovery = impl::Runtime::getInstance().GetServiceDiscovery();
+    const auto stop_find_service_result = service_discovery.StopFindService(*find_service_handle_);
+    if (!stop_find_service_result.has_value())
+    {
+        score::mw::log::LogError("lola") << "StopFindService failed with error" << stop_find_service_result.error()
+                                         << ". Ignoring error.";
+    }
+    find_service_handle_.reset();
 }
 
 }  // namespace score::mw::com::impl::lola

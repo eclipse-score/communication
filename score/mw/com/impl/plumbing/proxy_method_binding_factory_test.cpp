@@ -100,6 +100,20 @@ class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
         return ProxyBaseView{*proxy_base_}.GetBinding();
     }
 
+    void TearDown() override
+    {
+        if (proxy_base_ != nullptr)
+        {
+            auto* const binding = ProxyBaseView{*proxy_base_}.GetBinding();
+            if (binding != nullptr)
+            {
+                binding->PrepareDeinitialize();
+                binding->FinalizeDeinitialize();
+            }
+        }
+        lola::ProxyMockedMemoryFixture::TearDown();
+    }
+
   private:
     std::unique_ptr<ProxyBase> proxy_base_{nullptr};
     DummyInstanceIdentifierBuilder dummy_instance_identifier_builder_{};

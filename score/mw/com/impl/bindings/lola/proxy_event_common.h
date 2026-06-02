@@ -53,7 +53,7 @@ class ProxyEventCommon final
 
   public:
     ProxyEventCommon(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name);
-    ~ProxyEventCommon();
+    ~ProxyEventCommon() = default;
 
     ProxyEventCommon(const ProxyEventCommon&) = delete;
     ProxyEventCommon(ProxyEventCommon&&) noexcept = delete;

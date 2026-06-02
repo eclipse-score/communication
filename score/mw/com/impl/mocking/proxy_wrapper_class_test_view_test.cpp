@@ -172,12 +172,22 @@ TEST_F(ProxyWrapperTestClassCreateFixture, CallingFunctionsOnMockProxyDispatches
     proxy.some_event_2.InjectMock(proxy_event_mock_2);
     proxy.some_field.InjectMock(proxy_field_mock);
 
-    // Expecting that OfferService will be called on the Proxy mock and Unsubscribe on the event and field mocks
+    // Expecting that Subscribe on each event and field mock returns success (so the per-event subscribed
+    // flag is set; otherwise the later Unsubscribe is a silent no-op).
+    EXPECT_CALL(proxy_event_mock, Subscribe(_)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(proxy_event_mock_2, Subscribe(_)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(proxy_field_mock, Subscribe(_)).WillOnce(Return(score::Result<void>{}));
+
+    // Expecting that Unsubscribe is called on each event and field mock exactly once.
     EXPECT_CALL(proxy_event_mock, Unsubscribe());
     EXPECT_CALL(proxy_event_mock_2, Unsubscribe());
     EXPECT_CALL(proxy_field_mock, Unsubscribe());
 
-    // When calling Unsubscribe on the events and fields.
+    // When subscribing and then unsubscribing the events and fields.
+    std::ignore = proxy.some_event.Subscribe(1);
+    std::ignore = proxy.some_event_2.Subscribe(1);
+    std::ignore = proxy.some_field.Subscribe(1);
+
     proxy.some_event.Unsubscribe();
     proxy.some_event_2.Unsubscribe();
     proxy.some_field.Unsubscribe();
@@ -217,10 +227,14 @@ TEST_F(ProxyWrapperTestClassEventsOnlyCreateFixture, CallingFunctionsOnMockProxy
     auto& proxy_event_mock = std::get<0>(events_tuple).mock;
     proxy.some_event.InjectMock(proxy_event_mock);
 
+    // Expecting that Subscribe returns success on the mock
+    EXPECT_CALL(proxy_event_mock, Subscribe(1)).WillOnce(Return(score::Result<void>{}));
+
     // Expecting that Unsubscribe is called on the event
     EXPECT_CALL(proxy_event_mock, Unsubscribe());
 
-    // When calling Unsubscribe on the event
+    // When subscribing and then unsubscribing the event
+    std::ignore = proxy.some_event.Subscribe(1);
     proxy.some_event.Unsubscribe();
 }
 
@@ -256,10 +270,14 @@ TEST_F(ProxyWrapperTestClassFieldsOnlyCreateFixture, CallingFunctionsOnMockProxy
     auto& proxy_field_mock = (std::get<0>(fields_tuple).mock);
     proxy.some_field.InjectMock(proxy_field_mock);
 
+    // Expecting that Subscribe returns success on the mock
+    EXPECT_CALL(proxy_field_mock, Subscribe(1)).WillOnce(Return(score::Result<void>{}));
+
     // Expecting that Unsubscribe is called on the field
     EXPECT_CALL(proxy_field_mock, Unsubscribe());
 
-    // When calling Unsubscribe on the field
+    // When subscribing and then unsubscribing the field
+    std::ignore = proxy.some_field.Subscribe(1);
     proxy.some_field.Unsubscribe();
 }
 

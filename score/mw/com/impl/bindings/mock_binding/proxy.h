@@ -32,6 +32,8 @@ class Proxy : public ProxyBinding
     MOCK_METHOD(void, RegisterEventBinding, (std::string_view, ProxyEventBindingBase&), (noexcept, override));
     MOCK_METHOD(void, UnregisterEventBinding, (std::string_view), (noexcept, override));
     MOCK_METHOD(Result<void>, SetupMethods, (), (override));
+    MOCK_METHOD(void, PrepareDeinitialize, (), (override));
+    MOCK_METHOD(void, FinalizeDeinitialize, (), (override));
 };
 
 class ProxyFacade : public ProxyBinding
@@ -59,6 +61,16 @@ class ProxyFacade : public ProxyBinding
     Result<void> SetupMethods() override
     {
         return proxy_.SetupMethods();
+    }
+
+    void PrepareDeinitialize() override
+    {
+        proxy_.PrepareDeinitialize();
+    }
+
+    void FinalizeDeinitialize() override
+    {
+        proxy_.FinalizeDeinitialize();
     }
 
   private:
