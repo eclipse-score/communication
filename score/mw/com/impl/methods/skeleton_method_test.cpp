@@ -142,7 +142,7 @@ TYPED_TEST(SkeletonMethodTypedTest, AnyCombinationOfReturnAndInputArgTypesCanBeR
     // Expecting that the register call is dispatched to the binding without errors
     EXPECT_CALL(this->mock_method_binding_, RegisterHandler(_));
 
-    // // When a Register call is issued at the binding independent level
+    // When a Register call is issued at the binding independent level
     using FixtureMethodType = typename TestFixture::Type;
     score::cpp::callback<FixtureMethodType> test_callback{};
     std::ignore = this->method_->RegisterHandler(std::move(test_callback));
@@ -167,9 +167,7 @@ TYPED_TEST(SkeletonMethodTypedTest, TwoParameterConstructorCorrectlyCallsBinding
     EXPECT_TRUE(method.RegisterHandler(std::move(test_callback)));
 }
 
-TYPED_TEST(
-    SkeletonMethodTypedTest,
-    TwoParameterConstructorCorrectlyCallsBindingFactoryButSkeletonMethodIsNotCreatedWhenTheBindingFactoryDoesNotReturnBinding)
+TYPED_TEST(SkeletonMethodTypedTest, TwoParameterConstructorMarksBindingsAsInvalidWhenFactoryReturnsNullptr)
 {
     this->WithAMockedMethodBindingfactory();
 
