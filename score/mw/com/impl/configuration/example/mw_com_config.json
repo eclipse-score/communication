@@ -61,7 +61,9 @@
                             "fieldName": "CurrentTemperatureFrontLeft",
                             "numberOfSampleSlots": 60,
                             "maxSubscribers": 6,
-                            "numberOfIpcTracingSlots": 7
+                            "numberOfIpcTracingSlots": 7,
+                            "useGetIfAvailable": true,
+                            "useSetIfAvailable": true
                         }
                     ],
                     "methods": [

@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 
+#include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/common_test_resources/shared_memory_object_creator.h"
 #include "score/mw/com/test/common_test_resources/shared_memory_object_guard.h"
 
@@ -20,8 +21,7 @@
 #include <score/stop_token.hpp>
 
 #include <unistd.h>
-#include <cstdlib>
-#include <iostream>
+#include <memory>
 
 namespace score::mw::com::test
 {
@@ -32,14 +32,24 @@ std::optional<ProcessSynchronizer> ProcessSynchronizer::Create(const std::string
         SharedMemoryObjectCreator<os::InterprocessNotification>::CreateOrOpenObject(interprocess_notification_shm_path);
     if (!interprocess_notification_result.has_value())
     {
-        std::stringstream ss;
-        ss << "Consumer: Creating or opening interprocess notification object failed:"
-           << interprocess_notification_result.error().ToString();
-        std::cerr << ss.str() << std::endl;
-        return {};
+        FailTest("Consumer: Creating ProcessSynchronizer object failed:", interprocess_notification_result.error());
     }
 
     return std::optional<ProcessSynchronizer>{std::in_place_t{}, std::move(interprocess_notification_result).value()};
+}
+
+auto ProcessSynchronizer::CreateUniquePtr(const std::string& interprocess_notification_shm_path)
+    -> std::unique_ptr<ProcessSynchronizer>
+{
+    auto interprocess_notification_result =
+        SharedMemoryObjectCreator<os::InterprocessNotification>::CreateOrOpenObject(interprocess_notification_shm_path);
+    if (!interprocess_notification_result.has_value())
+    {
+        FailTest("Consumer: Creating ProcessSynchronizer object as unique_ptr failed:",
+                 interprocess_notification_result.error());
+    }
+
+    return std::make_unique<ProcessSynchronizer>(std::move(interprocess_notification_result).value());
 }
 
 ProcessSynchronizer::ProcessSynchronizer(

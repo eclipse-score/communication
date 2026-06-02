@@ -13,17 +13,50 @@
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
 
-#include <cstdlib>
-#include <iostream>
+#include "score/assert.hpp"
 
-namespace score::mw::com::test::detail
+#include <cstdlib>
+#include <functional>
+#include <iostream>
+#include <optional>
+
+namespace score::mw::com::test
+{
+namespace
+{
+
+thread_local std::optional<std::function<void()>> g_fail_test_exit_function{};
+
+}
+
+namespace detail
 {
 
 void FailTest(std::stringstream&& strstr)
 {
+    if (g_fail_test_exit_function.has_value())
+    {
+        std::invoke(g_fail_test_exit_function.value());
+        g_fail_test_exit_function.reset();
+    }
     strstr << "\033[0m  \033[1m\033[41mTEST FAILED\033[0m\n";
-    std::cerr << strstr.str() << std::flush;
+    std::cout << strstr.str() << std::flush;
     std::_Exit(EXIT_FAILURE);
 }
 
-}  // namespace score::mw::com::test::detail
+}  // namespace detail
+
+ExitFunctionGuard::ExitFunctionGuard(ExitFunction exit_function)
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(!g_fail_test_exit_function.has_value(),
+                                            "A test exit function is already set for this thread! Only one "
+                                            "ExitFunctionGuard can be created per thread.");
+    g_fail_test_exit_function.emplace(std::move(exit_function));
+}
+
+ExitFunctionGuard::~ExitFunctionGuard()
+{
+    std::invoke(g_fail_test_exit_function.value());
+    g_fail_test_exit_function.reset();
+}
+}  // namespace score::mw::com::test

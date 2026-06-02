@@ -116,7 +116,18 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
     }
 
     const auto& service_element_instance_deployment = service_element_instance_deployment_it->second;
-    const auto slots_per_tracing_point = service_element_instance_deployment.GetNumberOfTracingSlots();
+    // coverity[autosar_cpp14_a7_1_8_violation : FALSE]
+    // coverity[autosar_cpp14_m6_4_1_violation : FALSE]
+    const auto slots_per_tracing_point = [&service_element_instance_deployment]() noexcept {
+        if constexpr (service_element_type == ServiceElementType::EVENT)
+        {
+            return service_element_instance_deployment.GetNumberOfTracingSlots();
+        }
+        else
+        {
+            return service_element_instance_deployment.lola_event_instance_deployment_.GetNumberOfTracingSlots();
+        }
+    }();
 
     return slots_per_tracing_point;
 }

@@ -119,18 +119,18 @@ TEST(LolaServiceInstanceDeployment, ContainsEventReturnsFalseIfEventMissing)
     EXPECT_FALSE(unit.ContainsEvent("def"));
 }
 
-TEST(LolaServiceInstanceDeployment, ContainsFieldReturnsTrueIfEventPresent)
+TEST(LolaServiceInstanceDeployment, ContainsFieldReturnsTrueIfFieldPresent)
 {
     LolaServiceInstanceDeployment unit{LolaServiceInstanceId{LolaServiceInstanceId{2U}}};
-    auto temp = MakeDefaultLolaEventInstanceDeployment();
+    auto temp = MakeLolaFieldInstanceDeployment();
     unit.fields_.emplace(std::make_pair("abc", temp));
     EXPECT_TRUE(unit.ContainsField("abc"));
 }
 
-TEST(LolaServiceInstanceDeployment, ContainsFieldReturnsFalseIfEventMissing)
+TEST(LolaServiceInstanceDeployment, ContainsFieldReturnsFalseIfFieldMissing)
 {
     LolaServiceInstanceDeployment unit{LolaServiceInstanceId{2U}};
-    auto temp = MakeDefaultLolaEventInstanceDeployment();
+    auto temp = MakeLolaFieldInstanceDeployment();
     unit.fields_.emplace(std::make_pair("abc", temp));
     EXPECT_FALSE(unit.ContainsField("def"));
 }

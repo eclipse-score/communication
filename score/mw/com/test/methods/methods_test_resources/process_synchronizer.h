@@ -20,8 +20,6 @@
 
 #include <score/stop_token.hpp>
 
-#include <cstdlib>
-
 namespace score::mw::com::test
 {
 
@@ -31,8 +29,10 @@ class ProcessSynchronizer
 {
   public:
     static std::optional<ProcessSynchronizer> Create(const std::string& interprocess_notification_shm_path);
+    static auto CreateUniquePtr(const std::string& interprocess_notification_shm_path)
+        -> std::unique_ptr<ProcessSynchronizer>;
 
-    ProcessSynchronizer(SharedMemoryObjectCreator<os::InterprocessNotification> interprocess_notifier_creator);
+    explicit ProcessSynchronizer(SharedMemoryObjectCreator<os::InterprocessNotification> interprocess_notifier_creator);
 
     void Notify();
 
