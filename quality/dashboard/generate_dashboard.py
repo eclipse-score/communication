@@ -11,14 +11,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-"""Coverage KPI dashboard.
+"""Quality KPI dashboard.
 
-Reads LCOV coverage data and renders a dark-themed HTML summary page via
-the dashboard.html.j2 Jinja2 template.
+Reads LCOV coverage data, and clang-tidy findings, then renders a dark-themed HTML summary
+page via the dashboard.html.j2 Jinja2 template.
 
 Usage (CI, called from nightly_quality.yml):
     bazel run //quality/dashboard:generate_dashboard -- \\
         --lcov           /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \\
+        --clang-tidy     /tmp/clang_tidy/clang_tidy_findings.txt \\
         --html           _quality/index.html \\
         --github-summary
 """
@@ -123,6 +124,14 @@ def load_lcov(path: pathlib.Path) -> tuple[dict, list[dict]]:
     }
     return summary, sorted(files, key=lambda f: f["line_pct"])
 
+def load_clang_tidy(path: pathlib.Path) -> dict | None:
+    """Return {errors, warnings, total} from a clang-tidy findings text file."""
+    if not path or not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8", errors="replace")
+    errors   = len([l for l in text.splitlines() if "error:"   in l])
+    warnings = len([l for l in text.splitlines() if "warning:" in l])
+    return {"errors": errors, "warnings": warnings, "total": errors + warnings}
 
 def load_history(path: pathlib.Path) -> list[dict]:
     if not path or not path.exists():
@@ -142,7 +151,7 @@ def save_history(path: pathlib.Path, history: list[dict]) -> None:
 
 # ── HTML rendering ────────────────────────────────────────────────────────────
 
-def render_dashboard(cov_summary, cov_files, history, timestamp) -> str:
+def render_dashboard(cov_summary, cov_files, clang_tidy, history, timestamp) -> str:
     env = Environment(loader=FileSystemLoader(str(_TEMPLATE_DIR)), autoescape=True)
     env.globals["cov_colour"] = _cov_colour
     env.globals["delta"]      = _delta_badge
@@ -153,6 +162,7 @@ def render_dashboard(cov_summary, cov_files, history, timestamp) -> str:
         timestamp=timestamp,
         cov=cov_summary or None,
         cov_files=cov_files,
+        clang_tidy=clang_tidy,
         history=history,
         prev=history[-2] if len(history) >= 2 else None,
     )
@@ -160,8 +170,10 @@ def render_dashboard(cov_summary, cov_files, history, timestamp) -> str:
 
 # ── GitHub Actions step summary ───────────────────────────────────────────────
 
-def write_github_summary(cov_summary, history, summary_path) -> None:
-    lines = ["## Coverage Dashboard\n", "### Coverage\n"]
+def write_github_summary(cov_summary, clang_tidy, history, summary_path) -> None:
+    lines = ["## Quality Dashboard\n"]
+
+    lines.append("### Coverage\n")
     if cov_summary:
         lines += [
             "| Metric | Value |",
@@ -173,23 +185,39 @@ def write_github_summary(cov_summary, history, summary_path) -> None:
     else:
         lines.append("Coverage data not available.\n")
 
+    lines.append("\n### Clang-Tidy\n")
+    if clang_tidy:
+        err_icon = ":x:" if clang_tidy["errors"] > 0 else ":white_check_mark:"
+        lines += [
+            "| Metric | Count |",
+            "|--------|------:|",
+            f"| {err_icon} Errors   | **{clang_tidy['errors']}** |",
+            f"| :warning: Warnings | **{clang_tidy['warnings']}** |",
+            f"| Total              | **{clang_tidy['total']}** |",
+        ]
+    else:
+        lines.append("Clang-tidy data not available.\n")
+
     if len(history) >= 2:
         prev, curr = history[-2], history[-1]
         lines += [
-            "", "### Coverage Trend vs Previous Run\n",
+            "", "### Trend vs Previous Run\n",
             "| Metric | Prev | Now | Δ |",
             "|--------|------|-----|---|",
         ]
-        for label, key in [
-            ("Line coverage %",     "line_cov"),
-            ("Function coverage %", "func_cov"),
-            ("Branch coverage %",   "branch_cov"),
+        for label, key, higher_better in [
+            ("Line coverage %",     "line_cov",   True),
+            ("Function coverage %", "func_cov",   True),
+            ("Branch coverage %",   "branch_cov", True),
+            ("Clang-Tidy errors",   "ct_errors",  False),
+            ("Clang-Tidy warnings", "ct_warnings", False),
         ]:
             pv, cv = prev.get(key), curr.get(key)
             if pv is not None and cv is not None:
                 diff = cv - pv
                 sym  = "↓" if diff < 0 else ("↑" if diff > 0 else "=")
-                icon = "✅" if diff > 0 else ("⚠️" if diff < 0 else "")
+                improved = (diff < 0) if not higher_better else (diff > 0)
+                icon = "✅" if (diff != 0 and improved) else ("⚠️" if (diff != 0 and not improved) else "")
                 lines.append(f"| {label} | {pv:.1f} | {cv:.1f} | {sym}{abs(diff):.1f} {icon} |")
         lines.append(
             f"\n_Tracking since {history[0].get('date', 'start')} ({len(history)} runs)_"
@@ -202,10 +230,15 @@ def write_github_summary(cov_summary, history, summary_path) -> None:
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate coverage dashboard")
+    parser = argparse.ArgumentParser(description="Generate quality dashboard")
     parser.add_argument(
         "--lcov", default="",
         help="Path to LCOV .dat coverage data file",
+    )
+    parser.add_argument(
+        "--clang-tidy", default="",
+        dest="clang_tidy",
+        help="Path to clang-tidy findings text file",
     )
     parser.add_argument(
         "--html", default="dashboard.html",
@@ -221,27 +254,31 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    lcov_path = pathlib.Path(args.lcov)    if args.lcov else pathlib.Path("")
-    html_path = pathlib.Path(args.html)
-    hist_path = pathlib.Path(args.history) if args.history else None
+    lcov_path      = pathlib.Path(args.lcov)       if args.lcov       else pathlib.Path("")
+    ct_path        = pathlib.Path(args.clang_tidy) if args.clang_tidy else pathlib.Path("")
+    html_path      = pathlib.Path(args.html)
+    hist_path      = pathlib.Path(args.history)    if args.history    else None
 
     html_path.parent.mkdir(parents=True, exist_ok=True)
 
     cov_summary, cov_files = load_lcov(lcov_path)
+    clang_tidy = load_clang_tidy(ct_path)
     timestamp = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     history = load_history(hist_path) if hist_path else []
     history.append({
-        "date":       timestamp,
-        "line_cov":   cov_summary.get("line_pct")   if cov_summary else None,
-        "func_cov":   cov_summary.get("func_pct")   if cov_summary else None,
-        "branch_cov": cov_summary.get("branch_pct") if cov_summary else None,
+        "date":        timestamp,
+        "line_cov":    cov_summary.get("line_pct")   if cov_summary else None,
+        "func_cov":    cov_summary.get("func_pct")   if cov_summary else None,
+        "branch_cov":  cov_summary.get("branch_pct") if cov_summary else None,
+        "ct_errors":   clang_tidy["errors"]           if clang_tidy  else None,
+        "ct_warnings": clang_tidy["warnings"]         if clang_tidy  else None,
     })
     if hist_path:
         save_history(hist_path, history)
 
     html_path.write_text(
-        render_dashboard(cov_summary, cov_files, history, timestamp),
+        render_dashboard(cov_summary, cov_files, clang_tidy, history, timestamp),
         encoding="utf-8",
     )
 
@@ -252,10 +289,14 @@ def main() -> int:
         print(f"  Branches:  {cov_summary['branch_pct']:.1f}% ({cov_summary['branches']})")
     else:
         print("  Coverage:  N/A")
+    if clang_tidy:
+        print(f"  Clang-Tidy errors: {clang_tidy['errors']}  warnings: {clang_tidy['warnings']}")
+    else:
+        print("  Clang-Tidy: N/A")
 
     if args.github_summary:
         write_github_summary(
-            cov_summary, history,
+            cov_summary, clang_tidy, history,
             os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"),
         )
 
