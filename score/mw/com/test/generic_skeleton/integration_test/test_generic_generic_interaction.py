@@ -31,8 +31,7 @@ def test_generic_generic_interaction_64_byte(target):
     config_path = "./etc/mw_com_config.json"
 
     logger.info(f"Starting provider: {app_bin} in {app_root}")
-    # ADDED enforce_clean_shutdown=False and disabled LSAN here
-    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root, enforce_clean_shutdown=False, env={"ASAN_OPTIONS": "detect_leaks=0"}):
+    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root):
         time.sleep(2) # Give provider a moment to initialize
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")
@@ -50,8 +49,7 @@ def test_generic_generic_interaction_32_byte(target):
     config_path = "./etc/mw_com_config.json"
 
     logger.info(f"Starting provider: {app_bin} in {app_root}")
-    # ADDED enforce_clean_shutdown=False and disabled LSAN here
-    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root, enforce_clean_shutdown=False, env={"ASAN_OPTIONS": "detect_leaks=0"}):
+    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root):
         time.sleep(2) # Give provider a moment to initialize
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")
@@ -69,8 +67,7 @@ def test_generic_generic_interaction_16_byte(target):
     config_path = "./etc/mw_com_config.json"
 
     logger.info(f"Starting provider: {app_bin} in {app_root}")
-    # ADDED enforce_clean_shutdown=False and disabled LSAN here
-    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root, enforce_clean_shutdown=False, env={"ASAN_OPTIONS": "detect_leaks=0"}):
+    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root):
         time.sleep(2) # Give provider a moment to initialize
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")
@@ -88,8 +85,7 @@ def test_generic_generic_interaction_8_byte(target):
     config_path = "./etc/mw_com_config.json"
 
     logger.info(f"Starting provider: {app_bin} in {app_root}")
-    # ADDED enforce_clean_shutdown=False and disabled LSAN here
-    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root, enforce_clean_shutdown=False, env={"ASAN_OPTIONS": "detect_leaks=0"}):
+    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root):
         time.sleep(2) # Give provider a moment to initialize
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")

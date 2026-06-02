@@ -3,9 +3,12 @@
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/runtime_configuration.h"
+#include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/log/logging.h"
+#include <score/stop_token.hpp>
 
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -23,7 +26,7 @@ namespace
 
 struct MyEventData
 {
-    uint64_t counter;
+    std::uint64_t counter;
 #if PAYLOAD_SIZE > 8
     char padding[PAYLOAD_SIZE - 8];
 #endif
@@ -45,7 +48,7 @@ constexpr std::string_view kEventName = "Event8Byte";
 #error "Unsupported payload size configured."
 #endif
 
-int run_provider()
+int run_provider(score::cpp::stop_token stop_token)
 {
     const auto instance_specifier = score::mw::com::impl::InstanceSpecifier::Create(kInstanceSpecifier).value();
     std::cout << "[PROVIDER] Instance specifier created." << std::endl;
@@ -94,7 +97,8 @@ int run_provider()
     std::this_thread::sleep_for(std::chrono::seconds(5));
     std::cout << "[PROVIDER] Finished initial 5s sleep." << std::endl;
 
-    for (std::uint64_t i = 0; i < kSamplesToProcess; ++i)
+    std::uint64_t i{0};
+    while (!stop_token.stop_requested())
     {
         auto sample_res = generic_event.Allocate();
         if (!sample_res.has_value())
@@ -111,11 +115,10 @@ int run_provider()
         generic_event.Send(std::move(sample_res.value()));
         std::cout << "[PROVIDER] " << PAYLOAD_SIZE << "-byte Event Sent sample: " << i << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        i++;
     }
 
-    std::cout << "[PROVIDER] All samples sent." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(15));
-    std::cout << "[PROVIDER] Finished post-send 15s sleep. Calling StopOfferService()..." << std::endl;
+    std::cout << "[PROVIDER] Received termination signal. Calling StopOfferService()..." << std::endl;
     skeleton.StopOfferService();
     std::cout << "[PROVIDER] StopOfferService() completed." << std::endl;
     return 0;
@@ -126,7 +129,7 @@ int run_consumer()
     const auto instance_specifier = score::mw::com::impl::InstanceSpecifier::Create(kInstanceSpecifier).value();
 
     score::Result<score::mw::com::ServiceHandleContainer<score::mw::com::impl::GenericProxy::HandleType>> handles_res;
-    int retries = 0;
+    int retries{0};
     while (retries < 50)
     {
         handles_res = score::mw::com::impl::GenericProxy::FindService(instance_specifier);
@@ -151,9 +154,10 @@ int run_consumer()
     auto& generic_event = event_it->second;
     generic_event.Subscribe(kSamplesToSubscribe);
 
-    uint64_t expected = 0;
-    uint64_t received = 0;
-    int data_mismatches = 0;
+    std::uint64_t expected{0};
+    std::uint64_t received{0};
+    int data_mismatches{0};
+    bool is_first_sample{true};
 
     while (received < kSamplesToProcess)
     {
@@ -161,6 +165,13 @@ int run_consumer()
         generic_event.GetNewSamples(
             [&](auto sample) {
                 auto* typed_sample = static_cast<const MyEventData*>(sample.get());
+
+                if (is_first_sample)
+                {
+                    expected = typed_sample->counter;
+                    is_first_sample = false;
+                }
+
                 if (typed_sample->counter != expected)
                 {
                     std::cerr << "[CONSUMER] " << PAYLOAD_SIZE << "-byte Data mismatch! Expected: " << expected
@@ -194,8 +205,12 @@ int main(int argc, const char* argv[])
         if (std::string(argv[i]) == "--mode" && i + 1 < argc)
             mode = argv[++i];
     score::mw::com::runtime::InitializeRuntime(score::mw::com::runtime::RuntimeConfiguration(argc, argv));
+
+    score::cpp::stop_source stop_source{};
+    score::mw::com::SetupStopTokenSigTermHandler(stop_source);
+
     if (mode == "provider")
-        return run_provider();
+        return run_provider(stop_source.get_token());
     if (mode == "consumer")
         return run_consumer();
     return 1;

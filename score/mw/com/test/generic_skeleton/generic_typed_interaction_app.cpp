@@ -16,9 +16,12 @@
 #include "score/mw/com/impl/traits.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/runtime_configuration.h"
+#include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/log/logging.h"
+#include <score/stop_token.hpp>
 
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -35,7 +38,7 @@ namespace
 
 struct MyEventData
 {
-    uint64_t counter;
+    std::uint64_t counter;
 #if PAYLOAD_SIZE > 8
     char padding[PAYLOAD_SIZE - 8];
 #endif
@@ -57,7 +60,7 @@ constexpr std::string_view kEventName = "Event8Byte";
 #error "Unsupported payload size configured."
 #endif
 
-int run_provider()
+int run_provider(score::cpp::stop_token stop_token)
 {
     const auto instance_specifier =
         score::mw::com::impl::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
@@ -94,7 +97,8 @@ int run_provider()
         << PAYLOAD_SIZE << "-byte - Waiting 5s for consumer to subscribe...";
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    for (std::uint64_t i = 0; i < kSamplesToProcess; ++i)
+    std::uint64_t i{0};
+    while (!stop_token.stop_requested())
     {
         auto sample_res = generic_event.Allocate();
         if (!sample_res.has_value())
@@ -108,9 +112,9 @@ int run_provider()
 
         score::mw::log::LogInfo("GenericSkeletonProvider") << PAYLOAD_SIZE << "-byte Event Sent sample: " << i;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        i++;
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(15));
     skeleton.StopOfferService();
     return 0;
 }
@@ -130,7 +134,7 @@ int run_consumer()
         score::mw::com::impl::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
 
     score::Result<score::mw::com::ServiceHandleContainer<MyTestServiceProxy::HandleType>> handles_res;
-    int retries = 0;
+    int retries{0};
     while (retries < 50)  // Try for up to 5 seconds
     {
         handles_res = MyTestServiceProxy::FindService(instance_specifier);
@@ -156,15 +160,22 @@ int run_consumer()
     }
     auto& proxy = proxy_res.value();
 
-    uint64_t received = 0;
-    uint64_t expected = 0;
-    int data_mismatches = 0;
+    std::uint64_t received{0};
+    std::uint64_t expected{0};
+    int data_mismatches{0};
+    bool is_first_sample{true};
     proxy.event_.Subscribe(kSamplesToSubscribe);
 
     while (received < kSamplesToProcess)
     {
         proxy.event_.GetNewSamples(
             [&](score::mw::com::SamplePtr<MyEventData> sample) {
+                if (is_first_sample)
+                {
+                    expected = sample->counter;
+                    is_first_sample = false;
+                }
+
                 if (sample->counter != expected)
                 {
                     score::mw::log::LogFatal("TypedProxyConsumer")
@@ -208,9 +219,12 @@ int main(int argc, const char* argv[])
 
     score::mw::com::runtime::InitializeRuntime(score::mw::com::runtime::RuntimeConfiguration(argc, argv));
 
+    score::cpp::stop_source stop_source{};
+    score::mw::com::SetupStopTokenSigTermHandler(stop_source);
+
     if (mode == "provider")
     {
-        return run_provider();
+        return run_provider(stop_source.get_token());
     }
     else if (mode == "consumer")
     {
