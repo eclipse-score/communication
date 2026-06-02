@@ -40,6 +40,7 @@ def _generate_quality_links_impl(ctx):
         # quality reports are published alongside the latest/ docs
         coverage_ref = "`Coverage report <quality/coverage/index.html>`__"
         dashboard_ref = "`Quality Dashboard <quality/index.html>`__"
+        clang_tidy_ref = "`Clang-Tidy report <quality/clang_tidy_findings.txt>`__"
     elif docs_version and docs_base_url:
         # versioned release — quality reports only live at latest/
         latest = docs_base_url + "/latest"
@@ -47,6 +48,8 @@ def _generate_quality_links_impl(ctx):
                         "/quality/coverage/index.html>`__")
         dashboard_ref = ("`Quality Dashboard (latest) <" + latest +
                          "/quality/index.html>`__")
+        clang_tidy_ref = ("`Clang-Tidy report (latest) <" + latest +
+                          "/quality/clang_tidy_findings.txt>`__")
     else:
         # local build — no published reports; show the equivalent bazel command
         coverage_ref = (
@@ -56,10 +59,14 @@ def _generate_quality_links_impl(ctx):
         dashboard_ref = (
             "*local build* — dashboard only available on GitHub Pages"
         )
-
+        clang_tidy_ref = (
+            "*local build* — run " +
+            "``bazel test --config=clang-tidy //...``"
+        )
     content = (
         ".. |coverage_report_link| replace:: " + coverage_ref + "\n" +
-        ".. |quality_dashboard_link| replace:: " + dashboard_ref + "\n"
+        ".. |quality_dashboard_link| replace:: " + dashboard_ref + "\n" +
+        ".. |clang_tidy_report_link| replace:: " + clang_tidy_ref + "\n"
     )
 
     output = ctx.actions.declare_file(ctx.label.name + ".rst")
