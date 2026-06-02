@@ -143,6 +143,16 @@ class LolaProxyEventFixture : public LolaProxyEventResources
         return test_proxy_event_->GetNewSamples(std::move(receiver), guard_factory);
     }
 
+    // ProxyEventCommon no longer Unsubscribes on destruction, so do it explicitly.
+    void TearDown() override
+    {
+        if (test_proxy_event_ != nullptr)
+        {
+            test_proxy_event_->Unsubscribe();
+        }
+        ProxyMockedMemoryFixture::TearDown();
+    }
+
     std::unique_ptr<ProxyEventType> test_proxy_event_{nullptr};
     std::unique_ptr<SampleReferenceTracker> sample_reference_tracker_{};
 };

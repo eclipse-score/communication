@@ -174,6 +174,26 @@ Result<void> ProxyBase::SetupMethods()
     return {};
 }
 
+void ProxyBase::Deinitialize()
+{
+    if (proxy_binding_ != nullptr)
+    {
+        proxy_binding_->PrepareDeinitialize();
+    }
+    for (auto& event : events_)
+    {
+        event.second.get().Unsubscribe();
+    }
+    for (auto& field : fields_)
+    {
+        field.second.get().Unsubscribe();
+    }
+    if (proxy_binding_ != nullptr)
+    {
+        proxy_binding_->FinalizeDeinitialize();
+    }
+}
+
 ProxyBaseView::ProxyBaseView(ProxyBase& proxy_base) noexcept : proxy_base_(proxy_base) {}
 
 ProxyBinding* ProxyBaseView::GetBinding() noexcept

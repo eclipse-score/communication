@@ -274,7 +274,7 @@ class SkeletonWrapperClass : public Interface<Trait>
   private:
     explicit SkeletonWrapperClass(const InstanceIdentifier& instance_id,
                                   std::unique_ptr<SkeletonBinding> skeleton_binding)
-        : Interface<Trait>{std::move(skeleton_binding), instance_id}
+        : Interface<Trait>{std::move(skeleton_binding), instance_id}, is_service_owner_{true}
     {
     }
 
@@ -304,7 +304,7 @@ class SkeletonWrapperClass : public Interface<Trait>
     ///
     /// This flag is always set for a Skeleton except when a Skeleton is moved. In this case, this flag will be cleared
     /// in the moved-from class so that that object doesn't call StopFindService on destruction.
-    FlagOwner is_service_owner_{true};
+    FlagOwner is_service_owner_;
 };
 template <template <class> class Interface, class Trait>
 std::optional<std::unordered_map<InstanceSpecifier, std::queue<Result<SkeletonWrapperClass<Interface, Trait>>>>>
@@ -358,14 +358,46 @@ class ProxyWrapperClass : public Interface<Trait>
         return proxy_wrapper;
     }
 
-  private:
-    /// \brief Constructs ProxyWrapperClass
-    explicit ProxyWrapperClass(HandleType instance_handle, std::unique_ptr<ProxyBinding> proxy_binding)
-        : Interface<Trait>{std::move(proxy_binding), std::move(instance_handle)}
+    ~ProxyWrapperClass()
+    {
+        if (is_proxy_owner_.IsSet())
+        {
+            this->Deinitialize();
+        }
+    }
+
+    ProxyWrapperClass(const ProxyWrapperClass&) = delete;
+    ProxyWrapperClass& operator=(const ProxyWrapperClass&) = delete;
+
+    ProxyWrapperClass(ProxyWrapperClass&& other) noexcept
+        : Interface<Trait>{std::move(static_cast<Interface<Trait>&&>(other))},
+          is_proxy_owner_{std::move(other.is_proxy_owner_)}
     {
     }
 
-    ProxyWrapperClass() : Interface<Trait>{} {}
+    ProxyWrapperClass& operator=(ProxyWrapperClass&& other) noexcept
+    {
+        if (&other != this)
+        {
+            if (is_proxy_owner_.IsSet())
+            {
+                this->Deinitialize();
+            }
+
+            Interface<Trait>::operator=(std::move(static_cast<Interface<Trait>&&>(other)));
+            is_proxy_owner_ = std::move(other.is_proxy_owner_);
+        }
+        return *this;
+    }
+
+  private:
+    /// \brief Constructs ProxyWrapperClass
+    explicit ProxyWrapperClass(HandleType instance_handle, std::unique_ptr<ProxyBinding> proxy_binding)
+        : Interface<Trait>{std::move(proxy_binding), std::move(instance_handle)}, is_proxy_owner_{true}
+    {
+    }
+
+    ProxyWrapperClass() : Interface<Trait>{}, is_proxy_owner_{true} {}
 
     static void InjectCreationResults(
         std::unordered_map<HandleType, std::queue<Result<ProxyWrapperClass>>> creation_results)
@@ -379,6 +411,12 @@ class ProxyWrapperClass : public Interface<Trait>
     }
 
     static std::optional<std::unordered_map<HandleType, std::queue<Result<ProxyWrapperClass>>>> creation_results_;
+
+    /// \brief Flag which is checked before calling Unsubscribe in the destructor of this class
+    ///
+    /// This flag is always set for a Proxy except when a Proxy is moved. In this case, this flag will be cleared
+    /// in the moved-from class so that that object doesn't call Unsubscribe on destruction.
+    FlagOwner is_proxy_owner_;
 };
 template <template <class> class Interface, class Trait>
 std::optional<std::unordered_map<HandleType, std::queue<Result<ProxyWrapperClass<Interface, Trait>>>>>

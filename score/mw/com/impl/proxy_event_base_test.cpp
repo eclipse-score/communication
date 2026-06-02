@@ -77,6 +77,7 @@ class ProxyEventBaseFixture : public ::testing::Test
             std::make_unique<ServiceElementType>(empty_proxy_, std::move(mock_service_element_binding_ptr), kEventName);
 
         ON_CALL(*mock_service_element_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(*mock_service_element_binding_, Subscribe(_)).WillByDefault(Return(score::Result<void>{}));
     }
 
     DummyProxy empty_proxy_{std::make_unique<mock_binding::Proxy>(),
@@ -257,17 +258,22 @@ TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscribedCa
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
+    const std::uint8_t max_sample_count{1U};
+
     // Given a Service Element, that is connected to a mock binding
     this->CreateServiceElement();
 
-    // and that GetSubscriptionState will be called once and indicate that the Proxy is already subscribed.
+    // and given that GetSubscriptionState returns kNotSubscribed then kSubscribed
     EXPECT_CALL(*this->mock_service_element_binding_, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
         .WillOnce(Return(SubscriptionState::kSubscribed));
 
     // Expecting that the Unsubscribe will be called on the binding
     EXPECT_CALL(*this->mock_service_element_binding_, Unsubscribe());
 
-    // When Unsubscribe is called on the ProxyBase
+    // When Subscribe and then Unsubscribe is called on the ProxyElement
+    std::ignore = this->service_element_->Subscribe(max_sample_count);
+
     this->service_element_->Unsubscribe();
 }
 
@@ -280,17 +286,22 @@ TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscription
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
+    const std::uint8_t max_sample_count{1U};
+
     // Given a Service Element, that is connected to a mock binding
     this->CreateServiceElement();
 
-    // and that GetSubscriptionState will be called once and indicate that the Proxy subscription is pending.
+    // and given that GetSubscriptionState returns kNotSubscribed then kSubscriptionPending
     EXPECT_CALL(*this->mock_service_element_binding_, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
         .WillOnce(Return(SubscriptionState::kSubscriptionPending));
 
     // Expecting that the Unsubscribe will be called on the binding
     EXPECT_CALL(*this->mock_service_element_binding_, Unsubscribe());
 
-    // When Unsubscribe is called on the ProxyBase
+    // When Subscribe and then Unsubscribe is called on the ProxyElement
+    std::ignore = this->service_element_->Subscribe(max_sample_count);
+
     this->service_element_->Unsubscribe();
 }
 
@@ -305,10 +316,6 @@ TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileNotSubscribe
     // Given a Service Element, that is connected to a mock binding
     this->CreateServiceElement();
 
-    // and that GetSubscriptionState will be called once and indicate that the Proxy is not subscribed.
-    EXPECT_CALL(*this->mock_service_element_binding_, GetSubscriptionState())
-        .WillOnce(Return(SubscriptionState::kNotSubscribed));
-
     // Expecting that the Unsubscribe will not be called on the binding
     EXPECT_CALL(*this->mock_service_element_binding_, Unsubscribe()).Times(0);
 
@@ -316,23 +323,50 @@ TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileNotSubscribe
     this->service_element_->Unsubscribe();
 }
 
+TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeTwiceAfterSubscribeOnlyDispatchesToBindingOnce)
+{
+    const std::uint8_t max_sample_count{1U};
+
+    // Given a Service Element, that is connected to a mock binding
+    this->CreateServiceElement();
+
+    // and given that GetSubscriptionState returns kNotSubscribed then kSubscribed
+    EXPECT_CALL(*this->mock_service_element_binding_, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
+        .WillOnce(Return(SubscriptionState::kSubscribed));
+
+    // Expecting that Unsubscribe will be called on the binding exactly once across both Unsubscribe calls
+    EXPECT_CALL(*this->mock_service_element_binding_, Unsubscribe()).Times(1);
+
+    // When Subscribe is called and then Unsubscribe is called twice on the Service Element
+    std::ignore = this->service_element_->Subscribe(max_sample_count);
+    this->service_element_->Unsubscribe();
+    this->service_element_->Unsubscribe();
+
+    // Then Unsubscribe is dispatched to the binding only once
+}
+
 TYPED_TEST(ProxyEventBaseUnsubscribeDeathTest, CallingUnsubscribeWhileASampleIsStillReferencedTerminates)
 {
     const auto CallUnsubscribeWhileSampleIsStillAllocated = [this]() {
+        const std::uint8_t max_sample_count{1U};
+
         // Given a Service Element, that is connected to a mock binding
         this->CreateServiceElement();
 
-        // Expecting that GetSubscriptionState will be called once and indicate that the Proxy is not subscribed.
+        // and given that GetSubscriptionState returns kNotSubscribed then kSubscribed
         EXPECT_CALL(*this->mock_service_element_binding_, GetSubscriptionState())
+            .WillOnce(Return(SubscriptionState::kNotSubscribed))
             .WillOnce(Return(SubscriptionState::kSubscribed));
+
+        // Expecting that Unsubscribe will be called on the binding
+        EXPECT_CALL(*this->mock_service_element_binding_, Unsubscribe());
+
+        std::ignore = this->service_element_->Subscribe(max_sample_count);
 
         // and that a sample has been allocated and not yet released
         auto& tracker = ProxyEventBaseAttorney{*this->service_element_}.GetSampleReferenceTracker();
-        tracker.Reset(1);
         const auto allocation_result = tracker.Allocate(1);
-
-        // and that the Unsubscribe will be called on the binding
-        EXPECT_CALL(*this->mock_service_element_binding_, Unsubscribe());
 
         // Then we terminate when Unsubscribe is called on the ProxyBase
         this->service_element_->Unsubscribe();

@@ -14,6 +14,7 @@
 #ifndef SCORE_MW_COM_IMPL_GENERIC_PROXY_H
 #define SCORE_MW_COM_IMPL_GENERIC_PROXY_H
 
+#include "score/mw/com/impl/flag_owner.h"
 #include "score/mw/com/impl/generic_proxy_event.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/proxy_base.h"
@@ -66,6 +67,14 @@ class GenericProxy : public ProxyBase
      */
     static Result<GenericProxy> Create(HandleType instance_handle) noexcept;
 
+    ~GenericProxy() noexcept;
+
+    GenericProxy(const GenericProxy&) = delete;
+    GenericProxy& operator=(const GenericProxy&) = delete;
+
+    GenericProxy(GenericProxy&& other) noexcept;
+    GenericProxy& operator=(GenericProxy&& other) noexcept;
+
     /**
      * \api
      * \brief Returns a read-only view to the name-keyed map of events.
@@ -84,6 +93,10 @@ class GenericProxy : public ProxyBase
     /// GenericProxy. This is required as we hand out views to this map (see GetEvents()), which need to be valid
     /// even after the GenericProxy instance has been moved.
     std::unique_ptr<ServiceElementMapViewFactory<GenericProxyEvent>::map_type> events_;
+
+    /// Flag which is checked before calling Unsubscribe in the destructor.
+    /// Cleared on move so the moved-from instance does not call Unsubscribe.
+    FlagOwner is_proxy_owner_;
 };
 
 }  // namespace score::mw::com::impl

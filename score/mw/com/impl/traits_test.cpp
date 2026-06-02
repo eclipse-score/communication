@@ -28,6 +28,7 @@
 
 #include <gtest/gtest.h>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -327,6 +328,140 @@ TEST_F(GeneratedProxyCreationTestFixture, CallingSubscribeOnServiceElementsDispa
     std::ignore = unit.some_event.Subscribe(1);
     std::ignore = unit.some_field.Subscribe(1);
 }
+
+class GeneratedProxyUnsubscribeRaiiFixture : public ProxyCreationFixture
+{
+  public:
+    void SetUp() override
+    {
+        ProxyCreationFixture::SetUp();
+
+        ON_CALL(proxy_binding_mock_, PrepareDeinitialize()).WillByDefault(Invoke([this] {
+            proxy_prepare_unsubscribe_called_ = true;
+        }));
+        ON_CALL(proxy_binding_mock_, FinalizeDeinitialize()).WillByDefault(Invoke([this] {
+            proxy_finalize_unsubscribe_called_ = true;
+        }));
+        ON_CALL(proxy_event_binding_mock_, Unsubscribe()).WillByDefault(Invoke([this] {
+            proxy_event_unsubscribe_called_ = true;
+        }));
+        ON_CALL(proxy_field_binding_mock_, Unsubscribe()).WillByDefault(Invoke([this] {
+            proxy_field_unsubscribe_called_ = true;
+        }));
+
+        // Subscribe-path defaults so that calling Subscribe on the events/fields drives them into the
+        // subscribed state without requiring per-test mock setup.
+        ON_CALL(proxy_event_binding_mock_, GetSubscriptionState())
+            .WillByDefault(Return(SubscriptionState::kNotSubscribed));
+        ON_CALL(proxy_field_binding_mock_, GetSubscriptionState())
+            .WillByDefault(Return(SubscriptionState::kNotSubscribed));
+        ON_CALL(proxy_event_binding_mock_, Subscribe(_)).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(proxy_field_binding_mock_, Subscribe(_)).WillByDefault(Return(score::Result<void>{}));
+    }
+
+    GeneratedProxyUnsubscribeRaiiFixture& GivenAProxy()
+    {
+        auto proxy_result = MyProxy::Create(handle_);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_result.has_value());
+        proxy_.emplace(std::move(proxy_result).value());
+        return *this;
+    }
+
+    GeneratedProxyUnsubscribeRaiiFixture& WhichHasSubscribedEventsAndFields()
+    {
+        EXPECT_CALL(proxy_event_binding_mock_, GetSubscriptionState())
+            .WillOnce(Return(SubscriptionState::kNotSubscribed))
+            .WillOnce(Return(SubscriptionState::kSubscribed));
+        EXPECT_CALL(proxy_field_binding_mock_, GetSubscriptionState())
+            .WillOnce(Return(SubscriptionState::kNotSubscribed))
+            .WillOnce(Return(SubscriptionState::kSubscribed));
+        std::ignore = proxy_->some_event.Subscribe(1);
+        std::ignore = proxy_->some_field.Subscribe(1);
+        return *this;
+    }
+
+    std::optional<MyProxy> proxy_{};
+    bool proxy_prepare_unsubscribe_called_{false};
+    bool proxy_finalize_unsubscribe_called_{false};
+    bool proxy_event_unsubscribe_called_{false};
+    bool proxy_field_unsubscribe_called_{false};
+};
+
+using GeneratedProxyDestructionFixture = GeneratedProxyUnsubscribeRaiiFixture;
+TEST_F(GeneratedProxyDestructionFixture, CallsUnsubscribeOnDestruction)
+{
+    // SCR-20236391 and SCR-20237033 are split with UnsubscribingWillUnregisterEventHandler in
+    // proxy_event_common_test.cpp. this test covers destruction triggering Unsubscribe on the events and
+    // fields, the other covers Unsubscribe triggering UnregisterEventNotification.
+    RecordProperty("Verifies", "SCR-20236391, SCR-20237033");
+    RecordProperty("Description",
+                   "Checks that destroying a proxy triggers Unsubscribe on its bindings, events, and fields.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenAProxy().WhichHasSubscribedEventsAndFields();
+
+    // When destroying the Proxy
+    proxy_.reset();
+
+    // Then Unsubscribe should have been called on the binding, events, and fields
+    EXPECT_TRUE(proxy_prepare_unsubscribe_called_);
+    EXPECT_TRUE(proxy_event_unsubscribe_called_);
+    EXPECT_TRUE(proxy_field_unsubscribe_called_);
+    EXPECT_TRUE(proxy_finalize_unsubscribe_called_);
+}
+
+using GeneratedProxyMoveConstructionFixture = GeneratedProxyUnsubscribeRaiiFixture;
+TEST_F(GeneratedProxyMoveConstructionFixture, MoveConstructingDoesNotCallUnsubscribe)
+{
+    GivenAProxy().WhichHasSubscribedEventsAndFields();
+
+    // When move constructing the proxy
+    std::optional<MyProxy> moved_to_proxy{std::move(proxy_).value()};
+
+    // Then Unsubscribe should not have been called on the binding, events, or fields
+    EXPECT_FALSE(proxy_prepare_unsubscribe_called_);
+    EXPECT_FALSE(proxy_event_unsubscribe_called_);
+    EXPECT_FALSE(proxy_field_unsubscribe_called_);
+    EXPECT_FALSE(proxy_finalize_unsubscribe_called_);
+}
+
+TEST_F(GeneratedProxyMoveConstructionFixture, DestroyingMovedToProxyCallsUnsubscribe)
+{
+    GivenAProxy().WhichHasSubscribedEventsAndFields();
+
+    // and given a move constructed proxy
+    std::optional<MyProxy> moved_to_proxy{std::move(proxy_).value()};
+
+    // When destroying the moved-to proxy
+    moved_to_proxy.reset();
+
+    // Then Unsubscribe should have been called on the binding, events, and fields
+    EXPECT_TRUE(proxy_prepare_unsubscribe_called_);
+    EXPECT_TRUE(proxy_event_unsubscribe_called_);
+    EXPECT_TRUE(proxy_field_unsubscribe_called_);
+    EXPECT_TRUE(proxy_finalize_unsubscribe_called_);
+}
+
+TEST_F(GeneratedProxyMoveConstructionFixture, DestroyingMovedFromProxyDoesNotCallUnsubscribe)
+{
+    GivenAProxy().WhichHasSubscribedEventsAndFields();
+
+    // and given a move constructed proxy
+    std::optional<MyProxy> moved_to_proxy{std::move(proxy_).value()};
+
+    // When destroying the moved-from proxy
+    proxy_.reset();
+
+    // Then Unsubscribe should not have been called on the binding, events, or fields
+    EXPECT_FALSE(proxy_prepare_unsubscribe_called_);
+    EXPECT_FALSE(proxy_event_unsubscribe_called_);
+    EXPECT_FALSE(proxy_field_unsubscribe_called_);
+    EXPECT_FALSE(proxy_finalize_unsubscribe_called_);
+}
+
+// TODO: add MoveAssignmentFixture tests once the use-after-free during proxy wrapper move-assignment is resolved.
 
 TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithInstanceSpecifier)
 {

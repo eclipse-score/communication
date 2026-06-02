@@ -15,6 +15,7 @@
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 
 #include "score/mw/com/impl/event_receive_handler.h"
+#include "score/mw/com/impl/flag_owner.h"
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding_base.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
@@ -220,6 +221,7 @@ class ProxyEventBase
     ///        (because trying to expire the scope in which we are running, would lead to a deadlock)
     void ExpireReceiveHandlerScopeIfNotInHandler();
 
+    FlagOwner is_subscribed_flag_;
     safecpp::Scope<> receive_handler_scope_;
     std::shared_ptr<ScopedEventReceiveHandler> receive_handler_ptr_;
     /// \brief thread local variable, which indicates, whether the current thread is within the call context of an

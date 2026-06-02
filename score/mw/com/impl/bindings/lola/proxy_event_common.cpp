@@ -42,11 +42,6 @@ ProxyEventCommon::ProxyEventCommon(Proxy& parent, const ElementFqId element_fq_i
 {
 }
 
-ProxyEventCommon::~ProxyEventCommon()
-{
-    Unsubscribe();
-}
-
 Result<void> ProxyEventCommon::Subscribe(const std::size_t max_sample_count)
 {
     std::stringstream sstream{};
