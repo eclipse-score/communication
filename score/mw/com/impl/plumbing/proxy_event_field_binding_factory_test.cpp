@@ -140,6 +140,20 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
     ServiceElementTypes service_element_type_{GetParam()};
     std::unique_ptr<ProxyBase> proxy_base_{nullptr};
     DummyInstanceIdentifierBuilder dummy_instance_identifier_builder_{};
+
+    void TearDown() override
+    {
+        if (proxy_base_ != nullptr)
+        {
+            auto* const binding = ProxyBaseView{*proxy_base_}.GetBinding();
+            if (binding != nullptr)
+            {
+                binding->PrepareDeinitialize();
+                binding->FinalizeDeinitialize();
+            }
+        }
+        lola::ProxyMockedMemoryFixture::TearDown();
+    }
 };
 
 INSTANTIATE_TEST_CASE_P(ProxyServiceElementBindingFactoryParamaterisedFixture,

@@ -94,6 +94,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":flag_owner",
         ":generic_proxy_event",
         ":handle_type",
         ":proxy_base",
@@ -469,6 +470,7 @@ cc_library(
     ],
     deps = [
         ":error",
+        ":flag_owner",
         ":proxy_binding",
         ":proxy_event_binding",
         ":sample_reference_tracker",
@@ -476,6 +478,7 @@ cc_library(
         "//score/mw/com/impl/tracing:proxy_event_tracing_data",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
+        "@score_baselibs//score/scope_exit",
     ],
 )
 

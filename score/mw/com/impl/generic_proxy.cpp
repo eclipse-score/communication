@@ -85,8 +85,37 @@ Result<GenericProxy> GenericProxy::Create(HandleType instance_handle) noexcept
 
 GenericProxy::GenericProxy(std::unique_ptr<ProxyBinding> proxy_binding, HandleType instance_handle)
     : ProxyBase{std::move(proxy_binding), std::move(instance_handle)},
-      events_(std::make_unique<std::map<std::string_view, GenericProxyEvent>>())
+      events_(std::make_unique<std::map<std::string_view, GenericProxyEvent>>()),
+      is_proxy_owner_{true}
 {
+}
+
+GenericProxy::~GenericProxy() noexcept
+{
+    if (is_proxy_owner_.IsSet())
+    {
+        this->Deinitialize();
+    }
+}
+
+GenericProxy::GenericProxy(GenericProxy&& other) noexcept
+    : ProxyBase{std::move(other)}, events_{std::move(other.events_)}, is_proxy_owner_{std::move(other.is_proxy_owner_)}
+{
+}
+
+GenericProxy& GenericProxy::operator=(GenericProxy&& other) noexcept
+{
+    if (&other != this)
+    {
+        if (is_proxy_owner_.IsSet())
+        {
+            this->Deinitialize();
+        }
+        ProxyBase::operator=(std::move(other));
+        events_ = std::move(other.events_);
+        is_proxy_owner_ = std::move(other.is_proxy_owner_);
+    }
+    return *this;
 }
 
 void GenericProxy::FillEventMap(const std::vector<std::string_view>& event_names) noexcept

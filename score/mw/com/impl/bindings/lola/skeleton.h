@@ -99,7 +99,7 @@ class Skeleton final : public SkeletonBinding
              std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::ExclusiveFlockMutex>>
                  service_instance_existence_flock_mutex_and_lock);
 
-    ~Skeleton() noexcept override = default;
+    ~Skeleton() noexcept override;
 
     Skeleton(const Skeleton&) = delete;
     Skeleton& operator=(const Skeleton&) = delete;
@@ -228,6 +228,11 @@ class Skeleton final : public SkeletonBinding
     bool was_old_shm_region_reopened_;
 
     score::filesystem::Filesystem filesystem_;
+
+    /// Set by PrepareOffer / PrepareStopOffer respectively. ~Skeleton terminates if PrepareOffer was called but
+    /// PrepareStopOffer was not.
+    bool prepare_offer_called_;
+    bool prepare_stop_offer_called_;
 
     /// \brief Scope that is passed to the MethodCallHandler handler that is registered for each ProxyMethod
     ///

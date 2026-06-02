@@ -64,6 +64,7 @@ class StateMachineEventsFixture : public LolaProxyEventResources
         // Specifically, it's important that the Unsubscribe is recorded so that when ~TransactionLogRegistrationGuard
         // unregisters the TransactionLog, there are no open transactions.
         state_machine_.UnsubscribeEvent();
+        ProxyMockedMemoryFixture::TearDown();
     }
 
     void EnterSubscriptionPending(const std::size_t max_samples) noexcept
