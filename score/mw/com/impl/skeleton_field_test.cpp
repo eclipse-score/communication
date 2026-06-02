@@ -1111,7 +1111,7 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerInvokesUserCallback)
 
     // When calling the set handler that was captured by the method binding
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
-    captured_set_handler_.value()(in_span, out_span);
+    captured_set_handler_.value()(in_span, out_span, QualityType{});
 }
 
 TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerInvokesLatestRegisteredUserCallback)
@@ -1143,7 +1143,7 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerInvokesLatestRegisteredU
 
     // When calling the set handler that was captured by the method binding
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
-    captured_set_handler_.value()(in_span, out_span);
+    captured_set_handler_.value()(in_span, out_span, QualityType{});
 }
 
 TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerCallsSend)
@@ -1162,7 +1162,7 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerCallsSend)
 
     // When calling the set handler that was captured by the method binding
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
-    captured_set_handler_.value()(in_span, out_span);
+    captured_set_handler_.value()(in_span, out_span, QualityType{});
 }
 
 TEST_F(SkeletonFieldSetHandlerTest, MethodHandlerDoesNotTerminateWhenSendFails)
@@ -1182,7 +1182,7 @@ TEST_F(SkeletonFieldSetHandlerTest, MethodHandlerDoesNotTerminateWhenSendFails)
 
     // When calling the set handler that was captured by the method binding
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
-    captured_set_handler_.value()(in_span, out_span);
+    captured_set_handler_.value()(in_span, out_span, QualityType{});
 
     // Then we don't crash
 }
@@ -1212,7 +1212,7 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerCallsSendWithValueModifi
 
     // When calling the set handler that was captured by the method binding
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
-    captured_set_handler_.value()(in_span, out_span);
+    captured_set_handler_.value()(in_span, out_span, QualityType{});
 }
 
 TEST_F(SkeletonFieldSetHandlerTest, PassingReferenceToHandlerUpdatesStateInPlace)
@@ -1240,7 +1240,7 @@ TEST_F(SkeletonFieldSetHandlerTest, PassingReferenceToHandlerUpdatesStateInPlace
 
     // When calling the set handler that was captured by the method binding
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
-    captured_set_handler_.value()(in_span, out_span);
+    captured_set_handler_.value()(in_span, out_span, QualityType{});
 
     // Then the state of the functor is updated in place when the handler is called by the binding
     EXPECT_EQ(test_functor.i_, kModifiedValue);
@@ -1292,7 +1292,7 @@ TEST_F(SkeletonFieldMoveConstructionFixture,
 
     // When calling the set handler that was captured by the method binding
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
-    captured_set_handler_.value()(in_span, out_span);
+    captured_set_handler_.value()(in_span, out_span, QualityType{});
 }
 
 }  // namespace
