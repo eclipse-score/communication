@@ -91,35 +91,25 @@ jobs:
           cache-save: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Allow linux-sandbox
+        id: setup
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
       # ------------------------------------------------------------------
-      # Determine job conclusions (needs.*.result = success|failure|skipped|cancelled)
-      # ------------------------------------------------------------------
-      - name: Resolve job conclusions
-        id: conclusions
-        run: |
-          map_conclusion() {
-            case "$1" in
-              success)   echo "success" ;;
-              failure)   echo "failure" ;;
-              *)         echo "skipped" ;;
-            esac
-          }
-          echo "coverage=$(map_conclusion '${{ needs.run-coverage.result }}')" >> $GITHUB_OUTPUT
-
-      # ------------------------------------------------------------------
-      # Download artifacts (only if the upstream job succeeded)
+      # Download Coverage artifacts (only if the upstream job succeeded)
       # ------------------------------------------------------------------
       - name: Download coverage artifact
-        if: needs.run-coverage.result == 'success'
+        id: download-coverage
+        if: needs.run-coverage.outputs.conclusion == 'success'
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.run-coverage.outputs.artifact-name }}
           path: /tmp/coverage_zip
 
+      # ------------------------------------------------------------------
+      # Extract coverage artifact to a known location for the dashboard generator
+      # ------------------------------------------------------------------
       - name: Extract coverage HTML report
-        if: needs.run-coverage.result == 'success'
+        if: needs.run-coverage.outputs.conclusion == 'success' && steps.download-coverage.outcome == 'success'
         run: |
           bash quality/scripts/extract_coverage_artifact.sh \
             /tmp/coverage_zip \
@@ -148,9 +138,8 @@ jobs:
       # ------------------------------------------------------------------
       # Generate coverage KPI dashboard via generate_dashboard py_binary
       # ------------------------------------------------------------------
-
       - name: Generate quality dashboard
-        if: always() && steps.conclusions.outcome == 'success'
+        if: always() && steps.setup.outcome == 'success'
         run: |
           # Pass LCOV data, clang-tidy findings, and CodeQL findings, generate_dashboard handles
           # absent files gracefully (shows N/A for that metric).
@@ -169,7 +158,7 @@ jobs:
       # pick up and deploy as part of the unified Sphinx site.
       # ------------------------------------------------------------------
       - name: Upload quality reports artifact
-        if: always() && steps.conclusions.outcome == 'success'
+        if: always() && steps.setup.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: nightly-quality-reports
