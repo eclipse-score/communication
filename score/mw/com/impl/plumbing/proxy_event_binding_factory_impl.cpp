@@ -33,9 +33,10 @@ namespace score::mw::com::impl
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::Create(
     ProxyBase& parent,
-    const std::string_view event_name) noexcept
+    const std::string_view event_name,
+    const ServiceElementType element_type) noexcept
 {
-    const auto lookup = LookupLolaProxyElement(parent, event_name, ServiceElementType::EVENT);
+    const auto lookup = LookupLolaProxyElement(parent, event_name, element_type);
     if (!lookup.has_value())
     {
         score::mw::log::LogError("lola")
