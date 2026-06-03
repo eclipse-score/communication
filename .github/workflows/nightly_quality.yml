@@ -66,11 +66,13 @@ jobs:
         uses: actions/checkout@v6.0.2
 
       - name: Setup Bazel with shared caching
-        uses: bazel-contrib/setup-bazel@0.18.0
+        uses: castler/setup-bazel@cache-optimized
         with:
           bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
           repository-cache: true
-          cache-save: true
+          cache-optimized: true
+          cache-save: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
@@ -119,11 +121,11 @@ jobs:
           # case where the file is absent (returns empty coverage data).
           bazel run //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
-            --html     _quality/index.html \
+            --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
             --github-summary
 
           echo "Dashboard generated. Contents of _quality/:"
-          find _quality -type f | sort
+          find "${GITHUB_WORKSPACE}/_quality" -type f | sort
 
       # ------------------------------------------------------------------
       # Upload all quality reports as a single artifact for docs.yml to
