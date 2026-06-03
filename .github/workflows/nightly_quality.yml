@@ -11,19 +11,21 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Workflow: Run nightly coverage job and publish results to GitHub Pages.
+# Workflow: Run nightly quality jobs and publish results to GitHub Pages.
 #
 # Runs every night at midnight UTC:
-#   - Coverage : full C++ test suite with gcov/lcov → HTML report + KPI dashboard
+#   - Coverage  : full C++ test suite with gcov/lcov → HTML report
+#   - Clang-Tidy: static analysis across all C++ targets → findings text file
 #
-# After coverage completes, a deploy-quality-reports job:
-#   1. Downloads the coverage HTML artifact
-#   2. Runs `bazel run //quality/dashboard:generate_dashboard` to produce the coverage KPI index page
+# After both jobs complete, deploy-quality-reports:
+#   1. Downloads the coverage HTML artifact and the clang-tidy findings artifact
+#   2. Runs `bazel run //quality/dashboard:generate_dashboard` to produce the KPI dashboard
 #   3. Uploads everything as nightly-quality-reports artifact for docs.yml to deploy
 #
 # Deployed URL structure:
-#   https://eclipse-score.github.io/communication/latest/quality/index.html          ← dashboard
-#   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html ← lcov HTML
+#   https://eclipse-score.github.io/communication/latest/quality/index.html               ← dashboard
+#   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html      ← lcov HTML
+#   https://eclipse-score.github.io/communication/latest/quality/clang_tidy_findings.txt  ← raw findings
 
 name: Nightly Quality Jobs
 
