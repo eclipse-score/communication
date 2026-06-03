@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_PROXY_EVENT_BINDING_FACTORY_MOCK_H
 
 #include "score/mw/com/impl/plumbing/i_proxy_event_binding_factory.h"
+#include "score/mw/com/impl/service_element_type.h"
 
 #include <gmock/gmock.h>
 
@@ -26,7 +27,7 @@ class ProxyEventBindingFactoryMock : public IProxyEventBindingFactory<SampleType
   public:
     MOCK_METHOD(std::unique_ptr<ProxyEventBinding<SampleType>>,
                 Create,
-                (ProxyBase&, const std::string_view event_name),
+                (ProxyBase&, const std::string_view event_name, const ServiceElementType element_type),
                 (noexcept, override));
 };
 
@@ -35,7 +36,7 @@ class GenericProxyEventBindingFactoryMock : public IGenericProxyEventBindingFact
   public:
     MOCK_METHOD(std::unique_ptr<GenericProxyEventBinding>,
                 Create,
-                (ProxyBase&, const std::string_view event_name),
+                (ProxyBase&, const std::string_view event_name, const ServiceElementType element_type),
                 (noexcept, override));
 };
 

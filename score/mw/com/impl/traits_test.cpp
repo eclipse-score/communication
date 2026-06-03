@@ -120,7 +120,7 @@ class ProxyCreationFixture : public ::testing::Test
             .WillByDefault(Return(ByMove(std::move(proxy_binding_mock_ptr))));
 
         // By default the Create call on the ProxyEventBindingFactory returns valid bindings.
-        ON_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName))
+        ON_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName, ServiceElementType::EVENT))
             .WillByDefault(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
 
         // By default the Create call on the ProxyFieldBindingFactory returns valid bindings.
@@ -203,7 +203,7 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
     // Expecting that valid bindings are created for the Proxy, ProxyEvent and ProxyField
     EXPECT_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(handle_))
         .WillRepeatedly(Return(ByMove(std::move(proxy_binding_mock_ptr))));
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName))
+    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName, ServiceElementType::EVENT))
         .WillRepeatedly(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
         .WillRepeatedly(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
@@ -249,7 +249,7 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Expecting that the Create call on the ProxyEventBindingFactory returns an invalid binding for the event.
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName))
+    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName, ServiceElementType::EVENT))
         .WillOnce(Return(ByMove(nullptr)));
 
     // When creating a MyProxy
