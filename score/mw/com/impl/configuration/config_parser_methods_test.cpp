@@ -677,7 +677,7 @@ TEST_F(ConfigParserFixture, MethodCanBeExplicitlyDisabled)
           "methods": [
             {
               "methodName": "SetPressure",
-              "enabled": false
+              "use": false
             }
           ]
         }
@@ -744,7 +744,7 @@ TEST_F(ConfigParserFixture, MethodCanBeExplicitlyEnabled)
           "methods": [
             {
               "methodName": "SetPressure",
-              "enabled": true
+              "use": true
             }
           ]
         }

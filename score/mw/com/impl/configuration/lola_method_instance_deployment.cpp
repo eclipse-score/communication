@@ -22,7 +22,7 @@ namespace
 {
 using std::string_view_literals::operator""sv;
 constexpr auto kQueueSizeKey = "queueSize"sv;
-constexpr auto kMethodEnabledKey = "enabled"sv;
+constexpr auto kMethodEnabledKey = "use"sv;
 }  // namespace
 
 LolaMethodInstanceDeployment::LolaMethodInstanceDeployment(std::optional<QueueSize> queue_size,
