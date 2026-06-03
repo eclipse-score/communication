@@ -44,11 +44,20 @@ else
 fi
 
 if [[ -n "${RUN_ID}" ]]; then
-    gh run download "${RUN_ID}" \
-        --name nightly-quality-reports \
-        --dir "${PUBLISH_DIR}" \
-        --repo "${REPOSITORY}" \
-    || echo "Quality artifact not available for run ${RUN_ID} — skipping."
+    # gh run download always extracts into a sub-directory named after the
+    # artifact inside --dir, so we download to a temp location and then
+    # move the contents into the intended destination.
+    TEMP_DIR=$(mktemp -d)
+    if gh run download "${RUN_ID}" \
+            --name nightly-quality-reports \
+            --dir "${TEMP_DIR}" \
+            --repo "${REPOSITORY}"; then
+        cp -r "${TEMP_DIR}/nightly-quality-reports/." "${PUBLISH_DIR}/"
+        echo "Quality reports bundled into ${PUBLISH_DIR}/"
+    else
+        echo "Quality artifact not available for run ${RUN_ID} — skipping."
+    fi
+    rm -rf "${TEMP_DIR}"
 else
     echo "No successful nightly run found — quality reports not included."
 fi
