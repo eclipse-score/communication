@@ -13,84 +13,6 @@ Safety documentation for the Message Passing component (Dependable Element, Inte
 
     <script>
     (function() {
-<<<<<<< HEAD
-       function addSidebarLinks() {
-          var sidebar = document.querySelector("#pst-secondary-sidebar .sidebar-secondary__inner");
-          if (!sidebar) return;
-          var frame = document.getElementById("safety-report-frame");
-          if (!frame) return;
-
-          var frameDoc;
-          try {
-             frameDoc = frame.contentDocument || frame.contentWindow.document;
-          } catch (e) {
-             return;
-          }
-          if (!frameDoc) return;
-
-          var tocLinks = frameDoc.querySelectorAll("#pst-secondary-sidebar .section-nav a");
-          if (!tocLinks.length) return;
-
-          var existing = document.getElementById("safety-right-links");
-          if (existing) {
-             existing.remove();
-          }
-
-          var wrapper = document.createElement("div");
-          wrapper.className = "sidebar-secondary-item";
-          wrapper.id = "safety-right-links";
-          var list = document.createElement("ul");
-          list.className = "visible nav section-nav flex-column";
-          var frameSrc = frame.getAttribute("src") || "";
-
-          tocLinks.forEach(function(link) {
-             var href = link.getAttribute("href") || "";
-             if (href.startsWith("#")) {
-                href = frameSrc.replace(/#.*$/, "") + href;
-             }
-
-             var li = document.createElement("li");
-             li.className = "toc-entry nav-item toc-h2";
-
-             var a = document.createElement("a");
-             a.className = "reference internal nav-link";
-             a.setAttribute("href", href);
-             a.textContent = link.textContent.trim();
-
-             li.appendChild(a);
-             list.appendChild(li);
-          });
-
-          wrapper.appendChild(list);
-
-          var sourceBlock = sidebar.querySelector(".tocsection.sourcelink");
-          var sourceItem = sourceBlock ? sourceBlock.closest(".sidebar-secondary-item") : null;
-          if (sourceItem) {
-             sidebar.insertBefore(wrapper, sourceItem);
-          } else {
-             sidebar.appendChild(wrapper);
-          }
-       }
-
-       function init() {
-          var frame = document.getElementById("safety-report-frame");
-          if (!frame) return;
-          frame.addEventListener("load", function() {
-             addSidebarLinks();
-             setTimeout(addSidebarLinks, 150);
-          });
-          addSidebarLinks();
-       }
-
-       if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", init);
-       } else {
-          init();
-       }
-    })();
-    </script>
-
-=======
        var attempts = 0;
        var maxAttempts = 40;
 
@@ -239,5 +161,3 @@ Safety documentation for the Message Passing component (Dependable Element, Inte
        }
     })();
     </script>
-
->>>>>>> 94c65095 (docs: sync safety sidebar content with embedded report TOC)

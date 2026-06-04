@@ -17,7 +17,6 @@ load(
     "filter_execpath",
     "sphinx_module",
 )
-load("//bazel/rules:generate_quality_links.bzl", "generate_quality_links")
 load("//docs/sphinx/utils:defs.bzl", "generate_api_rst")
 
 # Capture the Doxygen XML output for Breathe
@@ -45,13 +44,6 @@ generate_api_rst(
     project_name = "mw::com",
 )
 
-# Generate RST substitution definitions for quality report links.
-# Content depends on --define=DOCS_VERSION and --define=DOCS_BASE_URL.
-generate_quality_links(
-    name = "quality_links",
-    visibility = ["//visibility:private"],
-)
-
 filter_execpath(
     name = "breathe_doxygen_xml",
     filter_pattern = "doxygen_build/xml",
@@ -75,7 +67,6 @@ sphinx_module(
             "safety_reports.rst",
             ":doxygen_xml",
             ":generate_api_rst",
-            ":quality_links",
             ":static_assets",
         ],
     docs_library_deps = [
