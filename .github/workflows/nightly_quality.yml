@@ -11,19 +11,21 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Workflow: Run nightly coverage job and publish results to GitHub Pages.
+# Workflow: Run nightly quality jobs and publish results to GitHub Pages.
 #
 # Runs every night at midnight UTC:
-#   - Coverage : full C++ test suite with gcov/lcov → HTML report + KPI dashboard
+#   - Coverage  : full C++ test suite with gcov/lcov → HTML report
+#   - Clang-Tidy: static analysis across all C++ targets → findings text file
 #
-# After coverage completes, a deploy-quality-reports job:
-#   1. Downloads the coverage HTML artifact
-#   2. Runs `bazel run //quality/dashboard:generate_dashboard` to produce the coverage KPI index page
+# After both jobs complete, deploy-quality-reports:
+#   1. Downloads the coverage HTML artifact and the clang-tidy findings artifact
+#   2. Runs `bazel run //quality/dashboard:generate_dashboard` to produce the KPI dashboard
 #   3. Uploads everything as nightly-quality-reports artifact for docs.yml to deploy
 #
 # Deployed URL structure:
-#   https://eclipse-score.github.io/communication/latest/quality/index.html          ← dashboard
-#   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html ← lcov HTML
+#   https://eclipse-score.github.io/communication/latest/quality/index.html               ← dashboard
+#   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html      ← lcov HTML
+#   https://eclipse-score.github.io/communication/latest/quality/clang_tidy_findings.txt  ← raw findings
 
 name: Nightly Quality Jobs
 
@@ -117,6 +119,13 @@ jobs:
           name: ${{ needs.run-clang-tidy.outputs.artifact-name }}
           path: /tmp/clang_tidy
 
+      - name: Copy clang-tidy findings into quality output
+        if: needs.run-clang-tidy.outputs.conclusion == 'success'
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/_quality"
+          cp /tmp/clang_tidy/clang_tidy_findings.txt \
+             "${GITHUB_WORKSPACE}/_quality/clang_tidy_findings.txt"
+
       # ------------------------------------------------------------------
       # Generate coverage KPI dashboard via generate_dashboard py_binary
       # ------------------------------------------------------------------
@@ -128,7 +137,7 @@ jobs:
           bazel run //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
             --clang-tidy /tmp/clang_tidy/clang_tidy_findings.txt \
-            --html     _quality/index.html \
+            --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
             --github-summary
 
           echo "Dashboard generated. Contents of _quality/:"
@@ -151,4 +160,4 @@ jobs:
         run: |
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
-          echo "::notice::Quality reports will be published at https://${OWNER}.github.io/${REPO}/latest/quality/index.html once docs.yml completes."
+          echo "::notice::Quality reports will be published at https://${OWNER}.github.io/${REPO}/latest/quality/index.html once deploy_docs.yml completes."

@@ -136,6 +136,62 @@ TEST_P(ShmPathBuilderMethodParamaterizedTestFixture, TestBuildingMethodChannelSh
     EXPECT_EQ(expected_path, actual_path);
 }
 
+TEST(ShmPathBuilderInterVmSupportTest, BuildsDataChannelShmNamePathWithInterVmPrefix)
+{
+    constexpr LolaServiceInstanceId::InstanceId instance_id{1};
+
+    // Given a ShmPathBuilder with inter-vm support enabled
+    ShmPathBuilder builder{kServiceId, true};
+
+    // When creating the data channel shm name
+    const auto actual_path = builder.GetDataChannelShmName(instance_id);
+
+    // Then the returned path should use the inter-vm prefix with standard padding
+    EXPECT_EQ("/intervm-shared-shmem/lola-data-0000000000004660-00001", actual_path);
+}
+
+TEST(ShmPathBuilderInterVmSupportTest, BuildsControlChannelShmNamePathWithInterVmPrefix)
+{
+    constexpr LolaServiceInstanceId::InstanceId instance_id{1};
+
+    // Given a ShmPathBuilder with inter-vm support enabled
+    ShmPathBuilder builder{kServiceId, true};
+
+    // When creating the control channel shm name
+    const auto actual_path = builder.GetControlChannelShmName(instance_id, QualityType::kASIL_B);
+
+    // Then the returned path should use the inter-vm prefix with standard padding
+    EXPECT_EQ("/intervm-shared-shmem/lola-ctl-0000000000004660-00001-b", actual_path);
+}
+
+TEST(ShmPathBuilderInterVmSupportTest, BuildsMethodChannelShmNamePathWithInterVmPrefix)
+{
+    constexpr LolaServiceInstanceId::InstanceId instance_id{1};
+    constexpr ProxyInstanceIdentifier proxy_instance_identifier{2U, 3U};
+
+    // Given a ShmPathBuilder with inter-vm support enabled
+    ShmPathBuilder builder{kServiceId, true};
+
+    // When creating the method channel shm name
+    const auto actual_path = builder.GetMethodChannelShmName(instance_id, proxy_instance_identifier);
+
+    // Then the returned path should use the inter-vm prefix with standard padding
+    EXPECT_EQ("/intervm-shared-shmem/lola-methods-0000000000004660-00001-00002-00003", actual_path);
+}
+
+TEST(ShmPathBuilderInterVmSupportDeathTests, GetControlChannelShmNameDiesWithInvalidQualityType)
+{
+    constexpr LolaServiceInstanceId::InstanceId instance_id{1};
+    constexpr QualityType invalid_quality_type = QualityType::kInvalid;
+
+    // Given a ShmPathBuilder with inter-vm support enabled
+    ShmPathBuilder builder{kServiceId, true};
+
+    // When creating the control channel shm name with an invalid quality type
+    // Then we expect it to die
+    EXPECT_DEATH(builder.GetControlChannelShmName(instance_id, invalid_quality_type), "");
+}
+
 INSTANTIATE_TEST_SUITE_P(
     ShmPathBuilderMethodTests,
     ShmPathBuilderMethodParamaterizedTestFixture,
