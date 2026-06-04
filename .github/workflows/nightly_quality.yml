@@ -113,18 +113,23 @@ jobs:
       # Download clang-tidy findings artifact
       # ------------------------------------------------------------------
       - name: Download clang-tidy findings
-        if: needs.run-clang-tidy.outputs.conclusion == 'success'
+        if: always()
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.run-clang-tidy.outputs.artifact-name }}
           path: /tmp/clang_tidy
 
       - name: Copy clang-tidy findings into quality output
-        if: needs.run-clang-tidy.outputs.conclusion == 'success'
+        if: always()
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/_quality"
-          cp /tmp/clang_tidy/clang_tidy_findings.txt \
-             "${GITHUB_WORKSPACE}/_quality/clang_tidy_findings.txt"
+          if [[ -f /tmp/clang_tidy/clang_tidy_findings.txt ]]; then
+            cp /tmp/clang_tidy/clang_tidy_findings.txt \
+               "${GITHUB_WORKSPACE}/_quality/clang_tidy_findings.txt"
+          else
+            echo "::warning::clang_tidy_findings.txt not found in downloaded artifact; skipping copy."
+          fi
 
       # ------------------------------------------------------------------
       # Generate coverage KPI dashboard via generate_dashboard py_binary

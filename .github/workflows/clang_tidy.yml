@@ -139,6 +139,15 @@ jobs:
           find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
             | xargs cat 2>/dev/null > clang_tidy_findings.txt || true
 
+          # Keep the published report human-readable even when no findings
+          # were produced in this run.
+          if [[ ! -s clang_tidy_findings.txt ]]; then
+            {
+              echo "No clang-tidy findings were produced for this run."
+              echo "errors=${ERRORS} warnings=${WARNINGS} total=${TOTAL}"
+            } > clang_tidy_findings.txt
+          fi
+
           grep "error:" clang_tidy_findings.txt > clang_tidy_errors.txt || true
 
           # ── Job summary ──────────────────────────────────────────────────
