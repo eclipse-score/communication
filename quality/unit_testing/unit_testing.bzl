@@ -1,5 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_test")
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_test")
 load("@score_qnx_unit_tests//:defs.bzl", "cc_test_qnx", "rust_test_qnx")
 
 def _forwarding_test_impl(ctx):
@@ -92,13 +92,19 @@ def cc_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
     name_linux = "{}_linux".format(name)
     name_qnx = "{}_qnx".format(name)
 
+    # The _linux cc_test is the real test binary. It is tagged "unit" and uses
+    # target_compatible_with so that:
+    #  - On Linux: it is discoverable by `bazel test //...` and `bazel coverage //...`
+    #    and properly collects LLVM coverage data.
+    #  - On QNX: it is automatically skipped (incompatible platform).
     cc_test(
         name = name_linux,
         size = "small",
         timeout = "short",
         features = features,
         deps = deps,
-        tags = tags + ["manual"],
+        tags = tags + ["unit"],
+        target_compatible_with = ["@platforms//os:linux"],
         **kwargs
     )
 
@@ -109,6 +115,10 @@ def cc_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
         cc_test = name_linux,
     )
 
+    # The forwarding test provides a single target name that works on both
+    # platforms via select(). On QNX CI it routes to the _qnx runner.
+    # It is marked target_compatible_with QNX so it does not interfere with
+    # Linux coverage collection (the _linux target handles that).
     _forwarding_test(
         name = name,
         actual = select({
@@ -123,6 +133,7 @@ def cc_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
             "//conditions:default": [],
         }),
         tags = tags + ["unit"],
+        target_compatible_with = ["@platforms//os:qnx"],
         visibility = kwargs["visibility"],
     )
 
@@ -137,7 +148,8 @@ def rust_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
         name = name_linux,
         size = "small",
         timeout = "short",
-        tags = tags + ["manual"],
+        tags = tags + ["unit"],
+        target_compatible_with = ["@platforms//os:linux"],
         **kwargs
     )
 
@@ -162,5 +174,6 @@ def rust_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
             "//conditions:default": [],
         }),
         tags = tags + ["unit"],
+        target_compatible_with = ["@platforms//os:qnx"],
         visibility = kwargs["visibility"],
     )
