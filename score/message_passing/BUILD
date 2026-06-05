@@ -35,12 +35,12 @@ py_unittest_qnx_test(
 test_suite(
     name = "unit_tests",
     tests = [
-        ":client_connection_test",
-        ":qnx_resource_path_test",
-        ":timed_command_queue_test",
-        ":unix_domain_test",
-        "@score_communication//score/message_passing/log:log_test",
-        "@score_communication//score/message_passing/non_allocating_future:non_allocating_future_test",
+        ":client_connection_test_linux",
+        ":qnx_resource_path_test_linux",
+        ":timed_command_queue_test_linux",
+        ":unix_domain_test_linux",
+        "@score_communication//score/message_passing/log:log_test_linux",
+        "@score_communication//score/message_passing/non_allocating_future:non_allocating_future_test_linux",
     ],
     visibility = [
         "//score/message_passing:__pkg__",
