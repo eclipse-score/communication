@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_unsubscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
@@ -52,12 +53,20 @@ class MessagePassingServiceMock : public IMessagePassingService
                 RegisterOnServiceMethodSubscribedHandler,
                 (QualityType, SkeletonInstanceIdentifier, ServiceMethodSubscribedHandler, AllowedConsumerUids),
                 (override));
+    MOCK_METHOD(Result<MethodUnsubscriptionRegistrationGuard>,
+                RegisterOnServiceMethodUnsubscribedHandler,
+                (QualityType, SkeletonInstanceIdentifier, ServiceMethodUnsubscribedHandler),
+                (override));
     MOCK_METHOD(Result<MethodSubscriptionRegistrationGuard>,
                 RegisterMethodCallHandler,
                 (QualityType, ProxyMethodInstanceIdentifier, MethodCallHandler, uid_t),
                 (override));
     MOCK_METHOD(Result<void>,
                 SubscribeServiceMethod,
+                (QualityType, const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&, pid_t),
+                (override));
+    MOCK_METHOD(ResultBlank,
+                UnsubscribeServiceMethod,
                 (QualityType, const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&, pid_t),
                 (override));
     MOCK_METHOD(Result<void>,
@@ -67,6 +76,10 @@ class MessagePassingServiceMock : public IMessagePassingService
 
     MOCK_METHOD(void,
                 UnregisterOnServiceMethodSubscribedHandler,
+                (const QualityType asil_level, SkeletonInstanceIdentifier skeleton_instance_identifier),
+                (override));
+    MOCK_METHOD(void,
+                UnregisterOnServiceMethodUnsubscribedHandler,
                 (const QualityType asil_level, SkeletonInstanceIdentifier skeleton_instance_identifier),
                 (override));
     MOCK_METHOD(void,
