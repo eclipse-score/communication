@@ -48,39 +48,36 @@ jobs:
         with:
           level: 4
 
-      # TODO(follow-up PR): align setup-bazel version with the other workflows.
       - name: Setup Bazel with shared caching
-        uses: bazel-contrib/setup-bazel@0.18.0
+        uses: castler/setup-bazel@cache-optimized
         with:
           bazelisk-cache: true
-          disk-cache: "coverage_report"
+          disk-cache: ${{ github.workflow }}
           repository-cache: true
-          cache-save: true
+          cache-optimized: true
+          cache-save: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
+      - name: Install Perl dependencies for genhtml
+        run: sudo apt-get install -y --no-install-recommends lcov
+
       - name: Run Unit Test with Coverage for C++
         id: run-coverage
-        continue-on-error: true
         run: |
           bazel coverage //... --build_tests_only
 
-      # TODO(follow-up PR): merge generate_coverage_html and create_coverage_archive
-      # into a single sh_binary with a --archive flag.
-      - name: Generate HTML Coverage Report
+      - name: Generate HTML Coverage Report and Create Archive
         if: steps.run-coverage.outcome == 'success'
         run: |
-          bazel run //quality/coverage:generate_coverage_html -- cpp_coverage
-
-      - name: Create archive of test report
-        if: steps.run-coverage.outcome == 'success'
-        run: |
-          bash quality/scripts/create_coverage_archive.sh \
-            "${{ github.event.repository.name }}_coverage_report_${{ github.sha }}"
+          bazel run //quality/coverage:generate_coverage_html -- \
+            --archive "${{ github.event.repository.name }}_coverage_report_${{ github.sha }}" \
+            cpp_coverage
 
       - name: Set conclusion
         id: set-conclusion
+        if: always()
         run: |
           if [[ "${{ steps.run-coverage.outcome }}" == "success" ]]; then
             echo "conclusion=success" >> $GITHUB_OUTPUT

@@ -44,11 +44,33 @@ else
 fi
 
 if [[ -n "${RUN_ID}" ]]; then
-    gh run download "${RUN_ID}" \
-        --name nightly-quality-reports \
-        --dir "${PUBLISH_DIR}" \
-        --repo "${REPOSITORY}" \
-    || echo "Quality artifact not available for run ${RUN_ID} — skipping."
+    # Download to a temp dir and then copy the contents to the destination.
+    TEMP_DIR=$(mktemp -d)
+    if gh run download "${RUN_ID}" \
+            --name nightly-quality-reports \
+            --dir "${TEMP_DIR}" \
+            --repo "${REPOSITORY}"; then
+        ARTIFACT_DIR="${TEMP_DIR}/nightly-quality-reports"
+        # gh CLI typically extracts into ARTIFACT_DIR, but some versions place
+        # files directly in TEMP_DIR.  Also, ARTIFACT_DIR may be created but
+        # left empty if the artifact contained no files — cp -r "dir/." fails
+        # in that case.  Use whichever location actually has content.
+        if [[ -d "${ARTIFACT_DIR}" ]] && \
+                [[ -n "$(find "${ARTIFACT_DIR}" -maxdepth 1 -mindepth 1 2>/dev/null)" ]]; then
+            SRC_DIR="${ARTIFACT_DIR}"
+        else
+            SRC_DIR="${TEMP_DIR}"
+        fi
+        if [[ -n "$(find "${SRC_DIR}" -maxdepth 1 -mindepth 1 2>/dev/null)" ]]; then
+            cp -r "${SRC_DIR}/." "${PUBLISH_DIR}/"
+            echo "Quality reports bundled into ${PUBLISH_DIR}/"
+        else
+            echo "::warning::Quality artifact downloaded but no files found — skipping."
+        fi
+    else
+        echo "Quality artifact not available for run ${RUN_ID} — skipping."
+    fi
+    rm -rf "${TEMP_DIR}"
 else
     echo "No successful nightly run found — quality reports not included."
 fi

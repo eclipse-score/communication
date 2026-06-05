@@ -69,7 +69,7 @@ constexpr auto kMethodsKey = "methods"sv;
 constexpr auto kMethodNameKey = "methodName"sv;
 constexpr auto kMethodIdKey = "methodId"sv;
 constexpr auto kMethodQueueSizeKey = "queueSize"sv;
-constexpr auto kMethodEnabledKey = "enabled"sv;
+constexpr auto kMethodEnabledKey = "use"sv;
 constexpr auto kMethodEnabledDefaultValue = true;
 constexpr auto kEventNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;
 constexpr auto kEventMaxSamplesKey = "maxSamples"sv;
@@ -81,6 +81,8 @@ constexpr auto kFieldNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;
 constexpr auto kFieldMaxSubscribersKey = "maxSubscribers"sv;
 constexpr auto kFieldEnforceMaxSamplesKey = "enforceMaxSamples"sv;
 constexpr auto kFieldMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;
+constexpr auto kFieldUseGetIfAvailableKey = "useGetIfAvailable"sv;
+constexpr auto kFieldUseSetIfAvailableKey = "useSetIfAvailable"sv;
 constexpr auto kLolaShmSizeKey = "shm-size"sv;
 constexpr auto kLolaControlAsilBShmSizeKey = "control-asil-b-shm-size"sv;
 constexpr auto kLolaControlQmShmSizeKey = "control-qm-shm-size"sv;
@@ -481,22 +483,27 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
         auto field_name_value = deployment_parser.GetName(field_name_it);
 
         const auto number_of_sample_slots =
-            deployment_parser.RetrieveJsonElement<LolaFieldInstanceDeployment::SampleSlotCountType>(
+            deployment_parser.RetrieveJsonElement<LolaEventInstanceDeployment::SampleSlotCountType>(
                 kFieldNumberOfSampleSlotsKey);
         const auto max_subscribers =
-            deployment_parser.RetrieveJsonElement<LolaFieldInstanceDeployment::SubscriberCountType>(
+            deployment_parser.RetrieveJsonElement<LolaEventInstanceDeployment::SubscriberCountType>(
                 kFieldMaxSubscribersKey);
         const auto enforce_max_samples =
             deployment_parser.RetrieveJsonElement<bool>(kFieldEnforceMaxSamplesKey).value_or(true);
         const auto number_of_tracing_slots =
             deployment_parser.RetrieveJsonElement<NumberOfIpcTracingSlots_t>(kNumberOfIpcTracingSlotsKey)
                 .value_or(kNumberOfIpcTracingSlotsDefault);
+        const auto use_get_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseGetIfAvailableKey);
+        const auto use_set_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey);
 
-        auto field_deployment = LolaFieldInstanceDeployment(number_of_sample_slots,
-                                                            max_subscribers,
-                                                            kMaxConcurrentAllocationsDefault,
-                                                            enforce_max_samples,
-                                                            number_of_tracing_slots);
+        auto field_deployment =
+            LolaFieldInstanceDeployment(LolaEventInstanceDeployment(number_of_sample_slots,
+                                                                    max_subscribers,
+                                                                    kMaxConcurrentAllocationsDefault,
+                                                                    enforce_max_samples,
+                                                                    number_of_tracing_slots),
+                                        use_get_if_available,
+                                        use_set_if_available);
         const auto emplace_result = service.fields_.emplace(std::piecewise_construct,
                                                             std::forward_as_tuple(std::move(field_name_value)),
                                                             std::forward_as_tuple(field_deployment));

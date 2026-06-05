@@ -329,6 +329,7 @@ apt.install(
     name = "ubuntu24_04",
     lock = "@@//quality/integration_testing/environments/ubuntu24_04_docker:ubuntu24_04.lock.json",
     manifest = "//quality/integration_testing/environments/ubuntu24_04_docker:ubuntu24_04.yaml",
+    mergedusr = True,
 )
 use_repo(apt, "ubuntu24_04")
 

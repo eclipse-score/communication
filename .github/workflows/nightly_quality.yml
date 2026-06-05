@@ -11,25 +11,27 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Workflow: Run nightly coverage job and publish results to GitHub Pages.
+# Workflow: Run nightly quality jobs and publish results to GitHub Pages.
 #
 # Runs every night at midnight UTC:
-#   - Coverage : full C++ test suite with gcov/lcov → HTML report + KPI dashboard
+#   - Coverage  : full C++ test suite with gcov/lcov → HTML report
+#   - Clang-Tidy: static analysis across all C++ targets → findings text file
 #
-# After coverage completes, a deploy-quality-reports job:
-#   1. Downloads the coverage HTML artifact
-#   2. Runs `bazel run //quality/dashboard:generate_dashboard` to produce the coverage KPI index page
+# After both jobs complete, deploy-quality-reports:
+#   1. Downloads the coverage HTML artifact and the clang-tidy findings artifact
+#   2. Runs `bazel run //quality/dashboard:generate_dashboard` to produce the KPI dashboard
 #   3. Uploads everything as nightly-quality-reports artifact for docs.yml to deploy
 #
 # Deployed URL structure:
-#   https://eclipse-score.github.io/communication/latest/quality/index.html          ← dashboard
-#   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html ← lcov HTML
+#   https://eclipse-score.github.io/communication/latest/quality/index.html               ← dashboard
+#   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html      ← lcov HTML
+#   https://eclipse-score.github.io/communication/latest/quality/clang_tidy_findings.txt  ← raw findings
 
 name: Nightly Quality Jobs
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # every day at midnight UTC
+    - cron: "0 0 * * *" # every day at midnight UTC
   workflow_dispatch:
 
 permissions:
@@ -50,10 +52,18 @@ jobs:
       contents: read
 
   # --------------------------------------------------------------------
+  # Quality job 2: Clang-Tidy
+  # --------------------------------------------------------------------
+  run-clang-tidy:
+    uses: ./.github/workflows/clang_tidy.yml
+    permissions:
+      contents: read
+
+  # --------------------------------------------------------------------
   # Collect results, build the dashboard, upload artifact for docs.yml
   # --------------------------------------------------------------------
   deploy-quality-reports:
-    needs: [run-coverage]
+    needs: [run-coverage, run-clang-tidy]
     # Always run even if individual quality jobs fail, so the dashboard
     # still reflects which jobs passed and which failed.
     if: always()
@@ -66,71 +76,79 @@ jobs:
         uses: actions/checkout@v6.0.2
 
       - name: Setup Bazel with shared caching
-        uses: bazel-contrib/setup-bazel@0.18.0
+        uses: castler/setup-bazel@cache-optimized
         with:
           bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
           repository-cache: true
-          cache-save: true
+          cache-optimized: true
+          cache-save: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Allow linux-sandbox
+        id: setup
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
       # ------------------------------------------------------------------
-      # Determine job conclusions (needs.*.result = success|failure|skipped|cancelled)
-      # ------------------------------------------------------------------
-      - name: Resolve job conclusions
-        id: conclusions
-        run: |
-          map_conclusion() {
-            case "$1" in
-              success)   echo "success" ;;
-              failure)   echo "failure" ;;
-              *)         echo "skipped" ;;
-            esac
-          }
-          echo "coverage=$(map_conclusion '${{ needs.run-coverage.result }}')" >> $GITHUB_OUTPUT
-
-      # ------------------------------------------------------------------
-      # Download artifacts (only if the upstream job succeeded)
+      # Download Coverage artifacts (only if the upstream job succeeded)
       # ------------------------------------------------------------------
       - name: Download coverage artifact
-        if: needs.run-coverage.result == 'success'
+        id: download-coverage
+        if: needs.run-coverage.outputs.conclusion == 'success'
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.run-coverage.outputs.artifact-name }}
           path: /tmp/coverage_zip
 
+      # ------------------------------------------------------------------
+      # Extract coverage artifact to a known location for the dashboard generator
+      # ------------------------------------------------------------------
       - name: Extract coverage HTML report
-        if: needs.run-coverage.result == 'success'
+        if: needs.run-coverage.outputs.conclusion == 'success' && steps.download-coverage.outcome == 'success'
         run: |
           bash quality/scripts/extract_coverage_artifact.sh \
             /tmp/coverage_zip \
             "${GITHUB_WORKSPACE}/_quality/coverage"
 
       # ------------------------------------------------------------------
+      # Download clang-tidy findings artifact
+      # ------------------------------------------------------------------
+      - name: Download clang-tidy findings
+        if: needs.run-clang-tidy.outputs.conclusion == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-clang-tidy.outputs.artifact-name }}
+          path: /tmp/clang_tidy
+
+      - name: Copy clang-tidy findings into quality output
+        if: needs.run-clang-tidy.outputs.conclusion == 'success'
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/_quality"
+          cp /tmp/clang_tidy/clang_tidy_findings.txt \
+             "${GITHUB_WORKSPACE}/_quality/clang_tidy_findings.txt"
+
+      # ------------------------------------------------------------------
       # Generate coverage KPI dashboard via generate_dashboard py_binary
       # ------------------------------------------------------------------
-
       - name: Generate quality dashboard
-        if: always() && steps.conclusions.outcome == 'success'
+        if: always() && steps.setup.outcome == 'success'
         run: |
-          # The LCOV .dat file is inside the extracted coverage zip at a known
-          # path; pass it unconditionally — generate_dashboard handles the
-          # case where the file is absent (returns empty coverage data).
+          # Pass LCOV data and clang-tidy findings, generate_dashboard handles
+          # absent files gracefully (shows N/A for that metric).
           bazel run //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
-            --html     _quality/index.html \
+            --clang-tidy /tmp/clang_tidy/clang_tidy_findings.txt \
+            --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
             --github-summary
 
           echo "Dashboard generated. Contents of _quality/:"
-          find _quality -type f | sort
+          find "${GITHUB_WORKSPACE}/_quality" -type f | sort
 
       # ------------------------------------------------------------------
       # Upload all quality reports as a single artifact for docs.yml to
       # pick up and deploy as part of the unified Sphinx site.
       # ------------------------------------------------------------------
       - name: Upload quality reports artifact
-        if: always() && steps.conclusions.outcome == 'success'
+        if: always() && steps.setup.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: nightly-quality-reports
@@ -142,4 +160,4 @@ jobs:
         run: |
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
-          echo "::notice::Quality reports will be published at https://${OWNER}.github.io/${REPO}/latest/quality/index.html once docs.yml completes."
+          echo "::notice::Quality reports will be published at https://${OWNER}.github.io/${REPO}/latest/quality/index.html once deploy_docs.yml completes."

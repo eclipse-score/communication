@@ -387,6 +387,18 @@
                                                 "default": 0,
                                                 "minimum": 0,
                                                 "maximum": 255
+                                            },
+                                            "useGetIfAvailable": {
+                                                "type": "boolean",
+                                                "title": "Use Field Getter If Available",
+                                                "description": "When true, the getter for this field will be used if the service type declares one in the C++ service interface. Applicable for proxy/consumer side.",
+                                                "default": false
+                                            },
+                                            "useSetIfAvailable": {
+                                                "type": "boolean",
+                                                "title": "Use Field Setter If Available",
+                                                "description": "When true, the setter for this field will be used if the service type declares one in the C++ service interface. Applicable for proxy/consumer side.",
+                                                "default": false
                                             }
                                         }
                                     }
@@ -412,7 +424,7 @@
                                                 "minimum": 1,
                                                 "maximum": 255
                                             },
-                                            "enabled": {
+                                            "use": {
                                                 "type": "boolean",
                                                 "description": "Optional flag to disable/enable method. Default value is true, which means the method is enabled. This flag is only relevant on the proxy side and is ignored if specified in skeleton configuration.",
                                                 "default": true

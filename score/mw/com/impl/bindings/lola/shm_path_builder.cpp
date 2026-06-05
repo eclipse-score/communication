@@ -30,6 +30,7 @@ constexpr auto kDataChannelPrefix = "lola-data-";
 constexpr auto kControlChannelPrefix = "lola-ctl-";
 constexpr auto kMethodChannelPrefix = "lola-methods-";
 constexpr auto kAsilBControlChannelSuffix = "-b";
+constexpr auto kInterVmSharedShmPrefix = "/intervm-shared-shmem/";
 
 /// Emit file name of the control file to an ostream
 ///
@@ -110,7 +111,8 @@ void EmitMethodFileName(std::ostream& out,
 
 std::string ShmPathBuilder::GetDataChannelShmName(const LolaServiceInstanceId::InstanceId instance_id) const noexcept
 {
-    return EmitWithPrefix('/', [this, instance_id](auto& out) {
+    const auto prefix = inter_vm_support_ ? kInterVmSharedShmPrefix : "/";
+    return EmitWithPrefix(prefix, [this, instance_id](auto& out) {
         EmitDataFileName(out, service_id_, instance_id);
     });
 }
@@ -118,7 +120,8 @@ std::string ShmPathBuilder::GetDataChannelShmName(const LolaServiceInstanceId::I
 std::string ShmPathBuilder::GetControlChannelShmName(const LolaServiceInstanceId::InstanceId instance_id,
                                                      const QualityType channel_type) const noexcept
 {
-    return EmitWithPrefix('/', [this, channel_type, instance_id](auto& out) noexcept {
+    const auto prefix = inter_vm_support_ ? kInterVmSharedShmPrefix : "/";
+    return EmitWithPrefix(prefix, [this, channel_type, instance_id](auto& out) noexcept {
         EmitControlFileName(out, channel_type, service_id_, instance_id);
     });
 }
@@ -127,7 +130,8 @@ std::string ShmPathBuilder::GetMethodChannelShmName(
     const LolaServiceInstanceId::InstanceId instance_id,
     const ProxyInstanceIdentifier& proxy_instance_identifier) const noexcept
 {
-    return EmitWithPrefix('/', [this, instance_id, proxy_instance_identifier](auto& out) noexcept {
+    const auto prefix = inter_vm_support_ ? kInterVmSharedShmPrefix : "/";
+    return EmitWithPrefix(prefix, [this, instance_id, proxy_instance_identifier](auto& out) noexcept {
         EmitMethodFileName(out, service_id_, instance_id, proxy_instance_identifier);
     });
 }

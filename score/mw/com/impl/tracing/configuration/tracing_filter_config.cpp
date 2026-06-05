@@ -228,15 +228,46 @@ std::size_t FindNumberOfTracingSlots(
                 std::terminate();
             }
 
-            const auto& service_instance_map = [service_element_type, &lola_service_instance_deployment]() {
-                if (service_element_type == ServiceElementType::EVENT)
+            const std::string service_element_name{service_element.service_element_name};
+
+            const auto get_number_of_tracing_slots =
+                [](const auto& service_elements_map,
+                   const std::string& service_element_name,
+                   const ServiceElementIdentifierView service_element,
+                   const auto& get_tracing_slots) noexcept -> LolaEventInstanceDeployment::TracingSlotSizeType {
+                const auto it = service_elements_map.find(service_element_name);
+                if (it == service_elements_map.end())
                 {
-                    return lola_service_instance_deployment->events_;
+                    score::mw::log::LogFatal("lola")
+                        << "Requested service element (" << service_element << ") does not exist.";
+                    std::terminate();
                 }
-                if (service_element_type == ServiceElementType::FIELD)
-                {
-                    return lola_service_instance_deployment->fields_;
-                }
+                return get_tracing_slots(it->second);
+            };
+
+            LolaEventInstanceDeployment::TracingSlotSizeType slots_per_tracing_point{0U};
+            if (service_element_type == ServiceElementType::EVENT)
+            {
+                slots_per_tracing_point =
+                    get_number_of_tracing_slots(lola_service_instance_deployment->events_,
+                                                service_element_name,
+                                                service_element,
+                                                [](const LolaEventInstanceDeployment& e) noexcept {
+                                                    return e.GetNumberOfTracingSlots();
+                                                });
+            }
+            else if (service_element_type == ServiceElementType::FIELD)
+            {
+                slots_per_tracing_point =
+                    get_number_of_tracing_slots(lola_service_instance_deployment->fields_,
+                                                service_element_name,
+                                                service_element,
+                                                [](const LolaFieldInstanceDeployment& f) noexcept {
+                                                    return f.lola_event_instance_deployment_.GetNumberOfTracingSlots();
+                                                });
+            }
+            else
+            {
                 // LCOV_EXCL_START Defensive programming.
                 // This function is only used internally and only ever called with EVENT or FIELD ServiceElementType,
                 // thus the following lines can never be reached.
@@ -244,18 +275,7 @@ std::size_t FindNumberOfTracingSlots(
                     << "Lola: invalid service element (" << service_element_type << ") provided.";
                 std::terminate();
                 // LCOV_EXCL_STOP
-            }();
-
-            const auto service_element_name = service_element.service_element_name.data();
-            const auto service_element_name_it = service_instance_map.find(service_element_name);
-
-            if (service_element_name_it == service_instance_map.end())
-            {
-                score::mw::log::LogFatal("lola")
-                    << "Requested service element (" << service_element << ") does not exist.";
-                std::terminate();
             }
-            const auto slots_per_tracing_point = service_element_name_it->second.GetNumberOfTracingSlots();
 
             number_of_needed_traceing_slots += slots_per_tracing_point;
         }

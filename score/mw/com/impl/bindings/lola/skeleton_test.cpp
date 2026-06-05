@@ -1163,13 +1163,17 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
     }
     else
     {
-        fields_.emplace(test::kFooEventName, foo_event);
-        fields_.emplace(test::kDumbEventName, dumb_event);
+        fields_.emplace(test::kFooFieldName, foo_event);
+        fields_.emplace(test::kDumbFieldName, dumb_event);
 
         lola_field_inst_depls.push_back(
-            {test::kFooEventName, LolaFieldInstanceDeployment{number_of_slots, 10U, 1U, true, 0}});
+            {test::kFooFieldName,
+             LolaFieldInstanceDeployment{
+                 LolaEventInstanceDeployment{number_of_slots, 10U, 1U, true, 0}, false, false}});
         lola_field_inst_depls.push_back(
-            {test::kDumbEventName, LolaFieldInstanceDeployment{number_of_slots, 10U, 1U, true, 0}});
+            {test::kDumbFieldName,
+             LolaFieldInstanceDeployment{
+                 LolaEventInstanceDeployment{number_of_slots, 10U, 1U, true, 0}, false, false}});
     }
     ServiceInstanceDeployment service_instance_deployment{
         test::kFooService,

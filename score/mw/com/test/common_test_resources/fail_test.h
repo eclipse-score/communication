@@ -13,6 +13,9 @@
 #ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_FAIL_TEST_H
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_FAIL_TEST_H
 
+#include "score/result/error.h"
+
+#include <functional>
 #include <sstream>
 #include <utility>
 
@@ -21,12 +24,23 @@ namespace score::mw::com::test
 
 namespace detail
 {
+
 void FailTest(std::stringstream&& strstr);
 
 template <typename Start, typename... Tail>
 void FailTest(std::stringstream&& strstr, Start&& start, Tail&&... tail)
 {
-    strstr << std::forward<Start>(start);
+    // Since score::result::Error does not have an operator<< overload for a stringstream and no method to convert it to
+    // a string, we manually stringify it here.
+    if constexpr (std::is_same_v<std::decay_t<Start>, score::result::Error>)
+    {
+        strstr << start.Message() << " / " << start.UserMessage();
+    }
+    else
+    {
+        strstr << std::forward<Start>(start);
+    }
+
     if constexpr (sizeof...(Tail) > 0U)
     {
         FailTest(std::move(strstr), std::forward<Tail>(tail)...);
@@ -36,7 +50,24 @@ void FailTest(std::stringstream&& strstr, Start&& start, Tail&&... tail)
         FailTest(std::move(strstr));
     }
 }
+
 }  // namespace detail
+
+/// \brief RAII guard to set a test exit function that will be called when FailTest is invoked or when the guard is
+/// destroyed.
+class ExitFunctionGuard
+{
+  public:
+    using ExitFunction = std::function<void()>;
+
+    explicit ExitFunctionGuard(ExitFunction exit_function);
+    ~ExitFunctionGuard();
+
+    ExitFunctionGuard(const ExitFunctionGuard&) = delete;
+    ExitFunctionGuard& operator=(const ExitFunctionGuard&) = delete;
+    ExitFunctionGuard(ExitFunctionGuard&&) = delete;
+    ExitFunctionGuard& operator=(ExitFunctionGuard&&) = delete;
+};
 
 /// \brief Fail a test by exiting the program with EXIT_FAILURE and printing a message to stderr.
 /// \param args variadic number of arguments, each one must be streamable to a standard stringstream.
@@ -46,20 +77,6 @@ void FailTest(Args&&... args)
     std::stringstream strstr;
     strstr << "\033[1m\033[31m";
     detail::FailTest(std::move(strstr), std::forward<Args>(args)...);
-}
-
-/// \brief Fail a test if a condition is true, by exiting the program with EXIT_FAILURE and printing a message to
-/// stderr.
-/// \tparam Args variadic number of argument types, each one must be streamable to a standard stringstream.
-/// \param condition if true, the program will exit with EXIT_FAILURE and print the message created from args to stderr.
-/// \param args variadic number of arguments, each one must be streamable to a standard stringstream.
-template <typename... Args>
-void FailTestIf(bool condition, Args&&... args)
-{
-    if (condition)
-    {
-        FailTest(std::forward<Args>(args)...);
-    }
 }
 
 }  // namespace score::mw::com::test

@@ -29,7 +29,19 @@ namespace score::mw::com::impl::lola
 class ShmPathBuilder : public IShmPathBuilder
 {
   public:
-    explicit ShmPathBuilder(const std::uint16_t service_id) noexcept : IShmPathBuilder{}, service_id_{service_id} {}
+    /// \brief Constructs a ShmPathBuilder for the given service.
+    ///
+    /// \param service_id       Numeric identifier of the LoLa service.
+    /// \param inter_vm_support When \c true, the prefix \c "/intervm-shared-shmem/" is prepended
+    ///                         to all generated SHM object path names.
+    ///                         \note This is an interim solution to express the intent to have a
+    ///                         shared-memory object that supports sharing across VMs by encoding it
+    ///                         into the path name. A future solution will be based on a redesigned
+    ///                         \c lib/memory/shared API abstraction.
+    explicit ShmPathBuilder(const std::uint16_t service_id, const bool inter_vm_support = false) noexcept
+        : IShmPathBuilder{}, service_id_{service_id}, inter_vm_support_{inter_vm_support}
+    {
+    }
 
     std::string GetDataChannelShmName(const LolaServiceInstanceId::InstanceId instance_id) const noexcept override;
 
@@ -42,6 +54,7 @@ class ShmPathBuilder : public IShmPathBuilder
 
   private:
     const std::uint16_t service_id_;
+    const bool inter_vm_support_;
 };
 
 }  // namespace score::mw::com::impl::lola
