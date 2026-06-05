@@ -614,14 +614,11 @@ where
         }
     }
 
-    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
-        // Get the event guard to ensure no concurrent receive calls
-        // on the same subscriber instance. This guard is held for the lifetime of the stream.
-        let mut proxy_event_guard = self.event.get_proxy_event();
+    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {   
         // Initialize the async receive callback only once when the first receive call is made
         // We are using std::sync::Once to ensure that the callback is set only once.
         self.async_init_status.call_once(|| {
-            self.init_async_receive(&mut proxy_event_guard)
+            self.init_async_receive(&mut self.event.get_proxy_event())
                 .expect("Failed to initialize async receive callback");
         });
         // Return stream that yields samples one at a time, fetching new batches as needed.
@@ -629,7 +626,6 @@ where
         SampleStream {
             subscriber: self,
             sample_container: SampleContainer::new(self.max_num_samples),
-            event_guard: proxy_event_guard,
         }
     }
 }
@@ -734,7 +730,6 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
 struct SampleStream<'a, T: CommData + Debug> {
     subscriber: &'a SubscriberImpl<T>,
     sample_container: SampleContainer<Sample<T>>,
-    event_guard: ProxyEventManagerGuard<'a>,
 }
 
 impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
@@ -757,7 +752,10 @@ impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
         let this = self.as_mut().get_mut();
         
         let samples_received = try_receive_samples::<T>(
-            this.event_guard.deref_mut(),
+            this.subscriber
+                .event
+                .get_proxy_event()
+                .deref_mut(), // Get mutable reference to the proxy event for FFI call
             &mut this.sample_container,
             max_num_samples,
             max_num_samples,
@@ -765,7 +763,7 @@ impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
 
         match samples_received {
             Ok(_count) => {
-                match self.sample_container.pop_front() {
+                match this.sample_container.pop_front() {
                     Some(sample) => Poll::Ready(Some(Ok(sample))),
                     None => Poll::Pending,
                 }

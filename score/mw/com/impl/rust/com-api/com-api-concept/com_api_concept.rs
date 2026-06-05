@@ -943,7 +943,10 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// A stream that yields individual `Sample<'a>` items one at a time.
     ///
     /// # Errors
-    /// Returns an error if a problem occurs during sample reception.
+    /// Returns an error if a problem occurs during sample reception but the stream is still processing further samples.
+    /// If the stream encounters an error, it will yield `Err(Error)` for that sample, but will continue to yield subsequent samples as they become available.
+    /// The stream only terminates when the subscription is unsubscribed or dropped or if the stream is explicitly dropped by the user.
+    /// With this design, users can handle errors on it side and take appropriate actions.
     fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
 }
 
