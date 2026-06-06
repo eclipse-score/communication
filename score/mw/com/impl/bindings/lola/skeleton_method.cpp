@@ -28,10 +28,12 @@
 #include <score/assert.hpp>
 #include <score/span.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <optional>
 #include <utility>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -103,18 +105,12 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
     }
 
     const std::lock_guard lock{registration_guards_mutex_};
-    auto insertion_result =
-        registration_guards_.insert({proxy_method_instance_identifier.proxy_instance_identifier.application_id,
-                                     MethodHandlerCleanupPackage{proxy_pid, {}}});
-
-    insertion_result.first->second.registration_guards.push_back(std::move(registration_result).value());
-
-    /// ToDo: This check should be added back in when we go away from the intermetidate solution (issue-258913).
-    /// currently we can not make this check because we store the guards in a vector, which contains all guards for the
-    /// individual application, i.e. insertion failure is expected behaviour after the first guard is injected.
-    // SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insertion_result.second,
-    //                        "Any old registered handlers must have been unregistered (by destroying its registration "
-    //                        "guard) before registering the new one and storing its registration guard in the map!");
+    const auto insertion_result = registration_guards_.emplace(
+        proxy_method_instance_identifier, std::make_pair(proxy_pid, std::move(registration_result).value()));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        insertion_result.second,
+        "Any old registered handlers must have been unregistered (by destroying its registration "
+        "guard) before registering the new one and storing its registration guard in the map!");
 
     return {};
 }
@@ -122,9 +118,15 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
 void SkeletonMethod::OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
 {
     const std::lock_guard lock{registration_guards_mutex_};
-    const auto num_elements_erased =
-        registration_guards_.erase(proxy_method_instance_identifier.proxy_instance_identifier.application_id);
+    const auto num_elements_erased = registration_guards_.erase(proxy_method_instance_identifier);
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(num_elements_erased != 0U);
+}
+
+void SkeletonMethod::OnProxyMethodUnsubscribeFinished(
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
+{
+    const std::lock_guard lock{registration_guards_mutex_};
+    registration_guards_.erase(proxy_method_instance_identifier);
 }
 
 void SkeletonMethod::UnregisterMethodCallHandlers()
@@ -151,17 +153,33 @@ void SkeletonMethod::Call(const std::optional<score::cpp::span<std::byte>> in_ar
 
 void SkeletonMethod::CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid)
 {
-
     const std::lock_guard lock{registration_guards_mutex_};
-    auto found_handler_cleanup_package_it = registration_guards_.find(application_id);
-    if (found_handler_cleanup_package_it == registration_guards_.end())
+    const bool already_registered = std::any_of(
+        registration_guards_.cbegin(), registration_guards_.cend(), [&application_id, proxy_pid](const auto& entry) {
+            return entry.first.proxy_instance_identifier.application_id == application_id &&
+                   entry.second.first == proxy_pid;
+        });
+
+    if (already_registered)
     {
         return;
-    };
+    }
 
-    if (found_handler_cleanup_package_it->second.proxy_pid != proxy_pid)
+    // Linear scan to erase all stale guards from a crashed application (same application_id, different pid).
+    // If benchmarking identifies this as a bottleneck, the data structure can be revisited.
+    // NOTE: this can be replaced with erase_if in c++20
+    std::vector<ProxyMethodInstanceIdentifier> keys_to_erase;
+    for (const auto& entry : registration_guards_)
     {
-        registration_guards_.erase(application_id);
+        if (entry.first.proxy_instance_identifier.application_id == application_id)
+        {
+            keys_to_erase.push_back(entry.first);
+        }
+    }
+
+    for (const auto& key : keys_to_erase)
+    {
+        registration_guards_.erase(key);
     }
 }
 

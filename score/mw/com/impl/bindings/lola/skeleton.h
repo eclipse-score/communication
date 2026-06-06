@@ -18,14 +18,17 @@
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/i_partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_unsubscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_resource_map.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
@@ -175,6 +178,13 @@ class Skeleton final : public SkeletonBinding
                                             const QualityType asil_level,
                                             const pid_t proxy_pid);
 
+    ResultBlank OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier);
+
+    Result<std::pair<MethodSubscriptionRegistrationGuard, MethodUnsubscriptionRegistrationGuard>>
+    RegisterMethodHandlers(const QualityType asil_level,
+                           const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                           IMessagePassingService& lola_message_passing);
+
     using MethodIdsToUnsubscribe = std::vector<UniqueMethodIdentifier>;
 
     std::pair<score::Result<void>, MethodIdsToUnsubscribe> SubscribeMethods(
@@ -224,6 +234,13 @@ class Skeleton final : public SkeletonBinding
     /// Skeleton::PrepareStopOffer()
     std::optional<MethodSubscriptionRegistrationGuard> method_subscription_registration_guard_qm_;
     std::optional<MethodSubscriptionRegistrationGuard> method_subscription_registration_guard_asil_b_;
+
+    /// \brief RAII guard objects which will unregister a ServiceMethodUnsubscribedHandler on destruction
+    ///
+    /// Each guard corresponds to the method unsubscription handler which was registered in Skeleton::PrepareOffer().
+    /// The guard objects will be destroyed in Skeleton::PrepareStopOffer().
+    std::optional<MethodUnsubscriptionRegistrationGuard> method_unsubscription_registration_guard_qm_;
+    std::optional<MethodUnsubscriptionRegistrationGuard> method_unsubscription_registration_guard_asil_b_;
 
     bool was_old_shm_region_reopened_;
 
