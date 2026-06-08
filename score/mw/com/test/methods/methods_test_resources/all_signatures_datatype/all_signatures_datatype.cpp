@@ -10,14 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_TEST_METHODS_BASIC_ACCEPTANCE_TEST_CONSUMER_H
-#define SCORE_MW_COM_TEST_METHODS_BASIC_ACCEPTANCE_TEST_CONSUMER_H
-
-namespace score::mw::com::test
-{
-
-void run_consumer();
-
-}  // namespace score::mw::com::test
-
-#endif  // SCORE_MW_COM_TEST_METHODS_BASIC_ACCEPTANCE_TEST_CONSUMER_H
+#include "score/mw/com/test/methods/methods_test_resources/all_signatures_datatype/all_signatures_datatype.h"
