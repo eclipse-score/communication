@@ -664,10 +664,10 @@ where
         }
     }
 
-    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {   
+    fn to_stream<'a>(&'a mut self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         // Initialize the async receive callback only once when the first receive call is made
-        // We are using std::sync::Once to ensure that the callback is set only once.
-        self.async_init_status.call_once(|| {
+        // We are using std::sync::OnceLock to ensure that the callback is set only once.
+        self.async_init_status.get_or_init(|| {
             self.init_async_receive(&mut self.event.get_proxy_event())
                 .expect("Failed to initialize async receive callback");
         });
@@ -782,13 +782,13 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future
 /// It also holds an exclusive `ProxyEventManagerGuard` for the lifetime of the stream to prevent
 /// concurrent receives on the same subscriber instance.
 /// On each poll, it first yields any buffered samples before attempting to receive more from the FFI callback.
-struct SampleStream<'a, T: CommData + Debug> {
-    subscriber: &'a SubscriberImpl<T>,
-    sample_container: SampleContainer<Sample<T>>,
+struct SampleStream<'a, T: CommData + Debug, B: FFIBridge> {
+    subscriber: &'a SubscriberImpl<T, B>,
+    sample_container: SampleContainer<Sample<T, B>>,
 }
 
-impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
-    type Item = Result<Sample<T>>;
+impl<'a, T: CommData + Debug, B: FFIBridge> Stream for SampleStream<'a, T, B> {
+    type Item = Result<Sample<T, B>>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // Yield any buffered samples from a previous batch fetch first.
@@ -802,27 +802,23 @@ impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
         self.subscriber.waker_storage.register(cx.waker());
         let max_num_samples = self.subscriber.max_num_samples;
 
-        // get a mutable reference of pinned self, with this 
+        // get a mutable reference of pinned self, with this
         // we can avoid borrow checker issue for self in try_receive_samples function call
         let this = self.as_mut().get_mut();
-        
-        let samples_received = try_receive_samples::<T>(
-            this.subscriber
-                .event
-                .get_proxy_event()
-                .deref_mut(), // Get mutable reference to the proxy event for FFI call
+
+        let samples_received = try_receive_samples::<T, B>(
+            &this.subscriber.instance_info.bridge,
+            this.subscriber.event.get_proxy_event().deref_mut(), // Get mutable reference to the proxy event for FFI call
             &mut this.sample_container,
             max_num_samples,
             max_num_samples,
         );
 
         match samples_received {
-            Ok(_count) => {
-                match this.sample_container.pop_front() {
-                    Some(sample) => Poll::Ready(Some(Ok(sample))),
-                    None => Poll::Pending,
-                }
-            }
+            Ok(_count) => match this.sample_container.pop_front() {
+                Some(sample) => Poll::Ready(Some(Ok(sample))),
+                None => Poll::Pending,
+            },
             Err(e) => Poll::Ready(Some(Err(e))),
         }
     }
