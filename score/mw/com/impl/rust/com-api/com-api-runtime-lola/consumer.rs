@@ -1219,6 +1219,7 @@ mod test {
 
     use super::*;
     use bridge_ffi_mock::{MockFFIBridge, SharedMockBridge};
+    use std::sync::Mutex;
 
     #[derive(Debug)]
     #[repr(C)]
@@ -1268,15 +1269,49 @@ mod test {
     #[test]
     fn test_subscribe_event() {
         let mut mock = MockFFIBridge::new();
+        // we need Arc here because expect closures are take the ownership of the variables,
+        // and we need to share the state between multiple expectations.
+        // vec is required to store multiple proxies/events and simulate multiple calls to create_proxy/subscribe_to_event/get_event_from_proxy/unsubscribe_to_event/destroy_proxy.
+        // also cleanup the created proxies/events by removing them from the vec when destroy/unsubscribe is called, and assert the pointer passed in is valid by checking if it exists in the vec.
+        let proxy_vec = Arc::new(Mutex::new(Vec::new()));
+        let event_vec = Arc::new(Mutex::new(Vec::new()));
 
         // Set up all expectations - all clones of SharedMockBridge will share these
+        let proxy = proxy_vec.clone();
+        mock.expect_create_proxy().returning(move |_, _| {
+            let mut proxy = proxy.lock().expect("not able to acquire lock on proxy_vec");
+            proxy.push(Box::<ProxyBase>::default());
+            // Push first, then take the pointer from the last element no borrow conflict.
+            proxy.last_mut().unwrap().as_mut() as *mut ProxyBase
+        });
         mock.expect_subscribe_to_event().returning(|_, _| true);
+        let event = event_vec.clone();
         mock.expect_get_event_from_proxy()
-            .returning(|_, _, _| Box::into_raw(Box::default()));
-        mock.expect_unsubscribe_to_event().returning(|_| ());
-        mock.expect_destroy_proxy().returning(|_| ());
-        mock.expect_create_proxy()
-            .returning(|_, _| Box::into_raw(Box::default()));
+            .returning(move |_, _, _| {
+                let mut event = event.lock().expect("not able to acquire lock on event_vec");
+                event.push(Box::<ProxyEventBase>::default());
+                // Push first, then take the pointer from the last element to avoid borrow conflict.
+                event.last_mut().unwrap().as_mut() as *mut ProxyEventBase
+            });
+        let event = event_vec.clone();
+        mock.expect_unsubscribe_to_event().returning(move |ptr| {
+            let mut event = event.lock().expect("not able to acquire lock on event_vec");
+            let pos = event
+                .iter_mut()
+                .position(|b| b.as_mut() as *mut ProxyEventBase == ptr)
+                .expect("unsubscribe_to_event called with unknown pointer");
+            event.remove(pos);
+        });
+
+        let proxy = proxy_vec.clone();
+        mock.expect_destroy_proxy().returning(move |ptr| {
+            let mut proxy = proxy.lock().expect("not able to acquire lock on proxy_vec");
+            let pos = proxy
+                .iter_mut()
+                .position(|b| b.as_mut() as *mut ProxyBase == ptr)
+                .expect("destroy_proxy called with unknown pointer");
+            proxy.remove(pos);
+        });
         // Create a single shared mock with all necessary expectations
         let bridge = SharedMockBridge::new(mock);
 
