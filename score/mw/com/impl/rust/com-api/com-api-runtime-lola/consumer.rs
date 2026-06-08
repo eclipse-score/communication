@@ -1332,19 +1332,29 @@ mod test {
         let mut mock = MockFFIBridge::new();
 
         // Set up all expectations - all clones of SharedMockBridge will share these
-        mock.expect_subscribe_to_event().returning(|_, _| true);
+        mock.expect_create_proxy()
+            .returning(|_, _| Box::into_raw(Box::default()));
         mock.expect_get_event_from_proxy()
             .returning(|_, _, _| Box::into_raw(Box::default()));
+        mock.expect_subscribe_to_event().returning(|_, _| true);
         mock.expect_get_samples_from_event()
             .returning(|_, _, _, _| 1);
         mock.expect_set_event_receive_handler()
             .returning(|_, _, _| true);
-        mock.expect_unsubscribe_to_event().returning(|_| ());
         mock.expect_clear_event_receive_handler()
             .returning(|_, _| ());
-        mock.expect_destroy_proxy().returning(|_| ());
-        mock.expect_create_proxy()
-            .returning(|_, _| Box::into_raw(Box::default()));
+        mock.expect_unsubscribe_to_event().returning(|event| {
+            // SAFETY: the event pointer is valid because it was created by the mock's get_event_from_proxy expectation
+            unsafe {
+                drop(Box::from_raw(event));
+            }
+        });
+        mock.expect_destroy_proxy().returning(|proxy| {
+            // SAFETY: the proxy pointer is valid because it was created by the mock's create_proxy expectation
+            unsafe {
+                drop(Box::from_raw(proxy));
+            }
+        });
         // Create a single shared mock with all necessary expectations
         let bridge = SharedMockBridge::new(mock);
 

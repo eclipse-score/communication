@@ -33,7 +33,7 @@ use crate::Debug;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
-use std::ptr::NonNull;
+use core::ptr::NonNull;
 use std::sync::Arc;
 
 use com_api_concept::{
@@ -507,6 +507,7 @@ mod test {
     use com_api_concept::Publisher as _;
     use com_api_concept::SampleMaybeUninit as _;
     use com_api_concept::SampleMut as _;
+    use std::sync::Mutex;
 
     #[derive(Debug)]
     #[repr(C)]
@@ -545,11 +546,28 @@ mod test {
     #[test]
     fn test_provider_info_offer_service() {
         let mut mock = MockFFIBridge::new();
-        mock.expect_create_skeleton()
-            .returning(|_, _| Box::into_raw(Box::default()));
+        let skeleton_vec = Arc::new(Mutex::new(Vec::new()));
+        let skeleton_vec_clone = skeleton_vec.clone();
+        mock.expect_create_skeleton().returning(move |_, _| {
+            let mut skeleton = skeleton_vec_clone
+                .lock()
+                .expect("not able to acquire lock on skeleton_vec");
+            skeleton.push(Box::<SkeletonBase>::default());
+            skeleton.last_mut().unwrap().as_mut() as *mut SkeletonBase
+        });
         mock.expect_skeleton_offer_service().returning(|_| true);
         mock.expect_skeleton_stop_offer_service().returning(|_| ());
-        mock.expect_destroy_skeleton().returning(|_| ());
+        let skeleton = skeleton_vec.clone();
+        mock.expect_destroy_skeleton().returning(move |ptr| {
+            let mut skeleton = skeleton
+                .lock()
+                .expect("not able to acquire lock on skeleton_vec");
+            let pos = skeleton
+                .iter_mut()
+                .position(|s| s.as_mut() as *mut SkeletonBase == ptr)
+                .expect("destroyed skeleton handle should exist in skeleton_vec");
+            skeleton.remove(pos);
+        });
         let bridge = SharedMockBridge::new(mock);
         let provider_info = make_provider_info("TestInterface", &bridge);
         assert!(
