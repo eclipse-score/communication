@@ -19,9 +19,79 @@ import ScoreReq
 // Integration level requirements derived from Assumed System Requirements
 ///////////////////////////////
 
-ScoreReq.FeatReq FEAT_MP_001 {
+ScoreReq.FeatReq ServerInterface {
     description = "The message passing component shall provide a server interface that registers connection handlers and processes incoming requests."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.ASR_MP_001@1]
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
+    version = 1
+}
+
+ScoreReq.FeatReq OSIndependentAPI {
+    description = "The system shall provide an OS-independent API for OS-native IPC mechanisms."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
+    version = 1
+}
+
+ScoreReq.FeatReq SafetyCertifiedTransportMechanism {
+    description = "The implementation under QNX shall use a safety-certified transport mechanism."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
+    version = 1
+}
+
+ScoreReq.FeatReq PointToPointConnections {
+    description = "The system shall support only point-to-point (1:1) connections between communication endpoints. N:M connections are explicitly excluded."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
+    version = 1
+}
+
+ScoreReq.FeatReq SmallDataLowLatencyCommunication {
+    description = "The system shall be optimized for the usage of small data and enable low-latency inter-process communication between dedicated endpoints."
+    safety = ScoreReq.Asil.QM
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
+    version = 1
+}
+
+ScoreReq.FeatReq SynchronousUnidirectionalCommunication {
+    description = "The communication shall support synchronous unidirectional message sending on a given connection. Where the send call blocks until the message has been transferred to the receiving side and a suitable handler has been identified."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
+    version = 1
+}
+
+ScoreReq.FeatReq SynchronousBidirectionalCommunication {
+    description = "The communication shall support synchronous bidirectional request-response communication on a given connection. Where the send call blocks until a reply from the receiver has been received (SendWaitReply)."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
+    version = 1
+}
+
+ScoreReq.FeatReq AsynchronousUnidirectionalCommunication {
+    description = "The communication shall support asynchronous unidirectional message sending, where the send call returns after the local message passing layer has accepted the message. No guarantee is provided that the message is delivered to or processed by the receiver."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
+    version = 1
+}
+
+ScoreReq.FeatReq FriendlyToSingletonFreeImplementations {
+    description = "The Message Passing library design shall not use any singletons. Since resource management and life-cycle oft the singleton are hard to track."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
+    version = 1
+}
+
+ScoreReq.FeatReq AllowsResourceMockInjection {
+    description = "The Message Passing library design shall allow bounded monotonic memory allocation."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
+    version = 1
+}
+
+ScoreReq.FeatReq AllowsResourceMockInjectionForTesting {
+    description = "The Message Passing library design shall allow resource mock injection for testing."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.SystemMessagingProtocol@1]
     version = 1
 }
