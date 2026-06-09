@@ -58,12 +58,7 @@ int run_consumer()
 
     // Step 1. Find service and create proxy
     std::cout << "\nConsumer: Step 1" << std::endl;
-    if (!consumer.CreateProxy(kInstanceSpecifier))
-    {
-        std::cerr << "Methods signature_variations consumer failed: CreateProxy" << std::endl;
-        process_synchronizer_result->Notify();
-        return EXIT_FAILURE;
-    }
+    consumer.CreateProxy(kInstanceSpecifier, "signature_variations");
 
     // Step 2. Call method with InArgs and Return with copy
     std::cout << "\nConsumer: Step 2" << std::endl;

@@ -121,7 +121,6 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     /// of this lock-free optimisation.
     score::cpp::optional<SlotCollector>& GetSlotCollectorLockFree() noexcept;
     const score::cpp::optional<SlotCollector>& GetSlotCollectorLockFree() const noexcept;
-    score::cpp::optional<TransactionLogIndex> GetTransactionLogIndex() const noexcept;
     [[nodiscard]] const ElementFqId& GetElementFqId() const noexcept;
 
   private:

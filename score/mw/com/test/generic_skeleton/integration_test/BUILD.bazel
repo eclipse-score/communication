@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("//quality/integration_testing:integration_testing.bzl", "integration_test")
+
+package(default_visibility = ["//visibility:public"])
+
+integration_test(
+    name = "test_generic_typed_interaction",
+    timeout = "moderate",
+    srcs = ["test_generic_typed_interaction.py"],
+    filesystem = "//score/mw/com/test/generic_skeleton:generic_typed_interaction_app-pkg",
+)
+
+integration_test(
+    name = "test_generic_generic_interaction",
+    timeout = "moderate",
+    srcs = ["test_generic_generic_interaction.py"],
+    filesystem = "//score/mw/com/test/generic_skeleton:generic_generic_interaction_app-pkg",
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":test_generic_generic_interaction",
+        ":test_generic_typed_interaction",
+    ],
+)

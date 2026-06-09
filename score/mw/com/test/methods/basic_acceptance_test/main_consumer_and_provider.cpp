@@ -33,14 +33,13 @@ int main(int argc, const char** argv)
         std::cerr << "Unable to set signal handler for SIGINT and/or SIGTERM, cautiously continuing\n";
     }
 
-    auto provider_return_value_future = std::async(score::mw::com::test::run_provider, stop_source.get_token());
-    auto consumer_return_value_future = std::async(score::mw::com::test::run_consumer);
+    auto provider_future = std::async(score::mw::com::test::run_provider, stop_source.get_token());
+    auto consumer_future = std::async(score::mw::com::test::run_consumer);
 
-    const auto provider_return_value = provider_return_value_future.get();
-    const auto consumer_return_value = consumer_return_value_future.get();
+    provider_future.get();
+    consumer_future.get();
 
-    std::cout << "BasicAcceptanceSameProcessTest: Provider result: " << provider_return_value
-              << " / Consumer result: " << consumer_return_value << std::endl;
+    std::cout << "BasicAcceptanceSameProcessTest: Provider and Consumer completed successfully" << std::endl;
 
-    return (provider_return_value && consumer_return_value);
+    return EXIT_SUCCESS;
 }

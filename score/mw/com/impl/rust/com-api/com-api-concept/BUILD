@@ -32,6 +32,7 @@ rust_library(
     ],
     deps = [
         "@score_baselibs_rust//src/containers",
+        "@score_communication_crate_index//:futures",
         "@score_communication_crate_index//:thiserror",
     ],
 )

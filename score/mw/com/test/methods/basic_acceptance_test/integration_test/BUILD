@@ -37,11 +37,3 @@ integration_test(
     ],
     filesystem = ":different_processes_filesystem",
 )
-
-test_suite(
-    name = "component_tests",
-    tests = [
-        ":basic_acceptance_different_processes_test",
-        ":basic_acceptance_same_process_test",
-    ],
-)

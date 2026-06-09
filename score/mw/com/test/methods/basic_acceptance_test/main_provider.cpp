@@ -30,5 +30,6 @@ int main(int argc, const char** argv)
         std::cerr << "Unable to set signal handler for SIGINT and/or SIGTERM, cautiously continuing\n";
     }
 
-    return score::mw::com::test::run_provider(stop_source.get_token());
+    score::mw::com::test::run_provider(stop_source.get_token());
+    return EXIT_SUCCESS;
 }
