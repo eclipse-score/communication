@@ -23,6 +23,6 @@ import MessagePassingSEooC
 ScoreReq.CompReq REQ_MP_COMP_001 {
     description = "The message passing server shall accept connections from clients on a configurable resource path."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.FEAT_MP_001@1]
+    derived_from = [MessagePassingSEooC.ServerInterface@1]
     version = 1
 }
