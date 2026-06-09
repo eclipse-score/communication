@@ -203,7 +203,7 @@ TEST_F(GenericSkeletonEventTest, AllocateAndSendDispatchesToBindingAfterOffer)
     auto* event = const_cast<GenericSkeletonEvent*>(&skeleton.GetEvents().find(event_name)->second);
 
     // And Given the service is Offered
-    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton.OfferService().has_value());
 
@@ -250,7 +250,7 @@ TEST_F(GenericSkeletonEventTest, AllocateReturnsErrorWhenBindingFails)
     auto* event = const_cast<GenericSkeletonEvent*>(&skeleton.GetEvents().find(event_name)->second);
 
     // And Given the service is Offered
-    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton.OfferService().has_value());
 
@@ -291,7 +291,7 @@ TEST_F(GenericSkeletonEventTest, SendReturnsErrorWhenBindingFails)
     auto* event = const_cast<GenericSkeletonEvent*>(&skeleton.GetEvents().find(event_name)->second);
 
     // And Given the service is Offered
-    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton.OfferService().has_value());
 
@@ -399,7 +399,7 @@ TEST_F(GenericSkeletonEventTest, NotifyDispatchesToBindingAfterOffer)
     auto* event = const_cast<GenericSkeletonEvent*>(&skeleton.GetEvents().find(event_name)->second);
 
     // And Given the service is Offered
-    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton.OfferService().has_value());
 
