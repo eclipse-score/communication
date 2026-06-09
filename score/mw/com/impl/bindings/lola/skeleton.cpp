@@ -558,7 +558,7 @@ void Skeleton::RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMe
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");
 }
 
-bool Skeleton::VerifyAllMethodsRegistered() const
+bool Skeleton::VerifyAllMethodHandlersRegistered() const
 {
     for (const auto& [method_id, method_reference] : skeleton_methods_)
     {
