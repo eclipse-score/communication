@@ -74,6 +74,8 @@ source_suffix = {
 # -- Options for HTML output --
 html_theme = 'pydata_sphinx_theme'
 
+html_css_files = ["css/default_custom.css"]
+
 # Professional theme configuration inspired by modern open-source projects
 html_theme_options = {
     # Navigation settings
@@ -108,7 +110,7 @@ html_theme_options = {
     'icon_links': [
         {
             'name': 'S-CORE GitHub',
-            'url': 'https://github.com/eclipse-score',
+            'url': 'https://github.com/eclipse-score/communication',
             'icon': 'fab fa-github',
         }
     ],
@@ -149,19 +151,6 @@ else:
     # This avoids requiring an external dot binary in the Bazel sandbox.
     plantuml = f"{_plantuml_path} -Playout=smetana"
     plantuml_output_format = "svg_obj"
-
-# Resolve custom CSS via runfiles so sub-doc builds also get the theme.
-_custom_css_rloc = r.Rlocation(
-    "_main/docs/sphinx/_static/css/default_custom.css", source_repo=""
-)
-if _custom_css_rloc and Path(_custom_css_rloc).exists():
-    _css_dir = Path(_custom_css_rloc).parent.parent  # points to _static/
-    html_static_path = [str(_css_dir)]
-    html_css_files = ["css/default_custom.css"]
-    logger.info(f"Custom CSS resolved from runfiles: {_custom_css_rloc}")
-else:
-    html_static_path = []
-    html_css_files = []
 
 
 def setup(app):

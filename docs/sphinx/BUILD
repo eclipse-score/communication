@@ -41,12 +41,6 @@ filegroup(
     srcs = glob(["_static/**/*"]),
 )
 
-filegroup(
-    name = "custom_css",
-    srcs = ["_static/css/default_custom.css"],
-    visibility = ["//bazel/toolchains:__pkg__"],
-)
-
 # Generate RST files from @api tagged items using custom Starlark rule
 generate_api_rst(
     name = "generate_api_rst",
