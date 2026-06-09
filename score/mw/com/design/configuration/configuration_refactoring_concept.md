@@ -322,6 +322,15 @@ is unchanged; only its location moves.
 
 ## Phased Rollout Plan
 
+### Phase 0: Validation Extraction
+
+**Goal**: Separate generic validation from parsing logic without changing any external behavior.
+
+1. Extract generic validation from `config_parser.cpp` into `ValidateConfiguration()`
+   - Move `CrosscheckAsilLevels()`, `CrosscheckServiceInstancesToTypes()`,
+     `AreEventFieldAndMethodIdsUnique()`, and duplicate-name checks
+   - Validation called by `Runtime::Initialize()` after parsing, before exposing Configuration
+
 ### Phase 1: Format & Parsing
 
 **Goal**: Introduce the strategy pattern and FlatBuffer support without changing validation behavior.
@@ -340,13 +349,9 @@ is unchanged; only its location moves.
 
 **Goal**: Separate validation from parsing and introduce typed views.
 
-1. Extract generic validation from `config_parser.cpp` into `ValidateConfiguration()`
-   - Move `CrosscheckAsilLevels()`, `CrosscheckServiceInstancesToTypes()`,
-     `AreEventFieldAndMethodIdsUnique()`, and duplicate-name checks
-   - Validation called by `Runtime::Initialize()` after parsing, before exposing Configuration
-2. Implement `SkeletonServiceInstanceConfiguration` with skeleton-specific validation
-3. Implement `ProxyServiceInstanceConfiguration` with proxy-specific validation
-4. Integrate typed views into skeleton and proxy constructors
+1. Implement `SkeletonServiceInstanceConfiguration` with skeleton-specific validation
+2. Implement `ProxyServiceInstanceConfiguration` with proxy-specific validation
+3. Integrate typed views into skeleton and proxy constructors
 
 ---
 
