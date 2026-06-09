@@ -152,7 +152,7 @@ auto SkeletonBase::OfferService() noexcept -> Result<void>
     auto register_shm_object_callback =
         tracing::CreateRegisterShmObjectCallback(instance_id_, events_, fields_, *binding_);
 
-    if (!binding_->VerifyAllMethodsRegistered())
+    if (!binding_->VerifyAllMethodHandlersRegistered())
     {
         constexpr std::string_view msg =
             "Not all methods have been registered! Call Register(...) with an appropriate callback on each mehtod.";

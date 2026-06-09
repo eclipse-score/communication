@@ -694,7 +694,7 @@ class GatewayApplicationFlowTest : public ::testing::Test
                 skeleton_binding_mock_ = mock.get();
                 ON_CALL(*mock, PrepareOffer(::testing::_, ::testing::_, ::testing::_))
                     .WillByDefault(::testing::Return(score::Result<void>{}));
-                ON_CALL(*mock, VerifyAllMethodsRegistered()).WillByDefault(::testing::Return(true));
+                ON_CALL(*mock, VerifyAllMethodHandlersRegistered()).WillByDefault(::testing::Return(true));
                 return mock;
             }));
 

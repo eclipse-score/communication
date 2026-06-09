@@ -96,7 +96,7 @@ class SkeletonBinding
 
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;
-    virtual bool VerifyAllMethodsRegistered() const = 0;
+    virtual bool VerifyAllMethodHandlersRegistered() const = 0;
 };
 
 }  // namespace score::mw::com::impl
