@@ -68,12 +68,14 @@ html[data-theme="dark"] {
 
 /* Content area size */
 .bd-main .bd-content .bd-article-container {
-    max-width: 100%;  /* default is 60em */
+    max-width: 100%;
+    /* default is 60em */
 }
 
 /* Whole page size */
 .bd-page-width {
-    max-width: 100rem;  /* default is 88rem */
+    max-width: 100rem;
+    /* default is 88rem */
 }
 
 /* ============================================================================
@@ -86,9 +88,9 @@ html[data-theme="dark"] {
 .navbar input.search-input,
 .navbar .search-button-field,
 .navbar input[type="search"] {
-    color: #333333 ;
-    background-color: #ffffff ;
-    border: none ;
+    color: #333333;
+    background-color: #ffffff;
+    border: none;
 }
 
 .bd-header input.search-input::placeholder,
@@ -97,35 +99,35 @@ html[data-theme="dark"] {
 .navbar input.search-input::placeholder,
 .navbar .search-button-field::placeholder,
 .navbar input[type="search"]::placeholder {
-    color: #666666 ;
+    color: #666666;
 }
 
 /* Search box input field - light theme (in content area) */
 html[data-theme="light"] input.search-input,
 html[data-theme="light"] .search-button-field,
 html[data-theme="light"] input[type="search"] {
-    color: #333333 ;
-    background-color: #ffffff ;
+    color: #333333;
+    background-color: #ffffff;
 }
 
 html[data-theme="light"] input.search-input::placeholder,
 html[data-theme="light"] .search-button-field::placeholder,
 html[data-theme="light"] input[type="search"]::placeholder {
-    color: #666666 ;
+    color: #666666;
 }
 
 /* Search box input field - dark theme (in content area) */
 html[data-theme="dark"] input.search-input,
 html[data-theme="dark"] .search-button-field,
 html[data-theme="dark"] input[type="search"] {
-    color: #e0e0e0 ;
-    background-color: #2d2d2d ;
+    color: #e0e0e0;
+    background-color: #2d2d2d;
 }
 
 html[data-theme="dark"] input.search-input::placeholder,
 html[data-theme="dark"] .search-button-field::placeholder,
 html[data-theme="dark"] input[type="search"]::placeholder {
-    color: #999999 ;
+    color: #999999;
 }
 
 .search-button-field {
@@ -133,11 +135,11 @@ html[data-theme="dark"] input[type="search"]::placeholder {
 }
 
 html .pst-navbar-icon:hover {
-    border-bottom: 1px solid var(--pst-color-primary) ;
-    color: var(--pst-color-primary) ;
+    border-bottom: 1px solid var(--pst-color-primary);
+    color: var(--pst-color-primary);
 }
 
-.bd-header ul.navbar-nav > li.nav-item.current > .nav-link {
+.bd-header ul.navbar-nav>li.nav-item.current>.nav-link {
     border-bottom: 1px solid var(--pst-color-primary);
 }
 
@@ -153,7 +155,7 @@ button.btn.version-switcher__button {
 
 /* Primary navigation styles */
 .navbar-brand {
-    color: #FFFFFF ;
+    color: #FFFFFF;
     font-weight: 600;
 }
 
@@ -168,7 +170,7 @@ button.btn.version-switcher__button {
 }
 
 .navbar-nav .nav-link {
-    color: #FFFFFF ;
+    color: #FFFFFF;
     transition: color 0.2s ease;
 }
 
@@ -183,7 +185,7 @@ button.btn.version-switcher__button {
 }
 
 .bd-header * {
-    color: #FFFFFF ;
+    color: #FFFFFF;
 }
 
 /* Override for search input - must come after the wildcard rule above */
@@ -280,11 +282,11 @@ html[data-theme="dark"] .navbar .search-button svg circle {
 }
 
 .bd-header a {
-    color: #FFFFFF ;
+    color: #FFFFFF;
 }
 
 .bd-header a:hover {
-    color: #9DE0AD ;
+    color: #9DE0AD;
 }
 
 /* ============================================================================
@@ -476,7 +478,7 @@ html[data-theme="dark"] .bd-sidebar-secondary h3 {
  * ============================================================================ */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                 "Helvetica Neue", Arial, sans-serif;
+        "Helvetica Neue", Arial, sans-serif;
     line-height: 1.6;
 }
 
@@ -501,7 +503,12 @@ html[data-theme="dark"] ::-moz-selection {
     color: #ffffff;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-weight: 600;
     line-height: 1.25;
     margin-top: 1.5rem;
@@ -528,37 +535,37 @@ code {
 /* Note admonition - light blue background */
 .admonition.note,
 div.admonition.note {
-    background-color: #e7f3ff ;
+    background-color: #e7f3ff;
     border-left: 4px solid #2196F3;
 }
 
 .admonition.note .admonition-title {
-    background-color: #d0e8ff ;
-    color: #0d47a1 ;
+    background-color: #d0e8ff;
+    color: #0d47a1;
 }
 
 .admonition.note p,
 .admonition.note ul,
 .admonition.note ol {
-    color: #1a1a1a ;
+    color: #1a1a1a;
 }
 
 /* Warning admonition - light orange/amber background */
 .admonition.warning,
 div.admonition.warning {
-    background-color: #fff8e1 ;
+    background-color: #fff8e1;
     border-left: 4px solid #ff9800;
 }
 
 .admonition.warning .admonition-title {
-    background-color: #ffecb3 ;
-    color: #e65100 ;
+    background-color: #ffecb3;
+    color: #e65100;
 }
 
 .admonition.warning p,
 .admonition.warning ul,
 .admonition.warning ol {
-    color: #1a1a1a ;
+    color: #1a1a1a;
 }
 
 /* General admonition text styling */
@@ -566,38 +573,38 @@ div.admonition.warning {
 .admonition ul,
 .admonition ol,
 .admonition li {
-    color: #1a1a1a ;
+    color: #1a1a1a;
 }
 
 /* Dark mode adjustments for admonitions */
 html[data-theme="dark"] .admonition.note {
-    background-color: #1a2332 ;
+    background-color: #1a2332;
 }
 
 html[data-theme="dark"] .admonition.note .admonition-title {
-    background-color: #243447 ;
-    color: #90caf9 ;
+    background-color: #243447;
+    color: #90caf9;
 }
 
 html[data-theme="dark"] .admonition.note p,
 html[data-theme="dark"] .admonition.note ul,
 html[data-theme="dark"] .admonition.note ol {
-    color: #e0e0e0 ;
+    color: #e0e0e0;
 }
 
 html[data-theme="dark"] .admonition.warning {
-    background-color: #2d2416 ;
+    background-color: #2d2416;
 }
 
 html[data-theme="dark"] .admonition.warning .admonition-title {
-    background-color: #3d3020 ;
-    color: #ffb74d ;
+    background-color: #3d3020;
+    color: #ffb74d;
 }
 
 html[data-theme="dark"] .admonition.warning p,
 html[data-theme="dark"] .admonition.warning ul,
 html[data-theme="dark"] .admonition.warning ol {
-    color: #e0e0e0 ;
+    color: #e0e0e0;
 }
 
 /* ============================================================================
@@ -607,4 +614,47 @@ html[data-theme="dark"] .admonition.warning ol {
     html {
         --pst-font-size-base: 15px;
     }
+}
+
+/* ============================================================================
+ * LOBSTER Traceability Report — Dropdown Status Colors
+ *
+ * pydata-sphinx-theme intercepts sd-bg-* on dropdown summary headers and
+ * applies the colour through --pst-sd-dropdown-bg-color using a selector
+ *   details.sd-dropdown summary.sd-card-header { background-color: var(...) !important }
+ * at specificity (0,2,2).  A simple body .sd-bg-* rule (0,1,1) cannot beat
+ * this even with !important.
+ *
+ * The layered approach (per pydata docs): override the variable itself at the
+ * same specificity as pydata's own colour-variant rules (0,3,2).
+ * default_custom.css loads AFTER pydata-sphinx-theme.css, so same specificity
+ * + later source order → our value wins.
+ * ============================================================================ */
+
+details.sd-dropdown summary.sd-card-header.sd-bg-success,
+details.sd-dropdown summary.sd-card-header.sd-bg-success+div.sd-summary-content {
+    --pst-sd-dropdown-bg-color: #2E7D32;
+    /* dark green */
+    --pst-sd-dropdown-color: #ffffff;
+    /* icon/border on dark background */
+}
+
+details.sd-dropdown summary.sd-card-header.sd-bg-warning,
+details.sd-dropdown summary.sd-card-header.sd-bg-warning+div.sd-summary-content {
+    --pst-sd-dropdown-bg-color: #E65100;
+    /* dark orange */
+    --pst-sd-dropdown-color: #ffffff;
+}
+
+details.sd-dropdown summary.sd-card-header.sd-bg-danger,
+details.sd-dropdown summary.sd-card-header.sd-bg-danger+div.sd-summary-content {
+    --pst-sd-dropdown-bg-color: #B71C1C;
+    /* dark red */
+    --pst-sd-dropdown-color: #ffffff;
+}
+
+/* Lobster issue card (nested red card inside a dropdown body) */
+body .lobster-issue-card.sd-card {
+    background-color: #fff0f0 !important;
+    border-left: 3px solid #B71C1C !important;
 }

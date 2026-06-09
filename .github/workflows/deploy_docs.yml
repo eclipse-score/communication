@@ -80,13 +80,19 @@ jobs:
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Install Graphviz
+        run: sudo apt-get install -y graphviz
+
       - name: Build Sphinx documentation
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           BASE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          SOURCE_ROOT="https://github.com/${{ github.repository }}/blob/main/"
           bazel build //docs/sphinx:sphinx_doc \
             --define=DOCS_VERSION="${VERSION}" \
-            --define=DOCS_BASE_URL="${BASE_URL}"
+            --define=DOCS_BASE_URL="${BASE_URL}" \
+            --define=LOBSTER_SOURCE_ROOT="${SOURCE_ROOT}" \
+            --action_env=GRAPHVIZ_DOT=/usr/bin/dot
 
       - name: Prepare documentation output
         run: |
