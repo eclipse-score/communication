@@ -37,6 +37,8 @@ extensions = [
     'sphinx.ext.todo',         # Support TODO directives
     'breathe',                 # Bridge between Doxygen and Sphinx
     'myst_parser',             # Support for Markdown files
+    'sphinx_design',           # Grid, card, and dropdown directives
+    'sphinxcontrib.graphviz',  # Render graphviz DOT diagrams
 ]
 
 # MyST Parser configuration
