@@ -54,7 +54,7 @@ download_archive(
 bazel_dep(name = "score_tooling")
 git_override(
     module_name = "score_tooling",
-    commit = "7ae115582a4a79f48a8b411c966583118c565ce2",
+    commit = "7ad211186e8e5d93786af9547f70e327397dd4a1",
     remote = "https://github.com/eclipse-score/tooling.git",
 )
 
@@ -297,7 +297,7 @@ use_repo(pip, "codeql_coding_standards_pip_hub")
 bazel_dep(name = "trlc", version = "0.0.0", dev_dependency = True)
 git_override(
     module_name = "trlc",
-    commit = "8bdcb1fe6d5af97b69a293673815592371bdbb20",  #TRLC 2.0.5 dev
+    commit = "c4c531b9d667085daa09dfc1590edacc314bfda4",
     remote = "https://github.com/bmw-software-engineering/trlc.git",
 )
 
@@ -305,7 +305,7 @@ git_override(
 bazel_dep(name = "lobster", version = "0.0.0", dev_dependency = True)
 git_override(
     module_name = "lobster",
-    commit = "d528fbdec2cd72ff7967b51546fb0bd935810258",
+    commit = "2792e2daee2cf524fdc7b1545fd3537791ebc36c",
     remote = "https://github.com/bmw-software-engineering/lobster.git",
 )
 
