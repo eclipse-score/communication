@@ -1115,6 +1115,37 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerCallsSendWithValueModifi
     captured_set_handler_.value()(in_span, out_span);
 }
 
+TEST_F(SkeletonFieldSetHandlerTest, PassingReferenceToHandlerUpdatesStateInPlace)
+{
+    static constexpr int kInitialValue = 42;
+    static constexpr int kModifiedValue = 43;
+
+    GivenASkeletonWithSetterEnabled().WhichCapturesASetHandler();
+
+    // and given that a set handler was registered which modifies its internal state when called
+    class DummyMethodFunctor
+    {
+      public:
+        void operator()(TestSampleType& /*value*/)
+        {
+            i_ = kModifiedValue;
+        }
+
+        int i_{kInitialValue};
+    };
+    DummyMethodFunctor test_functor{};
+    ASSERT_TRUE(unit_->my_setter_field_.RegisterSetHandler(test_functor).has_value());
+
+    WhichIsOffered();
+
+    // When calling the set handler that was captured by the method binding
+    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
+    captured_set_handler_.value()(in_span, out_span);
+
+    // Then the state of the functor is updated in place when the handler is called by the binding
+    EXPECT_EQ(test_functor.i_, kModifiedValue);
+}
+
 TEST_F(SkeletonFieldSetHandlerTest, CallingPrepareOfferWithoutRegisteringSetHandlerReturnsError)
 {
     GivenASkeletonWithSetterEnabled();
