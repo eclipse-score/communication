@@ -40,6 +40,7 @@
 #include <score/span.hpp>
 #include <sys/types.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <exception>
 #include <mutex>
@@ -566,19 +567,9 @@ void Skeleton::RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMe
 
 bool Skeleton::VerifyAllMethodHandlersRegistered() const
 {
-    for (const auto& [method_id, method_reference] : skeleton_methods_)
-    {
-        // TODO: Remove this skip once the field Get handler is auto-registered in SkeletonField.
-        if (method_id.method_type == ::score::mw::com::impl::MethodType::kGet)
-        {
-            continue;
-        }
-        if (!method_reference.get().IsRegistered())
-        {
-            return false;
-        }
-    }
-    return true;
+    return std::all_of(skeleton_methods_.begin(), skeleton_methods_.end(), [](const auto& method_pair) {
+        return method_pair.second.get().IsRegistered();
+    });
 }
 
 auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
