@@ -133,7 +133,7 @@ class SkeletonBaseFixture : public ::testing::Test
         binding_mock_ = GetMockBinding(*skeleton_);
         ASSERT_NE(binding_mock_, nullptr);
         ON_CALL(*binding_mock_, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
-        ON_CALL(*binding_mock_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+        ON_CALL(*binding_mock_, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
     }
 
     void ExpectOfferService() noexcept
@@ -223,8 +223,8 @@ TEST_F(SkeletonBaseOfferFixture, OfferServiceFailsIfAllMethodsHaveNotBeenRegiste
     // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
     CreateSkeleton(GetInstanceIdentifierWithValidBinding());
 
-    // When VerifyAllMethodsRegistered returns false
-    EXPECT_CALL(*binding_mock_, VerifyAllMethodsRegistered()).WillOnce(Return(false));
+    // When VerifyAllMethodHandlersRegistered returns false
+    EXPECT_CALL(*binding_mock_, VerifyAllMethodHandlersRegistered()).WillOnce(Return(false));
 
     // When offering a Service
     const auto offer_result = skeleton_->OfferService();
@@ -489,7 +489,7 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingServi
     mock_binding::Skeleton* const binding_mock = GetMockBinding(skeleton);
 
     ON_CALL(*binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
-    ON_CALL(*binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+    ON_CALL(*binding_mock, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
 
     ASSERT_NE(binding_mock, nullptr);
 
@@ -542,7 +542,7 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterCallingStopOfferServi
         mock_binding::Skeleton* const binding_mock = GetMockBinding(skeleton);
 
         ON_CALL(*binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
-        ON_CALL(*binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+        ON_CALL(*binding_mock, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
 
         ASSERT_NE(binding_mock, nullptr);
 
