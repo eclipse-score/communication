@@ -9,18 +9,45 @@ Clang-Tidy performs static analysis using a set of checks configured in the root
 ### Running Clang-Tidy
 
 ```bash
+# Check all targets
 bazel test --config=clang-tidy //...
-```
 
-To run on a specific target:
-
-```bash
+# Check a specific target or subtree
 bazel test --config=clang-tidy //score/message_passing:client_connection_test
+bazel test --config=clang-tidy //score/message_passing/...
 ```
 
 The enabled check groups are: `bugprone-*`, `cert-*`, `clang-analyzer-*`, `cppcoreguidelines-*`, `fuchsia-*`, `google-*`, `hicpp-*`, `misc-*`, `modernize-*`, `performance-*`, and `readability-*`. The checks are organized into AUTOSAR severity-one, AUTOSAR severity-two, CERT, and QNX categories — see the [`.clang-tidy`](../.clang-tidy) file for the full list.
 
 > **Note:** Only `clang-analyzer-*` findings are treated as errors. All other check groups produce warnings.
+
+### Applying Auto-Fixes
+
+Many clang-tidy checks can suggest machine-applicable fixes (e.g. `modernize-*`, `readability-*`)see the [`.clang-tidy`](../.) file for the full list.
+Use the `clang-tidy.fix` target to run clang-tidy in fix mode and apply patches to the source tree:
+
+```bash
+# Check all targets (convenience wrapper)
+bazel run //:clang-tidy.check
+# Fix all targets
+bazel run //:clang-tidy.fix
+
+# Fix a specific target or subtree
+bazel run //:clang-tidy.fix -- //score/message_passing:client_connection_test
+bazel run //:clang-tidy.fix -- //score/message_passing/...
+```
+
+Internally this runs `bazel test --config=clang-tidy-fix`, collects the
+`*.AspectRulesLintClangTidy.patch` files produced by `aspect_rules_lint`, and applies them with
+`git apply`. Review and stage the result before committing:
+
+```bash
+git diff        # review what was changed
+git add -p      # interactively stage hunks
+```
+
+> **Note:** Only checks that have an automatic fix produce patches. Violations without a fix
+> (e.g. `clang-analyzer-*`) are still reported in the terminal but leave no patch file.
 
 ## CodeQL (MISRA C++)
 
