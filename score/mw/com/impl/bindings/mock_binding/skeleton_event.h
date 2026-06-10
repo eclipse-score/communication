@@ -49,10 +49,7 @@ class SkeletonEvent : public SkeletonEventBinding<SampleType>
                  std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>),
                 (noexcept, override));
     MOCK_METHOD(Result<score::mw::com::impl::SampleAllocateePtr<SampleType>>, Allocate, (), (noexcept, override));
-    MOCK_METHOD(Result<score::mw::com::impl::SamplePtr<SampleType>>,
-                GetLatestSample,
-                (const QualityType&),
-                (noexcept, override));
+    MOCK_METHOD(Result<score::mw::com::impl::SamplePtr<SampleType>>, GetLatestSample, (QualityType), (override));
     MOCK_METHOD(Result<void>, PrepareOffer, (), (noexcept, override));
     MOCK_METHOD(void, PrepareStopOffer, (), (noexcept, override));
     MOCK_METHOD(std::size_t, GetMaxSize, (), (const, noexcept, override));
@@ -89,8 +86,7 @@ class SkeletonEventFacade : public SkeletonEventBinding<SampleType>
     {
         return skeleton_event_.Allocate();
     };
-    Result<score::mw::com::impl::SamplePtr<SampleType>> GetLatestSample(
-        const QualityType& quality_type) noexcept override
+    Result<score::mw::com::impl::SamplePtr<SampleType>> GetLatestSample(QualityType quality_type) override
     {
         return skeleton_event_.GetLatestSample(quality_type);
     }

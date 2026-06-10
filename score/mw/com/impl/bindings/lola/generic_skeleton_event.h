@@ -56,8 +56,10 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
         skeleton_event_common_.SetSkeletonEventTracingData(tracing_data);
     }
 
-    // GenericSkeletonEvent does not support getter functionality (void type); no-op.
-    void SetGetterEnabled(bool /*getter_enabled*/) noexcept override {}
+    void SetGetterEnabled(bool getter_enabled) noexcept override
+    {
+        skeleton_event_common_.SetGetterEnabled(getter_enabled);
+    }
 
     std::size_t GetMaxSize() const noexcept override
     {

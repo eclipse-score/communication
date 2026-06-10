@@ -28,6 +28,7 @@
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
@@ -95,6 +96,12 @@ class SkeletonEventCommon
         getter_enabled_ = getter_enabled;
     }
 
+    /// \brief Reserves a getter slot. Returns empty factory if a SamplePtr from a prior GetLatestSample is still alive.
+    TrackerGuardFactory AllocateGetterGuard() noexcept
+    {
+        return getter_sample_tracker_.Allocate(1U);
+    }
+
     const ElementFqId& GetElementFQId() const&
     {
         return element_fq_id_;
@@ -116,8 +123,7 @@ class SkeletonEventCommon
         return event_data_control_composite_.value();
     }
 
-    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView(
-        QualityType quality_type = QualityType::kASIL_QM)
+    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView(QualityType quality_type)
     {
         if (quality_type == QualityType::kASIL_B)
         {
@@ -170,6 +176,7 @@ class SkeletonEventCommon
     impl::tracing::SkeletonEventTracingData tracing_data_;
     bool qm_disconnect_;
     bool getter_enabled_{false};
+    SampleReferenceTracker getter_sample_tracker_{1U};
 
     /// \brief Atomic flags indicating whether any receive handlers are currently registered for this event
     ///        at each quality level (QM and ASIL-B).
@@ -259,7 +266,7 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(EventControl& event_con
             event_control_asil_b->transaction_log_set_.RegisterSkeletonTracingElement(
                 consumer_control_local_view_asil_.value()));
     }
-    
+
     // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
     // both branches (true / false) being covered. "Decision couldn't be analyzed" only appeared after changing the code
     // within the if statement (without changing the condition / tests). Suppression can be removed when bug is fixed in

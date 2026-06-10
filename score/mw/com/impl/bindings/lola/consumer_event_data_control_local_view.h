@@ -29,9 +29,6 @@
 
 namespace score::mw::com::impl::lola
 {
-template <typename SampleType>
-class SkeletonEventCommon;
-
 /// \brief View class which provides functionality for interacting with EventDataControl.
 ///
 /// \details EventDataControl contains control information for an event which is stored in shared memory. Accessing the
@@ -71,13 +68,6 @@ class ConsumerEventDataControlLocalView final
     ~ConsumerEventDataControlLocalView() noexcept = default;
 
     ConsumerEventDataControlLocalView(const ConsumerEventDataControlLocalView&) = delete;
-
-    // Suppress "AUTOSAR C++14 A11-3-1"
-    // SkeletonEventCommon needs controlled access to transaction-log view injection/cleanup for dual quality
-    // consumer setup.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    template <typename SampleType>
-    friend class SkeletonEventCommon;
     ConsumerEventDataControlLocalView& operator=(const ConsumerEventDataControlLocalView&) = delete;
     ConsumerEventDataControlLocalView(ConsumerEventDataControlLocalView&&) noexcept = delete;
     ConsumerEventDataControlLocalView& operator=(ConsumerEventDataControlLocalView&& other) noexcept = delete;
@@ -96,15 +86,6 @@ class ConsumerEventDataControlLocalView final
     std::optional<SlotIndexType> ReferenceNextEvent(
         const EventSlotStatus::EventTimeStamp last_search_time,
         const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTAMP_MAX) noexcept;
-
-    /// \brief Returns the latest readable sample and marks it as referenced.
-    ///
-    /// \details This method performs bounded retries on data races while increasing the reference count for the
-    /// selected slot.
-    ///
-    /// \return Index of latest sample if available, empty optional otherwise.
-    /// \post DereferenceEvent() is invoked to withdraw read-ownership
-    std::optional<SlotIndexType> GetLatestSlot() noexcept;
 
     /// \brief Increments refcount of given slot by one (given it is in the correct state i.e. being accessible/
     ///        readable)

@@ -12,6 +12,7 @@ abstract class SkeletonEventBinding<SampleType> {
   {abstract} +Send(SampleType const&): void
   {abstract} +Send(SampleAllocateePtr<SampleType>): void
   {abstract} +Allocate(): SampleAllocateePtr<SampleType>
+  {abstract} +GetLatestSample(QualityType): Result<SamplePtr<SampleType>>
   +GetMaxSize(): size_t
 }
 
@@ -44,6 +45,7 @@ class lola::SkeletonEvent<SampleType> {
   +Send(SampleType const&): void
   +Send(SampleAllocateePtr<SampleType>): void
   +Allocate(): SampleAllocateePtr<SampleType>
+  +GetLatestSample(QualityType): Result<SamplePtr<SampleType>>
   +PrepareOffer(): void
   +PrepareStopOffer(): void
 }

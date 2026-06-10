@@ -400,32 +400,36 @@ TEST_F(SkeletonEventPrepareStopOfferFixture, UnregisterEventNotificationExistenc
 using SkeletonEventGetLatestSampleFixture = SkeletonEventFixture;
 TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleFailsBeforePrepareOffer)
 {
-    const bool enforce_max_samples{true};
-    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+    // Given a skeleton event that has not been offered
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_);
 
+    // When getting the latest sample
     const auto latest_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
 
+    // Then an error is returned
     ASSERT_FALSE(latest_sample.has_value());
     EXPECT_EQ(latest_sample.error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleFailsIfNoSampleWasSent)
 {
-    const bool enforce_max_samples{true};
-    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+    // Given an offered skeleton event with no samples sent
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_);
     std::ignore = skeleton_event_->PrepareOffer();
 
+    // When getting the latest sample
     const auto latest_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
 
+    // Then an error is returned
     ASSERT_FALSE(latest_sample.has_value());
     EXPECT_EQ(latest_sample.error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleReturnsMostRecentlySentSample)
 {
-    const bool enforce_max_samples{true};
-    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+    // Given an offered skeleton event with getter enabled and two samples sent
     // Getter must be enabled so that the transaction log is set up in PrepareOffer
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_);
     skeleton_event_->SetGetterEnabled(true);
     std::ignore = skeleton_event_->PrepareOffer();
 
@@ -433,20 +437,69 @@ TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleReturnsMostRecentlySe
     ASSERT_TRUE(first_allocated_slot_result.has_value());
     auto first_allocated_slot = std::move(first_allocated_slot_result).value();
     *first_allocated_slot = static_cast<test::TestSampleType>(11U);
-    auto first_send_result = skeleton_event_->Send(std::move(first_allocated_slot), std::nullopt);
-    ASSERT_TRUE(first_send_result.has_value());
+    ASSERT_TRUE(skeleton_event_->Send(std::move(first_allocated_slot), std::nullopt).has_value());
 
     auto second_allocated_slot_result = skeleton_event_->Allocate();
     ASSERT_TRUE(second_allocated_slot_result.has_value());
     auto second_allocated_slot = std::move(second_allocated_slot_result).value();
     *second_allocated_slot = static_cast<test::TestSampleType>(42U);
-    auto second_send_result = skeleton_event_->Send(std::move(second_allocated_slot), std::nullopt);
-    ASSERT_TRUE(second_send_result.has_value());
+    ASSERT_TRUE(skeleton_event_->Send(std::move(second_allocated_slot), std::nullopt).has_value());
 
+    // When getting the latest sample
     const auto latest_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
 
+    // Then the most recently sent sample is returned
     ASSERT_TRUE(latest_sample.has_value());
     EXPECT_EQ(*latest_sample.value(), static_cast<test::TestSampleType>(42U));
+}
+
+TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleReturnsErrorWhenCalledWhilePreviousSamplePtrIsAlive)
+{
+    // Given an offered skeleton event with getter enabled and a sample sent
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_);
+    skeleton_event_->SetGetterEnabled(true);
+    std::ignore = skeleton_event_->PrepareOffer();
+
+    auto allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(allocated_slot_result.has_value());
+    auto allocated_slot = std::move(allocated_slot_result).value();
+    *allocated_slot = static_cast<test::TestSampleType>(42U);
+    ASSERT_TRUE(skeleton_event_->Send(std::move(allocated_slot), std::nullopt).has_value());
+
+    // When getting the latest sample and holding on to the SamplePtr
+    auto first_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+    ASSERT_TRUE(first_sample.has_value());
+
+    // Then calling GetLatestSample again while the first SamplePtr is still alive returns an error
+    const auto second_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+    ASSERT_FALSE(second_sample.has_value());
+    EXPECT_EQ(second_sample.error(), ComErrc::kMaxSamplesReached);
+}
+
+TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleSucceedsAfterPreviousSamplePtrIsReleased)
+{
+    // Given an offered skeleton event with getter enabled, a sample sent, and a SamplePtr already obtained and
+    // then released
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_);
+    skeleton_event_->SetGetterEnabled(true);
+    std::ignore = skeleton_event_->PrepareOffer();
+
+    auto allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(allocated_slot_result.has_value());
+    auto allocated_slot = std::move(allocated_slot_result).value();
+    *allocated_slot = static_cast<test::TestSampleType>(42U);
+    ASSERT_TRUE(skeleton_event_->Send(std::move(allocated_slot), std::nullopt).has_value());
+
+    {
+        auto first_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+        ASSERT_TRUE(first_sample.has_value());
+    }  // first_sample destroyed here, returning the token to the tracker
+
+    // When calling GetLatestSample after the previous SamplePtr is released
+    const auto second_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+
+    // Then it succeeds
+    ASSERT_TRUE(second_sample.has_value());
 }
 
 using SkeletonEventTimestampFixture = SkeletonEventFixture;

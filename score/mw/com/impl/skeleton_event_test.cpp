@@ -662,9 +662,8 @@ TEST(SkeletonEventGetLatestSampleTest, CallingGetLatestSampleDispatchesToBinding
     // Expecting that a SkeletonEvent binding is created
     auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
-        .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
+    ON_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, kEventName))
+        .WillByDefault(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that GetLatestSample() is called once on the event binding which returns a valid sample
     EXPECT_CALL(skeleton_event_binding_mock, GetLatestSample(QualityType::kASIL_QM))
@@ -692,9 +691,8 @@ TEST(SkeletonEventGetLatestSampleTest, CallingGetLatestSampleWhenBindingFailsRet
     // Expecting that a SkeletonEvent binding is created
     auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, kEventName))
-        .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
+    ON_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, kEventName))
+        .WillByDefault(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
 
     // and that GetLatestSample() is called once on the event binding which returns an error
     EXPECT_CALL(skeleton_event_binding_mock, GetLatestSample(QualityType::kASIL_QM))
