@@ -1,0 +1,44 @@
+@startuml
+
+skinparam state {
+  BackgroundColor White
+  BorderColor Black
+  FontName Courier
+  Padding 100
+}
+
+skinparam linetype polyline
+skinparam nodesep 100
+skinparam ranksep 100
+
+
+
+skinparam note {
+    FontName Courier
+    Padding 100
+}
+
+state Stopped
+state Starting
+state Ready
+state Stopping
+
+[*] --> Stopped
+
+Stopped --right[#0a0a0a,bold]--> Starting : Start() / Restart()
+Starting --left[#0a0a0a,bold]--> Stopped : Stop()
+
+state "canConnect" as canConnect <<choice>>
+Starting -down-> canConnect : attempt connection
+canConnect -up-> Starting : cannot connect
+canConnect -down-> Ready : can connect
+
+Ready -left[#0a0a0a,bold]-> Stopping : Stop()
+
+state "callbacksDone" as callbacksDone <<choice>>
+
+Stopping -up-> callbacksDone: attempting to stop
+callbacksDone -down-> Stopping : not all callbacks done
+callbacksDone -up-> Stopped : all callbacks done
+
+@enduml
