@@ -53,7 +53,12 @@ git add -p      # interactively stage hunks
 
 CodeQL performs MISRA C++ compliance checking using the `codeql/misra-cpp-coding-standards` query pack (version pinned in [`quality/static_analysis/config.yaml`](static_analysis/config.yaml)). The analysis builds a CodeQL database from the Bazel build and runs the configured queries against it.
 
-### Running CodeQL
+The script supports two reusable phases that can be run independently:
+
+1. **Database creation** — compiles the codebase with CodeQL tracing and produces a reusable database.
+2. **Analysis** — runs CodeQL queries against an existing database.
+
+### Running CodeQL (all-in-one)
 
 ```bash
 bazel run //quality/static_analysis:codeql_lint -- --target=//...
@@ -65,7 +70,36 @@ To analyze a specific target:
 bazel run //quality/static_analysis:codeql_lint -- --target=//score/message_passing/...
 ```
 
-The only user-facing option is `--target`, which specifies the Bazel target pattern to analyze. The `--codeql_path` and `--config_path` arguments are pre-configured by the build target.
+### Running CodeQL in phases
+
+Create the database once:
+
+```bash
+bazel run //quality/static_analysis:codeql_lint -- \
+  --phase create-database \
+  --database-path /var/tmp/codeql_databases/codeql_db \
+  --target //score/...
+```
+
+Run quick analysis (uses incremental queries from config.yaml):
+
+```bash
+bazel run //quality/static_analysis:codeql_lint -- \
+  --phase analyze-database \
+  --database-path /var/tmp/codeql_databases/codeql_db
+```
+
+Run full analysis with a specific query pack (e.g. for nightly):
+
+```bash
+bazel run //quality/static_analysis:codeql_lint -- \
+  --phase analyze-database \
+  --database-path /var/tmp/codeql_databases/codeql_db \
+  --query-spec "codeql/misra-cpp-coding-standards@2.52.0" \
+  --output-prefix codeql-nightly
+```
+
+The `--phase` argument accepts `create-database`, `analyze-database`, or `all` (default, original behavior). The `--query-spec` argument allows specifying a different query pack or suite for the analysis step. The `--output-prefix` argument controls the output file names.
 
 Results are written to the Bazel output directory (`bazel info output_path`):
 

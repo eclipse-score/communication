@@ -1,0 +1,128 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow: CodeQL analysis — split into database creation and analysis phases.
+#
+# Phase 1 (create-codeql-database): Builds the codebase with CodeQL tracing
+#   and produces a reusable CodeQL database artifact.
+#
+# Phase 2 (analysis): Downloads the database and runs CodeQL queries.
+#   - PR / push to main: runs the incremental (quick) query set defined in
+#     config.yaml, which excludes queries tagged "exclude-from-incremental".
+#   - Nightly (schedule): runs the full MISRA pack including slow queries.
+#
+# This split avoids rebuilding the database for each analysis profile and
+# enables running different query sets for PR feedback vs nightly compliance.
+#
+# Reference: https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/uploading-a-sarif-file-to-github
+
+name: CodeQL Analysis
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Nightly at 2 AM UTC
+  workflow_dispatch:  # Allow maintainers to trigger manually when needed
+
+permissions:
+  contents: read
+  security-events: write  # Required to upload SARIF results to GitHub Code Scanning
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: false  # Never cancel an in-progress CodeQL run; it takes hours
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ── Phase 1: Create CodeQL database ──────────────────────────────────────
+  create-codeql-database:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Setup Bazel
+        uses: castler/setup-bazel@cache-optimized
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Create CodeQL database
+        run: |
+          bazel run //quality/static_analysis:codeql_lint -- \
+            --phase create-database \
+            --database-path /var/tmp/codeql_databases/codeql_db \
+            --target //score/message_passing/... //score/mw/com/...
+
+      - name: Upload CodeQL database artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-database
+          path: /var/tmp/codeql_databases/codeql_db
+          retention-days: 1
+
+  # ── Phase 2: Full analysis (nightly) ─────────────────────────────────────
+  analyze-nightly:
+    needs: create-codeql-database
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Setup Bazel
+        uses: castler/setup-bazel@cache-optimized
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Download CodeQL database
+        uses: actions/download-artifact@v4
+        with:
+          name: codeql-database
+          path: /var/tmp/codeql_databases/codeql_db
+
+      - name: Run CodeQL analysis (full — all MISRA rules)
+        run: |
+          bazel run //quality/static_analysis:codeql_lint -- \
+            --phase analyze-database \
+            --database-path /var/tmp/codeql_databases/codeql_db \
+            --output-dir /tmp/codeql-results \
+            --output-prefix codeql-nightly
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: /tmp/codeql-results/codeql-nightly.sarif
+          category: codeql-nightly
+
+      - name: Upload CSV results
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-csv-results
+          path: /tmp/codeql-results/codeql-nightly.csv
+          retention-days: 30
