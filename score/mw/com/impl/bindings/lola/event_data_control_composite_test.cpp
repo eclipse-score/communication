@@ -286,7 +286,7 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesI
 
     // Then the timestamp is invalid
     auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus{}.GetTimeStamp()};
+    EventSlotStatus::EventTimeStamp expected_time_stamp{0U};
     EXPECT_EQ(time_stamp, expected_time_stamp);
 }
 
@@ -297,7 +297,7 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesI
 
     // Then the timestamp is invalid
     auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus{}.GetTimeStamp()};
+    EventSlotStatus::EventTimeStamp expected_time_stamp{0U};
     EXPECT_EQ(time_stamp, expected_time_stamp);
 }
 
@@ -312,7 +312,7 @@ TEST_F(EventDataControlCompositeFixture,
 
     // Then the timestamp is invalid
     auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus{}.GetTimeStamp()};
+    EventSlotStatus::EventTimeStamp expected_time_stamp{0U};
     EXPECT_EQ(time_stamp, expected_time_stamp);
 }
 

@@ -77,4 +77,27 @@ InstanceIdentifier SkeletonEventFixture::GetValidInstanceIdentifier()
     return make_InstanceIdentifier(valid_asil_instance_deployment_, valid_type_deployment_);
 }
 
+void SkeletonEventFixture::InitialiseSkeletonEventWithQmOnly(
+    const ElementFqId element_fq_id,
+    const std::string& service_element_name,
+    const std::size_t max_samples,
+    const std::uint8_t max_subscribers,
+    const bool enforce_max_samples,
+    impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data)
+{
+    InitialiseSkeleton(make_InstanceIdentifier(valid_qm_instance_deployment_, valid_type_deployment_));
+
+    SkeletonBinding::SkeletonEventBindings events{};
+    SkeletonBinding::SkeletonFieldBindings fields{};
+    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback{};
+    std::ignore = skeleton_->PrepareOffer(events, fields, std::move(register_shm_object_trace_callback));
+
+    skeleton_event_ = std::make_unique<SkeletonEvent<test::TestSampleType>>(
+        *skeleton_,
+        element_fq_id,
+        service_element_name,
+        SkeletonEventProperties{max_samples, max_subscribers, enforce_max_samples},
+        skeleton_event_tracing_data);
+}
+
 }  // namespace score::mw::com::impl::lola

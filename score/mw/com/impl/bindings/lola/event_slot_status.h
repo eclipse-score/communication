@@ -91,7 +91,8 @@ class EventSlotStatus final
     value_type data_;
 };
 
-static_assert(sizeof(EventSlotStatus) <= sizeof(std::uint64_t));
+static_assert(sizeof(EventSlotStatus) <= sizeof(std::uint64_t),
+              "EventSlotStatus must fit inside a std::atomic which is currently 64 bit.");
 }  // namespace score::mw::com::impl::lola
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_SLOT_STATUS_H

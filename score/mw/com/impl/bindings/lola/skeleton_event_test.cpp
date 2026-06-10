@@ -478,7 +478,7 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
     const EventSlotStatus first_final_slot_status{provider_event_data_control_local[first_slot_index]};
     // AND the first timestamp should be the first valid timestamp.
     const auto first_timestamp = first_final_slot_status.GetTimeStamp();
-    EXPECT_EQ(first_timestamp, EventSlotStatus::FIRST_VALID_TIMESTAMP);
+    EXPECT_EQ(first_timestamp, 1U);
 
     // AND WHEN we allocate and send a second sample
     auto second_allocated_slot_result = skeleton_event_->Allocate();
