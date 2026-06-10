@@ -10,6 +10,7 @@ py_binary(
     name = "sphinx_build",
     srcs = ["@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py"],
     data = [
+        "//docs/sphinx:custom_css",
         "@score_tooling//tools/sphinx:plantuml",
     ],
     exec_compatible_with = ["@platforms//os:linux"],
