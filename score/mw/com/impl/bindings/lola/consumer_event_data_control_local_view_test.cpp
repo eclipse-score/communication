@@ -217,7 +217,7 @@ TEST_F(ConsumerEventDataControlLocalViewFixture, FailingToUpdateSlotValueCausesR
     ASSERT_FALSE(event.has_value());
 }
 
-TEST_F(ConsumerEventDataControlLocalViewFixture, GetLatestSlotReturnsNewestReadySlot)
+TEST_F(ConsumerEventDataControlLocalViewFixture, ReferenceNextEventWithFullRangeReturnsNewestReadySlot)
 {
     // Given an EventDataControl with multiple ready slots and increasing timestamps
     GivenAConsumerEventDataControlLocalViewUsingRealAtomics(3);
@@ -225,8 +225,9 @@ TEST_F(ConsumerEventDataControlLocalViewFixture, GetLatestSlotReturnsNewestReady
     score::cpp::ignore = WithAnAllocatedSlot(2);
     score::cpp::ignore = WithAnAllocatedSlot(3);
 
-    // When requesting the latest slot
-    const auto latest_slot = unit_->GetLatestSlot();
+    // When requesting the latest slot via ReferenceNextEvent over the full timestamp range
+    const auto latest_slot =
+        unit_->ReferenceNextEvent(EventSlotStatus::EventTimeStamp{0U}, EventSlotStatus::TIMESTAMP_MAX);
 
     // Then the newest sample is returned and referenced
     ASSERT_TRUE(latest_slot.has_value());
@@ -234,15 +235,16 @@ TEST_F(ConsumerEventDataControlLocalViewFixture, GetLatestSlotReturnsNewestReady
     EXPECT_EQ((*unit_)[latest_slot.value()].GetReferenceCount(), 1U);
 }
 
-TEST_F(ConsumerEventDataControlLocalViewFixture, GetLatestSlotReturnsNullIfNoReadySlotExists)
+TEST_F(ConsumerEventDataControlLocalViewFixture, ReferenceNextEventWithFullRangeReturnsNullIfNoReadySlotExists)
 {
     // Given an EventDataControl with one slot in writing state (allocated but not marked ready)
     GivenAConsumerEventDataControlLocalViewUsingRealAtomics(1);
     const auto allocated_slot = provider_event_data_control_local_->AllocateNextSlot();
     ASSERT_TRUE(allocated_slot.has_value());
 
-    // When requesting the latest slot
-    const auto latest_slot = unit_->GetLatestSlot();
+    // When requesting the latest slot via ReferenceNextEvent over the full timestamp range
+    const auto latest_slot =
+        unit_->ReferenceNextEvent(EventSlotStatus::EventTimeStamp{0U}, EventSlotStatus::TIMESTAMP_MAX);
 
     // Then no slot is returned
     EXPECT_FALSE(latest_slot.has_value());

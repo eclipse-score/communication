@@ -606,7 +606,8 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture, WhenSendTracingEnabledTransactio
     ASSERT_TRUE(skeleton_transaction_log_result.has_value());
 }
 
-TEST_F(SkeletonEventTracingPrepareOfferFixture, WhenSendWithAllocateTracingEnabledTransactionLogIsRegisteredOnQmTransactionLogSet)
+TEST_F(SkeletonEventTracingPrepareOfferFixture,
+       WhenSendWithAllocateTracingEnabledTransactionLogIsRegisteredOnQmTransactionLogSet)
 {
     const bool enforce_max_samples{true};
 

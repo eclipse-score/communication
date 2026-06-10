@@ -47,9 +47,8 @@ class MyEvent final : public SkeletonEventBinding<SampleType>
     {
         return MakeSampleAllocateePtr(std::make_unique<SampleType>());
     }
-    Result<SamplePtr<SampleType>> GetLatestSample(const QualityType& quality_type) noexcept override
+    Result<SamplePtr<SampleType>> GetLatestSample(QualityType) override
     {
-        static_cast<void>(quality_type);
         return SamplePtr<SampleType>{mock_binding::SamplePtr<SampleType>{std::make_unique<SampleType>()},
                                      SampleReferenceGuard{}};
     }
