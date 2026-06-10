@@ -1,0 +1,278 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow: Clippy PR check
+#
+# Runs Clippy on pull requests with the 'rust-api' label, pushes to main, and merge groups.
+# - For PRs: Only runs when the 'rust-api' label is present
+# - Fails if Clippy errors or warnings are found in Rust files changed by the PR.
+# - Writes a job summary with error/warning counts.
+# - Uploads clippy log as a downloadable artifact.
+
+name: Clippy Check
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: "Name of the clippy findings artifact"
+        value: ${{ jobs.clippy.outputs.artifact-name }}
+      errors:
+        description: "Total clippy error count"
+        value: ${{ jobs.clippy.outputs.errors }}
+      warnings:
+        description: "Total clippy warning count"
+        value: ${{ jobs.clippy.outputs.warnings }}
+      conclusion:
+        description: "Job conclusion: success or failure"
+        value: ${{ jobs.clippy.outputs.conclusion }}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clippy-pr-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  precheck:
+    runs-on: ubuntu-24.04
+    outputs:
+      should-run: ${{ steps.gate.outputs.should-run }}
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Evaluate Clippy workflow gate
+        id: gate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'SCRIPT_END'
+          import json
+          import os
+
+          should_run = True
+
+          with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as event_file:
+              event = json.load(event_file)
+
+          pr = event.get("pull_request") or {}
+          labels = {label.get("name", "") for label in (pr.get("labels") or [])}
+
+          # For pull requests, only run if rust-api label is present
+          if os.environ["EVENT_NAME"] == "pull_request":
+              if "rust-api" not in labels:
+                  should_run = False
+          
+          should_run_string = 'true' if should_run else 'false'
+
+          labels_display = ", ".join(sorted(label for label in labels if label)) or "(none)"
+          print(
+              "Clippy gate evaluation: "
+              f"event_name='{os.environ['EVENT_NAME']}', "
+              f"labels=[{labels_display}], "
+              f"outputs: should-run={should_run_string}"
+          )
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as github_output:
+              print(f"should-run={should_run_string}", file=github_output)
+          SCRIPT_END
+
+  clippy:
+    needs: precheck
+    if: ${{ needs.precheck.outputs.should-run == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      artifact-name: clippy-findings
+      errors: ${{ steps.findings.outputs.errors }}
+      warnings: ${{ steps.findings.outputs.warnings }}
+      conclusion: ${{ steps.set-conclusion.outputs.conclusion }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0  # Fetch full history for accurate diff
+
+      - name: Fetch base branch for comparison
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+
+      - uses: castler/setup-bazel@cache-optimized
+        with:
+          bazelisk-cache: true
+          disk-cache: "clippy"
+          repository-cache: true
+          cache-optimized: true
+          cache-save: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Run Clippy via Bazel
+        id: run-clippy
+        continue-on-error: true
+        run: |
+          bazel build --config=lint //score/mw/com/... \
+            2>&1 | tee clippy_raw.log
+          # Capture the exit code from bazel (PIPESTATUS[0]), not tee
+          echo "bazel_exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+
+      - name: Collect findings
+        id: findings
+        run: |
+          # Verify clippy_raw.log exists
+          if [[ ! -f clippy_raw.log ]]; then
+            echo "::error::clippy_raw.log not found - build step may have failed"
+            exit 1
+          fi
+
+          # Check if this was a real build failure due to compilation errors
+          BUILD_FAILED=false
+          if grep -q "ERROR: Build did NOT complete successfully" clippy_raw.log; then
+            BUILD_FAILED=true
+            echo "::error::Build failed due to compilation errors"
+          fi
+
+          # Extract clippy errors and warnings
+          # Clippy format: "warning: message" or "error: message" or "error[E0123]: message"
+          ERRORS=$(grep -c "^error" clippy_raw.log 2>/dev/null || true)
+          WARNINGS=$(grep -c "^warning" clippy_raw.log 2>/dev/null || true)
+          ERRORS=${ERRORS:-0}
+          WARNINGS=${WARNINGS:-0}
+          TOTAL=$((ERRORS + WARNINGS))
+
+          echo "Grep results: errors=${ERRORS}, warnings=${WARNINGS}, total=${TOTAL}"
+
+          # Scope blocking errors to Rust files changed in this PR
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+            CHANGED_RUST=$(git diff --name-only "${BASE_REF}...HEAD" 2>/dev/null \
+              | grep -E '\.rs$' || true)
+          elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
+            # For merge queue, compare against the base
+            BASE_REF="origin/main"
+            CHANGED_RUST=$(git diff --name-only "${BASE_REF}...HEAD" 2>/dev/null \
+              | grep -E '\.rs$' || true)
+          else
+            # For pushes to main, check all Rust files changed in the last commit
+            CHANGED_RUST=$(git diff --name-only HEAD~1 HEAD 2>/dev/null \
+              | grep -E '\.rs$' || true)
+          fi
+
+          echo "Changed Rust files:"
+          echo "${CHANGED_RUST}"
+
+          if [[ -z "$CHANGED_RUST" ]]; then
+            ERRORS_BLOCKING=0
+            WARNINGS_BLOCKING=0
+            echo "No Rust files changed - skipping changed-file check"
+          else
+            PATTERN=$(echo "$CHANGED_RUST" | tr '\n' '|' | sed 's/|$//')
+            echo "File pattern: ${PATTERN}"
+            # Clippy format: "warning:" followed by "   --> file:line:col" on next line
+            # Use -B 1 to get the line before the file path (the warning/error line)
+            ERRORS_BLOCKING=$(grep -B 1 -E "(${PATTERN})" clippy_raw.log 2>/dev/null \
+              | grep -c "^error" || true)
+            ERRORS_BLOCKING=${ERRORS_BLOCKING:-0}
+            WARNINGS_BLOCKING=$(grep -B 1 -E "(${PATTERN})" clippy_raw.log 2>/dev/null \
+              | grep -c "^warning" || true)
+            WARNINGS_BLOCKING=${WARNINGS_BLOCKING:-0}
+            echo "Blocking errors in changed files: ${ERRORS_BLOCKING}"
+            echo "Blocking warnings in changed files: ${WARNINGS_BLOCKING}"
+          fi
+
+          BLOCKING_TOTAL=$((ERRORS_BLOCKING + WARNINGS_BLOCKING))
+
+          echo "errors=${ERRORS}"                   >> $GITHUB_OUTPUT
+          echo "warnings=${WARNINGS}"               >> $GITHUB_OUTPUT
+          echo "total=${TOTAL}"                     >> $GITHUB_OUTPUT
+          echo "errors_blocking=${ERRORS_BLOCKING}" >> $GITHUB_OUTPUT
+          echo "warnings_blocking=${WARNINGS_BLOCKING}" >> $GITHUB_OUTPUT
+          echo "blocking_total=${BLOCKING_TOTAL}"   >> $GITHUB_OUTPUT
+          echo "build_failed=${BUILD_FAILED}"       >> $GITHUB_OUTPUT
+
+          # Fail immediately if this was a build failure due to compilation errors
+          if [[ "${BUILD_FAILED}" == "true" ]]; then
+            echo "::error::Build failed due to compilation errors"
+            echo "## :x: Build Failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The build failed due to compilation errors." >> "$GITHUB_STEP_SUMMARY"
+            echo "Check the build log for details." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          # Job summary
+          {
+            echo "## Clippy Results"
+            echo ""
+            echo "| Metric | Count |"
+            echo "|--------|------:|"
+            echo "| :x: Errors | **${ERRORS}** |"
+            echo "| :warning: Warnings | **${WARNINGS}** |"
+            echo "| Total | **${TOTAL}** |"
+            echo ""
+            if [[ "${BLOCKING_TOTAL}" -gt 0 ]]; then
+              echo "### :x: Check Failed"
+              echo ""
+              echo "Found **${ERRORS_BLOCKING} error(s)** and **${WARNINGS_BLOCKING} warning(s)** in changed files."
+              echo ""
+              echo "#### Issues in Changed Files"
+              echo '```'
+              grep -B 1 -E "(${PATTERN})" clippy_raw.log 2>/dev/null | grep -E "(^warning|^error|^ *-->)" | head -50 || echo "See artifact for details"
+              echo '```'
+              echo ""
+              echo "> Download the **clippy-findings** artifact for full details."
+            else
+              echo "> :white_check_mark: **Check passed** — no clippy issues in changed files."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload clippy log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clippy-findings
+          path: clippy_raw.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Fail check if clippy issues found in changed files
+        if: steps.findings.outputs.blocking_total != '0' && steps.findings.outputs.blocking_total != ''
+        run: |
+          echo "::error::Clippy found ${{ steps.findings.outputs.errors_blocking }} error(s) and ${{ steps.findings.outputs.warnings_blocking }} warning(s) in changed files."
+          echo "Download the clippy-findings artifact to see full details."
+          exit 1
+
+      - name: Set conclusion
+        id: set-conclusion
+        if: always()
+        run: |
+          if [[ "${{ steps.findings.outputs.blocking_total }}" == "0" ]]; then
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          fi
