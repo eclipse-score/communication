@@ -70,13 +70,17 @@ bazel coverage --combined_report=lcov //score/message_passing:client_connection_
 When [`quality/coverage.bazelrc`](coverage.bazelrc) is active, the combined LCOV report is written to
 `bazel-out/_coverage/_coverage_report.dat`.
 
-To generate an HTML report from the LCOV data:
+To generate an HTML report from the LCOV data (works for both full and single-target runs):
 
 ```bash
-genhtml --ignore-errors inconsistent bazel-out/_coverage/_coverage_report.dat --output-directory coverage_html
+bazel run //quality/coverage:generate_coverage_html
 ```
 
-Then open `coverage_html/index.html` in a browser.
+The report is written to `cpp_coverage/index.html`. Open it with:
+
+```bash
+xdg-open cpp_coverage/index.html
+```
 
 ## Sanitizers
 

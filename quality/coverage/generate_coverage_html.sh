@@ -88,9 +88,14 @@ _tool_path() {
 }
 
 GENHTML="$(_tool_path genhtml)"
+LCOV="$(_tool_path lcov)"
 
 if [[ -z "$GENHTML" ]]; then
   echo "ERROR: 'genhtml' not found. Run via 'bazel run //quality/coverage:generate_coverage_html' or install 'lcov'." >&2
+  exit 1
+fi
+if [[ -z "$LCOV" ]]; then
+  echo "ERROR: 'lcov' not found. Run via 'bazel run //quality/coverage:generate_coverage_html' or install 'lcov'." >&2
   exit 1
 fi
 
@@ -100,6 +105,22 @@ lcov_lib="$(dirname "$(dirname "${GENHTML}")")/lib/lcov"
 if [[ -d "${lcov_lib}" ]]; then
   export PERL5LIB="${lcov_lib}${PERL5LIB:+:${PERL5LIB}}"
 fi
+
+# ---------------------------------------------------------------------------
+# Filter source files from LCOV data before generating HTML.
+# The --instrumentation_filter in coverage.bazelrc already excludes external
+# deps (third_party, gtest) and test/ subdirectories at compile time.
+# Only files that slip through because they live in mixed packages need
+# removal here:
+#   - *mock*.h/cpp      mock headers in production packages (e.g. configuration/)
+# ---------------------------------------------------------------------------
+LCOV_DAT_FILTERED="${TMPDIR:-/tmp}/coverage_report_filtered_$$.dat"
+"${LCOV}" --remove "${LCOV_DAT}" \
+  '*mock*.h' \
+  '*mock*.cpp' \
+  --output-file "${LCOV_DAT_FILTERED}" \
+  --ignore-errors unused
+
 # NOTE: "--ignore-errors category,inconsistent"
 # LLVM coverage writes per-process .profraw files that are merged during
 # bazel's post-processing step.  The merge can occasionally leave
@@ -107,12 +128,13 @@ fi
 # silently skip those entries instead of aborting, coverage numbers are
 # slightly under-counted for affected translation units but the report still
 # generates.
-"${GENHTML}" "${LCOV_DAT}" \
+"${GENHTML}" "${LCOV_DAT_FILTERED}" \
   --output-directory "${OUTPUT_DIR}" \
   --show-details \
   --legend \
   --function-coverage \
   --branch-coverage \
+  --rc no_exception_branch=1 \
   --ignore-errors category,inconsistent
 
 echo "Coverage report written to: ${OUTPUT_DIR}"
