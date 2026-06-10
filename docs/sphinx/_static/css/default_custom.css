@@ -79,16 +79,16 @@ html[data-theme="dark"] {
 /* ============================================================================
  * Navigation Styles
  * ============================================================================ */
-/* Search box in navbar/header - always light background with dark text */
+/* Search box in navbar/header */
 .bd-header input.search-input,
 .bd-header .search-button-field,
 .bd-header input[type="search"],
 .navbar input.search-input,
 .navbar .search-button-field,
 .navbar input[type="search"] {
-    color: #333333 ;
-    background-color: #ffffff ;
-    border: none ;
+    color: #FFFFFF !important;
+    background-color: transparent !important;
+    border: none !important;
 }
 
 .bd-header input.search-input::placeholder,
@@ -141,16 +141,6 @@ html .pst-navbar-icon:hover {
     border-bottom: 1px solid var(--pst-color-primary);
 }
 
-/* Version Switcher Button */
-button.btn.version-switcher__button {
-    color: #FFF;
-}
-
-/* Version Switcher Menu */
-.version-switcher__menu a.list-group-item {
-    color: #FFF;
-}
-
 /* Primary navigation styles */
 .navbar-brand {
     color: #FFFFFF ;
@@ -186,97 +176,45 @@ button.btn.version-switcher__button {
     color: #FFFFFF ;
 }
 
-/* Override for search input - must come after the wildcard rule above */
-/* Light theme search box - light background with dark/purple text */
-html[data-theme="light"] .bd-header input,
-html[data-theme="light"] .bd-header input.search-input,
-html[data-theme="light"] .bd-header input[type="search"],
-html[data-theme="light"] .bd-header .search-button-field input,
-html[data-theme="light"] .bd-header .search-button__button,
-html[data-theme="light"] .bd-header button.search-button__button,
-html[data-theme="light"] .bd-header .search-button,
-html[data-theme="light"] .navbar input,
-html[data-theme="light"] .navbar input.search-input,
-html[data-theme="light"] .navbar input[type="search"] {
-    color: #7c4daa;
-    background-color: #ffffff;
-    transition: background-color 0.2s ease, color 0.2s ease;
+/* Header search button styling */
+.bd-header .search-button__button,
+.bd-header button.search-button__button,
+.bd-header .search-button {
+    color: #e6c8ff !important;
+    background-color: rgba(214, 171, 255, 0.18) !important;
+    border: 2px solid #b784e4 !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+                color 0.2s ease !important;
 }
 
-/* Hover effect for light theme search box */
-html[data-theme="light"] .bd-header .search-button__button:hover,
-html[data-theme="light"] .bd-header button.search-button__button:hover {
-    background-color: #e8d4f5 !important;
-    color: #7c4daa !important;
+.bd-header .search-button__button:hover,
+.bd-header button.search-button__button:hover {
+    background-color: rgba(214, 171, 255, 0.24) !important;
+    border-color: #c89af0 !important;
+    color: #f1dbff !important;
 }
 
-/* Light theme - search button text and icon - force same color as text */
-html[data-theme="light"] .bd-header .search-button__default-text,
-html[data-theme="light"] .bd-header .search-button__kbd-shortcut,
-html[data-theme="light"] .navbar .search-button__default-text,
-html[data-theme="light"] .navbar .search-button__kbd-shortcut {
-    color: #7c4daa;
+.bd-header .search-button__default-text,
+.bd-header .search-button__kbd-shortcut,
+.navbar .search-button__default-text,
+.navbar .search-button__kbd-shortcut {
+    color: #e6c8ff !important;
 }
 
-/* Light theme - SVG icon - must match text color */
-html[data-theme="light"] .bd-header .search-button svg,
-html[data-theme="light"] .bd-header .search-button svg *,
-html[data-theme="light"] .bd-header .search-button svg path,
-html[data-theme="light"] .bd-header .search-button svg circle,
-html[data-theme="light"] .navbar .search-button svg,
-html[data-theme="light"] .navbar .search-button svg *,
-html[data-theme="light"] .navbar .search-button svg path,
-html[data-theme="light"] .navbar .search-button svg circle {
-    color: #7c4daa;
-    fill: none;
-    stroke: #7c4daa;
-    stroke-width: 2;
-}
-
-/* Dark theme search box - gray background with white text */
-html[data-theme="dark"] .bd-header input,
-html[data-theme="dark"] .bd-header input.search-input,
-html[data-theme="dark"] .bd-header input[type="search"],
-html[data-theme="dark"] .bd-header .search-button-field input,
-html[data-theme="dark"] .bd-header .search-button__button,
-html[data-theme="dark"] .bd-header button.search-button__button,
-html[data-theme="dark"] .bd-header .search-button,
-html[data-theme="dark"] .navbar input,
-html[data-theme="dark"] .navbar input.search-input,
-html[data-theme="dark"] .navbar input[type="search"] {
-    color: #ffffff;
-    background-color: #4a4a4a;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-/* Hover effect for dark theme search box */
-html[data-theme="dark"] .bd-header .search-button__button:hover,
-html[data-theme="dark"] .bd-header button.search-button__button:hover {
-    background-color: #d4c0e8 !important;
-    color: #2D1942 !important;
-}
-
-/* Dark theme - search button text and icon */
-html[data-theme="dark"] .bd-header .search-button__default-text,
-html[data-theme="dark"] .bd-header .search-button__kbd-shortcut,
-html[data-theme="dark"] .navbar .search-button__default-text,
-html[data-theme="dark"] .navbar .search-button__kbd-shortcut {
-    color: #ffffff;
-}
-
-/* Dark theme - SVG icon - must match text color */
-html[data-theme="dark"] .bd-header .search-button svg,
-html[data-theme="dark"] .bd-header .search-button svg *,
-html[data-theme="dark"] .bd-header .search-button svg path,
-html[data-theme="dark"] .bd-header .search-button svg circle,
-html[data-theme="dark"] .navbar .search-button svg,
-html[data-theme="dark"] .navbar .search-button svg *,
-html[data-theme="dark"] .navbar .search-button svg path,
-html[data-theme="dark"] .navbar .search-button svg circle {
-    color: #ffffff;
-    fill: none;
-    stroke: #ffffff;
-    stroke-width: 2;
+.bd-header .search-button svg,
+.bd-header .search-button svg *,
+.bd-header .search-button svg path,
+.bd-header .search-button svg circle,
+.navbar .search-button svg,
+.navbar .search-button svg *,
+.navbar .search-button svg path,
+.navbar .search-button svg circle {
+    color: #f3e5ff !important;
+    fill: none !important;
+    stroke: #f3e5ff !important;
+    stroke-width: 2 !important;
 }
 
 .bd-header a {
