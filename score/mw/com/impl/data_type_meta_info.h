@@ -18,7 +18,8 @@
 
 namespace score::mw::com::impl
 {
-
+// TODO This datatype should be replaced by the shared type DataTypeSizeInfo
+// (https://github.com/eclipse-score/baselibs/blob/main/score/memory/data_type_size_info.h)
 /// \brief Meta-info of a data type exchanged via mw::com/LoLa. I.e. can be the data type of an event/filed/method arg.
 struct DataTypeMetaInfo
 {
