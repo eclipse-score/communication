@@ -12,7 +12,10 @@
  ********************************************************************************/
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
+
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/method_type.h"
+#include "score/mw/com/impl/methods/method_handler_checker.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
@@ -21,7 +24,6 @@
 #include "score/result/result.h"
 
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -31,7 +33,7 @@
 namespace score::mw::com::impl
 {
 
-template <typename, bool, bool>
+template <typename, bool, bool, bool>
 class SkeletonField;
 
 template <typename Signature>
@@ -53,7 +55,7 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     static_assert(return_value_is_not_a_pointer,
                   "Return value can not be a pointer, since we can not put them in shared memory.");
 
-    template <typename, bool, bool>
+    template <typename, bool, bool, bool>
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SkeletonField;
 
@@ -111,7 +113,15 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     template <typename Callable>
     Result<void> RegisterHandler(Callable&& callback);
 
+    /// \brief Overload for callables that accept QualityType.
+    template <typename Callable>
+    Result<void> RegisterHandler(Callable&& callback, QualityType);
+
     void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept;
+
+  private:
+    template <typename Callable>
+    Result<void> RegisterHandlerImpl(Callable&& callback);
 };
 
 template <typename ReturnType, typename... ArgTypes>
@@ -160,19 +170,53 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
 {
     static_assert(std::is_rvalue_reference_v<decltype(callback)>,
                   "Callbeck provided to register has to be an rvalue reference");
+    AssertCallableMatchesMethodSignature<Callable, ReturnType, ArgTypes...>();
 
-    // A move would only be problematic if the forwarding refference Callback&& evealuates to an LValue and and is moved
-    // from (which the caller of the function might not expect). We static assert that the callback is an RValue
-    // refference and can always be movef from.
-    // NOLINTNEXTLINE(bugprone-move-forwarding-reference) The callback is asserted to be an RValue reference
-    auto callable_invoker = [callable = std::move(callback)](auto&&... ptrs) -> decltype(auto) {
-        return std::invoke(callable, (*ptrs)...);
-    };
+    constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
+    if constexpr (is_return_type_not_void)
+    {
+        auto wrapped_handler = [cb = std::forward<Callable>(callback)](
+                                   QualityType /*quality_type*/, ReturnType& ret, const ArgTypes&... args) {
+            std::invoke(cb, ret, args...);
+        };
+        return RegisterHandlerImpl(std::move(wrapped_handler));
+    }
+    else
+    {
+        auto wrapped_handler = [cb = std::forward<Callable>(callback)](QualityType /*quality_type*/,
+                                                                       const ArgTypes&... args) {
+            std::invoke(cb, args...);
+        };
+        return RegisterHandlerImpl(std::move(wrapped_handler));
+    }
+}
 
+template <typename ReturnType, typename... ArgTypes>
+template <typename Callable>
+Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& callback, QualityType)
+{
+    constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
+    if constexpr (is_return_type_not_void)
+    {
+        static_assert(std::is_invocable_r_v<void, Callable, QualityType, ReturnType&, const ArgTypes&...>,
+                      "Callable must have signature void(QualityType, ReturnType&, const ArgTypes&...)");
+    }
+    else
+    {
+        static_assert(std::is_invocable_r_v<void, Callable, QualityType, const ArgTypes&...>,
+                      "Callable must have signature void(QualityType, const ArgTypes&...)");
+    }
+    return RegisterHandlerImpl(std::forward<Callable>(callback));
+}
+
+template <typename ReturnType, typename... ArgTypes>
+template <typename Callable>
+Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandlerImpl(Callable&& callback)
+{
     SkeletonMethodBinding::TypeErasedHandler type_erased_callable =
-        [callable_invoker = std::move(callable_invoker)](
-            std::optional<score::cpp::span<std::byte>> type_erased_in_args,
-            std::optional<score::cpp::span<std::byte>> type_erased_return) {
+        [callback = std::forward<Callable>(callback)](std::optional<score::cpp::span<std::byte>> type_erased_in_args,
+                                                      std::optional<score::cpp::span<std::byte>> type_erased_return,
+                                                      QualityType quality_type) {
             using InArgPtrTuple = std::tuple<ArgTypes*...>;
             InArgPtrTuple typed_in_arg_ptrs{};
 
@@ -186,18 +230,32 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
                 typed_in_arg_ptrs = Deserialize<ArgTypes...>(type_erased_in_args.value());
             }
 
-            constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
-            if constexpr (is_return_type_not_void)
+            constexpr bool is_return_type_not_void_impl = !std::is_same_v<ReturnType, void>;
+            if constexpr (is_return_type_not_void_impl)
             {
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
                     type_erased_return.has_value(),
                     "ReturnType is non void. Thus, type_erased_result needs to have a value!");
-                ReturnType res = std::apply(callable_invoker, std::forward<InArgPtrTuple>(typed_in_arg_ptrs));
-                SerializeArgs<ReturnType>(type_erased_return.value(), res);
+                const auto typed_return_ptr_tuple = Deserialize<ReturnType>(type_erased_return.value());
+                auto* const typed_return_ptr = std::get<0>(typed_return_ptr_tuple);
+
+                // Call the callable with quality_type, typed_return_ptr and the typed_in_arg_ptrs which are
+                // unpacked from the tuple into individual arguments.
+                std::apply(
+                    [&callback, typed_return_ptr, quality_type](ArgTypes*... typed_in_arg_ptrs) {
+                        std::invoke(callback, quality_type, *typed_return_ptr, *typed_in_arg_ptrs...);
+                    },
+                    typed_in_arg_ptrs);
             }
             else
             {
-                std::apply(callable_invoker, std::forward<InArgPtrTuple>(typed_in_arg_ptrs));
+                // Call the callable with quality_type and the typed_in_arg_ptrs which are unpacked from the tuple
+                // into individual arguments.
+                std::apply(
+                    [&callback, quality_type](ArgTypes*... typed_in_arg_ptrs) {
+                        std::invoke(callback, quality_type, *typed_in_arg_ptrs...);
+                    },
+                    typed_in_arg_ptrs);
             }
         };
 
@@ -205,4 +263,5 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
 }
 
 }  // namespace score::mw::com::impl
+
 #endif  // SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H

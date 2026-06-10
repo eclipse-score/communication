@@ -249,6 +249,7 @@ cc_library(
         "//score/mw/com/impl/mocking:i_skeleton_event",
         "//score/mw/com/impl/plumbing:event",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
@@ -540,6 +541,7 @@ cc_library(
     deps = [
         ":binding_type",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing_data",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",

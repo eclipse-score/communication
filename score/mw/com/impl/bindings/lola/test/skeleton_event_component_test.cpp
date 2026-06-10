@@ -94,6 +94,7 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
 
     void TearDown() override
     {
+        skeleton_event_.PrepareStopOffer();
         parent_skeleton_->PrepareStopOffer({});
         parent_skeleton_.reset();
         score::memory::shared::MemoryResourceRegistry::getInstance().clear();

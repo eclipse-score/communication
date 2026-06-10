@@ -23,6 +23,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -127,6 +128,14 @@ class SkeletonFieldTestFixture : public ::testing::Test
     std::optional<TestSampleType> return_storage_{};
 };
 
+class MyGetEnabledSkeleton : public SkeletonBase
+{
+  public:
+    using SkeletonBase::SkeletonBase;
+
+    SkeletonField<TestSampleType, false, false, true> my_get_field_{*this, kFieldName};
+};
+
 TEST(SkeletonFieldTest, NotCopyable)
 {
     RecordProperty("Verifies", "SCR-18221574");
@@ -170,6 +179,85 @@ TEST(SkeletonFieldTest, SkeletonFieldContainsPublicSampleType)
 
     static_assert(std::is_same<typename SkeletonField<TestSampleType>::FieldType, TestSampleType>::value,
                   "Incorrect FieldType.");
+}
+
+TEST(SkeletonFieldTest, CtorBothEnabledAcceptsEnableBothTag)
+{
+    using FieldType = SkeletonField<TestSampleType, true, false, true>;
+    static_assert(std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableBothTag>,
+                  "Constructor should accept EnableBothTag when ES=true and EG=true");
+}
+
+TEST(SkeletonFieldTest, CtorGetOnlyAcceptsEnableGetOnlyTag)
+{
+    using FieldType = SkeletonField<TestSampleType, false, false, true>;
+    static_assert(std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableGetOnlyTag>,
+                  "Constructor should accept EnableGetOnlyTag when ES=false and EG=true");
+}
+
+TEST(SkeletonFieldTest, CtorSetOnlyAcceptsEnableSetOnlyTag)
+{
+    using FieldType = SkeletonField<TestSampleType, true, false, false>;
+    static_assert(std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableSetOnlyTag>,
+                  "Constructor should accept EnableSetOnlyTag when ES=true and EG=false");
+}
+
+TEST(SkeletonFieldTest, CtorNeitherEnabledAcceptsEnableNeitherTag)
+{
+    using FieldType = SkeletonField<TestSampleType, false, false, false>;
+    static_assert(std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableNeitherTag>,
+                  "Constructor should accept EnableNeitherTag when ES=false and EG=false");
+}
+
+TEST(SkeletonFieldTest, CtorBothEnabledRejectsEnableGetOnlyTag)
+{
+    using FieldType = SkeletonField<TestSampleType, true, false, true>;
+    static_assert(!std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableGetOnlyTag>,
+                  "Constructor should reject EnableGetOnlyTag when ES=true and EG=true");
+}
+
+TEST(SkeletonFieldTest, CtorGetOnlyRejectsEnableSetOnlyTag)
+{
+    using FieldType = SkeletonField<TestSampleType, false, false, true>;
+    static_assert(!std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableSetOnlyTag>,
+                  "Constructor should reject EnableSetOnlyTag when ES=false and EG=true");
+}
+
+TEST(SkeletonFieldTest, CtorSetOnlyRejectsEnableBothTag)
+{
+    using FieldType = SkeletonField<TestSampleType, true, false, false>;
+    static_assert(!std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableBothTag>,
+                  "Constructor should reject EnableBothTag when ES=true and EG=false");
+}
+
+TEST(SkeletonFieldTest, CtorNeitherEnabledRejectsEnableBothTag)
+{
+    using FieldType = SkeletonField<TestSampleType, false, false, false>;
+    static_assert(!std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableBothTag>,
+                  "Constructor should reject EnableBothTag when ES=false and EG=false");
+}
+
+TEST(SkeletonFieldGetHandlerTest, RegisterGetHandlerInvokesGetLatestSampleOnBinding)
+{
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+    // Set up event binding mock
+    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
+    auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
+        .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
+
+    // Set up method binding mock to verify RegisterHandler is called during construction
+    SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard{};
+    mock_binding::SkeletonMethod skeleton_method_binding_mock{};
+    EXPECT_CALL(skeleton_method_binding_mock, RegisterHandler(_)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, _))
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock))));
+
+    // When a skeleton with EnableGet=true field is constructed, RegisterHandler is called automatically
+    MyGetEnabledSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 }
 
 // When Ticket-104261 is implemented, the Update call does not have to be deferred until OfferService is called. This
@@ -944,25 +1032,30 @@ TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenEnable
     EXPECT_TRUE(result.has_value());
 }
 
-TEST(SkeletonFieldSetHandlerTypeTraitsTest, RegisterSetHandlerAcceptsAnyCallable)
+TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerAcceptsStdFunction)
 {
-    RecordProperty("Description",
-                   "RegisterSetHandler() shall accept any callable (lambda, std::function, "
-                   "score::cpp::callback) with signature void(FieldType&). "
-                   "The public interface is not tied to a specific callable type.");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("Priority", "1");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
+    // Given a skeleton containing a field with a setter enabled
+    MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
-    using HandlerSignature = void(TestSampleType&);
+    // When registering a set handler using std::function
+    std::function<void(TestSampleType&)> std_function_handler = [](TestSampleType& /*value*/) noexcept {};
+    const auto result = unit.my_setter_field_.RegisterSetHandler(std_function_handler).has_value();
 
-    // lambda
-    static_assert(std::is_invocable_v<std::function<HandlerSignature>, TestSampleType&>,
-                  "std::function with expected signature must be invocable");
+    // Then the registration succeeds
+    EXPECT_TRUE(result);
+}
 
-    // score::cpp::callback
-    static_assert(std::is_invocable_v<score::cpp::callback<HandlerSignature>, TestSampleType&>,
-                  "score::cpp::callback with expected signature must be invocable");
+TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerAcceptsCppCallback)
+{
+    // Given a skeleton containing a field with a setter enabled
+    MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // When registering a set handler using score::cpp::callback
+    score::cpp::callback<void(TestSampleType&)> cpp_callback_handler = [](TestSampleType& /*value*/) noexcept {};
+    const auto result = unit.my_setter_field_.RegisterSetHandler(std::move(cpp_callback_handler)).has_value();
+
+    // Then the registration succeeds
+    EXPECT_TRUE(result);
 }
 
 // Handler wrapping: user callback is invoked and the field value is updated
@@ -999,11 +1092,6 @@ TEST_F(SkeletonFieldSetHandlerTest, UserCallbackIsInvokedByWrappedHandler)
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
                 Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
         .WillOnce(Return(ByMove(std::move(capturing_binding))));
-    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
-        .WillOnce(InvokeWithoutArgs([]() {
-            return std::unique_ptr<SkeletonMethodBinding>{};
-        }));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
@@ -1023,7 +1111,7 @@ TEST_F(SkeletonFieldSetHandlerTest, UserCallbackIsInvokedByWrappedHandler)
     // We replicate that serialization here for the single TestSampleType argument.
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
-    capturing_binding_ref.captured_handler_(in_span, out_span);
+    capturing_binding_ref.captured_handler_(in_span, out_span, QualityType{});
 
     // Verify the user callback was called
     EXPECT_TRUE(user_callback_called);
@@ -1052,11 +1140,6 @@ TEST_F(SkeletonFieldSetHandlerTest, UserCallbackCanModifyValueInPlace)
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
                 Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
         .WillOnce(Return(ByMove(std::move(capturing_binding))));
-    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
-        .WillOnce(InvokeWithoutArgs([]() {
-            return std::unique_ptr<SkeletonMethodBinding>{};
-        }));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
@@ -1074,7 +1157,7 @@ TEST_F(SkeletonFieldSetHandlerTest, UserCallbackCanModifyValueInPlace)
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
     // The handler shall call Send with 20, not 10
-    capturing_binding_ref.captured_handler_(in_span, out_span);
+    capturing_binding_ref.captured_handler_(in_span, out_span, QualityType{});
 }
 
 TEST_F(SkeletonFieldSetHandlerTest, WrappedHandlerLogsWhenUpdateFails)
@@ -1102,11 +1185,6 @@ TEST_F(SkeletonFieldSetHandlerTest, WrappedHandlerLogsWhenUpdateFails)
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
                 Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
         .WillOnce(Return(ByMove(std::move(capturing_binding))));
-    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
-        .WillOnce(InvokeWithoutArgs([]() {
-            return std::unique_ptr<SkeletonMethodBinding>{};
-        }));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
@@ -1122,7 +1200,7 @@ TEST_F(SkeletonFieldSetHandlerTest, WrappedHandlerLogsWhenUpdateFails)
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
     // Handler must complete normally even when Update() returns an error
-    capturing_binding_ref.captured_handler_(in_span, out_span);
+    capturing_binding_ref.captured_handler_(in_span, out_span, QualityType{});
 
     // The user callback was invoked before the failed Update()
     EXPECT_TRUE(user_callback_called);
@@ -1186,9 +1264,6 @@ TEST_F(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
     EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
                 Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
         .WillOnce(Return(ByMove(std::move(capturing_binding))));
-    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
-                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
-        .WillOnce(Return(ByMove(nullptr)));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
@@ -1212,7 +1287,7 @@ TEST_F(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
     // Invoke the most-recently captured handler (from the second registration)
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(incoming_value, TestSampleType{});
 
-    capturing_binding_ref.captured_handler_(in_span, out_span);
+    capturing_binding_ref.captured_handler_(in_span, out_span, QualityType{});
 
     // Only the second callback must have been called
     EXPECT_FALSE(first_callback_called);

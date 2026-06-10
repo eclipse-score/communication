@@ -349,6 +349,7 @@ cc_library(
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/methods:skeleton_method_binding",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "//score/mw/com/impl/util:arithmetic_utils",
         "@score_baselibs//score/filesystem",

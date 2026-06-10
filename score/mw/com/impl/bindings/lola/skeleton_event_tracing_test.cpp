@@ -455,7 +455,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
 
 using SkeletonEventTracingPrepareOfferFixture = SkeletonEventTracingFixture;
 
-TEST_F(SkeletonEventTracingPrepareOfferFixture, DisablingTracingWillNotRegisterTransactionLog)
+TEST_F(SkeletonEventTracingPrepareOfferFixture, DisablingTracingWillRegisterTransactionLog)
 {
     const bool enforce_max_samples{true};
 
@@ -470,10 +470,33 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture, DisablingTracingWillNotRegisterT
                             enforce_max_samples,
                             expected_enabled_trace_points);
 
+    // Getter must be enabled so that the transaction log is set up even when tracing is disabled
+    skeleton_event_->SetGetterEnabled(true);
+
     // Given an offered event in an offered service
     std::ignore = skeleton_event_->PrepareOffer();
 
-    // Then a TransactionLog is not registered
+    // Then a TransactionLog is registered even when tracing is disabled.
+    auto& transaction_log_set = GetTransactionLogSet();
+    const auto skeleton_transaction_log_result =
+        TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog();
+    ASSERT_TRUE(skeleton_transaction_log_result.has_value());
+}
+
+TEST_F(SkeletonEventTracingPrepareOfferFixture, DisablingTracingAndGetterWillNotRegisterTransactionLog)
+{
+    const bool enforce_max_samples{true};
+    impl::tracing::SkeletonEventTracingData expected_enabled_trace_points{};
+
+    InitialiseSkeletonEvent(fake_element_fq_id_,
+                            fake_event_name_,
+                            max_samples_,
+                            max_subscribers_,
+                            enforce_max_samples,
+                            expected_enabled_trace_points);
+
+    std::ignore = skeleton_event_->PrepareOffer();
+
     auto& transaction_log_set = GetTransactionLogSet();
     const auto skeleton_transaction_log_result =
         TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog();
@@ -563,7 +586,7 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillRemoveRe
     ASSERT_FALSE(TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog().has_value());
 }
 
-TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillNotRemoveTransactionLogThatWasNotRegistered)
+TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillRemoveTransactionLogWhenTracingDisabled)
 {
     const bool enforce_max_samples{true};
 
@@ -578,18 +601,20 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillNotRemov
                             enforce_max_samples,
                             expected_enabled_trace_points);
 
+    // Getter must be enabled so that the transaction log is set up even when tracing is disabled
+    skeleton_event_->SetGetterEnabled(true);
+
     // Given an offered event in an offered service
     std::ignore = skeleton_event_->PrepareOffer();
 
-    // Then a TransactionLog is not registered, because expected_enabled_trace_points has no corresponding trace points
-    // enabled
+    // Then a TransactionLog is registered even when tracing is disabled.
     auto& transaction_log_set = GetTransactionLogSet();
-    ASSERT_FALSE(TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog().has_value());
+    ASSERT_TRUE(TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog().has_value());
 
     // and when calling PrepareStopOffer
     skeleton_event_->PrepareStopOffer();
 
-    // Then the TransactionLog is still not registered
+    // Then the TransactionLog is unregistered
     ASSERT_FALSE(TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog().has_value());
 }
 

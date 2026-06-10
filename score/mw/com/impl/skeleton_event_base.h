@@ -60,6 +60,15 @@ class SkeletonEventBase
         skeleton_base_ = skeleton_base;
     }
 
+    /// \brief Informs the binding that getter functionality is enabled, triggering transaction log setup.
+    void SetGetterEnabled(bool getter_enabled) noexcept
+    {
+        if (binding_ != nullptr)
+        {
+            binding_->SetGetterEnabled(getter_enabled);
+        }
+    }
+
     /// \brief Used to indicate that the event shall be available to consumer
     /// Performs binding independent functionality and then dispatches to the binding
     score::Result<void> PrepareOffer() noexcept

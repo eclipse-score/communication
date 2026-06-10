@@ -67,7 +67,8 @@ class SkeletonMethod : public SkeletonMethodBinding
 
   private:
     void Call(const std::optional<score::cpp::span<std::byte>> in_args,
-              const std::optional<score::cpp::span<std::byte>> return_arg);
+              const std::optional<score::cpp::span<std::byte>> return_arg,
+              QualityType quality_type);
     void CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid);
 
     std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;

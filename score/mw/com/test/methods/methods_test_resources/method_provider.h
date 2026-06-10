@@ -109,10 +109,11 @@ bool MethodProvider<Skeleton>::RegisterMethodHandlerWithInArgsAndReturn()
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_ != nullptr);
 
-    auto handler_with_in_args_and_return = [](std::int32_t a, std::int32_t b) -> std::int32_t {
-        std::cout << "Provider: with_in_args_and_return called with " << a << " + " << b << std::endl;
-        return a + b;
-    };
+    auto handler_with_in_args_and_return =
+        [](std::int32_t& return_value, const std::int32_t& a, const std::int32_t& b) {
+            std::cout << "Provider: with_in_args_and_return called with " << a << " + " << b << std::endl;
+            return_value = a + b;
+        };
     const auto register_result =
         skeleton_->with_in_args_and_return.RegisterHandler(std::move(handler_with_in_args_and_return));
     if (!register_result)
@@ -129,8 +130,8 @@ template <typename Skeleton>
 bool MethodProvider<Skeleton>::RegisterMethodHandlerWithInArgsOnly(const std::int32_t expected_input_argument_a,
                                                                    const std::int32_t expected_input_argument_b)
 {
-    auto handler_with_in_args_only = [expected_input_argument_a, expected_input_argument_b](std::int32_t a,
-                                                                                            std::int32_t b) {
+    auto handler_with_in_args_only = [expected_input_argument_a, expected_input_argument_b](const std::int32_t& a,
+                                                                                            const std::int32_t& b) {
         std::cout << "Provider: with_in_args_only called with " << a << " + " << b << std::endl;
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(a == expected_input_argument_a, "Unexpected first InArg received!");
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(b == expected_input_argument_b, "Unexpected second InArg received!");
@@ -149,9 +150,9 @@ bool MethodProvider<Skeleton>::RegisterMethodHandlerWithInArgsOnly(const std::in
 template <typename Skeleton>
 bool MethodProvider<Skeleton>::RegisterMethodHandlerWithReturnOnly(const std::int32_t expected_return_value)
 {
-    auto handler_with_return_only = [expected_return_value]() -> std::int32_t {
+    auto handler_with_return_only = [expected_return_value](std::int32_t& return_value) {
         std::cout << "Provider: with_return_only called. Returning " << expected_return_value << std::endl;
-        return expected_return_value;
+        return_value = expected_return_value;
     };
     const auto register_result = skeleton_->with_return_only.RegisterHandler(std::move(handler_with_return_only));
     if (!register_result)

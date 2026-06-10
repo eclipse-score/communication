@@ -14,7 +14,9 @@
 #define SCORE_MW_COM_IMPL_SKELETON_EVENT_BINDING_H
 
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include "score/result/result.h"
@@ -66,6 +68,9 @@ class SkeletonEventBindingBase
 
     /// \todo To be removed in Ticket-134850
     virtual void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept = 0;
+
+    /// \brief Informs the binding that a getter is enabled for this field event, enabling transaction log setup.
+    virtual void SetGetterEnabled(bool getter_enabled) noexcept = 0;
 };
 
 /// \brief The SkeletonEventBinding represents the interface that _every_ binding has to provide, if it wants to support
@@ -88,6 +93,8 @@ class SkeletonEventBinding : public SkeletonEventBindingBase
     /// \brief Allocates memory for SampleType for the user to fill it. This is especially necessary for Zero-Copy
     /// implementations.
     virtual Result<SampleAllocateePtr<SampleType>> Allocate() noexcept = 0;
+
+    virtual Result<SamplePtr<SampleType>> GetLatestSample(const QualityType& quality_type) noexcept = 0;
 
     std::size_t GetMaxSize() const noexcept override
     {

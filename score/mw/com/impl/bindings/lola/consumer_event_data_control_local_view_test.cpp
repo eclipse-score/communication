@@ -216,6 +216,38 @@ TEST_F(ConsumerEventDataControlLocalViewFixture, FailingToUpdateSlotValueCausesR
     // No event will be found
     ASSERT_FALSE(event.has_value());
 }
+
+TEST_F(ConsumerEventDataControlLocalViewFixture, GetLatestSlotReturnsNewestReadySlot)
+{
+    // Given an EventDataControl with multiple ready slots and increasing timestamps
+    GivenAConsumerEventDataControlLocalViewUsingRealAtomics(3);
+    score::cpp::ignore = WithAnAllocatedSlot(1);
+    score::cpp::ignore = WithAnAllocatedSlot(2);
+    score::cpp::ignore = WithAnAllocatedSlot(3);
+
+    // When requesting the latest slot
+    const auto latest_slot = unit_->GetLatestSlot();
+
+    // Then the newest sample is returned and referenced
+    ASSERT_TRUE(latest_slot.has_value());
+    EXPECT_EQ((*unit_)[latest_slot.value()].GetTimeStamp(), 3U);
+    EXPECT_EQ((*unit_)[latest_slot.value()].GetReferenceCount(), 1U);
+}
+
+TEST_F(ConsumerEventDataControlLocalViewFixture, GetLatestSlotReturnsNullIfNoReadySlotExists)
+{
+    // Given an EventDataControl with one slot in writing state (allocated but not marked ready)
+    GivenAConsumerEventDataControlLocalViewUsingRealAtomics(1);
+    const auto allocated_slot = provider_event_data_control_local_->AllocateNextSlot();
+    ASSERT_TRUE(allocated_slot.has_value());
+
+    // When requesting the latest slot
+    const auto latest_slot = unit_->GetLatestSlot();
+
+    // Then no slot is returned
+    EXPECT_FALSE(latest_slot.has_value());
+}
+
 using EventDataControlReferenceSpecificEventFixture = ConsumerEventDataControlLocalViewFixture;
 TEST_F(EventDataControlReferenceSpecificEventFixture, ReferenceSpecificEvents)
 {

@@ -119,12 +119,14 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
         dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_unique_method_id);
 
         std::ignore = foo_method_->RegisterHandler([this](std::optional<score::cpp::span<std::byte>> in_args,
-                                                          std::optional<score::cpp::span<std::byte>> return_arg) {
-            std::invoke(foo_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg);
+                                                          std::optional<score::cpp::span<std::byte>> return_arg,
+                                                          QualityType quality_type) {
+            std::invoke(foo_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg, quality_type);
         });
         std::ignore = dumb_method_->RegisterHandler([this](std::optional<score::cpp::span<std::byte>> in_args,
-                                                           std::optional<score::cpp::span<std::byte>> return_arg) {
-            std::invoke(dumb_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg);
+                                                           std::optional<score::cpp::span<std::byte>> return_arg,
+                                                           QualityType quality_type) {
+            std::invoke(dumb_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg, quality_type);
         });
     }
 
@@ -870,13 +872,13 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRegistersAMethodCallHan
 
     // Expecting that the type erased callback will be called for each method with InArgs and ReturnArg storage
     // provided if TypeErasedElementInfo for the method in MethodData contains InArgs / a ReturnArg
-    EXPECT_CALL(foo_mock_type_erased_callback_, Call(_, _))
-        .WillOnce(Invoke([](auto in_args_optional, auto result_optional) {
+    EXPECT_CALL(foo_mock_type_erased_callback_, Call(_, _, _))
+        .WillOnce(Invoke([](auto in_args_optional, auto result_optional, auto /*quality_type*/) {
             EXPECT_EQ(in_args_optional.has_value(), kFooTypeErasedElementInfo.in_arg_type_info.has_value());
             EXPECT_EQ(result_optional.has_value(), kFooTypeErasedElementInfo.return_type_info.has_value());
         }));
-    EXPECT_CALL(dumb_mock_type_erased_callback_, Call(_, _))
-        .WillOnce(Invoke([](auto in_args_optional, auto result_optional) {
+    EXPECT_CALL(dumb_mock_type_erased_callback_, Call(_, _, _))
+        .WillOnce(Invoke([](auto in_args_optional, auto result_optional, auto /*quality_type*/) {
             EXPECT_EQ(in_args_optional.has_value(), kDumbTypeErasedElementInfo.in_arg_type_info.has_value());
             EXPECT_EQ(result_optional.has_value(), kDumbTypeErasedElementInfo.return_type_info.has_value());
         }));
