@@ -187,11 +187,11 @@ class SkeletonEventCommon
     /// PrepareStopOfferCommon()
     /// - optional as only needed when tracing is enabled and when they haven't been cleaned up via a call to
     /// PrepareStopOfferCommon().
-    std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
+    std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_qm_{};
+    std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_asil_b_{};
     std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_{};
     std::optional<ReceiveHandlerRegistrationChangedCallback> receive_handler_registration_changed_callback_;
 
-    void EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set);
     void EmplaceTypeErasedSamplePtrsGuard();
     void UpdateCurrentTimestamp();
     void SetQmNotificationsRegistered(bool value);
@@ -243,10 +243,23 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(EventControl& event_con
 
     const bool tracing_for_skeleton_event_enabled =
         tracing_data_.enable_send || tracing_data_.enable_send_with_allocate;
+
+    // QM TransactionLog: register if tracing is enabled OR getter is enabled
     if (tracing_for_skeleton_event_enabled || getter_enabled_)
     {
-        EmplaceTransactionLogRegistrationGuard(event_control_qm.transaction_log_set_);
+        score::cpp::ignore = transaction_log_registration_guard_qm_.emplace(
+            event_control_qm.transaction_log_set_.RegisterSkeletonTracingElement(
+                consumer_control_local_view_qm_.value()));
     }
+
+    // ASIL-B TransactionLog: register on ASIL-B's own transaction_log_set_ if getter is enabled AND ASIL-B exists.
+    if (getter_enabled_ && consumer_control_local_view_asil_.has_value())
+    {
+        score::cpp::ignore = transaction_log_registration_guard_asil_b_.emplace(
+            event_control_asil_b->transaction_log_set_.RegisterSkeletonTracingElement(
+                consumer_control_local_view_asil_.value()));
+    }
+    
     // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
     // both branches (true / false) being covered. "Decision couldn't be analyzed" only appeared after changing the code
     // within the if statement (without changing the condition / tests). Suppression can be removed when bug is fixed in
@@ -407,35 +420,6 @@ Result<void> SkeletonEventCommon<SampleType>::NotifyConsumersIfHandlersRegistere
 }
 
 template <typename SampleType>
-void SkeletonEventCommon<SampleType>::EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set)
-{
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(consumer_control_local_view_qm_.has_value(),
-                                                "ConsumerEventDataControlLocalView must be initialized.");
-
-    if (transaction_log_registration_guard_.has_value())
-    {
-        if (consumer_control_local_view_asil_.has_value())
-        {
-            // Clear the manually injected ASIL cache before unregistering the old QM-owned log.
-            consumer_control_local_view_asil_.value().ClearTransactionLogLocalView();
-        }
-        transaction_log_registration_guard_.reset();
-    }
-
-    auto transaction_log_registration_guard =
-        transaction_log_set.RegisterSkeletonTracingElement(consumer_control_local_view_qm_.value());
-
-    if (getter_enabled_ && consumer_control_local_view_asil_.has_value())
-    {
-        auto& transaction_log =
-            transaction_log_set.GetTransactionLog(transaction_log_registration_guard.GetTransactionLogIndex());
-        consumer_control_local_view_asil_.value().SetTransactionLogLocalView(transaction_log);
-    }
-
-    score::cpp::ignore = transaction_log_registration_guard_.emplace(std::move(transaction_log_registration_guard));
-}
-
-template <typename SampleType>
 void SkeletonEventCommon<SampleType>::EmplaceTypeErasedSamplePtrsGuard()
 {
     score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(tracing_data_.service_element_tracing_data);
@@ -467,11 +451,8 @@ void SkeletonEventCommon<SampleType>::ResetGuards() noexcept
     type_erased_sample_ptrs_guard_.reset();
     if (event_data_control_composite_.has_value())
     {
-        if (consumer_control_local_view_asil_.has_value())
-        {
-            consumer_control_local_view_asil_.value().ClearTransactionLogLocalView();
-        }
-        transaction_log_registration_guard_.reset();
+        transaction_log_registration_guard_asil_b_.reset();
+        transaction_log_registration_guard_qm_.reset();
     }
 }
 
