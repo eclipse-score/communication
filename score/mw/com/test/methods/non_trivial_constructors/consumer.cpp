@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/test/methods/non_trivial_constructors/consumer.h"
 
+#include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/methods/methods_test_resources/proxy_container.h"
 #include "score/mw/com/test/methods/non_trivial_constructors/test_method_datatype.h"
@@ -33,14 +34,14 @@ const std::string kInterprocessNotificationShmPath{"/non_trivial_constructors_te
 const InstanceSpecifier kInstanceSpecifier =
     InstanceSpecifier::Create(std::string{"test/methods/non_trivial_constructors/MethodSignature"}).value();
 
-bool CallMethodWithInArgsAndReturn(NonTrivialConstructorProxy& proxy)
+void CallMethodWithInArgsAndReturn(NonTrivialConstructorProxy& proxy, const std::string& failure_message_prefix)
 {
-    auto call_result = [&proxy]() -> score::Result<impl::MethodReturnTypePtr<NonTriviallyConstructibleType>> {
+    auto call_result =
+        [&proxy, &failure_message_prefix]() -> score::Result<impl::MethodReturnTypePtr<NonTriviallyConstructibleType>> {
         std::cout << "\n=== Test: with_in_args_and_return (zero-copy) ===" << std::endl;
         auto allocated_args_result = proxy.with_in_args_and_return.Allocate();
         if (!allocated_args_result.has_value())
         {
-            std::cerr << "Consumer: Could not allocate method args: " << allocated_args_result.error() << std::endl;
             return Unexpected(allocated_args_result.error());
         }
 
@@ -49,8 +50,7 @@ bool CallMethodWithInArgsAndReturn(NonTrivialConstructorProxy& proxy)
     }();
     if (!call_result.has_value())
     {
-        std::cerr << "Consumer: with_in_args_and_return call failed: " << call_result.error() << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Consumer: with_in_args_and_return call failed: ", call_result.error());
     }
     const auto return_value = *(call_result.value());
 
@@ -58,22 +58,19 @@ bool CallMethodWithInArgsAndReturn(NonTrivialConstructorProxy& proxy)
     const auto expected_return_value = NonTriviallyConstructibleType{} + NonTriviallyConstructibleType{};
     if (return_value != expected_return_value)
     {
-        std::cerr << "Consumer: Expected " << expected_return_value << " but got " << return_value << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Consumer: Expected ", expected_return_value, " but got ", return_value);
     }
 
     std::cout << "Consumer: with_in_args_and_return returned correct result: " << return_value << std::endl;
-    return true;
 }
 
-bool CallMethodWithInArgsOnly(NonTrivialConstructorProxy& proxy)
+void CallMethodWithInArgsOnly(NonTrivialConstructorProxy& proxy, const std::string& failure_message_prefix)
 {
-    auto call_result = [&proxy]() -> Result<void> {
+    auto call_result = [&proxy, &failure_message_prefix]() -> Result<void> {
         std::cout << "\n=== Test: with_in_args_only (zero-copy) ===" << std::endl;
         auto allocated_args_result = proxy.with_in_args_only.Allocate();
         if (!allocated_args_result.has_value())
         {
-            std::cerr << "Consumer: Could not allocate method args: " << allocated_args_result.error() << std::endl;
             return Unexpected(allocated_args_result.error());
         }
 
@@ -83,90 +80,65 @@ bool CallMethodWithInArgsOnly(NonTrivialConstructorProxy& proxy)
     }();
     if (!call_result.has_value())
     {
-        std::cerr << "Consumer: with_in_args_only call failed: " << call_result.error() << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Consumer: with_in_args_only call failed: ", call_result.error());
     }
 
     std::cout << "Consumer: with_in_args_only returned without error" << std::endl;
-    return true;
 }
 
-bool CallMethodWithReturnOnly(NonTrivialConstructorProxy& proxy)
+void CallMethodWithReturnOnly(NonTrivialConstructorProxy& proxy, const std::string& failure_message_prefix)
 {
     std::cout << "\n=== Test: with_return_only (copy call) ===" << std::endl;
     const auto call_result = proxy.with_return_only();
     if (!call_result.has_value())
     {
-        std::cerr << "Consumer: with_return_only call failed: " << call_result.error() << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Consumer: with_return_only call failed: ", call_result.error());
     }
     const auto return_value = *(call_result.value());
 
     const auto expected_return_value = NonTriviallyConstructibleType{};
     if (return_value != expected_return_value)
     {
-        std::cerr << "Consumer: Expected " << expected_return_value << " but got " << return_value << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Consumer: Expected ", expected_return_value, " but got ", return_value);
     }
 
     std::cout << "Consumer: with_return_only returned correct result: " << return_value << std::endl;
-    return true;
 }
 
 }  // namespace
 
-int run_consumer()
+void run_consumer()
 {
     auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
     if (!(process_synchronizer_result.has_value()))
     {
-        std::cerr << "Methods non_trivial_constructors consumer failed: Could not create ProcessSynchronizer"
-                  << std::endl;
-        return EXIT_FAILURE;
+        FailTest("Methods non_trivial_constructors consumer failed: Could not create ProcessSynchronizer");
     }
+
+    // Set an exit function to notify the provider in case of failure in calls to FailTest, so that it does not wait
+    // indefinitely for the consumer to finish. Will also be called when the guard goes out of scope at the end of this
+    // function.
+    ExitFunctionGuard process_synchronizer_guard{[&process_synchronizer_result]() {
+        process_synchronizer_result->Notify();
+    }};
 
     ProxyContainer<NonTrivialConstructorProxy> consumer{};
 
     // Step 1. Find service and create proxy
     std::cout << "\nConsumer: Step 1" << std::endl;
-    if (!consumer.CreateProxy(kInstanceSpecifier))
-    {
-        std::cerr << "Methods non_trivial_constructors consumer failed: CreateProxy" << std::endl;
-        process_synchronizer_result->Notify();
-        return EXIT_FAILURE;
-    }
+    consumer.CreateProxy(kInstanceSpecifier, "non_trivial_constructors");
 
     // Step 2. Call zero-copy method with InArgs and Return
     std::cout << "\nConsumer: Step 2" << std::endl;
-    if (!CallMethodWithInArgsAndReturn(consumer.GetProxy()))
-    {
-        std::cerr << "Methods non_trivial_constructors consumer failed: CallMethodWithInArgsAndReturnZeroCopy"
-                  << std::endl;
-        process_synchronizer_result->Notify();
-        return EXIT_FAILURE;
-    }
+    CallMethodWithInArgsAndReturn(consumer.GetProxy(), "non_trivial_constructors");
 
     // Step 3. Call zero-copy method with InArgs only
     std::cout << "\nConsumer: Step 3" << std::endl;
-    if (!CallMethodWithInArgsOnly(consumer.GetProxy()))
-    {
-        std::cerr << "Methods non_trivial_constructors consumer failed: CallMethodWithInArgsOnlyZeroCopy" << std::endl;
-        process_synchronizer_result->Notify();
-        return EXIT_FAILURE;
-    }
+    CallMethodWithInArgsOnly(consumer.GetProxy(), "non_trivial_constructors");
 
     // Step 4. Call method with return only with copy
     std::cout << "\nConsumer: Step 4" << std::endl;
-    if (!CallMethodWithReturnOnly(consumer.GetProxy()))
-    {
-        std::cerr << "Methods non_trivial_constructors consumer failed: CallMethodWithReturnOnly" << std::endl;
-        process_synchronizer_result->Notify();
-        return EXIT_FAILURE;
-    }
-
-    process_synchronizer_result->Notify();
-
-    return EXIT_SUCCESS;
+    CallMethodWithReturnOnly(consumer.GetProxy(), "non_trivial_constructors");
 }
 
 }  // namespace score::mw::com::test

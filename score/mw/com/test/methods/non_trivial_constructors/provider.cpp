@@ -12,10 +12,12 @@
  ********************************************************************************/
 #include "score/mw/com/test/methods/non_trivial_constructors/provider.h"
 
+#include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/methods/methods_test_resources/skeleton_container.h"
 #include "score/mw/com/test/methods/non_trivial_constructors/test_method_datatype.h"
 
+#include "score/mw/com/types.h"
 #include <score/stop_token.hpp>
 
 #include <cstdlib>
@@ -27,9 +29,11 @@ namespace
 {
 const std::string kInterprocessNotificationShmPath{"/non_trivial_constructors_test_interprocess_notification"};
 
-const std::string kInstanceSpecifier{"test/methods/non_trivial_constructors/MethodSignature"};
+const auto kInstanceSpecifier{
+    InstanceSpecifier::Create(std::string{"test/methods/non_trivial_constructors/MethodSignature"}).value()};
 
-bool RegisterMethodHandlerWithInArgsAndReturn(NonTrivialConstructorSkeleton& skeleton)
+void RegisterMethodHandlerWithInArgsAndReturn(NonTrivialConstructorSkeleton& skeleton,
+                                              const std::string& failure_message_prefix)
 {
     auto handler_with_in_args_and_return = [](NonTriviallyConstructibleType a,
                                               NonTriviallyConstructibleType b) -> NonTriviallyConstructibleType {
@@ -40,15 +44,14 @@ bool RegisterMethodHandlerWithInArgsAndReturn(NonTrivialConstructorSkeleton& ske
         skeleton.with_in_args_and_return.RegisterHandler(std::move(handler_with_in_args_and_return));
     if (!register_result)
     {
-        std::cerr << "Provider: Failed to register with_in_args_and_return handler" << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Provider: Failed to register with_in_args_and_return handler");
     }
 
     std::cout << "Provider: Successfully registered with_in_args_and_return handler" << std::endl;
-    return true;
 }
 
-bool RegisterMethodHandlerWithInArgsOnly(NonTrivialConstructorSkeleton& skeleton)
+void RegisterMethodHandlerWithInArgsOnly(NonTrivialConstructorSkeleton& skeleton,
+                                         const std::string& failure_message_prefix)
 {
     auto handler_with_in_args_only = [](NonTriviallyConstructibleType a, NonTriviallyConstructibleType b) {
         std::cout << "Provider: with_in_args_only called with " << a << " + " << b << std::endl;
@@ -60,15 +63,14 @@ bool RegisterMethodHandlerWithInArgsOnly(NonTrivialConstructorSkeleton& skeleton
     const auto register_result = skeleton.with_in_args_only.RegisterHandler(std::move(handler_with_in_args_only));
     if (!register_result)
     {
-        std::cerr << "Provider: Failed to register with_in_args_only handler" << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Provider: Failed to register with_in_args_only handler");
     }
 
     std::cout << "Provider: Successfully registered with_in_args_only handler" << std::endl;
-    return true;
 }
 
-bool RegisterMethodHandlerWithReturnOnly(NonTrivialConstructorSkeleton& skeleton)
+void RegisterMethodHandlerWithReturnOnly(NonTrivialConstructorSkeleton& skeleton,
+                                         const std::string& failure_message_prefix)
 {
     auto handler_with_return_only = []() -> NonTriviallyConstructibleType {
         std::cout << "Provider: with_return_only called. Returning " << NonTriviallyConstructibleType{} << std::endl;
@@ -77,75 +79,50 @@ bool RegisterMethodHandlerWithReturnOnly(NonTrivialConstructorSkeleton& skeleton
     const auto register_result = skeleton.with_return_only.RegisterHandler(std::move(handler_with_return_only));
     if (!register_result)
     {
-        std::cerr << "Provider: Failed to register with_return_only handler" << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Provider: Failed to register with_return_only handler");
     }
 
     std::cout << "Provider: Successfully registered with_return_only handler" << std::endl;
-    return true;
 }
 
 }  // namespace
 
-bool run_provider(const score::cpp::stop_token& stop_token)
+void run_provider(const score::cpp::stop_token& stop_token)
 {
     auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
     if (!(process_synchronizer_result.has_value()))
     {
-        std::cerr << "Methods non_trivial_constructors provider failed: Could not create ProcessSynchronizer"
-                  << std::endl;
-        return EXIT_FAILURE;
+        FailTest("Methods non_trivial_constructors provider failed: Could not create ProcessSynchronizer");
     }
 
-    SkeletonContainer<NonTrivialConstructorSkeleton> skeleton_container{kInstanceSpecifier};
+    SkeletonContainer<NonTrivialConstructorSkeleton> skeleton_container{};
 
     // Step 1. Create skeleton
-    if (!skeleton_container.CreateSkeleton())
-    {
-        std::cerr << "Non trivial constructors provider failed: CreateSkeleton" << std::endl;
-        return EXIT_FAILURE;
-    }
+    skeleton_container.CreateSkeleton(kInstanceSpecifier, "non_trivial_constructors");
 
     // Step 2. Register method handler for method with InArgs and return value
-    if (!RegisterMethodHandlerWithInArgsAndReturn(skeleton_container.GetSkeleton()))
-    {
-        std::cerr << "Non trivial constructors provider failed: RegisterMethodHandlerWithInArgsAndReturn" << std::endl;
-        return EXIT_FAILURE;
-    }
+    RegisterMethodHandlerWithInArgsAndReturn(skeleton_container.GetSkeleton(), "non_trivial_constructors");
 
     // Step 3. Register method handler for method with only InArgs
-    if (!RegisterMethodHandlerWithInArgsOnly(skeleton_container.GetSkeleton()))
-    {
-        std::cerr << "Non trivial constructors provider failed: RegisterMethodHandlerWithInArgsOnly" << std::endl;
-        return EXIT_FAILURE;
-    }
+    RegisterMethodHandlerWithInArgsOnly(skeleton_container.GetSkeleton(), "non_trivial_constructors");
 
     // Step 4. Register method handler for method with only return value
-    if (!RegisterMethodHandlerWithReturnOnly(skeleton_container.GetSkeleton()))
-    {
-        std::cerr << "Non trivial constructors provider failed: RegisterMethodHandlerWithReturnOnly" << std::endl;
-        return EXIT_FAILURE;
-    }
+    RegisterMethodHandlerWithReturnOnly(skeleton_container.GetSkeleton(), "non_trivial_constructors");
 
     // Step 5. Offer service
-    if (!skeleton_container.OfferService())
-    {
-        std::cerr << "Non trivial constructors provider failed: OfferService" << std::endl;
-        return EXIT_FAILURE;
-    }
+    skeleton_container.OfferService("non_trivial_constructors");
 
     // Step 6. Wait for proxy test to finish
     std::cout << "Provider: Ready for method calls" << std::endl;
     if (!process_synchronizer_result->WaitWithAbort(stop_token))
     {
-        std::cerr << "Non trivial constructors provider failed: WaitForProxyTestToFinish was stopped by "
-                     "stop_token instead of notification"
-                  << std::endl;
-        return EXIT_FAILURE;
+        FailTest(
+            "Non trivial constructors provider failed: WaitForProxyTestToFinish was stopped by "
+            "stop_token instead of notification");
+        return;
     }
 
     std::cout << "Provider: Shutting down" << std::endl;
-    return EXIT_SUCCESS;
 }
 
 }  // namespace score::mw::com::test

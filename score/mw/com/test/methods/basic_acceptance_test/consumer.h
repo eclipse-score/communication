@@ -16,7 +16,7 @@
 namespace score::mw::com::test
 {
 
-int run_consumer();
+void run_consumer();
 
 }  // namespace score::mw::com::test
 

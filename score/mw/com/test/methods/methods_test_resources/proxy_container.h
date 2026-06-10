@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_PROXY_CONTAINER_H
 #define SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_PROXY_CONTAINER_H
 
+#include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/types.h"
 
 #include <chrono>
@@ -20,7 +21,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
-#include <vector>
+#include <string>
 
 namespace score::mw::com::test
 {
@@ -29,9 +30,7 @@ template <typename Proxy>
 class ProxyContainer
 {
   public:
-    ProxyContainer();
-
-    bool CreateProxy(InstanceSpecifier instance_specifier);
+    void CreateProxy(InstanceSpecifier instance_specifier, const std::string& failure_message_prefix);
 
     Proxy& GetProxy()
     {
@@ -41,21 +40,15 @@ class ProxyContainer
     }
 
   private:
-    std::unique_ptr<typename Proxy::HandleType> handle_;
-    std::mutex proxy_creation_mutex_;
-    std::condition_variable proxy_creation_condition_variable_;
+    std::unique_ptr<typename Proxy::HandleType> handle_{nullptr};
+    std::mutex proxy_creation_mutex_{};
+    std::condition_variable proxy_creation_condition_variable_{};
 
-    std::unique_ptr<Proxy> proxy_;
+    std::unique_ptr<Proxy> proxy_{nullptr};
 };
 
 template <typename Proxy>
-ProxyContainer<Proxy>::ProxyContainer()
-    : handle_{nullptr}, proxy_creation_mutex_{}, proxy_creation_condition_variable_{}, proxy_{nullptr}
-{
-}
-
-template <typename Proxy>
-bool ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier)
+void ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier, const std::string& failure_message_prefix)
 {
     bool callback_called{false};
     auto find_service_callback = [this, &callback_called](auto service_handle_container,
@@ -79,8 +72,7 @@ bool ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier)
     auto start_find_service_result = Proxy::StartFindService(find_service_callback, instance_specifier);
     if (!start_find_service_result.has_value())
     {
-        std::cerr << "Consumer: StartFindService() failed:" << start_find_service_result.error() << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Consumer: StartFindService() failed: ", start_find_service_result.error());
     }
     std::cout << "Consumer: StartFindService called" << std::endl;
 
@@ -93,21 +85,18 @@ bool ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier)
         });
     if (!service_found || handle_ == nullptr)
     {
-        std::cerr << "Consumer: StartFindService() failed to get handle" << std::endl;
-        return false;
+        FailTest(failure_message_prefix, " Consumer: StartFindService() failed to get handle");
     }
 
     auto proxy_result = Proxy::Create(*handle_);
     proxy_creation_lock.unlock();
     if (!proxy_result.has_value())
     {
-        std::cerr << "Consumer: Unable to construct proxy: " << proxy_result.error() << ", bailing!\n";
-        return false;
+        FailTest(failure_message_prefix, " Consumer: Unable to construct proxy: ", proxy_result.error());
     }
     proxy_ = std::make_unique<Proxy>(std::move(proxy_result).value());
 
     std::cout << "Consumer: Proxy created successfully" << std::endl;
-    return true;
 }
 
 }  // namespace score::mw::com::test

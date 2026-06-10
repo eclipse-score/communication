@@ -48,6 +48,7 @@ cc_library(
         ":unique_method_identifier",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/containers:dynamic_array",
+        "@score_baselibs//score/containers:non_relocatable_vector",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared:managed_memory_resource",
         "@score_baselibs//score/memory/shared:polymorphic_offset_ptr_allocator",

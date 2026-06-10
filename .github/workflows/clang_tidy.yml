@@ -32,6 +32,20 @@ on:
     branches: [main]
   merge_group:
     types: [checks_requested]
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: "Name of the clang-tidy findings artifact"
+        value: ${{ jobs.clang-tidy.outputs.artifact-name }}
+      errors:
+        description: "Total clang-tidy error count"
+        value: ${{ jobs.clang-tidy.outputs.errors }}
+      warnings:
+        description: "Total clang-tidy warning count"
+        value: ${{ jobs.clang-tidy.outputs.warnings }}
+      conclusion:
+        description: "Job conclusion: success or failure"
+        value: ${{ jobs.clang-tidy.outputs.conclusion }}
 
 permissions:
   contents: read
@@ -48,6 +62,11 @@ env:
 jobs:
   clang-tidy:
     runs-on: ubuntu-24.04
+    outputs:
+      artifact-name: clang-tidy-findings
+      errors: ${{ steps.findings.outputs.errors }}
+      warnings: ${{ steps.findings.outputs.warnings }}
+      conclusion: ${{ steps.set-conclusion.outputs.conclusion }}
 
     steps:
       - name: Checkout repository
@@ -120,6 +139,15 @@ jobs:
           find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
             | xargs cat 2>/dev/null > clang_tidy_findings.txt || true
 
+          # Keep the published report human-readable even when no findings
+          # were produced in this run.
+          if [[ ! -s clang_tidy_findings.txt ]]; then
+            {
+              echo "No clang-tidy findings were produced for this run."
+              echo "errors=${ERRORS} warnings=${WARNINGS} total=${TOTAL}"
+            } > clang_tidy_findings.txt
+          fi
+
           grep "error:" clang_tidy_findings.txt > clang_tidy_errors.txt || true
 
           # ── Job summary ──────────────────────────────────────────────────
@@ -157,11 +185,24 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      # Clang-tidy findings are always collected and uploaded as an artifact,
+      # but they should only block merging when a developer is actively
+      # submitting code — not during nightly reporting runs.
       - name: Fail check if clang-tidy errors found in changed files
-        if: steps.findings.outputs.errors_blocking != '0'
+        if: (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'merge_group') && steps.findings.outputs.errors_blocking != '0'
         run: |
           echo "::error::Clang-tidy found ${{ steps.findings.outputs.errors_blocking }} error(s) in changed files. See the 'clang-tidy-findings' artifact for details."
           echo ""
           echo "=== Clang-tidy errors ==="
           cat clang_tidy_errors.txt || true
           exit 1
+
+      - name: Set conclusion
+        id: set-conclusion
+        if: always()
+        run: |
+          if [[ "${{ steps.run-clang-tidy.outcome }}" == "success" ]]; then
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          fi

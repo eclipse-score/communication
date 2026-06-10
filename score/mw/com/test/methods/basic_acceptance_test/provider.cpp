@@ -12,9 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/test/methods/basic_acceptance_test/provider.h"
 
+#include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/methods/basic_acceptance_test/test_method_datatype.h"
-#include "score/mw/com/test/methods/methods_test_resources/method_provider.h"
 #include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
+#include "score/mw/com/test/methods/methods_test_resources/skeleton_container.h"
 #include "score/mw/com/types.h"
 
 #include "score/result/result.h"
@@ -36,49 +37,48 @@ const InstanceSpecifier kInstanceSpecifier =
 
 }  // namespace
 
-bool run_provider(const score::cpp::stop_token& stop_token)
+void run_provider(const score::cpp::stop_token& stop_token)
 {
-    MethodProvider<TestMethodSkeleton> provider{};
+    SkeletonContainer<TestMethodSkeleton> skeleton_container{};
     auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
     if (!(process_synchronizer_result.has_value()))
     {
-        std::cerr << "Methods basic_acceptance_test provider failed: Could not create ProcessSynchronizer" << std::endl;
-        return EXIT_FAILURE;
+        FailTest("Methods basic_acceptance_test provider failed: Could not create ProcessSynchronizer");
     }
 
     // Step 1. Create skeleton
-    if (!provider.CreateSkeleton(kInstanceSpecifier))
-    {
-        std::cerr << "Methods basic_acceptance_test provider failed: CreateSkeleton" << std::endl;
-        return EXIT_FAILURE;
-    }
+    std::cout << "\nProvider: Step 1" << std::endl;
+    skeleton_container.CreateSkeleton(kInstanceSpecifier, "basic_acceptance_test");
+    auto& skeleton = skeleton_container.GetSkeleton();
 
-    // Step 2. Register method handlers
-    if (!provider.RegisterMethodHandlerWithInArgsAndReturn())
+    // Step 2. Register method handler
+    std::cout << "\nProvider: Step 2" << std::endl;
+    auto handler_with_in_args_and_return = [](std::int32_t a, std::int32_t b) -> std::int32_t {
+        std::cout << "Provider: with_in_args_and_return called with " << a << " + " << b << std::endl;
+        return a + b;
+    };
+    const auto register_result =
+        skeleton.with_in_args_and_return.RegisterHandler(std::move(handler_with_in_args_and_return));
+    if (!register_result)
     {
-        std::cerr << "Methods basic_acceptance_test provider failed: RegisterMethodHandlers" << std::endl;
-        return EXIT_FAILURE;
+        FailTest("Provider: Failed to register with_in_args_and_return handler");
     }
 
     // Step 3. Offer service
-    if (!provider.OfferService())
-    {
-        std::cerr << "Methods basic_acceptance_test provider failed: OfferService" << std::endl;
-        return EXIT_FAILURE;
-    }
+    std::cout << "\nProvider: Step 3" << std::endl;
+    skeleton_container.OfferService("basic_acceptance_test");
 
     // Step 4. Wait for proxy test to finish
+    std::cout << "\nProvider: Step 4" << std::endl;
     std::cout << "Provider: Ready for method calls" << std::endl;
     if (!process_synchronizer_result->WaitWithAbort(stop_token))
     {
-        std::cerr << "Methods basic_acceptance_test provider failed: WaitForProxyTestToFinish was stopped by "
-                     "stop_token instead of notification"
-                  << std::endl;
-        return EXIT_FAILURE;
+        FailTest(
+            "Methods basic_acceptance_test provider failed: WaitForProxyTestToFinish was stopped by "
+            "stop_token instead of notification");
     }
 
     std::cout << "Provider: Shutting down" << std::endl;
-    return EXIT_SUCCESS;
 }
 
 }  // namespace score::mw::com::test

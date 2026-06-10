@@ -55,6 +55,7 @@ use containers::fixed_capacity::FixedCapacityQueue;
 use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
+use futures::stream::Stream;
 use std::path::Path;
 
 /// Result type alias with `std::result::Result` using `com_api::Error` as error type
@@ -911,6 +912,42 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         max_samples: usize,
         cancellation: impl Future<Output = ()> + Send + 'static,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a;
+
+    /// This method returns a stream that yields samples from the subscription as they become available.
+    ///
+    /// The stream creates and maintains an internal `SampleContainer` buffer during its lifetime,
+    /// and the buffer is created when the stream is created and persists until the stream is dropped.
+    /// The internal buffer has a maximum capacity of subscribed slots size (max_num_sample).
+    /// It does not fetch the samples in background,
+    /// samples only get fetched when the stream is polled and the internal buffer is empty,
+    /// otherwise the stream will yield samples from the internal buffer.
+    ///
+    /// **Polling Behavior:**
+    /// On each `poll_next()`:
+    /// - First, any buffered samples from a previous batch fetch are yielded (one sample at a time).
+    /// - Otherwise, new samples are fetched from the communication buffer. If at least one sample
+    ///   is available, the first one is yielded. If no samples are available, `Poll::Pending` is
+    ///   returned and the waker is registered to be notified when new samples arrive.
+    ///
+    /// The lifetime `'a` ties all yielded `Sample<'a>` to the subscription borrow, ensuring
+    /// samples cannot outlive the subscription that manages the underlying proxy connection.
+    ///
+    /// Why we need Unpin bound? -
+    /// We need to add the Unpin bound because the `next()` method of `Stream` requires the stream
+    /// to be polled, but the stream returned with `impl Trait` does not return as `Unpin` by default,
+    /// even though the actual stream implementation might be `Unpin`. The compiler cannot guarantee
+    /// that the returned stream is `Unpin` without the explicit bound, so we add it to ensure that
+    /// the returned stream can be safely polled without additional pinning at the user side.
+    ///
+    /// # Returns
+    /// A stream that yields individual `Sample<'a>` items one at a time.
+    ///
+    /// # Errors
+    /// Returns an error if a problem occurs during sample reception but the stream is still processing further samples.
+    /// If the stream encounters an error, it will yield `Err(Error)` for that sample, but will continue to yield subsequent samples as they become available.
+    /// The stream only terminates when the subscription is unsubscribed or dropped or if the stream is explicitly dropped by the user.
+    /// With this design, users can handle errors on it side and take appropriate actions.
+    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.

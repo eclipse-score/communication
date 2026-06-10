@@ -37,11 +37,13 @@ cc_library(
         "i_message_passing_service.cpp",
         "method_call_registration_guard.cpp",
         "method_subscription_registration_guard.cpp",
+        "method_unsubscription_registration_guard.cpp",
     ],
     hdrs = [
         "i_message_passing_service.h",
         "method_call_registration_guard.h",
         "method_subscription_registration_guard.h",
+        "method_unsubscription_registration_guard.h",
     ],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [

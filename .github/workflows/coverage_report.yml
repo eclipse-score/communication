@@ -65,7 +65,6 @@ jobs:
 
       - name: Run Unit Test with Coverage for C++
         id: run-coverage
-        continue-on-error: true
         run: |
           bazel coverage //... --build_tests_only
 
@@ -78,6 +77,7 @@ jobs:
 
       - name: Set conclusion
         id: set-conclusion
+        if: always()
         run: |
           if [[ "${{ steps.run-coverage.outcome }}" == "success" ]]; then
             echo "conclusion=success" >> $GITHUB_OUTPUT

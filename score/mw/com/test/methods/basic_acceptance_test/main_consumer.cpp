@@ -19,5 +19,6 @@ int main(int argc, const char** argv)
 {
     score::mw::com::test::SetupAssertHandler();
     score::mw::com::runtime::InitializeRuntime(argc, argv);
-    return score::mw::com::test::run_consumer();
+    score::mw::com::test::run_consumer();
+    return EXIT_SUCCESS;
 }

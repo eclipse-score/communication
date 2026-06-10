@@ -40,7 +40,7 @@ git_override(
 
 bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
-bazel_dep(name = "score_crates", version = "0.0.9", repo_name = "score_communication_crate_index")
+bazel_dep(name = "score_crates", version = "0.0.10", repo_name = "score_communication_crate_index")
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
 
@@ -54,7 +54,7 @@ download_archive(
 bazel_dep(name = "score_tooling")
 git_override(
     module_name = "score_tooling",
-    commit = "3e73bfe050b5fde05d49c5d410bbcf5b4fa9bf9f",
+    commit = "7ae115582a4a79f48a8b411c966583118c565ce2",
     remote = "https://github.com/eclipse-score/tooling.git",
 )
 

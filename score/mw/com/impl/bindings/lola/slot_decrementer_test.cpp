@@ -71,9 +71,6 @@ class SlotDecrementerFixture : public ::testing::Test
     TransactionLog transaction_log_{kMaxSlots, memory_};
     ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_, transaction_log_};
     ProviderEventDataControlLocalView<> provider_event_data_control_local_{event_data_control_};
-    // TransactionLogRegistrationGuard transaction_log_registration_guard_{
-    //     consumer_event_data_control_local_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value()};
-    // TransactionLogIndex transaction_log_index_{transaction_log_registration_guard_.GetTransactionLogIndex()};
 
     std::optional<SlotIndexType> event_slot_index_{};
     score::cpp::optional<SlotDecrementer> slot_decrementer_{};

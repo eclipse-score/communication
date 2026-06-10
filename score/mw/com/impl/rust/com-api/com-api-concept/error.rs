@@ -77,6 +77,8 @@ pub enum ReceiveFailedReason {
     Cancelled,
     #[error("Input value out of bounds, maximum sample {max}, but new sample is {requested}")]
     InputValueOutOfBounds { max: usize, requested: usize },
+    #[error("Stream buffer overflow: capacity is {max}, excess samples were discarded")]
+    BufferOverflow { max: usize },
 }
 
 /// Comprehensive error reasons for event-related failures
@@ -90,6 +92,8 @@ pub enum EventFailedReason {
     SendingDataFailed,
     #[error("Event not available for subscription, possibly due to missing event type or incompatible service")]
     EventNotAvailable,
+    #[error("Failed to subscribe to event, due to the max_samples parameter being invalid (e.g., zero or exceeding allowed limits)")]
+    InvalidMaxSamples,
 }
 
 /// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.

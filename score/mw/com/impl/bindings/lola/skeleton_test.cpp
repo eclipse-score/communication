@@ -516,6 +516,52 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillCallRegisterShmObjectTraceCa
         skeleton_->PrepareOffer(events_, fields_, register_shm_object_trace_callback.AsStdFunction()).has_value());
 }
 
+TEST_F(SkeletonPrepareOfferFixture,
+       PrepareOfferOpensExistingSharedMemoryForGatewayForwardedServiceWhenUsageFileCanBeLocked)
+{
+    auto service_instance_deployment = test::kValidMinimalAsilInstanceDeployment;
+    auto* const lola_service_instance_deployment =
+        std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
+    ASSERT_NE(lola_service_instance_deployment, nullptr);
+    lola_service_instance_deployment->inter_vm_support_ = true;
+    lola_service_instance_deployment->inter_vm_forwarded_ = true;
+
+    const auto instance_identifier =
+        make_InstanceIdentifier(service_instance_deployment, test::kValidMinimalTypeDeployment);
+    InitialiseSkeleton(instance_identifier).WithNoConnectedProxy();
+
+    EXPECT_CALL(shared_memory_factory_mock_, RemoveStaleArtefacts(_)).Times(0);
+    EXPECT_CALL(shared_memory_factory_mock_, Create(test::kControlChannelPathQm, _, _, _, _)).Times(0);
+    EXPECT_CALL(shared_memory_factory_mock_, Create(test::kControlChannelPathAsilB, _, _, _, _)).Times(0);
+    EXPECT_CALL(shared_memory_factory_mock_, Create(test::kDataChannelPath, _, _, _, _)).Times(0);
+
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _));
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathAsilB, true, _));
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kDataChannelPath, true, _))
+        .WillOnce(Return(data_shared_memory_resource_mock_));
+
+    EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
+}
+
+TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsForGatewayForwardedServiceWhenOpeningSharedMemoryFails)
+{
+    auto service_instance_deployment = test::kValidMinimalAsilInstanceDeployment;
+    auto* const lola_service_instance_deployment =
+        std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
+    ASSERT_NE(lola_service_instance_deployment, nullptr);
+    lola_service_instance_deployment->inter_vm_support_ = true;
+    lola_service_instance_deployment->inter_vm_forwarded_ = true;
+
+    const auto instance_identifier =
+        make_InstanceIdentifier(service_instance_deployment, test::kValidMinimalTypeDeployment);
+    InitialiseSkeleton(instance_identifier).WithNoConnectedProxy();
+
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _)).WillOnce(Return(nullptr));
+
+    EXPECT_FALSE(
+        skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
+}
+
 using SkeletonPrepareOfferDeathTest = SkeletonPrepareOfferFixture;
 TEST_F(SkeletonPrepareOfferDeathTest, CallingPrepareOfferWhenLolaRuntimeCannotBeAccessedTerminates)
 {
@@ -704,6 +750,46 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDoesNotRemoveUsageMarker
 
     // Then the service usage marker file will not be closed in PrepareStopOffer
     EXPECT_FALSE(*was_usage_marker_file_closed);
+}
+
+TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferForGatewayForwardedServiceRemovesOnlyUsageMarkerFile)
+{
+    bool was_usage_marker_file_closed{false};
+
+    auto service_instance_deployment = test::kValidMinimalAsilInstanceDeployment;
+    auto* const lola_service_instance_deployment =
+        std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
+    ASSERT_NE(lola_service_instance_deployment, nullptr);
+    lola_service_instance_deployment->inter_vm_support_ = true;
+    lola_service_instance_deployment->inter_vm_forwarded_ = true;
+
+    const auto instance_identifier =
+        make_InstanceIdentifier(service_instance_deployment, test::kValidMinimalTypeDeployment);
+    InitialiseSkeleton(instance_identifier);
+
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
+        .Times(2)
+        .WillRepeatedly(Return(score::cpp::blank{}));
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kUnlockOperation))
+        .Times(2)
+        .WillRepeatedly(Return(score::cpp::blank{}));
+
+    EXPECT_CALL(shared_memory_factory_mock_, Remove(test::kControlChannelPathQm)).Times(0);
+    EXPECT_CALL(shared_memory_factory_mock_, Remove(test::kControlChannelPathAsilB)).Times(0);
+    EXPECT_CALL(shared_memory_factory_mock_, Remove(test::kDataChannelPath)).Times(0);
+
+    EXPECT_CALL(*unistd_mock_, close(test::kServiceInstanceUsageFileDescriptor))
+        .WillOnce(InvokeWithoutArgs(
+            [&was_usage_marker_file_closed]() mutable noexcept -> score::cpp::expected_blank<score::os::Error> {
+                was_usage_marker_file_closed = true;
+                return {};
+            }));
+
+    EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
+
+    EXPECT_FALSE(was_usage_marker_file_closed);
+    skeleton_->PrepareStopOffer({});
+    EXPECT_TRUE(was_usage_marker_file_closed);
 }
 
 using SkeletonDisconnectQmConsumersFixture = SkeletonTestMockedSharedMemoryFixture;
@@ -1321,6 +1407,143 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CallingRegisterWithSameServiceEleme
     };
     // Then we should terminate
     EXPECT_DEATH(test_function(), ".*");
+}
+
+TEST_P(SkeletonRegisterParamaterisedFixture, RegisterDiesWhenCalledForGatewayForwardedSkeleton)
+{
+    const ServiceElementType element_type = GetParam();
+
+    if (element_type == ServiceElementType::EVENT)
+    {
+        events_.emplace(test::kFooEventName, mock_event_binding_);
+    }
+    else
+    {
+        fields_.emplace(test::kFooEventName, mock_event_binding_);
+    }
+
+    // Given a gateway-forwarded ASIL-B skeleton deployment (inter_vm_support_ and inter_vm_forwarded_ set)
+    auto service_instance_deployment = element_type == ServiceElementType::EVENT
+                                           ? test::kValidAsilInstanceDeploymentWithEvent
+                                           : test::kValidAsilInstanceDeploymentWithField;
+    auto* const lola_deployment = std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
+    ASSERT_NE(lola_deployment, nullptr);
+    lola_deployment->inter_vm_support_ = true;
+    lola_deployment->inter_vm_forwarded_ = true;
+    const auto gateway_instance_identifier =
+        make_InstanceIdentifier(service_instance_deployment, test::kValidMinimalTypeDeployment);
+
+    // When PrepareOffer is called it opens (not creates) the existing shared memory (use_gateway_forwarded_shm_ = true)
+    InitialiseSkeleton(gateway_instance_identifier).WithNoConnectedProxy();
+    EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
+
+    // Then calling the typed Register on a gateway-forwarded skeleton must die:
+    // gateway setups use GenericSkeleton exclusively — typed Register is a programming error in this context.
+    EXPECT_DEATH(skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties), "");
+}
+
+TEST_P(SkeletonRegisterParamaterisedFixture, RegisterGenericWillOpenEventDataForGatewayForwardedSkeleton)
+{
+    const ServiceElementType element_type = GetParam();
+
+    if (element_type == ServiceElementType::EVENT)
+    {
+        events_.emplace(test::kFooEventName, mock_event_binding_);
+    }
+    else
+    {
+        fields_.emplace(test::kFooEventName, mock_event_binding_);
+    }
+
+    // Given a gateway-forwarded ASIL-B skeleton deployment (inter_vm_support_ and inter_vm_forwarded_ set)
+    auto service_instance_deployment = element_type == ServiceElementType::EVENT
+                                           ? test::kValidAsilInstanceDeploymentWithEvent
+                                           : test::kValidAsilInstanceDeploymentWithField;
+    auto* const lola_deployment = std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
+    ASSERT_NE(lola_deployment, nullptr);
+    lola_deployment->inter_vm_support_ = true;
+    lola_deployment->inter_vm_forwarded_ = true;
+    const auto gateway_instance_identifier =
+        make_InstanceIdentifier(service_instance_deployment, test::kValidMinimalTypeDeployment);
+
+    // When PrepareOffer is called it opens (not creates) the existing shared memory (use_gateway_forwarded_shm_ = true)
+    InitialiseSkeleton(gateway_instance_identifier).WithNoConnectedProxy();
+    EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
+
+    // When RegisterGeneric is called on the gateway-forwarded skeleton
+    const auto result = skeleton_->RegisterGeneric(
+        test::kDummyElementFqId, test::kDefaultEventProperties, sizeof(std::uint8_t), alignof(std::uint8_t));
+
+    // Then it returns valid pointers to the opened SHM data and event controls (not newly created)
+    EXPECT_NE(result.type_erased_event_data_storage_ptr, nullptr);
+    EXPECT_NE(result.event_control_asil_b, nullptr);
+}
+
+TEST_P(SkeletonRegisterParamaterisedFixture, RegisterGenericWillOpenEventDataForReopenedSkeleton)
+{
+    const ServiceElementType element_type = GetParam();
+
+    if (element_type == ServiceElementType::EVENT)
+    {
+        events_.emplace(test::kFooEventName, mock_event_binding_);
+    }
+    else
+    {
+        fields_.emplace(test::kFooEventName, mock_event_binding_);
+    }
+    const InstanceIdentifier instance_identifier{element_type == ServiceElementType::EVENT
+                                                     ? GetValidASILInstanceIdentifierWithEvent()
+                                                     : GetValidASILInstanceIdentifierWithField()};
+
+    // Given a Skeleton with an already-connected proxy: flock of usage marker file fails,
+    // causing PrepareOffer to go through kReuseExistingShm and set was_old_shm_region_reopened_ = true
+    InitialiseSkeleton(instance_identifier).WithAlreadyConnectedProxy();
+    EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
+
+    // When RegisterGeneric is called on the reopened skeleton
+    const auto result = skeleton_->RegisterGeneric(
+        test::kDummyElementFqId, test::kDefaultEventProperties, sizeof(std::uint8_t), alignof(std::uint8_t));
+
+    // Then it returns valid pointers to the opened (not newly created) SHM data and event controls
+    EXPECT_NE(result.type_erased_event_data_storage_ptr, nullptr);
+    EXPECT_NE(result.event_control_asil_b, nullptr);
+}
+
+TEST_P(SkeletonRegisterParamaterisedFixture, RegisterGenericWillRollbackTransactionLogForReopenedSkeleton)
+{
+    // Given a QM ServiceDataControl which contains a TransactionLogSet with valid transactions
+    auto proxy_event_data_control_qm_local = GetConsumerEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, *existing_service_data_control_qm_);
+    auto& transaction_log_set =
+        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, *existing_service_data_control_qm_);
+    InsertSkeletonTransactionLogWithValidTransactions(proxy_event_data_control_qm_local, transaction_log_set);
+    EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
+
+    const ServiceElementType element_type = GetParam();
+
+    if (element_type == ServiceElementType::EVENT)
+    {
+        events_.emplace(test::kFooEventName, mock_event_binding_);
+    }
+    else
+    {
+        fields_.emplace(test::kFooEventName, mock_event_binding_);
+    }
+    const InstanceIdentifier instance_identifier{element_type == ServiceElementType::EVENT
+                                                     ? GetValidInstanceIdentifierWithEvent()
+                                                     : GetValidInstanceIdentifierWithField()};
+
+    // Given a Skeleton with an already-connected proxy: flock of usage marker file fails,
+    // causing PrepareOffer to go through kReuseExistingShm and set was_old_shm_region_reopened_ = true
+    InitialiseSkeleton(instance_identifier).WithAlreadyConnectedProxy();
+    EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
+
+    // When RegisterGeneric is called on the reopened skeleton
+    score::cpp::ignore = skeleton_->RegisterGeneric(
+        test::kDummyElementFqId, test::kDefaultEventProperties, sizeof(std::uint8_t), alignof(std::uint8_t));
+
+    // Then the QM TransactionLog should be rolled back and unregistered
+    EXPECT_FALSE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 }
 
 INSTANTIATE_TEST_SUITE_P(SkeletonRegisterParamaterisedFixture,

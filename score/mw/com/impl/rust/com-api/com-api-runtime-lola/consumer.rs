@@ -36,6 +36,7 @@ use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
 use core::panic;
 use core::ptr::NonNull;
+use futures::stream::Stream;
 use futures::task::{AtomicWaker, Context, Poll};
 use std::cmp::Ordering;
 use std::pin::Pin;
@@ -304,6 +305,9 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
         })
     }
     fn subscribe(self, max_num_samples: usize) -> Result<Self::Subscription> {
+        if max_num_samples == 0 {
+            return Err(Error::EventError(EventFailedReason::InvalidMaxSamples));
+        }
         let instance_info = self.instance_info.clone();
         let event_instance = NativeProxyEventBase::new(
             &self.proxy_instance.0.proxy,
@@ -609,6 +613,21 @@ where
             .await
         }
     }
+
+    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {   
+        // Initialize the async receive callback only once when the first receive call is made
+        // We are using std::sync::Once to ensure that the callback is set only once.
+        self.async_init_status.call_once(|| {
+            self.init_async_receive(&mut self.event.get_proxy_event())
+                .expect("Failed to initialize async receive callback");
+        });
+        // Return stream that yields samples one at a time, fetching new batches as needed.
+        // The guard is moved into the stream and held for its lifetime to prevent concurrent receives.
+        SampleStream {
+            subscriber: self,
+            sample_container: SampleContainer::new(self.max_num_samples),
+        }
+    }
 }
 
 // The ReceiveFuture struct encapsulates the state and logic for asynchronously receiving samples
@@ -699,6 +718,57 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
                     Err(e),
                 ))
             }
+        }
+    }
+}
+
+/// A `Stream` that continuously delivers one sample at a time from the subscription.
+/// It maintains an internal `SampleContainer` to buffer samples received from the FFI callback.
+/// It also holds an exclusive `ProxyEventManagerGuard` for the lifetime of the stream to prevent
+/// concurrent receives on the same subscriber instance.
+/// On each poll, it first yields any buffered samples before attempting to receive more from the FFI callback.
+struct SampleStream<'a, T: CommData + Debug> {
+    subscriber: &'a SubscriberImpl<T>,
+    sample_container: SampleContainer<Sample<T>>,
+}
+
+impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
+    type Item = Result<Sample<T>>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        // Yield any buffered samples from a previous batch fetch first.
+        if let Some(sample) = self.sample_container.pop_front() {
+            return Poll::Ready(Some(Ok(sample)));
+        }
+
+        // Register the waker before attempting to receive so that a concurrent FFI
+        // callback cannot fire between the receive attempt and registering the waker,
+        // which would cause a missed wake-up.
+        self.subscriber.waker_storage.register(cx.waker());
+        let max_num_samples = self.subscriber.max_num_samples;
+
+        // get a mutable reference of pinned self, with this 
+        // we can avoid borrow checker issue for self in try_receive_samples function call
+        let this = self.as_mut().get_mut();
+        
+        let samples_received = try_receive_samples::<T>(
+            this.subscriber
+                .event
+                .get_proxy_event()
+                .deref_mut(), // Get mutable reference to the proxy event for FFI call
+            &mut this.sample_container,
+            max_num_samples,
+            max_num_samples,
+        );
+
+        match samples_received {
+            Ok(_count) => {
+                match this.sample_container.pop_front() {
+                    Some(sample) => Poll::Ready(Some(Ok(sample))),
+                    None => Poll::Pending,
+                }
+            }
+            Err(e) => Poll::Ready(Some(Err(e))),
         }
     }
 }
@@ -1054,11 +1124,14 @@ pub fn create_sample_callback<'a, T: CommData + Debug>(
                     data: ManuallyDrop::new(sample_ptr),
                 },
             };
+
+            // try_receive / receive path: drop the oldest sample to make room
+            // so the buffer always contains the newest samples (sliding window).
+            // But for stream container already empty the buffer before receiving new samples,
+            // so it will not drop old samples when new samples arrive.
             while scratch.sample_count() >= max_samples {
                 scratch.pop_front();
             }
-            // After pop from SampleContainer to make room,
-            // push should always succeed, otherwise we lose the data
             assert!(
                 scratch.push_back(wrapped_sample).is_ok(),
                 "Failed to push sample after making room in buffer"
