@@ -68,8 +68,8 @@ inline void error_double_init()
 ///            MemoryResourceRegistry is available.
 void TouchStaticDependencies()
 {
-    score::cpp::ignore = score::mw::log::detail::Runtime::GetRecorder();
-    score::cpp::ignore = score::mw::log::detail::Runtime::GetFallbackRecorder();
+    score::cpp::ignore = score::mw::log::GetDefaultLogRecorder();
+    score::cpp::ignore = score::mw::log::GetFallbackLogRecorder();
     score::cpp::ignore = score::memory::shared::MemoryResourceRegistry::getInstance();
 }
 
