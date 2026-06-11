@@ -272,6 +272,8 @@ cc_library(
     ],
     deps = [
         ":i_proxy_event_binding_factory",
+        "//score/mw/com/impl:proxy_base",
+        "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/bindings/lola:proxy_element_lookup",
         "@score_baselibs//score/language/futurecpp",
     ],
