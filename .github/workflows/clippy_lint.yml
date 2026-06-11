@@ -13,8 +13,8 @@
 
 # Workflow: Clippy PR check
 #
-# Runs Clippy on pull requests with the 'rust-api' label, pushes to main, and merge groups.
-# - For PRs: Only runs when the 'rust-api' label is present
+# Runs Clippy on pull requests, pushes to main, and merge groups when Rust files or workflow changes.
+# - For PRs: Runs if PR contains changes to .rs files or this workflow file
 # - Fails if Clippy errors or warnings are found in Rust files changed by the PR.
 # - Writes a job summary with error/warning counts.
 # - Uploads clippy log as a downloadable artifact.
@@ -23,7 +23,7 @@ name: Clippy Check
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, labeled, unlabeled]
+    types: [opened, reopened, synchronize]
   push:
     branches: [main]
   merge_group:
@@ -59,46 +59,61 @@ jobs:
   precheck:
     runs-on: ubuntu-24.04
     outputs:
-      should-run: ${{ steps.gate.outputs.should-run }}
+      should-run: ${{ steps.check-rust-changes.outputs.should-run }}
     permissions:
       contents: read
       pull-requests: read
     steps:
-      - name: Evaluate Clippy workflow gate
-        id: gate
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch for comparison
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+
+      - name: Check for Rust file or workflow changes
+        id: check-rust-changes
         env:
           EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          python3 - <<'SCRIPT_END'
-          import json
-          import os
-
-          should_run = True
-
-          with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as event_file:
-              event = json.load(event_file)
-
-          pr = event.get("pull_request") or {}
-          labels = {label.get("name", "") for label in (pr.get("labels") or [])}
-
-          # For pull requests, only run if rust-api label is present
-          if os.environ["EVENT_NAME"] == "pull_request":
-              if "rust-api" not in labels:
-                  should_run = False
+          should_run='false'
           
-          should_run_string = 'true' if should_run else 'false'
-
-          labels_display = ", ".join(sorted(label for label in labels if label)) or "(none)"
-          print(
-              "Clippy gate evaluation: "
-              f"event_name='{os.environ['EVENT_NAME']}', "
-              f"labels=[{labels_display}], "
-              f"outputs: should-run={should_run_string}"
-          )
-
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as github_output:
-              print(f"should-run={should_run_string}", file=github_output)
-          SCRIPT_END
+          # For pull requests and merge groups, check for Rust file or workflow changes
+          if [[ "$EVENT_NAME" == "pull_request" || "$EVENT_NAME" == "merge_group" ]]; then
+            CHANGED_FILES=$(git diff --name-only "origin/${BASE_REF}...HEAD" 2>/dev/null || true)
+            
+            CHANGED_RUST=$(echo "$CHANGED_FILES" | grep -E '\.rs$' || true)
+            CHANGED_WORKFLOW=$(echo "$CHANGED_FILES" | grep -E '^\.github/workflows/clippy_lint\.yml$' || true)
+            
+            if [[ -n "$CHANGED_RUST" ]]; then
+              should_run='true'
+              echo "Found Rust file changes:"
+              echo "$CHANGED_RUST"
+            fi
+            
+            if [[ -n "$CHANGED_WORKFLOW" ]]; then
+              should_run='true'
+              echo "Found workflow file changes:"
+              echo "$CHANGED_WORKFLOW"
+            fi
+            
+            if [[ "$should_run" == "false" ]]; then
+              echo "No Rust or workflow files changed - skipping Clippy check"
+            fi
+          elif [[ "$EVENT_NAME" == "push" ]]; then
+            # For pushes to main, always run
+            should_run='true'
+          elif [[ "$EVENT_NAME" == "workflow_call" ]]; then
+            # For workflow_call, always run (manual or nightly)
+            should_run='true'
+          fi
+          
+          echo "should-run=${should_run}" >> $GITHUB_OUTPUT
+          echo "Clippy check: should-run=${should_run}"
 
   clippy:
     needs: precheck
@@ -158,9 +173,10 @@ jobs:
           fi
 
           # Extract clippy errors and warnings
-          # Clippy format: "warning: message" or "error: message" or "error[E0123]: message"
-          ERRORS=$(grep -c "^error" clippy_raw.log 2>/dev/null || true)
-          WARNINGS=$(grep -c "^warning" clippy_raw.log 2>/dev/null || true)
+          ERRORS=$(grep -A 1 -E "^error(\[|:)" clippy_raw.log 2>/dev/null \
+            | grep -c -E "^\s+--> .*\.rs:" || true)
+          WARNINGS=$(grep -A 1 -E "^warning(\[|:)" clippy_raw.log 2>/dev/null \
+            | grep -c -E "^\s+--> .*\.rs:" || true)
           ERRORS=${ERRORS:-0}
           WARNINGS=${WARNINGS:-0}
           TOTAL=$((ERRORS + WARNINGS))
@@ -193,13 +209,12 @@ jobs:
           else
             PATTERN=$(echo "$CHANGED_RUST" | tr '\n' '|' | sed 's/|$//')
             echo "File pattern: ${PATTERN}"
-            # Clippy format: "warning:" followed by "   --> file:line:col" on next line
-            # Use -B 1 to get the line before the file path (the warning/error line)
-            ERRORS_BLOCKING=$(grep -B 1 -E "(${PATTERN})" clippy_raw.log 2>/dev/null \
-              | grep -c "^error" || true)
+            # This filters out non-Clippy warnings like "dot utility not found" and summary lines
+            ERRORS_BLOCKING=$(grep -A 1 -E "^error(\[|:)" clippy_raw.log 2>/dev/null \
+              | grep -c -E "^\s+--> (${PATTERN}):" || true)
             ERRORS_BLOCKING=${ERRORS_BLOCKING:-0}
-            WARNINGS_BLOCKING=$(grep -B 1 -E "(${PATTERN})" clippy_raw.log 2>/dev/null \
-              | grep -c "^warning" || true)
+            WARNINGS_BLOCKING=$(grep -A 1 -E "^warning(\[|:)" clippy_raw.log 2>/dev/null \
+              | grep -c -E "^\s+--> (${PATTERN}):" || true)
             WARNINGS_BLOCKING=${WARNINGS_BLOCKING:-0}
             echo "Blocking errors in changed files: ${ERRORS_BLOCKING}"
             echo "Blocking warnings in changed files: ${WARNINGS_BLOCKING}"
@@ -242,7 +257,16 @@ jobs:
               echo ""
               echo "#### Issues in Changed Files"
               echo '```'
-              grep -B 1 -E "(${PATTERN})" clippy_raw.log 2>/dev/null | grep -E "(^warning|^error|^ *-->)" | head -50 || echo "See artifact for details"
+              # Show warning/error message + file location for changed files only
+              grep -E "^\s+--> (${PATTERN}):" clippy_raw.log 2>/dev/null | while IFS= read -r line; do
+                # Get the line number of this --> line
+                line_num=$(grep -n -F "$line" clippy_raw.log | head -1 | cut -d: -f1)
+                if [[ -n "$line_num" ]]; then
+                  # Show the warning line (1-2 lines before) and the --> line
+                  sed -n "$((line_num-2)),$((line_num))p" clippy_raw.log
+                  echo ""
+                fi
+              done | head -100 || echo "See artifact for details"
               echo '```'
               echo ""
               echo "> Download the **clippy-findings** artifact for full details."
