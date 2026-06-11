@@ -202,7 +202,9 @@ A consumer is constructed from a successful service discovery result. Once a mat
 - `create_consumer()` pattern directly builds consumer from discovered services based on InstanceSpecifier and instance index
 - `subscribe()` establishes event stream on specific event publishers (e.g., `left_tire`)
 - `try_receive()` polls for samples without blocking, returns number of new samples added
-- `receive()` provides async alternative for waiting
+- `receive()` async method that waits until min_samples are available, returns (SampleContainer, Result<usize>)
+- `cancellable_receive()` async method with cancellation future for timeout/cancellation support
+- `to_stream()` converts subscription to async stream for futures-based iteration
 - `SampleContainer` manages lifecycle and ordering of received samples
 - `unsubscribe()` stops receiving events and returns the subscriber
 
@@ -212,8 +214,12 @@ A consumer is constructed from a successful service discovery result. Once a mat
 <summary>Examples:</summary>
 
 ```rust
-use com_api::{Runtime, FindServiceSpecifier, InstanceSpecifier, SampleContainer};
+use com_api::{Result, Runtime, FindServiceSpecifier, InstanceSpecifier, SampleContainer, Subscription};
 use com_api_gen::{VehicleInterface, VehicleConsumer, Tire};
+use futures::channel::oneshot;
+use futures::{FutureExt, StreamExt};
+use std::thread;
+use std::time::Duration;
 
 // Discover and create consumer for the service
 fn create_consumer<R: Runtime>(
@@ -235,21 +241,117 @@ fn create_consumer<R: Runtime>(
     consumer_builder.build().unwrap()
 }
 
-// Polling for events (non-blocking)
-fn read_tire_data<R: Runtime>(
+// Subscribe to an event to create a subscription
+fn subscribe_event<R: Runtime>(
     consumer: &VehicleConsumer<R>,
+    max_samples: usize,
+) -> impl Subscription<Tire, R> {
+    consumer.left_tire.subscribe(max_samples).unwrap()
+}
+
+// Polling for events - Synchronous receive API
+fn read_tire_data<R: Runtime>(
+    tire_subscriber: &impl Subscription<Tire, R>,
 ) -> Result<String> {
-    let tire_subscriber = consumer.left_tire.subscribe(3).unwrap();
     let mut sample_buf = SampleContainer::new(3);
 
     match tire_subscriber.try_receive(&mut sample_buf, 1) {
-        Ok(0) => println!("No samples available"),
+        Ok(0) => Ok("No samples available".to_string()),
         Ok(x) => {
             let sample = sample_buf.pop_front().unwrap();
             Ok(format!("{} samples received: sample[0] = {:?}", x, *sample))
         }
         Err(e) => Err(e),
     }
+}
+
+// Async receive - waits for samples to arrive no wait timeout
+async fn read_tire_data_async<R: Runtime>(
+    tire_subscriber: impl Subscription<Tire, R>,
+) -> Result<()> {
+    let mut buffer = SampleContainer::new(5);
+    
+    // Wait for at least 1 sample, receive up to 5 samples
+    let (returned_buf, result) = tire_subscriber.receive(buffer, 1, 5).await;
+    
+    match result {
+        Ok(count) => {
+            println!("Received {} samples", count);
+            let mut buf = returned_buf;
+            while let Some(sample) = buf.pop_front() {
+                println!("Tire pressure: {} psi", sample.pressure);
+            }
+            buffer = buf;
+        }
+        Err(e) => {
+            eprintln!("Failed to receive samples: {:?}", e);
+            buffer = returned_buf;
+        }
+    }
+    Ok(())
+}
+
+// Async receive with cancellation/timeout
+async fn read_tire_data_with_timeout<R: Runtime>(
+    tire_subscriber: impl Subscription<Tire, R>,
+) -> Result<()> {
+    let mut buffer = SampleContainer::new(5);
+    
+    // Create timeout future using oneshot channel
+    let (tx, rx) = oneshot::channel();
+    thread::spawn(move || {
+        thread::sleep(Duration::from_secs(1));
+        let _ = tx.send(());
+    });
+    let timeout_future = rx.map(|_| ());
+    
+    // Wait for samples or timeout
+    let (returned_buf, result) = tire_subscriber
+        .cancellable_receive(buffer, 1, 5, timeout_future)
+        .await;
+    
+    match result {
+        Ok(count) => {
+            println!("Received {} samples before timeout", count);
+            let mut buf = returned_buf;
+            while let Some(sample) = buf.pop_front() {
+                println!("Tire pressure: {} psi", sample.pressure);
+            }
+            buffer = buf;
+        }
+        Err(e) => {
+            eprintln!("Receive cancelled or error: {:?}", e);
+            buffer = returned_buf;
+        }
+    }
+    Ok(())
+}
+
+// Stream-based async receive
+async fn read_tire_data_stream<R: Runtime>(
+    tire_subscriber: impl Subscription<Tire, R>,
+    num_samples: usize,
+) -> Result<()> {    
+    let mut stream = tire_subscriber.to_stream();
+    let mut received = 0;
+    
+    while received < num_samples {
+        match stream.next().await {
+            Some(Ok(sample)) => {
+                println!("Stream received tire pressure: {} psi", sample.pressure);
+                received += 1;
+            }
+            Some(Err(e)) => {
+                eprintln!("Stream error: {:?}", e);
+                break;
+            }
+            None => {
+                eprintln!("Stream ended unexpectedly");
+                break;
+            }
+        }
+    }
+    Ok(())
 }
 ```
 </details>
