@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_PLUMBING_LOLA_PROXY_ELEMENT_BUILDING_BLOCKS_H
-#define SCORE_MW_COM_IMPL_PLUMBING_LOLA_PROXY_ELEMENT_BUILDING_BLOCKS_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_ELEMENT_LOOKUP_H
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_ELEMENT_LOOKUP_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
@@ -60,4 +60,4 @@ inline std::optional<LoLaProxyElementBuildingBlocks> LookupLolaProxyElement(Prox
 
 }  // namespace score::mw::com::impl
 
-#endif  // SCORE_MW_COM_IMPL_PLUMBING_LOLA_PROXY_ELEMENT_BUILDING_BLOCKS_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_ELEMENT_LOOKUP_H

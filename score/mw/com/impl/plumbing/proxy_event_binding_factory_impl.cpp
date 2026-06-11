@@ -14,8 +14,8 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
+#include "score/mw/com/impl/bindings/lola/proxy_element_lookup.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
-#include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
 #include "score/mw/com/impl/service_element_type.h"
 
 #include "score/mw/log/logging.h"
