@@ -14,50 +14,30 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_ELEMENT_LOOKUP_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/proxy.h"
-#include "score/mw/com/impl/configuration/lola_service_element_id.h"
-#include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/handle_type.h"
-#include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/service_element_type.h"
 
 #include <optional>
 #include <string_view>
 
-namespace score::mw::com::impl
+namespace score::mw::com::impl::lola
 {
 
-/// \brief Result of resolving a named service element against the lola deployment on the proxy side.
-/// \details Carries everything a binding constructor needs that comes from deployment/handle lookup.
-///          This is intentionally agnostic to what kind of binding is being built (event, field notifier,
-///          method); the construction step lives with the caller.
-struct LoLaProxyElementBuildingBlocks
-{
-    lola::Proxy& parent;
-    LolaServiceInstanceId::InstanceId instance_id;
-    lola::ElementFqId element_fq_id;
-};
+class Proxy;
 
-/// \brief Validate the parent is a lola proxy and resolve the element name against the lola deployment contained in the
-/// given handle.
-/// \return The lookup data on success, std::nullopt for non-lola bindings or a missing parent binding.
-/// \note Fatally asserts on a malformed instance id or an element name that is not present in the
-///       deployment, matching the previous behaviour of the per-factory inlined lookups.
-std::optional<LoLaProxyElementBuildingBlocks> LookupLolaProxyElement(const HandleType& handle,
-                                                                     ProxyBinding* parent_binding,
-                                                                     std::string_view service_element_name,
-                                                                     ServiceElementType element_type) noexcept;
+/// \brief Returns the parent binding cast to a lola::Proxy.
+/// \return The lola proxy, or nullptr if the binding is null or not a lola binding.
+Proxy* GetLolaProxyBinding(ProxyBinding* parent_binding) noexcept;
 
-/// \brief Convenience overload that pulls the handle and binding out of a ProxyBase reference.
-inline std::optional<LoLaProxyElementBuildingBlocks> LookupLolaProxyElement(ProxyBase& parent,
-                                                                            std::string_view service_element_name,
-                                                                            ServiceElementType element_type) noexcept
-{
-    return LookupLolaProxyElement(
-        parent.GetHandle(), ProxyBaseView{parent}.GetBinding(), service_element_name, element_type);
-}
+/// \brief Resolves a named service element against the lola deployment contained in the given handle.
+/// \return The fully qualified element id, or std::nullopt for a non-lola (blank) deployment.
+/// \note Fatally asserts on a malformed instance id, an invalid element type, or an element name that is not present
+///       in the deployment.
+std::optional<ElementFqId> GetElementFqId(const HandleType& handle,
+                                          std::string_view service_element_name,
+                                          ServiceElementType element_type) noexcept;
 
-}  // namespace score::mw::com::impl
+}  // namespace score::mw::com::impl::lola
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_ELEMENT_LOOKUP_H
