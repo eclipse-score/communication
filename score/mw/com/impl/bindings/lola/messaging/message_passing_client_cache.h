@@ -37,6 +37,8 @@ class MessagePassingClientCache
     MessagePassingClientCache(const MessagePassingClientCache&) = delete;
     MessagePassingClientCache& operator=(const MessagePassingClientCache&) = delete;
 
+    std::shared_ptr<score::message_passing::IClientConnection> GetCachedMessagePassingClient(
+        const pid_t target_node_id) noexcept;
     std::shared_ptr<score::message_passing::IClientConnection> GetMessagePassingClient(
         const pid_t target_node_id) noexcept;
     void RemoveMessagePassingClient(const pid_t target_node_id) noexcept;
@@ -45,6 +47,8 @@ class MessagePassingClientCache
 
   private:
     std::shared_ptr<score::message_passing::IClientConnection> CreateNewClient(const pid_t target_node_id) noexcept;
+    std::shared_ptr<score::message_passing::IClientConnection> UnlockedGetCachedMessagePassingClient(
+        const pid_t target_node_id) noexcept;
 
     const ClientQualityType asil_level_;
     score::message_passing::IClientFactory& client_factory_;

@@ -37,6 +37,7 @@
 #include <score/assert.hpp>
 #include <score/span.hpp>
 
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <algorithm>
 #include <array>
@@ -1404,7 +1405,23 @@ void MessagePassingServiceInstance::UnregisterEventNotificationRemote(
         // Suppress "AUTOSAR C++14 A18-5-8" rule finding. This rule states: "Objects that do not outlive a function
         // shall have automatic storage duration". The object is a shared_ptr which is allocated in the heap.
         // coverity[autosar_cpp14_a18_5_8_violation]
-        auto sender = client_cache_.GetMessagePassingClient(target_node_id);
+        auto sender = client_cache_.GetCachedMessagePassingClient(target_node_id);
+
+        // Unregistering is best-effort. There are two possible scenarios when the channel might not be ready when we
+        // try to unregister for event notifications:
+        // 1. Partial restart: The skeleton will anyway come back without knowing about the registration
+        // 2. Shutdown of skeleton: Nobody will ever care about this message ever again
+        //
+        // To avoid the potential block of the caller thread until message_passing fails setting up the channel, we
+        // skip sending the message in this scenario.
+        if (sender == nullptr || sender->GetState() != message_passing::IClientConnection::State::kReady)
+        {
+            score::mw::log::LogInfo("lola")
+                << "MessagePassingService: Skipping UnregisterEventNotificationMessage to node_id " << target_node_id
+                << " because message passing client is not ready.";
+            return;
+        }
+
         const auto result = sender->Send(message);
         if (!result.has_value())
         {
