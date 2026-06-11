@@ -119,6 +119,7 @@ LCOV_DAT_FILTERED="${TMPDIR:-/tmp}/coverage_report_filtered_$$.dat"
   '*mock*.h' \
   '*mock*.cpp' \
   --output-file "${LCOV_DAT_FILTERED}" \
+  --rc lcov_branch_coverage=1 \
   --ignore-errors unused
 
 # NOTE: "--ignore-errors category,inconsistent"
