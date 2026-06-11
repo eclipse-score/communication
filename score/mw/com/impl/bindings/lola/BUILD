@@ -454,16 +454,22 @@ cc_library(
     srcs = ["proxy_element_lookup.cpp"],
     hdrs = ["proxy_element_lookup.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":proxy",
+        "//score/mw/com/impl/configuration",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
-        "//score/mw/com/impl:proxy_base",
-        "//score/mw/com/impl/bindings/lola",
-        "//score/mw/com/impl/configuration",
-        "@score_baselibs//score/language/futurecpp",
+        ":element_fq_id",
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:proxy_binding",
+        "//score/mw/com/impl:service_element_type",
     ],
 )
 
