@@ -13,26 +13,30 @@
 
 @startuml
 
-package "score::message_passing" as message_passing_public_api {
-    interface "Server" as api_server {
-        SetConnectionCallback()
-        SetDisconnectionCallback()
-        SetMessageCallback()
-        SetMessageWithReplyCallback()
+namespace score::message_passing {
+
+    interface Server {
+        +SetConnectionCallback()
+        +SetDisconnectionCallback()
+        +SetMessageCallback()
+        +SetMessageWithReplyCallback()
     }
-    interface "ClientFactory" as api_client_factory {
-        CreateClientConnection()
+
+    interface ClientFactory {
+        +CreateClientConnection()
     }
-    interface "ClientConnection" as api_client_connection {
-        Start()
-        Restart()
-        Stop()
-        GetStopReason()
-        Send()
-        SendWithReply()
-        SetStateCallback()
-        SetNotificationCallback()
+
+    interface ClientConnection {
+        +Start()
+        +Restart()
+        +Stop()
+        +GetStopReason()
+        +Send()
+        +SendWithReply()
+        +SetStateCallback()
+        +SetNotificationCallback()
     }
+
 }
 
 @enduml
