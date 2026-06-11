@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
+#include "score/mw/com/impl/bindings/lola/proxy_element_lookup.h"
 
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"

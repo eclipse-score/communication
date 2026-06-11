@@ -450,6 +450,24 @@ cc_library(
 )
 
 cc_library(
+    name = "proxy_element_lookup",
+    srcs = ["proxy_element_lookup.cpp"],
+    hdrs = ["proxy_element_lookup.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:proxy_base",
+        "//score/mw/com/impl/bindings/lola",
+        "//score/mw/com/impl/configuration",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "sample_ptr",
     srcs = ["sample_ptr.cpp"],
     hdrs = ["sample_ptr.h"],
