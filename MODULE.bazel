@@ -78,7 +78,20 @@ gcc_toolchains.toolchain(
     gcc_version = "15.2.0",
     target_arch = "x86_64",
 )
-use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
+gcc_toolchains.toolchain(
+    name = "gcc_toolchain_aarch64",
+    extra_cxxflags = [
+        "-mno-outline-atomics",
+    ],
+    extra_ldflags = [
+        "-lstdc++",
+        "-lrt",
+        "-latomic",
+    ],
+    gcc_version = "15.2.0",
+    target_arch = "aarch64",
+)
+use_repo(gcc_toolchains, "gcc_toolchain_aarch64", "gcc_toolchain_x86_64")
 
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.1", dev_dependency = True)
 
@@ -203,8 +216,30 @@ gcc_ferrocene.toolchain(
     target_triple = "x86_64-unknown-linux-gnu",
     url = "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.0.1/ferrocene-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
 )
+gcc_ferrocene.toolchain(
+    name = "ferrocene_aarch64_unknown_linux_gnu_llvm",
+    exec_triple = "x86_64-unknown-linux-gnu",
+    extra_rustc_flags = [
+        "-Crelocation-model=static",
+        "-Clink-arg=-Wl,--no-as-needed",
+        "-Clink-arg=-latomic",
+        "-Clink-arg=-Wl,--as-needed",
+        "-Clink-arg=-no-pie",
+        "-Clink-arg=-lstdc++",
+        "-Clink-arg=-lm",
+        "-Clink-arg=-lc",
+    ],
+    sha256 = "b1f1eb1146bf595fe1f4a65d5793b7039b37d2cb6d395d1c3100fa7d0377b6c9",
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+    ],
+    target_triple = "aarch64-unknown-linux-gnu",
+    url = "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.0.1/ferrocene-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-aarch64-unknown-linux-gnu.tar.gz",
+)
 use_repo(
     gcc_ferrocene,
+    "ferrocene_aarch64_unknown_linux_gnu_llvm",
     "ferrocene_x86_64_unknown_linux_gnu_llvm",
 )
 
