@@ -232,14 +232,14 @@ std::size_t FindNumberOfTracingSlots(
 
             const auto get_number_of_tracing_slots =
                 [](const auto& service_elements_map,
-                   const std::string& service_element_name,
-                   const ServiceElementIdentifierView service_element,
+                   const std::string& local_service_element_name,
+                   const ServiceElementIdentifierView& local_service_element,
                    const auto& get_tracing_slots) noexcept -> LolaEventInstanceDeployment::TracingSlotSizeType {
-                const auto it = service_elements_map.find(service_element_name);
+                const auto it = service_elements_map.find(local_service_element_name);
                 if (it == service_elements_map.end())
                 {
                     score::mw::log::LogFatal("lola")
-                        << "Requested service element (" << service_element << ") does not exist.";
+                        << "Requested service element (" << local_service_element << ") does not exist.";
                     std::terminate();
                 }
                 return get_tracing_slots(it->second);
