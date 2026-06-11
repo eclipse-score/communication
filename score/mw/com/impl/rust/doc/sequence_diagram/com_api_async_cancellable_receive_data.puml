@@ -1,0 +1,48 @@
+@startuml com_api_async_cancellable_receive_data
+
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+title Async Cancellable Receive Data
+
+actor User
+participant "Subscription<T, R>" as Subscription
+participant "SampleContainer<Sample<T>>" as SampleContainer
+participant "Sample<T>" as Sample
+
+User -> SampleContainer: new(capacity)
+SampleContainer --> User: Empty SampleContainer
+
+Note over User: Create cancellation future\n(e.g., oneshot::channel,\nfutures_timer::Delay)
+
+User -> Subscription: cancellable_receive(\n  sample_container,\n  min_samples,\n  max_samples,\n  cancellation_future\n).await
+Note over Subscription: Async waits until\nmin_samples available\nor cancellation occurs
+Subscription --> User: (SampleContainer, Result<usize>)
+
+alt Samples Received (Ok(n))
+    Note over User: n samples added to container
+
+    User -> SampleContainer: pop_front()
+    SampleContainer --> User: Option<Sample<T>>
+
+    alt Sample is Some
+        User -> Sample: Deref (*sample)
+        Sample --> User: &T immutable reference
+
+        User -> User: Access event data fields
+        Note over User: Read-only access
+    end
+
+else Cancelled or Error
+    Note over User: Handle cancellation/error,\ncontainer still returned
+end
+
+@enduml
