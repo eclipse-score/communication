@@ -1,4 +1,4 @@
-@startuml com_api_find_service_and_subscribe
+@startuml com_api_sync_find_service_and_subscribe
 
 ' Copyright (c) 2025 Contributors to the Eclipse Foundation
 '

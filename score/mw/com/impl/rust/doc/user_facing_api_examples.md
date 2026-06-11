@@ -198,28 +198,20 @@ async fn find_service_async<R: Runtime>(
 
 A consumer is constructed from a successful service discovery result. Once a matching instance is found via `get_available_instances()`, call `build()` on the returned builder to create the consumer. The consumer provides typed `Subscriber` fields for each event in the interface, which can then be subscribed to independently.
 
+### Consumer Creation and Subscription
+
 **Key Points**:
 - `create_consumer()` pattern directly builds consumer from discovered services based on InstanceSpecifier and instance index
 - `subscribe()` establishes event stream on specific event publishers (e.g., `left_tire`)
-- `try_receive()` polls for samples without blocking, returns number of new samples added
-- `receive()` async method that waits until min_samples are available, returns (SampleContainer, Result<usize>)
-- `cancellable_receive()` async method with cancellation future for timeout/cancellation support
-- `to_stream()` converts subscription to async stream for futures-based iteration
-- `SampleContainer` manages lifecycle and ordering of received samples
+- `max_samples` parameter defines subscription buffer capacity
 - `unsubscribe()` stops receiving events and returns the subscriber
-
-### Example: Consuming Events from a Service
 
 <details>
 <summary>Examples:</summary>
 
 ```rust
-use com_api::{Result, Runtime, FindServiceSpecifier, InstanceSpecifier, SampleContainer, Subscription};
+use com_api::{Result, Runtime, FindServiceSpecifier, InstanceSpecifier, Subscription};
 use com_api_gen::{VehicleInterface, VehicleConsumer, Tire};
-use futures::channel::oneshot;
-use futures::{FutureExt, StreamExt};
-use std::thread;
-use std::time::Duration;
 
 // Discover and create consumer for the service
 fn create_consumer<R: Runtime>(
@@ -236,7 +228,7 @@ fn create_consumer<R: Runtime>(
     let consumer_builder = available_service_instances
         .into_iter()
         .nth(instance_index)
-        .unwrap();
+        .expect("Failed to get consumer builder at specified handle index");
 
     consumer_builder.build().unwrap()
 }
@@ -246,8 +238,27 @@ fn subscribe_event<R: Runtime>(
     consumer: &VehicleConsumer<R>,
     max_samples: usize,
 ) -> impl Subscription<Tire, R> {
-    consumer.left_tire.subscribe(max_samples).unwrap()
+    consumer.left_tire.subscribe(max_samples).expect("Subscribe to event is failed");
 }
+```
+</details>
+
+---
+
+### Synchronous Receive (Polling)
+
+**Key Points**:
+- `try_receive()` polls for samples without blocking
+- Returns number of new samples added to the container
+- Returns `Ok(0)` if no samples are available
+- Use in polling loops or when non-blocking behavior is required
+
+<details>
+<summary>Examples:</summary>
+
+```rust
+use com_api::{Result, SampleContainer, Subscription};
+use com_api_gen::Tire;
 
 // Polling for events - Synchronous receive API
 fn read_tire_data<R: Runtime>(
@@ -256,24 +267,43 @@ fn read_tire_data<R: Runtime>(
     let mut sample_buf = SampleContainer::new(3);
 
     match tire_subscriber.try_receive(&mut sample_buf, 1) {
-        Ok(0) => Ok("No samples available".to_string()),
+        Ok(0) => println!("No samples available"),
         Ok(x) => {
-            let sample = sample_buf.pop_front().unwrap();
+            let sample = sample_buf.pop_front().expect("Sample pop failed");
             Ok(format!("{} samples received: sample[0] = {:?}", x, *sample))
         }
         Err(e) => Err(e),
     }
 }
+```
+</details>
+
+---
+
+### Asynchronous Receive
+
+**Key Points**:
+- `receive()` async method waits until min_samples are available
+- Returns `(SampleContainer, Result<usize>)` tuple
+- Buffer is always returned, even on error
+- Use when waiting for data is acceptable
+
+<details>
+<summary>Examples:</summary>
+
+```rust
+use com_api::{Result, SampleContainer, Subscription};
+use com_api_gen::Tire;
 
 // Async receive - waits for samples to arrive no wait timeout
 async fn read_tire_data_async<R: Runtime>(
     tire_subscriber: impl Subscription<Tire, R>,
 ) -> Result<()> {
     let mut buffer = SampleContainer::new(5);
-    
+
     // Wait for at least 1 sample, receive up to 5 samples
     let (returned_buf, result) = tire_subscriber.receive(buffer, 1, 5).await;
-    
+
     match result {
         Ok(count) => {
             println!("Received {} samples", count);
@@ -290,13 +320,36 @@ async fn read_tire_data_async<R: Runtime>(
     }
     Ok(())
 }
+```
+</details>
+
+---
+
+### Async Receive with Timeout/Cancellation
+
+**Key Points**:
+- `cancellable_receive()` async method with cancellation future for timeout/cancellation support
+- Accepts a cancellation future that can abort the receive operation
+- Returns buffer even when cancelled or when an error occurs while receiving
+- Useful for implementing timeouts or user-initiated cancellation
+
+<details>
+<summary>Examples:</summary>
+
+```rust
+use com_api::{Result, SampleContainer, Subscription};
+use com_api_gen::Tire;
+use futures::channel::oneshot;
+use futures::FutureExt;
+use std::thread;
+use std::time::Duration;
 
 // Async receive with cancellation/timeout
 async fn read_tire_data_with_timeout<R: Runtime>(
     tire_subscriber: impl Subscription<Tire, R>,
 ) -> Result<()> {
     let mut buffer = SampleContainer::new(5);
-    
+
     // Create timeout future using oneshot channel
     let (tx, rx) = oneshot::channel();
     thread::spawn(move || {
@@ -304,12 +357,13 @@ async fn read_tire_data_with_timeout<R: Runtime>(
         let _ = tx.send(());
     });
     let timeout_future = rx.map(|_| ());
-    
+
     // Wait for samples or timeout
+    // If no sample is received within 1 second, the timeout future becomes ready and the receive future is cancelled.
     let (returned_buf, result) = tire_subscriber
         .cancellable_receive(buffer, 1, 5, timeout_future)
         .await;
-    
+    // brief example of sample processing
     match result {
         Ok(count) => {
             println!("Received {} samples before timeout", count);
@@ -326,15 +380,36 @@ async fn read_tire_data_with_timeout<R: Runtime>(
     }
     Ok(())
 }
+```
+</details>
+
+---
+
+### Stream-based Receive
+
+**Key Points**:
+- `to_stream()` converts subscription to async stream for futures-based iteration
+- Stream returns samples with `Ready` status
+- Errors don't end the stream automatically - user decides based on error severity
+- Requires mutable reference to subscription
+- `SampleContainer` lifecycle managed internally
+
+<details>
+<summary>Examples:</summary>
+
+```rust
+use com_api::{Result, Subscription};
+use com_api_gen::Tire;
+use futures::StreamExt;
 
 // Stream-based async receive
 async fn read_tire_data_stream<R: Runtime>(
-    tire_subscriber: impl Subscription<Tire, R>,
+    mut tire_subscriber: impl Subscription<Tire, R>,
     num_samples: usize,
-) -> Result<()> {    
+) -> Result<()> {
     let mut stream = tire_subscriber.to_stream();
     let mut received = 0;
-    
+
     while received < num_samples {
         match stream.next().await {
             Some(Ok(sample)) => {
@@ -343,7 +418,6 @@ async fn read_tire_data_stream<R: Runtime>(
             }
             Some(Err(e)) => {
                 eprintln!("Stream error: {:?}", e);
-                break;
             }
             None => {
                 eprintln!("Stream ended unexpectedly");

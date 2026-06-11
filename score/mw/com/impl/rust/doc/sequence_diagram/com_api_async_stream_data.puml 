@@ -30,7 +30,7 @@ loop User polls the stream
         Subscription --> User: Ready(Sample)
     else No samples available
         Subscription --> User: Pending (Async waits for new samples to arrive)
-    else Error occurs
+    else Receive returns an error
         Subscription --> User: Ready(Error)
     end
     deactivate Subscription
