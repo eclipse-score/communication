@@ -1,0 +1,48 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Eclipse S-CORE - Communication: gateway application configuration schema",
+    "description": "mw::com gateway application configuration",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "forwarded-services": {
+            "type": "array",
+            "title": "Service instances to forward",
+            "description": "List of instance specifiers that will be forwarded by this gateway instance",
+            "items": {
+                "type": "string",
+                "title": "Instance specifier",
+                "description": "Instance specifier that will be forwarded"
+            }
+        },
+        "expected-received-services": {
+            "type": "array",
+            "title": "Service instances to receive",
+            "description": "Whitelist of service instance specifiers that shall be received by this gateway.",
+            "items": {
+                "type": "string",
+                "title": "Instance specifier",
+                "description": "Instance specifier that shall be received"
+            }
+        },
+        "transport-layer": {
+            "type": "object",
+            "title": "Transport layer reference",
+            "description": "Identifies which transport layer implementation to use and where its configuration lives.",
+            "additionalProperties": false,
+            "required": ["id", "config-path"],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "title": "Transport layer identifier",
+                    "description": "Unique identifier for the transport layer implementation (e.g. sample_hypervisor)."
+                },
+                "config-path": {
+                    "type": "string",
+                    "title": "Transport configuration path",
+                    "description": "Absolute path to the transport-layer-specific configuration JSON file."
+                }
+            }
+        }
+    }
+}

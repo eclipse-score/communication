@@ -46,6 +46,32 @@ cc_library(
     deps = ["@score_baselibs//score/result"],
 )
 
+cc_library(
+    name = "transport_factory",
+    srcs = ["transport_factory.cpp"],
+    hdrs = ["transport_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+    ],
+    deps = [
+        ":transport",
+        "//score/mw/com/gateway/gateway_application:gateway_core",
+        "//score/mw/com/gateway/transport_layer/sample/configuration:sample_transport_config_parser",
+    ],
+)
+
+cc_library(
+    name = "transport_mock",
+    hdrs = ["transport_mock.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/gateway:__subpackages__"],
+    deps = [
+        ":transport",
+        "@googletest//:gtest",
+    ],
+)
+
 cc_unit_test(
     name = "transport_error_test",
     srcs = ["transport_error_test.cpp"],

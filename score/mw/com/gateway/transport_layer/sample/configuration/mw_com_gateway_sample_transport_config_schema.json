@@ -1,0 +1,40 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Eclipse S-CORE - Communication: sample hypervisor transport configuration schema",
+    "description": "mw::com gateway sample hypervisor transport configuration",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["hypervisor-socket"],
+    "properties": {
+        "hypervisor-socket": {
+            "title": "Socket configuration for hypervisor communication",
+            "description": "Defines the communication mechanism used between the two gateways.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["remote-ip", "local-port", "remote-port"],
+            "properties": {
+                "remote-ip": {
+                    "type": "string",
+                    "title": "Remote IP address",
+                    "description": "IP address of the remote gateway."
+                },
+                "local-port": {
+                    "type": "integer",
+                    "title": "Local port",
+                    "description": "Local port to listen on for incoming connections."
+                },
+                "remote-port": {
+                    "type": "integer",
+                    "title": "Remote port",
+                    "description": "Port on the remote gateway to connect to."
+                },
+                "request-timeout-ms": {
+                    "type": "integer",
+                    "title": "Request timeout",
+                    "description": "Timeout in milliseconds for request-response round-trips.",
+                    "default": 5000
+                }
+            }
+        }
+    }
+}
