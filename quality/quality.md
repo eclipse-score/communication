@@ -163,6 +163,52 @@ bazel test --config=asan //...
 bazel test --config=tsan //...
 ```
 
+## Compiler Warnings
+
+Compiler warning features are defined in [`quality/compiler_warnings/`](compiler_warnings/) and referenced in targets through the shared bundle in [`score/common_features.bzl`](../score/common_features.bzl). Warning features are prefixed with `score_communication_` to avoid collisions with other modules.
+
+Features are enabled per-target via the `features` attribute. The LLVM toolchain enables `score_communication_default_flags` and `score_communication_minimal_warnings` by default (see [`MODULE.bazel`](../MODULE.bazel)).
+
+### Adding Warning Features to a Target
+
+Load the shared bundle and set it in your `cc_library` or `cc_unit_test`:
+
+```starlark
+load("//score:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+cc_library(
+    name = "my_lib",
+    srcs = ["my_lib.cpp"],
+    hdrs = ["my_lib.h"],
+    features = COMPILER_WARNING_FEATURES,
+)
+```
+
+### Disabling Warnings for a Single Target
+
+Use the `-` prefix to opt out of a feature on a specific target:
+
+```starlark
+cc_library(
+    name = "third_party_wrapper",
+    srcs = ["wrapper.cpp"],
+    features = ["-score_communication_treat_warnings_as_errors"],
+)
+```
+
+### Disabling a Feature Globally
+
+Use `--features=-<feature_name>` on the command line:
+
+```bash
+bazel build //... --features=-score_communication_treat_warnings_as_errors
+```
+
+### Coverage Builds
+
+Coverage builds (`bazel coverage //...`) automatically disable `-Werror` via [`quality/coverage.bazelrc`](coverage.bazelrc).
+
+
 ## Linting
 
 ### Copyright Checker

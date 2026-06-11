@@ -28,3 +28,6 @@ coverage --test_env=COVERAGE_GCOV_OPTIONS=-bcu
 coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
 coverage --cxxopt -mllvm
 coverage --cxxopt -runtime-counter-relocation
+
+# Disable treat_warnings_as_errors for coverage builds to avoid build failures from instrumentation-related warnings
+coverage --features=-score_communication_treat_warnings_as_errors
