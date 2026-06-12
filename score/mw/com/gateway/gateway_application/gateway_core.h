@@ -40,7 +40,7 @@ class GatewayCore
     /// for the service instance, which will be realized as a Forwarding Skeleton (GenericSkeleton).
     /// \return result indicating success or failure.
     virtual score::Result<void> ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                               std::vector<ServiceElementConfiguration> service_elements) = 0;
+                                               std::vector<impl::EventInfo> service_elements) = 0;
 
     /// \brief Stop providing the given service instance locally within the destination domain.
     /// \param service_instance_specifier instance specifier of the service instance to stop offering. It is expected,
