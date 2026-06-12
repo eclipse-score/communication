@@ -265,6 +265,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":field_tags",
         ":method_type",
         ":skeleton_event",
         ":skeleton_field_base",
@@ -289,6 +290,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":field_tags",
         ":flag_owner",
         ":proxy_base",
         ":proxy_event",
@@ -328,6 +330,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":field_tags",
         ":method_type",
         ":proxy_event",
         ":proxy_event_binding",
@@ -733,6 +736,23 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
+)
+
+cc_library(
+    name = "field_tags",
+    srcs = ["field_tags.cpp"],
+    hdrs = ["field_tags.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
+cc_unit_test(
+    name = "field_tags_test",
+    srcs = ["field_tags_test.cpp"],
+    deps = [
+        ":field_tags",
+    ],
 )
 
 cc_library(

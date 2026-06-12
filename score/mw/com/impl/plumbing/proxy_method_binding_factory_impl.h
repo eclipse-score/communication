@@ -17,13 +17,13 @@
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
+#include "score/mw/com/impl/bindings/lola/proxy_element_lookup.h"
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/plumbing/i_proxy_method_binding_factory.h"
-#include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -105,8 +105,16 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
                                   ? ServiceElementType::FIELD
                                   : ServiceElementType::METHOD;
 
-    const auto lookup = LookupLolaProxyElement(parent_handle, parent_binding, method_name, element_type);
-    if (!lookup.has_value())
+    auto* const lola_proxy = lola::GetLolaProxyBinding(parent_binding);
+    if (lola_proxy == nullptr)
+    {
+        score::mw::log::LogError("lola")
+            << "Proxy Method binding could not be created for" << method_name
+            << "because the parent proxy binding is not a lola binding or the element could not be resolved.";
+        return nullptr;
+    }
+    const auto element_fq_id = lola::GetElementFqId(parent_handle, method_name, element_type);
+    if (!element_fq_id.has_value())
     {
         score::mw::log::LogError("lola")
             << "Proxy Method binding could not be created for" << method_name
@@ -122,10 +130,9 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
     // the same id, but the pair (id, method_type) is different, so the two end up in separate
     // entries of the proxy_methods_ / skeleton_methods_ maps in the binding layer.
     const lola::ProxyMethodInstanceIdentifier proxy_method_instance_identifier{
-        lookup->parent.GetProxyInstanceIdentifier(), {lookup->element_fq_id.element_id_, method_type}};
+        lola_proxy->GetProxyInstanceIdentifier(), {element_fq_id->element_id_, method_type}};
 
-    return std::make_unique<lola::ProxyMethod>(
-        lookup->parent, proxy_method_instance_identifier, type_erased_element_info);
+    return std::make_unique<lola::ProxyMethod>(*lola_proxy, proxy_method_instance_identifier, type_erased_element_info);
 }
 
 }  // namespace score::mw::com::impl

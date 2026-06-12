@@ -20,6 +20,8 @@
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_element_id.h"
 #include "score/mw/com/impl/configuration/lola_service_id.h"
@@ -112,6 +114,18 @@ const LolaServiceTypeDeployment kLolaServiceTypeDeploymentWithMethods{
     {},
     {},
     {{kDummyMethodName0, kDummyMethodId0}, {kDummyMethodName1, kDummyMethodId1}, {kDummyMethodName2, kDummyMethodId2}}};
+
+const std::string kDummyFieldName0{"my_dummy_field_0"};
+constexpr LolaServiceElementId kDummyFieldId0{20U};
+const LolaEventInstanceDeployment kFieldEventInstanceDeployment(LolaEventInstanceDeployment::SampleSlotCountType{1U},
+                                                                LolaEventInstanceDeployment::SubscriberCountType{1U},
+                                                                std::uint8_t{1U},
+                                                                true,
+                                                                LolaEventInstanceDeployment::TracingSlotSizeType{0U});
+const LolaServiceTypeDeployment kLolaServiceTypeDeploymentWithField{kLolaServiceId,
+                                                                    {},
+                                                                    {{kDummyFieldName0, kDummyFieldId0}},
+                                                                    {}};
 
 const std::optional<DataTypeSizeInfo> kEmptyInArgsTypeErasedDataInfo{};
 const std::optional<DataTypeSizeInfo> kEmptyReturnTypeTypeErasedDataInfo{};
@@ -212,14 +226,33 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
     }
 
     ProxyMethodHandlingFixture& WithRegisteredProxyMethods(
-        std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>> methods_to_register)
+        std::vector<std::tuple<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo, MethodType>>
+            methods_to_register)
     {
-        for (auto& [method_id, type_erased_element_info] : methods_to_register)
+        for (auto& [method_id, type_erased_element_info, method_type] : methods_to_register)
         {
             const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_->GetProxyInstanceIdentifier(),
-                                                                                 {method_id, MethodType::kMethod}};
+                                                                                 {method_id, method_type}};
             proxy_method_storage_.emplace_back(*proxy_, proxy_method_instance_identifier, type_erased_element_info);
         }
+        return *this;
+    }
+
+    ProxyMethodHandlingFixture& GivenAConfigurationWithField(const std::optional<bool> use_get_if_available,
+                                                             const std::optional<bool> use_set_if_available)
+    {
+        configuration_store_ = std::make_unique<ConfigurationStore>(
+            ConfigurationStore{InstanceSpecifier::Create(std::string{"my_instance_spec"}).value(),
+                               make_ServiceIdentifierType("foo"),
+                               QualityType::kASIL_B,
+                               kLolaServiceTypeDeploymentWithField,
+                               LolaServiceInstanceDeployment{
+                                   kLolaInstanceId,
+                                   {},
+                                   {{kDummyFieldName0,
+                                     LolaFieldInstanceDeployment{
+                                         kFieldEventInstanceDeployment, use_get_if_available, use_set_if_available}}},
+                                   {}}});
         return *this;
     }
 
@@ -286,7 +319,8 @@ TEST_F(ProxyMethodHandlingFixture, SuccessfullyCreatingSharedMemoryReturnsSucces
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that the shared memory creation succeeds
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Create(StartsWith(kMethodChannelPrefix), _, _, _, _))
@@ -308,7 +342,8 @@ TEST_F(ProxyMethodHandlingFixture, FailingToCreateSharedMemoryReturnsError)
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that the shared memory creation fails and returns a nullptr
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Create(StartsWith(kMethodChannelPrefix), _, _, _, _))
@@ -331,10 +366,12 @@ TEST_F(ProxyMethodHandlingFixture, CreatesMethodCallQueueForEachMethodInShm)
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod},
              {kDummyMethodId1,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo1, kValidReturnTypeTypeErasedDataInfo1, kDummyQueueSize1}}});
+                  kValidInArgsTypeErasedDataInfo1, kValidReturnTypeTypeErasedDataInfo1, kDummyQueueSize1},
+              MethodType::kMethod}});
 
     // When calling SetupMethods with the name of the registered ProxyMethod
     score::cpp::ignore = proxy_->SetupMethods();
@@ -358,10 +395,12 @@ TEST_F(ProxyMethodHandlingFixture, SetsInArgsAndReturnStoragesForEachMethodInShm
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod},
              {kDummyMethodId1,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo1, kValidReturnTypeTypeErasedDataInfo1, kDummyQueueSize1}}});
+                  kValidInArgsTypeErasedDataInfo1, kValidReturnTypeTypeErasedDataInfo1, kDummyQueueSize1},
+              MethodType::kMethod}});
 
     // When calling SetupMethods with the name of the registered ProxyMethod
     score::cpp::ignore = proxy_->SetupMethods();
@@ -372,6 +411,108 @@ TEST_F(ProxyMethodHandlingFixture, SetsInArgsAndReturnStoragesForEachMethodInShm
     {
         score::cpp::ignore = method.GetInArgsBuffer(0);
     }
+}
+
+TEST_F(ProxyMethodHandlingFixture, RegisteredFieldGetAndSetAreCreatedInShmWhenEnabledInDeployment)
+{
+    // Given a field whose Get and Set are enabled in config and registered as proxy methods
+    auto use_get_if_available = true;
+    auto use_set_if_available = true;
+    GivenAConfigurationWithField(use_get_if_available, use_set_if_available)
+        .GivenAProxy()
+        .GivenAFakeSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kEmptyInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kGet},
+             {kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kEmptyReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kSet}});
+
+    // When setting up methods
+    score::cpp::ignore = proxy_->SetupMethods();
+
+    // Then the shm contains both the field Get and Set method call queues
+    const auto& method_data = GetMethodDataFromShm();
+    EXPECT_THAT(method_data.method_call_queues_,
+                UnorderedElementsAre(Pair(UniqueMethodIdentifier{kDummyFieldId0, MethodType::kGet}, _),
+                                     Pair(UniqueMethodIdentifier{kDummyFieldId0, MethodType::kSet}, _)));
+}
+
+TEST_F(ProxyMethodHandlingFixture, FieldGetDisabledInDeploymentConfigIsExcludedEvenWhenRegistered)
+{
+    // Given a field whose Get is disabled in config (useGetIfAvailable=false) but Set enabled, both registered
+    auto use_get_if_available = false;
+    auto use_set_if_available = true;
+    GivenAConfigurationWithField(use_get_if_available, use_set_if_available)
+        .GivenAProxy()
+        .GivenAFakeSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kEmptyInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kGet},
+             {kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kEmptyReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kSet}});
+
+    // When setting up methods
+    score::cpp::ignore = proxy_->SetupMethods();
+
+    // Then only the Set method is created; the config-disabled Get is excluded even though it was registered
+    const auto& method_data = GetMethodDataFromShm();
+    EXPECT_THAT(method_data.method_call_queues_,
+                UnorderedElementsAre(Pair(UniqueMethodIdentifier{kDummyFieldId0, MethodType::kSet}, _)));
+}
+
+TEST_F(ProxyMethodHandlingFixture, FieldSetDisabledInDeploymentConfigIsExcludedEvenWhenRegistered)
+{
+    // Given a field whose Get is enabled in config (useGetIfAvailable=true) but Set disabled, both registered
+    auto use_get_if_available = true;
+    auto use_set_if_available = false;
+    GivenAConfigurationWithField(use_get_if_available, use_set_if_available)
+        .GivenAProxy()
+        .GivenAFakeSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kEmptyInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kGet},
+             {kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kEmptyReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kSet}});
+
+    // When setting up methods
+    score::cpp::ignore = proxy_->SetupMethods();
+
+    // Then only the Get method is created; the config-disabled Set is excluded even though it was registered
+    const auto& method_data = GetMethodDataFromShm();
+    EXPECT_THAT(method_data.method_call_queues_,
+                UnorderedElementsAre(Pair(UniqueMethodIdentifier{kDummyFieldId0, MethodType::kGet}, _)));
+}
+
+TEST_F(ProxyMethodHandlingFixture, FieldGetNotRegisteredDoesAbort)
+{
+    // Given a field whose Get and Set are enabled in config, but only the Set was registered (Get unregistered
+    // showcasing a programming bug).
+    auto use_get_if_available = true;
+    auto use_set_if_available = true;
+    GivenAConfigurationWithField(use_get_if_available, use_set_if_available)
+        .GivenAProxy()
+        .GivenAFakeSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kEmptyReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kSet}});
+
+    // When setting up methods.
+    // Then the program terminates.
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(proxy_->SetupMethods());
 }
 
 TEST_F(ProxyMethodHandlingFixture, CreatesSharedMemoryWithUserPermissionsContainingSkeletonApplicationId)
@@ -385,7 +526,8 @@ TEST_F(ProxyMethodHandlingFixture, CreatesSharedMemoryWithUserPermissionsContain
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that the shared memory creation is called with read and write permissions for the skeleton's
     // uid
@@ -424,7 +566,8 @@ TEST_F(ProxySetupMethodsPartialRestartFixture, RemovesStaleArtefactsIfShmFileAlr
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that we check if the shm file already exists in the filesystem
     // which returns that it already exists (indicating that a previous Proxy was created which then crashed).
@@ -448,7 +591,8 @@ TEST_F(ProxySetupMethodsPartialRestartFixture, ReturnsErrorWhenCheckingIfShmFile
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that we check if the shm file already exists in the filesystem which returns an error
     EXPECT_CALL(filesystem_fake_.GetStandard(), Exists(StartsWith(kMethodShmChannelPrefix)))
@@ -472,7 +616,8 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will never be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(0);
@@ -496,7 +641,8 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, ResendsSubscribeMethodEveryTi
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called three times: once in SetupMethods and once for every time
     // the find service handler is called when the service has been reoffered
@@ -525,10 +671,12 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, MarksProxyMethodsUnsubscribed
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod},
              {kDummyMethodId1,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1},
+              MethodType::kMethod}});
 
     // Given that SetupMethods was called which should mark the ProxyMethods as subscribed
     score::cpp::ignore = proxy_->SetupMethods();
@@ -555,10 +703,12 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod},
              {kDummyMethodId1,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1},
+              MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called once in SetupMethods and a second time in the find service
     // handler when the service has been reoffered which succeeds
@@ -590,10 +740,12 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod},
              {kDummyMethodId1,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1},
+              MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called once in SetupMethods
     Sequence subscribe_service_method_sequence{};
@@ -628,7 +780,8 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, DoesNotResendSubscribeMethodI
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called only once in SetupMethods
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(1);
@@ -648,7 +801,8 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, DoesNotResendSubscribeMethodI
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called only once in SetupMethods
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(1);
@@ -673,7 +827,8 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesCalls
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
@@ -698,7 +853,8 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesForwa
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called which returns an error
     const auto call_service_method_subscribed_error_code = ComErrc::kCallQueueFull;
@@ -722,10 +878,12 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, ProxyMethodsMarkedAsSubscribedWhe
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod},
              {kDummyMethodId1,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1},
+              MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called and returns a valid result
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).WillOnce(Return(score::Result<void>{}));
@@ -748,10 +906,12 @@ TEST_F(ProxySetupMethodsMessagePassingFixture,
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod},
              {kDummyMethodId1,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1},
+              MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called which returns an error
     const auto call_service_method_subscribed_error_code = ComErrc::kCallQueueFull;
@@ -784,7 +944,8 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithoutArgsOrReturnTypesFo
     GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
         .GivenAProxy()
         .GivenAMockedSharedMemoryResource()
-        .WithRegisteredProxyMethods({{kDummyMethodId0, kEmptyTypeErasedInfo}, {kDummyMethodId1, kEmptyTypeErasedInfo}});
+        .WithRegisteredProxyMethods({{kDummyMethodId0, kEmptyTypeErasedInfo, MethodType::kMethod},
+                                     {kDummyMethodId1, kEmptyTypeErasedInfo, MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called which returns an error
     const auto call_service_method_subscribed_error_code = ComErrc::kCallQueueFull;
@@ -805,7 +966,8 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingMethodsWithoutArgsOrRetur
     GivenAConfigurationWithEnabledMethods({kDummyMethodName0, kDummyMethodName1})
         .GivenAProxy()
         .GivenAMockedSharedMemoryResource()
-        .WithRegisteredProxyMethods({{kDummyMethodId0, kEmptyTypeErasedInfo}, {kDummyMethodId1, kEmptyTypeErasedInfo}});
+        .WithRegisteredProxyMethods({{kDummyMethodId0, kEmptyTypeErasedInfo, MethodType::kMethod},
+                                     {kDummyMethodId1, kEmptyTypeErasedInfo, MethodType::kMethod}});
 
     // Expecting that SubscribeServiceMethod will be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
@@ -830,7 +992,8 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, FailingToGetLolaRuntimeTerminates
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that GetBindingRuntime is called on the impl runtime which returns
     // a nullptr
@@ -843,9 +1006,9 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, FailingToGetLolaRuntimeTerminates
 
 class ProxySetupMethodsShmSizeParamaterizedFixture
     : public ProxyMethodHandlingFixture,
-      public ::testing::WithParamInterface<
-          std::pair<std::vector<std::string_view>,
-                    std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>>
+      public ::testing::WithParamInterface<std::pair<
+          std::vector<std::string_view>,
+          std::vector<std::tuple<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo, MethodType>>>>
 {
 };
 
@@ -855,85 +1018,102 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
 
         // Single method containing InArgs and Return Type
-        std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+        std::make_pair<
+            std::vector<std::string_view>,
+            std::vector<std::tuple<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo, MethodType>>>(
             {kDummyMethodName0},
-            {std::make_pair(kDummyMethodId0,
-                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{24, 8}},
-                                                                       std::optional<DataTypeSizeInfo>{{32, 16}},
-                                                                       5U})}),
+            {std::make_tuple(kDummyMethodId0,
+                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{24, 8}},
+                                                                        std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                        5U},
+                             MethodType::kMethod)}),
 
         // Multiple methods containing InArgs and Return Type
-        std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+        std::make_pair<
+            std::vector<std::string_view>,
+            std::vector<std::tuple<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo, MethodType>>>(
             {kDummyMethodName0, kDummyMethodName1},
-            {std::make_pair(kDummyMethodId0,
-                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
-                                                                       std::optional<DataTypeSizeInfo>{{32, 16}},
-                                                                       3U}),
-             std::make_pair(kDummyMethodId1,
-                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
-                                                                       std::optional<DataTypeSizeInfo>{{104, 8}},
-                                                                       4U})}),
+            {std::make_tuple(kDummyMethodId0,
+                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
+                                                                        std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                        3U},
+                             MethodType::kMethod),
+             std::make_tuple(kDummyMethodId1,
+                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                        std::optional<DataTypeSizeInfo>{{104, 8}},
+                                                                        4U},
+                             MethodType::kMethod)}),
 
         // Multiple methods containing InArgs and Return Type with different padding
         // to previous test (The actual location of the padding will be determined
         // by the size of MethodData and its elements which are allocated before the
         // InArgs / Return types. However, the amount of padding between Method0 and
         // Method1 will be different to the test above).
-        std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+        std::make_pair<
+            std::vector<std::string_view>,
+            std::vector<std::tuple<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo, MethodType>>>(
             {kDummyMethodName0, kDummyMethodName1},
-            {std::make_pair(kDummyMethodId0,
-                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{24, 8}},
-                                                                       std::optional<DataTypeSizeInfo>{{32, 16}},
-                                                                       4U}),
-             std::make_pair(kDummyMethodId1,
-                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
-                                                                       std::optional<DataTypeSizeInfo>{{104, 8}},
-                                                                       6U})}),
+            {std::make_tuple(kDummyMethodId0,
+                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{24, 8}},
+                                                                        std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                        4U},
+                             MethodType::kMethod),
+             std::make_tuple(kDummyMethodId1,
+                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                        std::optional<DataTypeSizeInfo>{{104, 8}},
+                                                                        6U},
+                             MethodType::kMethod)}),
 
         // Method with empty InArgs
-        std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+        std::make_pair<
+            std::vector<std::string_view>,
+            std::vector<std::tuple<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo, MethodType>>>(
             {kDummyMethodName0, kDummyMethodName1},
-            {std::make_pair(kDummyMethodId0,
-                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
-                                                                       std::optional<DataTypeSizeInfo>{{32, 16}},
-                                                                       3U}),
-             std::make_pair(kDummyMethodId1,
-                            TypeErasedCallQueue::TypeErasedElementInfo{kEmptyInArgsTypeErasedDataInfo,
-                                                                       std::optional<DataTypeSizeInfo>{{104, 8}},
-                                                                       5U})}),
+            {std::make_tuple(kDummyMethodId0,
+                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
+                                                                        std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                        3U},
+                             MethodType::kMethod),
+             std::make_tuple(kDummyMethodId1,
+                             TypeErasedCallQueue::TypeErasedElementInfo{kEmptyInArgsTypeErasedDataInfo,
+                                                                        std::optional<DataTypeSizeInfo>{{104, 8}},
+                                                                        5U},
+                             MethodType::kMethod)}),
 
         // Method with empty Return type
-        std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+        std::make_pair<
+            std::vector<std::string_view>,
+            std::vector<std::tuple<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo, MethodType>>>(
             {kDummyMethodName0, kDummyMethodName1},
-            {std::make_pair(kDummyMethodId0,
-                            TypeErasedCallQueue::TypeErasedElementInfo{
-                                std::optional<DataTypeSizeInfo>{{32, 8}},
-                                kEmptyReturnTypeTypeErasedDataInfo,
-                                7U}),  // Adjust if needed based on actual structure
-             std::make_pair(kDummyMethodId1,
-                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
-                                                                       std::optional<DataTypeSizeInfo>{{104, 8}},
-                                                                       8U})}),
+            {std::make_tuple(kDummyMethodId0,
+                             TypeErasedCallQueue::TypeErasedElementInfo{
+                                 std::optional<DataTypeSizeInfo>{{32, 8}},
+                                 kEmptyReturnTypeTypeErasedDataInfo,
+                                 7U},  // Adjust if needed based on actual structure
+                             MethodType::kMethod),
+             std::make_tuple(kDummyMethodId1,
+                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                        std::optional<DataTypeSizeInfo>{{104, 8}},
+                                                                        8U},
+                             MethodType::kMethod)}),
 
         // Method with empty InArg and Return type (this method will be ignored in
         // size calculations)
-        std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+        std::make_pair<
+            std::vector<std::string_view>,
+            std::vector<std::tuple<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo, MethodType>>>(
             {kDummyMethodName0, kDummyMethodName1, kDummyMethodName2},
-            {std::make_pair(kDummyMethodId0,
-                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
-                                                                       std::optional<DataTypeSizeInfo>{{32, 16}},
-                                                                       3U}),
-             std::make_pair(kDummyMethodId1, kEmptyTypeErasedInfo),
-             std::make_pair(kDummyMethodId2,
-                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
-                                                                       std::optional<DataTypeSizeInfo>{{104, 8}},
-                                                                       5U})})));
+            {std::make_tuple(kDummyMethodId0,
+                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
+                                                                        std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                        3U},
+                             MethodType::kMethod),
+             std::make_tuple(kDummyMethodId1, kEmptyTypeErasedInfo, MethodType::kMethod),
+             std::make_tuple(kDummyMethodId2,
+                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                        std::optional<DataTypeSizeInfo>{{104, 8}},
+                                                                        5U},
+                             MethodType::kMethod)})));
 
 /// Note. This test assumes that the allocation behaviour of
 /// fake_method_memory_resource_ (i.e. MyBoundedSharedMemoryResource) behaves the
@@ -977,7 +1157,7 @@ TEST_F(ProxyMethodHandlingFixture, EnabledMethodWithoutRegisteredProxyMethodTerm
     GivenAConfigurationWithEnabledMethods({kDummyMethodName1})
         .GivenAProxy()
         .GivenAMockedSharedMemoryResource()
-        .WithRegisteredProxyMethods({{kDummyMethodId0, kEmptyTypeErasedInfo}});
+        .WithRegisteredProxyMethods({{kDummyMethodId0, kEmptyTypeErasedInfo, MethodType::kMethod}});
 
     // When calling SetupMethods with a ProxyMethod name which does not correspond
     // to the registered ProxyMethod Then the program terminates
@@ -1056,7 +1236,8 @@ TEST_F(ProxyMethodHandlingFixture, EnablingMethodThatDoesNotContainQueueSizeInCo
     InitialiseProxyWithCreate(configuration_store.GetInstanceIdentifier());
     SCORE_LANGUAGE_FUTURECPP_ASSERT(proxy_ != nullptr);
 
-    GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods({{kDummyMethodId0, kEmptyTypeErasedInfo}});
+    GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
+        {{kDummyMethodId0, kEmptyTypeErasedInfo, MethodType::kMethod}});
 
     // When calling SetupMethods with a ProxyMethod name which corresponds to the
     // registered ProxyMethod Then the program terminates
@@ -1074,7 +1255,8 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoes
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that UnsubscribeServiceMethod is never called when methods were not set up
     EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _)).Times(0);
@@ -1092,7 +1274,8 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSetupMethodsCallsUnsubscr
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that UnsubscribeServiceMethod is called exactly once on destruction
     EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _)).Times(1);
@@ -1112,7 +1295,8 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyCallsUnsubscribeServiceMethodW
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that UnsubscribeServiceMethod is called with the SkeletonInstanceIdentifier derived from the
     // configuration (service_id = kLolaServiceId, instance_id = kLolaInstanceId) and the skeleton pid from shared
@@ -1139,7 +1323,8 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyCompletesNormallyEvenWhenUnsub
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Given that UnsubscribeServiceMethod returns an error (e.g. skeleton already stopped offering)
     EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, _))
@@ -1163,7 +1348,8 @@ TEST_F(ProxyCleanupMethodsFixture,
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that UnsubscribeServiceMethod is never called because the ProxyMethods are not subscribed
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
@@ -1185,7 +1371,8 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSetupMethodsRemovesShmReg
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that Remove is called exactly once on destruction to unlink the method SHM.
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Remove(StartsWith(kMethodChannelPrefix))).Times(1);
@@ -1205,7 +1392,8 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyWithoutCallingSetupMethodsDoes
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that Remove and RemoveStaleArtefacts are never called because the SHM was never created
     EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Remove(_)).Times(0);
@@ -1223,7 +1411,8 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSkeletonStopOfferedDoesNo
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that UnsubscribeServiceMethod is NOT called on destruction because the skeleton already
     // cleaned up its side when it stopped offering (the subscribed flag was cleared by StopOffer).
@@ -1244,7 +1433,8 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyAfterSetupMethodsWithFailedSub
         .WithRegisteredProxyMethods(
             {{kDummyMethodId0,
               TypeErasedCallQueue::TypeErasedElementInfo{
-                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+                  kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kMethod}});
 
     // Expecting that Remove is still called to clean up the SHM even though subscription failed,
     // because the SHM was successfully created during SetupMethods.

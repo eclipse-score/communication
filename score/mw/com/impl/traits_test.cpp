@@ -70,7 +70,9 @@ class MyInterface : public InterfaceTrait::Base
     using InterfaceTrait::Base::Base;
 
     typename InterfaceTrait::template Event<TestSampleType> some_event{*this, kEventName};
-    typename InterfaceTrait::template Field<TestSampleType, true> some_field{*this, kFieldName};
+    typename InterfaceTrait::template Field<TestSampleType, WithGetter, WithSetter, WithNotifier> some_field{
+        *this,
+        kFieldName};
     typename InterfaceTrait::template Method<TestMethodType> some_method{*this, kMethodName};
 };
 using MyProxy = AsProxy<MyInterface>;
@@ -120,20 +122,22 @@ class ProxyCreationFixture : public ::testing::Test
             .WillByDefault(Return(ByMove(std::move(proxy_binding_mock_ptr))));
 
         // By default the Create call on the ProxyEventBindingFactory returns valid bindings.
-        ON_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName))
+        ON_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName, ServiceElementType::EVENT))
             .WillByDefault(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
 
         // By default the Create call on the ProxyFieldBindingFactory returns valid bindings.
         ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
             .WillByDefault(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
 
+        // By default the Create call on the ProxyFieldBindingFactory returns valid method bindings.
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, kFieldName))
+            .WillByDefault(Return(ByMove(std::move(proxy_field_get_binding_mock_ptr))));
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateSetMethodBinding(_, kFieldName))
+            .WillByDefault(Return(ByMove(std::move(proxy_field_set_binding_mock_ptr))));
+
         // By default the Create call on the ProxyMethodBindingFactory returns valid bindings.
         ON_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kMethodName, MethodType::kMethod))
             .WillByDefault(Return(ByMove(std::move(proxy_method_binding_mock_ptr))));
-        ON_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kFieldName, MethodType::kSet))
-            .WillByDefault(Return(ByMove(std::move(proxy_field_set_binding_mock_ptr))));
-        ON_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kFieldName, MethodType::kGet))
-            .WillByDefault(Return(ByMove(std::move(proxy_field_get_binding_mock_ptr))));
 
         // By default that the proxy_binding can successfully call SetupMethods
         ON_CALL(proxy_binding_mock_, SetupMethods()).WillByDefault(Return(score::Result<void>{}));
@@ -203,7 +207,7 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
     // Expecting that valid bindings are created for the Proxy, ProxyEvent and ProxyField
     EXPECT_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(handle_))
         .WillRepeatedly(Return(ByMove(std::move(proxy_binding_mock_ptr))));
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName))
+    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName, ServiceElementType::EVENT))
         .WillRepeatedly(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
         .WillRepeatedly(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
@@ -249,7 +253,7 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Expecting that the Create call on the ProxyEventBindingFactory returns an invalid binding for the event.
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName))
+    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName, ServiceElementType::EVENT))
         .WillOnce(Return(ByMove(nullptr)));
 
     // When creating a MyProxy
@@ -646,7 +650,7 @@ class SkeletonCreationFixture : public ::testing::Test
         ON_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillByDefault(Return(resolved_instance_identifiers_));
 
         // By default the skeleton binding will report that all methods were correctly registered
-        ON_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+        ON_CALL(skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
 
         // By default the skeleton and service element bindings will report that offer service preparation succeeded
         ON_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));
@@ -959,8 +963,8 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     EXPECT_CALL(skeleton_event_binding_mock_, Send(event_value, _));
     EXPECT_CALL(skeleton_field_binding_mock_, Send(field_value, _));
 
-    // and that VerifyAllMethodsRegistered returns true because there are no methods to register
-    EXPECT_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillOnce(Return(true));
+    // and that VerifyAllMethodHandlersRegistered returns true because there are no methods to register
+    EXPECT_CALL(skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillOnce(Return(true));
 
     // And that PrepareOffer is called on the skeleton binding and event / field
     EXPECT_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _))
@@ -1037,7 +1041,7 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
         }));
 
         // By default the skeleton binding will report that all methods were correctly registered
-        ON_CALL(skeleton_binding_mock_2_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+        ON_CALL(skeleton_binding_mock_2_, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
 
         // By default the skeleton and service element bindings will report that offer service preparation succeeded
         ON_CALL(skeleton_binding_mock_2_, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));

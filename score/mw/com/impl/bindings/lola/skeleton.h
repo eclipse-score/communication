@@ -170,7 +170,7 @@ class Skeleton final : public SkeletonBinding
     /// constructor of Skeleton) without locking a mutex.
     void RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMethod& skeleton_method);
 
-    bool VerifyAllMethodsRegistered() const override;
+    bool VerifyAllMethodHandlersRegistered() const override;
 
   private:
     /// \brief Strategies for handling shared memory during PrepareOffer
