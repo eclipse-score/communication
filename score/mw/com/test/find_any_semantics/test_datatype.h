@@ -34,7 +34,9 @@ class TestInterface : public T::Base
   public:
     using T::Base::Base;
 
-    typename T::template Field<std::int32_t> test_field{*this, "test_field"};
+    // Only WithNotifier is needed: the proxy subscribes to receive the value the skeleton publishes
+    // via Update(). No Get/Set API is involved, so WithGetter and WithSetter must stay absent.
+    typename T::template Field<std::int32_t, score::mw::com::WithNotifier> test_field{*this, "test_field"};
 };
 
 using TestDataProxy = score::mw::com::AsProxy<TestInterface>;

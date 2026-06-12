@@ -24,11 +24,11 @@
 namespace score::mw::com::impl
 {
 
-template <typename FieldType>
+template <typename FieldType, typename... Tags>
 class ProxyFieldAttorney
 {
   public:
-    ProxyFieldAttorney(ProxyField<FieldType>& proxy_field) noexcept : proxy_field_{proxy_field} {}
+    ProxyFieldAttorney(ProxyField<FieldType, Tags...>& proxy_field) noexcept : proxy_field_{proxy_field} {}
 
     ProxyEvent<FieldType>& GetProxyEvent() noexcept
     {
@@ -37,7 +37,7 @@ class ProxyFieldAttorney
     }
 
   private:
-    ProxyField<FieldType>& proxy_field_;
+    ProxyField<FieldType, Tags...>& proxy_field_;
 };
 
 class ProxyEventBaseAttorney
@@ -45,9 +45,9 @@ class ProxyEventBaseAttorney
   public:
     ProxyEventBaseAttorney(ProxyEventBase& proxy_event_base) noexcept : proxy_event_base_{proxy_event_base} {}
 
-    template <typename FieldType>
-    ProxyEventBaseAttorney(ProxyField<FieldType>& proxy_field) noexcept
-        : proxy_event_base_{ProxyFieldAttorney<FieldType>{proxy_field}.GetProxyEvent()}
+    template <typename FieldType, typename... Tags>
+    ProxyEventBaseAttorney(ProxyField<FieldType, Tags...>& proxy_field) noexcept
+        : proxy_event_base_{ProxyFieldAttorney<FieldType, Tags...>{proxy_field}.GetProxyEvent()}
     {
     }
 

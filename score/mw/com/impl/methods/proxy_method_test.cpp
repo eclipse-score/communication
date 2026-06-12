@@ -88,7 +88,7 @@ class ProxyMethodTestFixture : public ::testing::Test
     ProxyMethodTestFixture& GivenAValidProxyMethod()
     {
         unit_ = std::make_unique<ProxyServiceMethodType>(
-            proxy_base_, std::make_unique<mock_binding::ProxyMethodFacade>(proxy_method_binding_mock_), kMethodName);
+            proxy_base_, kMethodName, std::make_unique<mock_binding::ProxyMethodFacade>(proxy_method_binding_mock_));
         return *this;
     }
 
@@ -160,8 +160,8 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, Construction)
     // Then the ProxyMethod can be constructed
     using ProxyMethodType = ProxyMethod<TypeParam>;
     ProxyMethodType{this->proxy_base_,
-                    std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_),
-                    kMethodName};
+                    kMethodName,
+                    std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
 }
 
 TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, WhenMoveConstructingProxyMethodUpdateMethodIsCalled)
@@ -171,8 +171,8 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, WhenMoveConstructingProxyMe
     // Given a proxy method
     auto proxy_method =
         ProxyMethodType{this->proxy_base_,
-                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_),
-                        kMethodName};
+                        kMethodName,
+                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
 
     // When movie-constructing this method
     auto moved_method{std::move(proxy_method)};
@@ -190,15 +190,15 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, WhenMoveAssigningProxyMetho
     // Given a proxy method
     auto proxy_method =
         ProxyMethodType{this->proxy_base_,
-                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_),
-                        kMethodName};
+                        kMethodName,
+                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
 
     ProxyBase other_proxy_base = {std::make_unique<mock_binding::Proxy>(), this->config_store_.GetHandle()};
 
     auto other_proxy_method =
         ProxyMethodType{other_proxy_base,
-                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_),
-                        "this_method_will_be_overwritten_soon"};
+                        "this_method_will_be_overwritten_soon",
+                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
 
     // When move-assigning this method
     other_proxy_method = std::move(proxy_method);
@@ -218,8 +218,8 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture,
     // Given a proxy method
     auto proxy_method =
         ProxyMethodType{this->proxy_base_,
-                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_),
-                        kMethodName};
+                        kMethodName,
+                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
 
     auto same_method_ptr = &proxy_method;
     // When move-assigning this method to itself
@@ -263,7 +263,7 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, InvalidBindingInConstructor
     using ProxyMethodType = ProxyMethod<TypeParam>;
 
     // When a proxy method is created with an invalid binding
-    auto proxy_method = std::make_unique<ProxyMethodType>(this->proxy_base_, nullptr, kMethodName);
+    auto proxy_method = std::make_unique<ProxyMethodType>(this->proxy_base_, kMethodName, nullptr);
 
     // Then calling AreBindingsValid returns false
     EXPECT_FALSE(ProxyBaseView{this->proxy_base_}.AreBindingsValid());
