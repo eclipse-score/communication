@@ -17,6 +17,7 @@
 
 #include "score/filesystem/filesystem.h"
 
+#include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -396,6 +397,107 @@ TEST_F(SkeletonEventPrepareStopOfferFixture, UnregisterEventNotificationExistenc
     skeleton_event_->PrepareStopOffer();
 }
 
+using SkeletonEventGetLatestSampleFixture = SkeletonEventFixture;
+TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleFailsBeforePrepareOffer)
+{
+    // Given a skeleton event that has not been offered
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_);
+
+    // When getting the latest sample
+    const auto latest_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+
+    // Then an error is returned
+    ASSERT_FALSE(latest_sample.has_value());
+    EXPECT_EQ(latest_sample.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleFailsIfNoSampleWasSent)
+{
+    // Given an offered skeleton event with no samples sent
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_);
+    std::ignore = skeleton_event_->PrepareOffer();
+
+    // When getting the latest sample
+    const auto latest_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+
+    // Then an error is returned
+    ASSERT_FALSE(latest_sample.has_value());
+    EXPECT_EQ(latest_sample.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleReturnsMostRecentlySentSample)
+{
+    // Given an offered skeleton event with getter enabled and two samples sent
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, true, {}, true);
+    std::ignore = skeleton_event_->PrepareOffer();
+
+    auto first_allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(first_allocated_slot_result.has_value());
+    auto first_allocated_slot = std::move(first_allocated_slot_result).value();
+    *first_allocated_slot = static_cast<test::TestSampleType>(11U);
+    ASSERT_TRUE(skeleton_event_->Send(std::move(first_allocated_slot), std::nullopt).has_value());
+
+    auto second_allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(second_allocated_slot_result.has_value());
+    auto second_allocated_slot = std::move(second_allocated_slot_result).value();
+    *second_allocated_slot = static_cast<test::TestSampleType>(42U);
+    ASSERT_TRUE(skeleton_event_->Send(std::move(second_allocated_slot), std::nullopt).has_value());
+
+    // When getting the latest sample
+    const auto latest_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+
+    // Then the most recently sent sample is returned
+    ASSERT_TRUE(latest_sample.has_value());
+    EXPECT_EQ(*latest_sample.value(), static_cast<test::TestSampleType>(42U));
+}
+
+TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleReturnsErrorWhenCalledWhilePreviousSamplePtrIsAlive)
+{
+    // Given an offered skeleton event with getter enabled and a sample sent
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, true, {}, true);
+    std::ignore = skeleton_event_->PrepareOffer();
+
+    auto allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(allocated_slot_result.has_value());
+    auto allocated_slot = std::move(allocated_slot_result).value();
+    *allocated_slot = static_cast<test::TestSampleType>(42U);
+    ASSERT_TRUE(skeleton_event_->Send(std::move(allocated_slot), std::nullopt).has_value());
+
+    // When getting the latest sample and holding on to the SamplePtr
+    auto first_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+    ASSERT_TRUE(first_sample.has_value());
+
+    // Then calling GetLatestSample again while the first SamplePtr is still alive returns an error
+    const auto second_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+    ASSERT_FALSE(second_sample.has_value());
+    EXPECT_EQ(second_sample.error(), ComErrc::kMaxSamplesReached);
+}
+
+TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleSucceedsAfterPreviousSamplePtrIsReleased)
+{
+    // Given an offered skeleton event with getter enabled, a sample sent, and a SamplePtr already obtained and
+    // then released
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, true, {}, true);
+    std::ignore = skeleton_event_->PrepareOffer();
+
+    auto allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(allocated_slot_result.has_value());
+    auto allocated_slot = std::move(allocated_slot_result).value();
+    *allocated_slot = static_cast<test::TestSampleType>(42U);
+    ASSERT_TRUE(skeleton_event_->Send(std::move(allocated_slot), std::nullopt).has_value());
+
+    {
+        auto first_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+        ASSERT_TRUE(first_sample.has_value());
+    }  // first_sample destroyed here, returning the token to the tracker
+
+    // When calling GetLatestSample after the previous SamplePtr is released
+    const auto second_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+
+    // Then it succeeds
+    ASSERT_TRUE(second_sample.has_value());
+}
+
 using SkeletonEventTimestampFixture = SkeletonEventFixture;
 TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
 {
@@ -423,9 +525,9 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
     auto* event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
     ProviderEventDataControlLocalView<> provider_event_data_control_local{event_control->data_control};
     const EventSlotStatus first_final_slot_status{provider_event_data_control_local[first_slot_index]};
-    // AND the first timestamp should be 2, as it's the first one after initialization.
+    // AND the first timestamp should be the first valid timestamp.
     const auto first_timestamp = first_final_slot_status.GetTimeStamp();
-    EXPECT_EQ(first_timestamp, 2U);
+    EXPECT_EQ(first_timestamp, 1U);
 
     // AND WHEN we allocate and send a second sample
     auto second_allocated_slot_result = skeleton_event_->Allocate();

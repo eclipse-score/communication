@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_base.h"
@@ -312,6 +313,11 @@ class SkeletonEventView
     SkeletonEventBinding<SampleType>* GetBinding() const noexcept
     {
         return skeleton_event_.GetTypedEventBinding();
+    }
+
+    Result<SamplePtr<SampleType>> GetLatestSample(const QualityType& quality_type) noexcept
+    {
+        return GetBinding()->GetLatestSample(quality_type);
     }
 
   private:

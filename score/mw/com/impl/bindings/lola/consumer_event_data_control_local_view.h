@@ -28,7 +28,6 @@
 
 namespace score::mw::com::impl::lola
 {
-
 /// \brief View class which provides functionality for interacting with EventDataControl.
 ///
 /// \details EventDataControl contains control information for an event which is stored in shared memory. Accessing the

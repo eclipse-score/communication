@@ -85,8 +85,8 @@ template <typename SkeletonServiceElementBinding, typename SkeletonServiceElemen
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                                 SkeletonBase& parent,
-                                const std::string_view service_element_name) noexcept
-    -> std::unique_ptr<SkeletonServiceElementBinding>
+                                const std::string_view service_element_name,
+                                bool getter_enabled = false) noexcept -> std::unique_ptr<SkeletonServiceElementBinding>
 {
     static_assert((element_type == ServiceElementType::EVENT) || (element_type == ServiceElementType::FIELD));
 
@@ -94,7 +94,7 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
 
     using ReturnType = std::unique_ptr<SkeletonServiceElementBinding>;
     auto visitor = score::cpp::overload(
-        [identifier_view, &parent, &service_element_name](
+        [identifier_view, &parent, &service_element_name, getter_enabled](
             const LolaServiceTypeDeployment& lola_service_type_deployment) -> ReturnType {
             auto* const lola_parent = dynamic_cast<lola::Skeleton*>(SkeletonBaseView{parent}.GetBinding());
             if (lola_parent == nullptr)
@@ -121,8 +121,12 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                   lola_service_instance_deployment.instance_id_.value().GetId(),
                                                   element_type};
 
-            return std::make_unique<SkeletonServiceElement>(
-                *lola_parent, element_fq_id, service_element_name, skeleton_event_properties);
+            return std::make_unique<SkeletonServiceElement>(*lola_parent,
+                                                            element_fq_id,
+                                                            service_element_name,
+                                                            skeleton_event_properties,
+                                                            impl::tracing::SkeletonEventTracingData{},
+                                                            getter_enabled);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;

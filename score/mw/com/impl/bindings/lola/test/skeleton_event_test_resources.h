@@ -35,7 +35,16 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
                                  const std::size_t max_samples,
                                  const std::uint8_t max_subscribers,
                                  bool enforce_max_samples = true,
-                                 impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {});
+                                 impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {},
+                                 bool getter_enabled = false);
+
+    void InitialiseSkeletonEventWithQmOnly(ElementFqId element_fq_id,
+                                           const std::string& service_element_name,
+                                           const std::size_t max_samples,
+                                           const std::uint8_t max_subscribers,
+                                           bool enforce_max_samples = true,
+                                           impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {},
+                                           bool getter_enabled = false);
 
     InstanceIdentifier GetValidInstanceIdentifier();
 
@@ -72,6 +81,12 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
                                                               binding_info_,
                                                               QualityType::kASIL_B,
                                                               instance_specifier_};
+
+    /// \brief A QM-only ServiceInstanceDeployment for tests that require no ASIL-B EventControl.
+    ServiceInstanceDeployment valid_qm_instance_deployment_{make_ServiceIdentifierType(service_type_name_),
+                                                            binding_info_,
+                                                            QualityType::kASIL_QM,
+                                                            instance_specifier_};
 
     std::unique_ptr<SkeletonEvent<test::TestSampleType>> skeleton_event_;
 
