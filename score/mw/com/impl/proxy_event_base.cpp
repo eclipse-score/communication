@@ -34,45 +34,6 @@ namespace score::mw::com::impl
 // Initialization of static thread_local variables!
 thread_local bool ProxyEventBase::is_in_receive_handler_context = false;
 
-/// \brief Helper class which registers the ProxyEventBindingBase with its parent proxy (ProxyBinding) and unregisters
-/// on destruction
-///
-/// Since ProxyBase is moveable, we must ensure that this class does not store a reference or pointer to it. As if the
-/// Proxy is moved, then the pointer or reference would be invalidated. However, the ProxyBinding is not moveable, so
-/// storing a pointer to the ProxyBinding is safe.
-class EventBindingRegistrationGuard final
-{
-  public:
-    EventBindingRegistrationGuard(ProxyBinding* proxy_binding,
-                                  ProxyEventBindingBase* proxy_event_binding_base,
-                                  std::string_view event_name) noexcept
-        : proxy_binding_{proxy_binding}, proxy_event_binding_base_{proxy_event_binding_base}, event_name_{event_name}
-    {
-        if ((proxy_binding_ != nullptr) && (proxy_event_binding_base_ != nullptr))
-        {
-            proxy_binding_->RegisterEventBinding(event_name, *proxy_event_binding_base);
-        }
-    }
-
-    ~EventBindingRegistrationGuard() noexcept
-    {
-        if ((proxy_binding_ != nullptr) && (proxy_event_binding_base_ != nullptr))
-        {
-            proxy_binding_->UnregisterEventBinding(event_name_);
-        }
-    }
-
-    EventBindingRegistrationGuard(const EventBindingRegistrationGuard&) = delete;
-    EventBindingRegistrationGuard& operator=(const EventBindingRegistrationGuard&) = delete;
-    EventBindingRegistrationGuard(EventBindingRegistrationGuard&& other) = delete;
-    EventBindingRegistrationGuard& operator=(EventBindingRegistrationGuard&& other) = delete;
-
-  private:
-    ProxyBinding* proxy_binding_;
-    ProxyEventBindingBase* proxy_event_binding_base_;
-    std::string_view event_name_;
-};
-
 // Suppress "AUTOSAR C++14 A3-1-1", The rule states: "It shall be possible to include any header file
 // in multiple translation units without violating the One Definition Rule."
 // This is false positive. Function is declared only once.
@@ -86,8 +47,6 @@ ProxyEventBase::ProxyEventBase(ProxyBase& proxy_base,
       event_name_{event_name},
       tracker_{std::make_unique<SampleReferenceTracker>()},
       tracing_data_{},
-      event_binding_registration_guard_{
-          std::make_unique<EventBindingRegistrationGuard>(proxy_binding_ptr, binding_base_.get(), event_name)},
       proxy_event_base_mock_{nullptr},
       is_subscribed_flag_{false},
       receive_handler_scope_{}

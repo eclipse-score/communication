@@ -136,11 +136,7 @@ class ProxyBase
     ///      Calling this from user code leaves the binding in a torn-down state mid-life.
     void Deinitialize();
 
-    bool AreBindingsValid() const noexcept
-    {
-        const bool is_proxy_binding_valid{proxy_binding_ != nullptr};
-        return is_proxy_binding_valid && are_service_element_bindings_valid_;
-    }
+    bool AreBindingsValid() const noexcept;
 
     Result<void> SetupMethods();
 
@@ -152,8 +148,6 @@ class ProxyBase
     std::unique_ptr<ProxyBinding> proxy_binding_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     HandleType handle_;
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    bool are_service_element_bindings_valid_;
 
     ProxyEvents events_;
     ProxyFields fields_;
@@ -174,8 +168,6 @@ class ProxyBaseView final
     ProxyBinding* GetBinding() noexcept;
 
     const HandleType& GetAssociatedHandleType() const noexcept;
-
-    void MarkServiceElementBindingInvalid() noexcept;
 
     void RegisterEvent(const std::string_view event_name, ProxyEventBase& event);
 

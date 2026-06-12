@@ -27,9 +27,15 @@ namespace score::mw::com::impl
 {
 
 class ProxyBase;
+class ProxyMethodBaseView;
 
 class ProxyMethodBase
 {
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision. This class provides a view to the private members of this class.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class ProxyMethodBaseView;
+
   public:
     ProxyMethodBase(ProxyBase& proxy_base,
                     std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
@@ -95,6 +101,20 @@ class ProxyMethodBase
     containers::DynamicArray<bool> is_return_type_ptr_active_;
 
     std::unique_ptr<ProxyMethodBinding> binding_;
+};
+
+class ProxyMethodBaseView
+{
+  public:
+    explicit ProxyMethodBaseView(const ProxyMethodBase& base) : base_{base} {}
+
+    const ProxyMethodBinding* GetMethodBinding() const noexcept
+    {
+        return base_.binding_.get();
+    }
+
+  private:
+    const ProxyMethodBase& base_;
 };
 
 }  // namespace score::mw::com::impl

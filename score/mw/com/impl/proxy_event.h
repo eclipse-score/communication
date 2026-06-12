@@ -75,8 +75,7 @@ class ProxyEvent final : public ProxyEventBase
 
     /// Constructor which is dispatched to by the other public constructors.
     ///
-    /// Instantiates the base class and members of ProxyEvent and MarkServiceElementBindingInvalid() if the binding is
-    /// invalid. Should only be called directly in tests.
+    /// Instantiates the base class and members of ProxyEvent. Should only be called directly in tests.
     ///
     /// \param proxy_binding The binding that shall be associated with this proxy.
     ProxyEvent(ProxyBase& base,
@@ -148,22 +147,16 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
     : ProxyEventBase{base, ProxyBaseView{base}.GetBinding(), std::move(proxy_event_binding), event_name},
       proxy_event_mock_{nullptr}
 {
-    ProxyBaseView proxy_base_view{base};
-    if (!binding_base_)
-    {
-        proxy_base_view.MarkServiceElementBindingInvalid();
-        return;
-    }
 }
 
 template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const std::string_view event_name)
     : ProxyEvent{base, ProxyEventBindingFactory<SampleType>::Create(base, event_name), event_name}
 {
+    ProxyBaseView proxy_base_view{base};
+    proxy_base_view.RegisterEvent(event_name, *this);
     if (GetTypedEventBinding() != nullptr)
     {
-        ProxyBaseView proxy_base_view{base};
-        proxy_base_view.RegisterEvent(event_name, *this);
         const auto& instance_identifier = proxy_base_view.GetAssociatedHandleType().GetInstanceIdentifier();
         tracing_data_ = tracing::GenerateProxyTracingStructFromEventConfig(instance_identifier, event_name);
     }

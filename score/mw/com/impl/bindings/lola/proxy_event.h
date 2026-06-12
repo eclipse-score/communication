@@ -66,6 +66,7 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
           proxy_event_common_{parent, element_fq_id, event_name},
           samples_{parent.GetEventDataStorage<SampleType>(element_fq_id)}
     {
+        parent.RegisterEvent(event_name, *this);
     }
 
     ProxyEvent(const ProxyEvent&) = delete;

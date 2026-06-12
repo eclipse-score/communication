@@ -78,11 +78,6 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, *this);
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
     }
 
     ProxyMethod(ProxyBase& proxy_base,
@@ -93,11 +88,6 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, *this);
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
     }
 
     ProxyMethod(ProxyBase& proxy_base,
@@ -107,12 +97,6 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
         : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kSet),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
-        auto proxy_base_view = ProxyBaseView{proxy_base};
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
     }
 
     ~ProxyMethod() final = default;
