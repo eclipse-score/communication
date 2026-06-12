@@ -135,10 +135,7 @@ void run_notifier_consumer(const std::size_t num_retries, const std::chrono::mil
     auto instance_specifier = std::move(instance_specifier_result).value();
 
     ProxyContainer<InitialOnlyProxy> proxy_container{};
-    if (!proxy_container.CreateProxy(std::move(instance_specifier)))
-    {
-        NotifyAndFail(process_synchronizer, "Consumer: Unable to create InitialOnlyProxy");
-    }
+    proxy_container.CreateProxy(std::move(instance_specifier), "set_and_notifier");
 
     auto& proxy = proxy_container.GetProxy();
     std::ignore = proxy.test_field.Subscribe(kMaxNumSamples);
@@ -178,10 +175,7 @@ void run_set_consumer(const std::size_t num_retries, const std::chrono::millisec
     auto instance_specifier = std::move(instance_specifier_result).value();
 
     ProxyContainer<SetEnabledProxy> proxy_container{};
-    if (!proxy_container.CreateProxy(std::move(instance_specifier)))
-    {
-        NotifyAndFail(process_synchronizer, "Consumer: Unable to create SetEnabledProxy");
-    }
+    proxy_container.CreateProxy(std::move(instance_specifier), "set_and_notifier");
 
     auto& proxy = proxy_container.GetProxy();
     std::ignore = proxy.test_field.Subscribe(kMaxNumSamples);

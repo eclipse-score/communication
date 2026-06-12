@@ -39,11 +39,13 @@ void run_notifier_provider(const score::cpp::stop_token& stop_token)
         FailTest("Provider: Could not create ProcessSynchronizer");
     }
 
-    SkeletonContainer<InitialOnlySkeleton> skeleton_container{kInstanceSpecifierString};
-    if (!skeleton_container.CreateSkeleton())
+    auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
+    if (!instance_specifier_result.has_value())
     {
-        FailTest("Provider: Unable to construct InitialOnlySkeleton");
+        FailTest("Provider: Unable to create instance specifier");
     }
+    SkeletonContainer<InitialOnlySkeleton> skeleton_container{};
+    skeleton_container.CreateSkeleton(std::move(instance_specifier_result).value(), "set_and_notifier");
 
     auto& service = skeleton_container.GetSkeleton();
 
@@ -52,10 +54,7 @@ void run_notifier_provider(const score::cpp::stop_token& stop_token)
     {
         FailTest("Provider: Unable to update initial field value: ", update_result.error());
     }
-    if (!skeleton_container.OfferService())
-    {
-        FailTest("Provider: Unable to offer InitialOnlySkeleton");
-    }
+    skeleton_container.OfferService("set_and_notifier");
 
     if (!process_synchronizer_result->WaitWithAbort(stop_token))
     {
@@ -73,11 +72,13 @@ void run_set_provider(const score::cpp::stop_token& stop_token)
         FailTest("Provider: Could not create ProcessSynchronizer");
     }
 
-    SkeletonContainer<SetEnabledSkeleton> skeleton_container{kInstanceSpecifierString};
-    if (!skeleton_container.CreateSkeleton())
+    auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
+    if (!instance_specifier_result.has_value())
     {
-        FailTest("Provider: Unable to construct SetEnabledSkeleton");
+        FailTest("Provider: Unable to create instance specifier");
     }
+    SkeletonContainer<SetEnabledSkeleton> skeleton_container{};
+    skeleton_container.CreateSkeleton(std::move(instance_specifier_result).value(), "set_and_notifier");
 
     auto& service = skeleton_container.GetSkeleton();
     const auto register_handler_result = service.test_field.RegisterSetHandler([](std::int32_t& value) noexcept {
@@ -101,10 +102,7 @@ void run_set_provider(const score::cpp::stop_token& stop_token)
         FailTest("Provider: Unable to update initial field value: ", update_result.error());
     }
 
-    if (!skeleton_container.OfferService())
-    {
-        FailTest("Provider: Unable to offer SetEnabledSkeleton");
-    }
+    skeleton_container.OfferService("set_and_notifier");
 
     if (!process_synchronizer_result->WaitWithAbort(stop_token))
     {

@@ -23,6 +23,7 @@ cc_library(
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:fail_test",
     ],
 )
 
@@ -34,6 +35,7 @@ cc_library(
     visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:fail_test",
     ],
 )
 
