@@ -345,6 +345,7 @@ impl Debug for SkeletonEventBase {
 
 /// Opaque type operations struct
 #[repr(C)]
+#[derive(Default)]
 pub struct TypeOperations {
     dummy: [u8; 0],
 }

@@ -1287,6 +1287,7 @@ mod test {
         let mut seq = mockall::Sequence::new();
         let proxy_alloc = MockPointerAllocator::<ProxyBase>::new();
         let event_alloc = MockPointerAllocator::<ProxyEventBase>::new();
+        let type_ops_alloc = MockPointerAllocator::<TypeOperations>::new();
         let prox = proxy_alloc.clone();
         let evt = event_alloc.clone();
 
@@ -1299,6 +1300,9 @@ mod test {
         mock.expect_subscribe_to_event()
             .in_sequence(&mut seq)
             .returning(|_, _| true);
+         mock.expect_get_type_ops_instance()
+            .in_sequence(&mut seq)
+            .returning(move |_,_| Some(TypeOperationsManager::new(NonNull::new(type_ops_alloc.allocate()).unwrap())));
 
         let evt_cleanup = event_alloc.clone();
         mock.expect_unsubscribe_to_event()
@@ -1345,6 +1349,7 @@ mod test {
     fn test_event_try_receive() {
         let proxy_alloc = MockPointerAllocator::<ProxyBase>::new();
         let event_alloc = MockPointerAllocator::<ProxyEventBase>::new();
+        let type_ops_alloc = MockPointerAllocator::<TypeOperations>::new();
         let mut seq = mockall::Sequence::new();
         let mut mock = MockFFIBridge::new();
 
@@ -1360,15 +1365,18 @@ mod test {
         mock.expect_subscribe_to_event()
             .in_sequence(&mut seq)
             .returning(|_, _| true);
+         mock.expect_get_type_ops_instance()
+            .in_sequence(&mut seq)
+            .returning(move |_,_| Some(TypeOperationsManager::new(NonNull::new(type_ops_alloc.allocate()).unwrap())));
         mock.expect_get_samples_from_event()
             .in_sequence(&mut seq)
             .returning(|_, _, _, _| 1);
         mock.expect_set_event_receive_handler()
             .in_sequence(&mut seq)
-            .returning(|_, _, _| true);
+            .returning(|_, _| true);
         mock.expect_clear_event_receive_handler()
             .in_sequence(&mut seq)
-            .returning(|_, _| ());
+            .returning(|_| ());
 
         mock.expect_unsubscribe_to_event()
             .in_sequence(&mut seq)
