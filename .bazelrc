@@ -120,3 +120,8 @@ build --tool_java_runtime_version=remotejdk_21
 
 # Import AI checker custom configuration
 try-import %workspace%/.bazelrc.ai_checker
+
+#Clippy linting for Rust
+build --aspects=@score_rust_policies//clippy:linters.bzl%clippy_strict
+build --output_groups=+rules_lint_human
+build:lint --@aspect_rules_lint//lint:fail_on_violation=true
