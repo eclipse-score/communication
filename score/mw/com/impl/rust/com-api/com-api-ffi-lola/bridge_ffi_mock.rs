@@ -70,7 +70,7 @@
 //!
 //! This mock back-end is used for unit testing of Lola-Runtime.
 
-use bridge_ffi_rs::
+use bridge_ffi_rs::{
     FatPtr, FindServiceHandle, HandleType, InstanceSpecifier, NativeInstanceSpecifier, ProxyBase,
     ProxyEventBase, SkeletonBase, SkeletonEventBase, TypeOperationsManager,
 };

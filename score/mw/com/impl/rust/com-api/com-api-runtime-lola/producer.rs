@@ -604,6 +604,7 @@ mod test {
     fn test_publisher_allocate_and_send() {
         let skeleton_alloc = MockPointerAllocator::<SkeletonBase>::new();
         let event_alloc = MockPointerAllocator::<SkeletonEventBase>::new();
+        let type_ops_alloc = MockPointerAllocator::<TypeOperations>::new();
         let data_alloc = MockPointerAllocator::<TestData>::new();
         let mut seq = Sequence::new();
         let mut mock = MockFFIBridge::new();
@@ -616,6 +617,9 @@ mod test {
         mock.expect_get_event_from_skeleton()
             .in_sequence(&mut seq)
             .returning(move |_, _, _| event_alloc_clone.allocate());
+        mock.expect_get_type_ops_instance()
+            .in_sequence(&mut seq)
+            .returning(move |_,_| Some(TypeOperationsManager::new(NonNull::new(type_ops_alloc.allocate()).unwrap())));
 
         mock.expect_get_allocatee_ptr()
             .in_sequence(&mut seq)
