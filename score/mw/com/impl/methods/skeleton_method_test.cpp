@@ -12,11 +12,13 @@
  ********************************************************************************/
 #include "score/mw/com/impl/methods/skeleton_method.h"
 
+#include "gmock/gmock.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_method.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
+#include "score/mw/com/impl/methods/test/callable_traits_resources.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 #include "score/result/result.h"
@@ -24,6 +26,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <functional>
 #include <memory>
 
 #include <score/callback.hpp>
@@ -54,7 +57,8 @@ class EmptySkeleton final : public SkeletonBase
     using SkeletonBase::SkeletonBase;
 };
 
-using TestMethodType = bool(int, bool);
+using TestMethodType = bool(const int, const bool);
+using TestMethodHandlerType = void(bool&, const int&, const bool&);
 
 TEST(SkeletonMethodTests, NotCopyable)
 {
@@ -82,18 +86,24 @@ TEST(SkeletonMethodTest, ClassTypeDependsOnMethodType)
                   "Class type does not depend on method signature.");
 }
 
+struct MyDataStruct
+{
+    bool b;
+    int i;
+    double d;
+    float f[4];
+};
+
 template <typename MethodType>
-class SkeletonMethodTypedTest : public ::testing::Test
+class SkeletonMethodFixture : public ::testing::Test
 {
   public:
-    using Type = MethodType;
-
     void SetUp() override
     {
         ON_CALL(mock_method_binding_, RegisterHandler(_)).WillByDefault(Return(Result<void>{}));
     }
 
-    SkeletonMethodTypedTest& GivenASkeletonMethod()
+    SkeletonMethodFixture& GivenASkeletonMethod()
     {
         auto mock_method_binding_ptr = std::make_unique<mock_binding::SkeletonMethodFacade>(mock_method_binding_);
 
@@ -102,7 +112,7 @@ class SkeletonMethodTypedTest : public ::testing::Test
         return *this;
     }
 
-    SkeletonMethodTypedTest& WithAMockedMethodBindingfactory()
+    SkeletonMethodFixture& WithAMockedMethodBindingfactory()
     {
         skeleton_method_binding_factory_mock_guard_ = std::make_unique<SkeletonMethodBindingFactoryMockGuard>();
         return *this;
@@ -116,25 +126,84 @@ class SkeletonMethodTypedTest : public ::testing::Test
     std::unique_ptr<SkeletonMethodBindingFactoryMockGuard> skeleton_method_binding_factory_mock_guard_{nullptr};
 };
 
-struct MyDataStruct
+template <typename MethodHandlerFactoryIn, typename MethodTypeIn>
+struct FactoryAndMethodType
 {
-    bool b;
-    int i;
-    double d;
-    float f[4];
+    using MethodHandlerFactory = MethodHandlerFactoryIn;
+    using MethodType = MethodTypeIn;
 };
-using RegisteredFunctionTypes = ::testing::Types<TestMethodType,
-                                                 void(int),
-                                                 void(const double, int),
-                                                 void(char, MyDataStruct),
-                                                 int(),
-                                                 void(),
-                                                 MyDataStruct(MyDataStruct, int, float)>;
-TYPED_TEST_SUITE(SkeletonMethodTypedTest, RegisteredFunctionTypes, );
 
-using SkeletonMethodTestFixture = SkeletonMethodTypedTest<TestMethodType>;
+template <typename TestTypes>
+class SkeletonMethodTypedFixture : public SkeletonMethodFixture<typename TestTypes::MethodType>
+{
+  public:
+    using MethodHandlerFactory = typename TestTypes::MethodHandlerFactory;
+    using MethodType = typename TestTypes::MethodType;
 
-TYPED_TEST(SkeletonMethodTypedTest, AnyCombinationOfReturnAndInputArgTypesCanBeRegistered)
+    auto CreateHandler()
+    {
+        return MethodHandlerFactory::Create();
+    }
+};
+
+// clang-format off
+using RegisteredFunctionTypes = ::testing::Types<
+    FactoryAndMethodType<CallableFactory<score::cpp::callback, void(int&)>, int()>,
+    FactoryAndMethodType<CallableFactory<score::cpp::callback, void(float&, const double&, const bool&)>, float(double, bool)>,
+    FactoryAndMethodType<CallableFactory<score::cpp::callback, void(const MyDataStruct&, const bool&)>, void(MyDataStruct, bool)>,
+    FactoryAndMethodType<CallableFactory<score::cpp::callback, void()>, void()>,
+
+    FactoryAndMethodType<CallableFactory<std::function, void(int&)>, int()>,
+    FactoryAndMethodType<CallableFactory<std::function, void(float&, const double&, const bool&)>, float(double, bool)>,
+    FactoryAndMethodType<CallableFactory<std::function, void(const MyDataStruct&, const bool&)>, void(MyDataStruct, bool)>,
+    FactoryAndMethodType<CallableFactory<std::function, void()>, void()>,
+
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorConst, void(int&)>, int()>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorConst, void(float&, const double&, const bool&)>, float(double, bool)>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorConst, void(const MyDataStruct&, const bool&)>, void(MyDataStruct, bool)>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorConst, void()>, void()>,
+
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorConstNoexcept, void(int&)>, int()>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorConstNoexcept, void(float&, const double&, const bool&)>, float(double, bool)>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorConstNoexcept, void(const MyDataStruct&, const bool&)>, void(MyDataStruct, bool)>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorConstNoexcept, void()>, void()>,
+
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorNonConst, void(int&)>, int()>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorNonConst, void(float&, const double&, const bool&)>, float(double, bool)>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorNonConst, void(const MyDataStruct&, const bool&)>, void(MyDataStruct, bool)>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorNonConst, void()>, void()>,
+
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorNonConstNoexcept, void(int&)>, int()>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorNonConstNoexcept, void(float&, const double&, const bool&)>, float(double, bool)>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorNonConstNoexcept, void(const MyDataStruct&, const bool&)>, void(MyDataStruct, bool)>,
+    FactoryAndMethodType<CallableFactory<DummyMethodFunctorNonConstNoexcept, void()>, void()>,
+
+    FactoryAndMethodType<NonNoexceptMethodLambdaFactory<void(int&)>, int()>,
+    FactoryAndMethodType<NonNoexceptMethodLambdaFactory<void(float&, const double&, const bool&)>, float(double, bool)>,
+    FactoryAndMethodType<NonNoexceptMethodLambdaFactory<void(const MyDataStruct&, const bool&)>, void(MyDataStruct, bool)>,
+    FactoryAndMethodType<NonNoexceptMethodLambdaFactory<void()>, void()>,
+
+    FactoryAndMethodType<NoexceptMethodLambdaFactory<void(int&)>, int()>,
+    FactoryAndMethodType<NoexceptMethodLambdaFactory<void(float&, const double&, const bool&)>, float(double, bool)>,
+    FactoryAndMethodType<NoexceptMethodLambdaFactory<void(const MyDataStruct&, const bool&)>, void(MyDataStruct, bool)>,
+    FactoryAndMethodType<NoexceptMethodLambdaFactory<void()>, void()>,
+
+    FactoryAndMethodType<MutableMethodLambdaFactory<void(int&)>, int()>,
+    FactoryAndMethodType<MutableMethodLambdaFactory<void(float&, const double&, const bool&)>, float(double, bool)>,
+    FactoryAndMethodType<MutableMethodLambdaFactory<void(const MyDataStruct&, const bool&)>, void(MyDataStruct, bool)>,
+    FactoryAndMethodType<MutableMethodLambdaFactory<void()>, void()>,
+
+    FactoryAndMethodType<MutableNoexceptMethodLambdaFactory<void(int&)>, int()>,
+    FactoryAndMethodType<MutableNoexceptMethodLambdaFactory<void(float&, const double&, const bool&)>, float(double, bool)>,
+    FactoryAndMethodType<MutableNoexceptMethodLambdaFactory<void(const MyDataStruct&, const bool&)>, void(MyDataStruct, bool)>,
+    FactoryAndMethodType<MutableNoexceptMethodLambdaFactory<void()>, void()>
+
+>;
+// clang-format on
+
+TYPED_TEST_SUITE(SkeletonMethodTypedFixture, RegisteredFunctionTypes, );
+
+TYPED_TEST(SkeletonMethodTypedFixture, AnyCombinationOfReturnAndInputArgTypesCanBeRegistered)
 {
     // Given A skeleton Method with a mock method binding
     this->GivenASkeletonMethod();
@@ -143,12 +212,11 @@ TYPED_TEST(SkeletonMethodTypedTest, AnyCombinationOfReturnAndInputArgTypesCanBeR
     EXPECT_CALL(this->mock_method_binding_, RegisterHandler(_));
 
     // When a Register call is issued at the binding independent level
-    using FixtureMethodType = typename TestFixture::Type;
-    score::cpp::callback<FixtureMethodType> test_callback{};
+    auto test_callback = this->CreateHandler();
     std::ignore = this->method_->RegisterHandler(std::move(test_callback));
 }
 
-TYPED_TEST(SkeletonMethodTypedTest, TwoParameterConstructorCorrectlyCallsBindingFactoryAndSkeletonMethodIsCreated)
+TYPED_TEST(SkeletonMethodTypedFixture, TwoParameterConstructorCorrectlyCallsBindingFactoryAndSkeletonMethodIsCreated)
 {
     this->WithAMockedMethodBindingfactory();
 
@@ -159,15 +227,15 @@ TYPED_TEST(SkeletonMethodTypedTest, TwoParameterConstructorCorrectlyCallsBinding
             testing::ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(this->mock_method_binding_))));
 
     // When the 2-parameter constructor of the SkeletonMethod class is called
-    using FixtureMethodType = typename TestFixture::Type;
+    using FixtureMethodType = typename TestFixture::MethodType;
     SkeletonMethod<FixtureMethodType> method{this->empty_skeleton_, this->method_name_};
 
     // Then a Binding can be created which is capable of registering a callback
-    score::cpp::callback<FixtureMethodType> test_callback{};
+    auto test_callback = this->CreateHandler();
     EXPECT_TRUE(method.RegisterHandler(std::move(test_callback)));
 }
 
-TYPED_TEST(SkeletonMethodTypedTest, TwoParameterConstructorMarksBindingsAsInvalidWhenFactoryReturnsNullptr)
+TYPED_TEST(SkeletonMethodTypedFixture, TwoParameterConstructorMarksBindingsAsInvalidWhenFactoryReturnsNullptr)
 {
     this->WithAMockedMethodBindingfactory();
 
@@ -177,23 +245,22 @@ TYPED_TEST(SkeletonMethodTypedTest, TwoParameterConstructorMarksBindingsAsInvali
         .WillOnce(testing::Return(testing::ByMove(nullptr)));
 
     // When the 2-parameter constructor of the SkeletonMethod class is called
-    using FixtureMethodType = typename TestFixture::Type;
+    using FixtureMethodType = typename TestFixture::MethodType;
     SkeletonMethod<FixtureMethodType> method{this->empty_skeleton_, this->method_name_};
 
     // Then the binding cannot be created and calling AreBindingsValid returns false
     EXPECT_FALSE(SkeletonBaseView{this->empty_skeleton_}.AreBindingsValid());
 }
 
-TEST_F(SkeletonMethodTestFixture, ACallbackWithAPointerAsStateCanBeRegistered)
+using SkeletonMethodStatefulCallbackFixture = SkeletonMethodFixture<void()>;
+TEST_F(SkeletonMethodStatefulCallbackFixture, ACallbackWithAPointerAsStateCanBeRegistered)
 {
+    // Given A skeleton Method with a mock method binding
     GivenASkeletonMethod();
 
     // And a callback with a unique_ptr as a state
     auto test_struct_p = std::make_unique<MyDataStruct>();
-    score::cpp::callback<TestMethodType> test_callback_with_state = [state = std::move(test_struct_p)](
-                                                                        int, bool b) noexcept {
-        return state->b || b;
-    };
+    score::cpp::callback<void()> test_callback_with_state = [state = std::move(test_struct_p)]() noexcept {};
 
     // Expecting that the register call is dispatched to the binding without an error
     EXPECT_CALL(mock_method_binding_, RegisterHandler(_));
@@ -202,37 +269,87 @@ TEST_F(SkeletonMethodTestFixture, ACallbackWithAPointerAsStateCanBeRegistered)
     std::ignore = method_->RegisterHandler(std::move(test_callback_with_state));
 }
 
+TEST_F(SkeletonMethodStatefulCallbackFixture, PassingReferenceToHandlerUpdatesStateInPlace)
+{
+    static constexpr int kInitialValue = 42;
+    static constexpr int kModifiedValue = 43;
+
+    // Given A skeleton Method with a mock method binding
+    GivenASkeletonMethod();
+
+    // And a functor which modifies its internal state when called
+    class DummyMethodFunctor
+    {
+      public:
+        void operator()()
+        {
+            i_ = kModifiedValue;
+        }
+
+        int i_{kInitialValue};
+    };
+    DummyMethodFunctor test_functor{};
+
+    // Expecting that the register call is dispatched to the binding which captures the handler
+    std::optional<SkeletonMethodBinding::TypeErasedHandler> captured_set_handler{};
+    EXPECT_CALL(mock_method_binding_, RegisterHandler(_)).WillOnce(Invoke([&captured_set_handler](auto handler) {
+        captured_set_handler = std::move(handler);
+        return Result<void>{};
+    }));
+
+    // and given a Register call is issued at the binding independent level with an lvalue reference to the functor
+    std::ignore = method_->RegisterHandler(test_functor);
+
+    // When the type erased call is executed by the binding
+    captured_set_handler.value()({}, {});
+
+    // Then the state of the functor is updated in place when the handler is called by the binding
+    EXPECT_EQ(test_functor.i_, kModifiedValue);
+}
+
+template <typename HandlerTypeIn, typename MethodTypeIn>
+struct MethodTypeAndHandlerType
+{
+    using HandlerType = HandlerTypeIn;
+    using MethodType = MethodTypeIn;
+};
+
 using Thing = long;
 using InType1 = double;
 using InType2 = int;
-using VoidVoid = void();
-using ThingVoid = Thing();
-using VoidStuff = void(InType1, InType2);
-using ThingStuff = Thing(InType1, InType2);
+using VoidVoid = MethodTypeAndHandlerType<void(), void()>;
+using ThingVoid = MethodTypeAndHandlerType<void(Thing&), Thing()>;
+using VoidStuff =
+    MethodTypeAndHandlerType<void(const InType1&, const InType2&, const InType2&), void(InType1, InType2, InType2)>;
+using ThingStuff = MethodTypeAndHandlerType<void(Thing&, const InType1&, const InType2&, const InType2&),
+                                            Thing(InType1, InType2, InType2)>;
 
-template <typename MethodType>
+template <typename Types>
 class SkeletonMethodGenericTestFixture : public ::testing::Test
 {
-
   public:
+    static constexpr std::size_t in_args_buffer_size = sizeof(InType1) + sizeof(InType2) + sizeof(InType2);
+
     void CreateSkeletonMethodWithMockedTypeErasedCallback()
     {
         EmptySkeleton empty_skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
         auto mock_method_binding_ptr = std::make_unique<mock_binding::SkeletonMethodFacade>(mock_method_binding_);
-        method_ = std::make_unique<SkeletonMethod<MethodType>>(
+        method_ = std::make_unique<SkeletonMethod<typename Types::MethodType>>(
             empty_skeleton, "dummy_method", std::move(mock_method_binding_ptr));
     }
 
-    static constexpr std::size_t in_args_buffer_size = sizeof(InType1) + sizeof(InType2);
-    void SerializeBuffers(InType1 in_arg_1, InType2 in_arg_2)
+    void SerializeBuffers(InType1 in_arg_1, InType2 in_arg_2, InType2 in_arg_3)
     {
         constexpr std::size_t in_type_1_size = sizeof(InType1);
+        constexpr std::size_t in_type_2_size = sizeof(InType2);
 
         std::byte* write_head = in_args_buffer_.begin();
         new (write_head) InType1(in_arg_1);
         write_head += in_type_1_size;
         new (write_head) InType2(in_arg_2);
+        write_head += in_type_2_size;
+        new (write_head) InType2(in_arg_3);
     }
     Thing GetTypedResultFromOutArgBuffer()
     {
@@ -241,8 +358,8 @@ class SkeletonMethodGenericTestFixture : public ::testing::Test
     std::array<std::byte, sizeof(Thing)> out_arg_buffer_{};
     std::array<std::byte, in_args_buffer_size> in_args_buffer_{};
 
-    std::unique_ptr<SkeletonMethod<MethodType>> method_{nullptr};
-    ::testing::MockFunction<MethodType> typed_callback_mock_{};
+    std::unique_ptr<SkeletonMethod<typename Types::MethodType>> method_{nullptr};
+    ::testing::MockFunction<typename Types::HandlerType> typed_callback_mock_{};
     std::optional<SkeletonMethodBinding::TypeErasedHandler> typeerased_callback_{};
     mock_binding::SkeletonMethod mock_method_binding_{};
 };
@@ -263,11 +380,15 @@ TEST_F(SkeletonMethodThingStuffFixture, DataTransferBetweenTypedAndTypeErasedCal
     Thing ret_val{505};
     InType1 in_arg_1{6.12};
     InType2 in_arg_2{17};
+    InType2 in_arg_3{18};
 
-    // Expecting that a typed callable will be called with correctly deserialized inargs and will return a value
-    EXPECT_CALL(typed_callback_mock_, Call(in_arg_1, in_arg_2)).WillOnce(Return(ret_val));
+    // Expecting that a typed callable will be called with correctly deserialized inargs and will return value
+    EXPECT_CALL(typed_callback_mock_, Call(_, in_arg_1, in_arg_2, in_arg_3))
+        .WillOnce(Invoke([ret_val](auto& return_arg, auto, auto, auto) {
+            return_arg = ret_val;
+        }));
 
-    SerializeBuffers(in_arg_1, in_arg_2);
+    SerializeBuffers(in_arg_1, in_arg_2, in_arg_3);
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
     // When the type erased call is executed by the binding
     typeerased_callback_.value()(in_args_buffer_, out_arg_buffer_);
@@ -293,7 +414,9 @@ TEST_F(SkeletonMethodThingVoidFixture, DataTransferBetweenTypedAndTypeErasedCall
     Thing ret_val{50255};
 
     // Expecting that a typed callable will be called without inargs and will return a value
-    EXPECT_CALL(typed_callback_mock_, Call()).WillOnce(Return(ret_val));
+    EXPECT_CALL(typed_callback_mock_, Call(_)).WillOnce(Invoke([ret_val](auto& return_arg) {
+        return_arg = ret_val;
+    }));
 
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
 
@@ -320,11 +443,12 @@ TEST_F(SkeletonMethodVoidStuffFixture, DataTransferBetweenTypedAndTypeErasedCall
 
     InType1 in_arg_1{0.6};
     InType2 in_arg_2{0x1700};
+    InType2 in_arg_3{0x1701};
 
     // Expecting that a typed callable will be called with correctly deserialized inargs and will not return a value
-    EXPECT_CALL(typed_callback_mock_, Call(in_arg_1, in_arg_2)).WillOnce(Return());
+    EXPECT_CALL(typed_callback_mock_, Call(in_arg_1, in_arg_2, in_arg_3));
 
-    SerializeBuffers(in_arg_1, in_arg_2);
+    SerializeBuffers(in_arg_1, in_arg_2, in_arg_3);
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
 
     // When the type erased call is executed by the binding
@@ -345,7 +469,7 @@ TEST_F(SkeletonMethodVoidVoidFixture, DataTransferBetweenTypedAndTypeErasedCallb
         }));
 
     // Expecting that a typed callable will be called without inargs and will not return a value
-    EXPECT_CALL(typed_callback_mock_, Call()).WillOnce(Return());
+    EXPECT_CALL(typed_callback_mock_, Call());
 
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
     // When the type erased call is executed by the binding
@@ -353,5 +477,4 @@ TEST_F(SkeletonMethodVoidVoidFixture, DataTransferBetweenTypedAndTypeErasedCallb
 }
 
 }  // namespace
-
 }  // namespace score::mw::com::impl
