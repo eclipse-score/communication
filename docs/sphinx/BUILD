@@ -80,6 +80,8 @@ sphinx_module(
             "introduction.rst",
             "message_passing.rst",
             "quality_reports.rst",
+            "safety_message_passing.rst",
+            "safety_mw_com.rst",
             "safety_reports.rst",
             ":doxygen_xml",
             ":generate_api_rst",
