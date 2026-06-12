@@ -10,22 +10,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup")
-load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
-pkg_filegroup(
-    name = "filesystem",
-    srcs = [
-        "//score/mw/com/test/field_initial_value:client-pkg",
-        "//score/mw/com/test/field_initial_value:service-pkg",
-    ],
-)
+from test_fixture import consumer, provider
 
-integration_test(
-    name = "test_field_initial_value",
-    timeout = "moderate",
-    srcs = [
-        "test_field_initial_value.py",
-    ],
-    filesystem = ":filesystem",
-)
+
+def test_field_notifier_initial_value(target):
+    """Test field initial value exchange between provider and consumer."""
+    with provider(target, "notifier"):
+        with consumer(target, "notifier"):
+            pass

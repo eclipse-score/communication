@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_METHOD_CONSUMER_H
 #define SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_METHOD_CONSUMER_H
 
-#include "score/mw/com/test/methods/methods_test_resources/proxy_container.h"
+#include "score/mw/com/test/common_test_resources/proxy_container.h"
 
 #include <cstdint>
 

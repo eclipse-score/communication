@@ -18,7 +18,7 @@ def client(target, **kwargs):
 
 
 def service(target, **kwargs):
-    args = ["--cycle-time", "250"]
+    args = []
     return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp", **kwargs)
 
 

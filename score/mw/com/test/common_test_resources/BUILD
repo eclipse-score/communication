@@ -16,6 +16,30 @@ load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 
 cc_library(
+    name = "proxy_container",
+    srcs = ["proxy_container.cpp"],
+    hdrs = ["proxy_container.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/test:__subpackages__"],
+    deps = [
+        "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:fail_test",
+    ],
+)
+
+cc_library(
+    name = "skeleton_container",
+    srcs = ["skeleton_container.cpp"],
+    hdrs = ["skeleton_container.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/test:__subpackages__"],
+    deps = [
+        "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:fail_test",
+    ],
+)
+
+cc_library(
     name = "bigdata_type",
     srcs = [
         "big_datatype.cpp",

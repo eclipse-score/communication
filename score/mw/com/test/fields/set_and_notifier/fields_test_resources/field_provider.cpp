@@ -1,0 +1,134 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *******************************************************************************/
+
+#include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/field_provider.h"
+
+#include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/skeleton_container.h"
+#include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/test_constants.h"
+#include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/test_datatype.h"
+#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
+
+#include <chrono>
+#include <iostream>
+#include <string>
+#include <utility>
+
+namespace score::mw::com::test
+{
+namespace
+{
+
+const std::string kInterprocessNotificationShmPath{"/fields_set_and_notifier_interprocess_notification"};
+
+void run_notifier_provider(const score::cpp::stop_token& stop_token)
+{
+    auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
+    if (!process_synchronizer_result.has_value())
+    {
+        FailTest("Provider: Could not create ProcessSynchronizer");
+    }
+
+    auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
+    if (!instance_specifier_result.has_value())
+    {
+        FailTest("Provider: Unable to create instance specifier");
+    }
+    SkeletonContainer<InitialOnlySkeleton> skeleton_container{};
+    skeleton_container.CreateSkeleton(std::move(instance_specifier_result).value(), "set_and_notifier");
+
+    auto& service = skeleton_container.GetSkeleton();
+
+    const auto update_result = service.test_field.Update(kInitialValue);
+    if (!update_result.has_value())
+    {
+        FailTest("Provider: Unable to update initial field value: ", update_result.error());
+    }
+    skeleton_container.OfferService("set_and_notifier");
+
+    if (!process_synchronizer_result->WaitWithAbort(stop_token))
+    {
+        FailTest("Provider: WaitWithAbort was stopped by stop_token instead of notification");
+    }
+
+    service.StopOfferService();
+}
+
+void run_set_provider(const score::cpp::stop_token& stop_token)
+{
+    auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
+    if (!process_synchronizer_result.has_value())
+    {
+        FailTest("Provider: Could not create ProcessSynchronizer");
+    }
+
+    auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
+    if (!instance_specifier_result.has_value())
+    {
+        FailTest("Provider: Unable to create instance specifier");
+    }
+    SkeletonContainer<SetEnabledSkeleton> skeleton_container{};
+    skeleton_container.CreateSkeleton(std::move(instance_specifier_result).value(), "set_and_notifier");
+
+    auto& service = skeleton_container.GetSkeleton();
+    const auto register_handler_result = service.test_field.RegisterSetHandler([](std::int32_t& value) noexcept {
+        if (value > kSetAcceptedValue)
+        {
+            value = kSetAcceptedValue;
+        }
+        if (value < 0)
+        {
+            value = 0;
+        }
+    });
+    if (!register_handler_result.has_value())
+    {
+        FailTest("Provider: Unable to register set handler: ", register_handler_result.error());
+    }
+
+    const auto update_result = service.test_field.Update(kInitialValue);
+    if (!update_result.has_value())
+    {
+        FailTest("Provider: Unable to update initial field value: ", update_result.error());
+    }
+
+    skeleton_container.OfferService("set_and_notifier");
+
+    if (!process_synchronizer_result->WaitWithAbort(stop_token))
+    {
+        FailTest("Provider: WaitWithAbort was stopped by stop_token instead of notification");
+    }
+
+    service.StopOfferService();
+}
+
+}  // namespace
+
+void run_provider(const score::cpp::stop_token& stop_token, const std::string& mode)
+{
+    if (mode == "notifier")
+    {
+        run_notifier_provider(stop_token);
+        return;
+    }
+    if (mode == "set")
+    {
+        run_set_provider(stop_token);
+        return;
+    }
+
+    // TODO: Add "get" mode provider scenario coverage once getter-enabled field variant is introduced.
+    FailTest("Provider: Unsupported mode: ", mode);
+}
+
+}  // namespace score::mw::com::test

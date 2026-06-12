@@ -142,7 +142,7 @@ class ProxyTrait
     // Note : at the moment the SkeletonField::Get implementation is not in the branch which means the skeleton and
     // proxy side does not have same template parameters.
     template <typename SampleType, bool EnableSet = false, bool EnableGet = false, bool EnableNotifier = false>
-    using Field = ProxyField<SampleType>;
+    using Field = ProxyField<SampleType, EnableSet, EnableGet, EnableNotifier>;
 
     template <typename MethodSignature>
     using Method = ProxyMethod<MethodSignature>;
@@ -164,7 +164,7 @@ class SkeletonTrait
     template <typename SampleType>
     using Event = SkeletonEvent<SampleType>;
 
-    template <typename SampleType, bool EnableSet = false, bool EnableNotifier = false>
+    template <typename SampleType, bool EnableGet = false, bool EnableSet = false, bool EnableNotifier = false>
     using Field = SkeletonField<SampleType, EnableSet, EnableNotifier>;
 
     template <typename MethodSignature>

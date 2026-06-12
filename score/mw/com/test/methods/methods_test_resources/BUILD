@@ -13,35 +13,6 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
-load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
-
-cc_library(
-    name = "proxy_container",
-    srcs = ["proxy_container.cpp"],
-    hdrs = ["proxy_container.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/mw/com/test/methods:__subpackages__",
-    ],
-    deps = [
-        "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:fail_test",
-    ],
-)
-
-cc_library(
-    name = "skeleton_container",
-    srcs = ["skeleton_container.cpp"],
-    hdrs = ["skeleton_container.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/mw/com/test/methods:__subpackages__",
-    ],
-    deps = [
-        "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:fail_test",
-    ],
-)
 
 cc_library(
     name = "method_provider",
@@ -72,8 +43,8 @@ cc_library(
         "//score/mw/com",
         "//score/mw/com:runtime",
         "//score/mw/com/test/common_test_resources:assert_handler",
+        "//score/mw/com/test/common_test_resources:proxy_container",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
-        "//score/mw/com/test/methods/methods_test_resources:proxy_container",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -84,6 +55,7 @@ cc_library(
     hdrs = ["process_synchronizer.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/test/fields:__subpackages__",
         "//score/mw/com/test/methods:__subpackages__",
     ],
     deps = [

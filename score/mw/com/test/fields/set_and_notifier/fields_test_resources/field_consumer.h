@@ -11,4 +11,18 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/field_initial_value/test_datatype.h"
+#ifndef SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_FIELD_CONSUMER_H
+#define SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_FIELD_CONSUMER_H
+
+#include <chrono>
+#include <cstddef>
+#include <string>
+
+namespace score::mw::com::test
+{
+
+void run_consumer(std::size_t num_retries, std::chrono::milliseconds retry_backoff_time, const std::string& mode);
+
+}  // namespace score::mw::com::test
+
+#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_FIELD_CONSUMER_H

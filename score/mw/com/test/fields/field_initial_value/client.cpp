@@ -12,7 +12,8 @@
  *******************************************************************************/
 
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
-#include "score/mw/com/test/field_initial_value/test_datatype.h"
+#include "score/mw/com/test/fields/field_initial_value/test_datatype.h"
+#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 #include "score/mw/com/types.h"
 
 #include <score/optional.hpp>
@@ -21,6 +22,7 @@
 #include <cstddef>
 #include <future>
 #include <iostream>
+#include <string>
 #include <thread>
 
 namespace score::mw::com::test
@@ -31,9 +33,18 @@ namespace
 
 constexpr auto kMaxNumSamples{1U};
 
+const std::string kInterprocessNotificationShmPath{"/field_initial_value_interprocess_notification"};
+
 int run_client(const std::size_t num_retries, const std::chrono::milliseconds retry_backoff_time)
 {
     using score::mw::com::test::TestDataProxy;
+
+    auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
+    if (!process_synchronizer_result.has_value())
+    {
+        std::cerr << "Unable to create ProcessSynchronizer, terminating\n";
+        return -8;
+    }
 
     auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
     if (!instance_specifier_result.has_value())
@@ -106,6 +117,7 @@ int run_client(const std::size_t num_retries, const std::chrono::milliseconds re
         return -6;
     }
 
+    process_synchronizer_result->Notify();
     return 0;
 }
 
@@ -122,7 +134,6 @@ int main(int argc, const char** argv)
     const auto& run_parameters = test_runner.GetRunParameters();
     const auto num_retries = run_parameters.GetNumRetries();
     const auto retry_backoff_time = run_parameters.GetRetryBackoffTime();
-    const auto stop_token = test_runner.GetStopToken();
 
     return score::mw::com::test::run_client(num_retries, retry_backoff_time);
 }

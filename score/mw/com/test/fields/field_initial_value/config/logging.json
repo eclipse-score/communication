@@ -1,0 +1,7 @@
+{
+  "appId": "FRH",
+  "appDesc": "field_initial_value",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}

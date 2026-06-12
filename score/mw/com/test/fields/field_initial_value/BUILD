@@ -11,107 +11,87 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 validate_json_schema_test(
-    name = "validate_config_schema",
+    name = "validate_lola_schema",
     json = "config/mw_com_config.json",
     schema = "//score/mw/com:config_schema",
     tags = ["lint"],
 )
 
 cc_library(
-    name = "test_method_datatype",
-    srcs = ["test_method_datatype.cpp"],
-    hdrs = ["test_method_datatype.h"],
+    name = "test_datatype",
+    srcs = ["test_datatype.cpp"],
+    hdrs = ["test_datatype.h"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
-    ],
-)
-
-cc_library(
-    name = "consumer",
-    srcs = ["consumer.cpp"],
-    hdrs = ["consumer.h"],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        ":test_method_datatype",
-        "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:proxy_container",
-        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
-    ],
-    deps = [
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_library(
-    name = "provider",
-    srcs = ["provider.cpp"],
-    hdrs = ["provider.h"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":test_method_datatype",
-        "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:skeleton_container",
-        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
     ],
 )
 
 cc_binary(
-    name = "main_provider",
-    srcs = ["main_provider.cpp"],
+    name = "service",
+    srcs = ["service.cpp"],
     data = ["config/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
+    visibility = ["//score/mw/com/test/fields/field_initial_value:__pkg__"],
     deps = [
-        ":provider",
+        ":test_datatype",
         "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:assert_handler",
+        "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
+        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
 cc_binary(
-    name = "main_consumer",
-    srcs = ["main_consumer.cpp"],
+    name = "client",
+    srcs = ["client.cpp"],
     data = ["config/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
+    visibility = ["//score/mw/com/test/fields/field_initial_value:__pkg__"],
     deps = [
-        ":consumer",
+        ":test_datatype",
         "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:assert_handler",
+        "//score/mw/com/test/common_test_resources:sctf_test_runner",
+        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
 pkg_application(
-    name = "main_provider-pkg",
-    app_name = "MainProviderApp",
-    bin = [":main_provider"],
+    name = "service-pkg",
+    app_name = "ServiceApp",
+    bin = [":service"],
     etc = [
         "config/mw_com_config.json",
         "config/logging.json",
     ],
     visibility = [
-        "//score/mw/com/test/methods/non_trivial_constructors:__subpackages__",
+        "//platform/aas/test/mw/com:__pkg__",
+        "//score/mw/com/test/fields/field_initial_value:__subpackages__",
     ],
 )
 
 pkg_application(
-    name = "main_consumer-pkg",
-    app_name = "MainConsumerApp",
-    bin = [":main_consumer"],
+    name = "client-pkg",
+    app_name = "ClientApp",
+    bin = [":client"],
     etc = [
         "config/mw_com_config.json",
         "config/logging.json",
     ],
     visibility = [
-        "//score/mw/com/test/methods/non_trivial_constructors:__subpackages__",
+        "//platform/aas/test/mw/com:__pkg__",
+        "//score/mw/com/test/fields/field_initial_value:__subpackages__",
     ],
 )
