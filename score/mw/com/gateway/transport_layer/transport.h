@@ -35,7 +35,7 @@ static_assert(std::is_trivially_copyable_v<DataTypeSizeInfo>, "DataTypeSizeInfo 
 struct ServiceElementConfiguration
 {
     std::string element_name;
-    DataTypeSizeInfo size_info;
+    DataTypeSizeInfo size_info{1U, 1U};
 
     std::tuple<const std::string&, const DataTypeSizeInfo&> GetSerializeMembers() const
     {
@@ -57,7 +57,7 @@ class Transport
 
     /// \brief Returns whether this transport implementation supports memory sharing between source and destination.
     /// \return true if shared memory transport is supported, false otherwise.
-    virtual bool IsMemorySharingSupported() = 0;
+    virtual bool IsMemorySharingSupported() const = 0;
 
     /// \brief Sets up the transport layer (e.g. establishes connections or allocates resources).
     /// \return result indicating success or failure.
