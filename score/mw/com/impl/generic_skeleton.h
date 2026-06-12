@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/data_type_meta_info.h"
 #include "score/mw/com/impl/generic_skeleton_event.h"
+#include "score/mw/com/impl/generic_skeleton_field.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_map_view.h"
@@ -35,9 +36,20 @@ struct EventInfo
     DataTypeMetaInfo data_type_meta_info;
 };
 
+struct FieldInfo
+{
+    std::string_view name;
+    DataTypeMetaInfo data_type_meta_info;
+    bool has_getter{false};
+    bool has_setter{false};
+    bool has_notifier{false};
+    score::cpp::span<const uint8_t> initial_value{};
+};
+
 struct GenericSkeletonServiceElementInfo
 {
     score::cpp::span<const EventInfo> events{};
+    score::cpp::span<const FieldInfo> fields{};
 };
 
 /// @brief Represents a type-erased, runtime-configurable skeleton for a service instance.
@@ -49,7 +61,8 @@ class GenericSkeleton : public SkeletonBase
 {
   public:
     using EventMapView = ServiceElementMapView<GenericSkeletonEvent>;
-    /// \brief Creates a GenericSkeleton and all its service elements (events + fields) atomically.
+    using FieldMapView = ServiceElementMapView<GenericSkeletonField>;
+    /// @brief Creates a GenericSkeleton and all its service elements (events + fields) atomically.
     ///
     /// \contract
     /// - Empty spans are allowed for `in.events` and/or `in.fields`
@@ -72,8 +85,12 @@ class GenericSkeleton : public SkeletonBase
     /// \note The returned view is valid as long as the GenericSkeleton lives.
     [[nodiscard]] EventMapView GetEvents() const noexcept;
 
-    /// \brief Offers the service instance.
-    /// \return A blank result, or an error if offering fails.
+    /// @brief Returns a read-only view to the name-keyed map of fields.
+    /// @note The returned view is valid as long as the GenericSkeleton lives.
+    [[nodiscard]] FieldMapView GetFields() const noexcept;
+
+    /// @brief Offers the service instance.
+    /// @return A blank result, or an error if offering fails.
     [[nodiscard]] Result<void> OfferService() noexcept;
 
     /// \brief Stops offering the service instance.
@@ -88,6 +105,8 @@ class GenericSkeleton : public SkeletonBase
     /// GenericSkeleton. This is required as we hand out views to this map (see GetEvents()), which need to be valid
     /// even after the GenericSkeleton instance has been moved.
     std::unique_ptr<ServiceElementMapViewFactory<GenericSkeletonEvent>::map_type> events_;
+    /// @brief This map owns all GenericSkeletonField instances.
+    std::unique_ptr<ServiceElementMapViewFactory<GenericSkeletonField>::map_type> fields_;
 };
 }  // namespace score::mw::com::impl
 
