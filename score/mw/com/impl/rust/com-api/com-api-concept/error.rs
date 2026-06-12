@@ -94,6 +94,8 @@ pub enum EventFailedReason {
     EventNotAvailable,
     #[error("Failed to subscribe to event, due to the max_samples parameter being invalid (e.g., zero or exceeding allowed limits)")]
     InvalidMaxSamples,
+    #[error("Sample count out of bounds, expected at most {max}, but got {requested}")]
+    MaxSampleOutOfBounds { max: usize, requested: usize },
 }
 
 /// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.

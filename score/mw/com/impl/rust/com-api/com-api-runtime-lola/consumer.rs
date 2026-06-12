@@ -54,13 +54,18 @@ use bridge_ffi_rs::*;
 use crate::LolaRuntimeImpl;
 
 #[derive(Clone, Debug)]
-pub struct LolaConsumerInfo {
+pub struct LolaConsumerInfo<B: FFIBridge> {
     handle_container: Arc<mw_com::proxy::HandleContainer>,
     handle_index: usize,
     interface_id: &'static str,
+    // LolaFFIBridge (Production case) is a ZST, so cloning it is not overhead,
+    // But if in future we add some state in the bridge type then we need to ensure that
+    // it is properly cloned and does not cause any overhead.
+    // In that case suggested to implement Arc for the type or FFIBridge itself.
+    bridge: B,
 }
 
-impl LolaConsumerInfo {
+impl<B: FFIBridge> LolaConsumerInfo<B> {
     /// Get a reference to the handle, guaranteed valid as long as this struct exists
     pub fn get_handle(&self) -> Option<&HandleType> {
         self.handle_container.get(self.handle_index)
@@ -71,14 +76,15 @@ impl LolaConsumerInfo {
 //And sample_ptr_rs::SamplePtr<T> FFI function should be move in plumbing folder
 //sample_ptr_rs module
 #[derive(Debug)]
-pub struct LolaBinding<T>
+pub struct LolaBinding<T, B: FFIBridge>
 where
     T: CommData + Debug,
 {
     data: ManuallyDrop<sample_ptr_rs::SamplePtr<T>>,
+    bridge: B,
 }
 
-impl<T> Drop for LolaBinding<T>
+impl<T, B: FFIBridge> Drop for LolaBinding<T, B>
 where
     T: CommData + Debug,
 {
@@ -87,7 +93,7 @@ where
         //SamplePtr created by FFI
         unsafe {
             let mut sample_ptr = ManuallyDrop::take(&mut self.data);
-            bridge_ffi_rs::sample_ptr_delete(
+            self.bridge.sample_ptr_delete(
                 std::ptr::from_mut(&mut sample_ptr) as *mut std::ffi::c_void,
                 T::ID,
             );
@@ -96,19 +102,19 @@ where
 }
 
 #[derive(Debug)]
-pub struct Sample<T>
+pub struct Sample<T, B: FFIBridge>
 where
     T: CommData + Debug,
 {
     //we need unique id for each sample to implement Ord and Eq traits for sorting in
     // SampleContainer
     id: usize,
-    inner: LolaBinding<T>,
+    inner: LolaBinding<T, B>,
 }
 
 pub static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-impl<T> Sample<T>
+impl<T, B: FFIBridge> Sample<T, B>
 where
     T: CommData + Debug,
 {
@@ -116,7 +122,7 @@ where
         //SAFETY: It is safe to get the data pointer because SamplePtr is valid
         //and data is valid as long as SamplePtr is valid
         unsafe {
-            let data_ptr = bridge_ffi_rs::sample_ptr_get(
+            let data_ptr = self.inner.bridge.sample_ptr_get(
                 std::ptr::from_ref(&(*self.inner.data)) as *const std::ffi::c_void,
                 T::ID,
             );
@@ -127,7 +133,7 @@ where
     }
 }
 
-impl<T> Deref for Sample<T>
+impl<T, B: FFIBridge> Deref for Sample<T, B>
 where
     T: CommData + Debug,
 {
@@ -138,10 +144,10 @@ where
     }
 }
 
-impl<T> com_api_concept::Sample<T> for Sample<T> where T: CommData + Debug {}
+impl<T, B: FFIBridge> com_api_concept::Sample<T> for Sample<T, B> where T: CommData + Debug {}
 
 // Ordering traits for Sample<T> are using id field to provide total ordering
-impl<T> PartialEq for Sample<T>
+impl<T, B: FFIBridge> PartialEq for Sample<T, B>
 where
     T: CommData + Debug,
 {
@@ -150,9 +156,9 @@ where
     }
 }
 
-impl<T> Eq for Sample<T> where T: CommData + Debug {}
+impl<T, B: FFIBridge> Eq for Sample<T, B> where T: CommData + Debug {}
 
-impl<T> PartialOrd for Sample<T>
+impl<T, B: FFIBridge> PartialOrd for Sample<T, B>
 where
     T: CommData + Debug,
 {
@@ -161,7 +167,7 @@ where
     }
 }
 
-impl<T> Ord for Sample<T>
+impl<T, B: FFIBridge> Ord for Sample<T, B>
 where
     T: CommData + Debug,
 {
@@ -173,15 +179,15 @@ where
 /// Manages the lifetime of the native proxy instance,
 /// user should clone this to share between threads
 /// Always use this struct to manage the proxy instance pointer
-pub struct ProxyInstanceManager(Arc<NativeProxyBase>);
+pub struct ProxyInstanceManager<B: FFIBridge>(Arc<NativeProxyBase<B>>);
 
-impl Clone for ProxyInstanceManager {
+impl<B: FFIBridge> Clone for ProxyInstanceManager<B> {
     fn clone(&self) -> Self {
         Self(Arc::clone(&self.0))
     }
 }
 
-impl std::fmt::Debug for ProxyInstanceManager {
+impl<B: FFIBridge> std::fmt::Debug for ProxyInstanceManager<B> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("ProxyInstanceManager").finish()
     }
@@ -198,8 +204,9 @@ impl std::fmt::Debug for ProxyInstanceManager {
 /// As it has Send and Sync unsafe impls,
 /// it must not expose any mutable access to the proxy instance
 /// Or must not provide any method to access the proxy instance directly
-pub struct NativeProxyBase {
+pub struct NativeProxyBase<B: FFIBridge> {
     proxy: NonNull<ProxyBase>, // Stores the proxy instance
+    bridge: B,
 }
 
 //SAFETY: NativeProxyBase is safe to share between threads because:
@@ -207,34 +214,37 @@ pub struct NativeProxyBase {
 // Access is controlled through Arc which provides atomic reference counting
 // The proxy lifetime is managed safely through Drop
 // and it does not provide any mutable access to the underlying proxy instance
-unsafe impl Send for NativeProxyBase {}
-unsafe impl Sync for NativeProxyBase {}
+unsafe impl<B: FFIBridge> Send for NativeProxyBase<B> {}
+unsafe impl<B: FFIBridge> Sync for NativeProxyBase<B> {}
 
-impl Drop for NativeProxyBase {
+impl<B: FFIBridge> Drop for NativeProxyBase<B> {
     fn drop(&mut self) {
         //SAFETY: It is safe to destroy the proxy because it was created by FFI
         // and proxy pointer received at the time of create_proxy called
         unsafe {
-            bridge_ffi_rs::destroy_proxy(self.proxy.as_ptr());
+            self.bridge.destroy_proxy(self.proxy.as_ptr());
         }
     }
 }
 
-impl std::fmt::Debug for NativeProxyBase {
+impl<B: FFIBridge> std::fmt::Debug for NativeProxyBase<B> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("NativeProxyBase").finish()
     }
 }
 
-impl NativeProxyBase {
-    pub fn new(interface_id: &str, handle: &HandleType) -> Result<Self> {
+impl<B: FFIBridge> NativeProxyBase<B> {
+    pub fn new(bridge: &B, interface_id: &str, handle: &HandleType) -> Result<Self> {
         //SAFETY: It is safe to create the proxy because interface_id and handle are valid
         //Handle received at the time of get_avaible_instances called with correct interface_id
-        let raw_proxy_ptr = unsafe { bridge_ffi_rs::create_proxy(interface_id, handle) };
+        let raw_proxy_ptr = unsafe { bridge.create_proxy(interface_id, handle) };
         let proxy = std::ptr::NonNull::new(raw_proxy_ptr).ok_or(Error::ConsumerError(
             ConsumerFailedReason::ProxyCreationFailed,
         ))?;
-        Ok(Self { proxy })
+        Ok(Self {
+            proxy,
+            bridge: bridge.clone(),
+        })
     }
 }
 
@@ -256,11 +266,19 @@ pub struct NativeProxyEventBase {
 unsafe impl Send for NativeProxyEventBase {}
 
 impl NativeProxyEventBase {
-    pub fn new(proxy: &NonNull<ProxyBase>, interface_id: &str, identifier: &str) -> Result<Self> {
+    pub fn new<B: FFIBridge>(
+        proxy: &NonNull<ProxyBase>,
+        instance_info: &LolaConsumerInfo<B>,
+        identifier: &str,
+    ) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid proxy pointer and interface id to get event
         // proxy pointer is created during consumer creation
         let raw_event_ptr = unsafe {
-            bridge_ffi_rs::get_event_from_proxy(proxy.as_ptr(), interface_id, identifier)
+            instance_info.bridge.get_event_from_proxy(
+                proxy.as_ptr(),
+                instance_info.interface_id,
+                identifier,
+            )
         };
         let proxy_event_ptr = std::ptr::NonNull::new(raw_event_ptr)
             .ok_or(Error::EventError(EventFailedReason::EventCreationFailed))?;
@@ -282,20 +300,23 @@ impl std::fmt::Debug for NativeProxyEventBase {
 }
 
 #[derive(Debug)]
-pub struct SubscribableImpl<T> {
+pub struct SubscribableImpl<T, B: FFIBridge> {
     identifier: &'static str,
-    instance_info: LolaConsumerInfo,
-    proxy_instance: ProxyInstanceManager,
+    instance_info: LolaConsumerInfo<B>,
+    proxy_instance: ProxyInstanceManager<B>,
     data: PhantomData<T>,
 }
 
-impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
-    type Subscription = SubscriberImpl<T>;
-    fn new(identifier: &'static str, instance_info: LolaConsumerInfo) -> Result<Self> {
+impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
+    for SubscribableImpl<T, B>
+{
+    type Subscription = SubscriberImpl<T, B>;
+    fn new(identifier: &'static str, instance_info: LolaConsumerInfo<B>) -> Result<Self> {
         let handle = instance_info.get_handle().ok_or(Error::ConsumerError(
             ConsumerFailedReason::ServiceHandleNotFound,
         ))?;
-        let native_proxy = NativeProxyBase::new(instance_info.interface_id, handle)?;
+        let native_proxy =
+            NativeProxyBase::new(&instance_info.bridge, instance_info.interface_id, handle)?;
         let proxy_instance = ProxyInstanceManager(Arc::new(native_proxy));
         Ok(Self {
             identifier,
@@ -309,17 +330,23 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
             return Err(Error::EventError(EventFailedReason::InvalidMaxSamples));
         }
         let instance_info = self.instance_info.clone();
-        let event_instance = NativeProxyEventBase::new(
+        let event_instance = NativeProxyEventBase::new::<B>(
             &self.proxy_instance.0.proxy,
-            self.instance_info.interface_id,
+            &instance_info,
             self.identifier,
         )?;
+        let max_num_samples_u32 = u32::try_from(max_num_samples).map_err(|_| {
+            Error::EventError(EventFailedReason::MaxSampleOutOfBounds {
+                max: u32::MAX as usize,
+                requested: max_num_samples,
+            })
+        })?;
         //SAFETY: It is safe to subscribe to event because event_instance is valid
         // which was obtained from valid proxy instance
         let status = unsafe {
-            bridge_ffi_rs::subscribe_to_event(
+            self.instance_info.bridge.subscribe_to_event(
                 std::ptr::from_ref(event_instance.get_proxy_event_base()) as *mut ProxyEventBase,
-                max_num_samples.try_into().unwrap(),
+                max_num_samples_u32,
             )
         };
         if !status {
@@ -334,7 +361,7 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
             max_num_samples,
             instance_info,
             waker_storage: Arc::default(),
-            async_init_status: std::sync::Once::new(),
+            async_init_status: std::sync::OnceLock::new(),
             _proxy: self.proxy_instance.clone(),
             _phantom: PhantomData,
         })
@@ -431,21 +458,21 @@ impl<'a> DerefMut for ProxyEventManagerGuard<'a> {
 /// It also manages the asynchronous initialization of the receive callback
 /// and the waker storage for async notifications when new samples arrive.
 #[derive(Debug)]
-pub struct SubscriberImpl<T>
+pub struct SubscriberImpl<T, B: FFIBridge>
 where
     T: CommData + Debug,
 {
     event: ProxyEventManager,
     event_id: &'static str,
     max_num_samples: usize,
-    instance_info: LolaConsumerInfo,
+    instance_info: LolaConsumerInfo<B>,
     waker_storage: Arc<AtomicWaker>,
-    async_init_status: std::sync::Once,
-    _proxy: ProxyInstanceManager,
+    async_init_status: std::sync::OnceLock<()>,
+    _proxy: ProxyInstanceManager<B>,
     _phantom: PhantomData<T>,
 }
 
-impl<T: CommData + Debug> Drop for SubscriberImpl<T> {
+impl<T: CommData + Debug, B: FFIBridge> Drop for SubscriberImpl<T, B> {
     fn drop(&mut self) {
         // SAFETY: It is safe to unsubscribe from the event because the event pointer is valid
         // and was created during subscription.
@@ -454,17 +481,21 @@ impl<T: CommData + Debug> Drop for SubscriberImpl<T> {
         // and then unsubscribe from the event to clean up resources on the C++ side.
         let mut guard = self.event.get_proxy_event();
         unsafe {
-            if self.async_init_status.is_completed()
+            if self.async_init_status.get().is_some()
             // Check if the async receive callback was initialized
             {
-                bridge_ffi_rs::clear_event_receive_handler(guard.deref_mut(), T::ID);
+                self.instance_info
+                    .bridge
+                    .clear_event_receive_handler(guard.deref_mut(), T::ID);
             }
-            bridge_ffi_rs::unsubscribe_to_event(guard.deref_mut());
+            self.instance_info
+                .bridge
+                .unsubscribe_to_event(guard.deref_mut());
         }
     }
 }
 
-impl<T: CommData + Debug> SubscriberImpl<T> {
+impl<T: CommData + Debug, B: FFIBridge> SubscriberImpl<T, B> {
     fn init_async_receive(&self, event_guard: &mut ProxyEventManagerGuard) -> Result<()> {
         let callback_waker = Arc::clone(&self.waker_storage);
         let waker_callback = move || {
@@ -479,8 +510,19 @@ impl<T: CommData + Debug> SubscriberImpl<T> {
         // The callback is a simple waker that wakes the future when new samples arrive,
         // and the lifetime of the callback is managed by Rust, it will not outlive the scope of
         // this function call.
-        unsafe {
-            bridge_ffi_rs::set_event_receive_handler(event_guard.deref_mut(), &fat_ptr, T::ID);
+        let status = unsafe {
+            self.instance_info.bridge.set_event_receive_handler(
+                event_guard.deref_mut(),
+                &fat_ptr,
+                T::ID,
+            )
+        };
+        if !status {
+            // SAFETY: ptr was allocated as Box<dyn FnMut() + Send + 'static> via Box::into_raw
+            // above. The handler was not registered so this side retains ownership and must
+            // free it to prevent a leak.
+            drop(unsafe { Box::from_raw(ptr) });
+            return Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError));
         }
         Ok(())
     }
@@ -519,12 +561,12 @@ impl<T: CommData + Debug> SubscriberImpl<T> {
     }
 }
 
-impl<T> Subscription<T, LolaRuntimeImpl> for SubscriberImpl<T>
+impl<T, B: FFIBridge> Subscription<T, LolaRuntimeImpl<B>> for SubscriberImpl<T, B>
 where
     T: CommData + Debug,
 {
-    type Subscriber = SubscribableImpl<T>;
-    type Sample<'a> = Sample<T>;
+    type Subscriber = SubscribableImpl<T, B>;
+    type Sample<'a> = Sample<T, B>;
 
     /// The unsubscribe method consumes the subscription and returns the subscribable instance.
     /// Calling `unsubscribe` while a `SampleContainer` holding samples whose lifetime
@@ -565,7 +607,8 @@ where
         scratch: &'_ mut SampleContainer<Self::Sample<'a>>,
         max_samples: usize,
     ) -> Result<usize> {
-        try_receive_samples::<T>(
+        try_receive_samples::<T, B>(
+            &self.instance_info.bridge,
             self.event.get_proxy_event().deref_mut(),
             scratch,
             self.max_num_samples,
@@ -594,12 +637,18 @@ where
             // Get the event guard to ensure no concurrent receive calls
             // on the same subscriber instance.
             let mut event_guard = self.event.get_proxy_event();
-            // Initialize the async receive callback only once when the first receive call is made
-            // We are using std::sync::Once to ensure that the callback is set only once.
-            self.async_init_status.call_once(|| {
-                self.init_async_receive(&mut event_guard)
-                    .expect("Failed to initialize async receive callback");
-            });
+            // Initialize the async receive callback only once when the first receive call is made.
+            // ProxyEventManager already prevents concurrent receive calls, so the check-then-set
+            // sequence is race-free. Using get/set instead of get_or_try_init avoids the
+            // unstable `once_cell_try` feature while still propagating errors.
+            if self.async_init_status.get().is_none() {
+                if let Err(e) = self.init_async_receive(&mut event_guard) {
+                    return (scratch, Err(e));
+                }
+                // Ignore Err: the only way set() fails is if another thread raced us,
+                // which cannot happen because ProxyEventManager panics on concurrent access.
+                let _ = self.async_init_status.set(());
+            }
             ReceiveFuture {
                 event_guard: Some(event_guard),
                 waker_storage: Arc::clone(&self.waker_storage),
@@ -609,15 +658,16 @@ where
                 max_samples,
                 total_received: 0,
                 cancellation: core::pin::pin!(cancellation),
+                bridge: self.instance_info.bridge.clone(),
             }
             .await
         }
     }
 
-    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {   
+    fn to_stream<'a>(&'a mut self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         // Initialize the async receive callback only once when the first receive call is made
-        // We are using std::sync::Once to ensure that the callback is set only once.
-        self.async_init_status.call_once(|| {
+        // We are using std::sync::OnceLock to ensure that the callback is set only once.
+        self.async_init_status.get_or_init(|| {
             self.init_async_receive(&mut self.event.get_proxy_event())
                 .expect("Failed to initialize async receive callback");
         });
@@ -635,19 +685,22 @@ where
 // a waker storage for async notifications, and parameters for managing the receive operation.
 // The Future implementation for ReceiveFuture defines the polling logic,
 // which attempts to receive samples and manages the state of the receive operation.
-struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>> {
+struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> {
     event_guard: Option<ProxyEventManagerGuard<'a>>,
     waker_storage: Arc<AtomicWaker>,
     max_num_samples: usize,
-    scratch: Option<SampleContainer<Sample<T>>>,
+    scratch: Option<SampleContainer<Sample<T, B>>>,
     new_samples: usize,
     max_samples: usize,
     total_received: usize,
     cancellation: Pin<&'a mut F>,
+    bridge: B,
 }
 
-impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'a, T, F> {
-    type Output = (SampleContainer<Sample<T>>, Result<usize>);
+impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future
+    for ReceiveFuture<'a, T, F, B>
+{
+    type Output = (SampleContainer<Sample<T, B>>, Result<usize>);
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
         // Extract all immutable values upfront to avoid borrow conflicts with self in the callback
@@ -655,6 +708,7 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
         let new_samples = self.new_samples;
         let max_num_samples = self.max_num_samples;
         let total_received = self.total_received;
+        let bridge = self.bridge.clone();
 
         // Poll the cancellation future first to ensure prompt handling of cancellation requests.
         if self.cancellation.as_mut().poll(ctx).is_ready() {
@@ -675,7 +729,8 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
             // when passing to try_receive_samples
             if let Some(mut scratch) = self.scratch.take() {
                 if let Some(event_guard) = self.event_guard.as_mut() {
-                    let result = try_receive_samples::<T>(
+                    let result = try_receive_samples::<T, B>(
+                        &bridge,
                         event_guard.deref_mut(),
                         &mut scratch,
                         max_num_samples,
@@ -727,13 +782,13 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>> Future for ReceiveFuture<'
 /// It also holds an exclusive `ProxyEventManagerGuard` for the lifetime of the stream to prevent
 /// concurrent receives on the same subscriber instance.
 /// On each poll, it first yields any buffered samples before attempting to receive more from the FFI callback.
-struct SampleStream<'a, T: CommData + Debug> {
-    subscriber: &'a SubscriberImpl<T>,
-    sample_container: SampleContainer<Sample<T>>,
+struct SampleStream<'a, T: CommData + Debug, B: FFIBridge> {
+    subscriber: &'a SubscriberImpl<T, B>,
+    sample_container: SampleContainer<Sample<T, B>>,
 }
 
-impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
-    type Item = Result<Sample<T>>;
+impl<'a, T: CommData + Debug, B: FFIBridge> Stream for SampleStream<'a, T, B> {
+    type Item = Result<Sample<T, B>>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // Yield any buffered samples from a previous batch fetch first.
@@ -747,27 +802,23 @@ impl<'a, T: CommData + Debug> Stream for SampleStream<'a, T> {
         self.subscriber.waker_storage.register(cx.waker());
         let max_num_samples = self.subscriber.max_num_samples;
 
-        // get a mutable reference of pinned self, with this 
+        // get a mutable reference of pinned self, with this
         // we can avoid borrow checker issue for self in try_receive_samples function call
         let this = self.as_mut().get_mut();
-        
-        let samples_received = try_receive_samples::<T>(
-            this.subscriber
-                .event
-                .get_proxy_event()
-                .deref_mut(), // Get mutable reference to the proxy event for FFI call
+
+        let samples_received = try_receive_samples::<T, B>(
+            &this.subscriber.instance_info.bridge,
+            this.subscriber.event.get_proxy_event().deref_mut(), // Get mutable reference to the proxy event for FFI call
             &mut this.sample_container,
             max_num_samples,
             max_num_samples,
         );
 
         match samples_received {
-            Ok(_count) => {
-                match this.sample_container.pop_front() {
-                    Some(sample) => Poll::Ready(Some(Ok(sample))),
-                    None => Poll::Pending,
-                }
-            }
+            Ok(_count) => match this.sample_container.pop_front() {
+                Some(sample) => Poll::Ready(Some(Ok(sample))),
+                None => Poll::Pending,
+            },
             Err(e) => Poll::Ready(Some(Err(e))),
         }
     }
@@ -801,26 +852,29 @@ impl std::fmt::Debug for DiscoveryStateData {
     }
 }
 
-pub struct LolaConsumerDiscovery<I> {
-    pub instance_specifier: InstanceSpecifier,
-    pub _interface: PhantomData<I>,
+pub struct LolaConsumerDiscovery<I, B: FFIBridge> {
+    pub(crate) instance_specifier: InstanceSpecifier,
+    pub(crate) _interface: PhantomData<I>,
+    pub(crate) bridge: B,
 }
 
-impl<I: Interface> LolaConsumerDiscovery<I> {
-    pub fn new(_runtime: &LolaRuntimeImpl, instance_specifier: InstanceSpecifier) -> Self {
+impl<I: Interface, B: FFIBridge> LolaConsumerDiscovery<I, B> {
+    pub fn new(runtime: &LolaRuntimeImpl<B>, instance_specifier: InstanceSpecifier) -> Self {
         Self {
             instance_specifier,
             _interface: PhantomData,
+            bridge: runtime.bridge.clone(),
         }
     }
 }
 
-impl<I: Interface + Send> ServiceDiscovery<I, LolaRuntimeImpl> for LolaConsumerDiscovery<I>
+impl<I: Interface + Send, B: FFIBridge> ServiceDiscovery<I, LolaRuntimeImpl<B>>
+    for LolaConsumerDiscovery<I, B>
 where
-    LolaConsumerBuilder<I>: ConsumerBuilder<I, LolaRuntimeImpl>,
+    LolaConsumerBuilder<I, B>: ConsumerBuilder<I, LolaRuntimeImpl<B>>,
 {
-    type ConsumerBuilder = LolaConsumerBuilder<I>;
-    type ServiceEnumerator = Vec<LolaConsumerBuilder<I>>;
+    type ConsumerBuilder = LolaConsumerBuilder<I, B>;
+    type ServiceEnumerator = Vec<LolaConsumerBuilder<I, B>>;
 
     fn get_available_instances(&self) -> Result<Self::ServiceEnumerator> {
         //If ANY Support is added in Lola, then we need to return all available instances
@@ -839,6 +893,7 @@ where
                     handle_container: Arc::clone(&service_handle_arc),
                     handle_index,
                     interface_id: I::INTERFACE_ID,
+                    bridge: self.bridge.clone(),
                 };
                 LolaConsumerBuilder {
                     instance_info,
@@ -901,12 +956,13 @@ where
         // the same representation in memory as a FnMut fat pointer
         let fat_ptr: FatPtr = unsafe { std::mem::transmute(dyn_callback) };
 
+        let bridge = self.bridge.clone();
         let find_service_result = instance_specifier_lola.and_then(|spec| {
             // SAFETY: start_find_service is safe because fat_ptr is valid and
             // instance specifier is valid. The returned handle is stored
             // synchronously — before any async polling — guaranteeing
             // stop_find_service is always called in Drop.
-            let raw_handle = unsafe { bridge_ffi_rs::start_find_service(&fat_ptr, spec) };
+            let raw_handle = unsafe { bridge.start_find_service(&fat_ptr, spec) };
             if raw_handle.is_null() {
                 Err(Error::ServiceError(
                     ServiceFailedReason::FailedToStartDiscovery,
@@ -927,6 +983,7 @@ where
                 discovery_state,
                 waker_storage,
                 _interface: PhantomData,
+                bridge,
             }
             .await
         }
@@ -940,29 +997,30 @@ where
 /// resources.
 /// Stop find service in Drop implementation to ensure that we clean up the find service if the
 /// future is dropped before completion
-struct ServiceDiscoveryFuture<I: Interface> {
+struct ServiceDiscoveryFuture<I: Interface, B: FFIBridge> {
     find_handle: bridge_ffi_rs::NativeFindServiceHandle,
     discovery_state: Arc<std::sync::Mutex<DiscoveryStateData>>,
     waker_storage: Arc<futures::task::AtomicWaker>,
     _interface: PhantomData<I>,
+    bridge: B,
 }
 
-impl<I: Interface> Drop for ServiceDiscoveryFuture<I> {
+impl<I: Interface, B: FFIBridge> Drop for ServiceDiscoveryFuture<I, B> {
     fn drop(&mut self) {
         // SAFETY: find_handle is always valid here — it was stored synchronously
         // from start_find_service return value before any async polling began.
         // This unconditional call ensures the C++ discovery operation is always
         // cleaned up, even when the future is dropped before the callback fires.
         unsafe {
-            bridge_ffi_rs::stop_find_service(
+            self.bridge.stop_find_service(
                 self.find_handle.as_mut() as *mut bridge_ffi_rs::FindServiceHandle
             );
         }
     }
 }
 
-impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
-    type Output = Result<Vec<LolaConsumerBuilder<I>>>;
+impl<I: Interface, B: FFIBridge> Future for ServiceDiscoveryFuture<I, B> {
+    type Output = Result<Vec<LolaConsumerBuilder<I, B>>>;
 
     fn poll(
         self: std::pin::Pin<&mut Self>,
@@ -994,6 +1052,7 @@ impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
                         handle_container: Arc::clone(&service_handle_arc),
                         handle_index,
                         interface_id: I::INTERFACE_ID,
+                        bridge: self.bridge.clone(),
                     };
                     LolaConsumerBuilder {
                         instance_info,
@@ -1009,20 +1068,27 @@ impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
     }
 }
 
-impl<I: Interface> ConsumerBuilder<I, LolaRuntimeImpl> for LolaConsumerBuilder<I> {}
+impl<I: Interface, B: FFIBridge> ConsumerBuilder<I, LolaRuntimeImpl<B>>
+    for LolaConsumerBuilder<I, B>
+{
+}
 
-impl<I: Interface> Builder<I::Consumer<LolaRuntimeImpl>> for LolaConsumerBuilder<I> {
-    fn build(self) -> Result<I::Consumer<LolaRuntimeImpl>> {
+impl<I: Interface, B: FFIBridge> Builder<I::Consumer<LolaRuntimeImpl<B>>>
+    for LolaConsumerBuilder<I, B>
+{
+    fn build(self) -> Result<I::Consumer<LolaRuntimeImpl<B>>> {
         Ok(Consumer::new(self.instance_info))
     }
 }
 
-pub struct LolaConsumerBuilder<I: Interface> {
-    pub instance_info: LolaConsumerInfo,
+pub struct LolaConsumerBuilder<I: Interface, B: FFIBridge> {
+    pub instance_info: LolaConsumerInfo<B>,
     pub _interface: PhantomData<I>,
 }
 
-impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for LolaConsumerBuilder<I> {
+impl<I: Interface, B: FFIBridge> ConsumerDescriptor<LolaRuntimeImpl<B>>
+    for LolaConsumerBuilder<I, B>
+{
     fn get_instance_identifier(&self) -> &InstanceSpecifier {
         //if InstanceSpecifier::ANY support enable by lola
         //then this API should get InstanceSpecifier from FFI Call
@@ -1043,9 +1109,10 @@ impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for LolaConsumerBuilder<I
 /// * `scratch` - Mutable reference to the sample container
 /// * `max_num_samples` - Maximum allowed samples for this subscription
 /// * `max_samples` - How many samples to fetch in this call
-fn try_receive_samples<T: CommData + Debug>(
+fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
+    bridge: &B,
     event: &mut ProxyEventBase,
-    scratch: &mut SampleContainer<Sample<T>>,
+    scratch: &mut SampleContainer<Sample<T, B>>,
     max_num_samples: usize,
     max_samples: usize,
 ) -> Result<usize> {
@@ -1066,7 +1133,7 @@ fn try_receive_samples<T: CommData + Debug>(
         ));
     }
     // Create a callback that will be called by the C++ side for each new sample arrival
-    let mut callback = create_sample_callback(scratch, max_samples);
+    let mut callback = create_sample_callback::<T, B>(bridge, scratch, max_samples);
     // Convert closure to FatPtr for C++ callback
     let dyn_callback: &mut dyn FnMut(*mut sample_ptr_rs::SamplePtr<T>) = &mut callback;
     // SAFETY: it is safe to transmute the closure reference to a FatPtr because
@@ -1075,7 +1142,7 @@ fn try_receive_samples<T: CommData + Debug>(
     // SAFETY: event is a valid ProxyEventBase pointer obtained during subscription.
     // The lifetime of the callback is managed by Rust and will not outlive this function call.
     let count = unsafe {
-        bridge_ffi_rs::get_samples_from_event(
+        bridge.get_samples_from_event(
             event as *mut ProxyEventBase,
             T::ID,
             &fat_ptr,
@@ -1106,10 +1173,12 @@ fn try_receive_samples<T: CommData + Debug>(
 /// # Parameters
 /// * `scratch` - Mutable reference to the sample container
 /// * `max_samples` - Maximum number of samples to maintain in the container
-pub fn create_sample_callback<'a, T: CommData + Debug>(
-    scratch: &'a mut SampleContainer<Sample<T>>,
+pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
+    bridge: &B,
+    scratch: &'a mut SampleContainer<Sample<T, B>>,
     max_samples: usize,
 ) -> impl FnMut(*mut sample_ptr_rs::SamplePtr<T>) + 'a {
+    let bridge = bridge.clone();
     move |raw_sample: *mut sample_ptr_rs::SamplePtr<T>| {
         if !raw_sample.is_null() {
             //SAFETY: It is safe to read the sample pointer because
@@ -1122,6 +1191,7 @@ pub fn create_sample_callback<'a, T: CommData + Debug>(
                 id: ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
                 inner: LolaBinding {
                     data: ManuallyDrop::new(sample_ptr),
+                    bridge: bridge.clone(),
                 },
             };
 
@@ -1142,120 +1212,181 @@ pub fn create_sample_callback<'a, T: CommData + Debug>(
 
 #[cfg(test)]
 mod test {
-    use com_api_concept::{
-        CommData, Consumer, Interface, OfferedProducer, Producer, Result, Runtime, ServiceDiscovery,
-    };
 
-    #[derive(Debug, Clone, Copy)]
+    use super::*;
+    use bridge_ffi_mock::{MockFFIBridge, MockPointerAllocator, SharedMockBridge};
+
+    #[derive(Debug)]
     #[repr(C)]
-    struct TestData(u32);
+    struct TestData {
+        value: i32,
+    }
 
     unsafe impl com_api_concept::Reloc for TestData {}
 
-    impl CommData for TestData {
+    impl com_api_concept::CommData for TestData {
         const ID: &'static str = "TestData";
     }
 
-    // Test Consumer implementation
-    #[derive(Debug)]
-    struct TestConsumer;
+    // Builds a ProxyInstanceManager<SharedMockBridge>
+    fn make_proxy_instance(
+        bridge: SharedMockBridge,
+        interface_id: &'static str,
+    ) -> ProxyInstanceManager<SharedMockBridge> {
+        let handle: HandleType = HandleType::default();
+        let native_proxy = NativeProxyBase::<SharedMockBridge>::new(&bridge, interface_id, &handle)
+            .expect("SharedMockBridge::create_proxy should not fail");
+        ProxyInstanceManager(Arc::new(native_proxy))
+    }
 
-    impl<R: Runtime + ?Sized> Consumer<R> for TestConsumer {
-        fn new(_: R::ConsumerInfo) -> Self {
-            TestConsumer
+    // Builds a `LolaConsumerInfo<SharedMockBridge>` backed by a mock handle container.
+    fn make_instance_info(bridge: SharedMockBridge) -> LolaConsumerInfo<SharedMockBridge> {
+        // Create mock bridge and empty handle container (null pointer for testing)
+        let handle_container = Arc::new(HandleContainer::new(std::ptr::null_mut()));
+        LolaConsumerInfo::<SharedMockBridge> {
+            handle_container,
+            handle_index: 0,
+            interface_id: "TestInterface",
+            bridge,
         }
     }
 
-    // Test Producer implementation
-    #[derive(Debug)]
-    struct TestProducer;
-
-    impl<R: Runtime + ?Sized> Producer<R> for TestProducer {
-        type Interface = TestVehicleInterface;
-        type OfferedProducer = TestOfferedProducer;
-
-        fn offer(self) -> Result<Self::OfferedProducer> {
-            Ok(TestOfferedProducer)
-        }
-
-        fn new(_: R::ProviderInfo) -> Result<Self>
-        where
-            Self: Sized,
-        {
-            Ok(TestProducer)
-        }
-    }
-
-    // Test OfferedProducer implementation
-    struct TestOfferedProducer;
-
-    impl<R: Runtime + ?Sized> OfferedProducer<R> for TestOfferedProducer {
-        type Interface = TestVehicleInterface;
-        type Producer = TestProducer;
-
-        fn unoffer(self) -> Result<Self::Producer> {
-            Ok(TestProducer)
-        }
-    }
-
-    // Test Interface implementation
-    struct TestVehicleInterface;
-
-    impl Interface for TestVehicleInterface {
-        const INTERFACE_ID: &'static str = "TestVehicleInterface";
-        type Consumer<R: Runtime + ?Sized> = TestConsumer;
-        type Producer<R: Runtime + ?Sized> = TestProducer;
+    #[test]
+    fn test_lola_consumer_info() {
+        let mock = MockFFIBridge::new();
+        let bridge = SharedMockBridge::new(mock);
+        let instance_info = make_instance_info(bridge);
+        // Test that the instance_info is created successfully with mock data
+        assert_eq!(instance_info.interface_id, "TestInterface");
+        assert_eq!(instance_info.handle_index, 0);
     }
 
     #[test]
-    fn test_comm_data_trait() {
-        // Verify TestData implements CommData
-        assert_eq!(TestData::ID, "TestData");
-        let _data = TestData(42);
+    fn test_subscribe_event() {
+        let mut mock = MockFFIBridge::new();
+        let mut seq = mockall::Sequence::new();
+        let proxy_alloc = MockPointerAllocator::<ProxyBase>::new();
+        let event_alloc = MockPointerAllocator::<ProxyEventBase>::new();
+        let prox = proxy_alloc.clone();
+        let evt = event_alloc.clone();
+
+        mock.expect_create_proxy()
+            .in_sequence(&mut seq)
+            .returning(move |_, _| prox.allocate());
+        mock.expect_get_event_from_proxy()
+            .in_sequence(&mut seq)
+            .returning(move |_, _, _| evt.allocate());
+        mock.expect_subscribe_to_event()
+            .in_sequence(&mut seq)
+            .returning(|_, _| true);
+
+        let evt_cleanup = event_alloc.clone();
+        mock.expect_unsubscribe_to_event()
+            .in_sequence(&mut seq)
+            .returning(move |ptr| {
+                assert!(
+                    evt_cleanup.free(ptr),
+                    "unsubscribe_to_event called with unknown pointer"
+                );
+            });
+        let prox_cleanup = proxy_alloc.clone();
+        mock.expect_destroy_proxy()
+            .in_sequence(&mut seq)
+            .returning(move |ptr| {
+                assert!(
+                    prox_cleanup.free(ptr),
+                    "destroy_proxy called with unknown pointer"
+                );
+            });
+
+        // Create a single shared mock with all necessary expectations
+        let bridge = SharedMockBridge::new(mock);
+
+        let subscribable = SubscribableImpl::<TestData, SharedMockBridge> {
+            identifier: "TestEvent",
+            instance_info: make_instance_info(bridge.clone()),
+            proxy_instance: make_proxy_instance(bridge.clone(), "TestInterface"),
+            data: PhantomData,
+        };
+        let subscriber = subscribable
+            .subscribe(3)
+            .expect("subscribe should succeed with proper mock setup");
+        assert_eq!(subscriber.event_id, "TestEvent");
+
+        // Unsubscribe and drop subscriber to trigger cleanup
+        drop(subscriber.unsubscribe());
+
+        // Verify all allocations were cleaned up
+        proxy_alloc.assert_all_freed();
+        event_alloc.assert_all_freed();
     }
 
     #[test]
-    fn test_discovery_state_data_creation() {
-        // Test that DiscoveryStateData can be created with None values
-        let state = super::DiscoveryStateData { handles: None };
-        assert!(state.handles.is_none());
-    }
+    fn test_event_try_receive() {
+        let proxy_alloc = MockPointerAllocator::<ProxyBase>::new();
+        let event_alloc = MockPointerAllocator::<ProxyEventBase>::new();
+        let mut seq = mockall::Sequence::new();
+        let mut mock = MockFFIBridge::new();
 
-    #[test]
-    fn test_discovery_state_data_debug() {
-        // Test that DiscoveryStateData debug formatting works
-        let state = super::DiscoveryStateData { handles: None };
-        let debug_string = format!("{:?}", state);
-        assert!(debug_string.contains("DiscoveryStateData"));
-        assert!(debug_string.contains("handles"));
-    }
+        let proxy_alloc_clone = proxy_alloc.clone();
+        let event_alloc_clone = event_alloc.clone();
+        mock.expect_create_proxy()
+            .in_sequence(&mut seq)
+            .returning(move |_, _| proxy_alloc_clone.allocate());
+        mock.expect_get_event_from_proxy()
+            .in_sequence(&mut seq)
+            .returning(move |_, _, _| event_alloc_clone.allocate());
 
-    #[test]
-    fn test_sample_consumer_discovery_creation() {
-        // Test that LolaConsumerDiscovery can be created with valid interface
-        let instance_specifier = com_api_concept::InstanceSpecifier::new("/test/vehicle")
-            .expect("Failed to create instance specifier");
+        mock.expect_subscribe_to_event()
+            .in_sequence(&mut seq)
+            .returning(|_, _| true);
+        mock.expect_get_samples_from_event()
+            .in_sequence(&mut seq)
+            .returning(|_, _, _, _| 1);
+        mock.expect_set_event_receive_handler()
+            .in_sequence(&mut seq)
+            .returning(|_, _, _| true);
+        mock.expect_clear_event_receive_handler()
+            .in_sequence(&mut seq)
+            .returning(|_, _| ());
 
-        let _discovery = super::LolaConsumerDiscovery::<TestVehicleInterface>::new(
-            &super::super::LolaRuntimeImpl {},
-            instance_specifier,
+        mock.expect_unsubscribe_to_event()
+            .in_sequence(&mut seq)
+            .returning(move |ptr| {
+                assert!(
+                    event_alloc.free(ptr),
+                    "unsubscribe_to_event called with unknown pointer"
+                );
+            });
+        mock.expect_destroy_proxy()
+            .in_sequence(&mut seq)
+            .returning(move |ptr| {
+                assert!(
+                    proxy_alloc.free(ptr),
+                    "destroy_proxy called with unknown pointer"
+                );
+            });
+
+        // Create a single shared mock with all necessary expectations
+        let bridge = SharedMockBridge::new(mock);
+        let subscribable = SubscribableImpl::<TestData, SharedMockBridge> {
+            identifier: "TestEvent",
+            instance_info: make_instance_info(bridge.clone()),
+            proxy_instance: make_proxy_instance(bridge.clone(), "TestInterface"),
+            data: PhantomData,
+        };
+
+        let subscriber = subscribable
+            .subscribe(10)
+            .expect("subscribe should succeed with proper mock setup");
+
+        let mut sample_container = SampleContainer::new(5);
+        let count = subscriber
+            .try_receive(&mut sample_container, 5)
+            .expect("try_receive should succeed with a valid mock event");
+        assert_eq!(
+            count, 1,
+            "one sample should be returned by try_receive when the mock event has one sample"
         );
-        // Discovery created successfully
-    }
-
-    #[test]
-    #[ignore] // Requires LoLa runtime initialization and configuration
-    fn test_get_available_instances_method_exists() {
-        // Test that get_available_instances() can be called on ServiceDiscovery trait
-        let instance_specifier = com_api_concept::InstanceSpecifier::new("/test/vehicle")
-            .expect("Failed to create instance specifier");
-
-        let discovery = super::LolaConsumerDiscovery::<TestVehicleInterface>::new(
-            &super::super::LolaRuntimeImpl {},
-            instance_specifier,
-        );
-
-        // Call get_available_instances - verifies the method exists and is callable
-        let _result = discovery.get_available_instances();
     }
 }

@@ -54,6 +54,7 @@ mod ffi {
     /// `::score::mw::com::ServiceHandleContainer`<`::score::mw::com::impl::HandleType`> as an opaque
     /// struct. Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
+    #[derive(Default)]
     pub struct NativeHandleContainer {
         _dummy: [u8; 0],
     }
@@ -69,6 +70,7 @@ mod ffi {
     /// This type represents `score::mw::com::impl::ProxyEventBase` as an opaque struct.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
+    #[derive(Default)]
     pub struct ProxyEventBase {
         _dummy: [u8; 0],
     }
@@ -76,6 +78,7 @@ mod ffi {
     /// This type represents `score::mw::com::impl::ProxyEvent` as an opaque struct.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
+    #[derive(Default)]
     pub struct ProxyEvent<T> {
         pub(crate) base: ProxyEventBase,
         _data: PhantomData<T>,
@@ -84,6 +87,7 @@ mod ffi {
     /// This type represents `score::mw::com::impl::HandleType` as an opaque struct.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
+    #[derive(Default)]
     pub struct HandleType {
         _dummy: [u8; 0],
     }

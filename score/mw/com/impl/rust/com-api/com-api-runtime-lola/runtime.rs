@@ -16,22 +16,27 @@ use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use crate::{
-    LolaConsumerInfo, LolaProviderInfo, Publisher, LolaConsumerDiscovery, LolaProducerBuilder,
+    LolaConsumerDiscovery, LolaConsumerInfo, LolaProducerBuilder, LolaProviderInfo, Publisher,
     SubscribableImpl,
 };
 use com_api_concept::{
     Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime,
 };
 
-pub struct LolaRuntimeImpl {}
+use bridge_ffi_lola::LolaFFIBridge;
+use bridge_ffi_rs::FFIBridge;
 
-impl Runtime for LolaRuntimeImpl {
-    type ServiceDiscovery<I: Interface + Send> = LolaConsumerDiscovery<I>;
-    type Subscriber<T: CommData + Debug> = SubscribableImpl<T>;
-    type ProducerBuilder<I: Interface> = LolaProducerBuilder<I>;
-    type Publisher<T: CommData + Debug> = Publisher<T>;
-    type ProviderInfo = LolaProviderInfo;
-    type ConsumerInfo = LolaConsumerInfo;
+pub struct LolaRuntimeImpl<B: FFIBridge = LolaFFIBridge> {
+    pub(crate) bridge: B,
+}
+
+impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
+    type ServiceDiscovery<I: Interface + Send> = LolaConsumerDiscovery<I, B>;
+    type Subscriber<T: CommData + Debug> = SubscribableImpl<T, B>;
+    type ProducerBuilder<I: Interface> = LolaProducerBuilder<I, B>;
+    type Publisher<T: CommData + Debug> = Publisher<T, B>;
+    type ProviderInfo = LolaProviderInfo<B>;
+    type ConsumerInfo = LolaConsumerInfo<B>;
 
     fn find_service<I: Interface + Send>(
         &self,
@@ -46,6 +51,7 @@ impl Runtime for LolaRuntimeImpl {
                 FindServiceSpecifier::Specific(spec) => spec,
             },
             _interface: PhantomData,
+            bridge: self.bridge.clone(),
         }
     }
 
@@ -57,33 +63,39 @@ impl Runtime for LolaRuntimeImpl {
     }
 }
 
-pub struct RuntimeBuilderImpl {
+pub struct RuntimeBuilderImpl<B: FFIBridge = LolaFFIBridge> {
     config_path: Option<PathBuf>,
+    _marker: PhantomData<B>,
 }
 
-impl Builder<LolaRuntimeImpl> for RuntimeBuilderImpl {
-    fn build(self) -> Result<LolaRuntimeImpl> {
+impl<B: FFIBridge> Builder<LolaRuntimeImpl<B>> for RuntimeBuilderImpl<B> {
+    fn build(self) -> Result<LolaRuntimeImpl<B>> {
         mw_com::initialize(self.config_path.as_deref());
-        Ok(LolaRuntimeImpl {})
+        Ok(LolaRuntimeImpl {
+            bridge: B::default(),
+        })
     }
 }
 
-impl com_api_concept::RuntimeBuilder<LolaRuntimeImpl> for RuntimeBuilderImpl {
+impl<B: FFIBridge> com_api_concept::RuntimeBuilder<LolaRuntimeImpl<B>> for RuntimeBuilderImpl<B> {
     fn load_config(&mut self, config: &Path) -> &mut Self {
         self.config_path = Some(config.to_path_buf());
         self
     }
 }
 
-impl Default for RuntimeBuilderImpl {
+impl<B: FFIBridge> Default for RuntimeBuilderImpl<B> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl RuntimeBuilderImpl {
+impl<B: FFIBridge> RuntimeBuilderImpl<B> {
     /// Creates a new instance of the default implementation of the com layer
     pub fn new() -> Self {
-        Self { config_path: None }
+        Self {
+            config_path: None,
+            _marker: PhantomData,
+        }
     }
 }
