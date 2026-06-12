@@ -52,10 +52,15 @@ def analyze_database(code_ql_path, database_path, source_root, query_spec=None, 
 
     query_arg = f" {query_spec}" if query_spec else ""
 
-    os.system(
-        f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} --format=sarifv2.1.0 --output={output_base}/{output_prefix}.sarif")
-    os.system(
-        f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} --format=csv --output={output_base}/{output_prefix}.csv")
+    sarif_path = f"{output_base}/{output_prefix}.sarif"
+    csv_path = f"{output_base}/{output_prefix}.csv"
+
+    subprocess.run(
+        f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} --format=sarifv2.1.0 --output={sarif_path}",
+        shell=True, check=True)
+    subprocess.run(
+        f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} --format=csv --output={csv_path}",
+        shell=True, check=True)
 
     # @todo it is possible to generate here also a full MISRA compliance report, which we could do in the future.
     # path/to/<output_database_name> <name-of-results-file>.sarif <output_directory>
