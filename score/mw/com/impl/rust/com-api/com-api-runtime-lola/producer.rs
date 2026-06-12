@@ -500,16 +500,16 @@ impl<I: Interface, B: FFIBridge> Builder<I::Producer<LolaRuntimeImpl<B>>>
 #[cfg(test)]
 mod test {
     use super::*;
-    use bridge_ffi_mock::{MockFFIBridge, SharedMockBridge};
+    use bridge_ffi_mock::{MockFFIBridge, MockPointerAllocator, SharedMockBridge};
     use com_api_concept::InstanceSpecifier;
     use mockall::predicate::*;
+    use mockall::Sequence;
     // Bring trait methods into scope without shadowing local struct names.
     use com_api_concept::Publisher as _;
     use com_api_concept::SampleMaybeUninit as _;
     use com_api_concept::SampleMut as _;
-    use std::sync::Mutex;
 
-    #[derive(Debug)]
+    #[derive(Debug, Default)]
     #[repr(C)]
     struct TestData {
         value: i32,
@@ -546,28 +546,34 @@ mod test {
     #[test]
     fn test_provider_info_offer_service() {
         let mut mock = MockFFIBridge::new();
-        let skeleton_vec = Arc::new(Mutex::new(Vec::new()));
-        let skeleton_vec_clone = skeleton_vec.clone();
-        mock.expect_create_skeleton().returning(move |_, _| {
-            let mut skeleton = skeleton_vec_clone
-                .lock()
-                .expect("not able to acquire lock on skeleton_vec");
-            skeleton.push(Box::<SkeletonBase>::default());
-            skeleton.last_mut().unwrap().as_mut() as *mut SkeletonBase
-        });
-        mock.expect_skeleton_offer_service().returning(|_| true);
-        mock.expect_skeleton_stop_offer_service().returning(|_| ());
-        let skeleton = skeleton_vec.clone();
-        mock.expect_destroy_skeleton().returning(move |ptr| {
-            let mut skeleton = skeleton
-                .lock()
-                .expect("not able to acquire lock on skeleton_vec");
-            let pos = skeleton
-                .iter_mut()
-                .position(|s| s.as_mut() as *mut SkeletonBase == ptr)
-                .expect("destroyed skeleton handle should exist in skeleton_vec");
-            skeleton.remove(pos);
-        });
+        let mut seq = Sequence::new();
+
+        // Use MockPointerAllocator for cleaner pointer management
+        let skeleton_alloc = MockPointerAllocator::<SkeletonBase>::new();
+
+        let skel = skeleton_alloc.clone();
+        mock.expect_create_skeleton()
+            .in_sequence(&mut seq)
+            .returning(move |_, _| skel.allocate());
+
+        mock.expect_skeleton_offer_service()
+            .in_sequence(&mut seq)
+            .returning(|_| true);
+
+        mock.expect_skeleton_stop_offer_service()
+            .in_sequence(&mut seq)
+            .returning(|_| ());
+
+        let skel_cleanup = skeleton_alloc.clone();
+        mock.expect_destroy_skeleton()
+            .in_sequence(&mut seq)
+            .returning(move |ptr| {
+                assert!(
+                    skel_cleanup.free(ptr),
+                    "destroy_skeleton called with unknown pointer"
+                );
+            });
+
         let bridge = SharedMockBridge::new(mock);
         let provider_info = make_provider_info("TestInterface", &bridge);
         assert!(
@@ -578,16 +584,33 @@ mod test {
             provider_info.stop_offer_service().is_ok(),
             "stop_offer_service should always succeed in the mock"
         );
+
+        // Drop provider_info to remove the skeleton instance and trigger destroy_skeleton cleanup
+        drop(provider_info);
+
+        // Verify all allocations were cleaned up
+        skeleton_alloc.assert_all_freed();
     }
 
     #[test]
     fn test_publisher_allocate_and_send() {
+        let skeleton_alloc = MockPointerAllocator::<SkeletonBase>::new();
+        let event_alloc = MockPointerAllocator::<SkeletonEventBase>::new();
+        let data_alloc = MockPointerAllocator::<TestData>::new();
+        let mut seq = Sequence::new();
         let mut mock = MockFFIBridge::new();
+
+        let skeleton_alloc_clone = skeleton_alloc.clone();
+        let event_alloc_clone = event_alloc.clone();
         mock.expect_create_skeleton()
-            .returning(|_, _| Box::into_raw(Box::default()));
+            .in_sequence(&mut seq)
+            .returning(move |_, _| skeleton_alloc_clone.allocate());
         mock.expect_get_event_from_skeleton()
-            .returning(|_, _, _| Box::into_raw(Box::default()));
+            .in_sequence(&mut seq)
+            .returning(move |_, _, _| event_alloc_clone.allocate());
+
         mock.expect_get_allocatee_ptr()
+            .in_sequence(&mut seq)
             .returning(|_, allocatee_ptr, _| {
                 // SAFETY: Write a zeroed SampleAllocateePtr to the out-parameter for testing
                 unsafe {
@@ -598,17 +621,26 @@ mod test {
                 }
                 true
             });
-        mock.expect_get_allocatee_data_ptr().returning(move |_, _| {
-            // Return a valid heap-allocated TestData pointer for the test to write to
-            Box::into_raw(Box::new(TestData { value: 0 })) as *mut std::ffi::c_void
-        });
+        let data = data_alloc.clone();
+        mock.expect_get_allocatee_data_ptr()
+            .in_sequence(&mut seq)
+            .returning(move |_, _| data.allocate() as *mut std::ffi::c_void);
         mock.expect_skeleton_event_send_sample_allocatee()
+            .in_sequence(&mut seq)
             .returning(|_, _, _| true);
-        mock.expect_delete_allocatee_ptr().returning(|_, _| ());
-        mock.expect_destroy_skeleton().returning(|_| ());
+        mock.expect_delete_allocatee_ptr()
+            .in_sequence(&mut seq)
+            .returning(move |allocatee_ptr, _| {
+                data_alloc.free(allocatee_ptr as *mut TestData);
+            });
+
+        mock.expect_destroy_skeleton()
+            .in_sequence(&mut seq)
+            .returning(move |ptr| {
+                skeleton_alloc.free(ptr);
+            });
 
         let bridge = SharedMockBridge::new(mock);
-
         let spec = mw_com::InstanceSpecifier::try_from("/test_instance")
             .expect("valid instance specifier");
         let skeleton_handle =

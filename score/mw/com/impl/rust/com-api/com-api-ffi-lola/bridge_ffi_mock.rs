@@ -18,17 +18,54 @@
 //!
 //! This provides a mockall-based mock where tests can configure expectations locally.
 //! Uses a hybrid approach: mockall for most methods, with a wrapper for lifetime constraints.
-//! The SharedMockBridge wrapper allows all clones to share the same underlying mock instance and expectations,
+//!
+//! # Components
+//!
+//! ## SharedMockBridge
+//! Wrapper that allows all clones to share the same underlying mock instance and expectations,
 //! eliminating the need for complex clone expectation setup in tests.
-//! Tests can create a SharedMockBridge with a configured MockFFIBridge, and all clones will automatically share the same expectations.
-//! Example usage in a test:
-//! ```rust,ignore
+//!
+//! ## MockPointerAllocator
+//! Helper utility for managing FFI pointer allocations in tests. Eliminates the repetitive
+//! `Arc<Mutex<Vec<Box<T>>>>` pattern and provides automatic cleanup tracking.
+//!
+//! # Usage
+//! ```ignore
+//! use bridge_ffi_mock::{MockFFIBridge, SharedMockBridge, MockPointerAllocator};
+//!
 //! let mut mock = MockFFIBridge::new();
-//! mock.expect_create_proxy()
-//!     .returning(|_, _| Box::into_raw(Box::new(unsafe { std::mem::zeroed() }))); // this is just an example, configure expectations as needed
+//! // Use MockPointerAllocator for cleaner pointer management
+//! let skeleton_alloc = MockPointerAllocator::<SkeletonBase>::new();
+//! let skel = skeleton_alloc.clone();
+//! mock.expect_create_skeleton()
+//!     .returning(move |_, _| skel.allocate());
+//!
 //! let bridge = SharedMockBridge::new(mock);
+//! // All clones automatically share the same expectations
 //! let clone1 = bridge.clone();
-//! let clone2 = bridge.clone();
+//! ```
+//!
+//! # With Call Sequencing
+//! Use `mockall::Sequence` to enforce call ordering:
+//! ```ignore
+//! use mockall::Sequence;
+//!
+//! let mut mock = MockFFIBridge::new();
+//! let mut seq = Sequence::new();
+//!
+//! let skeleton_alloc = MockPointerAllocator::<SkeletonBase>::new();
+//! let skel = skeleton_alloc.clone();
+//! mock.expect_create_skeleton()
+//!     .in_sequence(&mut seq)
+//!     .returning(move |_, _| skel.allocate());
+//!
+//! let event_alloc = MockPointerAllocator::<SkeletonEventBase>::new();
+//! let evt = event_alloc.clone();
+//! mock.expect_get_event_from_skeleton()
+//!     .in_sequence(&mut seq)
+//!     .returning(move |_, _, _| evt.allocate());
+//!
+//! // Enforces: create_skeleton must be called before get_event_from_skeleton
 //! ```
 //!
 //! This mock back-end is used for unit testing of Lola-Runtime.
@@ -162,18 +199,6 @@ mock! {
 /// This wrapper uses Arc<Mutex<MockFFIBridge>> internally, allowing all clones to share
 /// the same underlying mock instance and its expectations. This eliminates the need for
 /// complex clone expectation setup in tests.
-///
-/// # Usage
-/// ```rust,ignore
-/// let mut mock = MockFFIBridge::new();
-/// mock.expect_create_proxy()
-///     .returning(|_, _| Box::into_raw(Box::new(unsafe { std::mem::zeroed() })));
-///
-/// let bridge = SharedMockBridge::new(mock);
-/// // All clones automatically share the same expectations
-/// let clone1 = bridge.clone();
-/// let clone2 = bridge.clone();
-/// ```
 #[derive(Debug, Default)]
 pub struct SharedMockBridge(std::sync::Arc<std::sync::Mutex<MockFFIBridge>>);
 
@@ -192,6 +217,10 @@ impl SharedMockBridge {
     {
         let mut guard = self.0.lock().expect("Failed to acquire lock");
         f(&mut *guard)
+    }
+
+    fn locked(&self) -> std::sync::MutexGuard<'_, MockFFIBridge> {
+        self.0.lock().expect("Failed to acquire lock")
     }
 }
 
@@ -212,21 +241,14 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     ) -> bool {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
+            self.locked()
                 .get_allocatee_ptr(event_ptr, allocatee_ptr, event_type)
         }
     }
 
     unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_name: &str) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .delete_allocatee_ptr(allocatee_ptr, type_name)
-        }
+        unsafe { self.locked().delete_allocatee_ptr(allocatee_ptr, type_name) }
     }
 
     unsafe fn get_allocatee_data_ptr(
@@ -236,9 +258,7 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     ) -> *mut std::ffi::c_void {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
+            self.locked()
                 .get_allocatee_data_ptr(allocatee_ptr, type_name)
         }
     }
@@ -250,9 +270,7 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         allocatee_ptr: *const std::ffi::c_void,
     ) -> bool {
         unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
+            self.locked()
                 .skeleton_event_send_sample_allocatee(event_ptr, event_type, allocatee_ptr)
         }
     }
@@ -263,51 +281,26 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         type_name: &str,
     ) -> *const std::ffi::c_void {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .sample_ptr_get(sample_ptr, type_name)
-        }
+        unsafe { self.locked().sample_ptr_get(sample_ptr, type_name) }
     }
 
     unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_name: &str) {
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .sample_ptr_delete(sample_ptr, type_name)
-        }
+        unsafe { self.locked().sample_ptr_delete(sample_ptr, type_name) }
     }
 
     unsafe fn skeleton_offer_service(&self, skeleton_ptr: *mut SkeletonBase) -> bool {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .skeleton_offer_service(skeleton_ptr)
-        }
+        unsafe { self.locked().skeleton_offer_service(skeleton_ptr) }
     }
 
     unsafe fn skeleton_stop_offer_service(&self, skeleton_ptr: *mut SkeletonBase) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .skeleton_stop_offer_service(skeleton_ptr)
-        }
+        unsafe { self.locked().skeleton_stop_offer_service(skeleton_ptr) }
     }
 
     unsafe fn create_proxy(&self, interface_id: &str, handle_ptr: &HandleType) -> *mut ProxyBase {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .create_proxy(interface_id, handle_ptr)
-        }
+        unsafe { self.locked().create_proxy(interface_id, handle_ptr) }
     }
 
     unsafe fn create_skeleton(
@@ -316,32 +309,17 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         instance_spec: *const NativeInstanceSpecifier,
     ) -> *mut SkeletonBase {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .create_skeleton(interface_id, instance_spec)
-        }
+        unsafe { self.locked().create_skeleton(interface_id, instance_spec) }
     }
 
     unsafe fn destroy_proxy(&self, proxy_ptr: *mut ProxyBase) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .destroy_proxy(proxy_ptr)
-        }
+        unsafe { self.locked().destroy_proxy(proxy_ptr) }
     }
 
     unsafe fn destroy_skeleton(&self, skeleton_ptr: *mut SkeletonBase) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .destroy_skeleton(skeleton_ptr)
-        }
+        unsafe { self.locked().destroy_skeleton(skeleton_ptr) }
     }
 
     unsafe fn get_event_from_proxy(
@@ -352,9 +330,7 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     ) -> *mut ProxyEventBase {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
+            self.locked()
                 .get_event_from_proxy(proxy_ptr, interface_id, event_id)
         }
     }
@@ -367,9 +343,7 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     ) -> *mut SkeletonEventBase {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
+            self.locked()
                 .get_event_from_skeleton(skeleton_ptr, interface_id, event_id)
         }
     }
@@ -380,21 +354,11 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         max_num_samples: u32,
     ) -> bool {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .subscribe_to_event(event_ptr, max_num_samples)
-        }
+        unsafe { self.locked().subscribe_to_event(event_ptr, max_num_samples) }
     }
 
     unsafe fn unsubscribe_to_event(&self, event_ptr: *mut ProxyEventBase) {
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .unsubscribe_to_event(event_ptr)
-        }
+        unsafe { self.locked().unsubscribe_to_event(event_ptr) }
     }
 
     unsafe fn get_samples_from_event(
@@ -406,9 +370,7 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     ) -> u32 {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
+            self.locked()
                 .get_samples_from_event(event_ptr, event_type, callback, max_num_samples)
         }
     }
@@ -421,9 +383,7 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     ) -> bool {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
+            self.locked()
                 .skeleton_send_event(event_ptr, event_type, data_ptr)
         }
     }
@@ -436,9 +396,7 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     ) -> bool {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
+            self.locked()
                 .set_event_receive_handler(event_ptr, callback, event_type)
         }
     }
@@ -446,9 +404,7 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     unsafe fn clear_event_receive_handler(&self, event_ptr: *mut ProxyEventBase, event_type: &str) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
+            self.locked()
                 .clear_event_receive_handler(event_ptr, event_type)
         }
     }
@@ -459,21 +415,97 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         instance_spec: InstanceSpecifier,
     ) -> *mut FindServiceHandle {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .start_find_service(callback, instance_spec)
-        }
+        unsafe { self.locked().start_find_service(callback, instance_spec) }
     }
 
     unsafe fn stop_find_service(&self, find_service_handle: *mut FindServiceHandle) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.0
-                .lock()
-                .expect("Failed to acquire lock")
-                .stop_find_service(find_service_handle)
+        unsafe { self.locked().stop_find_service(find_service_handle) }
+    }
+}
+
+/// Helper for managing mock pointer allocations with automatic cleanup tracking,
+/// eliminating the need for repetitive Arc<Mutex<Vec<Box<T>>>> patterns in tests.
+/// We can use for any FFI pointer type (e.g., SkeletonBase, ProxyBase) by specifying T.
+/// The allocator tracks all allocated pointers and provides a `free` method to clean them up,
+/// which can be used in test assertions to ensure proper resource management.
+#[derive(Debug)]
+pub struct MockPointerAllocator<T> {
+    allocations: std::sync::Arc<std::sync::Mutex<Vec<Box<T>>>>,
+}
+
+impl<T: Default> MockPointerAllocator<T> {
+    /// Create a new pointer allocator for type `T`.
+    pub fn new() -> Self {
+        Self {
+            allocations: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
         }
+    }
+
+    fn locked(&self) -> std::sync::MutexGuard<'_, Vec<Box<T>>> {
+        self.allocations.lock().expect("Failed to acquire lock")
+    }
+
+    /// Allocate a new heap-backed pointer with default value.
+    ///
+    /// # Returns
+    /// A raw mutable pointer to a heap-allocated `T` with default value.
+    pub fn allocate(&self) -> *mut T {
+        let mut allocs = self.locked();
+        allocs.push(Box::default());
+        allocs
+            .last_mut()
+            .expect("Failed to allocate pointer")
+            .as_mut() as *mut T
+    }
+
+    /// Free a previously allocated pointer.
+    ///
+    /// # Parameters
+    /// - `ptr`: The raw pointer to free, previously returned by `allocate()`
+    ///
+    /// # Returns
+    /// - `true` if the pointer was found and freed
+    /// - `false` if the pointer was not found in tracked allocations
+    pub fn free(&self, ptr: *mut T) -> bool {
+        let mut allocs = self.locked();
+        allocs
+            .extract_if(.., |b| b.as_mut() as *mut T == ptr)
+            .next()
+            .is_some()
+    }
+
+    /// Assert that all allocations have been freed (count is 0).
+    ///
+    /// # Panics
+    /// Panics if there are still tracked allocations.
+    ///
+    /// # Example
+    /// ```ignore
+    /// allocator.assert_all_freed(); // Instead of assert_eq!(allocator.count(), 0, ...)
+    /// ```
+    pub fn assert_all_freed(&self) {
+        let count = self.locked().len();
+        assert_eq!(
+            count,
+            0,
+            "memory leak: {} pointer(s) of type {} not freed",
+            count,
+            std::any::type_name::<T>()
+        );
+    }
+}
+
+impl<T: Default> Clone for MockPointerAllocator<T> {
+    fn clone(&self) -> Self {
+        Self {
+            allocations: std::sync::Arc::clone(&self.allocations),
+        }
+    }
+}
+
+impl<T: Default> Default for MockPointerAllocator<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
