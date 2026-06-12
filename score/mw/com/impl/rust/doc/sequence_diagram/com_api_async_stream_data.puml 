@@ -16,7 +16,6 @@ title Async Stream API in Lola Runtime
 actor User
 participant "Subscription" as Subscription
 participant "SampleContainer" as SampleContainer
-participant "Lola" as Lola
 
 User -> Subscription: Subscription::to_stream()
 Subscription --> SampleContainer: Create internal buffer (fixed capacity)
@@ -30,7 +29,9 @@ loop User polls the stream
     alt Sample available in buffer
         Subscription --> User: Ready(Sample)
     else No samples available
-        Subscription --> User: Pending
+        Subscription --> User: Pending (Async waits for new samples to arrive)
+    else Error occurs
+        Subscription --> User: Ready(Error)
     end
     deactivate Subscription
 end

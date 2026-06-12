@@ -1,6 +1,6 @@
-@startuml com_api_find_service_and_subscribe
+@startuml com_api_async_find_service_and_subscribe
 
-' Copyright (c) 2025 Contributors to the Eclipse Foundation
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
 '
 ' See the NOTICE file(s) distributed with this work for additional
 ' information regarding copyright ownership.
@@ -11,7 +11,7 @@
 '
 ' SPDX-License-Identifier: Apache-2.0
 
-title Find Service and Subscribe
+title Async Find Service and Subscribe
 
 actor User
 participant "R: Runtime" as Runtime
@@ -24,7 +24,8 @@ participant "Subscription<T, R>" as Subscription
 User -> Runtime: find_service::<VehicleInterface>(\nFindServiceSpecifier::Specific(\nInstanceSpecifier))
 Runtime --> User: ServiceDiscovery<I, R>
 
-User -> ServiceDiscovery: get_available_instances()
+User -> ServiceDiscovery: get_available_instances_async().await
+Note over ServiceDiscovery: Async waits until\nservice is offered
 ServiceDiscovery --> User: Result<ServiceEnumerator>
 
 Note over User: ServiceEnumerator contains\nConsumerBuilder instances
@@ -44,6 +45,6 @@ User -> Subscriber: subscribe(max_samples)
 Subscriber --> Subscription: create Subscription
 Subscriber --> User: Result<Subscription<Tire, R>>
 
-Note over User: Subscription ready for\nreceiving samples
+Note over User: Subscription ready for\nasync receiving samples
 
 @enduml
