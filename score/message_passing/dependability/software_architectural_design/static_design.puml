@@ -13,7 +13,12 @@
 
 @startuml
 
-interface "score::message_passing" as message_passing_public_api
+package "score::message_passing" as message_passing_public_api {
+    interface "Server" as api_server
+    interface "ClientFactory" as api_client_factory
+    interface "ClientConnection" as api_client_connection
+}
+
 interface "OS" as os
 
 component "Message Passing" as dependable_element_message_passing <<SEooC>> {
@@ -21,31 +26,23 @@ component "Message Passing" as dependable_element_message_passing <<SEooC>> {
     component "Message Passing" as component_message_passing <<component>> {
 
         component "Client" as client <<component>> {
-            component "ClientConnection" as client_connection <<unit>> {
-            }
+            component "ClientFactory" as client_factory <<unit>>
+            component "ClientConnection" as client_connection <<unit>>
+            component "QNX Dispatch" as client_qnx_dispatch <<unit>>
+            component "Unix Domain" as client_unix_domain <<unit>>
         }
 
         component "Server" as server <<component>> {
-            component "QNX Dispatch" as qnx_dispatch <<unit>> {
-            }
-            component "Unix Domain" as unix_domain <<unit>> {
-            }
+            component "ServerConnection" as server_connection <<unit>>
+            component "QNX Dispatch" as qnx_dispatch <<unit>>
+            component "Unix Domain" as unix_domain <<unit>>
         }
     }
     portout " " as message_passing_public_api_port
-    portin " " as port_os
+    portout " " as port_os
 }
 
-message_passing_public_api -l-() message_passing_public_api_port
+message_passing_public_api -r-() message_passing_public_api_port
 port_os -u-( os : uses
 
-' ------------------------ Formatting -------------------
-
-client -[hidden]down- server
-client_connection -[hidden]right- qnx_dispatch
-qnx_dispatch -[hidden]right- unix_domain
-
 @enduml
-
-x
-x
