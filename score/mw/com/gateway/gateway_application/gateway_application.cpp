@@ -197,12 +197,12 @@ void GatewayApplication::PropagateService(const std::string& specifier_str)
         return;
     }
 
-    std::vector<ServiceElementConfiguration> elements{};
+    std::vector<impl::EventInfo> elements{};
     const auto& event_map = proxy_it->second.GetEvents();
     for (auto it = event_map.cbegin(); it != event_map.cend(); ++it)
     {
         const auto sample_size = it->second.GetSampleSize();
-        elements.push_back(ServiceElementConfiguration{std::string(it->first), DataTypeSizeInfo{sample_size, 0U}});
+        elements.push_back(impl::EventInfo{it->first, impl::DataTypeMetaInfo{sample_size, 0U}});
     }
 
     auto provide_result = transport_layer_->ProvideService(std::move(specifier_result).value(), std::move(elements));
@@ -334,7 +334,7 @@ void GatewayApplication::ReRegisterActiveEventSubscriptions(const std::string& s
 }
 
 score::Result<void> GatewayApplication::ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                                       std::vector<ServiceElementConfiguration> service_elements)
+                                                       std::vector<impl::EventInfo> service_elements)
 {
     if (!IsServiceInstanceAccepted(service_instance_specifier.ToString()))
     {
@@ -368,17 +368,8 @@ score::Result<void> GatewayApplication::ProvideService(impl::InstanceSpecifier s
         return {};
     }
 
-    std::vector<impl::EventInfo> event_infos;
-    event_infos.reserve(service_elements.size());
-
-    for (const auto& element : service_elements)
-    {
-        event_infos.push_back(
-            {element.element_name, impl::DataTypeMetaInfo{element.size_info.Size(), element.size_info.Alignment()}});
-    }
-
     impl::GenericSkeletonServiceElementInfo skeleton_info;
-    skeleton_info.events = event_infos;
+    skeleton_info.events = service_elements;
     auto skeleton_result = impl::GenericSkeleton::Create(service_instance_specifier, skeleton_info);
     if (!skeleton_result.has_value())
     {
@@ -396,7 +387,7 @@ score::Result<void> GatewayApplication::ProvideService(impl::InstanceSpecifier s
     auto& skeleton = skeletons_.at(service_instance_specifier_str);
     for (const auto& element : service_elements)
     {
-        RegisterEventReceiveHandlerCallback(skeleton, service_instance_specifier_str, element.element_name);
+        RegisterEventReceiveHandlerCallback(skeleton, service_instance_specifier_str, std::string{element.name});
     }
 
     auto offer_result = skeleton.OfferService();
