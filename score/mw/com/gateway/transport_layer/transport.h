@@ -13,40 +13,16 @@
 #ifndef SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_TRANSPORT_H
 #define SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_TRANSPORT_H
 
-#include "score/memory/data_type_size_info.h"
+#include "score/mw/com/impl/generic_skeleton.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
 #include "score/result/result.h"
 
-#include <cstddef>
 #include <string>
-#include <tuple>
-#include <type_traits>
 #include <vector>
 
 namespace score::mw::com::gateway
 {
-
-using DataTypeSizeInfo = score::memory::DataTypeSizeInfo;
-
-static_assert(std::is_trivially_copyable_v<DataTypeSizeInfo>, "DataTypeSizeInfo must be trivially copyable");
-
-/// \brief Describes a single service element (event, field, or method) and its serialization type info.
-struct ServiceElementConfiguration
-{
-    std::string element_name;
-    DataTypeSizeInfo size_info;
-
-    std::tuple<const std::string&, const DataTypeSizeInfo&> GetSerializeMembers() const
-    {
-        return {element_name, size_info};
-    }
-
-    std::tuple<std::string&, DataTypeSizeInfo&> GetSerializeMembers()
-    {
-        return {element_name, size_info};
-    }
-};
 
 /// \brief Abstract base class for gateway transport layer implementations.
 class Transport
@@ -78,7 +54,7 @@ class Transport
     /// provide. This information is needed to create the (generic) skeleton on the destination gateway side.
     /// \return result indicating success or failure.
     virtual score::Result<void> ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                               std::vector<ServiceElementConfiguration> service_elements) = 0;
+                                               std::vector<impl::EventInfo> service_elements) = 0;
 
     /// \brief OfferService API to trigger service-instance offering at the destination gateway side.
     /// \details Transport layer implementation shall "forward" this call to the destination gateway and trigger the

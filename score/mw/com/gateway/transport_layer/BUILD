@@ -28,9 +28,9 @@ cc_library(
         "//score/mw/com/gateway:__subpackages__",
     ],
     deps = [
+        "//score/mw/com/impl:generic_skeleton",
         "//score/mw/com/impl:instance_specifier",
         "//score/mw/com/impl:service_element_type",
-        "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/result",
     ],
 )
@@ -78,16 +78,6 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":transport_error",
-        "@score_baselibs//score/result",
-    ],
-)
-
-cc_unit_test(
-    name = "transport_test",
-    srcs = ["transport_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":transport",
         "@score_baselibs//score/result",
     ],
 )
