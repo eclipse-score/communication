@@ -71,7 +71,7 @@ jobs:
           bazel run //quality/static_analysis:codeql_lint -- \
             --phase create-database \
             --database-path /var/tmp/codeql_databases/codeql_db \
-            --target //score/message_passing/... //score/mw/com/...
+            --target //score/message_passing //score/mw/com
 
       - name: Upload CodeQL database artifact
         uses: actions/upload-artifact@v4
