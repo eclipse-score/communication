@@ -37,7 +37,8 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
                                                    const std::size_t max_samples,
                                                    const std::uint8_t max_subscribers,
                                                    const bool enforce_max_samples,
-                                                   impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data)
+                                                   impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
+                                                   const bool getter_enabled)
 {
     // We defer initialisation of the Skeleton to InitialiseSkeletonEvent to allow test fixtures to set any mocked
     // expectations before creating the skeleton.
@@ -53,7 +54,8 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
         element_fq_id,
         service_element_name,
         SkeletonEventProperties{max_samples, max_subscribers, enforce_max_samples},
-        skeleton_event_tracing_data);
+        skeleton_event_tracing_data,
+        getter_enabled);
 }
 
 EventControl* SkeletonEventFixture::GetEventControl(const ElementFqId element_fq_id,
@@ -83,7 +85,8 @@ void SkeletonEventFixture::InitialiseSkeletonEventWithQmOnly(
     const std::size_t max_samples,
     const std::uint8_t max_subscribers,
     const bool enforce_max_samples,
-    impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data)
+    impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
+    const bool getter_enabled)
 {
     InitialiseSkeleton(make_InstanceIdentifier(valid_qm_instance_deployment_, valid_type_deployment_));
 
@@ -97,7 +100,8 @@ void SkeletonEventFixture::InitialiseSkeletonEventWithQmOnly(
         element_fq_id,
         service_element_name,
         SkeletonEventProperties{max_samples, max_subscribers, enforce_max_samples},
-        skeleton_event_tracing_data);
+        skeleton_event_tracing_data,
+        getter_enabled);
 }
 
 }  // namespace score::mw::com::impl::lola

@@ -428,9 +428,7 @@ TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleFailsIfNoSampleWasSen
 TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleReturnsMostRecentlySentSample)
 {
     // Given an offered skeleton event with getter enabled and two samples sent
-    // Getter must be enabled so that the transaction log is set up in PrepareOffer
-    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_);
-    skeleton_event_->SetGetterEnabled(true);
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, true, {}, true);
     std::ignore = skeleton_event_->PrepareOffer();
 
     auto first_allocated_slot_result = skeleton_event_->Allocate();
@@ -456,8 +454,7 @@ TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleReturnsMostRecentlySe
 TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleReturnsErrorWhenCalledWhilePreviousSamplePtrIsAlive)
 {
     // Given an offered skeleton event with getter enabled and a sample sent
-    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_);
-    skeleton_event_->SetGetterEnabled(true);
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, true, {}, true);
     std::ignore = skeleton_event_->PrepareOffer();
 
     auto allocated_slot_result = skeleton_event_->Allocate();
@@ -480,8 +477,7 @@ TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleSucceedsAfterPrevious
 {
     // Given an offered skeleton event with getter enabled, a sample sent, and a SamplePtr already obtained and
     // then released
-    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_);
-    skeleton_event_->SetGetterEnabled(true);
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, true, {}, true);
     std::ignore = skeleton_event_->PrepareOffer();
 
     auto allocated_slot_result = skeleton_event_->Allocate();

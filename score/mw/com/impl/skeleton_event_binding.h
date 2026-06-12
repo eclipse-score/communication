@@ -68,9 +68,6 @@ class SkeletonEventBindingBase
 
     /// \todo To be removed in Ticket-134850
     virtual void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept = 0;
-
-    /// \brief Informs the binding that a getter is enabled for this field event, enabling transaction log setup.
-    virtual void SetGetterEnabled(bool getter_enabled) noexcept = 0;
 };
 
 /// \brief The SkeletonEventBinding represents the interface that _every_ binding has to provide, if it wants to support

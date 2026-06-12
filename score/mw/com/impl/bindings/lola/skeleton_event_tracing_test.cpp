@@ -463,16 +463,14 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture,
     // Expecting that the TracingFilterConfig has no trace points enabled.
     impl::tracing::SkeletonEventTracingData expected_enabled_trace_points{};
 
-    // Given a skeleton event in an offered service
+    // Given a skeleton event in an offered service with the getter enabled
     InitialiseSkeletonEvent(fake_element_fq_id_,
                             fake_event_name_,
                             max_samples_,
                             max_subscribers_,
                             enforce_max_samples,
-                            expected_enabled_trace_points);
-
-    // Getter must be enabled so that the transaction log is set up even when tracing is disabled
-    skeleton_event_->SetGetterEnabled(true);
+                            expected_enabled_trace_points,
+                            true);
 
     // Given an offered event in an offered service
     std::ignore = skeleton_event_->PrepareOffer();
@@ -496,8 +494,8 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture,
                             max_samples_,
                             max_subscribers_,
                             enforce_max_samples,
-                            expected_enabled_trace_points);
-    skeleton_event_->SetGetterEnabled(true);
+                            expected_enabled_trace_points,
+                            true);
 
     // When the event is offered
     std::ignore = skeleton_event_->PrepareOffer();
@@ -568,8 +566,8 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture,
                                       max_samples_,
                                       max_subscribers_,
                                       enforce_max_samples,
-                                      expected_enabled_trace_points);
-    skeleton_event_->SetGetterEnabled(true);
+                                      expected_enabled_trace_points,
+                                      true);
 
     // When the event is offered
     std::ignore = skeleton_event_->PrepareOffer();
@@ -671,16 +669,14 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillRemoveTr
     // Expecting that the TracingFilterConfig has no trace points enabled.
     impl::tracing::SkeletonEventTracingData expected_enabled_trace_points{};
 
-    // Given a skeleton event in an offered service
+    // Given a skeleton event in an offered service with the getter enabled
     InitialiseSkeletonEvent(fake_element_fq_id_,
                             fake_event_name_,
                             max_samples_,
                             max_subscribers_,
                             enforce_max_samples,
-                            expected_enabled_trace_points);
-
-    // Getter must be enabled so that the transaction log is set up even when tracing is disabled
-    skeleton_event_->SetGetterEnabled(true);
+                            expected_enabled_trace_points,
+                            true);
 
     // Given an offered event in an offered service
     std::ignore = skeleton_event_->PrepareOffer();
@@ -708,8 +704,8 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture,
                             max_samples_,
                             max_subscribers_,
                             enforce_max_samples,
-                            expected_enabled_trace_points);
-    skeleton_event_->SetGetterEnabled(true);
+                            expected_enabled_trace_points,
+                            true);
     std::ignore = skeleton_event_->PrepareOffer();
 
     auto* const event_control_asil_b = GetEventControl(fake_element_fq_id_, QualityType::kASIL_B);
