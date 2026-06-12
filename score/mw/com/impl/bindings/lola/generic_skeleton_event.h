@@ -61,6 +61,23 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
         return size_info_.size;
     }
 
+    /// \brief Set callback, to get notified, when either the 1st event-notification has been registered or the last
+    /// event-notification has been unregistered.
+    /// \detail This extension has been added to GenericSkeletonEvent only (not "typed" SkeletonEvent),
+    /// because we are only using it so far in the gateway use case, where the gateway uses only
+    /// GenericProxy/GenericSkeleton and not typed proxies/skeletons.
+    Result<void> SetReceiveHandlerRegistrationChangedHandler(
+        ReceiveHandlerRegistrationChangedCallback callback) noexcept override
+    {
+        return skeleton_event_common_.SetReceiveHandlerRegistrationChangedHandler(std::move(callback));
+    }
+
+    /// \brief Unset the callback for ReceiveHandler registration change notifications.
+    Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept override
+    {
+        return skeleton_event_common_.UnsetReceiveHandlerRegistrationChangedHandler();
+    }
+
   private:
     DataTypeMetaInfo size_info_;
     std::uint8_t* event_data_storage_;
