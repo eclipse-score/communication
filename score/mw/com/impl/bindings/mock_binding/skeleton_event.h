@@ -32,7 +32,6 @@ class SkeletonEventBase : public SkeletonEventBindingBase
     MOCK_METHOD(std::size_t, GetMaxSize, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
-    MOCK_METHOD(void, SetGetterEnabled, (bool), (noexcept, override));
 };
 
 template <typename SampleType>
@@ -55,7 +54,6 @@ class SkeletonEvent : public SkeletonEventBinding<SampleType>
     MOCK_METHOD(std::size_t, GetMaxSize, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
-    MOCK_METHOD(void, SetGetterEnabled, (bool), (noexcept, override));
 };
 
 template <typename SampleType>
@@ -109,10 +107,6 @@ class SkeletonEventFacade : public SkeletonEventBinding<SampleType>
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
     {
         return skeleton_event_.SetSkeletonEventTracingData(tracing_data);
-    }
-    void SetGetterEnabled(bool getter_enabled) noexcept override
-    {
-        return skeleton_event_.SetGetterEnabled(getter_enabled);
     }
 };
 }  // namespace score::mw::com::impl::mock_binding

@@ -72,7 +72,8 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
                   const ElementFqId element_fq_id,
                   const std::string_view event_name,
                   const SkeletonEventProperties properties,
-                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {}) noexcept;
+                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {},
+                  bool getter_enabled = false) noexcept;
 
     SkeletonEvent(const SkeletonEvent&) = delete;
     SkeletonEvent(SkeletonEvent&&) noexcept = delete;
@@ -110,11 +111,6 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
         skeleton_event_common_.SetSkeletonEventTracingData(tracing_data);
     }
 
-    void SetGetterEnabled(bool getter_enabled) noexcept override
-    {
-        skeleton_event_common_.SetGetterEnabled(getter_enabled);
-    }
-
   private:
     EventDataStorage<SampleType>* event_data_storage_;
     SkeletonEventCommon<SampleType> skeleton_event_common_;
@@ -125,10 +121,11 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
                                          const ElementFqId element_fq_id,
                                          const std::string_view event_name,
                                          const SkeletonEventProperties properties,
-                                         impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
+                                         impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
+                                         bool getter_enabled) noexcept
     : SkeletonEventBinding<SampleType>{},
       event_data_storage_{nullptr},
-      skeleton_event_common_{parent, event_name, properties, element_fq_id, skeleton_event_tracing_data}
+      skeleton_event_common_{parent, event_name, properties, element_fq_id, skeleton_event_tracing_data, getter_enabled}
 {
 }
 

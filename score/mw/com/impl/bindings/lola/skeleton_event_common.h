@@ -66,7 +66,8 @@ class SkeletonEventCommon
                         const std::string_view event_name,
                         const SkeletonEventProperties& event_properties,
                         const ElementFqId& element_fq_id,
-                        impl::tracing::SkeletonEventTracingData tracing_data = {}) noexcept;
+                        impl::tracing::SkeletonEventTracingData tracing_data = {},
+                        bool getter_enabled = false) noexcept;
 
     SkeletonEventCommon(const SkeletonEventCommon&) = delete;
     SkeletonEventCommon(SkeletonEventCommon&&) noexcept = delete;
@@ -89,11 +90,6 @@ class SkeletonEventCommon
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept
     {
         tracing_data_ = tracing_data;
-    }
-
-    void SetGetterEnabled(bool getter_enabled) noexcept
-    {
-        getter_enabled_ = getter_enabled;
     }
 
     /// \brief Reserves a getter slot. Returns empty factory if a SamplePtr from a prior GetLatestSample is still alive.
@@ -175,7 +171,7 @@ class SkeletonEventCommon
     EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
     bool qm_disconnect_;
-    bool getter_enabled_{false};
+    bool getter_enabled_;
     SampleReferenceTracker getter_sample_tracker_{1U};
 
     /// \brief Atomic flags indicating whether any receive handlers are currently registered for this event
@@ -211,7 +207,8 @@ SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
                                                      const std::string_view event_name,
                                                      const SkeletonEventProperties& event_properties,
                                                      const ElementFqId& element_fq_id,
-                                                     impl::tracing::SkeletonEventTracingData tracing_data) noexcept
+                                                     impl::tracing::SkeletonEventTracingData tracing_data,
+                                                     bool getter_enabled) noexcept
     : parent_{parent},
       event_name_{event_name},
       event_properties_{event_properties},
@@ -219,7 +216,8 @@ SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
       event_data_control_composite_{},
       current_timestamp_{EventSlotStatus::INVALID_TIMESTAMP},
       tracing_data_{tracing_data},
-      qm_disconnect_{false}
+      qm_disconnect_{false},
+      getter_enabled_{getter_enabled}
 {
 }
 
