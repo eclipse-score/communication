@@ -64,7 +64,8 @@ class MyDummyField : public SkeletonFieldBase
     {
     }
 
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
+    // Parameter name commented out to fix -Wunused-parameter
+    void UpdateSkeletonReference(SkeletonBase& /* skeleton_base */) noexcept override {}
 
     StrictMock<mock_binding::SkeletonEventBase>* GetMockEventBinding() noexcept
     {
@@ -97,7 +98,8 @@ class MyDummyField : public SkeletonFieldBase
 class MyDummyFieldFailingDeferredUpdate final : public MyDummyField
 {
   public:
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
+    // Parameter name commented out to fix -Wunused-parameter
+    void UpdateSkeletonReference(SkeletonBase& /* skeleton_base */) noexcept override {}
 
     Result<void> DoDeferredUpdate() noexcept override
     {

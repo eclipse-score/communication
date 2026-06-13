@@ -67,7 +67,8 @@ class MyDummyField : public SkeletonFieldBase
     {
     }
 
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
+    // Parameter name commented out to fix -Wunused-parameter
+    void UpdateSkeletonReference(SkeletonBase& /* skeleton_base */) noexcept override {}
 
     bool IsInitialValueSaved() const noexcept override
     {
