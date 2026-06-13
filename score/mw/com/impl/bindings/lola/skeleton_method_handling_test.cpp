@@ -468,7 +468,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillNotCallUnregisterSubscribedM
         }));
 
     // When calling PrepareOffer
-    const auto result = PrepareOffer();
+    static_cast<void>(PrepareOffer());  // Return value intentionally discarded (-Wunused-result)
 
     // Then UnregisterOnServiceMethodSubscribedHandler was not called during PrepareOffer
     EXPECT_FALSE(*unregister_called);

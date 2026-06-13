@@ -23,8 +23,9 @@ class TypeErasedSamplePtr
   public:
     template <typename SamplePtrType>
     explicit TypeErasedSamplePtr(SamplePtrType sample_ptr)
-        : type_erased_sample_ptr_{[sample_ptr = std::move(sample_ptr)]() {
-              static_cast<void>(sample_ptr);
+        // Rename capture to avoid -Wshadow (parameter name shadows capture name)
+        : type_erased_sample_ptr_{[captured_sample_ptr = std::move(sample_ptr)]() {
+              static_cast<void>(captured_sample_ptr);
           }}
     {
     }
