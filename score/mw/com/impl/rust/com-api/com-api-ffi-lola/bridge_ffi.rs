@@ -99,7 +99,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
         &self,
         event_ptr: *mut SkeletonEventBase,
         allocatee_ptr: *mut std::ffi::c_void,
-        type_ops: &TypeOperationsManager
+        type_ops: &TypeOperationsManager,
     ) -> bool;
 
     /// # Safety
@@ -275,7 +275,8 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// Caller must ensure that the provided interface_id and member_name correspond to
     /// a valid TypeOperations instance in the C++ registry. The returned TypeOperationsManager
     /// must not be used after the underlying TypeOperations instance is destroyed on the C++ side.
-    unsafe fn get_type_ops_instance(&self,
+    unsafe fn get_type_ops_instance(
+        &self,
         interface_id: &str,
         member_name: &str,
     ) -> Option<TypeOperationsManager>;

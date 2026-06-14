@@ -94,9 +94,9 @@ pub struct AllocateePtrWrapper<T, B: FFIBridge>
 where
     T: CommData + Debug,
 {
-    pub inner: ManuallyDrop<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>,
-    pub bridge: B,
-    pub type_ops: TypeOperationsManager,
+    inner: ManuallyDrop<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>,
+    bridge: B,
+    type_ops: TypeOperationsManager,
 }
 
 impl<T, B: FFIBridge> Drop for AllocateePtrWrapper<T, B>
@@ -197,13 +197,13 @@ where
         // We've taken ownership via self (consumed, not borrowed), and
         // FFI call will complete before drop run on AllocateePtrWrapper and NativeSkeletonEventBase
         let status = unsafe {
-          self.allocatee_ptr
+            self.allocatee_ptr
                 .bridge
                 .skeleton_event_send_sample_allocatee(
-                self.skeleton_event.skeleton_event_ptr.as_ptr(),
-                &self.allocatee_ptr.type_ops,
-                std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
-            )
+                    self.skeleton_event.skeleton_event_ptr.as_ptr(),
+                    &self.allocatee_ptr.type_ops,
+                    std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
+                )
         };
         if !status {
             return Err(Error::EventError(EventFailedReason::SendingDataFailed));
@@ -443,12 +443,14 @@ where
         })
     }
 
-   fn new(identifier: &str, instance_info: LolaProviderInfo<B>) -> Result<Self> {
+    fn new(identifier: &str, instance_info: LolaProviderInfo<B>) -> Result<Self> {
         let skeleton_event = NativeSkeletonEventBase::new::<B>(&instance_info, identifier)?;
         let type_ops = unsafe {
             instance_info
-                .bridge.get_type_ops_instance(instance_info.interface_id, identifier) }
-                .ok_or(Error::EventError(EventFailedReason::EventNotAvailable))?;
+                .bridge
+                .get_type_ops_instance(instance_info.interface_id, identifier)
+        }
+        .ok_or(Error::EventError(EventFailedReason::EventNotAvailable))?;
         Ok(Self {
             skeleton_event,
             type_ops,
@@ -619,7 +621,11 @@ mod test {
             .returning(move |_, _, _| event_alloc_clone.allocate());
         mock.expect_get_type_ops_instance()
             .in_sequence(&mut seq)
-            .returning(move |_,_| Some(TypeOperationsManager::new(NonNull::new(type_ops_alloc.allocate()).unwrap())));
+            .returning(move |_, _| {
+                Some(TypeOperationsManager::new(
+                    NonNull::new(type_ops_alloc.allocate()).unwrap(),
+                ))
+            });
 
         mock.expect_get_allocatee_ptr()
             .in_sequence(&mut seq)
