@@ -191,9 +191,10 @@ mock! {
         unsafe fn stop_find_service(&self, handle: *mut FindServiceHandle);
 
         unsafe fn get_type_ops_instance(
-        &self,
-        interface_id: &str,
-        member_name: &str,) -> Option<TypeOperationsManager>;
+            &self,
+            interface_id: &str,
+            member_name: &str,
+        ) -> Option<TypeOperationsManager>;
 }
 }
 
@@ -249,7 +250,11 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         }
     }
 
-    unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_ops: &TypeOperationsManager) {
+    unsafe fn delete_allocatee_ptr(
+        &self,
+        allocatee_ptr: *mut std::ffi::c_void,
+        type_ops: &TypeOperationsManager,
+    ) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe { self.locked().delete_allocatee_ptr(allocatee_ptr, type_ops) }
     }
@@ -287,7 +292,11 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         unsafe { self.locked().sample_ptr_get(sample_ptr, type_ops) }
     }
 
-    unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_ops: &TypeOperationsManager) {
+    unsafe fn sample_ptr_delete(
+        &self,
+        sample_ptr: *mut std::ffi::c_void,
+        type_ops: &TypeOperationsManager,
+    ) {
         unsafe { self.locked().sample_ptr_delete(sample_ptr, type_ops) }
     }
 
@@ -397,18 +406,12 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         callback: &FatPtr,
     ) -> bool {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.locked()
-                .set_event_receive_handler(event_ptr, callback)
-        }
+        unsafe { self.locked().set_event_receive_handler(event_ptr, callback) }
     }
 
     unsafe fn clear_event_receive_handler(&self, event_ptr: *mut ProxyEventBase) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.locked()
-                .clear_event_receive_handler(event_ptr)
-        }
+        unsafe { self.locked().clear_event_receive_handler(event_ptr) }
     }
 
     unsafe fn start_find_service(
