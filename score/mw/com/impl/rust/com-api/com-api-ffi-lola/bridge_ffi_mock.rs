@@ -220,7 +220,7 @@ impl SharedMockBridge {
         F: FnOnce(&mut MockFFIBridge) -> R,
     {
         let mut guard = self.0.lock().expect("Failed to acquire lock");
-        f(&mut *guard)
+        f(&mut guard)
     }
 
     fn locked(&self) -> std::sync::MutexGuard<'_, MockFFIBridge> {
@@ -487,7 +487,7 @@ impl<T: Default> MockPointerAllocator<T> {
     pub fn free(&self, ptr: *mut T) -> bool {
         let mut allocs = self.locked();
         allocs
-            .extract_if(.., |b| b.as_mut() as *mut T == ptr)
+            .extract_if(.., |b| std::ptr::eq(b.as_mut(), ptr))
             .next()
             .is_some()
     }
