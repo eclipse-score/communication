@@ -50,6 +50,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -567,6 +568,11 @@ class DummyProxyMethod : public ProxyMethodBase
         return {};
     }
 };
+
+static_assert(std::is_nothrow_move_constructible_v<DummyProxyMethod>,
+              "DummyProxyMethod must be nothrow move constructible");
+static_assert(std::is_nothrow_move_assignable_v<DummyProxyMethod>,
+              "DummyProxyMethod must be nothrow move assignable");
 
 /// Note. Technically, these tests are testing internals of ProxyBase. While we generally strive to test only the public
 /// interface, we make an exception in this case since the reference updating of service elements is complex and can

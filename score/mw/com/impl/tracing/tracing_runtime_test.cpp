@@ -30,6 +30,7 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <memory>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 
@@ -38,6 +39,9 @@ namespace score::mw::com::impl::tracing
 
 namespace
 {
+static_assert(std::is_nothrow_move_assignable_v<TracingRuntime>,
+              "TracingRuntime must be nothrow move assignable");
+
 constexpr std::string_view kDummyServiceTypeName{"my_service_type"};
 constexpr std::string_view kDummyElementName{"my_event"};
 constexpr std::string_view kInstanceSpecifier{"/my_service_type_port"};

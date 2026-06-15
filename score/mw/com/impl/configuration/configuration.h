@@ -57,7 +57,7 @@ class Configuration final
      * \brief Class is moveable but not copyable
      */
     Configuration(const Configuration& other) = delete;
-    Configuration(Configuration&& other) = default;
+    Configuration(Configuration&& other) noexcept = default;
     Configuration& operator=(const Configuration& other) & = delete;
     Configuration& operator=(Configuration&& other) & = delete;
 

@@ -60,7 +60,7 @@ class ServiceVersionType final
     ServiceVersionType& operator=(const ServiceVersionType& other) = default;
     ServiceVersionType(const ServiceVersionType&) = default;
     ServiceVersionType(ServiceVersionType&&) noexcept = default;
-    ServiceVersionType& operator=(ServiceVersionType&& other) = default;
+    ServiceVersionType& operator=(ServiceVersionType&& other) noexcept = default;
 
     /**
      * \brief Compares two instances for equality
