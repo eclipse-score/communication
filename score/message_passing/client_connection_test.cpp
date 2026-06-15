@@ -964,6 +964,39 @@ TEST_F(ClientConnectionTest, SendWithCallbackReportsFailureWhenQueuedSendFailsTr
     StopCurrentConnection(connection);
 }
 
+TEST_F(ClientConnectionTest, SendWithCallbackStillHasItsSlotBusyWhenQueuedSendHappensTrulyAsync)
+{
+    client_config_.truly_async = true;
+    client_config_.max_async_replies = 1;
+    client_config_.max_queued_sends = 0;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    std::array<std::uint8_t, kMaxSendSize> send_buffer;
+
+    CatchSendQueueCommand();
+
+    // the send itself shall succeed
+    auto send_with_callback_result = connection.SendWithCallback(send_buffer, [](auto&& message_expected) {
+        EXPECT_FALSE(message_expected);
+        EXPECT_EQ(message_expected.error().GetOsDependentErrorCode(), EPIPE);
+    });
+    EXPECT_TRUE(send_with_callback_result);
+
+    EXPECT_CALL(*engine_, SendProtocolMessage).WillOnce([&](auto&&...) {
+        // with max_async_replies = 1, that single internal slot queued data shall still be busy.
+        // (if it's not the case, we may have data corruption if we try to send data concurrently)
+        auto send_expected = connection.SendWithCallback(send_buffer, [](auto&&) {});
+        EXPECT_FALSE(send_expected);
+        EXPECT_EQ(send_expected.error().GetOsDependentErrorCode(), ENOBUFS);
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE));
+    });
+
+    InvokeSendQueueCommand();
+
+    StopCurrentConnection(connection);
+}
+
 TEST_F(ClientConnectionTest, QueuedSendsCancelIfConnectionClosed)
 {
     client_config_.max_queued_sends = 4;
