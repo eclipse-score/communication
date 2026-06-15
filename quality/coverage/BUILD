@@ -16,6 +16,5 @@ load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 sh_binary(
     name = "generate_coverage_html",
     srcs = ["generate_coverage_html.sh"],
-    data = ["@lcov_deb//:srcs"],
     visibility = ["//visibility:private"],
 )

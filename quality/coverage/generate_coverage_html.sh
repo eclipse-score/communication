@@ -11,8 +11,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-# Generates an HTML coverage report from an LCOV .dat file using genhtml.
-# Optionally assembles and zips the report together with LCOV data and JUnit XMLs.
+# Extracts the HTML coverage report from the llvm-cov generated zip produced by
+# `bazel coverage`. Optionally assembles and zips the report together with
+# LCOV data and JUnit XMLs.
 #
 # Usage:
 #   bazel run //quality/coverage:generate_coverage_html [-- [--archive <archive-name>] [output-dir]]
@@ -58,87 +59,82 @@ unset _SELF_DIR _SELF_NAME
 
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
-# bazel-out/ is a symlink Bazel always creates in the workspace root, it
-# points to the real output directory.  _coverage/ sits at its root (not
-# inside a config-specific sub-directory), so we can locate the merged
-# report without calling 'bazel info' — which would require 'bazel' to be
-# on PATH inside the run environment.
-LCOV_DAT="${BUILD_WORKSPACE_DIRECTORY}/bazel-out/_coverage/_coverage_report.dat"
+# Resolve OUTPUT_DIR to absolute path (relative to workspace root).
+OUTPUT_DIR="${BUILD_WORKSPACE_DIRECTORY}/${OUTPUT_DIR}"
 
-# ---------------------------------------------------------------------------
-# Resolve genhtml: prefer Bazel-managed binary from @lcov_deb runfiles so
-# that no system lcov installation is required.  Fall back to PATH.
-#
-# Bazel uses a symlink forest on Linux: runfiles entries are symlinks to the
-# real cached files.  Use 'find -L' to dereference them ('find -type f'
-# without -L never matches symlinks).
-# ---------------------------------------------------------------------------
-_tool_path() {
-  local name="$1"
-  local found=""
-  # 1. Symlink forest (always present on Linux under bazel run)
-  if [[ -n "${RUNFILES_DIR:-}" ]]; then
-    found=$(find -L "${RUNFILES_DIR}" -path "*lcov_deb/usr/bin/${name}" -type f 2>/dev/null | head -1)
-  fi
-  # 2. PATH
-  if [[ -z "${found}" ]]; then
-    found=$(command -v "${name}" 2>/dev/null || true)
-  fi
-  echo "${found}"
-}
+# The coverage report generator produces a zip file at _coverage_report.dat
+# containing: html_report/, lcov_report/lcov.dat, text_report/summary.txt
+COVERAGE_ZIP="${BUILD_WORKSPACE_DIRECTORY}/bazel-out/_coverage/_coverage_report.dat"
 
-GENHTML="$(_tool_path genhtml)"
-LCOV="$(_tool_path lcov)"
-
-if [[ -z "$GENHTML" ]]; then
-  echo "ERROR: 'genhtml' not found. Run via 'bazel run //quality/coverage:generate_coverage_html' or install 'lcov'." >&2
-  exit 1
-fi
-if [[ -z "$LCOV" ]]; then
-  echo "ERROR: 'lcov' not found. Run via 'bazel run //quality/coverage:generate_coverage_html' or install 'lcov'." >&2
+if [[ ! -f "${COVERAGE_ZIP}" ]]; then
+  echo "ERROR: Coverage report not found at ${COVERAGE_ZIP}" >&2
+  echo "       Run 'bazel coverage //... --build_tests_only' first." >&2
   exit 1
 fi
 
-# When using the Bazel-managed tool, set PERL5LIB so Perl finds lcovutil.pm.
-# lcovutil.pm lives two levels above the genhtml binary: bin/ → usr/ → lib/lcov.
-lcov_lib="$(dirname "$(dirname "${GENHTML}")")/lib/lcov"
-if [[ -d "${lcov_lib}" ]]; then
-  export PERL5LIB="${lcov_lib}${PERL5LIB:+:${PERL5LIB}}"
+# Extract the HTML report from the zip.
+TMPDIR_EXTRACT="${TMPDIR:-/tmp}/coverage_extract_$$"
+mkdir -p "${TMPDIR_EXTRACT}"
+trap 'rm -rf "${TMPDIR_EXTRACT}"' EXIT
+
+unzip -q -o "${COVERAGE_ZIP}" -d "${TMPDIR_EXTRACT}"
+
+# Copy the HTML report to the output directory.
+rm -rf "${OUTPUT_DIR}"
+if [[ -d "${TMPDIR_EXTRACT}/html_report" ]]; then
+  cp -r "${TMPDIR_EXTRACT}/html_report" "${OUTPUT_DIR}"
+else
+  echo "ERROR: html_report/ not found in ${COVERAGE_ZIP}" >&2
+  exit 1
 fi
-
-# ---------------------------------------------------------------------------
-# Filter source files from LCOV data before generating HTML.
-# The --instrumentation_filter in coverage.bazelrc already excludes external
-# deps (third_party, gtest) and test/ subdirectories at compile time.
-# Only files that slip through because they live in mixed packages need
-# removal here:
-#   - *mock*.h/cpp      mock headers in production packages (e.g. configuration/)
-# ---------------------------------------------------------------------------
-LCOV_DAT_FILTERED="${TMPDIR:-/tmp}/coverage_report_filtered_$$.dat"
-"${LCOV}" --remove "${LCOV_DAT}" \
-  '*mock*.h' \
-  '*mock*.cpp' \
-  --output-file "${LCOV_DAT_FILTERED}" \
-  --rc lcov_branch_coverage=1 \
-  --ignore-errors unused
-
-# NOTE: "--ignore-errors category,inconsistent"
-# LLVM coverage writes per-process .profraw files that are merged during
-# bazel's post-processing step.  The merge can occasionally leave
-# inconsistent hit counts that genhtml rejects.  This flag tells genhtml to
-# silently skip those entries instead of aborting, coverage numbers are
-# slightly under-counted for affected translation units but the report still
-# generates.
-"${GENHTML}" "${LCOV_DAT_FILTERED}" \
-  --output-directory "${OUTPUT_DIR}" \
-  --show-details \
-  --legend \
-  --function-coverage \
-  --branch-coverage \
-  --rc no_exception_branch=1 \
-  --ignore-errors category,inconsistent
 
 echo "Coverage report written to: ${OUTPUT_DIR}"
+
+# ---------------------------------------------------------------------------
+# Run coverage justification processing.
+# ---------------------------------------------------------------------------
+JUSTIFICATION_YAML="${BUILD_WORKSPACE_DIRECTORY}/quality/coverage/coverage_justifications.yaml"
+
+if [[ -f "${JUSTIFICATION_YAML}" ]]; then
+  echo ""
+  echo "Running coverage justification processing..."
+
+  JUSTIFICATION_DIR="${TMPDIR_EXTRACT}/justification_report"
+  mkdir -p "${JUSTIFICATION_DIR}"
+
+  # Run justify.py via Bazel to produce the resolved manifest.
+  if bazel run //quality/coverage/llvm_cov:justify -- \
+      --yaml "${JUSTIFICATION_YAML}" \
+      --source-root "${BUILD_WORKSPACE_DIRECTORY}" \
+      --output "${JUSTIFICATION_DIR}/manifest.json"; then
+
+    # Run effective_coverage.py via Bazel to post-process HTML and calculate effective coverage.
+    bazel run //quality/coverage/llvm_cov:effective_coverage -- \
+        --html-dir "${OUTPUT_DIR}" \
+        --manifest "${JUSTIFICATION_DIR}/manifest.json" \
+        --output "${JUSTIFICATION_DIR}/report.json"
+  fi
+
+  # Display effective coverage summary.
+  if [[ -f "${JUSTIFICATION_DIR}/summary.txt" ]]; then
+    echo ""
+    cat "${JUSTIFICATION_DIR}/summary.txt"
+
+    # Extract effective coverage percentage for threshold check.
+    EFFECTIVE_PCT=$(grep -oP 'Effective line coverage:\s+\K[0-9.]+' \
+      "${JUSTIFICATION_DIR}/summary.txt" 2>/dev/null || echo "0")
+
+    # Threshold check (default: 100%)
+    THRESHOLD="${COVERAGE_THRESHOLD:-100}"
+    if awk "BEGIN {exit (${EFFECTIVE_PCT} >= ${THRESHOLD}) ? 0 : 1}"; then
+      :
+    else
+      echo "WARNING: Effective coverage ${EFFECTIVE_PCT}% is below threshold ${THRESHOLD}%" >&2
+    fi
+  fi
+else
+  echo "INFO: No coverage_justifications.yaml found, skipping justification processing."
+fi
 
 # ---------------------------------------------------------------------------
 # Optional: create a zip archive with the HTML report, raw LCOV data and
@@ -153,10 +149,9 @@ if [[ -n "${ARCHIVE_NAME}" ]]; then
   # Copy the HTML coverage report
   cp -r "${OUTPUT_DIR}" artifacts/
 
-  # Include the raw LCOV .dat so the quality dashboard can read
-  # line/function/branch percentages without re-running genhtml.
-  if [[ -f "${LCOV_DAT}" ]]; then
-    cp "${LCOV_DAT}" artifacts/coverage_report.dat
+  # Include the LCOV .dat file from the zip (for backward compat with dashboards).
+  if [[ -f "${TMPDIR_EXTRACT}/lcov_report/lcov.dat" ]]; then
+    cp "${TMPDIR_EXTRACT}/lcov_report/lcov.dat" artifacts/coverage_report.dat
   fi
 
   zip -r "${ARCHIVE_NAME}.zip" artifacts/
