@@ -77,6 +77,35 @@
 <p class="muted" style="margin-bottom:1.5rem">No clang-tidy data available.</p>
 {% endif %}
 
+{# ── CodeQL (MISRA C++) summary cards ── #}
+<h2>CodeQL (MISRA C++)</h2>
+{% if codeql %}
+<div class="cards">
+  <div class="card">
+    <div class="num" style="color:{% if codeql.errors == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ codeql.errors }}</div>
+    {% if prev and prev.codeql_errors is not none %}<div class="delta">{{ delta(codeql.errors, prev.codeql_errors, false) }}</div>{% endif %}
+    <div class="label">Errors</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:{% if codeql.warnings == 0 %}#27ae60{% else %}#e67e22{% endif %}">{{ codeql.warnings }}</div>
+    {% if prev and prev.codeql_warnings is not none %}<div class="delta">{{ delta(codeql.warnings, prev.codeql_warnings, false) }}</div>{% endif %}
+    <div class="label">Warnings</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:var(--muted)">{{ codeql.recommendations }}</div>
+    {% if prev and prev.codeql_recommendations is not none %}<div class="delta">{{ delta(codeql.recommendations, prev.codeql_recommendations, false) }}</div>{% endif %}
+    <div class="label">Recommendations</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:var(--muted)">{{ codeql.total }}</div>
+    {% if prev and prev.codeql_total is not none %}<div class="delta">{{ delta(codeql.total, prev.codeql_total, false) }}</div>{% endif %}
+    <div class="label">Total Findings</div>
+  </div>
+</div>
+{% else %}
+<p class="muted" style="margin-bottom:1.5rem">No CodeQL data available.</p>
+{% endif %}
+
 {# ── Per-file coverage table ── #}
 <h2>Per-File Coverage</h2>
 {% if cov_files %}
@@ -149,7 +178,7 @@
 <h2>Run History</h2>
 <table>
   <thead>
-    <tr><th>Date</th><th>Line Cov</th><th>Function Cov</th><th>Branch Cov</th><th>CT Errors</th><th>CT Warnings</th></tr>
+    <tr><th>Date</th><th>Line Cov</th><th>Function Cov</th><th>Branch Cov</th><th>CT Errors</th><th>CT Warnings</th><th>CQ Errors</th><th>CQ Warnings</th><th>CQ Total</th></tr>
   </thead>
   <tbody>
     {% for snap in history|reverse %}
@@ -167,6 +196,14 @@
       </td>
       {% endfor %}
       {% for key, higher_better in [('ct_errors', false), ('ct_warnings', false)] %}
+      <td>
+        {% if snap[key] is not none %}
+          <span style="color:{% if snap[key] == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ snap[key] }}</span>
+          {% if ps and ps[key] is not none %} {{ delta(snap[key], ps[key], higher_better) }}{% endif %}
+        {% else %}N/A{% endif %}
+      </td>
+      {% endfor %}
+      {% for key, higher_better in [('codeql_errors', false), ('codeql_warnings', false), ('codeql_total', false)] %}
       <td>
         {% if snap[key] is not none %}
           <span style="color:{% if snap[key] == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ snap[key] }}</span>
