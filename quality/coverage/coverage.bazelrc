@@ -1,0 +1,50 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# NOTE: --experimental_use_llvm_covmap (required for llvm-cov) causes Bazel to instrument
+# ALL targets regardless of --instrumentation_filter. The actual source filtering happens
+# in the merger/reporter via --ignore-filename-regex. The instrumentation_filter is kept
+# for documentation purposes and in case this Bazel limitation is fixed in the future.
+coverage --nocache_test_results
+coverage --cxxopt=-O0
+coverage --instrumentation_filter="^//score/message_passing[/:],^//score/mw/com/(impl|gateway|dependability|design|example|mocking|doc)"
+coverage --experimental_generate_llvm_lcov
+coverage --experimental_use_llvm_covmap
+coverage --combined_report=lcov
+coverage --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+
+# Use llvm-cov directly for HTML report generation instead of genhtml/lcov.
+# The custom merger (per-test) receives profraw files and produces a zip with profdata + HTML.
+# The custom reporter (final) merges all profdata and generates the combined HTML report.
+coverage --coverage_output_generator=//quality/coverage/llvm_cov:merger
+coverage --coverage_report_generator=//quality/coverage/llvm_cov:reporter
+coverage --experimental_fetch_all_coverage_outputs
+
+# Override GENERATE_LLVM_LCOV to keep raw profraw files instead of converting to LCOV.
+# The custom merger handles profraw→profdata→HTML directly.
+coverage --test_env=GENERATE_LLVM_LCOV=0
+# Suppress the default gcov path since we use llvm-cov directly.
+coverage --test_env=COVERAGE_GCOV_PATH=/usr/bin/true
+
+# These compile time options are required to cover abnormal termination cases. In GCC one can use `__gcc_dump()`, but this does not work with LLVM
+# LLVM provided these compile-time options in combination with a specific profile setting which is enabled in bazel via `LLVM_PROFILE_CONTINUOUS_MODE`
+coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
+coverage --cxxopt -mllvm
+coverage --cxxopt -runtime-counter-relocation
+
+# By default Bazel creates for each library a *.so for its tests. If there is a header that is used by multiple *.so files
+# and these *.so files have different instrumentation (production code has, test has not) a conflict arises which one to use when calculating coverage.
+# Then the first object is used, and it is pure luck if it contains the correct data or not. Even worse, small changes can change the order and then lead
+# to big coverage gaps. All these problems do not arise if no dynamic libs are used. Thus, we rather take bigger build times and binaries in advance for correct data.
+coverage --dynamic_mode=off

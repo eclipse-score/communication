@@ -105,7 +105,7 @@ common --check_direct_dependencies=error # Issue an error if a direct dependency
 build --test_env="GTEST_COLOR=1"
 
 # Configuration options required for quality assurance
-import %workspace%/quality/coverage.bazelrc
+import %workspace%/quality/coverage/coverage.bazelrc
 import %workspace%/quality/sanitizer/sanitizer.bazelrc
 import %workspace%/quality/static_analysis/static_analysis.bazelrc
 
@@ -120,3 +120,6 @@ build --tool_java_runtime_version=remotejdk_21
 
 # Import AI checker custom configuration
 try-import %workspace%/.bazelrc.ai_checker
+
+# Enable user-defined configs
+try-import %workspace%/user.bazelrc
