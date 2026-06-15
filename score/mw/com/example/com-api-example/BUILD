@@ -13,6 +13,10 @@
 
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 
+exports_files([
+    "etc/mw_com_config.json",
+])
+
 rust_binary(
     name = "com-api-example",
     srcs = ["basic-consumer-producer.rs"],
