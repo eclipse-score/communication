@@ -109,7 +109,7 @@ class Runtime final : public IRuntime
     IBindingRuntime* GetBindingRuntime(const BindingType binding) const noexcept override final;
 
     // coverity[autosar_cpp14_a10_3_1_violation]
-    IServiceDiscovery& GetServiceDiscovery() noexcept override final;
+    IServiceDiscovery& GetServiceDiscovery() & noexcept override final;
 
     /// \brief see IRuntime::GetTracingFilterConfig
     // coverity[autosar_cpp14_a10_3_1_violation]

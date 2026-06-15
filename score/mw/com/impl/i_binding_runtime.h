@@ -35,7 +35,7 @@ class IBindingRuntime
     virtual BindingType GetBindingType() const noexcept = 0;
 
     /// \brief returns client for binding-specific service discovery
-    virtual IServiceDiscoveryClient& GetServiceDiscoveryClient() noexcept = 0;
+    virtual IServiceDiscoveryClient& GetServiceDiscoveryClient() & noexcept = 0;
 
     /// \brief Returns (optional) TracingRuntime of this binding.
     /// \return pointer to binding specific TracingRuntime or nullptr in case there is no TracingRuntime as

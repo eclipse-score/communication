@@ -74,11 +74,11 @@ class UnixDomainEngine final : public ISharedResourceEngine
     {
         return memory_resource_;
     }
-    OsResources& GetOsResources() noexcept
+    OsResources& GetOsResources() & noexcept
     {
         return os_resources_;
     }
-    const LoggingCallback& GetLogger() noexcept override
+    const LoggingCallback& GetLogger() & noexcept override
     {
         return logger_;
     }

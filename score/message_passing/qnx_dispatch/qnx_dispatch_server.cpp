@@ -62,7 +62,7 @@ void QnxDispatchServer::ServerConnection::AcceptConnection(
 }
 
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
-const ClientIdentity& QnxDispatchServer::ServerConnection::GetClientIdentity() const noexcept
+const ClientIdentity& QnxDispatchServer::ServerConnection::GetClientIdentity() const& noexcept
 {
     return client_identity_;
 }

@@ -64,7 +64,7 @@ void UnixDomainServer::ServerConnection::AcceptConnection(UserData&& data,
     self_ = std::move(self);
 }
 
-const ClientIdentity& UnixDomainServer::ServerConnection::GetClientIdentity() const noexcept
+const ClientIdentity& UnixDomainServer::ServerConnection::GetClientIdentity() const& noexcept
 {
     return client_identity_;
 }

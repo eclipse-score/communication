@@ -97,7 +97,7 @@ ProxyBase& ProxyBase::operator=(ProxyBase&& other) noexcept
     return *this;
 }
 
-const HandleType& ProxyBase::GetHandle() const noexcept
+const HandleType& ProxyBase::GetHandle() const& noexcept
 {
     return handle_;
 }
@@ -206,7 +206,7 @@ ProxyBinding* ProxyBaseView::GetBinding() noexcept
     return proxy_base_.proxy_binding_.get();
 }
 
-const HandleType& ProxyBaseView::GetAssociatedHandleType() const noexcept
+const HandleType& ProxyBaseView::GetAssociatedHandleType() const& noexcept
 {
     return proxy_base_.handle_;
 }

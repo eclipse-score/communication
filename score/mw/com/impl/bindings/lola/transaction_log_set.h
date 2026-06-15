@@ -127,7 +127,7 @@ class TransactionLogSet
         // instance holder. API callers get the reference and use it in place without leaving the scope, so the
         // reference remains valid.
         // coverity[autosar_cpp14_a9_3_1_violation]
-        TransactionLog& GetTransactionLog()
+        TransactionLog& GetTransactionLog() &
         {
             // coverity[autosar_cpp14_a9_3_1_violation] see above
             return transaction_log_;

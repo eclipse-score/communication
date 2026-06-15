@@ -40,6 +40,8 @@ TEST(TypesAccessibilityTest, TypesExistInCorrectNamespaceWithCorrectInclude)
                   "SampleAllocateePtr does not exist");
     static_assert(std::is_class_v<score::mw::com::InstanceSpecifier>, "InstanceSpecifier does not exist");
     static_assert(std::is_class_v<score::mw::com::InstanceIdentifier>, "InstanceIdentifier does not exist");
+    static_assert(std::is_nothrow_move_assignable_v<score::mw::com::InstanceIdentifier>,
+                  "InstanceIdentifier must be nothrow move assignable");
     static_assert(std::is_class_v<score::mw::com::InstanceIdentifierContainer>,
                   "InstanceIdentifierContainer does not exist");
     static_assert(std::is_class_v<score::mw::com::FindServiceHandle>, "FindServiceHandle does not exist");

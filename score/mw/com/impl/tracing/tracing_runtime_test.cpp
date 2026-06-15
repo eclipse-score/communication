@@ -39,8 +39,7 @@ namespace score::mw::com::impl::tracing
 
 namespace
 {
-static_assert(std::is_nothrow_move_assignable_v<TracingRuntime>,
-              "TracingRuntime must be nothrow move assignable");
+static_assert(std::is_nothrow_move_assignable_v<TracingRuntime>, "TracingRuntime must be nothrow move assignable");
 
 constexpr std::string_view kDummyServiceTypeName{"my_service_type"};
 constexpr std::string_view kDummyElementName{"my_event"};

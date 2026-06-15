@@ -383,7 +383,8 @@ void ClientConnection::TryConnect() noexcept
         const auto retry_increase_ms =
             (static_cast<std::int64_t>(connect_retry_ms_) + static_cast<std::int64_t>(kConnectRetryT) - 1) /
             static_cast<std::int64_t>(kConnectRetryT);
-        if ((retry_increase_ms <= kConnectRetryMsMax) && (connect_retry_ms_ <= (kConnectRetryMsMax - retry_increase_ms)))
+        if ((retry_increase_ms <= kConnectRetryMsMax) &&
+            (connect_retry_ms_ <= (kConnectRetryMsMax - retry_increase_ms)))
         {
             // At this point checks guarantee no data loss
             // coverity[autosar_cpp14_a4_7_1_violation]

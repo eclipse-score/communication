@@ -122,7 +122,7 @@ class SkeletonEventBaseView
         return skeleton_event_base_.binding_.get();
     }
 
-    const tracing::SkeletonEventTracingData& GetSkeletonEventTracing()
+    const tracing::SkeletonEventTracingData& GetSkeletonEventTracing() &
     {
         return skeleton_event_base_.tracing_data_;
     }

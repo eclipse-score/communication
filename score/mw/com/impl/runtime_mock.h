@@ -29,7 +29,7 @@ class RuntimeMock : public IRuntime
   public:
     MOCK_METHOD(IBindingRuntime*, GetBindingRuntime, (BindingType), (const, noexcept, override));
     MOCK_METHOD(std::vector<InstanceIdentifier>, resolve, (const InstanceSpecifier&), (const, override));
-    MOCK_METHOD(IServiceDiscovery&, GetServiceDiscovery, (), (noexcept, override));
+    MOCK_METHOD(IServiceDiscovery&, GetServiceDiscovery, (), (ref(&), noexcept, override));
     MOCK_METHOD(const tracing::ITracingFilterConfig*, GetTracingFilterConfig, (), (const, noexcept, override));
     MOCK_METHOD(tracing::ITracingRuntime*, GetTracingRuntime, (), (const, noexcept, override));
 };

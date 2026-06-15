@@ -89,8 +89,8 @@ TEST(SkeletonEventTracingTest, TracePointsAreDisabledIfConfigNotReturnedByRuntim
     // Given a skeleton created based on FakeBindingInfo
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdentifier};
 
-    const SkeletonEventTracingData actual_enabled_trace_points =
-        SkeletonEventBaseView{unit.my_dummy_event_}.GetSkeletonEventTracing();
+    SkeletonEventBaseView skeleton_event_base_view{unit.my_dummy_event_};
+    const SkeletonEventTracingData actual_enabled_trace_points = skeleton_event_base_view.GetSkeletonEventTracing();
     EXPECT_EQ(actual_enabled_trace_points.service_element_instance_identifier_view,
               tracing::ServiceElementInstanceIdentifierView{});
     EXPECT_EQ(actual_enabled_trace_points.enable_send, false);
@@ -149,8 +149,9 @@ TEST_P(SkeletonEventTracingParamaterisedFixture, TracePointsAreCorrectlySet)
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdentifier};
 
     // Then all the trace points of the SkeletonEvent should be set according to the calls to IsTracePointEnabled
+    SkeletonEventBaseView skeleton_event_base_view{unit.my_dummy_event_};
     const tracing::SkeletonEventTracingData actual_enabled_trace_points =
-        SkeletonEventBaseView{unit.my_dummy_event_}.GetSkeletonEventTracing();
+        skeleton_event_base_view.GetSkeletonEventTracing();
     EXPECT_EQ(actual_enabled_trace_points.service_element_instance_identifier_view,
               expected_service_element_instance_identifier_view);
     EXPECT_EQ(actual_enabled_trace_points.enable_send, expected_enabled_trace_points.enable_send);
@@ -412,8 +413,8 @@ TEST_F(SkeletonEventTracingSendFixture, SendTracePointShouldBeDisabledAfterTrace
     (*send_trace_callback_result)(ptr);
 
     // Then the specific trace point instance should now be disabled
-    const auto actual_enabled_trace_points =
-        SkeletonEventBaseView{skeleton_->my_dummy_event_}.GetSkeletonEventTracing();
+    SkeletonEventBaseView skeleton_event_base_view{skeleton_->my_dummy_event_};
+    const auto actual_enabled_trace_points = skeleton_event_base_view.GetSkeletonEventTracing();
 
     auto expected_enabled_trace_points_after_error = expected_enabled_trace_points;
     expected_enabled_trace_points_after_error.enable_send = false;
@@ -502,8 +503,8 @@ TEST_F(SkeletonEventTracingSendFixture, SendTracePointShouldBeDisabledAfterTrace
     (*send_trace_callback_result)(ptr);
 
     // Then all trace point instances should now be disabled
-    const auto& actual_enabled_trace_points =
-        SkeletonEventBaseView{skeleton_->my_dummy_event_}.GetSkeletonEventTracing();
+    SkeletonEventBaseView skeleton_event_base_view{skeleton_->my_dummy_event_};
+    const auto& actual_enabled_trace_points = skeleton_event_base_view.GetSkeletonEventTracing();
 
     const SkeletonEventTracingData expected_enabled_trace_points_after_error{};
     EXPECT_TRUE(AreTracePointsEqual(actual_enabled_trace_points, expected_enabled_trace_points_after_error));
@@ -864,8 +865,8 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture,
     (*send_trace_callback_result)(ptr);
 
     // Then the specific trace point instance should now be disabled
-    const auto actual_enabled_trace_points =
-        SkeletonEventBaseView{skeleton_->my_dummy_event_}.GetSkeletonEventTracing();
+    SkeletonEventBaseView skeleton_event_base_view{skeleton_->my_dummy_event_};
+    const auto actual_enabled_trace_points = skeleton_event_base_view.GetSkeletonEventTracing();
 
     auto expected_enabled_trace_points_after_error = expected_enabled_trace_points;
     expected_enabled_trace_points_after_error.enable_send_with_allocate = false;
@@ -965,8 +966,8 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture,
     (*send_trace_callback_result)(ptr);
 
     // Then all trace point instances should now be disabled
-    const auto& actual_enabled_trace_points =
-        SkeletonEventBaseView{skeleton_->my_dummy_event_}.GetSkeletonEventTracing();
+    SkeletonEventBaseView skeleton_event_base_view{skeleton_->my_dummy_event_};
+    const auto& actual_enabled_trace_points = skeleton_event_base_view.GetSkeletonEventTracing();
 
     const SkeletonEventTracingData expected_enabled_trace_points_after_error{};
     EXPECT_TRUE(AreTracePointsEqual(actual_enabled_trace_points, expected_enabled_trace_points_after_error));

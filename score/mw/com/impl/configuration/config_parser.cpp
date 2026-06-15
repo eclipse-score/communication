@@ -559,7 +559,7 @@ auto ParseServiceElementTracingEnabled(const score::json::Object& json_map,
 
     const auto& [ElementKey, ElementNameKey] =
         ((service_element_type == ServiceElementType::EVENT) ? std::make_pair(kEventsKey, kEventNameKey)
-                                                           : std::make_pair(kFieldsKey, kFieldNameKey));
+                                                             : std::make_pair(kFieldsKey, kFieldNameKey));
 
     const auto& service_elements = json_map.find(ElementKey);
     if (service_elements == json_map.cend())

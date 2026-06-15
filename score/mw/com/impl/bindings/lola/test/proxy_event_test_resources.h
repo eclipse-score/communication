@@ -130,13 +130,13 @@ class LolaRuntimeMock : public IRuntime
         }
     }
 
-    MOCK_METHOD(IMessagePassingService&, GetLolaMessaging, (), (noexcept, override));
+    MOCK_METHOD(IMessagePassingService&, GetLolaMessaging, (), (ref(&), noexcept, override));
     MOCK_METHOD(bool, HasAsilBSupport, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
-    MOCK_METHOD(IServiceDiscoveryClient&, GetServiceDiscoveryClient, (), (noexcept, override));
+    MOCK_METHOD(IServiceDiscoveryClient&, GetServiceDiscoveryClient, (), (ref(&), noexcept, override));
     MOCK_METHOD(ShmSizeCalculationMode, GetShmSizeCalculationMode, (), (const, noexcept, override));
     MOCK_METHOD(impl::tracing::IBindingTracingRuntime*, GetTracingRuntime, (), (noexcept, override));
-    MOCK_METHOD(RollbackSynchronization&, GetRollbackSynchronization, (), (noexcept, override));
+    MOCK_METHOD(RollbackSynchronization&, GetRollbackSynchronization, (), (ref(&), noexcept, override));
     MOCK_METHOD(pid_t, GetPid, (), (const, noexcept, override));
     MOCK_METHOD(std::uint32_t, GetApplicationId, (), (const, noexcept, override));
 

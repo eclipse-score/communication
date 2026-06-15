@@ -12,7 +12,14 @@
  ********************************************************************************/
 #include <gtest/gtest.h>
 
+#include "score/message_passing/i_server_connection.h"
+#include "score/message_passing/i_shared_resource_engine.h"
+#include "score/message_passing/unix_domain/unix_domain_engine.h"
+#include "score/message_passing/unix_domain/unix_domain_server.h"
 #include "score/message_passing/unix_domain/unix_domain_server_factory.h"
+#include "score/message_passing/unix_domain/unix_domain_socket_address.h"
+
+#include <type_traits>
 
 namespace score
 {
@@ -22,6 +29,26 @@ namespace
 {
 
 using namespace ::testing;
+
+using GetOsResourcesPointer = decltype(&UnixDomainEngine::GetOsResources);
+using GetLoggerInterfacePointer = decltype(&ISharedResourceEngine::GetLogger);
+using GetLoggerPointer = decltype(&UnixDomainEngine::GetLogger);
+using GetClientIdentityInterfacePointer = decltype(&IServerConnection::GetClientIdentity);
+using GetClientIdentityPointer = decltype(&detail::UnixDomainServer::ServerConnection::GetClientIdentity);
+using SocketAddressDataPointer = decltype(&detail::UnixDomainSocketAddress::data);
+
+static_assert(std::is_invocable_v<GetOsResourcesPointer, UnixDomainEngine&>);
+static_assert(!std::is_invocable_v<GetOsResourcesPointer, UnixDomainEngine&&>);
+static_assert(std::is_invocable_v<GetLoggerInterfacePointer, ISharedResourceEngine&>);
+static_assert(!std::is_invocable_v<GetLoggerInterfacePointer, ISharedResourceEngine&&>);
+static_assert(std::is_invocable_v<GetLoggerPointer, UnixDomainEngine&>);
+static_assert(!std::is_invocable_v<GetLoggerPointer, UnixDomainEngine&&>);
+static_assert(std::is_invocable_v<GetClientIdentityInterfacePointer, const IServerConnection&>);
+static_assert(!std::is_invocable_v<GetClientIdentityInterfacePointer, const IServerConnection&&>);
+static_assert(std::is_invocable_v<GetClientIdentityPointer, const detail::UnixDomainServer::ServerConnection&>);
+static_assert(!std::is_invocable_v<GetClientIdentityPointer, const detail::UnixDomainServer::ServerConnection&&>);
+static_assert(std::is_invocable_v<SocketAddressDataPointer, const detail::UnixDomainSocketAddress&>);
+static_assert(!std::is_invocable_v<SocketAddressDataPointer, const detail::UnixDomainSocketAddress&&>);
 
 TEST(UnixDomainServerTest, NonRunningServers)
 {

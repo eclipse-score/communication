@@ -36,7 +36,7 @@ class UnixDomainSocketAddress
         return !addr_.sun_path[0];
     }
 
-    const sockaddr* data() const noexcept
+    const sockaddr* data() const& noexcept
     {
         return reinterpret_cast<const sockaddr*>(&addr_);
     }

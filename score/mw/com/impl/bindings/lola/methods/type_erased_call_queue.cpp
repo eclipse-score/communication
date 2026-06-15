@@ -120,7 +120,7 @@ std::optional<score::cpp::span<std::byte>> TypeErasedCallQueue::GetReturnValueQu
     return {{return_queue_start_address_.data.get(), return_queue_start_address_.size}};
 }
 
-auto TypeErasedCallQueue::GetTypeErasedElementInfo() const -> const TypeErasedElementInfo&
+auto TypeErasedCallQueue::GetTypeErasedElementInfo() const& -> const TypeErasedElementInfo&
 {
     return type_erased_element_info_;
 }

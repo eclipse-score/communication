@@ -87,17 +87,17 @@ class SkeletonEventCommon
         tracing_data_ = tracing_data;
     }
 
-    const ElementFqId& GetElementFQId() const
+    const ElementFqId& GetElementFQId() const&
     {
         return element_fq_id_;
     }
 
-    Skeleton& GetParent()
+    Skeleton& GetParent() &
     {
         return parent_;
     }
 
-    [[nodiscard]] const SkeletonEventProperties& GetEventProperties() const
+    [[nodiscard]] const SkeletonEventProperties& GetEventProperties() const&
     {
         return event_properties_;
     }

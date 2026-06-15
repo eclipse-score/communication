@@ -29,7 +29,7 @@ class RuntimeMock : public IRuntime
     // in all declarations and re-declarations.
     // Mock methods conform interface methods (testing purposes)
     // coverity[autosar_cpp14_m3_9_1_violation]
-    MOCK_METHOD(IMessagePassingService&, GetLolaMessaging, (), (noexcept, override));
+    MOCK_METHOD(IMessagePassingService&, GetLolaMessaging, (), (ref(&), noexcept, override));
     // coverity[autosar_cpp14_m3_9_1_violation]
     MOCK_METHOD(bool, HasAsilBSupport, (), (const, noexcept, override));
     // coverity[autosar_cpp14_m3_9_1_violation]
@@ -37,11 +37,11 @@ class RuntimeMock : public IRuntime
     // coverity[autosar_cpp14_m3_9_1_violation]
     MOCK_METHOD(ShmSizeCalculationMode, GetShmSizeCalculationMode, (), (const, noexcept, override));
     // coverity[autosar_cpp14_m3_9_1_violation]
-    MOCK_METHOD(IServiceDiscoveryClient&, GetServiceDiscoveryClient, (), (noexcept, override));
+    MOCK_METHOD(IServiceDiscoveryClient&, GetServiceDiscoveryClient, (), (ref(&), noexcept, override));
     // coverity[autosar_cpp14_m3_9_1_violation]
     MOCK_METHOD(impl::tracing::IBindingTracingRuntime*, GetTracingRuntime, (), (noexcept, override));
     // coverity[autosar_cpp14_m3_9_1_violation]
-    MOCK_METHOD(RollbackSynchronization&, GetRollbackSynchronization, (), (noexcept, override));
+    MOCK_METHOD(RollbackSynchronization&, GetRollbackSynchronization, (), (ref(&), noexcept, override));
     // coverity[autosar_cpp14_m3_9_1_violation]
     MOCK_METHOD(pid_t, GetPid, (), (const, noexcept, override));
     // coverity[autosar_cpp14_m3_9_1_violation]

@@ -60,7 +60,7 @@ class RuntimeConfiguration
      * \brief Returns the stored configuration path.
      * \return The stored configuration path.
      */
-    const filesystem::Path& GetConfigurationPath() const;
+    const filesystem::Path& GetConfigurationPath() const&;
 
   private:
     static std::optional<filesystem::Path> ParseConfigurationPath(

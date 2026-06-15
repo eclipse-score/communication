@@ -35,7 +35,7 @@ class ISharedResourceEngine
 
     virtual score::cpp::pmr::memory_resource* GetMemoryResource() noexcept = 0;
 
-    virtual const LoggingCallback& GetLogger() noexcept = 0;
+    virtual const LoggingCallback& GetLogger() & noexcept = 0;
 
     virtual bool IsOnCallbackThread() const noexcept = 0;
 

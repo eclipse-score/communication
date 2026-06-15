@@ -67,19 +67,19 @@ class Configuration final
         InstanceSpecifier instance_specifier,
         ServiceInstanceDeployment service_instance_deployment) noexcept;
 
-    const ServiceTypeDeployments& GetServiceTypes() const noexcept
+    const ServiceTypeDeployments& GetServiceTypes() const& noexcept
     {
         return service_types_;
     }
-    const ServiceInstanceDeployments& GetServiceInstances() const noexcept
+    const ServiceInstanceDeployments& GetServiceInstances() const& noexcept
     {
         return service_instances_;
     }
-    const GlobalConfiguration& GetGlobalConfiguration() const noexcept
+    const GlobalConfiguration& GetGlobalConfiguration() const& noexcept
     {
         return global_configuration_;
     }
-    const TracingConfiguration& GetTracingConfiguration() const noexcept
+    const TracingConfiguration& GetTracingConfiguration() const& noexcept
     {
         return tracing_configuration_;
     }
