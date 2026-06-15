@@ -22,6 +22,7 @@
 
 #include <cstdlib>
 #include <memory>
+#include <tuple>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -169,7 +170,11 @@ Result<void> ProxyBase::SetupMethods()
     for (auto& method_key_value_pair : methods_)
     {
         auto& method = method_key_value_pair.second.get();
-        method.InitializeInArgsAndReturnValues();
+        const auto method_init_result = method.InitializeInArgsAndReturnValues();
+        if (!method_init_result.has_value())
+        {
+            return MakeUnexpected<void>(method_init_result.error());
+        }
     }
     return {};
 }

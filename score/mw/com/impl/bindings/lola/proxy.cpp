@@ -803,8 +803,8 @@ Proxy::GetMethodIdAndQueueSizeForEnabledMethods() const
                 "Method instance deployment must contain queue_size on proxy side!");
             const auto queue_size = method_deployment.queue_size_.value();
 
-            enabled_method_ids_and_queue_sizes.emplace_back(UniqueMethodIdentifier{method_id, MethodType::kMethod},
-                                                            queue_size);
+            std::ignore = enabled_method_ids_and_queue_sizes.emplace_back(
+                UniqueMethodIdentifier{method_id, MethodType::kMethod}, queue_size);
         }
     }
 
@@ -824,10 +824,11 @@ std::size_t Proxy::CalculateRequiredShmSize(
     // Size of Method data elements (since MethodData contains a NonRelocatableVector, it will allocate memory for
     // the elements but not actually initialize them.
     using MethodDataElement = decltype(MethodData::method_call_queues_)::value_type;
-    std::for_each(type_erased_element_infos.begin(), type_erased_element_infos.end(), [&data_type_infos](auto) {
-        DataTypeSizeInfo method_data_element_info{sizeof(MethodDataElement), alignof(MethodDataElement)};
-        data_type_infos.push_back(method_data_element_info);
-    });
+    std::ignore =
+        std::for_each(type_erased_element_infos.begin(), type_erased_element_infos.end(), [&data_type_infos](auto) {
+            DataTypeSizeInfo method_data_element_info{sizeof(MethodDataElement), alignof(MethodDataElement)};
+            data_type_infos.push_back(method_data_element_info);
+        });
 
     // Size of memory allocated by elements of the NonRelocatableVector in MethodData when they're constructed.
     for (auto& type_erased_element_info : type_erased_element_infos)

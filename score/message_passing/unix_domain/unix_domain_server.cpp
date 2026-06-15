@@ -17,6 +17,7 @@
 #include "score/message_passing/unix_domain/unix_domain_socket_address.h"
 
 #include <score/utility.hpp>
+#include <tuple>
 
 namespace score
 {
@@ -148,7 +149,7 @@ UnixDomainServer::ServerConnection::~ServerConnection() noexcept
             server_.disconnect_callback_(*this);
         }
     }
-    server_.engine_->GetOsResources().unistd->close(fd_);
+    std::ignore = server_.engine_->GetOsResources().unistd->close(fd_);
 }
 
 UnixDomainServer::UnixDomainServer(std::shared_ptr<UnixDomainEngine> engine,
@@ -192,7 +193,7 @@ score::cpp::expected_blank<score::os::Error> UnixDomainServer::StartListening(
     auto bind_expected = socket->bind(server_fd_, addr.data(), addr.size());
     if (!bind_expected.has_value())
     {
-        engine_->GetOsResources().unistd->close(server_fd_);
+        std::ignore = engine_->GetOsResources().unistd->close(server_fd_);
         server_fd_ = -1;
         return score::cpp::make_unexpected(bind_expected.error());
     }
@@ -200,7 +201,7 @@ score::cpp::expected_blank<score::os::Error> UnixDomainServer::StartListening(
     auto listen_expected = socket->listen(server_fd_, kSocketListenBacklog);
     if (!listen_expected.has_value())
     {
-        engine_->GetOsResources().unistd->close(server_fd_);
+        std::ignore = engine_->GetOsResources().unistd->close(server_fd_);
         server_fd_ = -1;
         return score::cpp::make_unexpected(listen_expected.error());
     }
@@ -230,7 +231,7 @@ void UnixDomainServer::StopListening() noexcept
     if (server_fd_ >= 0)
     {
         engine_->CleanUpOwner(this);
-        engine_->GetOsResources().unistd->close(server_fd_);
+        std::ignore = engine_->GetOsResources().unistd->close(server_fd_);
         server_fd_ = -1;
     }
 }
@@ -249,7 +250,7 @@ void UnixDomainServer::ProcessConnect() noexcept
     auto sockopt_expected = socket->getsockopt(data_fd, SOL_SOCKET, SO_PEERCRED, &cr, &cr_len);
     if ((!sockopt_expected.has_value()) || (cr_len != sizeof(cr)))
     {
-        engine_->GetOsResources().unistd->close(data_fd);
+        std::ignore = engine_->GetOsResources().unistd->close(data_fd);
         return;
     }
 

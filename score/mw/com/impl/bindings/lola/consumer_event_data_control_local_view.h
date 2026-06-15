@@ -25,6 +25,7 @@
 #include <atomic>
 #include <cstddef>
 #include <optional>
+#include <tuple>
 
 namespace score::mw::com::impl::lola
 {
@@ -141,7 +142,7 @@ class ConsumerEventDataControlLocalView final
     /// This will be called in the constructor of TransactionLogRegistrationGuard.
     void SetTransactionLogLocalView(TransactionLogLocalView transaction_log_local_view) noexcept
     {
-        transaction_log_local_view_.emplace(transaction_log_local_view);
+        std::ignore = transaction_log_local_view_.emplace(transaction_log_local_view);
     }
 
     /// \brief Clears the cached TransactionLogLocalView.

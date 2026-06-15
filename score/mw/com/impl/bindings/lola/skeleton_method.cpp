@@ -32,6 +32,7 @@
 #include <cstddef>
 #include <functional>
 #include <optional>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -126,7 +127,7 @@ void SkeletonMethod::OnProxyMethodUnsubscribeFinished(
     const ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
 {
     const std::lock_guard lock{registration_guards_mutex_};
-    registration_guards_.erase(proxy_method_instance_identifier);
+    std::ignore = registration_guards_.erase(proxy_method_instance_identifier);
 }
 
 void SkeletonMethod::UnregisterMethodCallHandlers()
@@ -179,7 +180,7 @@ void SkeletonMethod::CleanUpOldHandlers(const GlobalConfiguration::ApplicationId
 
     for (const auto& key : keys_to_erase)
     {
-        registration_guards_.erase(key);
+        std::ignore = registration_guards_.erase(key);
     }
 }
 

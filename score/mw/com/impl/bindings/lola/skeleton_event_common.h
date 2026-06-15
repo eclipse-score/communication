@@ -35,6 +35,7 @@
 
 #include <atomic>
 #include <optional>
+#include <tuple>
 
 namespace score::mw::com::impl::lola
 {
@@ -319,8 +320,7 @@ Result<void> SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<Samp
     // coverity[autosar_cpp14_a4_7_1_violation]
     ++current_timestamp_;
     event_data_control_composite_->EventReady(slot, current_timestamp_);
-    NotifyConsumersIfHandlersRegistered();
-    return {};
+    return NotifyConsumersIfHandlersRegistered();
 }
 
 template <typename SampleType>
