@@ -33,6 +33,10 @@ namespace
 const std::string kInterprocessNotificationShmPath{"/fields_set_and_notifier_interprocess_notification"};
 const std::string kNotifierConsumerReadyShmPath{"/fields_notifier_consumer_ready"};
 
+// InstanceSpecifier::Create can only fail if the provided string is invalid.
+// Verified once here; all test functions reuse this constant.
+const InstanceSpecifier kInstanceSpecifier = InstanceSpecifier::Create(std::string{kInstanceSpecifierString}).value();
+
 void run_notifier_provider(const score::cpp::stop_token& stop_token)
 {
     auto consumer_ready_synchronizer_result = ProcessSynchronizer::Create(kNotifierConsumerReadyShmPath);
@@ -56,7 +60,7 @@ void run_notifier_provider(const score::cpp::stop_token& stop_token)
     auto& service = skeleton_container.GetSkeleton();
 
     {
-        const auto update_result = service.test_field.Update(kInitialValue);
+        const auto update_result = service.initial_only_field.Update(kInitialValue);
         if (!update_result.has_value())
         {
             FailTest("Provider: Unable to update initial field value: ", update_result.error());
@@ -73,7 +77,7 @@ void run_notifier_provider(const score::cpp::stop_token& stop_token)
     }
 
     {
-        const auto update_result = service.test_field.Update(kUpdatedValue);
+        const auto update_result = service.initial_only_field.Update(kUpdatedValue);
         if (!update_result.has_value())
         {
             FailTest("Provider: Unable to update field with updated value: ", update_result.error());
@@ -103,7 +107,7 @@ void run_set_and_notifier_provider(const score::cpp::stop_token& stop_token)
     }
 
     auto& service = skeleton_container.GetSkeleton();
-    const auto register_handler_result = service.test_field.RegisterSetHandler([](std::int32_t& value) noexcept {
+    const auto register_handler_result = service.set_enabled_field.RegisterSetHandler([](std::int32_t& value) noexcept {
         value = value * 2 + 1;
     });
     if (!register_handler_result.has_value())
@@ -111,7 +115,7 @@ void run_set_and_notifier_provider(const score::cpp::stop_token& stop_token)
         FailTest("Provider: Unable to register set handler: ", register_handler_result.error());
     }
 
-    const auto update_result = service.test_field.Update(kInitialValue);
+    const auto update_result = service.set_enabled_field.Update(kInitialValue);
     if (!update_result.has_value())
     {
         FailTest("Provider: Unable to update initial field value: ", update_result.error());

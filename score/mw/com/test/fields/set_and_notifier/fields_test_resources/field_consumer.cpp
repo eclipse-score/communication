@@ -40,6 +40,10 @@ constexpr auto kMaxNumSamples{1U};
 const std::string kInterprocessNotificationShmPath{"/fields_set_and_notifier_interprocess_notification"};
 const std::string kNotifierConsumerReadyShmPath{"/fields_notifier_consumer_ready"};
 
+// InstanceSpecifier::Create can only fail if the provided string is invalid.
+// Verified once here; all test functions reuse this constant.
+const InstanceSpecifier kInstanceSpecifier = InstanceSpecifier::Create(std::string{kInstanceSpecifierString}).value();
+
 template <typename FieldType>
 bool WaitForSubscription(FieldType& field, std::size_t retries, const std::chrono::milliseconds retry_backoff_time)
 {
@@ -170,13 +174,8 @@ void run_notifier_consumer(const std::size_t num_retries, const std::chrono::mil
 
     // Step 1. Find service and create proxy
     std::cout << "\nConsumer: Step 1" << std::endl;
-    auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
-    if (!instance_specifier_result.has_value())
-    {
-        FailTest("Consumer: Unable to create instance specifier");
-    }
     ProxyContainer<InitialOnlyProxy> proxy_container{};
-    proxy_container.CreateProxy(std::move(instance_specifier_result).value(), "set_and_notifier");
+    proxy_container.CreateProxy(kInstanceSpecifier, "set_and_notifier");
     auto& proxy = proxy_container.GetProxy();
 
     // Step 2. Subscribe to field and wait for subscription
@@ -223,13 +222,8 @@ void run_set_and_notifier_consumer(const std::size_t num_retries, const std::chr
 
     // Step 1. Find service and create proxy
     std::cout << "\nConsumer: Step 1" << std::endl;
-    auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
-    if (!instance_specifier_result.has_value())
-    {
-        FailTest("Consumer: Unable to create instance specifier");
-    }
     ProxyContainer<SetEnabledProxy> proxy_container{};
-    proxy_container.CreateProxy(std::move(instance_specifier_result).value(), "set_and_notifier");
+    proxy_container.CreateProxy(kInstanceSpecifier, "set_and_notifier");
     auto& proxy = proxy_container.GetProxy();
 
     // Step 2. Subscribe to field and wait for subscription
