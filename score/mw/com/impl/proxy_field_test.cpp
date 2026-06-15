@@ -63,6 +63,9 @@ class TestProxyBase : public ProxyBase
     {
         return fields_;
     }
+    // Deinitialize is protected and invoked by generated proxy destructors (see traits.h); expose it so tests can
+    // drive the real teardown path that unsubscribes every registered field.
+    using ProxyBase::Deinitialize;
 };
 
 namespace
@@ -375,18 +378,21 @@ class ProxyFieldGetSetFixture : public ::testing::Test
     mock_binding::ProxyMethod set_method_binding_mock_{};
 };
 
-TEST_F(ProxyFieldGetSetFixture, GetDelegatesToProxyMethodBinding)
+TEST_F(ProxyFieldGetSetFixture, GetDelegatesToProxyMethodBindingAndReturnsValueFromReturnBuffer)
 {
-    // Given a Get-enabled ProxyField (WithGetter) and a mock method binding
+    // Given a Get-enabled ProxyField (WithGetter) whose return buffer already holds a known field value
     auto field = MakeFieldWithGetOnly();
+    constexpr TestSampleType expected_value{42U};
+    return_type_buffer_[0] = static_cast<std::byte>(expected_value);
 
     // When calling Get()
     EXPECT_CALL(proxy_method_binding_mock_, GetReturnValueBuffer(0));
     EXPECT_CALL(proxy_method_binding_mock_, DoCall(0));
-    auto result = field.Get();
+    const auto result = field.Get();
 
-    // Then the call is delegated to the underlying method binding
-    EXPECT_TRUE(result.has_value());
+    // Then the call is delegated to the binding and the returned pointer exposes the value from the return buffer
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(*result.value(), expected_value);
 }
 
 TEST_F(ProxyFieldGetSetFixture, SetDelegatesToProxyMethodBindingAndCopiesValueIntoInArgsBuffer)
@@ -464,6 +470,22 @@ TEST_F(ProxyFieldGetSetFixture, NotifierOnlyFieldRegistersAsField)
 
     // Then the field is still registered on the parent proxy.
     EXPECT_EQ(proxy_base_.GetFields().size(), 1U);
+}
+
+TEST_F(ProxyFieldGetSetFixture, UnsubscribeOnNotifierFieldDispatchesToEventBinding)
+{
+    // Given a notifier-capable field that has been subscribed.
+    auto field = MakeFieldWithNotifierOnly();
+    EXPECT_CALL(proxy_event_mock_, GetSubscriptionState())
+        .WillOnce(Return(SubscriptionState::kNotSubscribed))
+        .WillRepeatedly(Return(SubscriptionState::kSubscribed));
+    ON_CALL(proxy_event_mock_, Subscribe(_)).WillByDefault(Return(score::Result<void>{}));
+    ASSERT_TRUE(field.Subscribe(1U).has_value());
+
+    EXPECT_CALL(proxy_event_mock_, Unsubscribe());
+    // When Unsubscribe is called
+    // Then the call is forwarded to the event dispatch.
+    field.Unsubscribe();
 }
 
 }  // namespace
