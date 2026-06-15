@@ -17,6 +17,14 @@ on:
   schedule:
     - cron: '0 2 * * *'  # Nightly at 2 AM UTC
   workflow_dispatch:  # Allow maintainers to trigger manually when needed
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: Name of the uploaded CSV artifact
+        value: codeql-csv-results
+      conclusion:
+        description: Job conclusion (success/failure)
+        value: ${{ jobs.run-codeql.result }}
 
 permissions:
   contents: read
