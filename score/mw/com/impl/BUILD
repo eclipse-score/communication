@@ -265,6 +265,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":field_tags",
         ":method_type",
         ":skeleton_event",
         ":skeleton_field_base",
@@ -289,6 +290,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":field_tags",
         ":flag_owner",
         ":proxy_base",
         ":proxy_event",
@@ -328,6 +330,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":field_tags",
         ":method_type",
         ":proxy_event",
         ":proxy_event_binding",
@@ -736,6 +739,23 @@ cc_library(
 )
 
 cc_library(
+    name = "field_tags",
+    srcs = ["field_tags.cpp"],
+    hdrs = ["field_tags.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
+cc_unit_test(
+    name = "field_tags_test",
+    srcs = ["field_tags_test.cpp"],
+    deps = [
+        ":field_tags",
+    ],
+)
+
+cc_library(
     name = "service_element_type",
     srcs = ["service_element_type.cpp"],
     hdrs = ["service_element_type.h"],
@@ -1083,6 +1103,15 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "method_type_test",
+    srcs = ["method_type_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":method_type",
+    ],
+)
+
+cc_unit_test(
     name = "sample_reference_tracker_test",
     srcs = ["sample_reference_tracker_test.cpp"],
     deps = [
@@ -1149,9 +1178,12 @@ cc_unit_test(
     deps = [
         ":impl",
         ":runtime_mock",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
     ],
 )
 

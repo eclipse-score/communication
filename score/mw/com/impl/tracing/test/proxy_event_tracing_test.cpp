@@ -69,7 +69,7 @@ class MyDummyProxyWithField : public ProxyBase
   public:
     using ProxyBase::ProxyBase;
 
-    ProxyField<TestSampleType> my_service_element_{*this, kServiceElementName};
+    ProxyField<TestSampleType, WithGetter, WithNotifier, WithSetter> my_service_element_{*this, kServiceElementName};
 };
 
 /// \brief Structs containing types for templated gtests.
@@ -119,7 +119,7 @@ class ProxyEventTracingFixture : public ::testing::Test
     {
         auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent<TestSampleType>>();
         mock_proxy_event_binding_ = proxy_event_binding_mock_ptr.get();
-        EXPECT_CALL(factory_mock_guard.factory_mock_, Create(_, kServiceElementName))
+        EXPECT_CALL(factory_mock_guard.factory_mock_, Create(_, kServiceElementName, ServiceElementType::EVENT))
             .WillOnce(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     }
 

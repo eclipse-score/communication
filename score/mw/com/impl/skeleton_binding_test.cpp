@@ -34,7 +34,7 @@ class MySkeleton final : public SkeletonBinding
     {
         return BindingType::kFake;
     };
-    bool VerifyAllMethodsRegistered() const override
+    bool VerifyAllMethodHandlersRegistered() const override
     {
         return true;
     }

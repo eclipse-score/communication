@@ -10,9 +10,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
+#include "score/mw/com/impl/bindings/lola/proxy_element_lookup.h"
 
+#include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
+#include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/log/logging.h"
 
@@ -23,24 +25,22 @@
 #include <string>
 #include <variant>
 
-namespace score::mw::com::impl
+namespace score::mw::com::impl::lola
 {
+
+Proxy* GetLolaProxyBinding(ProxyBinding* const parent_binding) noexcept
+{
+    return dynamic_cast<Proxy*>(parent_binding);
+}
 
 namespace
 {
 
-std::optional<LoLaProxyElementBuildingBlocks> LookupForLola(const HandleType& handle,
-                                                            ProxyBinding* parent_binding,
-                                                            const LolaServiceTypeDeployment& lola_type_deployment,
-                                                            const std::string_view name,
-                                                            const ServiceElementType element_type) noexcept
+std::optional<ElementFqId> GetElementFqIdForLola(const HandleType& handle,
+                                                 const LolaServiceTypeDeployment& lola_type_deployment,
+                                                 const std::string_view name,
+                                                 const ServiceElementType element_type) noexcept
 {
-    auto* const lola_parent = dynamic_cast<lola::Proxy*>(parent_binding);
-    if (lola_parent == nullptr)
-    {
-        return std::nullopt;
-    }
-
     const auto instance_id = handle.GetInstanceId();
     const auto* const lola_instance_id = std::get_if<LolaServiceInstanceId>(&(instance_id.binding_info_));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_instance_id != nullptr,
@@ -67,10 +67,7 @@ std::optional<LoLaProxyElementBuildingBlocks> LookupForLola(const HandleType& ha
             return std::nullopt;
     }
 
-    const lola::ElementFqId element_fq_id{
-        lola_type_deployment.service_id_, element_id, lola_instance_id->GetId(), element_type};
-
-    return LoLaProxyElementBuildingBlocks{*lola_parent, lola_instance_id->GetId(), element_fq_id};
+    return ElementFqId{lola_type_deployment.service_id_, element_id, lola_instance_id->GetId(), element_type};
 }
 
 }  // namespace
@@ -79,23 +76,21 @@ std::optional<LoLaProxyElementBuildingBlocks> LookupForLola(const HandleType& ha
 // if the variant is valueless_by_exception, which cannot happen here because we do not throw
 // exceptions during construction of the alternatives.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-std::optional<LoLaProxyElementBuildingBlocks> LookupLolaProxyElement(const HandleType& handle,
-                                                                     ProxyBinding* parent_binding,
-                                                                     const std::string_view service_element_name,
-                                                                     const ServiceElementType element_type) noexcept
+std::optional<ElementFqId> GetElementFqId(const HandleType& handle,
+                                          const std::string_view service_element_name,
+                                          const ServiceElementType element_type) noexcept
 {
     const auto& type_deployment = handle.GetServiceTypeDeployment();
 
     auto visitor = score::cpp::overload(
-        [&handle, parent_binding, service_element_name, element_type](
-            const LolaServiceTypeDeployment& lola_deployment) {
-            return LookupForLola(handle, parent_binding, lola_deployment, service_element_name, element_type);
+        [&handle, service_element_name, element_type](const LolaServiceTypeDeployment& lola_deployment) {
+            return GetElementFqIdForLola(handle, lola_deployment, service_element_name, element_type);
         },
-        [](const score::cpp::blank&) noexcept -> std::optional<LoLaProxyElementBuildingBlocks> {
+        [](const score::cpp::blank&) noexcept -> std::optional<ElementFqId> {
             return std::nullopt;
         });
 
     return std::visit(visitor, type_deployment.binding_info_);
 }
 
-}  // namespace score::mw::com::impl
+}  // namespace score::mw::com::impl::lola

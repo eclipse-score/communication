@@ -78,6 +78,29 @@ ConfigurationStore kConfigStoreWithEmptyQueueSizeAsilB{
     kLolaServiceTypeDeployment,
     kLolaServiceInstanceDeploymentWithEmptyQueueSize};
 
+// Deployment with a field alongside the method, for the field kGet / kSet construction tests.
+constexpr auto kDummyFieldName{"Field1"};
+constexpr std::uint16_t kDummyFieldId{6U};
+const auto kFieldInstanceSpecifier = InstanceSpecifier::Create(std::string{"/my_field_instance_specifier"}).value();
+
+const LolaServiceInstanceDeployment kLolaServiceInstanceDeploymentWithField{
+    LolaServiceInstanceId{kInstanceId},
+    {},
+    {{kDummyFieldName,
+      LolaFieldInstanceDeployment{LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0}, std::nullopt, std::nullopt}}},
+    {{kDummyMethodName, LolaMethodInstanceDeployment{kQueueSize}}}};
+
+const LolaServiceTypeDeployment kLolaServiceTypeDeploymentWithField{kServiceId,
+                                                                    {},
+                                                                    {{kDummyFieldName, kDummyFieldId}},
+                                                                    {{kDummyMethodName, kDummyMethodId}}};
+
+ConfigurationStore kConfigStoreWithFieldAsilB{kFieldInstanceSpecifier,
+                                              make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+                                              kQualityType,
+                                              kLolaServiceTypeDeploymentWithField,
+                                              kLolaServiceInstanceDeploymentWithField};
+
 class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
 {
 
@@ -85,6 +108,11 @@ class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
     HandleType GetValidLoLaHandle()
     {
         return kConfigStoreAsilB.GetHandle();
+    }
+
+    HandleType GetValidLoLaHandleWithField()
+    {
+        return kConfigStoreWithFieldAsilB.GetHandle();
     }
 
     HandleType GetBlankBindingHandle()
@@ -98,6 +126,12 @@ class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
     {
         proxy_base_ = std::make_unique<ProxyBase>(std::move(this->proxy_), handle);
         return ProxyBaseView{*proxy_base_}.GetBinding();
+    }
+
+    ProxyBinding* InitialiseProxyAndCreateBinding(const HandleType& handle)
+    {
+        InitialiseProxyWithConstructor(handle.GetInstanceIdentifier());
+        return CreateBindingFromHandle(handle);
     }
 
     void TearDown() override
@@ -131,20 +165,16 @@ TYPED_TEST_SUITE(ProxyMethodFactoryTypedFixture, RegisteredFunctionTypes, );
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructProxyMethod)
 {
-
     // Given a valid lola binding
-
     const auto handle = this->GetValidLoLaHandle();
-    this->InitialiseProxyWithConstructor(handle.GetInstanceIdentifier());
+    auto* const proxy_binding = this->InitialiseProxyAndCreateBinding(handle);
 
-    auto proxy_binding = this->CreateBindingFromHandle(handle);
-
-    // When creating a ProxyMethod using MethodBindingFactory
+    // When creating a ProxyMethod via the binding factory
     using MethodSignature = TypeParam;
     auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
         handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
 
-    // Then a valid binding can be created
+    // Then a valid binding is created
     ASSERT_NE(proxy_method, nullptr);
 }
 
@@ -238,6 +268,38 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeTerminatesForMethodInLola
     // Then the program terminates
     SCORE_LANGUAGE_FUTURECPP_ASSERT_CONTRACT_VIOLATED(score::cpp::ignore =
                                                           GetQueueSize(handle, kDummyMethodName, MethodType::kMethod));
+}
+
+TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructFieldGetAndSetMethods)
+{
+    // Given a valid lola binding whose deployment has a field named kDummyFieldName (and no method of that name)
+    const auto handle = this->GetValidLoLaHandleWithField();
+    auto* const proxy_binding = this->InitialiseProxyAndCreateBinding(handle);
+    using MethodSignature = TypeParam;
+
+    // When Create is created for both the Get and the Set of that field.
+    for (const auto method_type : {MethodType::kGet, MethodType::kSet})
+    {
+        auto proxy_method =
+            ProxyMethodBindingFactory<MethodSignature>::Create(handle, proxy_binding, kDummyFieldName, method_type);
+
+        // Then a binding is produced.
+        ASSERT_NE(proxy_method, nullptr);
+    }
+}
+
+TYPED_TEST(ProxyMethodFactoryTypedFixture, CreateTerminatesForUnknownFieldName)
+{
+    // Given a valid lola binding
+    const auto handle = this->GetValidLoLaHandleWithField();
+    auto* const proxy_binding = this->InitialiseProxyAndCreateBinding(handle);
+    using MethodSignature = TypeParam;
+
+    // When Create is called when a field name is absent from the deployment
+    // Then the field lookup terminates
+    EXPECT_DEATH(score::cpp::ignore = ProxyMethodBindingFactory<MethodSignature>::Create(
+                     handle, proxy_binding, "ThisFieldDoesNotExist", MethodType::kGet),
+                 ".*");
 }
 
 }  // namespace score::mw::com::impl

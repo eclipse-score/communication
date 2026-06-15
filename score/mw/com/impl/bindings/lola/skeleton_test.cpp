@@ -129,7 +129,7 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, GetBindingType)
     EXPECT_EQ(skeleton_->GetBindingType(), BindingType::kLoLa);
 }
 
-TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodsRegisteredSucceedsWhenAllMethodsAreRegistered)
+TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodHandlersRegisteredSucceedsWhenAllMethodsAreRegistered)
 {
     GivenASkeletonWithTwoMethods();
 
@@ -142,11 +142,11 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodsRegisteredSucceeds
     std::ignore = fooo_method_->RegisterHandler(fooo_callback);
     std::ignore = dumb_method_->RegisterHandler(dumb_callback);
 
-    // Then VerifyAllMethodsRegistered succeeds
-    EXPECT_EQ(skeleton_->VerifyAllMethodsRegistered(), true);
+    // Then VerifyAllMethodHandlersRegistered succeeds
+    EXPECT_EQ(skeleton_->VerifyAllMethodHandlersRegistered(), true);
 }
 
-TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodsRegisteredFailsWhenNotAllMethodsAreRegistered)
+TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodHandlersRegisteredFailsWhenNotAllMethodsAreRegistered)
 {
     GivenASkeletonWithTwoMethods();
 
@@ -155,8 +155,8 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodsRegisteredFailsWhe
 
     std::ignore = fooo_method_->RegisterHandler(fooo_callback);
 
-    // Then VerifyAllMethodsRegistered fails with kBindingFailure
-    EXPECT_EQ(skeleton_->VerifyAllMethodsRegistered(), false);
+    // Then VerifyAllMethodHandlersRegistered fails with kBindingFailure
+    EXPECT_EQ(skeleton_->VerifyAllMethodHandlersRegistered(), false);
 }
 
 TEST_F(SkeletonTestMockedSharedMemoryFixture, StopOfferCallsUnregisterShmObjectTraceCallback)

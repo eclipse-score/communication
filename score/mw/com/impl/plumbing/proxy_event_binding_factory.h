@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/plumbing/proxy_event_binding_factory_impl.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
+#include "score/mw/com/impl/service_element_type.h"
 
 #include <score/overload.hpp>
 
@@ -34,9 +35,12 @@ class ProxyEventBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyEventBindingFactory.
-    static std::unique_ptr<ProxyEventBinding<SampleType>> Create(ProxyBase& parent, std::string_view event_name)
+    static std::unique_ptr<ProxyEventBinding<SampleType>> Create(
+        ProxyBase& parent,
+        std::string_view event_name,
+        const ServiceElementType element_type = ServiceElementType::EVENT)
     {
-        return instance().Create(parent, event_name);
+        return instance().Create(parent, event_name, element_type);
     }
 
     /// \brief Inject a mock IProxyEventBindingFactory. If a mock is injected, then all calls on
@@ -57,9 +61,12 @@ class GenericProxyEventBindingFactory final
 {
   public:
     /// \brief See documentation in IGenericProxyEventBindingFactory.
-    static std::unique_ptr<GenericProxyEventBinding> Create(ProxyBase& parent, std::string_view event_name)
+    static std::unique_ptr<GenericProxyEventBinding> Create(
+        ProxyBase& parent,
+        std::string_view event_name,
+        const ServiceElementType element_type = ServiceElementType::EVENT)
     {
-        return instance().Create(parent, event_name);
+        return instance().Create(parent, event_name, element_type);
     }
 
     /// \brief Inject a mock IGenericProxyEventBindingFactory. If a mock is injected, then all calls on
