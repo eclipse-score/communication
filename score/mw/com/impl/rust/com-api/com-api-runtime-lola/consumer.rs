@@ -1294,7 +1294,8 @@ mod test {
             .in_sequence(&mut seq)
             .returning(move |_, _| {
                 Some(TypeOperationsManager::new(
-                    NonNull::new(type_ops_alloc.allocate()).unwrap(),
+                    NonNull::new(type_ops_alloc.allocate())
+                        .expect("Failed to allocate TypeOperations for mock"),
                 ))
             });
 
@@ -1363,7 +1364,8 @@ mod test {
             .in_sequence(&mut seq)
             .returning(move |_, _| {
                 Some(TypeOperationsManager::new(
-                    NonNull::new(type_ops_alloc.allocate()).unwrap(),
+                    NonNull::new(type_ops_alloc.allocate())
+                        .expect("Failed to allocate TypeOperations for mock"),
                 ))
             });
         mock.expect_get_samples_from_event()

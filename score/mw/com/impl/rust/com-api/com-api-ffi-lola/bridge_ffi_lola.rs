@@ -842,6 +842,6 @@ impl FFIBridge for LolaFFIBridge {
         let member_name = StringView::from(member_name);
         // SAFETY: interface_id and member_name are valid ids that correspond to a TypeOperations instance in the C++ registry, as per the caller's contract.
         let ptr = unsafe { mw_com_get_type_ops_instance(interface_id, member_name) };
-        NonNull::new(ptr).map(|inner| TypeOperationsManager::new(inner))
+        NonNull::new(ptr).map(TypeOperationsManager::new)
     }
 }
