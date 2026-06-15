@@ -189,6 +189,25 @@ apt.sources_list(
     ],
 )
 apt.install(
+    dependency_set = "ubuntu24_04_sysroot",
+    packages = [
+        "libc6", # Core C/POSIX
+        "libc6-dev",  # Core C/POSIX
+        "linux-libc-dev",  # Core C/POSIX
+        "libstdc++6", # C++ standard library runtime
+        "libstdc++-13-dev", # C++ standard library headers
+        "libgcc-s1", # Exception unwinding
+        "libatomic1", # Non-lock-free atomics support
+    ],
+    suites = [
+        "noble",
+        "noble-security",
+        "noble-updates",
+    ],
+    mergedusr = True,
+    unpack = True,
+)
+apt.install(
     dependency_set = "ubuntu24_04_integration_testing",
     packages = [
         "bash",
@@ -205,7 +224,7 @@ apt.install(
     mergedusr = True,
 )
 apt.lock(into = ":rules_distroless.lock.json")
-use_repo(apt, "ubuntu24_04_integration_testing")
+use_repo(apt, "ubuntu24_04_sysroot", "ubuntu24_04_integration_testing")
 
 bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
 
@@ -235,6 +254,17 @@ llvm.toolchain(
         "-latomic",
     ]},
     llvm_version = "19.1.7",
+    stdlib = {"": "stdc++"},
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@ubuntu24_04_sysroot//unpack_amd64",
+    targets = ["linux-x86_64"],
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@ubuntu24_04_sysroot//unpack_arm64",
+    targets = ["linux-aarch64"],
 )
 use_repo(llvm, "llvm_toolchain")
 
