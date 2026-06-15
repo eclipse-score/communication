@@ -145,6 +145,55 @@ imagefs.toolchain(
 )
 use_repo(imagefs, "score_qnx_aarch64_ifs_toolchain", "score_qnx_x86_64_ifs_toolchain")
 
+bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
+git_override(
+    module_name = "rules_distroless",
+    commit = "43dd94fd06e209a0d802a6a8543d42b74c1d8473",
+    remote = "https://github.com/LittleHuba/rules_distroless.git",
+)
+
+apt = use_extension(
+    "@rules_distroless//apt:extensions.bzl",
+    "apt",
+    dev_dependency = True,
+)
+apt.sources_list(
+    architectures = [
+        "amd64",
+        "arm64",
+    ],
+    components = [
+        "main",
+        "universe",
+    ],
+    suites = [
+        "noble",
+        "noble-security",
+        "noble-updates",
+    ],
+    types = ["deb"],
+    uris = ["https://snapshot.ubuntu.com/ubuntu/20260401T000000Z"],
+)
+apt.install(
+    dependency_set = "ubuntu24_04_integration_testing",
+    mergedusr = True,
+    packages = [
+        "bash",  # Required as default entrypoint of Docker
+        "binutils",  # provides addr2line, required for backtraces in sanitizers
+        "coreutils",  # for commands like `ls`
+        "dash",  # Framework expects /bin/sh, which on Ubuntu is provided by dash
+        "libatomic1",  # Dynamically linked at runtime to test executables
+        "libstdc++6",  # Dynamically linked at runtime to test executables
+    ],
+    suites = [
+        "noble",
+        "noble-security",
+        "noble-updates",
+    ],
+)
+apt.lock(into = ":rules_distroless.lock.json")
+use_repo(apt, "ubuntu24_04_integration_testing")
+
 bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
 
 llvm = use_extension(
@@ -318,21 +367,6 @@ pip.parse(
 use_repo(pip, "lobster_dependencies")
 
 bazel_dep(name = "rules_oci", version = "2.2.7", dev_dependency = True)
-bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
-
-apt = use_extension(
-    "@rules_distroless//apt:extensions.bzl",
-    "apt",
-    dev_dependency = True,
-)
-apt.install(
-    name = "ubuntu24_04",
-    lock = "@@//quality/integration_testing/environments/ubuntu24_04_docker:ubuntu24_04.lock.json",
-    manifest = "//quality/integration_testing/environments/ubuntu24_04_docker:ubuntu24_04.yaml",
-    mergedusr = True,
-)
-use_repo(apt, "ubuntu24_04")
-
 bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
