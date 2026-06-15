@@ -1,1 +1,6 @@
 deviations:
+  - rule-id: "RULE-18-5-2"
+    query-id: "cpp/misra/avoid-program-terminating-functions"
+    justification: "The software is designed for a fail-silent system. The agreed safe-state for a process is the termination. Thus, we do not need to care about not cleaning up the environment, as this is exactly the desired behavior."
+    paths:
+      - "score/**"
