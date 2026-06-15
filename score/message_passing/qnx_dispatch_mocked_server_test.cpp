@@ -29,6 +29,9 @@ using QnxDispatchMockedServerFixture = ResourceManagerFixtureBase;
 
 TEST_F(QnxDispatchMockedServerFixture, ServerOpenConnectClientInfoFailure)
 {
+    const std::size_t index = kServerIndex;
+    ResourceManagerMockHelper& helper = helpers_[index];
+
     WithEngineRunning();
 
     ServiceProtocolConfig protocol_config{"fake_path", 0U, 0U, 0U};
@@ -47,8 +50,8 @@ TEST_F(QnxDispatchMockedServerFixture, ServerOpenConnectClientInfoFailure)
     ASSERT_TRUE(server.StartListening(connect_callback, DisconnectCallback{}, MessageCallback{}, MessageCallback{})
                     .has_value());
 
-    helper_.HelperInsertIoOpen(score::cpp::blank{});
-    EXPECT_EQ(helper_.promises_.open.get_future().get(), EINVAL);
+    helper.HelperInsertIoOpen(score::cpp::blank{});
+    EXPECT_EQ(helper.promises_.open.get_future().get(), EINVAL);
 
     ExpectServerDetached();
     server.StopListening();
@@ -58,6 +61,9 @@ TEST_F(QnxDispatchMockedServerFixture, ServerOpenConnectOcbAttachFailure)
 {
     ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
     ::testing::Test::RecordProperty("given", "QNX dispatch server listening with ``MockOs``");
+    const std::size_t index = kServerIndex;
+    ResourceManagerMockHelper& helper = helpers_[index];
+
     WithEngineRunning();
 
     ServiceProtocolConfig protocol_config{"fake_path", 0U, 0U, 0U};
@@ -77,9 +83,9 @@ TEST_F(QnxDispatchMockedServerFixture, ServerOpenConnectOcbAttachFailure)
     EXPECT_CALL(*channel_, ConnectClientInfo).Times(1);
     EXPECT_CALL(*iofunc_, iofunc_ocb_attach).WillOnce(Return(score::cpp::make_unexpected(EIO)));
     ExpectConnectionOpen();
-    helper_.HelperInsertIoOpen(score::cpp::blank{});
+    helper.HelperInsertIoOpen(score::cpp::blank{});
     ::testing::Test::RecordProperty("then", "server reports the open failure with error code ``EIO``");
-    EXPECT_EQ(helper_.promises_.open.get_future().get(), EIO);
+    EXPECT_EQ(helper.promises_.open.get_future().get(), EIO);
 
     ExpectServerDetached();
     server.StopListening();

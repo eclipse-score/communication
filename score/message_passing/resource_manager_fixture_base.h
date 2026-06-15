@@ -101,6 +101,7 @@ class ResourceManagerMockHelper
     /// Blocks the dispatch loop till it has an event to process. Special treatment for `ErrnoPseudoMessage` event
     score::cpp::expected_blank<score::os::Error> dispatch_block(dispatch_context_t* const /*ctp*/) noexcept
     {
+        std::cerr << "dispatch_block 0" << std::endl;
         const auto max_wait = std::chrono::milliseconds(1000);
 
         auto result = message_queue_.Pop(max_wait, score::cpp::stop_token{});
@@ -121,12 +122,12 @@ class ResourceManagerMockHelper
     score::cpp::expected_blank<std::int32_t> dispatch_handler(dispatch_context_t* const /*ctp*/) noexcept
     {
         std::cerr << "dispatch_handler 0" << std::endl;
+        resmgr_context_t& context = context_.resmgr_context;
         if (std::holds_alternative<InternalPulseMessage>(current_message_))
         {
             std::cerr << "dispatch_handler InternalPulseMessage 0" << std::endl;
             auto& pulse = std::get<InternalPulseMessage>(current_message_);
 
-            message_context_t context{};
             resmgr_iomsgs_t message{};
             context.msg = &message;
             message.pulse.value.sival_int = pulse.value;
@@ -140,7 +141,6 @@ class ResourceManagerMockHelper
             std::cerr << "dispatch_handler TestPulseMessage 0" << std::endl;
             auto& pulse = std::get<TestPulseMessage>(current_message_);
 
-            message_context_t context{};
             resmgr_iomsgs_t message{};
             context.msg = &message;
             message.pulse.value.sival_int = pulse.value;
@@ -153,7 +153,6 @@ class ResourceManagerMockHelper
         else if (std::holds_alternative<IoOpenMessage>(current_message_))
         {
             std::cerr << "dispatch_handler IoOpenMessage 0" << std::endl;
-            resmgr_context_t context{};
             io_open_t message{};
 
             const auto result = (*connect_funcs_->open)(&context, &message, handle_, nullptr);
@@ -163,7 +162,6 @@ class ResourceManagerMockHelper
         else if (std::holds_alternative<IoWriteMessage>(current_message_))
         {
             auto& io_write = std::get<IoWriteMessage>(current_message_);
-            resmgr_context_t context{};
             struct IoWriteData
             {
                 io_write_t message;
@@ -181,7 +179,6 @@ class ResourceManagerMockHelper
         else if (std::holds_alternative<IoReadMessage>(current_message_))
         {
             auto& io_read = std::get<IoReadMessage>(current_message_);
-            resmgr_context_t context{};
             io_read_t message{};
             message.i.xtype = io_read.xtype;
             message.i.nbytes = io_read.nbytes;
@@ -192,7 +189,6 @@ class ResourceManagerMockHelper
         else if (std::holds_alternative<IoMsgMessage>(current_message_))
         {
             auto& io_msg = std::get<IoMsgMessage>(current_message_);
-            resmgr_context_t context{};
             io_msg_t message{};
             message.i.mgrid = io_msg.mgrid;
 
@@ -328,6 +324,8 @@ class ResourceManagerMockHelper
     };
 
     Promises promises_{};
+
+    dispatch_context_t context_{};
 
   private:
     struct InternalPulseMessage
@@ -477,58 +475,165 @@ class ResourceManagerFixtureBase : public ::testing::Test
                 unistd_.MoveOwnership()};
     }
 
-    void ExpectEngineConstructed()
+    void ExpectRunnerStarted(bool is_client, testing::Sequence& s)
     {
         using namespace testing;
 
-        EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(1).WillOnce(Return(kFakeDispatchPtr));
-        EXPECT_CALL(*dispatch_, pulse_attach)
-            .Times(4)
-            .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::pulse_attach));
-        EXPECT_CALL(*dispatch_, message_connect).Times(1).WillOnce(Return(kFakeCoid));
-        EXPECT_CALL(*dispatch_, resmgr_attach(_, _, IsNull(), _, _, _, _, _))
+        const std::size_t index = is_client ? kClientIndex : kServerIndex;
+
+        ResourceManagerMockHelper& helper = helpers_[index];
+        dispatch_t* const dispatch_ptr = reinterpret_cast<dispatch_t*>(&dispatches_[index]);
+        dispatch_context_t* const context_ptr = &helper.context_;
+        const auto coid = static_cast<std::int32_t>(index);
+
+        // StartPreInit
+        EXPECT_CALL(*dispatch_, dispatch_create_channel).InSequence(s).WillOnce(Return(dispatch_ptr));
+        EXPECT_CALL(*dispatch_, pulse_attach(dispatch_ptr, _, detail::DispatchThreadRunner::kQuitPulseCode, _, _))
             .Times(1)
-            .WillOnce(Return(kFakeResmgrEmptyId));
-        EXPECT_CALL(*dispatch_, dispatch_context_alloc).Times(1).WillOnce(Return(kFakeContextPtr));
-        EXPECT_CALL(*timer_, TimerCreate).Times(1).WillOnce(Return(kFakeTimerId));
-        EXPECT_CALL(*iofunc_, iofunc_func_init).Times(1);
-        EXPECT_CALL(*signal_, SigEmptySet).Times(1);
-        EXPECT_CALL(*signal_, AddTerminationSignal).Times(1);
-        EXPECT_CALL(*signal_, PthreadSigMask(SIG_BLOCK, _, _)).Times(1);
-        EXPECT_CALL(*signal_, PthreadSigMask(SIG_SETMASK, _)).Times(1);
+            .WillOnce(Invoke(&helper, &ResourceManagerMockHelper::pulse_attach));
+        EXPECT_CALL(*dispatch_, message_connect(dispatch_ptr, _)).Times(1).WillOnce(Return(coid));
+
+        // Init
+        if (is_client)
+        {
+            EXPECT_CALL(*dispatch_, pulse_attach(dispatch_ptr, _, QnxDispatchEngine::kTimerPulseCode, _, _))
+                .Times(1)
+                .WillOnce(Invoke(&helper, &ResourceManagerMockHelper::pulse_attach));
+            EXPECT_CALL(*dispatch_, pulse_attach(dispatch_ptr, _, QnxDispatchEngine::kSelectPulseCode, _, _))
+                .Times(1)
+                .WillOnce(Invoke(&helper, &ResourceManagerMockHelper::pulse_attach));
+            EXPECT_CALL(*dispatch_, pulse_attach(dispatch_ptr, _, _PULSE_CODE_COIDDEATH, _, _))
+                .Times(1)
+                .WillOnce(Invoke(&helper, &ResourceManagerMockHelper::pulse_attach));
+            EXPECT_CALL(*timer_, TimerCreate).Times(1).WillOnce(Return(kFakeTimerId));
+        }
+        else
+        {
+            EXPECT_CALL(*dispatch_, resmgr_attach(dispatch_ptr, _, IsNull(), _, _, _, _, _))
+                .Times(1)
+                .WillOnce(Return(kFakeResmgrEmptyId));
+        }
+
+        // StartPostInit
+        EXPECT_CALL(*dispatch_, dispatch_context_alloc(dispatch_ptr)).Times(1).WillOnce(Return(context_ptr));
+        EXPECT_CALL(*signal_, SigEmptySet).Times(1).InSequence(s);
+        EXPECT_CALL(*signal_, AddTerminationSignal).Times(1).InSequence(s);
+        EXPECT_CALL(*signal_, PthreadSigMask(SIG_BLOCK, _, _)).Times(1).InSequence(s);
+        EXPECT_CALL(*signal_, PthreadSigMask(SIG_SETMASK, _)).Times(1).InSequence(s);
+
+        // RunOnThread
+        EXPECT_CALL(*dispatch_, dispatch_block(context_ptr))
+            .Times(AnyNumber())
+            .WillRepeatedly(Invoke(&helper, &ResourceManagerMockHelper::dispatch_block));
+        EXPECT_CALL(*dispatch_, dispatch_handler(context_ptr))
+            .Times(AnyNumber())
+            .WillRepeatedly(Invoke(&helper, &ResourceManagerMockHelper::dispatch_handler));
+        EXPECT_CALL(*channel_, MsgSendPulse(coid, _, _, _))
+            .Times(AnyNumber())
+            .WillRepeatedly(Invoke(&helper, &ResourceManagerMockHelper::MsgSendPulse));
     }
 
-    void ExpectEngineThreadRunning()
+    void ExpectClientRunnerStarted(testing::Sequence& s)
+    {
+        ExpectRunnerStarted(true, s);
+    }
+
+    void ExpectServerRunnerStarted(testing::Sequence& s)
+    {
+        ExpectRunnerStarted(false, s);
+    }
+
+    void ExpectEngineConstructed()
+    {
+        EXPECT_CALL(*iofunc_, iofunc_func_init).Times(1);
+        testing::Sequence dispatch_allocation_sequence;
+        ExpectClientRunnerStarted(dispatch_allocation_sequence);
+        ExpectServerRunnerStarted(dispatch_allocation_sequence);
+    }
+
+    void ExpectEngineInConstructionForDeathTests()
     {
         using namespace testing;
 
-        EXPECT_CALL(*dispatch_, dispatch_block)
+        EXPECT_CALL(*iofunc_, iofunc_func_init).Times(AnyNumber());
+
+        const std::size_t index = kClientIndex;  // doesn't matter which one
+
+        ResourceManagerMockHelper& helper = helpers_[index];
+        dispatch_t* const dispatch_ptr = reinterpret_cast<dispatch_t*>(&dispatches_[index]);
+        dispatch_context_t* const context_ptr = &helper.context_;
+        const auto coid = static_cast<std::int32_t>(index);
+
+        // StartPreInit
+        EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(AnyNumber()).WillRepeatedly(Return(dispatch_ptr));
+        EXPECT_CALL(*dispatch_, pulse_attach(dispatch_ptr, _, detail::DispatchThreadRunner::kQuitPulseCode, _, _))
+            .Times(AnyNumber());
+        EXPECT_CALL(*dispatch_, message_connect(dispatch_ptr, _)).Times(AnyNumber()).WillOnce(Return(coid));
+
+        // Init will be test-specific
+
+        // StartPostInit
+        EXPECT_CALL(*dispatch_, dispatch_context_alloc(dispatch_ptr)).Times(AnyNumber()).WillOnce(Return(context_ptr));
+        EXPECT_CALL(*signal_, SigEmptySet).Times(AnyNumber());
+        EXPECT_CALL(*signal_, AddTerminationSignal).Times(AnyNumber());
+        EXPECT_CALL(*signal_, PthreadSigMask(SIG_BLOCK, _, _)).Times(AnyNumber());
+        EXPECT_CALL(*signal_, PthreadSigMask(SIG_SETMASK, _)).Times(AnyNumber());
+
+        // RunOnThread
+        EXPECT_CALL(*dispatch_, dispatch_block(context_ptr))
             .Times(AnyNumber())
-            .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::dispatch_block));
-        EXPECT_CALL(*dispatch_, dispatch_handler)
+            .WillRepeatedly(Invoke(&helper, &ResourceManagerMockHelper::dispatch_block));
+        EXPECT_CALL(*dispatch_, dispatch_handler(context_ptr))
             .Times(AnyNumber())
-            .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::dispatch_handler));
-        EXPECT_CALL(*channel_, MsgSendPulse)
+            .WillRepeatedly(Invoke(&helper, &ResourceManagerMockHelper::dispatch_handler));
+        EXPECT_CALL(*channel_, MsgSendPulse(coid, _, _, _))
             .Times(AnyNumber())
-            .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::MsgSendPulse));
+            .WillRepeatedly(Invoke(&helper, &ResourceManagerMockHelper::MsgSendPulse));
+    }
+
+    void ExpectRunnerStopped(bool is_client)
+    {
+        using namespace testing;
+
+        const std::size_t index = is_client ? kClientIndex : kServerIndex;
+        ResourceManagerMockHelper& helper = helpers_[index];
+        dispatch_t* const dispatch_ptr = reinterpret_cast<dispatch_t*>(&dispatches_[index]);
+        dispatch_context_t* const context_ptr = &helper.context_;
+        const auto coid = static_cast<std::int32_t>(index);
+
+        EXPECT_CALL(*channel_, ConnectDetach(coid)).Times(1);
+        EXPECT_CALL(*dispatch_, dispatch_destroy(dispatch_ptr)).Times(1);
+        EXPECT_CALL(*dispatch_, dispatch_context_free(context_ptr)).Times(1);
+    }
+
+    void ExpectClientRunnerStopped()
+    {
+        ExpectRunnerStopped(true);
+    }
+
+    void ExpectServerRunnerStopped()
+    {
+        ExpectRunnerStopped(false);
     }
 
     void ExpectEngineDestructed()
     {
         EXPECT_CALL(*timer_, TimerDestroy).Times(1);
-        EXPECT_CALL(*channel_, ConnectDetach).Times(1);
-        EXPECT_CALL(*dispatch_, pulse_detach).Times(4);
-        EXPECT_CALL(*dispatch_, dispatch_destroy).Times(1);
-        EXPECT_CALL(*dispatch_, dispatch_context_free).Times(1);
+        ExpectServerRunnerStopped();
+        ExpectClientRunnerStopped();
     }
 
     void ExpectServerAttached()
     {
         using namespace testing;
 
-        EXPECT_CALL(*dispatch_, resmgr_attach(_, _, NotNull(), _, _, _, _, _))
+        const std::size_t index = kServerIndex;
+        ResourceManagerMockHelper& helper = helpers_[index];
+        dispatch_t* const dispatch_ptr = reinterpret_cast<dispatch_t*>(&dispatches_[index]);
+
+        EXPECT_CALL(*dispatch_, resmgr_attach(dispatch_ptr, _, NotNull(), _, _, _, _, _))
             .Times(1)
-            .WillOnce(Invoke(&helper_, &ResourceManagerMockHelper::resmgr_attach));
+            .WillOnce(Invoke(&helper, &ResourceManagerMockHelper::resmgr_attach));
         EXPECT_CALL(*iofunc_, iofunc_attr_init).Times(1);
     }
 
@@ -536,37 +641,49 @@ class ResourceManagerFixtureBase : public ::testing::Test
     {
         using namespace testing;
 
+        const std::size_t index = kServerIndex;
+        dispatch_t* const dispatch_ptr = reinterpret_cast<dispatch_t*>(&dispatches_[index]);
+
         EXPECT_CALL(*dispatch_,
-                    resmgr_detach(_, kFakeResmgrServerId, static_cast<std::uint32_t>(_RESMGR_DETACH_CLOSE)));
+                    resmgr_detach(dispatch_ptr, kFakeResmgrServerId, static_cast<std::uint32_t>(_RESMGR_DETACH_CLOSE)));
     }
 
     void ExpectConnectionOpen()
     {
         using namespace testing;
 
+        const std::size_t index = kServerIndex;
+        ResourceManagerMockHelper& helper = helpers_[index];
+        resmgr_context_t* const context_ptr = &helper.context_.resmgr_context;
+
         InSequence is;
         EXPECT_CALL(*iofunc_, iofunc_attr_lock)
             .Times(1)
-            .WillOnce(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_attr_lock));
-        EXPECT_CALL(*iofunc_, iofunc_open).Times(1).WillOnce(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_open));
+            .WillOnce(Invoke(&helper, &ResourceManagerMockHelper::iofunc_attr_lock));
+        EXPECT_CALL(*iofunc_, iofunc_open(context_ptr, _, _, _, _))
+            .Times(1)
+            .WillOnce(Invoke(&helper, &ResourceManagerMockHelper::iofunc_open));
         EXPECT_CALL(*iofunc_, iofunc_attr_unlock)
             .Times(1)
-            .WillOnce(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_attr_unlock));
+            .WillOnce(Invoke(&helper, &ResourceManagerMockHelper::iofunc_attr_unlock));
     }
 
     void ExpectConnectionAccepted()
     {
         using namespace testing;
 
-        EXPECT_CALL(*iofunc_, iofunc_ocb_attach)
+        const std::size_t index = kServerIndex;
+        ResourceManagerMockHelper& helper = helpers_[index];
+        resmgr_context_t* const context_ptr = &helper.context_.resmgr_context;
+
+        EXPECT_CALL(*iofunc_, iofunc_ocb_attach(context_ptr, _, _, _, _))
             .Times(1)
-            .WillOnce(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_ocb_attach));
+            .WillOnce(Invoke(&helper, &ResourceManagerMockHelper::iofunc_ocb_attach));
     }
 
     void WithEngineRunning(LoggingCallback logger = {})
     {
         ExpectEngineConstructed();
-        ExpectEngineThreadRunning();
         if (!logger.empty())
         {
             engine_ = std::make_shared<QnxDispatchEngine>(
@@ -588,11 +705,16 @@ class ResourceManagerFixtureBase : public ::testing::Test
     mock_ptr<score::os::SysUioMock> sysuio_;
     mock_ptr<score::os::UnistdMock> unistd_;
 
-    ResourceManagerMockHelper helper_;
+    constexpr static std::size_t kMaxDispatches{2};
+    constexpr static std::size_t kClientIndex{0};
+    constexpr static std::size_t kServerIndex{1};
+
+    std::array<std::byte, kMaxDispatches> dispatches_{};
+    // std::array<dispatch_context_t, kMaxDispatches> contexts_{};
+    std::array<ResourceManagerMockHelper, kMaxDispatches> helpers_{};
+
     std::shared_ptr<QnxDispatchEngine> engine_;
 
-    constexpr static dispatch_t* kFakeDispatchPtr{nullptr};
-    constexpr static dispatch_context_t* kFakeContextPtr{nullptr};
     constexpr static std::int32_t kFakeCoid{0};
     constexpr static std::int32_t kFakeTimerId{0};
     constexpr static std::int32_t kFakeResmgrEmptyId{0};

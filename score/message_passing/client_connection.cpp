@@ -21,7 +21,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <thread>
 
 namespace score
