@@ -14,10 +14,11 @@
 #include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/field_provider.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/skeleton_container.h"
+#include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/initial_only_field.h"
+#include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/set_enabled_field.h"
 #include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/test_constants.h"
-#include "score/mw/com/test/fields/set_and_notifier/fields_test_resources/test_datatype.h"
-#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 
 #include <chrono>
 #include <iostream>
@@ -30,13 +31,20 @@ namespace
 {
 
 const std::string kInterprocessNotificationShmPath{"/fields_set_and_notifier_interprocess_notification"};
+const std::string kNotifierConsumerReadyShmPath{"/fields_notifier_consumer_ready"};
 
 void run_notifier_provider(const score::cpp::stop_token& stop_token)
 {
-    auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
-    if (!process_synchronizer_result.has_value())
+    auto consumer_ready_synchronizer_result = ProcessSynchronizer::Create(kNotifierConsumerReadyShmPath);
+    if (!consumer_ready_synchronizer_result.has_value())
     {
-        FailTest("Provider: Could not create ProcessSynchronizer");
+        FailTest("Provider: Could not create consumer ready ProcessSynchronizer");
+    }
+
+    auto done_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
+    if (!done_synchronizer_result.has_value())
+    {
+        FailTest("Provider: Could not create done ProcessSynchronizer");
     }
 
     SkeletonContainer<InitialOnlySkeleton> skeleton_container{kInstanceSpecifierString};
@@ -47,25 +55,40 @@ void run_notifier_provider(const score::cpp::stop_token& stop_token)
 
     auto& service = skeleton_container.GetSkeleton();
 
-    const auto update_result = service.test_field.Update(kInitialValue);
-    if (!update_result.has_value())
     {
-        FailTest("Provider: Unable to update initial field value: ", update_result.error());
+        const auto update_result = service.test_field.Update(kInitialValue);
+        if (!update_result.has_value())
+        {
+            FailTest("Provider: Unable to update initial field value: ", update_result.error());
+        }
     }
     if (!skeleton_container.OfferService())
     {
         FailTest("Provider: Unable to offer InitialOnlySkeleton");
     }
 
-    if (!process_synchronizer_result->WaitWithAbort(stop_token))
+    if (!consumer_ready_synchronizer_result->WaitWithAbort(stop_token))
     {
-        FailTest("Provider: WaitWithAbort was stopped by stop_token instead of notification");
+        FailTest("Provider: WaitWithAbort (consumer ready) was stopped by stop_token instead of notification");
+    }
+
+    {
+        const auto update_result = service.test_field.Update(kUpdatedValue);
+        if (!update_result.has_value())
+        {
+            FailTest("Provider: Unable to update field with updated value: ", update_result.error());
+        }
+    }
+
+    if (!done_synchronizer_result->WaitWithAbort(stop_token))
+    {
+        FailTest("Provider: WaitWithAbort (done) was stopped by stop_token instead of notification");
     }
 
     service.StopOfferService();
 }
 
-void run_set_provider(const score::cpp::stop_token& stop_token)
+void run_set_and_notifier_provider(const score::cpp::stop_token& stop_token)
 {
     auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
     if (!process_synchronizer_result.has_value())
@@ -81,14 +104,7 @@ void run_set_provider(const score::cpp::stop_token& stop_token)
 
     auto& service = skeleton_container.GetSkeleton();
     const auto register_handler_result = service.test_field.RegisterSetHandler([](std::int32_t& value) noexcept {
-        if (value > kSetAcceptedValue)
-        {
-            value = kSetAcceptedValue;
-        }
-        if (value < 0)
-        {
-            value = 0;
-        }
+        value = value * 2 + 1;
     });
     if (!register_handler_result.has_value())
     {
@@ -123,9 +139,9 @@ void run_provider(const score::cpp::stop_token& stop_token, const std::string& m
         run_notifier_provider(stop_token);
         return;
     }
-    if (mode == "set")
+    if (mode == "set_and_notifier")
     {
-        run_set_provider(stop_token);
+        run_set_and_notifier_provider(stop_token);
         return;
     }
 

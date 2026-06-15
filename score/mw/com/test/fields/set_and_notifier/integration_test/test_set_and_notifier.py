@@ -14,10 +14,10 @@
 from test_fixture import consumer, provider
 
 
-def test_field_set_value(target):
+def test_field_set_and_notifier_value(target):
     """Test field set exchange and accepted value propagation between provider and consumer."""
-    with provider(target, "set"):
-        with consumer(target, "set"):
+    with provider(target, "set_and_notifier", "mw_com_config.json"):
+        with consumer(target, "set_and_notifier", "mw_com_config.json"):
             pass
 
 

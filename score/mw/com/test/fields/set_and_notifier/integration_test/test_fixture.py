@@ -12,12 +12,12 @@
 # *******************************************************************************
 
 
-def consumer(target, mode, **kwargs):
+def consumer(target, mode, config, **kwargs):
     args = ["--num-retries", "20", "--backoff-time", "50", "--mode", mode,
-            "--service-instance-manifest", "./etc/mw_com_config.json"]
+            "--service-instance-manifest", f"./etc/{config}"]
     return target.wrap_exec("bin/consumer", args, cwd="/opt/MainConsumerApp", wait_on_exit=True, **kwargs)
 
 
-def provider(target, mode, **kwargs):
-    args = ["--mode", mode, "--service-instance-manifest", "./etc/mw_com_config.json"]
+def provider(target, mode, config, **kwargs):
+    args = ["--mode", mode, "--service-instance-manifest", f"./etc/{config}"]
     return target.wrap_exec("bin/provider", args, cwd="/opt/MainProviderApp", **kwargs)

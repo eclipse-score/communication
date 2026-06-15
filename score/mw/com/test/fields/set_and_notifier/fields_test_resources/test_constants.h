@@ -22,9 +22,9 @@ namespace score::mw::com::test
 constexpr const char* const kInstanceSpecifierString = "test/fields/set_and_notifier";
 
 constexpr std::int32_t kInitialValue = 18;
-constexpr std::int32_t kSetValidValue = 42;
 constexpr std::int32_t kSetRequestValue = 1234;
-constexpr std::int32_t kSetAcceptedValue = 100;
+constexpr std::int32_t kSetTransformedValue = kSetRequestValue * 2 + 1;
+constexpr std::int32_t kUpdatedValue = 19;
 
 }  // namespace score::mw::com::test
 

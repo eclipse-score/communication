@@ -23,10 +23,20 @@ validate_json_schema_test(
     tags = ["lint"],
 )
 
+validate_json_schema_test(
+    name = "validate_initial_only_field_lola_schema",
+    json = "config/initial_only_field_mw_com_config.json",
+    schema = "//score/mw/com:config_schema",
+    tags = ["lint"],
+)
+
 cc_binary(
     name = "provider",
-    srcs = ["provider.cpp"],
-    data = ["config/mw_com_config.json"],
+    srcs = ["main_provider.cpp"],
+    data = [
+        "config/initial_only_field_mw_com_config.json",
+        "config/mw_com_config.json",
+    ],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
@@ -43,8 +53,11 @@ cc_binary(
 
 cc_binary(
     name = "consumer",
-    srcs = ["consumer.cpp"],
-    data = ["config/mw_com_config.json"],
+    srcs = ["main_consumer.cpp"],
+    data = [
+        "config/initial_only_field_mw_com_config.json",
+        "config/mw_com_config.json",
+    ],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
@@ -63,8 +76,9 @@ pkg_application(
     app_name = "MainProviderApp",
     bin = [":provider"],
     etc = [
-        "config/mw_com_config.json",
+        "config/initial_only_field_mw_com_config.json",
         "config/logging.json",
+        "config/mw_com_config.json",
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
@@ -77,8 +91,9 @@ pkg_application(
     app_name = "MainConsumerApp",
     bin = [":consumer"],
     etc = [
-        "config/mw_com_config.json",
+        "config/initial_only_field_mw_com_config.json",
         "config/logging.json",
+        "config/mw_com_config.json",
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",

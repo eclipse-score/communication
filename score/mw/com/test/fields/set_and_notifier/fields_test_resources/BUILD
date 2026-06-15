@@ -15,13 +15,16 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
-    name = "test_datatype",
-    srcs = ["test_datatype.cpp"],
+    name = "field_types",
+    srcs = [
+        "initial_only_field.cpp",
+        "set_enabled_field.cpp",
+        "test_constants.cpp",
+    ],
     hdrs = [
-        "initial_only_interface.h",
-        "set_enabled_interface.h",
+        "initial_only_field.h",
+        "set_enabled_field.h",
         "test_constants.h",
-        "test_datatype.h",
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
@@ -41,11 +44,11 @@ cc_library(
         "//score/mw/com/test/fields/set_and_notifier:__subpackages__",
     ],
     deps = [
-        ":test_datatype",
+        ":field_types",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:proxy_container",
-        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
     ],
 )
 
@@ -58,10 +61,10 @@ cc_library(
         "//score/mw/com/test/fields/set_and_notifier:__subpackages__",
     ],
     deps = [
-        ":test_datatype",
+        ":field_types",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:skeleton_container",
-        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
     ],
 )
