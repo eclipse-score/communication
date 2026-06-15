@@ -53,7 +53,7 @@ class hash<score::mw::com::impl::lola::SkeletonInstanceIdentifier>
         const score::mw::com::impl::lola::SkeletonInstanceIdentifier& skeleton_instance_identifier) const noexcept
     {
         using SkeletonInstanceIdentifier = score::mw::com::impl::lola::SkeletonInstanceIdentifier;
-        static_assert(sizeof(SkeletonInstanceIdentifier::service_id) + sizeof(SkeletonInstanceIdentifier::instance_id) <
+        static_assert((sizeof(SkeletonInstanceIdentifier::service_id) + sizeof(SkeletonInstanceIdentifier::instance_id)) <
                       sizeof(std::uint64_t));
 
         constexpr auto instance_id_bit_width =

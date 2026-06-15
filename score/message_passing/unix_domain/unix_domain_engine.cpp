@@ -316,7 +316,7 @@ void UnixDomainEngine::RunOnThread() noexcept
     {
         std::int32_t timeout = ProcessTimerQueue();
         const auto num_expected = os_resources_.poll->poll(poll_fds_.data(), poll_fds_.size(), timeout);
-        if (num_expected.has_value() && num_expected.value() > 0)
+        if ((num_expected.has_value()) && (num_expected.value() > 0))
         {
             for (std::size_t i = 0; i < poll_fds_.size(); ++i)
             {

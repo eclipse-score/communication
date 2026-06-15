@@ -90,7 +90,7 @@ template <typename T>
 bool DeserializeFromPayload(const score::cpp::span<const std::uint8_t> payload, T& t) noexcept
 {
     static_assert(std::is_trivially_copyable_v<T>);
-    static_assert(sizeof(T) + 1 <= kMaxSendSize);
+    static_assert((sizeof(T) + 1) <= kMaxSendSize);
 
     if (sizeof(T) != payload.size())
     {
@@ -140,7 +140,7 @@ template <typename T>
 auto SerializeToMessage(const std::uint8_t message_id, const T& t) noexcept -> std::array<std::uint8_t, sizeof(T) + 1>
 {
     static_assert(std::is_trivially_copyable_v<T>);
-    static_assert(sizeof(T) + 1 <= kMaxSendSize);
+    static_assert((sizeof(T) + 1) <= kMaxSendSize);
 
     std::array<std::uint8_t, sizeof(T) + 1> out{};
     out[0] = message_id;
@@ -668,7 +668,7 @@ score::Result<void> MessagePassingServiceInstance::CallSubscribeServiceMethodLoc
     auto [method_subscribed_handler_copy, allowed_proxy_uids] = method_subscribed_handler_it->second;
     read_lock.unlock();
 
-    if (allowed_proxy_uids.has_value() && allowed_proxy_uids->count(proxy_uid) == 0U)
+    if ((allowed_proxy_uids.has_value()) && (allowed_proxy_uids->count(proxy_uid) == 0U))
     {
         mw::log::LogError("lola") << "Could not invoke subscribe service method handler because uid of proxy calling "
                                      "subscribe is not in allowed_consumers list.";
@@ -1414,7 +1414,7 @@ void MessagePassingServiceInstance::UnregisterEventNotificationRemote(
         //
         // To avoid the potential block of the caller thread until message_passing fails setting up the channel, we
         // skip sending the message in this scenario.
-        if (sender == nullptr || sender->GetState() != message_passing::IClientConnection::State::kReady)
+        if ((sender == nullptr) || (sender->GetState() != message_passing::IClientConnection::State::kReady))
         {
             score::mw::log::LogInfo("lola")
                 << "MessagePassingService: Skipping UnregisterEventNotificationMessage to node_id " << target_node_id

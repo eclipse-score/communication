@@ -36,7 +36,7 @@ score::cpp::span<std::byte> GetElement(const std::size_t position,
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(position < queue_size);
 
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(queue_storage.size() == type_info.Size() * queue_size);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(queue_storage.size() == (type_info.Size() * queue_size));
     const auto element_offset = type_info.Size() * position;
 
     // In our architecture we have a one-to-one mapping between pointers and integral values.

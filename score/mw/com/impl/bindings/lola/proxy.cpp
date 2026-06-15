@@ -649,11 +649,11 @@ score::Result<void> Proxy::SetupMethods()
             const auto field_id =
                 GetServiceElementId<ServiceElementType::FIELD>(lola_service_type_deployment, field_name);
 
-            if (kUseGetIfAvailable && proxy_methods_.count({field_id, MethodType::kGet}) != 0U)
+            if ((kUseGetIfAvailable) && (proxy_methods_.count({field_id, MethodType::kGet}) != 0U))
             {
                 enabled_method_data.push_back({{field_id, MethodType::kGet}, kFieldMethodQueueSize});
             }
-            if (kUseSetIfAvailable && proxy_methods_.count({field_id, MethodType::kSet}) != 0U)
+            if ((kUseSetIfAvailable) && (proxy_methods_.count({field_id, MethodType::kSet}) != 0U))
             {
                 enabled_method_data.push_back({{field_id, MethodType::kSet}, kFieldMethodQueueSize});
             }

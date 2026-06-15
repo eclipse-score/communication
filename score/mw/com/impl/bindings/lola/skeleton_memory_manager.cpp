@@ -473,7 +473,7 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
     }
 
     const auto control_asil_b_size =
-        quality_type_ == QualityType::kASIL_B
+        (quality_type_ == QualityType::kASIL_B)
             ? score::cpp::optional<std::size_t>{control_asil_resource_->GetUserAllocatedBytes()}
             : score::cpp::optional<std::size_t>{};
 
@@ -503,7 +503,7 @@ bool SkeletonMemoryManager::CreateSharedMemoryForData(
     const auto path = shm_path_builder_.GetDataChannelShmName(lola_instance_id_);
     const bool use_typed_memory = register_shm_object_trace_callback.has_value();
     const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
-        (permissions.empty()) && (lola_service_instance_deployment.strict_permissions_ == false)
+        ((permissions.empty()) && (lola_service_instance_deployment.strict_permissions_ == false))
             ? memory::shared::SharedMemoryFactory::WorldReadable{}
             : memory::shared::SharedMemoryFactory::UserPermissions{permissions};
     const auto memory_resource = score::memory::shared::SharedMemoryFactory::Create(
@@ -570,7 +570,7 @@ bool SkeletonMemoryManager::CreateSharedMemoryForControl(
     }
 
     const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
-        (permissions.empty()) && (lola_service_instance_deployment.strict_permissions_ == false)
+        ((permissions.empty()) && (lola_service_instance_deployment.strict_permissions_ == false))
             ? memory::shared::SharedMemoryFactory::WorldWritable{}
             : memory::shared::SharedMemoryFactory::UserPermissions{permissions};
     control_resource = score::memory::shared::SharedMemoryFactory::Create(

@@ -156,8 +156,8 @@ void SkeletonMethod::CleanUpOldHandlers(const GlobalConfiguration::ApplicationId
     const std::lock_guard lock{registration_guards_mutex_};
     const bool already_registered = std::any_of(
         registration_guards_.cbegin(), registration_guards_.cend(), [&application_id, proxy_pid](const auto& entry) {
-            return entry.first.proxy_instance_identifier.application_id == application_id &&
-                   entry.second.first == proxy_pid;
+            return (entry.first.proxy_instance_identifier.application_id == application_id) &&
+                   (entry.second.first == proxy_pid);
         });
 
     if (already_registered)

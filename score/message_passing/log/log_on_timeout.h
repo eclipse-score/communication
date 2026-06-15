@@ -43,7 +43,7 @@ class LogOnTimeoutBase
         if (started_ != time_point{})
         {
             const time_point now = UnderlyingClock::now();
-            if (now > started_ + timeout_)
+            if (now > (started_ + timeout_))
             {
                 std::apply(
                     [this, now](auto... tuple_args) {

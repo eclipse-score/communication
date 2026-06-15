@@ -247,7 +247,7 @@ void UnixDomainServer::ProcessConnect() noexcept
     ucred cr;
     socklen_t cr_len = sizeof(cr);
     auto sockopt_expected = socket->getsockopt(data_fd, SOL_SOCKET, SO_PEERCRED, &cr, &cr_len);
-    if (!sockopt_expected.has_value() || cr_len != sizeof(cr))
+    if ((!sockopt_expected.has_value()) || (cr_len != sizeof(cr)))
     {
         engine_->GetOsResources().unistd->close(data_fd);
         return;

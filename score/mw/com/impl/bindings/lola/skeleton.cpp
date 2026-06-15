@@ -743,8 +743,8 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
         {
             // A proxy may register a Get or Set method for a field that has been disabled in the skeleton's
             // interface definition. In that case, the skeleton has no handler for it.
-            if (unique_method_identifier.method_type == MethodType::kGet ||
-                unique_method_identifier.method_type == MethodType::kSet)
+            if ((unique_method_identifier.method_type == MethodType::kGet) ||
+                (unique_method_identifier.method_type == MethodType::kSet))
             {
                 score::mw::log::LogInfo("lola")
                     << "Proxy registered a field Get/Set method that is not available on the skeleton side. Skipping.";

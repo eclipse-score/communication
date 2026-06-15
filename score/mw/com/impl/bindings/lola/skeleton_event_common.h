@@ -336,8 +336,8 @@ Result<void> SkeletonEventCommon<SampleType>::NotifyConsumersIfHandlersRegistere
             .GetLolaMessaging()
             .NotifyEvent(QualityType::kASIL_QM, element_fq_id_);
     }
-    if (asil_b_event_update_notifications_registered_.load() &&
-        parent_.GetInstanceQualityType() == QualityType::kASIL_B)
+    if ((asil_b_event_update_notifications_registered_.load()) &&
+        (parent_.GetInstanceQualityType() == QualityType::kASIL_B))
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
