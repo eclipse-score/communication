@@ -13,8 +13,8 @@
 #include "score/mw/com/test/methods/non_trivial_constructors/provider.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/skeleton_container.h"
-#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/methods/non_trivial_constructors/test_method_datatype.h"
 
 #include "score/mw/com/types.h"

@@ -13,9 +13,9 @@
 
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/test/fields/field_initial_value/test_datatype.h"
-#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 
 #include <score/stop_token.hpp>
 

@@ -45,8 +45,8 @@ cc_binary(
         ":test_datatype",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
-        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -62,8 +62,8 @@ cc_binary(
     deps = [
         ":test_datatype",
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
-        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
         "@score_baselibs//score/mw/log",
     ],
 )
