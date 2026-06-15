@@ -12,10 +12,19 @@
 # *******************************************************************************
 
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("//bazel/rules:exec_in_sysroot.bzl", "exec_in_sysroot")
 
 sh_binary(
-    name = "generate_coverage_html",
+    name = "generate_coverage_html_bin",
     srcs = ["generate_coverage_html.sh"],
-    data = ["@lcov_deb//:srcs"],
+)
+
+exec_in_sysroot(
+    name = "generate_coverage_html",
+    executable = ":generate_coverage_html_bin",
+    sysroot = select({
+        "@platforms//cpu:x86_64": "@coverage_runtime_sysroot//unpack_amd64:unpack_amd64",
+        "@platforms//cpu:arm64": "@coverage_runtime_sysroot//unpack_arm64:unpack_arm64",
+    }),
     visibility = ["//visibility:private"],
 )

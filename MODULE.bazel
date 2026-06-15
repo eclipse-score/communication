@@ -223,8 +223,30 @@ apt.install(
     ],
     mergedusr = True,
 )
+apt.install(
+    dependency_set = "coverage_runtime_sysroot",
+    packages = [
+        "bash",
+        "coreutils",
+        "fakechroot", # Mandatory for exec_in_sysroot rule
+        "findutils",
+        "lcov",
+        "libcapture-tiny-perl",
+        "libdatetime-perl",
+        "libtimedate-perl",
+        "perl",
+        "zip",
+    ],
+    suites = [
+        "noble",
+        "noble-security",
+        "noble-updates",
+    ],
+    mergedusr = True,
+    unpack = True,
+)
 apt.lock(into = ":rules_distroless.lock.json")
-use_repo(apt, "ubuntu24_04_sysroot", "ubuntu24_04_integration_testing")
+use_repo(apt, "ubuntu24_04_sysroot", "ubuntu24_04_integration_testing", "coverage_runtime_sysroot")
 
 bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
 
@@ -302,17 +324,6 @@ use_repo(
 
 # We use here a pre-compiled fully static and hermetic clang_format binary
 # and not the one provided by llvm_toolchain, because the one from llvm_toolchain is not fully hermetic (and different version for now)
-###############################################################################
-# lcov deb package (provides genhtml + lcov for coverage HTML reports)
-###############################################################################
-deb = use_repo_rule("@download_utils//download/deb:defs.bzl", "download_deb")
-
-deb(
-    name = "lcov_deb",
-    dev_dependency = True,
-    integrity = "sha256-Ip14IkKavqBtkQ7mh6AXzr/6YyHpvSAZ0veMmw1+N80=",
-    urls = ["https://archive.ubuntu.com/ubuntu/pool/universe/l/lcov/lcov_2.0-4ubuntu2_all.deb"],
-)
 
 download_file = use_repo_rule("@download_utils//download/file:defs.bzl", "download_file")
 
