@@ -375,18 +375,21 @@ class ProxyFieldGetSetFixture : public ::testing::Test
     mock_binding::ProxyMethod set_method_binding_mock_{};
 };
 
-TEST_F(ProxyFieldGetSetFixture, GetDelegatesToProxyMethodBinding)
+TEST_F(ProxyFieldGetSetFixture, GetDelegatesToProxyMethodBindingAndReturnsValueFromReturnBuffer)
 {
-    // Given a Get-enabled ProxyField (WithGetter) and a mock method binding
+    // Given a Get-enabled ProxyField (WithGetter) whose return buffer already holds a known field value
     auto field = MakeFieldWithGetOnly();
+    constexpr TestSampleType expected_value{42U};
+    return_type_buffer_[0] = static_cast<std::byte>(expected_value);
 
     // When calling Get()
     EXPECT_CALL(proxy_method_binding_mock_, GetReturnValueBuffer(0));
     EXPECT_CALL(proxy_method_binding_mock_, DoCall(0));
-    auto result = field.Get();
+    const auto result = field.Get();
 
-    // Then the call is delegated to the underlying method binding
-    EXPECT_TRUE(result.has_value());
+    // Then the call is delegated to the binding and the returned pointer exposes the value from the return buffer
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(*result.value(), expected_value);
 }
 
 TEST_F(ProxyFieldGetSetFixture, SetDelegatesToProxyMethodBindingAndCopiesValueIntoInArgsBuffer)
