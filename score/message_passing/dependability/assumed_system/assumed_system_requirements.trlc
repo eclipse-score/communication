@@ -19,9 +19,9 @@ import ScoreReq
 // System level requirements for MessagePassing SEooC
 ///////////////////////////////
 
-ScoreReq.AssumedSystemReq ASR_MP_001 {
+ScoreReq.AssumedSystemReq SystemMessagingProtocol {
     description = "The system shall provide a mechanism for inter-process communication via a client-server messaging protocol."
     safety = ScoreReq.Asil.B
-    rationale = "Application processes need to exchange requests and responses reliably across process boundaries."
+    rationale = "Application processes need to exchange requests and responses process boundaries, while adhearing to the failiure modes of ISO-26262."
     version = 1
 }
