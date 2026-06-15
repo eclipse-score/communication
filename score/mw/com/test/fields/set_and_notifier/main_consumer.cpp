@@ -23,7 +23,18 @@
 #include <utility>
 #include <vector>
 
-int main(int argc, const char** argv)
+namespace
+{
+
+struct ConsumerConfig
+{
+    std::size_t num_retries;
+    std::chrono::milliseconds retry_backoff_time;
+    std::string mode;
+    std::string manifest;
+};
+
+ConsumerConfig ParseConfig(int argc, const char** argv)
 {
     constexpr auto kNumRetriesArg = "num-retries";
     constexpr auto kBackoffTimeArg = "backoff-time";
@@ -64,9 +75,20 @@ int main(int argc, const char** argv)
         score::mw::com::test::FailTest("Consumer: missing or invalid --", kServiceInstanceManifestArg, " argument");
     }
 
-    score::mw::com::runtime::InitializeRuntime(score::mw::com::runtime::RuntimeConfiguration{manifest_result.value()});
+    return ConsumerConfig{num_retries_result.value(),
+                          std::chrono::milliseconds{backoff_time_result.value()},
+                          mode_result.value(),
+                          manifest_result.value()};
+}
 
-    score::mw::com::test::run_consumer(
-        num_retries_result.value(), std::chrono::milliseconds{backoff_time_result.value()}, mode_result.value());
+}  // namespace
+
+int main(int argc, const char** argv)
+{
+    const auto config = ParseConfig(argc, argv);
+
+    score::mw::com::runtime::InitializeRuntime(score::mw::com::runtime::RuntimeConfiguration{config.manifest});
+
+    score::mw::com::test::run_consumer(config.num_retries, config.retry_backoff_time, config.mode);
     return EXIT_SUCCESS;
 }

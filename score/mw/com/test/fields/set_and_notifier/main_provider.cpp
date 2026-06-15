@@ -23,7 +23,16 @@
 #include <utility>
 #include <vector>
 
-int main(int argc, const char** argv)
+namespace
+{
+
+struct ProviderConfig
+{
+    std::string mode;
+    std::string manifest;
+};
+
+ProviderConfig ParseConfig(int argc, const char** argv)
 {
     constexpr auto kModeArg = "mode";
     constexpr auto kServiceInstanceManifestArg = "service-instance-manifest";
@@ -48,7 +57,16 @@ int main(int argc, const char** argv)
         score::mw::com::test::FailTest("Provider: missing or invalid --", kServiceInstanceManifestArg, " argument");
     }
 
-    score::mw::com::runtime::InitializeRuntime(score::mw::com::runtime::RuntimeConfiguration{manifest_result.value()});
+    return ProviderConfig{mode_result.value(), manifest_result.value()};
+}
+
+}  // namespace
+
+int main(int argc, const char** argv)
+{
+    const auto config = ParseConfig(argc, argv);
+
+    score::mw::com::runtime::InitializeRuntime(score::mw::com::runtime::RuntimeConfiguration{config.manifest});
 
     score::cpp::stop_source stop_source{};
     const bool sig_term_handler_setup_success = score::mw::com::SetupStopTokenSigTermHandler(stop_source);
@@ -57,8 +75,6 @@ int main(int argc, const char** argv)
         std::cerr << "Unable to set signal handler for SIGINT and/or SIGTERM, cautiously continuing\n";
     }
 
-    const auto& mode = mode_result.value();
-
-    score::mw::com::test::run_provider(stop_source.get_token(), mode);
+    score::mw::com::test::run_provider(stop_source.get_token(), config.mode);
     return EXIT_SUCCESS;
 }
