@@ -27,7 +27,7 @@
 #   https://eclipse-score.github.io/communication/latest/quality/index.html               ← dashboard
 #   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html      ← lcov HTML
 #   https://eclipse-score.github.io/communication/latest/quality/clang_tidy_findings.txt  ← raw findings
-#   https://eclipse-score.github.io/communication/latest/quality/codeql_findings.csv      ← CodeQL CSV
+#   https://eclipse-score.github.io/communication/latest/quality/codeql/index.html       ← CodeQL report
 
 name: Nightly Quality Jobs
 
@@ -176,6 +176,7 @@ jobs:
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
             --clang-tidy /tmp/clang_tidy/clang_tidy_findings.txt \
             --codeql-csv /tmp/codeql/codeql-nightly.csv \
+            --codeql-html "${GITHUB_WORKSPACE}/_quality/codeql/index.html" \
             --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
             --github-summary
 
