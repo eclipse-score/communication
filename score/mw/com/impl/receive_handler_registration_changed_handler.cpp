@@ -10,18 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-package MessagePassingSEooC
-
-import ScoreReq
-
-///////////////////////////////
-// Assumed System Requirements
-// System level requirements for MessagePassing SEooC
-///////////////////////////////
-
-ScoreReq.AssumedSystemReq SystemMessagingProtocol {
-    description = "The system shall provide a mechanism for inter-process communication via a client-server messaging protocol."
-    safety = ScoreReq.Asil.B
-    rationale = "Application processes need to exchange requests and responses process boundaries, while adhearing to the failiure modes of ISO-26262."
-    version = 1
-}
+#include "score/mw/com/impl/receive_handler_registration_changed_handler.h"

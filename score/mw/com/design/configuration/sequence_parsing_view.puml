@@ -1,0 +1,123 @@
+@startuml sequence_parsing_view
+title "Sequence View: Configuration Parsing & Validation"
+hide footbox
+
+participant "<u>:Process</u>\nara::com User" as Process
+participant "<u>impl::Runtime</u>" as Runtime
+participant "<u>:IConfigurationParsingStrategy</u>" as Strategy
+participant "<u>:ConfigurationValidator</u>" as Validator
+participant "<u>:Configuration</u>" as Configuration
+participant "<u>:SkeletonServiceInstanceConfiguration</u>" as SkeletonView
+participant "<u>:ProxyServiceInstanceConfiguration</u>" as ProxyView
+
+== Initialization ==
+
+activate Process
+Process -> Runtime : Initialize(argc, argv)
+activate Runtime
+
+note over Runtime
+  Select parsing strategy
+  based on feature flag
+  and/or file extension
+end note
+
+alt SCORE_MW_COM_ENABLE_FLATBUF_CONFIG defined && .bfbs/.bin extension
+  Runtime -> Runtime : strategy = make_unique<ConfigurationFlatbufParsingStrategy>()
+else default (JSON)
+  Runtime -> Runtime : strategy = make_unique<ConfigurationJsonParsingStrategy>()
+end alt
+
+== Phase 1: Format Validation & Parsing ==
+
+Runtime -> Strategy : Parse(path)
+activate Strategy
+
+note over Strategy
+  Phase 1: Format validation
+  - JSON: schema validation
+  - FlatBuf: verifier
+  Then: parse into C++ objects
+  (strings copied, not viewed)
+end note
+
+create Configuration
+Strategy -> Configuration : create(service_types, service_instances,\nglobal_configuration, tracing_configuration)
+
+Strategy --> Runtime : return: Configuration
+deactivate Strategy
+
+== Phase 2: Generic Rule Validation ==
+
+Runtime -> Validator : ValidateConfiguration(configuration)
+activate Validator
+
+note over Validator
+  Phase 2: Semantic cross-checks
+  - ASIL level consistency
+  - Type-instance reference integrity
+  - Binding consistency
+  - Unique event/field/method IDs
+  - No duplicate names
+end note
+
+alt validation failure
+  Validator -> Validator : LogFatal + ASSERT_PRD(false)
+  note over Validator #FFcccc : Terminates process
+end alt
+
+Validator --> Runtime : return: void (success)
+deactivate Validator
+
+Runtime -> Runtime : Create singleton with Configuration
+Runtime --> Process : return: void
+deactivate Runtime
+
+== Runtime Usage ==
+
+Process -> Runtime : getInstance()
+activate Runtime
+Runtime --> Process : return: singleton instance
+deactivate Runtime
+
+== Phase 3: User-Specific Validation (Skeleton) ==
+
+Process -> SkeletonView : Create(configuration, instance_specifier)
+activate SkeletonView
+
+note over SkeletonView
+  Phase 3: Skeleton-specific checks
+  - Offered instance completeness
+  - Provider permissions
+end note
+
+alt validation success
+  SkeletonView --> Process : return: score::Result<SkeletonServiceInstanceConfiguration>
+else validation failure
+  SkeletonView --> Process : return: score::Result with error
+  note over Process : Caller handles error gracefully
+end alt
+deactivate SkeletonView
+
+== Phase 3: User-Specific Validation (Proxy) ==
+
+Process -> ProxyView : Create(configuration, instance_specifier)
+activate ProxyView
+
+note over ProxyView
+  Phase 3: Proxy-specific checks
+  - Required instance validation
+  - Consumer permissions
+end note
+
+alt validation success
+  ProxyView --> Process : return: score::Result<ProxyServiceInstanceConfiguration>
+else validation failure
+  ProxyView --> Process : return: score::Result with error
+  note over Process : Caller handles error gracefully
+end alt
+deactivate ProxyView
+
+deactivate Process
+
+@enduml
