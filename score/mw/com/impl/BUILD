@@ -1064,6 +1064,18 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "reference_to_moveable",
+    srcs = [
+        "reference_to_moveable.cpp",
+    ],
+    hdrs = [
+        "reference_to_moveable.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+)
+
 cc_unit_test(
     name = "unit_test_runtime_single_exec",
     srcs = ["runtime_single_exec_test.cpp"],
@@ -1326,6 +1338,17 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola/methods:method_error",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_unit_test(
+    name = "reference_to_moveable_test",
+    srcs = [
+        "reference_to_moveable_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":reference_to_moveable",
     ],
 )
 
