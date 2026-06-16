@@ -27,6 +27,7 @@
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
+#include "score/mw/com/impl/receive_handler_registration_changed_handler.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/subscription_state.h"
 #include "score/mw/com/impl/traits.h"
@@ -141,6 +142,11 @@ using GenericSkeletonServiceElementInfo = impl::GenericSkeletonServiceElementInf
 /// \api
 /// \brief A type erased skeleton event that can be used to send data without knowing the SampleType.
 using GenericSkeletonEvent = impl::GenericSkeletonEvent;
+
+/// \api
+/// \brief A callback that can be registered on a GenericSkeletonEvent to be notified about changes in the
+/// availability of receive-handlers for this event.
+using ReceiveHandlerRegistrationChangedCallback = impl::ReceiveHandlerRegistrationChangedCallback;
 
 }  // namespace score::mw::com
 
