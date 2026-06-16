@@ -34,4 +34,4 @@ using InitialOnlySkeleton = score::mw::com::AsSkeleton<InitialOnlyInterface>;
 
 }  // namespace score::mw::com::test
 
-#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_INITIAL_ONLY_INTERFACE_H
+#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_FIELDS_TEST_RESOURCES_INITIAL_ONLY_FIELD_H

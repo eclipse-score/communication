@@ -138,6 +138,22 @@ cc_library(
 )
 
 cc_library(
+    name = "process_synchronizer",
+    srcs = ["process_synchronizer.cpp"],
+    hdrs = ["process_synchronizer.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/test:__subpackages__"],
+    deps = [
+        "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:shared_memory_object_creator",
+        "//score/mw/com/test/common_test_resources:shared_memory_object_guard",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/os/utils/interprocess:interprocess_notification",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "stop_token_sig_term_handler",
     srcs = [
         "stop_token_sig_term_handler.cpp",
@@ -420,22 +436,6 @@ cc_library(
         "//score/mw/com:com_error_domain",
         "//score/mw/com:types",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/result",
-    ],
-)
-
-cc_library(
-    name = "process_synchronizer",
-    srcs = ["process_synchronizer.cpp"],
-    hdrs = ["process_synchronizer.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/mw/com/test:__subpackages__"],
-    deps = [
-        "//score/mw/com/test/common_test_resources:fail_test",
-        "//score/mw/com/test/common_test_resources:shared_memory_object_creator",
-        "//score/mw/com/test/common_test_resources:shared_memory_object_guard",
-        "@score_baselibs//score/mw/log",
-        "@score_baselibs//score/os/utils/interprocess:interprocess_notification",
         "@score_baselibs//score/result",
     ],
 )

@@ -51,11 +51,8 @@ void run_notifier_provider(const score::cpp::stop_token& stop_token)
         FailTest("Provider: Could not create done ProcessSynchronizer");
     }
 
-    SkeletonContainer<InitialOnlySkeleton> skeleton_container{kInstanceSpecifierString};
-    if (!skeleton_container.CreateSkeleton())
-    {
-        FailTest("Provider: Unable to construct InitialOnlySkeleton");
-    }
+    SkeletonContainer<InitialOnlySkeleton> skeleton_container{};
+    skeleton_container.CreateSkeleton(kInstanceSpecifier, "set_and_notifier");
 
     auto& service = skeleton_container.GetSkeleton();
 
@@ -66,10 +63,7 @@ void run_notifier_provider(const score::cpp::stop_token& stop_token)
             FailTest("Provider: Unable to update initial field value: ", update_result.error());
         }
     }
-    if (!skeleton_container.OfferService())
-    {
-        FailTest("Provider: Unable to offer InitialOnlySkeleton");
-    }
+    skeleton_container.OfferService("set_and_notifier");
 
     if (!consumer_ready_synchronizer_result->WaitWithAbort(stop_token))
     {
@@ -100,11 +94,8 @@ void run_set_and_notifier_provider(const score::cpp::stop_token& stop_token)
         FailTest("Provider: Could not create ProcessSynchronizer");
     }
 
-    SkeletonContainer<SetEnabledSkeleton> skeleton_container{kInstanceSpecifierString};
-    if (!skeleton_container.CreateSkeleton())
-    {
-        FailTest("Provider: Unable to construct SetEnabledSkeleton");
-    }
+    SkeletonContainer<SetEnabledSkeleton> skeleton_container{};
+    skeleton_container.CreateSkeleton(kInstanceSpecifier, "set_and_notifier");
 
     auto& service = skeleton_container.GetSkeleton();
     const auto register_handler_result = service.set_enabled_field.RegisterSetHandler([](std::int32_t& value) noexcept {
@@ -121,10 +112,7 @@ void run_set_and_notifier_provider(const score::cpp::stop_token& stop_token)
         FailTest("Provider: Unable to update initial field value: ", update_result.error());
     }
 
-    if (!skeleton_container.OfferService())
-    {
-        FailTest("Provider: Unable to offer SetEnabledSkeleton");
-    }
+    skeleton_container.OfferService("set_and_notifier");
 
     if (!process_synchronizer_result->WaitWithAbort(stop_token))
     {

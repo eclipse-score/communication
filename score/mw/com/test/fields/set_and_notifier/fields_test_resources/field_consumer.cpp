@@ -168,7 +168,8 @@ void run_notifier_consumer(const std::size_t num_retries, const std::chrono::mil
     {
         FailTest("Consumer: Could not create done ProcessSynchronizer");
     }
-    ExitFunctionGuard done_guard{[&done_synchronizer_result]() {
+    ExitFunctionGuard exit_guard{[&consumer_ready_synchronizer_result, &done_synchronizer_result]() {
+        consumer_ready_synchronizer_result->Notify();
         done_synchronizer_result->Notify();
     }};
 
@@ -180,28 +181,84 @@ void run_notifier_consumer(const std::size_t num_retries, const std::chrono::mil
 
     // Step 2. Subscribe to field and wait for subscription
     std::cout << "\nConsumer: Step 2" << std::endl;
-    std::ignore = proxy.test_field.Subscribe(kMaxNumSamples);
-    if (!WaitForSubscription(proxy.test_field, num_retries, retry_backoff_time))
+    std::ignore = proxy.initial_only_field.Subscribe(kMaxNumSamples);
+    if (!WaitForSubscription(proxy.initial_only_field, num_retries, retry_backoff_time))
     {
         FailTest("Consumer: Subscription failed in notifier scenario");
     }
 
     // Step 3. Verify initial value received
     std::cout << "\nConsumer: Step 3" << std::endl;
-    const bool initial_value_received = WaitForValue(proxy.test_field, kInitialValue, num_retries, retry_backoff_time);
+    const bool initial_value_received =
+        WaitForValue(proxy.initial_only_field, kInitialValue, num_retries, retry_backoff_time);
     if (!initial_value_received)
     {
         FailTest("Consumer: Did not receive expected initial value ", kInitialValue, " in notifier scenario");
     }
 
-    // Step 4. Notify provider that consumer is ready
+    // Step 4. Register receive handler for updated value before notifying provider, to avoid missing the
+    // notification if the provider calls Update() before the handler is registered.
     std::cout << "\nConsumer: Step 4" << std::endl;
+    struct SyncState
+    {
+        std::mutex mutex{};
+        std::condition_variable cv{};
+        bool value_received{false};
+    };
+    SyncState sync_state;
+
+    const auto handler_result = proxy.initial_only_field.SetReceiveHandler([&proxy, &sync_state]() noexcept {
+        score::cpp::optional<std::int32_t> received;
+        std::ignore = proxy.initial_only_field.GetNewSamples(
+            [&received](const auto& sample_ptr) noexcept {
+                received = *sample_ptr;
+            },
+            kMaxNumSamples);
+        if (received.has_value() && received.value() == kUpdatedValue)
+        {
+            {
+                std::lock_guard<std::mutex> lock{sync_state.mutex};
+                sync_state.value_received = true;
+            }
+            sync_state.cv.notify_one();
+        }
+    });
+    if (!handler_result.has_value())
+    {
+        FailTest("Consumer: Could not register receive handler for updated value in notifier scenario");
+    }
+
     consumer_ready_synchronizer.Notify();
 
     // Step 5. Verify updated value received after provider publishes update
     std::cout << "\nConsumer: Step 5" << std::endl;
-    const bool updated_value_received = WaitForValue(proxy.test_field, kUpdatedValue, num_retries, retry_backoff_time);
-    proxy.test_field.Unsubscribe();
+
+    // Handle race: value may already be in the buffer before Notify() returned
+    bool updated_value_received = false;
+    {
+        score::cpp::optional<std::int32_t> existing;
+        std::ignore = proxy.initial_only_field.GetNewSamples(
+            [&existing](const auto& sample_ptr) noexcept {
+                existing = *sample_ptr;
+            },
+            kMaxNumSamples);
+        if (existing.has_value() && existing.value() == kUpdatedValue)
+        {
+            updated_value_received = true;
+        }
+    }
+
+    if (!updated_value_received)
+    {
+        const auto total_wait_time = retry_backoff_time * num_retries;
+        std::unique_lock<std::mutex> lock{sync_state.mutex};
+        updated_value_received = sync_state.cv.wait_for(lock, total_wait_time, [&sync_state] {
+            return sync_state.value_received;
+        });
+    }
+
+    std::ignore = proxy.initial_only_field.UnsetReceiveHandler();
+    proxy.initial_only_field.Unsubscribe();
 
     if (!updated_value_received)
     {
@@ -228,15 +285,16 @@ void run_set_and_notifier_consumer(const std::size_t num_retries, const std::chr
 
     // Step 2. Subscribe to field and wait for subscription
     std::cout << "\nConsumer: Step 2" << std::endl;
-    std::ignore = proxy.test_field.Subscribe(kMaxNumSamples);
-    if (!WaitForSubscription(proxy.test_field, num_retries, retry_backoff_time))
+    std::ignore = proxy.set_enabled_field.Subscribe(kMaxNumSamples);
+    if (!WaitForSubscription(proxy.set_enabled_field, num_retries, retry_backoff_time))
     {
         FailTest("Consumer: Subscription failed in set scenario");
     }
 
     // Step 3. Verify initial value received
     std::cout << "\nConsumer: Step 3" << std::endl;
-    const bool initial_value_received = WaitForValue(proxy.test_field, kInitialValue, num_retries, retry_backoff_time);
+    const bool initial_value_received =
+        WaitForValue(proxy.set_enabled_field, kInitialValue, num_retries, retry_backoff_time);
     if (!initial_value_received)
     {
         FailTest("Consumer: Did not receive initial value ", kInitialValue, " in set scenario");
@@ -244,7 +302,7 @@ void run_set_and_notifier_consumer(const std::size_t num_retries, const std::chr
 
     // Step 4. Set new field value and verify accepted value matches expected transformed value
     std::cout << "\nConsumer: Step 4" << std::endl;
-    const auto set_result = proxy.test_field.Set(kSetRequestValue);
+    const auto set_result = proxy.set_enabled_field.Set(kSetRequestValue);
     if (!set_result.has_value())
     {
         FailTest("Consumer: Set call failed: ", set_result.error());
@@ -259,8 +317,8 @@ void run_set_and_notifier_consumer(const std::size_t num_retries, const std::chr
     // Step 5. Verify transformed value received via field notification
     std::cout << "\nConsumer: Step 5" << std::endl;
     const bool transformed_value_received =
-        WaitForValue(proxy.test_field, kSetTransformedValue, num_retries, retry_backoff_time);
-    proxy.test_field.Unsubscribe();
+        WaitForValue(proxy.set_enabled_field, kSetTransformedValue, num_retries, retry_backoff_time);
+    proxy.set_enabled_field.Unsubscribe();
 
     if (!transformed_value_received)
     {
