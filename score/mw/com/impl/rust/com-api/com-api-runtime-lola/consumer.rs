@@ -30,6 +30,7 @@
 #![allow(clippy::needless_lifetimes)]
 
 use crate::Debug;
+use core::clone::Clone;
 use core::future::Future;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
@@ -668,7 +669,7 @@ where
                 total_received: 0,
                 cancellation: core::pin::pin!(cancellation),
                 bridge: self.instance_info.bridge.clone(),
-                type_ops: self.type_ops.clone(),
+                type_ops: self.type_ops,
             }
             .await
         }

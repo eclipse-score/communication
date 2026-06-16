@@ -143,50 +143,52 @@ class TypeOperations
     /// \param max_sample Maximum number of samples to process
     /// \param callBack FatPtr of Rust FnMut callable that takes SamplePtr<T>
     /// \return Result containing the number of samples processed on success, or error code on failure
-    virtual Result<uint32_t> GetSamplesFromEvent(ProxyEventBase* event_ptr, uint32_t max_sample, FatPtr callBack) = 0;
+    virtual Result<uint32_t> GetSamplesFromEvent(ProxyEventBase* event_ptr,
+                                                 uint32_t max_sample,
+                                                 FatPtr callBack) const = 0;
 
     /// \brief Send event data through SkeletonEvent of specific type
     /// \details Casts the type-erased data pointer back to the actual type and sends it via SkeletonEvent.
     /// \param event_ptr Pointer to SkeletonEventBase instance
     /// \param data_ptr Pointer to type T (erased as void*, casted back to T* in implementation)
     /// \return true if send successful, false otherwise
-    virtual bool SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) = 0;
+    virtual bool SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) const = 0;
 
     /// \brief Get data pointer from SamplePtr of specific type
     /// \details Casts the type-erased SamplePtr back to SamplePtr<T> and retrieves the underlying data pointer.
     /// \param sample_ptr Pointer to type-erased SamplePtr
     /// \return Pointer to the underlying data of type T
-    virtual const void* GetSamplePtrData(const void* sample_ptr) = 0;
+    virtual const void* GetSamplePtrData(const void* sample_ptr) const = 0;
 
     /// \brief Delete SamplePtr of specific type
     /// \details Casts the type-erased SamplePtr back to SamplePtr<T> and deletes it properly.
     /// \param sample_ptr Pointer to type-erased SamplePtr
-    virtual void DeleteSamplePtr(void* sample_ptr) = 0;
+    virtual void DeleteSamplePtr(void* sample_ptr) const = 0;
 
     /// @brief Get allocatee pointer from SkeletonEvent of specific type
     /// \details Allocates a SampleAllocateePtr<T> from the SkeletonEvent and places it into the provided storage.
     /// \param event_ptr Pointer to SkeletonEventBase instance
     /// \param allocatee_ptr Pointer to storage for SampleAllocateePtr<T>
     /// \return true if allocation successful, false otherwise
-    virtual bool GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) = 0;
+    virtual bool GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) const = 0;
 
     /// \brief Get data pointer from SampleAllocateePtr of specific type
     /// \details Casts the type-erased SampleAllocateePtr back to SampleAllocateePtr<T>
     /// \param allocatee_ptr Pointer to SampleAllocateePtr<T>
     /// \return Pointer to the underlying data of type T
-    virtual void* GetAllocateeDataPtr(void* allocatee_ptr) = 0;
+    virtual void* GetAllocateeDataPtr(void* allocatee_ptr) const = 0;
 
     /// \brief Delete SampleAllocateePtr of specific type
     /// \details Casts the type-erased SampleAllocateePtr back to SampleAllocateePtr<T> and deletes it properly.
     /// \param allocatee_ptr Pointer to type-erased SampleAllocateePtr
-    virtual void DeleteAllocateePtr(void* allocatee_ptr) = 0;
+    virtual void DeleteAllocateePtr(void* allocatee_ptr) const = 0;
 
     /// @brief Send allocatee data through SkeletonEvent of specific type
     /// \details Casts the type-erased allocatee pointer back to SampleAllocateePtr<T> and sends it via SkeletonEvent.
     /// \param event_ptr Pointer to SkeletonEventBase instance
     /// \param allocatee_ptr Pointer SampleAllocateePtr (of type T)
     /// \return true if send successful, false otherwise
-    virtual bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) = 0;
+    virtual bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) const = 0;
 };
 
 /// \brief Template implementation of TypeOperations for a specific type T
@@ -196,7 +198,7 @@ template <typename T>
 class TypeOperationImpl : public TypeOperations
 {
   public:
-    Result<uint32_t> GetSamplesFromEvent(ProxyEventBase* event_ptr, uint32_t max_sample, FatPtr callBack) override
+    Result<uint32_t> GetSamplesFromEvent(ProxyEventBase* event_ptr, uint32_t max_sample, FatPtr callBack) const override
     {
         auto proxy_event = dynamic_cast<ProxyEvent<T>*>(event_ptr);
         if (proxy_event == nullptr)
@@ -206,7 +208,7 @@ class TypeOperationImpl : public TypeOperations
         return details::GetSamplesFromEvent<T>(*proxy_event, callBack, max_sample);
     }
 
-    bool SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) override
+    bool SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) const override
     {
 
         auto skeleton_event = dynamic_cast<SkeletonEvent<T>*>(event_ptr);
@@ -223,7 +225,7 @@ class TypeOperationImpl : public TypeOperations
         return skeleton_event->Send(*typed_data).has_value();
     }
 
-    const void* GetSamplePtrData(const void* sample_ptr) override
+    const void* GetSamplePtrData(const void* sample_ptr) const override
     {
         if (sample_ptr == nullptr)
             return nullptr;
@@ -232,7 +234,7 @@ class TypeOperationImpl : public TypeOperations
         return typed_ptr->Get();
     }
 
-    void DeleteSamplePtr(void* sample_ptr) override
+    void DeleteSamplePtr(void* sample_ptr) const override
     {
         if (sample_ptr == nullptr)
             return;
@@ -241,7 +243,7 @@ class TypeOperationImpl : public TypeOperations
         typed_ptr->~SamplePtr<T>();
     }
 
-    bool GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) override
+    bool GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) const override
     {
         if (event_ptr == nullptr)
         {
@@ -263,7 +265,7 @@ class TypeOperationImpl : public TypeOperations
         return true;
     }
 
-    void DeleteAllocateePtr(void* allocatee_ptr) override
+    void DeleteAllocateePtr(void* allocatee_ptr) const override
     {
         if (allocatee_ptr == nullptr)
         {
@@ -274,7 +276,7 @@ class TypeOperationImpl : public TypeOperations
         typed_ptr->~SampleAllocateePtr<T>();
     }
 
-    void* GetAllocateeDataPtr(void* allocatee_ptr) override
+    void* GetAllocateeDataPtr(void* allocatee_ptr) const override
     {
         if (allocatee_ptr == nullptr)
         {
@@ -285,7 +287,7 @@ class TypeOperationImpl : public TypeOperations
         return typed_ptr->Get();
     }
 
-    bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) override
+    bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) const override
     {
         if (event_ptr == nullptr || allocatee_ptr == nullptr)
         {
@@ -321,7 +323,7 @@ class MemberOperation
 
     /// \brief Get TypeOperations for type-erased sample handling
     /// \return Pointer to TypeOperations instance for the event data type
-    virtual TypeOperations* GetTypeOps() = 0;
+    virtual const TypeOperations* GetTypeOps() const noexcept = 0;
 };
 
 /// \brief Template implementation of MemberOperation for specific ProxyType and SkeletonType
@@ -336,7 +338,7 @@ class MemberOperationImpl : public MemberOperation
 {
   public:
     /// Constructor to cache TypeOperations pointer for efficient member access
-    explicit MemberOperationImpl(TypeOperations* type_ops) : type_ops_ptr_(type_ops) {}
+    explicit MemberOperationImpl(const TypeOperations* type_ops) noexcept : type_ops_ptr_{type_ops} {}
 
     ProxyEventBase* GetProxyEvent(ProxyBase* proxy_ptr) override
     {
@@ -365,13 +367,13 @@ class MemberOperationImpl : public MemberOperation
         return static_cast<SkeletonEventBase*>(&(skeleton->*skeleton_event_member));
     }
 
-    TypeOperations* GetTypeOps() override
+    const TypeOperations* GetTypeOps() const noexcept override
     {
         return type_ops_ptr_;
     }
 
   private:
-    TypeOperations* type_ops_ptr_;
+    const TypeOperations* type_ops_ptr_;
 };
 
 /// \brief Interface for type-erased proxy and skeleton creation operations

@@ -358,6 +358,7 @@ impl Debug for TypeOperations {
 }
 
 /// This struct manages the pointer to TypeOperations instance retrieved from C++ registry.
+#[derive(Copy, Clone)]
 pub struct TypeOperationsManager {
     inner: NonNull<TypeOperations>,
 }
@@ -375,19 +376,12 @@ impl TypeOperationsManager {
 // any interior mutability and the instance is statically allocated and managed on the C++ side.
 // Sharing the pointer across threads is safe as this is used with event instance of proxy or skeleton instance
 // which already handles the concurrent scenario.
-// Note: Sync is required by consumer SubscriberImpl type.
 unsafe impl Send for TypeOperationsManager {}
 unsafe impl Sync for TypeOperationsManager {}
 
 impl Debug for TypeOperationsManager {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TypeOperationsManager").finish()
-    }
-}
-
-impl Clone for TypeOperationsManager {
-    fn clone(&self) -> Self {
-        TypeOperationsManager { inner: self.inner }
     }
 }
 

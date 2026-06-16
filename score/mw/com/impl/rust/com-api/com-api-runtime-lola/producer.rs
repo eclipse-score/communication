@@ -437,7 +437,7 @@ where
             allocatee_ptr: AllocateePtrWrapper {
                 inner: ManuallyDrop::new(allocatee_ptr),
                 bridge: self.skeleton_instance.0.bridge.clone(),
-                type_ops: self.type_ops.clone(),
+                type_ops: self.type_ops,
             },
             lifetime: PhantomData,
         })
