@@ -98,7 +98,7 @@ SkeletonEventBase* mw_com_get_event_from_skeleton(SkeletonBase* skeleton_ptr,
 /// \param type_ops Pointer to TypeOperations for the event data type T
 /// \param data_ptr Pointer to event data (T*)
 /// \return true if send successful, false otherwise
-bool mw_com_skeleton_send_event(SkeletonEventBase* event_ptr, TypeOperations* type_ops, void* data_ptr)
+bool mw_com_skeleton_send_event(SkeletonEventBase* event_ptr, const TypeOperations* type_ops, void* data_ptr)
 {
     if (event_ptr == nullptr || type_ops == nullptr || data_ptr == nullptr)
     {
@@ -247,7 +247,7 @@ void mw_com_destroy_skeleton(SkeletonBase* skeleton_ptr)
 /// \param max_samples Maximum number of samples to retrieve
 /// \return Number of samples retrieved, or std::numeric_limits<std::uint32_t>::max() on error
 std::uint32_t mw_com_type_registry_get_samples_from_event(ProxyEventBase* event_ptr,
-                                                          TypeOperations* type_ops,
+                                                          const TypeOperations* type_ops,
                                                           const FatPtr* callback,
                                                           uint32_t max_samples)
 {
@@ -270,7 +270,7 @@ std::uint32_t mw_com_type_registry_get_samples_from_event(ProxyEventBase* event_
 /// @param sample_ptr Opaque sample pointer
 /// @param type_ops Type operations pointer
 /// @return Pointer to sample data, or nullptr if type mismatch
-const void* mw_com_get_sample_ptr(const void* sample_ptr, TypeOperations* type_ops)
+const void* mw_com_get_sample_ptr(const void* sample_ptr, const TypeOperations* type_ops)
 {
     if (sample_ptr == nullptr || type_ops == nullptr)
     {
@@ -283,7 +283,7 @@ const void* mw_com_get_sample_ptr(const void* sample_ptr, TypeOperations* type_o
 /// @brief Delete sample pointer of specific type
 /// @param sample_ptr Opaque sample pointer
 /// @param type_ops Type operations pointer
-void mw_com_delete_sample_ptr(void* sample_ptr, TypeOperations* type_ops)
+void mw_com_delete_sample_ptr(void* sample_ptr, const TypeOperations* type_ops)
 {
     if (sample_ptr == nullptr || type_ops == nullptr)
     {
@@ -298,7 +298,7 @@ void mw_com_delete_sample_ptr(void* sample_ptr, TypeOperations* type_ops)
 /// @param allocatee_ptr Pointer to pre-allocated memory for allocatee
 /// @param type_ops Type operations pointer
 /// @return True if allocatee pointer was retrieved successfully, false otherwise
-bool mw_com_get_allocatee_ptr(SkeletonEventBase* event_ptr, void* allocatee_ptr, TypeOperations* type_ops)
+bool mw_com_get_allocatee_ptr(SkeletonEventBase* event_ptr, void* allocatee_ptr, const TypeOperations* type_ops)
 {
     if (event_ptr == nullptr || type_ops == nullptr)
     {
@@ -311,7 +311,7 @@ bool mw_com_get_allocatee_ptr(SkeletonEventBase* event_ptr, void* allocatee_ptr,
 /// @brief Delete allocatee pointer of specific type
 /// @param allocatee_ptr Pointer to SampleAllocateePtr<T>
 /// @param type_ops Type operations pointer
-void mw_com_delete_allocatee_ptr(void* allocatee_ptr, TypeOperations* type_ops)
+void mw_com_delete_allocatee_ptr(void* allocatee_ptr, const TypeOperations* type_ops)
 {
     if (allocatee_ptr == nullptr || type_ops == nullptr)
     {
@@ -325,7 +325,7 @@ void mw_com_delete_allocatee_ptr(void* allocatee_ptr, TypeOperations* type_ops)
 /// @param allocatee_ptr Pointer to SampleAllocateePtr<T>
 /// @param type_ops Type operations pointer
 /// @return Pointer to allocatee data, or nullptr if type mismatch
-void* mw_com_get_allocatee_data_ptr(void* allocatee_ptr, TypeOperations* type_ops)
+void* mw_com_get_allocatee_data_ptr(void* allocatee_ptr, const TypeOperations* type_ops)
 {
     if (allocatee_ptr == nullptr || type_ops == nullptr)
     {
@@ -340,7 +340,9 @@ void* mw_com_get_allocatee_data_ptr(void* allocatee_ptr, TypeOperations* type_op
 /// @param type_ops Type operations pointer
 /// @param allocatee_ptr Pointer to SampleAllocateePtr<T>
 /// @return True if event was sent successfully, false otherwise
-bool mw_com_skeleton_send_event_allocatee(SkeletonEventBase* event_ptr, TypeOperations* type_ops, void* allocatee_ptr)
+bool mw_com_skeleton_send_event_allocatee(SkeletonEventBase* event_ptr,
+                                          const TypeOperations* type_ops,
+                                          void* allocatee_ptr)
 {
     if (event_ptr == nullptr || type_ops == nullptr || allocatee_ptr == nullptr)
     {
@@ -450,8 +452,8 @@ void mw_com_stop_find_service(void* find_service_handle_ptr)
 /// registry-based approach.
 /// \param interface_id UTF-8 string view of interface ID
 /// \param member_name UTF-8 string view of member name (e.g., event name)
-/// \return Pointer to TypeOperations instance if found, nullptr otherwise
-void* mw_com_get_type_ops_instance(StringView interface_id, StringView member_name)
+/// \return Const pointer to TypeOperations instance if found, nullptr otherwise
+const void* mw_com_get_type_ops_instance(StringView interface_id, StringView member_name)
 {
     if (interface_id.data == nullptr || member_name.data == nullptr)
     {
