@@ -163,6 +163,7 @@ def load_codeql_csv(path: pathlib.Path) -> dict | None:
     except (OSError, csv.Error):
         return None
     return {
+        "loaded": True,
         "errors": errors,
         "warnings": warnings,
         "recommendations": recommendations,
@@ -212,6 +213,7 @@ def render_codeql_report(codeql, timestamp) -> str:
     tmpl = env.get_template("codeql_report.html.j2")
     return tmpl.render(
         timestamp=timestamp,
+        loaded=codeql.get("loaded", False) if codeql else False,
         findings=codeql.get("findings", []) if codeql else [],
         errors=codeql["errors"] if codeql else 0,
         warnings=codeql["warnings"] if codeql else 0,

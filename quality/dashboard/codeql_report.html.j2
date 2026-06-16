@@ -30,7 +30,7 @@ tbody tr:hover { background: var(--surface); }
 <h1>CodeQL Findings Report</h1>
 <p class="meta">Generated: {{ timestamp }}</p>
 
-{% if findings %}
+{% if loaded %}
 <div class="summary">
   <div class="card">
     <div class="num" style="color:{% if errors == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ errors }}</div>
