@@ -136,10 +136,11 @@ def load_clang_tidy(path: pathlib.Path) -> dict | None:
 
 
 def load_codeql_csv(path: pathlib.Path) -> dict | None:
-    """Return {errors, warnings, recommendations, total} from a CodeQL CSV results file."""
+    """Return {errors, warnings, recommendations, total, findings} from a CodeQL CSV results file."""
     if not path or not path.is_file():
         return None
     errors = warnings = recommendations = 0
+    findings = []
     try:
         with path.open(encoding="utf-8", errors="replace", newline="") as fh:
             reader = csv.DictReader(fh)
@@ -150,7 +151,15 @@ def load_codeql_csv(path: pathlib.Path) -> dict | None:
                 elif severity == "warning":
                     warnings += 1
                 else:
+                    severity = "recommendation"
                     recommendations += 1
+                findings.append({
+                    "severity": severity,
+                    "name": row.get("name") or row.get("Name") or "",
+                    "message": row.get("message") or row.get("Message") or row.get("description") or "",
+                    "path": row.get("path") or row.get("Path") or row.get("file") or "",
+                    "line": row.get("start:line") or row.get("Line") or "",
+                })
     except (OSError, csv.Error):
         return None
     return {
@@ -158,6 +167,7 @@ def load_codeql_csv(path: pathlib.Path) -> dict | None:
         "warnings": warnings,
         "recommendations": recommendations,
         "total": errors + warnings + recommendations,
+        "findings": findings,
     }
 
 def load_history(path: pathlib.Path) -> list[dict]:
@@ -193,6 +203,20 @@ def render_dashboard(cov_summary, cov_files, clang_tidy, codeql, history, timest
         codeql=codeql,
         history=history,
         prev=history[-2] if len(history) >= 2 else None,
+    )
+
+
+def render_codeql_report(codeql, timestamp) -> str:
+    """Render standalone CodeQL findings HTML report."""
+    env = Environment(loader=FileSystemLoader(str(_TEMPLATE_DIR)), autoescape=True)
+    tmpl = env.get_template("codeql_report.html.j2")
+    return tmpl.render(
+        timestamp=timestamp,
+        findings=codeql.get("findings", []) if codeql else [],
+        errors=codeql["errors"] if codeql else 0,
+        warnings=codeql["warnings"] if codeql else 0,
+        recommendations=codeql["recommendations"] if codeql else 0,
+        total=codeql["total"] if codeql else 0,
     )
 
 
@@ -291,6 +315,11 @@ def main() -> int:
         help="Path to CodeQL CSV results file",
     )
     parser.add_argument(
+        "--codeql-html", default="",
+        dest="codeql_html",
+        help="Output path for standalone CodeQL findings HTML report",
+    )
+    parser.add_argument(
         "--html", default="dashboard.html",
         help="Output HTML dashboard path",
     )
@@ -337,6 +366,16 @@ def main() -> int:
         render_dashboard(cov_summary, cov_files, clang_tidy, codeql, history, timestamp),
         encoding="utf-8",
     )
+
+    # Generate standalone CodeQL HTML report (like coverage HTML)
+    if args.codeql_html:
+        codeql_html_path = pathlib.Path(args.codeql_html)
+        codeql_html_path.parent.mkdir(parents=True, exist_ok=True)
+        codeql_html_path.write_text(
+            render_codeql_report(codeql, timestamp),
+            encoding="utf-8",
+        )
+        print(f"CodeQL report written: {codeql_html_path}")
 
     print(f"Dashboard written: {html_path}")
     if cov_summary:
