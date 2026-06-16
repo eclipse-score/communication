@@ -13,6 +13,8 @@
 
 use com_api::{Interface, Producer, Runtime, Subscriber};
 use com_api_gen::{Exhaust, Tire, VehicleInterface};
+use futures::channel::oneshot;
+use std::sync::{mpsc, OnceLock};
 
 // Type aliases for generated consumer and offered producer types for the Vehicle interface
 // VehicleConsumer is the consumer type generated for the Vehicle interface, parameterized by the runtime R
@@ -23,11 +25,14 @@ pub type VehicleOfferedProducer<R> =
 
 // Example struct demonstrating composition with VehicleConsumer
 pub struct VehicleMonitorProducer<R: Runtime> {
-    pub producer: VehicleOfferedProducer<R>,
+    pub(crate) producer: VehicleOfferedProducer<R>,
 }
 
 pub struct VehicleMonitorConsumer<R: Runtime> {
-    pub tire_subscriber: <<R as Runtime>::Subscriber<Tire> as Subscriber<Tire, R>>::Subscription,
-    pub _exhaust_subscriber:
+    pub(crate) tire_subscriber:
+        <<R as Runtime>::Subscriber<Tire> as Subscriber<Tire, R>>::Subscription,
+    pub(crate) _exhaust_subscriber:
         <<R as Runtime>::Subscriber<Exhaust> as Subscriber<Exhaust, R>>::Subscription,
+    // The thread is spawned on the first cancellable receive call and exits when the struct is dropped.
+    pub(crate) timer_tx: OnceLock<mpsc::SyncSender<oneshot::Sender<()>>>,
 }

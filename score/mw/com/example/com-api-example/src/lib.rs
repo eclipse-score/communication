@@ -14,8 +14,22 @@
 pub mod consumer;
 pub mod producer;
 pub mod vehicle_monitor;
-
-// Re-export commonly used items
 pub use vehicle_monitor::{
     VehicleConsumer, VehicleMonitorConsumer, VehicleMonitorProducer, VehicleOfferedProducer,
 };
+
+/// All execution modes supported by the example application.
+/// Used by clap for CLI argument parsing and by the consumer/producer to select behaviour.
+#[derive(clap::ValueEnum, Clone, Debug)]
+pub enum ExampleType {
+    /// Synchronous service discovery and synchronous receive.
+    Sync,
+    /// Asynchronous service discovery, then synchronous receive.
+    AsyncServiceDiscovery,
+    /// Asynchronous service discovery and asynchronous receive (no timeout).
+    AsyncReceive,
+    /// Asynchronous service discovery and asynchronous receive with a cancellation timeout.
+    AsyncReceiveWithTimeout,
+    /// Asynchronous service discovery and stream-based receive.
+    Streaming,
+}
