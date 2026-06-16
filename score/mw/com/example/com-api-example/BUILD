@@ -11,18 +11,33 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
-rust_binary(
-    name = "com-api-example",
-    srcs = ["basic-consumer-producer.rs"],
-    data = ["etc/mw_com_config.json"],
+rust_library(
+    name = "com-api-example-lib",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "com_api_example",
     features = ["link_std_cpp_lib"],
     visibility = ["//visibility:public"],
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",
         "//score/mw/com/impl/rust/com-api/com-api",
+    ],
+)
+
+rust_binary(
+    name = "com-api-example",
+    srcs = ["main.rs"],
+    data = ["etc/mw_com_config.json"],
+    features = ["link_std_cpp_lib"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":com-api-example-lib",
+        "//score/mw/com/example/com-api-example/com-api-gen",
+        "//score/mw/com/impl/rust/com-api/com-api",
         "@score_communication_crate_index//:clap",
+        "@score_communication_crate_index//:futures",
+        "@score_communication_crate_index//:tokio",
     ],
 )
 
@@ -31,9 +46,4 @@ rust_test(
     crate = ":com-api-example",
     data = ["etc/mw_com_config.json"],
     tags = ["manual"],
-    deps = [
-        ":com-api-example",
-        "@score_communication_crate_index//:futures",
-        "@score_communication_crate_index//:tokio",
-    ],
 )
