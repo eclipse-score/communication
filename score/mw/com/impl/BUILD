@@ -1064,6 +1064,36 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "enable_reference_to_moveable_from_this",
+    srcs = [
+        "enable_reference_to_moveable_from_this.cpp",
+    ],
+    hdrs = [
+        "enable_reference_to_moveable_from_this.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    deps = [
+        ":reference_to_moveable",
+    ],
+)
+
+cc_library(
+    name = "reference_to_moveable",
+    srcs = [
+        "reference_to_moveable.cpp",
+    ],
+    hdrs = [
+        "reference_to_moveable.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
 cc_unit_test(
     name = "unit_test_runtime_single_exec",
     srcs = ["runtime_single_exec_test.cpp"],
@@ -1326,6 +1356,28 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola/methods:method_error",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_unit_test(
+    name = "enable_reference_to_moveable_from_this_test",
+    srcs = [
+        "enable_reference_to_moveable_from_this_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":enable_reference_to_moveable_from_this",
+    ],
+)
+
+cc_unit_test(
+    name = "reference_to_moveable_test",
+    srcs = [
+        "reference_to_moveable_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":reference_to_moveable",
     ],
 )
 
