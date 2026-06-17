@@ -42,11 +42,7 @@ class SkeletonField : public SkeletonFieldBase
     // SkeletonField must enable WithGetter or WithNotifier. Without one the consumer has no way to
     // observe the value, so the field is useless. WithSetter alone does not count.
     static_assert(
-<<<<<<< HEAD
         contains_type<WithNotifier, Tags...>::value || contains_type<WithGetter, Tags...>::value,
-=======
-        detail::contains_type<WithNotifier, Tags...>::value || detail::contains_type<WithGetter, Tags...>::value,
->>>>>>> aafdc844 (mw/com: migrate ProxyField and SkeletonField to tag-based dispatch)
         "A field must either have WithGetter or WithNotifier enabled otherwise, there is no way for the consumer to "
         "receive the field values.");
 
@@ -148,11 +144,7 @@ class SkeletonField : public SkeletonFieldBase
     /// \return void on success otherwise the error code reported by the binding.
     template <typename CallableType,
               typename U = SampleDataType,
-<<<<<<< HEAD
               typename = std::enable_if_t<is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
-=======
-              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
->>>>>>> aafdc844 (mw/com: migrate ProxyField and SkeletonField to tag-based dispatch)
     Result<void> RegisterSetHandler(CallableType&& set_handler)
     {
         static_assert(std::is_invocable_v<CallableType, FieldType&>,
@@ -225,13 +217,8 @@ class SkeletonField : public SkeletonFieldBase
         return !is_set_handler_registered_;
     }
 
-<<<<<<< HEAD
     static constexpr bool kHasGetter = contains_type<WithGetter, Tags...>::value;
     static constexpr bool kHasSetter = contains_type<WithSetter, Tags...>::value;
-=======
-    static constexpr bool kHasGetter = detail::contains_type<WithGetter, Tags...>::value;
-    static constexpr bool kHasSetter = detail::contains_type<WithSetter, Tags...>::value;
->>>>>>> aafdc844 (mw/com: migrate ProxyField and SkeletonField to tag-based dispatch)
     // No kHasNotifier: the SkeletonEvent is always built because it provides Update/Allocate.
 
     static std::unique_ptr<SkeletonEvent<FieldType>> MakeSkeletonEvent(SkeletonBase& parent,
