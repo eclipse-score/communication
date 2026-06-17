@@ -69,6 +69,7 @@
 use core::fmt::{Debug, Formatter};
 use core::marker::Unpin;
 use std::ffi::c_char;
+use std::ptr::NonNull;
 
 /// Opaque C++ void* pointer wrapper
 pub type CVoidPtr = *const std::ffi::c_void;
@@ -98,31 +99,36 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
         &self,
         event_ptr: *mut SkeletonEventBase,
         allocatee_ptr: *mut std::ffi::c_void,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
     ) -> bool;
 
     /// # Safety
     /// `allocatee_ptr` must be a valid pointer previously returned by `get_allocatee_ptr`
-    /// with the same `type_name`, and must not be used after this call.
-    unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_name: &str);
+    /// and `type_ops` must be the corresponding `TypeOperationsManager` for the type T.
+    unsafe fn delete_allocatee_ptr(
+        &self,
+        allocatee_ptr: *mut std::ffi::c_void,
+        type_ops: &TypeOperationsManager,
+    );
 
     /// # Safety
-    /// `allocatee_ptr` must be a valid pointer to a `SampleAllocateePtr<T>` of the specified
-    /// `type_name`, previously obtained from `get_allocatee_ptr`.
+    /// `allocatee_ptr` must be a valid pointer previously returned by `get_allocatee_ptr`
+    /// and `type_ops` must be the corresponding `TypeOperationsManager` for the type T.
     unsafe fn get_allocatee_data_ptr(
         &self,
         allocatee_ptr: *const std::ffi::c_void,
-        type_name: &str,
+        type_ops: &TypeOperationsManager,
     ) -> *mut std::ffi::c_void;
 
     /// # Safety
     /// `event_ptr` must be a valid pointer to a `SkeletonEventBase` obtained from
     /// `get_event_from_skeleton`. `allocatee_ptr` must be a valid `SampleAllocateePtr<T>`
-    /// whose type matches `event_type`.
+    /// previously returned by `get_allocatee_ptr` for the same event and type T, and `type_ops`
+    /// must be the corresponding `TypeOperationsManager` for type T.
     unsafe fn skeleton_event_send_sample_allocatee(
         &self,
         event_ptr: *mut SkeletonEventBase,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
         allocatee_ptr: *const std::ffi::c_void,
     ) -> bool;
 
@@ -131,13 +137,17 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     unsafe fn sample_ptr_get(
         &self,
         sample_ptr: *const std::ffi::c_void,
-        type_name: &str,
+        type_ops: &TypeOperationsManager,
     ) -> *const std::ffi::c_void;
 
     /// # Safety
     /// `sample_ptr` must be a valid pointer to a `SamplePtr<T>` of the specified `type_name`,
     /// and must not be used after this call.
-    unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_name: &str);
+    unsafe fn sample_ptr_delete(
+        &self,
+        sample_ptr: *mut std::ffi::c_void,
+        type_ops: &TypeOperationsManager,
+    );
 
     /// # Safety
     /// `skeleton_ptr` must be a valid, non-null pointer to a `SkeletonBase` previously created
@@ -200,7 +210,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     unsafe fn get_samples_from_event(
         &self,
         event_ptr: *mut ProxyEventBase,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
         callback: &FatPtr,
         max_samples: u32,
     ) -> u32;
@@ -212,7 +222,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     unsafe fn skeleton_send_event(
         &self,
         event_ptr: *mut SkeletonEventBase,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
         data_ptr: *const std::ffi::c_void,
     ) -> bool;
 
@@ -239,17 +249,12 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
         &self,
         proxy_event_ptr: *mut ProxyEventBase,
         handler: &FatPtr,
-        event_type: &str,
     ) -> bool;
 
     /// # Safety
     /// `proxy_event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
     /// `get_event_from_proxy`. `event_type` must match the type used when the handler was set.
-    unsafe fn clear_event_receive_handler(
-        &self,
-        proxy_event_ptr: *mut ProxyEventBase,
-        event_type: &str,
-    );
+    unsafe fn clear_event_receive_handler(&self, proxy_event_ptr: *mut ProxyEventBase);
 
     /// # Safety
     /// `callback` must be a valid `FatPtr` referencing a callable compatible with the
@@ -265,6 +270,16 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// `handle` must be a valid pointer returned from `start_find_service` that has not
     /// been stopped yet. The handle must not be used after this call.
     unsafe fn stop_find_service(&self, handle: *mut FindServiceHandle);
+
+    /// # Safety
+    /// Caller must ensure that the provided interface_id and member_name correspond to
+    /// a valid TypeOperations instance in the C++ registry. The returned TypeOperationsManager
+    /// must not be used after the underlying TypeOperations instance is destroyed on the C++ side.
+    unsafe fn get_type_ops_instance(
+        &self,
+        interface_id: &str,
+        member_name: &str,
+    ) -> Option<TypeOperationsManager>;
 }
 
 /// Opaque proxy base struct
@@ -326,6 +341,47 @@ pub struct SkeletonEventBase {
 impl Debug for SkeletonEventBase {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SkeletonEventBase").finish()
+    }
+}
+
+/// Opaque type operations struct
+#[repr(C)]
+#[derive(Default)]
+pub struct TypeOperations {
+    dummy: [u8; 0],
+}
+
+impl Debug for TypeOperations {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TypeOperations").finish()
+    }
+}
+
+/// This struct manages the pointer to TypeOperations instance retrieved from C++ registry.
+#[derive(Copy, Clone)]
+pub struct TypeOperationsManager {
+    inner: NonNull<TypeOperations>,
+}
+
+impl TypeOperationsManager {
+    pub fn new(inner: NonNull<TypeOperations>) -> Self {
+        Self { inner }
+    }
+    pub fn as_ptr(&self) -> *const TypeOperations {
+        self.inner.as_ptr()
+    }
+}
+
+// SAFETY: TypeOperationsManager can be sent and shared between threads because it does not provide
+// any interior mutability and the instance is statically allocated and managed on the C++ side.
+// Sharing the pointer across threads is safe as this is used with event instance of proxy or skeleton instance
+// which already handles the concurrent scenario.
+unsafe impl Send for TypeOperationsManager {}
+unsafe impl Sync for TypeOperationsManager {}
+
+impl Debug for TypeOperationsManager {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TypeOperationsManager").finish()
     }
 }
 

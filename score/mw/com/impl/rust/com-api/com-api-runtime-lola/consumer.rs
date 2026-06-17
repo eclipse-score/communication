@@ -30,6 +30,7 @@
 #![allow(clippy::needless_lifetimes)]
 
 use crate::Debug;
+use core::clone::Clone;
 use core::future::Future;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
@@ -82,6 +83,7 @@ where
 {
     data: ManuallyDrop<sample_ptr_rs::SamplePtr<T>>,
     bridge: B,
+    type_ops: TypeOperationsManager,
 }
 
 impl<T, B: FFIBridge> Drop for LolaBinding<T, B>
@@ -95,7 +97,7 @@ where
             let mut sample_ptr = ManuallyDrop::take(&mut self.data);
             self.bridge.sample_ptr_delete(
                 std::ptr::from_mut(&mut sample_ptr) as *mut std::ffi::c_void,
-                T::ID,
+                &self.type_ops,
             );
         }
     }
@@ -124,7 +126,7 @@ where
         unsafe {
             let data_ptr = self.inner.bridge.sample_ptr_get(
                 std::ptr::from_ref(&(*self.inner.data)) as *const std::ffi::c_void,
-                T::ID,
+                &self.inner.type_ops,
             );
             (data_ptr as *const T)
                 .as_ref()
@@ -352,6 +354,13 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
         if !status {
             return Err(Error::EventError(EventFailedReason::EventNotAvailable));
         }
+        let type_ops = unsafe {
+            self.instance_info
+                .bridge
+                .get_type_ops_instance(self.instance_info.interface_id, self.identifier)
+        }
+        .ok_or(Error::EventError(EventFailedReason::EventNotAvailable))?;
+
         // Store in SubscriberImpl with event, max_num_samples
         Ok(SubscriberImpl {
             event: ProxyEventManager::new(
@@ -362,6 +371,7 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
             instance_info,
             waker_storage: Arc::default(),
             async_init_status: std::sync::OnceLock::new(),
+            type_ops,
             _proxy: self.proxy_instance.clone(),
             _phantom: PhantomData,
         })
@@ -468,6 +478,7 @@ where
     instance_info: LolaConsumerInfo<B>,
     waker_storage: Arc<AtomicWaker>,
     async_init_status: std::sync::OnceLock<()>,
+    type_ops: TypeOperationsManager,
     _proxy: ProxyInstanceManager<B>,
     _phantom: PhantomData<T>,
 }
@@ -486,7 +497,7 @@ impl<T: CommData + Debug, B: FFIBridge> Drop for SubscriberImpl<T, B> {
             {
                 self.instance_info
                     .bridge
-                    .clear_event_receive_handler(guard.deref_mut(), T::ID);
+                    .clear_event_receive_handler(guard.deref_mut());
             }
             self.instance_info
                 .bridge
@@ -511,11 +522,9 @@ impl<T: CommData + Debug, B: FFIBridge> SubscriberImpl<T, B> {
         // and the lifetime of the callback is managed by Rust, it will not outlive the scope of
         // this function call.
         let status = unsafe {
-            self.instance_info.bridge.set_event_receive_handler(
-                event_guard.deref_mut(),
-                &fat_ptr,
-                T::ID,
-            )
+            self.instance_info
+                .bridge
+                .set_event_receive_handler(event_guard.deref_mut(), &fat_ptr)
         };
         if !status {
             // SAFETY: ptr was allocated as Box<dyn FnMut() + Send + 'static> via Box::into_raw
@@ -613,6 +622,7 @@ where
             scratch,
             self.max_num_samples,
             max_samples,
+            &self.type_ops,
         )
     }
 
@@ -659,6 +669,7 @@ where
                 total_received: 0,
                 cancellation: core::pin::pin!(cancellation),
                 bridge: self.instance_info.bridge.clone(),
+                type_ops: self.type_ops,
             }
             .await
         }
@@ -695,6 +706,7 @@ struct ReceiveFuture<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBrid
     total_received: usize,
     cancellation: Pin<&'a mut F>,
     bridge: B,
+    type_ops: TypeOperationsManager,
 }
 
 impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future
@@ -703,12 +715,11 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future
     type Output = (SampleContainer<Sample<T, B>>, Result<usize>);
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
-        // Extract all immutable values upfront to avoid borrow conflicts with self in the callback
+        // Extract Copy values upfront, the rest are accessed via `this` below.
         let max_samples = self.max_samples;
         let new_samples = self.new_samples;
         let max_num_samples = self.max_num_samples;
         let total_received = self.total_received;
-        let bridge = self.bridge.clone();
 
         // Poll the cancellation future first to ensure prompt handling of cancellation requests.
         if self.cancellation.as_mut().poll(ctx).is_ready() {
@@ -724,50 +735,46 @@ impl<'a, T: CommData + Debug, F: Future<Output = ()>, B: FFIBridge> Future
         // Register the current waker to be notified when new samples arrive via FFI callback
         self.waker_storage.register(ctx.waker());
 
-        let samples_received = {
-            // Temporarily take ownership of scratch to avoid borrow checker conflicts
-            // when passing to try_receive_samples
-            if let Some(mut scratch) = self.scratch.take() {
-                if let Some(event_guard) = self.event_guard.as_mut() {
-                    let result = try_receive_samples::<T, B>(
-                        &bridge,
-                        event_guard.deref_mut(),
-                        &mut scratch,
-                        max_num_samples,
-                        max_samples - total_received,
-                    );
-                    self.scratch = Some(scratch);
-                    result
-                } else {
-                    self.scratch = Some(scratch);
-                    Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError))
-                }
-            } else {
-                Err(Error::ReceiveError(ReceiveFailedReason::BufferUnavailable))
-            }
+        // Use get_mut() to split-borrow multiple fields simultaneously, mirroring the approach
+        // used in poll_next. This avoids the scratch take, instead of moving
+        // `scratch` out of the Option, then putting it back, we borrow it in-place via as_mut().
+        let this = self.as_mut().get_mut();
+
+        let samples_received = match (this.scratch.as_mut(), this.event_guard.as_mut()) {
+            (Some(scratch), Some(event_guard)) => try_receive_samples::<T, B>(
+                &this.bridge,
+                event_guard.deref_mut(),
+                scratch,
+                max_num_samples,
+                max_samples - total_received,
+                &this.type_ops,
+            ),
+            (None, _) => Err(Error::ReceiveError(ReceiveFailedReason::BufferUnavailable)),
+            (_, None) => Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError)),
         };
+
         match samples_received {
             Ok(count) => {
-                self.total_received += count;
-
+                this.total_received += count;
                 // Check if we've received enough samples
-                if self.total_received >= new_samples {
+                if this.total_received >= new_samples {
                     // Release the event guard to allow new receive calls to access the proxy event
-                    self.event_guard = None;
-                    return Poll::Ready((
-                        self.scratch.take().expect(
+                    this.event_guard = None;
+                    Poll::Ready((
+                        this.scratch.take().expect(
                             "SampleContainer is not available when returning Future result",
                         ),
-                        Ok(self.total_received),
-                    ));
+                        Ok(this.total_received),
+                    ))
+                } else {
+                    // Have some samples but not enough yet, wait for more via waker
+                    Poll::Pending
                 }
-                // Have some samples but not enough yet, wait for more via waker
-                Poll::Pending
             }
             Err(e) => {
-                self.event_guard = None;
+                this.event_guard = None;
                 Poll::Ready((
-                    self.scratch.take().expect(
+                    this.scratch.take().expect(
                         "SampleContainer unavailable on error; was receive polled after completion?",
                     ),
                     Err(e),
@@ -812,6 +819,7 @@ impl<'a, T: CommData + Debug, B: FFIBridge> Stream for SampleStream<'a, T, B> {
             &mut this.sample_container,
             max_num_samples,
             max_num_samples,
+            &this.subscriber.type_ops,
         );
 
         match samples_received {
@@ -1115,6 +1123,7 @@ fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
     scratch: &mut SampleContainer<Sample<T, B>>,
     max_num_samples: usize,
     max_samples: usize,
+    type_ops: &TypeOperationsManager,
 ) -> Result<usize> {
     if max_samples == 0 {
         return Err(Error::ReceiveError(
@@ -1133,7 +1142,7 @@ fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
         ));
     }
     // Create a callback that will be called by the C++ side for each new sample arrival
-    let mut callback = create_sample_callback::<T, B>(bridge, scratch, max_samples);
+    let mut callback = create_sample_callback::<T, B>(bridge, scratch, max_samples, type_ops);
     // Convert closure to FatPtr for C++ callback
     let dyn_callback: &mut dyn FnMut(*mut sample_ptr_rs::SamplePtr<T>) = &mut callback;
     // SAFETY: it is safe to transmute the closure reference to a FatPtr because
@@ -1144,15 +1153,15 @@ fn try_receive_samples<T: CommData + Debug, B: FFIBridge>(
     let count = unsafe {
         bridge.get_samples_from_event(
             event as *mut ProxyEventBase,
-            T::ID,
+            type_ops,
             &fat_ptr,
-            max_num_samples as u32,
+            max_samples as u32,
         )
     };
-    if count > max_num_samples as u32 {
+    if count > max_samples as u32 {
         return Err(Error::ReceiveError(
             ReceiveFailedReason::SampleCountOutOfBounds {
-                max: max_num_samples,
+                max: max_samples,
                 requested: count as usize,
             },
         ));
@@ -1177,6 +1186,7 @@ pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
     bridge: &B,
     scratch: &'a mut SampleContainer<Sample<T, B>>,
     max_samples: usize,
+    type_ops: &'a TypeOperationsManager,
 ) -> impl FnMut(*mut sample_ptr_rs::SamplePtr<T>) + 'a {
     let bridge = bridge.clone();
     move |raw_sample: *mut sample_ptr_rs::SamplePtr<T>| {
@@ -1192,6 +1202,7 @@ pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
                 inner: LolaBinding {
                     data: ManuallyDrop::new(sample_ptr),
                     bridge: bridge.clone(),
+                    type_ops: type_ops.clone(),
                 },
             };
 
@@ -1267,6 +1278,7 @@ mod test {
         let mut seq = mockall::Sequence::new();
         let proxy_alloc = MockPointerAllocator::<ProxyBase>::new();
         let event_alloc = MockPointerAllocator::<ProxyEventBase>::new();
+        let type_ops_alloc = MockPointerAllocator::<TypeOperations>::new();
         let prox = proxy_alloc.clone();
         let evt = event_alloc.clone();
 
@@ -1279,6 +1291,14 @@ mod test {
         mock.expect_subscribe_to_event()
             .in_sequence(&mut seq)
             .returning(|_, _| true);
+        mock.expect_get_type_ops_instance()
+            .in_sequence(&mut seq)
+            .returning(move |_, _| {
+                Some(TypeOperationsManager::new(
+                    NonNull::new(type_ops_alloc.allocate())
+                        .expect("Failed to allocate TypeOperations for mock"),
+                ))
+            });
 
         let evt_cleanup = event_alloc.clone();
         mock.expect_unsubscribe_to_event()
@@ -1325,6 +1345,7 @@ mod test {
     fn test_event_try_receive() {
         let proxy_alloc = MockPointerAllocator::<ProxyBase>::new();
         let event_alloc = MockPointerAllocator::<ProxyEventBase>::new();
+        let type_ops_alloc = MockPointerAllocator::<TypeOperations>::new();
         let mut seq = mockall::Sequence::new();
         let mut mock = MockFFIBridge::new();
 
@@ -1340,15 +1361,23 @@ mod test {
         mock.expect_subscribe_to_event()
             .in_sequence(&mut seq)
             .returning(|_, _| true);
+        mock.expect_get_type_ops_instance()
+            .in_sequence(&mut seq)
+            .returning(move |_, _| {
+                Some(TypeOperationsManager::new(
+                    NonNull::new(type_ops_alloc.allocate())
+                        .expect("Failed to allocate TypeOperations for mock"),
+                ))
+            });
         mock.expect_get_samples_from_event()
             .in_sequence(&mut seq)
             .returning(|_, _, _, _| 1);
         mock.expect_set_event_receive_handler()
             .in_sequence(&mut seq)
-            .returning(|_, _, _| true);
+            .returning(|_, _| true);
         mock.expect_clear_event_receive_handler()
             .in_sequence(&mut seq)
-            .returning(|_, _| ());
+            .returning(|_| ());
 
         mock.expect_unsubscribe_to_event()
             .in_sequence(&mut seq)
@@ -1388,5 +1417,60 @@ mod test {
             count, 1,
             "one sample should be returned by try_receive when the mock event has one sample"
         );
+    }
+
+    // Verify that `subscribe` returns `EventNotAvailable` when `get_type_ops_instance`
+    // returns `None`. The proxy must still be destroyed to avoid a resource leak.
+    #[test]
+    fn test_subscribe_type_ops_none_returns_event_not_available() {
+        let mut mock = MockFFIBridge::new();
+        let mut seq = mockall::Sequence::new();
+        let proxy_alloc = MockPointerAllocator::<ProxyBase>::new();
+        let event_alloc = MockPointerAllocator::<ProxyEventBase>::new();
+        let prox = proxy_alloc.clone();
+        let evt = event_alloc.clone();
+
+        mock.expect_create_proxy()
+            .in_sequence(&mut seq)
+            .returning(move |_, _| prox.allocate());
+        mock.expect_get_event_from_proxy()
+            .in_sequence(&mut seq)
+            .returning(move |_, _, _| evt.allocate());
+        mock.expect_subscribe_to_event()
+            .in_sequence(&mut seq)
+            .returning(|_, _| true);
+        // Returning None here is the scenario under test, TypeOperations lookup failed.
+        mock.expect_get_type_ops_instance()
+            .in_sequence(&mut seq)
+            .returning(|_, _| None);
+
+        let prox_cleanup = proxy_alloc.clone();
+        mock.expect_destroy_proxy()
+            .in_sequence(&mut seq)
+            .returning(move |ptr| {
+                assert!(
+                    prox_cleanup.free(ptr),
+                    "destroy_proxy called with unknown pointer"
+                );
+            });
+
+        let bridge = SharedMockBridge::new(mock);
+        let subscribable = SubscribableImpl::<TestData, SharedMockBridge> {
+            identifier: "TestEvent",
+            instance_info: make_instance_info(bridge.clone()),
+            proxy_instance: make_proxy_instance(bridge.clone(), "TestInterface"),
+            data: PhantomData,
+        };
+
+        let result = subscribable.subscribe(3);
+        assert!(
+            matches!(
+                result,
+                Err(Error::EventError(EventFailedReason::EventNotAvailable))
+            ),
+            "subscribe must return EventNotAvailable when get_type_ops_instance returns None"
+        );
+
+        proxy_alloc.assert_all_freed();
     }
 }

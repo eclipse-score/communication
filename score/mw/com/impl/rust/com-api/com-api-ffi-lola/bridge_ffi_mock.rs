@@ -72,7 +72,7 @@
 
 use bridge_ffi_rs::{
     FatPtr, FindServiceHandle, HandleType, InstanceSpecifier, NativeInstanceSpecifier, ProxyBase,
-    ProxyEventBase, SkeletonBase, SkeletonEventBase,
+    ProxyEventBase, SkeletonBase, SkeletonEventBase, TypeOperationsManager,
 };
 use mockall::mock;
 
@@ -92,31 +92,31 @@ mock! {
             &self,
             event_ptr: *mut SkeletonEventBase,
             allocatee_ptr: *mut std::ffi::c_void,
-            event_type: &str,
+            type_ops: &TypeOperationsManager,
         ) -> bool;
 
-        unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_name: &str);
+        unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_ops: &TypeOperationsManager);
 
         unsafe fn get_allocatee_data_ptr(
             &self,
             allocatee_ptr: *const std::ffi::c_void,
-            type_name: &str,
+            type_ops: &TypeOperationsManager,
         ) -> *mut std::ffi::c_void;
 
         unsafe fn skeleton_event_send_sample_allocatee(
             &self,
             event_ptr: *mut SkeletonEventBase,
-            event_type: &str,
+            type_ops: &TypeOperationsManager,
             allocatee_ptr: *const std::ffi::c_void,
         ) -> bool;
 
         unsafe fn sample_ptr_get(
             &self,
             sample_ptr: *const std::ffi::c_void,
-            type_name: &str,
+            type_ops: &TypeOperationsManager,
         ) -> *const std::ffi::c_void;
 
-        unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_name: &str);
+        unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_ops: &TypeOperationsManager);
 
         unsafe fn skeleton_offer_service(&self, skeleton_ptr: *mut SkeletonBase) -> bool;
 
@@ -151,7 +151,7 @@ mock! {
         unsafe fn get_samples_from_event(
             &self,
             event_ptr: *mut ProxyEventBase,
-            event_type: &str,
+            type_ops: &TypeOperationsManager,
             callback: &FatPtr,
             max_samples: u32,
         ) -> u32;
@@ -159,7 +159,7 @@ mock! {
         unsafe fn skeleton_send_event(
             &self,
             event_ptr: *mut SkeletonEventBase,
-            event_type: &str,
+            type_ops: &TypeOperationsManager,
             data_ptr: *const std::ffi::c_void,
         ) -> bool;
 
@@ -175,13 +175,11 @@ mock! {
             &self,
             proxy_event_ptr: *mut ProxyEventBase,
             handler: &FatPtr,
-            event_type: &str,
         ) -> bool;
 
         unsafe fn clear_event_receive_handler(
             &self,
             proxy_event_ptr: *mut ProxyEventBase,
-            event_type: &str,
         );
 
         unsafe fn start_find_service(
@@ -191,6 +189,12 @@ mock! {
         ) -> *mut FindServiceHandle;
 
         unsafe fn stop_find_service(&self, handle: *mut FindServiceHandle);
+
+        unsafe fn get_type_ops_instance(
+            &self,
+            interface_id: &str,
+            member_name: &str,
+        ) -> Option<TypeOperationsManager>;
 }
 }
 
@@ -216,7 +220,7 @@ impl SharedMockBridge {
         F: FnOnce(&mut MockFFIBridge) -> R,
     {
         let mut guard = self.0.lock().expect("Failed to acquire lock");
-        f(&mut *guard)
+        f(&mut guard)
     }
 
     fn locked(&self) -> std::sync::MutexGuard<'_, MockFFIBridge> {
@@ -237,55 +241,63 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         &self,
         event_ptr: *mut SkeletonEventBase,
         allocatee_ptr: *mut std::ffi::c_void,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
     ) -> bool {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
             self.locked()
-                .get_allocatee_ptr(event_ptr, allocatee_ptr, event_type)
+                .get_allocatee_ptr(event_ptr, allocatee_ptr, type_ops)
         }
     }
 
-    unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_name: &str) {
+    unsafe fn delete_allocatee_ptr(
+        &self,
+        allocatee_ptr: *mut std::ffi::c_void,
+        type_ops: &TypeOperationsManager,
+    ) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe { self.locked().delete_allocatee_ptr(allocatee_ptr, type_name) }
+        unsafe { self.locked().delete_allocatee_ptr(allocatee_ptr, type_ops) }
     }
 
     unsafe fn get_allocatee_data_ptr(
         &self,
         allocatee_ptr: *const std::ffi::c_void,
-        type_name: &str,
+        type_ops: &TypeOperationsManager,
     ) -> *mut std::ffi::c_void {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
             self.locked()
-                .get_allocatee_data_ptr(allocatee_ptr, type_name)
+                .get_allocatee_data_ptr(allocatee_ptr, type_ops)
         }
     }
 
     unsafe fn skeleton_event_send_sample_allocatee(
         &self,
         event_ptr: *mut SkeletonEventBase,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
         allocatee_ptr: *const std::ffi::c_void,
     ) -> bool {
         unsafe {
             self.locked()
-                .skeleton_event_send_sample_allocatee(event_ptr, event_type, allocatee_ptr)
+                .skeleton_event_send_sample_allocatee(event_ptr, type_ops, allocatee_ptr)
         }
     }
 
     unsafe fn sample_ptr_get(
         &self,
         sample_ptr: *const std::ffi::c_void,
-        type_name: &str,
+        type_ops: &TypeOperationsManager,
     ) -> *const std::ffi::c_void {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe { self.locked().sample_ptr_get(sample_ptr, type_name) }
+        unsafe { self.locked().sample_ptr_get(sample_ptr, type_ops) }
     }
 
-    unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_name: &str) {
-        unsafe { self.locked().sample_ptr_delete(sample_ptr, type_name) }
+    unsafe fn sample_ptr_delete(
+        &self,
+        sample_ptr: *mut std::ffi::c_void,
+        type_ops: &TypeOperationsManager,
+    ) {
+        unsafe { self.locked().sample_ptr_delete(sample_ptr, type_ops) }
     }
 
     unsafe fn skeleton_offer_service(&self, skeleton_ptr: *mut SkeletonBase) -> bool {
@@ -364,27 +376,27 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     unsafe fn get_samples_from_event(
         &self,
         event_ptr: *mut ProxyEventBase,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
         callback: &FatPtr,
         max_num_samples: u32,
     ) -> u32 {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
             self.locked()
-                .get_samples_from_event(event_ptr, event_type, callback, max_num_samples)
+                .get_samples_from_event(event_ptr, type_ops, callback, max_num_samples)
         }
     }
 
     unsafe fn skeleton_send_event(
         &self,
         event_ptr: *mut SkeletonEventBase,
-        event_type: &str,
+        type_ops: &TypeOperationsManager,
         data_ptr: *const std::ffi::c_void,
     ) -> bool {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe {
             self.locked()
-                .skeleton_send_event(event_ptr, event_type, data_ptr)
+                .skeleton_send_event(event_ptr, type_ops, data_ptr)
         }
     }
 
@@ -392,21 +404,14 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         &self,
         event_ptr: *mut ProxyEventBase,
         callback: &FatPtr,
-        event_type: &str,
     ) -> bool {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.locked()
-                .set_event_receive_handler(event_ptr, callback, event_type)
-        }
+        unsafe { self.locked().set_event_receive_handler(event_ptr, callback) }
     }
 
-    unsafe fn clear_event_receive_handler(&self, event_ptr: *mut ProxyEventBase, event_type: &str) {
+    unsafe fn clear_event_receive_handler(&self, event_ptr: *mut ProxyEventBase) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe {
-            self.locked()
-                .clear_event_receive_handler(event_ptr, event_type)
-        }
+        unsafe { self.locked().clear_event_receive_handler(event_ptr) }
     }
 
     unsafe fn start_find_service(
@@ -421,6 +426,18 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
     unsafe fn stop_find_service(&self, find_service_handle: *mut FindServiceHandle) {
         //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
         unsafe { self.locked().stop_find_service(find_service_handle) }
+    }
+
+    unsafe fn get_type_ops_instance(
+        &self,
+        interface_id: &str,
+        member_name: &str,
+    ) -> Option<TypeOperationsManager> {
+        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
+        unsafe {
+            self.locked()
+                .get_type_ops_instance(interface_id, member_name)
+        }
     }
 }
 
@@ -470,7 +487,7 @@ impl<T: Default> MockPointerAllocator<T> {
     pub fn free(&self, ptr: *mut T) -> bool {
         let mut allocs = self.locked();
         allocs
-            .extract_if(.., |b| b.as_mut() as *mut T == ptr)
+            .extract_if(.., |b| std::ptr::eq(b.as_mut(), ptr))
             .next()
             .is_some()
     }
