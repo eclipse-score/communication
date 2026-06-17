@@ -16,6 +16,10 @@ load(
     "component_requirements",
     "feature_requirements",
 )
+load(
+    "@score_tooling//validation/ai_checker:ai_checker.bzl",
+    "trlc_requirements_ai_test",
+)
 
 feature_requirements(
     name = "feature_requirements",
@@ -23,6 +27,13 @@ feature_requirements(
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/message_passing/dependability:__subpackages__"],
     deps = ["//score/message_passing/dependability/assumed_system:assumed_system_requirements"],
+)
+
+trlc_requirements_ai_test(
+    name = "feature_requirements_ai_check",
+    batch_size = 10,
+    reqs = [":feature_requirements"],
+    tags = ["manual"],
 )
 
 component_requirements(
