@@ -241,6 +241,7 @@ llvm.toolchain(
         "-latomic",
     ]},
     llvm_version = "19.1.7",
+    stdlib = {"": "stdc++"},
 )
 llvm.sysroot(
     name = "llvm_toolchain",
