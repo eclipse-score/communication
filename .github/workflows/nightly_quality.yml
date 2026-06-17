@@ -166,7 +166,7 @@ jobs:
           mkdir -p "${GITHUB_WORKSPACE}/_quality"
           if [[ -f /tmp/codeql/codeql-nightly.csv ]]; then
             cp /tmp/codeql/codeql-nightly.csv \
-               "${GITHUB_WORKSPACE}/_quality/codeql_findings.csv"
+               "${GITHUB_WORKSPACE}/_quality/codeql_findings.txt"
           else
             echo "::warning::codeql-nightly.csv not found; skipping copy."
           fi
@@ -182,8 +182,8 @@ jobs:
           bazel run //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
             --clang-tidy /tmp/clang_tidy/clang_tidy_findings.txt \
-            --codeql-csv /tmp/codeql/codeql-nightly.csv \
-            --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
+            --codeql-csv \"${GITHUB_WORKSPACE}/_quality/codeql_findings.txt\" \
+            --html     \"${GITHUB_WORKSPACE}/_quality/index.html\" \
             --github-summary
 
           echo "Dashboard generated. Contents of _quality/:"
