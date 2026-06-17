@@ -41,7 +41,7 @@ def _generate_quality_links_impl(ctx):
         coverage_ref = "`Coverage report <quality/coverage/index.html>`__"
         dashboard_ref = "`Quality Dashboard <quality/index.html>`__"
         clang_tidy_ref = "`Clang-Tidy report <quality/clang_tidy_findings.txt>`__"
-        codeql_ref = "`CodeQL report <quality/codeql/index.html>`__"
+        codeql_ref = "`CodeQL findings <quality/codeql_findings.csv>`__"
     elif docs_version and docs_base_url:
         # versioned release — quality reports only live at latest/
         latest = docs_base_url + "/latest"
@@ -51,8 +51,8 @@ def _generate_quality_links_impl(ctx):
                          "/quality/index.html>`__")
         clang_tidy_ref = ("`Clang-Tidy report (latest) <" + latest +
                           "/quality/clang_tidy_findings.txt>`__")
-        codeql_ref = ("`CodeQL report (latest) <" + latest +
-                      "/quality/codeql/index.html>`__")
+        codeql_ref = ("`CodeQL findings (latest) <" + latest +
+                      "/quality/codeql_findings.csv>`__")
     else:
         # local build — no published reports; show the equivalent bazel command
         coverage_ref = (

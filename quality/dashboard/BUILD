@@ -16,7 +16,7 @@ load("@rules_python//python:defs.bzl", "py_binary")
 py_binary(
     name = "generate_dashboard",
     srcs = ["generate_dashboard.py"],
-    data = ["dashboard.html.j2", "codeql_report.html.j2"],
+    data = ["dashboard.html.j2"],
     main = "generate_dashboard.py",
     visibility = ["//visibility:private"],
     deps = [

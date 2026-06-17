@@ -227,21 +227,6 @@ def render_dashboard(cov_summary, cov_files, clang_tidy, codeql, history, timest
     )
 
 
-def render_codeql_report(codeql, timestamp) -> str:
-    """Render standalone CodeQL findings HTML report."""
-    env = Environment(loader=FileSystemLoader(str(_TEMPLATE_DIR)), autoescape=True)
-    tmpl = env.get_template("codeql_report.html.j2")
-    return tmpl.render(
-        timestamp=timestamp,
-        loaded=codeql.get("loaded", False) if codeql else False,
-        findings=codeql.get("findings", []) if codeql else [],
-        errors=codeql["errors"] if codeql else 0,
-        warnings=codeql["warnings"] if codeql else 0,
-        recommendations=codeql["recommendations"] if codeql else 0,
-        total=codeql["total"] if codeql else 0,
-    )
-
-
 # ── GitHub Actions step summary ───────────────────────────────────────────────
 
 def write_github_summary(cov_summary, clang_tidy, codeql, history, summary_path) -> None:
@@ -337,11 +322,6 @@ def main() -> int:
         help="Path to CodeQL CSV results file",
     )
     parser.add_argument(
-        "--codeql-html", default="",
-        dest="codeql_html",
-        help="Output path for standalone CodeQL findings HTML report",
-    )
-    parser.add_argument(
         "--html", default="dashboard.html",
         help="Output HTML dashboard path",
     )
@@ -388,16 +368,6 @@ def main() -> int:
         render_dashboard(cov_summary, cov_files, clang_tidy, codeql, history, timestamp),
         encoding="utf-8",
     )
-
-    # Generate standalone CodeQL HTML report (like coverage HTML)
-    if args.codeql_html:
-        codeql_html_path = pathlib.Path(args.codeql_html)
-        codeql_html_path.parent.mkdir(parents=True, exist_ok=True)
-        codeql_html_path.write_text(
-            render_codeql_report(codeql, timestamp),
-            encoding="utf-8",
-        )
-        print(f"CodeQL report written: {codeql_html_path}")
 
     print(f"Dashboard written: {html_path}")
     if cov_summary:
