@@ -141,27 +141,47 @@ def load_codeql_csv(path: pathlib.Path) -> dict | None:
         return None
     errors = warnings = recommendations = 0
     findings = []
+    severity_counts = {}  # For debugging
     try:
         with path.open(encoding="utf-8", errors="replace", newline="") as fh:
             reader = csv.DictReader(fh)
+            if reader.fieldnames:
+                print(f"CodeQL CSV columns: {reader.fieldnames}", file=sys.stderr)
             for row in reader:
-                severity = (row.get("severity") or row.get("Severity") or "").lower().strip()
-                if severity == "error":
+                # Try multiple severity column name variations
+                severity = (row.get("severity") or row.get("Severity") or row.get("level") or row.get("Level") or "").lower().strip()
+
+                # Track severity values for debugging
+                raw_severity = severity
+                severity_counts[raw_severity] = severity_counts.get(raw_severity, 0) + 1
+
+                # Categorize
+                if severity == "error" or severity == "fail":
                     errors += 1
-                elif severity == "warning":
+                    severity = "error"
+                elif severity == "warning" or severity == "warn":
                     warnings += 1
+                    severity = "warning"
                 else:
-                    severity = "recommendation"
+                    # Treat everything else as recommendation (including empty or unknown)
                     recommendations += 1
+                    severity = "recommendation"
+
                 findings.append({
                     "severity": severity,
-                    "name": row.get("name") or row.get("Name") or "",
-                    "message": row.get("message") or row.get("Message") or row.get("description") or "",
-                    "path": row.get("path") or row.get("Path") or row.get("file") or "",
-                    "line": row.get("start:line") or row.get("Line") or "",
+                    "name": row.get("name") or row.get("Name") or row.get("rule_id") or row.get("Rule") or "",
+                    "message": row.get("message") or row.get("Message") or row.get("description") or row.get("Description") or "",
+                    "path": row.get("path") or row.get("Path") or row.get("file") or row.get("File") or "",
+                    "line": row.get("start:line") or row.get("Line") or row.get("line_number") or "",
                 })
-    except (OSError, csv.Error):
+    except (OSError, csv.Error) as e:
+        print(f"Error parsing CodeQL CSV: {e}", file=sys.stderr)
         return None
+
+    # Debug: show what severity values we found
+    if severity_counts:
+        print(f"CodeQL severity distribution: {dict(sorted(severity_counts.items(), key=lambda x: x[1], reverse=True))}", file=sys.stderr)
+
     return {
         "loaded": True,
         "errors": errors,
