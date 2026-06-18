@@ -114,7 +114,7 @@ class ProxyBase
      * \brief Returns the handle that was used to instantiate this proxy.
      * \return Handle identifying the service that this proxy is connected to.
      */
-    const HandleType& GetHandle() const noexcept;
+    const HandleType& GetHandle() const& noexcept;
 
   protected:
     using ProxyEvents = std::map<std::string_view, std::reference_wrapper<ProxyEventBase>>;
@@ -173,7 +173,7 @@ class ProxyBaseView final
     /// \return Pointer to the proxy binding.
     ProxyBinding* GetBinding() noexcept;
 
-    const HandleType& GetAssociatedHandleType() const noexcept;
+    const HandleType& GetAssociatedHandleType() const& noexcept;
 
     void MarkServiceElementBindingInvalid() noexcept;
 

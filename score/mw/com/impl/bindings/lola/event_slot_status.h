@@ -70,8 +70,8 @@ class EventSlotStatus final
     void SetTimeStamp(const EventTimeStamp time_stamp) noexcept;
     void SetReferenceCount(const SubscriberCount ref_count) noexcept;
 
-    explicit operator value_type&() noexcept;
-    explicit operator const value_type&() const noexcept;
+    explicit operator value_type&() & noexcept;
+    explicit operator const value_type&() const& noexcept;
 
     bool IsUsed() const noexcept;
 

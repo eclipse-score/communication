@@ -89,13 +89,13 @@ auto EventSlotStatus::IsTimeStampBetween(const EventTimeStamp min_timestamp,
 // e.i. compare_exchange_weak and compare_exchange_strong. This a simple way without the need to extend these atomic
 // operations with corresponding template specializations
 // coverity[autosar_cpp14_a9_3_1_violation]
-EventSlotStatus::operator value_type&() noexcept
+EventSlotStatus::operator value_type&() & noexcept
 {
     // coverity[autosar_cpp14_a9_3_1_violation]
     return data_;
 }
 
-EventSlotStatus::operator const value_type&() const noexcept
+EventSlotStatus::operator const value_type&() const& noexcept
 {
     return data_;
 }

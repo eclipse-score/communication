@@ -60,9 +60,8 @@ class hash<score::mw::com::impl::lola::ProxyInstanceIdentifier>
         const score::mw::com::impl::lola::ProxyInstanceIdentifier& proxy_instance_identifier) const noexcept
     {
         using ProxyInstanceIdentifier = score::mw::com::impl::lola::ProxyInstanceIdentifier;
-        static_assert(sizeof(ProxyInstanceIdentifier::application_id) +
-                          sizeof(ProxyInstanceIdentifier::proxy_instance_counter) <
-                      sizeof(std::uint64_t));
+        static_assert((sizeof(ProxyInstanceIdentifier::application_id) +
+                       sizeof(ProxyInstanceIdentifier::proxy_instance_counter)) < sizeof(std::uint64_t));
 
         constexpr auto proxy_instance_counter_bit_width =
             std::numeric_limits<decltype(proxy_instance_identifier.proxy_instance_counter)>::digits;

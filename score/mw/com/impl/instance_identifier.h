@@ -92,7 +92,7 @@ class InstanceIdentifier final
      * \param other The InstanceIdentifier *this shall be constructed from
      * \return The InstanceIdentifier that was constructed
      */
-    InstanceIdentifier& operator=(InstanceIdentifier&& other) = default;
+    InstanceIdentifier& operator=(InstanceIdentifier&& other) noexcept = default;
 
     /**
      * \api

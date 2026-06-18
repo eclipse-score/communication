@@ -68,8 +68,8 @@ inline void error_double_init()
 ///            MemoryResourceRegistry is available.
 void TouchStaticDependencies()
 {
-    score::cpp::ignore = score::mw::log::detail::Runtime::GetRecorder();
-    score::cpp::ignore = score::mw::log::detail::Runtime::GetFallbackRecorder();
+    score::cpp::ignore = score::mw::log::GetDefaultLogRecorder();
+    score::cpp::ignore = score::mw::log::GetFallbackLogRecorder();
     score::cpp::ignore = score::memory::shared::MemoryResourceRegistry::getInstance();
 }
 
@@ -246,7 +246,7 @@ auto Runtime::GetBindingRuntime(const BindingType binding) const noexcept -> IBi
     return nullptr;
 }
 
-auto Runtime::GetServiceDiscovery() noexcept -> IServiceDiscovery&
+auto Runtime::GetServiceDiscovery() & noexcept -> IServiceDiscovery&
 {
     // The signature of this function is part of the detailled design.
     // coverity[autosar_cpp14_a9_3_1_violation]

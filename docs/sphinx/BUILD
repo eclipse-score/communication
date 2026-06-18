@@ -26,15 +26,19 @@ sphinx_docs_library(
     srcs = ["//score/mw/com/design/doxygen_build:generate_doxygen"],
 )
 
+# Expose version flyout assets so docs/sphinx/utils targets can reference them
+exports_files(
+    [
+        "_static/css/version_flyout.css",
+        "_static/js/version_flyout.js",
+    ],
+    visibility = ["//docs/sphinx/utils:__pkg__"],
+)
+
 # Static assets for Sphinx documentation
 filegroup(
     name = "static_assets",
     srcs = glob(["_static/**/*"]),
-)
-
-exports_files(
-    glob(["_static/**/*"]),
-    visibility = ["//docs/sphinx/utils:__pkg__"],
 )
 
 # Generate RST files from @api tagged items using custom Starlark rule

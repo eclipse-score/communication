@@ -55,8 +55,8 @@ class ServiceInstanceDeployment
 
     ServiceInstanceDeployment(const ServiceInstanceDeployment& other) = default;
     ServiceInstanceDeployment& operator=(const ServiceInstanceDeployment& other) = default;
-    ServiceInstanceDeployment(ServiceInstanceDeployment&& other) = default;
-    ServiceInstanceDeployment& operator=(ServiceInstanceDeployment&& other) = default;
+    ServiceInstanceDeployment(ServiceInstanceDeployment&& other) noexcept = default;
+    ServiceInstanceDeployment& operator=(ServiceInstanceDeployment&& other) noexcept = default;
 
     score::json::Object Serialize() const noexcept;
 

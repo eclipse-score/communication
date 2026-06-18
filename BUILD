@@ -13,7 +13,9 @@
 
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@score_tooling//:defs.bzl", "copyright_checker")
+load("//tools/lint:linters.bzl", "use_clang_tidy_targets")
 
 compile_pip_requirements(
     name = "pip_requirements",
@@ -59,4 +61,18 @@ format_test(
     starlark = "@buildifier_prebuilt//:buildifier",
     target_compatible_with = ["@platforms//os:linux"],
     workspace = "//:LICENSE",
+)
+
+use_clang_tidy_targets()
+
+sh_binary(
+    name = "clang-tidy.fix",
+    srcs = [":clang-tidy.fix_script"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+sh_binary(
+    name = "clang-tidy.check",
+    srcs = [":clang-tidy.check_script"],
+    target_compatible_with = ["@platforms//os:linux"],
 )

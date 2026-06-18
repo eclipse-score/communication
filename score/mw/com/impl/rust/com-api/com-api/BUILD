@@ -18,6 +18,7 @@ rust_library(
     name = "com-api",
     srcs = ["com_api.rs"],
     crate_name = "com_api",
+    edition = "2024",
     visibility = [
         "//visibility:public",  # platform_only
     ],

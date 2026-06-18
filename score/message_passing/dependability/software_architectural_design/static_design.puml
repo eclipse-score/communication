@@ -20,32 +20,22 @@ component "Message Passing" as dependable_element_message_passing <<SEooC>> {
 
     component "Message Passing" as component_message_passing <<component>> {
 
-        component "Client" as client <<component>> {
-            component "ClientConnection" as client_connection <<unit>> {
-            }
-        }
+        component "ClientConnection" as client_connection <<unit>>
 
-        component "Server" as server <<component>> {
-            component "QNX Dispatch" as qnx_dispatch <<unit>> {
-            }
-            component "Unix Domain" as unix_domain <<unit>> {
-            }
+        component "ServerConnection" as server_connection <<unit>>
+
+        component "Dispatch" as dispatch <<component>> {
+            component "QNX Dispatch" as qnx_dispatch <<unit>>
+            component "Unix Domain" as unix_domain <<unit>>
         }
     }
     portout " " as message_passing_public_api_port
     portin " " as port_os
+    dispatch -u[hidden]- server_connection
+    dispatch -u[hidden]- client_connection
 }
 
-message_passing_public_api -l-() message_passing_public_api_port
+message_passing_public_api -r-() message_passing_public_api_port
 port_os -u-( os : uses
 
-' ------------------------ Formatting -------------------
-
-client -[hidden]down- server
-client_connection -[hidden]right- qnx_dispatch
-qnx_dispatch -[hidden]right- unix_domain
-
 @enduml
-
-x
-x

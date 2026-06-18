@@ -25,7 +25,7 @@ LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle,
 {
     // Field Get/Set methods are synchronous and always use a fixed queue size of 1.
     // TODO: Revisit once field Get/Set deployment config grows its own queue-size entry.
-    if (method_type == MethodType::kGet || method_type == MethodType::kSet)
+    if ((method_type == MethodType::kGet) || (method_type == MethodType::kSet))
     {
         return 1U;
     }

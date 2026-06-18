@@ -74,6 +74,8 @@ source_suffix = {
 # -- Options for HTML output --
 html_theme = 'pydata_sphinx_theme'
 
+html_css_files = ["css/default_custom.css"]
+
 # Professional theme configuration inspired by modern open-source projects
 html_theme_options = {
     # Navigation settings
@@ -101,13 +103,14 @@ html_theme_options = {
     # Logo configuration
     'logo': {
         'text': 'Eclipse S-CORE',
+        **({} if (Path(__file__).parent / "docs").is_dir() else {'link': '../index.html'}),
     },
 
     # External links - S-CORE GitHub
     'icon_links': [
         {
             'name': 'S-CORE GitHub',
-            'url': 'https://github.com/eclipse-score',
+            'url': 'https://github.com/eclipse-score/communication',
             'icon': 'fab fa-github',
         }
     ],

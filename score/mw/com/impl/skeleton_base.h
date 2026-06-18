@@ -134,11 +134,11 @@ class SkeletonBaseView
 
     void UpdateMethod(std::string_view method_name, SkeletonMethodBase& method) noexcept;
 
-    [[nodiscard]] const SkeletonBase::SkeletonEvents& GetEvents() const noexcept;
+    [[nodiscard]] const SkeletonBase::SkeletonEvents& GetEvents() const& noexcept;
 
-    [[nodiscard]] const SkeletonBase::SkeletonFields& GetFields() const noexcept;
+    [[nodiscard]] const SkeletonBase::SkeletonFields& GetFields() const& noexcept;
 
-    [[nodiscard]] const SkeletonBase::SkeletonMethods& GetMethods() const noexcept;
+    [[nodiscard]] const SkeletonBase::SkeletonMethods& GetMethods() const& noexcept;
 
     [[nodiscard]] bool AreBindingsValid() const;
 

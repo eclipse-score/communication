@@ -1,0 +1,13 @@
+{
+  "forwarded-services": [
+    "abc/abc/TirePressurePort",
+    "def/def/BigDataPort"
+  ],
+  "expected-received-services": [
+    "abc/abc/WindowLifter"
+  ],
+  "transport-layer": {
+    "id": "sample_hypervisor",
+    "config-path": "/etc/mw_com/gateway/mw_com_gateway_transport_config.json"
+  }
+}

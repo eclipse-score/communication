@@ -139,14 +139,14 @@ std::optional<std::uint16_t> NotSubscribedState::GetMaxSampleCount() const noexc
     return {};
 }
 
-score::cpp::optional<SlotCollector>& NotSubscribedState::GetSlotCollector() noexcept
+score::cpp::optional<SlotCollector>& NotSubscribedState::GetSlotCollector() & noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(!state_machine_.subscription_data_.slot_collector_.has_value(),
                                             "Slot collector should not be created until Subscribe is called.");
     return state_machine_.subscription_data_.slot_collector_;
 }
 
-const score::cpp::optional<SlotCollector>& NotSubscribedState::GetSlotCollector() const noexcept
+const score::cpp::optional<SlotCollector>& NotSubscribedState::GetSlotCollector() const& noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(!state_machine_.subscription_data_.slot_collector_.has_value(),
                                             "Slot collector should not be created until Subscribe is called.");

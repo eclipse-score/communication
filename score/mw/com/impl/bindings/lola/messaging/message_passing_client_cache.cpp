@@ -50,18 +50,37 @@ MessagePassingClientCache::MessagePassingClientCache(const ClientQualityType asi
 {
 }
 
+std::shared_ptr<score::message_passing::IClientConnection>
+MessagePassingClientCache::UnlockedGetCachedMessagePassingClient(const pid_t target_node_id) noexcept
+{
+    auto search = clients_.find(target_node_id);
+    if (search != clients_.end())
+    {
+        return search->second;
+    }
+
+    return nullptr;
+}
+
+std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientCache::GetCachedMessagePassingClient(
+    const pid_t target_node_id) noexcept
+{
+    std::lock_guard<std::mutex> lck(mutex_);
+    return UnlockedGetCachedMessagePassingClient(target_node_id);
+}
+
 std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientCache::GetMessagePassingClient(
     const pid_t target_node_id) noexcept
 {
     std::lock_guard<std::mutex> lck(mutex_);
 
-    auto search = clients_.find(target_node_id);
-    if (search != clients_.end())
+    const auto cached_client = UnlockedGetCachedMessagePassingClient(target_node_id);
+    if (cached_client != nullptr)
     {
-        const auto state = search->second->GetState();
+        const auto state = cached_client->GetState();
         if (state == score::message_passing::IClientConnection::State::kReady)
         {
-            return search->second;
+            return cached_client;
         }
         // Evict a cached client that is not in kReady state. This covers:
         // - kStopped/kStopping: connection was lost (e.g. peer was SIGKILL'd)
@@ -71,10 +90,10 @@ std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientC
                                         << " (state=" << static_cast<std::uint32_t>(score::cpp::to_underlying(state))
                                         << ", reason="
                                         << static_cast<std::uint32_t>(
-                                               score::cpp::to_underlying(search->second->GetStopReason()))
+                                               score::cpp::to_underlying(cached_client->GetStopReason()))
                                         << ")";
-        search->second->Stop();
-        score::cpp::ignore = clients_.erase(search);
+        cached_client->Stop();
+        score::cpp::ignore = clients_.erase(target_node_id);
         // Fall through to create a new client below
     }
 

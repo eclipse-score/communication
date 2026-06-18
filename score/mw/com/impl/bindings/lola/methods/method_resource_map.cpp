@@ -16,6 +16,8 @@
 
 #include <score/assert.hpp>
 
+#include <tuple>
+
 namespace score::mw::com::impl::lola
 {
 
@@ -79,7 +81,7 @@ auto MethodResourceMap::EraseRegionsFromCrashedProcesses(const GlobalConfigurati
     {
         score::mw::log::LogDebug("lola") << "Removing old methods shared memory regions with ApplicationID:"
                                          << proxy_app_id << "and PID:" << old_pid;
-        resource_map_.erase(resources_it);
+        std::ignore = resource_map_.erase(resources_it);
         return CleanUpResult::OLD_REGIONS_REMOVED;
     }
     return CleanUpResult::NO_REGIONS_REMOVED;
@@ -99,10 +101,10 @@ void MethodResourceMap::Remove(const ProxyInstanceIdentifier proxy_instance_iden
     }
 
     auto& inner_map = resources_it->second.inner_resource_map;
-    inner_map.erase(proxy_instance_identifier.proxy_instance_counter);
+    std::ignore = inner_map.erase(proxy_instance_identifier.proxy_instance_counter);
     if (inner_map.empty())
     {
-        resource_map_.erase(resources_it);
+        std::ignore = resource_map_.erase(resources_it);
     }
 }
 

@@ -15,6 +15,7 @@
 #include "score/message_passing/unix_domain/unix_domain_socket_address.h"
 
 #include <future>
+#include <tuple>
 
 namespace score
 {
@@ -30,7 +31,7 @@ UnixDomainEngine::UnixDomainEngine(score::cpp::pmr::memory_resource* memory_reso
       poll_endpoints_{memory_resource},
       posix_receive_buffer_{memory_resource}
 {
-    os_resources_.unistd->pipe(pipe_fds_.data());
+    std::ignore = os_resources_.unistd->pipe(pipe_fds_.data());
 
     // Normally, during the application lifecycle initialization, LifeCycleManager blocks the SIGTERM on the main
     // thread and creates a separate thread that catches all the SIGTERM signals coming to the process. The other
@@ -62,8 +63,8 @@ UnixDomainEngine::~UnixDomainEngine() noexcept
 {
     SendPipeEvent(PipeEvent::QUIT);
     thread_.join();
-    os_resources_.unistd->close(pipe_fds_[0]);
-    os_resources_.unistd->close(pipe_fds_[1]);
+    std::ignore = os_resources_.unistd->close(pipe_fds_[0]);
+    std::ignore = os_resources_.unistd->close(pipe_fds_[1]);
 }
 
 score::cpp::expected<std::int32_t, score::os::Error> UnixDomainEngine::TryOpenClientConnection(
@@ -81,7 +82,7 @@ score::cpp::expected<std::int32_t, score::os::Error> UnixDomainEngine::TryOpenCl
     const auto connect_expected = os_resources_.socket->connect(client_fd, addr.data(), addr.size());
     if (!connect_expected.has_value())
     {
-        os_resources_.unistd->close(client_fd);
+        std::ignore = os_resources_.unistd->close(client_fd);
         return score::cpp::make_unexpected(connect_expected.error());
     }
     return client_fd;
@@ -89,7 +90,7 @@ score::cpp::expected<std::int32_t, score::os::Error> UnixDomainEngine::TryOpenCl
 
 void UnixDomainEngine::CloseClientConnection(std::int32_t client_fd) noexcept
 {
-    os_resources_.unistd->close(client_fd);
+    std::ignore = os_resources_.unistd->close(client_fd);
 }
 
 void UnixDomainEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noexcept
@@ -122,8 +123,8 @@ void UnixDomainEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noexc
     }
     else
     {
-        poll_fds_.emplace_back(pollfd{endpoint.fd, events, 0});
-        poll_endpoints_.emplace_back(&endpoint);
+        std::ignore = poll_fds_.emplace_back(pollfd{endpoint.fd, events, 0});
+        std::ignore = poll_endpoints_.emplace_back(&endpoint);
     }
     posix_endpoint_list_.push_back(endpoint);
 }
@@ -143,7 +144,7 @@ void UnixDomainEngine::UnregisterPosixEndpoint(PosixEndpointEntry& endpoint) noe
 void UnixDomainEngine::UnpollEndpoint(const std::size_t index) noexcept
 {
     PosixEndpointEntry& endpoint = *poll_endpoints_[index];
-    posix_endpoint_list_.erase(posix_endpoint_list_.iterator_to(endpoint));
+    std::ignore = posix_endpoint_list_.erase(posix_endpoint_list_.iterator_to(endpoint));
     poll_endpoints_[index] = nullptr;
     poll_fds_[index].fd = -1;
     poll_fds_[index].revents = 0;
@@ -194,7 +195,7 @@ score::cpp::expected_blank<score::os::Error> UnixDomainEngine::SendProtocolMessa
     const score::cpp::span<const std::uint8_t> message) noexcept
 {
     struct msghdr msg;
-    std::memset(static_cast<void*>(&msg), 0, sizeof(msg));
+    std::ignore = std::memset(static_cast<void*>(&msg), 0, sizeof(msg));
     constexpr auto kVectorCount = 3UL;
     std::uint16_t size = static_cast<std::uint16_t>(message.size());
     std::array<iovec, kVectorCount> io;
@@ -220,7 +221,7 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Uni
     std::uint8_t& code) noexcept
 {
     struct msghdr msg;
-    std::memset(static_cast<void*>(&msg), 0, sizeof(msg));
+    std::ignore = std::memset(static_cast<void*>(&msg), 0, sizeof(msg));
     constexpr auto kVectorCount = 2UL;
     std::uint16_t size{};
     std::array<iovec, kVectorCount> io;
@@ -268,13 +269,13 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Uni
 
 void UnixDomainEngine::SendPipeEvent(PipeEvent pipe_event) noexcept
 {
-    os_resources_.unistd->write(pipe_fds_[1], &pipe_event, sizeof(pipe_event));
+    std::ignore = os_resources_.unistd->write(pipe_fds_[1], &pipe_event, sizeof(pipe_event));
 }
 
 void UnixDomainEngine::ProcessPipeEvent() noexcept
 {
     PipeEvent pipe_event;
-    os_resources_.unistd->read(pipe_fds_[0], &pipe_event, sizeof(pipe_event));
+    std::ignore = os_resources_.unistd->read(pipe_fds_[0], &pipe_event, sizeof(pipe_event));
     if (pipe_event == PipeEvent::TIMER)
     {
         // Intentionally empty. Just wake up to recalculate poll timeout.
@@ -316,7 +317,7 @@ void UnixDomainEngine::RunOnThread() noexcept
     {
         std::int32_t timeout = ProcessTimerQueue();
         const auto num_expected = os_resources_.poll->poll(poll_fds_.data(), poll_fds_.size(), timeout);
-        if (num_expected.has_value() && num_expected.value() > 0)
+        if ((num_expected.has_value()) && (num_expected.value() > 0))
         {
             for (std::size_t i = 0; i < poll_fds_.size(); ++i)
             {

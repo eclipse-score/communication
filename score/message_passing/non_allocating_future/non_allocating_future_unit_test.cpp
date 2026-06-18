@@ -17,6 +17,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <type_traits>
 
 #include "score/message_passing/non_allocating_future/non_allocating_future.h"
 
@@ -51,6 +52,12 @@ class NonAllocatingFutureTestFixture : public ::testing::Test
     StrictMock<MockMutex> mutex_;
     StrictMock<MockCV> condition_;
 };
+
+using IntFuture = detail::NonAllocatingFuture<StrictMock<MockMutex>, StrictMock<MockCV>, std::int32_t>;
+using GetValueForUpdatePointer = decltype(&IntFuture::GetValueForUpdate);
+
+static_assert(std::is_invocable_v<GetValueForUpdatePointer, const IntFuture&>);
+static_assert(!std::is_invocable_v<GetValueForUpdatePointer, const IntFuture&&>);
 
 TEST_F(NonAllocatingFutureTestFixture, NonSyncFutureMethodsGiveExpectedAccessButDontTriggerSyncMocks)
 {

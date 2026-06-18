@@ -88,7 +88,7 @@ class TracingRuntime : public ITracingRuntime
     ~TracingRuntime() noexcept override = default;
 
     TracingRuntime& operator=(const TracingRuntime& other) = delete;
-    TracingRuntime& operator=(TracingRuntime&& other) = default;
+    TracingRuntime& operator=(TracingRuntime&& other) noexcept = default;
 
     void DisableTracing() noexcept override;
 

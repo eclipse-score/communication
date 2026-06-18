@@ -30,31 +30,31 @@
 //  - We can not rely on static macros alone to achieve runtime independence
 //
 //  Key design elements:
-//  - GlobalRegistryMapping: Central registry that maps string identifiers to type/interface operations
+//  - GlobalRegistryMapping: Central registry that maps interface identifiers to InterfaceOperations
 //    - InterfaceOperationMap: Maps interface_id (string) -> InterfaceOperations (proxy/skeleton creation)
-//    - TypeOperationMap: Maps type_name (string) -> TypeOperations (sample handling, event sending)
+//    - get_type_operations<T>(): Template function providing per-type singleton TypeOperationImpl<T>
 //
 //  How it works:
-//  - Registry is filled at COMPILE TIME using macros (BEGIN_EXPORT_MW_COM_INTERFACE, EXPORT_MW_COM_EVENT,
-//  EXPORT_MW_COM_TYPE)
-//  - Macros create static helper structs that register operations in GlobalRegistryMapping at program startup
-//  - Operations are looked up at RUNTIME using string keys (interface_id, event_id, type_name)
-//  - Rust calls FFI functions with string identifiers
-//  - C++ resolves actual types via registry and invokes appropriate virtual methods
+//  - Registry is filled at COMPILE TIME using macros (BEGIN_EXPORT_MW_COM_INTERFACE, EXPORT_MW_COM_EVENT)
+//  - Macros create static helper structs that register InterfaceOperationImpl and MemberOperationImpl at startup
+//  - Type operations are resolved at COMPILE TIME via template specialization (get_type_operations<T>)
+//  - Each type T has a single static TypeOperationImpl<T> instance shared across all events of that type
+//  - Interface and member lookups use string keys (interface_id, event_id), type dispatch uses direct pointers
 //
 //  Example flow for event subscription:
-//  - Rust calls: get_event_from_proxy(proxy_ptr, "VehicleInterface", "TireEvent")
-//  - C++: FindMemberOperation("VehicleInterface", "TireEvent") -> returns MemberOperationImpl<VehicleProxy,
+//  - Rust calls: get_event_from_proxy(proxy_ptr, "VehicleInterface", "left_tire")
+//  - C++: FindMemberOperation("VehicleInterface", "left_tire") -> returns MemberOperationImpl<VehicleProxy,
 //  VehicleSkeleton, Tire, ...>
 //  - C++: Calls GetProxyEvent() on the returned MemberOperation
 //  - C++: Returns ProxyEventBase* which is actually ProxyEvent<Tire>*
-//  - Rust receives opaque ProxyEventBase* and can use it with type-name strings in subsequent calls
+//  - Rust receives opaque ProxyEventBase* and uses get_type_ops_instance() to retrieve TypeOperations pointer
+//  - Direct pointer dispatch avoids string-based type lookup overhead on every send/receive operation
 //
 //  Template specialization pattern:
-//  - EXPORT_MW_COM_TYPE macro specializes RustRefMutCallable template for each type
-//  - This allows C++ to invoke Rust FnMut closures with type-specific SamplePtr<T>
+//  - get_type_operations<T>() provides singleton access to TypeOperationImpl<T> via function-scoped static
+//  - Each template specialization (e.g., get_type_operations<Tire>, get_type_operations<Exhaust>) has one instance
+//  - EXPORT_MW_COM_TYPE macro specializes RustRefMutCallable template for closure invocation with SamplePtr<T>
 //  - SamplePtr<T> is wrapped in placement-new storage and passed to mw_com_impl_call_dyn_ref_fnmut_sample()
-//  - The Rust side reconstructs the FatPtr and invokes the original closure
 //
 //  Application side usage:
 //  - Generated C++ code invokes these macros to fill registry for each interface and type
@@ -143,50 +143,52 @@ class TypeOperations
     /// \param max_sample Maximum number of samples to process
     /// \param callBack FatPtr of Rust FnMut callable that takes SamplePtr<T>
     /// \return Result containing the number of samples processed on success, or error code on failure
-    virtual Result<uint32_t> GetSamplesFromEvent(ProxyEventBase* event_ptr, uint32_t max_sample, FatPtr callBack) = 0;
+    virtual Result<uint32_t> GetSamplesFromEvent(ProxyEventBase* event_ptr,
+                                                 uint32_t max_sample,
+                                                 FatPtr callBack) const = 0;
 
     /// \brief Send event data through SkeletonEvent of specific type
     /// \details Casts the type-erased data pointer back to the actual type and sends it via SkeletonEvent.
     /// \param event_ptr Pointer to SkeletonEventBase instance
     /// \param data_ptr Pointer to type T (erased as void*, casted back to T* in implementation)
     /// \return true if send successful, false otherwise
-    virtual bool SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) = 0;
+    virtual bool SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) const = 0;
 
     /// \brief Get data pointer from SamplePtr of specific type
     /// \details Casts the type-erased SamplePtr back to SamplePtr<T> and retrieves the underlying data pointer.
     /// \param sample_ptr Pointer to type-erased SamplePtr
     /// \return Pointer to the underlying data of type T
-    virtual const void* GetSamplePtrData(const void* sample_ptr) = 0;
+    virtual const void* GetSamplePtrData(const void* sample_ptr) const = 0;
 
     /// \brief Delete SamplePtr of specific type
     /// \details Casts the type-erased SamplePtr back to SamplePtr<T> and deletes it properly.
     /// \param sample_ptr Pointer to type-erased SamplePtr
-    virtual void DeleteSamplePtr(void* sample_ptr) = 0;
+    virtual void DeleteSamplePtr(void* sample_ptr) const = 0;
 
     /// @brief Get allocatee pointer from SkeletonEvent of specific type
     /// \details Allocates a SampleAllocateePtr<T> from the SkeletonEvent and places it into the provided storage.
     /// \param event_ptr Pointer to SkeletonEventBase instance
     /// \param allocatee_ptr Pointer to storage for SampleAllocateePtr<T>
     /// \return true if allocation successful, false otherwise
-    virtual bool GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) = 0;
+    virtual bool GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) const = 0;
 
     /// \brief Get data pointer from SampleAllocateePtr of specific type
     /// \details Casts the type-erased SampleAllocateePtr back to SampleAllocateePtr<T>
     /// \param allocatee_ptr Pointer to SampleAllocateePtr<T>
     /// \return Pointer to the underlying data of type T
-    virtual void* GetAllocateeDataPtr(void* allocatee_ptr) = 0;
+    virtual void* GetAllocateeDataPtr(void* allocatee_ptr) const = 0;
 
     /// \brief Delete SampleAllocateePtr of specific type
     /// \details Casts the type-erased SampleAllocateePtr back to SampleAllocateePtr<T> and deletes it properly.
     /// \param allocatee_ptr Pointer to type-erased SampleAllocateePtr
-    virtual void DeleteAllocateePtr(void* allocatee_ptr) = 0;
+    virtual void DeleteAllocateePtr(void* allocatee_ptr) const = 0;
 
     /// @brief Send allocatee data through SkeletonEvent of specific type
     /// \details Casts the type-erased allocatee pointer back to SampleAllocateePtr<T> and sends it via SkeletonEvent.
     /// \param event_ptr Pointer to SkeletonEventBase instance
     /// \param allocatee_ptr Pointer SampleAllocateePtr (of type T)
     /// \return true if send successful, false otherwise
-    virtual bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) = 0;
+    virtual bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) const = 0;
 };
 
 /// \brief Template implementation of TypeOperations for a specific type T
@@ -196,7 +198,7 @@ template <typename T>
 class TypeOperationImpl : public TypeOperations
 {
   public:
-    Result<uint32_t> GetSamplesFromEvent(ProxyEventBase* event_ptr, uint32_t max_sample, FatPtr callBack) override
+    Result<uint32_t> GetSamplesFromEvent(ProxyEventBase* event_ptr, uint32_t max_sample, FatPtr callBack) const override
     {
         auto proxy_event = dynamic_cast<ProxyEvent<T>*>(event_ptr);
         if (proxy_event == nullptr)
@@ -206,7 +208,7 @@ class TypeOperationImpl : public TypeOperations
         return details::GetSamplesFromEvent<T>(*proxy_event, callBack, max_sample);
     }
 
-    bool SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) override
+    bool SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) const override
     {
 
         auto skeleton_event = dynamic_cast<SkeletonEvent<T>*>(event_ptr);
@@ -223,7 +225,7 @@ class TypeOperationImpl : public TypeOperations
         return skeleton_event->Send(*typed_data).has_value();
     }
 
-    const void* GetSamplePtrData(const void* sample_ptr) override
+    const void* GetSamplePtrData(const void* sample_ptr) const override
     {
         if (sample_ptr == nullptr)
             return nullptr;
@@ -232,7 +234,7 @@ class TypeOperationImpl : public TypeOperations
         return typed_ptr->Get();
     }
 
-    void DeleteSamplePtr(void* sample_ptr) override
+    void DeleteSamplePtr(void* sample_ptr) const override
     {
         if (sample_ptr == nullptr)
             return;
@@ -241,7 +243,7 @@ class TypeOperationImpl : public TypeOperations
         typed_ptr->~SamplePtr<T>();
     }
 
-    bool GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) override
+    bool GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) const override
     {
         if (event_ptr == nullptr)
         {
@@ -263,7 +265,7 @@ class TypeOperationImpl : public TypeOperations
         return true;
     }
 
-    void DeleteAllocateePtr(void* allocatee_ptr) override
+    void DeleteAllocateePtr(void* allocatee_ptr) const override
     {
         if (allocatee_ptr == nullptr)
         {
@@ -274,7 +276,7 @@ class TypeOperationImpl : public TypeOperations
         typed_ptr->~SampleAllocateePtr<T>();
     }
 
-    void* GetAllocateeDataPtr(void* allocatee_ptr) override
+    void* GetAllocateeDataPtr(void* allocatee_ptr) const override
     {
         if (allocatee_ptr == nullptr)
         {
@@ -285,7 +287,7 @@ class TypeOperationImpl : public TypeOperations
         return typed_ptr->Get();
     }
 
-    bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) override
+    bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) const override
     {
         if (event_ptr == nullptr || allocatee_ptr == nullptr)
         {
@@ -318,6 +320,10 @@ class MemberOperation
     /// \param skeleton_ptr Pointer to SkeletonBase instance
     /// \return Pointer to SkeletonEventBase if found, nullptr otherwise
     virtual SkeletonEventBase* GetSkeletonEvent(SkeletonBase* skeleton_ptr) = 0;
+
+    /// \brief Get TypeOperations for type-erased sample handling
+    /// \return Pointer to TypeOperations instance for the event data type
+    virtual const TypeOperations* GetTypeOps() const noexcept = 0;
 };
 
 /// \brief Template implementation of MemberOperation for specific ProxyType and SkeletonType
@@ -331,6 +337,9 @@ template <typename ProxyType,
 class MemberOperationImpl : public MemberOperation
 {
   public:
+    /// Constructor to cache TypeOperations pointer for efficient member access
+    explicit MemberOperationImpl(const TypeOperations* type_ops) noexcept : type_ops_ptr_{type_ops} {}
+
     ProxyEventBase* GetProxyEvent(ProxyBase* proxy_ptr) override
     {
         auto proxy = dynamic_cast<ProxyType*>(proxy_ptr);
@@ -357,6 +366,14 @@ class MemberOperationImpl : public MemberOperation
 
         return static_cast<SkeletonEventBase*>(&(skeleton->*skeleton_event_member));
     }
+
+    const TypeOperations* GetTypeOps() const noexcept override
+    {
+        return type_ops_ptr_;
+    }
+
+  private:
+    const TypeOperations* type_ops_ptr_;
 };
 
 /// \brief Interface for type-erased proxy and skeleton creation operations
@@ -450,26 +467,6 @@ class GlobalRegistryMapping
   public:
     using InterfaceOperationMap = std::unordered_map<std::string_view, std::unique_ptr<InterfaceOperations>>;
 
-    using TypeOperationMap = std::unordered_map<std::string_view, std::unique_ptr<TypeOperations>>;
-
-    /// \brief Get the type operation map
-    /// \details Creates static map on first call and returns reference to it for subsequent calls.
-    /// \return Reference to the static type operation map
-    static TypeOperationMap& GetTypeOperationMap()
-    {
-        static TypeOperationMap s_type_operation_map;
-        return s_type_operation_map;
-    }
-
-    /// \brief Register type operation for a specific type name
-    /// \details Called by EXPORT_MW_COM_TYPE macro to register type operations.
-    /// \param type_name Name of the type used as key in registry
-    /// \param impl Unique pointer to TypeOperations implementation
-    static void RegisterTypeOperation(const std::string_view type_name, std::unique_ptr<TypeOperations> impl)
-    {
-        GetTypeOperationMap()[type_name] = std::move(impl);
-    }
-
     /// \brief Get the interface operation map
     /// \details Creates static map on first call and returns reference to it for subsequent calls.
     /// \return Reference to the static interface operation map
@@ -512,20 +509,6 @@ class GlobalRegistryMapping
     {
         auto it = GetInterfaceOperationMap().find(interface_id);
         if (it != GetInterfaceOperationMap().end())
-        {
-            return it->second.get();
-        }
-        return nullptr;
-    }
-
-    /// \brief Get type operation for a specific type name
-    /// \param type_name Name of the type used as registry key
-    /// \return Pointer to TypeOperations implementation if found, nullptr otherwise
-    static TypeOperations* FindTypeInformation(const std::string_view type_name)
-    {
-        auto& type_ops_map = GetTypeOperationMap();
-        auto it = type_ops_map.find(type_name);
-        if (it != type_ops_map.end())
         {
             return it->second.get();
         }
@@ -629,6 +612,14 @@ class RustBoxedCallable<void,
     static void dispose(FatPtr) noexcept {}
 };
 
+/// Helper function to get singleton TypeOperations instance for each type T
+template <typename T>
+inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
+{
+    static ::score::mw::com::impl::rust::TypeOperationImpl<T> ops;
+    return ops;
+}
+
 /// \brief Macro to begin registration of interface operations
 /// \details Creates registry and type aliases for a specific interface. Uses a static struct to register
 /// interface operations at startup/before main(). Declares the Rust FFI function for closure invocation.
@@ -663,38 +654,41 @@ class RustBoxedCallable<void,
 
 /// \brief Macro to register event member operations
 /// \details Creates registry for event member operations for a specific interface and event name.
-/// Uses a static struct to register member operations at startup/before main().
-/// \param event_type Data type of the event
-/// \param event_member Event member name in Proxy and Skeleton classes
+/// Uses a static struct to register MemberOperationImpl at startup/before main().
+/// All events with the same event_type share a single TypeOperationImpl<event_type> instance obtained via
+/// get_type_operations<event_type>(), eliminating per-event type operation overhead.
+/// \param event_type Data type of the event (e.g., Tire, Exhaust)
+/// \param event_member Event member name in Proxy and Skeleton classes (e.g., left_tire, right_tire)
 /// \note Example usage: EXPORT_MW_COM_EVENT(Tire, left_tire)
-#define EXPORT_MW_COM_EVENT(event_type, event_member)                                                               \
-    struct event_member##_EventRegistrationHelper                                                                   \
-    {                                                                                                               \
-        event_member##_EventRegistrationHelper()                                                                    \
-        {                                                                                                           \
-                                                                                                                    \
-            auto event_info =                                                                                       \
-                std::make_unique<::score::mw::com::impl::rust::MemberOperationImpl<ProxyType,                       \
-                                                                                   SkeletonType,                    \
-                                                                                   event_type,                      \
-                                                                                   &ProxyType::event_member,        \
-                                                                                   &SkeletonType::event_member>>(); \
-                                                                                                                    \
-            /* Register this event in the LOCAL interface registry (not global) */                                  \
-            ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterMemberOperation(                           \
-                std::string_view(id_interface), std::string_view(#event_member), std::move(event_info));            \
-        }                                                                                                           \
-    };                                                                                                              \
-                                                                                                                    \
-    /* Force instantiation at startup */                                                                            \
+#define EXPORT_MW_COM_EVENT(event_type, event_member)                                                             \
+    struct event_member##_EventRegistrationHelper                                                                 \
+    {                                                                                                             \
+        event_member##_EventRegistrationHelper()                                                                  \
+        {                                                                                                         \
+            /* Get reference to shared TypeOperations - same for all events of same type */                       \
+            auto& type_ops = ::score::mw::com::impl::rust::get_type_operations<event_type>();                     \
+                                                                                                                  \
+            auto event_info =                                                                                     \
+                std::make_unique<::score::mw::com::impl::rust::MemberOperationImpl<ProxyType,                     \
+                                                                                   SkeletonType,                  \
+                                                                                   event_type,                    \
+                                                                                   &ProxyType::event_member,      \
+                                                                                   &SkeletonType::event_member>>( \
+                    &type_ops);                                                                                   \
+                                                                                                                  \
+            ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterMemberOperation(                         \
+                std::string_view(id_interface), std::string_view(#event_member), std::move(event_info));          \
+        }                                                                                                         \
+    };                                                                                                            \
+                                                                                                                  \
     static event_member##_EventRegistrationHelper event_member##_event_reg_instance;
 
 #define END_EXPORT_MW_COM_INTERFACE() }  // namespace id##_detail
 
-/// \brief Macro to register type operations
-/// \details Creates registry for type operations for a specific type name. Specializes the
-/// RustRefMutCallable template and uses a static struct to register type operations at startup/before main().
-/// \param type_tag Type name tag used in macros as the registry key
+/// \brief Macro to create type specific class and support functions
+/// \details RustRefMutCallable template is specialized for SamplePtr<type> to allow C++ to call Rust closures with
+/// type-erased sample pointers.
+/// \param type_tag Type name tag is currently not used but we may need for method and field.
 /// \param type Actual C++ type for which operations are registered
 /// \note Example usage: EXPORT_MW_COM_TYPE(TireType, Tire)
 #define EXPORT_MW_COM_TYPE(type_tag, type)                                                                    \
@@ -712,19 +706,8 @@ class RustBoxedCallable<void,
             ::score::mw::com::impl::rust::mw_com_impl_call_dyn_ref_fnmut_sample(&ptr_, placement_sample);     \
         }                                                                                                     \
         static void dispose(::score::mw::com::impl::rust::FatPtr) noexcept {}                                 \
-    };                                                                                                        \
-                                                                                                              \
-    struct type_tag##_TypeRegistrationHelper                                                                  \
-    {                                                                                                         \
-        type_tag##_TypeRegistrationHelper()                                                                   \
-        {                                                                                                     \
-            auto type_ops = std::make_unique<::score::mw::com::impl::rust::TypeOperationImpl<type>>();        \
-            ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterTypeOperation(#type_tag,             \
-                                                                                       std::move(type_ops));  \
-        }                                                                                                     \
-    };                                                                                                        \
-                                                                                                              \
-    static type_tag##_TypeRegistrationHelper type_tag##_type_reg_instance;
+    };
+
 }  // namespace score::mw::com::impl::rust
 
 #endif  // SCORE_MW_COM_REGISTRY_BRIDGE_MACROS_H

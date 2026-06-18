@@ -13,11 +13,21 @@
 
 # Clang-tidy configuration
 # Run clang-tidy on all C++ targets with: bazel test --config=clang-tidy //...
-test:clang-tidy --aspects=//:tools/lint/linters.bzl%clang_tidy_aspect
-test:clang-tidy --output_groups=+rules_lint_report
+test:clang-tidy --aspects=//tools/lint:linters.bzl%clang_tidy_aspect
+test:clang-tidy --output_groups=+rules_lint_human,+rules_lint_machine
 # Use LLVM toolchain for clang-tidy so it can find system headers
 test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 test:clang-tidy --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+
+# Clang-tidy autofix configuration
+# Inherits all clang-tidy flags above and additionally enables fix mode so that
+# aspect_rules_lint runs clang-tidy with --fix-errors in a sandbox, collects
+# the edits as a unified-diff patch, and writes one *.AspectRulesLintClangTidy.patch
+# file per source file under bazel-bin.  Use `bazel run //:clang-tidy.fix`
+# to apply those patches back to the workspace.
+test:clang-tidy-fix --config=clang-tidy
+test:clang-tidy-fix --@aspect_rules_lint//lint:fix
+test:clang-tidy-fix --output_groups=+rules_lint_patch
 
 common:codeql --platform_suffix=codeql
 common:codeql --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux

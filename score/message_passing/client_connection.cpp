@@ -370,7 +370,7 @@ void ClientConnection::TryConnect() noexcept
         if (((os_code != EAGAIN) && (os_code != ECONNREFUSED)) && (os_code != ENOENT))
         {
             LogError(logger, "TryOpenClientConnection ", identifier_, " non-retry OS error code ", os_code);
-            StopReason stop_reason = os_code == EACCES ? StopReason::kPermission : StopReason::kIoError;
+            StopReason stop_reason = (os_code == EACCES) ? StopReason::kPermission : StopReason::kIoError;
             if (TrySetStopReason(stop_reason))
             {
                 ProcessStateChange(State::kStopping);
@@ -383,7 +383,8 @@ void ClientConnection::TryConnect() noexcept
         const auto retry_increase_ms =
             (static_cast<std::int64_t>(connect_retry_ms_) + static_cast<std::int64_t>(kConnectRetryT) - 1) /
             static_cast<std::int64_t>(kConnectRetryT);
-        if ((retry_increase_ms <= kConnectRetryMsMax) && (connect_retry_ms_ <= kConnectRetryMsMax - retry_increase_ms))
+        if ((retry_increase_ms <= kConnectRetryMsMax) &&
+            (connect_retry_ms_ <= (kConnectRetryMsMax - retry_increase_ms)))
         {
             // At this point checks guarantee no data loss
             // coverity[autosar_cpp14_a4_7_1_violation]
@@ -452,7 +453,7 @@ IClientConnection::StopReason ClientConnection::ProcessInputEvent() noexcept
             LogWarn(engine_->GetLogger(), "ProcessInputEvent ", identifier_, " spurious wake-up");
             return StopReason::kNone;
         }
-        return os_code == EPIPE ? StopReason::kClosedByPeer : StopReason::kIoError;
+        return (os_code == EPIPE) ? StopReason::kClosedByPeer : StopReason::kIoError;
     }
     auto message = message_expected.value();
     // This switch statement is considered not well-formed due to early exits, i.e. return statements.
@@ -519,7 +520,8 @@ void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& l
     {
         SendCommand& send = send_queue_.front();
         send_queue_.pop_front();
-        send_pool_.push_front(send);  // LIFO for better cache locality
+        // below, we will need to return the SendCommand to the send_pool_ under lock
+        // (LIFO for better cache locality) right after we use its buffer to send the message
         if (!send.callback.empty())
         {
             waiting_for_reply_ = std::move(send.callback);
@@ -531,6 +533,7 @@ void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& l
             const auto expected = engine_->SendProtocolMessage(
                 client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), send.message);
             lock.lock();
+            send_pool_.push_front(send);
             if (expected.has_value())
             {
                 break;
@@ -554,6 +557,7 @@ void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& l
             score::cpp::ignore =
                 engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::SEND), send.message);
             lock.lock();
+            send_pool_.push_front(send);
             waiting_for_reply_.reset();
         }
     }

@@ -373,7 +373,7 @@ auto TracingRuntime::GetTraceContextIdRangeForServiceElement(
     // This check is anyway defensive programming to prevent accidental changes that could be made to the code in
     // the future but currently has no way of failing in production.
     static_assert(
-        (std::numeric_limits<decltype(range_start)>::max() + std::numeric_limits<decltype(range_size)>::max() <=
+        ((std::numeric_limits<decltype(range_start)>::max() + std::numeric_limits<decltype(range_size)>::max()) <=
          std::numeric_limits<TraceContextId>::max()),
         "If the maximum value of range_start plus the maximum value of range_size can exceed the maximum value a "
         "TraceContextId, then we could get an overflow.");

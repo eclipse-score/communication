@@ -40,7 +40,7 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
 
         // User methods
         // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
-        const ClientIdentity& GetClientIdentity() const noexcept override;
+        const ClientIdentity& GetClientIdentity() const& noexcept override;
         // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
         UserData& GetUserData() noexcept override;
 

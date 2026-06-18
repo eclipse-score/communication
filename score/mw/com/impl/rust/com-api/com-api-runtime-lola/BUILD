@@ -21,6 +21,7 @@ rust_library(
         "producer.rs",
         "runtime.rs",
     ],
+    edition = "2024",
     visibility = [
         "//visibility:public",  # platform_only
     ],
@@ -29,6 +30,7 @@ rust_library(
         "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
         "//score/mw/com/impl/rust:mw_com",
         "//score/mw/com/impl/rust/com-api/com-api-concept",
+        "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_lola",
         "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_rs",
         "@score_communication_crate_index//:futures",
     ],
@@ -37,8 +39,14 @@ rust_library(
 rust_test(
     name = "com-api-runtime-lola-tests",
     crate = ":com-api-runtime-lola",
+    edition = "2024",
+    #tag will be removed wwhen sanitizer issue resolved for this
     tags = ["manual"],
-    deps = [":com-api-runtime-lola"],
+    deps = [
+        ":com-api-runtime-lola",
+        "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_mock",
+        "@score_communication_crate_index//:mockall",
+    ],
 )
 
 rust_doc_test(

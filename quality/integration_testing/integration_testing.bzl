@@ -62,7 +62,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
             "//quality/sanitizer/flags:none": [],
             "//quality/sanitizer/flags:any_sanitizer": ["//quality/sanitizer:suppressions_pkg"],
         }) + [
-            "@ubuntu24_04//:ubuntu24_04",
+            "@ubuntu24_04_integration_testing//:ubuntu24_04_integration_testing",
         ],
         target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
     )

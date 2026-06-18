@@ -23,6 +23,7 @@ rust_library(
         "lib.rs",
         "reloc.rs",
     ],
+    edition = "2024",
     proc_macro_deps = [
         "//score/mw/com/impl/rust/com-api/com-api-concept-macros",
         "@score_communication_crate_index//:paste",
@@ -40,6 +41,7 @@ rust_library(
 rust_test(
     name = "com-api-concept-test",
     crate = ":com-api-concept",
+    edition = "2024",
     tags = ["manual"],
     deps = [":com-api-concept"],
 )

@@ -14,6 +14,7 @@
 
 #include "score/memory/shared/shared_memory_resource_heap_allocator_mock.h"
 
+#include <limits>
 #include <memory>
 
 namespace score::mw::com::impl::lola
@@ -24,8 +25,11 @@ namespace
 
 using ::score::memory::shared::SharedMemoryResourceHeapAllocatorMock;
 
-const std::uint64_t kControlMemoryResourceId{10U};
-const std::uint64_t kDataMemoryResourceId{11U};
+// \todo: This needs to be revisited on why this should be hardcoded in the first place. until then we use the maximum
+// possible value for the memory resource ID to avoid any potential conflicts with memory
+//  resource IDs that are be generated during tests.
+const std::uint64_t kControlMemoryResourceId{std::numeric_limits<std::uint64_t>::max()};
+const std::uint64_t kDataMemoryResourceId{std::numeric_limits<std::uint64_t>::max() - 1U};
 
 }  // namespace
 

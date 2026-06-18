@@ -101,7 +101,7 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
     // only has one id at the lola level, so the Get and the Set of the same field both resolve to
     // the same element id here. The Get-vs-Set split is added further down when we pair the id
     // with method_type to build the UniqueMethodIdentifier.
-    const auto element_type = (method_type == MethodType::kGet || method_type == MethodType::kSet)
+    const auto element_type = ((method_type == MethodType::kGet) || (method_type == MethodType::kSet))
                                   ? ServiceElementType::FIELD
                                   : ServiceElementType::METHOD;
 

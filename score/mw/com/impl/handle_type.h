@@ -80,7 +80,7 @@ class HandleType
      *
      * \return The InstanceIdentifier that is associated with this handle
      */
-    const InstanceIdentifier& GetInstanceIdentifier() const noexcept;
+    const InstanceIdentifier& GetInstanceIdentifier() const& noexcept;
 
     /// Extracts the deployment instance information from the handle.
     ///

@@ -110,4 +110,20 @@ DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
     return {size_info_pair.first, size_info_pair.second};
 }
 
+Result<void> GenericSkeletonEvent::SetReceiveHandlerRegistrationChangedHandler(
+    ReceiveHandlerRegistrationChangedCallback callback) noexcept
+{
+    auto* const binding = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding != nullptr, "Cast to GenericSkeletonEventBinding failed");
+
+    return binding->SetReceiveHandlerRegistrationChangedHandler(std::move(callback));
+}
+
+Result<void> GenericSkeletonEvent::UnsetReceiveHandlerRegistrationChangedHandler() noexcept
+{
+    auto* const binding = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding != nullptr, "Cast to GenericSkeletonEventBinding failed");
+
+    return binding->UnsetReceiveHandlerRegistrationChangedHandler();
+}
 }  // namespace score::mw::com::impl

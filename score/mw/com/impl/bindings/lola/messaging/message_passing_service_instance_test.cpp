@@ -482,6 +482,30 @@ TEST_F(MessagePassingServiceInstanceTest,
     instance.UnregisterEventNotification(event_id_, registration_no, remote_pid_);
 }
 
+TEST_F(MessagePassingServiceInstanceTest,
+       UnregisterEventNotificationRemoteDoesNotSendUnregisterMessageWhenClientIsNotReady)
+{
+    // Given service instance
+    MessagePassingServiceInstance instance{
+        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
+
+    // Expect only the registration message to be sent.
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
+        .Times(1)
+        .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
+
+    // and the cached client is not ready when unregistration happens
+    EXPECT_CALL(client_connection_mock_, GetState())
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(testing::Return(IClientConnection::State::kStopped));
+
+    // Given handler being registered for event with pid != local_pid
+    auto registration_no = instance.RegisterEventNotification(event_id_, {}, remote_pid_);
+
+    // When UnregisterEventNotification is called with received registration handler
+    instance.UnregisterEventNotification(event_id_, registration_no, remote_pid_);
+}
+
 TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesNotUnregisterOnPidMismatch)
 {
     // Given service instance

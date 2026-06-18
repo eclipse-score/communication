@@ -24,6 +24,7 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
@@ -35,6 +36,7 @@
 
 #include <atomic>
 #include <optional>
+#include <tuple>
 
 namespace score::mw::com::impl::lola
 {
@@ -55,6 +57,8 @@ class SkeletonEventCommon
     // The "SkeletonEventAttorney" class is a helper, which sets the internal state of "SkeletonEventCommon" accessing
     // private members and used for testing purposes only.
     friend class SkeletonEventAttorney<SampleType>;
+
+    using ReceiveHandlerRegistrationChangedCallback = lola::IMessagePassingService::HandlerStatusChangeCallback;
 
   public:
     SkeletonEventCommon(Skeleton& parent,
@@ -86,17 +90,17 @@ class SkeletonEventCommon
         tracing_data_ = tracing_data;
     }
 
-    const ElementFqId& GetElementFQId() const
+    const ElementFqId& GetElementFQId() const&
     {
         return element_fq_id_;
     }
 
-    Skeleton& GetParent()
+    Skeleton& GetParent() &
     {
         return parent_;
     }
 
-    [[nodiscard]] const SkeletonEventProperties& GetEventProperties() const
+    [[nodiscard]] const SkeletonEventProperties& GetEventProperties() const&
     {
         return event_properties_;
     }
@@ -111,6 +115,31 @@ class SkeletonEventCommon
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(consumer_control_local_view_qm_.has_value());
         return consumer_control_local_view_qm_.value();
+    }
+
+    /// \brief Set callback, to get notified, when either the 1st event-notification has been registered or the last
+    /// event-notification has been unregistered.
+    /// \detail  This extension has been added to GenericSkeletonEvent only (not "typed" SkeletonEvent), because we
+    /// are only using it so far in the gateway use case, where the gateway use only GenericProxy/GenericSkeleton and
+    /// not typed proxies/skeletons.
+    /// \attention The callback must be set before OfferService() has been called in order to avoid any race
+    /// conditions between setting the callback and it being called.
+    Result<void> SetReceiveHandlerRegistrationChangedHandler(
+        ReceiveHandlerRegistrationChangedCallback callback) noexcept
+    {
+        static_assert(std::is_same_v<decltype(callback), ReceiveHandlerRegistrationChangedCallback>,
+                      "Callback type mismatch between GenericSkeletonEvent and lola::GenericSkeletonEvent");
+        receive_handler_registration_changed_callback_ = std::move(callback);
+        return {};
+    }
+
+    /// \brief Unset the callback for Receive Handler registration change notifications
+    /// \attention The callback must not be unset until after StopOffer() has been called to avoid any
+    /// race conditions between unsetting the callback and it being called.
+    Result<void> UnsetReceiveHandlerRegistrationChangedHandler()
+    {
+        receive_handler_registration_changed_callback_.reset();
+        return {};
     }
 
   private:
@@ -146,6 +175,7 @@ class SkeletonEventCommon
     /// PrepareStopOfferCommon().
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
     std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_{};
+    std::optional<ReceiveHandlerRegistrationChangedCallback> receive_handler_registration_changed_callback_;
 
     void EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set);
     void EmplaceTypeErasedSamplePtrsGuard();
@@ -213,11 +243,18 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(EventControl& event_con
     // Register callbacks to be notified when event notification existence changes.
     // This allows us to optimise the Send() path by skipping NotifyEvent() when no handlers are registered.
     // Separate callbacks for QM and ASIL-B update their respective atomic flags for lock-free access.
+    // If a callback for receive handler registration changes has been set, like it is done for the gateway
+    // use case, it will also be called.
     GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
         .GetLolaMessaging()
         .RegisterEventNotificationExistenceChangedCallback(
             QualityType::kASIL_QM, element_fq_id_, [this](const bool has_handlers) noexcept {
                 SetQmNotificationsRegistered(has_handlers);
+                if (receive_handler_registration_changed_callback_.has_value())
+                {
+                    const bool qm_registered = qm_event_update_notifications_registered_.load();
+                    receive_handler_registration_changed_callback_.value()(qm_registered);
+                }
             });
 
     if (parent_.GetInstanceQualityType() == QualityType::kASIL_B)
@@ -227,6 +264,11 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(EventControl& event_con
             .RegisterEventNotificationExistenceChangedCallback(
                 QualityType::kASIL_B, element_fq_id_, [this](const bool has_handlers) noexcept {
                     SetAsilBNotificationsRegistered(has_handlers);
+                    if (receive_handler_registration_changed_callback_.has_value())
+                    {
+                        const bool asil_b_registered = asil_b_event_update_notifications_registered_.load();
+                        receive_handler_registration_changed_callback_.value()(asil_b_registered);
+                    }
                 });
     }
 }
@@ -319,8 +361,7 @@ Result<void> SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<Samp
     // coverity[autosar_cpp14_a4_7_1_violation]
     ++current_timestamp_;
     event_data_control_composite_->EventReady(slot, current_timestamp_);
-    NotifyConsumersIfHandlersRegistered();
-    return {};
+    return NotifyConsumersIfHandlersRegistered();
 }
 
 template <typename SampleType>
@@ -336,8 +377,8 @@ Result<void> SkeletonEventCommon<SampleType>::NotifyConsumersIfHandlersRegistere
             .GetLolaMessaging()
             .NotifyEvent(QualityType::kASIL_QM, element_fq_id_);
     }
-    if (asil_b_event_update_notifications_registered_.load() &&
-        parent_.GetInstanceQualityType() == QualityType::kASIL_B)
+    if ((asil_b_event_update_notifications_registered_.load()) &&
+        (parent_.GetInstanceQualityType() == QualityType::kASIL_B))
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()

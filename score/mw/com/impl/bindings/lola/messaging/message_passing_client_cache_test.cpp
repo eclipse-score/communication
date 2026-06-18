@@ -300,5 +300,29 @@ TEST_P(MessagePassingClientCacheTest, GetMessagePassingClientEvictsStartingClien
     EXPECT_EQ(client2.get(), fresh_connection_ptr);
 }
 
+TEST_P(MessagePassingClientCacheTest, GetCachedMessagePassingClientReturnsNullWhenNoClientExists)
+{
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(0);
+
+    auto client = client_cache_.GetCachedMessagePassingClient(pid_);
+
+    EXPECT_EQ(client, nullptr);
+}
+
+TEST_P(MessagePassingClientCacheTest, GetCachedMessagePassingClientReturnsExistingNonReadyClient)
+{
+    EXPECT_CALL(*client_connection_mock_, GetState())
+        .WillRepeatedly(::testing::Return(IClientConnection::State::kStarting));
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+
+    auto client1 = client_cache_.GetMessagePassingClient(pid_);
+
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_)).Times(0);
+    auto client2 = client_cache_.GetCachedMessagePassingClient(pid_);
+
+    EXPECT_EQ(client1, client2);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

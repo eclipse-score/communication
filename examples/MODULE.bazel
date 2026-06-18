@@ -9,7 +9,7 @@ bazel_dep(name = "score_baselibs", version = "0.2.7")
 git_override(
     module_name = "score_baselibs",
     # Required until a new release of baselibs is available that includes the tracing API
-    commit = "e0ed8b15ea6aa4195c6df3891846bbda9d83c431",
+    commit = "a0bae98d65bda42e02d3d5732a55895e1a66cdaa",
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 

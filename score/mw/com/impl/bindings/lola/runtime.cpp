@@ -84,7 +84,7 @@ BindingType Runtime::GetBindingType() const noexcept
     return BindingType::kLoLa;
 }
 
-IMessagePassingService& Runtime::GetLolaMessaging() noexcept
+IMessagePassingService& Runtime::GetLolaMessaging() & noexcept
 {
     // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or
     // references to private or protected data owned by the class.".
@@ -168,7 +168,7 @@ ShmSizeCalculationMode Runtime::GetShmSizeCalculationMode() const noexcept
     return configuration_.GetGlobalConfiguration().GetShmSizeCalcMode();
 }
 
-IServiceDiscoveryClient& Runtime::GetServiceDiscoveryClient() noexcept
+IServiceDiscoveryClient& Runtime::GetServiceDiscoveryClient() & noexcept
 {
     // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or
     // references to private or protected data owned by the class.".
@@ -180,7 +180,7 @@ IServiceDiscoveryClient& Runtime::GetServiceDiscoveryClient() noexcept
     return service_discovery_client_;
 }
 
-RollbackSynchronization& Runtime::GetRollbackSynchronization() noexcept
+RollbackSynchronization& Runtime::GetRollbackSynchronization() & noexcept
 {
     // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or
     // references to private or protected data owned by the class.".

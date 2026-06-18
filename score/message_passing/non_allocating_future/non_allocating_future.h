@@ -47,7 +47,7 @@ class NonAllocatingFuture
         MarkReady();
     }
 
-    Value& GetValueForUpdate() const noexcept
+    Value& GetValueForUpdate() const& noexcept
     {
         return value_;
     }

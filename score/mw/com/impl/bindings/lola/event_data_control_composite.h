@@ -95,7 +95,7 @@ class EventDataControlComposite
     bool IsQmControlDisconnected() const noexcept;
 
     /// \brief Returns the (mandatory) ProviderEventDataControlLocalView for QM.
-    ProviderEventDataControlLocalView<AtomicIndirectorType>& GetQmEventDataControlLocal() const noexcept;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>& GetQmEventDataControlLocal() const& noexcept;
 
     /// \brief Returns a pointer to ProviderEventDataControlLocalView for ASIL-B
     /// \return a nullptr if no ASIL-B support, otherwise, a valid pointer to the ASIL-B EventDataControl.

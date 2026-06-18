@@ -36,7 +36,7 @@ score::cpp::span<std::byte> GetElement(const std::size_t position,
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(position < queue_size);
 
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(queue_storage.size() == type_info.Size() * queue_size);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(queue_storage.size() == (type_info.Size() * queue_size));
     const auto element_offset = type_info.Size() * position;
 
     // In our architecture we have a one-to-one mapping between pointers and integral values.
@@ -120,7 +120,7 @@ std::optional<score::cpp::span<std::byte>> TypeErasedCallQueue::GetReturnValueQu
     return {{return_queue_start_address_.data.get(), return_queue_start_address_.size}};
 }
 
-auto TypeErasedCallQueue::GetTypeErasedElementInfo() const -> const TypeErasedElementInfo&
+auto TypeErasedCallQueue::GetTypeErasedElementInfo() const& -> const TypeErasedElementInfo&
 {
     return type_erased_element_info_;
 }

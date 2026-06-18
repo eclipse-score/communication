@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_GENERIC_SKELETON_EVENT_BINDING_H_
 #define SCORE_MW_COM_IMPL_GENERIC_SKELETON_EVENT_BINDING_H_
 
+#include "score/mw/com/impl/receive_handler_registration_changed_handler.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
@@ -35,6 +36,11 @@ class GenericSkeletonEventBinding : public SkeletonEventBindingBase
     virtual Result<void> Notify() noexcept = 0;
 
     virtual std::pair<size_t, size_t> GetSizeInfo() const noexcept = 0;
+
+    virtual Result<void> SetReceiveHandlerRegistrationChangedHandler(
+        ReceiveHandlerRegistrationChangedCallback callback) noexcept = 0;
+
+    virtual Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept = 0;
 };
 
 }  // namespace score::mw::com::impl

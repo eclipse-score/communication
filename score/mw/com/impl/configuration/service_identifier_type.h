@@ -58,7 +58,7 @@ class ServiceIdentifierType final
     ServiceIdentifierType& operator=(const ServiceIdentifierType& other) = default;
     ServiceIdentifierType(const ServiceIdentifierType&) = default;
     ServiceIdentifierType(ServiceIdentifierType&&) noexcept = default;
-    ServiceIdentifierType& operator=(ServiceIdentifierType&& other) = default;
+    ServiceIdentifierType& operator=(ServiceIdentifierType&& other) noexcept = default;
 
     /**
      * \brief Compares two instances for equality

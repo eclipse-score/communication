@@ -46,9 +46,9 @@ class GlobalConfiguration final
      * \brief Class is only move constructible
      */
     GlobalConfiguration(const GlobalConfiguration& other) = delete;
-    GlobalConfiguration(GlobalConfiguration&& other) = default;
+    GlobalConfiguration(GlobalConfiguration&& other) noexcept = default;
     GlobalConfiguration& operator=(const GlobalConfiguration& other) & = delete;
-    GlobalConfiguration& operator=(GlobalConfiguration&& other) & = default;
+    GlobalConfiguration& operator=(GlobalConfiguration&& other) & noexcept = default;
 
     ~GlobalConfiguration() noexcept = default;
 

@@ -214,6 +214,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:__pkg__",
     ],
     deps = [
+        ":receive_handler_registration_changed_handler",
         ":skeleton_event_binding",
         "@score_baselibs//score/result",
     ],
@@ -413,6 +414,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
+        "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
     ],
 )
@@ -833,6 +835,18 @@ cc_library(
     name = "event_receive_handler",
     srcs = ["event_receive_handler.cpp"],
     hdrs = ["event_receive_handler.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = ["@score_baselibs//score/language/futurecpp"],
+)
+
+cc_library(
+    name = "receive_handler_registration_changed_handler",
+    srcs = ["receive_handler_registration_changed_handler.cpp"],
+    hdrs = ["receive_handler_registration_changed_handler.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
