@@ -180,8 +180,8 @@ jobs:
           # Pass LCOV data and clang-tidy findings, generate_dashboard handles
           # absent files gracefully (shows N/A for that metric).
           bazel run //quality/dashboard:generate_dashboard -- \
-            --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
-            --clang-tidy /tmp/clang_tidy/clang_tidy_findings.txt \
+            --lcov     "${GITHUB_WORKSPACE}/_quality/coverage/coverage_report.dat" \
+            --clang-tidy "${GITHUB_WORKSPACE}/_quality/clang_tidy_findings.txt" \
             --codeql-csv "${GITHUB_WORKSPACE}/_quality/codeql_findings.txt" \
             --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
             --github-summary
