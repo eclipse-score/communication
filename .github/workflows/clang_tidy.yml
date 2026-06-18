@@ -49,6 +49,7 @@ on:
 
 permissions:
   contents: read
+  actions: write # Needed to delete old bazel caches
 
 concurrency:
   group: clang-tidy-pr-${{ github.event.pull_request.number || github.run_id }}

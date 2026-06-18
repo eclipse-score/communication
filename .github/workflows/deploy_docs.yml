@@ -32,7 +32,7 @@ permissions:
   contents: write  # needed for uploading release assets
   pages: write
   id-token: write
-  actions: read    # needed to download artifacts from the nightly workflow_run
+  actions: write    # needed to download artifacts from the nightly workflow_run and delete old bazel caches
 
 concurrency:
   group: "pages"
