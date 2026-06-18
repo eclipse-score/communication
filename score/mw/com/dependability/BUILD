@@ -23,7 +23,10 @@ dependable_element(
     dependability_analysis = ["//score/mw/com/dependability/safety_analysis:mw_com_fmea"],
     integrity_level = "B",
     maturity = "development",
-    requirements = [],
+    requirements = [
+        "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_ipc",
+        "//score/mw/com/dependability/requirements/assumed_system_requirements:assumed_system_requirements",
+    ],
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],
     visibility = ["//visibility:public"],

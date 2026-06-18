@@ -369,7 +369,7 @@ class RSTGenerator: # pylint: disable=too-few-public-methods
             Path to generated index file
         """
         content = f"""Public API Reference
-=============
+=====================
 
 This document contains all public API items tagged with @api for \
 {self.project_name}.
