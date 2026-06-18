@@ -56,72 +56,10 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  precheck:
-    runs-on: ubuntu-24.04
-    outputs:
-      should-run: ${{ steps.check-rust-changes.outputs.should-run }}
-    permissions:
-      contents: read
-      pull-requests: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
-        with:
-          fetch-depth: 0
-
-      - name: Fetch base branch for comparison
-        if: github.event_name == 'pull_request'
-        run: |
-          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
-
-      - name: Check for Rust file or workflow changes
-        id: check-rust-changes
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_REF: ${{ github.base_ref }}
-        run: |
-          should_run='false'
-          
-          # For pull requests and merge groups, check for Rust file or workflow changes
-          if [[ "$EVENT_NAME" == "pull_request" || "$EVENT_NAME" == "merge_group" ]]; then
-            CHANGED_FILES=$(git diff --name-only "origin/${BASE_REF}...HEAD" 2>/dev/null || true)
-            
-            CHANGED_RUST=$(echo "$CHANGED_FILES" | grep -E '\.rs$' || true)
-            CHANGED_WORKFLOW=$(echo "$CHANGED_FILES" | grep -E '^\.github/workflows/clippy_lint\.yml$' || true)
-            
-            if [[ -n "$CHANGED_RUST" ]]; then
-              should_run='true'
-              echo "Found Rust file changes:"
-              echo "$CHANGED_RUST"
-            fi
-            
-            if [[ -n "$CHANGED_WORKFLOW" ]]; then
-              should_run='true'
-              echo "Found workflow file changes:"
-              echo "$CHANGED_WORKFLOW"
-            fi
-            
-            if [[ "$should_run" == "false" ]]; then
-              echo "No Rust or workflow files changed - skipping Clippy check"
-            fi
-          elif [[ "$EVENT_NAME" == "push" ]]; then
-            # For pushes to main, always run
-            should_run='true'
-          elif [[ "$EVENT_NAME" == "workflow_call" ]]; then
-            # For workflow_call, always run (manual or nightly)
-            should_run='true'
-          fi
-          
-          echo "should-run=${should_run}" >> $GITHUB_OUTPUT
-          echo "Clippy check: should-run=${should_run}"
-
   clippy:
-    needs: precheck
-    if: ${{ needs.precheck.outputs.should-run == 'true' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      pull-requests: read
     outputs:
       artifact-name: clippy-findings
       errors: ${{ steps.findings.outputs.errors }}
@@ -132,32 +70,51 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
         with:
-          fetch-depth: 0  # Fetch full history for accurate diff
-
-      - name: Fetch base branch for comparison
-        if: github.event_name == 'pull_request'
+          fetch-depth: 0  # Full history so git-diff against origin/<base-ref> works
+      - name: Check for relevant file changes
+        id: check-changes
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+          should_run='true'  # default: always run
 
-      - uses: castler/setup-bazel@cache-optimized
+          # For PRs and merge groups, skip when no Rust or workflow files changed.
+          # For push/workflow_call we always run so the job never gets stuck.
+          if [[ "$EVENT_NAME" == "pull_request" || "$EVENT_NAME" == "merge_group" ]]; then
+            CHANGED_FILES=$(git diff --name-only "origin/${BASE_REF}...HEAD" 2>/dev/null || true)
+            CHANGED_RUST=$(echo "$CHANGED_FILES" | grep -E '\.rs$' || true)
+            CHANGED_WORKFLOW=$(echo "$CHANGED_FILES" | grep -E '^\.github/workflows/clippy_lint\.yml$' || true)
+
+            if [[ -z "$CHANGED_RUST" && -z "$CHANGED_WORKFLOW" ]]; then
+              should_run='false'
+              echo "No Rust or workflow files changed — reporting success without running Clippy."
+            else
+              [[ -n "$CHANGED_RUST" ]]     && echo "Rust file changes detected."
+              [[ -n "$CHANGED_WORKFLOW" ]] && echo "Workflow file changes detected."
+            fi
+          fi
+
+          echo "should-run=${should_run}" >> $GITHUB_OUTPUT
+
+      - name: Setup lint environment
+        if: steps.check-changes.outputs.should-run == 'true'
+        uses: ./.github/actions/setup-bazel-lint
         with:
-          bazelisk-cache: true
-          disk-cache: "clippy"
-          repository-cache: true
-          cache-optimized: true
+          disk-cache: clippy
           cache-save: ${{ github.ref == 'refs/heads/main' }}
-
       - name: Run Clippy via Bazel
         id: run-clippy
+        if: steps.check-changes.outputs.should-run == 'true'
         continue-on-error: true
         run: |
-          bazel build --config=lint //score/mw/com/... \
+          bazel build --config=clippy //score/... \
             2>&1 | tee clippy_raw.log
           # Capture the exit code from bazel (PIPESTATUS[0]), not tee
           echo "bazel_exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
-
       - name: Collect findings
         id: findings
+        if: steps.check-changes.outputs.should-run == 'true'
         run: |
           # Verify clippy_raw.log exists
           if [[ ! -f clippy_raw.log ]]; then
@@ -184,11 +141,11 @@ jobs:
           echo "Grep results: errors=${ERRORS}, warnings=${WARNINGS}, total=${TOTAL}"
 
           # Scope blocking errors to Rust files changed in this PR
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            BASE_REF="origin/${{ github.base_ref }}"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            BASE_REF="origin/${GITHUB_BASE_REF}"
             CHANGED_RUST=$(git diff --name-only "${BASE_REF}...HEAD" 2>/dev/null \
               | grep -E '\.rs$' || true)
-          elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
+          elif [[ "${GITHUB_EVENT_NAME}" == "merge_group" ]]; then
             # For merge queue, compare against the base
             BASE_REF="origin/main"
             CHANGED_RUST=$(git diff --name-only "${BASE_REF}...HEAD" 2>/dev/null \
@@ -295,7 +252,10 @@ jobs:
         id: set-conclusion
         if: always()
         run: |
-          if [[ "${{ steps.findings.outputs.blocking_total }}" == "0" ]]; then
+          # When findings was skipped (no relevant files changed) blocking_total is
+          # empty — treat that as success so the job never blocks unrelated PRs.
+          BLOCKING="${{ steps.findings.outputs.blocking_total }}"
+          if [[ -z "${BLOCKING}" || "${BLOCKING}" == "0" ]]; then
             echo "conclusion=success" >> $GITHUB_OUTPUT
           else
             echo "conclusion=failure" >> $GITHUB_OUTPUT

@@ -72,23 +72,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
-
+        with:
+          fetch-depth: 0  # Full history so git-diff against origin/<base-ref> works
+      - name: Setup lint environment
+        uses: ./.github/actions/setup-bazel-lint
+        with:
+          disk-cache: clang_tidy
+          cache-save: ${{ github.ref == 'refs/heads/main' }}
       - name: Free Disk Space (Ubuntu)
         uses: eclipse-score/more-disk-space@v1
         with:
           level: 4
-
-      - uses: castler/setup-bazel@cache-optimized
-        with:
-          bazelisk-cache: true
-          disk-cache: "clang_tidy"
-          repository-cache: true
-          cache-optimized: true
-          cache-save: ${{ github.ref == 'refs/heads/main' }}
-
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
-
       - name: Run clang-tidy via Bazel
         id: run-clang-tidy
         # continue-on-error so we can collect findings and upload the artifact

@@ -1,0 +1,50 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Composite action: Setup Bazel for Lint
+#
+# Shared Bazel configuration used by lint workflows (Clippy, Clang-Tidy, etc.)
+# to eliminate duplicated setup steps.
+#
+# The calling workflow is responsible for checking out the repository before
+# invoking this action. This separation allows workflows to insert their own
+# steps (e.g. change-detection) between checkout and the Bazel setup.
+
+name: Setup Bazel for Lint
+description: >
+  Configures Bazel with shared caching options. Shared by lint workflows
+  (Clippy, Clang-Tidy, etc.) to avoid duplicating the same setup steps.
+  The caller must check out the repository before using this action.
+
+inputs:
+  disk-cache:
+    description: Bazel disk-cache key (e.g. "clippy", "clang_tidy")
+    required: true
+  cache-save:
+    description: >
+      Save the Bazel cache to the remote store.
+      Should be true only for pushes to main to avoid cache poisoning.
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Bazel
+      uses: castler/setup-bazel@cache-optimized
+      with:
+        bazelisk-cache: true
+        disk-cache: ${{ inputs.disk-cache }}
+        repository-cache: true
+        cache-optimized: true
+        cache-save: ${{ inputs.cache-save }}
