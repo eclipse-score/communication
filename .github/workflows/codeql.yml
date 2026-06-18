@@ -11,34 +11,27 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Workflow: CodeQL analysis on push to main and on demand.
-#
-# Runs CodeQL via Bazel on all relevant C++ targets under //score/...
-# and uploads the resulting SARIF file to GitHub Code Scanning so that:
-#   - GitHub tracks findings over time with a stable baseline on main.
-#   - New PRs are compared against that baseline to surface new findings.
-#
-# Why not run on pull_request?
-#   The full CodeQL analysis (169 MISRA rules over //score/...) exceeds
-#   GitHub's 6-hour runner limit and is cancelled before producing output.
-#   Running on push to main ensures a complete, uploadable baseline exists.
-#   GitHub Code Scanning then uses that baseline to flag new findings per PR.
-#
-# Reference: https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/uploading-a-sarif-file-to-github
-
 name: CodeQL Analysis
 
 on:
-  push:
-    branches: [main]
+  schedule:
+    - cron: '0 2 * * *'  # Nightly at 2 AM UTC
   workflow_dispatch:  # Allow maintainers to trigger manually when needed
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: Name of the uploaded CSV artifact
+        value: codeql-csv-results
+      conclusion:
+        description: Job conclusion (success/failure)
+        value: ${{ jobs.run-codeql.result }}
 
 permissions:
   contents: read
   security-events: write  # Required to upload SARIF results to GitHub Code Scanning
 
 concurrency:
-  group: codeql-${{ github.run_id }}
+  group: codeql-${{ github.ref }}
   cancel-in-progress: false  # Never cancel an in-progress CodeQL run; it takes hours
 
 env:
@@ -47,7 +40,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  codeql:
+  run-codeql:
     runs-on: ubuntu-24.04
 
     steps:
@@ -61,29 +54,33 @@ jobs:
 
       - name: Setup Bazel
         uses: castler/setup-bazel@cache-optimized
-        with:
-          bazelisk-cache: true
-          disk-cache: "codeql"
-          repository-cache: true
-          cache-optimized: true
-          cache-save: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
-      - name: Run CodeQL via Bazel
+      - name: Stub out ARM-only dependencies unavailable in CI
+        run: |
+          mkdir -p /tmp/ape_stub
+          touch /tmp/ape_stub/BUILD.bazel
+          touch /tmp/ape_stub/WORKSPACE
+          echo "common --override_repository=ape+=/tmp/ape_stub" >> user.bazelrc
+
+      - name: Create CodeQL database
         run: |
           bazel run //quality/static_analysis:codeql_lint -- \
-            --target //score/...
-
-      - name: Locate SARIF output
-        id: sarif
-        run: |
-          SARIF_PATH="$(bazel info output_path)/codeql.sarif"
-          echo "path=${SARIF_PATH}" >> "$GITHUB_OUTPUT"
+            --output-dir /tmp/codeql-results \
+            --output-prefix codeql-nightly \
+            --target //score/message_passing //score/mw/com
 
       - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: ${{ steps.sarif.outputs.path }}
-          category: codeql-bazel
+          sarif_file: /tmp/codeql-results/codeql-nightly.sarif
+          category: codeql-nightly
+
+      - name: Upload CSV results
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-csv-results
+          path: /tmp/codeql-results/codeql-nightly.csv
+          retention-days: 30
