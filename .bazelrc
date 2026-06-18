@@ -35,14 +35,22 @@ build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch-enum
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch-enum
+build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=sign-conversion
+build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=sign-conversion
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=range-loop-construct
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=range-loop-construct
 build --per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
 build --host_per_file_copt=external/.*googletest.*@-Wno-error=switch-enum
+build --per_file_copt=external/.*google_benchmark.*@-Wno-error=sign-conversion
+build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=sign-conversion
 build --per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
 build --host_per_file_copt=external/.*google_benchmark.*@-Wno-error=switch-enum
+build --per_file_copt=external/.*flatbuffers.*@-Wno-error=sign-conversion
+build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=sign-conversion
 build --per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
 build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
+build --per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
+build --host_per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
 
 # Places with warnings that we need to fix
 build --per_file_copt=score/mw/com/impl/bindings/lola/slot_decrementer.*@-w

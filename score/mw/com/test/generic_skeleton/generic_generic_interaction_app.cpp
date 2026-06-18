@@ -30,7 +30,7 @@ struct MyEventData
 };
 
 constexpr std::string_view kInstanceSpecifier = "/test/generic/generic/interaction";
-constexpr int kSamplesToProcess = 30;
+constexpr std::uint64_t kSamplesToProcess = 30;
 constexpr int kSamplesToSubscribe = 5;
 
 #if PAYLOAD_SIZE == 64
@@ -94,7 +94,7 @@ int run_provider()
     std::this_thread::sleep_for(std::chrono::seconds(5));
     std::cout << "[PROVIDER] Finished initial 5s sleep." << std::endl;
 
-    for (int i = 0; i < kSamplesToProcess; ++i)
+    for (std::uint64_t i = 0; i < kSamplesToProcess; ++i)
     {
         auto sample_res = generic_event.Allocate();
         if (!sample_res.has_value())
