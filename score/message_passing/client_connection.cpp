@@ -519,7 +519,8 @@ void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& l
     {
         SendCommand& send = send_queue_.front();
         send_queue_.pop_front();
-        send_pool_.push_front(send);  // LIFO for better cache locality
+        // below, we will need to return the SendCommand to the send_pool_ under lock
+        // (LIFO for better cache locality) right after we use its buffer to send the message
         if (!send.callback.empty())
         {
             waiting_for_reply_ = std::move(send.callback);
@@ -531,6 +532,7 @@ void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& l
             const auto expected = engine_->SendProtocolMessage(
                 client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), send.message);
             lock.lock();
+            send_pool_.push_front(send);
             if (expected.has_value())
             {
                 break;
@@ -554,6 +556,7 @@ void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& l
             score::cpp::ignore =
                 engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::SEND), send.message);
             lock.lock();
+            send_pool_.push_front(send);
             waiting_for_reply_.reset();
         }
     }

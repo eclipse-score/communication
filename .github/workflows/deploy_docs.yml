@@ -84,9 +84,11 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           BASE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          SOURCE_ROOT="https://github.com/${{ github.repository }}/blob/main/"
           bazel build //docs/sphinx:sphinx_doc \
             --define=DOCS_VERSION="${VERSION}" \
-            --define=DOCS_BASE_URL="${BASE_URL}"
+            --define=DOCS_BASE_URL="${BASE_URL}" \
+            --define=LOBSTER_SOURCE_ROOT="${SOURCE_ROOT}"
 
       - name: Prepare documentation output
         run: |

@@ -94,8 +94,9 @@ pub struct AllocateePtrWrapper<T, B: FFIBridge>
 where
     T: CommData + Debug,
 {
-    pub inner: ManuallyDrop<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>,
-    pub bridge: B,
+    inner: ManuallyDrop<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>,
+    bridge: B,
+    type_ops: TypeOperationsManager,
 }
 
 impl<T, B: FFIBridge> Drop for AllocateePtrWrapper<T, B>
@@ -109,7 +110,7 @@ where
             let mut allocatee_ptr = ManuallyDrop::take(&mut self.inner);
             self.bridge.delete_allocatee_ptr(
                 std::ptr::from_mut(&mut allocatee_ptr) as *mut std::ffi::c_void,
-                T::ID,
+                &self.type_ops,
             );
         }
     }
@@ -145,7 +146,7 @@ where
         unsafe {
             let data_ptr = self.allocatee_ptr.bridge.get_allocatee_data_ptr(
                 std::ptr::from_ref(&(*self.allocatee_ptr.inner)) as *const std::ffi::c_void,
-                T::ID,
+                &self.allocatee_ptr.type_ops,
             );
             (data_ptr as *const T).as_ref()
         }
@@ -157,7 +158,7 @@ where
         unsafe {
             let data_ptr = self.allocatee_ptr.bridge.get_allocatee_data_ptr(
                 std::ptr::from_mut(&mut (*self.allocatee_ptr.inner)) as *mut std::ffi::c_void,
-                T::ID,
+                &self.allocatee_ptr.type_ops,
             );
             (data_ptr as *mut T).as_mut()
         }
@@ -200,7 +201,7 @@ where
                 .bridge
                 .skeleton_event_send_sample_allocatee(
                     self.skeleton_event.skeleton_event_ptr.as_ptr(),
-                    T::ID,
+                    &self.allocatee_ptr.type_ops,
                     std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
                 )
         };
@@ -231,7 +232,7 @@ where
         let data_ptr = unsafe {
             self.allocatee_ptr.bridge.get_allocatee_data_ptr(
                 std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
-                T::ID,
+                &self.allocatee_ptr.type_ops,
             ) as *mut core::mem::MaybeUninit<T>
         };
         unsafe { data_ptr.as_mut() }
@@ -395,6 +396,7 @@ impl std::fmt::Debug for NativeSkeletonEventBase {
 #[derive(Debug)]
 pub struct Publisher<T, B: FFIBridge> {
     skeleton_event: NativeSkeletonEventBase,
+    type_ops: TypeOperationsManager,
     _data: PhantomData<T>,
     skeleton_instance: SkeletonInstanceManager<B>,
 }
@@ -411,7 +413,7 @@ where
     fn allocate<'a>(&'a self) -> Result<Self::SampleMaybeUninit<'a>> {
         //SAFETY: It is safe to get the allocatee ptr because skeleton_event is valid
         // skeleton_event is created during publisher creation and valid as long as publisher is valid
-        // T::ID is valid as it is associated with CommData type
+        // type_ops is valid as it is created during publisher creation using valid interface id and identifier
         // allocatee_ptr is same type pointer which is allocated for T type and
         // it will be constructed in cpp side and moved back to rust side
         let allocatee_ptr = unsafe {
@@ -420,7 +422,7 @@ where
             let status = self.skeleton_instance.0.bridge.get_allocatee_ptr(
                 self.skeleton_event.skeleton_event_ptr.as_ptr(),
                 sample.as_mut_ptr() as *mut std::ffi::c_void,
-                T::ID,
+                &self.type_ops,
             );
             if !status {
                 return Err(Error::AllocateError(
@@ -435,6 +437,7 @@ where
             allocatee_ptr: AllocateePtrWrapper {
                 inner: ManuallyDrop::new(allocatee_ptr),
                 bridge: self.skeleton_instance.0.bridge.clone(),
+                type_ops: self.type_ops,
             },
             lifetime: PhantomData,
         })
@@ -442,8 +445,15 @@ where
 
     fn new(identifier: &str, instance_info: LolaProviderInfo<B>) -> Result<Self> {
         let skeleton_event = NativeSkeletonEventBase::new::<B>(&instance_info, identifier)?;
+        let type_ops = unsafe {
+            instance_info
+                .bridge
+                .get_type_ops_instance(instance_info.interface_id, identifier)
+        }
+        .ok_or(Error::EventError(EventFailedReason::EventNotAvailable))?;
         Ok(Self {
             skeleton_event,
+            type_ops,
             _data: PhantomData,
             skeleton_instance: instance_info.skeleton_handle.clone(),
         })
@@ -596,6 +606,7 @@ mod test {
     fn test_publisher_allocate_and_send() {
         let skeleton_alloc = MockPointerAllocator::<SkeletonBase>::new();
         let event_alloc = MockPointerAllocator::<SkeletonEventBase>::new();
+        let type_ops_alloc = MockPointerAllocator::<TypeOperations>::new();
         let data_alloc = MockPointerAllocator::<TestData>::new();
         let mut seq = Sequence::new();
         let mut mock = MockFFIBridge::new();
@@ -608,6 +619,14 @@ mod test {
         mock.expect_get_event_from_skeleton()
             .in_sequence(&mut seq)
             .returning(move |_, _, _| event_alloc_clone.allocate());
+        mock.expect_get_type_ops_instance()
+            .in_sequence(&mut seq)
+            .returning(move |_, _| {
+                Some(TypeOperationsManager::new(
+                    NonNull::new(type_ops_alloc.allocate())
+                        .expect("Failed to allocate TypeOperations for mock"),
+                ))
+            });
 
         mock.expect_get_allocatee_ptr()
             .in_sequence(&mut seq)
