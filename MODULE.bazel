@@ -290,18 +290,6 @@ use_repo(
 
 # We use here a pre-compiled fully static and hermetic clang_format binary
 # and not the one provided by llvm_toolchain, because the one from llvm_toolchain is not fully hermetic (and different version for now)
-###############################################################################
-# lcov deb package (provides genhtml + lcov for coverage HTML reports)
-###############################################################################
-deb = use_repo_rule("@download_utils//download/deb:defs.bzl", "download_deb")
-
-deb(
-    name = "lcov_deb",
-    dev_dependency = True,
-    integrity = "sha256-Ip14IkKavqBtkQ7mh6AXzr/6YyHpvSAZ0veMmw1+N80=",
-    urls = ["https://archive.ubuntu.com/ubuntu/pool/universe/l/lcov/lcov_2.0-4ubuntu2_all.deb"],
-)
-
 download_file = use_repo_rule("@download_utils//download/file:defs.bzl", "download_file")
 
 download_file(

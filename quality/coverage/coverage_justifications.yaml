@@ -1,0 +1,70 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+#
+# Coverage Justification Database
+# ================================
+#
+# This file defines justified non-covered lines for achieving 100% effective coverage.
+#
+# Each justification has:
+#   - id: Unique kebab-case identifier
+#   - category: One of: defensive_programming, tool_false_positive, platform_specific, other
+#   - reason: Explanation why the line(s) cannot be covered
+#   - locations: (optional) File + line specifications where justification applies
+#
+# Lines can also be justified via in-code markers referencing the ID:
+#   // COV_JUSTIFIED <id>           — justifies the current line
+#   // COV_JUSTIFIED_START <id>     — starts a justified region
+#   // COV_JUSTIFIED_STOP           — ends the justified region
+#
+# Validation rules:
+#   - IDs must be unique and kebab-case (lowercase + hyphens)
+#   - Every justification needs a non-empty reason
+#   - Stale justifications (line is actually covered) produce warnings
+#   - References to non-existent IDs produce errors
+#
+
+version: 1
+
+justifications: []
+  # Example entries (uncomment and adapt as needed):
+  #
+  # - id: config-parser-defensive-switch
+  #   category: defensive_programming
+  #   reason: >
+  #     Default case in switch over fully-handled enum. All enum values are explicitly
+  #     handled with a static_assert guard. Kept as defensive programming against
+  #     future enum additions.
+  #   locations:
+  #     - file: score/mw/com/impl/configuration/config_parser.cpp
+  #       line_start: 1201
+  #       line_end: 1203
+  #
+  # - id: runtime-tool-false-positive
+  #   category: tool_false_positive
+  #   reason: >
+  #     Coverage tool incorrectly marks this line as not covered. Lines immediately
+  #     before and after are covered, indicating a tool bug.
+  #   locations:
+  #     - file: score/mw/com/impl/runtime.cpp
+  #       lines: [191]
+  #
+  # - id: flag-file-crawler-defensive
+  #   category: defensive_programming
+  #   reason: >
+  #     Defensive guard for flag file parsing. Only entered if a flag file exists,
+  #     so the file must be parseable. Guard protects against filesystem race conditions.
+  #   locations:
+  #     - file: score/mw/com/impl/bindings/lola/service_discovery/flag_file_crawler.cpp
+  #       line_start: 81
+  #       line_end: 85

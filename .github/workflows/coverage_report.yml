@@ -60,9 +60,6 @@ jobs:
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
-      - name: Install Perl dependencies for genhtml
-        run: sudo apt-get install -y --no-install-recommends lcov
-
       - name: Run Unit Test with Coverage for C++
         id: run-coverage
         run: |

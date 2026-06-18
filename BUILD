@@ -17,6 +17,8 @@ load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@score_tooling//:defs.bzl", "copyright_checker")
 load("//tools/lint:linters.bzl", "use_clang_tidy_targets")
 
+exports_files(["MODULE.bazel"])
+
 compile_pip_requirements(
     name = "pip_requirements",
     src = "requirements.in",
