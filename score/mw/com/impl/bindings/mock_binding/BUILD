@@ -49,6 +49,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],

@@ -436,6 +436,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
+        "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
@@ -503,6 +504,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
+        "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
     ],
 )
@@ -647,6 +649,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
+        "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
@@ -663,6 +666,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
+        "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
@@ -785,6 +789,7 @@ cc_library(
     hdrs = ["service_discovery_client_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
