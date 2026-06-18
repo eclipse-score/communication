@@ -17,6 +17,14 @@ on:
   schedule:
     - cron: '0 2 * * *'  # Nightly at 2 AM UTC
   workflow_dispatch:  # Allow maintainers to trigger manually when needed
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: Name of the uploaded CSV artifact
+        value: codeql-csv-results
+      conclusion:
+        description: Job conclusion (success/failure)
+        value: ${{ jobs.run-codeql.result }}
 
 permissions:
   contents: read
@@ -49,6 +57,13 @@ jobs:
 
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Stub out ARM-only dependencies unavailable in CI
+        run: |
+          mkdir -p /tmp/ape_stub
+          touch /tmp/ape_stub/BUILD.bazel
+          touch /tmp/ape_stub/WORKSPACE
+          echo "common --override_repository=ape+=/tmp/ape_stub" >> user.bazelrc
 
       - name: Create CodeQL database
         run: |
