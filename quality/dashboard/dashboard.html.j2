@@ -176,15 +176,5 @@
 </table>
 {% endif %}
 
-<script>
-let cvDir = 1;
-function cvSort(c) {
-  const tb = document.getElementById('cv-tbody');
-  [...tb.querySelectorAll('tr')]
-    .sort((a, b) => (parseFloat(a.cells[c]?.dataset.val || 0) - parseFloat(b.cells[c]?.dataset.val || 0)) * cvDir)
-    .forEach(r => tb.appendChild(r));
-  cvDir *= -1;
-}
-</script>
 </body>
 </html>
