@@ -70,4 +70,9 @@ bool ProcessSynchronizer::WaitWithAbort(score::cpp::stop_token stop_token)
     return interprocess_notifier_.waitWithAbort(stop_token);
 }
 
+void ProcessSynchronizer::Reset()
+{
+    interprocess_notifier_.reset();
+}
+
 }  // namespace score::mw::com::test

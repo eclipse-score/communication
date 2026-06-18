@@ -1,0 +1,7 @@
+{
+  "appId": "SMSM",
+  "appDesc": "skeleton_move_semantics",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}

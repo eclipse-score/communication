@@ -37,6 +37,13 @@ class SkeletonContainer
         return *skeleton_;
     }
 
+    Skeleton&& Extract()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton_ != nullptr,
+                                                    "Skeleton was not successfully created! Cannot extract it!");
+        return std::move(*skeleton_);
+    }
+
   private:
     std::unique_ptr<Skeleton> skeleton_;
 };
