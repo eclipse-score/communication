@@ -161,7 +161,8 @@ class SkeletonFieldBaseView
 
     const tracing::SkeletonEventTracingData& GetSkeletonEventTracing()
     {
-        return SkeletonEventBaseView{*base_.skeleton_event_dispatch_}.GetSkeletonEventTracing();
+        SkeletonEventBaseView skeleton_event_base_view{*base_.skeleton_event_dispatch_};
+        return skeleton_event_base_view.GetSkeletonEventTracing();
     }
 
   private:

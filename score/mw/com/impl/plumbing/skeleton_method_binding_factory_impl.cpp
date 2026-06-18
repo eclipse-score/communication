@@ -50,7 +50,7 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
                                                     "ServiceInstanceId does not contain lola binding.");
 
         LolaServiceElementId lola_element_id{};
-        if (method_type == MethodType::kGet || method_type == MethodType::kSet)
+        if ((method_type == MethodType::kGet) || (method_type == MethodType::kSet))
         {
             lola_element_id =
                 GetServiceElementId<ServiceElementType::FIELD>(lola_type_deployment, std::string{method_name});

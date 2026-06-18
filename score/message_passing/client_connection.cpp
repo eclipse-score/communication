@@ -370,7 +370,7 @@ void ClientConnection::TryConnect() noexcept
         if (((os_code != EAGAIN) && (os_code != ECONNREFUSED)) && (os_code != ENOENT))
         {
             LogError(logger, "TryOpenClientConnection ", identifier_, " non-retry OS error code ", os_code);
-            StopReason stop_reason = os_code == EACCES ? StopReason::kPermission : StopReason::kIoError;
+            StopReason stop_reason = (os_code == EACCES) ? StopReason::kPermission : StopReason::kIoError;
             if (TrySetStopReason(stop_reason))
             {
                 ProcessStateChange(State::kStopping);
@@ -383,7 +383,8 @@ void ClientConnection::TryConnect() noexcept
         const auto retry_increase_ms =
             (static_cast<std::int64_t>(connect_retry_ms_) + static_cast<std::int64_t>(kConnectRetryT) - 1) /
             static_cast<std::int64_t>(kConnectRetryT);
-        if ((retry_increase_ms <= kConnectRetryMsMax) && (connect_retry_ms_ <= kConnectRetryMsMax - retry_increase_ms))
+        if ((retry_increase_ms <= kConnectRetryMsMax) &&
+            (connect_retry_ms_ <= (kConnectRetryMsMax - retry_increase_ms)))
         {
             // At this point checks guarantee no data loss
             // coverity[autosar_cpp14_a4_7_1_violation]
@@ -452,7 +453,7 @@ IClientConnection::StopReason ClientConnection::ProcessInputEvent() noexcept
             LogWarn(engine_->GetLogger(), "ProcessInputEvent ", identifier_, " spurious wake-up");
             return StopReason::kNone;
         }
-        return os_code == EPIPE ? StopReason::kClosedByPeer : StopReason::kIoError;
+        return (os_code == EPIPE) ? StopReason::kClosedByPeer : StopReason::kIoError;
     }
     auto message = message_expected.value();
     // This switch statement is considered not well-formed due to early exits, i.e. return statements.

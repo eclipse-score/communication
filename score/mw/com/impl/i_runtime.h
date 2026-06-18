@@ -44,7 +44,7 @@ class IRuntime
     ///          the given type (due to configuration settings)
     virtual IBindingRuntime* GetBindingRuntime(const BindingType binding) const noexcept = 0;
 
-    virtual IServiceDiscovery& GetServiceDiscovery() noexcept = 0;
+    virtual IServiceDiscovery& GetServiceDiscovery() & noexcept = 0;
 
     /// \brief returns the tracing related part of the Runtime
     /// \return nullptr, if tracing is not enabled, ptr to TracingRuntime else.

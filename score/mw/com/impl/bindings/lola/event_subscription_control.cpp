@@ -86,7 +86,7 @@ auto EventSubscriptionControl<AtomicIndirectorType>::Subscribe(SlotNumberType sl
             return SubscribeResult::kMaxSubscribersOverflow;
         }
         SlotNumberType current_subscribed_slots = GetSubscribedSamplesFromState(current_state);
-        if (enforce_max_samples_ && (current_subscribed_slots + slot_count > max_subscribable_slots_))
+        if ((enforce_max_samples_) && ((current_subscribed_slots + slot_count) > max_subscribable_slots_))
         {
             mw::log::LogInfo("lola")
                 << "EventSubscriptionControl<>::Subscribe() rejected as max_subscribable_slots_ would overflow.";

@@ -558,8 +558,8 @@ auto ParseServiceElementTracingEnabled(const score::json::Object& json_map,
         "Only FIELD or EVENT are allowed as ServiceElementTypes.");
 
     const auto& [ElementKey, ElementNameKey] =
-        (service_element_type == ServiceElementType::EVENT ? std::make_pair(kEventsKey, kEventNameKey)
-                                                           : std::make_pair(kFieldsKey, kFieldNameKey));
+        ((service_element_type == ServiceElementType::EVENT) ? std::make_pair(kEventsKey, kEventNameKey)
+                                                             : std::make_pair(kFieldsKey, kFieldNameKey));
 
     const auto& service_elements = json_map.find(ElementKey);
     if (service_elements == json_map.cend())

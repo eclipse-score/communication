@@ -54,7 +54,7 @@ RuntimeConfiguration::RuntimeConfiguration(const std::int32_t argc, score::Strin
         configuration_path.has_value() ? std::move(configuration_path).value() : kDefaultConfigurationPath;
 }
 
-const filesystem::Path& RuntimeConfiguration::GetConfigurationPath() const
+const filesystem::Path& RuntimeConfiguration::GetConfigurationPath() const&
 {
     return configuration_path_;
 }

@@ -34,7 +34,7 @@ class IRuntime : public impl::IBindingRuntime
 
     /// \brief returns the message passing service instance needed by/used by LoLa skeletons/proxies.
     /// \return message passing service instance
-    virtual lola::IMessagePassingService& GetLolaMessaging() noexcept = 0;
+    virtual lola::IMessagePassingService& GetLolaMessaging() & noexcept = 0;
 
     /// \brief returns, whether LoLa binding runtime was created with ASIL-B support
     virtual bool HasAsilBSupport() const noexcept = 0;
@@ -42,7 +42,7 @@ class IRuntime : public impl::IBindingRuntime
     /// \brief returns configured mode, how shm-sizes shall be calculated.
     virtual ShmSizeCalculationMode GetShmSizeCalculationMode() const noexcept = 0;
 
-    virtual RollbackSynchronization& GetRollbackSynchronization() noexcept = 0;
+    virtual RollbackSynchronization& GetRollbackSynchronization() & noexcept = 0;
 
     /// \brief We need our PID in several locations/frequently. So the runtime shall provide/cache it.
     virtual pid_t GetPid() const noexcept = 0;

@@ -36,6 +36,7 @@
 
 #include <atomic>
 #include <optional>
+#include <tuple>
 
 namespace score::mw::com::impl::lola
 {
@@ -89,17 +90,17 @@ class SkeletonEventCommon
         tracing_data_ = tracing_data;
     }
 
-    const ElementFqId& GetElementFQId() const
+    const ElementFqId& GetElementFQId() const&
     {
         return element_fq_id_;
     }
 
-    Skeleton& GetParent()
+    Skeleton& GetParent() &
     {
         return parent_;
     }
 
-    [[nodiscard]] const SkeletonEventProperties& GetEventProperties() const
+    [[nodiscard]] const SkeletonEventProperties& GetEventProperties() const&
     {
         return event_properties_;
     }
@@ -360,8 +361,7 @@ Result<void> SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<Samp
     // coverity[autosar_cpp14_a4_7_1_violation]
     ++current_timestamp_;
     event_data_control_composite_->EventReady(slot, current_timestamp_);
-    NotifyConsumersIfHandlersRegistered();
-    return {};
+    return NotifyConsumersIfHandlersRegistered();
 }
 
 template <typename SampleType>
@@ -377,8 +377,8 @@ Result<void> SkeletonEventCommon<SampleType>::NotifyConsumersIfHandlersRegistere
             .GetLolaMessaging()
             .NotifyEvent(QualityType::kASIL_QM, element_fq_id_);
     }
-    if (asil_b_event_update_notifications_registered_.load() &&
-        parent_.GetInstanceQualityType() == QualityType::kASIL_B)
+    if ((asil_b_event_update_notifications_registered_.load()) &&
+        (parent_.GetInstanceQualityType() == QualityType::kASIL_B))
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()

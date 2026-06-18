@@ -30,7 +30,7 @@ namespace message_passing
 class IServerConnection
 {
   public:
-    virtual const ClientIdentity& GetClientIdentity() const noexcept = 0;
+    virtual const ClientIdentity& GetClientIdentity() const& noexcept = 0;
     virtual UserData& GetUserData() noexcept = 0;
 
     virtual score::cpp::expected_blank<score::os::Error> Reply(

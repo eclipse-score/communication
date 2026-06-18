@@ -400,13 +400,13 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
             return MakeUnexpected<void>(asil_b_handlers_result.error());
         }
         auto asil_b_handlers = std::move(asil_b_handlers_result).value();
-        method_subscription_registration_guard_asil_b_.emplace(std::move(asil_b_handlers.first));
-        method_unsubscription_registration_guard_asil_b_.emplace(std::move(asil_b_handlers.second));
+        std::ignore = method_subscription_registration_guard_asil_b_.emplace(std::move(asil_b_handlers.first));
+        std::ignore = method_unsubscription_registration_guard_asil_b_.emplace(std::move(asil_b_handlers.second));
     }
 
     auto qm_handlers = std::move(qm_handlers_result).value();
-    method_subscription_registration_guard_qm_.emplace(std::move(qm_handlers.first));
-    method_unsubscription_registration_guard_qm_.emplace(std::move(qm_handlers.second));
+    std::ignore = method_subscription_registration_guard_qm_.emplace(std::move(qm_handlers.first));
+    std::ignore = method_unsubscription_registration_guard_qm_.emplace(std::move(qm_handlers.second));
     prepare_offer_called_ = true;
 
     return {};
@@ -686,7 +686,7 @@ Result<void> Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier&
         shm_path_builder_->GetMethodChannelShmName(lola_instance_id_, proxy_instance_identifier);
     const bool is_read_write{true};
 
-    method_resources_.CleanUpOldRegions(proxy_instance_identifier, proxy_pid);  // Per Proxy
+    std::ignore = method_resources_.CleanUpOldRegions(proxy_instance_identifier, proxy_pid);  // Per Proxy
 
     const std::vector<uid_t> allowed_providers{proxy_uid};
     auto opened_shm_region =
@@ -743,8 +743,8 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
         {
             // A proxy may register a Get or Set method for a field that has been disabled in the skeleton's
             // interface definition. In that case, the skeleton has no handler for it.
-            if (unique_method_identifier.method_type == MethodType::kGet ||
-                unique_method_identifier.method_type == MethodType::kSet)
+            if ((unique_method_identifier.method_type == MethodType::kGet) ||
+                (unique_method_identifier.method_type == MethodType::kSet))
             {
                 score::mw::log::LogInfo("lola")
                     << "Proxy registered a field Get/Set method that is not available on the skeleton side. Skipping.";

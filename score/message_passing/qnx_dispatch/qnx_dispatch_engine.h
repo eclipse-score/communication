@@ -196,11 +196,11 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     {
         return memory_resource_;
     }
-    const OsResources& GetOsResources() noexcept
+    const OsResources& GetOsResources() & noexcept
     {
         return os_resources_;
     }
-    const LoggingCallback& GetLogger() noexcept override
+    const LoggingCallback& GetLogger() & noexcept override
     {
         return logger_;
     }

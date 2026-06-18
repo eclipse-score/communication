@@ -47,8 +47,8 @@ class ProxyMethodBase
     ProxyMethodBase& operator=(const ProxyMethodBase&) = delete;
 
     /// \brief A ProxyMethod shall be moveable. (Exactly like impl::ProxyBase and impl:ProxyEventBase)
-    ProxyMethodBase(ProxyMethodBase&&) = default;
-    ProxyMethodBase& operator=(ProxyMethodBase&&) = default;
+    ProxyMethodBase(ProxyMethodBase&&) noexcept = default;
+    ProxyMethodBase& operator=(ProxyMethodBase&&) noexcept = default;
     virtual ~ProxyMethodBase() = default;
 
     void UpdateProxyReference(ProxyBase& proxy_base) noexcept

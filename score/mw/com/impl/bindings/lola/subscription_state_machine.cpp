@@ -138,7 +138,7 @@ const score::cpp::optional<SlotCollector>& SubscriptionStateMachine::GetSlotColl
     return GetCurrentEventState().GetSlotCollector();
 }
 
-const ElementFqId& SubscriptionStateMachine::GetElementFqId() const noexcept
+const ElementFqId& SubscriptionStateMachine::GetElementFqId() const& noexcept
 {
     return element_fq_id_;
 }

@@ -50,7 +50,7 @@ using ::testing::ReturnRef;
 class IBindingRuntimeMock : public IBindingRuntime
 {
   public:
-    MOCK_METHOD(IServiceDiscoveryClient&, GetServiceDiscoveryClient, (), (noexcept, override));
+    MOCK_METHOD(IServiceDiscoveryClient&, GetServiceDiscoveryClient, (), (ref(&), noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(tracing::IBindingTracingRuntime*, GetTracingRuntime, (), (noexcept, override));
 };

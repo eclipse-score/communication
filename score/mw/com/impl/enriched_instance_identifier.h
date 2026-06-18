@@ -86,7 +86,7 @@ class EnrichedInstanceIdentifier final
     {
     }
 
-    const InstanceIdentifier& GetInstanceIdentifier() const noexcept
+    const InstanceIdentifier& GetInstanceIdentifier() const& noexcept
     {
         return instance_identifier_;
     }
@@ -109,7 +109,7 @@ class EnrichedInstanceIdentifier final
         return service_deployment->service_id_;
     }
 
-    const score::cpp::optional<ServiceInstanceId>& GetInstanceId() const noexcept
+    const score::cpp::optional<ServiceInstanceId>& GetInstanceId() const& noexcept
     {
         return instance_id_;
     }

@@ -57,7 +57,7 @@ class Runtime final : public IRuntime
 
     /// \brief returns the message passing service instance needed by/used by LoLa skeletons/proxies.
     /// \return message passing service instance
-    lola::IMessagePassingService& GetLolaMessaging() noexcept override;
+    lola::IMessagePassingService& GetLolaMessaging() & noexcept override;
 
     /// \brief returns, whether LoLa binding runtime has been created with ASIL-B support or not
     /// \return _True_ in case Runtime was created with ASIL-B support, _False_ else.
@@ -76,9 +76,9 @@ class Runtime final : public IRuntime
 
     ShmSizeCalculationMode GetShmSizeCalculationMode() const noexcept override;
 
-    IServiceDiscoveryClient& GetServiceDiscoveryClient() noexcept override;
+    IServiceDiscoveryClient& GetServiceDiscoveryClient() & noexcept override;
 
-    RollbackSynchronization& GetRollbackSynchronization() noexcept override;
+    RollbackSynchronization& GetRollbackSynchronization() & noexcept override;
 
     pid_t GetPid() const noexcept override;
 

@@ -22,6 +22,7 @@
 
 #include <cstdlib>
 #include <memory>
+#include <tuple>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -96,7 +97,7 @@ ProxyBase& ProxyBase::operator=(ProxyBase&& other) noexcept
     return *this;
 }
 
-const HandleType& ProxyBase::GetHandle() const noexcept
+const HandleType& ProxyBase::GetHandle() const& noexcept
 {
     return handle_;
 }
@@ -169,7 +170,11 @@ Result<void> ProxyBase::SetupMethods()
     for (auto& method_key_value_pair : methods_)
     {
         auto& method = method_key_value_pair.second.get();
-        method.InitializeInArgsAndReturnValues();
+        const auto method_init_result = method.InitializeInArgsAndReturnValues();
+        if (!method_init_result.has_value())
+        {
+            return MakeUnexpected<void>(method_init_result.error());
+        }
     }
     return {};
 }
@@ -201,7 +206,7 @@ ProxyBinding* ProxyBaseView::GetBinding() noexcept
     return proxy_base_.proxy_binding_.get();
 }
 
-const HandleType& ProxyBaseView::GetAssociatedHandleType() const noexcept
+const HandleType& ProxyBaseView::GetAssociatedHandleType() const& noexcept
 {
     return proxy_base_.handle_;
 }

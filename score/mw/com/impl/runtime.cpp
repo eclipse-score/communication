@@ -246,7 +246,7 @@ auto Runtime::GetBindingRuntime(const BindingType binding) const noexcept -> IBi
     return nullptr;
 }
 
-auto Runtime::GetServiceDiscovery() noexcept -> IServiceDiscovery&
+auto Runtime::GetServiceDiscovery() & noexcept -> IServiceDiscovery&
 {
     // The signature of this function is part of the detailled design.
     // coverity[autosar_cpp14_a9_3_1_violation]

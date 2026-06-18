@@ -67,7 +67,7 @@ class CopyableAtomic
         return atomic_.operator T();
     }
     // NOLINTEND(google-explicit-constructor): see above for detailed explanation
-    std::atomic<T>& GetUnderlying()
+    std::atomic<T>& GetUnderlying() &
     {
         // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or
         // references to private or protected data owned by the class.".
@@ -78,7 +78,7 @@ class CopyableAtomic
         return atomic_;
     }
 
-    const std::atomic<T>& GetUnderlying() const
+    const std::atomic<T>& GetUnderlying() const&
     {
         return atomic_;
     }

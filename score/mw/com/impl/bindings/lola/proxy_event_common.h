@@ -92,7 +92,7 @@ class ProxyEventCommon final
     {
         return event_fq_id_;
     };
-    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocal() noexcept
+    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocal() & noexcept
     {
         return event_data_control_local_;
     };

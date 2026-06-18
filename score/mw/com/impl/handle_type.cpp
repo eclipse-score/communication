@@ -55,7 +55,7 @@ HandleType::HandleType(InstanceIdentifier identifier, score::cpp::optional<Servi
 {
 }
 
-auto HandleType::GetInstanceIdentifier() const noexcept -> const InstanceIdentifier&
+auto HandleType::GetInstanceIdentifier() const& noexcept -> const InstanceIdentifier&
 {
     return this->identifier_;
 }

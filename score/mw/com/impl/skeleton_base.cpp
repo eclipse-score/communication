@@ -371,17 +371,17 @@ void SkeletonBaseView::UpdateMethod(const std::string_view method_name, Skeleton
     method_it->second = method;
 }
 
-const SkeletonBase::SkeletonEvents& SkeletonBaseView::GetEvents() const noexcept
+const SkeletonBase::SkeletonEvents& SkeletonBaseView::GetEvents() const& noexcept
 {
     return skeleton_base_.events_;
 }
 
-const SkeletonBase::SkeletonFields& SkeletonBaseView::GetFields() const noexcept
+const SkeletonBase::SkeletonFields& SkeletonBaseView::GetFields() const& noexcept
 {
     return skeleton_base_.fields_;
 }
 
-const SkeletonBase::SkeletonMethods& SkeletonBaseView::GetMethods() const noexcept
+const SkeletonBase::SkeletonMethods& SkeletonBaseView::GetMethods() const& noexcept
 {
     return skeleton_base_.methods_;
 }

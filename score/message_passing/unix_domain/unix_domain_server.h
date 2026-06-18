@@ -39,7 +39,7 @@ class UnixDomainServer final : public IServer
         ServerConnection(UnixDomainServer& server, std::int32_t fd, ClientIdentity client_identity) noexcept;
 
         // User methods
-        const ClientIdentity& GetClientIdentity() const noexcept override;
+        const ClientIdentity& GetClientIdentity() const& noexcept override;
         UserData& GetUserData() noexcept override;
 
         score::cpp::expected_blank<score::os::Error> Reply(
