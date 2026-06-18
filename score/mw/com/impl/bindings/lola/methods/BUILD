@@ -142,7 +142,11 @@ cc_library(
 cc_unit_test(
     name = "unique_method_identifier_test",
     srcs = ["unique_method_identifier_test.cpp"],
-    deps = [":unique_method_identifier"],
+    deps = [
+        ":unique_method_identifier",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:recorder_mock",
+    ],
 )
 
 cc_unit_test(
@@ -171,6 +175,8 @@ cc_unit_test(
     srcs = ["proxy_method_instance_identifier_test.cpp"],
     deps = [
         ":proxy_method_instance_identifier",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
 

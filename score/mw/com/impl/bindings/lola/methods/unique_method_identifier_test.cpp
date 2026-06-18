@@ -13,17 +13,21 @@
 #include "score/mw/com/impl/bindings/lola/methods/unique_method_identifier.h"
 
 #include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <functional>
 #include <limits>
+#include <sstream>
 
 namespace score::mw::com::impl::lola
 {
 namespace
 {
+
+using namespace ::testing;
 
 constexpr LolaServiceElementId kDummyId{42U};
 constexpr LolaServiceElementId kDummyId2{43U};
@@ -164,6 +168,58 @@ TEST(UniqueMethodIdentifierTest, TestIfGetAndUnknownMethodTypeWithSameIdReturnDi
 
     // Then the hash results are different
     EXPECT_NE(hash_result_get, hash_result_unknown);
+}
+
+class UniqueMethodIdentifierPararaterisedFixture
+    : public ::testing::TestWithParam<std::pair<UniqueMethodIdentifier, std::string>>
+{
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    UniqueMethodIdentifierPararaterisedFixture,
+    UniqueMethodIdentifierPararaterisedFixture,
+    ::testing::Values(
+        std::make_pair(UniqueMethodIdentifier{42, MethodType::kMethod}, "MethodOrFieldId: 42. MethodType: Method"),
+        std::make_pair(UniqueMethodIdentifier{42, MethodType::kGet}, "MethodOrFieldId: 42. MethodType: Get"),
+        std::make_pair(UniqueMethodIdentifier{42, MethodType::kSet}, "MethodOrFieldId: 42. MethodType: Set"),
+        std::make_pair(UniqueMethodIdentifier{42, MethodType::kUnknown}, "MethodOrFieldId: 42. MethodType: Unknown")));
+
+TEST_P(UniqueMethodIdentifierPararaterisedFixture, TestIfStreamOperatorReturnsExpectedString)
+{
+    // Given a UniqueMethodIdentifier object
+    const UniqueMethodIdentifier unique_method_identifier = GetParam().first;
+
+    // When streaming it to a standard ostream
+    std::stringstream buffer{};
+    buffer << unique_method_identifier;
+
+    // Then the result is as expected
+    const std::string expected_string = GetParam().second;
+    EXPECT_EQ(buffer.str(), expected_string);
+}
+
+TEST_P(UniqueMethodIdentifierPararaterisedFixture, TestIfScoreLogLogsExpectedString)
+{
+    // Given a UniqueMethodIdentifier object
+    const UniqueMethodIdentifier unique_method_identifier = GetParam().first;
+
+    // and given a mocked LogRecorder which calls StartRecord with a unique SlotHandle
+    mw::log::RecorderMock recorder_mock{};
+    score::mw::log::SetLogRecorder(&recorder_mock);
+    mw::log::SlotHandle handle{10};
+    ON_CALL(recorder_mock, StartRecord(_, mw::log::LogLevel::kDebug)).WillByDefault(Return(handle));
+
+    // Expecting that the UniqueMethodIdentifier will be logged
+    {
+        ::testing::InSequence s;
+        EXPECT_CALL(recorder_mock, LogStringView(handle, "MethodOrFieldId: "));
+        EXPECT_CALL(recorder_mock, LogUint16(handle, unique_method_identifier.method_or_field_id));
+        EXPECT_CALL(recorder_mock, LogStringView(handle, ". MethodType: "));
+        EXPECT_CALL(recorder_mock, LogStringView(handle, to_string(unique_method_identifier.method_type)));
+    }
+
+    // When logging it with score log
+    score::mw::log::LogDebug() << unique_method_identifier;
 }
 
 }  // namespace

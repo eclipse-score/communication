@@ -21,10 +21,15 @@ bool operator==(const ProxyMethodInstanceIdentifier& lhs, const ProxyMethodInsta
             (lhs.unique_method_identifier == rhs.unique_method_identifier));
 }
 
+std::ostream& operator<<(std::ostream& stream, const ProxyMethodInstanceIdentifier& value)
+{
+    stream << value.proxy_instance_identifier << ". " << value.unique_method_identifier;
+    return stream;
+}
+
 mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyMethodInstanceIdentifier& value) noexcept
 {
-    stream << "ProxyInstanceIdentifier:" << value.proxy_instance_identifier
-           << ". UniqueMethodIdentifier:" << value.unique_method_identifier;
+    stream << value.proxy_instance_identifier << ". " << value.unique_method_identifier;
     return stream;
 }
 
