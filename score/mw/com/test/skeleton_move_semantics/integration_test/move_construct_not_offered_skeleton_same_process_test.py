@@ -12,10 +12,8 @@
 # *******************************************************************************
 from test_fixture import consumer_and_provider, SkeletonMoveScenario
 
-NUMBER_OF_SAMPLES_TO_SEND_PER_OFFER = 10
-
 
 def test_move_construct_not_offered_same_process(target):
-    with consumer_and_provider(target, SkeletonMoveScenario.MOVE_CONSTRUCT_NOT_OFFERED, NUMBER_OF_SAMPLES_TO_SEND_PER_OFFER):
+    with consumer_and_provider(target, SkeletonMoveScenario.MOVE_CONSTRUCT_NOT_OFFERED):
         pass
 

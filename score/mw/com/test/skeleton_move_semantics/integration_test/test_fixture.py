@@ -20,20 +20,20 @@ class SkeletonMoveScenario(IntEnum):
     MOVE_ASSIGN_OFFERED = 3
 
 
-def consumer_and_provider(target, scenario, number_of_samples_to_send_per_offer, **kwargs):
-    args = ["--scenario", str(int(scenario)), "--number-of-samples-to-send", str(number_of_samples_to_send_per_offer), "--service-instance-manifest", f"./etc/mw_com_config.json"]
+def consumer_and_provider(target, scenario, **kwargs):
+    args = ["--scenario", str(int(scenario)), "--service-instance-manifest", f"./etc/mw_com_config.json"]
     return target.wrap_exec(
         "bin/main_consumer_and_provider", args, cwd="/opt/MainConsumerAndProviderApp", wait_on_exit=True, **kwargs
     )
 
-def consumer(target, scenario, number_of_samples_to_send_per_offer, **kwargs):
-    args = ["--scenario", str(int(scenario)), "--number-of-samples-to-send", str(number_of_samples_to_send_per_offer), "--service-instance-manifest", f"./etc/mw_com_config.json"]
+def consumer(target, scenario, **kwargs):
+    args = ["--scenario", str(int(scenario)), "--service-instance-manifest", f"./etc/mw_com_config.json"]
     return target.wrap_exec(
         "bin/main_consumer", args, cwd="/opt/MainConsumerApp", wait_on_exit=True, **kwargs
     )
 
-def provider(target, scenario, number_of_samples_to_send_per_offer, **kwargs):
-    args = ["--scenario", str(int(scenario)), "--number-of-samples-to-send", str(number_of_samples_to_send_per_offer), "--service-instance-manifest", f"./etc/mw_com_config.json"]
+def provider(target, scenario, **kwargs):
+    args = ["--scenario", str(int(scenario)), "--service-instance-manifest", f"./etc/mw_com_config.json"]
     return target.wrap_exec(
         "bin/main_provider", args, cwd="/opt/MainProviderApp", wait_on_exit=True, **kwargs
     )

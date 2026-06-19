@@ -13,8 +13,8 @@
 #include "score/mw/com/test/skeleton_move_semantics/provider.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/skeleton_container.h"
 #include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
-#include "score/mw/com/test/methods/methods_test_resources/skeleton_container.h"
 #include "score/mw/com/test/skeleton_move_semantics/test_event_datatype.h"
 
 #include <cstdint>
@@ -26,11 +26,6 @@ namespace
 {
 
 const std::string kInterprocessNotificationShmPath{"/skeleton_move_semantics_interprocess_notification"};
-
-const InstanceSpecifier kInstanceSpecifierMovedTo =
-    InstanceSpecifier::Create(std::string{"test/skeleton_move_semantics/MoveEventInterfaceMovedTo"}).value();
-const InstanceSpecifier kInstanceSpecifierMovedFrom =
-    InstanceSpecifier::Create(std::string{"test/skeleton_move_semantics/MoveEventInterfaceMovedFrom"}).value();
 
 void SendSamples(SkeletonMoveSemanticsSkeleton& skeleton,
                  const std::size_t number_of_samples_to_send_per_offer,

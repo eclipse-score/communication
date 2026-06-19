@@ -12,11 +12,9 @@
 # *******************************************************************************
 from test_fixture import consumer, provider, SkeletonMoveScenario
 
-NUMBER_OF_SAMPLES_TO_SEND_PER_OFFER = 10
-
 
 def test_move_assign_not_offered_same_process(target):
-    with consumer(target, SkeletonMoveScenario.MOVE_ASSIGN_NOT_OFFERED, NUMBER_OF_SAMPLES_TO_SEND_PER_OFFER):
-        with provider(target, SkeletonMoveScenario.MOVE_ASSIGN_NOT_OFFERED, NUMBER_OF_SAMPLES_TO_SEND_PER_OFFER):
+    with consumer(target, SkeletonMoveScenario.MOVE_ASSIGN_NOT_OFFERED):
+        with provider(target, SkeletonMoveScenario.MOVE_ASSIGN_NOT_OFFERED):
             pass
 

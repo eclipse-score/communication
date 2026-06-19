@@ -36,15 +36,73 @@ CombinedTestConfiguration ReadCommandLineArguments(int argc, const char** argv)
     }
     const auto scenario = static_cast<SkeletonMoveScenario>(scenario_index);
 
-    const auto num_samples_to_send = GetValue<std::size_t>(args, kNumberOfSamplesToSend);
-    if (num_samples_to_send == 0U)
-    {
-        FailTest("Consumer: ", kNumberOfSamplesToSend, " value must be larger than 0.");
-    }
-
     auto service_instance_manifest = GetValue<std::string>(args, kServiceInstanceManifest);
 
-    return {scenario, num_samples_to_send, service_instance_manifest};
+    return {scenario, service_instance_manifest};
+}
+
+std::size_t GetNumberOfSendIterations(const SkeletonMoveScenario scenario)
+{
+    if (scenario == SkeletonMoveScenario::kMoveConstructNotOffered)
+    {
+        // In this scenario, the provider will:
+        //   - Create a skeleton
+        //   - move construct the skeleton
+        //   - offer the service
+        //   - send samples
+        //   - stop offering the service
+        //   - offer the service again
+        //   - send samples again
+        // The receiver therefore expects two send iterations.
+        return 2U;
+    }
+    else if (scenario == SkeletonMoveScenario::kMoveConstructOffered)
+    {
+        // In this scenario, the provider will:
+        //   - Create a skeleton
+        //   - offer the service
+        //   - send samples
+        //   - move construct the skeleton while the service is offered
+        //   - send samples
+        //   - stop offering the service
+        //   - offer the service again
+        //   - send samples again
+        // The receiver therefore expects three send iterations.
+        return 3U;
+    }
+    else if (scenario == SkeletonMoveScenario::kMoveAssignNotOffered)
+    {
+        // In this scenario, the provider will:
+        //   - Create 2 skeletons
+        //   - move assign the skeleton
+        //   - offer the moved-to service
+        //   - send samples
+        //   - stop offering the service
+        //   - offer the service again
+        //   - send samples again
+        // The receiver therefore expects two send iterations.
+        return 2U;
+    }
+    else if (scenario == SkeletonMoveScenario::kMoveAssignOffered)
+    {
+        // In this scenario, the provider will:
+        //   - Create 2 skeletons
+        //   - offer both services
+        //   - send samples in both services
+        //   - move assign the skeleton
+        //   - send samples from moved-to service
+        //   - stop offering the moved-to service
+        //   - offer the moved-to service again
+        //   - send samples again
+        // The receiver connected to the moved-from service expects one send iteration. The receiver connected to
+        // the moved-to service expects three send iterations.
+        return 3U;
+    }
+    else
+    {
+        FailTest("Unknown scenario, cannot determine number of send iterations");
+        return 0U;
+    }
 }
 
 }  // namespace score::mw::com::test

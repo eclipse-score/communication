@@ -39,6 +39,7 @@ cc_library(
     hdrs = ["test_parameters.h"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
+        "//score/mw/com",
         "//score/mw/com/test/common_test_resources:command_line_parser",
         "//score/mw/com/test/common_test_resources:fail_test",
     ],
@@ -54,8 +55,8 @@ cc_library(
         ":test_parameters",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:skeleton_container",
         "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
-        "//score/mw/com/test/methods/methods_test_resources:skeleton_container",
     ],
 )
 
@@ -69,8 +70,8 @@ cc_library(
         ":test_parameters",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:proxy_container",
         "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
-        "//score/mw/com/test/methods/methods_test_resources:proxy_container",
     ],
 )
 
