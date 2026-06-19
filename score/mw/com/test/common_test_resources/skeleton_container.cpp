@@ -10,4 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/methods/methods_test_resources/proxy_container.h"
+#include "score/mw/com/test/common_test_resources/skeleton_container.h"

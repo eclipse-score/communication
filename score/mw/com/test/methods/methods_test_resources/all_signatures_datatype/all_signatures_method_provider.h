@@ -13,8 +13,8 @@
 #ifndef SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_ALL_SIGNATURES_DATA_TYPE_ALL_SIGNATURES_METHOD_PROVIDER_H
 #define SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_ALL_SIGNATURES_DATA_TYPE_ALL_SIGNATURES_METHOD_PROVIDER_H
 
+#include "score/mw/com/test/common_test_resources/skeleton_container.h"
 #include "score/mw/com/test/methods/methods_test_resources/all_signatures_datatype/all_signatures_datatype.h"
-#include "score/mw/com/test/methods/methods_test_resources/skeleton_container.h"
 #include "score/mw/com/types.h"
 
 #include <score/stop_token.hpp>
