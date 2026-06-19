@@ -329,7 +329,7 @@ TEST_F(FlagFileDeathTest, GivenFileRemoveFailWhenMakeThenWillDie)
 
     // When Make is called
     // Then the program terminates
-    EXPECT_DEATH(FlagFile::Make(kEnrichedInstanceIdentifier2, disambiguator_, filesystem_), ".*");
+    EXPECT_DEATH(score::cpp::ignore = FlagFile::Make(kEnrichedInstanceIdentifier2, disambiguator_, filesystem_), ".*");
 }
 
 TEST_F(FlagFileTest, CreatePathReturnsValidPathWhenDirectoryAlreadyExists)

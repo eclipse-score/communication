@@ -144,7 +144,7 @@ TEST_F(SkeletonEventAllocateFixture, AllocateReturnsUniquePointersForMultipleCal
 
     // Given an offered event
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
-    skeleton_event_->PrepareOffer();
+    score::cpp::ignore = skeleton_event_->PrepareOffer();
 
     // When allocating multiple samples without sending them
     std::vector<impl::SampleAllocateePtr<test::TestSampleType>> allocated_pointers;

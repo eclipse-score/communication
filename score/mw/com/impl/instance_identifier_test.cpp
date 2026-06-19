@@ -347,7 +347,7 @@ TEST_F(InstanceIdentifierDeathTest, DeathOnCreationWithDuplicateServiceIdentifie
     // When creating a second InstanceIdentifier with the same ServiceIdentifierType
     // Then the program terminates
     std::string second_serialized_string_form_copy{serialized_string_form};
-    EXPECT_DEATH(InstanceIdentifier::Create(std::move(second_serialized_string_form_copy)), ".*");
+    EXPECT_DEATH(score::cpp::ignore = InstanceIdentifier::Create(std::move(second_serialized_string_form_copy)), ".*");
 }
 
 TEST_F(InstanceIdentifierDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
@@ -365,7 +365,7 @@ TEST_F(InstanceIdentifierDeathTest, CreatingFromSerializedObjectWithMismatchedSe
     std::string serialized_string_form = writer.ToBuffer(serialized_unit).value();
 
     // Then: Verify creation of identifier with mismatched serialization version causes program termination
-    EXPECT_DEATH(InstanceIdentifier::Create(std::move(serialized_string_form)), ".*");
+    EXPECT_DEATH(score::cpp::ignore = InstanceIdentifier::Create(std::move(serialized_string_form)), ".*");
 }
 
 TEST_F(InstanceIdentifierDeathTest, DeathOnCreationWithDuplicateInstanceSpecifier)
@@ -379,7 +379,7 @@ TEST_F(InstanceIdentifierDeathTest, DeathOnCreationWithDuplicateInstanceSpecifie
 
     // When: Creating a second instance identifier with the same instance specifier
     // Then: The program terminates
-    EXPECT_DEATH(InstanceIdentifier::Create(std::move(serialized_form_service2)), ".*");
+    EXPECT_DEATH(score::cpp::ignore = InstanceIdentifier::Create(std::move(serialized_form_service2)), ".*");
 }
 
 TEST_F(InstanceIdentifierFixture, HashInstanceIdentifierComparesEqual)
