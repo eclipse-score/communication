@@ -14,16 +14,22 @@
 
 #include "score/mw/com/impl/configuration/global_configuration.h"
 
+#include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <functional>
 #include <limits>
+#include <sstream>
 
 namespace score::mw::com::impl::lola
 {
 namespace
 {
+
+using namespace ::testing;
 
 constexpr GlobalConfiguration::ApplicationId kDummyProcessIdentifier{10U};
 constexpr ProxyInstanceIdentifier::ProxyInstanceCounter kDummyProxyInstanceCounter{15U};
@@ -101,18 +107,57 @@ TEST(ProxyInstanceIdentifierHashTest,
     EXPECT_NE(hash_result0, hash_result1);
 }
 
-TEST(ProxyInstanceIdentifierTest, OperatorStreamOutputsExpectedString)
+class ProxyInstanceIdentifierParamaterisedFixture
+    : public ::testing::TestWithParam<std::pair<ProxyInstanceIdentifier, std::string>>
 {
-    // Given a ProxyInstanceIdentifier
-    const ProxyInstanceIdentifier unit{kDummyProcessIdentifier, kDummyProxyInstanceCounter};
-    testing::internal::CaptureStdout();
+};
 
-    // When streaming the ProxyInstanceIdentifier to a log
-    score::mw::log::LogFatal("test") << unit;
-    std::string output = testing::internal::GetCapturedStdout();
+INSTANTIATE_TEST_SUITE_P(
+    ToStringTests,
+    ProxyInstanceIdentifierParamaterisedFixture,
+    ::testing::Values(std::make_pair(ProxyInstanceIdentifier{10, 15}, "Application ID: 10. Proxy Instance Counter: 15"),
+                      std::make_pair(
+                          ProxyInstanceIdentifier{
+                              std::numeric_limits<GlobalConfiguration::ApplicationId>::max(),
+                              std::numeric_limits<ProxyInstanceIdentifier::ProxyInstanceCounter>::max()},
+                          "Application ID: 4294967295. Proxy Instance Counter: 65535")));
 
-    // Then the output should contain the expected string
-    EXPECT_THAT(output, ::testing::HasSubstr("Application ID: 10 . Proxy Instance Counter: 15"));
+TEST_P(ProxyInstanceIdentifierParamaterisedFixture, StreamOperatorOutputsExpectedString)
+{
+    // Given a ProxyInstanceIdentifier and its expected string representation
+    const ProxyInstanceIdentifier unit = GetParam().first;
+
+    // When streaming it to a standard ostream
+    std::stringstream buffer{};
+    buffer << unit;
+
+    // Then the result should be the expected string
+    const std::string expected_string = GetParam().second;
+    EXPECT_EQ(buffer.str(), expected_string);
+}
+
+TEST_P(ProxyInstanceIdentifierParamaterisedFixture, LogStreamOperatorOutputsExpectedString)
+{
+    // Given a ProxyInstanceIdentifier object
+    const ProxyInstanceIdentifier proxy_instance_identifier = GetParam().first;
+
+    // and given a mocked LogRecorder which calls StartRecord with a unique SlotHandle
+    mw::log::RecorderMock recorder_mock{};
+    score::mw::log::SetLogRecorder(&recorder_mock);
+    mw::log::SlotHandle handle{10};
+    ON_CALL(recorder_mock, StartRecord(_, mw::log::LogLevel::kDebug)).WillByDefault(Return(handle));
+
+    // Expecting that the ProxyInstanceIdentifier will be logged
+    {
+        ::testing::InSequence s;
+        EXPECT_CALL(recorder_mock, LogStringView(handle, "Application ID: "));
+        EXPECT_CALL(recorder_mock, LogUint32(handle, proxy_instance_identifier.application_id));
+        EXPECT_CALL(recorder_mock, LogStringView(handle, ". Proxy Instance Counter: "));
+        EXPECT_CALL(recorder_mock, LogUint16(handle, proxy_instance_identifier.proxy_instance_counter));
+    }
+
+    // When logging it with score log
+    score::mw::log::LogDebug() << proxy_instance_identifier;
 }
 
 }  // namespace

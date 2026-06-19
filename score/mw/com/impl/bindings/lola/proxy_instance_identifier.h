@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <ostream>
 
 namespace score::mw::com::impl::lola
 {
@@ -44,6 +45,8 @@ struct ProxyInstanceIdentifier
 };
 
 bool operator==(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifier& rhs) noexcept;
+
+std::ostream& operator<<(std::ostream& stream, const ProxyInstanceIdentifier& value);
 
 mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyInstanceIdentifier& value) noexcept;
 

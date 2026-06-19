@@ -16,17 +16,21 @@
 #include "score/mw/com/impl/configuration/lola_service_element_id.h"
 
 #include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <functional>
 #include <limits>
+#include <sstream>
 
 namespace score::mw::com::impl::lola
 {
 namespace
 {
+
+using namespace ::testing;
 
 constexpr GlobalConfiguration::ApplicationId kDummyProcessIdentifier{10U};
 constexpr ProxyInstanceIdentifier::ProxyInstanceCounter kDummyProxyInstanceCounter{15U};
@@ -135,21 +139,73 @@ TEST(ProxyMethodInstanceIdentifierTest,
     EXPECT_NE(hash_result0, hash_result1);
 }
 
-TEST(ProxyMethodInstanceIdentifierTest, OperatorStreamOutputsExpectedString)
+class ProxyMethodInstanceIdentifierParamaterisedFixture
+    : public ::testing::TestWithParam<std::pair<ProxyMethodInstanceIdentifier, std::string>>
 {
-    // Given a ProxyMethodInstanceIdentifier
-    const ProxyMethodInstanceIdentifier unit{{kDummyProcessIdentifier, kDummyProxyInstanceCounter},
-                                             kDummyUniqueMethodIdentifier};
-    testing::internal::CaptureStdout();
+};
 
-    // When streaming the ProxyMethodInstanceIdentifier to a log
-    score::mw::log::LogFatal("test") << unit;
-    std::string output = testing::internal::GetCapturedStdout();
+INSTANTIATE_TEST_SUITE_P(
+    ToStringTest,
+    ProxyMethodInstanceIdentifierParamaterisedFixture,
+    ::testing::Values(
+        std::make_pair(ProxyMethodInstanceIdentifier{{10, 15}, {20, MethodType::kMethod}},
+                       "Application ID: 10. Proxy Instance Counter: 15. MethodOrFieldId: 20. MethodType: Method"),
+        std::make_pair(ProxyMethodInstanceIdentifier{{10, 15}, {20, MethodType::kSet}},
+                       "Application ID: 10. Proxy Instance Counter: 15. MethodOrFieldId: 20. MethodType: Set"),
+        std::make_pair(
+            ProxyMethodInstanceIdentifier{{std::numeric_limits<GlobalConfiguration::ApplicationId>::max(),
+                                           std::numeric_limits<ProxyInstanceIdentifier::ProxyInstanceCounter>::max()},
+                                          {std::numeric_limits<LolaServiceElementId>::max(), MethodType::kGet}},
+            "Application ID: 4294967295. Proxy Instance Counter: 65535. MethodOrFieldId: 65535. MethodType: "
+            "Get")));
 
-    // Then the output should contain the expected string
-    EXPECT_THAT(output,
-                ::testing::HasSubstr("ProxyInstanceIdentifier: Application ID: 10 . Proxy Instance Counter: 15 "
-                                     ". UniqueMethodIdentifier: MethodOrFieldId: 20 . MethodType: Method"));
+TEST_P(ProxyMethodInstanceIdentifierParamaterisedFixture, StreamOperatorReturnsExpectedString)
+{
+    // Given a ProxyMethodInstanceIdentifier and the expected string representation
+    const ProxyMethodInstanceIdentifier unit = GetParam().first;
+
+    // When streaming the ProxyMethodInstanceIdentifier to a standard ostream
+    std::stringstream buffer{};
+    buffer << unit;
+
+    // Then the result is the expected string
+    const std::string expected_string = GetParam().second;
+    EXPECT_EQ(buffer.str(), expected_string);
+}
+
+TEST_P(ProxyMethodInstanceIdentifierParamaterisedFixture, LogStreamOperatorReturnsExpectedString)
+{
+    // Given a ProxyMethodInstanceIdentifier object
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier = GetParam().first;
+
+    // and given a mocked LogRecorder which calls StartRecord with a unique SlotHandle
+    mw::log::RecorderMock recorder_mock{};
+    score::mw::log::SetLogRecorder(&recorder_mock);
+    mw::log::SlotHandle handle{10};
+    ON_CALL(recorder_mock, StartRecord(_, mw::log::LogLevel::kDebug)).WillByDefault(Return(handle));
+
+    // Expecting that the ProxyMethodInstanceIdentifier will be logged
+    {
+        ::testing::InSequence s;
+        EXPECT_CALL(recorder_mock, LogStringView(handle, "Application ID: "));
+        EXPECT_CALL(recorder_mock,
+                    LogUint32(handle, proxy_method_instance_identifier.proxy_instance_identifier.application_id));
+        EXPECT_CALL(recorder_mock, LogStringView(handle, ". Proxy Instance Counter: "));
+        EXPECT_CALL(
+            recorder_mock,
+            LogUint16(handle, proxy_method_instance_identifier.proxy_instance_identifier.proxy_instance_counter));
+        EXPECT_CALL(recorder_mock, LogStringView(handle, ". "));
+        EXPECT_CALL(recorder_mock, LogStringView(handle, "MethodOrFieldId: "));
+        EXPECT_CALL(recorder_mock,
+                    LogUint16(handle, proxy_method_instance_identifier.unique_method_identifier.method_or_field_id));
+        EXPECT_CALL(recorder_mock, LogStringView(handle, ". MethodType: "));
+        EXPECT_CALL(
+            recorder_mock,
+            LogStringView(handle, to_string(proxy_method_instance_identifier.unique_method_identifier.method_type)));
+    }
+
+    // When logging it with score log
+    score::mw::log::LogDebug() << proxy_method_instance_identifier;
 }
 
 }  // namespace

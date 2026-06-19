@@ -20,9 +20,17 @@ bool operator==(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifie
     return ((lhs.application_id == rhs.application_id) && (lhs.proxy_instance_counter == rhs.proxy_instance_counter));
 }
 
+std::ostream& operator<<(std::ostream& stream, const ProxyInstanceIdentifier& value)
+{
+    stream << "Application ID: " << value.application_id
+           << ". Proxy Instance Counter: " << value.proxy_instance_counter;
+    return stream;
+}
+
 mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyInstanceIdentifier& value) noexcept
 {
-    stream << "Application ID:" << value.application_id << ". Proxy Instance Counter:" << value.proxy_instance_counter;
+    stream << "Application ID: " << value.application_id
+           << ". Proxy Instance Counter: " << value.proxy_instance_counter;
     return stream;
 }
 

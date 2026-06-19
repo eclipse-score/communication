@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <ostream>
 #include <type_traits>
 
 namespace score::mw::com::impl::lola
@@ -38,7 +39,10 @@ struct UniqueMethodIdentifier
 bool operator==(const UniqueMethodIdentifier& lhs, const UniqueMethodIdentifier& rhs) noexcept;
 bool operator!=(const UniqueMethodIdentifier& lhs, const UniqueMethodIdentifier& rhs) noexcept;
 
+std::ostream& operator<<(std::ostream& stream, const UniqueMethodIdentifier& value);
+
 mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const UniqueMethodIdentifier& value) noexcept;
+
 }  // namespace score::mw::com::impl::lola
 
 namespace std

@@ -25,9 +25,15 @@ bool operator!=(const UniqueMethodIdentifier& lhs, const UniqueMethodIdentifier&
     return !(lhs == rhs);
 }
 
+std::ostream& operator<<(std::ostream& stream, const UniqueMethodIdentifier& value)
+{
+    stream << "MethodOrFieldId: " << value.method_or_field_id << ". MethodType: " << to_string(value.method_type);
+    return stream;
+}
+
 mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const UniqueMethodIdentifier& value) noexcept
 {
-    stream << "MethodOrFieldId:" << value.method_or_field_id << ". MethodType:" << to_string(value.method_type);
+    stream << "MethodOrFieldId: " << value.method_or_field_id << ". MethodType: " << to_string(value.method_type);
     return stream;
 }
 

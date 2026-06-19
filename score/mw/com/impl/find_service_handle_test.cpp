@@ -16,6 +16,8 @@
 #include "score/mw/log/recorder_mock.h"
 
 #include "score/mw/log/slot_handle.h"
+
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 namespace score::mw::com::impl
@@ -71,15 +73,14 @@ TEST(FindServiceHandle, LogStreamOperatorOutputsUid)
 {
     const std::size_t uid{2U};
 
-    // Given a mocked LogRecorder
+    // Given a mocked LogRecorder which calls StartRecord with a unique SlotHandle
     mw::log::RecorderMock recorder_mock{};
     score::mw::log::SetLogRecorder(&recorder_mock);
+    mw::log::SlotHandle handle{10};
+    ON_CALL(recorder_mock, StartRecord(_, mw::log::LogLevel::kVerbose)).WillByDefault(Return(handle));
 
-    // Expecting that StartRecord and StopRecord will be called with a SlotHandle containing the uid of the
-    // FindServiceHandle to be logged
-    mw::log::SlotHandle handle{uid};
-    EXPECT_CALL(recorder_mock, StartRecord(_, mw::log::LogLevel::kVerbose)).WillOnce(Return(handle));
-    EXPECT_CALL(recorder_mock, StopRecord(handle)).Times(1);
+    // Expecting that the LogUint64 will be called with the uid of the FindServiceHandle
+    EXPECT_CALL(recorder_mock, LogUint64(handle, uid));
 
     // Given a FindServiceHandle
     const auto unit = make_FindServiceHandle(uid);
