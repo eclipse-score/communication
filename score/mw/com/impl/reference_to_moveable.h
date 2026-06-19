@@ -49,6 +49,21 @@ template <typename T>
 class ReferenceToMoveable
 {
   public:
+    /// \brief Class which is handed out to other classes which need a reference to the moveable class T via
+    /// ReferenceToMoveable::Get().
+    ///
+    /// This class is stored on the heap and will never be moved so references to it will never be invalidated. We need
+    /// this class instead of handing out a reference to a reference_wrapper stored on the heap to make it clear in the
+    /// calling code that the reference will never be invalidated and to ensure that it can only be created by
+    /// ReferenceToMoveable.
+    ///
+    /// E.g. so that the calling code will look like this:
+    ///     using SkeletonEvents = std::map<std::string_view,
+    ///         std::reference_wrapper<ReferenceToMoveable<SkeletonEventBase>::Reference>>;
+    ///
+    /// and not like this:
+    ///     using SkeletonEvents = std::map<std::string_view,
+    ///         std::reference_wrapper<std::reference_wrapper<SkeletonEventBase>>>;
     class Reference
     {
         friend class ReferenceToMoveable;
@@ -66,12 +81,22 @@ class ReferenceToMoveable
         Reference& operator=(Reference&&) = delete;
         ~Reference() = default;
 
-        const T& Get() const
+        // Since T& Get() must not be called on a temporary object (since the returned reference would be dangling), it
+        // must have a trailing & in the signature. const T& Get() is allowed to be called on a temporary object since
+        // the returned reference will not be dangling (since the const ref will extend the lifetime of the temporary
+        // object). We cannot overload 'T& Get() &' with 'const T& Get() const', so we must explicitly provide const T&
+        // Get() const& and const T& Get() const&& overloads.
+        const T& Get() const&
         {
             return reference_object_.get();
         }
 
-        T& Get()
+        const T& Get() const&&
+        {
+            return reference_object_.get();
+        }
+
+        T& Get() &
         {
             return reference_object_.get();
         }
@@ -90,12 +115,19 @@ class ReferenceToMoveable
     {
     }
 
-    Reference& Get()
+    // See explanation above Reference::Get() for why we need const Reference& Get() const& and const Reference& Get()
+    // const&& overloads.
+    const Reference& Get() const&
     {
         return *(reference_to_moveable_);
     }
 
-    const Reference& Get() const
+    const Reference& Get() const&&
+    {
+        return *(reference_to_moveable_);
+    }
+
+    Reference& Get() &
     {
         return *(reference_to_moveable_);
     }

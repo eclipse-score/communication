@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_SKELETON_EVENT_BASE_H
 
 #include "score/mw/com/impl/flag_owner.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
@@ -46,19 +47,14 @@ class SkeletonEventBase
                       const std::string_view event_name,
                       std::unique_ptr<SkeletonEventBindingBase> binding)
         : binding_{std::move(binding)},
-          skeleton_base_{skeleton_base},
           event_name_{event_name},
           tracing_data_{},
-          service_offered_flag_{}
+          service_offered_flag_{},
+          reference_to_moveable_(*static_cast<SkeletonEventBase*>(this))
     {
     }
 
     virtual ~SkeletonEventBase() = default;
-
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept
-    {
-        skeleton_base_ = skeleton_base;
-    }
 
     /// \brief Used to indicate that the event shall be available to consumer
     /// Performs binding independent functionality and then dispatches to the binding
@@ -87,27 +83,52 @@ class SkeletonEventBase
     SkeletonEventBase(const SkeletonEventBase&) = delete;
     SkeletonEventBase& operator=(const SkeletonEventBase&) & = delete;
 
-    SkeletonEventBase(SkeletonEventBase&&) noexcept = default;
-    SkeletonEventBase& operator=(SkeletonEventBase&& other) & noexcept = default;
+    SkeletonEventBase(SkeletonEventBase&& other) noexcept
+        : binding_{std::move(other.binding_)},
+          event_name_{other.event_name_},
+          tracing_data_{std::move(other.tracing_data_)},
+          service_offered_flag_{std::move(other.service_offered_flag_)},
+          reference_to_moveable_{std::move(other.reference_to_moveable_)}
+    {
+        reference_to_moveable_.Update(*this);
+    }
+
+    SkeletonEventBase& operator=(SkeletonEventBase&& other) & noexcept
+    {
+        if (this == &other)
+        {
+            return *this;
+        }
+
+        binding_ = std::move(other.binding_);
+        event_name_ = other.event_name_;
+        tracing_data_ = std::move(other.tracing_data_);
+        service_offered_flag_ = std::move(other.service_offered_flag_);
+        reference_to_moveable_ = std::move(other.reference_to_moveable_);
+
+        reference_to_moveable_.Update(*this);
+
+        return *this;
+    }
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". We need these data elements to exchange this information between the SkeletonEventBase and the
     // SkeletonEvent.
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::unique_ptr<SkeletonEventBindingBase> binding_;
-
-    // The SkeletonEventBase must contain a reference to the SkeletonBase so that a SkeletonBase can call
-    // UpdateSkeletonReference whenever it is moved to a new address. A SkeletonBase only has a reference to a
-    // SkeletonEventBase, not a typed SkeletonEvent, which is why UpdateSkeletonReference has to be in this class
-    // despite skeleton_base_ being used in the derived class, SkeletonEvent.
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    std::reference_wrapper<SkeletonBase> skeleton_base_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::string_view event_name_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     tracing::SkeletonEventTracingData tracing_data_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     FlagOwner service_offered_flag_;
+
+    /// \brief Helper class for creating reference to this SkeletonEventBase which is provided to SkeletonBase when
+    /// registering this event.
+    ///
+    /// Contains a heap allocated reference to this SkeletonEventBase which is updated in the move constructor and move
+    /// assignment operator so that it's always valid, even after moving the SkeletonEventBase.
+    ReferenceToMoveable<SkeletonEventBase> reference_to_moveable_;
 };
 
 class SkeletonEventBaseView

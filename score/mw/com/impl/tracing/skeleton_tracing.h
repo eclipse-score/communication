@@ -19,10 +19,12 @@
 #define SCORE_MW_COM_IMPL_SKELETON_TRACING_H
 
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
 #include "score/mw/com/impl/skeleton_field_base.h"
 
+#include <functional>
 #include <map>
 #include <optional>
 
@@ -31,13 +33,13 @@ namespace score::mw::com::impl::tracing
 
 std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> CreateRegisterShmObjectCallback(
     const InstanceIdentifier& instance_id,
-    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
-    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonEventBase>::Reference>>& events,
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>>& fields,
     const SkeletonBinding& skeleton_binding) noexcept;
 std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback> CreateUnregisterShmObjectCallback(
     const InstanceIdentifier& instance_id,
-    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
-    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonEventBase>::Reference>>& events,
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>>& fields,
     const SkeletonBinding& skeleton_binding) noexcept;
 
 }  // namespace score::mw::com::impl::tracing

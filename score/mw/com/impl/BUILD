@@ -192,6 +192,7 @@ cc_library(
     deps = [
         ":data_type_meta_info",
         ":generic_skeleton_event_binding",
+        ":reference_to_moveable",
         ":skeleton_base",
         ":skeleton_event_base",
         ":skeleton_event_binding",
@@ -243,6 +244,7 @@ cc_library(
     ],
     deps = [
         ":instance_identifier",
+        ":reference_to_moveable",
         ":runtime",
         ":skeleton_base",
         ":skeleton_event_base",
@@ -355,6 +357,7 @@ cc_library(
     ],
     deps = [
         ":flag_owner",
+        ":reference_to_moveable",
         ":skeleton_event_binding",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "//score/mw/com/impl/tracing:skeleton_event_tracing_data",
@@ -374,6 +377,7 @@ cc_library(
     ],
     deps = [
         ":error",
+        ":reference_to_moveable",
         ":skeleton_event_base",
         "//score/mw/com/impl/methods:skeleton_method_base",
         "@score_baselibs//score/language/futurecpp",
@@ -396,6 +400,7 @@ cc_library(
     deps = [
         ":flag_owner",
         ":instance_identifier",
+        ":reference_to_moveable",
         ":runtime",
         ":skeleton_binding",
         ":skeleton_event_base",

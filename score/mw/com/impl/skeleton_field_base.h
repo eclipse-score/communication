@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
 
 #include "score/mw/log/logging.h"
@@ -23,6 +24,7 @@
 #include <functional>
 #include <memory>
 #include <string_view>
+#include <utility>
 
 namespace score::mw::com::impl
 {
@@ -43,8 +45,8 @@ class SkeletonFieldBase
                       std::unique_ptr<SkeletonEventBase> skeleton_event_base)
         : skeleton_event_dispatch_{std::move(skeleton_event_base)},
           was_prepare_offer_called_{false},
-          skeleton_base_{skeleton_base},
-          field_name_{field_name}
+          field_name_{field_name},
+          reference_to_moveable_{*this}
     {
     }
 
@@ -52,12 +54,6 @@ class SkeletonFieldBase
 
     SkeletonFieldBase(const SkeletonFieldBase&) = delete;
     SkeletonFieldBase& operator=(const SkeletonFieldBase&) & = delete;
-
-    /// \brief Updates the reference to SkeletonBase held by the SkeletonField and also the owned methods.
-    ///
-    /// This must happen in the derived class since the derived class owns the methods (this is required since they are
-    /// templated with the FieldType, which SkeletonFieldBase doesn't know).
-    virtual void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept = 0;
 
     /// \brief Used to indicate that the field shall be available to consumer (e.g. binding specific preparation)
     Result<void> PrepareOffer() noexcept
@@ -106,8 +102,29 @@ class SkeletonFieldBase
     }
 
   protected:
-    SkeletonFieldBase(SkeletonFieldBase&&) noexcept = default;
-    SkeletonFieldBase& operator=(SkeletonFieldBase&&) & noexcept = default;
+    SkeletonFieldBase(SkeletonFieldBase&& other) noexcept
+        : skeleton_event_dispatch_{std::move(other.skeleton_event_dispatch_)},
+          was_prepare_offer_called_{other.was_prepare_offer_called_},
+          field_name_{other.field_name_},
+          reference_to_moveable_{std::move(other.reference_to_moveable_)}
+    {
+        reference_to_moveable_.Update(*this);
+    }
+
+    SkeletonFieldBase& operator=(SkeletonFieldBase&& other) & noexcept
+    {
+        if (this == &other)
+        {
+            return *this;
+        }
+
+        skeleton_event_dispatch_ = std::move(other.skeleton_event_dispatch_);
+        was_prepare_offer_called_ = other.was_prepare_offer_called_;
+        field_name_ = other.field_name_;
+        reference_to_moveable_ = std::move(other.reference_to_moveable_);
+        reference_to_moveable_.Update(*this);
+        return *this;
+    }
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". We need these data elements to exchange this information between the SkeletonBase and the
     // SkeletonField.
@@ -116,14 +133,15 @@ class SkeletonFieldBase
     // coverity[autosar_cpp14_m11_0_1_violation]
     bool was_prepare_offer_called_;
 
-    // The SkeletonFieldBase must contain a reference to the SkeletonBase so that a SkeletonBase can call
-    // UpdateSkeletonReference whenever it is moved to a new address. A SkeletonBase only has a reference to a
-    // SkeletonFieldBase, not a typed SkeletonField, which is why UpdateSkeletonReference has to be in this class
-    // despite skeleton_base_ being used in the derived class, SkeletonField.
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    std::reference_wrapper<SkeletonBase> skeleton_base_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::string_view field_name_;
+
+    /// \brief Helper class for creating reference to this SkeletonFieldBase which is provided to SkeletonBase when
+    /// registering this event.
+    ///
+    /// Contains a heap allocated reference to this SkeletonFieldBase which is updated in the move constructor and move
+    /// assignment operator so that it's always valid, even after moving the SkeletonFieldBase.
+    ReferenceToMoveable<SkeletonFieldBase> reference_to_moveable_;
 
   private:
     /// \brief Returns whether the initial value has been saved by the user to be used by DoDeferredUpdate

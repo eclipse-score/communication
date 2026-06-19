@@ -192,7 +192,7 @@ class SkeletonWrapperClassTestView
                     [&events](auto& event_mock_pair) {
                         auto event_base_it = events.find(std::string{event_mock_pair.event_name});
                         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_base_it != events.end());
-                        auto& event_base = event_base_it->second.get();
+                        auto& event_base = event_base_it->second.get().Get();
                         InjectEventMock(event_base, event_mock_pair.mock);
                     }(unpacked_tuple),
                     ...);
@@ -205,7 +205,7 @@ class SkeletonWrapperClassTestView
                     [&fields](auto& field_mock_pair) {
                         auto field_base_it = fields.find(std::string{field_mock_pair.field_name});
                         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(field_base_it != fields.end());
-                        auto& field_base = field_base_it->second.get();
+                        auto& field_base = field_base_it->second.get().Get();
                         InjectFieldMock(field_base, field_mock_pair.mock);
                     }(unpacked_tuple),
                     ...);

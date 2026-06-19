@@ -574,7 +574,7 @@ TEST(SkeletonEventTest, SkeletonEventsRegisterThemselvesWithSkeleton)
     EXPECT_EQ(event_name, kEventName);
 
     // and the event in the map corresponds to the correct skeleton event address
-    EXPECT_EQ(&event, &unit.my_dummy_event_);
+    EXPECT_EQ(&event.Get(), &unit.my_dummy_event_);
 }
 
 TEST(SkeletonEventTest, MovingConstructingSkeletonUpdatesEventMapReference)
@@ -606,7 +606,7 @@ TEST(SkeletonEventTest, MovingConstructingSkeletonUpdatesEventMapReference)
     EXPECT_EQ(event_name, kEventName);
 
     // and the event in the map corresponds to the new skeleton event address
-    EXPECT_EQ(&event, &unit2.my_dummy_event_);
+    EXPECT_EQ(&event.Get(), &unit2.my_dummy_event_);
 }
 
 TEST(SkeletonEventTest, MovingAssigningSkeletonUpdatesEventMapReference)
@@ -650,7 +650,7 @@ TEST(SkeletonEventTest, MovingAssigningSkeletonUpdatesEventMapReference)
     EXPECT_EQ(event_name, kEventName);
 
     // and the event in the map corresponds to the new skeleton event address
-    EXPECT_EQ(&event, &unit2.my_dummy_event_);
+    EXPECT_EQ(&event.Get(), &unit2.my_dummy_event_);
 }
 
 }  // namespace

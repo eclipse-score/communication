@@ -40,8 +40,7 @@ abstract class "score::mw::com::impl::SkeletonBase" as SkeletonBase {
     +StopOfferService(): void
     --
     Notes:
-    SkeletonBase is moveable but not copyable. On moving, the SkeletonBase should call
-    UpdateSkeletonReference on all events and fields within its events_ and fields_ maps.
+    SkeletonBase is moveable but not copyable. On moving, the SkeletonBase updates method references.
 }
 
 class SkeletonBinding {
@@ -91,7 +90,6 @@ abstract class "score::mw::com::impl::SkeletonFieldBase" as SkeletonFieldBase {
     +SkeletonFieldBase(SkeletonBase&, std::string_view field_name, std::unique_ptr<impl::SkeletonEventBase>)
     +PrepareOffer(): Result<void>
     +PrepareStopOffer(): void
-    +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
 
     -IsInitialValueSaved(): bool = 0
     -DoDeferredUpdate(): Result<void> = 0
@@ -108,7 +106,6 @@ class "score::mw::com::impl::SkeletonEventBase" as SkeletonEventBase {
     +SkeletonEventBase(std::unique_ptr<SkeletonEventBindingBase> binding)
     +PrepareOffer(): score::Result<void>
     +PrepareStopOffer(): void
-    +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
 
     --
     Notes:
@@ -118,8 +115,7 @@ class "score::mw::com::impl::SkeletonEventBase" as SkeletonEventBase {
     This allows SkeletonEventBase to access the type independent methods of
     SkeletonEventBindingBase. Derived classes i.e. impl::SkeletonEvent should
     downcast binding_ to a SkeletonEventBinding<SampleType> in order to use type
-    dependent methods. On moving, the SkeletonEvent should call UpdateEvent on its
-    parent skeleton so that the parent stores its new address.
+    dependent methods.
 }
 
 class SkeletonServiceMethodBinding <InArgs, OutArgs> {

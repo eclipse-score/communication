@@ -15,8 +15,8 @@
 
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
 
-#include <functional>
 #include <memory>
 
 namespace score::mw::com::impl
@@ -36,14 +36,14 @@ class SkeletonMethodBase
     friend SkeletonMethodBaseView;
 
   public:
-    SkeletonMethodBase(SkeletonBase& skeleton_base,
+    SkeletonMethodBase(SkeletonBase&,
                        const std::string_view method_name,
                        std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding,
                        MethodType method_type = MethodType::kMethod)
         : method_name_{method_name},
           method_type_{method_type},
           binding_{std::move(skeleton_method_binding)},
-          skeleton_base_{skeleton_base}
+          reference_to_moveable_{*this}
     {
     }
 
@@ -52,16 +52,42 @@ class SkeletonMethodBase
     SkeletonMethodBase(const SkeletonMethodBase&) = delete;
     SkeletonMethodBase& operator=(const SkeletonMethodBase&) & = delete;
 
-    SkeletonMethodBase(SkeletonMethodBase&&) noexcept = default;
-    SkeletonMethodBase& operator=(SkeletonMethodBase&&) & noexcept = default;
+    SkeletonMethodBase(SkeletonMethodBase&& other) noexcept
+        : method_name_{other.method_name_},
+          method_type_{other.method_type_},
+          binding_{std::move(other.binding_)},
+          reference_to_moveable_{std::move(other.reference_to_moveable_)}
+    {
+        reference_to_moveable_.Update(*this);
+    }
 
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept;
+    SkeletonMethodBase& operator=(SkeletonMethodBase&& other) & noexcept
+    {
+        if (this == &other)
+        {
+            return *this;
+        }
+
+        method_name_ = other.method_name_;
+        method_type_ = other.method_type_;
+        binding_ = std::move(other.binding_);
+        reference_to_moveable_ = std::move(other.reference_to_moveable_);
+
+        reference_to_moveable_.Update(*this);
+        return *this;
+    }
 
   protected:
     std::string_view method_name_;
     MethodType method_type_;
     std::unique_ptr<SkeletonMethodBinding> binding_;
-    std::reference_wrapper<SkeletonBase> skeleton_base_;
+
+    /// \brief Helper class for creating reference to this SkeletonMethodBase which is provided to SkeletonBase when
+    /// registering this event.
+    ///
+    /// Contains a heap allocated reference to this SkeletonMethodBase which is updated in the move constructor and move
+    /// assignment operator so that it's always valid, even after moving the SkeletonMethodBase.
+    ReferenceToMoveable<SkeletonMethodBase> reference_to_moveable_;
 };
 
 class SkeletonMethodBaseView

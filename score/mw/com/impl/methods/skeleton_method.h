@@ -21,7 +21,6 @@
 #include "score/result/result.h"
 
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -102,16 +101,14 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     SkeletonMethod(const SkeletonMethod&) = delete;
     SkeletonMethod& operator=(const SkeletonMethod&) & = delete;
 
-    SkeletonMethod(SkeletonMethod&& other) noexcept;
-    SkeletonMethod& operator=(SkeletonMethod&& other) & noexcept;
+    SkeletonMethod(SkeletonMethod&& other) noexcept = default;
+    SkeletonMethod& operator=(SkeletonMethod&& other) & noexcept = default;
 
     /// \brief Register a handler with the binding, which will be executed by the binding when the Proxy calls this
     /// method.
     /// \return score::cpp::blank on success and ComErrc code specified by the binding on failiure
     template <typename Callable>
     Result<void> RegisterHandler(Callable&& callback);
-
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept;
 };
 
 template <typename ReturnType, typename... ArgTypes>
@@ -121,37 +118,7 @@ SkeletonMethod<ReturnType(ArgTypes...)>::SkeletonMethod(SkeletonBase& skeleton_b
                                                         ::score::mw::com::impl::MethodType method_type)
     : SkeletonMethodBase(skeleton_base, method_name, std::move(skeleton_method_binding), method_type)
 {
-    auto skeleton_base_view = SkeletonBaseView{skeleton_base};
-    skeleton_base_view.RegisterMethod(method_name_, *this);
-}
-
-template <typename ReturnType, typename... ArgTypes>
-SkeletonMethod<ReturnType(ArgTypes...)>::SkeletonMethod(SkeletonMethod&& other) noexcept
-    : SkeletonMethodBase(std::move(other))
-{
-
-    SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
-    skeleton_base_view.UpdateMethod(method_name_, *this);
-}
-
-template <typename ReturnType, typename... ArgTypes>
-SkeletonMethod<ReturnType(ArgTypes...)>& SkeletonMethod<ReturnType(ArgTypes...)>::operator=(
-    SkeletonMethod&& other) & noexcept
-{
-    if (this != &other)
-    {
-        SkeletonMethodBase::operator=(std::move(other));
-
-        SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
-        skeleton_base_view.UpdateMethod(method_name_, *this);
-    }
-    return *this;
-}
-
-template <typename ReturnType, typename... ArgTypes>
-void SkeletonMethod<ReturnType(ArgTypes...)>::UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept
-{
-    skeleton_base_ = skeleton_base;
+    SkeletonBaseView{skeleton_base}.RegisterMethod(method_name_, reference_to_moveable_.Get());
 }
 
 template <typename ReturnType, typename... ArgTypes>
