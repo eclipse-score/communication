@@ -52,6 +52,35 @@ normally registers itself at its parent skeleton in its event-collection. This i
 the field use case as in this case the `impl::SkeletonField<SampleType>` has already registered itself in its parents
 field-collection!
 
+### Field capability tags
+
+A field is declared with its `SampleType` plus a pack of marker tags from `field_tags.h`. Any combination of
+`WithGetter`, `WithSetter` and `WithNotifier` is allowed, and the tags decide which methods the user actually sees:
+`WithGetter` enables `Get()`, `WithSetter` enables `Set()`, and `WithNotifier` enables the notifier methods
+(`Subscribe()`, `Unsubscribe()`, `GetSubscriptionState()`, `GetNumNewSamplesAvailable()`, `GetNewSamples()`,
+`GetFreeSampleCount()`, `SetReceiveHandler()`, `UnsetReceiveHandler()`, `SetSubscriptionStateChangeHandler()` and
+`UnsetSubscriptionStateChangeHandler()`). The gating happens at compile time via SFINAE, so calling e.g. `Subscribe()`
+on a field that was not declared with `WithNotifier` does not compile.
+
+The notifier is a pure consumer-side concept. It only controls
+whether the proxy can subscribe and receive event-style notifications when the provider updates the value, and says
+nothing about the provider side. This follows `ara::com`, where the notifier is essentially "the event part" of a field
+(see AUTOSAR's [Explanation of ara::com API](https://www.autosar.org/fileadmin/standards/R24-11/AP/AUTOSAR_AP_EXP_ARAComAPI.pdf),
+chapter "Fields").
+
+The same asymmetry shows up in how each side builds the field's event dispatch:
+
+- On the skeleton side, value handling does not depend on the tags. `impl::SkeletonField` always creates its
+  `skeleton_event_dispatch_`, and `Update()`/`Allocate()` are always present. I.e. the provider can always set the
+  initial value and push new values later, whether or not a notifier was configured.
+- On the proxy side, the event dispatch (`proxy_event_dispatch_`) is only created when `WithNotifier` is set. Without it
+  the member stays `nullptr` and the notifier methods are removed at compile time.
+
+The only combination we actually enforce is a `static_assert` on both `impl::ProxyField` and `impl::SkeletonField`: a
+field must have at least one of `WithGetter` or `WithNotifier`. Without one of them the consumer has no way to observe
+the value, which makes the field useless. We deliberately do not require a setter, since a read-only field is perfectly normal and the provider always sets the
+value itself via `Update()` with no explicit tag needed.
+
 ## Event related datastructures in LoLa binding
 
 Here we provide insight, how event communication is realized within our `LoLa` (shared memory based) binding. The
