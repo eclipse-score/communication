@@ -57,7 +57,8 @@ jobs:
   run-clang-tidy:
     uses: ./.github/workflows/clang_tidy.yml
     permissions:
-      contents: write
+      contents: read    
+      actions: write
 
   # --------------------------------------------------------------------
   # Collect results, build the dashboard, upload artifact for docs.yml
