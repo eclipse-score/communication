@@ -53,7 +53,7 @@ jobs:
         uses: castler/setup-bazel@cache-optimized
         with:
           bazelisk-cache: true
-          disk-cache: ${{ github.job }}
+          disk-cache: "coverage_report"
           repository-cache: true
           cache-optimized: true
           cache-save: ${{ github.ref == 'refs/heads/main' }}
