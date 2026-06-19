@@ -47,16 +47,10 @@ source_suffix = {
     '.md': 'markdown',
 }
 
-# MyST parser settings to handle broken links in included markdown files
+# MyST parser settings
 myst_heading_anchors = 3
 myst_enable_extensions = [
     # "linkify",  # Disabled - requires linkify-it-py package
-]
-# Suppress warnings for unknown references in markdown files
-# These references point to files outside the sphinx documentation
-suppress_warnings = [
-    'myst.xref_missing',
-    'myst.anchor',
 ]
 # Continue on errors from myst parser for included markdown files
 myst_commonmark_only = False
