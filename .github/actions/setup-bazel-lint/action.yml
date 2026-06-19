@@ -13,8 +13,13 @@
 
 # Composite action: Setup Bazel for Lint
 #
-# Shared Bazel configuration used by lint workflows (Clippy, Clang-Tidy, etc.)
-# to eliminate duplicated setup steps.
+# Shared setup used by lint/analysis workflows (Clippy, Clang-Tidy, CodeQL, etc.)
+# to eliminate duplicated steps.
+#
+# Runs in order:
+#   1. Free Disk Space  — ensures enough space before Bazel downloads artifacts
+#   2. Setup Bazel      — configures Bazel with caching
+#   3. Allow linux-sandbox — unblocks user namespaces needed by Bazel sandbox
 #
 # The calling workflow is responsible for checking out the repository before
 # invoking this action. This separation allows workflows to insert their own
@@ -22,8 +27,9 @@
 
 name: Setup Bazel for Lint
 description: >
-  Configures Bazel with shared caching options. Shared by lint workflows
-  (Clippy, Clang-Tidy, etc.) to avoid duplicating the same setup steps.
+  Frees disk space, configures Bazel with shared caching options, and unblocks
+  the linux sandbox. Shared by lint/analysis workflows (Clippy, Clang-Tidy,
+  CodeQL, etc.) to avoid duplicating the same setup steps.
   The caller must check out the repository before using this action.
 
 inputs:
@@ -40,6 +46,10 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Free Disk Space (Ubuntu)
+      uses: eclipse-score/more-disk-space@v1
+      with:
+        level: 4
     - name: Setup Bazel
       uses: castler/setup-bazel@cache-optimized
       with:
@@ -48,3 +58,5 @@ runs:
         repository-cache: true
         cache-optimized: true
         cache-save: ${{ inputs.cache-save }}
+    - name: Allow linux-sandbox
+      uses: ./actions/unblock_user_namespace_for_linux_sandbox

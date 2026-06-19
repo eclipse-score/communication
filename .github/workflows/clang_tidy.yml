@@ -79,12 +79,6 @@ jobs:
         with:
           disk-cache: clang_tidy
           cache-save: ${{ github.ref == 'refs/heads/main' }}
-      - name: Free Disk Space (Ubuntu)
-        uses: eclipse-score/more-disk-space@v1
-        with:
-          level: 4
-      - name: Allow linux-sandbox
-        uses: ./actions/unblock_user_namespace_for_linux_sandbox
       - name: Run clang-tidy via Bazel
         id: run-clang-tidy
         # continue-on-error so we can collect findings and upload the artifact

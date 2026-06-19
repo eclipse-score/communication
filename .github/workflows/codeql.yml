@@ -39,16 +39,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Free Disk Space (Ubuntu)
-        uses: eclipse-score/more-disk-space@v1
+      - name: Setup build environment
+        uses: ./.github/actions/setup-bazel-lint
         with:
-          level: 4
-
-      - name: Setup Bazel
-        uses: castler/setup-bazel@cache-optimized
-
-      - name: Allow linux-sandbox
-        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+          disk-cache: codeql
+          cache-save: 'true'  # Nightly run — no cache poisoning risk from PRs
 
       - name: Create CodeQL database
         run: |

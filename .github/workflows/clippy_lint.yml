@@ -13,11 +13,14 @@
 
 # Workflow: Clippy PR check
 #
-# Runs Clippy on pull requests, pushes to main, and merge groups when Rust files or workflow changes.
-# - For PRs: Runs if PR contains changes to .rs files or this workflow file
+# Runs Clippy on every pull_request, push to main, and merge_group.
 # - Fails if Clippy errors or warnings are found in Rust files changed by the PR.
+# - The same changed-files scope is applied for both pull_request and
+#   merge_group (gate) so that a passing PR check guarantees a passing gate.
 # - Writes a job summary with error/warning counts.
 # - Uploads clippy log as a downloadable artifact.
+#
+# Cache is saved only on pushes to main.
 
 name: Clippy Check
 
@@ -60,6 +63,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      actions: write # Needed to delete old bazel caches
     outputs:
       artifact-name: clippy-findings
       errors: ${{ steps.findings.outputs.errors }}
@@ -106,12 +110,12 @@ jobs:
       - name: Run Clippy via Bazel
         id: run-clippy
         if: steps.check-changes.outputs.should-run == 'true'
+        # continue-on-error so we can collect findings and upload the artifact
+        # even when the Bazel invocation exits non-zero.
         continue-on-error: true
         run: |
           bazel build --config=clippy //score/... \
             2>&1 | tee clippy_raw.log
-          # Capture the exit code from bazel (PIPESTATUS[0]), not tee
-          echo "bazel_exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
       - name: Collect findings
         id: findings
         if: steps.check-changes.outputs.should-run == 'true'
@@ -140,21 +144,15 @@ jobs:
 
           echo "Grep results: errors=${ERRORS}, warnings=${WARNINGS}, total=${TOTAL}"
 
-          # Scope blocking errors to Rust files changed in this PR
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            BASE_REF="origin/${GITHUB_BASE_REF}"
-            CHANGED_RUST=$(git diff --name-only "${BASE_REF}...HEAD" 2>/dev/null \
-              | grep -E '\.rs$' || true)
-          elif [[ "${GITHUB_EVENT_NAME}" == "merge_group" ]]; then
-            # For merge queue, compare against the base
-            BASE_REF="origin/main"
-            CHANGED_RUST=$(git diff --name-only "${BASE_REF}...HEAD" 2>/dev/null \
-              | grep -E '\.rs$' || true)
-          else
-            # For pushes to main, check all Rust files changed in the last commit
-            CHANGED_RUST=$(git diff --name-only HEAD~1 HEAD 2>/dev/null \
-              | grep -E '\.rs$' || true)
-          fi
+          # Scope blocking issues to Rust files changed in this PR / merge-group
+          # commit set. The same logic is applied for all event types
+          # (pull_request, merge_group, push to main) so that a check passing on
+          # a PR is guaranteed to also pass at gate.
+          #
+          # GITHUB_BASE_REF is set by GitHub for both pull_request and
+          # merge_group events (it is the name of the target branch, e.g. main).
+          CHANGED_RUST=$(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" 2>/dev/null \
+            | grep -E '\.rs$' || true)
 
           echo "Changed Rust files:"
           echo "${CHANGED_RUST}"
@@ -242,20 +240,22 @@ jobs:
           retention-days: 7
 
       - name: Fail check if clippy issues found in changed files
-        if: steps.findings.outputs.blocking_total != '0' && steps.findings.outputs.blocking_total != ''
+        if: steps.check-changes.outputs.should-run == 'true' && (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'merge_group') && steps.findings.outputs.blocking_total != '0'
         run: |
-          echo "::error::Clippy found ${{ steps.findings.outputs.errors_blocking }} error(s) and ${{ steps.findings.outputs.warnings_blocking }} warning(s) in changed files."
-          echo "Download the clippy-findings artifact to see full details."
+          echo "::error::Clippy found ${{ steps.findings.outputs.errors_blocking }} error(s) and ${{ steps.findings.outputs.warnings_blocking }} warning(s) in changed files. See the 'clippy-findings' artifact for details."
+          echo ""
+          echo "=== Clippy findings ==="
+          cat clippy_raw.log || true
           exit 1
 
       - name: Set conclusion
         id: set-conclusion
         if: always()
         run: |
-          # When findings was skipped (no relevant files changed) blocking_total is
-          # empty — treat that as success so the job never blocks unrelated PRs.
-          BLOCKING="${{ steps.findings.outputs.blocking_total }}"
-          if [[ -z "${BLOCKING}" || "${BLOCKING}" == "0" ]]; then
+          # When check-changes skipped the build (no relevant files changed),
+          # run-clippy.outcome is 'skipped' — treat that as success.
+          OUTCOME="${{ steps.run-clippy.outcome }}"
+          if [[ "${OUTCOME}" == "success" || "${OUTCOME}" == "skipped" ]]; then
             echo "conclusion=success" >> $GITHUB_OUTPUT
           else
             echo "conclusion=failure" >> $GITHUB_OUTPUT
