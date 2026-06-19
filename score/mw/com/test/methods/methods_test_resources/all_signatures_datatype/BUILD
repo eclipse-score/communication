@@ -35,7 +35,7 @@ cc_library(
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
-        "//score/mw/com/test/methods/methods_test_resources:skeleton_container",
+        "//score/mw/com/test/common_test_resources:skeleton_container",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
     ],
@@ -52,8 +52,8 @@ cc_library(
         "//score/mw/com",
         "//score/mw/com:runtime",
         "//score/mw/com/test/common_test_resources:assert_handler",
+        "//score/mw/com/test/common_test_resources:proxy_container",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
-        "//score/mw/com/test/methods/methods_test_resources:proxy_container",
         "@score_baselibs//score/mw/log",
     ],
 )
