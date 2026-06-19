@@ -162,7 +162,6 @@ cc_library(
         "treat_warnings_as_errors",
         "strict_warnings",
         "additional_warnings",
-        "strict_warnings_no_error",
     ],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
