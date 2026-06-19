@@ -539,7 +539,7 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
 
         {
             std::lock_guard lock{event_sending_mutex_};
-            event.Send(std::move(sample));
+            score::cpp::ignore = event.Send(std::move(sample));
             event_published_ = true;
         }
         std::this_thread::sleep_for(cycle_time);
