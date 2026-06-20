@@ -38,6 +38,8 @@ class ProcessSynchronizer
 
     bool WaitWithAbort(score::cpp::stop_token stop_token);
 
+    void Reset();
+
   private:
     SharedMemoryObjectCreator<os::InterprocessNotification> interprocess_notifier_creator_;
     SharedMemoryObjectGuard<os::InterprocessNotification> interprocess_notifier_guard_;

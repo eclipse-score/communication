@@ -1,0 +1,105 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/skeleton_move_semantics/MoveEventInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 2100,
+          "events": [
+            {
+              "eventName": "moved_event",
+              "eventId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/skeleton_move_semantics/MoveEventInterfaceMovedTo",
+      "serviceTypeName": "/test/skeleton_move_semantics/MoveEventInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "moved_event",
+              "numberOfSampleSlots": 15,
+              "maxSubscribers": 1
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "test/skeleton_move_semantics/MoveEventInterfaceMovedFrom",
+      "serviceTypeName": "/test/skeleton_move_semantics/MoveEventInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 2,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "moved_event",
+              "numberOfSampleSlots": 15,
+              "maxSubscribers": 1
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM",
+    "applicationID": 4001
+  }
+}

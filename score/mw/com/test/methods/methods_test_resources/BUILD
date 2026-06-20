@@ -55,7 +55,7 @@ cc_library(
     hdrs = ["process_synchronizer.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//score/mw/com/test/methods:__subpackages__",
+        "//score/mw/com/test:__subpackages__",
     ],
     deps = [
         "//score/mw/com/test/common_test_resources:fail_test",
