@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/mocking/skeleton_wrapper_class_test_view.h"
 
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/mocking/skeleton_base_mock.h"
@@ -59,7 +60,8 @@ class MyInterface : public InterfaceTrait::Base
 
     typename InterfaceTrait::template Event<TestEventType> some_event{*this, kEventName};
     typename InterfaceTrait::template Event<TestEventType2> some_event_2{*this, kEventName2};
-    typename InterfaceTrait::template Field<TestFieldType> some_field{*this, kFieldName};
+    typename InterfaceTrait::template Field<TestFieldType, WithGetter, WithNotifier, WithSetter> some_field{*this,
+                                                                                                            kFieldName};
 };
 using MySkeleton = AsSkeleton<MyInterface>;
 
@@ -235,7 +237,7 @@ TEST_F(SkeletonWrapperTestClassCreateFixture, CreatingMockSkeletonWithAllEventsA
     SkeletonBaseMock skeleton_mock{};
     std::tuple<NamedSkeletonEventMock<TestEventType>, NamedSkeletonEventMock<TestEventType2>> events_tuple{kEventName,
                                                                                                            kEventName2};
-    std::tuple<NamedSkeletonFieldMock<TestFieldType>> fields_tuple{kFieldName};
+    std::tuple<NamedSkeletonFieldMock<TestFieldType, WithGetter, WithNotifier, WithSetter>> fields_tuple{kFieldName};
 
     // When creating a mocked skeleton
     auto skeleton = SkeletonWrapperClassTestView<MySkeleton>::Create(skeleton_mock, events_tuple, fields_tuple);
@@ -249,7 +251,7 @@ TEST_F(SkeletonWrapperTestClassCreateFixture, CallingFunctionsOnMockSkeletonDisp
     SkeletonBaseMock skeleton_mock{};
     std::tuple<NamedSkeletonEventMock<TestEventType>, NamedSkeletonEventMock<TestEventType2>> events_tuple{kEventName,
                                                                                                            kEventName2};
-    std::tuple<NamedSkeletonFieldMock<TestFieldType>> fields_tuple{kFieldName};
+    std::tuple<NamedSkeletonFieldMock<TestFieldType, WithGetter, WithNotifier, WithSetter>> fields_tuple{kFieldName};
 
     // and a mocked skeleton
     auto skeleton = SkeletonWrapperClassTestView<MySkeleton>::Create(skeleton_mock, events_tuple, fields_tuple);
@@ -320,7 +322,8 @@ class FieldOnlyInterface : public InterfaceTrait::Base
   public:
     using InterfaceTrait::Base::Base;
 
-    typename InterfaceTrait::template Field<TestFieldType> some_field{*this, kFieldName};
+    typename InterfaceTrait::template Field<TestFieldType, WithGetter, WithNotifier, WithSetter> some_field{*this,
+                                                                                                            kFieldName};
 };
 using FieldOnlySkeleton = AsSkeleton<FieldOnlyInterface>;
 
@@ -329,7 +332,7 @@ TEST_F(SkeletonWrapperTestClassFieldsOnlyCreateFixture, CreatingMockSkeletonWith
 {
     // Given a SkeletonBaseMock and a mock per Field
     SkeletonBaseMock skeleton_mock{};
-    std::tuple<NamedSkeletonFieldMock<TestFieldType>> fields_tuple{kFieldName};
+    std::tuple<NamedSkeletonFieldMock<TestFieldType, WithGetter, WithNotifier, WithSetter>> fields_tuple{kFieldName};
 
     // When creating a mocked skeleton
     auto skeleton = SkeletonWrapperClassTestView<FieldOnlySkeleton>::Create(skeleton_mock, fields_tuple);
@@ -341,7 +344,7 @@ TEST_F(SkeletonWrapperTestClassFieldsOnlyCreateFixture, CallingFunctionsOnMockSk
 {
     // Given a SkeletonBaseMock and a mock per Field
     SkeletonBaseMock skeleton_mock{};
-    std::tuple<NamedSkeletonFieldMock<TestFieldType>> fields_tuple{kFieldName};
+    std::tuple<NamedSkeletonFieldMock<TestFieldType, WithGetter, WithNotifier, WithSetter>> fields_tuple{kFieldName};
 
     // and given a mocked skeleton was created
     auto skeleton = SkeletonWrapperClassTestView<FieldOnlySkeleton>::Create(skeleton_mock, fields_tuple);

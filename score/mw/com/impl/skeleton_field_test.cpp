@@ -36,6 +36,19 @@ namespace
 
 using TestSampleType = std::uint8_t;
 
+// SFINAE helper to check if RegisterSetHandler is available with "WithSetter" tag.
+template <typename, typename = void>
+struct has_register_set_handler : std::false_type
+{
+};
+template <typename T>
+struct has_register_set_handler<T,
+                                std::void_t<decltype(std::declval<T&>().RegisterSetHandler(
+                                    std::declval<score::cpp::callback<void(typename T::FieldType&)>>()))>>
+    : std::true_type
+{
+};
+
 using SkeletonEventTracingData = tracing::SkeletonEventTracingData;
 
 using ::testing::_;
@@ -66,7 +79,8 @@ class MyDummySkeleton : public SkeletonBase
   public:
     using SkeletonBase::SkeletonBase;
 
-    SkeletonField<TestSampleType> my_dummy_field_{*this, kFieldName};
+    // WithSetter is intentionally absent here since setter-related behaviour is tested via MySetterSkeleton below.
+    SkeletonField<TestSampleType, WithGetter, WithNotifier> my_dummy_field_{*this, kFieldName};
 };
 
 class SkeletonFieldTestFixture : public ::testing::Test
@@ -135,14 +149,20 @@ TEST(SkeletonFieldTest, NotCopyable)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    static_assert(!std::is_copy_constructible<SkeletonField<TestSampleType>>::value, "Is wrongly copyable");
-    static_assert(!std::is_copy_assignable<SkeletonField<TestSampleType>>::value, "Is wrongly copyable");
+    static_assert(
+        !std::is_copy_constructible<SkeletonField<TestSampleType, WithGetter, WithNotifier, WithSetter>>::value,
+        "Is wrongly copyable");
+    static_assert(!std::is_copy_assignable<SkeletonField<TestSampleType, WithGetter, WithNotifier, WithSetter>>::value,
+                  "Is wrongly copyable");
 }
 
 TEST(SkeletonFieldTest, IsMoveable)
 {
-    static_assert(std::is_move_constructible<SkeletonField<TestSampleType>>::value, "Is not move constructible");
-    static_assert(std::is_move_assignable<SkeletonField<TestSampleType>>::value, "Is not move assignable");
+    static_assert(
+        std::is_move_constructible<SkeletonField<TestSampleType, WithGetter, WithNotifier, WithSetter>>::value,
+        "Is not move constructible");
+    static_assert(std::is_move_assignable<SkeletonField<TestSampleType, WithGetter, WithNotifier, WithSetter>>::value,
+                  "Is not move assignable");
 }
 
 TEST(SkeletonFieldTest, ClassTypeDependsOnFieldDataType)
@@ -168,7 +188,8 @@ TEST(SkeletonFieldTest, SkeletonFieldContainsPublicSampleType)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    static_assert(std::is_same<typename SkeletonField<TestSampleType>::FieldType, TestSampleType>::value,
+    static_assert(std::is_same<typename SkeletonField<TestSampleType, WithGetter, WithNotifier, WithSetter>::FieldType,
+                               TestSampleType>::value,
                   "Incorrect FieldType.");
 }
 
@@ -677,6 +698,13 @@ TEST(SkeletonFieldInitialValueTest, MoveAssigningFieldBeforePrepareOfferWillKeep
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
 
     SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
+    SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard{};
+
+    mock_binding::SkeletonMethod skeleton_method_mock{};
+    ON_CALL(skeleton_method_binding_factory_mock_guard.factory_mock_, Create(_, _, _, _))
+        .WillByDefault(InvokeWithoutArgs([&skeleton_method_mock]() {
+            return std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_mock);
+        }));
 
     // Expecting that a SkeletonField binding is created
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
@@ -832,32 +860,31 @@ TEST_F(SkeletonFieldDeathTest, UpdateWithInvalidFieldNameTriggersTermination)
     EXPECT_DEATH(SkeletonBaseView{unit}.UpdateField("non_existing_test_field_name", field);, ".*");
 }
 
-// Helper skeleton that holds an EnableSet=true field (setter-capable field)
+// Helper skeleton that holds a SkeletonField with all three tags.
 class MySetterSkeleton : public SkeletonBase
 {
   public:
     using SkeletonBase::SkeletonBase;
 
-    SkeletonField<TestSampleType, /*EnableSet=*/true> my_setter_field_{*this, kFieldName};
+    SkeletonField<TestSampleType, WithGetter, WithSetter, WithNotifier> my_setter_field_{*this, kFieldName};
 };
 
-TEST(SkeletonFieldSetHandlerTypeTraitsTest, RegisterSetHandlerOnlyExistsWhenEnableSetIsTrue)
+TEST(SkeletonFieldSetHandlerTypeTraitsTest, RegisterSetHandlerOnlyExistsWhenWithSetterTagPresent)
 {
     RecordProperty("Description",
-                   "RegisterSetHandler() shall only exist on SkeletonField<T, EnableSet=true>. "
-                   "Verify via has_member detection that it is absent when EnableSet=false.");
+                   "RegisterSetHandler() shall only exist on SkeletonField specializations whose tag pack "
+                   "contains WithSetter. Verify via SFINAE detection that it is absent without WithSetter.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // RegisterSetHandler should be callable on EnableSet=true
-    static_assert(std::is_same_v<SkeletonField<TestSampleType, true>::FieldType, TestSampleType>,
-                  "Setter-capable field must expose FieldType");
+    using SetterField = SkeletonField<TestSampleType, WithSetter, WithNotifier, WithGetter>;
+    using NoSetterField = SkeletonField<TestSampleType, WithNotifier, WithGetter>;
 
-    // EnableSet=false field must not expose SetHandlerType at the member function level. We verify
-    // indirectly that the EnableSet template parameter distinguishes the types.
-    static_assert(!std::is_same_v<SkeletonField<TestSampleType, false>, SkeletonField<TestSampleType, true>>,
-                  "EnableSet=false and EnableSet=true fields must be different types");
+    static_assert(has_register_set_handler<SetterField>::value,
+                  "RegisterSetHandler must exist on a SkeletonField with WithSetter in the tag pack");
+    static_assert(!has_register_set_handler<NoSetterField>::value,
+                  "RegisterSetHandler must be SFINAE-removed on a SkeletonField without WithSetter");
 }
 
 using SkeletonFieldSetHandlerTest = SkeletonFieldTestFixture;
@@ -930,7 +957,7 @@ TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsAfterRegisterSetHandler)
     EXPECT_TRUE(result.has_value());
 }
 
-TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenEnableSetIsFalse)
+TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenWithSetterTagIsAbsent)
 {
     // Given a skeleton containing a field without a setter enabled
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};

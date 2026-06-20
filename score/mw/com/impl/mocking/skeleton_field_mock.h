@@ -20,7 +20,7 @@
 namespace score::mw::com::impl
 {
 
-template <typename SampleType>
+template <typename SampleType, typename... Tags>
 class SkeletonFieldMock : public ISkeletonField<SampleType>
 {
   public:
