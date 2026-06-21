@@ -33,7 +33,6 @@ struct DummyStruct
 };
 
 constexpr std::size_t kMaxSlots{5U};
-constexpr std::size_t kMaxSubscribers{5U};
 
 class SampleAllocateePtrFixture : public ::testing::Test
 {

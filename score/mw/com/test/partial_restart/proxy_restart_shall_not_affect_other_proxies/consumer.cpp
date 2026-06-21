@@ -36,9 +36,6 @@ constexpr auto kInstanceSpecifierString{"partial_restart/small_but_great"};
 const auto kInstanceSpecifier =
     score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifierString}).value();
 const std::chrono::seconds kMaxHandleNotificationWaitTime{15U};
-// uid 1312, 1313 is reserved for use. See broken_link_cf/display/ipnext/User+Management
-const uid_t kUidFirstConsumer{1312};
-const uid_t kUidSecondConsumer{1313};
 
 bool StartFindServiceAndWait(const std::string& tag,
                              HandleNotificationData& handle_notification_data,
