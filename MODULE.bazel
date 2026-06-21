@@ -214,7 +214,7 @@ apt.install(
 apt.lock(into = ":rules_distroless.lock.json")
 use_repo(apt, "ubuntu24_04_integration_testing", "ubuntu24_04_sysroot")
 
-bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
+bazel_dep(name = "toolchains_llvm", version = "1.8.0", dev_dependency = True)
 
 llvm = use_extension(
     "@toolchains_llvm//toolchain/extensions:llvm.bzl",

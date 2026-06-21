@@ -39,7 +39,6 @@ using ::testing::_;
 using ::testing::Return;
 
 constexpr std::size_t kMaxSlots{5U};
-constexpr std::size_t kMaxSubscribers{5U};
 
 constexpr auto kSlotIsInWriting = std::numeric_limits<EventSlotStatus::SubscriberCount>::max();
 

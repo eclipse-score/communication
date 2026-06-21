@@ -637,8 +637,7 @@ TEST_F(TransactionLogSetRegisterFixture, RegisterUnregisterMultipleTransactionLo
     // again.
     for (std::size_t thread_idx = 0; thread_idx < thread_count; ++thread_idx)
     {
-        threads.emplace_back([this,
-                              &unit,
+        threads.emplace_back([&unit,
                               thread_number = TransactionLogIndex(thread_idx + 1U),
                               &consumer_event_data_control_locals,
                               thread_idx]() noexcept {
