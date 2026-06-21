@@ -25,7 +25,7 @@ bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
 
 # Cannot be dev-dependency due to being required in "load" statements
-bazel_dep(name = "score_qnx_unit_tests", version = "0.1.0")
+bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
 bazel_dep(name = "score_baselibs", version = "0.2.7")
 git_override(
     module_name = "score_baselibs",
@@ -81,7 +81,7 @@ gcc_toolchains.toolchain(
 )
 use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
 
-bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.1", dev_dependency = True)
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.4", dev_dependency = True)
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
 score_gcc.toolchain(
@@ -102,7 +102,7 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
-    sdp_version = "8.0.3",
+    sdp_version = "8.0.4",
     target_cpu = "x86_64",
     target_os = "qnx",
     use_default_package = True,
@@ -110,7 +110,7 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
-    sdp_version = "8.0.3",
+    sdp_version = "8.0.4",
     target_cpu = "aarch64",
     target_os = "qnx",
     use_default_package = True,
