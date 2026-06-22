@@ -30,8 +30,7 @@ def test_generic_typed_interaction_64_byte(target):
     config_path = "./etc/mw_com_config.json"
 
     logger.info(f"Starting provider: {app_bin} in {app_root}")
-    # Added enforce_clean_shutdown=False and disabled LSAN so forceful shutdown doesn't fail the test
-    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root, enforce_clean_shutdown=False, env={"ASAN_OPTIONS": "detect_leaks=0"}):
+    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root):
         # Give the provider a moment to initialize and offer the service
         # to prevent a race condition where the consumer starts too quickly.
         time.sleep(2)
@@ -51,7 +50,7 @@ def test_generic_typed_interaction_32_byte(target):
     config_path = "./etc/mw_com_config.json"
 
     logger.info(f"Starting provider: {app_bin} in {app_root}")
-    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root, enforce_clean_shutdown=False, env={"ASAN_OPTIONS": "detect_leaks=0"}):
+    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root):
         time.sleep(2)
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")
@@ -68,7 +67,7 @@ def test_generic_typed_interaction_16_byte(target):
     config_path = "./etc/mw_com_config.json"
 
     logger.info(f"Starting provider: {app_bin} in {app_root}")
-    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root, enforce_clean_shutdown=False, env={"ASAN_OPTIONS": "detect_leaks=0"}):
+    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root):
         time.sleep(2)
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")
@@ -85,7 +84,7 @@ def test_generic_typed_interaction_8_byte(target):
     config_path = "./etc/mw_com_config.json"
 
     logger.info(f"Starting provider: {app_bin} in {app_root}")
-    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root, enforce_clean_shutdown=False, env={"ASAN_OPTIONS": "detect_leaks=0"}):
+    with run_interaction_app(target, app_bin, "provider", config_path, cwd=app_root):
         time.sleep(2)
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")
