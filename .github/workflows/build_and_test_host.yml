@@ -106,7 +106,7 @@ jobs:
             cache-optimized: true
             cache-save: ${{ github.ref == 'refs/heads/main' }}
         - name: Allow linux-sandbox
-          uses: ./actions/unblock_user_namespace_for_linux_sandbox
+          uses: eclipse-score/cicd-actions/unblock-user-namespace-for-linux-sandbox@f89865691445b60e9229c36adb1c37b675e1ca85
         - name: Bazel build communication targets
           run: |
             bazel build ${{ matrix.config }} //...
