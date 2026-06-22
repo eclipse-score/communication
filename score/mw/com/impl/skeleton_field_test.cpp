@@ -1132,19 +1132,35 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerCallsSendWithValueModifi
     captured_set_handler_.value()(in_span, out_span);
 }
 
-TEST_F(SkeletonFieldSetHandlerTest, CallingPrepareOfferWithoutRegisteringSetHandlerReturnsError)
+TEST_F(SkeletonFieldSetHandlerTest, PassingReferenceToHandlerUpdatesStateInPlace)
 {
-    GivenASkeletonWithSetterEnabled();
+    static constexpr int kInitialValue = 42;
+    static constexpr int kModifiedValue = 43;
 
-    // and given an initial value was set so that the initial-value check does not fail
-    EXPECT_TRUE(unit_->my_setter_field_.Update(TestSampleType{42}).has_value());
+    GivenASkeletonWithSetterEnabled().WhichCapturesASetHandler();
 
-    // When PrepareOffer is called without having called RegisterSetHandler
-    const auto result = unit_->my_setter_field_.PrepareOffer();
+    // and given that a set handler was registered which modifies its internal state when called
+    class DummyMethodFunctor
+    {
+      public:
+        void operator()(TestSampleType& /*value*/)
+        {
+            i_ = kModifiedValue;
+        }
 
-    // Then it returns kSetHandlerNotSet
-    ASSERT_FALSE(result.has_value());
-    EXPECT_EQ(result.error(), ComErrc::kSetHandlerNotSet);
+        int i_{kInitialValue};
+    };
+    DummyMethodFunctor test_functor{};
+    ASSERT_TRUE(unit_->my_setter_field_.RegisterSetHandler(test_functor).has_value());
+
+    WhichIsOffered();
+
+    // When calling the set handler that was captured by the method binding
+    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
+    captured_set_handler_.value()(in_span, out_span);
+
+    // Then the state of the functor is updated in place when the handler is called by the binding
+    EXPECT_EQ(test_functor.i_, kModifiedValue);
 }
 
 using SkeletonFieldMoveConstructionFixture = SkeletonFieldSetHandlerTest;
