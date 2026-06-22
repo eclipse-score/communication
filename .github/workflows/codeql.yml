@@ -58,13 +58,6 @@ jobs:
       - name: Allow linux-sandbox
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
-      - name: Stub out ARM-only dependencies unavailable in CI
-        run: |
-          mkdir -p /tmp/ape_stub
-          touch /tmp/ape_stub/BUILD.bazel
-          touch /tmp/ape_stub/WORKSPACE
-          echo "common --override_repository=ape+=/tmp/ape_stub" >> user.bazelrc
-
       - name: Create CodeQL database
         run: |
           bazel run //quality/static_analysis:codeql_lint -- \

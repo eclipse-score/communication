@@ -99,13 +99,6 @@ jobs:
         id: setup
         uses: ./actions/unblock_user_namespace_for_linux_sandbox
 
-      - name: Stub out ARM-only dependencies unavailable in CI
-        run: |
-          mkdir -p /tmp/ape_stub
-          touch /tmp/ape_stub/BUILD.bazel
-          touch /tmp/ape_stub/WORKSPACE
-          echo "common --override_repository=ape+=/tmp/ape_stub" >> user.bazelrc
-
       # ------------------------------------------------------------------
       # Download Coverage artifacts (only if the upstream job succeeded)
       # ------------------------------------------------------------------
