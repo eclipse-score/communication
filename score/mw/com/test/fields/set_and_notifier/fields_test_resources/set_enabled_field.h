@@ -26,7 +26,7 @@ class SetEnabledInterface : public T::Base
   public:
     using T::Base::Base;
 
-    typename T::template Field<std::int32_t, false, true> set_enabled_field{*this, "set_enabled_field"};
+    typename T::template Field<std::int32_t, WithSetter, WithNotifier> set_enabled_field{*this, "set_enabled_field"};
 };
 
 using SetEnabledProxy = score::mw::com::AsProxy<SetEnabledInterface>;

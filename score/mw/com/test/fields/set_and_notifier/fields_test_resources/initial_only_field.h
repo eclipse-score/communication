@@ -26,7 +26,7 @@ class InitialOnlyInterface : public T::Base
   public:
     using T::Base::Base;
 
-    typename T::template Field<std::int32_t> initial_only_field{*this, "initial_only_field"};
+    typename T::template Field<std::int32_t, WithNotifier> initial_only_field{*this, "initial_only_field"};
 };
 
 using InitialOnlyProxy = score::mw::com::AsProxy<InitialOnlyInterface>;
