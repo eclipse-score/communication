@@ -77,43 +77,31 @@
 <p class="muted" style="margin-bottom:1.5rem">No clang-tidy data available.</p>
 {% endif %}
 
-{# ── Per-file coverage table ── #}
-<h2>Per-File Coverage</h2>
-{% if cov_files %}
-<table>
-  <thead>
-    <tr>
-      <th>File</th>
-      <th onclick="cvSort(1)">Lines &#8597;</th>
-      <th onclick="cvSort(2)">Functions &#8597;</th>
-      <th onclick="cvSort(3)">Branches &#8597;</th>
-      <th>Lines (hit/total)</th>
-    </tr>
-  </thead>
-  <tbody id="cv-tbody">
-    {% for f in cov_files %}
-    <tr>
-      <td class="mono">{{ f.file|basename }}</td>
-      <td data-val="{{ f.line_pct }}">
-        <div class="cov-bar-wrap"><div class="cov-bar" style="width:{{ [f.line_pct,100]|min }}%;background:{{ cov_colour(f.line_pct) }}"></div></div>
-        <span style="color:{{ cov_colour(f.line_pct) }};font-weight:600">{{ '%.1f'|format(f.line_pct) }}%</span>
-      </td>
-      <td data-val="{{ f.func_pct }}">
-        <div class="cov-bar-wrap"><div class="cov-bar" style="width:{{ [f.func_pct,100]|min }}%;background:{{ cov_colour(f.func_pct) }}"></div></div>
-        <span style="color:{{ cov_colour(f.func_pct) }};font-weight:600">{{ '%.1f'|format(f.func_pct) }}%</span>
-      </td>
-      <td data-val="{{ f.branch_pct }}">
-        <div class="cov-bar-wrap"><div class="cov-bar" style="width:{{ [f.branch_pct,100]|min }}%;background:{{ cov_colour(f.branch_pct) }}"></div></div>
-        <span style="color:{{ cov_colour(f.branch_pct) }};font-weight:600">{{ '%.1f'|format(f.branch_pct) }}%</span>
-      </td>
-      <td class="mono muted">{{ f.lh }}/{{ f.lf }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+{# ── CodeQL summary cards ── #}
+<h2>CodeQL</h2>
+{% if codeql %}
+<div class="cards">
+  <div class="card">
+    <div class="num" style="color:{% if (codeql.errors + codeql.recommendations) == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ codeql.errors + codeql.recommendations }}</div>
+    {% if prev and prev.codeql_errors is not none %}<div class="delta">{{ delta(codeql.errors + codeql.recommendations, prev.codeql_errors, false) }}</div>{% endif %}
+    <div class="label">Errors</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:{% if codeql.warnings == 0 %}#27ae60{% else %}#e67e22{% endif %}">{{ codeql.warnings }}</div>
+    {% if prev and prev.codeql_warnings is not none %}<div class="delta">{{ delta(codeql.warnings, prev.codeql_warnings, false) }}</div>{% endif %}
+    <div class="label">Warnings</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:var(--muted)">{{ codeql.total }}</div>
+    {% if prev and prev.codeql_total is not none %}<div class="delta">{{ delta(codeql.total, prev.codeql_total, false) }}</div>{% endif %}
+    <div class="label">Total Findings</div>
+  </div>
+</div>
 {% else %}
-<p class="empty-msg">No per-file coverage data available.</p>
+<p class="muted" style="margin-bottom:1.5rem">No CodeQL data available.</p>
 {% endif %}
+
+
 
 {# ── KPI Trends ── #}
 {% if history|length >= 2 %}
@@ -149,7 +137,7 @@
 <h2>Run History</h2>
 <table>
   <thead>
-    <tr><th>Date</th><th>Line Cov</th><th>Function Cov</th><th>Branch Cov</th><th>CT Errors</th><th>CT Warnings</th></tr>
+    <tr><th>Date</th><th>Line Cov</th><th>Function Cov</th><th>Branch Cov</th><th>CT Errors</th><th>CT Warnings</th><th>CQ Errors</th><th>CQ Warnings</th><th>CQ Total</th></tr>
   </thead>
   <tbody>
     {% for snap in history|reverse %}
@@ -174,21 +162,19 @@
         {% else %}N/A{% endif %}
       </td>
       {% endfor %}
+      {% for key, higher_better in [('codeql_errors', false), ('codeql_warnings', false), ('codeql_total', false)] %}
+      <td>
+        {% if snap[key] is not none %}
+          <span style="color:{% if snap[key] == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ snap[key] }}</span>
+          {% if ps and ps[key] is not none %} {{ delta(snap[key], ps[key], higher_better) }}{% endif %}
+        {% else %}N/A{% endif %}
+      </td>
+      {% endfor %}
     </tr>
     {% endfor %}
   </tbody>
 </table>
 {% endif %}
 
-<script>
-let cvDir = 1;
-function cvSort(c) {
-  const tb = document.getElementById('cv-tbody');
-  [...tb.querySelectorAll('tr')]
-    .sort((a, b) => (parseFloat(a.cells[c]?.dataset.val || 0) - parseFloat(b.cells[c]?.dataset.val || 0)) * cvDir)
-    .forEach(r => tb.appendChild(r));
-  cvDir *= -1;
-}
-</script>
 </body>
 </html>

@@ -16,9 +16,10 @@
 # Runs every night at midnight UTC:
 #   - Coverage  : full C++ test suite with gcov/lcov → HTML report
 #   - Clang-Tidy: static analysis across all C++ targets → findings text file
+#   - CodeQL    : MISRA C++ compliance analysis → CSV findings
 #
-# After both jobs complete, deploy-quality-reports:
-#   1. Downloads the coverage HTML artifact and the clang-tidy findings artifact
+# After all jobs complete, deploy-quality-reports:
+#   1. Downloads the coverage HTML artifact, clang-tidy findings, and CodeQL CSV
 #   2. Runs `bazel run //quality/dashboard:generate_dashboard` to produce the KPI dashboard
 #   3. Uploads everything as nightly-quality-reports artifact for docs.yml to deploy
 #
@@ -26,6 +27,7 @@
 #   https://eclipse-score.github.io/communication/latest/quality/index.html               ← dashboard
 #   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html      ← lcov HTML
 #   https://eclipse-score.github.io/communication/latest/quality/clang_tidy_findings.txt  ← raw findings
+#   https://eclipse-score.github.io/communication/latest/quality/codeql/index.html       ← CodeQL report
 
 name: Nightly Quality Jobs
 
@@ -62,10 +64,19 @@ jobs:
       actions: write
 
   # --------------------------------------------------------------------
+  # Quality job 3: CodeQL
+  # --------------------------------------------------------------------
+  run-codeql:
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  # --------------------------------------------------------------------
   # Collect results, build the dashboard, upload artifact for docs.yml
   # --------------------------------------------------------------------
   deploy-quality-reports:
-    needs: [run-coverage, run-clang-tidy]
+    needs: [run-coverage, run-clang-tidy, run-codeql]
     # Always run even if individual quality jobs fail, so the dashboard
     # still reflects which jobs passed and which failed.
     if: always()
@@ -134,6 +145,28 @@ jobs:
           fi
 
       # ------------------------------------------------------------------
+      # Download CodeQL CSV artifact
+      # ------------------------------------------------------------------
+      - name: Download CodeQL CSV artifact
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-codeql.outputs.artifact-name }}
+          path: /tmp/codeql
+
+      - name: Copy CodeQL CSV into quality output
+        if: always()
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/_quality"
+          if [[ -f /tmp/codeql/codeql-nightly.csv ]]; then
+            cp /tmp/codeql/codeql-nightly.csv \
+               "${GITHUB_WORKSPACE}/_quality/codeql_findings.txt"
+          else
+            echo "::warning::codeql-nightly.csv not found; skipping copy."
+          fi
+
+      # ------------------------------------------------------------------
       # Generate coverage KPI dashboard via generate_dashboard py_binary
       # ------------------------------------------------------------------
       - name: Generate quality dashboard
@@ -144,6 +177,7 @@ jobs:
           bazel run //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
             --clang-tidy /tmp/clang_tidy/clang_tidy_findings.txt \
+            --codeql-csv "${GITHUB_WORKSPACE}/_quality/codeql_findings.txt" \
             --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
             --github-summary
 
