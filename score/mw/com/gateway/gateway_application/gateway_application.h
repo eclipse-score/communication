@@ -53,7 +53,7 @@ class GatewayApplication : public GatewayCore
     score::Result<void> Start();
 
     score::Result<void> ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                       std::vector<ServiceElementConfiguration> service_elements) override;
+                                       std::vector<impl::EventInfo> service_elements) override;
     void StopOfferService(impl::InstanceSpecifier service_instance_specifier) override;
     score::Result<void> OfferService(impl::InstanceSpecifier service_instance_specifier) override;
     score::Result<void> RegisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,

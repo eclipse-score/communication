@@ -28,7 +28,7 @@ class TransportMock : public Transport
     MOCK_METHOD(void, Shutdown, (), (override));
     MOCK_METHOD(score::Result<void>,
                 ProvideService,
-                (impl::InstanceSpecifier, std::vector<ServiceElementConfiguration>),
+                (impl::InstanceSpecifier, std::vector<impl::EventInfo>),
                 (override));
     MOCK_METHOD(score::Result<void>, StopOfferService, (impl::InstanceSpecifier), (override));
     MOCK_METHOD(score::Result<void>, OfferService, (impl::InstanceSpecifier), (override));
