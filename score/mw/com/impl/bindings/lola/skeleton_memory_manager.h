@@ -106,7 +106,7 @@ class SkeletonMemoryManager final
     /// \param element_properties Properties of the event.
     /// \param sample_size The size of a single data sample.
     /// \param sample_alignment The alignment of the data sample.
-    /// \return A pair containing the data storage pointer (void*) and the control composite.
+    /// \return A raw pointer to the first byte of the generic event sample storage.
     auto CreateGenericEventDataInCreatedSharedMemory(const ElementFqId element_fq_id,
                                                      const SkeletonEventProperties& element_properties,
                                                      size_t sample_size,
@@ -126,6 +126,14 @@ class SkeletonMemoryManager final
     /// OpenExistingSharedMemory.
     template <typename SampleType>
     auto RetrieveEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id) -> EventDataStorage<SampleType>&;
+
+    /// \brief Retrieves the raw event sample storage pointer for a generic event from opened shared memory.
+    ///
+    /// Generic events use EventMetaInfo as the stable type-erased contract. No interpretation to a
+    /// DynamicArray<SampleType> takes place in this case.
+    auto RetrieveGenericEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
+                                                        const SkeletonEventProperties& element_properties) noexcept
+        -> void*;
 
     /// \brief Rolls back any existing operations in the TransactionLog corresponding to a SkeletonEvent
     ///

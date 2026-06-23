@@ -601,8 +601,9 @@ auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
             }
         }
 
-        auto& event_data_storage = memory_manager_.RetrieveEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);
-        return {static_cast<void*>(&event_data_storage), event_data_control_qm, event_data_control_asil_b};
+        auto* const event_data_storage =
+            memory_manager_.RetrieveGenericEventDataFromOpenedSharedMemory(element_fq_id, element_properties);
+        return {event_data_storage, event_data_control_qm, event_data_control_asil_b};
     }
 
     auto* const type_erased_event_data_storage = memory_manager_.CreateGenericEventDataInCreatedSharedMemory(

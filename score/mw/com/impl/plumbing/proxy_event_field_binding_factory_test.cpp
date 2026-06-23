@@ -37,7 +37,11 @@ namespace score::mw::com::impl
 
 using namespace ::testing;
 
-using TestSampleType = std::uint8_t;
+// TestSampleType must have the same size and alignment as lola::ProxyMockedMemoryFixture::SampleType.
+// The fixture derives EventMetaInfo (element size and alignment) from its EventDataStorage<SampleType>,
+// and ProxyEvent<T> validates sizeof(T) and alignof(T) against that EventMetaInfo at construction time.
+// Using a type with different size or alignment would trigger a precondition failure.
+using TestSampleType = lola::ProxyMockedMemoryFixture::SampleType;
 
 constexpr auto kDummyEventName{"Event1"};
 constexpr auto kDummyFieldName{"Field1"};

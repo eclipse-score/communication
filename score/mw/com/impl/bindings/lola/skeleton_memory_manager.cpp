@@ -22,6 +22,7 @@
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/new_delete_delegate_resource.h"
 #include "score/memory/shared/shared_memory_factory.h"
@@ -232,7 +233,30 @@ void* SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory(
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
                                                 "Couldn't register/emplace event-meta-info in data-section.");
 
-    return data_storage;
+    return event_data_raw_array;
+}
+
+void* SkeletonMemoryManager::RetrieveGenericEventDataFromOpenedSharedMemory(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties) noexcept
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(storage_ != nullptr, "Service data storage is not available.");
+
+    const auto event_meta_info_it = storage_->events_metainfo_.find(element_fq_id);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_meta_info_it != storage_->events_metainfo_.cend(),
+                                                "Could not find element fq id in meta info map");
+
+    const auto sample_size = event_meta_info_it->second.data_type_info_.size;
+    const auto sample_alignment = event_meta_info_it->second.data_type_info_.alignment;
+    const auto aligned_sample_size =
+        memory::shared::CalculateAlignedSize(sample_size, static_cast<std::size_t>(sample_alignment));
+    const auto total_event_slots_size = safe_math::Multiply<safe_math::ReturnMode::kAbortOnError>(
+        aligned_sample_size, element_properties.number_of_slots);
+
+    void* const event_slots_raw_array = event_meta_info_it->second.event_slots_raw_array_.get(total_event_slots_size);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_slots_raw_array != nullptr,
+                                                "Could not get generic EventDataStorage raw array");
+    return event_slots_raw_array;
 }
 
 auto SkeletonMemoryManager::RetrieveEventControlsFromOpenedSharedMemory(const ElementFqId element_fq_id)
