@@ -960,17 +960,16 @@ where
                 + 'static,
         > = discovery_callback;
 
-        // SAFETY: it is safe to transmute the closure to a FatPtr because it has
-        // the same representation in memory as a FnMut fat pointer
-        let fat_ptr: FatPtr = unsafe { std::mem::transmute(dyn_callback) };
+        // SAFETY: dyn_callback has the signature FnMut(HandleContainer, NativeFindServiceHandle)
+        // which matches the find-service callback contract required by FindServiceCallable.
+        let callable = unsafe { FindServiceCallable::new(std::mem::transmute(dyn_callback)) };
 
         let bridge = self.bridge.clone();
         let find_service_result = instance_specifier_lola.and_then(|spec| {
-            // SAFETY: start_find_service is safe because fat_ptr is valid and
-            // instance specifier is valid. The returned handle is stored
-            // synchronously — before any async polling — guaranteeing
+            // start_find_service is safe: the callback invariant is encoded in FindServiceCallable.
+            // The returned handle is stored synchronously — before any async polling — guaranteeing
             // stop_find_service is always called in Drop.
-            let raw_handle = unsafe { bridge.start_find_service(&fat_ptr, spec) };
+            let raw_handle = bridge.start_find_service(&callable, spec);
             if raw_handle.is_null() {
                 Err(Error::ServiceError(
                     ServiceFailedReason::FailedToStartDiscovery,

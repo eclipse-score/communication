@@ -256,13 +256,12 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// `get_event_from_proxy`. `event_type` must match the type used when the handler was set.
     unsafe fn clear_event_receive_handler(&self, proxy_event_ptr: *mut ProxyEventBase);
 
-    /// # Safety
-    /// `callback` must be a valid `FatPtr` referencing a callable compatible with the
-    /// find-service callback signature. `instance_spec` must be a valid `InstanceSpecifier`.
+    /// Starts asynchronous service discovery. The `callback` invariant is encoded in
+    /// `FindServiceCallable, check its `unsafe` constructor for the full contract.
     /// The returned handle must eventually be passed to `stop_find_service`.
-    unsafe fn start_find_service(
+    fn start_find_service(
         &self,
-        callback: &FatPtr,
+        callback: &FindServiceCallable,
         instance_spec: InstanceSpecifier,
     ) -> *mut FindServiceHandle;
 
@@ -300,6 +299,33 @@ pub struct SkeletonBase {
 #[repr(C)]
 pub struct FindServiceHandle {
     dummy: [u8; 0],
+}
+
+/// A type-safe wrapper around a `FatPtr` that has been verified to represent a valid
+/// find-service callback (`FnMut(HandleContainer, NativeFindServiceHandle)`).
+///
+/// Constructing this type is `unsafe`, once constructed, passing it to
+/// `FFIBridge::start_find_service` is safe because the invariant is encoded here.
+pub struct FindServiceCallable {
+    inner: FatPtr,
+}
+
+impl FindServiceCallable {
+    /// Wraps `fat_ptr` in a `FindServiceCallable`.
+    ///
+    /// # Safety
+    /// `fat_ptr` must be a valid, whose underlying closure has the signature
+    /// `FnMut(HandleContainer, NativeFindServiceHandle)` and must remain valid for
+    /// as long as the returned `FindServiceCallable` (and the find-service operation
+    /// registered with it) is alive.
+    pub unsafe fn new(fat_ptr: FatPtr) -> Self {
+        Self { inner: fat_ptr }
+    }
+
+    /// Returns a reference to the inner `FatPtr`.
+    pub fn as_fat_ptr(&self) -> &FatPtr {
+        &self.inner
+    }
 }
 
 /// This struct wraps the raw pointer to FindServiceHandle returned

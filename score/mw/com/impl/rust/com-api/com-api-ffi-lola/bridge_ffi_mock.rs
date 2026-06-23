@@ -71,8 +71,9 @@
 //! This mock back-end is used for unit testing of Lola-Runtime.
 
 use bridge_ffi_rs::{
-    FatPtr, FindServiceHandle, HandleType, InstanceSpecifier, NativeInstanceSpecifier, ProxyBase,
-    ProxyEventBase, SkeletonBase, SkeletonEventBase, TypeOperationsManager,
+    FatPtr, FindServiceCallable, FindServiceHandle, HandleType, InstanceSpecifier,
+    NativeInstanceSpecifier, ProxyBase, ProxyEventBase, SkeletonBase, SkeletonEventBase,
+    TypeOperationsManager,
 };
 use mockall::mock;
 
@@ -182,9 +183,9 @@ mock! {
             proxy_event_ptr: *mut ProxyEventBase,
         );
 
-        unsafe fn start_find_service(
+        fn start_find_service(
             &self,
-            callback: &FatPtr,
+            callback: &FindServiceCallable,
             instance_spec: InstanceSpecifier,
         ) -> *mut FindServiceHandle;
 
@@ -414,13 +415,12 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         unsafe { self.locked().clear_event_receive_handler(event_ptr) }
     }
 
-    unsafe fn start_find_service(
+    fn start_find_service(
         &self,
-        callback: &FatPtr,
+        callback: &FindServiceCallable,
         instance_spec: InstanceSpecifier,
     ) -> *mut FindServiceHandle {
-        //Safety: This is just forwarding the call to the inner mock, which is expected to be configured correctly in tests using mockall's expectations.
-        unsafe { self.locked().start_find_service(callback, instance_spec) }
+        self.locked().start_find_service(callback, instance_spec)
     }
 
     unsafe fn stop_find_service(&self, find_service_handle: *mut FindServiceHandle) {

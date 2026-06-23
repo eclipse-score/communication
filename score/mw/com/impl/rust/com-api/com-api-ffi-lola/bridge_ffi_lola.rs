@@ -42,8 +42,13 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_sample(
     // The caller must ensure the lifetime of the closure outlives this call.
     let callable: &mut dyn FnMut(*mut std::ffi::c_void) = unsafe { std::mem::transmute(*ptr) };
 
-    // Invoke the closure with the void* sample pointer
-    callable(sample_ptr);
+    // Invoke the closure with the void* sample pointer.
+    // catch_unwind prevents a Rust panic from unwinding across the C++ stack boundary.
+    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callable(sample_ptr))).is_err() {
+        // LOG the error here, Once logging mechanism is available.
+        // Abort to prevent unwinding across FFI boundary
+        std::process::abort();
+    }
 }
 
 /// Rust closure invocation for C++ callbacks for FindService
@@ -71,11 +76,20 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_find_service(
     let callable: &mut dyn FnMut(HandleContainer, NativeFindServiceHandle) =
         unsafe { std::mem::transmute(*ptr) };
 
-    // Invoke with correct types
-    callable(
-        HandleContainer::new(service_handles),
-        NativeFindServiceHandle::new(find_service_handle),
-    );
+    // Invoke with correct types.
+    // catch_unwind prevents a Rust panic from unwinding across the C++ stack boundary.
+    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        callable(
+            HandleContainer::new(service_handles),
+            NativeFindServiceHandle::new(find_service_handle),
+        )
+    }))
+    .is_err()
+    {
+        // LOG the error here, Once logging mechanism is available.
+        // Abort to prevent unwinding across FFI boundary
+        std::process::abort();
+    }
 }
 
 // FFI declarations for C++ functions implemented in registry_bridge_macro.cpp
@@ -358,6 +372,11 @@ impl FFIBridge for LolaFFIBridge {
     /// event_ptr must point to a valid SkeletonEventBase,
     /// allocatee_ptr must point to valid memory for the allocatee,
     /// and event_type must be a valid UTF-8 string representing the event type.
+    ///
+    /// Note: We cannot use SampleAllocateePtr<T> directly in the FFIBridge trait methods,
+    /// because the underlying extern "C" functions use *mut c_void (C linkage has no generics).
+    /// Type-specific operations are instead delegated to TypeOperationsManager, which resolves
+    /// the concrete type at runtime via the C++ type registry.
     unsafe fn get_allocatee_ptr(
         &self,
         event_ptr: *mut SkeletonEventBase,
@@ -372,7 +391,7 @@ impl FFIBridge for LolaFFIBridge {
     /// Delete allocatee pointer of SampleAllocateePtr<T>
     ///
     /// # Arguments
-    /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
+    /// * `allocatee_ptr` - type erased pointer to SampleAllocateePtr<T>
     /// * `type_ops` - Reference to TypeOperationsManager for the type
     ///
     /// # Safety
@@ -393,7 +412,7 @@ impl FFIBridge for LolaFFIBridge {
     /// Get allocatee data pointer from allocatee of specific type
     ///
     /// # Arguments
-    /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
+    /// * `allocatee_ptr` - type erased pointer to SampleAllocateePtr<T>
     /// * `type_ops` - Reference to TypeOperationsManager for the type
     ///
     /// # Returns
@@ -417,7 +436,7 @@ impl FFIBridge for LolaFFIBridge {
     /// # Arguments
     /// * `event_ptr` - Opaque skeleton event pointer
     /// * `type_ops` - Reference to TypeOperationsManager for the type
-    /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
+    /// * `allocatee_ptr` - type erased pointer to SampleAllocateePtr<T>
     ///
     /// # Returns
     /// True if event was sent successfully, false otherwise
@@ -782,26 +801,22 @@ impl FFIBridge for LolaFFIBridge {
         }
     }
 
-    /// Unsafe wrapper around mw_com_start_find_service
+    /// Wrapper around mw_com_start_find_service
     ///
     /// # Arguments
-    /// * `callback` - FatPtr to callback function to be invoked when services are found
+    /// * `callback` - Valid find-service callable, its invariant is guaranteed by `FindServiceCallable`.
     /// * `instance_spec` - InstanceSpecifier identifying the service instance to find
     ///
     /// # Returns
     /// Opaque handle pointer for the find service operation, or nullptr on failure
-    ///
-    /// # Safety
-    /// callback must be a valid FatPtr referencing a callable compatible with the find service results.
-    /// instance_spec must be a valid InstanceSpecifier for the service to find.
-    unsafe fn start_find_service(
+    fn start_find_service(
         &self,
-        callback: &FatPtr,
+        callback: &FindServiceCallable,
         instance_spec: InstanceSpecifier,
     ) -> *mut FindServiceHandle {
-        // SAFETY: callback and instance_spec are guaranteed to be valid per the caller's contract.
-        // The C++ implementation handles the find service operation and callback invocation safely.
-        unsafe { mw_com_start_find_service(callback, instance_spec.as_native()) }
+        // SAFETY: FindServiceCallable guarantees that the inner FatPtr is a valid callable
+        // compatible with the find-service callback signature.
+        unsafe { mw_com_start_find_service(callback.as_fat_ptr(), instance_spec.as_native()) }
     }
 
     /// Unsafe wrapper around mw_com_stop_find_service
