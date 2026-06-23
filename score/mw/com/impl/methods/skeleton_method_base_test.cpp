@@ -26,6 +26,16 @@
 namespace score::mw::com::impl
 {
 
+// Test helper to access private UpdateSkeletonReference method
+class SkeletonMethodBaseTestHelper
+{
+  public:
+    static void UpdateSkeletonReference(SkeletonMethodBase& method, SkeletonBase& skeleton_base)
+    {
+        method.UpdateSkeletonReference(skeleton_base);
+    }
+};
+
 namespace
 {
 using ::testing::_;
@@ -80,7 +90,7 @@ TEST(SkeletonMethodBase, UpdateSkeletonReferenceUpdatesTheReference)
     EXPECT_EQ(std::addressof(kEmptySkeleton1), std::addressof(skeleton_method->GetSkeletonReference().get()));
 
     // When UpdateSkeletonReference is called with a reference to a new Skeleton base class
-    skeleton_method->UpdateSkeletonReference(kEmptySkeleton2);
+    SkeletonMethodBaseTestHelper::UpdateSkeletonReference(*skeleton_method, kEmptySkeleton2);
 
     // Then the reference in the skeleton method is updated correctly
     EXPECT_EQ(std::addressof(kEmptySkeleton2), std::addressof(skeleton_method->GetSkeletonReference().get()));

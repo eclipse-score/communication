@@ -111,6 +111,7 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     template <typename Callable>
     Result<void> RegisterHandler(Callable&& callback);
 
+  private:
     void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept;
 };
 
