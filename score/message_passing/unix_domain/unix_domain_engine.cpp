@@ -208,7 +208,9 @@ score::cpp::expected_blank<score::os::Error> UnixDomainEngine::SendProtocolMessa
     msg.msg_iov = io.data();
     msg.msg_iovlen = kVectorCount;
 
-    const auto result_expected = os_resources_.socket->sendmsg(fd, &msg, ::score::os::Socket::MessageFlag::kWaitAll);
+    using MessageFlag = ::score::os::Socket::MessageFlag;
+    const auto result_expected =
+        os_resources_.socket->sendmsg(fd, &msg, MessageFlag::kWaitAll | MessageFlag::kNoSignal);
     if (result_expected.has_value())
     {
         return {};
@@ -232,7 +234,8 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Uni
     msg.msg_iov = io.data();
     msg.msg_iovlen = kVectorCount;
 
-    auto size_expected = os_resources_.socket->recvmsg(fd, &msg, ::score::os::Socket::MessageFlag::kWaitAll);
+    using MessageFlag = ::score::os::Socket::MessageFlag;
+    auto size_expected = os_resources_.socket->recvmsg(fd, &msg, MessageFlag::kWaitAll | MessageFlag::kNoSignal);
     if (!size_expected.has_value())
     {
         return score::cpp::make_unexpected(size_expected.error());
@@ -255,7 +258,8 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Uni
     io[0].iov_len = static_cast<std::size_t>(size);
     msg.msg_iovlen = 1UL;
 
-    size_expected = os_resources_.socket->recvmsg(fd, &msg, ::score::os::Socket::MessageFlag::kWaitAll);
+    using MessageFlag = ::score::os::Socket::MessageFlag;
+    size_expected = os_resources_.socket->recvmsg(fd, &msg, MessageFlag::kWaitAll | MessageFlag::kNoSignal);
     if (!size_expected.has_value())
     {
         return score::cpp::make_unexpected(size_expected.error());
