@@ -149,7 +149,7 @@ use_repo(imagefs, "score_qnx_aarch64_ifs_toolchain", "score_qnx_x86_64_ifs_toolc
 bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
 git_override(
     module_name = "rules_distroless",
-    commit = "43dd94fd06e209a0d802a6a8543d42b74c1d8473",
+    commit = "f114b1f878345e623ef84dcda14d275348840199",
     remote = "https://github.com/LittleHuba/rules_distroless.git",
 )
 
@@ -192,7 +192,6 @@ apt.install(
         "noble-security",
         "noble-updates",
     ],
-    unpack = True,
 )
 apt.install(
     dependency_set = "ubuntu24_04_integration_testing",
@@ -211,8 +210,18 @@ apt.install(
         "noble-updates",
     ],
 )
+apt.sysroot(
+    name = "ubuntu24_04_sysroot_amd64",
+    architecture = "amd64",
+    dependency_set = "ubuntu24_04_sysroot",
+)
+apt.sysroot(
+    name = "ubuntu24_04_sysroot_arm64",
+    architecture = "arm64",
+    dependency_set = "ubuntu24_04_sysroot",
+)
 apt.lock(into = ":rules_distroless.lock.json")
-use_repo(apt, "ubuntu24_04_integration_testing", "ubuntu24_04_sysroot")
+use_repo(apt, "ubuntu24_04_integration_testing", "ubuntu24_04_sysroot_amd64", "ubuntu24_04_sysroot_arm64")
 
 bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
 
@@ -246,12 +255,12 @@ llvm.toolchain(
 )
 llvm.sysroot(
     name = "llvm_toolchain",
-    label = "@ubuntu24_04_sysroot//unpack_amd64",
+    label = "@ubuntu24_04_sysroot_amd64//sysroot",
     targets = ["linux-x86_64"],
 )
 llvm.sysroot(
     name = "llvm_toolchain",
-    label = "@ubuntu24_04_sysroot//unpack_arm64",
+    label = "@ubuntu24_04_sysroot_arm64//sysroot",
     targets = ["linux-aarch64"],
 )
 use_repo(llvm, "llvm_toolchain")
