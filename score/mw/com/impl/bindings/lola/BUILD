@@ -1198,6 +1198,20 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "proxy_element_lookup_test",
+    srcs = ["proxy_element_lookup_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":proxy",
+        ":proxy_element_lookup",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_unit_test(
     name = "slot_decrementer_test",
     srcs = ["slot_decrementer_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
