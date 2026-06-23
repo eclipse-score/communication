@@ -27,6 +27,9 @@ class SkeletonMethodBaseView;
 // forward declaration to avoid cyclical dependencies
 class SkeletonBase;
 
+// Test helper - provides access to private methods for testing
+class SkeletonMethodBaseTestHelper;
+
 class SkeletonMethodBase
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
@@ -34,6 +37,8 @@ class SkeletonMethodBase
     // module.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend SkeletonMethodBaseView;
+    friend SkeletonBase;
+    friend class SkeletonMethodBaseTestHelper;
 
   public:
     SkeletonMethodBase(SkeletonBase& skeleton_base,
@@ -55,6 +60,7 @@ class SkeletonMethodBase
     SkeletonMethodBase(SkeletonMethodBase&&) noexcept = default;
     SkeletonMethodBase& operator=(SkeletonMethodBase&&) & noexcept = default;
 
+  private:
     void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept;
 
   protected:

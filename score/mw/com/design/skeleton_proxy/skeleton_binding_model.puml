@@ -91,7 +91,7 @@ abstract class "score::mw::com::impl::SkeletonFieldBase" as SkeletonFieldBase {
     +SkeletonFieldBase(SkeletonBase&, std::string_view field_name, std::unique_ptr<impl::SkeletonEventBase>)
     +PrepareOffer(): Result<void>
     +PrepareStopOffer(): void
-    +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
+    -UpdateSkeletonReference(SkeletonBase& base_skeleton): void
 
     -IsInitialValueSaved(): bool = 0
     -DoDeferredUpdate(): Result<void> = 0

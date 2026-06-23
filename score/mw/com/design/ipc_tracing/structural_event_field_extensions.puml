@@ -27,7 +27,7 @@ class "score::mw::com::impl::SkeletonEventBase" {
   +SkeletonEventBase(std::unique_ptr<SkeletonEventBindingBase> binding)
   +PrepareOffer(): score::Result<void>
   +PrepareStopOffer(): void
-  +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
+  -UpdateSkeletonReference(SkeletonBase& base_skeleton): void
   -binding_: std::unique_ptr<SkeletonEventBindingBase>
   -tracing_data_: SkeletonEventTracing
 }
