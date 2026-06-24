@@ -247,6 +247,8 @@ class SkeletonField : public SkeletonFieldBase
         }
         else
         {
+            std::ignore = parent;
+            std::ignore = field_name;
             return nullptr;
         }
     }
@@ -266,6 +268,8 @@ class SkeletonField : public SkeletonFieldBase
         }
         else
         {
+            std::ignore = parent;
+            std::ignore = field_name;
             return nullptr;
         }
     }
