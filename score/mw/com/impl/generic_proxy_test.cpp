@@ -36,6 +36,8 @@
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 #include "service_element_map_view_factory.h"
 
+#include "score/mw/log/recorder_mock.h"
+
 #include <score/utility.hpp>
 
 #include <gmock/gmock.h>
@@ -419,22 +421,25 @@ TEST_F(GenericProxyFixture, GenericProxyWillLogErrorMessageForEventsProvidedInCo
     ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName2})).WillByDefault(Return(false));
     ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName3})).WillByDefault(Return(true));
 
-    // capture stdout output during Parse() call.
-    testing::internal::CaptureStdout();
+    // Given a log recorder mock to capture log calls
+    score::mw::log::RecorderMock recorder_mock{};
+    score::mw::log::SetLogRecorder(&recorder_mock);
+    const score::mw::log::SlotHandle handle{10};
+    ON_CALL(recorder_mock, StartRecord(::testing::_, score::mw::log::LogLevel::kError))
+        .WillByDefault(::testing::Return(score::cpp::optional<score::mw::log::SlotHandle>{handle}));
+
+    // Then an error should be logged exactly once (only kEventName2 is not provided) with the expected message
+    EXPECT_CALL(recorder_mock, StartRecord(std::string_view{"lola"}, score::mw::log::LogLevel::kError)).Times(1);
+    EXPECT_CALL(recorder_mock,
+                LogStringView(handle,
+                              std::string_view{"GenericProxy: Event provided in the ServiceTypeDeployment could not be "
+                                               "found in shared memory. This is likely a configuration error."}));
 
     // When constructing the generic proxy
-    auto generic_proxy_result = GenericProxy::Create(*handle_);
+    score::cpp::ignore = GenericProxy::Create(*handle_);
 
-    // stop capture and get captured data.
-    std::string log_output = testing::internal::GetCapturedStdout();
-
-    // Then the an error message should be logged
-    const char text_snippet[] =
-        "log error verbose 1 GenericProxy: Event provided in the ServiceTypeDeployment could not be found in shared "
-        "memory. This is likely a configuration error.";
-    auto text_location = log_output.find(text_snippet);
-    EXPECT_TRUE(text_location != log_output.npos);
-    EXPECT_TRUE(log_output.find(text_snippet, text_location) != log_output.npos);
+    // Reset the global recorder to nullptr so that it no longer points to the local recorder_mock.
+    score::mw::log::SetLogRecorder(nullptr);
 }
 
 TEST_F(GenericProxyFixture, MovingGenericProxyLeavesEventMapIntact)

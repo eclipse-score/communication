@@ -1112,6 +1112,7 @@ cc_unit_test(
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
 
