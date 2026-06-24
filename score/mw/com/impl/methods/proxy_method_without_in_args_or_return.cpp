@@ -14,26 +14,6 @@
 
 namespace score::mw::com::impl
 {
-ProxyMethod<void()>::ProxyMethod(ProxyMethod&& other) noexcept : ProxyMethodBase(std::move(other))
-{
-    // Since the address of this method has changed, we need update the address stored in the parent proxy.
-    ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(method_name_, *this);
-}
-
-auto ProxyMethod<void()>::operator=(ProxyMethod&& other) noexcept -> ProxyMethod<void()>&
-{
-    if (this != &other)
-    {
-        ProxyMethodBase::operator=(std::move(other));
-
-        // Since the address of this method has changed, we need update the address stored in the parent proxy.
-        ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(method_name_, *this);
-    }
-    return *this;
-}
-
 score::Result<void> ProxyMethod<void()>::operator()()
 {
     auto queue_position = detail::DetermineNextAvailableQueueSlot(is_return_type_ptr_active_);

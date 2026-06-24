@@ -98,7 +98,7 @@ class ProxyMethodTestFixture : public ::testing::Test
         auto moved_method = methods.find(kMethodName);
 
         EXPECT_NE(moved_method, methods.end());
-        return &moved_method->second.get();
+        return &moved_method->second.get().Get();
     }
 
     alignas(8) std::array<std::byte, 1024> method_in_args_buffer_{};

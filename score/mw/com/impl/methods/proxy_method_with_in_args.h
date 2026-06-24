@@ -63,11 +63,11 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::string_view method_name,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
-        : ProxyMethodBase(proxy_base, method_name, std::move(proxy_method_binding), MethodType::kMethod),
+        : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -82,8 +82,8 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
     ProxyMethod& operator=(const ProxyMethod&) = delete;
 
     /// \brief A ProxyMethod shall be moveable.
-    ProxyMethod(ProxyMethod&&) noexcept;
-    ProxyMethod& operator=(ProxyMethod&&) noexcept;
+    ProxyMethod(ProxyMethod&&) noexcept = default;
+    ProxyMethod& operator=(ProxyMethod&&) noexcept = default;
 
     Result<void> InitializeInArgsAndReturnValues() override;
 
@@ -124,30 +124,6 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
     /// pointer passed to the zero-copy call-operator is active.
     containers::DynamicArray<std::array<bool, sizeof...(ArgTypes)>> are_in_arg_ptrs_active_;
 };
-
-template <typename... ArgTypes>
-ProxyMethod<void(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept
-    : ProxyMethodBase(std::move(other)), are_in_arg_ptrs_active_{std::move(other.are_in_arg_ptrs_active_)}
-{
-    // Since the address of this method has changed, we need update the address stored in the parent proxy.
-    ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(method_name_, *this);
-}
-
-template <typename... ArgTypes>
-auto ProxyMethod<void(ArgTypes...)>::operator=(ProxyMethod&& other) noexcept -> ProxyMethod<void(ArgTypes...)>&
-{
-    if (this != &other)
-    {
-        ProxyMethodBase::operator=(std::move(other));
-        are_in_arg_ptrs_active_ = std::move(other.are_in_arg_ptrs_active_);
-
-        // Since the address of this method has changed, we need update the address stored in the parent proxy.
-        ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(method_name_, *this);
-    }
-    return *this;
-}
 
 template <typename... ArgTypes>
 score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(const ArgTypes&... args)

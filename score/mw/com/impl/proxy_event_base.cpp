@@ -77,12 +77,12 @@ class EventBindingRegistrationGuard final
 // in multiple translation units without violating the One Definition Rule."
 // This is false positive. Function is declared only once.
 // coverity[autosar_cpp14_a3_1_1_violation]
-ProxyEventBase::ProxyEventBase(ProxyBase& proxy_base,
-                               std::string_view event_name,
+
+ProxyEventBase::ProxyEventBase(std::string_view event_name,
                                ProxyBinding* proxy_binding_ptr,
                                std::unique_ptr<ProxyEventBindingBase> proxy_event_binding) noexcept
-    : binding_base_{std::move(proxy_event_binding)},
-      proxy_base_(proxy_base),
+    : EnableReferenceToMoveableFromThis<ProxyEventBase>(),
+      binding_base_{std::move(proxy_event_binding)},
       event_name_{event_name},
       tracker_{std::make_unique<SampleReferenceTracker>()},
       tracing_data_{},

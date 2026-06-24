@@ -14,6 +14,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_BASE_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_BASE_H
 
+#include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 
@@ -26,16 +27,13 @@
 namespace score::mw::com::impl
 {
 
-class ProxyBase;
-
-class ProxyMethodBase
+class ProxyMethodBase : public EnableReferenceToMoveableFromThis<ProxyMethodBase>
 {
   public:
-    ProxyMethodBase(ProxyBase& proxy_base,
-                    std::string_view method_name,
+    ProxyMethodBase(std::string_view method_name,
                     std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                     MethodType method_type = MethodType::kMethod) noexcept
-        : proxy_base_{proxy_base},
+        : EnableReferenceToMoveableFromThis<ProxyMethodBase>(),
           method_name_{method_name},
           method_type_{method_type},
           is_return_type_ptr_active_{kCallQueueSize, false},
@@ -50,11 +48,6 @@ class ProxyMethodBase
     ProxyMethodBase(ProxyMethodBase&&) noexcept = default;
     ProxyMethodBase& operator=(ProxyMethodBase&&) noexcept = default;
     virtual ~ProxyMethodBase() = default;
-
-    void UpdateProxyReference(ProxyBase& proxy_base) noexcept
-    {
-        proxy_base_ = proxy_base;
-    }
 
     /// \brief Default initializes each method InArg and Return value (if they exist)
     ///
@@ -71,8 +64,6 @@ class ProxyMethodBase
     /// \brief Size of the call-queue is currently fixed to 1! As soon as we are going to support larger call-queues,
     /// the call-queue-size shall be taken from configuration and handed over to ProxyMethod ctor.
     static constexpr containers::DynamicArray<int>::size_type kCallQueueSize = 1U;
-
-    std::reference_wrapper<ProxyBase> proxy_base_;
 
     std::string_view method_name_;
     MethodType method_type_;

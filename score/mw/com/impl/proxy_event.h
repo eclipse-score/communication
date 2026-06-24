@@ -105,8 +105,8 @@ class ProxyEvent final : public ProxyEventBase
     ProxyEvent& operator=(const ProxyEvent&) & = delete;
 
     /// \brief A ProxyEvent shall be movable
-    ProxyEvent(ProxyEvent&& other) noexcept;
-    ProxyEvent& operator=(ProxyEvent&& other) & noexcept;
+    ProxyEvent(ProxyEvent&& other) noexcept = default;
+    ProxyEvent& operator=(ProxyEvent&& other) noexcept = default;
 
     ~ProxyEvent() override = default;
 
@@ -145,7 +145,7 @@ template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
                                    const std::string_view event_name,
                                    std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding)
-    : ProxyEventBase{base, event_name, ProxyBaseView{base}.GetBinding(), std::move(proxy_event_binding)},
+    : ProxyEventBase{event_name, ProxyBaseView{base}.GetBinding(), std::move(proxy_event_binding)},
       proxy_event_mock_{nullptr}
 {
     ProxyBaseView proxy_base_view{base};
@@ -163,7 +163,7 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const std::string_view event
     if (GetTypedEventBinding() != nullptr)
     {
         ProxyBaseView proxy_base_view{base};
-        proxy_base_view.RegisterEvent(event_name, *this);
+        proxy_base_view.RegisterEvent(event_name, GetReferenceToMoveable());
         const auto& instance_identifier = proxy_base_view.GetAssociatedHandleType().GetInstanceIdentifier();
         tracing_data_ = tracing::GenerateProxyTracingStructFromEventConfig(instance_identifier, event_name);
     }
@@ -185,35 +185,6 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
         const auto& instance_identifier = proxy_base_view.GetAssociatedHandleType().GetInstanceIdentifier();
         tracing_data_ = tracing::GenerateProxyTracingStructFromFieldConfig(instance_identifier, event_name);
     }
-}
-
-template <typename SampleType>
-ProxyEvent<SampleType>::ProxyEvent(ProxyEvent&& other) noexcept
-    : ProxyEventBase(std::move(static_cast<ProxyEventBase&&>(other))),
-      proxy_event_mock_{std::move(other.proxy_event_mock_)}
-{
-    // Since the address of this event has changed, we need update the address stored in the parent proxy.
-    ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateEvent(event_name_, *this);
-}
-
-template <typename SampleType>
-// Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
-// or respectively copy base classes and data members of a class, without any side effects."
-// Rationale: The parent proxy stores a reference to the ProxyEvent. The address that is pointed to must be
-// updated when the ProxyEvent is moved. Therefore, side effects are required.
-// coverity[autosar_cpp14_a6_2_1_violation]
-auto ProxyEvent<SampleType>::operator=(ProxyEvent&& other) & noexcept -> ProxyEvent<SampleType>&
-{
-    if (this != &other)
-    {
-        ProxyEventBase::operator=(std::move(static_cast<ProxyEventBase&&>(other)));
-        proxy_event_mock_ = std::move(other.proxy_event_mock_);
-        // Since the address of this event has changed, we need update the address stored in the parent proxy.
-        ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateEvent(event_name_, *this);
-    }
-    return *this;
 }
 
 template <typename SampleType>
