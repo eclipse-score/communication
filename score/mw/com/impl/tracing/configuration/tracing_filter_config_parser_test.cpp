@@ -17,6 +17,9 @@
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config_mock.h"
 
+#include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
+
 #include "tracing_filter_config.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -174,6 +177,17 @@ class TraceConfigParserFixture : public ::testing::Test
         EXPECT_TRUE(json_result.has_value());
         config_ =
             std::make_unique<Configuration>(score::mw::com::impl::configuration::Parse(std::move(json_result).value()));
+        score::mw::log::SetLogRecorder(&recorder_mock_);
+        ON_CALL(recorder_mock_, StartRecord(::testing::_, ::testing::_))
+            .WillByDefault(
+                ::testing::Return(score::cpp::optional<score::mw::log::SlotHandle>{score::mw::log::SlotHandle{}}));
+    }
+    void TearDown() override
+    {
+        // Reset the global recorder to nullptr so that it no longer points to the local recorder_mock_.
+        // Without this, the global recorder would hold a dangling pointer after recorder_mock_ is destroyed,
+        // causing undefined behavior if any subsequent test triggers logging.
+        score::mw::log::SetLogRecorder(nullptr);
     }
 
     const std::string get_path(const std::string& file_name)
@@ -268,6 +282,7 @@ class TraceConfigParserFixture : public ::testing::Test
     }
 
     std::unique_ptr<Configuration> config_;
+    score::mw::log::RecorderMock recorder_mock_{};
 };
 
 TEST_F(TraceConfigParserFixture, FilterConfigOK)
@@ -775,10 +790,9 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointReferencingUnknownEventField)
 /// \brief This test verifies, that a specific trace-point, which has been activated/enabled in the trace-filter-config
 ///        for an event/field, for which tracing has been disabled in the mw::com/LoLa config, will not lead to
 ///        corresponding enabling in the returned TracingFilterConfig AND that a warning message is logged.
-/// \attention the verification of the warning message expects, that the message is logged to stdout! The implementation
-///            writes the warning message via mw::log. We expect, that in the context of the unit test there is no
-///            configuration for mw::log existing, which leads to stdout output! Whenever this changes, this test has to
-///            be adapted!
+/// \attention The warning message is verified via score::mw::log::RecorderMock by asserting that
+///            StartRecord("lola", LogLevel::kWarn) is called the expected number of times, and that
+///            LogStringView is called with the static suffix of the warning message.
 TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledEventWithWarning)
 {
     RecordProperty("Verifies", "SCR-18159594, SCR-18144675, SCR-18144767");
@@ -880,12 +894,20 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledEventWithWarning)
 }
 )"_json;
 
-    // capture stdout output during Parse() call.
-    testing::internal::CaptureStdout();
+    // Verify two warning logs are issued, each containing the static suffix of the "tracing disabled" message
+    EXPECT_CALL(recorder_mock_, StartRecord(std::string_view{"lola"}, score::mw::log::LogLevel::kWarn)).Times(2);
+    // Catch-all for dynamic parts of the log (service element identifier and instance specifier tokens);
+    // registered first so the specific check below has higher LIFO priority.
+    EXPECT_CALL(recorder_mock_, LogStringView(::testing::_, ::testing::_)).Times(::testing::AnyNumber());
+    EXPECT_CALL(recorder_mock_,
+                LogStringView(score::mw::log::SlotHandle{},
+                              std::string_view{" has been disabled in mw_com_config but is present in trace filter "
+                                               "config file!"}))
+        .Times(2);
+
     // when parsing the given tracing filter config
     auto result = Parse(std::move(filter_config_json), config);
-    // stop capture and get captured data.
-    std::string log_output = testing::internal::GetCapturedStdout();
+
     // expect, that there is no error
     EXPECT_TRUE(result.has_value());
 
@@ -893,18 +915,6 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledEventWithWarning)
     TracingFilterConfig tracing_filter_config = std::move(result).value();
     expectAllEventTracePoints(tracing_filter_config, "CurrentPressureFrontLeft", false);
     expectAllEventTracePoints(tracing_filter_config, "CurrentPressureFrontRight", false);
-
-    const char log_warn_snippet[] = "log warn";
-    const char text_snippet[] = "has been disabled in mw_com_config but";
-
-    // and expect, that the output contains two warning messages (mw::log)
-    auto first_offset = log_output.find(log_warn_snippet);
-    EXPECT_TRUE(first_offset != log_output.npos);
-    EXPECT_TRUE(log_output.find(log_warn_snippet, first_offset) != log_output.npos);
-    // and the following snippet, which is part of the warn message
-    first_offset = log_output.find(text_snippet);
-    EXPECT_TRUE(first_offset != log_output.npos);
-    EXPECT_TRUE(log_output.find(text_snippet, first_offset) != log_output.npos);
 }
 
 /// \brief Test resembles test "IgnoreTracePointForDisabledFieldWithWarning", but with fields instead of events.
@@ -1014,12 +1024,20 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledFieldWithWarning)
 }
 )"_json;
 
-    // capture stdout output during Parse() call.
-    testing::internal::CaptureStdout();
+    // Verify two warning logs are issued, each containing the static suffix of the "tracing disabled" message
+    EXPECT_CALL(recorder_mock_, StartRecord(std::string_view{"lola"}, score::mw::log::LogLevel::kWarn)).Times(2);
+    // Catch-all for dynamic parts of the log (service element identifier and instance specifier tokens);
+    // registered first so the specific check below has higher LIFO priority.
+    EXPECT_CALL(recorder_mock_, LogStringView(::testing::_, ::testing::_)).Times(::testing::AnyNumber());
+    EXPECT_CALL(recorder_mock_,
+                LogStringView(score::mw::log::SlotHandle{},
+                              std::string_view{" has been disabled in mw_com_config but is present in trace filter "
+                                               "config file!"}))
+        .Times(2);
+
     // when parsing the given tracing filter config
     auto result = Parse(std::move(filter_config_json), config);
-    // stop capture and get captured data.
-    std::string log_output = testing::internal::GetCapturedStdout();
+
     // expect, that there is no error
     EXPECT_TRUE(result.has_value());
 
@@ -1027,18 +1045,6 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledFieldWithWarning)
     TracingFilterConfig tracing_filter_config = std::move(result).value();
     expectAllFieldTracePoints(tracing_filter_config, "CurrentTemperatureFrontLeft", false);
     expectAllFieldTracePoints(tracing_filter_config, "CurrentTemperatureFrontRight", false);
-
-    const char log_warn_snippet[] = "log warn";
-    const char text_snippet[] = "has been disabled in mw_com_config but";
-
-    // and expect, that the output contains two warning messages (mw::log)
-    auto first_offset = log_output.find(log_warn_snippet);
-    EXPECT_TRUE(first_offset != log_output.npos);
-    EXPECT_TRUE(log_output.find(log_warn_snippet, first_offset) != log_output.npos);
-    // and the following snippet, which is part of the warn message
-    first_offset = log_output.find(text_snippet);
-    EXPECT_TRUE(first_offset != log_output.npos);
-    EXPECT_TRUE(log_output.find(text_snippet, first_offset) != log_output.npos);
 }
 
 /// \todo Test that can be removed when support for these tracing points is added in Ticket-126558
@@ -1075,13 +1081,22 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForTemporarilyDisabledTracePoin
 }
 )"_json;
 
-    // capture stdout output during Parse() call.
-    testing::internal::CaptureStdout();
+    // Verify four warning logs are issued (2 event + 2 field unsupported trace points); the "Event Tracing point:"
+    // vs "Field Tracing point:" prefix distinguishes the two kinds of warning.
+    EXPECT_CALL(recorder_mock_, StartRecord(std::string_view{"lola"}, score::mw::log::LogLevel::kWarn)).Times(4);
+    // Catch-all for dynamic parts of the log (the unsupported property name tokens); registered first
+    // so the specific checks below have higher LIFO priority.
+    EXPECT_CALL(recorder_mock_, LogStringView(::testing::_, ::testing::_)).Times(::testing::AnyNumber());
+    // Two event-tracing warnings, one per unsupported property (trace_subscribe_received, trace_unsubscribe_received).
+    EXPECT_CALL(recorder_mock_, LogStringView(score::mw::log::SlotHandle{}, std::string_view{"Event Tracing point:"}))
+        .Times(2);
+    // Two field-tracing warnings, one per unsupported property.
+    EXPECT_CALL(recorder_mock_, LogStringView(score::mw::log::SlotHandle{}, std::string_view{"Field Tracing point:"}))
+        .Times(2);
+
     // when parsing the given tracing filter config
     auto result = Parse(std::move(filter_config_json), *config_);
 
-    // stop capture and get captured data.
-    std::string log_output = testing::internal::GetCapturedStdout();
     // expect, that there is no error
     EXPECT_TRUE(result.has_value());
 
@@ -1089,28 +1104,6 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForTemporarilyDisabledTracePoin
     TracingFilterConfig tracing_filter_config = std::move(result).value();
     expectAllFieldTracePoints(tracing_filter_config, "CurrentTemperatureFrontLeft", false);
     expectAllFieldTracePoints(tracing_filter_config, "CurrentTemperatureFrontRight", false);
-
-    const char log_warn_snippet[] = "log warn";
-    const char text_snippet_0[] = "Event Tracing point: trace_subscribe_received is currently unsupported";
-    const char text_snippet_1[] = "Event Tracing point: trace_unsubscribe_received is currently unsupported";
-    const char text_snippet_2[] = "Field Tracing point: trace_subscribe_received is currently unsupported";
-    const char text_snippet_3[] = "Field Tracing point: trace_unsubscribe_received is currently unsupported";
-
-    auto check_test_snipped =
-        [&log_output, &log_warn_snippet](
-            const auto text_snippet) {  // and expect, that the output contains two warning messages (mw::log)
-            auto first_offset = log_output.find(log_warn_snippet);
-            EXPECT_TRUE(first_offset != log_output.npos);
-            EXPECT_TRUE(log_output.find(log_warn_snippet, first_offset) != log_output.npos);
-            // and the following snippet, which is part of the warn message
-            first_offset = log_output.find(text_snippet);
-            EXPECT_TRUE(first_offset != log_output.npos);
-            EXPECT_TRUE(log_output.find(text_snippet, first_offset) != log_output.npos);
-        };
-    check_test_snipped(text_snippet_0);
-    check_test_snipped(text_snippet_1);
-    check_test_snipped(text_snippet_2);
-    check_test_snipped(text_snippet_3);
 }
 
 TEST_F(TraceConfigParserFixture, ParserReturnsValidObjectWhenConfigurationContainsUnsupportedTracePoints)

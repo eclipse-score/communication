@@ -363,6 +363,8 @@ cc_unit_test(
         ":tracing_filter_config_mock",
         ":tracing_filter_config_parser",
         "//score/mw/com/impl/test:runtime_mock_guard",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
 
