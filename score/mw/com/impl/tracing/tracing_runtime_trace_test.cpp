@@ -155,7 +155,21 @@ class TracingRuntimeTraceParamaterisedFixture : public TracingRuntimeTraceFixtur
                                                 public ::testing::WithParamInterface<TracingRuntime::TracePointType>
 {
   public:
+    void SetUp() override
+    {
+        TracingRuntimeTraceFixture::SetUp();
+        ON_CALL(recorder_mock_, StartRecord(testing::_, testing::_))
+            .WillByDefault(Return(score::cpp::optional<score::mw::log::SlotHandle>{score::mw::log::SlotHandle{}}));
+    }
+    void TearDown() override
+    {
+        // Reset the global recorder to nullptr so that it no longer points to the local recorder_mock_.
+        // Without this, the global recorder would hold a dangling pointer after recorder_mock_ is destroyed,
+        // causing undefined behavior if any subsequent test triggers logging.
+        score::mw::log::SetLogRecorder(nullptr);
+    }
     TracingRuntime::TracePointType trace_point_type_{GetParam()};
+    score::mw::log::RecorderMock recorder_mock_{};
 };
 
 using TracingRuntimeTraceShmParamaterisedFixture = TracingRuntimeTraceParamaterisedFixture;
@@ -585,8 +599,16 @@ TEST_P(TracingRuntimeTraceShmParamaterisedFixture, TraceShmDataNOK_NonRecoverabl
     // expect, that UuT sets data-loss-flag on binding specific runtime as this trace call is lost because of error
     EXPECT_CALL(binding_tracing_runtime_mock_, SetDataLossFlag(true)).Times(1);
 
-    // capture stdout output during Trace() call.
-    testing::internal::CaptureStdout();
+    // Verify a warning log is issued containing the non-recoverable-error specific message
+    score::mw::log::SetLogRecorder(&recorder_mock_);
+    EXPECT_CALL(recorder_mock_, StartRecord(std::string_view{"lola"}, score::mw::log::LogLevel::kWarn)).Times(1);
+    // Catch-all for LogStringView calls corresponding to dynamic parts of the log message (e.g. the service element
+    // identifier and the error code); registered first so the specific check below has higher LIFO priority.
+    EXPECT_CALL(recorder_mock_, LogStringView(::testing::_, ::testing::_)).Times(::testing::AnyNumber());
+    // The static text that uniquely identifies this code path (distinct from the kTerminalFatal warning below).
+    EXPECT_CALL(recorder_mock_,
+                LogStringView(score::mw::log::SlotHandle{},
+                              std::string_view{" because of non-recoverable error during call of Trace(). Error: "}));
 
     TracingRuntimeAttorney attorney{*unit_under_test_};
     auto previous_error_counter = attorney.GetFailureCounter();
@@ -601,14 +623,6 @@ TEST_P(TracingRuntimeTraceShmParamaterisedFixture, TraceShmDataNOK_NonRecoverabl
                                           dummy_shm_data_ptr_,
                                           dummy_shm_data_size_);
 
-    // stop capture and get captured data.
-    std::string log_output = testing::internal::GetCapturedStdout();
-    const char log_warn_snippet[] = "log warn";
-    const char text_snippet[] = "TracingRuntime: Disabling Tracing for ";
-    // and expect, that the output contains a warning message (mw::log)
-    auto first_offset = log_output.find(log_warn_snippet);
-    EXPECT_TRUE(first_offset != log_output.npos);
-    EXPECT_TRUE(log_output.find(text_snippet, first_offset) != log_output.npos);
     EXPECT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), TraceErrorCode::TraceErrorDisableTracePointInstance);
 
@@ -640,8 +654,16 @@ TEST_P(TracingRuntimeTraceShmParamaterisedFixture, TraceShmDataNOK_TerminalFatal
     // callback will happen, which frees the sample ptr.
     EXPECT_CALL(binding_tracing_runtime_mock_, ClearTypeErasedSamplePtr(trace_context_id_)).Times(1);
 
-    // capture stdout output during Trace() call.
-    testing::internal::CaptureStdout();
+    // Verify a warning log is issued containing the terminal-fatal-error specific message
+    score::mw::log::SetLogRecorder(&recorder_mock_);
+    EXPECT_CALL(recorder_mock_, StartRecord(std::string_view{"lola"}, score::mw::log::LogLevel::kWarn)).Times(1);
+    // Catch-all for LogStringView calls corresponding to dynamic parts of the log message (e.g. the error code).
+    // registered first so the specific check below has higher LIFO priority.
+    EXPECT_CALL(recorder_mock_, LogStringView(::testing::_, ::testing::_)).Times(::testing::AnyNumber());
+    // The static text that uniquely identifies this code path (distinct from the non-recoverable-error warning above).
+    EXPECT_CALL(recorder_mock_,
+                LogStringView(score::mw::log::SlotHandle{},
+                              std::string_view{"TracingRuntime: Disabling Tracing because of kTerminalFatal Error: "}));
 
     // when we call Trace on the UuT
     auto result = unit_under_test_->Trace(BindingType::kLoLa,
@@ -652,15 +674,6 @@ TEST_P(TracingRuntimeTraceShmParamaterisedFixture, TraceShmDataNOK_TerminalFatal
                                           CreateDummySamplePtr(),
                                           dummy_shm_data_ptr_,
                                           dummy_shm_data_size_);
-
-    // stop capture and get captured data.
-    std::string log_output = testing::internal::GetCapturedStdout();
-    const char log_warn_snippet[] = "log warn";
-    const char text_snippet[] = "kTerminalFatal";
-    // and expect, that the output contains a warning message (mw::log)
-    auto first_offset = log_output.find(log_warn_snippet);
-    EXPECT_TRUE(first_offset != log_output.npos);
-    EXPECT_TRUE(log_output.find(text_snippet, first_offset) != log_output.npos);
 
     // expect, that there was an error
     EXPECT_FALSE(result.has_value());
