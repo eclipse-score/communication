@@ -51,5 +51,7 @@ cc_unit_test(
         ":tracing_runtime",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
         "@score_baselibs//score/analysis/tracing/generic_trace_library:mock",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
