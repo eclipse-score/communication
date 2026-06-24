@@ -1,0 +1,337 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow: Generalized Lint Check
+#
+# A single input-driven reusable workflow that runs any Bazel-based linter.
+# No linter-specific code paths exist — all behaviour is controlled via inputs.
+#
+# How it works
+# ------------
+#   1. Runs:  bazel <bazel-command> --config=<bazel-config> <bazel-targets>
+#   2. Finds: all files matching <findings-glob> under bazel-bin/
+#   3. Counts errors/warnings using <error-pattern> / <warning-pattern>
+#   4. Scopes blocking check to files changed in the PR that match
+#      <changed-files-regex>
+#   5. Fails the job when blocking errors are found on pull_request /
+#      push / merge_group events.
+#
+# Inputs (workflow_call)
+# ----------------------
+#   bazel-command         Bazel sub-command: 'test' or 'build'        (default: test)
+#   bazel-config          Value passed to --config=<…>                (required)
+#   bazel-targets         Target pattern                              (default: //...)
+#   findings-glob         Glob for linter .out files under bazel-bin  (required)
+#   changed-files-regex   egrep regex to scope changed files          (required)
+#   error-pattern         grep pattern that identifies error lines     (default: "error:")
+#   warning-pattern       grep pattern that identifies warning lines   (default: "warning:")
+#   artifact-name         Name for the uploaded findings artifact      (default: lint-findings)
+#   cache-save            Save Bazel disk cache                       (default: false)
+#
+# Outputs
+# -------
+#   artifact-name    Name of the uploaded findings artifact
+#   errors           Total error count
+#   warnings         Total warning count
+#   conclusion       success | failure
+#
+# Usage examples
+# --------------
+# clang-tidy:
+#   uses: ./.github/workflows/lint.yml
+#   with:
+#     bazel-command: test
+#     bazel-config: clang-tidy
+#     findings-glob: "*.AspectRulesLintClangTidy.out"
+#     changed-files-regex: '\.(cpp|h|cc|cxx|hpp)$'
+#
+# Clippy:
+#   uses: ./.github/workflows/lint.yml
+#   with:
+#     bazel-command: build
+#     bazel-config: clippy
+#     bazel-targets: //score/...
+#     findings-glob: "*.AspectRulesLintClippy.out"
+#     changed-files-regex: '\.rs$'
+#     error-pattern: '^error'
+#     warning-pattern: '^warning'
+#
+# Any future linter (e.g. a custom Bazel aspect):
+#   uses: ./.github/workflows/lint.yml
+#   with:
+#     bazel-command: build
+#     bazel-config: my-linter
+#     findings-glob: "*.MyLinter.out"
+#     changed-files-regex: '\.(cpp|h)$'
+
+name: Lint Check
+
+on:
+  workflow_call:
+    inputs:
+      bazel-command:
+        description: "Bazel sub-command to run: 'test' or 'build'"
+        required: false
+        default: "test"
+        type: string
+      bazel-config:
+        description: "Value passed to --config=<…> (e.g. clang-tidy, clippy)"
+        required: true
+        type: string
+      bazel-targets:
+        description: "Bazel target pattern to lint"
+        required: false
+        default: "//..."
+        type: string
+      findings-glob:
+        description: "Glob pattern for linter output files under bazel-bin (e.g. '*.AspectRulesLintClangTidy.out')"
+        required: true
+        type: string
+      changed-files-regex:
+        description: "egrep regex to scope the blocking check to relevant changed files (e.g. '\\.(cpp|h|cc|cxx|hpp)$')"
+        required: true
+        type: string
+      error-pattern:
+        description: "grep pattern that identifies error lines in findings"
+        required: false
+        default: "error:"
+        type: string
+      warning-pattern:
+        description: "grep pattern that identifies warning lines in findings"
+        required: false
+        default: "warning:"
+        type: string
+      location-pattern:
+        description: |
+          Optional. When the linter emits the file path on the line *after* the
+          error/warning (e.g. Clippy's '  --> src/file.rs:10:5'), set this to
+          the regex that matches that location line (e.g. '^\s+-->').
+          Counting will then use 'grep -A 1 <error-pattern> | grep -c <location-pattern>'
+          instead of a plain grep-count.
+          Leave empty for linters where the file path is on the same line as
+          the error/warning (e.g. clang-tidy).
+        required: false
+        default: ""
+        type: string
+      artifact-name:
+        description: "Name for the uploaded findings artifact"
+        required: false
+        default: "lint-findings"
+        type: string
+      cache-save:
+        description: "Save Bazel disk cache (set true only for pushes to main)"
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      artifact-name:
+        description: "Name of the uploaded lint findings artifact"
+        value: ${{ jobs.lint.outputs.artifact-name }}
+      errors:
+        description: "Total error count"
+        value: ${{ jobs.lint.outputs.errors }}
+      warnings:
+        description: "Total warning count"
+        value: ${{ jobs.lint.outputs.warnings }}
+      conclusion:
+        description: "Job conclusion: success or failure"
+        value: ${{ jobs.lint.outputs.conclusion }}
+
+permissions:
+  contents: read
+  actions: write # Needed to delete old Bazel caches
+
+concurrency:
+  group: lint-${{ inputs.bazel-config }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  lint:
+    name: ${{ inputs.bazel-config }}
+    runs-on: ubuntu-24.04
+    outputs:
+      artifact-name: ${{ inputs.artifact-name }}
+      errors: ${{ steps.findings.outputs.errors }}
+      warnings: ${{ steps.findings.outputs.warnings }}
+      conclusion: ${{ steps.set-conclusion.outputs.conclusion }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0  # Full history so git-diff against origin/<base-ref> works
+
+      - name: Setup lint environment
+        uses: ./.github/actions/setup-bazel-lint
+        with:
+          disk-cache: lint-${{ inputs.bazel-config }}
+          cache-save: ${{ inputs.cache-save }}
+
+      # ── Run linter ───────────────────────────────────────────────────────
+      - name: Run linter via Bazel
+        id: run-linter
+        # continue-on-error so findings are always collected and uploaded
+        # even when the Bazel invocation exits non-zero.
+        continue-on-error: true
+        run: |
+          bazel ${{ inputs.bazel-command }} --config=${{ inputs.bazel-config }} \
+            ${{ inputs.bazel-targets }} \
+            2>&1 | tee lint_raw.log
+
+      # ── Collect findings ─────────────────────────────────────────────────
+      - name: Collect findings
+        id: findings
+        run: |
+          # Gather all linter output files produced under bazel-bin.
+          # -L is required because bazel-bin is a symlink.
+          FINDINGS_FILES=$(find -L bazel-bin -name "${{ inputs.findings-glob }}" 2>/dev/null || true)
+
+          ERROR_PATTERN="${{ inputs.error-pattern }}"
+          WARNING_PATTERN="${{ inputs.warning-pattern }}"
+          LOCATION_PATTERN="${{ inputs.location-pattern }}"
+
+          if [[ -z "$FINDINGS_FILES" ]]; then
+            echo "No findings files matched glob '${{ inputs.findings-glob }}' — treating as zero findings."
+            ERRORS=0
+            WARNINGS=0
+          elif [[ -n "$LOCATION_PATTERN" ]]; then
+            # Linter puts the file path on the line *after* the error/warning
+            # (e.g. Clippy: "error[E0...]" followed by "  --> src/file.rs:10:5").
+            # Count how many location lines follow an error/warning indicator.
+            ERRORS=$(echo "$FINDINGS_FILES" | xargs cat 2>/dev/null \
+              | grep -A 1 -E "$ERROR_PATTERN" \
+              | grep -c -E "$LOCATION_PATTERN" || true)
+            WARNINGS=$(echo "$FINDINGS_FILES" | xargs cat 2>/dev/null \
+              | grep -A 1 -E "$WARNING_PATTERN" \
+              | grep -c -E "$LOCATION_PATTERN" || true)
+          else
+            # File path is on the same line as the error/warning indicator
+            # (e.g. clang-tidy: "src/foo.cpp:10:5: error: ...").
+            ERRORS=$(echo "$FINDINGS_FILES" | xargs cat 2>/dev/null \
+              | grep -c -E "$ERROR_PATTERN" || true)
+            WARNINGS=$(echo "$FINDINGS_FILES" | xargs cat 2>/dev/null \
+              | grep -c -E "$WARNING_PATTERN" || true)
+          fi
+          ERRORS=${ERRORS:-0}
+          WARNINGS=${WARNINGS:-0}
+          TOTAL=$((ERRORS + WARNINGS))
+
+          # ── Scope blocking check to changed files ────────────────────────
+          # GITHUB_BASE_REF is set for pull_request and merge_group events.
+          CHANGED_FILES=$(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" 2>/dev/null \
+            | grep -E "${{ inputs.changed-files-regex }}" || true)
+
+          if [[ -z "$CHANGED_FILES" || -z "$FINDINGS_FILES" ]]; then
+            ERRORS_BLOCKING=0
+          else
+            PATTERN=$(echo "$CHANGED_FILES" | tr '\n' '|' | sed 's/|$//')
+            if [[ -n "$LOCATION_PATTERN" ]]; then
+              # Location line carries the file path — filter it by changed files.
+              ERRORS_BLOCKING=$(echo "$FINDINGS_FILES" | xargs cat 2>/dev/null \
+                | grep -A 1 -E "$ERROR_PATTERN" \
+                | grep -E "$LOCATION_PATTERN" \
+                | grep -c -E "(${PATTERN})" || true)
+            else
+              # File path is on the same line as the error indicator.
+              ERRORS_BLOCKING=$(echo "$FINDINGS_FILES" | xargs cat 2>/dev/null \
+                | grep -E "(${PATTERN})" \
+                | grep -c -E "$ERROR_PATTERN" || true)
+            fi
+          fi
+          ERRORS_BLOCKING=${ERRORS_BLOCKING:-0}
+
+          echo "errors=${ERRORS}"                   >> $GITHUB_OUTPUT
+          echo "warnings=${WARNINGS}"               >> $GITHUB_OUTPUT
+          echo "total=${TOTAL}"                     >> $GITHUB_OUTPUT
+          echo "errors_blocking=${ERRORS_BLOCKING}" >> $GITHUB_OUTPUT
+
+          # ── Write consolidated findings file for the artifact ────────────
+          if [[ -n "$FINDINGS_FILES" ]]; then
+            echo "$FINDINGS_FILES" | xargs cat 2>/dev/null > lint_findings.txt || true
+          fi
+
+          if [[ ! -s lint_findings.txt ]]; then
+            {
+              echo "No findings were produced for this run."
+              echo "config=${{ inputs.bazel-config }} targets=${{ inputs.bazel-targets }}"
+              echo "errors=${ERRORS} warnings=${WARNINGS} total=${TOTAL}"
+            } > lint_findings.txt
+          fi
+
+          grep "${{ inputs.error-pattern }}" lint_findings.txt > lint_errors.txt || true
+
+          # ── Job summary ──────────────────────────────────────────────────
+          {
+            echo "## Lint Results — \`${{ inputs.bazel-config }}\`"
+            echo ""
+            echo "| Metric | Count |"
+            echo "|--------|------:|"
+            echo "| :x: Errors | **${ERRORS}** |"
+            echo "| :warning: Warnings | **${WARNINGS}** |"
+            echo "| Total | **${TOTAL}** |"
+            echo ""
+            echo "**Targets:** \`${{ inputs.bazel-targets }}\`"
+            if [[ "${ERRORS_BLOCKING}" -gt 0 ]]; then
+              echo ""
+              echo "> :x: **Check failed** — ${ERRORS_BLOCKING} error(s) found in changed files. Fix before merging."
+              echo ""
+              echo "### First 20 errors in changed files"
+              echo '```'
+              head -20 lint_errors.txt || true
+              echo '```'
+            else
+              echo ""
+              echo "> :white_check_mark: **Check passed** — no errors in changed files."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Upload artifact ──────────────────────────────────────────────────
+      - name: Upload lint findings artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: |
+            lint_findings.txt
+            lint_errors.txt
+            lint_raw.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # ── Gate: fail if blocking errors found ─────────────────────────────
+      - name: Fail if errors found in changed files
+        if: >-
+          (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'merge_group') &&
+          steps.findings.outputs.errors_blocking != '0'
+        run: |
+          echo "::error::${{ inputs.bazel-config }} found ${{ steps.findings.outputs.errors_blocking }} error(s) in changed files. See the '${{ inputs.artifact-name }}' artifact for details."
+          echo ""
+          echo "=== Errors ==="
+          cat lint_errors.txt || true
+          exit 1
+
+      # ── Set conclusion ───────────────────────────────────────────────────
+      - name: Set conclusion
+        id: set-conclusion
+        if: always()
+        run: |
+          if [[ "${{ steps.run-linter.outcome }}" == "success" ]]; then
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          fi
