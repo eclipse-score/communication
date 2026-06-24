@@ -23,7 +23,7 @@ GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const std::string_view eve
     : ProxyEventBase{base,
                      event_name,
                      ProxyBaseView{base}.GetBinding(),
-                     GenericProxyEventBindingFactory::Create(base, event_name)}
+                     GenericProxyEventBindingFactory::Create(base, event_name, ServiceElementType::EVENT)}
 {
     ProxyBaseView proxy_base_view{base};
     if (!binding_base_)

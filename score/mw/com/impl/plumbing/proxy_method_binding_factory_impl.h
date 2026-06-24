@@ -97,35 +97,47 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
     const std::string_view method_name,
     MethodType method_type) noexcept
 {
-    // When method_type is Get or Set, method_name holds a field name, not a method name. A field
-    // only has one id at the lola level, so the Get and the Set of the same field both resolve to
-    // the same element id here. The Get-vs-Set split is added further down when we pair the id
-    // with method_type to build the UniqueMethodIdentifier.
-    const auto element_type = ((method_type == MethodType::kGet) || (method_type == MethodType::kSet))
-                                  ? ServiceElementType::FIELD
-                                  : ServiceElementType::METHOD;
+    auto method_name_str = std::string{method_name};
 
-    const auto lookup = LookupLolaProxyElement(parent_handle, parent_binding, method_name, element_type);
-    if (!lookup.has_value())
-    {
-        score::mw::log::LogError("lola")
-            << "Proxy Method binding could not be created for" << method_name
-            << "because the parent proxy binding is not a lola binding or the element could not be resolved.";
-        return nullptr;
-    }
+    using LambdaReturnType = std::unique_ptr<ProxyMethodBinding>;
 
-    const auto method_name_str = std::string{method_name};
-    const lola::TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info =
-        GetTypeErasedElementInfo<ReturnType, ArgTypes...>(parent_handle, method_name_str, method_type);
+    auto deployment_info_visitor = score::cpp::overload(
+        [&parent_handle, parent_binding, &method_name_str, method_type](
+            const LolaServiceTypeDeployment& lola_type_deployment) -> LambdaReturnType {
+            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(parent_binding);
+            if (lola_proxy == nullptr)
+            {
+                score::mw::log::LogError("lola") << "Proxy Method binding could not be created for" << method_name_str
+                                                 << "because the parent proxy binding is not a lola binding.";
+                return nullptr;
+            }
 
-    // Pairing the id with method_type is what keeps Get and Set separate from here on. They share
-    // the same id, but the pair (id, method_type) is different, so the two end up in separate
-    // entries of the proxy_methods_ / skeleton_methods_ maps in the binding layer.
-    const lola::ProxyMethodInstanceIdentifier proxy_method_instance_identifier{
-        lookup->parent.GetProxyInstanceIdentifier(), {lookup->element_fq_id.element_id_, method_type}};
+            // When method_type is Get or Set, method_name holds a field name, not a method name. A field
+            // only has one id at the lola level, so the Get and the Set of the same field both resolve to
+            // the same element id here. The Get-vs-Set split is added further down when we pair the id
+            // with method_type to build the UniqueMethodIdentifier.
+            const auto service_element_type = ((method_type == MethodType::kGet) || (method_type == MethodType::kSet))
+                                                  ? ServiceElementType::FIELD
+                                                  : ServiceElementType::METHOD;
 
-    return std::make_unique<lola::ProxyMethod>(
-        lookup->parent, proxy_method_instance_identifier, type_erased_element_info);
+            const auto element_fq_id =
+                GetElementFqId(parent_handle, lola_type_deployment, method_name_str, service_element_type);
+
+            lola::TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info =
+                GetTypeErasedElementInfo<ReturnType, ArgTypes...>(parent_handle, method_name_str, method_type);
+
+            lola::ProxyMethodInstanceIdentifier proxy_method_instance_identifier{
+                lola_proxy->GetProxyInstanceIdentifier(), {element_fq_id.element_id_, method_type}};
+
+            return std::make_unique<lola::ProxyMethod>(
+                *lola_proxy, proxy_method_instance_identifier, type_erased_element_info);
+        },
+        [](const score::cpp::blank&) noexcept -> LambdaReturnType {
+            return nullptr;
+        });
+
+    const auto& type_deployment = parent_handle.GetServiceTypeDeployment();
+    return std::visit(deployment_info_visitor, type_deployment.binding_info_);
 }
 
 }  // namespace score::mw::com::impl

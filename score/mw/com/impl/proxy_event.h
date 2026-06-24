@@ -158,7 +158,9 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
 
 template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const std::string_view event_name)
-    : ProxyEvent{base, event_name, ProxyEventBindingFactory<SampleType>::Create(base, event_name)}
+    : ProxyEvent{base,
+                 event_name,
+                 ProxyEventBindingFactory<SampleType>::Create(base, event_name, ServiceElementType::EVENT)}
 {
     if (GetTypedEventBinding() != nullptr)
     {

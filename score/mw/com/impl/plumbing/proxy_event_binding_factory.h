@@ -34,9 +34,11 @@ class ProxyEventBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyEventBindingFactory.
-    static std::unique_ptr<ProxyEventBinding<SampleType>> Create(ProxyBase& parent, std::string_view event_name)
+    static std::unique_ptr<ProxyEventBinding<SampleType>> Create(ProxyBase& parent,
+                                                                 std::string_view event_name,
+                                                                 const ServiceElementType service_element_type)
     {
-        return instance().Create(parent, event_name);
+        return instance().Create(parent, event_name, service_element_type);
     }
 
     /// \brief Inject a mock IProxyEventBindingFactory. If a mock is injected, then all calls on
@@ -57,9 +59,11 @@ class GenericProxyEventBindingFactory final
 {
   public:
     /// \brief See documentation in IGenericProxyEventBindingFactory.
-    static std::unique_ptr<GenericProxyEventBinding> Create(ProxyBase& parent, std::string_view event_name)
+    static std::unique_ptr<GenericProxyEventBinding> Create(ProxyBase& parent,
+                                                            std::string_view event_name,
+                                                            const ServiceElementType service_element_type)
     {
-        return instance().Create(parent, event_name);
+        return instance().Create(parent, event_name, service_element_type);
     }
 
     /// \brief Inject a mock IGenericProxyEventBindingFactory. If a mock is injected, then all calls on
