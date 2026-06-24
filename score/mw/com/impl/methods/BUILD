@@ -139,6 +139,7 @@ cc_library(
     ],
     deps = [
         ":skeleton_method_binding",
+        "//score/mw/com/impl:enable_reference_to_moveable_from_this",
         "//score/mw/com/impl:method_type",
         "//score/mw/com/impl/util:type_erased_storage",
     ],

@@ -192,6 +192,7 @@ cc_library(
     deps = [
         ":data_type_meta_info",
         ":generic_skeleton_event_binding",
+        ":reference_to_moveable",
         ":skeleton_base",
         ":skeleton_event_base",
         ":skeleton_event_binding",
@@ -243,6 +244,7 @@ cc_library(
     ],
     deps = [
         ":instance_identifier",
+        ":reference_to_moveable",
         ":runtime",
         ":skeleton_base",
         ":skeleton_event_base",
@@ -354,6 +356,7 @@ cc_library(
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
+        ":enable_reference_to_moveable_from_this",
         ":flag_owner",
         ":skeleton_event_binding",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
@@ -373,6 +376,7 @@ cc_library(
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
+        ":enable_reference_to_moveable_from_this",
         ":error",
         ":skeleton_event_base",
         "//score/mw/com/impl/methods:skeleton_method_base",
@@ -396,6 +400,7 @@ cc_library(
     deps = [
         ":flag_owner",
         ":instance_identifier",
+        ":reference_to_moveable",
         ":runtime",
         ":skeleton_binding",
         ":skeleton_event_base",

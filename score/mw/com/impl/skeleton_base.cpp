@@ -14,7 +14,7 @@
 
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
-#include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
@@ -28,7 +28,7 @@
 
 #include <algorithm>
 #include <exception>
-#include <unordered_map>
+#include <functional>
 #include <utility>
 #include <vector>
 
@@ -55,7 +55,7 @@ SkeletonBinding::SkeletonEventBindings GetSkeletonEventBindingsMap(const Skeleto
     for (const auto& event : events)
     {
         const std::string_view event_name = event.first;
-        SkeletonEventBase& skeleton_event_base = event.second.get();
+        SkeletonEventBase& skeleton_event_base = event.second.get().Get();
 
         auto skeleton_event_base_view = SkeletonEventBaseView{skeleton_event_base};
         auto* event_binding = skeleton_event_base_view.GetBinding();
@@ -72,7 +72,7 @@ SkeletonBinding::SkeletonFieldBindings GetSkeletonFieldBindingsMap(const Skeleto
     for (const auto& field : fields)
     {
         const std::string_view field_name = field.first;
-        SkeletonFieldBase& skeleton_field_base = field.second.get();
+        SkeletonFieldBase& skeleton_field_base = field.second.get().Get();
 
         auto skeleton_field_base_view = SkeletonFieldBaseView{skeleton_field_base};
         auto* event_binding = skeleton_field_base_view.GetEventBinding();
@@ -96,49 +96,12 @@ SkeletonBase::SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding, In
 {
 }
 
-SkeletonBase::SkeletonBase(SkeletonBase&& other) noexcept
-    : binding_{std::move(other.binding_)},
-      events_{std::move(other.events_)},
-      fields_{std::move(other.fields_)},
-      methods_{std::move(other.methods_)},
-      instance_id_{std::move(other.instance_id_)},
-      skeleton_mock_{std::move(other.skeleton_mock_)},
-      service_offered_flag_{std::move(other.service_offered_flag_)}
-{
-    UpdateAllServiceElementReferences();
-}
-
-// Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
-// or respectively copy base classes and data members of a class, without any side effects." Due to architectural
-// decisions, SkeletonBase must perform a cleanup and update references to itself in its events and fields. Therefore,
-// side effects are required.
-// coverity[autosar_cpp14_a6_2_1_violation]
-SkeletonBase& SkeletonBase::operator=(SkeletonBase&& other) noexcept
-{
-    if (this == &other)
-    {
-        return *this;
-    }
-
-    binding_ = std::move(other.binding_);
-    events_ = std::move(other.events_);
-    fields_ = std::move(other.fields_);
-    methods_ = std::move(other.methods_);
-    instance_id_ = std::move(other.instance_id_);
-    skeleton_mock_ = std::move(other.skeleton_mock_);
-    service_offered_flag_ = std::move(other.service_offered_flag_);
-
-    UpdateAllServiceElementReferences();
-
-    return *this;
-}
-
 score::Result<void> SkeletonBase::OfferServiceEvents() const noexcept
 {
-    for (auto& event : events_)
+    for (const auto& event : events_)
     {
         const auto event_name = event.first;
-        auto& skeleton_event = event.second.get();
+        auto& skeleton_event = event.second.get().Get();
         const auto offer_result = skeleton_event.PrepareOffer();
         if (!offer_result.has_value())
         {
@@ -153,10 +116,10 @@ score::Result<void> SkeletonBase::OfferServiceEvents() const noexcept
 
 score::Result<void> SkeletonBase::OfferServiceFields() const noexcept
 {
-    for (auto& field : fields_)
+    for (const auto& field : fields_)
     {
         const auto field_name = field.first;
-        auto& skeleton_field = field.second.get();
+        auto& skeleton_field = field.second.get().Get();
         const auto offer_result = skeleton_field.PrepareOffer();
         if (!offer_result.has_value())
         {
@@ -247,11 +210,11 @@ auto SkeletonBase::StopOfferService() noexcept -> void
 
         for (auto& event : events_)
         {
-            event.second.get().PrepareStopOffer();
+            event.second.get().Get().PrepareStopOffer();
         }
         for (auto& field : fields_)
         {
-            field.second.get().PrepareStopOffer();
+            field.second.get().Get().PrepareStopOffer();
         }
 
         auto tracing_handler = tracing::CreateUnregisterShmObjectCallback(instance_id_, events_, fields_, *binding_);
@@ -267,45 +230,29 @@ auto SkeletonBase::AreBindingsValid() const noexcept -> bool
     bool are_service_element_bindings_valid{true};
 
     score::cpp::ignore =
-        std::for_each(events_.begin(), events_.end(), [&are_service_element_bindings_valid](const auto& element) {
-            if (SkeletonEventBaseView{element.second.get()}.GetBinding() == nullptr)
+        std::for_each(events_.begin(), events_.end(), [&are_service_element_bindings_valid](auto& element) {
+            if (SkeletonEventBaseView{element.second.get().Get()}.GetBinding() == nullptr)
             {
                 are_service_element_bindings_valid = false;
             }
         });
     score::cpp::ignore =
-        std::for_each(fields_.begin(), fields_.end(), [&are_service_element_bindings_valid](const auto& element) {
-            if (SkeletonFieldBaseView{element.second.get()}.GetEventBinding() == nullptr)
+        std::for_each(fields_.begin(), fields_.end(), [&are_service_element_bindings_valid](auto& element) {
+            if (SkeletonFieldBaseView{element.second.get().Get()}.GetEventBinding() == nullptr)
             {
                 are_service_element_bindings_valid = false;
             }
         });
 
     score::cpp::ignore =
-        std::for_each(methods_.begin(), methods_.end(), [&are_service_element_bindings_valid](const auto& element) {
-            if (SkeletonMethodBaseView{element.second.get()}.GetMethodBinding() == nullptr)
+        std::for_each(methods_.begin(), methods_.end(), [&are_service_element_bindings_valid](auto& element) {
+            if (SkeletonMethodBaseView{element.second.get().Get()}.GetMethodBinding() == nullptr)
             {
                 are_service_element_bindings_valid = false;
             }
         });
 
     return is_skeleton_binding_valid && are_service_element_bindings_valid;
-}
-
-void SkeletonBase::UpdateAllServiceElementReferences() noexcept
-{
-    for (auto& event : events_)
-    {
-        event.second.get().UpdateSkeletonReference(*this);
-    }
-    for (auto& field : fields_)
-    {
-        field.second.get().UpdateSkeletonReference(*this);
-    }
-    for (auto& method : methods_)
-    {
-        method.second.get().UpdateSkeletonReference(*this);
-    }
 }
 
 SkeletonBaseView::SkeletonBaseView(SkeletonBase& skeleton_base) : skeleton_base_{skeleton_base} {}
@@ -320,55 +267,28 @@ SkeletonBinding* SkeletonBaseView::GetBinding() const
     return skeleton_base_.binding_.get();
 }
 
-void SkeletonBaseView::RegisterEvent(const std::string_view event_name, SkeletonEventBase& event)
+void SkeletonBaseView::RegisterEvent(const std::string_view event_name,
+                                     ReferenceToMoveable<SkeletonEventBase>::Reference& event)
 {
-    const auto result = skeleton_base_.events_.emplace(event_name, event);
+    const auto result = skeleton_base_.events_.emplace(event_name, std::ref(event));
     const bool was_event_inserted = result.second;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_event_inserted, "Event cannot be registered as it already exists.");
 }
 
-void SkeletonBaseView::RegisterField(const std::string_view field_name, SkeletonFieldBase& field)
+void SkeletonBaseView::RegisterField(const std::string_view field_name,
+                                     ReferenceToMoveable<SkeletonFieldBase>::Reference& field)
 {
-    const auto result = skeleton_base_.fields_.emplace(field_name, field);
+    const auto result = skeleton_base_.fields_.emplace(field_name, std::ref(field));
     const bool was_field_inserted = result.second;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_field_inserted, "Field cannot be registered as it already exists.");
 }
 
-void SkeletonBaseView::RegisterMethod(const std::string_view method_name, SkeletonMethodBase& method)
+void SkeletonBaseView::RegisterMethod(const std::string_view method_name,
+                                      ReferenceToMoveable<SkeletonMethodBase>::Reference& method)
 {
-    const auto result = skeleton_base_.methods_.emplace(method_name, method);
+    const auto result = skeleton_base_.methods_.emplace(method_name, std::ref(method));
     const bool was_method_inserted = result.second;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_method_inserted, "Method cannot be registered as it already exists.");
-}
-
-void SkeletonBaseView::UpdateEvent(const std::string_view event_name, SkeletonEventBase& event) noexcept
-{
-    auto event_name_it = skeleton_base_.events_.find(event_name);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
-        event_name_it != skeleton_base_.events_.cend(),
-        "SkeletonBaseView::UpdateEvent failed to update event because the requested event doesn't exist");
-
-    event_name_it->second = event;
-}
-
-void SkeletonBaseView::UpdateField(const std::string_view field_name, SkeletonFieldBase& field) noexcept
-{
-    auto field_name_it = skeleton_base_.fields_.find(field_name);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
-        field_name_it != skeleton_base_.fields_.cend(),
-        "SkeletonBaseView::UpdateField failed to update field because the requested field doesn't exist");
-
-    field_name_it->second = field;
-}
-
-void SkeletonBaseView::UpdateMethod(const std::string_view method_name, SkeletonMethodBase& method) noexcept
-{
-    auto method_it = skeleton_base_.methods_.find(method_name);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
-        method_it != skeleton_base_.methods_.cend(),
-        "SkeletonBaseView::UpdateMethod failed to update method because the requested method doesn't exist");
-
-    method_it->second = method;
 }
 
 const SkeletonBase::SkeletonEvents& SkeletonBaseView::GetEvents() const& noexcept
@@ -398,7 +318,7 @@ score::cpp::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpe
     {
         return {};
     }
-    const auto instance_identifier = instance_identifiers.front();
+    auto instance_identifier = instance_identifiers.front();
     return instance_identifier;
 }
 

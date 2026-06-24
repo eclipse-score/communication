@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
 #include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
@@ -67,8 +68,6 @@ class MyDummyField : public SkeletonFieldBase
     {
     }
 
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
-
     bool IsInitialValueSaved() const noexcept override
     {
         return true;
@@ -98,8 +97,8 @@ class SkeletonTracingFixture : public ::testing::Test
                                kEventName,
                                std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>()},
           skeleton_field_base_{empty_skeleton_, kFieldName, std::make_unique<mock_binding::SkeletonEventBase>()},
-          events_map_{{kEventName, skeleton_event_base_}},
-          fields_map_{{kFieldName, skeleton_field_base_}}
+          events_map_{{kEventName, skeleton_event_base_.GetReferenceToMoveable()}},
+          fields_map_{{kFieldName, skeleton_field_base_.GetReferenceToMoveable()}}
     {
         ON_CALL(mock_skeleton_binding_, GetBindingType).WillByDefault(Return(BindingType::kFake));
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock_));
@@ -130,8 +129,8 @@ class SkeletonTracingFixture : public ::testing::Test
     SkeletonEventBase skeleton_event_base_;
     MyDummyField skeleton_field_base_;
 
-    std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>> events_map_;
-    std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>> fields_map_;
+    std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonEventBase>::Reference>> events_map_;
+    std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>> fields_map_;
 };
 
 using SkeletonTracingCreateRegisterShmCallbackFixture = SkeletonTracingFixture;

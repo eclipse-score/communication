@@ -26,7 +26,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
                                            std::unique_ptr<GenericSkeletonEventBinding> binding)
     : SkeletonEventBase(skeleton_base, event_name, std::move(binding))
 {
-    SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, *this);
+    SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, GetReferenceToMoveable());
 
     if (binding_ != nullptr)
     {
