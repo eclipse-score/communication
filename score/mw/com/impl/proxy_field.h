@@ -352,6 +352,8 @@ class ProxyField final : public ProxyFieldBase
         }
         else
         {
+            std::ignore = proxy_base;
+            std::ignore = field_name;
             return nullptr;
         }
     }
@@ -372,6 +374,8 @@ class ProxyField final : public ProxyFieldBase
         }
         else
         {
+            std::ignore = proxy_base;
+            std::ignore = field_name;
             return nullptr;
         }
     }
@@ -391,6 +395,8 @@ class ProxyField final : public ProxyFieldBase
         }
         else
         {
+            std::ignore = proxy_base;
+            std::ignore = field_name;
             return nullptr;
         }
     }
