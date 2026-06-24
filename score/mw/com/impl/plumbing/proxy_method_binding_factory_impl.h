@@ -37,36 +37,12 @@
 
 namespace score::mw::com::impl
 {
-
-template <typename Signature>
-class ProxyMethodBindingFactoryImpl : IProxyMethodBindingFactory
+namespace detail
 {
-    static_assert(sizeof(Signature) == 0,
-                  "ProxyMethodBindingFactory can only be instantiated with a function signature, e.g., "
-                  "ProxyMethodBindingFactory<void(int, double)>. "
-                  "You tried to use an unsupported signature type.");
-};
 
 LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle,
                                                      const std::string& method_name_str,
                                                      MethodType method_type);
-
-/// \brief Factory class that dispatches calls to the appropriate binding based on binding information in the
-/// deployment configuration.
-template <typename ReturnType, typename... ArgTypes>
-class ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)> : public IProxyMethodBindingFactory
-{
-  public:
-    /// Creates instances of the binding specific implementations for a proxy method with a particular data type.
-    /// \tparam SampleType Type of the data that is exchanges
-    /// \param handle The handle containing the binding information.
-    /// \param method_name The binding unspecific name of the method inside the proxy denoted by handle.
-    /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
-    std::unique_ptr<ProxyMethodBinding> Create(HandleType parent_handle,
-                                               ProxyBinding* parent_binding,
-                                               const std::string_view method_name,
-                                               MethodType method_type) noexcept override;
-};
 
 template <typename ReturnType, typename... ArgTypes>
 lola::TypeErasedCallQueue::TypeErasedElementInfo GetTypeErasedElementInfo(HandleType parent_handle,
@@ -89,6 +65,34 @@ lola::TypeErasedCallQueue::TypeErasedElementInfo GetTypeErasedElementInfo(Handle
 
     return lola::TypeErasedCallQueue::TypeErasedElementInfo{in_arg_type_info, return_type_info, queue_size};
 }
+
+}  // namespace detail
+
+template <typename Signature>
+class ProxyMethodBindingFactoryImpl : IProxyMethodBindingFactory
+{
+    static_assert(sizeof(Signature) == 0,
+                  "ProxyMethodBindingFactory can only be instantiated with a function signature, e.g., "
+                  "ProxyMethodBindingFactory<void(int, double)>. "
+                  "You tried to use an unsupported signature type.");
+};
+
+/// \brief Factory class that dispatches calls to the appropriate binding based on binding information in the
+/// deployment configuration.
+template <typename ReturnType, typename... ArgTypes>
+class ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)> : public IProxyMethodBindingFactory
+{
+  public:
+    /// Creates instances of the binding specific implementations for a proxy method with a particular data type.
+    /// \tparam SampleType Type of the data that is exchanges
+    /// \param handle The handle containing the binding information.
+    /// \param method_name The binding unspecific name of the method inside the proxy denoted by handle.
+    /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
+    std::unique_ptr<ProxyMethodBinding> Create(HandleType parent_handle,
+                                               ProxyBinding* parent_binding,
+                                               const std::string_view method_name,
+                                               MethodType method_type) noexcept override;
+};
 
 template <typename ReturnType, typename... ArgTypes>
 std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)>::Create(
@@ -124,7 +128,7 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
                 GetElementFqId(parent_handle, lola_type_deployment, method_name_str, service_element_type);
 
             lola::TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info =
-                GetTypeErasedElementInfo<ReturnType, ArgTypes...>(parent_handle, method_name_str, method_type);
+                detail::GetTypeErasedElementInfo<ReturnType, ArgTypes...>(parent_handle, method_name_str, method_type);
 
             lola::ProxyMethodInstanceIdentifier proxy_method_instance_identifier{
                 lola_proxy->GetProxyInstanceIdentifier(), {element_fq_id.element_id_, method_type}};

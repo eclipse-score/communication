@@ -18,6 +18,8 @@
 
 namespace score::mw::com::impl
 {
+namespace detail
+{
 
 LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle,
                                                      const std::string& method_name_str,
@@ -52,4 +54,7 @@ LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle,
     }
     return lola_method_instance_deployment.queue_size_.value();
 }
+
+}  // namespace detail
+
 }  // namespace score::mw::com::impl
