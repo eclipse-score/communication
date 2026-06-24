@@ -73,21 +73,17 @@ TEST(ReferenceToMoveableTest, GetReturnsReferenceToUpdatedObject)
 // Note. This class and the test below is added as a demonstration of how ReferenceToMoveable and
 // ReferenceToMoveable::Reference can be used together to allow moveable classes to hand out references to themselves
 // while allowing these references to be updated when the moveable class is moved.
-class DummyClass
+class Decorator
 {
-  public:
-    DummyClass() : ptr_wrapper_{*this} {}
+public:
+    Decorator() : ptr_wrapper_{*this} {}
+    virtual ~Decorator() = default;
 
-    ~DummyClass() = default;
-
-    DummyClass(const DummyClass&) = delete;
-    DummyClass& operator=(const DummyClass&) & = delete;
-
-    DummyClass(DummyClass&& other) noexcept : ptr_wrapper_{std::move(other.ptr_wrapper_)}
+    Decorator(Decorator&& other) noexcept : ptr_wrapper_{std::move(other.ptr_wrapper_)}
     {
         ptr_wrapper_.Update(*this);
     }
-    DummyClass& operator=(DummyClass&& other) & noexcept
+    Decorator& operator=(Decorator&& other) & noexcept
     {
         if (this != &other)
         {
@@ -97,13 +93,29 @@ class DummyClass
         return *this;
     }
 
-    ReferenceToMoveable<DummyClass>::Reference& Get()
+    ReferenceToMoveable<Decorator>::Reference& Get()
     {
         return ptr_wrapper_.Get();
     }
 
-  private:
-    ReferenceToMoveable<DummyClass> ptr_wrapper_;
+private:
+    ReferenceToMoveable<Decorator> ptr_wrapper_;
+};
+
+class DummyClass : public Decorator
+{
+  public:
+    DummyClass() {}
+
+    ~DummyClass() override = default;
+
+    DummyClass(const DummyClass&) = delete;
+    DummyClass& operator=(const DummyClass&) & = delete;
+
+    DummyClass(DummyClass&& other) noexcept : Decorator{std::move(other)}
+    {
+    }
+    using Decorator::operator=;
 };
 
 TEST(ReferenceToMoveableDummyClassTest, GetReturnsReferenceToUpdatedObjectWhenMoveConstructingDummyClass)
