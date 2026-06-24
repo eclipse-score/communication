@@ -770,7 +770,7 @@ TEST_F(MessagePassingServiceInstanceHandleMessageWithReplyTest, RepliesWithError
 
     // When a MessageWithReply message is received which is empty
     std::vector<std::uint8_t> empty_message(0U);
-    const auto result = received_send_message_with_reply_callback_(
+    std::ignore = received_send_message_with_reply_callback_(
         server_connection_mock_, score::cpp::span<std::uint8_t>{empty_message.data(), empty_message.size()});
 }
 
@@ -805,7 +805,7 @@ TEST_F(MessagePassingServiceInstanceHandleMessageWithReplyTest, RepliesWithError
     // When a MessageWithReply message is received of unexpected type
     std::vector<std::uint8_t> payload_with_unexpected_type(sizeof(MethodCallUnserializedPayload) + 2U);
     payload_with_unexpected_type[0] = 20U;
-    const auto result = received_send_message_with_reply_callback_(
+    std::ignore = received_send_message_with_reply_callback_(
         server_connection_mock_,
         score::cpp::span<std::uint8_t>{payload_with_unexpected_type.data(), payload_with_unexpected_type.size()});
 }

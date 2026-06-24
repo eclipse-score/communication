@@ -92,7 +92,7 @@ class GenericProxy : public ProxyBase
     /// \details This map needs to be covered in a unique_ptr as it shall not be relocated by a move of the
     /// GenericProxy. This is required as we hand out views to this map (see GetEvents()), which need to be valid
     /// even after the GenericProxy instance has been moved.
-    std::unique_ptr<ServiceElementMapViewFactory<GenericProxyEvent>::map_type> events_;
+    std::unique_ptr<ServiceElementMapViewFactory<GenericProxyEvent>::map_type> generic_events_;
 
     /// Flag which is checked before calling Unsubscribe in the destructor.
     /// Cleared on move so the moved-from instance does not call Unsubscribe.

@@ -97,7 +97,7 @@ TEST_F(ServiceDiscoveryClientFixture, CorrectlyAssociatesSubsearchWithCorrectDir
     FindServiceHandle expected_handle{make_FindServiceHandle(1U)};
     const auto start_find_service_result = service_discovery_client_->StartFindService(
         expected_handle,
-        [&find_service_handler, destructor_notifier = std::move(destructor_notifier)](
+        [&find_service_handler, moved_notifier = std::move(destructor_notifier)](
             ServiceHandleContainer<HandleType> containers, FindServiceHandle handle) noexcept {
             find_service_handler.AsStdFunction()(containers, handle);
         },
@@ -150,7 +150,7 @@ TEST_F(ServiceDiscoveryClientFixture, DoesNotCallHandlerIfFindServiceIsStoppedBu
     FindServiceHandle expected_handle{make_FindServiceHandle(1U)};
     const auto start_find_service_result = service_discovery_client_->StartFindService(
         expected_handle,
-        [&find_service_handler, destructor_notifier = std::move(destructor_notifier)](
+        [&find_service_handler, moved_notifier = std::move(destructor_notifier)](
             ServiceHandleContainer<HandleType> containers, FindServiceHandle handle) noexcept {
             find_service_handler.AsStdFunction()(containers, handle);
         },

@@ -77,14 +77,14 @@ auto CreateTracingGetNewSamplesCallback(ProxyEventTracingData& proxy_event_traci
             // via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding
             // reference. std::forward is already used here.
             // coverity[autosar_cpp14_a18_9_2_violation : FALSE]
-            [&proxy_event_tracing_data, &proxy_event_binding_base, receiver = std::forward<ReceiverType>(receiver)](
+            [&proxy_event_tracing_data, &proxy_event_binding_base, fwd_receiver = std::forward<ReceiverType>(receiver)](
                 SamplePtr<SampleType> sample_ptr, ITracingRuntime::TracePointDataId trace_point_data_id) noexcept {
                 TraceCallGetNewSamplesCallback(proxy_event_tracing_data, proxy_event_binding_base, trace_point_data_id);
                 // Suppress "AUTOSAR C++14 A18-9-2", The rule states: "Forwarding values to other functions shall be
                 // done via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is
                 // forwarding reference. std::move is already used here.
                 // coverity[autosar_cpp14_a18_9_2_violation : FALSE]
-                receiver(std::move(sample_ptr));
+                fwd_receiver(std::move(sample_ptr));
             };
         return tracing_receiver;
     }
@@ -95,13 +95,13 @@ auto CreateTracingGetNewSamplesCallback(ProxyEventTracingData& proxy_event_traci
             // via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding
             // reference. std::forward is already used here.
             // coverity[autosar_cpp14_a18_9_2_violation : FALSE]
-            [receiver = std::forward<ReceiverType>(receiver)](SamplePtr<SampleType> sample_ptr,
-                                                              ITracingRuntime::TracePointDataId) noexcept {
+            [fwd_receiver = std::forward<ReceiverType>(receiver)](SamplePtr<SampleType> sample_ptr,
+                                                                  ITracingRuntime::TracePointDataId) noexcept {
                 // Suppress "AUTOSAR C++14 A18-9-2", The rule states: "Forwarding values to other functions shall be
                 // done via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is
                 // forwarding reference. std::move is already used here.
                 // coverity[autosar_cpp14_a18_9_2_violation : FALSE]
-                receiver(std::move(sample_ptr));
+                fwd_receiver(std::move(sample_ptr));
             };
         return tracing_receiver;
     }
@@ -116,15 +116,15 @@ typename GenericProxyEventBinding::Callback CreateTracingGenericGetNewSamplesCal
     // via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding
     // reference. std::forward is already used here.
     // coverity[autosar_cpp14_a18_9_2_violation : FALSE]
-    typename GenericProxyEventBinding::Callback tracing_receiver = [receiver = std::forward<ReceiverType>(receiver)](
-                                                                       SamplePtr<void> sample_ptr,
-                                                                       ITracingRuntime::TracePointDataId) noexcept {
-        // Suppress "AUTOSAR C++14 A18-9-2", The rule states: "Forwarding values to other functions shall be done
-        // via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding
-        // reference. std::move is already used here.
-        // coverity[autosar_cpp14_a18_9_2_violation : FALSE]
-        receiver(std::move(sample_ptr));
-    };
+    typename GenericProxyEventBinding::Callback tracing_receiver =
+        [fwd_receiver = std::forward<ReceiverType>(receiver)](SamplePtr<void> sample_ptr,
+                                                              ITracingRuntime::TracePointDataId) noexcept {
+            // Suppress "AUTOSAR C++14 A18-9-2", The rule states: "Forwarding values to other functions shall be done
+            // via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding
+            // reference. std::move is already used here.
+            // coverity[autosar_cpp14_a18_9_2_violation : FALSE]
+            fwd_receiver(std::move(sample_ptr));
+        };
     return tracing_receiver;
 }
 

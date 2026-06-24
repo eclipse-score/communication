@@ -422,9 +422,9 @@ score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(
     if (proxy_event_tracing_data.enable_call_receive_handler)
     {
         score::cpp::callback<void(void), 128U> tracing_receive_handler =
-            [&proxy_event_tracing_data, &proxy_event_binding_base, handler = std::move(handler)]() noexcept {
+            [&proxy_event_tracing_data, &proxy_event_binding_base, fwd_handler = std::move(handler)]() noexcept {
                 TraceCallReceiveHandler(proxy_event_tracing_data, proxy_event_binding_base);
-                handler();
+                fwd_handler();
             };
         return tracing_receive_handler;
     }

@@ -116,7 +116,7 @@ TEST_F(ServiceDiscoveryClientStopFindServiceFixture, DoesNotCallHandlerIfFindSer
     WhichContainsAServiceDiscoveryClient().WithAnActiveStartFindService(
         kConfigStoreQm1.GetInstanceIdentifier(),
         expected_handle,
-        [&handler_called, destructor_notifier = std::move(destructor_notifier)](auto, auto) noexcept {
+        [&handler_called, moved_notifier = std::move(destructor_notifier)](auto, auto) noexcept {
             handler_called = true;
         });
 
@@ -144,7 +144,7 @@ TEST_F(ServiceDiscoveryClientStopFindServiceFixture, DoesNotCallHandlerIfFindSer
     WhichContainsAServiceDiscoveryClient().WithAnActiveStartFindService(
         kConfigStoreFindAny.GetInstanceIdentifier(),
         expected_handle,
-        [&handler_called, destructor_notifier = std::move(destructor_notifier)](auto, auto) noexcept {
+        [&handler_called, moved_notifier = std::move(destructor_notifier)](auto, auto) noexcept {
             handler_called = true;
         });
 

@@ -67,7 +67,7 @@ class MyDummyField : public SkeletonFieldBase
     {
     }
 
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
+    void UpdateSkeletonReference(SkeletonBase& /*skeleton_base*/) noexcept override {}
 
     bool IsInitialValueSaved() const noexcept override
     {

@@ -152,9 +152,9 @@ class SkeletonField : public SkeletonFieldBase
                       "The argument initially holds the proxy-requested value and may be modified in-place.");
 
         auto wrapped_callback =
-            [this, set_handler = std::forward<CallableType>(set_handler)](FieldType& new_value) -> FieldType {
+            [this, fwd_set_handler = std::forward<CallableType>(set_handler)](FieldType& new_value) -> FieldType {
             // Allow user to validate/modify the value in-place
-            set_handler(new_value);
+            fwd_set_handler(new_value);
 
             // Store the (possibly modified) value as the latest field value
             auto update_result = this->Update(new_value);

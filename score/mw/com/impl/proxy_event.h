@@ -223,8 +223,8 @@ Result<std::size_t> ProxyEvent<SampleType>::GetNewSamples(F&& receiver, std::siz
     if (proxy_event_mock_ != nullptr)
     {
         typename IProxyEvent<SampleType>::Callback mock_callback =
-            [receiver = std::forward<F>(receiver)](SamplePtr<SampleType> sample_ptr) noexcept {
-                receiver(std::move(sample_ptr));
+            [fwd_receiver = std::forward<F>(receiver)](SamplePtr<SampleType> sample_ptr) noexcept {
+                fwd_receiver(std::move(sample_ptr));
             };
         return proxy_event_mock_->GetNewSamples(std::move(mock_callback), max_num_samples);
     }

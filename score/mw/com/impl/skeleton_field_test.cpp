@@ -939,7 +939,7 @@ TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferFailsWhenSetHandlerNotRegistered
 
 TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsAfterRegisterSetHandler)
 {
-    const TestSampleType kDummyInitialValue{7U};
+    const TestSampleType kSetHandlerInitialValue{7U};
 
     // Given a skeleton containing a field with a setter enabled
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -948,7 +948,7 @@ TEST_F(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsAfterRegisterSetHandler)
     ASSERT_TRUE(unit.my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {}).has_value());
 
     // Set the initial field value
-    ASSERT_TRUE(unit.my_setter_field_.Update(kDummyInitialValue).has_value());
+    ASSERT_TRUE(unit.my_setter_field_.Update(kSetHandlerInitialValue).has_value());
 
     // When PrepareOffer is called
     const auto result = unit.my_setter_field_.PrepareOffer();
@@ -1164,17 +1164,17 @@ TEST_F(SkeletonFieldSetHandlerTest, IsSetHandlerRegisteredFlagIsSetAfterRegistra
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    const TestSampleType kDummyInitialValue{3U};
+    const TestSampleType kLocalInitialValue{3U};
 
     EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(Result<void>{}));
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _)).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(kLocalInitialValue, _)).WillOnce(Return(Result<void>{}));
 
     EXPECT_CALL(skeleton_field_set_binding_mock_, RegisterHandler(_)).WillOnce(Return(Result<void>{}));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
     // Before registration PrepareOffer should fail with kSetHandlerNotSet
-    ASSERT_TRUE(unit.my_setter_field_.Update(kDummyInitialValue).has_value());
+    ASSERT_TRUE(unit.my_setter_field_.Update(kLocalInitialValue).has_value());
     {
         // Separate scope: verify failure without handler
         // (We cannot call PrepareOffer twice without a stop-offer in between, so we

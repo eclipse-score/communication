@@ -311,7 +311,7 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
     // (e.g. an issue with message passing itself). Any recoverable errors are sent back to the client in the reply
     // message and handled there.
     auto received_send_message_with_reply_callback =
-        [message_callback_with_reply_scoped_function = std::move(message_callback_with_reply_scoped_function)](
+        [scoped_callback = std::move(message_callback_with_reply_scoped_function)](
             score::message_passing::IServerConnection& connection,
             score::cpp::span<const std::uint8_t> message) noexcept -> score::cpp::expected_blank<score::os::Error> {
         const auto client_identity = connection.GetClientIdentity();
@@ -319,10 +319,8 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
         const auto client_uid = client_identity.uid;
 
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-            message_callback_with_reply_scoped_function != nullptr,
-            "Message callback with reply callable was not properly constructed");
-        auto function_invocation_result =
-            std::invoke(*message_callback_with_reply_scoped_function, client_uid, client_pid, message);
+            scoped_callback != nullptr, "Message callback with reply callable was not properly constructed");
+        auto function_invocation_result = std::invoke(*scoped_callback, client_uid, client_pid, message);
         if (!(function_invocation_result.has_value()))
         {
             score::mw::log::LogError("lola")

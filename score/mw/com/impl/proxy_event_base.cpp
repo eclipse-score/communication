@@ -161,8 +161,8 @@ void ProxyEventBase::Unsubscribe() noexcept
         return;
     }
 
-    utils::ScopeExit clear_subscribed_flag_on_exit{[&is_subscribed_flag_ = is_subscribed_flag_] {
-        is_subscribed_flag_.Clear();
+    utils::ScopeExit clear_subscribed_flag_on_exit{[&subscribed_flag_ref = is_subscribed_flag_] {
+        subscribed_flag_ref.Clear();
     }};
 
     if (proxy_event_base_mock_ != nullptr)
@@ -257,9 +257,9 @@ Result<void> ProxyEventBase::SetReceiveHandler(EventReceiveHandler handler) noex
     // Package the tracing handler, which already encapsulates the user provided EventReceiveHandler into another
     // move-only function, which adds the aspect of updating the thread local state is_in_receive_handler_context
     // correctly.
-    auto extended_tracing_handler = [handler = std::move(tracing_handler)]() noexcept {
+    auto extended_tracing_handler = [tracing_handler_fn = std::move(tracing_handler)]() noexcept {
         is_in_receive_handler_context = true;
-        handler();
+        tracing_handler_fn();
         is_in_receive_handler_context = false;
     };
 
