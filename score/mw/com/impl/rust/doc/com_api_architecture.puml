@@ -134,7 +134,9 @@ interface Subscription<T: CommData, R: Runtime + ?Sized> {
     ---
     + unsubscribe()
     + try_receive()
-    + receive()
+    + async receive()
+    + async cancellable_receive()
+    + to_stream()
 }
 
 class SampleContainer<S> {

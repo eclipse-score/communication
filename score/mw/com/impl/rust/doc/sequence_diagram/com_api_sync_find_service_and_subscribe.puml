@@ -1,4 +1,4 @@
-@startuml com_api_find_service_and_subscribe
+@startuml com_api_sync_find_service_and_subscribe
 
 ' Copyright (c) 2025 Contributors to the Eclipse Foundation
 '
@@ -16,6 +16,7 @@ title Find Service and Subscribe
 actor User
 participant "R: Runtime" as Runtime
 participant "ServiceDiscovery<I, R>" as ServiceDiscovery
+participant "ServiceEnumerator<I, R>" as ServiceEnumerator
 participant "ConsumerBuilder<I, R>" as ConsumerBuilder
 participant "Consumer<R>" as Consumer
 participant "Subscriber<T, R>" as Subscriber
@@ -27,10 +28,10 @@ Runtime --> User: ServiceDiscovery<I, R>
 User -> ServiceDiscovery: get_available_instances()
 ServiceDiscovery --> User: Result<ServiceEnumerator>
 
-Note over User: ServiceEnumerator contains\nConsumerBuilder instances
+Note over User: ServiceEnumerator yields\nConsumerBuilder instances when iterated
 
-User -> ConsumerBuilder: (from iterator.nth())
-ConsumerBuilder --> User: ConsumerBuilder<I, R>
+User -> ServiceEnumerator: into_iter() (e.g., .next(), .nth(n), or any iterator method)
+ServiceEnumerator --> User: ConsumerBuilder<I, R>
 
 User -> ConsumerBuilder: build()
 ConsumerBuilder --> User: Result<Consumer<R>>
