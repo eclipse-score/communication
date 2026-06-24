@@ -33,7 +33,7 @@ on:
 
 concurrency:
   group: build_and_test_qnx-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request_target'}}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 env:
   LICENSE_DIR: "/opt/score_qnx/license"

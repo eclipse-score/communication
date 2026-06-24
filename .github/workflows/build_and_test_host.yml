@@ -31,7 +31,7 @@ on:
         default: true
 concurrency:
   group: build_and_test_host-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request'}}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 env:
   ANDROID_HOME: ""
   ANDROID_SDK_ROOT: ""
