@@ -247,6 +247,7 @@ cc_unit_test(
     deps = [
         ":service_element_identifier",
         "//score/mw/com/impl:service_element_type",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
 

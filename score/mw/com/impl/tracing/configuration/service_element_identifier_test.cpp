@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/tracing/configuration/service_element_identifier.h"
 
 #include "score/mw/com/impl/service_element_type.h"
+#include "score/mw/log/recorder_mock.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -169,17 +170,26 @@ TEST(ServiceElementIdentifierStreamTest, OperatorStreamOutputsServiceElementData
     // Given a ServiceElementIdentifier
     const ServiceElementIdentifier service_element_identifier{"TestType", "TestElement", ServiceElementType::EVENT};
 
-    testing::internal::CaptureStdout();
+    // Given a log recorder mock
+    score::mw::log::RecorderMock recorder_mock{};
+    score::mw::log::SetLogRecorder(&recorder_mock);
+    score::mw::log::SlotHandle handle{10};
+    ON_CALL(recorder_mock, StartRecord(::testing::_, score::mw::log::LogLevel::kFatal))
+        .WillByDefault(::testing::Return(handle));
+
+    // Then the logged output should contain the formatted service type, service element name, and service element type
+    EXPECT_CALL(recorder_mock, LogStringView(handle, std::string_view{"service type: "}));
+    EXPECT_CALL(recorder_mock, LogStringView(handle, std::string_view{"TestType"}));
+    EXPECT_CALL(recorder_mock, LogStringView(handle, std::string_view{", service element: "}));
+    EXPECT_CALL(recorder_mock, LogStringView(handle, std::string_view{"TestElement"}));
+    EXPECT_CALL(recorder_mock, LogStringView(handle, std::string_view{", service element type: "}));
+    EXPECT_CALL(recorder_mock, LogStringView(handle, std::string_view{"EVENT"}));
 
     // When streaming the ServiceElementIdentifier to a log
     score::mw::log::LogFatal("test") << service_element_identifier;
 
-    std::string output = testing::internal::GetCapturedStdout();
-
-    // Then the output should contain the formatted service type, service element name, and service element type
-    EXPECT_THAT(output, testing::HasSubstr("service type:  TestType"));
-    EXPECT_THAT(output, testing::HasSubstr("service element:  TestElement"));
-    EXPECT_THAT(output, testing::HasSubstr("service element type:  EVENT"));
+    // Reset the global recorder to nullptr so that it no longer points to the local recorder_mock.
+    score::mw::log::SetLogRecorder(nullptr);
 }
 
 }  // namespace
