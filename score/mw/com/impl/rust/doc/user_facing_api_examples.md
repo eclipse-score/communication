@@ -392,7 +392,7 @@ async fn read_tire_data_with_timeout<R: Runtime>(
 - Stream returns samples with `Ready` status
 - Errors don't end the stream automatically - user decides based on error severity
 - Requires mutable reference to subscription
-- `SampleContainer` lifecycle managed internally
+- This method will allocate an internal sample pointer buffer with a fixed size equal to the `max_samples` value specified at subscription time
 
 <details>
 <summary>Examples:</summary>

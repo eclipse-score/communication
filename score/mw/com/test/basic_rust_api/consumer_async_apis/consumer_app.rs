@@ -30,18 +30,18 @@ use com_api::{
     Builder, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, Runtime,
     RuntimeBuilder, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
 };
-use futures::channel::oneshot;
-use futures::{FutureExt, StreamExt};
 use core::time::Duration;
 use core::unreachable;
+use futures::channel::oneshot;
+use futures::{FutureExt, StreamExt};
 use std::path::Path;
+use std::sync::mpsc;
 use std::thread;
 
 const CONFIG_PATH: &str = "etc/config.json";
 const MAX_SAMPLES_PER_CALL: usize = 5;
 
-#[derive(Clone, clap::ValueEnum)]
-#[derive(Debug)]
+#[derive(Clone, clap::ValueEnum, Debug)]
 enum ReceiveMode {
     WithCancellation,
     WithoutCancellation,
@@ -79,7 +79,7 @@ async fn receive_without_cancellation<R: Runtime>(
                 println!("[bigdata-consumer] Received {} samples", count);
                 let mut buf = returned_buf;
                 while let Some(sample) = buf.pop_front() {
-                    println!("[bigdata-consumer]   Sample x: {}", sample.x);         
+                    println!("[bigdata-consumer]   Sample x: {}", sample.x);
                 }
                 buffer = buf;
             }
@@ -90,7 +90,7 @@ async fn receive_without_cancellation<R: Runtime>(
         }
         total_cycle += 1;
         if total_cycle >= num_cycles {
-                break;
+            break;
         }
     }
 }
@@ -107,13 +107,22 @@ async fn receive_with_cancellation<R: Runtime>(
 
     println!("[bigdata-consumer] Using async cancellable receive with timeout");
 
-    while total_cycle < num_cycles {
-        // Create a timeout future using oneshot channel and thread sleep
-        let (tx, rx) = oneshot::channel();
-        thread::spawn(move || {
+    // Thread for simulating a timeout mechanism.
+    // This is just for demonstration purposes, but in a real application you would likely use a more robust timer mechanism or library.
+    let (timer_tx, timer_rx) = mpsc::channel::<oneshot::Sender<()>>();
+    thread::spawn(move || {
+        while let Ok(reply_tx) = timer_rx.recv() {
             thread::sleep(Duration::from_millis(50));
-            let _ = tx.send(()); // Send signal after timeout
-        });
+            let _ = reply_tx.send(());
+        }
+    });
+
+    while total_cycle < num_cycles {
+        // Request a timeout from the shared timer thread.
+        let (tx, rx) = oneshot::channel();
+        timer_tx
+            .send(tx)
+            .expect("Timer thread unexpectedly stopped");
 
         // Map the receiver to resolve to () instead of Result<(), Canceled>
         let timeout_future = rx.map(|_| ());
@@ -142,15 +151,17 @@ async fn receive_with_cancellation<R: Runtime>(
         if total_cycle >= num_cycles {
             break;
         }
-
     }
 }
 
 /// Demonstrates using the async stream API to receive samples as they arrive.
 /// Receives samples one at a time as they are published by the producer, printing each sample's `x` field until the specified number of samples have been received.
-/// The stream will end if the subscription is cancelled or if the consumer is shut down, but will not end on receive errors instead, 
+/// The stream will end if the subscription is cancelled or if the consumer is shut down, but will not end on receive errors instead,
 /// errors are returned as part of the stream and can be handled by the consumer while continuing to receive future samples.
-async fn receive_stream<R: Runtime>(mut subscription: impl Subscription<MapApiLanesStamped, R>, num_cycles: usize) {
+async fn receive_stream<R: Runtime>(
+    mut subscription: impl Subscription<MapApiLanesStamped, R>,
+    num_cycles: usize,
+) {
     let mut stream = subscription.to_stream();
     let mut total_cycle = 0;
 
@@ -166,7 +177,7 @@ async fn receive_stream<R: Runtime>(mut subscription: impl Subscription<MapApiLa
             Some(Err(e)) => {
                 eprintln!("[bigdata-consumer] Stream error: {:?}", e);
             }
-            None => unreachable!("Stream never sends None")
+            None => unreachable!("Stream never sends None"),
         }
         total_cycle += 1;
     }
@@ -224,5 +235,8 @@ async fn async_main() {
         ReceiveMode::Stream => receive_stream(subscription, num_cycles).await,
     }
 
-    println!("[bigdata-consumer] Completed {} receive attempts, exiting", num_cycles);
+    println!(
+        "[bigdata-consumer] Completed {} receive attempts, exiting",
+        num_cycles
+    );
 }
