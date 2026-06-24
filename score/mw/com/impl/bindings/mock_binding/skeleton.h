@@ -34,7 +34,7 @@ class Skeleton : public SkeletonBinding
                 (noexcept, override, final));
     MOCK_METHOD(void, PrepareStopOffer, (std::optional<UnregisterShmObjectTraceCallback>), (noexcept, override, final));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override, final));
-    MOCK_METHOD(bool, VerifyAllMethodsRegistered, (), (const, override));
+    MOCK_METHOD(bool, VerifyAllMethodHandlersRegistered, (), (const, override));
 };
 
 class SkeletonFacade : public SkeletonBinding
@@ -60,9 +60,9 @@ class SkeletonFacade : public SkeletonBinding
         return skeleton_.GetBindingType();
     }
 
-    bool VerifyAllMethodsRegistered() const override final
+    bool VerifyAllMethodHandlersRegistered() const override final
     {
-        return skeleton_.VerifyAllMethodsRegistered();
+        return skeleton_.VerifyAllMethodHandlersRegistered();
     }
 
   private:

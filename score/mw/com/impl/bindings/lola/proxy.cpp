@@ -244,6 +244,83 @@ score::Result<void> ExecutePartialRestartLogic(const QualityType quality_type,
     return {};
 }
 
+template <typename>
+struct ServiceElementTypeFor;
+
+template <>
+struct ServiceElementTypeFor<LolaMethodInstanceDeployment>
+{
+    static constexpr ServiceElementType kType = ServiceElementType::METHOD;
+};
+
+template <>
+struct ServiceElementTypeFor<LolaFieldInstanceDeployment>
+{
+    static constexpr ServiceElementType kType = ServiceElementType::FIELD;
+};
+
+constexpr LolaMethodInstanceDeployment::QueueSize kFieldMethodQueueSize{1U};
+
+template <typename T>
+constexpr bool always_false_v = false;
+
+template <typename LolaInstanceDeploymentType>
+std::vector<std::pair<MethodType, LolaMethodInstanceDeployment::QueueSize>> GetEnabledMethodEntries(
+    const LolaInstanceDeploymentType& deployment)
+{
+    std::vector<std::pair<MethodType, LolaMethodInstanceDeployment::QueueSize>> entries;
+
+    if constexpr (std::is_same_v<LolaInstanceDeploymentType, LolaFieldInstanceDeployment>)
+    {
+        for (const auto& [use_if_available, method_type] :
+             {std::pair{deployment.use_get_if_available_, MethodType::kGet},
+              std::pair{deployment.use_set_if_available_, MethodType::kSet}})
+        {
+            if (use_if_available.value_or(false))
+            {
+                entries.emplace_back(method_type, kFieldMethodQueueSize);
+            }
+        }
+    }
+    else if constexpr (std::is_same_v<LolaInstanceDeploymentType, LolaMethodInstanceDeployment>)
+    {
+        if (deployment.enabled_.value_or(false))
+        {
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                deployment.queue_size_.has_value(),
+                "Method instance deployment must contain queue_size on proxy side!");
+            entries.emplace_back(MethodType::kMethod, deployment.queue_size_.value());
+        }
+    }
+    else
+    {
+        // Defensive programming: This branch should never be hit as this function is only instantiated for
+        // LolaFieldInstanceDeployment and LolaMethodInstanceDeployment.
+        static_assert(always_false_v<LolaInstanceDeploymentType>,
+                      "GetEnabledMethodEntries is not implemented for this type");
+    }
+    return entries;
+}
+
+template <typename DeploymentMap>
+void AppendEnabledMethodIds(
+    const DeploymentMap& deployment_map,
+    std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& result,
+    const LolaServiceTypeDeployment& service_type_deployment)
+{
+    using ElementDeployment = typename DeploymentMap::mapped_type;
+    constexpr auto kElementType = ServiceElementTypeFor<ElementDeployment>::kType;
+
+    for (const auto& [name, deployment] : deployment_map)
+    {
+        const auto element_id = GetServiceElementId<kElementType>(service_type_deployment, name);
+        for (const auto& [method_type, queue_size] : GetEnabledMethodEntries(deployment))
+        {
+            result.emplace_back(UniqueMethodIdentifier{element_id, method_type}, queue_size);
+        }
+    }
+}
+
 }  // namespace
 
 namespace detail_proxy
@@ -630,35 +707,6 @@ score::Result<void> Proxy::SetupMethods()
 {
     auto enabled_method_data = GetMethodIdAndQueueSizeForEnabledMethods();
 
-    // Add field Get/Set methods to the enabled method data.
-    // TODO(Ticket-250429): Replace these constants with actual per-field configuration flags
-    // once the field get/set availability is added to the deployment configuration.
-    constexpr bool kUseGetIfAvailable = true;
-    constexpr bool kUseSetIfAvailable = true;
-
-    // TODO : This would also be replaced with the actual queue size configuration from the config files once we support
-    // queue size > 1.
-    constexpr LolaMethodInstanceDeployment::QueueSize kFieldMethodQueueSize{1U};
-
-    const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
-    const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
-    {
-        std::lock_guard lock{proxy_method_registration_mutex_};
-        for (const auto& [field_name, field_instance_deployment] : lola_service_instance_deployment.fields_)
-        {
-            const auto field_id =
-                GetServiceElementId<ServiceElementType::FIELD>(lola_service_type_deployment, field_name);
-
-            if ((kUseGetIfAvailable) && (proxy_methods_.count({field_id, MethodType::kGet}) != 0U))
-            {
-                enabled_method_data.push_back({{field_id, MethodType::kGet}, kFieldMethodQueueSize});
-            }
-            if ((kUseSetIfAvailable) && (proxy_methods_.count({field_id, MethodType::kSet}) != 0U))
-            {
-                enabled_method_data.push_back({{field_id, MethodType::kSet}, kFieldMethodQueueSize});
-            }
-        }
-    }
     // This check has be done after looping over the fields to add the field methods to the enabled method data because,
     // if we did this before then even when the fields are configured and when the enabled_method_names are empty we
     // would do an early return and miss setting up the fields shm.
@@ -790,23 +838,11 @@ Proxy::GetMethodIdAndQueueSizeForEnabledMethods() const
     const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
     const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
 
-    // Get enabled methods from config and build method data
-    for (const auto& [method_name, method_deployment] : lola_service_instance_deployment.methods_)
-    {
-        if (method_deployment.enabled_.has_value() && method_deployment.enabled_.value())
-        {
-            const auto method_id =
-                GetServiceElementId<ServiceElementType::METHOD>(lola_service_type_deployment, method_name);
+    AppendEnabledMethodIds(
+        lola_service_instance_deployment.methods_, enabled_method_ids_and_queue_sizes, lola_service_type_deployment);
 
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-                method_deployment.queue_size_.has_value(),
-                "Method instance deployment must contain queue_size on proxy side!");
-            const auto queue_size = method_deployment.queue_size_.value();
-
-            std::ignore = enabled_method_ids_and_queue_sizes.emplace_back(
-                UniqueMethodIdentifier{method_id, MethodType::kMethod}, queue_size);
-        }
-    }
+    AppendEnabledMethodIds(
+        lola_service_instance_deployment.fields_, enabled_method_ids_and_queue_sizes, lola_service_type_deployment);
 
     return enabled_method_ids_and_queue_sizes;
 }
