@@ -23,13 +23,14 @@
 #include "score/filesystem/factory/filesystem_factory_fake.h"
 #include "score/os/utils/inotify/inotify_instance_mock.h"
 
+#include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
+
 #include <score/expected.hpp>
 
 #include <gtest/gtest.h>
 #include <cerrno>
-#include <iostream>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -666,26 +667,40 @@ TEST_F(FlagFileCrawlerCrawlAndWatchSpecificInstanceFixture,
         .WillOnce(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EPERM))));
 
     // And that Status is called which returns a status containing permissions
-    const auto file_permissions_octal = 777;
+    const std::string_view file_permissions_octal = "777";
     filesystem::FileStatus file_status{filesystem::FileType::kDirectory, kAllPerms};
     ON_CALL(filesystem_factory_fake_.GetStandard(), Status(instance_id_search_path)).WillByDefault(Return(file_status));
 
     GivenAFlagFileCrawler();
 
-    // capture stdout output during CrawlAndWatch.
-    testing::internal::CaptureStdout();
+    // Then a message should be logged containing the file permissions in octal format
+    score::mw::log::RecorderMock recorder_mock{};
+    score::mw::log::SetLogRecorder(&recorder_mock);
+    const score::mw::log::SlotHandle handle{10};
+    ON_CALL(recorder_mock, StartRecord(::testing::_, score::mw::log::LogLevel::kError))
+        .WillByDefault(Return(score::cpp::optional<score::mw::log::SlotHandle>{handle}));
+    // GMock evaluates EXPECT_CALLs in LIFO order (last registered = highest priority). The catch-all expectations
+    // are registered first so they have the lowest priority and absorb any calls that don't match a specific
+    // expectation registered afterwards.
+    //
+    // The catch-all for StartRecord is necessary because CrawlAndWatch emits log calls at levels other than kError
+    // (e.g. during the internal directory crawl phase) before reaching the EPERM handling path. Without it, GMock
+    // would treat every non-kError StartRecord call as an "unexpected call" failure, because registering ANY
+    // EXPECT_CALL for a mock function makes all non-matching calls to that function fail.
+    EXPECT_CALL(recorder_mock, StartRecord(::testing::_, ::testing::_)).Times(::testing::AnyNumber());
+    // The catch-all for LogStringView is necessary for the same reason, the EPERM path emits multiple LogStringView
+    // calls per log record, and only the two permissions-related strings below are asserted. Without the catch-all,
+    // those unmatched calls would fail.
+    EXPECT_CALL(recorder_mock, LogStringView(::testing::_, ::testing::_)).Times(::testing::AnyNumber());
+    // Specific expectations for the permissions log (registered last = highest LIFO priority)
+    EXPECT_CALL(recorder_mock, LogStringView(handle, std::string_view{"Current file permissions are:"}));
+    EXPECT_CALL(recorder_mock, LogStringView(handle, file_permissions_octal));
 
     // When calling CrawlAndWatch
     score::cpp::ignore = flag_file_crawler_->CrawlAndWatch(kConfigStoreQm1.GetEnrichedInstanceIdentifier());
 
-    // stop capture, get captured data and print output for easier test debugging
-    std::string log_output = testing::internal::GetCapturedStdout();
-    std::cout << log_output << std::endl;
-
-    // Then a message should be logged containing the file permissions in octal format
-    std::stringstream expected_text_snippet{};
-    expected_text_snippet << "Current file permissions are: " << file_permissions_octal;
-    EXPECT_TRUE(log_output.find(expected_text_snippet.str()) != log_output.npos);
+    // Reset the global recorder to nullptr so that it no longer points to the local recorder_mock.
+    score::mw::log::SetLogRecorder(nullptr);
 }
 
 TEST_F(FlagFileCrawlerCrawlAndWatchSpecificInstanceFixture, ReturnsErrorIfCannotGetDirectoryStatusToCheckPermissions)

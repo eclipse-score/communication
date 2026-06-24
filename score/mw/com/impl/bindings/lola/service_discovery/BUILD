@@ -75,6 +75,8 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola/service_discovery/test:service_discovery_client_test_resources",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "@score_baselibs//score/filesystem:mock",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:recorder_mock",
         "@score_baselibs//score/os/utils/inotify:inotify_instance_mock",
     ],
 )
