@@ -960,8 +960,8 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     EXPECT_CALL(skeleton_field_binding_mock_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // and that Send is called on the event binding once for the event and once for the field
-    EXPECT_CALL(skeleton_event_binding_mock_, Send(event_value, _));
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(field_value, _));
+    EXPECT_CALL(skeleton_event_binding_mock_, Send(event_value, _, _));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(field_value, _, _));
 
     // and that VerifyAllMethodsRegistered returns true because there are no methods to register
     EXPECT_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillOnce(Return(true));
