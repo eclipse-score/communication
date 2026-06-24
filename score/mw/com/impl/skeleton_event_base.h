@@ -28,10 +28,6 @@ namespace score::mw::com::impl
 {
 
 class SkeletonEventBaseView;
-// False Positive: this is a normal forward declaration.
-// Which is used to avoid cyclic dependency with skeleton_base.h
-// coverity[autosar_cpp14_m3_2_3_violation]
-class SkeletonBase;
 
 class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEventBase>
 {
@@ -41,9 +37,7 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
     friend SkeletonEventBaseView;
 
   public:
-    SkeletonEventBase(SkeletonBase& skeleton_base,
-                      const std::string_view event_name,
-                      std::unique_ptr<SkeletonEventBindingBase> binding)
+    SkeletonEventBase(const std::string_view event_name, std::unique_ptr<SkeletonEventBindingBase> binding)
         : EnableReferenceToMoveableFromThis<SkeletonEventBase>(),
           binding_{std::move(binding)},
           event_name_{event_name},

@@ -61,10 +61,7 @@ class MyDummyField : public SkeletonFieldBase
     MyDummyField(SkeletonBase& skeleton_base,
                  const std::string_view field_name,
                  std::unique_ptr<SkeletonEventBindingBase> skeleton_event_base)
-        : SkeletonFieldBase{
-              skeleton_base,
-              field_name,
-              std::make_unique<SkeletonEventBase>(skeleton_base, field_name, std::move(skeleton_event_base))}
+        : SkeletonFieldBase{field_name, std::make_unique<SkeletonEventBase>(field_name, std::move(skeleton_event_base))}
     {
     }
 
@@ -93,9 +90,7 @@ class SkeletonTracingFixture : public ::testing::Test
         : empty_skeleton_{std::make_unique<mock_binding::Skeleton>(), kInstanceIdentifier},
           mock_skeleton_binding_{
               *dynamic_cast<mock_binding::Skeleton*>(SkeletonBaseView{empty_skeleton_}.GetBinding())},
-          skeleton_event_base_{empty_skeleton_,
-                               kEventName,
-                               std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>()},
+          skeleton_event_base_{kEventName, std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>()},
           skeleton_field_base_{empty_skeleton_, kFieldName, std::make_unique<mock_binding::SkeletonEventBase>()},
           events_map_{{kEventName, skeleton_event_base_.GetReferenceToMoveable()}},
           fields_map_{{kFieldName, skeleton_field_base_.GetReferenceToMoveable()}}

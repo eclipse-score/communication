@@ -56,10 +56,8 @@ class MyDummyField : public SkeletonFieldBase
   public:
     MyDummyField()
         : SkeletonFieldBase{
-              kEmptySkeleton,
               kFieldName,
-              std::make_unique<SkeletonEventBase>(kEmptySkeleton,
-                                                  kFieldName,
+              std::make_unique<SkeletonEventBase>(kFieldName,
                                                   std::make_unique<StrictMock<mock_binding::SkeletonEventBase>>())}
     {
     }

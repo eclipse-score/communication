@@ -133,8 +133,7 @@ class SkeletonEvent : public SkeletonEventBase
 
 template <typename SampleDataType>
 SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base, const std::string_view event_name)
-    : SkeletonEventBase{skeleton_base,
-                        event_name,
+    : SkeletonEventBase{event_name,
                         SkeletonEventBindingFactory<EventType>::Create(
                             SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                             skeleton_base,
@@ -159,7 +158,7 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
                                              const std::string_view event_name,
                                              std::unique_ptr<SkeletonEventBinding<EventType>> binding,
                                              FieldOnlyConstructorEnabler)
-    : SkeletonEventBase{skeleton_base, event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
+    : SkeletonEventBase{event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
 {
     if (binding_ != nullptr)
     {
@@ -176,7 +175,7 @@ template <typename SampleDataType>
 SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
                                              const std::string_view event_name,
                                              std::unique_ptr<SkeletonEventBinding<EventType>> binding)
-    : SkeletonEventBase{skeleton_base, event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
+    : SkeletonEventBase{event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
 {
 }
 

@@ -24,9 +24,6 @@ namespace score::mw::com::impl
 
 class SkeletonMethodBaseView;
 
-// forward declaration to avoid cyclical dependencies
-class SkeletonBase;
-
 class SkeletonMethodBase : public EnableReferenceToMoveableFromThis<SkeletonMethodBase>
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
@@ -36,8 +33,7 @@ class SkeletonMethodBase : public EnableReferenceToMoveableFromThis<SkeletonMeth
     friend SkeletonMethodBaseView;
 
   public:
-    SkeletonMethodBase(SkeletonBase&,
-                       const std::string_view method_name,
+    SkeletonMethodBase(const std::string_view method_name,
                        std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding,
                        MethodType method_type = MethodType::kMethod)
         : EnableReferenceToMoveableFromThis<SkeletonMethodBase>(),

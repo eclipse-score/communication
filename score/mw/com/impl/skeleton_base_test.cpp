@@ -703,23 +703,19 @@ class SkeletonBaseServiceElementReferencesFixture : public ::testing::Test
     mock_binding::Skeleton skeleton_binding_mock_{};
     MySkeleton skeleton_{std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_), instance_identifier_};
 
-    SkeletonEventBase event_0_{skeleton_, event_name_0_, std::make_unique<mock_binding::SkeletonEventBase>()};
-    SkeletonEventBase event_1_{skeleton_, event_name_1_, std::make_unique<mock_binding::SkeletonEventBase>()};
+    SkeletonEventBase event_0_{event_name_0_, std::make_unique<mock_binding::SkeletonEventBase>()};
+    SkeletonEventBase event_1_{event_name_1_, std::make_unique<mock_binding::SkeletonEventBase>()};
 
     std::unique_ptr<SkeletonEventBase> field_event_dispatch_0_{
-        std::make_unique<SkeletonEventBase>(skeleton_,
-                                            field_name_0_,
-                                            std::make_unique<mock_binding::SkeletonEventBase>())};
+        std::make_unique<SkeletonEventBase>(field_name_0_, std::make_unique<mock_binding::SkeletonEventBase>())};
     std::unique_ptr<SkeletonEventBase> field_event_dispatch_1_{
-        std::make_unique<SkeletonEventBase>(skeleton_,
-                                            field_name_1_,
-                                            std::make_unique<mock_binding::SkeletonEventBase>())};
+        std::make_unique<SkeletonEventBase>(field_name_1_, std::make_unique<mock_binding::SkeletonEventBase>())};
 
-    DummyField field_0_{skeleton_, field_name_0_, std::move(field_event_dispatch_0_)};
-    DummyField field_1_{skeleton_, field_name_0_, std::move(field_event_dispatch_0_)};
+    DummyField field_0_{field_name_0_, std::move(field_event_dispatch_0_)};
+    DummyField field_1_{field_name_1_, std::move(field_event_dispatch_1_)};
 
-    SkeletonMethodBase method_0_{skeleton_, method_name_0_, std::make_unique<mock_binding::SkeletonMethod>()};
-    SkeletonMethodBase method_1_{skeleton_, method_name_1_, std::make_unique<mock_binding::SkeletonMethod>()};
+    SkeletonMethodBase method_0_{method_name_0_, std::make_unique<mock_binding::SkeletonMethod>()};
+    SkeletonMethodBase method_1_{method_name_1_, std::make_unique<mock_binding::SkeletonMethod>()};
 };
 
 TEST_F(SkeletonBaseServiceElementReferencesFixture, RegisteringServiceElementStoresReferenceInMap)
@@ -807,14 +803,14 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferenc
     MySkeleton skeleton_2{std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock), instance_identifier_};
 
     // and given that an Event, Field and Method were registered on the second skeleton
-    SkeletonEventBase event{skeleton_2, other_event_name, std::make_unique<mock_binding::SkeletonEventBase>()};
+    SkeletonEventBase event{other_event_name, std::make_unique<mock_binding::SkeletonEventBase>()};
 
-    auto field_event_dispatch = std::make_unique<SkeletonEventBase>(
-        skeleton_2, other_field_name, std::make_unique<mock_binding::SkeletonEventBase>());
+    auto field_event_dispatch =
+        std::make_unique<SkeletonEventBase>(other_field_name, std::make_unique<mock_binding::SkeletonEventBase>());
 
-    DummyField field{skeleton_2, other_field_name, std::move(field_event_dispatch)};
+    DummyField field{other_field_name, std::move(field_event_dispatch)};
 
-    SkeletonMethodBase method{skeleton_2, other_method_name, std::make_unique<mock_binding::SkeletonMethod>()};
+    SkeletonMethodBase method{other_method_name, std::make_unique<mock_binding::SkeletonMethod>()};
     SkeletonBaseView{skeleton_2}.RegisterEvent(other_event_name, event.GetReferenceToMoveable());
     SkeletonBaseView{skeleton_2}.RegisterField(other_field_name, field.GetReferenceToMoveable());
     SkeletonBaseView{skeleton_2}.RegisterMethod(other_method_name, method.GetReferenceToMoveable());

@@ -274,7 +274,7 @@ SkeletonField<SampleDataType, Tags...>::SkeletonField(
     std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
     std::unique_ptr<SkeletonMethod<SetMethodSignature>> skeleton_set_method_dispatch,
     std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch)
-    : SkeletonFieldBase{parent, field_name, std::move(skeleton_event_dispatch)},
+    : SkeletonFieldBase{field_name, std::move(skeleton_event_dispatch)},
       initial_field_value_{nullptr},
       skeleton_field_mock_{nullptr},
       is_set_handler_registered_{false},

@@ -24,7 +24,7 @@ namespace score::mw::com::impl
 GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
                                            const std::string_view event_name,
                                            std::unique_ptr<GenericSkeletonEventBinding> binding)
-    : SkeletonEventBase(skeleton_base, event_name, std::move(binding))
+    : SkeletonEventBase(event_name, std::move(binding))
 {
     SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, GetReferenceToMoveable());
 

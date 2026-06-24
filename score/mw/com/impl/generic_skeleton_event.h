@@ -26,6 +26,7 @@ namespace score::mw::com::impl
 {
 
 class GenericSkeletonEventBinding;
+class SkeletonBase;
 
 class GenericSkeletonEvent : public SkeletonEventBase
 {

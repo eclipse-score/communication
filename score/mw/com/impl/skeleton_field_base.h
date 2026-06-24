@@ -29,7 +29,6 @@ namespace score::mw::com::impl
 {
 
 class SkeletonFieldBaseView;
-class SkeletonBase;
 
 class SkeletonFieldBase : public EnableReferenceToMoveableFromThis<SkeletonFieldBase>
 {
@@ -39,9 +38,7 @@ class SkeletonFieldBase : public EnableReferenceToMoveableFromThis<SkeletonField
     friend SkeletonFieldBaseView;
 
   public:
-    SkeletonFieldBase(SkeletonBase& skeleton_base,
-                      const std::string_view field_name,
-                      std::unique_ptr<SkeletonEventBase> skeleton_event_base)
+    SkeletonFieldBase(const std::string_view field_name, std::unique_ptr<SkeletonEventBase> skeleton_event_base)
         : EnableReferenceToMoveableFromThis<SkeletonFieldBase>(),
           skeleton_event_dispatch_{std::move(skeleton_event_base)},
           was_prepare_offer_called_{false},

@@ -80,7 +80,6 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
                    ::score::mw::com::impl::MethodType method_type,
                    FieldOnlyConstructorEnabler) noexcept
         : SkeletonMethodBase(
-              skeleton_base,
               method_name,
               SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                                                    SkeletonBaseView{skeleton_base}.GetBinding(),
@@ -116,7 +115,7 @@ SkeletonMethod<ReturnType(ArgTypes...)>::SkeletonMethod(SkeletonBase& skeleton_b
                                                         const std::string_view method_name,
                                                         std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding,
                                                         ::score::mw::com::impl::MethodType method_type)
-    : SkeletonMethodBase(skeleton_base, method_name, std::move(skeleton_method_binding), method_type)
+    : SkeletonMethodBase(method_name, std::move(skeleton_method_binding), method_type)
 {
     SkeletonBaseView{skeleton_base}.RegisterMethod(method_name_, GetReferenceToMoveable());
 }
