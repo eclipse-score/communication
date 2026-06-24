@@ -34,6 +34,7 @@
 #include "score/mw/com/impl/traits.h"
 
 #include <vector>
+/// test trigger
 /// \api
 /// \brief The Types header file includes the data type definitions which are specific for the
 /// mw::com API.
