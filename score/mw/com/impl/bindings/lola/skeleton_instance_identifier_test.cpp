@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 
 #include "score/mw/com/impl/configuration/global_configuration.h"
+#include "score/mw/log/recorder_mock.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -105,14 +106,25 @@ TEST(SkeletonInstanceIdentifierHashTest, OperatorStreamOutputsExpectedString)
 {
     // Given a SkeletonInstanceIdentifier
     const SkeletonInstanceIdentifier unit{kDummyServiceId, kDummyInstanceId};
-    testing::internal::CaptureStdout();
+
+    // Given a log recorder mock
+    score::mw::log::RecorderMock recorder_mock{};
+    score::mw::log::SetLogRecorder(&recorder_mock);
+    score::mw::log::SlotHandle handle{10};
+    ON_CALL(recorder_mock, StartRecord(::testing::_, score::mw::log::LogLevel::kFatal))
+        .WillByDefault(::testing::Return(handle));
+
+    // Then the logged output should contain the expected service ID and instance ID
+    EXPECT_CALL(recorder_mock, LogStringView(handle, std::string_view{"Service ID:"}));
+    EXPECT_CALL(recorder_mock, LogUint16(handle, kDummyServiceId));
+    EXPECT_CALL(recorder_mock, LogStringView(handle, std::string_view{". Instance ID:"}));
+    EXPECT_CALL(recorder_mock, LogUint16(handle, kDummyInstanceId));
 
     // When streaming the SkeletonInstanceIdentifier to a log
     score::mw::log::LogFatal("test") << unit;
-    std::string output = testing::internal::GetCapturedStdout();
 
-    // Then the output should contain the expected string
-    EXPECT_THAT(output, ::testing::HasSubstr("Service ID: 10 . Instance ID: 15"));
+    // Reset the global recorder to nullptr so that it no longer points to the local recorder_mock.
+    score::mw::log::SetLogRecorder(nullptr);
 }
 
 }  // namespace
