@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/service_element_type.h"
 
 #include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -22,7 +23,27 @@ namespace score::mw::com::impl
 namespace
 {
 
-TEST(ServiceElementTypeTest, DefaultConstructedEnumValueIsInvalid)
+class ServiceElementTypeTest : public ::testing::Test
+{
+  public:
+    void SetUp() override
+    {
+        score::mw::log::SetLogRecorder(&recorder_mock_);
+        ON_CALL(recorder_mock_, StartRecord(::testing::_, score::mw::log::LogLevel::kFatal))
+            .WillByDefault(::testing::Return(handle_));
+    }
+    void TearDown() override
+    {
+        // Reset the global recorder to nullptr so that it no longer points to the local recorder_mock_.
+        // Without this, the global recorder would hold a dangling pointer after recorder_mock_ is destroyed,
+        // causing undefined behavior if any subsequent test triggers logging.
+        score::mw::log::SetLogRecorder(nullptr);
+    }
+    score::mw::log::RecorderMock recorder_mock_{};
+    const score::mw::log::SlotHandle handle_{10};
+};
+
+TEST_F(ServiceElementTypeTest, DefaultConstructedEnumValueIsInvalid)
 {
     // Given a default constructed ServiceElementType
     ServiceElementType service_element_type{};
@@ -31,74 +52,64 @@ TEST(ServiceElementTypeTest, DefaultConstructedEnumValueIsInvalid)
     EXPECT_EQ(service_element_type, ServiceElementType::INVALID);
 }
 
-TEST(ServiceElementTypeTest, OperatorStreamOutputsInvalidWhenTypeIsInvalid)
+TEST_F(ServiceElementTypeTest, OperatorStreamOutputsInvalidWhenTypeIsInvalid)
 {
     // Given a ServiceElementType set to INVALID
     ServiceElementType service_element_type = ServiceElementType::INVALID;
-    testing::internal::CaptureStdout();
+
+    // Then the logged output should contain the formatted ServiceElementType
+    EXPECT_CALL(recorder_mock_, LogStringView(handle_, std::string_view{"INVALID"}));
 
     // When streaming the ServiceElementType to a log
     score::mw::log::LogFatal("test") << service_element_type;
-    std::string output = testing::internal::GetCapturedStdout();
-
-    // Then the output should contain the formatted ServiceElementType
-    EXPECT_THAT(output, ::testing::HasSubstr("INVALID"));
 }
 
-TEST(ServiceElementTypeTest, OperatorStreamOutputsEventWhenTypeIsEvent)
+TEST_F(ServiceElementTypeTest, OperatorStreamOutputsEventWhenTypeIsEvent)
 {
     // Given a ServiceElementType set to EVENT
     ServiceElementType service_element_type = ServiceElementType::EVENT;
-    testing::internal::CaptureStdout();
+
+    // Then the logged output should contain the formatted ServiceElementType
+    EXPECT_CALL(recorder_mock_, LogStringView(handle_, std::string_view{"EVENT"}));
 
     // When streaming the ServiceElementType to a log
     score::mw::log::LogFatal("test") << service_element_type;
-    std::string output = testing::internal::GetCapturedStdout();
-
-    // Then the output should contain the formatted ServiceElementType
-    EXPECT_THAT(output, ::testing::HasSubstr("EVENT"));
 }
 
-TEST(ServiceElementTypeTest, OperatorStreamOutputsFieldWhenTypeIsField)
+TEST_F(ServiceElementTypeTest, OperatorStreamOutputsFieldWhenTypeIsField)
 {
     // Given a ServiceElementType set to FIELD
     ServiceElementType service_element_type = ServiceElementType::FIELD;
-    testing::internal::CaptureStdout();
+
+    // Then the logged output should contain the formatted ServiceElementType
+    EXPECT_CALL(recorder_mock_, LogStringView(handle_, std::string_view{"FIELD"}));
 
     // When streaming the ServiceElementType to a log
     score::mw::log::LogFatal("test") << service_element_type;
-    std::string output = testing::internal::GetCapturedStdout();
-
-    // Then the output should contain the formatted ServiceElementType
-    EXPECT_THAT(output, ::testing::HasSubstr("FIELD"));
 }
 
-TEST(ServiceElementTypeTest, OperatorStreamOutputsMethodWhenTypeIsMethod)
+TEST_F(ServiceElementTypeTest, OperatorStreamOutputsMethodWhenTypeIsMethod)
 {
     // Given a ServiceElementType set to METHOD
     ServiceElementType service_element_type = ServiceElementType::METHOD;
-    testing::internal::CaptureStdout();
+
+    // Then the logged output should contain the formatted ServiceElementType
+    EXPECT_CALL(recorder_mock_, LogStringView(handle_, std::string_view{"METHOD"}));
 
     // When streaming the ServiceElementType to a log
     score::mw::log::LogFatal("test") << service_element_type;
-    std::string output = testing::internal::GetCapturedStdout();
-
-    // Then the output should contain the formatted ServiceElementType
-    EXPECT_THAT(output, ::testing::HasSubstr("METHOD"));
 }
 
-TEST(ServiceElementTypeTest, OperatorStreamOutputsUnknownWhenTypeIsUnrecognized)
+TEST_F(ServiceElementTypeTest, OperatorStreamOutputsUnknownWhenTypeIsUnrecognized)
 {
     // Given a ServiceElementType set to UNKNOWN
     ServiceElementType service_element_type = static_cast<ServiceElementType>(100U);
-    testing::internal::CaptureStdout();
+
+    // Then the logged output should contain the formatted ServiceElementType
+    EXPECT_CALL(recorder_mock_, LogStringView(handle_, std::string_view{"UNKNOWN"}));
 
     // When streaming the ServiceElementType to a log
     score::mw::log::LogFatal("test") << service_element_type;
-    std::string output = testing::internal::GetCapturedStdout();
-
-    // Then the output should contain the formatted ServiceElementType
-    EXPECT_THAT(output, ::testing::HasSubstr("UNKNOWN"));
 }
 
 }  // namespace
