@@ -34,7 +34,11 @@ cc_library(
 
 rust_library(
     name = "bridge_ffi_rs",
-    srcs = ["bridge_ffi.rs"],
+    srcs = [
+        "bridge_ffi.rs",
+        "common.rs",
+    ],
+    crate_root = "bridge_ffi.rs",
     edition = "2024",
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -68,5 +72,6 @@ rust_library(
     ],
     deps = [
         ":bridge_ffi_rs",
+        "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
     ],
 )

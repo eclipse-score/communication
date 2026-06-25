@@ -12,6 +12,8 @@
  ********************************************************************************/
 
 use bridge_ffi_rs::*;
+use std::ffi::CString;
+use std::path::Path;
 use std::ptr::NonNull;
 
 #[derive(Debug, Clone, Default)]
@@ -31,7 +33,12 @@ unsafe extern "C" fn mw_com_impl_call_dyn_fnmut(ptr: *const FatPtr) {
     // SAFETY: caller guarantees ptr is valid; transmute reconstructs the fat pointer.
     let dyn_fnmut: *mut (dyn FnMut() + Send + 'static) = unsafe { std::mem::transmute(*ptr) };
     // SAFETY: the box is still alive (C++ only calls dispose after all invocations finish).
-    unsafe { (*dyn_fnmut)() };
+    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe { (*dyn_fnmut)() })).is_err()
+    {
+        // LOG the error here, Once logging mechanism is available.
+        // Abort to prevent a Rust panic from unwinding across the C++ stack boundary.
+        std::process::abort();
+    }
 }
 
 /// Called by C++ (`RustBoxedCallable<void>::dispose`) to drop the boxed receive handler.
@@ -383,6 +390,27 @@ unsafe extern "C" {
         interface_id: StringView,
         member_name: StringView,
     ) -> *mut TypeOperations;
+
+    /// Find available service instances and return a pointer to NativeHandleContainer
+    ///
+    /// # Arguments
+    /// * `instance_specifier` - Pointer to NativeInstanceSpecifier for the service to find
+    ///
+    /// # Returns
+    /// Pointer to NativeHandleContainer containing available service instances, or nullptr if none found
+    fn mw_com_impl_find_service(
+        instance_specifier: *mut NativeInstanceSpecifier,
+    ) -> *mut NativeHandleContainer;
+
+    /// Initialize the communication implementation with the provided configuration.
+    ///
+    /// # Arguments
+    /// * `options` - Pointer to an array of UTF-8 strings representing configuration options
+    /// * `len` - Number of configuration arguments in the array
+    fn mw_com_impl_initialize(options: *mut *const std::ffi::c_char, len: i32);
+
+    ///This function just for validating the size of SamplePtr<T> in C++ and Rust are same.
+    fn mw_com_impl_sample_ptr_get_size() -> u32;
 }
 
 impl FFIBridge for LolaFFIBridge {
@@ -886,5 +914,45 @@ impl FFIBridge for LolaFFIBridge {
         // SAFETY: interface_id and member_name are valid ids that correspond to a TypeOperations instance in the C++ registry, as per the caller's contract.
         let ptr = unsafe { mw_com_get_type_ops_instance(interface_id, member_name) };
         NonNull::new(ptr).map(TypeOperationsManager::new)
+    }
+
+    /// Wrapper around mw_com_impl_find_service
+    ///
+    /// # Arguments
+    /// * `instance_specifier` - InstanceSpecifier identifying the service instance to find
+    ///
+    /// # Returns
+    /// Result containing a HandleContainer if the service was found, or an error if not found
+    fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()> {
+        // SAFETY: instance_specifier.inner is a valid pointer.
+        let container = unsafe { mw_com_impl_find_service(instance_specifier.as_native_mut()) };
+        if container.is_null() {
+            Err(())
+        } else {
+            Ok(HandleContainer::new(container))
+        }
+    }
+
+    /// Initialize the Lola Runtime with provided configuration.
+    ///
+    /// # Arguments
+    /// * `manifest_location` - Optional path to the service instance manifest file
+    fn initialize(&self, manifest_location: Option<&Path>) {
+        // Sanity-check that the Rust and C++ SamplePtr sizes agree.
+        let c_size = unsafe { mw_com_impl_sample_ptr_get_size() } as usize;
+        assert_eq!(
+            c_size,
+            std::mem::size_of::<sample_ptr_rs::SamplePtr<u32>>(),
+            "SamplePtr size mismatch between Rust and C++"
+        );
+
+        let mut options = vec![CString::new("executable").unwrap()];
+        if let Some(path) = manifest_location {
+            options.push(CString::new("--service_instance_manifest").unwrap());
+            options.push(CString::new(path.to_string_lossy().as_ref()).unwrap());
+        }
+        let mut ptrs: Vec<*const std::ffi::c_char> = options.iter().map(|s| s.as_ptr()).collect();
+        // SAFETY: ptrs points to valid null-terminated C strings; len matches the vec length.
+        unsafe { mw_com_impl_initialize(ptrs.as_mut_ptr(), ptrs.len() as i32) }
     }
 }

@@ -74,14 +74,22 @@
 #include "score/mw/com/types.h"
 
 #include <score/assert.hpp>
-#include <utility>
 #include <cstdint>
 #include <memory>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 
 namespace score::mw::com::impl::rust
 {
+
+/// Forward declaration of RustBoxedCallable and RustRefMutCallable templates
+template <typename R, typename... Args>
+class RustBoxedCallable;
+
+/// Forward declaration of RustRefMutCallable template
+template <typename R, typename... Args>
+class RustRefMutCallable;
 
 struct FatPtr
 {
@@ -89,12 +97,98 @@ struct FatPtr
     void* data;
 };
 
-template <typename R, typename... Args>
-class RustBoxedCallable;
+/// \brief String view for FFI boundary passing strings from Rust to C++
+/// \details Holds a pointer to a string and its length without requiring null termination.
+/// Similar to C++'s std::string_view but optimized for FFI use.
+struct StringView
+{
+    const char* data = nullptr;  ///< Pointer to string data
+    uint32_t len = 0;            ///< Length of the string
 
-template <typename R, typename... Args>
-class RustRefMutCallable;
+    /// \brief Conversion operator to std::string_view
+    /// \details Allows implicit conversion: std::string_view sv = static_cast<std::string_view>(string_view_instance);
+    /// \return std::string_view object constructed from this StringView
+    explicit operator std::string_view() const noexcept
+    {
+        return std::string_view(data, len);
+    }
+};
 
+// This function will be defined in the FFI implementation file and called by C++ code to invoke Rust closures with
+// SamplePtr arguments.
+extern "C" {
+/// \brief Rust closure invocation for SamplePtr with type erasure
+/// \details This function is called by C++ to invoke a Rust closure with a sample pointer.
+/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure
+/// \param sample_ptr Pointer to SamplePtr<T> representing the sample data
+void mw_com_impl_call_dyn_ref_fnmut_sample(const ::score::mw::com::impl::rust::FatPtr* boxed_fnmut, void* sample_ptr);
+
+/// \brief Rust closure invocation for events without sample data
+/// \details This function is called by C++ to invoke a Rust closure for events that do not have sample data (e.g.
+/// simple notifications).
+/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure
+void mw_com_impl_call_dyn_fnmut(const FatPtr* boxed_fnmut) noexcept;
+
+/// \brief Rust closure deletion for all types
+/// \details This function is called by C++ to properly delete a Rust FnMut closure represented as a FatPtr.
+//  This is necessary to ensure that any resources owned by the closure are released correctly when the event receive
+//  handler is cleared or when the proxy is destroyed.
+/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure to be deleted
+void mw_com_impl_delete_boxed_fnmut(const FatPtr* boxed_fnmut) noexcept;
+
+/// \brief Rust closure invocation for FindServiceHandle with type erasure
+/// \details This function is called by C++ to invoke a Rust closure for finding services, passing a vector of service
+/// handles.
+/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure
+/// \param service_handles Pointer to a vector of service handles (type-erased as void*)
+/// \param find_service_handle Opaque handle for the find service operation
+void mw_com_impl_call_dyn_ref_fnmut_find_service(
+    const ::score::mw::com::impl::rust::FatPtr* boxed_fnmut,
+    void* service_handles,
+    ::score::mw::com::impl::FindServiceHandle find_service_handle) noexcept;
+}
+
+/// \brief Template specialization of RustBoxedCallable for void return type
+/// \details This specialization is used for events that do not have sample data and therefore do not need to pass a
+/// SamplePtr to the Rust closure.
+// It simply calls the Rust FFI function for FnMut without sample data.
+// The dispose function calls the Rust FFI function to delete the
+template <>
+class RustBoxedCallable<void>
+{
+  public:
+    static void invoke(FatPtr ptr_) noexcept
+    {
+        mw_com_impl_call_dyn_fnmut(&ptr_);
+    }
+
+    static void dispose(FatPtr ptr_) noexcept
+    {
+        mw_com_impl_delete_boxed_fnmut(&ptr_);
+    }
+};
+
+/// Specialization of RustBoxedCallable for FindServiceHandle with type-erased service handles vector
+template <>
+class RustBoxedCallable<void,
+                        std::vector<::score::mw::com::impl::HandleType>,
+                        ::score::mw::com::impl::FindServiceHandle>
+{
+  public:
+    static void invoke(FatPtr ptr_,
+                       std::vector<::score::mw::com::impl::HandleType> service_handles,
+                       ::score::mw::com::impl::FindServiceHandle find_service_handle) noexcept
+    {
+        auto* placement_handles = new ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>{
+            std::move(service_handles)};
+        // Call the Rust FFI function
+        mw_com_impl_call_dyn_ref_fnmut_find_service(&ptr_, static_cast<void*>(placement_handles), find_service_handle);
+    }
+
+    static void dispose(FatPtr) noexcept {}
+};
+
+/// Base class for Rust FnMut callable wrappers
 template <template <typename, typename...> class FnMutHandler, typename R, typename... Args>
 class RustFnMutCallableBase
 {
@@ -138,6 +232,7 @@ class RustFnMutCallableBase
     FatPtr ptr_;
 };
 
+/// Template wrapper for Rust FnMut callable with type erasure
 template <template <typename, typename...> class FnMutHandler, typename R = void, typename... Args>
 class RustFnMutCallable : public RustFnMutCallableBase<FnMutHandler, R, Args...>
 {
@@ -160,6 +255,7 @@ class RustFnMutCallable : public RustFnMutCallableBase<FnMutHandler, R, Args...>
     }
 };
 
+/// Template specialization of RustFnMutCallable for void return type
 template <template <typename, typename...> class FnMutHandler, typename... Args>
 class RustFnMutCallable<FnMutHandler, void, Args...> final : public RustFnMutCallableBase<FnMutHandler, void, Args...>
 {
@@ -179,23 +275,6 @@ class RustFnMutCallable<FnMutHandler, void, Args...> final : public RustFnMutCal
     {
         Base::CheckValid();
         Base::Handler::invoke(this->ptr_, std::forward<CallArgs>(call_args)...);
-    }
-};
-
-/// \brief String view for FFI boundary passing strings from Rust to C++
-/// \details Holds a pointer to a string and its length without requiring null termination.
-/// Similar to C++'s std::string_view but optimized for FFI use.
-struct StringView
-{
-    const char* data = nullptr;  ///< Pointer to string data
-    uint32_t len = 0;            ///< Length of the string
-
-    /// \brief Conversion operator to std::string_view
-    /// \details Allows implicit conversion: std::string_view sv = static_cast<std::string_view>(string_view_instance);
-    /// \return std::string_view object constructed from this StringView
-    explicit operator std::string_view() const noexcept
-    {
-        return std::string_view(data, len);
     }
 };
 
@@ -637,80 +716,6 @@ class GlobalRegistryMapping
 };
 
 // Declare the FFI function for Rust closure invocation with type erasure.
-// This function will be defined in the FFI implementation file and called by C++ code to invoke Rust closures with
-// SamplePtr arguments.
-extern "C" {
-/// \brief Rust closure invocation for SamplePtr with type erasure
-/// \details This function is called by C++ to invoke a Rust closure with a sample pointer.
-/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure
-/// \param sample_ptr Pointer to SamplePtr<T> representing the sample data
-void mw_com_impl_call_dyn_ref_fnmut_sample(const ::score::mw::com::impl::rust::FatPtr* boxed_fnmut, void* sample_ptr);
-
-/// \brief Rust closure invocation for events without sample data
-/// \details This function is called by C++ to invoke a Rust closure for events that do not have sample data (e.g.
-/// simple notifications).
-/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure
-void mw_com_impl_call_dyn_fnmut(const FatPtr* boxed_fnmut) noexcept;
-
-/// \brief Rust closure deletion for all types
-/// \details This function is called by C++ to properly delete a Rust FnMut closure represented as a FatPtr.
-//  This is necessary to ensure that any resources owned by the closure are released correctly when the event receive
-//  handler is cleared or when the proxy is destroyed.
-/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure to be deleted
-void mw_com_impl_delete_boxed_fnmut(const FatPtr* boxed_fnmut) noexcept;
-
-/// \brief Rust closure invocation for FindServiceHandle with type erasure
-/// \details This function is called by C++ to invoke a Rust closure for finding services, passing a vector of service
-/// handles.
-/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure
-/// \param service_handles Pointer to a vector of service handles (type-erased as void*)
-/// \param find_service_handle Opaque handle for the find service operation
-void mw_com_impl_call_dyn_ref_fnmut_find_service(
-    const ::score::mw::com::impl::rust::FatPtr* boxed_fnmut,
-    void* service_handles,
-    ::score::mw::com::impl::FindServiceHandle find_service_handle) noexcept;
-}
-
-/// \brief Template specialization of RustBoxedCallable for void return type
-/// \details This specialization is used for events that do not have sample data and therefore do not need to pass a
-/// SamplePtr to the Rust closure.
-// It simply calls the Rust FFI function for FnMut without sample data.
-// The dispose function calls the Rust FFI function to delete the
-template <>
-class RustBoxedCallable<void>
-{
-  public:
-    static void invoke(FatPtr ptr_) noexcept
-    {
-        mw_com_impl_call_dyn_fnmut(&ptr_);
-    }
-
-    static void dispose(FatPtr ptr_) noexcept
-    {
-        mw_com_impl_delete_boxed_fnmut(&ptr_);
-    }
-};
-
-/// Specialization of RustBoxedCallable for FindServiceHandle with type-erased service handles vector
-template <>
-class RustBoxedCallable<void,
-                        std::vector<::score::mw::com::impl::HandleType>,
-                        ::score::mw::com::impl::FindServiceHandle>
-{
-  public:
-    static void invoke(FatPtr ptr_,
-                       std::vector<::score::mw::com::impl::HandleType> service_handles,
-                       ::score::mw::com::impl::FindServiceHandle find_service_handle) noexcept
-    {
-        auto* placement_handles = new ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>{
-            std::move(service_handles)};
-        // Call the Rust FFI function
-        mw_com_impl_call_dyn_ref_fnmut_find_service(&ptr_, static_cast<void*>(placement_handles), find_service_handle);
-    }
-
-    static void dispose(FatPtr) noexcept {}
-};
-
 /// Helper function to get singleton TypeOperations instance for each type T
 template <typename T>
 inline ::score::mw::com::impl::rust::TypeOperationImpl<T>& get_type_operations()
