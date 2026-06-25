@@ -70,7 +70,7 @@ pub struct RuntimeBuilderImpl<B: FFIBridge = LolaFFIBridge> {
 
 impl<B: FFIBridge> Builder<LolaRuntimeImpl<B>> for RuntimeBuilderImpl<B> {
     fn build(self) -> Result<LolaRuntimeImpl<B>> {
-        mw_com::initialize(self.config_path.as_deref());
+        bridge_ffi_rs::initialize(self.config_path.as_deref());
         Ok(LolaRuntimeImpl {
             bridge: B::default(),
         })

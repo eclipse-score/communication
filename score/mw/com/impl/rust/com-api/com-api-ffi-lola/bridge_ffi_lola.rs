@@ -18,6 +18,34 @@ use std::ptr::NonNull;
 /// unit struct representing the FFI bridge for Lola runtime
 pub struct LolaFFIBridge;
 
+/// Called by C++ (`RustBoxedCallable<void>::invoke`) to fire a Rust `FnMut()` receive handler.
+///
+/// The pointer was originally created as `Box::into_raw(Box::new(handler) as Box<dyn FnMut() + Send + 'static>)`
+/// and passed to C++ via `mw_com_impl_proxy_event_set_receive_handler`.
+///
+/// # Safety
+/// `ptr` must point to a valid `FatPtr` whose payload is a live
+/// `Box<dyn FnMut() + Send + 'static>` that has not yet been dropped.
+#[unsafe(no_mangle)]
+unsafe extern "C" fn mw_com_impl_call_dyn_fnmut(ptr: *const FatPtr) {
+    // SAFETY: caller guarantees ptr is valid; transmute reconstructs the fat pointer.
+    let dyn_fnmut: *mut (dyn FnMut() + Send + 'static) = unsafe { std::mem::transmute(*ptr) };
+    // SAFETY: the box is still alive (C++ only calls dispose after all invocations finish).
+    unsafe { (*dyn_fnmut)() };
+}
+
+/// Called by C++ (`RustBoxedCallable<void>::dispose`) to drop the boxed receive handler.
+///
+/// # Safety
+/// `ptr` must point to the same `FatPtr` that was previously passed to
+/// `mw_com_impl_proxy_event_set_receive_handler`, and must only be called once.
+#[unsafe(no_mangle)]
+unsafe extern "C" fn mw_com_impl_delete_boxed_fnmut(ptr: *mut FatPtr) {
+    // SAFETY: caller guarantees ptr is valid and this is the single dispose call.
+    let dyn_fnmut: *mut (dyn FnMut() + Send + 'static) = unsafe { std::mem::transmute(*ptr) };
+    drop(unsafe { Box::from_raw(dyn_fnmut) });
+}
+
 ///  Rust closure invocation for C++ callbacks
 ///
 /// This function is called by C++ to invoke a Rust closure with a sample pointer.
