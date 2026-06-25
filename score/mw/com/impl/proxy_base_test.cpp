@@ -609,8 +609,8 @@ class ProxyBaseServiceElementReferencesFixture : public ::testing::Test
     ProxyFieldBase field_0_{field_name_0_, &field_event_dispatch_0_};
     ProxyFieldBase field_1_{field_name_1_, &field_event_dispatch_1_};
 
-    DummyProxyMethod method_0_{method_name_0_, std::make_unique<mock_binding::ProxyMethod>()};
-    DummyProxyMethod method_1_{method_name_1_, std::make_unique<mock_binding::ProxyMethod>()};
+    DummyProxyMethod method_0_{method_name_0_, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod};
+    DummyProxyMethod method_1_{method_name_1_, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod};
 };
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringServiceElementStoresReferenceInMap)
@@ -707,7 +707,7 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     ProxyEventBase field_event_dispatch{
         other_field_name, &proxy_binding_mock, std::make_unique<mock_binding::ProxyEventBase>()};
     ProxyFieldBase field{other_field_name, &field_event_dispatch};
-    DummyProxyMethod method{other_method_name, std::make_unique<mock_binding::ProxyMethod>()};
+    DummyProxyMethod method{other_method_name, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod};
     ProxyBaseView{proxy_2}.RegisterEvent(other_event_name, event.GetReferenceToMoveable());
     ProxyBaseView{proxy_2}.RegisterField(other_field_name, field.GetReferenceToMoveable());
     ProxyBaseView{proxy_2}.RegisterMethod(other_method_name, method.GetReferenceToMoveable());

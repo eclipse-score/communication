@@ -32,7 +32,7 @@ class ProxyMethodBase : public EnableReferenceToMoveableFromThis<ProxyMethodBase
   public:
     ProxyMethodBase(std::string_view method_name,
                     std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                    MethodType method_type = MethodType::kMethod) noexcept
+                    MethodType method_type) noexcept
         : EnableReferenceToMoveableFromThis<ProxyMethodBase>(),
           method_name_{method_name},
           method_type_{method_type},
