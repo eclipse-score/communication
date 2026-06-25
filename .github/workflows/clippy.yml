@@ -24,7 +24,34 @@ on:
     types: [checks_requested]
   workflow_call:
 jobs:
+  check-changes:
+    runs-on: ubuntu-24.04
+    # For push/workflow_call/merge_group always run; skip only on pull_request
+    # with no relevant changes so the job is never "missing" for branch protection.
+    outputs:
+      should-run: ${{ steps.detect.outputs.should-run }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Detect relevant changes
+        id: detect
+        run: |
+          should_run="true"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" 2>/dev/null || true)
+            RUST=$(echo "$CHANGED" | grep -E '\.rs$' || true)
+            WORKFLOW=$(echo "$CHANGED" | grep -E '^\.github/workflows/clippy\.yml$' || true)
+            if [[ -z "$RUST" && -z "$WORKFLOW" ]]; then
+              should_run="false"
+              echo "No Rust or workflow files changed — skipping Clippy."
+            fi
+          fi
+          echo "should-run=${should_run}" >> $GITHUB_OUTPUT
+
   lint-clippy:
+    needs: check-changes
+    if: needs.check-changes.outputs.should-run == 'true'
     uses: eclipse-score/cicd-workflows/.github/workflows/static-analysis.yml@af347722c7ae3ed85518895c11268d96ac728f62
     with:
       bazel-targets: "//score/..."
