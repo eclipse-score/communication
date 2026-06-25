@@ -14,15 +14,8 @@ package MessagePassingFMEA
 
 import ScoreReq
 
-ScoreReq.ControlMeasure ServerHealthCheck {
+ScoreReq.ControlMeasure ToBeDefined {
     safety = ScoreReq.Asil.B
-    description = "Monitor server availability and trigger safe state on persistent connection failures"
+    description = "tbd"
     version = 1
 }
-
-ScoreReq.ControlMeasure ClientRetryPolicy {
-    safety = ScoreReq.Asil.B
-    description = "Client shall implement a bounded retry mechanism and report error to caller on exhaustion"
-    version = 1
-}
-
