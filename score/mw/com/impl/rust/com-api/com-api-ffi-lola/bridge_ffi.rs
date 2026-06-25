@@ -11,17 +11,17 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-// Why dynamic FFI bridge instead of static macros which is already available in macros.rs -->
+// Why dynamic FFI bridge instead of static macros based -->
 //
 // DESIGN DECISION:  FFI Bridge for Compile-time decoupling of COM-API and Lola
 //
-// Problem with macros.rs approach:
-// - macros.rs file provides static, compile-time bindings tightly coupled with specific runtime
+// Problem with static macro based approach:
+// - macros provides compile-time bindings tightly coupled with specific runtime
 //   implementations
 // - This violates COM-API design principle of being independent of any specific runtime
 // - We cannot invoke macros defined in runtime-specific crates (like Lola, Mock) from COM-API
 //   library which is runtime-agnostic
-// - macros.rs mixes two concerns: API abstraction (what to communicate)
+// - macros mixes two concerns: API abstraction (what to communicate)
 //   and runtime binding (how to communicate)
 //
 // Why this file exists:
@@ -56,9 +56,8 @@
 // - This enables type-safe communication without C++ needing to know Rust types at compile time
 //
 // Dependencies:
-// - C FFI implementations (mw_com_impl_*) are in proxy_bridge.cpp / registry_bridge_macro.cpp
 // - FatPtr provides binary representation of dyn trait objects (data pointer + vtable pointer)
-// - sample_ptr_rs is used for SamplePtr size validation in initialize()
+// - common_ffi.rs holds the service-discovery types (InstanceSpecifier, HandleContainer) and their extern "C" declarations
 //
 // StringView:
 // - StringView implementation is inspired by C++ std::string_view
@@ -67,57 +66,18 @@
 
 use core::fmt::{Debug, Formatter};
 use core::marker::Unpin;
-use std::ptr::NonNull;
-use std::ffi::{c_char, CString};
-use std::ops::Index;
+use std::ffi::c_char;
 use std::path::Path;
+use std::ptr::NonNull;
+
+pub mod common;
+pub use common::{
+    HandleContainer, HandleType, InstanceSpecifier, NativeHandleContainer, NativeInstanceSpecifier,
+};
 
 /// Opaque C++ void* pointer wrapper
 pub type CVoidPtr = *const std::ffi::c_void;
 pub type CMutVoidPtr = *mut std::ffi::c_void;
-
-/// Fat pointer: binary representation of a Rust `dyn` trait object (vtable + data pointer).
-/// Passed across FFI boundaries to represent type-erased Rust closures.
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct FatPtr {
-    vtable: *const (),
-    data: *mut (),
-}
-
-// SAFETY: FatPtr is a plain pair of pointers. Whether it is safe to send/share
-// across threads depends entirely on the closure it points to — callers take that
-// responsibility. We declare Send+Sync here so that types containing FatPtr can
-// implement those bounds where their closure types warrant it.
-unsafe impl Send for FatPtr {}
-unsafe impl Sync for FatPtr {}
-
-/// Opaque C++ type: `score::mw::com::impl::HandleType`.
-#[repr(C)]
-#[derive(Default)]
-pub struct HandleType {
-    _dummy: [u8; 0],
-}
-
-/// Opaque C++ type: `score::mw::com::ServiceHandleContainer<HandleType>`.
-#[repr(C)]
-#[derive(Default)]
-pub struct NativeHandleContainer {
-    _dummy: [u8; 0],
-}
-
-/// Opaque C++ type: `score::mw::com::InstanceSpecifier`.
-#[repr(C)]
-pub struct NativeInstanceSpecifier {
-    _dummy: [u8; 0],
-}
-
-/// Opaque C++ type: `score::mw::com::impl::ProxyEventBase`.
-#[repr(C)]
-#[derive(Default)]
-pub struct ProxyEventBase {
-    _dummy: [u8; 0],
-}
 
 /// FFIBridge trait defines the interface for FFI interactions between Rust COM-API and C++ Lola runtime.
 /// This trait abstracts the FFI calls and allows for different implementations
@@ -314,6 +274,40 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
         interface_id: &str,
         member_name: &str,
     ) -> Option<TypeOperationsManager>;
+
+    /// Find all service instances matching `instance_specifier`.
+    ///
+    /// Returns `Err(())` when the search fails or yields no container.
+    fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()>;
+
+    /// Initialize the `mw::com` subsystem.
+    ///
+    /// Optionally accepts a path to the service-instance manifest. When omitted the
+    /// default location compiled into the middleware is used.
+    fn initialize(&self, manifest_location: Option<&Path>);
+}
+
+/// Fat pointer: binary representation of a Rust `dyn` trait object (vtable + data pointer).
+/// Passed across FFI boundaries to represent type-erased Rust closures.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct FatPtr {
+    vtable: *const (),
+    data: *mut (),
+}
+
+// SAFETY: FatPtr is a plain pair of pointers. Whether it is safe to send/share
+// across threads depends entirely on the closure it points to — callers take that
+// responsibility. We declare Send+Sync here so that types containing FatPtr can
+// implement those bounds where their closure types warrant it.
+unsafe impl Send for FatPtr {}
+unsafe impl Sync for FatPtr {}
+
+/// Opaque C++ type: `score::mw::com::impl::ProxyEventBase`.
+#[repr(C)]
+#[derive(Default)]
+pub struct ProxyEventBase {
+    _dummy: [u8; 0],
 }
 
 /// Opaque proxy base struct
@@ -468,166 +462,4 @@ impl From<&'_ str> for StringView {
             }
         }
     }
-}
-
-unsafe extern "C" {
-    fn mw_com_impl_instance_specifier_create(
-        value: *const u8,
-        len: u32,
-    ) -> *mut NativeInstanceSpecifier;
-    fn mw_com_impl_instance_specifier_clone(
-        instance_specifier: *const NativeInstanceSpecifier,
-    ) -> *mut NativeInstanceSpecifier;
-    fn mw_com_impl_instance_specifier_delete(instance_specifier: *mut NativeInstanceSpecifier);
-    fn mw_com_impl_find_service(
-        instance_specifier: *mut NativeInstanceSpecifier,
-    ) -> *mut NativeHandleContainer;
-    fn mw_com_impl_handle_container_delete(container: *mut NativeHandleContainer);
-    fn mw_com_impl_handle_container_get_size(container: *const NativeHandleContainer) -> u32;
-    fn mw_com_impl_handle_container_get_handle_at(
-        container: *const NativeHandleContainer,
-        pos: u32,
-    ) -> *const HandleType;
-    fn mw_com_impl_initialize(options: *mut *const std::ffi::c_char, len: i32);
-    fn mw_com_impl_sample_ptr_get_size() -> u32;
-}
-
-/// Human-readable address of a service instance (e.g. `/vehicle/speed`).
-/// Create via `InstanceSpecifier::try_from("/my/service")`.
-pub struct InstanceSpecifier {
-    inner: *mut NativeInstanceSpecifier,
-}
-
-impl InstanceSpecifier {
-    /// Returns the raw native pointer. Valid as long as `self` is alive.
-    pub fn as_native(&self) -> *const NativeInstanceSpecifier {
-        self.inner
-    }
-}
-
-impl TryFrom<&'_ str> for InstanceSpecifier {
-    type Error = ();
-
-    fn try_from(value: &'_ str) -> Result<Self, Self::Error> {
-        // SAFETY: value points to a valid UTF-8 string; len matches the slice length.
-        let inner =
-            unsafe { mw_com_impl_instance_specifier_create(value.as_ptr(), value.len() as u32) };
-        if inner.is_null() { Err(()) } else { Ok(Self { inner }) }
-    }
-}
-
-impl Clone for InstanceSpecifier {
-    fn clone(&self) -> Self {
-        // SAFETY: self.inner was obtained from mw_com_impl_instance_specifier_create.
-        let inner = unsafe { mw_com_impl_instance_specifier_clone(self.inner) };
-        Self { inner }
-    }
-}
-
-impl Drop for InstanceSpecifier {
-    fn drop(&mut self) {
-        // SAFETY: self.inner was obtained from mw_com_impl_instance_specifier_create.
-        unsafe { mw_com_impl_instance_specifier_delete(self.inner) }
-    }
-}
-
-/// Wrapper around a native C++ handle container returned by `find_service`.
-pub struct HandleContainer {
-    inner: *mut NativeHandleContainer,
-}
-
-// SAFETY: The pointer is heap-allocated by C++ and owned exclusively by this struct.
-unsafe impl Send for HandleContainer {}
-// SAFETY: No interior mutability; all access goes through shared references to immutable data.
-unsafe impl Sync for HandleContainer {}
-
-impl HandleContainer {
-    /// Wraps a raw pointer returned by C++ FFI. Takes ownership.
-    pub fn new(inner: *mut NativeHandleContainer) -> Self {
-        Self { inner }
-    }
-
-    /// Number of handles in the container.
-    #[allow(clippy::len_without_is_empty)]
-    pub fn len(&self) -> usize {
-        // SAFETY: self.inner is a valid pointer from mw_com_impl_find_service.
-        unsafe { mw_com_impl_handle_container_get_size(self.inner) as usize }
-    }
-
-    /// Returns `true` if the container has no handles.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    /// Returns the first handle, or `None` if empty.
-    pub fn first(&self) -> Option<&HandleType> {
-        if !self.is_empty() { Some(self.index(0)) } else { None }
-    }
-
-    /// Returns the handle at `index`, or `None` if out of bounds.
-    pub fn get(&self, index: usize) -> Option<&HandleType> {
-        if index < self.len() { Some(self.index(index)) } else { None }
-    }
-}
-
-impl Index<usize> for HandleContainer {
-    type Output = HandleType;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        assert!(index < self.len(), "HandleContainer index out of bounds");
-        // SAFETY: index is within bounds; lifetime of result is tied to &self.
-        unsafe {
-            mw_com_impl_handle_container_get_handle_at(self.inner, index as u32)
-                .as_ref()
-                .expect("nullptr received as handle")
-        }
-    }
-}
-
-impl Drop for HandleContainer {
-    fn drop(&mut self) {
-        // SAFETY: self.inner was obtained from mw_com_impl_find_service.
-        unsafe { mw_com_impl_handle_container_delete(self.inner) }
-    }
-}
-
-impl Debug for HandleContainer {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("HandleContainer").finish()
-    }
-}
-
-/// Find all service instances matching `instance_specifier`.
-///
-/// Returns `Err(())` when the search fails or yields no container.
-#[allow(clippy::result_unit_err)]
-pub fn find_service(instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()> {
-    // SAFETY: instance_specifier.inner is a valid pointer.
-    let container = unsafe { mw_com_impl_find_service(instance_specifier.inner) };
-    if container.is_null() { Err(()) } else { Ok(HandleContainer { inner: container }) }
-}
-
-/// Initialize the `mw::com` subsystem.
-///
-/// Optionally accepts a path to the service-instance manifest. When omitted the
-/// default location compiled into the middleware is used.
-pub fn initialize(manifest_location: Option<&Path>) {
-    // Sanity-check that the Rust and C++ SamplePtr sizes agree.
-    let c_size =
-        unsafe { mw_com_impl_sample_ptr_get_size() } as usize;
-    assert_eq!(
-        c_size,
-        std::mem::size_of::<sample_ptr_rs::SamplePtr<u32>>(),
-        "SamplePtr size mismatch between Rust and C++"
-    );
-
-    let mut options = vec![CString::new("executable").unwrap()];
-    if let Some(path) = manifest_location {
-        options.push(CString::new("--service_instance_manifest").unwrap());
-        options.push(CString::new(path.to_string_lossy().as_ref()).unwrap());
-    }
-    let mut ptrs: Vec<*const std::ffi::c_char> =
-        options.iter().map(|s| s.as_ptr()).collect();
-    // SAFETY: ptrs points to valid null-terminated C strings; len matches the vec length.
-    unsafe { mw_com_impl_initialize(ptrs.as_mut_ptr(), ptrs.len() as i32) }
 }
