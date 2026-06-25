@@ -1,0 +1,168 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+<style>
+.OS {
+    LineThickness 5.0
+}
+</style>
+
+skinparam sequenceArrowColor Black
+skinparam sequenceParticipantBackgroundColor White
+skinparam sequenceParticipantBorderColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceGroupBorderColor DarkGray
+skinparam sequenceGroupBodyBackgroundColor #FAFAFA
+skinparam NoteBackgroundColor LightYellow
+skinparam NoteBorderColor Gray
+skinparam NoteTextAlignment left
+skinparam ParticipantFontName Courier
+skinparam sequenceFontName Courier
+skinparam ArrowFontName Courier
+
+title Server <-> Client Sequence Diagram
+
+participant "ClientApp" as client_app
+participant "IClientConnection" as client_conn
+participant "IPC Mechanism"  as os <<OS>>
+participant "IServerConnection" as server_conn
+participant "IServer" as server
+participant "ServerApp" as server_app
+
+' -----------------------------------------------------------------
+== Setup ==
+' -----------------------------------------------------------------
+
+server_app -> server : IServerFactory::Create(\n  protocol_config,\n  server_config\n)
+server -> os : IServer::StartListening(\n  connect_callback,\n  disconnect_callback,\n  message_callback,\n  reply_callback\n)
+
+create server_conn
+
+server -> server_conn : create IServerConnection
+note right of server : Server now accepts\nincoming connections
+
+client_app -> client_conn : IClientFactory::Create(\n  protocol_config,\n  client_config\n)
+client_app -> client_conn : IClientConnection::Start(\n  state_callback,\n  notify_callback\n)
+client_conn -> client_app : state_callback(kStarting)
+note left of client_conn : State: **kStarting**
+
+' -----------------------------------------------------------------
+== Connection Establishment ==
+' -----------------------------------------------------------------
+
+loop until server is available
+  client_conn -> os: [IPC] connect attempt
+end
+
+
+loop until server is available
+  os -> server_conn : [IPC] connect attempt
+end
+
+server_conn -> server : connect_callback(connection)
+note right of server
+  Server app returns UserData,
+  optionally wrapping an
+  IConnectionHandler instance
+end note
+server_conn --> server : UserData / IConnectionHandler
+
+client_conn -> client_app : state_callback(kReady)
+note left of client_conn : State: **kReady**
+
+' -----------------------------------------------------------------
+== Fire-and-Forget: IClientConnection::Send() ==
+' -----------------------------------------------------------------
+
+client_app -> client_conn : Send(message)
+note left : Non-blocking;\nreturns immediately
+client_conn -> os : [IPC] SEND message
+os -> server_conn : [IPC] SEND message
+server_conn -> server : MessageCallback(connection, message)\nor IConnectionHandler::OnMessageSent(\n  connection, message\n)
+
+' -----------------------------------------------------------------
+== Synchronous Request/Reply: IClientConnection::SendWaitReply() ==
+' -----------------------------------------------------------------
+
+client_app -> client_conn : SendWaitReply(message, reply_buffer)
+note left : **Blocking** — caller\nwaits until reply arrives
+activate client_conn
+client_conn -> os : [IPC] REQUEST message
+os -> server_conn : [IPC] REQUEST message
+server_conn -> server : IConnectionHandler::OnMessageSentWithReply(\n  connection, message\n)
+server -> server_conn : IServerConnection::Reply(reply)
+note right of server: Reply is triggered from\nthe reply_callback
+server_conn -> os : [IPC] REPLY
+os -> client_conn : [IPC] REPLY
+client_conn --> client_app : return reply span
+deactivate client_conn
+
+' -----------------------------------------------------------------
+== Asynchronous Request/Reply: IClientConnection::SendWithCallback() ==
+' -----------------------------------------------------------------
+
+client_app -> client_conn : SendWithCallback(message, reply_callback)
+note left : Non-blocking;\nreturns immediately
+client_conn -> os : [IPC] REQUEST message
+os -> server_conn : [IPC] REQUEST message
+server_conn -> server : IConnectionHandler::OnMessageSentWithReply(\n  connection, message\n)
+server -> server_conn : IServerConnection::Reply(reply)
+server_conn -> os : [IPC] REPLY
+os -> client_conn : [IPC] REPLY
+client_conn -> client_app : reply_callback(reply)
+
+' -----------------------------------------------------------------
+== Server Notification: IServerConnection::Notify() ==
+' -----------------------------------------------------------------
+
+server_app -> server_conn : Notify(message)
+note right : Unsolicited push\nfrom server to client
+server_conn -> os : [IPC] NOTIFY message
+os -> client_conn : [IPC] NOTIFY message
+client_conn -> client_app : notify_callback(message)
+
+' -----------------------------------------------------------------
+== Disconnection ==
+' -----------------------------------------------------------------
+
+client_app -> client_conn : IClientConnection::Stop()
+note left
+  Also triggered by:
+  - IServerConnection::RequestDisconnect()
+  - peer disconnect / IO error
+end note
+
+client_conn -> client_app : state_callback(kStopping)
+note left : State: **kStopping**
+
+client_conn -> os : [IPC] disconnect
+os -> server_conn : [IPC] disconnect
+server_conn -> server_app : DisconnectCallback(connection)\nor IConnectionHandler::OnDisconnect(\n  connection\n)
+destroy server_conn
+
+client_conn -> client_app : state_callback(kStopped)
+note left
+  State: **kStopped**
+  Safe to destroy or Restart()
+end note
+
+' -----------------------------------------------------------------
+== Teardown ==
+' -----------------------------------------------------------------
+
+server -> os : IServer::StopListening()
+note right of server : Releases callbacks;\ncloses all remaining\nserver connections
+
+@enduml
