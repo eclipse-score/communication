@@ -23,12 +23,15 @@
 
 #include "score/mw/com/impl/rust/com-api/com-api-ffi-lola/registry_bridge_macro.h"
 #include "score/mw/com/impl/find_service_handler.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event.h"
 #include "score/mw/com/impl/proxy_event_base.h"
+#include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
+#include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
 #include "score/mw/log/logging.h"
 
@@ -471,6 +474,78 @@ const void* mw_com_get_type_ops_instance(StringView interface_id, StringView mem
     }
 
     return registry->GetTypeOps();
+}
+
+::score::mw::com::InstanceSpecifier* mw_com_impl_instance_specifier_create(
+    const char* const instance_specifier,
+    const std::uint32_t instance_specifier_length) noexcept
+{
+    if (auto result =
+            ::score::mw::com::InstanceSpecifier::Create(std::string{instance_specifier, instance_specifier_length});
+        result.has_value())
+    {
+        return new ::score::mw::com::InstanceSpecifier{std::move(result).value()};
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+::score::mw::com::InstanceSpecifier* mw_com_impl_instance_specifier_clone(
+    const ::score::mw::com::InstanceSpecifier& instance_specifier) noexcept
+{
+    return new ::score::mw::com::InstanceSpecifier{instance_specifier};
+}
+
+void mw_com_impl_instance_specifier_delete(::score::mw::com::InstanceSpecifier* instance_specifier) noexcept
+{
+    delete instance_specifier;
+}
+
+::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>* mw_com_impl_find_service(
+    ::score::mw::com::InstanceSpecifier* instance_specifier) noexcept
+{
+    if (auto result = ::score::mw::com::impl::Runtime::getInstance().GetServiceDiscovery().FindService(
+            std::move(*instance_specifier));
+        result.has_value())
+    {
+        return new ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>{
+            std::move(result).value()};
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+void mw_com_impl_handle_container_delete(
+    ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>* container) noexcept
+{
+    delete container;
+}
+
+std::uint32_t mw_com_impl_handle_container_get_size(
+    const ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>* container)
+{
+    return static_cast<std::uint32_t>(container->size());
+}
+
+const ::score::mw::com::impl::HandleType* mw_com_impl_handle_container_get_handle_at(
+    const ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>* container,
+    std::uint32_t pos) noexcept
+{
+    return &container->at(pos);
+}
+
+void mw_com_impl_initialize(const char* argv[], std::int32_t argc)
+{
+    ::score::mw::com::runtime::InitializeRuntime(argc, argv);
+}
+
+std::uint32_t mw_com_impl_sample_ptr_get_size() noexcept
+{
+    return sizeof(::score::mw::com::impl::SamplePtr<std::uint32_t>);
 }
 
 }  // extern "C"

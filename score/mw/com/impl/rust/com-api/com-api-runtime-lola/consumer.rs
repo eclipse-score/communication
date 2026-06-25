@@ -56,7 +56,7 @@ use crate::LolaRuntimeImpl;
 
 #[derive(Clone, Debug)]
 pub struct LolaConsumerInfo<B: FFIBridge> {
-    handle_container: Arc<mw_com::proxy::HandleContainer>,
+    handle_container: Arc<bridge_ffi_rs::HandleContainer>,
     handle_index: usize,
     interface_id: &'static str,
     // LolaFFIBridge (Production case) is a ZST, so cloning it is not overhead,
@@ -849,7 +849,7 @@ impl<'a, T: CommData + Debug, B: FFIBridge> Stream for SampleStream<'a, T, B> {
 /// - C++ passes the same handle both as return value and callback argument; we use only the
 ///   return value to eliminate double-write races and ensure deterministic cleanup.
 struct DiscoveryStateData {
-    handles: Option<mw_com::proxy::HandleContainer>,
+    handles: Option<bridge_ffi_rs::HandleContainer>,
 }
 
 impl std::fmt::Debug for DiscoveryStateData {
@@ -888,10 +888,10 @@ where
         //If ANY Support is added in Lola, then we need to return all available instances
         //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_lola =
-            mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
+            bridge_ffi_rs::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
                 .map_err(|_| Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid))?;
 
-        let service_handle = mw_com::proxy::find_service(instance_specifier_lola)
+        let service_handle = bridge_ffi_rs::find_service(instance_specifier_lola)
             .map_err(|_| Error::ServiceError(ServiceFailedReason::ServiceNotFound))?;
 
         let service_handle_arc = Arc::new(service_handle);
@@ -928,7 +928,7 @@ where
         // Convert to Lola InstanceSpecifier early
         //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_lola =
-            mw_com::InstanceSpecifier::try_from(instance_specifier.as_ref())
+            bridge_ffi_rs::InstanceSpecifier::try_from(instance_specifier.as_ref())
                 .map_err(|_| Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid));
 
         let waker_storage = Arc::new(futures::task::AtomicWaker::new());
@@ -945,7 +945,7 @@ where
         // synchronously from `start_find_service`'s return value and stored
         // directly in `ServiceDiscoveryFuture`, eliminating the double-write race.
         let discovery_callback = Box::new(
-            move |handles: mw_com::proxy::HandleContainer,
+            move |handles: bridge_ffi_rs::HandleContainer,
                   _find_handle: bridge_ffi_rs::NativeFindServiceHandle| {
                 if let Ok(mut state) = state_ref.lock() {
                     state.handles = Some(handles);
@@ -955,7 +955,7 @@ where
         );
 
         let dyn_callback: Box<
-            dyn FnMut(mw_com::proxy::HandleContainer, bridge_ffi_rs::NativeFindServiceHandle)
+            dyn FnMut(bridge_ffi_rs::HandleContainer, bridge_ffi_rs::NativeFindServiceHandle)
                 + Send
                 + 'static,
         > = discovery_callback;
