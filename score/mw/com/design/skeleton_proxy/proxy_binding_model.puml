@@ -67,10 +67,12 @@ class "lola::Proxy" as LolaProxy {
   +{static} Create(const LolaServiceInstanceDeployment& shm_binding, const LolaServiceTypeDeployment& service_deployment, QualityType quality_type) : Result<Proxy>
   +Proxy(Proxy&&)
   +GetServiceHandles(instance_identifier : InstanceIdentifier) : score::Result<std::vector<HandleType>>
-  +GetEventDataControl(element_fq_id : const ElementFqId) : EventDataControl*
+  +GetEventControlLocal(element_fq_id : const ElementFqId) : ConsumerEventControlLocalView&
   +GetRawDataStorage(element_fq_id : const ElementFqId) : void*
   +GetQualityType() : QualityType
   +GetSourcePid() : pid_t
+  --
+  -service_data_control_local_ : ProxyServiceDataControlLocalView
 }
 
 class "score::mw::com::impl::ProxyEventBase" as ScoreMwComImplProxyEventBase {
@@ -137,10 +139,12 @@ class "lola::ProxyEventCommon" as LolaProxyEventCommon {
   +GetEventSourcePid() : pid_t
   +GetElementFQId() : ElementFqId
   +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +GetEventControl(): ConsumerEventControlLocalView&
   +GetNewSamplesSlotIndices(size_t max_count):
    pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
   --
   Notes:
+  event_control_local_ is obtained from Proxy::GetEventControlLocal() at construction.
   SlotCollector is instantiated by the SubscriptionStateMachine when it enters the
   Subscribed state. It is cleared if it subsequently leaves the Subscribed state.
   All subscription operations are implemented in the separate class
@@ -236,24 +240,35 @@ class "lola::SamplePtr<SampleType>" as LolaSamplePtrTemplate {
   using pointer = const SampleType*
   --
   -managed_object_: pointer
-  -event_slot_index_: EventDataControl::SlotIndexType
-  -event_data_control_: EventDataControl*
+  -slot_decrementer_: std::optional<SlotDecrementer>
   --
   get() : pointer
   operator*() : const SampleType&
   operator->() : pointer
+  ..
+  <u>Notes:</u>
+  SlotDecrementer (RAII) holds a ConsumerEventDataControlLocalView reference\nand calls DereferenceEvent() on destruction.
+}
+
+class "lola::SlotDecrementer" as LolaSlotDecrementer {
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>*
+  -event_slot_index_: SlotIndexType
+  +SlotDecrementer(event_data_control: ConsumerEventDataControlLocalView<>&, slot_index: SlotIndexType)
 }
 
 class "lola::SlotCollector" as LolaSlotCollector {
-  +using SlotIndexVector = std::vector<EventDataControl::SlotIndexType>;
+  +using SlotIndexVector = std::vector<SlotIndexType>;
 
   --
-  -event_data_control_: EventDataControl&
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>&
   --
-  -ProxyEventClient(EventDataControl&, const std::size_t max_slots)
+  +SlotCollector(event_data_control_local: ConsumerEventDataControlLocalView<>&, const std::size_t max_slots)
   +GetNumNewSamplesAvailable(): size_t
   +GetNewSamplesSlotIndices(size_t max_count):
    pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
+  ..
+  <u>Notes:</u>
+  Uses ConsumerEventDataControlLocalView to avoid OffsetPtr overhead\nwhen scanning shared-memory slot state during GetNewSamples().
 }
 
 class "ProxyBaseView" {
@@ -287,6 +302,7 @@ ScoreMwComImplProxyEventTemplate ..> "ProxyEventBindingFactory" #blue;text:blue 
 ScoreMwComImplProxyEventTemplate *-- SampleReferenceTracker
 ScoreMwComImplProxyEventTemplate --* MwComImplProxyFieldTemplate : event_dispatch_
 LolaProxy --o LolaProxyEventCommon
+LolaProxy *-- ProxyServiceDataControlLocalView : service_data_control_local_
 ProxyEventBindingBase <|-- ProxyEventBindingTemplate
 "ProxyEventBindingFactory" ..> ProxyEventBindingTemplate #red;text:red : <<creates>>
 "ProxyFieldBindingFactory" ..> ProxyEventBindingTemplate #red;text:red : <<creates>>
@@ -304,8 +320,13 @@ SamplePtrTemplate *-- "SampleReferenceGuard"
 SamplePtrTemplate --* LolaSamplePtrTemplate
 ProxyBaseView --* ProxyEventBindingFactory
 LolaProxyEventTemplate *-- LolaProxyEventCommon : common_dispatch_
+LolaProxyEventCommon o-- ConsumerEventControlLocalView : event_control_local_
 LolaProxyEventCommon *-- LolaSubscriptionStateMachine
-LolaProxyEventCommon *-- LolaSlotCollector : slot_collector_
 LolaSubscriptionStateMachine ..> LolaSlotCollector #red;text:red : <<creates>>
+LolaSlotCollector o-- ConsumerEventDataControlLocalView
+LolaSamplePtrTemplate *-- LolaSlotDecrementer
+LolaSlotDecrementer o-- ConsumerEventDataControlLocalView
+ProxyServiceDataControlLocalView *-- "1..n" ConsumerEventControlLocalView
+ConsumerEventControlLocalView *-- ConsumerEventDataControlLocalView
 
 @enduml

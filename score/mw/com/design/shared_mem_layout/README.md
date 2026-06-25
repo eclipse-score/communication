@@ -81,5 +81,41 @@ The anchor/root element (i.e. the location, where `SharedMemoryResource::Control
 placed into the `SharedMemoryResource` for **Control** is an instance of `lola::ServiceDataControl`. It also gets
 created by a `LoLa` skeleton instance during `lola::Skeleton::PrepareOffer()` within the initialization
 callback of the newly created shared-memory object.
-This anchor element of the `SharedMemoryResource` contains the member:
-* `event_data_control_`: a map containing the control slots of every event the service provides.
+This anchor element of the `SharedMemoryResource` contains the members:
+* `event_controls_`: a map containing an `EventControl` entry for every event the service provides. Each `EventControl`
+  aggregates the event's data control slots (`EventDataControl`), subscription control (`EventSubscriptionControl`), and
+  the transaction log set (`TransactionLogSet`).
+* `application_id_pid_mapping_`: a mapping from application identifiers to process IDs, used by proxy instances to
+  detect crashes and register their current PID.
+
+## Local Views (Performance Optimization)
+
+Accessing data structures inside shared-memory objects via `OffsetPtr` has a runtime cost: every dereference of an
+`OffsetPtr` involves a pointer arithmetic computation relative to the base address of the shared-memory segment. In
+hot-path operations (e.g. every `Send()`, every `GetNewSamples()` call), this overhead accumulates.
+
+To eliminate this cost, **local view** classes are introduced. They are created once per Skeleton event / Proxy instance
+at offer/subscription time by resolving the `OffsetPtr`s to ordinary raw pointers (or `span`s). During runtime the
+hot-path code uses these local views exclusively.
+
+The following local view classes exist:
+
+| Local View | Side | Wraps |
+|---|---|---|
+| `ProviderEventDataControlLocalView` | Provider (Skeleton) | `EventDataControl` – provides `AllocateNextSlot`, `EventReady`, `Discard` |
+| `ConsumerEventDataControlLocalView` | Consumer (Proxy / IPC-Tracing) | `EventDataControl` – provides `ReferenceNextEvent`, `DereferenceEvent`, `GetNumNewEvents` |
+| `ConsumerEventControlLocalView` | Consumer (Proxy) | `EventControl` – aggregates `ConsumerEventDataControlLocalView`, a reference to `EventSubscriptionControl`, and a reference to `TransactionLogSet` |
+| `ProxyServiceDataControlLocalView` | Consumer (Proxy) | `ServiceDataControl` – provides a `Map<ElementFqId, ConsumerEventControlLocalView>` built once at proxy construction |
+| `TransactionLogLocalView` | Consumer | `TransactionLog` – provides transaction recording via raw pointers |
+
+On the **skeleton side**, `SkeletonEventCommon::PrepareOfferCommon()` creates and stores `ProviderEventDataControlLocalView`
+(one per quality level) and `ConsumerEventDataControlLocalView` (used by IPC-tracing) when the event is offered.
+`EventDataControlComposite` (used by `lola::SkeletonEvent` for slot allocation) holds references to
+`ProviderEventDataControlLocalView` instances rather than raw `EventDataControl` pointers.
+
+On the **consumer side**, `ProxyServiceDataControlLocalView` is built at `lola::Proxy` construction time. It iterates
+the `ServiceDataControl::event_controls_` map (resolving `OffsetPtr`s once) and stores a
+`ConsumerEventControlLocalView` per event. `ProxyEventCommon` obtains its `ConsumerEventControlLocalView` reference
+from `Proxy::GetEventControlLocal()` at construction. `SlotCollector` holds a reference to
+`ConsumerEventDataControlLocalView` (obtained from `ConsumerEventControlLocalView::data_control`) and uses it in
+`GetNewSamples()` for efficient slot scanning.

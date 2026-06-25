@@ -39,13 +39,32 @@ abstract class SkeletonBinding {
 ' Concrete classes
 class lola::SkeletonEvent<SampleType> {
   -event_data_storage_: EventDataStorage<SampleType>*
-  -skeleton_event_common_: SkeletonEventCommon
+  -skeleton_event_common_: SkeletonEventCommon<SampleType>
   +SkeletonEvent(parent: Skeleton&, element_fq_id: const ElementFqId, max_number_of_slots: const std::size_t, enforce_max_samples: const bool)
   +Send(SampleType const&): void
   +Send(SampleAllocateePtr<SampleType>): void
   +Allocate(): SampleAllocateePtr<SampleType>
   +PrepareOffer(): void
   +PrepareStopOffer(): void
+}
+
+class lola::SkeletonEventCommon<SampleType> {
+  -provider_control_local_view_qm_: std::optional<ProviderEventDataControlLocalView<>>
+  -provider_control_local_view_asil_b_: std::optional<ProviderEventDataControlLocalView<>>
+  -consumer_control_local_view_qm_: std::optional<ConsumerEventDataControlLocalView<>>
+  -consumer_control_local_view_asil_: std::optional<ConsumerEventDataControlLocalView<>>
+  -event_data_control_composite_: std::optional<EventDataControlComposite<>>
+  +PrepareOfferCommon(event_control_qm: EventControl&, event_control_asil_b: EventControl*): void
+  +PrepareStopOfferCommon(): void
+  +AllocateSlot(): Result<SlotIndexType>
+  +Send(sample: SampleAllocateePtr<SampleType>&): Result<void>
+  +GetEventDataControlComposite(): EventDataControlComposite<>&
+  +GetConsumerEventDataControlLocalView(quality_type: QualityType): ConsumerEventDataControlLocalView<>&
+  ..
+  <u>Notes:</u>
+  Created/destroyed in PrepareOfferCommon/PrepareStopOfferCommon.
+  Avoids OffsetPtr overhead by holding raw-pointer-based local views
+  into shared-memory EventDataControl after mapping it once at offer time.
 }
 
 class lola::ProxyEvent<SampleType> {
@@ -91,11 +110,13 @@ class lola::ProxyEventCommon {
   +GetElementFQId(): ElementFqId
   +GetNumNewSamplesAvailable(): Result<std::size_t>
   +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
+  +GetEventControl(): ConsumerEventControlLocalView&
   ..
   <u>Notes:</u>
   lola::ProxyEventCommon is not moveable or copyable.
-  SlotCollector is instantiated by the SubscriptionStateMachine when it enters the
-  Subscribed state. It is cleared if it subsequently leaves the Subscribed state.
+  event_control_local_ is obtained from ProxyServiceDataControlLocalView at
+  construction time. SlotCollector is instantiated by the SubscriptionStateMachine
+  when it enters the Subscribed state.
   All subscription operations are implemented in the separate class
   SubscriptionStateMachine and the associated states.
 }
@@ -107,13 +128,15 @@ class lola::SubscriptionStateMachine {
 }
 
 class lola::SlotCollector {
-  -event_data_control_: EventDataControl&
-  +SlotCollector(EventDataControl&, const std::size_t max_slots)
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>&
+  +SlotCollector(event_data_control_local: ConsumerEventDataControlLocalView<>&, const std::size_t max_slots)
   +GetNumNewSamplesAvailable(): size_t
   +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
   ..
   <u>Notes:</u>
   SlotCollector is not copyable.
+  Uses ConsumerEventDataControlLocalView to avoid OffsetPtr overhead
+  when scanning shared-memory slot state during GetNewSamples().
 }
 
 class lola::ShmPathBuilder {
@@ -133,14 +156,20 @@ class SampleAllocateePtr<SampleType> {
 
 class lola::SampleAllocateePtr<SampleType> {
   -managed_object_: SampleType*
-  -event_data_control_: EventDataControlComposite
+  -event_slot_index_: SlotIndexType
+  -event_data_control_: std::optional<EventDataControlComposite<>>
+  -consumer_event_data_control_local_view_: ConsumerEventDataControlLocalView<>*
   +SampleAllocateePtr()
   +SampleAllocateePtr(std::nullptr_t)
-  +SampleAllocateePtr(ptr: pointer, const EventDataControlComposite<>&, const EventDataControl::SlotIndexType)
-  +GetReferencedSlot() const: EventDataControl::SlotIndexType
+  +SampleAllocateePtr(ptr: pointer, event_data_ctrl: EventDataControlComposite<>&, slot_index: SlotIndexType, consumer_view: ConsumerEventDataControlLocalView<>&)
+  +GetReferencedSlot() const: SlotIndexType
   +get() const: SampleType*
   +reset(std::nullptr_t): void
   +swap(other: SampleAllocateePtr&): void
+  ..
+  <u>Notes:</u>
+  consumer_event_data_control_local_view_ is used by IPC-tracing on
+  skeleton side to reference/dereference the allocated slot for tracing.
 }
 
 class SamplePtr<SampleType> {
@@ -156,12 +185,23 @@ class SamplePtr<SampleType> {
 
 class lola::SamplePtr<SampleType> {
   -managed_object_: SampleType*
-  -event_data_control_: EventDataControl*
+  -slot_decrementer_: std::optional<SlotDecrementer>
   +SamplePtr()
   +SamplePtr(std::nullptr_t)
-  +SamplePtr(pointer ptr, const EventDataControlComposite<>&, const EventDataControl::SlotIndexType)
+  +SamplePtr(ptr: pointer, consumer_view: ConsumerEventDataControlLocalView<>&, slot_index: SlotIndexType)
   +get() const: pointer
   +swap(): void
+  ..
+  <u>Notes:</u>
+  SlotDecrementer (RAII) holds a reference to ConsumerEventDataControlLocalView
+  and calls DereferenceEvent() on destruction, decrementing the slot ref-count.
+}
+
+class lola::SlotDecrementer {
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>*
+  -event_slot_index_: SlotIndexType
+  +SlotDecrementer(event_data_control: ConsumerEventDataControlLocalView<>&, slot_index: SlotIndexType)
+  +~SlotDecrementer() : calls DereferenceEvent()
 }
 
 ' Shared memory classes
@@ -179,6 +219,55 @@ class "<<SharedMemory>>\n<<typedef>>\nSkeletonDataStorage<SampleType>" as Skelet
   The offset_ptr<void> SkeletonDataStorage stored as the value in the map is an offset_ptr<EventDataStorage> which has its type erased.\nThe type is identified later when samples are retrieved, see GetNewSamples for an explanation.
 }
 
+' Local view classes (non-shared-memory, live in process heap)
+class ProviderEventDataControlLocalView<AtomicIndirectorType> {
+  -state_slots_: LocalEventControlSlots (score::cpp::span<ControlSlotType>)
+  +ProviderEventDataControlLocalView(event_data_control: EventDataControl&)
+  +AllocateNextSlot(): std::optional<SlotIndexType>
+  +EventReady(slot_index: SlotIndexType, time_stamp: EventSlotStatus::EventTimeStamp): void
+  +Discard(slot_index: SlotIndexType): void
+  +operator[](slot_index: SlotIndexType) const: EventSlotStatus
+  +RemoveAllocationsForWriting(): void
+  ..
+  <u>Notes:</u>
+  Provider (skeleton) side local view of EventDataControl.\nHolds a raw span into shared-memory state_slots_ (no OffsetPtr on hot path).
+}
+
+class ConsumerEventDataControlLocalView<AtomicIndirectorType> {
+  -state_slots_: LocalEventControlSlots (score::cpp::span<ControlSlotType>)
+  -transaction_log_local_view_: std::optional<TransactionLogLocalView>
+  +ConsumerEventDataControlLocalView(event_data_control: EventDataControl&)
+  +ReferenceNextEvent(last_search_time: EventSlotStatus::EventTimeStamp, upper_limit: EventSlotStatus::EventTimeStamp): std::optional<SlotIndexType>
+  +GetLatestSlot(): std::optional<SlotIndexType>
+  +ReferenceSpecificEvent(slot_index: SlotIndexType): void
+  +GetNumNewEvents(reference_time: EventSlotStatus::EventTimeStamp) const: std::size_t
+  +DereferenceEvent(slot_index: SlotIndexType): void
+  +DereferenceEventWithoutTransactionLogging(slot_index: SlotIndexType): void
+  +operator[](slot_index: SlotIndexType) const: EventSlotStatus
+  ..
+  <u>Notes:</u>
+  Consumer (proxy/tracing) side local view of EventDataControl.\nHolds a raw span into shared-memory state_slots_ (no OffsetPtr on hot path).
+}
+
+class ConsumerEventControlLocalView {
+  +data_control: ConsumerEventDataControlLocalView<>
+  +subscription_control: std::reference_wrapper<EventSubscriptionControl<>>
+  +transaction_log_set: std::reference_wrapper<TransactionLogSet>
+  +ConsumerEventControlLocalView(event_control: EventControl&)
+  ..
+  <u>Notes:</u>
+  Aggregated local view of a single EventControl entry from shared memory.
+}
+
+class ProxyServiceDataControlLocalView {
+  +event_controls_: Map<ElementFqId, ConsumerEventControlLocalView>
+  +application_id_pid_mapping_: ApplicationIdPidMapping<...>&
+  +ProxyServiceDataControlLocalView(service_data_control: ServiceDataControl&)
+  ..
+  <u>Notes:</u>
+  Created once per Proxy at construction. Builds ConsumerEventControlLocalView\nentries for every event in ServiceDataControl, avoiding per-call OffsetPtr\nindirection when accessing the control map at runtime.
+}
+
 class "<<SharedMemory>>\nlola::SkeletonDataControl" {
   +event_data_control_: std::map<ElementFqId, EventDataControl>
   +skeleton_pid_: pid_t
@@ -186,17 +275,11 @@ class "<<SharedMemory>>\nlola::SkeletonDataControl" {
 }
 
 class "<<SharedMemory>>\nlola::EventDataControl" {
-  -state_slots: std::vector<std::atomic<EventSlotStatusType::value_type>, PolymorphicOffsetAllocator<std::atomic<EventSlotStatusType::value_type>>>
-  +EventDataControl(ManagedMemoryResource&, SlotIndexType maxSlots)
-  +AllocateNextSlot(): std::optional<SlotIndexType>
-  +EventReady(SlotIndexType, EventTimestamp): void
-  +Discard(SlotIndexType): void
-  +ReferenceNextEvent(lastSearchTime: EventTimestampType, upper_limit: const EventSlotStatus::EventTimeStamp): std::optional<SlotIndexType>
-  +DereferenceEvent(SlotIndexType eventSlotIndex): void
-  +GetNumNewEvents(reference_time: const EventSlotStatus::EventTimeStamp) const: std::size_t
+  +state_slots_: DynamicArray<ControlSlotType, PolymorphicOffsetPtrAllocator<ControlSlotType>>
+  +EventDataControl(max_slots: SlotIndexType, resource: ManagedMemoryResource&)
   ..
   <u>Notes:</u>
-  Exists at least once per provided Event.\nFor an ASIL-B provider/skeleton, which has ASIL-B AND ASIL-QM consumer/subscriber,\nit exists twice: One Control section per ASIL-level in seperated shm-objects.\nReadable/Writable by Skeleton and Proxies.
+  Pure data class stored in shared memory. Holds the atomic slot-state array.\nAll behaviour (AllocateNextSlot, EventReady, ReferenceNextEvent, etc.) has been\nmoved to ProviderEventDataControlLocalView / ConsumerEventDataControlLocalView\nto avoid OffsetPtr overhead in the hot path.\nExists at least once per provided Event. For ASIL-B providers with both ASIL-B\nand QM consumers it exists twice (one per quality level in separate shm objects).
 }
 
 class "<<SharedMemory>>\nlola::EventSlotStatus" {
@@ -214,14 +297,16 @@ class "<<SharedMemory>>\nlola::EventSlotStatus" {
 }
 
 class EventDataControlComposite<memory::shared::AtomicIndirectorType> {
-  -asil_qm_control_: EventDataControl*
-  -asil_b_control_: EventDataControl*
-  +EventDataControlComposite(asil_qm_control: EventDataControl* const)
-  +EventDataControlComposite(asil_qm_control: EventDataControl* const, asil_b_control: EventDataControl* const)
-  +AllocateNextSlot(): std::optional<EventDataControl::SlotIndexType>
-  +EventReady(EventDataControl::SlotIndexType, EventSlotStatus::EventTimeStamp): void
-  +Discard(EventDataControl::SlotIndexType): void
+  -asil_qm_control_local_: ProviderEventDataControlLocalView<>&
+  -asil_b_control_local_: ProviderEventDataControlLocalView<>*
+  +EventDataControlComposite(asil_qm_control_local: ProviderEventDataControlLocalView<>&)
+  +EventDataControlComposite(asil_qm_control_local: ProviderEventDataControlLocalView<>&, asil_b_control_local: ProviderEventDataControlLocalView<>*)
+  +AllocateNextSlot(): AllocationResult
+  +EventReady(slot_index: SlotIndexType, time_stamp: EventSlotStatus::EventTimeStamp): void
+  +Discard(slot_index: SlotIndexType): void
   +IsQmControlDisconnected(): bool
+  +GetQmEventDataControlLocal(): ProviderEventDataControlLocalView<>&
+  +GetAsilBEventDataControlLocal(): ProviderEventDataControlLocalView<>*
 }
 
 enum SubscriptionState {
@@ -238,26 +323,38 @@ lola::Skeleton *-- SkeletonDataStorage : "1..1"
 lola::Skeleton *-- "<<SharedMemory>>\nlola::SkeletonDataControl" : "1..2"
 "<<SharedMemory>>\nlola::SkeletonDataControl" *-- "<<SharedMemory>>\nlola::EventDataControl" : "0..n"
 lola::SkeletonEvent o-- "EventDataStorage"
-lola::SkeletonEvent *-- EventDataControlComposite
+lola::SkeletonEvent *-- lola::SkeletonEventCommon
 "<<SharedMemory>>\nlola::EventDataControl" ..> "<<SharedMemory>>\nlola::EventSlotStatus"
 SampleAllocateePtr o-- lola::SampleAllocateePtr
 SamplePtr o-- lola::SamplePtr
 lola::ProxyEvent *-- lola::ProxyEventCommon
 lola::ProxyEventCommon *-- lola::SubscriptionStateMachine
-lola::ProxyEventCommon --* lola::SlotCollector
 ProxyEventBindingBase o-- SubscriptionState
 lola::SampleAllocateePtr *-- EventDataControlComposite
-EventDataControlComposite o-- "<<SharedMemory>>\nlola::EventDataControl" : "2"
 lola::Skeleton ..> lola::ShmPathBuilder : uses
-lola::Skeleton ..> EventDataControlComposite
 lola::SubscriptionStateMachine ..> lola::SlotCollector : <<creates>>
 SkeletonEventBinding ..> SampleAllocateePtr
 lola::ProxyEvent ..> lola::SamplePtr
 SkeletonDataStorage *-- "EventDataStorage" : "0..n"
-lola::SlotCollector o-- "<<SharedMemory>>\nlola::EventDataControl"
 ProxyEventBinding ..> SamplePtr
 lola::SkeletonEvent ..> lola::SampleAllocateePtr
-lola::SamplePtr ..> "<<SharedMemory>>\nlola::EventDataControl"
-lola::SampleAllocateePtr ..> "<<SharedMemory>>\nlola::EventDataControl"
+
+' Local view relationships
+lola::SkeletonEventCommon *-- "0..2" ProviderEventDataControlLocalView
+lola::SkeletonEventCommon *-- "0..2" ConsumerEventDataControlLocalView
+lola::SkeletonEventCommon *-- EventDataControlComposite
+EventDataControlComposite o-- "1..2" ProviderEventDataControlLocalView
+ProviderEventDataControlLocalView ..> "<<SharedMemory>>\nlola::EventDataControl" : accesses via span
+ConsumerEventDataControlLocalView ..> "<<SharedMemory>>\nlola::EventDataControl" : accesses via span
+lola::ProxyEventCommon o-- ConsumerEventControlLocalView : event_control_local_
+ConsumerEventControlLocalView *-- ConsumerEventDataControlLocalView
+ConsumerEventControlLocalView ..> "<<SharedMemory>>\nlola::EventSubscriptionControl" : subscription_control ref
+ConsumerEventControlLocalView ..> "<<SharedMemory>>\nlola::TransactionLogSet" : transaction_log_set ref
+lola::SlotCollector o-- ConsumerEventDataControlLocalView
+lola::SampleAllocateePtr o-- ConsumerEventDataControlLocalView
+lola::SamplePtr *-- lola::SlotDecrementer
+lola::SlotDecrementer o-- ConsumerEventDataControlLocalView
+lola::Proxy *-- ProxyServiceDataControlLocalView : service_data_control_local_
+ProxyServiceDataControlLocalView *-- "1..n" ConsumerEventControlLocalView
 
 @enduml
