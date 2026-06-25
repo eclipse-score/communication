@@ -58,7 +58,7 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     // ProxyField needs to instantiate ProxyMethod via the private FieldOnlyConstructorEnabler tag.
     // coverity[autosar_cpp14_a11_3_1_violation]
     template <typename, typename...>
-    friend class ProxyField;
+    friend class ProxyFieldImpl;
 
     struct FieldOnlyConstructorEnabler
     {
