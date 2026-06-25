@@ -36,8 +36,7 @@ const InstanceSpecifier kInstanceSpecifier =
 
 void CallMethodWithInArgsAndReturn(NonTrivialConstructorProxy& proxy, const std::string& failure_message_prefix)
 {
-    auto call_result =
-        [&proxy, &failure_message_prefix]() -> score::Result<impl::MethodReturnTypePtr<NonTriviallyConstructibleType>> {
+    auto call_result = [&proxy]() -> score::Result<impl::MethodReturnTypePtr<NonTriviallyConstructibleType>> {
         std::cout << "\n=== Test: with_in_args_and_return (zero-copy) ===" << std::endl;
         auto allocated_args_result = proxy.with_in_args_and_return.Allocate();
         if (!allocated_args_result.has_value())
@@ -66,7 +65,7 @@ void CallMethodWithInArgsAndReturn(NonTrivialConstructorProxy& proxy, const std:
 
 void CallMethodWithInArgsOnly(NonTrivialConstructorProxy& proxy, const std::string& failure_message_prefix)
 {
-    auto call_result = [&proxy, &failure_message_prefix]() -> Result<void> {
+    auto call_result = [&proxy]() -> Result<void> {
         std::cout << "\n=== Test: with_in_args_only (zero-copy) ===" << std::endl;
         auto allocated_args_result = proxy.with_in_args_only.Allocate();
         if (!allocated_args_result.has_value())

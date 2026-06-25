@@ -118,6 +118,7 @@ def cc_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
     cc_test_qnx(
         name = name_qnx,
         cc_test = name_linux,
+        tags = ["manual"],
     )
 
     _forwarding_test(
