@@ -21,7 +21,16 @@ py_binary(
 
 py_binary(
     name = "analysis_report",
-    srcs = ["scripts/reports/analysis_report.py"],
+    srcs = ["scripts/reports/analysis_report.py",
+            "scripts/reports/diagnostics.py" ,
+            "scripts/reports/deviations.py",
+            "scripts/reports/error.py",
+            "scripts/reports/codeqlvalidation.py",
+            "scripts/reports/utils.py",
+            "scripts/shared/codeql.py",
+            "scripts/reports/guideline_recategorizations.py"],
+    data = ["supported_codeql_configs.json"] + glob(["cpp/**"]),
     deps = [requirement("pyyaml")],
+    imports = ["scripts/reports","scripts/shared"],
     visibility = ["//visibility:public"],
 )
