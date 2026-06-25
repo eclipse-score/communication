@@ -714,8 +714,8 @@ class SkeletonBaseServiceElementReferencesFixture : public ::testing::Test
     DummyField field_0_{field_name_0_, std::move(field_event_dispatch_0_)};
     DummyField field_1_{field_name_1_, std::move(field_event_dispatch_1_)};
 
-    SkeletonMethodBase method_0_{method_name_0_, std::make_unique<mock_binding::SkeletonMethod>()};
-    SkeletonMethodBase method_1_{method_name_1_, std::make_unique<mock_binding::SkeletonMethod>()};
+    SkeletonMethodBase method_0_{method_name_0_, std::make_unique<mock_binding::SkeletonMethod>(), MethodType::kMethod};
+    SkeletonMethodBase method_1_{method_name_1_, std::make_unique<mock_binding::SkeletonMethod>(), MethodType::kMethod};
 };
 
 TEST_F(SkeletonBaseServiceElementReferencesFixture, RegisteringServiceElementStoresReferenceInMap)
@@ -810,7 +810,7 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferenc
 
     DummyField field{other_field_name, std::move(field_event_dispatch)};
 
-    SkeletonMethodBase method{other_method_name, std::make_unique<mock_binding::SkeletonMethod>()};
+    SkeletonMethodBase method{other_method_name, std::make_unique<mock_binding::SkeletonMethod>(), MethodType::kMethod};
     SkeletonBaseView{skeleton_2}.RegisterEvent(other_event_name, event.GetReferenceToMoveable());
     SkeletonBaseView{skeleton_2}.RegisterField(other_field_name, field.GetReferenceToMoveable());
     SkeletonBaseView{skeleton_2}.RegisterMethod(other_method_name, method.GetReferenceToMoveable());
