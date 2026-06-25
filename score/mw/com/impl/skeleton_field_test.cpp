@@ -775,7 +775,7 @@ TEST_F(SkeletonFieldTestFixture, SkeletonFieldsRegisterThemselvesWithSkeleton)
     ASSERT_EQ(fields.size(), 1);
 
     const auto field_name = fields.begin()->first;
-    const auto& field = fields.begin()->second.get();
+    const auto& field = fields.begin()->second.get().Get();
 
     // the name corresponds to the correct field name
     EXPECT_EQ(field_name, kFieldName);
@@ -798,7 +798,7 @@ TEST_F(SkeletonFieldTestFixture, MovingConstructingSkeletonUpdatesFieldMapRefere
     ASSERT_EQ(fields.size(), 1);
 
     const auto field_name = fields.begin()->first;
-    const auto& field = fields.begin()->second.get();
+    const auto& field = fields.begin()->second.get().Get();
 
     // the name corresponds to the correct field name
     EXPECT_EQ(field_name, kFieldName);
@@ -833,31 +833,13 @@ TEST_F(SkeletonFieldTestFixture, MovingAssigningSkeletonUpdatesFieldMapReference
     ASSERT_EQ(fields.size(), 1);
 
     const auto field_name = fields.begin()->first;
-    const auto& field = fields.begin()->second.get();
+    const auto& field = fields.begin()->second.get().Get();
 
     // the name corresponds to the correct field name
     EXPECT_EQ(field_name, kFieldName);
 
     // and the field in the map corresponds to the correct skeleton field address
     EXPECT_EQ(&field, &unit2.my_dummy_field_);
-}
-
-using SkeletonFieldDeathTest = SkeletonFieldTestFixture;
-TEST_F(SkeletonFieldDeathTest, UpdateWithInvalidFieldNameTriggersTermination)
-{
-    // Given a skeleton created based on a Lola binding
-    MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
-
-    // Expect that the field map stored in the skeleton
-    const auto& fields = SkeletonBaseView{unit}.GetFields();
-
-    // contains a single field
-    ASSERT_EQ(fields.size(), 1);
-
-    auto& field = fields.begin()->second.get();
-
-    // Then the program terminates as expected due to the invalid field name
-    EXPECT_DEATH(SkeletonBaseView{unit}.UpdateField("non_existing_test_field_name", field);, ".*");
 }
 
 // Helper skeleton that holds a SkeletonField with all three tags.
@@ -1250,12 +1232,8 @@ using SkeletonFieldMoveConstructionFixture = SkeletonFieldTestFixture;
 TEST_F(SkeletonFieldMoveConstructionFixture, SecondRegisterSetHandlerReplacesHandler)
 {
     // Note. This test verifies that moving a skeleton does not break the getter / setter methods stored within a field.
-    // When moving, UpdateSkeletonReference must update the references to SkeletonBase in the field instance as well as
-    // the stored methods. However, the SkeletonBase reference in the methods are only used when moving the method (to
-    // update the reference to the method in SkeletonBase). Since the methods are stored in the field as unique_ptrs,
-    // they will never actually be moved. Therefore, with the current implementation, the SkeletonBase reference in the
-    // getter and setter are never used and so we have no way of ensuring that they are updated correctly. We can only
-    // verify that the method is still valid after move construction.
+    // The getter and setter methods are owned by the field via unique_ptr, so they remain valid across skeleton moves.
+    // This test verifies usability after move construction.
 
     // Given a skeleton containing a field with a setter enabled
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};

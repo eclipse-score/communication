@@ -56,15 +56,11 @@ class MyDummyField : public SkeletonFieldBase
   public:
     MyDummyField()
         : SkeletonFieldBase{
-              kEmptySkeleton,
               kFieldName,
-              std::make_unique<SkeletonEventBase>(kEmptySkeleton,
-                                                  kFieldName,
+              std::make_unique<SkeletonEventBase>(kFieldName,
                                                   std::make_unique<StrictMock<mock_binding::SkeletonEventBase>>())}
     {
     }
-
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
 
     StrictMock<mock_binding::SkeletonEventBase>* GetMockEventBinding() noexcept
     {
@@ -97,8 +93,6 @@ class MyDummyField : public SkeletonFieldBase
 class MyDummyFieldFailingDeferredUpdate final : public MyDummyField
 {
   public:
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override {}
-
     Result<void> DoDeferredUpdate() noexcept override
     {
         return MakeUnexpected(ComErrc::kCommunicationLinkError);

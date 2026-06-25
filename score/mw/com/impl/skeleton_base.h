@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
 #include "score/mw/com/impl/mocking/i_skeleton_base.h"
@@ -26,7 +27,6 @@
 #include <score/optional.hpp>
 #include <score/span.hpp>
 
-#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -44,9 +44,12 @@ class SkeletonMethodBase;
 class SkeletonBase
 {
   public:
-    using SkeletonEvents = std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>;
-    using SkeletonFields = std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>;
-    using SkeletonMethods = std::map<std::string_view, std::reference_wrapper<SkeletonMethodBase>>;
+    using SkeletonEvents =
+        std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonEventBase>::Reference>>;
+    using SkeletonFields =
+        std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>>;
+    using SkeletonMethods =
+        std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonMethodBase>::Reference>>;
 
     /// \brief Creation of service skeleton with provided Skeleton binding
     ///
@@ -93,8 +96,8 @@ class SkeletonBase
 
     /// \brief A Skeleton shall be movable
     /// \requirement SWS_CM_00135
-    SkeletonBase(SkeletonBase&& other) noexcept;
-    SkeletonBase& operator=(SkeletonBase&& other) noexcept;
+    SkeletonBase(SkeletonBase&& other) noexcept = default;
+    SkeletonBase& operator=(SkeletonBase&& other) noexcept = default;
 
   private:
     std::unique_ptr<SkeletonBinding> binding_;
@@ -108,8 +111,6 @@ class SkeletonBase
     [[nodiscard]] score::Result<void> OfferServiceEvents() const noexcept;
     [[nodiscard]] score::Result<void> OfferServiceFields() const noexcept;
 
-    void UpdateAllServiceElementReferences() noexcept;
-
     FlagOwner service_offered_flag_;
 };
 
@@ -122,17 +123,11 @@ class SkeletonBaseView
 
     [[nodiscard]] SkeletonBinding* GetBinding() const;
 
-    void RegisterEvent(std::string_view event_name, SkeletonEventBase& event);
+    void RegisterEvent(std::string_view event_name, ReferenceToMoveable<SkeletonEventBase>::Reference& event);
 
-    void RegisterField(std::string_view field_name, SkeletonFieldBase& field);
+    void RegisterField(std::string_view field_name, ReferenceToMoveable<SkeletonFieldBase>::Reference& field);
 
-    void RegisterMethod(std::string_view method_name, SkeletonMethodBase& method);
-
-    void UpdateEvent(std::string_view event_name, SkeletonEventBase& event) noexcept;
-
-    void UpdateField(std::string_view field_name, SkeletonFieldBase& field) noexcept;
-
-    void UpdateMethod(std::string_view method_name, SkeletonMethodBase& method) noexcept;
+    void RegisterMethod(std::string_view method_name, ReferenceToMoveable<SkeletonMethodBase>::Reference& method);
 
     [[nodiscard]] const SkeletonBase::SkeletonEvents& GetEvents() const& noexcept;
 

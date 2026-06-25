@@ -55,8 +55,7 @@ abstract class "score::mw::com::impl::SkeletonBase" as ScoreMwComImplSkeletonBas
   +StopOfferService(): void
   --
   Notes:
-  SkeletonBase is moveable but not copyable. On moving, the SkeletonBase should call UpdateSkeletonReference on all
-  events and fields within its events_ and fields_ maps.
+  SkeletonBase is moveable but not copyable. On moving, the SkeletonBase updates method references.
 }
 
 abstract class "DummySkeleton\n{{generated}}" as DummySkeleton {
@@ -75,7 +74,6 @@ class "score::mw::com::impl::SkeletonEventBase" as ScoreMwComImplSkeletonEventBa
   +SkeletonEventBase(std::unique_ptr<SkeletonEventBindingBase> binding)
   +PrepareOffer(): score::Result<void>
   +PrepareStopOffer(): void
-  +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
   --
   Notes:
   SkeletonEventBase is moveable but not copyable.
@@ -84,15 +82,13 @@ class "score::mw::com::impl::SkeletonEventBase" as ScoreMwComImplSkeletonEventBa
   This allows SkeletonEventBase to access the type independent methods of
   SkeletonEventBindingBase. Derived classes i.e. impl::SkeletonEvent should
   downcast binding_ to a SkeletonEventBinding<SampleType> in order to use type
-  dependent methods. On moving, the SkeletonEvent should call UpdateEvent on its
-  parent skeleton so that the parent stores its new address.
+  dependent methods.
 }
 
 class "score::mw::com::impl::SkeletonFieldBase" as ScoreMwComImplSkeletonFieldBase {
   +SkeletonFieldBase(SkeletonBase&, std::string_view field_name, std::unique_ptr<impl::SkeletonEventBase>)
   +PrepareOffer(): Result<void>
   +PrepareStopOffer(): void
-  +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
   --
   #skeleton_event_dispatch_ : std::unique_ptr<impl::SkeletonEventBase>
   #skeleton_base_ : std::reference_wrapper<SkeletonBase>

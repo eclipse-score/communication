@@ -116,6 +116,7 @@ cc_library(
     deps = [
         ":tracing_runtime",
         "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:reference_to_moveable",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:skeleton_binding",
         "//score/mw/com/impl:skeleton_event_base",

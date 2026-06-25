@@ -89,8 +89,8 @@ class SkeletonEvent : public SkeletonEventBase
     SkeletonEvent(const SkeletonEvent&) = delete;
     SkeletonEvent& operator=(const SkeletonEvent&) & = delete;
 
-    SkeletonEvent(SkeletonEvent&& other) noexcept;
-    SkeletonEvent& operator=(SkeletonEvent&& other) & noexcept;
+    SkeletonEvent(SkeletonEvent&& other) noexcept = default;
+    SkeletonEvent& operator=(SkeletonEvent&& other) & noexcept = default;
 
     /**
      * \api
@@ -133,16 +133,14 @@ class SkeletonEvent : public SkeletonEventBase
 
 template <typename SampleDataType>
 SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base, const std::string_view event_name)
-    : SkeletonEventBase{skeleton_base,
-                        event_name,
+    : SkeletonEventBase{event_name,
                         SkeletonEventBindingFactory<EventType>::Create(
                             SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                             skeleton_base,
                             event_name)},
       skeleton_event_mock_{nullptr}
 {
-    SkeletonBaseView base_skeleton_view{skeleton_base};
-    base_skeleton_view.RegisterEvent(event_name, *this);
+    SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, GetReferenceToMoveable());
 
     if (binding_ != nullptr)
     {
@@ -160,7 +158,7 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
                                              const std::string_view event_name,
                                              std::unique_ptr<SkeletonEventBinding<EventType>> binding,
                                              FieldOnlyConstructorEnabler)
-    : SkeletonEventBase{skeleton_base, event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
+    : SkeletonEventBase{event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
 {
     if (binding_ != nullptr)
     {
@@ -177,42 +175,8 @@ template <typename SampleDataType>
 SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
                                              const std::string_view event_name,
                                              std::unique_ptr<SkeletonEventBinding<EventType>> binding)
-    : SkeletonEventBase{skeleton_base, event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
+    : SkeletonEventBase{event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
 {
-}
-
-template <typename SampleDataType>
-SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonEvent&& other) noexcept
-    : SkeletonEventBase(std::move(static_cast<SkeletonEventBase&&>(other))),
-      skeleton_event_mock_{std::move(other.skeleton_event_mock_)}
-{
-    // Since the address of this event has changed, we need update the address stored in the parent skeleton.
-    SkeletonBaseView base_skeleton_view{skeleton_base_.get()};
-    base_skeleton_view.UpdateEvent(event_name_, *this);
-
-    other.skeleton_event_mock_ = nullptr;
-}
-
-template <typename SampleDataType>
-// Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
-// or respectively copy base classes and data members of a class, without any side effects."
-// Rationale: The parent skeleton stores a reference to the SkeletonEvent. The address that is pointed to must be
-// updated when the SkeletonEvent is moved. Therefore, side effects are required.
-// coverity[autosar_cpp14_a6_2_1_violation]
-auto SkeletonEvent<SampleDataType>::operator=(SkeletonEvent&& other) & noexcept -> SkeletonEvent<SampleDataType>&
-{
-    if (this != &other)
-    {
-        SkeletonEventBase::operator=(std::move(other));
-
-        // Since the address of this event has changed, we need update the address stored in the parent skeleton.
-        SkeletonBaseView base_skeleton_view{skeleton_base_.get()};
-        base_skeleton_view.UpdateEvent(event_name_, *this);
-
-        skeleton_event_mock_ = std::move(other.skeleton_event_mock_);
-        other.skeleton_event_mock_ = nullptr;
-    }
-    return *this;
 }
 
 template <typename SampleDataType>

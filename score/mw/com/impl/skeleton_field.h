@@ -94,8 +94,8 @@ class SkeletonField : public SkeletonFieldBase
     SkeletonField(const SkeletonField&) = delete;
     SkeletonField& operator=(const SkeletonField&) & = delete;
 
-    SkeletonField(SkeletonField&& other) noexcept;
-    SkeletonField& operator=(SkeletonField&& other) & noexcept;
+    SkeletonField(SkeletonField&& other) noexcept = default;
+    SkeletonField& operator=(SkeletonField&& other) & noexcept = default;
 
     /**
      * \api
@@ -169,27 +169,6 @@ class SkeletonField : public SkeletonFieldBase
 
         is_set_handler_registered_ = true;
         return set_method_->RegisterHandler(std::move(wrapped_callback));
-    }
-
-    /// \brief Updates the reference to SkeletonBase held by this SkeletonField and also the owned methods.
-    ///
-    /// This is necessary when a Skeleton (which owns its events, fields and methods) is moved to a new address. When
-    /// this happens, the references to the SkeletonBase are pointing to the old address and must be updated. This must
-    /// be done also for the get and set method since they call a SkeletonMethod constructor which does not register
-    /// them with the SkeletonBase. Rather, they're considered as part of the SkeletonField and it's the field's
-    /// responsibility to update their SkeletonBase reference when it's moved.
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override
-    {
-        skeleton_base_ = skeleton_base;
-
-        if (set_method_ != nullptr)
-        {
-            set_method_->UpdateSkeletonReference(skeleton_base);
-        }
-        if (get_method_ != nullptr)
-        {
-            get_method_->UpdateSkeletonReference(skeleton_base);
-        }
     }
 
   private:
@@ -299,7 +278,7 @@ SkeletonField<SampleDataType, Tags...>::SkeletonField(
     std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
     std::unique_ptr<SkeletonMethod<SetMethodSignature>> skeleton_set_method_dispatch,
     std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch)
-    : SkeletonFieldBase{parent, field_name, std::move(skeleton_event_dispatch)},
+    : SkeletonFieldBase{field_name, std::move(skeleton_event_dispatch)},
       initial_field_value_{nullptr},
       skeleton_field_mock_{nullptr},
       is_set_handler_registered_{false},
@@ -307,44 +286,7 @@ SkeletonField<SampleDataType, Tags...>::SkeletonField(
       get_method_{std::move(skeleton_get_method_dispatch)}
 {
     SkeletonBaseView skeleton_base_view{parent};
-    skeleton_base_view.RegisterField(field_name, *this);
-}
-
-template <typename SampleDataType, typename... Tags>
-SkeletonField<SampleDataType, Tags...>::SkeletonField(SkeletonField&& other) noexcept
-    : SkeletonFieldBase(static_cast<SkeletonFieldBase&&>(other)),
-      // known llvm bug (https://github.com/llvm/llvm-project/issues/63202)
-      // This usage is safe because the previous line only moves the base class portion via static_cast.
-      // The derived class member 'initial_field_value_' remains untouched by the base class move constructor,
-      // so it's still valid to access it here for moving into our own member.
-      // coverity[autosar_cpp14_a12_8_3_violation] This is a false-positive.
-      initial_field_value_{std::move(other.initial_field_value_)},
-      skeleton_field_mock_{other.skeleton_field_mock_},
-      is_set_handler_registered_{other.is_set_handler_registered_},
-      set_method_{std::move(other.set_method_)},
-      get_method_{std::move(other.get_method_)}
-{
-    SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
-    skeleton_base_view.UpdateField(field_name_, *this);
-}
-
-template <typename SampleDataType, typename... Tags>
-auto SkeletonField<SampleDataType, Tags...>::operator=(SkeletonField&& other) & noexcept
-    -> SkeletonField<SampleDataType, Tags...>&
-{
-    if (this != &other)
-    {
-        SkeletonFieldBase::operator=(std::move(other));
-
-        initial_field_value_ = std::move(other.initial_field_value_);
-        skeleton_field_mock_ = std::move(other.skeleton_field_mock_);
-        is_set_handler_registered_ = other.is_set_handler_registered_;
-        set_method_ = std::move(other.set_method_);
-        get_method_ = std::move(other.get_method_);
-        SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
-        skeleton_base_view.UpdateField(field_name_, *this);
-    }
-    return *this;
+    skeleton_base_view.RegisterField(field_name, GetReferenceToMoveable());
 }
 
 /// \brief FieldType is allocated by the user and provided to the middleware to send. Dispatches to

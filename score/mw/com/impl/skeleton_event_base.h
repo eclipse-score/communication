@@ -13,14 +13,13 @@
 #ifndef SCORE_MW_COM_IMPL_SKELETON_EVENT_BASE_H
 #define SCORE_MW_COM_IMPL_SKELETON_EVENT_BASE_H
 
+#include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
 #include "score/mw/com/impl/flag_owner.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
-#include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include "score/result/result.h"
 
-#include <functional>
 #include <memory>
 #include <string_view>
 #include <utility>
@@ -29,12 +28,8 @@ namespace score::mw::com::impl
 {
 
 class SkeletonEventBaseView;
-// False Positive: this is a normal forward declaration.
-// Which is used to avoid cyclic dependency with skeleton_base.h
-// coverity[autosar_cpp14_m3_2_3_violation]
-class SkeletonBase;
 
-class SkeletonEventBase
+class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEventBase>
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Design decision. This class provides a view to the private members of this class.
@@ -42,11 +37,9 @@ class SkeletonEventBase
     friend SkeletonEventBaseView;
 
   public:
-    SkeletonEventBase(SkeletonBase& skeleton_base,
-                      const std::string_view event_name,
-                      std::unique_ptr<SkeletonEventBindingBase> binding)
-        : binding_{std::move(binding)},
-          skeleton_base_{skeleton_base},
+    SkeletonEventBase(const std::string_view event_name, std::unique_ptr<SkeletonEventBindingBase> binding)
+        : EnableReferenceToMoveableFromThis<SkeletonEventBase>(),
+          binding_{std::move(binding)},
           event_name_{event_name},
           tracing_data_{},
           service_offered_flag_{}
@@ -54,11 +47,6 @@ class SkeletonEventBase
     }
 
     virtual ~SkeletonEventBase() = default;
-
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept
-    {
-        skeleton_base_ = skeleton_base;
-    }
 
     /// \brief Used to indicate that the event shall be available to consumer
     /// Performs binding independent functionality and then dispatches to the binding
@@ -88,20 +76,13 @@ class SkeletonEventBase
     SkeletonEventBase& operator=(const SkeletonEventBase&) & = delete;
 
     SkeletonEventBase(SkeletonEventBase&&) noexcept = default;
-    SkeletonEventBase& operator=(SkeletonEventBase&& other) & noexcept = default;
+    SkeletonEventBase& operator=(SkeletonEventBase&&) & noexcept = default;
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". We need these data elements to exchange this information between the SkeletonEventBase and the
     // SkeletonEvent.
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::unique_ptr<SkeletonEventBindingBase> binding_;
-
-    // The SkeletonEventBase must contain a reference to the SkeletonBase so that a SkeletonBase can call
-    // UpdateSkeletonReference whenever it is moved to a new address. A SkeletonBase only has a reference to a
-    // SkeletonEventBase, not a typed SkeletonEvent, which is why UpdateSkeletonReference has to be in this class
-    // despite skeleton_base_ being used in the derived class, SkeletonEvent.
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    std::reference_wrapper<SkeletonBase> skeleton_base_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::string_view event_name_;
     // coverity[autosar_cpp14_m11_0_1_violation]

@@ -53,10 +53,7 @@ const auto kEventName{"DummyEvent1"};
 class MyDummyEvent final : public SkeletonEventBase
 {
   public:
-    MyDummyEvent()
-        : SkeletonEventBase{kEmptySkeleton, kEventName, std::make_unique<StrictMock<mock_binding::SkeletonEventBase>>()}
-    {
-    }
+    MyDummyEvent() : SkeletonEventBase{kEventName, std::make_unique<StrictMock<mock_binding::SkeletonEventBase>>()} {}
 
     StrictMock<mock_binding::SkeletonEventBase>* GetMockBinding() noexcept
     {

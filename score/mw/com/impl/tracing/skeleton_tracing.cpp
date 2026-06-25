@@ -16,10 +16,10 @@
 ///
 #include "score/mw/com/impl/tracing/skeleton_tracing.h"
 
+#include "score/mw/com/impl/reference_to_moveable.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
-#include "score/mw/com/impl/tracing/tracing_runtime.h"
 
 #include <map>
 
@@ -35,11 +35,12 @@ bool IsTracingEnabledForInterfaceEvent(const SkeletonEventTracingData& skeleton_
 }
 
 bool IsTracingEnabledForAnyEvent(
-    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events) noexcept
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonEventBase>::Reference>>&
+        events) noexcept
 {
     for (const auto& event : events)
     {
-        auto& skeleton_event_base = event.second.get();
+        auto& skeleton_event_base = event.second.get().Get();
         auto skeleton_event_base_view = SkeletonEventBaseView(skeleton_event_base);
         const auto& skeleton_event_tracing = skeleton_event_base_view.GetSkeletonEventTracing();
         const bool tracing_enabled = IsTracingEnabledForInterfaceEvent(skeleton_event_tracing);
@@ -52,11 +53,12 @@ bool IsTracingEnabledForAnyEvent(
 }
 
 bool IsTracingEnabledForAnyField(
-    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields) noexcept
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>>&
+        fields) noexcept
 {
     for (const auto& field : fields)
     {
-        auto& skeleton_field_base = field.second.get();
+        auto& skeleton_field_base = field.second.get().Get();
         auto skeleton_field_base_view = SkeletonFieldBaseView(skeleton_field_base);
         auto skeleton_event_base_view = SkeletonEventBaseView(skeleton_field_base_view.GetEventBase());
         const auto& skeleton_event_tracing = skeleton_event_base_view.GetSkeletonEventTracing();
@@ -71,8 +73,9 @@ bool IsTracingEnabledForAnyField(
 
 bool IsTracingEnabledForInstance(
     ITracingRuntime* const tracing_runtime,
-    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
-    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields) noexcept
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonEventBase>::Reference>>& events,
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>>&
+        fields) noexcept
 {
     if (tracing_runtime == nullptr)
     {
@@ -92,8 +95,8 @@ bool IsTracingEnabledForInstance(
 
 std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> CreateRegisterShmObjectCallback(
     const InstanceIdentifier& instance_id,
-    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
-    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonEventBase>::Reference>>& events,
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>>& fields,
     const SkeletonBinding& skeleton_binding) noexcept
 {
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> tracing_handler{};
@@ -125,8 +128,8 @@ std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> CreateRegisterShm
 
 std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback> CreateUnregisterShmObjectCallback(
     const InstanceIdentifier& instance_id,
-    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
-    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonEventBase>::Reference>>& events,
+    const std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>>& fields,
     const SkeletonBinding& skeleton_binding) noexcept
 {
     std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback> tracing_handler{};

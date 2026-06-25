@@ -13,10 +13,10 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_BASE_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_BASE_H
 
+#include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 
-#include <functional>
 #include <memory>
 
 namespace score::mw::com::impl
@@ -24,10 +24,7 @@ namespace score::mw::com::impl
 
 class SkeletonMethodBaseView;
 
-// forward declaration to avoid cyclical dependencies
-class SkeletonBase;
-
-class SkeletonMethodBase
+class SkeletonMethodBase : public EnableReferenceToMoveableFromThis<SkeletonMethodBase>
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Design decision. This class provides a read only view to the private members of this class inside the impl
@@ -36,14 +33,13 @@ class SkeletonMethodBase
     friend SkeletonMethodBaseView;
 
   public:
-    SkeletonMethodBase(SkeletonBase& skeleton_base,
-                       const std::string_view method_name,
+    SkeletonMethodBase(const std::string_view method_name,
                        std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding,
                        MethodType method_type = MethodType::kMethod)
-        : method_name_{method_name},
+        : EnableReferenceToMoveableFromThis<SkeletonMethodBase>(),
+          method_name_{method_name},
           method_type_{method_type},
-          binding_{std::move(skeleton_method_binding)},
-          skeleton_base_{skeleton_base}
+          binding_{std::move(skeleton_method_binding)}
     {
     }
 
@@ -55,13 +51,10 @@ class SkeletonMethodBase
     SkeletonMethodBase(SkeletonMethodBase&&) noexcept = default;
     SkeletonMethodBase& operator=(SkeletonMethodBase&&) & noexcept = default;
 
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept;
-
   protected:
     std::string_view method_name_;
     MethodType method_type_;
     std::unique_ptr<SkeletonMethodBinding> binding_;
-    std::reference_wrapper<SkeletonBase> skeleton_base_;
 };
 
 class SkeletonMethodBaseView
