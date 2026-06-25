@@ -151,5 +151,7 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         "runtime_configuration",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )

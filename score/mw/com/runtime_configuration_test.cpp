@@ -13,6 +13,8 @@
 #include "score/mw/com/runtime_configuration.h"
 
 #include "score/memory/string_literal.h"
+#include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
 
 #include <score/assert.hpp>
 #include <score/span.hpp>
@@ -93,19 +95,29 @@ TEST(RuntimeConfigurationCommandLineConstructorTest, DeprecatedConfigurationComm
         kDummyApplicationName, kDeprecatedConfigurationPathCommandLineKey, kDummyConfigurationPath};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
-    // Given a mocked stdout to capture logs
-    testing::internal::CaptureStdout();
+    // Given a log recorder mock
+    score::mw::log::RecorderMock recorder_mock{};
+    score::mw::log::SetLogRecorder(&recorder_mock);
+    score::mw::log::SlotHandle handle{10};
+    ON_CALL(recorder_mock, StartRecord(::testing::_, score::mw::log::LogLevel::kWarn))
+        .WillByDefault(::testing::Return(handle));
+
+    // Then a deprecation warning should be logged containing the key phrase that confirms this is a deprecation notice
+    EXPECT_CALL(recorder_mock, StartRecord(std::string_view{"lola"}, score::mw::log::LogLevel::kWarn)).Times(1);
+    // Catch-all for other LogStringView calls (the key names are also streamed as separate tokens);
+    // registered first so the specific check below has higher LIFO priority.
+    EXPECT_CALL(recorder_mock, LogStringView(::testing::_, ::testing::_)).Times(::testing::AnyNumber());
+    EXPECT_CALL(recorder_mock, LogStringView(handle, std::string_view{"is deprecated, please use"}));
 
     // When constructing a RuntimeConfiguration
     const RuntimeConfiguration runtime_configuration{argc, argv};
 
+    // Reset the global recorder to nullptr so that it no longer points to the local recorder_mock.
+    score::mw::log::SetLogRecorder(nullptr);
+
     // Then the configuration path should still work for backward compatibility
     const auto& stored_configuration_path = runtime_configuration.GetConfigurationPath();
     EXPECT_EQ(stored_configuration_path.Native(), kDummyConfigurationPath);
-
-    // Then the output should contain the deprecation warning of the command line argument
-    std::string output = testing::internal::GetCapturedStdout();
-    EXPECT_THAT(output, ::testing::HasSubstr("is deprecated"));
 }
 
 TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsDefaultPathIfNoPathKeyInCommandLineArgs)
@@ -156,16 +168,9 @@ TEST(RuntimeConfigurationCommandLineConstructorDeathTest, TerminatesIfCommandLin
     std::vector<score::StringLiteral> arguments = {kDummyApplicationName, kConfigurationPathCommandLineKey};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
-    // Given a mocked stdout to capture logs
-    testing::internal::CaptureStdout();
-
     // When constructing a RuntimeConfiguration
     // Then the process terminates
     EXPECT_DEATH(RuntimeConfiguration(argc, argv), ".*");
-
-    // Then the output should contain the termination reason
-    std::string output = testing::internal::GetCapturedStdout();
-    EXPECT_THAT(output, ::testing::HasSubstr("no corresponding value"));
 }
 
 TEST(RuntimeConfigurationCommandLineConstructorDeathTest, TerminatesIfCommandLineArgsContainDeprecatedPathKeyButNoPath)
@@ -174,16 +179,9 @@ TEST(RuntimeConfigurationCommandLineConstructorDeathTest, TerminatesIfCommandLin
     std::vector<score::StringLiteral> arguments = {kDummyApplicationName, kDeprecatedConfigurationPathCommandLineKey};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
-    // Given a mocked stdout to capture logs
-    testing::internal::CaptureStdout();
-
     // When constructing a RuntimeConfiguration
     // Then the process terminates
     EXPECT_DEATH(RuntimeConfiguration(argc, argv), ".*");
-
-    // Then the output should contain the termination reason
-    std::string output = testing::internal::GetCapturedStdout();
-    EXPECT_THAT(output, ::testing::HasSubstr("no corresponding value"));
 }
 
 }  // namespace

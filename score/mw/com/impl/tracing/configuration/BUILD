@@ -247,6 +247,7 @@ cc_unit_test(
     deps = [
         ":service_element_identifier",
         "//score/mw/com/impl:service_element_type",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
 
@@ -362,6 +363,8 @@ cc_unit_test(
         ":tracing_filter_config_mock",
         ":tracing_filter_config_parser",
         "//score/mw/com/impl/test:runtime_mock_guard",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
 
