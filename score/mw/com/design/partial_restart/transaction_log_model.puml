@@ -17,7 +17,7 @@ class "lola::TransactionLog" {
   +ContainsTransactions() const : bool
   -reference_count_slots_ : TransactionLogSlots
   -subscribe_transactions_ : TransactionLogSlot
-  -subscription_max_sample_count_ : score::cpp::optional<MaxSampleCountType>
+  -subscription_max_sample_count_ : std::reference_wrapper<std::optional<std::uint16_t>>
 }
 
 class "lola::TransactionLogSet" {

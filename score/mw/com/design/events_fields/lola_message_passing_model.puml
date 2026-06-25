@@ -37,7 +37,7 @@ class "lola::messaging::MessagePassingFacade" {
   -msg_receiver_qm_: MessageReceiveCtrl
   -notify_event_handler_ : NotifyEventHandler
   -message_passing_ctrl_ : IMessagePassingControl&
-  +MessagePassingFacade(IMessagePassingControl& msgpass_ctrl, const AsilSpecificCfg config_asil_qm, const score::cpp::optional<AsilSpecificCfg> config_asil_b)
+  +MessagePassingFacade(IMessagePassingControl& msgpass_ctrl, const AsilSpecificCfg config_asil_qm, const std::optional<AsilSpecificCfg> config_asil_b)
   +RegisterEventNotification(ASILType, ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): RegistrationHandle
   +ReregisterEventNotification(QualityType, ElementFqId, pid_t)
   +UnregisterEventNotification(ASILType, RegistrationHandle) : void

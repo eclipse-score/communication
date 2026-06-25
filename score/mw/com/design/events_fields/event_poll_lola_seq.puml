@@ -88,7 +88,7 @@ activate ProxyEvent
 loop until maxSamples reached or no new samples available
   ProxyEvent -> EventDataControl: referenceNextEvent(last_samples_check_timestamp)
   activate EventDataControl
-  ProxyEvent <-- EventDataControl: return score::cpp::optional<EventSlotIndexType>
+  ProxyEvent <-- EventDataControl: return std::optional<EventSlotIndexType>
   deactivate EventDataControl
   create SampleDeleter
   ProxyEvent -> SampleDeleter: Create(slot_index, EventDataControl&)

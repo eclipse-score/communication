@@ -2,8 +2,6 @@
 title "Structural View Service Discovery"
 
 interface "mw::com::impl::IRuntime" as IRuntime {
-  - service_discovery_: score::cpp::optional<ServiceDiscovery>
-  --
   + {abstract} resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>
   + {abstract} GetServiceDiscovery(): ServiceDiscovery&
   + {abstract} GetBindingRuntime(BindingType binding): IBindingRuntime*

@@ -30,8 +30,8 @@ package "configuration" {
     + events : std::unordered_map<std::string, LolaEventInstanceDeployment> const
     + fields : std::unordered_map<std::string, LolaFieldInstanceDeployment> const
     + methods : std::unordered_map<std::string, LolaMethodInstanceDeployment> const
-    + instanceId : score::cpp::optional<std::uint16_t>
-    + shared_memory_size : score::cpp::optional<std::size_t>
+    + instanceId : std::optional<std::uint16_t>
+    + shared_memory_size : std::optional<std::size_t>
     + allowed_consumer : std::unordered_map<QualityType, std::vector<uid_t>>
     + allowed_provider : std::unordered_map<QualityType, std::vector<uid_t>>
     + LolaServiceInstanceDeployment(instance_id : std::uint16_t, events: EventInstanceMapping, fields: FieldInstanceMapping, methods: MethodInstanceMapping)
@@ -50,7 +50,7 @@ package "configuration" {
   class "score::mw::com::impl::LolaEventInstanceDeployment" {
     + max_samples_: std::uint16_t
     + max_subscribers_: std::uint8_t
-    + enforce_max_samples_ : score::cpp::optional<bool>
+    + enforce_max_samples_ : bool
   }
 
   class "score::mw::com::impl::LolaFieldInstanceDeployment" {
@@ -149,14 +149,14 @@ package "configuration" {
     + GetSenderMessageQueueSize() const noexcept : std::int32_t
     + GetProcessAsilLevel() const : QualityType
     + GetShmSizeCalcMode() const noexcept : ShmSizeCalculationMode
-    + GetApplicationId() const : score::cpp::optional<uid_t>
+    + GetApplicationId() const : std::optional<std::uint32_t>
     + SetApplicationId(uid_t application_id) : void
     - process_asil_level_ : QualityType
     - message_rx_queue_size_qm : std::int32_t
     - message_rx_queue_size_b : std::int32_t
     - message_tx_queue_size_b : std::int32_t
     - shm_size_calc_mode_ : ShmSizeCalculationMode
-    - application_id_ : score::cpp::optional<uid_t>
+    - application_id_ : std::optional<std::uint32_t>
   }
 
   class "Global Functions" {
@@ -200,7 +200,7 @@ class "nlhomann::json" {
 class "score::mw::com::impl::Runtime" {
   - configuration : Configuration const&
   __
-  - Runtime(std::pair<Configuration&&, score::cpp::optional<tracing::TracingFilterConfig>&&> configs)
+  - Runtime(std::pair<Configuration&&, std::optional<tracing::TracingFilterConfig>&&> configs)
   {static} + Initialize() : void
   {static} + Initialize(const score::cpp::span<const score::StringLiteral> arguments) : void
   {static} + getInstance() : Runtime&

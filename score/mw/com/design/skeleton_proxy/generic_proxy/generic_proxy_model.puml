@@ -157,7 +157,7 @@ class "lola::ProxyEventCommon" #yellow {
   -element_fq_id_: ElementFqId
   -parent_: lola::Proxy&
   -subscription_event_state_machine_: std::shared_ptr<SubscriptionStateMachine>
-  -slot_collector_: score::cpp::optional<SlotCollector>
+  -test_slot_collector_: std::optional<SlotCollector>
   +ProxyEventCommon(lola::Proxy& parent, ElementFqId)
   +Subscribe(size_t max_sample_count): void
   +Unsubscribe(): void
