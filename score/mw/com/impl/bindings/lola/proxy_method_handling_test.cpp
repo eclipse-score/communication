@@ -101,7 +101,7 @@ LolaServiceId kLolaServiceId{2U};
 LolaServiceInstanceId::InstanceId kLolaInstanceId{3U};
 
 const LolaServiceInstanceDeployment kLolaServiceInstanceDeploymentWithMethods{
-    kLolaInstanceId,
+    LolaServiceInstanceId{kLolaInstanceId},
     {},
     {},
     {{kDummyMethodName0, LolaMethodInstanceDeployment{kDummyQueueSize0}},
@@ -181,7 +181,7 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
             QualityType::kASIL_B,
             kLolaServiceTypeDeploymentWithMethods,
             LolaServiceInstanceDeployment{
-                kLolaInstanceId,
+                LolaServiceInstanceId{kLolaInstanceId},
                 {},
                 {},
                 {{kDummyMethodName0, LolaMethodInstanceDeployment{kDummyQueueSize0, is_method_0_enabled}},
@@ -989,7 +989,10 @@ TEST_F(ProxyMethodHandlingFixture, EnabledMethodPresentOnlyInInstanceDeploymentT
     // Given a configuration where an enabled method exists only in the instance deployment
     // and is missing from the type deployment
     const LolaServiceInstanceDeployment lola_service_instance_deployment_with_unknown_method{
-        kLolaInstanceId, {}, {}, {{"unknown_method", LolaMethodInstanceDeployment{kDummyQueueSize0, true}}}};
+        LolaServiceInstanceId{kLolaInstanceId},
+        {},
+        {},
+        {{"unknown_method", LolaMethodInstanceDeployment{kDummyQueueSize0, true}}}};
     const LolaServiceTypeDeployment lola_service_type_deployment_without_unknown_method{kLolaServiceId, {}, {}, {}};
 
     const ConfigurationStore configuration_store{InstanceSpecifier::Create(std::string{"my_instance_spec"}).value(),
@@ -1011,7 +1014,8 @@ TEST_F(ProxyMethodHandlingFixture, EnabledMethodPresentOnlyInInstanceDeploymentT
 TEST_F(ProxyMethodHandlingFixture, MethodPresentOnlyInTypeDeploymentDoesNotCreateSharedMemory)
 {
     // Given a configuration where a method exists only in the type deployment and not in the instance deployment
-    const LolaServiceInstanceDeployment lola_service_instance_deployment_without_method{kLolaInstanceId, {}, {}, {}};
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_without_method{
+        LolaServiceInstanceId{kLolaInstanceId}, {}, {}, {}};
     const LolaServiceTypeDeployment lola_service_type_deployment_with_method{
         kLolaServiceId, {}, {}, {{kDummyMethodName0, kDummyMethodId0}}};
 
@@ -1042,7 +1046,10 @@ TEST_F(ProxyMethodHandlingFixture, EnablingMethodThatDoesNotContainQueueSizeInCo
     // empty queue size
     const std::optional<LolaMethodInstanceDeployment::QueueSize> empty_queue_size{};
     const LolaServiceInstanceDeployment lola_service_instance_deployment_missing_queue_size{
-        kLolaInstanceId, {}, {}, {{kDummyMethodName0, LolaMethodInstanceDeployment{empty_queue_size, true}}}};
+        LolaServiceInstanceId{kLolaInstanceId},
+        {},
+        {},
+        {{kDummyMethodName0, LolaMethodInstanceDeployment{empty_queue_size, true}}}};
     const LolaServiceTypeDeployment lola_service_type_deployment{
         kLolaServiceId, {}, {}, {{kDummyMethodName0, kDummyMethodId0}}};
 

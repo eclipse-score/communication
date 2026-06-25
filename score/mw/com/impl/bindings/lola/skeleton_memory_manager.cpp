@@ -35,6 +35,7 @@
 #include <sys/types.h>
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -306,7 +307,7 @@ void SkeletonMemoryManager::RollbackSkeletonTracingTransactions(EventControl& ev
 
 void SkeletonMemoryManager::RemoveSharedMemory()
 {
-    constexpr auto RemoveMemoryIfExists = [](const score::cpp::optional<std::string>& path) -> void {
+    constexpr auto RemoveMemoryIfExists = [](const std::optional<std::string>& path) -> void {
         if (path.has_value())
         {
             score::memory::shared::SharedMemoryFactory::Remove(path.value());
@@ -496,10 +497,9 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
         field.second.get().PrepareStopOffer();
     }
 
-    const auto control_asil_b_size =
-        (quality_type_ == QualityType::kASIL_B)
-            ? score::cpp::optional<std::size_t>{control_asil_resource_->GetUserAllocatedBytes()}
-            : score::cpp::optional<std::size_t>{};
+    const auto control_asil_b_size = (quality_type_ == QualityType::kASIL_B)
+                                         ? std::optional<std::size_t>{control_asil_resource_->GetUserAllocatedBytes()}
+                                         : std::optional<std::size_t>{};
 
     return ShmResourceStorageSizes{control_data_size, control_qm_size, control_asil_b_size};
 }

@@ -16,10 +16,10 @@
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/shm_size_calc_mode.h"
 
-#include <score/optional.hpp>
-
 #include <sys/types.h>
+
 #include <cstdint>
+#include <optional>
 
 namespace score::mw::com::impl
 {
@@ -83,7 +83,7 @@ class GlobalConfiguration final
         application_id_ = application_id;
     }
 
-    score::cpp::optional<ApplicationId> GetApplicationId() const
+    std::optional<ApplicationId> GetApplicationId() const
     {
         return application_id_;
     }
@@ -96,7 +96,7 @@ class GlobalConfiguration final
   private:
     /// properties/settings from the "global" section
     QualityType process_asil_level_;
-    score::cpp::optional<std::uint32_t> application_id_;
+    std::optional<std::uint32_t> application_id_;
 
     std::int32_t message_rx_queue_size_qm;
     std::int32_t message_rx_queue_size_b;

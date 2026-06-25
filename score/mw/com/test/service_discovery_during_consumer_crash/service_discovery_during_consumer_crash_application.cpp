@@ -19,14 +19,15 @@
 #include "score/mw/com/test/service_discovery_during_consumer_crash/consumer.h"
 #include "score/mw/com/test/service_discovery_during_consumer_crash/provider.h"
 
-#include <score/optional.hpp>
 #include <score/stop_token.hpp>
 
 #include <boost/program_options.hpp>
+
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <optional>
 #include <random>
 #include <string>
 #include <string_view>
@@ -45,11 +46,11 @@ const std::chrono::seconds kMaxWaitTimeToReachCheckpoint{30U};
 /// \brief Test parameters for the ITF test.
 struct TestParameters
 {
-    score::cpp::optional<std::string> service_instance_manifest{};
+    std::optional<std::string> service_instance_manifest{};
     std::size_t number_test_iterations{};
 };
 
-score::cpp::optional<TestParameters> ParseTestParameters(int argc, const char** argv) noexcept
+std::optional<TestParameters> ParseTestParameters(int argc, const char** argv) noexcept
 {
     namespace po = boost::program_options;
 

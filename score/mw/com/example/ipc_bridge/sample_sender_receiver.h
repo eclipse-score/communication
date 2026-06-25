@@ -15,11 +15,10 @@
 
 #include "datatype.h"
 
-#include <score/optional.hpp>
-
 #include <atomic>
 #include <chrono>
 #include <mutex>
+#include <optional>
 #include <random>
 #include <vector>
 
@@ -40,7 +39,7 @@ class EventSenderReceiver
     template <typename ProxyType = score::mw::com::IpcBridgeProxy,
               typename ProxyEventType = score::mw::com::impl::ProxyEvent<MapApiLanesStamped>>
     int RunAsProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
-                   const score::cpp::optional<std::chrono::milliseconds> cycle_time,
+                   const std::optional<std::chrono::milliseconds> cycle_time,
                    const std::size_t num_cycles,
                    bool try_writing_to_data_segment = false,
                    bool check_sample_hash = true);

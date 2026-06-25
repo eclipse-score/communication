@@ -107,7 +107,7 @@ class ProxyMethodTestFixture : public ::testing::Test
                                      make_ServiceIdentifierType("foo"),
                                      QualityType::kASIL_QM,
                                      LolaServiceTypeDeployment{42U},
-                                     LolaServiceInstanceDeployment{1U}};
+                                     LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}}};
 
     mock_binding::ProxyMethod proxy_method_binding_mock_;
     TestProxyBase proxy_base_{std::make_unique<mock_binding::Proxy>(), config_store_.GetHandle()};

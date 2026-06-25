@@ -13,11 +13,11 @@
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
-
 #include "score/mw/com/impl/bindings/lola/subscription_not_subscribed_states.h"
 #include "score/mw/com/impl/bindings/lola/subscription_subscribed_states.h"
 #include "score/mw/com/impl/bindings/lola/subscription_subscription_pending_states.h"
 
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -128,12 +128,12 @@ std::optional<std::uint16_t> SubscriptionStateMachine::GetMaxSampleCount() const
     return GetCurrentEventState().GetMaxSampleCount();
 }
 
-score::cpp::optional<SlotCollector>& SubscriptionStateMachine::GetSlotCollectorLockFree() noexcept
+std::optional<SlotCollector>& SubscriptionStateMachine::GetSlotCollectorLockFree() noexcept
 {
     return GetCurrentEventState().GetSlotCollector();
 }
 
-const score::cpp::optional<SlotCollector>& SubscriptionStateMachine::GetSlotCollectorLockFree() const noexcept
+const std::optional<SlotCollector>& SubscriptionStateMachine::GetSlotCollectorLockFree() const noexcept
 {
     return GetCurrentEventState().GetSlotCollector();
 }

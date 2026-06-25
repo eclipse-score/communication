@@ -21,8 +21,8 @@
 #include "score/os/utils/interprocess/interprocess_notification.h"
 #include "score/result/result.h"
 
-#include <score/optional.hpp>
 #include <score/stop_token.hpp>
+#include <optional>
 
 #include <atomic>
 #include <chrono>
@@ -60,7 +60,7 @@ class EventSenderReceiver
     template <typename ProxyType = score::mw::com::test::BigDataProxy,
               typename ProxyEventType = score::mw::com::impl::ProxyEvent<MapApiLanesStamped>>
     int RunAsProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
-                   const score::cpp::optional<std::chrono::milliseconds> cycle_time,
+                   const std::optional<std::chrono::milliseconds> cycle_time,
                    const std::size_t num_cycles,
                    const score::cpp::stop_token& stop_token,
                    bool try_writing_to_data_segment = false);

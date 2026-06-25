@@ -28,7 +28,7 @@ ConfigurationStore::ConfigurationStore(InstanceSpecifier instance_specifier,
                                        const ServiceIdentifierType service_identifier,
                                        const QualityType quality_type,
                                        const LolaServiceId lola_service_id,
-                                       const score::cpp::optional<LolaServiceInstanceId> lola_instance_id) noexcept
+                                       const std::optional<LolaServiceInstanceId> lola_instance_id) noexcept
     : service_identifier_{service_identifier},
       instance_specifier_{std::move(instance_specifier)},
       quality_type_{quality_type},
@@ -68,7 +68,7 @@ InstanceIdentifier ConfigurationStore::GetInstanceIdentifier() const noexcept
 }
 
 EnrichedInstanceIdentifier ConfigurationStore::GetEnrichedInstanceIdentifier(
-    score::cpp::optional<ServiceInstanceId> instance_id) const noexcept
+    std::optional<ServiceInstanceId> instance_id) const noexcept
 {
     if (instance_id.has_value())
     {
@@ -77,7 +77,7 @@ EnrichedInstanceIdentifier ConfigurationStore::GetEnrichedInstanceIdentifier(
     return EnrichedInstanceIdentifier(GetInstanceIdentifier());
 }
 
-HandleType ConfigurationStore::GetHandle(score::cpp::optional<ServiceInstanceId> instance_id) const noexcept
+HandleType ConfigurationStore::GetHandle(std::optional<ServiceInstanceId> instance_id) const noexcept
 {
     return make_HandleType(GetInstanceIdentifier(), instance_id);
 }

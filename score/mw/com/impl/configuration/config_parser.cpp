@@ -192,7 +192,7 @@ auto ParseServiceTypeIdentifier(const score::json::Object& json) -> ServiceIdent
     return make_ServiceIdentifierType(name.data(), version.first, version.second);
 }
 
-auto ParseAsilLevel(const score::json::Object& json_map) -> score::cpp::optional<QualityType>
+auto ParseAsilLevel(const score::json::Object& json_map) -> std::optional<QualityType>
 {
     const auto& quality = json_map.find(kAsilKey.data());
     if (quality != json_map.cend())
@@ -215,10 +215,10 @@ auto ParseAsilLevel(const score::json::Object& json_map) -> score::cpp::optional
         return QualityType::kInvalid;
     }
 
-    return score::cpp::nullopt;
+    return std::nullopt;
 }
 
-auto ParseShmSizeCalcMode(const score::json::Object& json_map) -> score::cpp::optional<ShmSizeCalculationMode>
+auto ParseShmSizeCalcMode(const score::json::Object& json_map) -> std::optional<ShmSizeCalculationMode>
 {
     const auto& shm_size_calc_mode = json_map.find(kShmSizeCalcModeKey.data());
     if (shm_size_calc_mode != json_map.cend())
@@ -240,7 +240,7 @@ auto ParseShmSizeCalcMode(const score::json::Object& json_map) -> score::cpp::op
         }
     }
 
-    return score::cpp::nullopt;
+    return std::nullopt;
 }
 
 // Note 1:
@@ -1228,8 +1228,7 @@ auto ParseGlobalProperties(const score::json::Object& top_level_object) -> Globa
             global_configuration.SetSenderMessageQueueSize(b_tx_message_size.value());
         }
 
-        const score::cpp::optional<ShmSizeCalculationMode> shm_size_calc_mode{
-            ParseShmSizeCalcMode(process_properties_map)};
+        const std::optional<ShmSizeCalculationMode> shm_size_calc_mode{ParseShmSizeCalcMode(process_properties_map)};
         if (shm_size_calc_mode.has_value())
         {
             global_configuration.SetShmSizeCalcMode(shm_size_calc_mode.value());

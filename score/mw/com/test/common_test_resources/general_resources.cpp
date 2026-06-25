@@ -172,9 +172,9 @@ os::Result<SharedMemoryObjectCreator<CheckPointControl>> OpenSharedCheckPointCon
     return checkpoint_control_guard_result;
 }
 
-score::cpp::optional<ChildProcessGuard> ForkProcessAndRunInChildProcess(std::string_view parent_message_prefix,
-                                                                        std::string_view child_message_prefix,
-                                                                        std::function<void()> child_callable) noexcept
+std::optional<ChildProcessGuard> ForkProcessAndRunInChildProcess(std::string_view parent_message_prefix,
+                                                                 std::string_view child_message_prefix,
+                                                                 std::function<void()> child_callable) noexcept
 {
     const int is_child_process{0};
     const int fork_failed{-1};

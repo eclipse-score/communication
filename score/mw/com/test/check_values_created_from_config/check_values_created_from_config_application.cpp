@@ -94,7 +94,7 @@ class ConfigParser
                            score::mw::com::impl::ServiceElementType::EVENT};
     }
 
-    score::cpp::optional<std::string> GetShmPath() const noexcept
+    std::optional<std::string> GetShmPath() const noexcept
     {
         const auto shm_name = GetShmName();
         if (!(shm_name.has_value()))
@@ -105,7 +105,7 @@ class ConfigParser
         return shm_path;
     }
 
-    score::cpp::optional<std::string> GetShmName() const noexcept
+    std::optional<std::string> GetShmName() const noexcept
     {
         const auto lola_service_type_deployment =
             std::get_if<score::mw::com::impl::LolaServiceTypeDeployment>(&type_deployment_.binding_info_);

@@ -24,7 +24,7 @@
 #include "score/mw/com/impl/proxy_event.h"
 #include <score/assert.hpp>
 #include <score/hash.hpp>
-#include <score/optional.hpp>
+#include <optional>
 
 #include <unistd.h>
 #include <cstring>
@@ -225,7 +225,7 @@ class SampleReceiver
     }
 
     const score::mw::com::InstanceSpecifier& instance_specifier_;
-    score::cpp::optional<std::uint32_t> last_received_;
+    std::optional<std::uint32_t> last_received_;
     std::size_t received_;
 };
 
@@ -295,13 +295,13 @@ bool FileExists(const std::string& filePath)
     return access(filePath.c_str(), F_OK) == 0;
 }
 
-score::cpp::optional<std::reference_wrapper<impl::ProxyEvent<MapApiLanesStamped>>> GetMapApiLanesStampedProxyEvent(
+std::optional<std::reference_wrapper<impl::ProxyEvent<MapApiLanesStamped>>> GetMapApiLanesStampedProxyEvent(
     BigDataProxy& proxy)
 {
     return proxy.map_api_lanes_stamped_;
 }
 
-score::cpp::optional<std::reference_wrapper<impl::GenericProxyEvent>> GetMapApiLanesStampedProxyEvent(
+std::optional<std::reference_wrapper<impl::GenericProxyEvent>> GetMapApiLanesStampedProxyEvent(
     GenericProxy& generic_proxy)
 {
     const std::string event_name{"map_api_lanes_stamped"};
@@ -422,7 +422,7 @@ Result<SampleAllocateePtr<MapApiLanesStamped>> PrepareMapLaneSample(BigDataSkele
 
 template <typename ProxyType, typename ProxyEventType>
 int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
-                                    const score::cpp::optional<std::chrono::milliseconds> cycle_time,
+                                    const std::optional<std::chrono::milliseconds> cycle_time,
                                     const std::size_t num_cycles,
                                     const score::cpp::stop_token& stop_token,
                                     bool try_writing_to_data_segment)
@@ -1095,13 +1095,13 @@ int EventSenderReceiver::RunAsProxyCheckSubscribeHandler(const score::mw::com::I
 
 template int EventSenderReceiver::RunAsProxy<BigDataProxy, impl::ProxyEvent<MapApiLanesStamped>>(
     const score::mw::com::InstanceSpecifier&,
-    const score::cpp::optional<std::chrono::milliseconds>,
+    const std::optional<std::chrono::milliseconds>,
     const std::size_t,
     const score::cpp::stop_token&,
     bool try_writing_to_data_segment);
 template int EventSenderReceiver::RunAsProxy<impl::GenericProxy, impl::GenericProxyEvent>(
     const score::mw::com::InstanceSpecifier&,
-    const score::cpp::optional<std::chrono::milliseconds>,
+    const std::optional<std::chrono::milliseconds>,
     const std::size_t,
     const score::cpp::stop_token&,
     bool try_writing_to_data_segment);

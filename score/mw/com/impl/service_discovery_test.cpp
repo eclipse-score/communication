@@ -28,8 +28,8 @@
 
 #include "score/result/result.h"
 
-#include <score/optional.hpp>
 #include <score/utility.hpp>
+#include <optional>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -508,8 +508,8 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
     WithAServiceContainingTwoInstances();
 
     // Expecting that StartFindService will be called on the binding for each InstanceIdentifier
-    score::cpp::optional<FindServiceHandle> find_service_handle_1{};
-    score::cpp::optional<FindServiceHandle> find_service_handle_2{};
+    std::optional<FindServiceHandle> find_service_handle_1{};
+    std::optional<FindServiceHandle> find_service_handle_2{};
     ON_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
         .WillByDefault(DoAll(SaveArg<0>(&find_service_handle_1), Return(Result<void>{})));
     ON_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[1].GetEnrichedInstanceIdentifier()))

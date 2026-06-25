@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 #include <unistd.h>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace score::mw::com::impl::lola::test
@@ -54,12 +55,14 @@ ConfigurationStore kConfigStoreFindAny{kInstanceSpecifierString,
                                        make_ServiceIdentifierType("foo"),
                                        QualityType::kASIL_QM,
                                        kServiceId,
-                                       score::cpp::optional<LolaServiceInstanceId>{}};
+                                       std::optional<LolaServiceInstanceId>{}};
 
 HandleType kHandleQm1{kConfigStoreQm1.GetHandle()};
 HandleType kHandleQm2{kConfigStoreQm2.GetHandle()};
-HandleType kHandleFindAnyQm1{kConfigStoreFindAny.GetHandle(kConfigStoreQm1.lola_instance_id_.value())};
-HandleType kHandleFindAnyQm2{kConfigStoreFindAny.GetHandle(kConfigStoreQm2.lola_instance_id_.value())};
+HandleType kHandleFindAnyQm1{
+    kConfigStoreFindAny.GetHandle(ServiceInstanceId{kConfigStoreQm1.lola_instance_id_.value()})};
+HandleType kHandleFindAnyQm2{
+    kConfigStoreFindAny.GetHandle(ServiceInstanceId{kConfigStoreQm2.lola_instance_id_.value()})};
 
 TEST_F(ServiceDiscoveryClientFixture, CorrectlyAssociatesSubsearchWithCorrectDirectory)
 {

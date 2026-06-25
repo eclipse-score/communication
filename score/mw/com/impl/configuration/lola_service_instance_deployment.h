@@ -24,7 +24,7 @@
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
-#include <score/optional.hpp>
+#include <optional>
 
 #include <cstdint>
 #include <exception>
@@ -44,7 +44,7 @@ class LolaServiceInstanceDeployment
 
     LolaServiceInstanceDeployment() = default;
     explicit LolaServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
-    explicit LolaServiceInstanceDeployment(const score::cpp::optional<LolaServiceInstanceId> instance_id,
+    explicit LolaServiceInstanceDeployment(const std::optional<LolaServiceInstanceId> instance_id,
                                            EventInstanceMapping events = {},
                                            FieldInstanceMapping fields = {},
                                            MethodInstanceMapping methods = {},
@@ -63,13 +63,13 @@ class LolaServiceInstanceDeployment
     // The struct is used as a config storage obtained by performing the parsing json object.
     // Public access is required by the implementation to reach the following members of the struct.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::optional<LolaServiceInstanceId> instance_id_;
+    std::optional<LolaServiceInstanceId> instance_id_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::optional<std::size_t> shared_memory_size_;
+    std::optional<std::size_t> shared_memory_size_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::optional<std::size_t> control_asil_b_memory_size_;
+    std::optional<std::size_t> control_asil_b_memory_size_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::optional<std::size_t> control_qm_memory_size_;
+    std::optional<std::size_t> control_qm_memory_size_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     EventInstanceMapping events_;  // key = event name
     // coverity[autosar_cpp14_m11_0_1_violation]

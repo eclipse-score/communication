@@ -16,9 +16,8 @@
 #include "score/mw/com/impl/bindings/lola/subscription_state_base.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 
-#include <score/optional.hpp>
-
 #include <cstddef>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -44,8 +43,8 @@ class NotSubscribedState final : public SubscriptionStateBase
     void SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override;
     void UnsetReceiveHandler() noexcept override;
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
-    score::cpp::optional<SlotCollector>& GetSlotCollector() & noexcept override;
-    const score::cpp::optional<SlotCollector>& GetSlotCollector() const& noexcept override;
+    std::optional<SlotCollector>& GetSlotCollector() & noexcept override;
+    const std::optional<SlotCollector>& GetSlotCollector() const& noexcept override;
 
     void OnEntry() noexcept override;
 };

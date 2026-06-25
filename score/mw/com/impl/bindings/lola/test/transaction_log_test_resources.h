@@ -22,7 +22,9 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <functional>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -42,7 +44,7 @@ class TransactionLogSetAttorney
         return transaction_log_set_.proxy_transaction_logs_;
     }
 
-    const score::cpp::optional<std::reference_wrapper<TransactionLog>> GetSkeletonTransactionLog() noexcept
+    const std::optional<std::reference_wrapper<TransactionLog>> GetSkeletonTransactionLog() noexcept
     {
         auto& skeleton_tracing_transaction_log = transaction_log_set_.skeleton_tracing_transaction_log_;
         if (!skeleton_tracing_transaction_log.IsActive())

@@ -311,7 +311,7 @@ bool SkeletonBaseView::AreBindingsValid() const
     return skeleton_base_.AreBindingsValid();
 }
 
-score::cpp::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpecifier& specifier)
+std::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpecifier& specifier)
 {
     const auto instance_identifiers = Runtime::getInstance().resolve(specifier);
     if (instance_identifiers.size() != static_cast<std::size_t>(1U))

@@ -29,8 +29,10 @@
 
 #include <sys/stat.h>
 #include <unistd.h>
+
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -178,9 +180,9 @@ class SkeletonComponentTestFixture : public ::testing::Test
 
     SkeletonComponentTestFixture& WithAServiceInstanceDeploymentContainingSingleEventAndField(
         const QualityType quality_type,
-        score::cpp::optional<std::size_t> configured_shared_memory_size = {},
-        score::cpp::optional<std::size_t> configured_control_asil_b_shared_memory_size = {},
-        score::cpp::optional<std::size_t> configured_control_qm_shared_memory_size = {})
+        std::optional<std::size_t> configured_shared_memory_size = {},
+        std::optional<std::size_t> configured_control_asil_b_shared_memory_size = {},
+        std::optional<std::size_t> configured_control_qm_shared_memory_size = {})
     {
         events_.emplace(test::kFooEventName, mock_event_binding_);
         lola_event_instance_deployments_.push_back(

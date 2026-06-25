@@ -21,8 +21,8 @@
 #include "score/os/errno.h"
 
 #include <score/assert.hpp>
-#include <score/optional.hpp>
 #include <score/stop_token.hpp>
+#include <optional>
 
 #include <chrono>
 #include <functional>
@@ -81,9 +81,9 @@ os::Result<SharedMemoryObjectCreator<CheckPointControl>> OpenSharedCheckPointCon
     std::string_view message_prefix,
     std::string_view shared_memory_file_path) noexcept;
 
-score::cpp::optional<ChildProcessGuard> ForkProcessAndRunInChildProcess(std::string_view parent_message_prefix,
-                                                                        std::string_view child_message_prefix,
-                                                                        std::function<void()> child_callable) noexcept;
+std::optional<ChildProcessGuard> ForkProcessAndRunInChildProcess(std::string_view parent_message_prefix,
+                                                                 std::string_view child_message_prefix,
+                                                                 std::function<void()> child_callable) noexcept;
 
 bool WaitForChildProcessToTerminate(std::string_view message_prefix,
                                     score::mw::com::test::ChildProcessGuard& child_process_guard,

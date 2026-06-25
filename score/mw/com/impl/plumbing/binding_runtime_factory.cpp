@@ -27,7 +27,7 @@ std::unordered_map<score::mw::com::impl::BindingType, std::unique_ptr<score::mw:
 score::mw::com::impl::BindingRuntimeFactory::CreateBindingRuntimes(
     Configuration& configuration,
     concurrency::Executor& long_running_threads,
-    const score::cpp::optional<tracing::TracingFilterConfig>& tracing_filter_config)
+    const std::optional<tracing::TracingFilterConfig>& tracing_filter_config)
 {
     std::unordered_map<BindingType, std::unique_ptr<IBindingRuntime>> result{};
 

@@ -14,8 +14,8 @@
 #ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_SCTF_TEST_RUNNER_H
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_SCTF_TEST_RUNNER_H
 
-#include <score/optional.hpp>
 #include <score/stop_token.hpp>
+#include <optional>
 
 #include <algorithm>
 #include <chrono>
@@ -45,14 +45,14 @@ class SctfTestRunner
         };
 
         RunParameters(const std::vector<RunParameters::Parameters>& allowed_parameters,
-                      score::cpp::optional<std::chrono::milliseconds> cycle_time,
-                      score::cpp::optional<std::string> mode,
-                      score::cpp::optional<std::size_t> num_cycles,
-                      score::cpp::optional<std::string> service_instance_manifest,
-                      score::cpp::optional<uid_t> uid,
-                      score::cpp::optional<std::size_t> num_retries,
-                      score::cpp::optional<std::chrono::milliseconds> retry_backoff_time,
-                      score::cpp::optional<bool> should_modify_data_segment) noexcept;
+                      std::optional<std::chrono::milliseconds> cycle_time,
+                      std::optional<std::string> mode,
+                      std::optional<std::size_t> num_cycles,
+                      std::optional<std::string> service_instance_manifest,
+                      std::optional<uid_t> uid,
+                      std::optional<std::size_t> num_retries,
+                      std::optional<std::chrono::milliseconds> retry_backoff_time,
+                      std::optional<bool> should_modify_data_segment) noexcept;
 
         std::chrono::milliseconds GetCycleTime() const;
         std::string GetMode() const;
@@ -63,24 +63,24 @@ class SctfTestRunner
         std::chrono::milliseconds GetRetryBackoffTime() const;
         bool GetShouldModifyDataSegment() const;
 
-        score::cpp::optional<std::chrono::milliseconds> GetOptionalCycleTime() const;
-        score::cpp::optional<std::string> GetOptionalMode() const;
-        score::cpp::optional<std::size_t> GetOptionalNumCycles() const;
-        score::cpp::optional<std::string> GetOptionalServiceInstanceManifest() const;
-        score::cpp::optional<uid_t> GetOptionalUid() const;
-        score::cpp::optional<std::size_t> GetOptionalNumRetries() const;
-        score::cpp::optional<std::chrono::milliseconds> GetOptionalRetryBackoffTime() const;
+        std::optional<std::chrono::milliseconds> GetOptionalCycleTime() const;
+        std::optional<std::string> GetOptionalMode() const;
+        std::optional<std::size_t> GetOptionalNumCycles() const;
+        std::optional<std::string> GetOptionalServiceInstanceManifest() const;
+        std::optional<uid_t> GetOptionalUid() const;
+        std::optional<std::size_t> GetOptionalNumRetries() const;
+        std::optional<std::chrono::milliseconds> GetOptionalRetryBackoffTime() const;
 
       private:
         const std::vector<RunParameters::Parameters> allowed_parameters_;
-        const score::cpp::optional<std::chrono::milliseconds> cycle_time_;
-        const score::cpp::optional<std::string> mode_;
-        const score::cpp::optional<std::size_t> num_cycles_;
-        const score::cpp::optional<std::string> service_instance_manifest_;
-        const score::cpp::optional<uid_t> uid_;
-        const score::cpp::optional<std::size_t> num_retries_;
-        const score::cpp::optional<std::chrono::milliseconds> retry_backoff_time_;
-        const score::cpp::optional<bool> should_modify_data_segment_;
+        const std::optional<std::chrono::milliseconds> cycle_time_;
+        const std::optional<std::string> mode_;
+        const std::optional<std::size_t> num_cycles_;
+        const std::optional<std::string> service_instance_manifest_;
+        const std::optional<uid_t> uid_;
+        const std::optional<std::size_t> num_retries_;
+        const std::optional<std::chrono::milliseconds> retry_backoff_time_;
+        const std::optional<bool> should_modify_data_segment_;
     };
 
     SctfTestRunner(int argc, const char** argv, const std::vector<RunParameters::Parameters>& allowed_parameters);

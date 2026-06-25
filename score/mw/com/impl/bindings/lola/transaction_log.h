@@ -19,6 +19,7 @@
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
 #include <cstdint>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -53,7 +54,7 @@ class TransactionLog
     /// \brief The max sample count used for the recorded subscription transaction.
     ///
     /// This is set in SubscribeTransactionBegin() and used in the UnsubscribeCallback which is called during Rollback()
-    score::cpp::optional<MaxSampleCountType> subscription_max_sample_count_;
+    std::optional<MaxSampleCountType> subscription_max_sample_count_;
 };
 
 }  // namespace score::mw::com::impl::lola

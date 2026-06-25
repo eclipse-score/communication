@@ -23,7 +23,7 @@
 #include "score/mw/com/test/partial_restart/test_datatype.h"
 
 #include "score/mw/com/test/common_test_resources/timeout_supervisor.h"
-#include <score/optional.hpp>
+#include <optional>
 
 #include <boost/program_options.hpp>
 #include <cstdio>
@@ -45,12 +45,12 @@ using CheckPointControl = score::mw::com::test::CheckPointControl;
 
 struct TestParameters
 {
-    score::cpp::optional<std::string> service_instance_manifest{};
+    std::optional<std::string> service_instance_manifest{};
     std::size_t number_test_iterations{};
     bool connected_proxy_during_restart{true};
 };
 
-score::cpp::optional<TestParameters> ParseTestParameters(int argc, const char** argv) noexcept
+std::optional<TestParameters> ParseTestParameters(int argc, const char** argv) noexcept
 {
     namespace po = boost::program_options;
 

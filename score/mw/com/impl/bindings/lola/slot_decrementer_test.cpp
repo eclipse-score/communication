@@ -20,10 +20,10 @@
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log.h"
 
-#include <score/optional.hpp>
-
 #include <gtest/gtest.h>
+
 #include <cstddef>
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -73,7 +73,7 @@ class SlotDecrementerFixture : public ::testing::Test
     ProviderEventDataControlLocalView<> provider_event_data_control_local_{event_data_control_};
 
     std::optional<SlotIndexType> event_slot_index_{};
-    score::cpp::optional<SlotDecrementer> slot_decrementer_{};
+    std::optional<SlotDecrementer> slot_decrementer_{};
 };
 
 TEST_F(SlotDecrementerFixture, CreatingSlotDecrementerWithReferencedSlotMaintainsReferenceCount)

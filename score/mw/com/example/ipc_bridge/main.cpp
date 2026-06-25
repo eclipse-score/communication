@@ -17,6 +17,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <optional>
 
 #include "score/mw/com/runtime.h"
 
@@ -24,19 +25,18 @@ using namespace std::chrono_literals;
 
 struct Params
 {
-    score::cpp::optional<std::string> mode;
-    score::cpp::optional<std::string> instance_manifest;
-    score::cpp::optional<std::chrono::milliseconds> cycle_time;
-    score::cpp::optional<unsigned long> cycle_num;
+    std::optional<std::string> mode;
+    std::optional<std::string> instance_manifest;
+    std::optional<std::chrono::milliseconds> cycle_time;
+    std::optional<unsigned long> cycle_num;
     bool check_sample_hash;
 };
 
 template <typename ParsedType, typename SavedType = ParsedType>
-score::cpp::optional<SavedType> GetValueIfProvided(const boost::program_options::variables_map& args,
-                                                   std::string arg_string)
+std::optional<SavedType> GetValueIfProvided(const boost::program_options::variables_map& args, std::string arg_string)
 {
     return (args.count(arg_string) > 0U) ? static_cast<SavedType>(args[arg_string].as<ParsedType>())
-                                         : score::cpp::optional<SavedType>();
+                                         : std::optional<SavedType>();
 }
 
 Params ParseCommandLineArguments(const int argc, const char** argv)

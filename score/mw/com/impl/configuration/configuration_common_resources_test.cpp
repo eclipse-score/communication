@@ -14,9 +14,9 @@
 
 #include "score/json/json_parser.h"
 
-#include <score/optional.hpp>
-
 #include <gtest/gtest.h>
+
+#include <optional>
 
 namespace score::mw::com::impl
 {

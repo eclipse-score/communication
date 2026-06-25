@@ -19,7 +19,6 @@
 #include "score/mw/com/test/service_discovery_offer_and_search/test_datatype.h"
 #include "score/mw/com/types.h"
 
-#include <score/optional.hpp>
 #include <fstream>
 #include <iostream>
 #include <utility>

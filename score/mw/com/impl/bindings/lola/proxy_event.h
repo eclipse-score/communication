@@ -28,7 +28,6 @@
 #include "score/result/result.h"
 
 #include <score/assert.hpp>
-#include <score/optional.hpp>
 
 #include <cstdint>
 #include <exception>
@@ -36,6 +35,7 @@
 #include <limits>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <string_view>
 #include <utility>

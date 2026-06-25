@@ -29,8 +29,8 @@
 #include "score/analysis/tracing/generic_trace_library/mock/trace_library_mock.h"
 
 #include <score/assert_support.hpp>
-#include <score/optional.hpp>
 #include <score/span.hpp>
+#include <optional>
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -52,7 +52,7 @@ TEST(RuntimeTest, CanRetrieveServiceDiscovery)
                                       Configuration::ServiceInstanceDeployments{},
                                       GlobalConfiguration{},
                                       TracingConfiguration{}};
-    score::cpp::optional<tracing::TracingFilterConfig> empty_filter_configuration{};
+    std::optional<tracing::TracingFilterConfig> empty_filter_configuration{};
     Runtime runtime{std::make_pair(std::move(dummy_configuration), std::move(empty_filter_configuration))};
     score::cpp::ignore = runtime.GetServiceDiscovery();
 }
@@ -125,7 +125,7 @@ class RuntimeFixture : public ::testing::Test
         return lola_tracing_runtime->GetTraceClientId();
     }
 
-    score::cpp::optional<tracing::TracingFilterConfig> trace_filter_config_{};
+    std::optional<tracing::TracingFilterConfig> trace_filter_config_{};
     std::unique_ptr<Configuration> configuration_{nullptr};
     std::unique_ptr<Runtime> runtime_{nullptr};
 

@@ -161,18 +161,18 @@ InstanceIdentifierView::InstanceIdentifierView(const InstanceIdentifier& identif
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto InstanceIdentifierView::GetServiceInstanceId() const noexcept -> score::cpp::optional<ServiceInstanceId>
+auto InstanceIdentifierView::GetServiceInstanceId() const noexcept -> std::optional<ServiceInstanceId>
 {
     auto visitor = score::cpp::overload(
-        [](const LolaServiceInstanceDeployment& deployment) -> score::cpp::optional<ServiceInstanceId> {
+        [](const LolaServiceInstanceDeployment& deployment) -> std::optional<ServiceInstanceId> {
             if (!deployment.instance_id_.has_value())
             {
                 return {};
             }
             return ServiceInstanceId{*deployment.instance_id_};
         },
-        [](const score::cpp::blank&) noexcept -> score::cpp::optional<ServiceInstanceId> {
-            return score::cpp::optional<ServiceInstanceId>{};
+        [](const score::cpp::blank&) noexcept -> std::optional<ServiceInstanceId> {
+            return std::optional<ServiceInstanceId>{};
         });
     return std::visit(visitor, GetServiceInstanceDeployment().bindingInfo_);
 }

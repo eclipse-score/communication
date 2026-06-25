@@ -17,6 +17,7 @@
 
 #include <score/assert.hpp>
 
+#include <optional>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -53,7 +54,7 @@ void EventReceiveHandlerManager::Unregister() noexcept
         auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
         lola_runtime.GetLolaMessaging().UnregisterEventNotification(
             asil_level_, element_fq_id_, registration_number_.value(), event_source_pid_);
-        registration_number_ = score::cpp::nullopt;
+        registration_number_ = std::nullopt;
     }
 }
 

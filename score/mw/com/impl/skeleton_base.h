@@ -24,8 +24,8 @@
 
 #include "score/result/result.h"
 
-#include <score/optional.hpp>
 #include <score/span.hpp>
+#include <optional>
 
 #include <functional>
 #include <map>
@@ -141,7 +141,7 @@ class SkeletonBaseView
     SkeletonBase& skeleton_base_;
 };
 
-score::cpp::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpecifier& specifier);
+std::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpecifier& specifier);
 
 }  // namespace score::mw::com::impl
 

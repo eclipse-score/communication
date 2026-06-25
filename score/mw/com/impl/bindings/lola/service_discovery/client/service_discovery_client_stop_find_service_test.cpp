@@ -30,6 +30,7 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 
@@ -68,7 +69,7 @@ ConfigurationStore kConfigStoreFindAny{kInstanceSpecifierString,
                                        make_ServiceIdentifierType("foo"),
                                        QualityType::kASIL_QM,
                                        kServiceId,
-                                       score::cpp::optional<LolaServiceInstanceId>{}};
+                                       std::optional<LolaServiceInstanceId>{}};
 
 using ServiceDiscoveryClientStopFindServiceFixture = ServiceDiscoveryClientFixture;
 TEST_F(ServiceDiscoveryClientStopFindServiceFixture, RemovesWatchOnStopFindService)
@@ -175,7 +176,8 @@ TEST_F(ServiceDiscoveryClientStopFindServiceFixture, CanCallStopFindServiceInsid
     EXPECT_CALL(find_service_handler, Call(_, expected_handle))
         .WillOnce(Invoke([this](auto container, auto find_service_handle) {
             EXPECT_EQ(container.size(), 1);
-            EXPECT_EQ(container[0], kConfigStoreFindAny.GetHandle(kConfigStoreQm1.lola_instance_id_.value()));
+            EXPECT_EQ(container[0],
+                      kConfigStoreFindAny.GetHandle(ServiceInstanceId{kConfigStoreQm1.lola_instance_id_.value()}));
             const auto result = service_discovery_client_->StopFindService(find_service_handle);
             ASSERT_TRUE(result.has_value());
 

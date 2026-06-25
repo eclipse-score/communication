@@ -19,7 +19,6 @@
 #include "score/json/internal/model/any.h"
 #include "score/json/json_writer.h"
 
-#include <score/optional.hpp>
 #include <score/overload.hpp>
 
 #include <gtest/gtest.h>
@@ -27,6 +26,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -86,7 +86,7 @@ class ConfigurationFixture : public ::testing::Test
         }
     }
 
-    score::cpp::optional<Configuration> unit_{};
+    std::optional<Configuration> unit_{};
 };
 
 score::Result<std::string> GetStringFromJson(const json::Object& json_object)
