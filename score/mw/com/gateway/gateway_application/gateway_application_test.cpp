@@ -664,8 +664,9 @@ class GatewayApplicationFlowTest : public ::testing::Test
         // subscribed until Unsubscribe(). Otherwise ProxyEventBase::Subscribe takes the
         // already-subscribed branch and asserts on the (unset) max sample count.
         ON_CALL(generic_proxy_event_binding_factory_mock_guard_.factory_mock_,
-                Create(::testing::_, ::testing::_, ::testing::_))
-            .WillByDefault(::testing::Invoke([this](impl::ProxyBase&,
+                Create(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+            .WillByDefault(::testing::Invoke([this](impl::HandleType,
+                                                    impl::ProxyBinding&,
                                                     const std::string_view event_name,
                                                     impl::ServiceElementType) {
                 auto mock = std::make_unique<::testing::NiceMock<impl::mock_binding::GenericProxyEvent>>();

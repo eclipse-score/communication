@@ -94,26 +94,7 @@ class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
         return make_HandleType(instance_identifier, ServiceInstanceId{LolaServiceInstanceId{kInstanceId}});
     }
 
-    ProxyBinding& CreateBindingFromHandle(HandleType handle)
-
-    {
-        proxy_base_ = std::make_unique<ProxyBase>(std::move(this->proxy_), handle);
-        return ProxyBaseView{*proxy_base_}.GetBinding();
-    }
-
-    void TearDown() override
-    {
-        if (proxy_base_ != nullptr)
-        {
-            auto& binding = ProxyBaseView{*proxy_base_}.GetBinding();
-            binding.PrepareDeinitialize();
-            binding.FinalizeDeinitialize();
-        }
-        lola::ProxyMockedMemoryFixture::TearDown();
-    }
-
   private:
-    std::unique_ptr<ProxyBase> proxy_base_{nullptr};
     DummyInstanceIdentifierBuilder dummy_instance_identifier_builder_{};
 };
 
@@ -129,18 +110,15 @@ TYPED_TEST_SUITE(ProxyMethodFactoryTypedFixture, RegisteredFunctionTypes, );
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructProxyMethod)
 {
-
     // Given a valid lola binding
 
     const auto handle = this->GetValidLoLaHandle();
     this->InitialiseProxyWithConstructor(handle.GetInstanceIdentifier());
 
-    auto& proxy_binding = this->CreateBindingFromHandle(handle);
-
     // When creating a ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
     auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
+        handle, *this->proxy_, kDummyMethodName, MethodType::kMethod);
 
     // Then a valid binding can be created
     ASSERT_NE(proxy_method, nullptr);

@@ -347,7 +347,8 @@ class ProxyFieldImpl : public ProxyFieldBase
             return std::make_unique<ProxyEvent<FieldType>>(
                 proxy_base,
                 field_name,
-                ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
+                ProxyFieldBindingFactory<FieldType>::CreateEventBinding(
+                    proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
                 typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{});
         }
         else
@@ -369,7 +370,8 @@ class ProxyFieldImpl : public ProxyFieldBase
             return std::make_unique<ProxyMethod<FieldType(FieldType)>>(
                 proxy_base,
                 field_name,
-                ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(proxy_base, field_name),
+                ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(
+                    proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
                 typename ProxyMethod<FieldType(FieldType)>::FieldSetterConstructorEnabler{});
         }
         else
@@ -390,7 +392,8 @@ class ProxyFieldImpl : public ProxyFieldBase
             return std::make_unique<ProxyMethod<FieldType()>>(
                 proxy_base,
                 field_name,
-                ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(proxy_base, field_name),
+                ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(
+                    proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
                 typename ProxyMethod<FieldType()>::FieldGetterConstructorEnabler{});
         }
         else

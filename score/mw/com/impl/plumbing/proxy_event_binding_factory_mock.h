@@ -24,19 +24,21 @@ template <typename SampleType>
 class ProxyEventBindingFactoryMock : public IProxyEventBindingFactory<SampleType>
 {
   public:
-    MOCK_METHOD(std::unique_ptr<ProxyEventBinding<SampleType>>,
-                Create,
-                (ProxyBase&, const std::string_view event_name, const ServiceElementType service_element_type),
-                (noexcept, override));
+    MOCK_METHOD(
+        std::unique_ptr<ProxyEventBinding<SampleType>>,
+        Create,
+        (HandleType, ProxyBinding&, const std::string_view event_name, const ServiceElementType service_element_type),
+        (noexcept, override));
 };
 
 class GenericProxyEventBindingFactoryMock : public IGenericProxyEventBindingFactory
 {
   public:
-    MOCK_METHOD(std::unique_ptr<GenericProxyEventBinding>,
-                Create,
-                (ProxyBase&, const std::string_view event_name, const ServiceElementType service_element_type),
-                (noexcept, override));
+    MOCK_METHOD(
+        std::unique_ptr<GenericProxyEventBinding>,
+        Create,
+        (HandleType, ProxyBinding&, const std::string_view event_name, const ServiceElementType service_element_type),
+        (noexcept, override));
 };
 
 }  // namespace score::mw::com::impl
