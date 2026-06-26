@@ -28,6 +28,7 @@ namespace score::mw::com::impl
 {
 
 class ProxyFieldBaseView;
+class ProxyMethodBase;
 
 class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
 {
@@ -38,9 +39,16 @@ class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
 
   public:
     /// \param proxy_event_base_dispatch May be nullptr when the field's tag pack does not include WithNotifier.
-    ProxyFieldBase(std::string_view field_name, ProxyEventBase* proxy_event_base_dispatch)
+    /// \param proxy_set_method_dispatch May be nullptr when the field's tag pack does not include WithSetter.
+    /// \param proxy_get_method_dispatch May be nullptr when the field's tag pack does not include WithGetter.
+    ProxyFieldBase(std::string_view field_name,
+                   ProxyEventBase* proxy_event_base_dispatch,
+                   ProxyMethodBase* proxy_set_method_dispatch,
+                   ProxyMethodBase* proxy_get_method_dispatch)
         : EnableReferenceToMoveableFromThis<ProxyFieldBase>(),
           proxy_event_base_dispatch_{proxy_event_base_dispatch},
+          proxy_set_method_dispatch_{proxy_set_method_dispatch},
+          proxy_get_method_dispatch_{proxy_get_method_dispatch},
           field_name_{field_name}
     {
     }
@@ -122,6 +130,8 @@ class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
     /// \}
 
     ProxyEventBase* proxy_event_base_dispatch_;
+    ProxyMethodBase* proxy_set_method_dispatch_;
+    ProxyMethodBase* proxy_get_method_dispatch_;
     std::string_view field_name_;
 };
 

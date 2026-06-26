@@ -406,7 +406,10 @@ class ProxyFieldImpl : public ProxyFieldBase
                    std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
                    std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
                    std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch)
-        : ProxyFieldBase{field_name, proxy_event_dispatch.get()},
+        : ProxyFieldBase{field_name,
+                         proxy_event_dispatch.get(),
+                         proxy_method_set_dispatch.get(),
+                         proxy_method_get_dispatch.get()},
           proxy_event_dispatch_{std::move(proxy_event_dispatch)},
           proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)},
           proxy_method_get_dispatch_{std::move(proxy_method_get_dispatch)}
