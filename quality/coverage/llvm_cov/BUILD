@@ -11,67 +11,29 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_python//python:defs.bzl", "py_binary")
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
-
-py_binary(
-    name = "merger",
-    srcs = ["merger.py"],
+load(
+    "@score_cpp_policies//coverage:defs.bzl",
+    "score_coverage_reporter",
+    "score_instrumented_sources_manifest",
 )
 
-py_binary(
-    name = "reporter",
-    srcs = ["reporter.py"],
-    data = [
-        "filter_regexes.txt",
-        "//:MODULE.bazel",
-        "@llvm_toolchain//:llvm-cov",
-        "@llvm_toolchain//:llvm-profdata",
+# Collect all C++ source files reachable from the main library targets so that
+# files not linked into any test show up at 0% in the coverage report.
+score_instrumented_sources_manifest(
+    name = "instrumented_sources",
+    targets = [
+        "//score/message_passing:message_passing",
+        "//score/mw/com:com",
     ],
-    deps = ["@rules_python//python/runfiles"],
 )
 
-genrule(
-    name = "reporter_wrapper_gen",
-    srcs = [
-        "filter_regexes.txt",
-        "//:MODULE.bazel",
-    ],
-    outs = ["reporter_wrapper.sh"],
-    cmd = """
-cat > $@ << EOF
-#!/usr/bin/env bash
-set -euo pipefail
-if [[ -z "\\$${RUNFILES_DIR:-}" ]]; then
-  if [[ -d "\\$$0.runfiles" ]]; then
-    export RUNFILES_DIR="\\$$0.runfiles"
-  fi
-fi
-WORKSPACE_ROOT="\\$$(cd "\\$$(dirname "\\$$(readlink -f "\\$${RUNFILES_DIR}/$(rlocationpath //:MODULE.bazel)")")" && pwd)/"
-exec "\\$${RUNFILES_DIR}/_main/quality/coverage/llvm_cov/reporter" \\\\
-  --filter_regexes="$(rlocationpath filter_regexes.txt)" \\\\
-  --workspace_root="\\$${WORKSPACE_ROOT}" \\\\
-  "\\$$@"
-EOF
-chmod +x $@
-""",
-)
-
-sh_binary(
+# Wrapper target wiring in the LLVM toolchain binaries and the workspace root.
+# Referenced by coverage.bazelrc via:
+#   coverage --coverage_report_generator=//quality/coverage/llvm_cov:reporter_wrapper
+score_coverage_reporter(
     name = "reporter_wrapper",
-    srcs = [":reporter_wrapper_gen"],
-    data = [":reporter"],
-)
-
-py_binary(
-    name = "justify",
-    srcs = ["justify.py"],
-    deps = [
-        "@score_communication_pip//pyyaml",
-    ],
-)
-
-py_binary(
-    name = "effective_coverage",
-    srcs = ["effective_coverage.py"],
+    llvm_cov = "@llvm_toolchain//:llvm-cov",
+    llvm_profdata = "@llvm_toolchain//:llvm-profdata",
+    instrumented_sources_manifest = ":instrumented_sources",
+    visibility = ["//visibility:public"],
 )
