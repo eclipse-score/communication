@@ -32,8 +32,8 @@ score_instrumented_sources_manifest(
 #   coverage --coverage_report_generator=//quality/coverage/llvm_cov:reporter_wrapper
 score_coverage_reporter(
     name = "reporter_wrapper",
+    instrumented_sources_manifest = ":instrumented_sources",
     llvm_cov = "@llvm_toolchain//:llvm-cov",
     llvm_profdata = "@llvm_toolchain//:llvm-profdata",
-    instrumented_sources_manifest = ":instrumented_sources",
     visibility = ["//visibility:public"],
 )
