@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -169,12 +170,12 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
     const auto handle = this->GetBlankBindingHandle();
 
     // Given a blank binding
-    auto proxy_binding = this->CreateBindingFromHandle(handle);
+    mock_binding::Proxy proxy_binding_mock{};
 
     // When creating a ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
     auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
+        handle, &proxy_binding_mock, kDummyMethodName, MethodType::kMethod);
 
     // Then a nullptr is returned
     EXPECT_EQ(proxy_method, nullptr);
