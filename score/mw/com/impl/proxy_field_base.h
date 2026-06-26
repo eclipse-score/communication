@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_FIELD_BASE_H
 #define SCORE_MW_COM_IMPL_PROXY_FIELD_BASE_H
 
+#include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
 #include "score/mw/com/impl/proxy_event_base.h"
 
 #include "score/result/result.h"
@@ -20,17 +21,15 @@
 #include <score/assert.hpp>
 
 #include <cstddef>
-#include <functional>
 #include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
 {
 
-class ProxyBase;
 class ProxyFieldBaseView;
 
-class ProxyFieldBase
+class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Design decision. This class provides a view to the private members of this class.
@@ -39,8 +38,10 @@ class ProxyFieldBase
 
   public:
     /// \param proxy_event_base_dispatch May be nullptr when the field's tag pack does not include WithNotifier.
-    ProxyFieldBase(ProxyBase& proxy_base, std::string_view field_name, ProxyEventBase* proxy_event_base_dispatch)
-        : proxy_base_{proxy_base}, proxy_event_base_dispatch_{proxy_event_base_dispatch}, field_name_{field_name}
+    ProxyFieldBase(std::string_view field_name, ProxyEventBase* proxy_event_base_dispatch)
+        : EnableReferenceToMoveableFromThis<ProxyFieldBase>(),
+          proxy_event_base_dispatch_{proxy_event_base_dispatch},
+          field_name_{field_name}
     {
     }
 
@@ -53,11 +54,6 @@ class ProxyFieldBase
     ProxyFieldBase& operator=(ProxyFieldBase&&) noexcept = default;
 
     virtual ~ProxyFieldBase() noexcept = default;
-
-    void UpdateProxyReference(ProxyBase& proxy_base) noexcept
-    {
-        proxy_base_ = proxy_base;
-    }
 
     /**
      * \name Tag-gated interface
@@ -125,7 +121,6 @@ class ProxyFieldBase
     }
     /// \}
 
-    std::reference_wrapper<ProxyBase> proxy_base_;
     ProxyEventBase* proxy_event_base_dispatch_;
     std::string_view field_name_;
 };

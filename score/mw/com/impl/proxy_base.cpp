@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/methods/proxy_method_base.h"
 #include "score/mw/com/impl/proxy_event_base.h"
 #include "score/mw/com/impl/proxy_field_base.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
 #include "score/mw/com/impl/runtime.h"
 
 #include <score/assert.hpp>
@@ -36,65 +37,6 @@ ProxyBase::ProxyBase(std::unique_ptr<ProxyBinding> proxy_binding, HandleType han
       fields_{},
       methods_{}
 {
-}
-
-ProxyBase::ProxyBase(ProxyBase&& other) noexcept
-    : proxy_binding_(std::move(other.proxy_binding_)),
-      handle_(std::move(other.handle_)),
-      are_service_element_bindings_valid_(other.are_service_element_bindings_valid_),
-      events_(std::move(other.events_)),
-      fields_(std::move(other.fields_)),
-      methods_(std::move(other.methods_))
-{
-    // Since the address of this proxy has changed, we need update the address stored in each of the events, fields
-    // and methods belonging to the proxy.
-    for (auto& event : events_)
-    {
-        event.second.get().UpdateProxyReference(*this);
-    }
-
-    for (auto& field : fields_)
-    {
-        field.second.get().UpdateProxyReference(*this);
-    }
-
-    for (auto& method : methods_)
-    {
-        method.second.get().UpdateProxyReference(*this);
-    }
-}
-
-ProxyBase& ProxyBase::operator=(ProxyBase&& other) noexcept
-{
-    if (this == &other)
-    {
-        return *this;
-    }
-
-    proxy_binding_ = std::move(other.proxy_binding_);
-    handle_ = std::move(other.handle_);
-    are_service_element_bindings_valid_ = other.are_service_element_bindings_valid_;
-    events_ = std::move(other.events_);
-    fields_ = std::move(other.fields_);
-    methods_ = std::move(other.methods_);
-
-    // Since the address of this proxy has changed, we need update the address stored in each of the events, fields
-    // and methods belonging to the proxy.
-    for (auto& event : events_)
-    {
-        event.second.get().UpdateProxyReference(*this);
-    }
-
-    for (auto& field : fields_)
-    {
-        field.second.get().UpdateProxyReference(*this);
-    }
-
-    for (auto& method : methods_)
-    {
-        method.second.get().UpdateProxyReference(*this);
-    }
-    return *this;
 }
 
 const HandleType& ProxyBase::GetHandle() const& noexcept
@@ -169,7 +111,7 @@ Result<void> ProxyBase::SetupMethods()
 
     for (auto& method_key_value_pair : methods_)
     {
-        auto& method = method_key_value_pair.second.get();
+        auto& method = method_key_value_pair.second.get().Get();
         const auto method_init_result = method.InitializeInArgsAndReturnValues();
         if (!method_init_result.has_value())
         {
@@ -187,11 +129,11 @@ void ProxyBase::Deinitialize()
     }
     for (auto& event : events_)
     {
-        event.second.get().Unsubscribe();
+        event.second.get().Get().Unsubscribe();
     }
     for (auto& field : fields_)
     {
-        ProxyFieldBaseView{field.second.get()}.Unsubscribe();
+        ProxyFieldBaseView{field.second.get().Get()}.Unsubscribe();
     }
     if (proxy_binding_ != nullptr)
     {
@@ -216,68 +158,29 @@ void ProxyBaseView::MarkServiceElementBindingInvalid() noexcept
     proxy_base_.are_service_element_bindings_valid_ = false;
 }
 
-void ProxyBaseView::RegisterEvent(const std::string_view event_name, ProxyEventBase& event)
+void ProxyBaseView::RegisterEvent(const std::string_view event_name,
+                                  ReferenceToMoveable<ProxyEventBase>::Reference& event)
 {
-    const auto result = proxy_base_.events_.emplace(event_name, event);
+    const auto result = proxy_base_.events_.emplace(event_name, std::ref(event));
     const bool was_event_inserted = result.second;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_event_inserted, "Event cannot be registered as it already exists.");
 }
 
-void ProxyBaseView::RegisterField(const std::string_view field_name, ProxyFieldBase& field)
+void ProxyBaseView::RegisterField(const std::string_view field_name,
+                                  ReferenceToMoveable<ProxyFieldBase>::Reference& field)
 {
-    const auto result = proxy_base_.fields_.emplace(field_name, field);
+    const auto result = proxy_base_.fields_.emplace(field_name, std::ref(field));
     const bool was_field_inserted = result.second;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_field_inserted, "Field cannot be registered as it already exists.");
 }
 
-void ProxyBaseView::RegisterMethod(const std::string_view method_name, ProxyMethodBase& method)
+void ProxyBaseView::RegisterMethod(const std::string_view method_name,
+                                   ReferenceToMoveable<ProxyMethodBase>::Reference& method)
 {
-    const auto result = proxy_base_.methods_.emplace(method_name, method);
+    const auto result = proxy_base_.methods_.emplace(method_name, std::ref(method));
     const bool was_method_inserted = result.second;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_method_inserted, "Method cannot be registered as it already exists.");
 }
-
-void ProxyBaseView::UpdateEvent(const std::string_view event_name, ProxyEventBase& event)
-{
-    auto event_it = proxy_base_.events_.find(event_name);
-    if (event_it == proxy_base_.events_.cend())
-    {
-        score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateEvent failed to update, because the requested event "
-                                         << event_name << " doesn't exist!";
-
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(false);
-    }
-
-    event_it->second = event;
-}
-
-void ProxyBaseView::UpdateField(const std::string_view field_name, ProxyFieldBase& field)
-{
-    auto field_it = proxy_base_.fields_.find(field_name);
-    if (field_it == proxy_base_.fields_.cend())
-    {
-        score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateField failed to update, because the requested field "
-                                         << field_name << " doesn't exist";
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(false);
-    }
-
-    field_it->second = field;
-}
-
-void ProxyBaseView::UpdateMethod(const std::string_view method_name, ProxyMethodBase& method)
-{
-    auto method_it = proxy_base_.methods_.find(method_name);
-    if (method_it == proxy_base_.methods_.cend())
-    {
-        score::mw::log::LogFatal("lola")
-            << "ProxyBaseView::UpdateMethod failed to update, because the requested method " << method_name
-            << " doesn't exist";
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(false);
-    }
-
-    method_it->second = method;
-}
-
 bool ProxyBaseView::AreBindingsValid() const
 {
     return proxy_base_.AreBindingsValid();

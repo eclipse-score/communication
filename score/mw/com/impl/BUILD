@@ -317,6 +317,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":enable_reference_to_moveable_from_this",
         ":proxy_event_base",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
@@ -457,6 +458,7 @@ cc_library(
         ":find_service_handler",
         ":proxy_event_base",
         ":proxy_field_base",
+        ":reference_to_moveable",
         ":runtime",
         "//score/mw/com/impl/methods:proxy_method_base",
         "//score/mw/com/impl/plumbing",
@@ -479,6 +481,7 @@ cc_library(
         "//score/mw/com/impl/rust:__pkg__",
     ],
     deps = [
+        ":enable_reference_to_moveable_from_this",
         ":error",
         ":flag_owner",
         ":proxy_binding",

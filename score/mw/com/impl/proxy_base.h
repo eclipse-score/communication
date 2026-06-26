@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/proxy_binding.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
 
 #include "score/result/result.h"
 
@@ -117,9 +118,12 @@ class ProxyBase
     const HandleType& GetHandle() const& noexcept;
 
   protected:
-    using ProxyEvents = std::map<std::string_view, std::reference_wrapper<ProxyEventBase>>;
-    using ProxyFields = std::map<std::string_view, std::reference_wrapper<ProxyFieldBase>>;
-    using ProxyMethods = std::map<std::string_view, std::reference_wrapper<ProxyMethodBase>>;
+    using ProxyEvents =
+        std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<ProxyEventBase>::Reference>>;
+    using ProxyFields =
+        std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<ProxyFieldBase>::Reference>>;
+    using ProxyMethods =
+        std::map<std::string_view, std::reference_wrapper<ReferenceToMoveable<ProxyMethodBase>::Reference>>;
 
     /// \brief A Proxy shall not be copyable
     /// \requirement SWS_CM_00136
@@ -128,8 +132,8 @@ class ProxyBase
 
     /// \brief A Proxy shall be movable
     /// \requirement SWS_CM_00137
-    ProxyBase(ProxyBase&& other) noexcept;
-    ProxyBase& operator=(ProxyBase&& other) noexcept;
+    ProxyBase(ProxyBase&& other) noexcept = default;
+    ProxyBase& operator=(ProxyBase&& other) noexcept = default;
 
     /// \brief Deinitialize all events and fields and tears down binding-level state.
     ///  Must only be invoked from the wrapper class destructor (ProxyWrapperClass / GenericProxy).
@@ -177,18 +181,11 @@ class ProxyBaseView final
 
     void MarkServiceElementBindingInvalid() noexcept;
 
-    void RegisterEvent(const std::string_view event_name, ProxyEventBase& event);
+    void RegisterEvent(const std::string_view event_name, ReferenceToMoveable<ProxyEventBase>::Reference& event);
 
-    void RegisterField(const std::string_view field_name, ProxyFieldBase& field);
+    void RegisterField(const std::string_view field_name, ReferenceToMoveable<ProxyFieldBase>::Reference& field);
 
-    void RegisterMethod(const std::string_view method_name, ProxyMethodBase& method);
-
-    void UpdateEvent(const std::string_view event_name, ProxyEventBase& event);
-
-    void UpdateField(const std::string_view field_name, ProxyFieldBase& field);
-
-    void UpdateMethod(const std::string_view method_name, ProxyMethodBase& method);
-
+    void RegisterMethod(const std::string_view method_name, ReferenceToMoveable<ProxyMethodBase>::Reference& method);
     bool AreBindingsValid() const;
 
   private:

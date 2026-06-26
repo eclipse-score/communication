@@ -145,8 +145,8 @@ class ProxyField final : public ProxyFieldBase
     ProxyField& operator=(const ProxyField&) = delete;
 
     /// \brief A ProxyField shall be moveable
-    ProxyField(ProxyField&&) noexcept;
-    ProxyField& operator=(ProxyField&&) & noexcept;
+    ProxyField(ProxyField&&) noexcept = default;
+    ProxyField& operator=(ProxyField&&) noexcept = default;
 
     ~ProxyField() noexcept = default;
 
@@ -406,13 +406,13 @@ class ProxyField final : public ProxyFieldBase
                std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
                std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
                std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch)
-        : ProxyFieldBase{proxy_base, field_name, proxy_event_dispatch.get()},
+        : ProxyFieldBase{field_name, proxy_event_dispatch.get()},
           proxy_event_dispatch_{std::move(proxy_event_dispatch)},
           proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)},
           proxy_method_get_dispatch_{std::move(proxy_method_get_dispatch)}
     {
         ProxyBaseView proxy_base_view{proxy_base};
-        proxy_base_view.RegisterField(field_name, *this);
+        proxy_base_view.RegisterField(field_name, GetReferenceToMoveable());
     }
 
     std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;
@@ -424,39 +424,6 @@ class ProxyField final : public ProxyFieldBase
                   "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "
                   "we must ensure that it doesn't move when the ProxyField is moved to avoid dangling references. ");
 };
-
-template <typename SampleDataType, typename... Tags>
-ProxyField<SampleDataType, Tags...>::ProxyField(ProxyField&& other) noexcept
-    : ProxyFieldBase(std::move(static_cast<ProxyFieldBase&&>(other))),
-      proxy_event_dispatch_(std::move(other.proxy_event_dispatch_)),
-      proxy_method_set_dispatch_(std::move(other.proxy_method_set_dispatch_)),
-      proxy_method_get_dispatch_(std::move(other.proxy_method_get_dispatch_))
-{
-    ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateField(field_name_, *this);
-}
-
-template <typename SampleDataType, typename... Tags>
-// Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
-// or respectively copy base classes and data members of a class, without any side effects."
-// Rationale: The parent proxy stores a reference to the ProxyEvent. The address that is pointed to must be
-// updated when the ProxyField is moved. Therefore, side effects are required.
-// coverity[autosar_cpp14_a6_2_1_violation]
-auto ProxyField<SampleDataType, Tags...>::operator=(ProxyField&& other) & noexcept
-    -> ProxyField<SampleDataType, Tags...>&
-{
-    if (this != &other)
-    {
-        ProxyFieldBase::operator=(std::move(other));
-
-        ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateField(field_name_, *this);
-        proxy_event_dispatch_ = std::move(other.proxy_event_dispatch_);
-        proxy_method_set_dispatch_ = std::move(other.proxy_method_set_dispatch_);
-        proxy_method_get_dispatch_ = std::move(other.proxy_method_get_dispatch_);
-    }
-    return *this;
-}
 
 }  // namespace score::mw::com::impl
 

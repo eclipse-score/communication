@@ -45,8 +45,7 @@ class ProxyMethod<void()> final : public ProxyMethodBase
 
   public:
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base,
-                          method_name,
+        : ProxyMethodBase(method_name,
                           ProxyMethodBindingFactory<void()>::Create(proxy_base.GetHandle(),
                                                                     ProxyBaseView{proxy_base}.GetBinding(),
                                                                     method_name,
@@ -54,7 +53,7 @@ class ProxyMethod<void()> final : public ProxyMethodBase
                           MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -65,10 +64,10 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::string_view method_name,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
-        : ProxyMethodBase(proxy_base, method_name, std::move(proxy_method_binding), MethodType::kMethod)
+        : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -83,8 +82,8 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     ProxyMethod& operator=(const ProxyMethod&) = delete;
 
     /// \brief A ProxyMethod shall be moveable.
-    ProxyMethod(ProxyMethod&&) noexcept;
-    ProxyMethod& operator=(ProxyMethod&&) noexcept;
+    ProxyMethod(ProxyMethod&&) noexcept = default;
+    ProxyMethod& operator=(ProxyMethod&&) noexcept = default;
 
     Result<void> InitializeInArgsAndReturnValues() override
     {

@@ -597,28 +597,20 @@ class ProxyBaseServiceElementReferencesFixture : public ::testing::Test
     mock_binding::Proxy proxy_binding_mock_{};
     MyProxy proxy_{std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_), handle_};
 
-    ProxyEventBase event_0_{proxy_,
-                            event_name_0_,
-                            &proxy_binding_mock_,
-                            std::make_unique<mock_binding::ProxyEventBase>()};
-    ProxyEventBase event_1_{proxy_,
-                            event_name_1_,
-                            &proxy_binding_mock_,
-                            std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyEventBase event_0_{event_name_0_, &proxy_binding_mock_, std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyEventBase event_1_{event_name_1_, &proxy_binding_mock_, std::make_unique<mock_binding::ProxyEventBase>()};
 
-    ProxyEventBase field_event_dispatch_0_{proxy_,
-                                           field_name_0_,
+    ProxyEventBase field_event_dispatch_0_{field_name_0_,
                                            &proxy_binding_mock_,
                                            std::make_unique<mock_binding::ProxyEventBase>()};
-    ProxyEventBase field_event_dispatch_1_{proxy_,
-                                           field_name_1_,
+    ProxyEventBase field_event_dispatch_1_{field_name_1_,
                                            &proxy_binding_mock_,
                                            std::make_unique<mock_binding::ProxyEventBase>()};
-    ProxyFieldBase field_0_{proxy_, field_name_0_, &field_event_dispatch_0_};
-    ProxyFieldBase field_1_{proxy_, field_name_1_, &field_event_dispatch_1_};
+    ProxyFieldBase field_0_{field_name_0_, &field_event_dispatch_0_};
+    ProxyFieldBase field_1_{field_name_1_, &field_event_dispatch_1_};
 
-    DummyProxyMethod method_0_{proxy_, method_name_0_, std::make_unique<mock_binding::ProxyMethod>()};
-    DummyProxyMethod method_1_{proxy_, method_name_1_, std::make_unique<mock_binding::ProxyMethod>()};
+    DummyProxyMethod method_0_{method_name_0_, std::make_unique<mock_binding::ProxyMethod>()};
+    DummyProxyMethod method_1_{method_name_1_, std::make_unique<mock_binding::ProxyMethod>()};
 };
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringServiceElementStoresReferenceInMap)
@@ -626,28 +618,28 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringServiceElementStores
     // Given a valid MyProxy object
 
     // When registering 2 Events, Fields and Methods
-    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_);
-    ProxyBaseView{proxy_}.RegisterEvent(event_name_1_, event_1_);
-    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_);
-    ProxyBaseView{proxy_}.RegisterField(field_name_1_, field_1_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_1_, method_1_);
+    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterEvent(event_name_1_, event_1_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterField(field_name_1_, field_1_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterMethod(method_name_1_, method_1_.GetReferenceToMoveable());
 
     // Then the proxy's reference maps should contain references to the registered elements
     const auto& events = proxy_.GetEvents();
     EXPECT_EQ(events.size(), 2U);
-    EXPECT_EQ(&events.at(event_name_0_).get(), &event_0_);
-    EXPECT_EQ(&events.at(event_name_1_).get(), &event_1_);
+    EXPECT_EQ(&events.at(event_name_0_).get().Get(), &event_0_);
+    EXPECT_EQ(&events.at(event_name_1_).get().Get(), &event_1_);
 
     const auto& fields = proxy_.GetFields();
     EXPECT_EQ(fields.size(), 2U);
-    EXPECT_EQ(&fields.at(field_name_0_).get(), &field_0_);
-    EXPECT_EQ(&fields.at(field_name_1_).get(), &field_1_);
+    EXPECT_EQ(&fields.at(field_name_0_).get().Get(), &field_0_);
+    EXPECT_EQ(&fields.at(field_name_1_).get().Get(), &field_1_);
 
     const auto& methods = proxy_.GetMethods();
     EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
+    EXPECT_EQ(&methods.at(method_name_0_).get().Get(), &method_0_);
+    EXPECT_EQ(&methods.at(method_name_1_).get().Get(), &method_1_);
 }
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferencesToServiceElements)
@@ -659,12 +651,12 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferenc
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a valid MyProxy object on which 2 Events, Fields and Methods were registered
-    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_);
-    ProxyBaseView{proxy_}.RegisterEvent(event_name_1_, event_1_);
-    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_);
-    ProxyBaseView{proxy_}.RegisterField(field_name_1_, field_1_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_1_, method_1_);
+    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterEvent(event_name_1_, event_1_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterField(field_name_1_, field_1_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterMethod(method_name_1_, method_1_.GetReferenceToMoveable());
 
     // When move constructing a new MyProxy object
     MyProxy moved_to_proxy{std::move(proxy_)};
@@ -672,18 +664,18 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferenc
     // Then the moved-to proxy's reference maps should still contain references to the registered elements
     const auto& events = moved_to_proxy.GetEvents();
     ASSERT_EQ(events.size(), 2U);
-    EXPECT_EQ(&events.at(event_name_0_).get(), &event_0_);
-    EXPECT_EQ(&events.at(event_name_1_).get(), &event_1_);
+    EXPECT_EQ(&events.at(event_name_0_).get().Get(), &event_0_);
+    EXPECT_EQ(&events.at(event_name_1_).get().Get(), &event_1_);
 
     const auto& fields = moved_to_proxy.GetFields();
     ASSERT_EQ(fields.size(), 2U);
-    EXPECT_EQ(&fields.at(field_name_0_).get(), &field_0_);
-    EXPECT_EQ(&fields.at(field_name_1_).get(), &field_1_);
+    EXPECT_EQ(&fields.at(field_name_0_).get().Get(), &field_0_);
+    EXPECT_EQ(&fields.at(field_name_1_).get().Get(), &field_1_);
 
     const auto& methods = moved_to_proxy.GetMethods();
     EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
+    EXPECT_EQ(&methods.at(method_name_0_).get().Get(), &method_0_);
+    EXPECT_EQ(&methods.at(method_name_1_).get().Get(), &method_1_);
 }
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
@@ -700,26 +692,25 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     mock_binding::Proxy proxy_binding_mock{};
 
     // Given a valid MyProxy object on which 2 Events, Fields and Methods were registered
-    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_);
-    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
-    ProxyBaseView{proxy_}.RegisterEvent(event_name_1_, event_1_);
-    ProxyBaseView{proxy_}.RegisterField(field_name_1_, field_1_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_1_, method_1_);
+    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterEvent(event_name_1_, event_1_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterField(field_name_1_, field_1_.GetReferenceToMoveable());
+    ProxyBaseView{proxy_}.RegisterMethod(method_name_1_, method_1_.GetReferenceToMoveable());
 
     // and given a second valid MyProxy object
     MyProxy proxy_2{std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock), handle_};
 
     // and given that an Event, Field and Method were registered on the second proxy
-    ProxyEventBase event{
-        proxy_2, other_event_name, &proxy_binding_mock, std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyEventBase event{other_event_name, &proxy_binding_mock, std::make_unique<mock_binding::ProxyEventBase>()};
     ProxyEventBase field_event_dispatch{
-        proxy_2, other_field_name, &proxy_binding_mock, std::make_unique<mock_binding::ProxyEventBase>()};
-    ProxyFieldBase field{proxy_2, other_field_name, &field_event_dispatch};
-    DummyProxyMethod method{proxy_2, other_method_name, std::make_unique<mock_binding::ProxyMethod>()};
-    ProxyBaseView{proxy_2}.RegisterEvent(other_event_name, event);
-    ProxyBaseView{proxy_2}.RegisterField(other_field_name, field);
-    ProxyBaseView{proxy_2}.RegisterMethod(other_method_name, method);
+        other_field_name, &proxy_binding_mock, std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyFieldBase field{other_field_name, &field_event_dispatch};
+    DummyProxyMethod method{other_method_name, std::make_unique<mock_binding::ProxyMethod>()};
+    ProxyBaseView{proxy_2}.RegisterEvent(other_event_name, event.GetReferenceToMoveable());
+    ProxyBaseView{proxy_2}.RegisterField(other_field_name, field.GetReferenceToMoveable());
+    ProxyBaseView{proxy_2}.RegisterMethod(other_method_name, method.GetReferenceToMoveable());
 
     // When move assigning the first MyProxy object to the second
     proxy_2 = std::move(proxy_);
@@ -727,18 +718,18 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     // Then the second proxy's reference maps should contain references to the first proxy's registered elements
     const auto& events = proxy_2.GetEvents();
     ASSERT_EQ(events.size(), 2U);
-    EXPECT_EQ(&events.at(event_name_0_).get(), &event_0_);
-    EXPECT_EQ(&events.at(event_name_1_).get(), &event_1_);
+    EXPECT_EQ(&events.at(event_name_0_).get().Get(), &event_0_);
+    EXPECT_EQ(&events.at(event_name_1_).get().Get(), &event_1_);
 
     const auto& fields = proxy_2.GetFields();
     ASSERT_EQ(fields.size(), 2U);
-    EXPECT_EQ(&fields.at(field_name_0_).get(), &field_0_);
-    EXPECT_EQ(&fields.at(field_name_1_).get(), &field_1_);
+    EXPECT_EQ(&fields.at(field_name_0_).get().Get(), &field_0_);
+    EXPECT_EQ(&fields.at(field_name_1_).get().Get(), &field_1_);
 
     const auto& methods = proxy_2.GetMethods();
     EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
+    EXPECT_EQ(&methods.at(method_name_0_).get().Get(), &method_0_);
+    EXPECT_EQ(&methods.at(method_name_1_).get().Get(), &method_1_);
 }
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningToItselfDoesNotDoAnything)
@@ -756,76 +747,4 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningToItselfDoesNotDoA
     // be taken without crash.
 }
 
-TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateEventUpdatesCorrectly)
-{
-    // Given a proxy with a registered event
-    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_);
-
-    // When we update the event with a new event value
-    ProxyBaseView{proxy_}.UpdateEvent(event_name_0_, event_1_);
-
-    // Then we expect the proxy to contain the new event under the old name
-    auto& updated_event = proxy_.GetEvents().find(event_name_0_)->second.get();
-
-    EXPECT_EQ(&updated_event, &event_1_);
-    EXPECT_NE(&updated_event, &event_0_);
-}
-
-TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateEventTerminatesOnFailiure)
-{
-    // Given a proxy with a registered event
-    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_);
-
-    // When we try to update the event but use a wrong name, then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ProxyBaseView{proxy_}.UpdateEvent("wrong_event_name", event_0_));
-}
-
-TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateFieldUpdatesCorrectly)
-{
-    // Given a proxy with a registered field
-    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_);
-
-    // When we update the field with a new field value
-    ProxyBaseView{proxy_}.UpdateField(field_name_0_, field_1_);
-
-    // Then we expect the proxy to contain the new field under the old name
-    auto& updated_field = proxy_.GetFields().find(field_name_0_)->second.get();
-
-    EXPECT_EQ(&updated_field, &field_1_);
-    EXPECT_NE(&updated_field, &field_0_);
-}
-
-TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateFieldTerminatesOnFailiure)
-{
-    // Given a proxy with a registered event
-    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_);
-
-    // When we try to update the even but use a wrong name, then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ProxyBaseView{proxy_}.UpdateField("wrong_field_name", field_0_));
-}
-
-TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateMethodUpdatesCorrectly)
-{
-    // Given a proxy with a registered method
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
-
-    // When we update the method with a new method value
-    ProxyBaseView{proxy_}.UpdateMethod(method_name_0_, method_1_);
-
-    // Then we expect the proxy to contain the new method under the old name
-    auto& updated_method = proxy_.GetMethods().find(method_name_0_)->second.get();
-
-    EXPECT_EQ(&updated_method, &method_1_);
-    EXPECT_NE(&updated_method, &method_0_);
-}
-
-TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateMethodTerminatesOnFailiure)
-{
-    // Given a proxy with a registered event
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
-
-    // When we try to update the even but use a wrong name, then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        ProxyBaseView{proxy_}.UpdateMethod("wrong_method_name", method_0_));
-}
 }  // namespace score::mw::com::impl

@@ -67,7 +67,6 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
   public:
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
         : ProxyMethodBase(
-              proxy_base,
               method_name,
               ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::Create(proxy_base.GetHandle(),
                                                                          ProxyBaseView{proxy_base}.GetBinding(),
@@ -77,7 +76,7 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -88,11 +87,11 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::string_view method_name,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
-        : ProxyMethodBase(proxy_base, method_name, std::move(proxy_method_binding), MethodType::kMethod),
+        : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -104,7 +103,7 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
                 std::string_view method_name,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 FieldOnlyConstructorEnabler) noexcept
-        : ProxyMethodBase(proxy_base, method_name, std::move(proxy_method_binding), MethodType::kSet),
+        : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kSet),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
@@ -122,8 +121,8 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     ProxyMethod& operator=(const ProxyMethod&) = delete;
 
     /// \brief A ProxyMethod shall be moveable.
-    ProxyMethod(ProxyMethod&&) noexcept;
-    ProxyMethod& operator=(ProxyMethod&&) noexcept;
+    ProxyMethod(ProxyMethod&&) noexcept = default;
+    ProxyMethod& operator=(ProxyMethod&&) noexcept = default;
 
     Result<void> InitializeInArgsAndReturnValues() override;
 
@@ -167,31 +166,6 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     /// pointer passed to the zero-copy call-operator is active.
     containers::DynamicArray<std::array<bool, sizeof...(ArgTypes)>> are_in_arg_ptrs_active_;
 };
-
-template <typename ReturnType, typename... ArgTypes>
-ProxyMethod<ReturnType(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept
-    : ProxyMethodBase(std::move(other)), are_in_arg_ptrs_active_{std::move(other.are_in_arg_ptrs_active_)}
-{
-    // Since the address of this method has changed, we need update the address stored in the parent proxy.
-    ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(method_name_, *this);
-}
-
-template <typename ReturnType, typename... ArgTypes>
-auto ProxyMethod<ReturnType(ArgTypes...)>::operator=(ProxyMethod&& other) noexcept
-    -> ProxyMethod<ReturnType(ArgTypes...)>&
-{
-    if (this != &other)
-    {
-        ProxyMethodBase::operator=(std::move(other));
-        are_in_arg_ptrs_active_ = std::move(other.are_in_arg_ptrs_active_);
-
-        // Since the address of this method has changed, we need update the address stored in the parent proxy
-        ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(method_name_, *this);
-    }
-    return *this;
-}
 
 template <typename ReturnType, typename... ArgTypes>
 score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes...)>::operator()(const ArgTypes&... args)

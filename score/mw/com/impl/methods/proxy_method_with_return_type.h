@@ -61,8 +61,7 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
 
   public:
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base,
-                          method_name,
+        : ProxyMethodBase(method_name,
                           ProxyMethodBindingFactory<ReturnType()>::Create(proxy_base.GetHandle(),
                                                                           ProxyBaseView{proxy_base}.GetBinding(),
                                                                           method_name,
@@ -70,7 +69,7 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
                           MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -81,10 +80,10 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::string_view method_name,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
-        : ProxyMethodBase(proxy_base, method_name, std::move(proxy_method_binding), MethodType::kMethod)
+        : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -96,7 +95,7 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
                 std::string_view method_name,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 FieldOnlyConstructorEnabler) noexcept
-        : ProxyMethodBase(proxy_base, method_name, std::move(proxy_method_binding), MethodType::kGet)
+        : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kGet)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         if (binding_ == nullptr)
@@ -113,8 +112,8 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     ProxyMethod& operator=(const ProxyMethod&) = delete;
 
     /// \brief A ProxyMethod shall be moveable.
-    ProxyMethod(ProxyMethod&&) noexcept;
-    ProxyMethod& operator=(ProxyMethod&&) noexcept;
+    ProxyMethod(ProxyMethod&&) noexcept = default;
+    ProxyMethod& operator=(ProxyMethod&&) noexcept = default;
 
     Result<void> InitializeInArgsAndReturnValues() override;
 
@@ -133,28 +132,6 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     static constexpr std::optional<memory::DataTypeSizeInfo> type_erased_return_type_ =
         CreateDataTypeSizeInfoFromTypes<ReturnType>();
 };
-
-template <typename ReturnType>
-ProxyMethod<ReturnType()>::ProxyMethod(ProxyMethod&& other) noexcept : ProxyMethodBase(std::move(other))
-{
-    // Since the address of this method has changed, we need update the address stored in the parent proxy.
-    ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(method_name_, *this);
-}
-
-template <typename ReturnType>
-auto ProxyMethod<ReturnType()>::operator=(ProxyMethod&& other) noexcept -> ProxyMethod<ReturnType()>&
-{
-    if (this != &other)
-    {
-        ProxyMethodBase::operator=(std::move(other));
-
-        // Since the address of this method has changed, we need update the address stored in the parent proxy.
-        ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(method_name_, *this);
-    }
-    return *this;
-}
 
 template <typename ReturnType>
 score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operator()()

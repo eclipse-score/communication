@@ -560,8 +560,8 @@ TEST_F(ProxyEventMoveAssignmentTest, MoveAssignmentTransfersBindingFromSourceToD
 
     // Given two registered ProxyEvents, each with their own binding mock
     ProxyEventType second_event{empty_proxy_, kEventName2, std::move(second_binding_facade)};
-    ProxyBaseView{empty_proxy_}.RegisterEvent(kEventName, proxy_event_);
-    ProxyBaseView{empty_proxy_}.RegisterEvent(kEventName2, second_event);
+    ProxyBaseView{empty_proxy_}.RegisterEvent(kEventName, proxy_event_.GetReferenceToMoveable());
+    ProxyBaseView{empty_proxy_}.RegisterEvent(kEventName2, second_event.GetReferenceToMoveable());
 
     constexpr std::size_t max_sample_count{7U};
     EXPECT_CALL(second_binding_mock, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kNotSubscribed));
