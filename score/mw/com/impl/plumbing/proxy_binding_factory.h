@@ -20,7 +20,7 @@
 
 #include "score/result/result.h"
 
-#include <score/optional.hpp>
+#include <optional>
 
 #include <memory>
 #include <vector>

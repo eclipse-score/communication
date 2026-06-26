@@ -86,7 +86,7 @@ bool ChildProcessGuard::KillChildProcess() noexcept
     return true;
 }
 
-score::cpp::optional<bool> ChildProcessGuard::IsProcessDead(bool should_block) noexcept
+std::optional<bool> ChildProcessGuard::IsProcessDead(bool should_block) noexcept
 {
     // Check if KillChildProcess was previously called and process is already dead
     if (!(pid_.has_value()))

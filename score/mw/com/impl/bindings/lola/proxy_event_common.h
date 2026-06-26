@@ -29,10 +29,10 @@
 #include "score/result/result.h"
 
 #include <score/assert.hpp>
-#include <score/optional.hpp>
 #include <score/utility.hpp>
 
 #include <mutex>
+#include <optional>
 #include <string_view>
 
 namespace score::mw::com::impl::lola
@@ -109,7 +109,7 @@ class ProxyEventCommon final
     {
         score::cpp::ignore = test_slot_collector_.emplace(std::move(slot_collector));
     };
-    score::cpp::optional<SlotCollector> test_slot_collector_;
+    std::optional<SlotCollector> test_slot_collector_;
 
     Proxy& parent_;
     ElementFqId event_fq_id_;

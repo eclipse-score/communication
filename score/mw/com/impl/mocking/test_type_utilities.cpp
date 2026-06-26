@@ -39,11 +39,11 @@ InstanceIdentifier MakeFakeInstanceIdentifier(const std::uint16_t unique_identif
     ServiceInstanceId lola_instance_id{LolaServiceInstanceId{unique_identifier}};
 
     auto& type_deployment = service_type_deployments_.emplace_back(score::cpp::blank{});
-    auto& instance_deployment =
-        service_instance_deployments_.emplace_back(std::move(service_identifier_type),
-                                                   LolaServiceInstanceDeployment{unique_identifier},
-                                                   QualityType::kASIL_B,
-                                                   std::move(instance_specifier));
+    auto& instance_deployment = service_instance_deployments_.emplace_back(
+        std::move(service_identifier_type),
+        LolaServiceInstanceDeployment{LolaServiceInstanceId{unique_identifier}},
+        QualityType::kASIL_B,
+        std::move(instance_specifier));
 
     return make_InstanceIdentifier(instance_deployment, type_deployment);
 }

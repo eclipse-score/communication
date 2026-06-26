@@ -22,6 +22,7 @@
 
 #include <exception>
 #include <memory>
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -97,7 +98,7 @@ std::optional<std::uint16_t> SubscriptionPendingState::GetMaxSampleCount() const
     return state_machine_.subscription_data_.max_sample_count_.value();
 }
 
-score::cpp::optional<SlotCollector>& SubscriptionPendingState::GetSlotCollector() & noexcept
+std::optional<SlotCollector>& SubscriptionPendingState::GetSlotCollector() & noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
         state_machine_.subscription_data_.max_sample_count_.has_value(),
@@ -105,7 +106,7 @@ score::cpp::optional<SlotCollector>& SubscriptionPendingState::GetSlotCollector(
     return state_machine_.subscription_data_.slot_collector_;
 }
 
-const score::cpp::optional<SlotCollector>& SubscriptionPendingState::GetSlotCollector() const& noexcept
+const std::optional<SlotCollector>& SubscriptionPendingState::GetSlotCollector() const& noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
         state_machine_.subscription_data_.max_sample_count_.has_value(),

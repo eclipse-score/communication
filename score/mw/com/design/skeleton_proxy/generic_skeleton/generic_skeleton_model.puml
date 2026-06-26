@@ -136,10 +136,10 @@ abstract class "GenericSkeletonEventBinding" #yellow {
 class "lola::SkeletonEventCommon" #yellow {
   -parent_: lola::Skeleton&
   -element_fq_id_: ElementFqId
-  -control_: score::cpp::optional<EventDataControlComposite>&
+  -event_data_control_composite_: std::optional<EventDataControlComposite<>>
   -current_timestamp_: EventSlotStatus::EventTimeStamp&
   -receive_handler_registration_changed_callback_: std::optional<lola::IMessagePassingService::HandlerStatusChangeCallback>
-  +SkeletonEventCommon(lola::Skeleton&, const ElementFqId&, score::cpp::optional<EventDataControlComposite>&, EventSlotStatus::EventTimeStamp&, impl::tracing::SkeletonEventTracingData)
+  +SkeletonEventCommon(lola::Skeleton&, const std::string_view, const SkeletonEventProperties&, const ElementFqId&, impl::tracing::SkeletonEventTracingData)
   +PrepareOfferCommon(): void
   +PrepareStopOfferCommon(): void
   +GetParent(): lola::Skeleton&

@@ -296,46 +296,45 @@ TEST_P(ServiceInstanceDeploymentLessThanParamaterisedFixture, DifferentDeploymen
     EXPECT_FALSE(service_type_deployment_2 < service_type_deployment_1);
 }
 
-INSTANTIATE_TEST_CASE_P(ServiceInstanceDeploymentLessThanParamaterisedFixture,
-                        ServiceInstanceDeploymentLessThanParamaterisedFixture,
-                        ::testing::Values(
-                            // Comparing two ServiceInstanceDeployments with equal bindings compares based on Asil level
-                            std::make_pair(ServiceInstanceDeployment{kDummyService,
-                                                                     LolaServiceInstanceDeployment{1U},
-                                                                     QualityType::kASIL_QM,
-                                                                     kInstanceSpecifier},
-                                           ServiceInstanceDeployment{kDummyService,
-                                                                     LolaServiceInstanceDeployment{1U},
-                                                                     QualityType::kASIL_B,
-                                                                     kInstanceSpecifier}),
+INSTANTIATE_TEST_CASE_P(
+    ServiceInstanceDeploymentLessThanParamaterisedFixture,
+    ServiceInstanceDeploymentLessThanParamaterisedFixture,
+    ::testing::Values(
+        // Comparing two ServiceInstanceDeployments with equal bindings compares based on Asil level
+        std::make_pair(ServiceInstanceDeployment{kDummyService,
+                                                 LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                                                 QualityType::kASIL_QM,
+                                                 kInstanceSpecifier},
+                       ServiceInstanceDeployment{kDummyService,
+                                                 LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                                                 QualityType::kASIL_B,
+                                                 kInstanceSpecifier}),
 
-                            // Comparing two LolaServiceInstanceDeployments compares based on InstanceId only
-                            std::make_pair(ServiceInstanceDeployment{kDummyService,
-                                                                     LolaServiceInstanceDeployment{1U},
-                                                                     QualityType::kASIL_QM,
-                                                                     kInstanceSpecifier},
-                                           ServiceInstanceDeployment{kDummyService,
-                                                                     LolaServiceInstanceDeployment{2U},
-                                                                     QualityType::kASIL_B,
-                                                                     kInstanceSpecifier}),
-                            std::make_pair(ServiceInstanceDeployment{kDummyService,
-                                                                     LolaServiceInstanceDeployment{1U},
-                                                                     QualityType::kASIL_B,
-                                                                     kInstanceSpecifier},
-                                           ServiceInstanceDeployment{kDummyService,
-                                                                     LolaServiceInstanceDeployment{2U},
-                                                                     QualityType::kASIL_QM,
-                                                                     kInstanceSpecifier}),
+        // Comparing two LolaServiceInstanceDeployments compares based on InstanceId only
+        std::make_pair(ServiceInstanceDeployment{kDummyService,
+                                                 LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                                                 QualityType::kASIL_QM,
+                                                 kInstanceSpecifier},
+                       ServiceInstanceDeployment{kDummyService,
+                                                 LolaServiceInstanceDeployment{LolaServiceInstanceId{2U}},
+                                                 QualityType::kASIL_B,
+                                                 kInstanceSpecifier}),
+        std::make_pair(ServiceInstanceDeployment{kDummyService,
+                                                 LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                                                 QualityType::kASIL_B,
+                                                 kInstanceSpecifier},
+                       ServiceInstanceDeployment{kDummyService,
+                                                 LolaServiceInstanceDeployment{LolaServiceInstanceId{2U}},
+                                                 QualityType::kASIL_QM,
+                                                 kInstanceSpecifier}),
 
-                            // Comparing difference ServiceInstanceDeployment bindings compares based on variant index
-                            std::make_pair(ServiceInstanceDeployment{kDummyService,
-                                                                     LolaServiceInstanceDeployment{2U},
-                                                                     QualityType::kASIL_QM,
-                                                                     kInstanceSpecifier},
-                                           ServiceInstanceDeployment{kDummyService,
-                                                                     score::cpp::blank{},
-                                                                     QualityType::kASIL_B,
-                                                                     kInstanceSpecifier})));
+        // Comparing difference ServiceInstanceDeployment bindings compares based on variant index
+        std::make_pair(
+            ServiceInstanceDeployment{kDummyService,
+                                      LolaServiceInstanceDeployment{LolaServiceInstanceId{2U}},
+                                      QualityType::kASIL_QM,
+                                      kInstanceSpecifier},
+            ServiceInstanceDeployment{kDummyService, score::cpp::blank{}, QualityType::kASIL_B, kInstanceSpecifier})));
 
 }  // namespace
 }  // namespace score::mw::com::impl

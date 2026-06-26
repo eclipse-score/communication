@@ -36,13 +36,13 @@ using Parameters = SctfTestRunner::RunParameters::Parameters;
 
 template <typename ParsedType, typename SavedType = ParsedType>
 auto ParseAndPackage(const std::unordered_map<std::string, std::string>& args, const std::string& name)
-    -> score::cpp::optional<SavedType>
+    -> std::optional<SavedType>
 {
     auto result = GetValueIfProvided<ParsedType>(args, name);
     if (!result.has_value())
     {
         std::cerr << "Optional parameter " << name << " not provided... continuing\n";
-        return score::cpp::optional<SavedType>{};
+        return std::optional<SavedType>{};
     }
     return static_cast<SavedType>(result.value());
 }
@@ -74,7 +74,7 @@ auto ParameterToNameAndDescription(const Parameters parameter) -> std::pair<std:
 }
 
 template <typename T>
-void AssertParameterExists(const score::cpp::optional<T>& value, const Parameters parameter)
+void AssertParameterExists(const std::optional<T>& value, const Parameters parameter)
 {
     if (!value.has_value())
     {
@@ -95,14 +95,14 @@ void AssertParameterInAllowList(const Parameters parameter, const std::vector<Pa
 }  // namespace
 
 SctfTestRunner::RunParameters::RunParameters(const std::vector<Parameters>& allowed_parameters,
-                                             score::cpp::optional<std::chrono::milliseconds> cycle_time,
-                                             score::cpp::optional<std::string> mode,
-                                             score::cpp::optional<std::size_t> num_cycles,
-                                             score::cpp::optional<std::string> service_instance_manifest,
-                                             score::cpp::optional<uid_t> uid,
-                                             score::cpp::optional<std::size_t> num_retries,
-                                             score::cpp::optional<std::chrono::milliseconds> retry_backoff_time,
-                                             score::cpp::optional<bool> should_modify_data_segment) noexcept
+                                             std::optional<std::chrono::milliseconds> cycle_time,
+                                             std::optional<std::string> mode,
+                                             std::optional<std::size_t> num_cycles,
+                                             std::optional<std::string> service_instance_manifest,
+                                             std::optional<uid_t> uid,
+                                             std::optional<std::size_t> num_retries,
+                                             std::optional<std::chrono::milliseconds> retry_backoff_time,
+                                             std::optional<bool> should_modify_data_segment) noexcept
     : allowed_parameters_{allowed_parameters},
       cycle_time_{std::move(cycle_time)},
       mode_{std::move(mode)},
@@ -171,43 +171,43 @@ bool SctfTestRunner::RunParameters::GetShouldModifyDataSegment() const
     return should_modify_data_segment_.value();
 }
 
-score::cpp::optional<std::chrono::milliseconds> SctfTestRunner::RunParameters::GetOptionalCycleTime() const
+std::optional<std::chrono::milliseconds> SctfTestRunner::RunParameters::GetOptionalCycleTime() const
 {
     AssertParameterInAllowList(Parameters::CYCLE_TIME, allowed_parameters_);
     return cycle_time_;
 }
 
-score::cpp::optional<std::string> SctfTestRunner::RunParameters::GetOptionalMode() const
+std::optional<std::string> SctfTestRunner::RunParameters::GetOptionalMode() const
 {
     AssertParameterInAllowList(Parameters::MODE, allowed_parameters_);
     return mode_;
 }
 
-score::cpp::optional<std::size_t> SctfTestRunner::RunParameters::GetOptionalNumCycles() const
+std::optional<std::size_t> SctfTestRunner::RunParameters::GetOptionalNumCycles() const
 {
     AssertParameterInAllowList(Parameters::NUM_CYCLES, allowed_parameters_);
     return num_cycles_;
 }
 
-score::cpp::optional<std::string> SctfTestRunner::RunParameters::GetOptionalServiceInstanceManifest() const
+std::optional<std::string> SctfTestRunner::RunParameters::GetOptionalServiceInstanceManifest() const
 {
     AssertParameterInAllowList(Parameters::SERVICE_INSTANCE_MANIFEST, allowed_parameters_);
     return service_instance_manifest_;
 }
 
-score::cpp::optional<uid_t> SctfTestRunner::RunParameters::GetOptionalUid() const
+std::optional<uid_t> SctfTestRunner::RunParameters::GetOptionalUid() const
 {
     AssertParameterInAllowList(Parameters::UID, allowed_parameters_);
     return uid_;
 }
 
-score::cpp::optional<std::size_t> SctfTestRunner::RunParameters::GetOptionalNumRetries() const
+std::optional<std::size_t> SctfTestRunner::RunParameters::GetOptionalNumRetries() const
 {
     AssertParameterInAllowList(Parameters::NUM_RETRIES, allowed_parameters_);
     return num_retries_;
 }
 
-score::cpp::optional<std::chrono::milliseconds> SctfTestRunner::RunParameters::GetOptionalRetryBackoffTime() const
+std::optional<std::chrono::milliseconds> SctfTestRunner::RunParameters::GetOptionalRetryBackoffTime() const
 {
     AssertParameterInAllowList(Parameters::RETRY_BACKOFF_TIME, allowed_parameters_);
     return retry_backoff_time_;

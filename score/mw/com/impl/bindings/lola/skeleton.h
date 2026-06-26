@@ -44,12 +44,13 @@
 #include "score/memory/shared/lock_file.h"
 
 #include <score/assert.hpp>
-#include <score/optional.hpp>
 
 #include <sys/types.h>
+
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 

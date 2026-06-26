@@ -267,7 +267,7 @@ TYPED_TEST(ProxyEventDeathTest, DieOnUnsubscribingWhileHoldingSamplePtrs)
     Base::mock_proxy_event_.PushFakeSample(3U);
     std::ignore = Base::proxy_event_.Subscribe(max_num_samples);
 
-    score::cpp::optional<SamplePtr<typename Base::SampleType>> held_sample{};
+    std::optional<SamplePtr<typename Base::SampleType>> held_sample{};
     Result<std::size_t> num_samples = Base::proxy_event_.GetNewSamples(
         [&held_sample](SamplePtr<typename Base::SampleType> sample) {
             held_sample = std::move(sample);
@@ -505,7 +505,7 @@ TEST(ProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
     mock_proxy.PushFakeSample(3U);
     EXPECT_CALL(mock_proxy, GetSubscriptionState()).WillOnce(::testing::Return(SubscriptionState::kNotSubscribed));
 
-    score::cpp::optional<SamplePtr<SampleType>> ptr{};
+    std::optional<SamplePtr<SampleType>> ptr{};
     std::ignore = proxy->Subscribe(max_num_samples);
     Result<std::size_t> num_samples = proxy->GetNewSamples(
         [&ptr](SamplePtr<SampleType> new_sample) {

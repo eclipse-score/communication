@@ -22,10 +22,9 @@
 
 #include "score/filesystem/filesystem.h"
 
-#include <score/optional.hpp>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <list>
 #include <memory>
 #include <string>

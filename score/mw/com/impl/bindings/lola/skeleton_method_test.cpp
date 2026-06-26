@@ -130,7 +130,7 @@ class SkeletonMethodFixture : public SkeletonMockedMemoryFixture
                                      make_ServiceIdentifierType("foo"),
                                      QualityType::kASIL_QM,
                                      LolaServiceTypeDeployment{kDummyServiceId},
-                                     LolaServiceInstanceDeployment{kDummyInstanceId}};
+                                     LolaServiceInstanceDeployment{LolaServiceInstanceId{kDummyInstanceId}}};
 
     std::unique_ptr<SkeletonMethod> unit_{nullptr};
 

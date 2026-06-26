@@ -17,7 +17,7 @@
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/test/partial_restart/provider_restart/controller.h"
 
-#include <score/optional.hpp>
+#include <optional>
 
 #include <boost/program_options.hpp>
 #include <cstdio>
@@ -41,7 +41,7 @@ namespace
 ///                         -> create_proxy{false}, kill_provider{true}
 struct TestParameters
 {
-    score::cpp::optional<std::string> service_instance_manifest{};
+    std::optional<std::string> service_instance_manifest{};
     std::size_t number_test_iterations{};
     /// \brief shall a proxy be created on consumer side (which then also tests implicitly proxy-auto-reconnect)
     bool create_proxy{true};
@@ -49,7 +49,7 @@ struct TestParameters
     bool kill_provider{false};
 };
 
-score::cpp::optional<TestParameters> ParseTestParameters(int argc, const char** argv) noexcept
+std::optional<TestParameters> ParseTestParameters(int argc, const char** argv) noexcept
 {
     namespace po = boost::program_options;
 

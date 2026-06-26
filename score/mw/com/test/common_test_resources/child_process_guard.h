@@ -14,7 +14,7 @@
 #ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_CHILD_PROCESS_GUARD_H
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_CHILD_PROCESS_GUARD_H
 
-#include <score/optional.hpp>
+#include <optional>
 
 #include <sys/types.h>
 
@@ -30,7 +30,7 @@ class ChildProcessGuard
     /// \brief Kills the child process, if it is not already dead.
     /// \return true in case the child could be successfully killed or was dead already, false else.
     bool KillChildProcess() noexcept;
-    score::cpp::optional<bool> IsProcessDead(bool should_block) noexcept;
+    std::optional<bool> IsProcessDead(bool should_block) noexcept;
 
     pid_t GetPid() const noexcept
     {
@@ -39,7 +39,7 @@ class ChildProcessGuard
 
   private:
     // pid_ will be filled on construction of the ChildProcessGuard and will be cleared after calling ChildProcessGuard.
-    score::cpp::optional<pid_t> pid_;
+    std::optional<pid_t> pid_;
 };
 
 }  // namespace score::mw::com::test

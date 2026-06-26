@@ -18,9 +18,11 @@
 #include "score/language/safecpp/scoped_function/scope.h"
 
 #include <gtest/gtest.h>
+
 #include <chrono>
 #include <future>
 #include <memory>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -101,7 +103,7 @@ class StateMachineMethodsFixture : public LolaProxyEventResources
         return event_receive_handler;
     }
 
-    const score::cpp::optional<SlotCollector>& GetConstSlotCollector() const
+    const std::optional<SlotCollector>& GetConstSlotCollector() const
     {
         return state_machine_.GetSlotCollectorLockFree();
     }

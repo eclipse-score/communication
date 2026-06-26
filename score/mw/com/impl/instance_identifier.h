@@ -232,7 +232,7 @@ class InstanceIdentifierView final
         return identifier_.Serialize();
     };
 
-    score::cpp::optional<ServiceInstanceId> GetServiceInstanceId() const noexcept;
+    std::optional<ServiceInstanceId> GetServiceInstanceId() const noexcept;
     const ServiceInstanceDeployment& GetServiceInstanceDeployment() const noexcept;
     const ServiceTypeDeployment& GetServiceTypeDeployment() const;
     bool isCompatibleWith(const InstanceIdentifier&) const;

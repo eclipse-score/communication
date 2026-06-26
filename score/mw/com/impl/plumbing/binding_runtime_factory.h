@@ -17,7 +17,7 @@
 #include "score/mw/com/impl/i_binding_runtime.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config.h"
 
-#include <score/optional.hpp>
+#include <optional>
 
 #include "score/concurrency/executor.h"
 
@@ -34,7 +34,7 @@ class BindingRuntimeFactory final
     static std::unordered_map<BindingType, std::unique_ptr<IBindingRuntime>> CreateBindingRuntimes(
         Configuration& configuration,
         concurrency::Executor& long_running_threads,
-        const score::cpp::optional<tracing::TracingFilterConfig>& tracing_filter_config);
+        const std::optional<tracing::TracingFilterConfig>& tracing_filter_config);
 };
 
 }  // namespace score::mw::com::impl

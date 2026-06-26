@@ -72,10 +72,10 @@ LolaMethodInstanceDeployment MakeLolaMethodInstanceDeployment(
 }
 
 LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
-    const score::cpp::optional<LolaServiceInstanceId> instance_id,
-    const score::cpp::optional<std::size_t> shared_memory_size,
-    const score::cpp::optional<std::size_t> control_asil_b_memory_size,
-    const score::cpp::optional<std::size_t> control_qm_memory_size) noexcept
+    const std::optional<LolaServiceInstanceId> instance_id,
+    const std::optional<std::size_t> shared_memory_size,
+    const std::optional<std::size_t> control_asil_b_memory_size,
+    const std::optional<std::size_t> control_qm_memory_size) noexcept
 {
     const LolaEventInstanceDeployment event_instance_deployment_1{MakeLolaEventInstanceDeployment(12U, 13U)};
     const LolaEventInstanceDeployment event_instance_deployment_2{MakeLolaEventInstanceDeployment(14U, 15U)};

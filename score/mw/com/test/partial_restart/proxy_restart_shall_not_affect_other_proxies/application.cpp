@@ -300,7 +300,7 @@ bool DoControllerActions(const TestParameters& test_parameters, score::cpp::stop
     return true;
 }
 
-score::cpp::optional<TestParameters> ParseTestParameters(int argc, const char** argv) noexcept
+std::optional<TestParameters> ParseTestParameters(int argc, const char** argv) noexcept
 {
     namespace po = boost::program_options;
     TestParameters test_parameters{};

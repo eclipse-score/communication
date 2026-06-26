@@ -44,13 +44,13 @@ class TrackerGuardFactory final
     ~TrackerGuardFactory() noexcept;
 
     /// Returns the number of available guards, i.e. the number of times TakeGuard() can be called without getting an
-    /// score::cpp::nullopt.
+    /// std::nullopt.
     ///
     /// \return Number of guards available.
     std::size_t GetNumAvailableGuards() const noexcept;
 
     /// Creates one SampleReferenceGuard, reducing the number of reserved references by one. If no references are left,
-    /// it will return score::cpp::nullopt.
+    /// it will return std::nullopt.
     ///
     /// \return A guard managing a single reference, std::nullopt otherwise.
     std::optional<SampleReferenceGuard> TakeGuard() noexcept;

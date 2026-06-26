@@ -25,8 +25,8 @@
 #include "score/mw/com/runtime_configuration.h"
 
 #include <score/assert.hpp>
-#include <score/optional.hpp>
 #include <score/span.hpp>
+#include <optional>
 
 #include <memory>
 #include <mutex>
@@ -85,7 +85,7 @@ class Runtime final : public IRuntime
     ///          impl::Runtime isn't user facing and just internally used. Having a public ctor eases life
     ///          in so many places!
     /// \param config configuration, which was build up during Runtime::Initialize().
-    explicit Runtime(std::pair<Configuration&&, score::cpp::optional<tracing::TracingFilterConfig>&&> configs);
+    explicit Runtime(std::pair<Configuration&&, std::optional<tracing::TracingFilterConfig>&&> configs);
 
     /// \brief Runtime is not copyable/copy-assignable since it shall have singleton semantic.
     Runtime(const Runtime&) = delete;
@@ -141,7 +141,7 @@ class Runtime final : public IRuntime
 
     /// \brief static configuration set by one of the static Initialize() overloads. Will then finally get moved into
     ///        the singleton instance member configuration_.
-    static score::cpp::optional<Configuration> initialization_config_;
+    static std::optional<Configuration> initialization_config_;
 
     /// \brief configuration
     Configuration configuration_;
@@ -150,7 +150,7 @@ class Runtime final : public IRuntime
     ///
     /// Will be filled only if tracing is enabled in the configuration_ and the tracing json file can be found and
     /// successfully parsed.
-    score::cpp::optional<tracing::TracingFilterConfig> tracing_filter_configuration_;
+    std::optional<tracing::TracingFilterConfig> tracing_filter_configuration_;
 
     /// \brief Runtimes for specific bindings (e.g. LoLa, SomeIP etc.)
     std::unordered_map<BindingType, std::unique_ptr<IBindingRuntime>> binding_runtimes_;

@@ -100,7 +100,7 @@ class CyclicEventSender
                 if (trace_api_mock_context_.last_trace_context_id.has_value())
                 {
                     trace_api_mock_context_.stored_trace_done_cb(trace_api_mock_context_.last_trace_context_id.value());
-                    trace_api_mock_context_.last_trace_context_id = score::cpp::nullopt;
+                    trace_api_mock_context_.last_trace_context_id = std::nullopt;
                 }
             }
         }

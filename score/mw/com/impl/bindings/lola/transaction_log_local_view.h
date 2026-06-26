@@ -25,6 +25,7 @@
 #include <score/span.hpp>
 
 #include <cstdint>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -111,7 +112,7 @@ class TransactionLogLocalView
     /// \brief The max sample count used for the recorded subscription transaction.
     ///
     /// This is set in SubscribeTransactionBegin() and used in the UnsubscribeCallback which is called during Rollback()
-    std::reference_wrapper<score::cpp::optional<TransactionLog::MaxSampleCountType>> subscription_max_sample_count_;
+    std::reference_wrapper<std::optional<TransactionLog::MaxSampleCountType>> subscription_max_sample_count_;
 };
 
 }  // namespace score::mw::com::impl::lola

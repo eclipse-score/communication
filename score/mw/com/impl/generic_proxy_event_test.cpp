@@ -129,7 +129,7 @@ TEST(GenericProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
     EXPECT_CALL(mock_proxy_event, GetSubscriptionState())
         .WillOnce(::testing::Return(SubscriptionState::kNotSubscribed));
 
-    score::cpp::optional<SamplePtr<SampleType>> ptr{};
+    std::optional<SamplePtr<SampleType>> ptr{};
     std::ignore = proxy_event->Subscribe(max_num_samples);
     Result<std::size_t> num_samples = proxy_event->GetNewSamples(
         [&ptr](SamplePtr<SampleType> new_sample) {

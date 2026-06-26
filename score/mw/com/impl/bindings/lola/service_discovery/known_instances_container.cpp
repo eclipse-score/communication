@@ -74,7 +74,7 @@ auto KnownInstancesContainer::GetKnownHandles(
         if (known_service_instances.find(handle_instance_id.value()) != known_service_instances.cend())
         {
             handles.push_back(make_HandleType(enriched_instance_identifier.GetInstanceIdentifier(),
-                                              LolaServiceInstanceId{handle_instance_id.value()}));
+                                              ServiceInstanceId{LolaServiceInstanceId{handle_instance_id.value()}}));
         }
     }
     else
@@ -82,7 +82,7 @@ auto KnownInstancesContainer::GetKnownHandles(
         for (const auto& instance_id : known_service_instances)
         {
             handles.push_back(make_HandleType(enriched_instance_identifier.GetInstanceIdentifier(),
-                                              LolaServiceInstanceId{instance_id}));
+                                              ServiceInstanceId{LolaServiceInstanceId{instance_id}}));
         }
     }
 

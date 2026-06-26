@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <atomic>
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace score::mw::com::impl::lola::test
@@ -78,11 +79,14 @@ ConfigurationStore kConfigStoreFindAny{kInstanceSpecifierString,
                                        make_ServiceIdentifierType("foo"),
                                        QualityType::kASIL_QM,
                                        kServiceId,
-                                       score::cpp::optional<LolaServiceInstanceId>{}};
+                                       std::optional<LolaServiceInstanceId>{}};
 
-HandleType kHandleFindAnyQm1{kConfigStoreFindAny.GetHandle(kConfigStoreQm1.lola_instance_id_.value())};
-HandleType kHandleFindAnyQm2{kConfigStoreFindAny.GetHandle(kConfigStoreQm2.lola_instance_id_.value())};
-HandleType kHandleFindAnyAsilB{kConfigStoreFindAny.GetHandle(kConfigStoreAsilB.lola_instance_id_.value())};
+HandleType kHandleFindAnyQm1{
+    kConfigStoreFindAny.GetHandle(ServiceInstanceId{kConfigStoreQm1.lola_instance_id_.value()})};
+HandleType kHandleFindAnyQm2{
+    kConfigStoreFindAny.GetHandle(ServiceInstanceId{kConfigStoreQm2.lola_instance_id_.value()})};
+HandleType kHandleFindAnyAsilB{
+    kConfigStoreFindAny.GetHandle(ServiceInstanceId{kConfigStoreAsilB.lola_instance_id_.value()})};
 
 using ServiceDiscoveryClientStartFindServiceFixture = ServiceDiscoveryClientFixture;
 TEST_F(ServiceDiscoveryClientStartFindServiceFixture, CallingStartFindServiceReturnsValidResult)

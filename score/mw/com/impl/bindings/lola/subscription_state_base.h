@@ -18,9 +18,8 @@
 
 #include "score/result/result.h"
 
-#include <score/optional.hpp>
-
 #include <cstddef>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -49,8 +48,8 @@ class SubscriptionStateBase
     virtual void SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept = 0;
     virtual void UnsetReceiveHandler() noexcept = 0;
     virtual std::optional<std::uint16_t> GetMaxSampleCount() const noexcept = 0;
-    virtual score::cpp::optional<SlotCollector>& GetSlotCollector() & noexcept = 0;
-    virtual const score::cpp::optional<SlotCollector>& GetSlotCollector() const& noexcept = 0;
+    virtual std::optional<SlotCollector>& GetSlotCollector() & noexcept = 0;
+    virtual const std::optional<SlotCollector>& GetSlotCollector() const& noexcept = 0;
 
     virtual void OnEntry() noexcept {};
     virtual void OnExit() noexcept {};

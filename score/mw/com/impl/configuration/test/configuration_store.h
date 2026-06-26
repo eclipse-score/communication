@@ -28,7 +28,7 @@
 #include "score/mw/com/impl/instance_specifier.h"
 
 #include <score/callback.hpp>
-#include <score/optional.hpp>
+#include <optional>
 
 #include <memory>
 
@@ -42,7 +42,7 @@ class ConfigurationStore final
                        const ServiceIdentifierType service_identifier,
                        const QualityType quality_type,
                        const LolaServiceId lola_service_id,
-                       const score::cpp::optional<LolaServiceInstanceId> lola_instance_id) noexcept;
+                       const std::optional<LolaServiceInstanceId> lola_instance_id) noexcept;
 
     ConfigurationStore(InstanceSpecifier instance_specifier,
                        const ServiceIdentifierType service_identifier,
@@ -52,13 +52,13 @@ class ConfigurationStore final
 
     InstanceIdentifier GetInstanceIdentifier() const noexcept;
     EnrichedInstanceIdentifier GetEnrichedInstanceIdentifier(
-        score::cpp::optional<ServiceInstanceId> instance_id = {}) const noexcept;
-    HandleType GetHandle(score::cpp::optional<ServiceInstanceId> instance_id = {}) const noexcept;
+        std::optional<ServiceInstanceId> instance_id = {}) const noexcept;
+    HandleType GetHandle(std::optional<ServiceInstanceId> instance_id = {}) const noexcept;
 
     ServiceIdentifierType service_identifier_;
     InstanceSpecifier instance_specifier_;
     QualityType quality_type_;
-    score::cpp::optional<LolaServiceInstanceId> lola_instance_id_;
+    std::optional<LolaServiceInstanceId> lola_instance_id_;
 
     LolaServiceTypeDeployment lola_service_type_deployment_;
     LolaServiceInstanceDeployment lola_service_instance_deployment_;

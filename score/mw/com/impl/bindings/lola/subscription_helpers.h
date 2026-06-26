@@ -20,8 +20,8 @@
 #include "score/mw/com/impl/subscription_state.h"
 
 #include <score/callback.hpp>
-#include <score/optional.hpp>
 
+#include <optional>
 #include <string>
 
 namespace score::mw::com::impl::lola
@@ -61,7 +61,7 @@ class EventReceiveHandlerManager
     const QualityType asil_level_;
     const ElementFqId element_fq_id_;
     pid_t event_source_pid_;
-    score::cpp::optional<IMessagePassingService::HandlerRegistrationNoType> registration_number_;
+    std::optional<IMessagePassingService::HandlerRegistrationNoType> registration_number_;
 };
 
 class SubscriptionData
@@ -79,9 +79,9 @@ class SubscriptionData
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::optional<std::uint16_t> max_sample_count_;
+    std::optional<std::uint16_t> max_sample_count_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::optional<SlotCollector> slot_collector_;
+    std::optional<SlotCollector> slot_collector_;
 };
 
 std::string CreateLoggingString(std::string&& string,

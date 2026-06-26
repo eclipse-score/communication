@@ -19,7 +19,7 @@
 #include "score/mw/com/test/common_test_resources/sample_sender_receiver.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 
-#include <score/optional.hpp>
+#include <optional>
 
 #include <iostream>
 #include <vector>
@@ -56,7 +56,7 @@ int main(int argc, const char** argv)
     }
     else if (mode == "recv" || mode == "proxy")
     {
-        const score::cpp::optional<std::chrono::milliseconds> cycle_time = {};
+        const std::optional<std::chrono::milliseconds> cycle_time = {};
         return event_sender_receiver
             .RunAsProxy<score::mw::com::impl::GenericProxy, score::mw::com::impl::GenericProxyEvent>(
                 instance_specifier, cycle_time, num_cycles, std::cref(stop_token));

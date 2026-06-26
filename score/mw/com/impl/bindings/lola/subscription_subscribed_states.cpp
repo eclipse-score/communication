@@ -20,6 +20,7 @@
 
 #include <score/assert.hpp>
 
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -90,7 +91,7 @@ std::optional<std::uint16_t> SubscribedState::GetMaxSampleCount() const noexcept
     return state_machine_.subscription_data_.max_sample_count_.value();
 }
 
-score::cpp::optional<SlotCollector>& SubscribedState::GetSlotCollector() & noexcept
+std::optional<SlotCollector>& SubscribedState::GetSlotCollector() & noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
         state_machine_.subscription_data_.max_sample_count_.has_value(),
@@ -98,7 +99,7 @@ score::cpp::optional<SlotCollector>& SubscribedState::GetSlotCollector() & noexc
     return state_machine_.subscription_data_.slot_collector_;
 }
 
-const score::cpp::optional<SlotCollector>& SubscribedState::GetSlotCollector() const& noexcept
+const std::optional<SlotCollector>& SubscribedState::GetSlotCollector() const& noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
         state_machine_.subscription_data_.max_sample_count_.has_value(),

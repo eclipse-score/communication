@@ -111,7 +111,7 @@ package "Configuration (unchanged core)" {
     - message_rx_queue_size_b : std::int32_t
     - message_tx_queue_size_b : std::int32_t
     - shm_size_calc_mode_ : ShmSizeCalculationMode
-    - application_id_ : score::cpp::optional<uid_t>
+    - application_id_ : std::optional<std::uint32_t>
   }
 
   class "TracingConfiguration" {

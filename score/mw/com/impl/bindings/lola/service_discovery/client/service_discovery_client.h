@@ -30,6 +30,7 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
@@ -216,7 +217,7 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
 
     std::recursive_mutex worker_mutex_;
     concurrency::TaskResult<void> worker_thread_result_;
-    std::unordered_map<InstanceIdentifier, QualityAwareContainer<score::cpp::optional<FlagFile>>> flag_files_;
+    std::unordered_map<InstanceIdentifier, QualityAwareContainer<std::optional<FlagFile>>> flag_files_;
     std::unordered_set<FindServiceHandle> obsolete_search_requests_;
     std::mutex flag_files_mutex_;
 };

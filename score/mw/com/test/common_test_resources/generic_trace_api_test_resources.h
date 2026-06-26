@@ -17,7 +17,7 @@
 #include "score/memory/shared/typedshm/typedshm_wrapper/typed_memory.h"
 
 #include <score/expected.hpp>
-#include <score/optional.hpp>
+#include <optional>
 
 #include <gmock/gmock.h>
 #include <iostream>
@@ -49,7 +49,7 @@ struct GenericTraceApiMockContext
 {
     score::analysis::tracing::TraceLibraryMock generic_trace_api_mock{};
     score::analysis::tracing::TraceDoneCallBackType stored_trace_done_cb{};
-    score::cpp::optional<score::analysis::tracing::TraceContextId> last_trace_context_id{};
+    std::optional<score::analysis::tracing::TraceContextId> last_trace_context_id{};
     std::shared_ptr<TypedMemoryMock> typed_memory_mock{};
 };
 

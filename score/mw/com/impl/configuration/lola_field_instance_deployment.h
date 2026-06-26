@@ -16,7 +16,7 @@
 #include "score/json/json_parser.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 
-#include <score/optional.hpp>
+#include <optional>
 
 #include <cstdint>
 #include <optional>

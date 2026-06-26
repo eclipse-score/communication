@@ -108,7 +108,7 @@ class ProxyMethodFixture : public ProxyMockedMemoryFixture
                                      make_ServiceIdentifierType("foo"),
                                      QualityType::kASIL_QM,
                                      LolaServiceTypeDeployment{42U},
-                                     LolaServiceInstanceDeployment{1U}};
+                                     LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}}};
 
     std::unique_ptr<ProxyMethod> unit_{nullptr};
 

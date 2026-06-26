@@ -23,13 +23,12 @@
 #include "score/mw/com/test/common_test_resources/big_datatype.h"
 #include "score/os/utils/interprocess/interprocess_notification.h"
 
-#include <score/optional.hpp>
-
 #include <stdint.h>
 #include <array>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <ostream>
 
 namespace score::mw::com
@@ -43,7 +42,7 @@ class ProxyTestAttorney
   public:
     explicit ProxyTestAttorney(Proxy& proxy) : proxy_{proxy} {}
 
-    score::cpp::optional<uintptr_t> GetEventMetaInfoAddress(const ElementFqId element_fq_id) const noexcept
+    std::optional<uintptr_t> GetEventMetaInfoAddress(const ElementFqId element_fq_id) const noexcept
     {
         auto* const service_data_storage = static_cast<ServiceDataStorage*>(proxy_.data_->getUsableBaseAddress());
         if (service_data_storage == nullptr)
@@ -92,7 +91,7 @@ class SkeletonAttorney
   public:
     explicit SkeletonAttorney(Skeleton& skeleton) : skeleton_{skeleton} {}
 
-    score::cpp::optional<uintptr_t> GetEventMetaInfoAddress(const ElementFqId element_fq_id) const noexcept
+    std::optional<uintptr_t> GetEventMetaInfoAddress(const ElementFqId element_fq_id) const noexcept
     {
         SkeletonMemoryManagerTestAttorney skeleton_memory_manager_attorney{skeleton_.memory_manager_};
 

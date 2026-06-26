@@ -91,14 +91,14 @@ class ProxyBindingFactoryCreateFixture : public lola::ProxyMockedMemoryFixture
 
     std::unique_ptr<ProxyBinding> created_binding_{nullptr};
 };
-score::cpp::optional<LolaServiceInstanceId> GetInstanceId(score::mw::com::impl::InstanceIdentifier identifier)
+std::optional<LolaServiceInstanceId> GetInstanceId(score::mw::com::impl::InstanceIdentifier identifier)
 {
     const InstanceIdentifierView identifier_view{identifier};
     const auto* const instance_deployment =
         std::get_if<LolaServiceInstanceDeployment>(&identifier_view.GetServiceInstanceDeployment().bindingInfo_);
     if (instance_deployment == nullptr)
     {
-        return score::cpp::nullopt;
+        return std::nullopt;
     }
     return instance_deployment->instance_id_;
 }

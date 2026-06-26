@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <exception>
 #include <mutex>
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -165,7 +166,7 @@ auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_iden
         }
     }
 
-    QualityAwareContainer<score::cpp::optional<FlagFile>> flag_files{};
+    QualityAwareContainer<std::optional<FlagFile>> flag_files{};
     // Suppress "AUTOSAR C++14 M6-4-3" rule finding. This rule declares: "A switch statement shall be
     // a well-formed switch statement".
     // We don't need a break statement at each case as we use fallthrough and return.

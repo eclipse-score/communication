@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <future>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -294,7 +295,7 @@ TEST_F(ProxyCreationDeathTest, CreatingProxyWithoutLolaServiceInstanceIdTerminat
     // Given a deployment information which contains a lola instance deployment which has no instance ID
     const ServiceInstanceDeployment service_instance_deployment_without_instance_id{
         service,
-        LolaServiceInstanceDeployment{score::cpp::optional<LolaServiceInstanceId>{}},
+        LolaServiceInstanceDeployment{std::optional<LolaServiceInstanceId>{}},
         QualityType::kASIL_QM,
         kInstanceSpecifier};
     const auto identifier =

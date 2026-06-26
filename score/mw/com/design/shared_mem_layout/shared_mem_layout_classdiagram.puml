@@ -90,7 +90,7 @@ class "lola::EventSubscriptionControl<>" as EventSubscriptionControl <<Shared Me
 }
 
 class "lola::UidPidMapping" <<Shared Memory>> {
-  +RegisterPid(const uid_t uid, const pid_t pid) : score::cpp::optional<pid_t>
+  +RegisterPid(const uid_t uid, const pid_t pid) : std::optional<pid_t>
   -mapping_entries_ : score::containers::DynamicArray<UidPidMappingEntry, mapping_entry_alloc>
 }
 
@@ -114,7 +114,7 @@ class TransactionLog {
 class "lola::TransactionLog" <<Shared Memory>> {
   -reference_count_slots_ : std::vector<TransactionLogSlot, memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogSlot>>
   -subscribe_transactions_ : TransactionLogSlot
-  -subscription_max_sample_count_ : score::cpp::optional<MaxSampleCountType>
+  -subscription_max_sample_count_ : std::optional<std::uint16_t>
 }
 
 class "lola::TransactionLogSlot" <<Shared Memory>> {

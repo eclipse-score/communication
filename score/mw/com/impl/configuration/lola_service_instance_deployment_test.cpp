@@ -332,14 +332,14 @@ using LolaServiceInstanceDeploymentEqualityFixture = ConfigurationStructsFixture
 TEST_F(LolaServiceInstanceDeploymentEqualityFixture, ComparingSameDeploymentsReturnsTrue)
 {
     // Given two LolaServiceInstanceDeployments containing the same data
-    const LolaServiceInstanceDeployment unit{1U,
+    const LolaServiceInstanceDeployment unit{LolaServiceInstanceId{1U},
                                              {{"same_event_name", kDummyLolaEventInstanceDeployment}},
                                              {{"same_field_name", kDummyLolaFieldInstanceDeployment}},
                                              {},
                                              true,
                                              kAllowedConsumers,
                                              kAllowedProviders};
-    const LolaServiceInstanceDeployment unit2{1U,
+    const LolaServiceInstanceDeployment unit2{LolaServiceInstanceId{1U},
                                               {{"same_event_name", kDummyLolaEventInstanceDeployment}},
                                               {{"same_field_name", kDummyLolaFieldInstanceDeployment}},
                                               {},
@@ -375,43 +375,70 @@ INSTANTIATE_TEST_CASE_P(
     LolaServiceInstanceDeploymentEqualityParamaterisedFixture,
     LolaServiceInstanceDeploymentEqualityParamaterisedFixture,
     ::testing::Values(
-        std::make_pair(LolaServiceInstanceDeployment{1U}, LolaServiceInstanceDeployment{2U}),
+        std::make_pair(LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                       LolaServiceInstanceDeployment{LolaServiceInstanceId{2U}}),
 
-        std::make_pair(LolaServiceInstanceDeployment{1U,
+        std::make_pair(LolaServiceInstanceDeployment{LolaServiceInstanceId{1U},
                                                      {{"first_event_name", kDummyLolaEventInstanceDeployment}},
                                                      {{"same_field_name", kDummyLolaFieldInstanceDeployment}}},
-                       LolaServiceInstanceDeployment{1U,
+                       LolaServiceInstanceDeployment{LolaServiceInstanceId{1U},
                                                      {{"second_event_name", kDummyLolaEventInstanceDeployment}},
                                                      {{"same_field_name", kDummyLolaFieldInstanceDeployment}}}),
 
-        std::make_pair(LolaServiceInstanceDeployment{1U,
+        std::make_pair(LolaServiceInstanceDeployment{LolaServiceInstanceId{1U},
                                                      {{"same_event_name", kDummyLolaEventInstanceDeployment}},
                                                      {{"same_field_name", kDummyLolaFieldInstanceDeployment}}},
-                       LolaServiceInstanceDeployment{1U,
+                       LolaServiceInstanceDeployment{LolaServiceInstanceId{1U},
                                                      {{"same_event_name", kDummyLolaEventInstanceDeployment2}},
                                                      {{"same_field_name", kDummyLolaFieldInstanceDeployment}}}),
 
-        std::make_pair(LolaServiceInstanceDeployment{1U,
+        std::make_pair(LolaServiceInstanceDeployment{LolaServiceInstanceId{1U},
                                                      {{"same_event_name", kDummyLolaEventInstanceDeployment}},
                                                      {{"same_field_name", kDummyLolaFieldInstanceDeployment}}},
-                       LolaServiceInstanceDeployment{1U,
+                       LolaServiceInstanceDeployment{LolaServiceInstanceId{1U},
                                                      {{"same_event_name", kDummyLolaEventInstanceDeployment}},
                                                      {{"same_field_name", kDummyLolaFieldInstanceDeployment2}}}),
 
-        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, {}, true},
-                       LolaServiceInstanceDeployment{1U, {}, {}, {}, false}),
+        std::make_pair(LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}, {}, {}, {}, true},
+                       LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}, {}, {}, {}, false}),
 
-        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, {}, true, kAllowedConsumers2, kAllowedProviders},
-                       LolaServiceInstanceDeployment{1U, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders}),
+        std::make_pair(LolaServiceInstanceDeployment{LolaServiceInstanceId{1U},
+                                                     {},
+                                                     {},
+                                                     {},
+                                                     true,
+                                                     kAllowedConsumers2,
+                                                     kAllowedProviders},
+                       LolaServiceInstanceDeployment{LolaServiceInstanceId{1U},
+                                                     {},
+                                                     {},
+                                                     {},
+                                                     true,
+                                                     kAllowedConsumers,
+                                                     kAllowedProviders}),
 
-        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders2},
-                       LolaServiceInstanceDeployment{1U, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders})));
+        std::make_pair(LolaServiceInstanceDeployment{LolaServiceInstanceId{1U},
+                                                     {},
+                                                     {},
+                                                     {},
+                                                     true,
+                                                     kAllowedConsumers,
+                                                     kAllowedProviders2},
+                       LolaServiceInstanceDeployment{LolaServiceInstanceId{1U},
+                                                     {},
+                                                     {},
+                                                     {},
+                                                     true,
+                                                     kAllowedConsumers,
+                                                     kAllowedProviders})));
 
 TEST(LolaServiceInstanceDeploymentLessThan, DeploymentsComparedBasedOnInstanceId)
 {
     // Given 2 LolaServiceInstanceDeployments containing different values
-    const LolaServiceInstanceDeployment lhs{1U, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders};
-    const LolaServiceInstanceDeployment rhs{2U, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders};
+    const LolaServiceInstanceDeployment lhs{
+        LolaServiceInstanceId{1U}, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders};
+    const LolaServiceInstanceDeployment rhs{
+        LolaServiceInstanceId{2U}, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders};
 
     // When comparing the two
     // Then the result is based on the instance IDs

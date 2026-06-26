@@ -31,7 +31,6 @@
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include <score/assert.hpp>
-#include <score/optional.hpp>
 #include <score/utility.hpp>
 
 #include <atomic>

@@ -20,8 +20,10 @@
 #include "score/mw/com/impl/proxy_binding.h"
 
 #include <gtest/gtest.h>
+
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace score::mw::com::impl::lola
@@ -81,7 +83,7 @@ class StateMachineEventsFixture : public LolaProxyEventResources
         EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::SUBSCRIBED_STATE);
     }
 
-    score::cpp::optional<std::reference_wrapper<TransactionLog>> GetTransactionLog(
+    std::optional<std::reference_wrapper<TransactionLog>> GetTransactionLog(
         const TransactionLogId& transaction_log_id) noexcept
     {
         auto& transaction_log_set = proxy_->GetTransactionLogSet(element_fq_id_);

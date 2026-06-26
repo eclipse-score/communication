@@ -15,7 +15,7 @@
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 
-#include <score/optional.hpp>
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl

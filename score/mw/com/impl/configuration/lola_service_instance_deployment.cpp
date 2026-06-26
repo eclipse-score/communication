@@ -138,7 +138,7 @@ bool operator<(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstan
 }
 
 // In this case the constructor delegation does not provide additional code structuring because of the
-// score::cpp::optional By adding a third private constructor additional complexity would be introduced
+// std::optional By adding a third private constructor additional complexity would be introduced
 //
 // See Note 1 for autosar_cpp14_a15_5_3_violation.
 // coverity[autosar_cpp14_a12_1_5_violation]
@@ -164,7 +164,7 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::json::
     const auto instance_id_it = json_object.find(kInstanceIdKeyInstDepl);
     if (instance_id_it != json_object.end())
     {
-        instance_id_ = instance_id_it->second.As<json::Object>().value();
+        instance_id_ = LolaServiceInstanceId{instance_id_it->second.As<json::Object>().value()};
     }
 
     const auto shared_memory_size_it = json_object.find(kSharedMemorySizeKeyInstDepl);
@@ -191,7 +191,7 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::json::
 // Justification: This constructor is used by other constructors for delegation.
 // coverity[autosar_cpp14_a12_1_5_violation]
 LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(
-    const score::cpp::optional<LolaServiceInstanceId> instance_id,
+    const std::optional<LolaServiceInstanceId> instance_id,
     EventInstanceMapping events,
     FieldInstanceMapping fields,
     MethodInstanceMapping methods,

@@ -16,11 +16,11 @@
 #include "score/concurrency/notification.h"
 #include <score/assert.hpp>
 #include <score/hash.hpp>
-#include <score/optional.hpp>
 
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -142,19 +142,18 @@ class SampleReceiver
     }
 
     const score::mw::com::InstanceSpecifier& instance_specifier_;
-    score::cpp::optional<std::uint32_t> last_received_;
+    std::optional<std::uint32_t> last_received_;
     std::size_t received_;
     bool check_sample_hash_;
 };
 
-score::cpp::optional<std::reference_wrapper<impl::ProxyEvent<MapApiLanesStamped>>> GetMapApiLanesStampedProxyEvent(
+std::optional<std::reference_wrapper<impl::ProxyEvent<MapApiLanesStamped>>> GetMapApiLanesStampedProxyEvent(
     IpcBridgeProxy& proxy)
 {
     return proxy.map_api_lanes_stamped_;
 }
 
-score::cpp::optional<std::reference_wrapper<GenericProxyEvent>> GetMapApiLanesStampedProxyEvent(
-    GenericProxy& generic_proxy)
+std::optional<std::reference_wrapper<GenericProxyEvent>> GetMapApiLanesStampedProxyEvent(GenericProxy& generic_proxy)
 {
     const std::string event_name{"map_api_lanes_stamped"};
     auto event_it = generic_proxy.GetEvents().find(event_name);
@@ -300,7 +299,7 @@ Result<SampleAllocateePtr<void>> PrepareMapLaneSample(GenericSkeletonEvent& even
 
 template <typename ProxyType, typename ProxyEventType>
 int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
-                                    const score::cpp::optional<std::chrono::milliseconds> cycle_time,
+                                    const std::optional<std::chrono::milliseconds> cycle_time,
                                     const std::size_t num_cycles,
                                     bool try_writing_to_data_segment,
                                     bool check_sample_hash)
@@ -554,13 +553,13 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
 
 template int EventSenderReceiver::RunAsProxy<IpcBridgeProxy, impl::ProxyEvent<MapApiLanesStamped>>(
     const score::mw::com::InstanceSpecifier&,
-    const score::cpp::optional<std::chrono::milliseconds>,
+    const std::optional<std::chrono::milliseconds>,
     const std::size_t,
     bool,
     bool);
 template int EventSenderReceiver::RunAsProxy<impl::GenericProxy, impl::GenericProxyEvent>(
     const score::mw::com::InstanceSpecifier&,
-    const score::cpp::optional<std::chrono::milliseconds>,
+    const std::optional<std::chrono::milliseconds>,
     const std::size_t,
     bool,
     bool);

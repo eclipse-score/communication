@@ -58,9 +58,9 @@ EnrichedInstanceIdentifier kEnrichedInstanceIdentifier3{kInstanceIdentifier3};
 EnrichedInstanceIdentifier kEnrichedInstanceIdentifierAny{kInstanceIdentifierAny};
 HandleType kHandleType1{make_HandleType(kInstanceIdentifier1)};
 HandleType kHandleType2{make_HandleType(kInstanceIdentifier2)};
-HandleType kHandleTypeAny1{make_HandleType(kInstanceIdentifierAny, kInstanceId1)};
-HandleType kHandleTypeAny2{make_HandleType(kInstanceIdentifierAny, kInstanceId2)};
-HandleType kHandleTypeAny3{make_HandleType(kInstanceIdentifierAny, kInstanceId3)};
+HandleType kHandleTypeAny1{make_HandleType(kInstanceIdentifierAny, ServiceInstanceId{kInstanceId1})};
+HandleType kHandleTypeAny2{make_HandleType(kInstanceIdentifierAny, ServiceInstanceId{kInstanceId2})};
+HandleType kHandleTypeAny3{make_HandleType(kInstanceIdentifierAny, ServiceInstanceId{kInstanceId3})};
 
 class KnownInstancesContainerTest : public ::testing::Test
 {

@@ -18,7 +18,7 @@
 #include "score/mw/com/impl/instance_identifier.h"
 
 #include <score/assert.hpp>
-#include <score/optional.hpp>
+#include <optional>
 
 #include <utility>
 
@@ -52,7 +52,7 @@ class EnrichedInstanceIdentifier final
     // coverity[autosar_cpp14_a12_6_1_violation]
     EnrichedInstanceIdentifier(InstanceIdentifier instance_identifier, const ServiceInstanceId instance_id) noexcept
         : EnrichedInstanceIdentifier(
-              score::cpp::optional<ServiceInstanceId>{instance_id},
+              std::optional<ServiceInstanceId>{instance_id},
               InstanceIdentifierView{instance_identifier}.GetServiceInstanceDeployment().asilLevel_,
               instance_identifier)
     {
@@ -79,7 +79,7 @@ class EnrichedInstanceIdentifier final
     {
     }
 
-    EnrichedInstanceIdentifier(score::cpp::optional<ServiceInstanceId> instance_id,
+    EnrichedInstanceIdentifier(std::optional<ServiceInstanceId> instance_id,
                                QualityType quality_type,
                                InstanceIdentifier instance_identifier) noexcept
         : instance_identifier_{std::move(instance_identifier)}, instance_id_{instance_id}, quality_type_{quality_type}
@@ -97,19 +97,19 @@ class EnrichedInstanceIdentifier final
     // The GetBindingSpecificServiceId class is a templated function, each translation unit will instantiate
     // it separately. This can not be avoided.
     // coverity[autosar_cpp14_m3_2_2_violation]
-    score::cpp::optional<typename ServiceTypeDeployment::ServiceId> GetBindingSpecificServiceId() const noexcept
+    std::optional<typename ServiceTypeDeployment::ServiceId> GetBindingSpecificServiceId() const noexcept
     {
         const InstanceIdentifierView instance_identifier_view{instance_identifier_};
         const auto* service_deployment =
             std::get_if<ServiceTypeDeployment>(&(instance_identifier_view.GetServiceTypeDeployment().binding_info_));
         if (service_deployment == nullptr)
         {
-            return score::cpp::nullopt;
+            return std::nullopt;
         }
         return service_deployment->service_id_;
     }
 
-    const score::cpp::optional<ServiceInstanceId>& GetInstanceId() const& noexcept
+    const std::optional<ServiceInstanceId>& GetInstanceId() const& noexcept
     {
         return instance_id_;
     }
@@ -119,17 +119,17 @@ class EnrichedInstanceIdentifier final
     // The GetBindingSpecificInstanceId class is a templated function, each translation unit will instantiate
     // it separately. This can not be avoided.
     // coverity[autosar_cpp14_m3_2_2_violation]
-    score::cpp::optional<typename ServiceInstanceId::InstanceId> GetBindingSpecificInstanceId() const noexcept
+    std::optional<typename ServiceInstanceId::InstanceId> GetBindingSpecificInstanceId() const noexcept
     {
         if (!instance_id_.has_value())
         {
-            return score::cpp::nullopt;
+            return std::nullopt;
         }
 
         const auto* instance_id = std::get_if<ServiceInstanceId>(&(instance_id_->binding_info_));
         if (instance_id == nullptr)
         {
-            return score::cpp::nullopt;
+            return std::nullopt;
         }
         return instance_id->GetId();
     }
@@ -141,7 +141,7 @@ class EnrichedInstanceIdentifier final
 
   private:
     InstanceIdentifier instance_identifier_;
-    score::cpp::optional<ServiceInstanceId> instance_id_;
+    std::optional<ServiceInstanceId> instance_id_;
     QualityType quality_type_;
 };
 

@@ -15,7 +15,7 @@
 #include "score/mw/com/test/find_any_semantics/test_datatype.h"
 #include "score/mw/com/types.h"
 
-#include <score/optional.hpp>
+#include <optional>
 
 #include <iostream>
 #include <utility>
@@ -80,7 +80,7 @@ int run_client(const std::size_t num_retries, const std::chrono::milliseconds re
             return -3;
         }
         auto& lola_proxy = lola_proxy_result.value();
-        score::cpp::optional<std::int32_t> received_value;
+        std::optional<std::int32_t> received_value;
 
         const auto subscribe_result = lola_proxy.test_field.Subscribe(kMaxNumSamples);
         if (!subscribe_result.has_value())

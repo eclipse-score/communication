@@ -971,7 +971,7 @@ TYPED_TEST(ProxyEventBaseGetFreeSampleCountFixture, GetFreeSampleCountReturnsCou
     EXPECT_EQ(received_free_sample_count, free_sample_count);
 
     // and when allocating 2 additional slots
-    score::cpp::optional<TrackerGuardFactory> tracker_guard_factory{tracker.Allocate(2)};
+    std::optional<TrackerGuardFactory> tracker_guard_factory{tracker.Allocate(2)};
 
     // and when calling GetFreeSampleCount
     // Then the free sample count should be updated
