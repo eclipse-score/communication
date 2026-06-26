@@ -101,6 +101,7 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
     const std::string_view method_name,
     MethodType method_type) noexcept
 {
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(parent_binding != nullptr, "Parent binding must not be null.");
     auto method_name_str = std::string{method_name};
 
     using LambdaReturnType = std::unique_ptr<ProxyMethodBinding>;

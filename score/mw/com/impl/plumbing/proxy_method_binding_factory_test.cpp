@@ -149,7 +149,7 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructProxyMethod)
     ASSERT_NE(proxy_method, nullptr);
 }
 
-TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotCreateProxyServiceWhenProxyBindingIsNullptr)
+TYPED_TEST(ProxyMethodFactoryTypedFixture, CreatingProxyServiceWhenProxyBindingIsNullptrTerminates)
 {
     const auto handle = this->GetValidLoLaHandle();
 
@@ -157,12 +157,11 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotCreateProxyServiceWhenProxyBind
     auto proxy_binding{nullptr};
 
     // When creating a ProxyMethod using MethodBindingFactory
+    // Then the program terminates
     using MethodSignature = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
-
-    // Then a nullptr is returned
-    ASSERT_EQ(proxy_method, nullptr);
+    EXPECT_DEATH(std::ignore = ProxyMethodBindingFactory<MethodSignature>::Create(
+                     handle, proxy_binding, kDummyMethodName, MethodType::kMethod),
+                 ".*");
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
