@@ -80,7 +80,8 @@ class ProxyBaseFixture : public ::testing::Test
 
     ProxyBaseFixture& WithAProxyBaseWithMockBinding(const HandleType& handle_type)
     {
-        base_proxy_ = std::make_unique<ProxyBase>(std::move(proxy_binding_mock_), handle_type);
+        base_proxy_ =
+            std::make_unique<ProxyBase>(std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_), handle_type);
         return *this;
     }
 
@@ -100,7 +101,7 @@ class ProxyBaseFixture : public ::testing::Test
     RuntimeMockGuard runtime_mock_guard_{};
     ServiceDiscoveryMock service_discovery_mock_{};
 
-    std::unique_ptr<mock_binding::Proxy> proxy_binding_mock_{nullptr};
+    mock_binding::Proxy proxy_binding_mock_{};
     std::unique_ptr<ProxyBase> base_proxy_{nullptr};
 
     safecpp::Scope<> event_receive_handler_scope_{};
@@ -119,12 +120,16 @@ TEST_F(ProxyBaseFixture, GetImplReturnsProxyBindingPassedToConstructor)
     // Given a ProxyBase with a mock binding and valid handle
     WithAProxyBaseWithMockBinding(handle_);
 
+    // Expecting that IsEventProvided is called on the Proxy binding that was passed to the constructor
+    EXPECT_CALL(proxy_binding_mock_, IsEventProvided("test_event")).WillOnce(Return(true));
+
     // When getting the proxy binding
     auto* proxy_binding = ProxyBaseView{*base_proxy_}.GetBinding();
 
-    // Then the returned binding will have the same address as the binding provided to the constructor of ProxyBase
-    const auto* const proxy_binding_address = proxy_binding_mock_.get();
-    EXPECT_EQ(proxy_binding, proxy_binding_address);
+    // Then the returned binding will be the same one that was provided to the constructor (checked by calling a
+    // function on the returned binding and checking that the mock was called)
+    ASSERT_NE(proxy_binding, nullptr);
+    proxy_binding->IsEventProvided("test_event");
 }
 
 TEST_F(ProxyBaseFixture, StoredHandleTypeEqualToSuppliedOne)
