@@ -14,40 +14,40 @@
 # Reproduces score_cpp_policies' sanitizers.bazelrc since it can't be imported across repos yet.
 
 build:with_debug_symbols --features=debug_symbols
+
+# todo: score_cpp_policies' debug_symbols feature only covers -g1; extract these
+# remaining flags into a feature too once possible (--strip=never can't be, it's
+# a Bazel build setting, not a compiler arg).
 build:with_debug_symbols --cxxopt -gline-tables-only
 build:with_debug_symbols --cxxopt -gcolumn-info
 build:with_debug_symbols --strip=never
 
-build:asan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:asan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:sanitizer_common --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+build:sanitizer_common --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:sanitizer_common --config=with_debug_symbols
+
+build:asan --config=sanitizer_common
 build:asan --features=score_asan
 build:asan --@score_cpp_policies//sanitizers/flags:asan=True
 build:asan --platform_suffix=asan
-build:asan --config=with_debug_symbols
 test:asan  --run_under=@score_cpp_policies//sanitizers:wrapper
 
-build:ubsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:ubsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:ubsan --config=sanitizer_common
 build:ubsan --features=score_ubsan
 build:ubsan --@score_cpp_policies//sanitizers/flags:ubsan=True
 build:ubsan --platform_suffix=ubsan
-build:ubsan --config=with_debug_symbols
 test:ubsan  --run_under=@score_cpp_policies//sanitizers:wrapper
 
-build:lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:lsan --config=sanitizer_common
 build:lsan --features=score_lsan
 build:lsan --@score_cpp_policies//sanitizers/flags:lsan=True
 build:lsan --platform_suffix=lsan
-build:lsan --config=with_debug_symbols
 test:lsan  --run_under=@score_cpp_policies//sanitizers:wrapper
 
-build:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:tsan --config=sanitizer_common
 build:tsan --features=score_tsan
 build:tsan --@score_cpp_policies//sanitizers/flags:tsan=True
 build:tsan --platform_suffix=tsan
-build:tsan --config=with_debug_symbols
 test:tsan  --run_under=@score_cpp_policies//sanitizers:wrapper
 
 build:asan_ubsan_lsan --config=asan

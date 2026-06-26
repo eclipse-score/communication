@@ -53,13 +53,13 @@ def integration_test(name, srcs, filesystem, **kwargs):
         }),
         os = "linux",
         env = select({
-            "@score_cpp_policies//sanitizers/flags:any_sanitizer": "//quality/integration_testing/sanitizer_support:merged_absolute_env",
+            "@score_cpp_policies//sanitizers/flags:any_sanitizer": "//quality/sanitizer:merged_absolute_env",
             "//conditions:default": None,
         }),
         tars = [
             "_oci_filesystem_{}".format(name),
         ] + select({
-            "@score_cpp_policies//sanitizers/flags:any_sanitizer": ["//quality/integration_testing/sanitizer_support:suppressions_pkg"],
+            "@score_cpp_policies//sanitizers/flags:any_sanitizer": ["//quality/sanitizer:suppressions_pkg"],
             "//conditions:default": [],
         }) + [
             "@ubuntu24_04_integration_testing//:ubuntu24_04_integration_testing",

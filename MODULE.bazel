@@ -223,12 +223,12 @@ apt.sysroot(
 apt.lock(into = ":rules_distroless.lock.json")
 use_repo(apt, "ubuntu24_04_integration_testing", "ubuntu24_04_sysroot_amd64", "ubuntu24_04_sysroot_arm64")
 
-# Pinned to a fork until the suppressions filegroup export lands upstream.
+# No BCR release covers this yet (only tag 0.0.1, which predates the sanitizer split).
 bazel_dep(name = "score_cpp_policies", version = "0.0.0", dev_dependency = True)
 git_override(
     module_name = "score_cpp_policies",
-    commit = "f39a3c239cd232c5f177ed844b0369f459f29367",
-    remote = "https://github.com/RSingh1511/score_cpp_policies.git",
+    commit = "cdfd6ac4217b9e7413fa1e959ccb857bf803165f",
+    remote = "https://github.com/eclipse-score/score_cpp_policies.git",
 )
 
 # extra_known_features below requires toolchains_llvm >= 1.7.0.
