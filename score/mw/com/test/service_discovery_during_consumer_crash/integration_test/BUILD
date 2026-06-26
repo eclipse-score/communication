@@ -23,5 +23,5 @@ integration_test(
     srcs = ["test_service_discovery_during_consumer_crash.py"],
     filesystem = "//score/mw/com/test/service_discovery_during_consumer_crash:service_discovery_during_consumer_crash-pkg",
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
-    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )

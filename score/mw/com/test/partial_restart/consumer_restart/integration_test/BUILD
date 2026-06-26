@@ -22,7 +22,7 @@ integration_test(
     ],
     filesystem = "//score/mw/com/test/partial_restart/consumer_restart:consumer_restart-pkg",
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
-    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
 
 integration_test(
@@ -39,5 +39,5 @@ integration_test(
     # for event notifications that were never registered.
     flaky = True,
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
-    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )

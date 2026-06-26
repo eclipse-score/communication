@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,35 +11,50 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# todo: Extract to toolchain feature once possible
+# Reproduces score_cpp_policies' sanitizers.bazelrc since it can't be imported across repos yet.
 
-test:with_debug_symbols --cxxopt -gline-tables-only
-test:with_debug_symbols --cxxopt -gcolumn-info
-test:with_debug_symbols --strip=never
+build:with_debug_symbols --features=debug_symbols
+build:with_debug_symbols --cxxopt -gline-tables-only
+build:with_debug_symbols --cxxopt -gcolumn-info
+build:with_debug_symbols --strip=never
 
-test:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-test:asan_ubsan_lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-test:asan_ubsan_lsan --config=with_debug_symbols
-test:asan_ubsan_lsan --run_under=//quality/sanitizer:wrapper
-test:asan_ubsan_lsan --//quality/sanitizer/flags:sanitizer=asan_ubsan_lsan
-test:asan_ubsan_lsan --cxxopt -fsanitize=undefined,address,leak
-test:asan_ubsan_lsan --cxxopt -fno-omit-frame-pointer
-test:asan_ubsan_lsan --cxxopt -fno-common
-test:asan_ubsan_lsan --linkopt -fsanitize=undefined,address,leak
-test:asan_ubsan_lsan --linkopt -fsanitize-link-c++-runtime
-test:asan_ubsan_lsan --platform_suffix=asan_ubsan
+build:asan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+build:asan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:asan --features=score_asan
+build:asan --@score_cpp_policies//sanitizers/flags:asan=True
+build:asan --platform_suffix=asan
+build:asan --config=with_debug_symbols
+test:asan  --run_under=@score_cpp_policies//sanitizers:wrapper
 
-test:asan --config=asan_ubsan_lsan
-test:ubsan --config=asan_ubsan_lsan
-test:lsan --config=asan_ubsan_lsan
+build:ubsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+build:ubsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:ubsan --features=score_ubsan
+build:ubsan --@score_cpp_policies//sanitizers/flags:ubsan=True
+build:ubsan --platform_suffix=ubsan
+build:ubsan --config=with_debug_symbols
+test:ubsan  --run_under=@score_cpp_policies//sanitizers:wrapper
 
-test:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-test:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-test:tsan --config=with_debug_symbols
-test:tsan --run_under=//quality/sanitizer:wrapper
-test:tsan --//quality/sanitizer/flags:sanitizer=tsan
-test:tsan --cxxopt -fsanitize=thread
-test:tsan --cxxopt -O1
-test:tsan --linkopt -fsanitize=thread
-test:tsan --linkopt -fsanitize-link-c++-runtime
-test:tsan --platform_suffix=tsan
+build:lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+build:lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:lsan --features=score_lsan
+build:lsan --@score_cpp_policies//sanitizers/flags:lsan=True
+build:lsan --platform_suffix=lsan
+build:lsan --config=with_debug_symbols
+test:lsan  --run_under=@score_cpp_policies//sanitizers:wrapper
+
+build:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+build:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:tsan --features=score_tsan
+build:tsan --@score_cpp_policies//sanitizers/flags:tsan=True
+build:tsan --platform_suffix=tsan
+build:tsan --config=with_debug_symbols
+test:tsan  --run_under=@score_cpp_policies//sanitizers:wrapper
+
+build:asan_ubsan_lsan --config=asan
+build:asan_ubsan_lsan --config=ubsan
+build:asan_ubsan_lsan --config=lsan
+build:asan_ubsan_lsan --platform_suffix=asan_ubsan_lsan
+
+build:tsan_ubsan --config=tsan
+build:tsan_ubsan --config=ubsan
+build:tsan_ubsan --platform_suffix=tsan_ubsan
