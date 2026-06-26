@@ -122,17 +122,18 @@ class ProxyCreationFixture : public ::testing::Test
             .WillByDefault(Return(ByMove(std::move(proxy_binding_mock_ptr))));
 
         // By default the Create call on the ProxyEventBindingFactory returns valid bindings.
-        ON_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName, ServiceElementType::EVENT))
+        ON_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_,
+                Create(_, _, kEventName, ServiceElementType::EVENT))
             .WillByDefault(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
 
         // By default the Create call on the ProxyFieldBindingFactory returns valid bindings.
-        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName))
             .WillByDefault(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
 
         // By default the Create call on the ProxyFieldBindingFactory returns valid method bindings.
-        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, kFieldName))
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, _, kFieldName))
             .WillByDefault(Return(ByMove(std::move(proxy_field_get_binding_mock_ptr))));
-        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateSetMethodBinding(_, kFieldName))
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateSetMethodBinding(_, _, kFieldName))
             .WillByDefault(Return(ByMove(std::move(proxy_field_set_binding_mock_ptr))));
 
         // By default the Create call on the ProxyMethodBindingFactory returns valid bindings.
@@ -207,9 +208,10 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
     // Expecting that valid bindings are created for the Proxy, ProxyEvent and ProxyField
     EXPECT_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(handle_))
         .WillRepeatedly(Return(ByMove(std::move(proxy_binding_mock_ptr))));
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName, ServiceElementType::EVENT))
+    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_,
+                Create(_, _, kEventName, ServiceElementType::EVENT))
         .WillRepeatedly(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName))
         .WillRepeatedly(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
     EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kMethodName, _))
         .WillRepeatedly(Return(ByMove(std::move(proxy_method_binding_mock_ptr))));
@@ -253,7 +255,8 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Expecting that the Create call on the ProxyEventBindingFactory returns an invalid binding for the event.
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName, ServiceElementType::EVENT))
+    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_,
+                Create(_, _, kEventName, ServiceElementType::EVENT))
         .WillOnce(Return(ByMove(nullptr)));
 
     // When creating a MyProxy
@@ -275,7 +278,7 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Expecting that the Create call on the ProxyFieldBindingFactory returns an invalid binding for the field
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName))
         .WillOnce(Return(ByMove(nullptr)));
 
     // When creating a MyProxy

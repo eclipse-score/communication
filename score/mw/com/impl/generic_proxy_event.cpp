@@ -22,7 +22,10 @@ namespace score::mw::com::impl
 GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const std::string_view event_name)
     : ProxyEventBase{event_name,
                      ProxyBaseView{base}.GetBinding(),
-                     GenericProxyEventBindingFactory::Create(base, event_name, ServiceElementType::EVENT)}
+                     GenericProxyEventBindingFactory::Create(base.GetHandle(),
+                                                             ProxyBaseView{base}.GetBinding(),
+                                                             event_name,
+                                                             ServiceElementType::EVENT)}
 {
     ProxyBaseView proxy_base_view{base};
     if (!binding_base_)

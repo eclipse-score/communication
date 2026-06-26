@@ -15,13 +15,14 @@
 
 #include "score/mw/com/impl/plumbing/i_proxy_field_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory_impl.h"
-#include "score/mw/com/impl/proxy_base.h"
+#include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
 #include <score/overload.hpp>
 
 #include <memory>
 #include <string_view>
+#include <utility>
 
 namespace score::mw::com::impl
 {
@@ -33,24 +34,27 @@ class ProxyFieldBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyFieldBindingFactory.
-    static std::unique_ptr<ProxyEventBinding<SampleType>> CreateEventBinding(ProxyBase& parent,
+    static std::unique_ptr<ProxyEventBinding<SampleType>> CreateEventBinding(HandleType parent_handle,
+                                                                             ProxyBinding* parent_binding,
                                                                              std::string_view field_name) noexcept
     {
-        return instance().CreateEventBinding(parent, field_name);
+        return instance().CreateEventBinding(std::move(parent_handle), parent_binding, field_name);
     }
 
     /// \brief See documentation in IProxyFieldBindingFactory.
-    static std::unique_ptr<ProxyMethodBinding> CreateGetMethodBinding(ProxyBase& parent,
+    static std::unique_ptr<ProxyMethodBinding> CreateGetMethodBinding(HandleType parent_handle,
+                                                                      ProxyBinding* parent_binding,
                                                                       std::string_view field_name) noexcept
     {
-        return instance().CreateGetMethodBinding(parent, field_name);
+        return instance().CreateGetMethodBinding(std::move(parent_handle), parent_binding, field_name);
     }
 
     /// \brief See documentation in IProxyFieldBindingFactory.
-    static std::unique_ptr<ProxyMethodBinding> CreateSetMethodBinding(ProxyBase& parent,
+    static std::unique_ptr<ProxyMethodBinding> CreateSetMethodBinding(HandleType parent_handle,
+                                                                      ProxyBinding* parent_binding,
                                                                       std::string_view field_name) noexcept
     {
-        return instance().CreateSetMethodBinding(parent, field_name);
+        return instance().CreateSetMethodBinding(std::move(parent_handle), parent_binding, field_name);
     }
 
     /// \brief Inject a mock IProxyFieldBindingFactory. If a mock is injected, then all calls on
