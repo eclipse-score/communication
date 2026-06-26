@@ -184,7 +184,7 @@ void SampleHyperVisorTransport::Shutdown()
 }
 
 score::ResultBlank SampleHyperVisorTransport::ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                                             std::vector<ServiceElementConfiguration> service_elements)
+                                                             std::vector<impl::EventInfo> service_elements)
 {
     const auto shm_sizes = GetShmSizes(service_instance_specifier);
 

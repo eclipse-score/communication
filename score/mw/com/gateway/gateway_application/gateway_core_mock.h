@@ -26,7 +26,7 @@ class GatewayCoreMock : public GatewayCore
   public:
     MOCK_METHOD((score::Result<void>),
                 ProvideService,
-                (impl::InstanceSpecifier, std::vector<ServiceElementConfiguration>),
+                (impl::InstanceSpecifier, std::vector<impl::EventInfo>),
                 (override));
     MOCK_METHOD((score::Result<void>), OfferService, (impl::InstanceSpecifier), (override));
     MOCK_METHOD(void, StopOfferService, (impl::InstanceSpecifier), (override));

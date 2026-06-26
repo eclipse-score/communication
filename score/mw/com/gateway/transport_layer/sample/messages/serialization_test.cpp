@@ -148,17 +148,17 @@ TEST(SerializationTest, VectorSerializeAndDeserializeFailWhenBufferTooSmallForHe
 
 TEST(SerializationTest, SerializeAndDeserializeNonTrivialStructProducesOriginalMembers)
 {
-    ServiceElementConfiguration original{"SpeedEvent", DataTypeSizeInfo{64U, 8U}};
+    impl::EventInfo original{"SpeedEvent", impl::DataTypeMetaInfo{64U, 8U}};
     std::array<std::byte, 128> buf{};
 
     auto written = Serialize(original, score::cpp::span<std::byte>(buf.data(), buf.size()));
     ASSERT_TRUE(written.has_value());
 
-    ServiceElementConfiguration out;
+    impl::EventInfo out;
     auto consumed = Deserialize(out, score::cpp::span<const std::byte>(buf.data(), written.value()));
     ASSERT_TRUE(consumed.has_value());
-    EXPECT_EQ(out.element_name, "SpeedEvent");
-    EXPECT_EQ(out.size_info, original.size_info);
+    EXPECT_EQ(out.name, "SpeedEvent");
+    EXPECT_EQ(out.data_type_meta_info.size, original.data_type_meta_info.size);
 }
 
 TEST(SerializationTest, ComputeSerializedSizeReturnsCorrectValuesPerTypeCategory)
@@ -193,10 +193,10 @@ TEST(SerializationTest, ComputeSerializedSizeMatchesBytesWrittenBySerialize)
     const std::uint32_t trivial = 42U;
     const std::string str = "gateway_test";
     const std::vector<std::uint32_t> vec = {1U, 2U, 3U, 4U, 5U};
-    ServiceElementConfiguration config{"SpeedEvent", DataTypeSizeInfo{64U, 8U}};
-    std::vector<ServiceElementConfiguration> configs = {
-        {"SpeedEvent", DataTypeSizeInfo{64U, 8U}},
-        {"BrakeField", DataTypeSizeInfo{32U, 4U}},
+    impl::EventInfo config{"SpeedEvent", impl::DataTypeMetaInfo{64U, 8U}};
+    std::vector<impl::EventInfo> configs = {
+        {"SpeedEvent", impl::DataTypeMetaInfo{64U, 8U}},
+        {"BrakeField", impl::DataTypeMetaInfo{32U, 4U}},
     };
 
     auto w1 = Serialize(trivial, score::cpp::span<std::byte>(buf.data(), buf.size()));
@@ -318,7 +318,7 @@ TEST(SerializationTest, DeserializeVectorFailsIfNotEnoughSpaceForSubElement)
 TEST(SerializationTest, SerializeNonTrivialCopyableTypeFailsIfBufferTooSmall)
 {
     // Given a non-trivial copyable type and a buffer that is too small to hold its serialized form
-    ServiceElementConfiguration config{"SpeedEvent", DataTypeSizeInfo{64U, 8U}};
+    impl::EventInfo config{"SpeedEvent", impl::DataTypeMetaInfo{64U, 8U}};
     std::array<std::byte, 1> buf{};
 
     // when trying to serialize the non-trivial type
@@ -334,7 +334,7 @@ TEST(SerializationTest, DeserializeNonTrivialCopyableTypeFailsIfBufferTooSmall)
     std::array<std::byte, 1> buf{};
 
     // when trying to deserialize into a non-trivial type
-    ServiceElementConfiguration out;
+    impl::EventInfo out;
     const auto deserialize_result = Deserialize(out, score::cpp::span<const std::byte>(buf.data(), buf.size()));
     // then the result should have the error code kPayloadInvalid due to insufficient bytes for deserialization
     EXPECT_FALSE(deserialize_result.has_value());

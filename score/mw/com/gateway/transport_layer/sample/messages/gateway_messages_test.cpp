@@ -35,9 +35,9 @@ TEST(GatewayMessagesTest, ProvideServiceRequestRoundTrip)
     auto specifier = impl::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
     ASSERT_TRUE(specifier.has_value());
 
-    std::vector<ServiceElementConfiguration> elements{
-        {"SpeedEvent", DataTypeSizeInfo{64U, 8U}},
-        {"SpeedField", DataTypeSizeInfo{32U, 4U}},
+    std::vector<impl::EventInfo> elements{
+        {"SpeedEvent", impl::DataTypeMetaInfo{64U, 8U}},
+        {"SpeedField", impl::DataTypeMetaInfo{32U, 4U}},
     };
 
     ProvideServiceRequest original{std::move(specifier).value(), elements, 4U, 8U};
@@ -51,12 +51,12 @@ TEST(GatewayMessagesTest, ProvideServiceRequestRoundTrip)
 
     EXPECT_EQ(deserialized.GetInstanceSpecifier(), "SpeedService/Instance42");
     ASSERT_EQ(deserialized.GetServiceElements().size(), 2U);
-    EXPECT_EQ(deserialized.GetServiceElements()[0].element_name, "SpeedEvent");
-    EXPECT_EQ(deserialized.GetServiceElements()[0].size_info.Size(), 64U);
-    EXPECT_EQ(deserialized.GetServiceElements()[0].size_info.Alignment(), 8U);
-    EXPECT_EQ(deserialized.GetServiceElements()[1].element_name, "SpeedField");
-    EXPECT_EQ(deserialized.GetServiceElements()[1].size_info.Size(), 32U);
-    EXPECT_EQ(deserialized.GetServiceElements()[1].size_info.Alignment(), 4U);
+    EXPECT_EQ(deserialized.GetServiceElements()[0].name, "SpeedEvent");
+    EXPECT_EQ(deserialized.GetServiceElements()[0].data_type_meta_info.size, 64U);
+    EXPECT_EQ(deserialized.GetServiceElements()[0].data_type_meta_info.alignment, 8U);
+    EXPECT_EQ(deserialized.GetServiceElements()[1].name, "SpeedField");
+    EXPECT_EQ(deserialized.GetServiceElements()[1].data_type_meta_info.size, 32U);
+    EXPECT_EQ(deserialized.GetServiceElements()[1].data_type_meta_info.alignment, 4U);
     EXPECT_EQ(deserialized.GetShmControlSize(), 4U);
     EXPECT_EQ(deserialized.GetShmDataSize(), 8U);
 }
@@ -232,13 +232,12 @@ TEST(GatewayMessagesTest, SerializeWithTooSmallBufferReturnsSizeZero)
 
 TEST(GatewayMessagesTest, SerializeWithVectorExceedingUint16MaxReturnsZero)
 {
-    // Given a ProvideServiceRequest with more than 65535 ServiceElementConfiguration elements
+    // Given a ProvideServiceRequest with more than 65535 impl::EventInfo elements
     auto specifier = impl::InstanceSpecifier::Create(std::string{"SpeedService/Instance42"});
     ASSERT_TRUE(specifier.has_value());
 
     constexpr std::size_t kTooManyElements = static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max()) + 1U;
-    std::vector<ServiceElementConfiguration> elements(kTooManyElements,
-                                                      ServiceElementConfiguration{"A", DataTypeSizeInfo{8U, 8U}});
+    std::vector<impl::EventInfo> elements(kTooManyElements, impl::EventInfo{"A", impl::DataTypeMetaInfo{8U, 8U}});
 
     ProvideServiceRequest request{std::move(specifier).value(), std::move(elements)};
 

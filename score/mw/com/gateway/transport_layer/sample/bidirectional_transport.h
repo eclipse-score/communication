@@ -16,18 +16,19 @@
 #include "score/concurrency/long_running_threads_container.h"
 #include "score/mw/com/gateway/transport_layer/sample/configuration/hypervisor_socket_configuration.h"
 #include "score/mw/com/gateway/transport_layer/sample/i_bidirectional_transport.h"
+#include "score/mw/com/gateway/transport_layer/sample/message_framer.h"
 #include "score/mw/com/gateway/transport_layer/sample/messages/gateway_messages.h"
+#include "score/mw/com/gateway/transport_layer/sample/pending_request_tracker.h"
 #include "score/mw/com/gateway/transport_layer/transport_error.h"
 
+#include "score/mw/com/gateway/transport_layer/sample/i_pending_request_tracker.h"
 #include "score/mw/com/gateway/transport_layer/sample/unique_socket.h"
 
 #include <score/callback.hpp>
 
-#include <array>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -35,12 +36,18 @@
 namespace score::mw::com::gateway
 {
 
+/// \brief Implements a bidirectional transport layer that can send and receive messages over TCP sockets.
+/// \details The class manages the connection state, handles incoming messages, and dispatches them to a user-defined
+/// message handler callback.
 class BidirectionalTransport : public IBidirectionalTransport
 {
     friend class BidirectionalTransportAttorney;  // For testing purposes only
 
   public:
     explicit BidirectionalTransport(HyperVisorSocketConfiguration socket_config) noexcept;
+    BidirectionalTransport(HyperVisorSocketConfiguration socket_config,
+                           std::unique_ptr<IMessageFramer> message_framer,
+                           std::unique_ptr<IPendingRequestTracker> pending_tracker) noexcept;
     ~BidirectionalTransport() override;
 
     BidirectionalTransport(const BidirectionalTransport&) = delete;
@@ -65,11 +72,6 @@ class BidirectionalTransport : public IBidirectionalTransport
     void SetMessageHandler(MessageHandler handler) override;
 
   private:
-    struct PendingRequest
-    {
-        bool acknowledged{false};
-    };
-
     /// \brief Send the given message and wait for the ACK response with the same sequence number.
     /// Returns error if unknown sequence number, timeout ocurres or disconnect happens.
     score::ResultBlank TrySendAndWaitForAck(TransportMessage& message, const std::uint32_t sequence);
@@ -96,15 +98,6 @@ class BidirectionalTransport : public IBidirectionalTransport
     /// \brief Sends ACK for the given sequence number.
     score::ResultBlank SendAck(const std::uint32_t sequence);
 
-    std::uint32_t GetNextSequenceNumber();
-
-    /// \brief Serializes the given message and sends it on the send socket. Returns error if sending fails or
-    /// disconnect happens.
-    score::ResultBlank SendMessageOnSocket(const TransportMessage& message);
-    /// \brief Reads from receiving socket and serializes the incoming message.
-    /// \return The deserialized message or error if deserialization fails or a disconnect happens.
-    std::unique_ptr<TransportMessage> ReceiveMessageFromSocket();
-
     HyperVisorSocketConfiguration socket_config_;
 
     UniqueSocket send_socket_;
@@ -126,16 +119,10 @@ class BidirectionalTransport : public IBidirectionalTransport
     std::condition_variable dispatch_cv_;
     std::atomic<bool> dispatch_shutdown_{false};
 
-    std::mutex pending_mutex_;
-    std::condition_variable pending_cv_;
-    std::atomic<std::uint32_t> next_sequence_{1U};
-    std::map<std::uint32_t, PendingRequest> pending_requests_;
+    std::unique_ptr<IMessageFramer> message_framer_;
+    std::unique_ptr<IPendingRequestTracker> pending_tracker_;
 
     static constexpr int kMaxSendRetries = 5U;
-    static constexpr std::size_t kMaxPayloadSize = 1024U;
-
-    std::array<std::uint8_t, kMaxPayloadSize> send_buffer_{};
-    std::array<std::uint8_t, kMaxPayloadSize> receive_buffer_{};
 
     // Intentionally keeping at the end to ensure that it's destroyed first during shutdown.
     score::concurrency::LongRunningThreadsContainer threads_;

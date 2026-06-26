@@ -57,7 +57,7 @@ class SampleHyperVisorTransport : public Transport
     // Methods to create the related TransportMessage and call SendMessage of BidirectionalTransport
 
     Result<void> ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                std::vector<ServiceElementConfiguration> service_elements) override;
+                                std::vector<impl::EventInfo> service_elements) override;
     Result<void> OfferService(impl::InstanceSpecifier service_instance_specifier) override;
     Result<void> StopOfferService(impl::InstanceSpecifier service_instance_specifier) override;
 

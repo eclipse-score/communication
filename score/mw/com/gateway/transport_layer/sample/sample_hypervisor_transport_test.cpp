@@ -95,7 +95,7 @@ class SampleHyperVisorTransportTest : public ::testing::Test
         {
             case MessageType::kProvideServiceRequest:
             {
-                std::vector<ServiceElementConfiguration> elements{};
+                std::vector<impl::EventInfo> elements{};
                 constexpr std::uint32_t kShmControlSize = 1024U;
                 constexpr std::uint32_t kShmDataSize = 4096U;
                 return std::make_unique<ProvideServiceRequest>(specifier, elements, kShmControlSize, kShmDataSize);
@@ -178,8 +178,8 @@ TEST_F(SampleHyperVisorTransportTest, SetupReturnsErrorWhenTransportSetupFails)
     EXPECT_CALL(*bi_directional_transport_mock_, SetMessageHandler(::testing::_)).Times(1);
     EXPECT_CALL(*bi_directional_transport_mock_, Setup())
         .WillOnce(::testing::Return(score::MakeUnexpected(TransportErrorc::kConnectionFailure)));
-    // then calling Setup on SampleHyperVisorTransport should return an error
     const auto result = transport_->Setup();
+    // then calling Setup on SampleHyperVisorTransport should return an error
     EXPECT_FALSE(result.has_value());
 }
 
@@ -622,8 +622,7 @@ TEST_F(SampleHyperVisorTransportTest, ProvideServiceDeathTest)
     // When calling ProvideService with a valid instance specifier, then it is expected to terminate.
     // TODO This test needs to be adapted when implementing ResolveShmPaths() and GetShmSizes() based on the actual
     // HyperVisor SHM technology.
-    EXPECT_DEATH(transport_->ProvideService(CreateValidInstanceSpecifier(), std::vector<ServiceElementConfiguration>{}),
-                 ".*");
+    EXPECT_DEATH(transport_->ProvideService(CreateValidInstanceSpecifier(), std::vector<impl::EventInfo>{}), ".*");
 }
 
 }  // namespace

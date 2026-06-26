@@ -28,6 +28,48 @@ cc_library(
 )
 
 cc_library(
+    name = "message_framer",
+    srcs = ["message_framer.cpp"],
+    hdrs = [
+        "i_message_framer.h",
+        "message_framer.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/os:socket",
+    ],
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/gateway/transport_layer:transport_error",
+        "//score/mw/com/gateway/transport_layer/sample/messages:gateway_messages",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "pending_request_tracker",
+    srcs = ["pending_request_tracker.cpp"],
+    hdrs = [
+        "i_pending_request_tracker.h",
+        "pending_request_tracker.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/mw/log",
+    ],
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/gateway/transport_layer:transport_error",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "bidirectional_transport",
     srcs = ["bidirectional_transport.cpp"],
     hdrs = [
@@ -43,6 +85,8 @@ cc_library(
     ],
     deps = [
         ":i_bidirectional_transport",
+        ":message_framer",
+        ":pending_request_tracker",
         "//score/mw/com/gateway/transport_layer:transport_error",
         "//score/mw/com/gateway/transport_layer/sample:unique_socket",
         "//score/mw/com/gateway/transport_layer/sample/configuration:hypervisor_socket_configuration",
@@ -93,6 +137,31 @@ cc_library(
 )
 
 cc_unit_test(
+    name = "pending_request_tracker_test",
+    srcs = ["pending_request_tracker_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+    ],
+    deps = [
+        ":pending_request_tracker",
+    ],
+)
+
+cc_unit_test(
+    name = "message_framer_test",
+    srcs = ["message_framer_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+    ],
+    deps = [
+        ":message_framer",
+        "@score_baselibs//score/os/mocklib:socket_mock",
+    ],
+)
+
+cc_unit_test(
     name = "unique_socket_test",
     srcs = ["unique_socket_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -105,18 +174,25 @@ cc_unit_test(
     ],
 )
 
-cc_unit_test(
+cc_test(
     name = "bidirectional_transport_test",
+    timeout = "long",
     srcs = [
         "bidirectional_transport_test.cpp",
+        "mock_message_framer.h",
+        "mock_pending_request_tracker.h",
         "sample_transport_test_resources.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    tags = [
+        "unit",
+    ],
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
     deps = [
         ":bidirectional_transport",
+        "@googletest//:gtest_main",
         "@score_baselibs//score/os/mocklib:socket_mock",
     ],
 )

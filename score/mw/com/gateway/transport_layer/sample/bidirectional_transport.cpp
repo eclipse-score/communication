@@ -21,7 +21,6 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-#include <array>
 #include <cerrno>
 #include <chrono>
 #include <cstring>
@@ -37,30 +36,8 @@ namespace
 
 using score::os::Socket;
 
-std::unique_ptr<TransportMessage> CreateMessageForType(MessageType type)
-{
-    switch (type)
-    {
-        case MessageType::kProvideServiceRequest:
-            return std::make_unique<ProvideServiceRequest>();
-        case MessageType::kOfferServiceRequest:
-            return std::make_unique<OfferServiceRequest>();
-        case MessageType::kStopOfferServiceRequest:
-            return std::make_unique<StopOfferServiceRequest>();
-        case MessageType::kRegisterNotificationRequest:
-            return std::make_unique<RegisterNotificationRequest>();
-        case MessageType::kUnregisterNotificationRequest:
-            return std::make_unique<UnregisterNotificationRequest>();
-        case MessageType::kUpdateNotification:
-            return std::make_unique<UpdateNotification>();
-        case MessageType::kAckResponse:
-            return std::make_unique<AckResponse>();
-        case MessageType::kInvalid:
-        default:
-            return nullptr;
-    }
-}
-
+/// \brief Sets the TCP_NODELAY option on the given socket file descriptor to disable Nagle's algorithm in order to
+/// reduce latency.
 void SetTcpNoDelay(std::int32_t socket_fd)
 {
     std::int32_t flag = 1;
@@ -73,63 +50,21 @@ void SetTcpNoDelay(std::int32_t socket_fd)
     }
 }
 
-/// \brief Helper function to send the buffer's data over a socket.
-/// \param socket_fd The file descriptor of the socket to send on.
-/// \param data Pointer to the buffer containing the data to send.
-/// \param length The total number of bytes to send from the buffer.
-int SendAll(std::int32_t socket_fd, const void* data, std::size_t length)
-{
-    auto* ptr = static_cast<const char*>(data);
-    while (length > 0)
-    {
-        auto result = Socket::instance().sendto(socket_fd, ptr, length, Socket::MessageFlag::kNone, nullptr, 0);
-        if (!result.has_value())
-        {
-            return -1;
-        }
-        const auto sent = static_cast<std::size_t>(result.value());
-        ptr += sent;
-        length -= sent;
-    }
-    return 0;
-}
-
-/// \brief Helper function to receive data from a socket until the expected amount of bytes is received or an error
-/// occurs.
-/// \param socket_fd The file descriptor of the socket to receive from.
-/// \param buffer Pointer to the buffer where received data should be stored.
-/// \param length The total number of bytes to receive into the buffer.
-ssize_t ReceiveAll(std::int32_t socket_fd, void* buffer, std::size_t length)
-{
-    auto* ptr = static_cast<char*>(buffer);
-    const auto original_length = length;
-    const score::os::Socket::MessageFlag flags{};
-    while (length > 0)
-    {
-        auto result = Socket::instance().recv(socket_fd, ptr, length, flags);
-        if (!result.has_value())
-        {
-            ::score::mw::log::LogError() << "ReceiveAll: recv error: " << result.error().ToString()
-                                         << " fd=" << socket_fd << " remaining=" << length;
-            return -1;
-        }
-        if (result.value() == 0)
-        {
-            ::score::mw::log::LogWarn() << "ReceiveAll: peer closed connection, fd=" << socket_fd
-                                        << " remaining=" << length << " of " << original_length;
-            return 0;
-        }
-        const auto received = static_cast<std::size_t>(result.value());
-        ptr += received;
-        length -= received;
-    }
-    return static_cast<ssize_t>(original_length);
-}
-
 }  // namespace
 
 BidirectionalTransport::BidirectionalTransport(HyperVisorSocketConfiguration socket_config) noexcept
-    : socket_config_(std::move(socket_config))
+    : socket_config_(std::move(socket_config)),
+      message_framer_(std::make_unique<MessageFramer>()),
+      pending_tracker_(std::make_unique<PendingRequestTracker>())
+{
+}
+
+BidirectionalTransport::BidirectionalTransport(HyperVisorSocketConfiguration socket_config,
+                                               std::unique_ptr<IMessageFramer> message_framer,
+                                               std::unique_ptr<IPendingRequestTracker> pending_tracker) noexcept
+    : socket_config_(std::move(socket_config)),
+      message_framer_(std::move(message_framer)),
+      pending_tracker_(std::move(pending_tracker))
 {
 }
 
@@ -208,9 +143,7 @@ score::ResultBlank BidirectionalTransport::SetupSendSocket(score::cpp::stop_toke
         std::this_thread::sleep_for(kRetryInterval);
 
         // Creating a new socket for each retry since the previous connect attempt might have put the socket into an
-        // unusable state. This is especially important if the remote side is not up yet, since in that case we expect
-        // multiple retries and want to avoid issues with reusing a socket that has been put into an error state by the
-        // failed connect attempt.
+        // unusable state.
         auto new_sock_result = Socket::instance().socket(Socket::Domain::kIPv4, SOCK_STREAM, 0);
         if (!new_sock_result.has_value())
         {
@@ -266,10 +199,6 @@ void BidirectionalTransport::ConnectionLoop(score::cpp::stop_token stop_token)
 {
     while (!stop_token.stop_requested())
     {
-        // This is used to handle the case where the connection is lost and we need to re-establish it. In that case we
-        // need to set up a new listen socket since the previous one would have been used to accept the connection that
-        // got lost and is now in an unusable state. By setting up a new listen socket we can ensure that we are able to
-        // accept a new connection when the remote side comes back up.
         if (!listen_socket_.IsValid())
         {
             auto result = SetupListenSocket();
@@ -341,10 +270,11 @@ bool BidirectionalTransport::WaitForConnection(score::cpp::stop_token stop_token
         // Clear it so recv() blocks properly instead of returning EAGAIN immediately.
         int flags = fcntl(client_sock.Get(), F_GETFL, 0);
         if (flags != -1)
+        // COV_JUSTIFIED_START gateway-clear-nonblock-on-accepted-socket
         {
             fcntl(client_sock.Get(), F_SETFL, flags & ~O_NONBLOCK);
         }
-
+        // COV_JUSTIFIED_STOP
         receive_socket_ = std::move(client_sock);
         listen_socket_.Reset();
         return true;
@@ -356,7 +286,7 @@ void BidirectionalTransport::ReceiveUntilDisconnect(score::cpp::stop_token stop_
 {
     while (!stop_token.stop_requested() && is_connected_)
     {
-        auto message = ReceiveMessageFromSocket();
+        auto message = message_framer_->ReceiveMessage(receive_socket_.Get());
         if (message == nullptr)
         {
             if (!stop_token.stop_requested())
@@ -391,9 +321,7 @@ void BidirectionalTransport::HandleIncomingMessage(std::unique_ptr<TransportMess
         SendAck(message->GetSequenceNumber());
     }
 
-    // Post to dispatch queue rather than calling the handler inline. This keeps the
-    // receive loop free to process incoming ACKs while the handler (which may itself
-    // call SendRequest) runs on the dedicated dispatch thread.
+    // Post to dispatch queue rather than calling the handler inline.
     {
         std::lock_guard<std::mutex> lock(dispatch_mutex_);
         dispatch_queue_.push(std::move(message));
@@ -409,7 +337,7 @@ void BidirectionalTransport::CleanupSocketsForReconnection()
         send_socket_.ShutdownAndReset();
     }
     receive_socket_.ShutdownAndReset();
-    pending_cv_.notify_all();
+    pending_tracker_->NotifyAll();
 }
 
 void BidirectionalTransport::DispatchLoop(const score::cpp::stop_token& stop_token)
@@ -432,47 +360,35 @@ void BidirectionalTransport::DispatchLoop(const score::cpp::stop_token& stop_tok
             dispatch_queue_.pop();
         }
 
-        message_handler_(std::move(message));
+        message_handler_(std::move(message));  // COV_JUSTIFIED gateway-dispatch-loop-calls-handler
     }
 }
 
 void BidirectionalTransport::HandleResponse(std::unique_ptr<TransportMessage> response)
 {
     if (response->GetType() != MessageType::kAckResponse)
+    // COV_JUSTIFIED_START gateway-handle-response-only-ack-response
     {
-        // Just a sanity check, we should only receive AckResponses as responses since that's the only response type we
-        // have.
         return;
     }
+    // COV_JUSTIFIED_STOP
 
     const auto* ack = static_cast<AckResponse*>(response.get());
-
-    std::lock_guard<std::mutex> lock(pending_mutex_);
-    auto it = pending_requests_.find(ack->GetAckedSequence());
-    if (it != pending_requests_.end())
-    {
-        it->second.acknowledged = true;
-        pending_cv_.notify_all();
-    }
+    pending_tracker_->Acknowledge(ack->GetAckedSequence());
 }
 
 score::ResultBlank BidirectionalTransport::SendAck(const std::uint32_t sequence)
 {
     AckResponse ack_response(sequence);
     std::lock_guard<std::mutex> lock(send_mutex_);
-    return SendMessageOnSocket(ack_response);
-}
-
-std::uint32_t BidirectionalTransport::GetNextSequenceNumber()
-{
-    return next_sequence_.fetch_add(1U, std::memory_order_relaxed);
+    return message_framer_->SendMessage(send_socket_.Get(), ack_response);
 }
 
 score::ResultBlank BidirectionalTransport::TrySendAndWaitForAck(TransportMessage& message, const std::uint32_t sequence)
 {
     {
         std::lock_guard<std::mutex> lock(send_mutex_);
-        auto send_result = SendMessageOnSocket(message);
+        auto send_result = message_framer_->SendMessage(send_socket_.Get(), message);
         if (!send_result.has_value())
         {
             score::mw::log::LogError() << "BidirectionalTransport: failed to send message of type "
@@ -481,35 +397,8 @@ score::ResultBlank BidirectionalTransport::TrySendAndWaitForAck(TransportMessage
         }
     }
 
-    std::unique_lock<std::mutex> lock(pending_mutex_);
-    auto it = pending_requests_.find(sequence);
-    if (it == pending_requests_.end())
-    {
-        score::mw::log::LogError() << "BidirectionalTransport: internal error: pending request not found for sequence "
-                                   << sequence;
-        return score::MakeUnexpected(TransportErrorc::kSendFailure);
-    }
-
-    pending_cv_.wait_for(lock, std::chrono::milliseconds(socket_config_.request_timeout_ms_), [&it, this] {
-        return it->second.acknowledged || !is_connected_.load();
-    });
-
-    if (it->second.acknowledged)
-    {
-        score::mw::log::LogDebug() << "BidirectionalTransport: received ack for sequence " << sequence;
-        return {};
-    }
-
-    if (!is_connected_.load())
-    {
-        ::score::mw::log::LogError() << "BidirectionalTransport: connection lost while waiting for ack for sequence "
-                                     << sequence;
-        return score::MakeUnexpected(TransportErrorc::kNotConnected);
-    }
-
-    ::score::mw::log::LogError() << "BidirectionalTransport: timeout waiting for ack for sequence " << sequence;
-    return score::MakeUnexpected(TransportErrorc::kTimeout,
-                                 "timeout waiting for ack for sequence " + std::to_string(sequence));
+    return pending_tracker_->WaitForAck(
+        sequence, std::chrono::milliseconds(socket_config_.request_timeout_ms_), is_connected_);
 }
 
 score::ResultBlank BidirectionalTransport::SendRequest(TransportMessage& message)
@@ -519,13 +408,10 @@ score::ResultBlank BidirectionalTransport::SendRequest(TransportMessage& message
         return score::MakeUnexpected(TransportErrorc::kNotConnected, "BidirectionalTransport: not connected");
     }
 
-    const std::uint32_t sequence = GetNextSequenceNumber();
+    const std::uint32_t sequence = pending_tracker_->GetNextSequenceNumber();
     message.SetSequenceNumber(sequence);
 
-    {
-        std::lock_guard<std::mutex> lock(pending_mutex_);
-        pending_requests_[sequence] = PendingRequest{};
-    }
+    pending_tracker_->RegisterPendingRequest(sequence);
 
     score::ResultBlank last_result = score::MakeUnexpected(TransportErrorc::kSendFailure);
     for (std::size_t attempt = 0U; attempt < kMaxSendRetries; ++attempt)
@@ -540,16 +426,13 @@ score::ResultBlank BidirectionalTransport::SendRequest(TransportMessage& message
         {
             ::score::mw::log::LogWarn() << "BidirectionalTransport: request timeout or failure, retrying (" << attempt
                                         << "/" << kMaxSendRetries << ")";
-            std::lock_guard<std::mutex> lock(pending_mutex_);
-            pending_requests_[sequence].acknowledged = false;
+            pending_tracker_->ResetAcknowledgement(sequence);
         }
 
         last_result = TrySendAndWaitForAck(message, sequence);
         if (last_result.has_value())
         {
-            std::lock_guard<std::mutex> lock(pending_mutex_);
-            // Erase the pending request since we got the ack successfully.
-            pending_requests_.erase(sequence);
+            pending_tracker_->ErasePendingRequest(sequence);
             return {};
         }
 
@@ -560,8 +443,7 @@ score::ResultBlank BidirectionalTransport::SendRequest(TransportMessage& message
         }
     }
 
-    std::lock_guard<std::mutex> lock(pending_mutex_);
-    pending_requests_.erase(sequence);  // erase the pending request since we are giving up after max retries.
+    pending_tracker_->ErasePendingRequest(sequence);
     return last_result;
 }
 
@@ -573,7 +455,7 @@ score::ResultBlank BidirectionalTransport::SendNotification(TransportMessage& me
     }
 
     std::lock_guard<std::mutex> lock(send_mutex_);
-    return SendMessageOnSocket(message);
+    return message_framer_->SendMessage(send_socket_.Get(), message);
 }
 
 void BidirectionalTransport::SetMessageHandler(MessageHandler handler)
@@ -591,7 +473,7 @@ void BidirectionalTransport::Shutdown()
 {
     is_connected_ = false;
 
-    pending_cv_.notify_all();
+    pending_tracker_->NotifyAll();
 
     send_socket_.ShutdownFd();
     receive_socket_.ShutdownFd();
@@ -601,81 +483,6 @@ void BidirectionalTransport::Shutdown()
     dispatch_cv_.notify_all();
 
     threads_.Shutdown();
-}
-
-score::ResultBlank BidirectionalTransport::SendMessageOnSocket(const TransportMessage& message)
-{
-    const auto payload_size = message.Serialize(send_buffer_);
-    if (payload_size == 0U)
-    {
-        return score::MakeUnexpected(TransportErrorc::kSendFailure);
-    }
-
-    MessageHeader header = message.GetHeader();
-    header.payload_size = static_cast<std::uint32_t>(payload_size);
-
-    std::array<std::uint8_t, MessageHeader::kWireSize> header_buf{};
-    //    std::uint8_t header_buf[MessageHeader::kWireSize]{};
-    header.SerializeToBuffer(header_buf.data());
-
-    if (SendAll(send_socket_.Get(), &header_buf, MessageHeader::kWireSize) != 0)
-    {
-        return score::MakeUnexpected(TransportErrorc::kSendFailure);
-    }
-
-    if (SendAll(send_socket_.Get(), send_buffer_.data(), payload_size) != 0)
-    {
-        return score::MakeUnexpected(TransportErrorc::kSendFailure);
-    }
-
-    return {};
-}
-
-std::unique_ptr<TransportMessage> BidirectionalTransport::ReceiveMessageFromSocket()
-{
-    std::array<std::uint8_t, MessageHeader::kWireSize> header_buf{};
-    if (ReceiveAll(receive_socket_.Get(), &header_buf, MessageHeader::kWireSize) <= 0)
-    {
-        return nullptr;
-    }
-
-    MessageHeader header{};
-    header.DeserializeFromBuffer(header_buf.data());
-
-    if (header.payload_size > kMaxPayloadSize)
-    {
-        ::score::mw::log::LogError() << "BidirectionalTransport: payload size " << header.payload_size
-                                     << " exceeds maximum " << kMaxPayloadSize;
-        return nullptr;
-    }
-
-    if (header.payload_size > 0U)
-    {
-        const auto bytes_received = ReceiveAll(receive_socket_.Get(), receive_buffer_.data(), header.payload_size);
-        if (bytes_received <= 0)
-        {
-            return nullptr;
-        }
-    }
-
-    auto message = CreateMessageForType(header.type);
-    if (message == nullptr)
-    {
-        ::score::mw::log::LogError() << "BidirectionalTransport: unknown message type "
-                                     << static_cast<int>(header.type);
-        return nullptr;
-    }
-
-    message->SetSequenceNumber(header.sequence);
-
-    if (header.payload_size > 0U &&
-        !message->Deserialize(score::cpp::span<const std::uint8_t>(receive_buffer_.data(), header.payload_size)))
-    {
-        ::score::mw::log::LogError() << "BidirectionalTransport: deserialization failed";
-        return nullptr;
-    }
-
-    return message;
 }
 
 }  // namespace score::mw::com::gateway

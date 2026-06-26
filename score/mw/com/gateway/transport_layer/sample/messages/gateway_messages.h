@@ -36,9 +36,8 @@ class ProvideServiceRequest : public TransportMessage
     {
         using SelfNoRef = std::remove_reference_t<Self>;
         using StringType = std::conditional_t<std::is_const_v<SelfNoRef>, const std::string, std::string>;
-        using VectorType = std::conditional_t<std::is_const_v<SelfNoRef>,
-                                              const std::vector<ServiceElementConfiguration>,
-                                              std::vector<ServiceElementConfiguration>>;
+        using VectorType = std::
+            conditional_t<std::is_const_v<SelfNoRef>, const std::vector<impl::EventInfo>, std::vector<impl::EventInfo>>;
         using Uint32Type = std::conditional_t<std::is_const_v<SelfNoRef>, const std::uint32_t, std::uint32_t>;
         return std::tuple<StringType&, VectorType&, Uint32Type&, Uint32Type&>(
             self.instance_specifier_, self.elements_, self.shm_control_size_, self.shm_data_size_);
@@ -48,7 +47,7 @@ class ProvideServiceRequest : public TransportMessage
     ProvideServiceRequest() : TransportMessage(MessageType::kProvideServiceRequest) {}
 
     ProvideServiceRequest(impl::InstanceSpecifier service_instance_specifier,
-                          std::vector<ServiceElementConfiguration> service_elements,
+                          std::vector<impl::EventInfo> service_elements,
                           std::uint32_t shm_control_size = 0U,
                           std::uint32_t shm_data_size = 0U)
         : TransportMessage(MessageType::kProvideServiceRequest),
@@ -67,7 +66,7 @@ class ProvideServiceRequest : public TransportMessage
         return instance_specifier_;
     }
 
-    const std::vector<ServiceElementConfiguration>& GetServiceElements() const
+    const std::vector<impl::EventInfo>& GetServiceElements() const
     {
         return elements_;
     }
@@ -93,7 +92,7 @@ class ProvideServiceRequest : public TransportMessage
 
   private:
     std::string instance_specifier_;
-    std::vector<ServiceElementConfiguration> elements_;
+    std::vector<impl::EventInfo> elements_;
     std::uint32_t shm_control_size_{0U};
     std::uint32_t shm_data_size_{0U};
 };
