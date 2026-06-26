@@ -74,7 +74,7 @@ inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyEventBindingFactoryIm
     auto deployment_info_visitor = score::cpp::overload(
         [&parent, event_of_field_name, service_element_type](
             const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
-            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(ProxyBaseView{parent}.GetBinding());
+            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(&ProxyBaseView{parent}.GetBinding());
             if (lola_proxy == nullptr)
             {
                 score::mw::log::LogError("lola")

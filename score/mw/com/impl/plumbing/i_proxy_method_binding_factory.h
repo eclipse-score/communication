@@ -14,10 +14,9 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_I_PROXY_METHOD_BINDING_FACTORY_H
 
 #include "score/mw/com/impl/handle_type.h"
-#include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
-#include "score/mw/com/impl/proxy_base.h"
+#include "score/mw/com/impl/proxy_binding.h"
 
 #include <memory>
 #include <string_view>
@@ -41,12 +40,12 @@ class IProxyMethodBindingFactory
 
     /// Creates instances of the binding specific implementations for a proxy method with a particular data type.
     /// \param parent_handle The handle containing the binding information.
-    /// \param parent_binding Pointer to the parent binding which can be cast to the actual binding pointer like
+    /// \param parent_binding Reference to the parent binding which can be cast to the actual binding type like
     /// lola::Proxy.
     /// \param method_name The binding unspecific name of the method inside the proxy denoted by handle.
     /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
     virtual auto Create(HandleType parent_handle,
-                        ProxyBinding* parent_binding,
+                        ProxyBinding& parent_binding,
                         const std::string_view method_name,
                         MethodType method_type) noexcept -> std::unique_ptr<ProxyMethodBinding> = 0;
 };

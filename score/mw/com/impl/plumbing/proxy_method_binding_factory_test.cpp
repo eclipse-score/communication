@@ -94,7 +94,7 @@ class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
         return make_HandleType(instance_identifier, ServiceInstanceId{LolaServiceInstanceId{kInstanceId}});
     }
 
-    ProxyBinding* CreateBindingFromHandle(HandleType handle)
+    ProxyBinding& CreateBindingFromHandle(HandleType handle)
 
     {
         proxy_base_ = std::make_unique<ProxyBase>(std::move(this->proxy_), handle);
@@ -105,12 +105,9 @@ class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
     {
         if (proxy_base_ != nullptr)
         {
-            auto* const binding = ProxyBaseView{*proxy_base_}.GetBinding();
-            if (binding != nullptr)
-            {
-                binding->PrepareDeinitialize();
-                binding->FinalizeDeinitialize();
-            }
+            auto& binding = ProxyBaseView{*proxy_base_}.GetBinding();
+            binding.PrepareDeinitialize();
+            binding.FinalizeDeinitialize();
         }
         lola::ProxyMockedMemoryFixture::TearDown();
     }
@@ -138,7 +135,7 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructProxyMethod)
     const auto handle = this->GetValidLoLaHandle();
     this->InitialiseProxyWithConstructor(handle.GetInstanceIdentifier());
 
-    auto proxy_binding = this->CreateBindingFromHandle(handle);
+    auto& proxy_binding = this->CreateBindingFromHandle(handle);
 
     // When creating a ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
@@ -147,22 +144,6 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructProxyMethod)
 
     // Then a valid binding can be created
     ASSERT_NE(proxy_method, nullptr);
-}
-
-TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotCreateProxyServiceWhenProxyBindingIsNullptr)
-{
-    const auto handle = this->GetValidLoLaHandle();
-
-    // Given a null proxy binding
-    auto proxy_binding{nullptr};
-
-    // When creating a ProxyMethod using MethodBindingFactory
-    using MethodSignature = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
-
-    // Then a nullptr is returned
-    ASSERT_EQ(proxy_method, nullptr);
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
@@ -175,7 +156,7 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
     // When creating a ProxyMethod using MethodBindingFactory
     using MethodSignature = TypeParam;
     auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, &proxy_binding_mock, kDummyMethodName, MethodType::kMethod);
+        handle, proxy_binding_mock, kDummyMethodName, MethodType::kMethod);
 
     // Then a nullptr is returned
     EXPECT_EQ(proxy_method, nullptr);

@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_MOCKING_PROXY_WRAPPER_CLASS_TEST_VIEW_H
 #define SCORE_MW_COM_IMPL_MOCKING_PROXY_WRAPPER_CLASS_TEST_VIEW_H
 
+#include "score/mw/com/impl/bindings/mock_binding/proxy.h"
 #include "score/mw/com/impl/traits.h"
 
 #include "score/mw/com/impl/mocking/proxy_event_mock.h"
@@ -91,7 +92,7 @@ class ProxyWrapperClassTestView
         [[maybe_unused]] std::tuple<ProxyEventBindingFactoryMockGuard<EventTypes>...> event_binding_factories{};
         [[maybe_unused]] std::tuple<ProxyFieldBindingFactoryMockGuard<FieldTypes>...> field_binding_factories{};
 
-        ProxyWrapperClass proxy{MakeFakeHandle(0U), nullptr};
+        ProxyWrapperClass proxy{MakeFakeHandle(0U), std::make_unique<mock_binding::Proxy>()};
         /// TODO: We should inject the event and field mocks that were provided to Create within this function (similar
         /// to what is done in SkeletonWrapperClassTestView::Create. This would require that ProxyBase stores a map of
         /// ProxyEventBases / ProxyFieldBases. To be implemented in Ticket-218575.

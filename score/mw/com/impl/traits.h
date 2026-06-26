@@ -387,6 +387,12 @@ class ProxyWrapperClass : public Interface<Trait>
         }
 
         auto proxy_binding = ProxyBindingFactory::Create(instance_handle);
+        if (proxy_binding == nullptr)
+        {
+            ::score::mw::log::LogError("lola")
+                << "Could not create ProxyWrapperClass as Proxy binding could not be created.";
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
 
         ProxyWrapperClass proxy_wrapper(instance_handle, std::move(proxy_binding));
 

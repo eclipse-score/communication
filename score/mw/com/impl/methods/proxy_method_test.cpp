@@ -103,7 +103,7 @@ class ProxyMethodTestFixture : public ::testing::Test
 
     ProxyBinding& GetProxyBinding()
     {
-        return *ProxyBaseView{proxy_base_}.GetBinding();
+        return ProxyBaseView{proxy_base_}.GetBinding();
     }
 
     alignas(8) std::array<std::byte, 1024> method_in_args_buffer_{};
