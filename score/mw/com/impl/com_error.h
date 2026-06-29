@@ -94,7 +94,7 @@ class ComErrorDomain final : public score::result::ErrorDomain
      * \return returns a string view to the human readable message
      * \threadsafe
      */
-    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept override final
+    [[nodiscard]] std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept override final
     // Suppress "AUTOSAR C++14 A10-3-1" rule finding: Virtual function declaration shall contain exactly one of the
     // three specifiers: (1) virtual, (2) override, (3) final.
     // Rationale : See explanation above.

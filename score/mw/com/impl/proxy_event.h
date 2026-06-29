@@ -124,7 +124,7 @@ class ProxyEvent final : public ProxyEventBase
      * \return Number of samples that were handed over to the callable or an error.
      */
     template <typename F>
-    Result<std::size_t> GetNewSamples(F&& receiver, std::size_t max_num_samples) noexcept;
+    [[nodiscard]] Result<std::size_t> GetNewSamples(F&& receiver, std::size_t max_num_samples) noexcept;
 
     void InjectMock(IProxyEvent<SampleType>& proxy_event_mock)
     {

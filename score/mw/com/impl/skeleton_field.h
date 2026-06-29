@@ -108,7 +108,7 @@ class SkeletonFieldImpl : public SkeletonFieldBase
      * \param sample_value The field data to be sent to subscribers.
      * \return On failure, returns an error code.
      */
-    Result<void> Update(const FieldType& sample_value) noexcept;
+    [[nodiscard]] Result<void> Update(const FieldType& sample_value) noexcept;
 
     /**
      * \api
@@ -117,7 +117,7 @@ class SkeletonFieldImpl : public SkeletonFieldBase
      * \param sample The pre-allocated sample pointer containing the field data to be sent.
      * \return On failure, returns an error code.
      */
-    Result<void> Update(SampleAllocateePtr<FieldType> sample) noexcept;
+    [[nodiscard]] Result<void> Update(SampleAllocateePtr<FieldType> sample) noexcept;
 
     /**
      * \api
@@ -127,7 +127,7 @@ class SkeletonFieldImpl : public SkeletonFieldBase
      *          be first set up in the Skeleton::PrepareOffer() before the user can obtain / use a SampleAllocateePtr.
      * \return On success, returns a SampleAllocateePtr that can be filled with data. On failure, returns an error code.
      */
-    Result<SampleAllocateePtr<FieldType>> Allocate() noexcept;
+    [[nodiscard]] Result<SampleAllocateePtr<FieldType>> Allocate() noexcept;
 
     void InjectMock(ISkeletonField<FieldType>& skeleton_field_mock)
     {
@@ -145,7 +145,7 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     template <typename CallableType,
               typename U = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
-    Result<void> RegisterSetHandler(CallableType&& set_handler)
+    [[nodiscard]] Result<void> RegisterSetHandler(CallableType&& set_handler)
     {
         static_assert(std::is_invocable_v<CallableType, FieldType&>,
                       "RegisterSetHandler: handler must be callable as void(FieldType& value). "

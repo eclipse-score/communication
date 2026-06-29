@@ -100,7 +100,7 @@ class SkeletonEvent : public SkeletonEventBase
      * \param sample_value The event data to be sent to subscribers.
      * \return On failure, returns an error code.
      */
-    Result<void> Send(const EventType& sample_value) noexcept;
+    [[nodiscard]] Result<void> Send(const EventType& sample_value) noexcept;
 
     /**
      * \api
@@ -110,7 +110,7 @@ class SkeletonEvent : public SkeletonEventBase
      * \param sample The pre-allocated sample pointer containing the event data to be sent.
      * \return On failure, returns an error code.
      */
-    Result<void> Send(SampleAllocateePtr<EventType> sample) noexcept;
+    [[nodiscard]] Result<void> Send(SampleAllocateePtr<EventType> sample) noexcept;
 
     /**
      * \api
@@ -119,7 +119,7 @@ class SkeletonEvent : public SkeletonEventBase
      *          filled with data and sent using Send(SampleAllocateePtr).
      * \return On success, returns a SampleAllocateePtr that can be filled with data. On failure, returns an error code.
      */
-    Result<SampleAllocateePtr<EventType>> Allocate() noexcept;
+    [[nodiscard]] Result<SampleAllocateePtr<EventType>> Allocate() noexcept;
 
     void InjectMock(ISkeletonEvent<EventType>& skeleton_event_mock)
     {

@@ -193,7 +193,7 @@ class SkeletonWrapperClass : public Interface<Trait>
      * \param specifier The instance specifier identifying the service instance.
      * \return On success, returns a SkeletonWrapperClass instance. On failure, returns an error code.
      */
-    static Result<SkeletonWrapperClass> Create(const InstanceSpecifier& specifier) noexcept
+    [[nodiscard]] static Result<SkeletonWrapperClass> Create(const InstanceSpecifier& specifier) noexcept
     {
         if (instance_specifier_creation_results_.has_value())
         {
@@ -218,7 +218,7 @@ class SkeletonWrapperClass : public Interface<Trait>
      * \param instance_identifier The instance identifier uniquely identifying the service instance.
      * \return On success, returns a SkeletonWrapperClass instance. On failure, returns an error code.
      */
-    static Result<SkeletonWrapperClass> Create(const InstanceIdentifier& instance_identifier) noexcept
+    [[nodiscard]] static Result<SkeletonWrapperClass> Create(const InstanceIdentifier& instance_identifier) noexcept
     {
         if (instance_specifier_creation_results_.has_value())
         {
@@ -329,7 +329,7 @@ class ProxyWrapperClass : public Interface<Trait>
     ///          for the given service handle and validating all service element bindings.
     /// \param instance_handle The handle identifying the service instance to connect to.
     /// \return On success, returns a ProxyWrapperClass instance. On failure, returns an error code.
-    static Result<ProxyWrapperClass> Create(const HandleType instance_handle) noexcept
+    [[nodiscard]] static Result<ProxyWrapperClass> Create(const HandleType instance_handle) noexcept
     {
         if (creation_results_.has_value())
         {

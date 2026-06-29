@@ -78,7 +78,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      *                          be able to offer to the using application.
      * \return On failure, returns an error code.
      */
-    Result<void> Subscribe(const std::size_t max_sample_count) noexcept;
+    [[nodiscard]] Result<void> Subscribe(const std::size_t max_sample_count) noexcept;
 
     /**
      * \api
@@ -106,14 +106,14 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      * \note An already set/registered SubscriptionStateChangeHandler will be silently overridden.
      * \param handler
      */
-    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept;
+    [[nodiscard]] Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept;
 
     /**
      * \api
      * \brief Unsets/Unregisters a SubscriptionStateChangeHandler for this event. After this method returns, it is
      *        guaranteed, that the previously registered handler is neither active nor will be called anymore.
      */
-    Result<void> UnsetSubscriptionStateChangeHandler() noexcept;
+    [[nodiscard]] Result<void> UnsetSubscriptionStateChangeHandler() noexcept;
 
     /**
      * \api
@@ -138,7 +138,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      *         actual new samples. I.e. an implementation is allowed to report a lower number than actual new samples,
      *         which would be provided by a call to GetNewSamples().
      */
-    Result<std::size_t> GetNumNewSamplesAvailable() const noexcept;
+    [[nodiscard]] Result<std::size_t> GetNumNewSamplesAvailable() const noexcept;
 
     /**
      * \api
@@ -152,13 +152,13 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      *            already running ReceiveHandler. We also see no use cases for it and won't support it therefore.
      * \param handler user provided handler to be called
      */
-    Result<void> SetReceiveHandler(EventReceiveHandler handler) noexcept;
+    [[nodiscard]] Result<void> SetReceiveHandler(EventReceiveHandler handler) noexcept;
 
     /**
      * \api
      * \brief Removes any ReceiveHandler registered via SetReceiveHandler.
      */
-    Result<void> UnsetReceiveHandler() noexcept;
+    [[nodiscard]] Result<void> UnsetReceiveHandler() noexcept;
 
     /**
      * \api

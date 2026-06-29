@@ -166,7 +166,7 @@ class ProxyFieldImpl : public ProxyFieldBase
     template <typename ReceiverType,
               typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
-    Result<std::size_t> GetNewSamples(ReceiverType&& receiver, const std::size_t max_num_samples) noexcept
+    [[nodiscard]] Result<std::size_t> GetNewSamples(ReceiverType&& receiver, const std::size_t max_num_samples) noexcept
     {
         return proxy_event_dispatch_->GetNewSamples(std::forward<ReceiverType>(receiver), max_num_samples);
     }
@@ -180,7 +180,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
-    Result<void> Subscribe(const std::size_t max_sample_count) noexcept
+    [[nodiscard]] Result<void> Subscribe(const std::size_t max_sample_count) noexcept
     {
         return ProxyFieldBase::Subscribe(max_sample_count);
     }
@@ -240,7 +240,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
-    Result<std::size_t> GetNumNewSamplesAvailable() noexcept
+    [[nodiscard]] Result<std::size_t> GetNumNewSamplesAvailable() noexcept
     {
         return ProxyFieldBase::GetNumNewSamplesAvailable();
     }
@@ -259,7 +259,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
-    Result<void> SetReceiveHandler(EventReceiveHandler handler) noexcept
+    [[nodiscard]] Result<void> SetReceiveHandler(EventReceiveHandler handler) noexcept
     {
         return ProxyFieldBase::SetReceiveHandler(std::move(handler));
     }
@@ -271,7 +271,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
-    Result<void> UnsetSubscriptionStateChangeHandler() noexcept
+    [[nodiscard]] Result<void> UnsetSubscriptionStateChangeHandler() noexcept
     {
         return ProxyFieldBase::UnsetSubscriptionStateChangeHandler();
     }
@@ -285,7 +285,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
-    Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
+    [[nodiscard]] Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
     {
         return ProxyFieldBase::SetSubscriptionStateChangeHandler(std::move(handler));
     }
@@ -296,7 +296,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithNotifier, Tags...>::value>>
-    Result<void> UnsetReceiveHandler() noexcept
+    [[nodiscard]] Result<void> UnsetReceiveHandler() noexcept
     {
         return ProxyFieldBase::UnsetReceiveHandler();
     }
@@ -308,7 +308,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithGetter, Tags...>::value>>
-    score::Result<MethodReturnTypePtr<T>> Get() noexcept
+    [[nodiscard]] score::Result<MethodReturnTypePtr<T>> Get() noexcept
     {
         return proxy_method_get_dispatch_->operator()();
     }
@@ -320,7 +320,7 @@ class ProxyFieldImpl : public ProxyFieldBase
      */
     template <typename T = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithSetter, Tags...>::value>>
-    score::Result<MethodReturnTypePtr<T>> Set(const SampleDataType& new_field_value) noexcept
+    [[nodiscard]] score::Result<MethodReturnTypePtr<T>> Set(const SampleDataType& new_field_value) noexcept
     {
         return proxy_method_set_dispatch_->operator()(new_field_value);
     }

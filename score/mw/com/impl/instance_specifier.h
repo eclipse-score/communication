@@ -43,7 +43,7 @@ class InstanceSpecifier
      * \param shortname_path The shortname path to create the InstanceSpecifier from.
      * \return A Result containing the created InstanceSpecifier or an error.
      */
-    static score::Result<InstanceSpecifier> Create(std::string&& shortname_path) noexcept;
+    [[nodiscard]] static score::Result<InstanceSpecifier> Create(std::string&& shortname_path) noexcept;
 
     /**
      * \brief Create an InstanceSpecifier from various string-like types (deprecated template version).
