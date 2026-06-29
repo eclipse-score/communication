@@ -41,7 +41,7 @@ def create_database(code_ql_path, config_path, target, source_root, database_pat
     # Build with CodeQL tracing
     timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
     bazel_cmd = f"bazel build --config=codeql --stamp --action_env=CODEQL_SEED_FORCE_RECOMPILE={timestamp}"
-    bazel_cmd += " " + " ".join(f"--action_env={var}" for var in codeql_env)
+    bazel_cmd += _get_action_env_extension(codeql_env)
     subprocess.run(f"{bazel_cmd} {target}", shell=True, env=env, cwd=source_root, check=True)
 
     # Finalize database
@@ -55,12 +55,19 @@ def analyze_database(code_ql_path, database_path, source_root, analysis_report_p
 
     query_arg = f" {query_spec}" if query_spec else ""
     sarif_path = f"{output_base}/{output_prefix}.sarif"
+    csv_path = f"{output_base}/{output_prefix}.csv"
 
     # Run CodeQL analysis (generates SARIF)
     print("\n Running CodeQL analysis...")
     subprocess.run(
         f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
         f"--format=sarifv2.1.0 --output={sarif_path}",
+        shell=True, check=True)
+
+    # Generate CSV results
+    subprocess.run(
+        f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
+        f"--format=csv --output={csv_path}",
         shell=True, check=True)
 
     # Generate reports using CodeQL analysis_report tool
@@ -165,6 +172,13 @@ def main():
         print(f"  Use this database for future report generation")
 
 
+def _get_action_env_extension(codeql_env):
+    action_env_extension = ""
+    for env_var in codeql_env:
+        action_env_extension += f" --action_env={env_var}"
+    return action_env_extension
+
+
 def _get_merged_environment(codeql_env):
     env = os.environ.copy()
     for var in codeql_env:
@@ -173,10 +187,22 @@ def _get_merged_environment(codeql_env):
 
 
 def _get_bazel_info(source_root):
-    result = subprocess.run("bazel info", shell=True, cwd=source_root,
-                          capture_output=True, text=True, check=True)
-    return {line.split(':', 1)[0].strip(): line.split(':', 1)[1].strip()
-            for line in result.stdout.strip().split('\n') if ':' in line}
+    result = subprocess.run(
+        "bazel info",
+        shell=True,
+        cwd=source_root,
+        capture_output=True,
+        text=True,
+        check=True
+    )
+
+    # Parse the output into a dictionary
+    bazel_info = {}
+    for line in result.stdout.strip().split('\n'):
+        if ':' in line:
+            key, value = line.split(':', 1)
+            bazel_info[key.strip()] = value.strip()
+    return bazel_info
 
 
 if __name__ == "__main__":

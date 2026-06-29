@@ -129,43 +129,8 @@ The following markdown files are automatically created in `bazel-out/analysis_re
 
 > **Note:** `bazel-out` is a **symlink** into the Bazel cache (`~/.cache/bazel/.../bazel-out`),
 > not a real folder inside the repository. VS Code's Explorer and `find` do not traverse it by
-> default, so the reports may not appear in the sidebar even though they exist on disk. Open them
-> from the terminal (see below) or with `code bazel-out/analysis_reports/<report>.md`. Use `ls`
+> default, so the reports may not appear in the sidebar even though they exist on disk. Use `ls`
 > (not `find`) to list them, since `find` skips the symlink unless you pass `-L`.
-
-#### View Reports
-
-**View the main compliance summary:**
-
-```bash
-cat bazel-out/analysis_reports/guideline_compliance_summary.md
-```
-
-**View deviation permits and exceptions:**
-
-```bash
-cat bazel-out/analysis_reports/deviations_report.md
-```
-
-**View database integrity status:**
-
-```bash
-cat bazel-out/analysis_reports/database_integrity_report.md
-```
-
-#### What Happens on Subsequent Runs
-
-When you run the command again:
-- **Database** — Recreated fresh (ensures latest analysis)
-- **SARIF** — Overwritten with new findings
-- **Reports** — Deleted and regenerated with new data
-
-#### Important Notes
-
-- **Always specify --target** — Without it, the database will be empty and reports will show 0 issues
-- **Reports auto-generate** — No separate command needed; they're created automatically as part of the pipeline
-- **All three artifacts created** — Database, SARIF, and Reports are generated in one command
-- **Database persists** — Reusable for future report generation without rebuilding
 
 
 ## Coverage
