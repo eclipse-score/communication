@@ -58,7 +58,7 @@ constexpr std::string_view kFieldName{"DummyField1"};
 class MyDummyField : public SkeletonFieldBase
 {
   public:
-    MyDummyField(SkeletonBase& skeleton_base,
+    MyDummyField(SkeletonBase& /*skeleton_base*/,
                  const std::string_view field_name,
                  std::unique_ptr<SkeletonEventBindingBase> skeleton_event_base)
         : SkeletonFieldBase{field_name, std::make_unique<SkeletonEventBase>(field_name, std::move(skeleton_event_base))}

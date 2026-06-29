@@ -172,7 +172,7 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
 }
 
 template <typename SampleDataType>
-SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
+SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& /*skeleton_base*/,
                                              const std::string_view event_name,
                                              std::unique_ptr<SkeletonEventBinding<EventType>> binding)
     : SkeletonEventBase{event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
