@@ -16,10 +16,12 @@ py_binary(
     args = [
         "--codeql_path=$(location @codeql_bundle//:codeql_cli)",
         "--config_path=$(location :config)",
+        "--analysis_report_path=$(location @codeql_coding_standards//:analysis_report)",
     ],
     data = [
         ":config",
         "@codeql_bundle//:codeql_cli",
+        "@codeql_coding_standards//:analysis_report",
         "@codeql_coding_standards//:process_coding_standards_config",
     ],
     main = "codeql_lint.py",

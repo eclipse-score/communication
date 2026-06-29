@@ -70,43 +70,68 @@ To analyze a specific target:
 bazel run //quality/static_analysis:codeql_lint -- --target=//score/message_passing/...
 ```
 
-### Running CodeQL in phases
+This command automatically creates the database, generates SARIF, and creates 4 compliance reports in one step.
 
-Create the database once:
+### Automatic Compliance Report Generation
+
+When CodeQL analysis completes, MISRA C++ compliance reports are **automatically generated** using the `analysis_report` tool.
+
+Reports are automatically generated for all analysis modes:
+- `--phase all` (default)
+- `--phase analyze-database` (when analyzing existing database)
+
+The complete pipeline creates:
+
+1. **CodeQL Database** — Analyzed code structure
+   - Location: `bazel-out/codeql_database/` (persistent)
+
+2. **SARIF File** — Machine-readable analysis results (JSON)
+   - Location: `bazel-out/codeql.sarif`
+
+3. **Markdown Reports** — Human-readable compliance documents (4 files)
+   - Location: `bazel-out/analysis_reports/`
+
+#### Run CodeQL with Automatic Reports (Recommended)
+
+**Analyze a specific target with full automatic report generation:**
 
 ```bash
-bazel run //quality/static_analysis:codeql_lint -- \
-  --phase create-database \
-  --database-path /var/tmp/codeql_databases/codeql_db \
-  --target //score/...
+bazel run //quality/static_analysis:codeql_lint -- --target=//score/message_passing
 ```
 
-Run quick analysis (uses incremental queries from config.yaml):
+This single command automatically:
+1. Creates CodeQL database
+2. Generates SARIF file (JSON with 274+ findings)
+3. Generates 4 Markdown reports from SARIF + database
 
-```bash
-bazel run //quality/static_analysis:codeql_lint -- \
-  --phase analyze-database \
-  --database-path /var/tmp/codeql_databases/codeql_db
-```
+#### Generated Reports
 
-Run full analysis with a specific query pack (e.g. for nightly):
+The following markdown files are automatically created in `bazel-out/analysis_reports/`:
 
-```bash
-bazel run //quality/static_analysis:codeql_lint -- \
-  --phase analyze-database \
-  --database-path /var/tmp/codeql_databases/codeql_db \
-  --query-spec "codeql/misra-cpp-coding-standards@2.52.0" \
-  --output-prefix codeql-nightly
-```
+- **database_integrity_report.md** — Database validation
+  - Extraction errors (if any)
+  - Successfully extracted files
+  - Database health status
 
-The `--phase` argument accepts `create-database`, `analyze-database`, or `all` (default, original behavior). The `--query-spec` argument allows specifying a different query pack or suite for the analysis step. The `--output-prefix` argument controls the output file names.
+- **deviations_report.md** — MISRA compliance waivers
+  - Deviation records and permits
+  - Approved exceptions from standards
+  - Justification and background
 
-Results are written to the Bazel output directory (`bazel info output_path`):
+- **guideline_compliance_summary.md** — Executive summary
+  - **Result**: Compliant or Non-Compliant
+  - Total issues and violations
+  - Rules triggered
 
-- `codeql.sarif` — SARIF v2.1.0 format
-- `codeql.csv` — CSV format
+- **guideline_recategorizations_report.md** — Rule recategorizations
+  - Applied guideline recategorizations
+  - Category remappings
 
-The query configuration is defined in [`quality/static_analysis/config.yaml`](static_analysis/config.yaml).
+> **Note:** `bazel-out` is a **symlink** into the Bazel cache (`~/.cache/bazel/.../bazel-out`),
+> not a real folder inside the repository. VS Code's Explorer and `find` do not traverse it by
+> default, so the reports may not appear in the sidebar even though they exist on disk. Use `ls`
+> (not `find`) to list them, since `find` skips the symlink unless you pass `-L`.
+
 
 ## Coverage
 
