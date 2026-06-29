@@ -38,7 +38,7 @@ git_override(
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
-bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
+bazel_dep(name = "score_baselibs_rust", version = "0.1.2")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.10", repo_name = "score_communication_crate_index")
 
