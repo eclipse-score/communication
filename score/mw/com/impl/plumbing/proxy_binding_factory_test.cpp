@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
+#include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/plumbing/proxy_binding_factory_mock.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
 #include "score/mw/com/impl/runtime.h"
@@ -122,9 +123,11 @@ TEST_F(ProxyBindingFactoryCreateFixture, CanCreateLoLaProxy)
         .WillByDefault(Return(make_FindServiceHandle(10U)));
 
     // When creating a proxy with that
-    created_binding_ = ProxyBindingFactory::Create(handle);
+    auto create_result = ProxyBindingFactory::Create(handle);
 
-    // Then no nullptr is returned
+    // Then a binding is returned
+    ASSERT_TRUE(create_result.has_value());
+    created_binding_ = std::move(create_result).value();
     EXPECT_NE(created_binding_, nullptr);
 }
 
@@ -147,8 +150,9 @@ TEST_F(ProxyBindingFactoryCreateFixture, CannotCreateBlank)
     // When creating a proxy with that
     const auto result = ProxyBindingFactory::Create(handle);
 
-    // Then a nullptr is returned
-    EXPECT_EQ(result, nullptr);
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), BindingFactoryErrorCode::kUnsupportedBindingType);
 }
 
 using ProxyBindingFactoryCreateDeathTest = ProxyBindingFactoryCreateFixture;

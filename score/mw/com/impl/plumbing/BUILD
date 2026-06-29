@@ -272,6 +272,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
+        ":binding_factory_error",
         ":i_proxy_binding_factory",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -309,6 +310,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
+        ":binding_factory_error",
         ":i_proxy_event_binding_factory",
         ":lola_proxy_element_building_blocks",
         "@score_baselibs//score/language/futurecpp",
@@ -343,6 +345,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
+        ":binding_factory_error",
         ":i_proxy_method_binding_factory",
         ":lola_proxy_element_building_blocks",
         "@score_baselibs//score/language/futurecpp",

@@ -34,7 +34,7 @@ class ProxyBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyBindingFactory.
-    static std::unique_ptr<ProxyBinding> Create(const HandleType& handle) noexcept
+    static Result<std::unique_ptr<ProxyBinding>> Create(const HandleType& handle) noexcept
     {
         return instance().Create(handle);
     }

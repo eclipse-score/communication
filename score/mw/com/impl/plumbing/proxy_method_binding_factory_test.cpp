@@ -121,7 +121,8 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructProxyMethod)
         handle, *this->proxy_, kDummyMethodName, MethodType::kMethod);
 
     // Then a valid binding can be created
-    ASSERT_NE(proxy_method, nullptr);
+    ASSERT_TRUE(proxy_method.has_value());
+    ASSERT_NE(proxy_method.value(), nullptr);
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
@@ -136,8 +137,9 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
     auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
         handle, proxy_binding_mock, kDummyMethodName, MethodType::kMethod);
 
-    // Then a nullptr is returned
-    EXPECT_EQ(proxy_method, nullptr);
+    // Then an error is returned
+    ASSERT_FALSE(proxy_method.has_value());
+    EXPECT_EQ(proxy_method.error(), BindingFactoryErrorCode::kUnsupportedBindingType);
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeReturnsValueForMethodInLolaDeployment)

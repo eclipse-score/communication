@@ -18,6 +18,8 @@
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
+#include "score/result/result.h"
+
 #include <memory>
 #include <string_view>
 
@@ -43,29 +45,29 @@ class IProxyFieldBindingFactory
     /// \tparam SampleType Type of the data that is exchanges
     /// \param handle The handle containing the binding information.
     /// \param field_name The binding unspecific name of the event inside the proxy denoted by handle.
-    /// \return An instance of ProxyEventBinding or nullptr in case of an error.
+    /// \return An instance of ProxyEventBinding or an error in case of binding construction failure.
     virtual auto CreateEventBinding(HandleType parent_handle,
                                     ProxyBinding& parent_binding,
                                     const std::string_view field_name) noexcept
-        -> std::unique_ptr<ProxyEventBinding<SampleType>> = 0;
+        -> Result<std::unique_ptr<ProxyEventBinding<SampleType>>> = 0;
 
     /// Creates an instance of the method binding for the get-method of a proxy field.
     /// \param parent The proxy base that contains this field.
     /// \param field_name The binding unspecific name of the field inside the proxy.
-    /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
+    /// \return An instance of ProxyMethodBinding or an error in case of binding construction failure.
     virtual auto CreateGetMethodBinding(HandleType parent_handle,
                                         ProxyBinding& parent_binding,
                                         const std::string_view field_name) noexcept
-        -> std::unique_ptr<ProxyMethodBinding> = 0;
+        -> Result<std::unique_ptr<ProxyMethodBinding>> = 0;
 
     /// Creates an instance of the method binding for the set-method of a proxy field.
     /// \param parent The proxy base that contains this field.
     /// \param field_name The binding unspecific name of the field inside the proxy.
-    /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
+    /// \return An instance of ProxyMethodBinding or an error in case of binding construction failure.
     virtual auto CreateSetMethodBinding(HandleType parent_handle,
                                         ProxyBinding& parent_binding,
                                         const std::string_view field_name) noexcept
-        -> std::unique_ptr<ProxyMethodBinding> = 0;
+        -> Result<std::unique_ptr<ProxyMethodBinding>> = 0;
 };
 }  // namespace score::mw::com::impl
 

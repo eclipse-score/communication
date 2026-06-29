@@ -27,7 +27,7 @@ class ProxyBindingFactoryImpl final : public IProxyBindingFactory
 {
   public:
     /// \brief See documentation in IProxyBindingFactory.
-    std::unique_ptr<ProxyBinding> Create(const HandleType& handle) noexcept override;
+    Result<std::unique_ptr<ProxyBinding>> Create(const HandleType& handle) noexcept override;
 };
 
 }  // namespace score::mw::com::impl
