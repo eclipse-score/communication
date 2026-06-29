@@ -59,19 +59,19 @@ SubscriptionStateMachineState SubscriptionStateMachine::GetCurrentState() const 
 
 SubscriptionStateMachineState SubscriptionStateMachine::GetCurrentStateNoLock() const noexcept
 {
-    return current_state_idx_;
+    return current_state_idx_.load();
 }
 
 SubscriptionStateBase& SubscriptionStateMachine::GetCurrentEventState() noexcept
 {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index): current_state_idx_ can't be const expression
-    return *states_[static_cast<std::uint8_t>(current_state_idx_)];
+    return *states_[static_cast<std::uint8_t>(current_state_idx_.load())];
 }
 
 const SubscriptionStateBase& SubscriptionStateMachine::GetCurrentEventState() const noexcept
 {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index): current_state_idx_ can't be const expression
-    return *states_[static_cast<std::uint8_t>(current_state_idx_)];
+    return *states_[static_cast<std::uint8_t>(current_state_idx_.load())];
 }
 
 Result<void> SubscriptionStateMachine::SubscribeEvent(const std::size_t max_sample_count) noexcept
@@ -150,7 +150,7 @@ const ElementFqId& SubscriptionStateMachine::GetElementFqId() const& noexcept
 void SubscriptionStateMachine::TransitionToState(const SubscriptionStateMachineState newState) noexcept
 {
     GetCurrentEventState().OnExit();
-    current_state_idx_ = newState;
+    current_state_idx_.store(newState);
     GetCurrentEventState().OnEntry();
     if (subscription_state_change_handler_.has_value())
     {
