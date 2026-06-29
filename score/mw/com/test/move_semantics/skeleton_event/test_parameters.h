@@ -28,9 +28,9 @@ const std::string kServiceInstanceManifest{"service-instance-manifest"};
 constexpr std::size_t kNumberOfSamplesToSendPerOffer{10U};
 
 const InstanceSpecifier kInstanceSpecifierMovedTo =
-    InstanceSpecifier::Create(std::string{"test/skeleton_move_semantics/MoveEventInterfaceMovedTo"}).value();
+    InstanceSpecifier::Create(std::string{"test/skeleton_event_move_semantics/MoveEventInterfaceMovedTo"}).value();
 const InstanceSpecifier kInstanceSpecifierMovedFrom =
-    InstanceSpecifier::Create(std::string{"test/skeleton_move_semantics/MoveEventInterfaceMovedFrom"}).value();
+    InstanceSpecifier::Create(std::string{"test/skeleton_event_move_semantics/MoveEventInterfaceMovedFrom"}).value();
 
 enum class SkeletonMoveScenario : std::uint8_t
 {

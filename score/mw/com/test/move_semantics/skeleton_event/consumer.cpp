@@ -10,12 +10,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/skeleton_move_semantics/consumer.h"
+#include "score/mw/com/test/move_semantics/skeleton_event/consumer.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/common_test_resources/proxy_container.h"
 #include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
-#include "score/mw/com/test/skeleton_move_semantics/test_event_datatype.h"
+#include "score/mw/com/test/move_semantics/skeleton_event/test_event_datatype.h"
 #include "score/mw/com/types.h"
 
 #include <cstdint>
@@ -25,7 +25,7 @@ namespace score::mw::com::test
 namespace
 {
 
-const std::string kInterprocessNotificationShmPath{"/skeleton_move_semantics_interprocess_notification"};
+const std::string kInterprocessNotificationShmPath{"/skeleton_event_move_semantics_interprocess_notification"};
 
 template <typename ProxyEventType>
 class ProxyStateChangeNotifier
@@ -103,7 +103,8 @@ class ProxyEventReceiver
                 num_samples_to_receive);
             if (!get_samples_result.has_value())
             {
-                FailTest("skeleton_move_semantics consumer failed: GetNewSamples failed: ", get_samples_result.error());
+                FailTest("skeleton_event_move_semantics consumer failed: GetNewSamples failed: ",
+                         get_samples_result.error());
             }
 
             received_count += get_samples_result.value();
@@ -133,12 +134,12 @@ class ProxyEventReceiver
     {
         if (sample == nullptr)
         {
-            FailTest("skeleton_move_semantics consumer failed: received null sample");
+            FailTest("skeleton_event_move_semantics consumer failed: received null sample");
         }
         const std::uint32_t expected_value = latest_value_.has_value() ? latest_value_.value() + 1U : 1U;
         if (*sample != expected_value)
         {
-            FailTest("skeleton_move_semantics consumer failed: received value ",
+            FailTest("skeleton_event_move_semantics consumer failed: received value ",
                      *sample,
                      " does not match expected value ",
                      expected_value);
@@ -165,7 +166,7 @@ void RunConsumer(const InstanceSpecifier& instance_specifier,
         ProcessSynchronizer::Create(kInterprocessNotificationShmPath + std::string{name});
     if (!process_synchronizer_result.has_value())
     {
-        FailTest("skeleton_move_semantics consumer failed: could not create ready synchronizer");
+        FailTest("skeleton_event_move_semantics consumer failed: could not create ready synchronizer");
     }
 
     ExitFunctionGuard done_guard{[&process_synchronizer_result]() {
@@ -176,7 +177,7 @@ void RunConsumer(const InstanceSpecifier& instance_specifier,
 
     // Step 1. Find service and create proxy
     std::cout << "\nConsumer: Step 1 - Find service and create proxy" << std::endl;
-    proxy_container.CreateProxy(instance_specifier, "skeleton_move_semantics");
+    proxy_container.CreateProxy(instance_specifier, "skeleton_event_move_semantics");
     auto& proxy = proxy_container.GetProxy();
 
     // Step 2. Register receive handler
@@ -192,7 +193,7 @@ void RunConsumer(const InstanceSpecifier& instance_specifier,
     auto subscribe_result = proxy.moved_event_.Subscribe(num_samples_to_receive);
     if (!subscribe_result.has_value())
     {
-        FailTest("skeleton_move_semantics consumer failed: Subscribe failed: ", subscribe_result.error());
+        FailTest("skeleton_event_move_semantics consumer failed: Subscribe failed: ", subscribe_result.error());
     }
 
     // Step 5. Wait for provider to send values and notify

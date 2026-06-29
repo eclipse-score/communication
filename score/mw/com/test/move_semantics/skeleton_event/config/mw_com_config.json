@@ -1,7 +1,7 @@
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/test/skeleton_move_semantics/MoveEventInterface",
+      "serviceTypeName": "/test/skeleton_event_move_semantics/MoveEventInterface",
       "version": {
         "major": 1,
         "minor": 0
@@ -22,8 +22,8 @@
   ],
   "serviceInstances": [
     {
-      "instanceSpecifier": "test/skeleton_move_semantics/MoveEventInterfaceMovedTo",
-      "serviceTypeName": "/test/skeleton_move_semantics/MoveEventInterface",
+      "instanceSpecifier": "test/skeleton_event_move_semantics/MoveEventInterfaceMovedTo",
+      "serviceTypeName": "/test/skeleton_event_move_semantics/MoveEventInterface",
       "version": {
         "major": 1,
         "minor": 0
@@ -60,8 +60,8 @@
       ]
     },
     {
-      "instanceSpecifier": "test/skeleton_move_semantics/MoveEventInterfaceMovedFrom",
-      "serviceTypeName": "/test/skeleton_move_semantics/MoveEventInterface",
+      "instanceSpecifier": "test/skeleton_event_move_semantics/MoveEventInterfaceMovedFrom",
+      "serviceTypeName": "/test/skeleton_event_move_semantics/MoveEventInterface",
       "version": {
         "major": 1,
         "minor": 0

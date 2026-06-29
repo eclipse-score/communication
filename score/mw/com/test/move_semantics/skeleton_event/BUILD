@@ -136,7 +136,7 @@ pkg_application(
         "config/logging.json",
     ],
     visibility = [
-        "//score/mw/com/test/skeleton_move_semantics:__subpackages__",
+        "//score/mw/com/test/move_semantics/skeleton_event:__subpackages__",
     ],
 )
 
@@ -149,7 +149,7 @@ pkg_application(
         "config/logging.json",
     ],
     visibility = [
-        "//score/mw/com/test/skeleton_move_semantics:__subpackages__",
+        "//score/mw/com/test/move_semantics/skeleton_event:__subpackages__",
     ],
 )
 
@@ -162,6 +162,6 @@ pkg_application(
         "config/logging.json",
     ],
     visibility = [
-        "//score/mw/com/test/skeleton_move_semantics:__subpackages__",
+        "//score/mw/com/test/move_semantics/skeleton_event:__subpackages__",
     ],
 )
