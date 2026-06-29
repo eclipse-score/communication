@@ -142,3 +142,78 @@ def integration_test(name, srcs, filesystem, **kwargs):
         env = {"DOCKER_HOST": ""},
         **kwargs
     )
+
+def dual_qemu_integration_test(
+        name,
+        srcs,
+        filesystem,
+        dual_config = Label("//quality/integration_testing/environments/dual_qemu:dual_qemu_config.example.json"),
+        **kwargs):
+    """Run an integration test on TWO QNX QEMU VMs sharing an ivshmem region.
+
+    Mirrors `integration_test` but wires the `dual_qemu` plugin (which provides the
+    `target_a` / `target_b` fixtures) instead of the single-VM `qemu_plugin`. Both VMs boot
+    the same IFS image built from `filesystem`. QNX-only.
+
+    Args:
+        name: test target name.
+        srcs: pytest source files.
+        filesystem: a `pkg_*` target installed into the (shared) IFS image of both VMs.
+        dual_config: JSON config describing the two VMs and the ivshmem region.
+        **kwargs: forwarded to `py_itf_test`.
+    """
+    QNX_TARGET_COMPATIBLE_WITH = select({
+        "@platforms//cpu:x86_64": ["@platforms//cpu:x86_64"],
+        "@platforms//cpu:arm64": ["@platforms//cpu:arm64"],
+    }) + [
+        "@platforms//os:qnx",
+    ]
+
+    qemu_image = "_init_ifs_{}".format(name)
+    qnx_ifs(
+        name = qemu_image,
+        out = "init_ifs_{}".format(name),
+        build_file = "//quality/integration_testing/environments/qnx8_qemu:init_build",
+        srcs = [filesystem, "//quality/integration_testing/environments/qnx8_qemu:qnx_config"],
+        target_compatible_with = QNX_TARGET_COMPATIBLE_WITH,
+    )
+
+    _extend_list_in_kwargs(kwargs, "data", [qemu_image, dual_config])
+    _extend_list_in_kwargs(
+        kwargs,
+        "args",
+        [
+            "--log-cli-level=DEBUG",
+            "--dual-qemu-config=$(location {})".format(dual_config),
+            "--qemu-image=$(location {})".format(qemu_image),
+        ],
+    )
+
+    # Two VMs require even more resources than a single one.
+    if "size" not in kwargs:
+        kwargs["size"] = "enormous"
+    if "timeout" not in kwargs:
+        kwargs["timeout"] = "moderate"
+
+    # Driving two real QNX guests under KVM has rare, environment-induced boot
+    # nondeterminism (e.g. a guest occasionally wedging during device bring-up).
+    # The fixtures already stagger boots and wait for stable SSH; mark the test
+    # flaky so bazel transparently retries such infrastructure hiccups.
+    if "flaky" not in kwargs:
+        kwargs["flaky"] = True
+
+    _extend_list_in_kwargs_without_duplicates(
+        kwargs,
+        "target_compatible_with",
+        ["//quality/sanitizer/constraints:no_tsan"],
+    )
+    _extend_list_in_kwargs(kwargs, "target_compatible_with", QNX_TARGET_COMPATIBLE_WITH)
+
+    py_itf_test(
+        name = name,
+        srcs = srcs,
+        plugins = [
+            "//quality/integration_testing/environments/dual_qemu:dual_qemu_plugin",
+        ],
+        **kwargs
+    )
