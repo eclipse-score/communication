@@ -81,6 +81,7 @@ static constexpr auto kFieldSetterName = "field_setter_name";
 static constexpr auto kFieldGetterName = "field_getter_name";
 static constexpr auto kFieldName = "field_name";
 static constexpr auto kMethodName = "method_name";
+static constexpr auto kMethodName2 = "method_name_2";
 
 class ProxyBaseFixture : public ::testing::Test
 {
@@ -570,22 +571,16 @@ class MyProxy : public ProxyBase
     }
 };
 
-// Since ProxyMethodBase is an abstract class, we create a dummy ProxyMethod which has a dummy implementation of the
-// pure virtual method which is not required in these tests. We use this class instead of a real ProxyMethod since we
-// want to explicitly call RegisterMethod in the tests, and ProxyMethod already calls this on construction.
+// Since ProxyMethodBase is an abstract class, we create a dummy ProxyMethod which mocks the pure virtual method. We use
+// this class instead of a real ProxyMethod since we want to explicitly call RegisterMethod in the tests, and
+// ProxyMethod already calls this on construction.
 class DummyProxyMethod : public ProxyMethodBase
 {
   public:
     using ProxyMethodBase::ProxyMethodBase;
-    Result<void> InitializeInArgsAndReturnValues(ProxyBinding&) override
-    {
-        return {};
-    }
-};
 
-static_assert(std::is_nothrow_move_constructible_v<DummyProxyMethod>,
-              "DummyProxyMethod must be nothrow move constructible");
-static_assert(std::is_nothrow_move_assignable_v<DummyProxyMethod>, "DummyProxyMethod must be nothrow move assignable");
+    MOCK_METHOD(Result<void>, InitializeInArgsAndReturnValues, (ProxyBinding&), (override));
+};
 
 /// Note. Technically, these tests are testing internals of ProxyBase. While we generally strive to test only the public
 /// interface, we make an exception in this case since the reference updating of service elements is complex and can
@@ -779,13 +774,25 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningToItselfDoesNotDoA
     // branch can be taken without crash.
 }
 
+// Attorney class which allows us to call the protected SetupMethods method of ProxyBase in the tests.
+class ProxyBaseSetupMethodsAttorney : public ProxyBase
+{
+  public:
+    using ProxyBase::ProxyBase;
+
+    Result<void> SetupMethods(const std::size_t additional_shm_size_bytes = 0)
+    {
+        return ProxyBase::SetupMethods(additional_shm_size_bytes);
+    }
+};
+
 class ProxyBaseAreBindingsValidFixture : public ::testing::Test
 {
   public:
     ProxyBaseAreBindingsValidFixture& GivenAProxyBaseWithValidBinding()
     {
-        proxy_base_ = std::make_unique<ProxyBase>(std::make_unique<mock_binding::ProxyFacade>(mock_proxy_binding_),
-                                                  kConfigStore.GetHandle());
+        proxy_base_ = std::make_unique<ProxyBaseSetupMethodsAttorney>(
+            std::make_unique<mock_binding::ProxyFacade>(mock_proxy_binding_), kConfigStore.GetHandle());
         return *this;
     }
 
@@ -818,13 +825,21 @@ class ProxyBaseAreBindingsValidFixture : public ::testing::Test
         return *this;
     }
 
-    mock_binding::Proxy mock_proxy_binding_;
-    std::unique_ptr<ProxyBase> proxy_base_;
+    ProxyBaseAreBindingsValidFixture& WithASecondValidMethodRegistered()
+    {
+        method_2_ = std::make_unique<DummyProxyMethod>(
+            kMethodName2, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod);
+        ProxyBaseView{*proxy_base_}.RegisterMethod(kMethodName2, method_2_->GetReferenceToMoveable());
+        return *this;
+    }
 
-  private:
+    mock_binding::Proxy mock_proxy_binding_;
+    std::unique_ptr<ProxyBaseSetupMethodsAttorney> proxy_base_;
+
     std::unique_ptr<ProxyEventBase> event_{nullptr};
 
     std::unique_ptr<DummyProxyMethod> method_{nullptr};
+    std::unique_ptr<DummyProxyMethod> method_2_{nullptr};
 
     std::unique_ptr<ProxyEventBase> field_event_dispatch_{nullptr};
     std::unique_ptr<DummyProxyMethod> field_setter_dispatch_{nullptr};
@@ -939,6 +954,86 @@ TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsFalseIfRegistere
 
     // Then the result is false
     EXPECT_FALSE(are_bindings_valid);
+}
+
+using ProxyBaseSetupMethodsFixture = ProxyBaseAreBindingsValidFixture;
+TEST_F(ProxyBaseSetupMethodsFixture, DispatchesToBindingSetupMethods)
+{
+    GivenAProxyBaseWithValidBinding();
+
+    // Expecting that SetupMethods is called on the Proxy binding
+    EXPECT_CALL(mock_proxy_binding_, SetupMethods(_)).WillOnce(Return(Result<void>{}));
+
+    // When calling SetupMethods
+    const auto result = proxy_base_->SetupMethods();
+
+    // Then the result is valid
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(ProxyBaseSetupMethodsFixture, PropagatesErrorFromBindingSetupMethods)
+{
+    GivenAProxyBaseWithValidBinding();
+
+    // Expecting that SetupMethods is called on the Proxy binding and returns an error
+    const auto binding_error_code = ComErrc::kCommunicationLinkError;
+    EXPECT_CALL(mock_proxy_binding_, SetupMethods(_)).WillOnce(Return(MakeUnexpected(binding_error_code)));
+
+    // When calling SetupMethods
+    const auto result = proxy_base_->SetupMethods();
+
+    // Then the result is an error
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), binding_error_code);
+}
+
+TEST_F(ProxyBaseSetupMethodsFixture, CallsInitializeOnAllMethodBindings)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidMethodRegistered().WithASecondValidMethodRegistered();
+
+    // Expecting that Initialize is called on both method bindings and returns a valid result
+    EXPECT_CALL(*method_, InitializeInArgsAndReturnValues(_)).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(*method_2_, InitializeInArgsAndReturnValues(_)).WillOnce(Return(Result<void>{}));
+
+    // When calling SetupMethods
+    const auto result = proxy_base_->SetupMethods();
+
+    // Then the result is valid
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(ProxyBaseSetupMethodsFixture, ReturnsValidWhenInitializeReturnsBindingDisabled)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidMethodRegistered().WithASecondValidMethodRegistered();
+
+    // Expecting that Initialize is called on both method bindings and returns a kMethodBindingDisabled error from the
+    // first and a valid result from the second
+    EXPECT_CALL(*method_, InitializeInArgsAndReturnValues(_))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kMethodBindingDisabled)));
+    EXPECT_CALL(*method_2_, InitializeInArgsAndReturnValues(_)).WillOnce(Return(Result<void>{}));
+
+    // When calling SetupMethods
+    const auto result = proxy_base_->SetupMethods();
+
+    // Then the result is valid
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(ProxyBaseSetupMethodsFixture, ReturnsErrorWhenInitializeReturnsErrorOtherThanBindingDisabled)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidMethodRegistered().WithASecondValidMethodRegistered();
+
+    // Expecting that Initialize is called on the first binding and returns an error other than kBindingDisabled
+    const auto binding_error_code = ComErrc::kCommunicationLinkError;
+    EXPECT_CALL(*method_, InitializeInArgsAndReturnValues(_)).WillOnce(Return(MakeUnexpected(binding_error_code)));
+    EXPECT_CALL(*method_2_, InitializeInArgsAndReturnValues(_)).Times(0);
+
+    // When calling SetupMethods
+    const auto result = proxy_base_->SetupMethods();
+
+    // Then the result is an error
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), binding_error_code);
 }
 
 }  // namespace score::mw::com::impl

@@ -169,7 +169,20 @@ Result<void> ProxyBase::SetupMethods(const std::size_t additional_shm_size_bytes
         const auto method_init_result = method.InitializeInArgsAndReturnValues(*proxy_binding_);
         if (!method_init_result.has_value())
         {
-            return MakeUnexpected<void>(method_init_result.error());
+            if (method_init_result.error() == ComErrc::kMethodBindingDisabled)
+            {
+                score::mw::log::LogDebug("lola")
+                    << "Proxy method " << method_key_value_pair.first
+                    << " was disabled in the instance deployment configuration. No binding was created for it. "
+                       "Skipping initialization of in-args and return values.";
+            }
+            else
+            {
+                score::mw::log::LogError("lola")
+                    << "Proxy method " << method_key_value_pair.first
+                    << " failed to initialize in-args and return values with error: " << method_init_result.error();
+                return MakeUnexpected<void>(method_init_result.error());
+            }
         }
     }
     return {};

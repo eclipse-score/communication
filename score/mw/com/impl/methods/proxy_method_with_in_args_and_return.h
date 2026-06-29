@@ -27,6 +27,8 @@
 #include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
+#include "score/mw/log/logging.h"
+
 #include <score/assert.hpp>
 #include <score/stop_token.hpp>
 
@@ -111,6 +113,12 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     /// returned.
     score::Result<std::tuple<impl::MethodInArgPtr<ArgTypes>...>> Allocate()
     {
+        if (binding_ == nullptr)
+        {
+            score::mw::log::LogError("lola")
+                << "ProxyMethod::Allocate: Binding is not initialized for method " << method_name_;
+            return Unexpected(ComErrc::kMethodBindingDisabled);
+        }
         return detail::AllocateImpl<ArgTypes...>(*binding_, are_in_arg_ptrs_active_, is_return_type_ptr_active_);
     };
 
@@ -150,6 +158,12 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
 template <typename ReturnType, typename... ArgTypes>
 score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes...)>::operator()(const ArgTypes&... args)
 {
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola") << "ProxyMethod::operator(): Binding is not initialized for method "
+                                         << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     auto allocate_result = Allocate();
     if (!allocate_result.has_value())
     {
@@ -171,6 +185,12 @@ template <typename ReturnType, typename... ArgTypes>
 score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes...)>::operator()(
     MethodInArgPtr<ArgTypes>... args)
 {
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola") << "ProxyMethod::operator(): Binding is not initialized for method "
+                                         << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     auto queue_position = detail::GetCommonQueuePosition(args...);
     auto allocated_return_type_storage = binding_->GetReturnValueBuffer(queue_position);
     if (!allocated_return_type_storage.has_value())
@@ -203,7 +223,12 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes..
 template <typename ReturnType, typename... ArgTypes>
 Result<void> ProxyMethod<ReturnType(ArgTypes...)>::InitializeInArgsAndReturnValues(ProxyBinding& proxy_binding)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola")
+            << "ProxyMethod::InitializeInArgsAndReturnValues: Binding is not initialized for method " << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     const auto init_in_args_result = detail::InitializeInArgs<ArgTypes...>(proxy_binding, *binding_, kCallQueueSize);
     if (!init_in_args_result.has_value())
     {
