@@ -51,28 +51,22 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
 
   public:
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
-        : ProxyMethod(proxy_base,
-                      method_name,
-                      ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
-                                                                           ProxyBaseView{proxy_base}.GetBinding(),
-                                                                           method_name,
-                                                                           MethodType::kMethod))
-    {
-    }
-
-    ProxyMethod(ProxyBase& proxy_base,
-                std::string_view method_name,
-                std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
-        : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kMethod),
+        : ProxyMethodBase(method_name,
+                          ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                               ProxyBaseView{proxy_base}.GetBinding(),
+                                                                               method_name,
+                                                                               MethodType::kMethod),
+                          MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
+    }
+
+    ProxyMethod(std::string_view method_name, std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
+        : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kMethod),
+          are_in_arg_ptrs_active_(kCallQueueSize)
+    {
     }
 
     ~ProxyMethod() final = default;

@@ -24,14 +24,11 @@ GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const std::string_view eve
                      GenericProxyEventBindingFactory::Create(base.GetHandle(),
                                                              ProxyBaseView{base}.GetBinding(),
                                                              event_name,
-                                                             ServiceElementType::EVENT)}
+                                                             ServiceElementType::EVENT)
+                         .and_then([](std::unique_ptr<GenericProxyEventBinding> binding) {
+                             return Result<std::unique_ptr<ProxyEventBindingBase>>{std::move(binding)};
+                         })}
 {
-    ProxyBaseView proxy_base_view{base};
-    if (!binding_base_)
-    {
-        proxy_base_view.MarkServiceElementBindingInvalid();
-        return;
-    }
 }
 
 GenericProxyEvent::GenericProxyEvent(ProxyBase& base,
@@ -39,12 +36,6 @@ GenericProxyEvent::GenericProxyEvent(ProxyBase& base,
                                      std::unique_ptr<GenericProxyEventBinding> proxy_binding)
     : ProxyEventBase{event_name, std::move(proxy_binding)}
 {
-    ProxyBaseView proxy_base_view{base};
-    if (!binding_base_)
-    {
-        proxy_base_view.MarkServiceElementBindingInvalid();
-        return;
-    }
 }
 
 std::size_t GenericProxyEvent::GetSampleSize() const noexcept
