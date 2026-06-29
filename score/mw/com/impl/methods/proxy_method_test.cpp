@@ -11,21 +11,19 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/methods/proxy_method.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
+#include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/methods/proxy_method_with_in_args.h"
 #include "score/mw/com/impl/methods/proxy_method_with_in_args_and_return.h"
 #include "score/mw/com/impl/methods/proxy_method_with_return_type.h"
 #include "score/mw/com/impl/methods/proxy_method_without_in_args_or_return.h"
-
-#include "score/mw/com/impl/bindings/mock_binding/proxy.h"
-#include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
-#include "score/mw/com/impl/configuration/test/configuration_store.h"
-#include "score/mw/com/impl/method_type.h"
+#include "score/mw/com/impl/proxy_base.h"
+#include "score/mw/com/impl/test/binding_factory_resources.h"
 
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/result/result.h"
 
-#include "score/mw/com/impl/plumbing/proxy_method_binding_factory_mock.h"
-#include "score/mw/com/impl/proxy_base.h"
 #include <score/assert_support.hpp>
 #include <score/utility.hpp>
 
@@ -75,8 +73,6 @@ class ProxyMethodTestFixture : public ::testing::Test
   public:
     void SetUp() override
     {
-        ProxyMethodBindingFactory<MethodType>::InjectMockBinding(&proxy_method_binding_factory_mock_);
-
         ON_CALL(proxy_method_binding_mock_, GetInArgsBuffer(0))
             .WillByDefault(Return(score::Result<score::cpp::span<std::byte>>{
                 score::cpp::span{method_in_args_buffer_.data(), method_in_args_buffer_.size()}}));
@@ -112,7 +108,7 @@ class ProxyMethodTestFixture : public ::testing::Test
     mock_binding::ProxyMethod proxy_method_binding_mock_;
     TestProxyBase proxy_base_{std::make_unique<mock_binding::Proxy>(), config_store_.GetHandle()};
 
-    ProxyMethodBindingFactoryMock proxy_method_binding_factory_mock_{};
+    ProxyMethodBindingFactoryMockGuard<MethodType> proxy_method_binding_factory_mock_guard_{};
     std::unique_ptr<ProxyServiceMethodType> unit_{nullptr};
 };
 
@@ -258,50 +254,62 @@ TYPED_TEST(ProxyMethodWithInArgsTestFixture, GetInArgsBuffer_ReturnsInArgPointer
     EXPECT_EQ(pointer2.GetQueuePosition(), 0);
 }
 
-TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, InvalidBindingInConstructorMarksServiceElementAsInvalid)
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, SucceedingToCreateMethodBindingCreatesValidProxyMethod)
 {
-    using ProxyMethodType = ProxyMethod<TypeParam>;
-
-    // When a proxy method is created with an invalid binding
-    auto proxy_method = std::make_unique<ProxyMethodType>(this->proxy_base_, kMethodName, nullptr);
-
-    // Then calling AreBindingsValid returns false
-    EXPECT_FALSE(ProxyBaseView{this->proxy_base_}.AreBindingsValid());
-}
-
-TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture,
-           TwoParameterConstructorCorrectlyCallsBindingFactoryAndProxyMethodIsCreated)
-{
-
-    auto proxy_method_binding = std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_);
-
-    // expecting that a binding factory can create a binding
-    EXPECT_CALL(this->proxy_method_binding_factory_mock_,
+    // Expecting that a binding factory can create a binding
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
                 Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
-        .WillOnce(testing::Return(testing::ByMove(std::move(proxy_method_binding))));
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_))));
 
     // When the 2-parameter constructor of the ProxyMethod class is called
-    auto proxy_method = std::make_unique<ProxyMethod<TypeParam>>(this->proxy_base_, kMethodName);
+    ProxyMethod<TypeParam> proxy_method{this->proxy_base_, kMethodName};
 
-    // Then a valid proxy method is created
-    EXPECT_NE(proxy_method, nullptr);
+    // Then a valid proxy method is created without crashing
 }
 
-TYPED_TEST(
-    ProxyMethodAllArgCombinationsTestFixture,
-    TwoParameterConstructorCorrectlyCallsBindingFactoryButProxyMethodIsNotCreatedWhenTheBindingFactoryDoesNotReturnBinding)
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, SucceedingToCreateMethodBindingStoresValidConstructionResult)
 {
-    // expecting that a binding factory cannot create a binding
-    EXPECT_CALL(this->proxy_method_binding_factory_mock_,
+    // Expecting that a binding factory can create a binding
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
                 Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
-        .WillOnce(testing::Return(testing::ByMove(nullptr)));
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_))));
 
     // When the 2-parameter constructor of the ProxyMethod class is called
-    auto proxy_method = std::make_unique<ProxyMethod<TypeParam>>(this->proxy_base_, kMethodName);
+    ProxyMethod<TypeParam> proxy_method{this->proxy_base_, kMethodName};
 
-    // Then the binding cannot be created and calling AreBindingsValid returns false
-    EXPECT_FALSE(ProxyBaseView{this->proxy_base_}.AreBindingsValid());
+    // Then the stored construction result is valid
+    ProxyMethodBaseView proxy_method_view{proxy_method};
+    EXPECT_TRUE(proxy_method_view.GetBindingConstructionResult().has_value());
 }
+
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, FailingToCreateMethodBindingCreatesValidProxyMethod)
+{
+    // Expecting that a binding factory fails to create a binding and returns an error
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
+                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+
+    // When the 2-parameter constructor of the ProxyMethod class is called
+    ProxyMethod<TypeParam> proxy_method{this->proxy_base_, kMethodName};
+
+    // Then a valid proxy method is created without crashing
+}
+
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, FailingToCreateMethodBindingStoresConstructionError)
+{
+    // Expecting that a binding factory fails to create a binding and returns an error
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
+                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+
+    // When the 2-parameter constructor of the ProxyMethod class is called
+    ProxyMethod<TypeParam> proxy_method{this->proxy_base_, kMethodName};
+
+    // Then the stored construction result contains an error
+    ProxyMethodBaseView proxy_method_view{proxy_method};
+    EXPECT_FALSE(proxy_method_view.GetBindingConstructionResult().has_value());
+}
+
 TYPED_TEST(ProxyMethodWithInArgsTestFixture, GetInArgsBuffer_ReturnsInArgPointersPointingToInArgsAllocatedByBinding)
 {
     auto* const buffer_start_address = &(this->method_in_args_buffer_[0]);

@@ -54,11 +54,6 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
     }
 
     ProxyMethod(ProxyBase& proxy_base,
@@ -68,11 +63,6 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
     }
 
     ~ProxyMethod() final = default;

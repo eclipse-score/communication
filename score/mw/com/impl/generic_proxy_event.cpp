@@ -20,19 +20,17 @@ namespace score::mw::com::impl
 {
 
 GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const std::string_view event_name)
-    : ProxyEventBase{event_name,
-                     ProxyBaseView{base}.GetBinding(),
-                     GenericProxyEventBindingFactory::Create(base.GetHandle(),
-                                                             ProxyBaseView{base}.GetBinding(),
-                                                             event_name,
-                                                             ServiceElementType::EVENT)}
+    : ProxyEventBase{
+          event_name,
+          ProxyBaseView{base}.GetBinding(),
+          GenericProxyEventBindingFactory::Create(base.GetHandle(), ProxyBaseView{base}.GetBinding(), event_name)
+              .and_then([](std::unique_ptr<GenericProxyEventBinding> binding) {
+                  // Upcast the typed ProxyEventBinding to the base class ProxyEventBindingBase since the
+                  // base class does not know about the SampleType.
+                  return Result<std::unique_ptr<ProxyEventBindingBase>>{
+                      static_cast<ProxyEventBindingBase*>(binding.release())};
+              })}
 {
-    ProxyBaseView proxy_base_view{base};
-    if (!binding_base_)
-    {
-        proxy_base_view.MarkServiceElementBindingInvalid();
-        return;
-    }
 }
 
 GenericProxyEvent::GenericProxyEvent(ProxyBase& base,
@@ -40,12 +38,6 @@ GenericProxyEvent::GenericProxyEvent(ProxyBase& base,
                                      std::unique_ptr<GenericProxyEventBinding> proxy_binding)
     : ProxyEventBase{event_name, ProxyBaseView{base}.GetBinding(), std::move(proxy_binding)}
 {
-    ProxyBaseView proxy_base_view{base};
-    if (!binding_base_)
-    {
-        proxy_base_view.MarkServiceElementBindingInvalid();
-        return;
-    }
 }
 
 std::size_t GenericProxyEvent::GetSampleSize() const noexcept

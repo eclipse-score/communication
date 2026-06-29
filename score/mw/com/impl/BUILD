@@ -319,6 +319,7 @@ cc_library(
     deps = [
         ":enable_reference_to_moveable_from_this",
         ":proxy_event_base",
+        "//score/mw/com/impl/methods:proxy_method_base",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
     ],

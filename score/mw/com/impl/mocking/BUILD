@@ -248,6 +248,7 @@ cc_unit_test(
         ":test_type_utilities",
         "//score/mw/com/impl:proxy_event",
         "//score/mw/com/impl:proxy_field",
+        "//score/mw/com/impl/bindings/mock_binding",
     ],
 )
 

@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_PROXY_FIELD_BASE_H
 
 #include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
+#include "score/mw/com/impl/methods/proxy_method_base.h"
 #include "score/mw/com/impl/proxy_event_base.h"
 
 #include "score/result/result.h"
@@ -146,19 +147,40 @@ class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
 class ProxyFieldBaseView
 {
   public:
-    explicit ProxyFieldBaseView(ProxyFieldBase& base) noexcept : base_{base} {}
+    explicit ProxyFieldBaseView(ProxyFieldBase& base) noexcept : proxy_field_base_{base} {}
 
     void Unsubscribe() noexcept
     {
         // if the WithNotifier tag is not set, proxy_event_base_dispatch_ will be nullptr.
-        if (base_.proxy_event_base_dispatch_ != nullptr)
+        if (proxy_field_base_.proxy_event_base_dispatch_ != nullptr)
         {
-            base_.Unsubscribe();
+            proxy_field_base_.Unsubscribe();
         }
     }
 
+    [[nodiscard]] Result<void> GetEventBindingConstructionResult() const noexcept
+    {
+        return proxy_field_base_.proxy_event_base_dispatch_ != nullptr
+                   ? ProxyEventBaseView{*proxy_field_base_.proxy_event_base_dispatch_}.GetBindingConstructionResult()
+                   : Result<void>{};
+    }
+
+    [[nodiscard]] Result<void> GetSetterBindingConstructionResult() const noexcept
+    {
+        return proxy_field_base_.proxy_set_method_dispatch_ != nullptr
+                   ? ProxyMethodBaseView{*proxy_field_base_.proxy_set_method_dispatch_}.GetBindingConstructionResult()
+                   : Result<void>{};
+    }
+
+    [[nodiscard]] Result<void> GetGetterBindingConstructionResult() const noexcept
+    {
+        return proxy_field_base_.proxy_get_method_dispatch_ != nullptr
+                   ? ProxyMethodBaseView{*proxy_field_base_.proxy_get_method_dispatch_}.GetBindingConstructionResult()
+                   : Result<void>{};
+    }
+
   private:
-    ProxyFieldBase& base_;
+    ProxyFieldBase& proxy_field_base_;
 };
 
 }  // namespace score::mw::com::impl
