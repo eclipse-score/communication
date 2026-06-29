@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/skeleton_move_semantics/test_parameters.h"
+#include "score/mw/com/test/move_semantics/skeleton_event/test_parameters.h"
 
 #include "score/mw/com/test/common_test_resources/command_line_parser.h"
 #include "score/mw/com/test/common_test_resources/fail_test.h"

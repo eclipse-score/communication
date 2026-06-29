@@ -20,7 +20,7 @@ integration_test(
         "move_construct_not_offered_skeleton_same_process_test.py",
         "test_fixture.py",
     ],
-    filesystem = "//score/mw/com/test/skeleton_move_semantics:main_consumer_and_provider-pkg",
+    filesystem = "//score/mw/com/test/move_semantics/skeleton_event:main_consumer_and_provider-pkg",
 )
 
 integration_test(
@@ -29,7 +29,7 @@ integration_test(
         "move_construct_offered_skeleton_same_process_test.py",
         "test_fixture.py",
     ],
-    filesystem = "//score/mw/com/test/skeleton_move_semantics:main_consumer_and_provider-pkg",
+    filesystem = "//score/mw/com/test/move_semantics/skeleton_event:main_consumer_and_provider-pkg",
 )
 
 integration_test(
@@ -38,7 +38,7 @@ integration_test(
         "move_assign_not_offered_skeleton_same_process_test.py",
         "test_fixture.py",
     ],
-    filesystem = "//score/mw/com/test/skeleton_move_semantics:main_consumer_and_provider-pkg",
+    filesystem = "//score/mw/com/test/move_semantics/skeleton_event:main_consumer_and_provider-pkg",
 )
 
 integration_test(
@@ -47,14 +47,14 @@ integration_test(
         "move_assign_offered_skeleton_same_process_test.py",
         "test_fixture.py",
     ],
-    filesystem = "//score/mw/com/test/skeleton_move_semantics:main_consumer_and_provider-pkg",
+    filesystem = "//score/mw/com/test/move_semantics/skeleton_event:main_consumer_and_provider-pkg",
 )
 
 pkg_filegroup(
     name = "different_processes_filesystem",
     srcs = [
-        "//score/mw/com/test/skeleton_move_semantics:main_consumer-pkg",
-        "//score/mw/com/test/skeleton_move_semantics:main_provider-pkg",
+        "//score/mw/com/test/move_semantics/skeleton_event:main_consumer-pkg",
+        "//score/mw/com/test/move_semantics/skeleton_event:main_provider-pkg",
     ],
 )
 

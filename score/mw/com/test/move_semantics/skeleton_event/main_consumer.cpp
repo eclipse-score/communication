@@ -14,9 +14,8 @@
 
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
-#include "score/mw/com/test/skeleton_move_semantics/consumer.h"
-#include "score/mw/com/test/skeleton_move_semantics/provider.h"
-#include "score/mw/com/test/skeleton_move_semantics/test_parameters.h"
+#include "score/mw/com/test/move_semantics/skeleton_event/consumer.h"
+#include "score/mw/com/test/move_semantics/skeleton_event/test_parameters.h"
 
 int main(int argc, const char** argv)
 {
@@ -39,10 +38,6 @@ int main(int argc, const char** argv)
               << score::mw::com::test::kNumberOfSamplesToSendPerOffer << " and number of send iterations"
               << num_send_iterations << std::endl;
 
-    auto provider_future = std::async(score::mw::com::test::RunProvider,
-                                      test_configuration.scenario,
-                                      score::mw::com::test::kNumberOfSamplesToSendPerOffer,
-                                      stop_source.get_token());
     auto consumer_future = std::async(score::mw::com::test::RunConsumer,
                                       score::mw::com::test::kInstanceSpecifierMovedTo,
                                       score::mw::com::test::kNumberOfSamplesToSendPerOffer,
@@ -52,15 +47,12 @@ int main(int argc, const char** argv)
     if (test_configuration.scenario == score::mw::com::test::SkeletonMoveScenario::kMoveAssignOffered)
     {
         const std::size_t num_moved_to_send_iterations{1U};
-        auto moved_from_consumer_future = std::async(score::mw::com::test::RunConsumer,
-                                                     score::mw::com::test::kInstanceSpecifierMovedFrom,
-                                                     score::mw::com::test::kNumberOfSamplesToSendPerOffer,
-                                                     num_moved_to_send_iterations,
-                                                     stop_source.get_token());
-        moved_from_consumer_future.get();
+        score::mw::com::test::RunConsumer(score::mw::com::test::kInstanceSpecifierMovedFrom,
+                                          score::mw::com::test::kNumberOfSamplesToSendPerOffer,
+                                          num_moved_to_send_iterations,
+                                          stop_source.get_token());
     }
 
-    provider_future.get();
     consumer_future.get();
 
     return EXIT_SUCCESS;

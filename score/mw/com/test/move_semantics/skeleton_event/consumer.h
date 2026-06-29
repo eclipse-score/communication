@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_TEST_SKELETON_MOVE_SEMANTICS_CONSUMER_H
 #define SCORE_MW_COM_TEST_SKELETON_MOVE_SEMANTICS_CONSUMER_H
 
-#include "score/mw/com/test/skeleton_move_semantics/test_parameters.h"
+#include "score/mw/com/test/move_semantics/skeleton_event/test_parameters.h"
 #include "score/mw/com/types.h"
 
 #include <score/stop_token.hpp>

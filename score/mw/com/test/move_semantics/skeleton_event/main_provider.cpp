@@ -14,8 +14,8 @@
 
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
-#include "score/mw/com/test/skeleton_move_semantics/provider.h"
-#include "score/mw/com/test/skeleton_move_semantics/test_parameters.h"
+#include "score/mw/com/test/move_semantics/skeleton_event/provider.h"
+#include "score/mw/com/test/move_semantics/skeleton_event/test_parameters.h"
 
 int main(int argc, const char** argv)
 {

@@ -10,12 +10,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/skeleton_move_semantics/provider.h"
+#include "score/mw/com/test/move_semantics/skeleton_event/provider.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/common_test_resources/skeleton_container.h"
 #include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
-#include "score/mw/com/test/skeleton_move_semantics/test_event_datatype.h"
+#include "score/mw/com/test/move_semantics/skeleton_event/test_event_datatype.h"
 
 #include <cstdint>
 #include <utility>
@@ -25,7 +25,7 @@ namespace score::mw::com::test
 namespace
 {
 
-const std::string kInterprocessNotificationShmPath{"/skeleton_move_semantics_interprocess_notification"};
+const std::string kInterprocessNotificationShmPath{"/skeleton_event_move_semantics_interprocess_notification"};
 
 void SendSamples(SkeletonMoveSemanticsSkeleton& skeleton,
                  const std::size_t number_of_samples_to_send_per_offer,
@@ -50,7 +50,7 @@ void RunProviderMoveConstructNotOfferedSkeleton(const score::cpp::stop_token& st
     // Step 1. Create skeleton
     std::cout << "\nProvider: Step 1 - Create skeleton" << std::endl;
     SkeletonContainer<SkeletonMoveSemanticsSkeleton> skeleton_container{};
-    skeleton_container.CreateSkeleton(kInstanceSpecifierMovedTo, "skeleton_move_semantics");
+    skeleton_container.CreateSkeleton(kInstanceSpecifierMovedTo, "skeleton_event_move_semantics");
     auto original_skeleton = skeleton_container.Extract();
 
     // Step 2. Move construct skeleton
@@ -72,7 +72,7 @@ void RunProviderMoveConstructNotOfferedSkeleton(const score::cpp::stop_token& st
     // Step 5. Wait for consumer to notify that it received the first n values
     if (!proxy_done_synchronizer.WaitWithAbort(stop_token))
     {
-        FailTest("skeleton_move_semantics provider failed: waiting for consumer done was aborted");
+        FailTest("skeleton_event_move_semantics provider failed: waiting for consumer done was aborted");
     }
     proxy_done_synchronizer.Reset();
 
@@ -96,7 +96,7 @@ void RunProviderMoveConstructNotOfferedSkeleton(const score::cpp::stop_token& st
     // Step 9. Wait for consumer to notify that it received the second n values
     if (!proxy_done_synchronizer.WaitWithAbort(stop_token))
     {
-        FailTest("skeleton_move_semantics provider failed: waiting for consumer done was aborted");
+        FailTest("skeleton_event_move_semantics provider failed: waiting for consumer done was aborted");
     }
 }
 
@@ -107,11 +107,11 @@ void RunProviderMoveConstructOfferedSkeleton(const score::cpp::stop_token& stop_
     // Step 1. Create skeleton
     std::cout << "\nProvider: Step 1 - Create skeleton" << std::endl;
     SkeletonContainer<SkeletonMoveSemanticsSkeleton> skeleton_container{};
-    skeleton_container.CreateSkeleton(kInstanceSpecifierMovedTo, "skeleton_move_semantics");
+    skeleton_container.CreateSkeleton(kInstanceSpecifierMovedTo, "skeleton_event_move_semantics");
 
     // Step 2. Offer skeleton
     std::cout << "\nProvider: Step 2 - Offer skeleton" << std::endl;
-    skeleton_container.OfferService("skeleton_move_semantics");
+    skeleton_container.OfferService("skeleton_event_move_semantics");
 
     // Step 3. Send n values
     std::cout << "\nProvider: Step 3 - Send " << number_of_samples_to_send_per_offer << " samples" << std::endl;
@@ -120,7 +120,7 @@ void RunProviderMoveConstructOfferedSkeleton(const score::cpp::stop_token& stop_
     // Step 4. Wait for consumer to notify that it received the first n values
     if (!proxy_done_synchronizer.WaitWithAbort(stop_token))
     {
-        FailTest("skeleton_move_semantics provider failed: waiting for consumer done was aborted");
+        FailTest("skeleton_event_move_semantics provider failed: waiting for consumer done was aborted");
     }
     proxy_done_synchronizer.Reset();
 
@@ -136,7 +136,7 @@ void RunProviderMoveConstructOfferedSkeleton(const score::cpp::stop_token& stop_
     // Step 7. Wait for consumer to notify that it received the second n values
     if (!proxy_done_synchronizer.WaitWithAbort(stop_token))
     {
-        FailTest("skeleton_move_semantics provider failed: waiting for consumer done was aborted");
+        FailTest("skeleton_event_move_semantics provider failed: waiting for consumer done was aborted");
     }
     proxy_done_synchronizer.Reset();
 
@@ -160,7 +160,7 @@ void RunProviderMoveConstructOfferedSkeleton(const score::cpp::stop_token& stop_
     // Step 11. Wait for consumer to notify that it received the third n values
     if (!proxy_done_synchronizer.WaitWithAbort(stop_token))
     {
-        FailTest("skeleton_move_semantics provider failed: waiting for consumer done was aborted");
+        FailTest("skeleton_event_move_semantics provider failed: waiting for consumer done was aborted");
     }
     proxy_done_synchronizer.Reset();
 }
@@ -172,11 +172,11 @@ void RunProviderMoveAssignNotOfferedSkeleton(const score::cpp::stop_token& stop_
     // Step 1. Create two skeletons
     std::cout << "\nProvider: Step 1 - Create two skeletons" << std::endl;
     SkeletonContainer<SkeletonMoveSemanticsSkeleton> moved_from_skeleton_container{};
-    moved_from_skeleton_container.CreateSkeleton(kInstanceSpecifierMovedTo, "skeleton_move_semantics");
+    moved_from_skeleton_container.CreateSkeleton(kInstanceSpecifierMovedTo, "skeleton_event_move_semantics");
     auto moved_from_skeleton = moved_from_skeleton_container.Extract();
 
     SkeletonContainer<SkeletonMoveSemanticsSkeleton> moved_to_skeleton_container{};
-    moved_to_skeleton_container.CreateSkeleton(kInstanceSpecifierMovedFrom, "skeleton_move_semantics");
+    moved_to_skeleton_container.CreateSkeleton(kInstanceSpecifierMovedFrom, "skeleton_event_move_semantics");
     auto moved_to_skeleton = moved_to_skeleton_container.Extract();
 
     // Step 2. Move assign skeleton
@@ -198,7 +198,7 @@ void RunProviderMoveAssignNotOfferedSkeleton(const score::cpp::stop_token& stop_
     // Step 5. Wait for consumer to notify that it received the first n values
     if (!proxy_done_synchronizer.WaitWithAbort(stop_token))
     {
-        FailTest("skeleton_move_semantics provider failed: waiting for consumer done was aborted");
+        FailTest("skeleton_event_move_semantics provider failed: waiting for consumer done was aborted");
     }
     proxy_done_synchronizer.Reset();
 
@@ -222,7 +222,7 @@ void RunProviderMoveAssignNotOfferedSkeleton(const score::cpp::stop_token& stop_
     // Step 9. Wait for consumer to notify that it received the second n values
     if (!proxy_done_synchronizer.WaitWithAbort(stop_token))
     {
-        FailTest("skeleton_move_semantics provider failed: waiting for consumer done was aborted");
+        FailTest("skeleton_event_move_semantics provider failed: waiting for consumer done was aborted");
     }
 }
 
@@ -234,15 +234,15 @@ void RunProviderMoveAssignOfferedSkeleton(const score::cpp::stop_token& stop_tok
     // Step 1. Create two skeletons
     std::cout << "\nProvider: Step 1 - Create two skeletons" << std::endl;
     SkeletonContainer<SkeletonMoveSemanticsSkeleton> moved_from_skeleton_container{};
-    moved_from_skeleton_container.CreateSkeleton(kInstanceSpecifierMovedTo, "skeleton_move_semantics");
+    moved_from_skeleton_container.CreateSkeleton(kInstanceSpecifierMovedTo, "skeleton_event_move_semantics");
 
     SkeletonContainer<SkeletonMoveSemanticsSkeleton> moved_to_skeleton_container{};
-    moved_to_skeleton_container.CreateSkeleton(kInstanceSpecifierMovedFrom, "skeleton_move_semantics");
+    moved_to_skeleton_container.CreateSkeleton(kInstanceSpecifierMovedFrom, "skeleton_event_move_semantics");
 
     // Step 2. Offer both skeletons
     std::cout << "\nProvider: Step 2 - Offer both skeletons" << std::endl;
-    moved_from_skeleton_container.OfferService("skeleton_move_semantics");
-    moved_to_skeleton_container.OfferService("skeleton_move_semantics");
+    moved_from_skeleton_container.OfferService("skeleton_event_move_semantics");
+    moved_to_skeleton_container.OfferService("skeleton_event_move_semantics");
 
     // Step 3. Send n values from both skeletons
     std::cout << "\nProvider: Step 3 - Send " << number_of_samples_to_send_per_offer << " samples from both skeletons"
@@ -253,12 +253,12 @@ void RunProviderMoveAssignOfferedSkeleton(const score::cpp::stop_token& stop_tok
     // Step 4. Wait for both consumers to notify that they received the first n values
     if (!moved_to_proxy_done_synchronizer_result.WaitWithAbort(stop_token))
     {
-        FailTest("skeleton_move_semantics provider failed: waiting for moved-to consumer done was aborted");
+        FailTest("skeleton_event_move_semantics provider failed: waiting for moved-to consumer done was aborted");
     }
     moved_to_proxy_done_synchronizer_result.Reset();
     if (!moved_from_proxy_done_synchronizer_result.WaitWithAbort(stop_token))
     {
-        FailTest("skeleton_move_semantics provider failed: waiting for moved-from consumer done was aborted");
+        FailTest("skeleton_event_move_semantics provider failed: waiting for moved-from consumer done was aborted");
     }
     moved_from_proxy_done_synchronizer_result.Reset();
 
@@ -293,7 +293,7 @@ void RunProviderMoveAssignOfferedSkeleton(const score::cpp::stop_token& stop_tok
     // Step 10. Wait for moved-to consumer to notify that it received the third n values
     if (!moved_to_proxy_done_synchronizer_result.WaitWithAbort(stop_token))
     {
-        FailTest("skeleton_move_semantics provider failed: waiting for moved-to consumer done was aborted");
+        FailTest("skeleton_event_move_semantics provider failed: waiting for moved-to consumer done was aborted");
     }
 }
 
@@ -308,7 +308,7 @@ void RunProvider(const SkeletonMoveScenario& scenario,
         ProcessSynchronizer::Create(kInterprocessNotificationShmPath + std::string{moved_to_name});
     if (!moved_to_proxy_done_synchronizer_result.has_value())
     {
-        FailTest("skeleton_move_semantics provider failed: could not create ready synchronizer");
+        FailTest("skeleton_event_move_semantics provider failed: could not create ready synchronizer");
     }
 
     switch (scenario)
@@ -338,7 +338,7 @@ void RunProvider(const SkeletonMoveScenario& scenario,
                 ProcessSynchronizer::Create(kInterprocessNotificationShmPath + std::string{moved_from_name});
             if (!moved_from_proxy_done_synchronizer_result.has_value())
             {
-                FailTest("skeleton_move_semantics provider failed: could not create ready synchronizer");
+                FailTest("skeleton_event_move_semantics provider failed: could not create ready synchronizer");
             }
             RunProviderMoveAssignOfferedSkeleton(stop_token,
                                                  num_samples_to_send,
@@ -349,7 +349,7 @@ void RunProvider(const SkeletonMoveScenario& scenario,
         case SkeletonMoveScenario::kNumberOfScenarios:
             [[fallthrough]];
         default:
-            FailTest("skeleton_move_semantics provider failed: unknown scenario");
+            FailTest("skeleton_event_move_semantics provider failed: unknown scenario");
     }
 }
 
