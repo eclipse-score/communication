@@ -22,6 +22,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <utility>
 
 namespace score::mw::com::test
 {
@@ -37,6 +38,13 @@ class ProxyContainer
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_ != nullptr,
                                                     "Proxy was not successfully created! Cannot get it!");
         return *proxy_;
+    }
+
+    Proxy&& Extract()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_ != nullptr,
+                                                    "Proxy was not successfully created! Cannot extract it!");
+        return std::move(*proxy_);
     }
 
   private:
