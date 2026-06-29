@@ -90,6 +90,12 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
     /// returned.
     score::Result<std::tuple<impl::MethodInArgPtr<ArgTypes>...>> Allocate()
     {
+        if (binding_ == nullptr)
+        {
+            score::mw::log::LogError("lola")
+                << "ProxyMethod::Allocate: Binding is not initialized for method " << method_name_;
+            return Unexpected(ComErrc::kMethodBindingDisabled);
+        }
         return detail::AllocateImpl<ArgTypes...>(*binding_, are_in_arg_ptrs_active_, is_return_type_ptr_active_);
     };
 
@@ -126,6 +132,12 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
 template <typename... ArgTypes>
 score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(const ArgTypes&... args)
 {
+    if (!binding_)
+    {
+        score::mw::log::LogError("lola") << "ProxyMethod::operator(): Binding is not initialized for method "
+                                         << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     auto allocate_result = Allocate();
     if (!allocate_result.has_value())
     {
@@ -146,6 +158,12 @@ score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(const ArgTypes&..
 template <typename... ArgTypes>
 score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(MethodInArgPtr<ArgTypes>... args)
 {
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola") << "ProxyMethod::operator(): Binding is not initialized for method "
+                                         << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     auto queue_position = detail::GetCommonQueuePosition(args...);
     auto call_result = binding_->DoCall(queue_position);
     if (!call_result.has_value())
@@ -158,7 +176,12 @@ score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(MethodInArgPtr<Ar
 template <typename... ArgTypes>
 Result<void> ProxyMethod<void(ArgTypes...)>::InitializeInArgsAndReturnValues()
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola")
+            << "ProxyMethod::InitializeInArgsAndReturnValues: Binding is not initialized for method " << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     const auto init_in_args_result = detail::InitializeInArgs<ArgTypes...>(*binding_, kCallQueueSize);
     if (!init_in_args_result.has_value())
     {

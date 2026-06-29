@@ -25,6 +25,8 @@
 #include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
+#include "score/mw/log/logging.h"
+
 #include <score/assert.hpp>
 #include <score/stop_token.hpp>
 
@@ -119,6 +121,12 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
 template <typename ReturnType>
 score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operator()()
 {
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola") << "ProxyMethod::operator(): Binding is not initialized for method "
+                                         << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     auto queue_position_result = detail::DetermineNextAvailableQueueSlot(is_return_type_ptr_active_);
     if (!queue_position_result.has_value())
     {
@@ -157,7 +165,12 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operat
 template <typename ReturnType>
 Result<void> ProxyMethod<ReturnType()>::InitializeInArgsAndReturnValues()
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola")
+            << "ProxyMethod::InitializeInArgsAndReturnValues: Binding is not initialized for method " << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     const auto init_return_result = detail::InitializeReturnValue<ReturnType>(*binding_, kCallQueueSize);
     if (!init_return_result.has_value())
     {
