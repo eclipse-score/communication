@@ -42,12 +42,33 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola/messaging:__pkg__"],
 )
 
+# A common library for configuration validation and parsing. It shall be used by both strategies (JSON & Flatbuffers) parsers.
+cc_library(
+    name = "config_validate",
+    srcs = ["config_validate.cpp"],
+    hdrs = ["config_validate.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/configuration:__subpackages__",
+    ],
+    deps = [
+        ":configuration_local",
+        ":lola_service_instance_deployment",
+        ":lola_service_type_deployment",
+        "//score/mw/com/impl:instance_specifier",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
 cc_library(
     name = "config_parser",
     srcs = ["config_parser.cpp"],
     hdrs = ["config_parser.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
+        ":config_validate",
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_type_deployment",
