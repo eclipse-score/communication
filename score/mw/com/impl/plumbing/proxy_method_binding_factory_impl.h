@@ -121,6 +121,23 @@ Result<std::unique_ptr<ProxyMethodBinding>> ProxyMethodBindingFactoryImpl<Return
                 return MakeUnexpected(BindingFactoryErrorCode::kParentBindingIsNotLola);
             }
 
+            const auto& service_instance_deployment = parent_handle.GetServiceInstanceDeployment();
+            const auto& lola_service_instance_deployment =
+                GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment);
+
+            const auto method_it = lola_service_instance_deployment.methods_.find(method_name_str);
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_it != lola_service_instance_deployment.methods_.end(),
+                                                        "Could not find method deployment information for method");
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_it->second.enabled_.has_value(),
+                                                        "Enabled flag must be set on proxy side for method!");
+            if (!method_it->second.enabled_.value())
+            {
+                score::mw::log::LogDebug("lola")
+                    << "Proxy Method " << method_name_str
+                    << " was disabled in the instance deployment configuration. Not creating a binding for it.";
+                return nullptr;
+            }
+
             // When method_type is Get or Set, method_name holds a field name, not a method name. A field
             // only has one id at the lola level, so the Get and the Set of the same field both resolve to
             // the same element id here. The Get-vs-Set split is added further down when we pair the id
