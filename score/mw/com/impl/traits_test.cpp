@@ -26,7 +26,10 @@
 #include "score/mw/com/impl/skeleton_binding.h"
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 
+#include "score/result/result.h"
+
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <optional>
 #include <utility>
@@ -1001,7 +1004,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     std::ignore = unit.some_field.Update(field_value);
 
     // and registering a field set handler
-    unit.some_field.RegisterSetHandler([](TestSampleType&) {});
+    [[maybe_unused]] score::Result<void> res = unit.some_field.RegisterSetHandler([](TestSampleType&) {});
 
     // and offering the service
     const auto result = unit.OfferService();

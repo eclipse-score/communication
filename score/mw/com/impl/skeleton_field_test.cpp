@@ -21,8 +21,11 @@
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 
+#include "score/result/result.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -1250,7 +1253,8 @@ TEST_F(SkeletonFieldMoveConstructionFixture, SecondRegisterSetHandlerReplacesHan
     MySetterSkeleton unit2{std::move(unit)};
 
     // Then the method should still be usable (validated by calling RegisterSetHandler which dispatches to the method)
-    unit2.my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
+    [[maybe_unused]] score::Result<void> res =
+        unit2.my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
 }
 
 }  // namespace

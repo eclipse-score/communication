@@ -18,6 +18,8 @@
 #include "score/mw/com/test/move_semantics/skeleton_event/test_event_datatype.h"
 #include "score/mw/com/types.h"
 
+#include "score/result/result.h"
+
 #include <cstdint>
 
 namespace score::mw::com::test
@@ -40,12 +42,12 @@ class ProxyStateChangeNotifier
             condition_variable_.notify_all();
             return true;
         };
-        proxy_event_.SetSubscriptionStateChangeHandler(state_change_handler);
+        [[maybe_unused]] score::Result<void> res = proxy_event_.SetSubscriptionStateChangeHandler(state_change_handler);
     }
 
     ~ProxyStateChangeNotifier()
     {
-        proxy_event_.UnsetSubscriptionStateChangeHandler();
+        [[maybe_unused]] score::Result<void> res = proxy_event_.UnsetSubscriptionStateChangeHandler();
     }
 
     ProxyStateChangeNotifier(const ProxyStateChangeNotifier&) = delete;
@@ -78,12 +80,12 @@ class ProxyEventReceiver
             std::cout << "Received event notification" << std::endl;
             received_sample_notification.notify();
         };
-        proxy_event_.SetReceiveHandler(receive_handler);
+        [[maybe_unused]] score::Result<void> res = proxy_event_.SetReceiveHandler(receive_handler);
     }
 
     ~ProxyEventReceiver()
     {
-        proxy_event_.UnsetReceiveHandler();
+        [[maybe_unused]] score::Result<void> res = proxy_event_.UnsetReceiveHandler();
     }
 
     ProxyEventReceiver(const ProxyEventReceiver&) = delete;
