@@ -31,7 +31,6 @@
 #include <cstdlib>
 #include <exception>
 #include <optional>
-#include <set>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -136,13 +135,7 @@ auto ParseInstanceSpecifier(const score::json::Object& json_map) -> InstanceSpec
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(string_result.has_value(),
                                                       "Configuration corrupted, check with json schema");
     auto instance_specifier_name = string_result.value().get();
-    const auto instance_specifier_result = InstanceSpecifier::Create(std::move(instance_specifier_name));
-    if (!instance_specifier_result.has_value())
-    {
-        score::mw::log::LogFatal("lola") << "Invalid InstanceSpecifier.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    }
-    return instance_specifier_result.value();
+    return CreateValidInstanceSpecifier(std::move(instance_specifier_name));
 }
 
 auto ParseServiceTypeName(const score::json::Object& json_map) -> const std::string&
@@ -761,12 +754,7 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
 
         auto instance_deployments = ParseServiceInstanceDeployments(
             service_instance_map, tracing_configuration, service_identifier, instanceSpecifier);
-        if (instance_deployments.size() != 1U)
-        {
-            score::mw::log::LogFatal("lola") << "More or less then one deployment for " << service_identifier.ToString()
-                                             << ". Multi-Binding support right now not supported";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
+        ValidateSingleDeployment(instance_deployments, service_identifier);
 
         EmplaceOrFatal(service_instance_deployments,
                        instanceSpecifier,
@@ -889,47 +877,6 @@ auto ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaSer
     return true;
 }
 
-auto AreEventFieldAndMethodIdsUnique(const LolaServiceTypeDeployment& lola_service_type_deployment) -> bool
-{
-    const auto& events = lola_service_type_deployment.events_;
-    const auto& fields = lola_service_type_deployment.fields_;
-    const auto& methods = lola_service_type_deployment.methods_;
-
-    static_assert(std::is_same<LolaEventId, LolaFieldId>::value,
-                  "EventId and FieldId should have the same underlying type.");
-    static_assert(std::is_same<LolaEventId, LolaMethodId>::value,
-                  "EventId and MethodId should have the same underlying type.");
-    std::set<LolaEventId> ids{};
-
-    for (const auto& event : events)
-    {
-        const auto result = ids.insert(event.second);
-        if (!result.second)
-        {
-            return false;
-        }
-    }
-
-    for (const auto& field : fields)
-    {
-        const auto result = ids.insert(field.second);
-        if (!result.second)
-        {
-            return false;
-        }
-    }
-
-    for (const auto& method : methods)
-    {
-        const auto result = ids.insert(method.second);
-        if (!result.second)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseLoLaServiceTypeDeployments(const score::json::Object& json_map) -> LolaServiceTypeDeployment
@@ -942,19 +889,11 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Object& json_map) -> Lol
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(service_id_casted.has_value(),
                                                       "Configuration corrupted, check with json schema");
     LolaServiceTypeDeployment lola{service_id_casted.value()};
-    const bool events_exist = ParseLolaEventTypeDeployments(json_map, lola);
-    const bool fields_exist = ParseLolaFieldTypeDeployments(json_map, lola);
-    const bool methods_exist = ParseLolaMethodTypeDeployments(json_map, lola);
-    if (!events_exist && !fields_exist && !methods_exist)
-    {
-        score::mw::log::LogFatal("lola") << "Configuration should contain at least one event, field, or method.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    }
-    if (!AreEventFieldAndMethodIdsUnique(lola))
-    {
-        score::mw::log::LogFatal("lola") << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    }
+    score::cpp::ignore = ParseLolaEventTypeDeployments(json_map, lola);
+    score::cpp::ignore = ParseLolaFieldTypeDeployments(json_map, lola);
+    score::cpp::ignore = ParseLolaMethodTypeDeployments(json_map, lola);
+    ValidateServiceTypeHasElements(lola);
+    ValidateUniqueServiceElementIds(lola);
     return lola;
 }
 
@@ -1246,97 +1185,6 @@ auto ParseTracingProperties(const score::json::Object& top_level_object) -> Trac
             std::string{tracing_filter_config_path.data(), tracing_filter_config_path.size()});
     }
     return tracing_configuration;
-}
-
-void CrosscheckAsilLevels(const Configuration& config)
-{
-    for (const auto& service_instance : config.GetServiceInstances())
-    {
-        if ((service_instance.second.asilLevel_ == QualityType::kASIL_B) &&
-            (config.GetGlobalConfiguration().GetProcessAsilLevel() != QualityType::kASIL_B))
-        {
-            ::score::mw::log::LogFatal("lola")
-                << "Service instance has a higher ASIL than the process. This is invalid, terminating";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
-    }
-}
-
-/**
- * \brief Checks, whether for all (binding) types used in service instances, there is also a corresponding type
- *        in service types.
- * @param config configuration to be crosschecked.
- */
-void CrosscheckServiceInstancesToTypes(const Configuration& config)
-{
-    for (const auto& service_instance : config.GetServiceInstances())
-    {
-        const auto foundServiceType = config.GetServiceTypes().find(service_instance.second.service_);
-        if (foundServiceType == config.GetServiceTypes().cend())
-        {
-            ::score::mw::log::LogFatal("lola")
-                << "Service instance " << service_instance.first << "refers to a service type ("
-                << service_instance.second.service_.ToString()
-                << "), which is not configured. This is invalid, terminating";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
-        // check, that binding in service type and service instance are equal. Since currently ServiceTypeDeployment
-        // only supports LolaServiceTypeDeployment, everything else than LolaServiceInstanceDeployment is an error.
-        // LCOV_EXCL_BR_START: Defensive programming: Parse() currently terminates if the ServiceInstanceDeployment
-        // contains anything other than a Lola binding. Therefore, it's impossible to reach this point without
-        // a LolaServiceInstanceDeployment.
-        if (!std::holds_alternative<LolaServiceInstanceDeployment>(service_instance.second.bindingInfo_))
-        {
-            // LCOV_EXCL_BR_STOP
-            // LCOV_EXCL_START defensive programming: Parse() currently terminates if the ServiceInstanceDeployment
-            // contains anything other than a Lola binding. Therefore, it's impossible to reach this point without
-            // a LolaServiceInstanceDeployment.
-            ::score::mw::log::LogFatal("lola")
-                << "Service instance " << service_instance.first
-                << "refers to an not yet supported binding. This is invalid, terminating";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-            // LCOV_EXCL_STOP
-        }
-        if (!std::holds_alternative<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_))
-        {
-            ::score::mw::log::LogFatal("lola")
-                << "Service type " << service_instance.second.service_.ToString()
-                << "refers to an not yet supported binding. This is invalid, terminating";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
-        // check, that for each service-element-name in the instance deployment, there exists a corresponding
-        // service-element-name in the type deployment
-        const auto& serviceInstanceDeployment =
-            std::get<LolaServiceInstanceDeployment>(service_instance.second.bindingInfo_);
-        for (const auto& eventInstanceElement : serviceInstanceDeployment.events_)
-        {
-            const auto& serviceTypeDeployment =
-                std::get<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_);
-            const auto search = serviceTypeDeployment.events_.find(eventInstanceElement.first);
-            if (search == serviceTypeDeployment.events_.cend())
-            {
-                ::score::mw::log::LogFatal("lola")
-                    << "Service instance " << service_instance.first << "event" << eventInstanceElement.first
-                    << "refers to an event, which doesn't exist in the referenced service type ("
-                    << service_instance.second.service_.ToString() << "). This is invalid, terminating";
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-            }
-        }
-        for (const auto& fieldInstanceElement : serviceInstanceDeployment.fields_)
-        {
-            const auto& serviceTypeDeployment =
-                std::get<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_);
-            const auto search = serviceTypeDeployment.fields_.find(fieldInstanceElement.first);
-            if (search == serviceTypeDeployment.fields_.cend())
-            {
-                ::score::mw::log::LogFatal("lola")
-                    << "Service instance " << service_instance.first << "field" << fieldInstanceElement.first
-                    << "refers to a field, which doesn't exist in the referenced service type ("
-                    << service_instance.second.service_.ToString() << "). This is invalid, terminating";
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-            }
-        }
-    }
 }
 
 }  // namespace

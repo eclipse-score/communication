@@ -44,6 +44,7 @@ cc_library(
 
 cc_library(
     name = "config_validate",
+    srcs = ["config_validate.cpp"],
     hdrs = ["config_validate.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
@@ -51,6 +52,10 @@ cc_library(
         "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
+        ":configuration_local",
+        ":lola_service_instance_deployment",
+        ":lola_service_type_deployment",
+        "//score/mw/com/impl:instance_specifier",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
     ],
