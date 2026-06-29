@@ -25,7 +25,7 @@ class ProxyEventBindingFactoryMock : public IProxyEventBindingFactory<SampleType
 {
   public:
     MOCK_METHOD(
-        std::unique_ptr<ProxyEventBinding<SampleType>>,
+        Result<std::unique_ptr<ProxyEventBinding<SampleType>>>,
         Create,
         (HandleType, ProxyBinding*, const std::string_view event_name, const ServiceElementType service_element_type),
         (noexcept, override));
@@ -35,7 +35,7 @@ class GenericProxyEventBindingFactoryMock : public IGenericProxyEventBindingFact
 {
   public:
     MOCK_METHOD(
-        std::unique_ptr<GenericProxyEventBinding>,
+        Result<std::unique_ptr<GenericProxyEventBinding>>,
         Create,
         (HandleType, ProxyBinding*, const std::string_view event_name, const ServiceElementType service_element_type),
         (noexcept, override));

@@ -34,25 +34,24 @@ class ProxyFieldBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyFieldBindingFactory.
-    static std::unique_ptr<ProxyEventBinding<SampleType>> CreateEventBinding(HandleType parent_handle,
-                                                                             ProxyBinding* parent_binding,
-                                                                             std::string_view field_name) noexcept
+    static Result<std::unique_ptr<ProxyEventBinding<SampleType>>>
+    CreateEventBinding(HandleType parent_handle, ProxyBinding* parent_binding, std::string_view field_name) noexcept
     {
         return instance().CreateEventBinding(std::move(parent_handle), parent_binding, field_name);
     }
 
     /// \brief See documentation in IProxyFieldBindingFactory.
-    static std::unique_ptr<ProxyMethodBinding> CreateGetMethodBinding(HandleType parent_handle,
-                                                                      ProxyBinding* parent_binding,
-                                                                      std::string_view field_name) noexcept
+    static Result<std::unique_ptr<ProxyMethodBinding>> CreateGetMethodBinding(HandleType parent_handle,
+                                                                              ProxyBinding* parent_binding,
+                                                                              std::string_view field_name) noexcept
     {
         return instance().CreateGetMethodBinding(std::move(parent_handle), parent_binding, field_name);
     }
 
     /// \brief See documentation in IProxyFieldBindingFactory.
-    static std::unique_ptr<ProxyMethodBinding> CreateSetMethodBinding(HandleType parent_handle,
-                                                                      ProxyBinding* parent_binding,
-                                                                      std::string_view field_name) noexcept
+    static Result<std::unique_ptr<ProxyMethodBinding>> CreateSetMethodBinding(HandleType parent_handle,
+                                                                              ProxyBinding* parent_binding,
+                                                                              std::string_view field_name) noexcept
     {
         return instance().CreateSetMethodBinding(std::move(parent_handle), parent_binding, field_name);
     }

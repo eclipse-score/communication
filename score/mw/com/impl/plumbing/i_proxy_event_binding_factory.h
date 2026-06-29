@@ -18,6 +18,8 @@
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
+#include "score/result/result.h"
+
 #include <memory>
 #include <string_view>
 
@@ -43,12 +45,12 @@ class IProxyEventBindingFactory
     /// \tparam SampleType Type of the data that is exchanges
     /// \param handle The handle containing the binding information.
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
-    /// \return An instance of ProxyEventBinding or nullptr in case of an error.
+    /// \return An instance of ProxyEventBinding or an error in case of binding construction failure.
     virtual auto Create(HandleType parent_handle,
                         ProxyBinding* parent_binding,
                         const std::string_view event_name,
                         const ServiceElementType service_element_type) noexcept
-        -> std::unique_ptr<ProxyEventBinding<SampleType>> = 0;
+        -> Result<std::unique_ptr<ProxyEventBinding<SampleType>>> = 0;
 };
 
 /// \brief Interface for a factory class that dispatches calls to the appropriate binding based on
@@ -68,8 +70,8 @@ class IGenericProxyEventBindingFactory
     /// Creates instances of the binding specific implementations for a generic proxy event that has no data type.
     /// \param handle The handle containing the binding information.
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
-    /// \return An instance of ProxyEventBinding or nullptr in case of an error.
-    virtual std::unique_ptr<GenericProxyEventBinding> Create(
+    /// \return An instance of ProxyEventBinding or an error in case of binding construction failure.
+    virtual Result<std::unique_ptr<GenericProxyEventBinding>> Create(
         HandleType parent_handle,
         ProxyBinding* parent_binding,
         const std::string_view event_name,

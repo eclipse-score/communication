@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
+#include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
 #include "score/mw/com/impl/service_element_type.h"
 
@@ -31,7 +32,7 @@ namespace score::mw::com::impl
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::Create(
+Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactoryImpl::Create(
     HandleType parent_handle,
     ProxyBinding* parent_binding,
     const std::string_view event_name,
@@ -40,7 +41,7 @@ std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::C
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(service_element_type == ServiceElementType::EVENT ||
                                               service_element_type == ServiceElementType::FIELD);
 
-    using ReturnType = std::unique_ptr<lola::GenericProxyEvent>;
+    using ReturnType = Result<std::unique_ptr<lola::GenericProxyEvent>>;
     auto deployment_info_visitor = score::cpp::overload(
         [&parent_handle, parent_binding, event_name, service_element_type](
             const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
@@ -49,7 +50,7 @@ std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::C
             {
                 score::mw::log::LogError("lola") << "Generic proxy event binding could not be created for" << event_name
                                                  << "because the parent proxy binding is not a lola binding.";
-                return nullptr;
+                return MakeUnexpected(BindingFactoryErrorCode::kParentBindingIsNotLola);
             }
 
             const auto element_fq_id =
@@ -57,7 +58,7 @@ std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::C
             return std::make_unique<lola::GenericProxyEvent>(*lola_proxy, element_fq_id, event_name);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
-            return nullptr;
+            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         });
 
     const auto& type_deployment = parent_handle.GetServiceTypeDeployment();
