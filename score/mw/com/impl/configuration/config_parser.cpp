@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/config_parser.h"
+#include "score/mw/com/impl/configuration/config_validate.h"
 
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
@@ -329,28 +330,6 @@ class ServiceElementInstanceDeploymentParser
         return name_value.value().get();
     }
 
-    void CheckContainsEvent(const score::json::Object::const_iterator name,
-                            const LolaServiceInstanceDeployment& service)
-    {
-        const auto name_value = GetName(name);
-        if (service.ContainsEvent(name_value))
-        {
-            score::mw::log::LogFatal("lola") << "Event Name Duplicated. Not allowed";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
-    }
-
-    void CheckContainsField(const score::json::Object::const_iterator name,
-                            const LolaServiceInstanceDeployment& service)
-    {
-        const auto name_value = GetName(name);
-        if (service.ContainsField(name_value))
-        {
-            score::mw::log::LogFatal("lola") << "Field Name Duplicated. Not allowed";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
-    }
-
     template <typename element_type>
     std::optional<element_type> RetrieveJsonElement(const score::json::Object::const_iterator element_iterator)
     {
@@ -422,8 +401,6 @@ auto ParseLolaEventInstanceDeployment(const score::json::Object& json_map, LolaS
         ServiceElementInstanceDeploymentParser deployment_parser{event_object};
 
         const auto& event_name_it = event_object.find(kEventNameKey.data());
-        deployment_parser.CheckContainsEvent(event_name_it, service);
-
         auto event_name_value = deployment_parser.GetName(event_name_it);
 
         const auto number_of_sample_slots = deployment_parser.GetNumberOfSampleSlots();
@@ -444,10 +421,7 @@ auto ParseLolaEventInstanceDeployment(const score::json::Object& json_map, LolaS
                                                             enforce_max_samples,
                                                             number_of_tracing_slots);
 
-        const auto emplace_result = service.events_.emplace(std::piecewise_construct,
-                                                            std::forward_as_tuple(std::move(event_name_value)),
-                                                            std::forward_as_tuple(event_deployment));
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(emplace_result.second, "Could not emplace element in map");
+        EmplaceOrFatal(service.events_, std::move(event_name_value), event_deployment, "An event instance");
     }
 }
 
@@ -478,8 +452,6 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
         ServiceElementInstanceDeploymentParser deployment_parser{field_object};
 
         const auto& field_name_it = field_object.find(kFieldNameKey);
-        deployment_parser.CheckContainsField(field_name_it, service);
-
         auto field_name_value = deployment_parser.GetName(field_name_it);
 
         const auto number_of_sample_slots =
@@ -504,10 +476,7 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
                                                                     number_of_tracing_slots),
                                         use_get_if_available,
                                         use_set_if_available);
-        const auto emplace_result = service.fields_.emplace(std::piecewise_construct,
-                                                            std::forward_as_tuple(std::move(field_name_value)),
-                                                            std::forward_as_tuple(field_deployment));
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(emplace_result.second, "Could not emplace element in map");
+        EmplaceOrFatal(service.fields_, std::move(field_name_value), field_deployment, "A field instance");
     }
 }
 
@@ -539,9 +508,7 @@ auto ParseLolaMethodInstanceDeployment(const score::json::Object& json_map, Lola
             GetOptionalValueFromJson<bool>(method_object, kMethodEnabledKey).value_or(kMethodEnabledDefaultValue);
         const LolaMethodInstanceDeployment method_deployment{queue_size, method_enabled};
 
-        const auto emplace_result = service.methods_.emplace(
-            std::piecewise_construct, std::forward_as_tuple(method_name), std::forward_as_tuple(method_deployment));
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(emplace_result.second, "Could not emplace element in map");
+        EmplaceOrFatal(service.methods_, method_name, method_deployment, "A method instance");
     }
 }
 
@@ -801,14 +768,10 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
 
-        auto emplaceRes = service_instance_deployments.emplace(std::piecewise_construct,
-                                                               std::forward_as_tuple(instanceSpecifier),
-                                                               std::forward_as_tuple(instance_deployments.at(0U)));
-        if (emplaceRes.second == false)
-        {
-            score::mw::log::LogFatal("lola") << "Unexpected error, when inserting service instance deployments.";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
+        EmplaceOrFatal(service_instance_deployments,
+                       instanceSpecifier,
+                       instance_deployments.at(0U),
+                       "Service instance deployment");
     }
     return service_instance_deployments;
 }
@@ -845,15 +808,7 @@ auto ParseLolaEventTypeDeployments(const score::json::Object& json_map, LolaServ
         const auto event_id_casted = event_id->second.As<std::uint16_t>();
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(event_id_casted.has_value(),
                                                           "Configuration corrupted, check with json schema");
-        const auto result = service.events_.emplace(std::piecewise_construct,
-                                                    std::forward_as_tuple(event_name_casted.value().get()),
-                                                    std::forward_as_tuple(event_id_casted.value()));
-
-        if (result.second != true)
-        {
-            score::mw::log::LogFatal("lola") << "An event was configured twice.";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
+        EmplaceOrFatal(service.events_, event_name_casted.value().get(), event_id_casted.value(), "An event");
     }
     return true;
 }
@@ -891,15 +846,7 @@ auto ParseLolaFieldTypeDeployments(const score::json::Object& json_map, LolaServ
         const auto field_id_casted = field_id->second.As<std::uint16_t>();
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(field_id_casted.has_value(),
                                                           "Configuration corrupted, check with json schema");
-        const auto result = service.fields_.emplace(std::piecewise_construct,
-                                                    std::forward_as_tuple(field_name_casted.value().get()),
-                                                    std::forward_as_tuple(field_id_casted.value()));
-
-        if (result.second != true)
-        {
-            score::mw::log::LogFatal("lola") << "A field was configured twice.";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
+        EmplaceOrFatal(service.fields_, field_name_casted.value().get(), field_id_casted.value(), "A field");
     }
     return true;
 }
@@ -937,15 +884,7 @@ auto ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaSer
         const auto method_id_casted = method_id->second.As<std::uint16_t>();
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(method_id_casted.has_value(),
                                                           "Configuration corrupted, check with json schema");
-        const auto result = service.methods_.emplace(std::piecewise_construct,
-                                                     std::forward_as_tuple(method_name_casted.value().get()),
-                                                     std::forward_as_tuple(method_id_casted.value()));
-
-        if (result.second != true)
-        {
-            score::mw::log::LogFatal("lola") << "A method was configured twice.";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
+        EmplaceOrFatal(service.methods_, method_name_casted.value().get(), method_id_casted.value(), "A method");
     }
     return true;
 }
@@ -1081,15 +1020,7 @@ auto ParseServiceTypes(const score::json::Object& json_map) -> Configuration::Se
         const auto service_identifier = ParseServiceTypeIdentifier(service_type_map);
 
         const auto service_deployment = ParseServiceTypeDeployment(service_type_map);
-        const auto inserted = service_type_deployments.emplace(std::piecewise_construct,
-                                                               std::forward_as_tuple(service_identifier),
-                                                               std::forward_as_tuple(service_deployment));
-
-        if (inserted.second != true)
-        {
-            score::mw::log::LogFatal("lola") << "Service Type was deployed twice";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
+        EmplaceOrFatal(service_type_deployments, service_identifier, service_deployment, "Service Type");
     }
     return service_type_deployments;
 }

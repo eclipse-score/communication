@@ -43,11 +43,26 @@ cc_library(
 )
 
 cc_library(
+    name = "config_validate",
+    hdrs = ["config_validate.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/configuration:__subpackages__",
+    ],
+    deps = [
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_library(
     name = "config_parser",
     srcs = ["config_parser.cpp"],
     hdrs = ["config_parser.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
+        ":config_validate",
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_type_deployment",
