@@ -20,23 +20,9 @@ load(
 component(
     name = "component_message_passing",
     components = [
-        ":client",
-        ":server",
-    ],
-    requirements = [
-        "//score/message_passing/dependability/requirements:component_requirements",
-    ],
-    tags = ["manual"],
-    target_compatible_with = ["@platforms//os:linux"],
-    tests = [],
-)
-
-# Component: client
-# Covers the client-side connection management and common messaging infrastructure
-component(
-    name = "client",
-    components = [
         "//score/message_passing:client_connection",
+        "//score/message_passing:server_connection",
+        ":dispatch",
     ],
     requirements = [
         "//score/message_passing/dependability/requirements:component_requirements",
@@ -46,17 +32,12 @@ component(
     tests = [],
 )
 
-# Component: server
-# Covers the platform-specific server implementations (QNX dispatch and Unix domain)
 component(
-    name = "server",
-    components = select({
-        "@platforms//os:qnx": [
-            "//score/message_passing:qnx_dispatch",
-            "//score/message_passing:unix_domain",
-        ],
-        "//conditions:default": ["//score/message_passing:unix_domain"],
-    }),
+    name = "dispatch",
+    components = [
+        "//score/message_passing:unix_domain",
+        "//score/message_passing:qnx_dispatch",
+    ],
     requirements = [
         "//score/message_passing/dependability/requirements:component_requirements",
     ],

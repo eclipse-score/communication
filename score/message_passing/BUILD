@@ -143,6 +143,19 @@ unit(
     ],
 )
 
+unit(
+    name = "server_connection",
+    scope = [
+        "@@//score/message_passing:__subpackages__",
+    ],
+    tests = [],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:server_connection_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = [
+        "//score/message_passing:common_headers",
+    ],
+)
+
 cc_library(
     name = "message_passing_unix_domain",
     srcs = [
@@ -252,14 +265,10 @@ unit(
     scope = [
         "@@//score/message_passing:__subpackages__",
     ],
-    tests = [
-        ":qnx_dispatch_test_linux",
-    ],
+    tests = [],
     unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_unit_design"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
-    implementation = [
-        ":message_passing_qnx_dispatch",
-    ],
+    implementation = [],
 )
 
 cc_library(
