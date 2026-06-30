@@ -13,14 +13,17 @@
 #ifndef SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_PROXY_CONTAINER_H
 #define SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_PROXY_CONTAINER_H
 
+#include "score/concurrency/notification.h"
 #include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/types.h"
 
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -53,6 +56,131 @@ class ProxyContainer
     std::condition_variable proxy_creation_condition_variable_{};
 
     std::unique_ptr<Proxy> proxy_{nullptr};
+};
+
+template <typename ProxyEventType>
+class ProxyStateChangeNotifier
+{
+  public:
+    explicit ProxyStateChangeNotifier(ProxyEventType& proxy_event) : proxy_event_{proxy_event}
+    {
+        auto state_change_handler = [this](const SubscriptionState new_state) -> bool {
+            std::cout << "Service state changed, new state: " << static_cast<std::uint32_t>(new_state) << std::endl;
+            std::lock_guard lock(mutex_);
+            last_seen_state_ = new_state;
+            condition_variable_.notify_all();
+            return true;
+        };
+        proxy_event_.SetSubscriptionStateChangeHandler(state_change_handler);
+    }
+
+    ~ProxyStateChangeNotifier()
+    {
+        proxy_event_.UnsetSubscriptionStateChangeHandler();
+    }
+
+    ProxyStateChangeNotifier(const ProxyStateChangeNotifier&) = delete;
+    ProxyStateChangeNotifier& operator=(const ProxyStateChangeNotifier&) = delete;
+    ProxyStateChangeNotifier(const ProxyStateChangeNotifier&&) = delete;
+    ProxyStateChangeNotifier& operator=(const ProxyStateChangeNotifier&&) = delete;
+
+    bool WaitForStateChange(const score::cpp::stop_token& stop_token, SubscriptionState desired_state)
+    {
+        std::unique_lock lock(mutex_);
+        return condition_variable_.wait(lock, stop_token, [this, desired_state]() {
+            return last_seen_state_.has_value() && last_seen_state_.value() == desired_state;
+        });
+    }
+
+  private:
+    std::mutex mutex_{};
+    concurrency::InterruptibleConditionalVariable condition_variable_{};
+    std::optional<SubscriptionState> last_seen_state_{};
+    ProxyEventType& proxy_event_;
+};
+
+template <typename ProxyEventType, typename SampleType = std::uint32_t>
+class ProxyEventReceiver
+{
+  public:
+    ProxyEventReceiver(ProxyEventType& proxy_event, std::string failure_message_prefix)
+        : failure_message_prefix_{std::move(failure_message_prefix)}, proxy_event_{proxy_event}
+    {
+        auto receive_handler = [&received_sample_notification = received_sample_notification_]() {
+            std::cout << "Received event notification" << std::endl;
+            received_sample_notification.notify();
+        };
+        proxy_event_.SetReceiveHandler(receive_handler);
+    }
+
+    ~ProxyEventReceiver()
+    {
+        proxy_event_.UnsetReceiveHandler();
+    }
+
+    ProxyEventReceiver(const ProxyEventReceiver&) = delete;
+    ProxyEventReceiver& operator=(const ProxyEventReceiver&) = delete;
+    ProxyEventReceiver(const ProxyEventReceiver&&) = delete;
+    ProxyEventReceiver& operator=(const ProxyEventReceiver&&) = delete;
+
+    void WaitForSamples(const score::cpp::stop_token& stop_token, const std::size_t num_samples_to_receive)
+    {
+        std::size_t received_count{0U};
+        while (!stop_token.stop_requested())
+        {
+            auto get_samples_result = proxy_event_.GetNewSamples(
+                [this](SamplePtr<SampleType> sample) {
+                    GetNewSamplesCallback(std::move(sample));
+                },
+                num_samples_to_receive);
+            if (!get_samples_result.has_value())
+            {
+                FailTest(failure_message_prefix_, " GetNewSamples failed: ", get_samples_result.error());
+            }
+
+            received_count += get_samples_result.value();
+            std::cout << "Received " << get_samples_result.value() << " samples. " << received_count
+                      << " samples so far" << std::endl;
+
+            if (received_count == num_samples_to_receive)
+            {
+                break;
+            }
+
+            const auto notification_received = received_sample_notification_.waitWithAbort(stop_token);
+            if (!notification_received)
+            {
+                continue;
+            }
+
+            received_sample_notification_.reset();
+        }
+        std::cout << "\nConsumer: Done receiving samples, received " << received_count << " samples in total\n";
+    }
+
+  private:
+    void GetNewSamplesCallback(SamplePtr<SampleType> sample)
+    {
+        if (sample == nullptr)
+        {
+            FailTest(failure_message_prefix_, " received null sample");
+        }
+        const SampleType expected_value = latest_value_.has_value() ? latest_value_.value() + 1U : 1U;
+        if (*sample != expected_value)
+        {
+            FailTest(failure_message_prefix_,
+                     " received value ",
+                     *sample,
+                     " does not match expected value ",
+                     expected_value);
+        }
+        latest_value_ = *sample;
+    }
+
+    std::string failure_message_prefix_;
+    concurrency::Notification received_sample_notification_{};
+    std::optional<SampleType> latest_value_{};
+    ProxyEventType& proxy_event_;
 };
 
 template <typename Proxy>
