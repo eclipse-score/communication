@@ -17,7 +17,7 @@
 
 $TopEvent("Service is offered under wrong IDs", "Communication.ServiceOfferedUnderWrongIds")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.ServiceOfferedUnderWrongIds")
 $IntermediateEvent("Instance Identifier contains wrong values", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
 $BasicEvent("Instance Specifier resolution faulty", "Communication.InstanceSpecifierResolutionFaulty", "Gate2")

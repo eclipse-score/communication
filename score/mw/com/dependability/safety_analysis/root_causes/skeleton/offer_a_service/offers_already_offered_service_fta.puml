@@ -17,7 +17,7 @@
 
 $TopEvent("Offers already offered service", "Communication.OffersAlreadyOfferedService")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.OffersAlreadyOfferedService")
 $BasicEvent("Service was offered by another process", "Communication.ServiceWasOfferedByAnotherProcess", "Gate1")
 $BasicEvent("Service was already offered by our process", "Communication.ServiceWasAlreadyOfferedByOurProcess", "Gate1")
 $BasicEvent("Service was already offered by previous died process", "Communication.ServiceWasAlreadyOfferedByPreviousDiedProcess", "Gate1")

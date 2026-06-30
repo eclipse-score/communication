@@ -17,7 +17,7 @@
 
 $TopEvent("Does not free resources on destruction", "Communication.DoesNotFreeResourcesOnDestruction")
 
-$IntermediateEvent("Does not free slot", "Event1", "TopEvent")
+$IntermediateEvent("Does not free slot", "Event1", "Communication.DoesNotFreeResourcesOnDestruction")
 $OrGate("Gate1", "Event1")
 $IntermediateEvent("Slot Status is not updated correctly", "Event2", "Gate1")
 $OrGate("Gate2", "Event2")

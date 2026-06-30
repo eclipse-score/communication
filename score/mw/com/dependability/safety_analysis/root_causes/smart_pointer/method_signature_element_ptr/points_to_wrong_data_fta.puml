@@ -17,7 +17,7 @@
 
 $TopEvent("Points to wrong data", "Communication.MethodSignatureElementPtrWrongTarget")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.MethodSignatureElementPtrWrongTarget")
 $IntermediateEvent("Shared Memory no longer valid", "Event2", "Gate1")
 $BasicEvent("Life-Cycle issues", "Communication.LifeCycleIssues", "Event2")
 $IntermediateEvent("Wrong memory location referenced", "Event3", "Gate1")

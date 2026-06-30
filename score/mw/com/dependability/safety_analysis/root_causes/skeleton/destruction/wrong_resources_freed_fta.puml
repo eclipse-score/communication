@@ -17,7 +17,7 @@
 
 $TopEvent("Wrong resources freed", "Communication.WrongResourcesFreed")
 
-$IntermediateEvent("Unlink / unmap shm-region of different instance", "Event1", "TopEvent")
+$IntermediateEvent("Unlink / unmap shm-region of different instance", "Event1", "Communication.WrongResourcesFreed")
 $OrGate("Gate1", "Event1")
 $IntermediateEvent("Shared Memory Ressource associates wrong shared memory segment", "Event2", "Gate1")
 $BasicEvent("Wrong name of shared memory segment", "Communication.WrongNameOfSharedMemorySegment", "Event2")

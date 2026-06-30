@@ -17,7 +17,7 @@
 
 $TopEvent("Only Partially Stop Offer", "Communication.ServiceOnlyPartiallyStopOffered")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.ServiceOnlyPartiallyStopOffered")
 $BasicEvent("Only one ASIL is stopped", "Communication.OnlyOneAsilIsStopped", "Gate1")
 $BasicEvent("Only some events stop offered", "Communication.OnlySomeEventsStopOffered", "Gate1")
 
