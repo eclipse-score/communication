@@ -22,11 +22,11 @@ $IntermediateEvent("Callee used wrong InArgs", "Event1", "Gate1")
 $IntermediateEvent("Callee used corrupted InArgs", "Event2", "Gate1")
 $OrGate("Gate2", "Event1")
 $OrGate("Gate3", "Event2")
-$BasicEvent("Callee used InArgs from wrong location", "Event3", "Gate2")
-$BasicEvent("Callee used InArgs before being provided", "Event4", "Gate2")
+$BasicEvent("Callee used InArgs from wrong location", "Communication.CalleeUsedInArgsFromWrongLocation", "Gate2")
+$BasicEvent("Callee used InArgs before being provided", "Communication.CalleeUsedInArgsBeforeBeingProvided", "Gate2")
 
-$BasicEvent("Callee used InArgs in wrong layout", "Event5", "Gate3")
-$BasicEvent("Callee used InArgs while concurrently updated", "Event6", "Gate3")
-$BasicEvent("InArgs corrupted by 3d party", "Event7", "Gate3")
+$BasicEvent("Callee used InArgs in wrong layout", "Communication.CalleeUsedInArgsInWrongLayout", "Gate3")
+$BasicEvent("Callee used InArgs while concurrently updated", "Communication.CalleeUsedInArgsWhileConcurrentlyUpdated", "Gate3")
+$BasicEvent("InArgs corrupted by 3d party", "Communication.InArgsCorruptedBy3rdParty", "Gate3")
 
 @enduml
