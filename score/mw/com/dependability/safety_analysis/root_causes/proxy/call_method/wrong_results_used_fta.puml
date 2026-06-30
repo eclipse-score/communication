@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Wrong call result used", "Communication.WrongResultsUsed")
+$TopEvent("Wrong call result used", "Communication.WrongReturnValueUsed")
 
 $OrGate("Gate1", "TopEvent")
 $BasicEvent("Caller used result from wrong location", "Event10", "Gate1")

@@ -15,7 +15,7 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Wrong input arguments provided", "Communication.WrongInArgsProvided")
+$TopEvent("Wrong input arguments provided", "Communication.WrongMethodInArgsProvided")
 
 $OrGate("Gate1", "TopEvent")
 
