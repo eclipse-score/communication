@@ -18,9 +18,9 @@
 $TopEvent("Wrong call result used", "Communication.WrongReturnValueUsed")
 
 $OrGate("Gate1", "Communication.WrongReturnValueUsed")
-$BasicEvent("Caller used result from wrong location", "Event10", "Gate1")
-$BasicEvent("Caller used result in wrong layout", "Event11", "Gate1")
-$BasicEvent("Caller used result before fully provided", "Event12", "Gate1")
-$BasicEvent("Caller used result while concurrently updated", "Event13", "Gate1")
+$BasicEvent("Caller used result from wrong location", "Communication.CallerUsedResultFromWrongLocation", "Gate1")
+$BasicEvent("Caller used result in wrong layout", "Communication.CallerUsedResultInWrongLayout", "Gate1")
+$BasicEvent("Caller used result before fully provided", "Communication.CallerUsedResultBeforeFullyProvided", "Gate1")
+$BasicEvent("Caller used result while concurrently updated", "Communication.CallerUsedResultWhileConcurrentlyUpdated", "Gate1")
 
 @enduml

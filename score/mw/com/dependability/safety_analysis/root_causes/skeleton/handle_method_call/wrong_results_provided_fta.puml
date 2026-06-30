@@ -21,11 +21,11 @@ $IntermediateEvent("Callee did provide no result", "Event3", "Gate1")
 $IntermediateEvent("Callee did provide wrong result", "Event4", "Gate1")
 $OrGate("Gate3", "Event3")
 $OrGate("Gate4", "Event4")
-$BasicEvent("Callee signalled call finished before or without providing result completely", "Event5", "Gate3")
-$BasicEvent("Callee provided result in wrong location", "Event8", "Gate3")
+$BasicEvent("Callee signalled call finished before or without providing result completely", "Communication.CalleeSignalledCallFinishedBeforeResultComplete", "Gate3")
+$BasicEvent("Callee provided result in wrong location", "Communication.CalleeProvidedResultInWrongLocation", "Gate3")
 
-$BasicEvent("Callee provided result in wrong layout", "Event9", "Gate4")
-$BasicEvent("Callee concurrently updates result after signaling it", "Event11", "Gate4")
+$BasicEvent("Callee provided result in wrong layout", "Communication.CalleeProvidedResultInWrongLayout", "Gate4")
+$BasicEvent("Callee concurrently updates result after signaling it", "Communication.CalleeConcurrentlyUpdatesResultAfterSignaling", "Gate4")
 
 
 

@@ -21,8 +21,8 @@ $OrGate("Gate1", "Communication.WrongMethodInArgsProvided")
 
 $IntermediateEvent("Caller did not/only partially provide InArgs", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
-$BasicEvent("Call signalled before InArgs completely provided", "Event2", "Gate2")
-$BasicEvent("Caller provided InArgs in wrong location", "Event4", "Gate2")
+$BasicEvent("Call signalled before InArgs completely provided", "Communication.CallSignalledBeforeInArgsCompletelyProvided", "Gate2")
+$BasicEvent("Caller provided InArgs in wrong location", "Communication.CallerProvidedInArgsInWrongLocation", "Gate2")
 
 $IntermediateEvent("Caller provided wrong InArgs", "Event5", "Gate1")
 $OrGate("Gate4", "Event5")
