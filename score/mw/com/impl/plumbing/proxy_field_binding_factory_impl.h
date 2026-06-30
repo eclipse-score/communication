@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/plumbing/i_proxy_field_binding_factory.h"
 #include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
+#include "score/mw/com/impl/plumbing/proxy_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
@@ -66,15 +67,7 @@ inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyFieldBindingFactoryIm
     ProxyBase& parent,
     const std::string_view field_name) noexcept
 {
-    const auto lookup = LookupLolaProxyElement(parent, field_name, ServiceElementType::FIELD);
-    if (!lookup.has_value())
-    {
-        score::mw::log::LogError("lola")
-            << "ProxyField event binding could not be created for field" << field_name
-            << "because the parent proxy binding is not a lola binding or the element could not be resolved.";
-        return nullptr;
-    }
-    return std::make_unique<lola::ProxyEvent<SampleType>>(lookup->parent, lookup->element_fq_id, field_name);
+    return ProxyEventBindingFactory<SampleType>::Create(parent, field_name, ServiceElementType::FIELD);
 }
 
 template <typename SampleType>

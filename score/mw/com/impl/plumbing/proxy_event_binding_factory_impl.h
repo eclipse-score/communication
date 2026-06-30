@@ -29,6 +29,51 @@
 
 namespace score::mw::com::impl
 {
+namespace detail
+{
+
+template <typename ProxyServiceElementBinding, typename ProxyServiceElement, ServiceElementType element_type>
+std::unique_ptr<ProxyServiceElementBinding> CreateProxyEvent(ProxyBase& parent,
+                                                             const std::string_view service_element_name) noexcept
+{
+    using ReturnType = std::unique_ptr<ProxyServiceElementBinding>;
+
+    const HandleType& handle = parent.GetHandle();
+    const auto& type_deployment = handle.GetServiceTypeDeployment();
+
+    auto deployment_info_visitor = score::cpp::overload(
+        [&parent, &handle, service_element_name](const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
+            auto* const lola_parent = dynamic_cast<lola::Proxy*>(ProxyBaseView{parent}.GetBinding());
+            if (lola_parent == nullptr)
+            {
+                score::mw::log::LogError("lola") << "Proxy service element could not be created because parent proxy "
+                                                    "binding is a nullptr.";
+                return nullptr;
+            }
+
+            const auto instance_id = handle.GetInstanceId();
+            const auto* const lola_service_instance_id =
+                std::get_if<LolaServiceInstanceId>(&(instance_id.binding_info_));
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
+                                                        "ServiceInstanceId does not contain lola binding.");
+
+            const auto lola_service_element_id =
+                GetServiceElementId<element_type>(lola_type_deployment, std::string{service_element_name});
+            const lola::ElementFqId element_fq_id{lola_type_deployment.service_id_,
+                                                  lola_service_element_id,
+                                                  lola_service_instance_id->GetId(),
+                                                  element_type};
+            return std::make_unique<ProxyServiceElement>(*lola_parent, element_fq_id, service_element_name);
+        },
+        [](const score::cpp::blank&) noexcept -> ReturnType {
+            return nullptr;
+        });
+
+    // coverity[autosar_cpp14_a15_5_3_violation]
+    return std::visit(deployment_info_visitor, type_deployment.binding_info_);
+}
+
+}  // namespace detail
 
 /// \brief Factory class that dispatches calls to the appropriate binding based on binding information in the
 /// deployment configuration.
@@ -41,8 +86,10 @@ class ProxyEventBindingFactoryImpl : public IProxyEventBindingFactory<SampleType
     /// \param handle The handle containing the binding information.
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
-    std::unique_ptr<ProxyEventBinding<SampleType>> Create(ProxyBase& parent,
-                                                          const std::string_view event_name) noexcept override;
+    std::unique_ptr<ProxyEventBinding<SampleType>> Create(
+        ProxyBase& parent,
+        const std::string_view event_name,
+        const ServiceElementType service_element_type) noexcept override;
 };
 
 /// \brief Factory class that dispatches calls to the appropriate binding based on binding information in the
@@ -55,31 +102,43 @@ class GenericProxyEventBindingFactoryImpl : public IGenericProxyEventBindingFact
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
     std::unique_ptr<GenericProxyEventBinding> Create(ProxyBase& parent,
-                                                     const std::string_view event_name) noexcept override;
+                                                     const std::string_view event_name,
+                                                     const ServiceElementType service_element_type) noexcept override;
 };
 
 template <typename SampleType>
-// Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
-// not be called implicitly.". std::visit Throws std::bad_variant_access if
-// as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
-// valueless if an exception is thrown during different stages. Since we don't throw exceptions, it's not possible
-// that the variant can return true from valueless_by_exception and therefore not possible that std::visit throws
-// an exception.
-// This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyEventBindingFactoryImpl<SampleType>::Create(
     ProxyBase& parent,
-    const std::string_view event_name) noexcept
+    const std::string_view event_of_field_name,
+    const ServiceElementType service_element_type) noexcept
 {
-    const auto lookup = LookupLolaProxyElement(parent, event_name, ServiceElementType::EVENT);
-    if (!lookup.has_value())
-    {
-        score::mw::log::LogError("lola")
-            << "ProxyEvent binding could not be created for event" << event_name
-            << "because the parent proxy binding is not a lola binding or the element could not be resolved.";
-        return nullptr;
-    }
-    return std::make_unique<lola::ProxyEvent<SampleType>>(lookup->parent, lookup->element_fq_id, event_name);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(service_element_type == ServiceElementType::EVENT ||
+                                              service_element_type == ServiceElementType::FIELD);
+
+    using ReturnType = std::unique_ptr<ProxyEventBinding<SampleType>>;
+    auto deployment_info_visitor = score::cpp::overload(
+        [&parent, event_of_field_name, service_element_type](
+            const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
+            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(ProxyBaseView{parent}.GetBinding());
+            if (lola_proxy == nullptr)
+            {
+                score::mw::log::LogError("lola")
+                    << "Proxy event binding could not be created for" << event_of_field_name
+                    << "because the parent proxy binding is not a lola binding.";
+                return nullptr;
+            }
+
+            const auto element_fq_id = GetElementFqId(
+                parent.GetHandle(), lola_type_deployment, std::string{event_of_field_name}, service_element_type);
+            return std::make_unique<lola::ProxyEvent<SampleType>>(*lola_proxy, element_fq_id, event_of_field_name);
+        },
+        [](const score::cpp::blank&) noexcept -> ReturnType {
+            return nullptr;
+        });
+
+    const HandleType& handle = parent.GetHandle();
+    const auto& type_deployment = handle.GetServiceTypeDeployment();
+    return std::visit(deployment_info_visitor, type_deployment.binding_info_);
 }
 
 }  // namespace score::mw::com::impl

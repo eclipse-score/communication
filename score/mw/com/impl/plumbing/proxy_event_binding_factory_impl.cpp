@@ -33,17 +33,35 @@ namespace score::mw::com::impl
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::Create(
     ProxyBase& parent,
-    const std::string_view event_name) noexcept
+    const std::string_view event_name,
+    const ServiceElementType service_element_type) noexcept
 {
-    const auto lookup = LookupLolaProxyElement(parent, event_name, ServiceElementType::EVENT);
-    if (!lookup.has_value())
-    {
-        score::mw::log::LogError("lola")
-            << "GenericProxyEvent binding could not be created for event" << event_name
-            << "because the parent proxy binding is not a lola binding or the element could not be resolved.";
-        return nullptr;
-    }
-    return std::make_unique<lola::GenericProxyEvent>(lookup->parent, lookup->element_fq_id, event_name);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(service_element_type == ServiceElementType::EVENT ||
+                                              service_element_type == ServiceElementType::FIELD);
+
+    using ReturnType = std::unique_ptr<lola::GenericProxyEvent>;
+    auto deployment_info_visitor = score::cpp::overload(
+        [&parent, event_name, service_element_type](
+            const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
+            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(ProxyBaseView{parent}.GetBinding());
+            if (lola_proxy == nullptr)
+            {
+                score::mw::log::LogError("lola") << "Generic proxy event binding could not be created for" << event_name
+                                                 << "because the parent proxy binding is not a lola binding.";
+                return nullptr;
+            }
+
+            const auto element_fq_id =
+                GetElementFqId(parent.GetHandle(), lola_type_deployment, std::string{event_name}, service_element_type);
+            return std::make_unique<lola::GenericProxyEvent>(*lola_proxy, element_fq_id, event_name);
+        },
+        [](const score::cpp::blank&) noexcept -> ReturnType {
+            return nullptr;
+        });
+
+    const HandleType& handle = parent.GetHandle();
+    const auto& type_deployment = handle.GetServiceTypeDeployment();
+    return std::visit(deployment_info_visitor, type_deployment.binding_info_);
 }
 
 }  // namespace score::mw::com::impl
