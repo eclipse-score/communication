@@ -15,9 +15,11 @@
 
 #include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/method_type.h"
+#include "score/mw/com/impl/methods/method_traits_checker.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
+#include "score/mw/com/impl/reference_to_moveable.h"
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_field_base.h"
 
@@ -28,6 +30,7 @@
 
 #include <score/assert.hpp>
 
+#include <functional>
 #include <memory>
 #include <string_view>
 #include <type_traits>
@@ -145,30 +148,48 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     template <typename CallableType,
               typename U = SampleDataType,
               typename = std::enable_if_t<is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
-    Result<void> RegisterSetHandler(CallableType&& set_handler)
+    Result<void> RegisterSetHandler(CallableType&& user_set_handler)
     {
-        static_assert(std::is_invocable_v<CallableType, FieldType&>,
-                      "RegisterSetHandler: handler must be callable as void(FieldType& value). "
-                      "The argument initially holds the proxy-requested value and may be modified in-place.");
+        using ActualCallableReturnType = typename get_callable_return_type<CallableType>::type;
+        using ExpectedCallableReturnType = void;
+        static_assert(std::is_same_v<ExpectedCallableReturnType, ActualCallableReturnType>,
+                      "Registered method callable must have void return type!");
 
-        auto wrapped_callback =
-            [this, set_handler = std::forward<CallableType>(set_handler)](FieldType& new_value) -> FieldType {
+        using ActualCallableInArgType = typename get_callable_args_types<CallableType>::type;
+        using ExpectedCallableInArgTypes = std::tuple<FieldType&>;
+        static_assert(std::is_same_v<ExpectedCallableInArgTypes, ActualCallableInArgType>,
+                      "Registered method callable must have a single non-const reference argument of type FieldType&!");
+
+        // Since the pointer to SkeletonField and the user callable don't fit in the state of the type-erased handler,
+        // we have to allocate them on the heap and store a pointer to them.
+        auto state = std::make_unique<
+            std::pair<std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>, CallableType>>(
+            GetReferenceToMoveable(), std::forward<CallableType>(user_set_handler));
+
+        auto set_handler = [state = std::move(state)](FieldType& final_value, const FieldType& desired_value) {
+            auto& [skeleton_field_base_ref, actual_user_set_handler] = *state;
+
+            // Copy desired_value (which is a method InArg) into final_value (which is the method return value).
+            // final_value can then be modified in place by set_handler.
+            final_value = desired_value;
+
             // Allow user to validate/modify the value in-place
-            set_handler(new_value);
+            std::invoke(actual_user_set_handler, final_value);
 
-            // Store the (possibly modified) value as the latest field value
-            auto update_result = this->Update(new_value);
+            // Copy the (possibly modified) value into the latest field value
+            auto typed_field =
+                static_cast<SkeletonField<SampleDataType, Tags...>*>(&skeleton_field_base_ref.get().Get());
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(typed_field != nullptr);
+            auto update_result = typed_field->Update(final_value);
             if (!update_result.has_value())
             {
                 score::mw::log::LogError("lola") << "Set handler: failed to update field value.";
             }
-
-            // Return the accepted value to the proxy
-            return new_value;
         };
 
         is_set_handler_registered_ = true;
-        return set_method_->RegisterHandler(std::move(wrapped_callback));
+
+        return set_method_->RegisterHandler(std::move(set_handler));
     }
 
   private:

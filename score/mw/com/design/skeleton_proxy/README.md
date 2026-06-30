@@ -92,6 +92,12 @@ The following sequence shows the instantiation of a service class up to its serv
 
 <img alt="SKELETON_CREATE_OFFER_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/skeleton_create_offer_seq.puml">
 
+On construction, the generated skeleton (`DummySkeleton`) checks that all the bindings of its contained service elements
+(events/fields/methods) are valid. This is done by calling the `AreBindingsValid()` on `SkeletonBase`. This will then 
+iterate over the maps of references to its service elements described [below](#binding-independent-level-registration-of-skeleton-eventsfields-at-their-parent-skeleton) 
+and check if each binding was successfully created. If this is not the case, the construction of the skeleton instance 
+returns an error.
+
 #### Binding independent level Registration of skeleton events/fields at their parent skeleton
 
 Due to our architectural constraints, the `impl::SkeletonBase` (the base class of the generated skeleton/`DummySkeleton`)
@@ -168,54 +174,32 @@ On `ProxyBase` level we have two types of methods:
   a generated proxy instance, to detect, whether the instance can be successfully returned from
   `static Result<generated proxy class> <generated proxy class>::Create()` or not.
 
-The implementation of the latter one contains some indirection &ndash; again due to our architectural constraints, which
-are the same at proxy and skeleton side and have been laid out
-[here on the skeleton side](#binding-independent-level-registration-of-skeleton-eventsfields-at-their-parent-skeleton).
-
-The indirection is that for `ProxyBase::AreBindingsValid()` to work, the binding independent `impl::ProxyEvent`s set
-the member of its semantic parent `ProxyBase::are_service_element_bindings_valid_` to `false` during their construction,
-if they detect, that they don't have a valid underlying `pImpl` member of type `ProxyEventBindingBase` to dispatch to.
-This is an indication, that the binding specific implementation of the `ProxyEvent` couldn't be successfully created by
-the proxy side factories.
-
-So, the binding independent `impl::ProxyBase` doesn't "know" its semantically aggregated `ProxyEvent`s.
-Although the `ProxyEvent`s get a reference to their parent `ProxyBase` during construction (and therefore "know" their
-parent in the context of their `ctor`), they don't store this reference (as it isn't really needed currently and
-would require additional logic to update this reference if the parent `impl::ProxyBase` gets moved).
-Instead, they only set once (see above) the `ProxyBase::are_service_element_bindings_valid_` member variable of their
-parent during construction as this is currently the only feedback needed between proxy and its proxy events on binding
-independent level.
+Similarly to the skeleton side, the `impl::ProxyBase` doesn't "know" its event/field/method children. Therefore,
+the `impl::ProxyEventBase` registers itself with the `impl::ProxyBase` in the same way as `impl::SkeletonEventBase`
+(as explained
+[here on the skeleton side](#binding-independent-level-registration-of-skeleton-eventsfields-at-their-parent-skeleton). 
+It will then call `impl::ProxyBase::GetConstructionResult()` and will return a valid proxy to the user if none of the 
+bindings received an error from the binding factory when trying to construct the binding.
 
 #### Binding level Registration of proxy events/fields at their parent proxy
 
-On the binding **specific** level things look different!
-I.e. the binding specific proxy needs to interact with its dependent/child proxy events of type `ProxyEventBindingBase`
+On the binding **specific** level things look similar:
+the binding specific proxy needs to interact with its dependent/child proxy events of type `ProxyEventBindingBase`
 (at least the `LoLa`/shared-memory specific does, so we introduced it on the `ProxyBinding` interface level) .
 
-Therefore, `impl::ProxyBinding` has a method `RegisterEventBinding` (and `UnregisterEventBinding`) and our `LoLa`
-binding specific proxy `lola::Proxy`, which implements `impl::ProxyBinding`, has a member `event_bindings_` (a map
-containing its child proxy events), which it populates in its implementation of `RegisterEventBinding` with its
-dependent proxy events.
-
-The call to `RegisterEventBinding` happens during creation of a binding independent `impl::ProxyEvent` via an `RAII`
-style member `event_binding_registration_guard_` of type `EventBindingRegistrationGuard`, which the `impl::ProxyEvent`
-owns.
-This `EventBindingRegistrationGuard` takes over two functionalities:
-
-- setting `ProxyBase::are_service_element_bindings_valid_` member of its parent ProxyBase instance (see previous chapter)
-- calling `RegisterEventBinding` on the underlying `ProxyBinding` of the given `ProxyBase` on construction of the
-  `EventBindingRegistrationGuard` and calling `UnregisterEventBinding` on destruction. Since
-  `event_binding_registration_guard_` is owned by the `impl::ProxyEvent`, the registration / unregistration is done on
-  construction / destruction of an `impl::ProxyEvent`.
+Therefore, when each `lola::ProxyEvent` gets created (as a member of the generated proxy class), it registers itself 
+at its parent `lola::Proxy` via `lola::Proxy::RegisterEvent()`. The `lola::Proxy` stores the reference to each 
+child `lola::ProxyEvent`s in a map which it can later use.
 
 So **after** construction of user facing generated proxy class instance (`DummyProxy`), we have the following structure
 in place:
 
 1. Only an instance of the generated proxy class gets returned from the call to `<DummyProxy>::Create()` in case its
    binding on proxy level (its `pImpl` target) implementing `ProxyBinding` could be constructed and also for **all** its
-   aggregated events/fields their related `ProxyEventBinding`s (`pImpl` targets) could be constructed.
+   aggregated events/fields their related `ProxyEventBinding`s (`pImpl` targets) could be constructed. If this is not 
+   the case, then an error will be returned from `<DummyProxy>::Create()`.
 2. The `ProxyBinding` (`ProxyBase::proxy_binding_`) has complete access to all its child events/fields as
-   `ProxyBinding::RegisterEventBinding` has been called for all contained events/fields.
+   `lola::Proxy::RegisterEvent()` has been called for all contained events/fields.
 
 
 #### Extract type agnostic code

@@ -35,7 +35,7 @@
 namespace score::mw::com::impl
 {
 
-class EventBindingRegistrationGuard;
+class ProxyEventBaseView;
 
 /// \brief This is the user-visible class of an event that is part of a proxy. It contains ProxyEvent functionality that
 /// is agnostic of the data type that is transferred by the event.
@@ -50,6 +50,11 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyEventBaseAttorney;
 
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision. This class provides a view to the private members of this class.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend ProxyEventBaseView;
+
   public:
     /// \brief Constructs a ProxyEventBase with the given proxy event binding.
     /// \param proxy_binding_ptr Pointer to the ProxyBinding of the parent ProxyBase. Needed to register the
@@ -58,7 +63,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     /// \param event_name Event name of the event.
     ProxyEventBase(std::string_view event_name,
                    ProxyBinding* proxy_binding_ptr,
-                   std::unique_ptr<ProxyEventBindingBase> proxy_event_binding) noexcept;
+                   Result<std::unique_ptr<ProxyEventBindingBase>> proxy_event_binding) noexcept;
 
     /// \brief A ProxyEventBase shall not be copyable
     ProxyEventBase(const ProxyEventBase&) = delete;
@@ -176,19 +181,23 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
         proxy_event_base_mock_ = &proxy_event_base_mock;
     }
 
-    // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
-    // be private.". We need these data elements to exchange this information between the ProxyEventBase and the
-    // GenericProxyEvent.
-    // coverity[autosar_cpp14_m11_0_1_violation]
+    /// \brief Stores the result of the binding construction returned by the ProxyEventBindingFactory in the derived
+    /// ProxyEvent class.
+    ///
+    /// The ProxyBase will check the result in AreBindingsValid() to determine whether proxy construction was successful
+    /// or not (and whether to return a constructed proxy to the user or to return an error).
+    Result<void> binding_construction_result_;
+
+    // Note. MUST be initialized after binding_construction_result_ since the or_else() lambda used to construct
+    // binding_ writes to binding_construction_result_. According to C++ Standard 12.6.2/3/, "There is a sequence point
+    // (1.9) after the initialization of each base and member. The expression-list of a mem-initializer is evaluated as
+    // part of the initialization of the corresponding base or member.". So binding_construction_result_ is guaranteed
+    // to be initialized before the or_else() lambda is called.
     std::unique_ptr<ProxyEventBindingBase> binding_base_;
-    // coverity[autosar_cpp14_m11_0_1_violation]
+
     std::string_view event_name_;
-    // coverity[autosar_cpp14_m11_0_1_violation]
     std::unique_ptr<SampleReferenceTracker> tracker_;
-    // coverity[autosar_cpp14_m11_0_1_violation]
     tracing::ProxyEventTracingData tracing_data_;
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    std::unique_ptr<EventBindingRegistrationGuard> event_binding_registration_guard_;
 
     IProxyEventBase* proxy_event_base_mock_;
 
@@ -214,6 +223,25 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     ///          EventReceiveHandler call context or not and thus to call scope.expire() or not. This thread local
     ///          variable enables this detection.
     static thread_local bool is_in_receive_handler_context;
+};
+
+class ProxyEventBaseView
+{
+  public:
+    explicit ProxyEventBaseView(const ProxyEventBase& proxy_event_base) : proxy_event_base_{proxy_event_base} {}
+
+    const ProxyEventBindingBase* GetBinding() const
+    {
+        return proxy_event_base_.binding_base_.get();
+    }
+
+    [[nodiscard]] Result<void> GetBindingConstructionResult() const
+    {
+        return proxy_event_base_.binding_construction_result_;
+    }
+
+  private:
+    const ProxyEventBase& proxy_event_base_;
 };
 
 }  // namespace score::mw::com::impl

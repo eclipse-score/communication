@@ -25,19 +25,19 @@ template <typename SampleType>
 class ProxyFieldBindingFactoryMock : public IProxyFieldBindingFactory<SampleType>
 {
   public:
-    MOCK_METHOD(std::unique_ptr<ProxyEventBinding<SampleType>>,
+    MOCK_METHOD(Result<std::unique_ptr<ProxyEventBinding<SampleType>>>,
                 CreateEventBinding,
-                (ProxyBase&, std::string_view),
+                (HandleType, ProxyBinding*, std::string_view),
                 (noexcept, override));
 
-    MOCK_METHOD(std::unique_ptr<ProxyMethodBinding>,
+    MOCK_METHOD(Result<std::unique_ptr<ProxyMethodBinding>>,
                 CreateGetMethodBinding,
-                (ProxyBase&, std::string_view),
+                (HandleType, ProxyBinding*, std::string_view),
                 (noexcept, override));
 
-    MOCK_METHOD(std::unique_ptr<ProxyMethodBinding>,
+    MOCK_METHOD(Result<std::unique_ptr<ProxyMethodBinding>>,
                 CreateSetMethodBinding,
-                (ProxyBase&, std::string_view),
+                (HandleType, ProxyBinding*, std::string_view),
                 (noexcept, override));
 };
 

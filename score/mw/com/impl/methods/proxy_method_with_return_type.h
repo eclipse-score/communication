@@ -25,6 +25,8 @@
 #include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
+#include "score/mw/log/logging.h"
+
 #include <score/assert.hpp>
 #include <score/stop_token.hpp>
 
@@ -55,7 +57,7 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     template <typename, typename...>
     friend class ProxyFieldImpl;
 
-    struct FieldOnlyConstructorEnabler
+    struct FieldGetterConstructorEnabler
     {
     };
 
@@ -70,11 +72,6 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
     }
 
     ProxyMethod(ProxyBase& proxy_base,
@@ -84,25 +81,13 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
     }
 
-    ProxyMethod(ProxyBase& proxy_base,
-                std::string_view method_name,
-                std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                FieldOnlyConstructorEnabler) noexcept
+    ProxyMethod(std::string_view method_name,
+                Result<std::unique_ptr<ProxyMethodBinding>> proxy_method_binding,
+                FieldGetterConstructorEnabler) noexcept
         : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kGet)
     {
-        auto proxy_base_view = ProxyBaseView{proxy_base};
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
     }
 
     ~ProxyMethod() final = default;
@@ -136,6 +121,12 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
 template <typename ReturnType>
 score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operator()()
 {
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola") << "ProxyMethod::operator(): Binding is not initialized for method "
+                                         << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     auto queue_position_result = detail::DetermineNextAvailableQueueSlot(is_return_type_ptr_active_);
     if (!queue_position_result.has_value())
     {
@@ -174,7 +165,12 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operat
 template <typename ReturnType>
 Result<void> ProxyMethod<ReturnType()>::InitializeInArgsAndReturnValues()
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola")
+            << "ProxyMethod::InitializeInArgsAndReturnValues: Binding is not initialized for method " << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     const auto init_return_result = detail::InitializeReturnValue<ReturnType>(*binding_, kCallQueueSize);
     if (!init_return_result.has_value())
     {

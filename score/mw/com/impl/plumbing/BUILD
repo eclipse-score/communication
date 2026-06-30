@@ -33,6 +33,20 @@ cc_library(
 )
 
 cc_library(
+    name = "binding_factory_error",
+    srcs = ["binding_factory_error.cpp"],
+    hdrs = ["binding_factory_error.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/plumbing:__subpackages__",
+    ],
+    deps = [
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "skeleton_method_binding_factory",
     srcs = ["skeleton_method_binding_factory.cpp"],
     hdrs = ["skeleton_method_binding_factory.h"],
@@ -255,6 +269,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
+        ":binding_factory_error",
         ":i_proxy_binding_factory",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -292,6 +307,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
+        ":binding_factory_error",
         ":i_proxy_event_binding_factory",
         ":lola_proxy_element_building_blocks",
         "@score_baselibs//score/language/futurecpp",
@@ -326,6 +342,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
+        ":binding_factory_error",
         ":i_proxy_method_binding_factory",
         ":lola_proxy_element_building_blocks",
         "@score_baselibs//score/language/futurecpp",
@@ -768,6 +785,7 @@ cc_unit_test(
     deps = [
         ":proxy_method_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
@@ -782,6 +800,7 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
     ],
@@ -855,6 +874,17 @@ cc_unit_test(
         ":binding_runtime_factory",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+    ],
+)
+
+cc_unit_test(
+    name = "binding_factory_error_test",
+    srcs = [
+        "binding_factory_error_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":binding_factory_error",
     ],
 )
 

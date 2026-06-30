@@ -29,6 +29,46 @@ cc_library(
 )
 
 cc_library(
+    name = "method_traits_checker",
+    srcs = ["method_traits_checker.cpp"],
+    hdrs = ["method_traits_checker.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":callable_traits",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "callable_traits",
+    hdrs = [
+        "callable_traits.h",
+        "callable_traits_impl.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+    ],
+)
+
+cc_unit_test(
+    name = "callable_traits_test",
+    srcs = ["callable_traits_test.cpp"],
+    deps = [
+        ":callable_traits",
+        "//score/mw/com/impl/methods/test:callable_traits_resources",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "proxy_method_base",
     srcs = ["proxy_method_base.cpp"],
     hdrs = ["proxy_method_base.h"],
@@ -113,6 +153,20 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "method_traits_checker_test",
+    srcs = ["method_traits_checker_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":method_traits_checker",
+        "@googletest//:gtest",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_unit_test(
     name = "proxy_method_test",
     srcs = ["proxy_method_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [
@@ -124,6 +178,7 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/plumbing:proxy_method_binding_factory_mock",
+        "//score/mw/com/impl/test:binding_factory_resources",
         "@googletest//:gtest",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
@@ -156,6 +211,7 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":method_traits_checker",
         ":skeleton_method_binding",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:skeleton_base",
@@ -188,6 +244,7 @@ cc_unit_test(
     deps = [
         ":skeleton_method",
         "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/methods/test:callable_traits_resources",
         "//score/mw/com/impl/plumbing:skeleton_method_binding_factory_mock",
         "//score/mw/com/impl/test:binding_factory_resources",
         "@score_baselibs//score/language/futurecpp",

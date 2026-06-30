@@ -21,6 +21,8 @@
 #include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/proxy_field_base.h"
 
+#include "score/mw/com/impl/methods/proxy_method_base.h"
+
 #include "score/mw/com/impl/mocking/i_proxy_event.h"
 
 #include "score/result/result.h"
@@ -80,11 +82,8 @@ class ProxyFieldImpl : public ProxyFieldBase
     /// \param proxy_base Parent proxy that owns this field's registration.
     /// \param field_name Field's name as it appears in the deployment.
     /// \param event_binding Mock event binding. Must be provided (use nullptr if no event binding is needed).
-    /// \param set_method_binding Optional mock Set-method binding. If nullptr, no ProxyMethod is built for Set
-    ///        (same MarkServiceElementBindingInvalid avoidance as get_method_binding).
-    /// \param get_method_binding Optional mock Get-method binding. If nullptr, no ProxyMethod is built for Get;
-    ///        this avoids the ProxyMethod ctor calling ProxyBaseView::MarkServiceElementBindingInvalid() on the
-    ///        parent, which would otherwise make AreBindingsValid() return false during proxy construction.
+    /// \param set_method_binding Optional mock Set-method binding. If nullptr, no ProxyMethod is built for Set.
+    /// \param get_method_binding Optional mock Get-method binding. If nullptr, no ProxyMethod is built for Get.
     ProxyFieldImpl(ProxyBase& proxy_base,
                    const std::string_view field_name,
                    std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
@@ -96,17 +95,15 @@ class ProxyFieldImpl : public ProxyFieldBase
                          set_method_binding == nullptr
                              ? nullptr
                              : std::make_unique<ProxyMethod<FieldType(FieldType)>>(
-                                   proxy_base,
                                    field_name,
                                    std::move(set_method_binding),
-                                   typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
+                                   typename ProxyMethod<FieldType(FieldType)>::FieldSetterConstructorEnabler{}),
                          get_method_binding == nullptr
                              ? nullptr
                              : std::make_unique<ProxyMethod<FieldType()>>(
-                                   proxy_base,
                                    field_name,
                                    std::move(get_method_binding),
-                                   typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{})}
+                                   typename ProxyMethod<FieldType()>::FieldGetterConstructorEnabler{})}
     {
     }
 
@@ -347,7 +344,8 @@ class ProxyFieldImpl : public ProxyFieldBase
             return std::make_unique<ProxyEvent<FieldType>>(
                 proxy_base,
                 field_name,
-                ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
+                ProxyFieldBindingFactory<FieldType>::CreateEventBinding(
+                    proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
                 typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{});
         }
         else
@@ -367,10 +365,10 @@ class ProxyFieldImpl : public ProxyFieldBase
         if constexpr (kHasSetter)
         {
             return std::make_unique<ProxyMethod<FieldType(FieldType)>>(
-                proxy_base,
                 field_name,
-                ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(proxy_base, field_name),
-                typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{});
+                ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(
+                    proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
+                typename ProxyMethod<FieldType(FieldType)>::FieldSetterConstructorEnabler{});
         }
         else
         {
@@ -388,10 +386,10 @@ class ProxyFieldImpl : public ProxyFieldBase
         if constexpr (kHasGetter)
         {
             return std::make_unique<ProxyMethod<FieldType()>>(
-                proxy_base,
                 field_name,
-                ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(proxy_base, field_name),
-                typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{});
+                ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(
+                    proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
+                typename ProxyMethod<FieldType()>::FieldGetterConstructorEnabler{});
         }
         else
         {
@@ -406,7 +404,10 @@ class ProxyFieldImpl : public ProxyFieldBase
                    std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
                    std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
                    std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch)
-        : ProxyFieldBase{field_name, proxy_event_dispatch.get()},
+        : ProxyFieldBase{field_name,
+                         proxy_event_dispatch.get(),
+                         proxy_method_set_dispatch.get(),
+                         proxy_method_get_dispatch.get()},
           proxy_event_dispatch_{std::move(proxy_event_dispatch)},
           proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)},
           proxy_method_get_dispatch_{std::move(proxy_method_get_dispatch)}

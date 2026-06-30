@@ -27,17 +27,33 @@
 namespace score::mw::com::impl
 {
 
+class ProxyMethodBaseView;
+
 class ProxyMethodBase : public EnableReferenceToMoveableFromThis<ProxyMethodBase>
 {
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision. This class provides a view to the private members of this class.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class ProxyMethodBaseView;
+
   public:
     ProxyMethodBase(std::string_view method_name,
-                    std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                    MethodType method_type = MethodType::kMethod) noexcept
+                    Result<std::unique_ptr<ProxyMethodBinding>> proxy_method_binding,
+                    MethodType method_type) noexcept
         : EnableReferenceToMoveableFromThis<ProxyMethodBase>(),
           method_name_{method_name},
           method_type_{method_type},
           is_return_type_ptr_active_{kCallQueueSize, false},
-          binding_{std::move(proxy_method_binding)}
+          binding_construction_result_{},
+          binding_{std::move(proxy_method_binding)
+                       .or_else([this](auto&& error) -> Result<std::unique_ptr<ProxyMethodBinding>> {
+                           // If the binding creation fails, we store the error in binding_construction_result_ which
+                           // can be accessed via GetBindingConstructionResult(). ProxyBase will check before returning
+                           // a created Proxy to the user.
+                           binding_construction_result_ = Unexpected{std::forward<decltype(error)>(error)};
+                           return nullptr;
+                       })
+                       .value()}
     {
     }
     /// \brief A ProxyMethod shall not be copyable. (Exactly like impl::ProxyBase and impl:ProxyEventBase)
@@ -85,7 +101,33 @@ class ProxyMethodBase : public EnableReferenceToMoveableFromThis<ProxyMethodBase
     /// of the async call and back to false, when the asynchronous call concludes.
     containers::DynamicArray<bool> is_return_type_ptr_active_;
 
+    /// \brief Stores the result of the binding construction returned by the ProxyMethodBindingFactory in the derived
+    /// ProxyMethod class.
+    ///
+    /// The ProxyBase will check the result in AreBindingsValid() to determine whether proxy construction was successful
+    /// or not (and whether to return a constructed proxy to the user or to return an error).
+    Result<void> binding_construction_result_;
+
+    // Note. MUST be initialized after binding_construction_result_ since the or_else() lambda used to construct
+    // binding_ writes to binding_construction_result_. According to C++ Standard 12.6.2/3/, "There is a sequence point
+    // (1.9) after the initialization of each base and member. The expression-list of a mem-initializer is evaluated as
+    // part of the initialization of the corresponding base or member.". So binding_construction_result_ is guaranteed
+    // to be initialized before the or_else() lambda is called.
     std::unique_ptr<ProxyMethodBinding> binding_;
+};
+
+class ProxyMethodBaseView
+{
+  public:
+    explicit ProxyMethodBaseView(const ProxyMethodBase& base) : base_{base} {}
+
+    [[nodiscard]] Result<void> GetBindingConstructionResult() const
+    {
+        return base_.binding_construction_result_;
+    }
+
+  private:
+    const ProxyMethodBase& base_;
 };
 
 }  // namespace score::mw::com::impl

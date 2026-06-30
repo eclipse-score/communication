@@ -32,6 +32,21 @@
 
 namespace score::mw::com::impl::lola
 {
+
+class ProxyTestAttorney
+{
+  public:
+    explicit ProxyTestAttorney(Proxy& proxy) : proxy_{proxy} {}
+
+    const std::unordered_map<std::string_view, std::reference_wrapper<ProxyEventBindingBase>>& GetEvents() const
+    {
+        return proxy_.event_bindings_;
+    }
+
+  private:
+    Proxy& proxy_;
+};
+
 namespace
 {
 
@@ -163,6 +178,10 @@ using MyTypes = ::testing::Types<ProxyEventStruct, GenericProxyEventStruct>;
 TYPED_TEST_SUITE(LolaProxyEventFixture, MyTypes, );
 
 template <typename T>
+using LolaProxyEventConstructionFixture = LolaProxyEventFixture<T>;
+TYPED_TEST_SUITE(LolaProxyEventConstructionFixture, MyTypes, );
+
+template <typename T>
 using LolaProxyEventGetNewSamplesFixture = LolaProxyEventFixture<T>;
 TYPED_TEST_SUITE(LolaProxyEventGetNewSamplesFixture, MyTypes, );
 
@@ -173,6 +192,22 @@ TYPED_TEST_SUITE(LolaProxyEventGetNumNewSamplesAvailableFixture, MyTypes, );
 template <typename T>
 using LolaProxyEventDeathTest = LolaProxyEventFixture<T>;
 TYPED_TEST_SUITE(LolaProxyEventDeathTest, MyTypes, );
+
+TYPED_TEST(LolaProxyEventConstructionFixture, ConstructingRegistersEventWithParent)
+{
+    // Given a proxy with an events map which is initially empty
+    auto& events_map = ProxyTestAttorney(*this->proxy_).GetEvents();
+    ASSERT_EQ(events_map.size(), 0U);
+
+    // When constructing a ProxyEvent
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
+
+    // Then the event should have been registered in the parent Proxy's map of events
+    EXPECT_EQ(events_map.size(), 1U);
+    auto registered_event_it = events_map.find(this->event_name_);
+    EXPECT_NE(registered_event_it, events_map.end());
+    EXPECT_EQ(&registered_event_it->second.get(), &(*this->test_proxy_event_));
+}
 
 TYPED_TEST(LolaProxyEventGetNewSamplesFixture, CallsReceiverForEachAccessibleSample)
 {

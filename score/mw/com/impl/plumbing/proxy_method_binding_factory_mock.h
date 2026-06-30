@@ -25,7 +25,7 @@ namespace score::mw::com::impl
 class ProxyMethodBindingFactoryMock : public IProxyMethodBindingFactory
 {
   public:
-    MOCK_METHOD(std::unique_ptr<ProxyMethodBinding>,
+    MOCK_METHOD(Result<std::unique_ptr<ProxyMethodBinding>>,
                 Create,
                 (HandleType parent_handle,
                  ProxyBinding* parent_binding,
