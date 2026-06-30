@@ -10,15 +10,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from enum import IntEnum
+from test_fixture import consumer, provider, ProxyMoveScenario
 
 
-class ProxyMoveScenario(IntEnum):
-    MOVE_CONSTRUCT_BEFORE_SUBSCRIBE = 0
-
-
-def consumer_and_provider(target, scenario, **kwargs):
-    args = ["--scenario", str(int(scenario)), "--service-instance-manifest", "./etc/mw_com_config.json"]
-    return target.wrap_exec(
-        "bin/main_consumer_and_provider", args, cwd="/opt/MainConsumerAndProviderApp", wait_on_exit=True, **kwargs
-    )
+def test_move_construct_before_subscribe_proxy_different_process(target):
+    with consumer(target, ProxyMoveScenario.MOVE_CONSTRUCT_BEFORE_SUBSCRIBE):
+        with provider(target, ProxyMoveScenario.MOVE_CONSTRUCT_BEFORE_SUBSCRIBE):
+            pass

@@ -10,12 +10,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/proxy_event_move_semantics/consumer.h"
+#include "score/mw/com/test/move_semantics/proxy_event/consumer.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/common_test_resources/proxy_container.h"
 #include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
-#include "score/mw/com/test/proxy_event_move_semantics/test_event_datatype.h"
+#include "score/mw/com/test/move_semantics/proxy_event/test_event_datatype.h"
 #include "score/mw/com/types.h"
 
 #include <cstdint>

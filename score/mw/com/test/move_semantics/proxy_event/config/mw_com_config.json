@@ -1,7 +1,7 @@
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/test/proxy_event_move_semantics/MoveEventInterface",
+      "serviceTypeName": "/test/move_semantics/proxy_event/MoveEventInterface",
       "version": {
         "major": 1,
         "minor": 0
@@ -22,8 +22,8 @@
   ],
   "serviceInstances": [
     {
-      "instanceSpecifier": "test/proxy_event_move_semantics/MoveEventInterface",
-      "serviceTypeName": "/test/proxy_event_move_semantics/MoveEventInterface",
+      "instanceSpecifier": "test/move_semantics/proxy_event/MoveEventInterface",
+      "serviceTypeName": "/test/move_semantics/proxy_event/MoveEventInterface",
       "version": {
         "major": 1,
         "minor": 0

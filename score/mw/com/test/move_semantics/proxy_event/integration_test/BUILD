@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
 integration_test(
@@ -19,5 +20,22 @@ integration_test(
         "move_construct_before_subscribe_proxy_same_process_test.py",
         "test_fixture.py",
     ],
-    filesystem = "//score/mw/com/test/proxy_event_move_semantics:main_consumer_and_provider-pkg",
+    filesystem = "//score/mw/com/test/move_semantics/proxy_event:main_consumer_and_provider-pkg",
+)
+
+pkg_filegroup(
+    name = "different_processes_filesystem",
+    srcs = [
+        "//score/mw/com/test/move_semantics/proxy_event:main_consumer-pkg",
+        "//score/mw/com/test/move_semantics/proxy_event:main_provider-pkg",
+    ],
+)
+
+integration_test(
+    name = "move_construct_before_subscribe_proxy_different_process_test",
+    srcs = [
+        "move_construct_before_subscribe_proxy_different_process_test.py",
+        "test_fixture.py",
+    ],
+    filesystem = ":different_processes_filesystem",
 )

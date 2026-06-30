@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_TEST_PROXY_EVENT_MOVE_SEMANTICS_PROVIDER_H
 #define SCORE_MW_COM_TEST_PROXY_EVENT_MOVE_SEMANTICS_PROVIDER_H
 
-#include "score/mw/com/test/proxy_event_move_semantics/test_parameters.h"
+#include "score/mw/com/test/move_semantics/proxy_event/test_parameters.h"
 
 #include <score/stop_token.hpp>
 

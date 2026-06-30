@@ -27,7 +27,7 @@ const std::string kServiceInstanceManifest{"service-instance-manifest"};
 constexpr std::size_t kNumberOfSamplesToSendPerOffer{10U};
 
 const InstanceSpecifier kInstanceSpecifierMovedTo =
-    InstanceSpecifier::Create(std::string{"test/proxy_event_move_semantics/MoveEventInterface"}).value();
+    InstanceSpecifier::Create(std::string{"test/move_semantics/proxy_event/MoveEventInterface"}).value();
 
 enum class ProxyMoveScenario : std::uint8_t
 {

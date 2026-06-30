@@ -14,8 +14,8 @@
 
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
-#include "score/mw/com/test/proxy_event_move_semantics/provider.h"
-#include "score/mw/com/test/proxy_event_move_semantics/test_parameters.h"
+#include "score/mw/com/test/move_semantics/proxy_event/consumer.h"
+#include "score/mw/com/test/move_semantics/proxy_event/test_parameters.h"
 
 int main(int argc, const char** argv)
 {
@@ -33,12 +33,15 @@ int main(int argc, const char** argv)
 
     const auto num_send_iterations = score::mw::com::test::GetNumberOfSendIterations(test_configuration.scenario);
 
-    std::cout << "Starting provider with scenario " << static_cast<std::size_t>(test_configuration.scenario)
-              << ", number of samples to send per offer " << score::mw::com::test::kNumberOfSamplesToSendPerOffer
+    std::cout << "Starting consumer with scenario " << static_cast<std::size_t>(test_configuration.scenario)
+              << ", number of samples to receive per iteration " << score::mw::com::test::kNumberOfSamplesToSendPerOffer
               << " and number of send iterations " << num_send_iterations << std::endl;
 
-    score::mw::com::test::RunProvider(
-        test_configuration.scenario, score::mw::com::test::kNumberOfSamplesToSendPerOffer, stop_source.get_token());
+    score::mw::com::test::RunConsumer(test_configuration.scenario,
+                                      score::mw::com::test::kInstanceSpecifierMovedTo,
+                                      score::mw::com::test::kNumberOfSamplesToSendPerOffer,
+                                      num_send_iterations,
+                                      stop_source.get_token());
 
     return EXIT_SUCCESS;
 }
