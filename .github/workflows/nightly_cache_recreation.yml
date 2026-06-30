@@ -1,0 +1,189 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow: Nightly Cache Recreation
+#
+# Recreates all Bazel caches (disk + repository) from scratch.
+#
+# Phase 1 — Fetch (sequential): Each job runs with --nobuild to populate
+# the repository cache without compiling. Jobs run sequentially so the
+# repo cache accumulates across configs.
+#
+# Phase 2 — Build (parallel): All jobs run the actual builds in parallel,
+# restoring the complete repo cache from Phase 1. Each job saves its own
+# disk cache.
+#
+# Can also be triggered manually via workflow_dispatch.
+
+name: Nightly Cache Recreation
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # 3 AM UTC
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ======================================================================
+  # Phase 1: Fetch dependencies (sequential, --nobuild)
+  # Populates the shared repository cache without compiling.
+  # ======================================================================
+  fetch-host-build:
+    uses: ./.github/workflows/_build_and_test_gcc15.yml
+    with:
+      cache-mode: "recreate"
+      fetch-only: "true"
+    permissions:
+      contents: read
+      actions: write
+
+  fetch-tsan:
+    needs: fetch-host-build
+    uses: ./.github/workflows/_thread_sanitizer.yml
+    with:
+      cache-mode: "recreate-update"
+      fetch-only: "true"
+    permissions:
+      contents: read
+      actions: write
+
+  fetch-asan:
+    needs: fetch-tsan
+    uses: ./.github/workflows/_address_sanitizer.yml
+    with:
+      cache-mode: "recreate-update"
+      fetch-only: "true"
+    permissions:
+      contents: read
+      actions: write
+
+  fetch-clang-tidy:
+    needs: fetch-asan
+    uses: ./.github/workflows/_clang_tidy.yml
+    with:
+      cache-mode: "recreate-update"
+      fetch-only: "true"
+    permissions:
+      contents: read
+      actions: write
+
+  fetch-coverage:
+    needs: fetch-clang-tidy
+    uses: ./.github/workflows/_coverage_report.yml
+    with:
+      cache-mode: "recreate-update"
+      fetch-only: "true"
+    permissions:
+      contents: read
+      actions: write
+
+  fetch-codeql:
+    needs: fetch-coverage
+    uses: ./.github/workflows/_codeql.yml
+    with:
+      cache-mode: "recreate-update"
+      fetch-only: "true"
+    permissions:
+      contents: read
+      actions: write
+      security-events: write
+
+  fetch-qnx:
+    needs: fetch-codeql
+    uses: ./.github/workflows/build_and_test_qnx.yml
+    with:
+      cache_mode: "recreate-update"
+      fetch_only: "true"
+    secrets:
+      SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
+      SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+      SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+    permissions:
+      contents: read
+      actions: write
+      pull-requests: read
+
+  # ======================================================================
+  # Phase 2: Build (parallel)
+  # All jobs restore the repo cache from Phase 1 and build their disk cache.
+  # ======================================================================
+  build-host:
+    needs: fetch-qnx
+    uses: ./.github/workflows/_build_and_test_gcc15.yml
+    with:
+      cache-mode: "recreate-update"
+    permissions:
+      contents: read
+      actions: write
+
+  build-tsan:
+    needs: fetch-qnx
+    uses: ./.github/workflows/_thread_sanitizer.yml
+    with:
+      cache-mode: "recreate-update"
+    permissions:
+      contents: read
+      actions: write
+
+  build-asan:
+    needs: fetch-qnx
+    uses: ./.github/workflows/_address_sanitizer.yml
+    with:
+      cache-mode: "recreate-update"
+    permissions:
+      contents: read
+      actions: write
+
+  build-clang-tidy:
+    needs: fetch-qnx
+    uses: ./.github/workflows/_clang_tidy.yml
+    with:
+      cache-mode: "recreate-update"
+    permissions:
+      contents: read
+      actions: write
+
+  build-coverage:
+    needs: fetch-qnx
+    uses: ./.github/workflows/_coverage_report.yml
+    with:
+      cache-mode: "recreate-update"
+    permissions:
+      contents: read
+      actions: write
+
+  build-codeql:
+    needs: fetch-qnx
+    uses: ./.github/workflows/_codeql.yml
+    with:
+      cache-mode: "recreate-update"
+    permissions:
+      contents: read
+      actions: write
+      security-events: write
+
+  build-qnx:
+    needs: fetch-qnx
+    uses: ./.github/workflows/build_and_test_qnx.yml
+    with:
+      cache_mode: "recreate-update"
+    secrets:
+      SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
+      SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+      SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+    permissions:
+      contents: read
+      actions: write
+      pull-requests: read
