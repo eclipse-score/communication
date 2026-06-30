@@ -195,7 +195,7 @@ SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
       event_properties_{event_properties},
       element_fq_id_{element_fq_id},
       event_data_control_composite_{},
-      current_timestamp_{1U},
+      current_timestamp_{EventSlotStatus::INVALID_TIMESTAMP},
       tracing_data_{tracing_data},
       qm_disconnect_{false}
 {
