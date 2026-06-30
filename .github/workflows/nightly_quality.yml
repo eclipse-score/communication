@@ -73,6 +73,15 @@ jobs:
       security-events: write
 
   # --------------------------------------------------------------------
+  # Quality job 3: CodeQL
+  # --------------------------------------------------------------------
+  run-codeql:
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  # --------------------------------------------------------------------
   # Collect results, build the dashboard, upload artifact for docs.yml
   # --------------------------------------------------------------------
   deploy-quality-reports:
@@ -100,6 +109,13 @@ jobs:
       - name: Allow linux-sandbox
         id: setup
         uses: eclipse-score/cicd-actions/unblock-user-namespace-for-linux-sandbox@f89865691445b60e9229c36adb1c37b675e1ca85
+
+      - name: Stub out ARM-only dependencies unavailable in CI
+        run: |
+          mkdir -p /tmp/ape_stub
+          touch /tmp/ape_stub/BUILD.bazel
+          touch /tmp/ape_stub/WORKSPACE
+          echo "common --override_repository=ape+=/tmp/ape_stub" >> user.bazelrc
 
       # ------------------------------------------------------------------
       # Download Coverage artifacts (only if the upstream job succeeded)
