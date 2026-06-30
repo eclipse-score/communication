@@ -11,54 +11,43 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-name: CodeQL Analysis
+name: "CodeQL Analysis"
 
 on:
-  schedule:
-    - cron: '0 2 * * *'  # Nightly at 2 AM UTC
-  workflow_dispatch:  # Allow maintainers to trigger manually when needed
   workflow_call:
-    outputs:
-      artifact-name:
-        description: Name of the uploaded CSV artifact
-        value: codeql-csv-results
-      conclusion:
-        description: Job conclusion (success/failure)
-        value: ${{ jobs.run-codeql.result }}
-
-permissions:
-  contents: read
-  security-events: write  # Required to upload SARIF results to GitHub Code Scanning
-
-concurrency:
-  group: codeql-${{ github.ref }}
-  cancel-in-progress: false  # Never cancel an in-progress CodeQL run; it takes hours
-
-env:
-  ANDROID_HOME: ""
-  ANDROID_SDK_ROOT: ""
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    inputs:
+      cache-mode:
+        description: "Cache mode override (empty = auto-compute from event context)."
+        type: string
+        default: ""
+      fetch-only:
+        description: "When true, runs --nobuild to fetch dependencies only."
+        type: string
+        default: "false"
 
 jobs:
-  run-codeql:
+  codeql:
+    name: Build & Test
     runs-on: ubuntu-24.04
-
+    permissions:
+      contents: read
+      actions: write
+      security-events: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
-      - name: Free Disk Space (Ubuntu)
-        uses: eclipse-score/more-disk-space@v1
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:
-          level: 4
+          disk-cache: ""
+          cache-mode: ${{ inputs.cache-mode }}
 
-      - name: Setup Bazel
-        uses: castler/setup-bazel@cache-optimized
+      - name: Fetch dependencies (--nobuild)
+        if: inputs.fetch-only == 'true'
+        run: bazel build --nobuild //...
 
-      - name: Allow linux-sandbox
-        uses: eclipse-score/cicd-actions/unblock-user-namespace-for-linux-sandbox@f89865691445b60e9229c36adb1c37b675e1ca85
-
-      - name: Create CodeQL database
+      - name: Run CodeQL analysis
+        if: inputs.fetch-only != 'true'
+        id: run-codeql
         run: |
           bazel run //quality/static_analysis:codeql_lint -- \
             --output-dir /tmp/codeql-results \
@@ -66,12 +55,14 @@ jobs:
             --target //score/message_passing //score/mw/com
 
       - name: Upload SARIF to GitHub Code Scanning
+        if: inputs.fetch-only != 'true' && always() && steps.run-codeql.outcome == 'success'
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: /tmp/codeql-results/codeql-nightly.sarif
           category: codeql-nightly
 
       - name: Upload CSV results
+        if: inputs.fetch-only != 'true' && always() && steps.run-codeql.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: codeql-csv-results
