@@ -10,4 +10,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/skeleton_move_semantics/test_event_datatype.h"
+#ifndef SCORE_MW_COM_TEST_SKELETON_MOVE_SEMANTICS_PROVIDER_H
+#define SCORE_MW_COM_TEST_SKELETON_MOVE_SEMANTICS_PROVIDER_H
+
+#include "score/mw/com/test/move_semantics/skeleton_event/test_parameters.h"
+
+#include <score/stop_token.hpp>
+
+namespace score::mw::com::test
+{
+
+void RunProvider(const SkeletonMoveScenario& scenario,
+                 const std::size_t num_samples_to_send,
+                 const score::cpp::stop_token& stop_token);
+
+}  // namespace score::mw::com::test
+
+#endif  // SCORE_MW_COM_TEST_SKELETON_MOVE_SEMANTICS_PROVIDER_H
