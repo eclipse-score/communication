@@ -31,6 +31,7 @@
 #include <score/callback.hpp>
 
 #include <array>
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -109,16 +110,25 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
 
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept;
 
-    /// \brief Getter which returns an optional SlotCollector lock-free as long as SubscribeEvent, UnsubscribeEvent and
-    /// GetSlotCollectorLockFree are called single-threaded.
+    /// \brief Returns the optional SlotCollector without acquiring state_mutex_.
     ///
-    /// The SlotCollector is created when we succesfully subscribe (i.e. transition to Subscribed state) and is
-    /// destroyed when we unsubscribe (i.e. transition to Not Subscribed state). IMPORTANT: These getters can only be
-    /// called if SubscribeEvent and UnsubscribeEvent are called single-threaded. If they're called multi-threaded, then
-    /// creating / destroying / accessing the SlotCollector must be protected by a mutex.
+    /// The SlotCollector is stored in subscription_data_ and is created on a successful Subscribe (transition to
+    /// Subscribed or SubscriptionPending state) and destroyed on Unsubscribe (transition to NotSubscribed state).
+    ///
+    /// IMPORTANT: These getters are safe only when SubscribeEvent and UnsubscribeEvent are called single-threaded
+    /// relative to GetSlotCollectorLockFree. If called multi-threaded, access to the SlotCollector must be protected
+    /// by a mutex.
     ///
     /// Since calls to a single ProxyEvent must be called single-threaded according to our AOUs, we can take advantage
     /// of this lock-free optimisation.
+    ///
+    /// Thread-safety note: current_state_idx_ is atomic, so reading it here without state_mutex_ is well-defined.
+    /// The only state transitions that can race with this getter come from the middleware notification thread via
+    /// StopOfferEvent() (SUBSCRIBED -> PENDING) and ReOfferEvent() (PENDING -> SUBSCRIBED). Both SubscribedState and
+    /// SubscriptionPendingState return the same subscription_data_.slot_collector_ and neither transition modifies it,
+    /// so the result is identical regardless of which state is observed. The SUBSCRIBED -> NOT_SUBSCRIBED transition
+    /// (which does destroy the SlotCollector) is only triggered by UnsubscribeEvent(), a user-facing call that is
+    /// single-threaded with this getter per the AoU above.
     std::optional<SlotCollector>& GetSlotCollectorLockFree() noexcept;
     const std::optional<SlotCollector>& GetSlotCollectorLockFree() const noexcept;
     [[nodiscard]] const ElementFqId& GetElementFqId() const& noexcept;
@@ -136,7 +146,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     std::array<std::unique_ptr<SubscriptionStateBase>,
                static_cast<std::uint8_t>(SubscriptionStateMachineState::STATE_COUNT)>
         states_;
-    SubscriptionStateMachineState current_state_idx_;
+    std::atomic<SubscriptionStateMachineState> current_state_idx_;
 
     // Data used by states
     SubscriptionData subscription_data_;
