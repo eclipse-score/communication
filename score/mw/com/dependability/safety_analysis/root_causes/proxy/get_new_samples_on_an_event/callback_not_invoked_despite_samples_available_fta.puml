@@ -17,7 +17,7 @@
 
 $TopEvent("Callback not invoked, despite samples available", "Communication.CallbackNotInvokedDespiteSamplesAvailable")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.CallbackNotInvokedDespiteSamplesAvailable")
 $IntermediateEvent("Search Logic is broken", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
 $IntermediateEvent("Wrong slot status / timestamp is set", "Event4", "Gate2")

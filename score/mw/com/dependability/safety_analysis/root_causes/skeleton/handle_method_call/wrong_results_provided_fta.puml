@@ -16,7 +16,7 @@
 !include fta_metamodel.puml
 
 $TopEvent("Wrong call result provided", "Communication.WrongResultsProvided")
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.WrongResultsProvided")
 $IntermediateEvent("Callee did provide no result", "Event3", "Gate1")
 $IntermediateEvent("Callee did provide wrong result", "Event4", "Gate1")
 $OrGate("Gate3", "Event3")

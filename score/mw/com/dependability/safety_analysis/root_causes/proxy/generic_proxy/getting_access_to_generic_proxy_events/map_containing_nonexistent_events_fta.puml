@@ -17,7 +17,7 @@
 
 $TopEvent("Map containing non-existent events", "Communication.MapContainingNonexistentEvents")
 
-$IntermediateEvent("Configuration is wrong", "Event1", "TopEvent")
+$IntermediateEvent("Configuration is wrong", "Event1", "Communication.MapContainingNonexistentEvents")
 $TransferInGate("Transfer1", "Event1")
 
 @enduml

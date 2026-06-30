@@ -17,7 +17,7 @@
 
 $TopEvent("Wrong input arguments used", "Communication.WrongMethodInArgsUsed")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.WrongMethodInArgsUsed")
 $IntermediateEvent("Callee used wrong InArgs", "Event1", "Gate1")
 $IntermediateEvent("Callee used corrupted InArgs", "Event2", "Gate1")
 $OrGate("Gate2", "Event1")

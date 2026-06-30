@@ -17,7 +17,7 @@
 
 $TopEvent("Wrong call result used", "Communication.WrongReturnValueUsed")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.WrongReturnValueUsed")
 $BasicEvent("Caller used result from wrong location", "Event10", "Gate1")
 $BasicEvent("Caller used result in wrong layout", "Event11", "Gate1")
 $BasicEvent("Caller used result before fully provided", "Event12", "Gate1")

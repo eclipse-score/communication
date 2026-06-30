@@ -17,7 +17,7 @@
 
 $TopEvent("Allocate in Wrong Memory", "Communication.MemoryAllocatedInWrongSection")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.MemoryAllocatedInWrongSection")
 $IntermediateEvent("Allocate in Heap", "Event1", "Gate1")
 $OrGate("Gate2", "Event1")
 $IntermediateEvent("Usage of wrong memory ressource", "Event11", "Gate2")

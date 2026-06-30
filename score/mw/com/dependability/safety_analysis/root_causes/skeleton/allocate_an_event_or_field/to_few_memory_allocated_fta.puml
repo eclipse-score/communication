@@ -17,7 +17,7 @@
 
 $TopEvent("To few memory allocated", "Communication.TooFewMemoryAllocated")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.TooFewMemoryAllocated")
 $IntermediateEvent("Wrong slot-type choosen", "Event2", "Gate1")
 $BasicEvent("Mapping from actual EventID to Event-Type incorrect", "Communication.MappingFromActualEventidToEventTypeIncorrect", "Event2")
 $IntermediateEvent("A slot cannot be allocated", "Event3", "Gate1")
