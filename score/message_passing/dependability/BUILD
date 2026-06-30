@@ -83,4 +83,10 @@ dependable_element(
         "//score/message_passing:unit_tests",
     ],
     visibility = ["//visibility:public"],
+    deps = [
+        "//third_party/score_baselibs:bitmanipulation",
+        "//third_party/score_baselibs:containers",
+        "//third_party/score_baselibs:futurecpp",
+        "//third_party/score_baselibs:os",
+    ],
 )

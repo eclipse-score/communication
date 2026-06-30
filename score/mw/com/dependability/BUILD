@@ -21,6 +21,12 @@ dependable_element(
         "//score/mw/com/impl/bindings",
     ],
     dependability_analysis = ["//score/mw/com/dependability/safety_analysis:mw_com_fmea"],
+    deps = [
+        "//third_party/score_baselibs:bitmanipulation",
+        "//third_party/score_baselibs:containers",
+        "//third_party/score_baselibs:futurecpp",
+        "//third_party/score_baselibs:os",
+    ],
     integrity_level = "B",
     maturity = "development",
     requirements = [

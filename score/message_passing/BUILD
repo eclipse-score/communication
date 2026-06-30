@@ -131,7 +131,7 @@ cc_library(
 unit(
     name = "client_connection",
     scope = [
-        ":message_passing_common",
+        "@@//score/message_passing:__subpackages__",
     ],
     tests = [
         "//score/message_passing:client_connection_test_linux",
@@ -178,7 +178,7 @@ cc_library(
 unit(
     name = "unix_domain",
     scope = [
-        ":message_passing_unix_domain",
+        "@@//score/message_passing:__subpackages__",
     ],
     tests = [
         ":unix_domain_test_linux",
@@ -250,7 +250,7 @@ cc_library(
 unit(
     name = "qnx_dispatch",
     scope = [
-        "//score/message_passing:message_passing_qnx_dispatch",
+        "@@//score/message_passing:__subpackages__",
     ],
     tests = [
         ":qnx_dispatch_test_linux",
