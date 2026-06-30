@@ -15,7 +15,7 @@ package MessagePassingFMEA
 import ScoreReq
 
 ScoreReq.FailureMode ServerNotListening {
-    guideword = ScoreReq.GuideWord.LossOfFunction
+    guidewords = [ ScoreReq.guidewords.LossOfFunction ]
     description = "Message passing server fails to accept incoming client connections"
     failureeffect = "Clients cannot communicate with the server; IPC requests are lost"
     version = 1
@@ -24,7 +24,7 @@ ScoreReq.FailureMode ServerNotListening {
 }
 
 ScoreReq.FailureMode ClientConnectionFailed {
-    guideword = ScoreReq.GuideWord.LossOfFunction
+    guidewords = [ ScoreReq.guidewords.LossOfFunction ]
     description = "Message passing client fails to establish a connection to the server"
     failureeffect = "Client cannot send requests; dependent functionality is unavailable"
     version = 1
