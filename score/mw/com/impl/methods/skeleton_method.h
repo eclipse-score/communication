@@ -54,7 +54,7 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
 
     template <typename, typename...>
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class SkeletonField;
+    friend class SkeletonFieldImpl;
 
     struct FieldOnlyConstructorEnabler
     {

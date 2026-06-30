@@ -37,9 +37,9 @@ namespace score::mw::com::impl
 {
 
 template <typename SampleDataType, typename... Tags>
-class SkeletonField : public SkeletonFieldBase
+class SkeletonFieldImpl : public SkeletonFieldBase
 {
-    // SkeletonField must enable WithGetter or WithNotifier. Without one the consumer has no way to
+    // SkeletonFieldImpl must enable WithGetter or WithNotifier. Without one the consumer has no way to
     // observe the value, so the field is useless. WithSetter alone does not count.
     static_assert(
         contains_type<WithNotifier, Tags...>::value || contains_type<WithGetter, Tags...>::value,
@@ -54,14 +54,14 @@ class SkeletonField : public SkeletonFieldBase
     /// \param skeleton_base Parent skeleton that owns this field's registration.
     /// \param field_name Field's name as it appears in the deployment.
     /// \param binding Mock event binding.
-    SkeletonField(SkeletonBase& skeleton_base,
-                  const std::string_view field_name,
-                  std::unique_ptr<SkeletonEventBinding<FieldType>> binding)
-        : SkeletonField{skeleton_base,
-                        field_name,
-                        std::make_unique<SkeletonEvent<FieldType>>(skeleton_base, field_name, std::move(binding)),
-                        nullptr,
-                        nullptr}
+    SkeletonFieldImpl(SkeletonBase& skeleton_base,
+                      const std::string_view field_name,
+                      std::unique_ptr<SkeletonEventBinding<FieldType>> binding)
+        : SkeletonFieldImpl{skeleton_base,
+                            field_name,
+                            std::make_unique<SkeletonEvent<FieldType>>(skeleton_base, field_name, std::move(binding)),
+                            nullptr,
+                            nullptr}
     {
     }
 
@@ -70,12 +70,12 @@ class SkeletonField : public SkeletonFieldBase
     ///          and return nullptr when their corresponding tag is absent.
     /// \param parent Parent skeleton that owns this field's registration.
     /// \param field_name Field's name as it appears in the deployment.
-    SkeletonField(SkeletonBase& parent, const std::string_view field_name)
-        : SkeletonField{parent,
-                        field_name,
-                        MakeSkeletonEvent(parent, field_name),
-                        MakeSetMethodIfEnabled(parent, field_name),
-                        MakeGetMethodIfEnabled(parent, field_name)}
+    SkeletonFieldImpl(SkeletonBase& parent, const std::string_view field_name)
+        : SkeletonFieldImpl{parent,
+                            field_name,
+                            MakeSkeletonEvent(parent, field_name),
+                            MakeSetMethodIfEnabled(parent, field_name),
+                            MakeGetMethodIfEnabled(parent, field_name)}
     {
         // Each Make*IfEnabled must have produced a non-null dispatch when
         // the corresponding tag is in the pack.
@@ -89,13 +89,13 @@ class SkeletonField : public SkeletonFieldBase
         }
     }
 
-    ~SkeletonField() override = default;
+    ~SkeletonFieldImpl() override = default;
 
-    SkeletonField(const SkeletonField&) = delete;
-    SkeletonField& operator=(const SkeletonField&) & = delete;
+    SkeletonFieldImpl(const SkeletonFieldImpl&) = delete;
+    SkeletonFieldImpl& operator=(const SkeletonFieldImpl&) & = delete;
 
-    SkeletonField(SkeletonField&& other) noexcept = default;
-    SkeletonField& operator=(SkeletonField&& other) & noexcept = default;
+    SkeletonFieldImpl(SkeletonFieldImpl&& other) noexcept = default;
+    SkeletonFieldImpl& operator=(SkeletonFieldImpl&& other) & noexcept = default;
 
     /**
      * \api
@@ -255,11 +255,11 @@ class SkeletonField : public SkeletonFieldBase
 
     /// \brief Single private delegating constructor. Both the production and test ctors funnel through here with
     ///        appropriate dispatches (real ones from the Make*IfEnabled helpers, or nullptr).
-    SkeletonField(SkeletonBase& parent,
-                  const std::string_view field_name,
-                  std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
-                  std::unique_ptr<SkeletonMethod<SetMethodSignature>> skeleton_set_method_dispatch,
-                  std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch);
+    SkeletonFieldImpl(SkeletonBase& parent,
+                      const std::string_view field_name,
+                      std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
+                      std::unique_ptr<SkeletonMethod<SetMethodSignature>> skeleton_set_method_dispatch,
+                      std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch);
 
     std::unique_ptr<FieldType> initial_field_value_;
     ISkeletonField<FieldType>* skeleton_field_mock_;
@@ -272,7 +272,7 @@ class SkeletonField : public SkeletonFieldBase
 };
 
 template <typename SampleDataType, typename... Tags>
-SkeletonField<SampleDataType, Tags...>::SkeletonField(
+SkeletonFieldImpl<SampleDataType, Tags...>::SkeletonFieldImpl(
     SkeletonBase& parent,
     const std::string_view field_name,
     std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
@@ -297,7 +297,7 @@ SkeletonField<SampleDataType, Tags...>::SkeletonField(
 /// callback that will update the field value with sample_value which will be called in the first call to
 /// SkeletonFieldBase::PrepareOffer().
 template <typename SampleDataType, typename... Tags>
-Result<void> SkeletonField<SampleDataType, Tags...>::Update(const FieldType& sample_value) noexcept
+Result<void> SkeletonFieldImpl<SampleDataType, Tags...>::Update(const FieldType& sample_value) noexcept
 {
     if (skeleton_field_mock_ != nullptr)
     {
@@ -315,7 +315,7 @@ Result<void> SkeletonField<SampleDataType, Tags...>::Update(const FieldType& sam
 /// \brief FieldType is previously allocated by middleware and provided by the user to indicate that he is finished
 /// filling the provided pointer with live data. Dispatches to SkeletonEvent::Send()
 template <typename SampleDataType, typename... Tags>
-Result<void> SkeletonField<SampleDataType, Tags...>::Update(SampleAllocateePtr<FieldType> sample) noexcept
+Result<void> SkeletonFieldImpl<SampleDataType, Tags...>::Update(SampleAllocateePtr<FieldType> sample) noexcept
 {
     if (skeleton_field_mock_ != nullptr)
     {
@@ -331,7 +331,7 @@ Result<void> SkeletonField<SampleDataType, Tags...>::Update(SampleAllocateePtr<F
 /// This function cannot be currently called to set the initial value of a field as the shared memory must be first
 /// set up in the Skeleton::PrepareOffer() before the user can obtain / use a SampleAllocateePtr.
 template <typename SampleDataType, typename... Tags>
-Result<SampleAllocateePtr<SampleDataType>> SkeletonField<SampleDataType, Tags...>::Allocate() noexcept
+Result<SampleAllocateePtr<SampleDataType>> SkeletonFieldImpl<SampleDataType, Tags...>::Allocate() noexcept
 {
     if (skeleton_field_mock_ != nullptr)
     {
@@ -354,7 +354,7 @@ template <typename SampleDataType, typename... Tags>
 // namespace, or static function with internal linkage, or private member function shall be used.".
 // False-positive, method is used in the base class in PrepareOffer().
 // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
-Result<void> SkeletonField<SampleDataType, Tags...>::DoDeferredUpdate() noexcept
+Result<void> SkeletonFieldImpl<SampleDataType, Tags...>::DoDeferredUpdate() noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
         initial_field_value_ != nullptr,
@@ -371,18 +371,32 @@ Result<void> SkeletonField<SampleDataType, Tags...>::DoDeferredUpdate() noexcept
 }
 
 template <typename SampleDataType, typename... Tags>
-Result<void> SkeletonField<SampleDataType, Tags...>::UpdateImpl(const FieldType& sample_value) noexcept
+Result<void> SkeletonFieldImpl<SampleDataType, Tags...>::UpdateImpl(const FieldType& sample_value) noexcept
 {
     return GetTypedEvent()->Send(sample_value);
 }
 
 template <typename SampleDataType, typename... Tags>
-auto SkeletonField<SampleDataType, Tags...>::GetTypedEvent() const noexcept -> SkeletonEvent<SampleDataType>*
+auto SkeletonFieldImpl<SampleDataType, Tags...>::GetTypedEvent() const noexcept -> SkeletonEvent<SampleDataType>*
 {
     auto* const typed_event = dynamic_cast<SkeletonEvent<FieldType>*>(skeleton_event_dispatch_.get());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event != nullptr, "Downcast to SkeletonEvent<FieldType> failed!");
     return typed_event;
 }
+
+template <typename SampleDataType, typename... Tags>
+class SkeletonField final : public SkeletonFieldImpl<SampleDataType, Tags...>
+{
+    using SkeletonFieldImpl<SampleDataType, Tags...>::SkeletonFieldImpl;
+};
+
+template <typename SampleDataType>
+class [[deprecated("Implicit deduction of field semantics is deprecated. Choose at least WithNotifier or WithGetter")]]
+SkeletonField<SampleDataType>
+    final : public SkeletonFieldImpl<SampleDataType, WithNotifier>
+{
+    using SkeletonFieldImpl<SampleDataType, WithNotifier>::SkeletonFieldImpl;
+};
 
 }  // namespace score::mw::com::impl
 

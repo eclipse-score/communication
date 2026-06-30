@@ -309,5 +309,26 @@ TEST(ProxyFieldSetterGatingTest, SetIsAbsentWhenWithSetterTagIsMissing)
     static_assert(!has_set<GetterOnlyField>::value);
 }
 
+TEST(ProxyFieldNotifierGatingTest, OnlyNotifierApiExistsWhenNoTagsArePresent)
+{
+    // Given a ProxyField with the WithNotifier tag
+    // When checking the notifier API
+    // Then all notifier-related members should be present
+    using DefaultField = ProxyField<TestSampleType>;
+    static_assert(has_subscribe<DefaultField>::value);
+    static_assert(has_unsubscribe<DefaultField>::value);
+    static_assert(has_set_subscription_state_change_handler<DefaultField>::value);
+    static_assert(has_unset_subscription_state_change_handler<DefaultField>::value);
+    static_assert(has_get_subscription_state<DefaultField>::value);
+    static_assert(has_get_free_sample_count<DefaultField>::value);
+    static_assert(has_get_num_new_samples_available<DefaultField>::value);
+    static_assert(has_set_receive_handler<DefaultField>::value);
+    static_assert(has_unset_receive_handler<DefaultField>::value);
+    static_assert(has_get_new_samples<DefaultField>::value);
+    static_assert(has_inject_mock<DefaultField>::value);
+    static_assert(!has_get<DefaultField>::value);
+    static_assert(!has_set<DefaultField>::value);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl
