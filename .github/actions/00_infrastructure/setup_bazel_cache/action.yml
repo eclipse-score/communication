@@ -1,0 +1,37 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Bazel Post Cache Save"
+description: >
+  Internal action: registers a post step that saves Bazel caches.
+  Called from within prepare_bazel_environment composite action to ensure cache save
+  runs even on job failure (via post-if: always()).
+
+inputs:
+  cache-mode:
+    description: "Cache mode (determines what to save)."
+    required: true
+  disk-cache-name:
+    description: "Disk cache name (empty = skip disk cache)."
+    required: false
+    default: ""
+  github-token:
+    description: "GitHub token for cache cleanup API calls."
+    required: false
+    default: ""
+
+runs:
+  using: "node24"
+  main: "dist/main/index.js"
+  post: "dist/post/index.js"
+  post-if: "always()"

@@ -59,13 +59,12 @@ jobs:
           prerelease: false
           target_commitish: ${{ github.sha }}
 
-  run-build-and-test-host:
+  run-host-quality:
     needs: create-draft-release
     uses: ./.github/workflows/build_and_test_host.yml
-    with:
-      run_all_configurations: true
     permissions:
       contents: read
+      actions: write
 
   run-build-and-test-qnx:
     needs: create-draft-release
@@ -73,28 +72,18 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+      actions: write
     secrets:
       SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
       SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
       SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
 
-  run-thread-sanitizer:
-    needs: create-draft-release
-    uses: ./.github/workflows/thread_sanitizer.yml
-    permissions:
-      contents: read
-
-  run-address-sanitizer:
-    needs: create-draft-release
-    uses: ./.github/workflows/address_undefined_behavior_leak_sanitizer.yml
-    permissions:
-      contents: read
-
   run-coverage-report:
     needs: create-draft-release
-    uses: ./.github/workflows/coverage_report.yml
+    uses: ./.github/workflows/_coverage_report.yml
     permissions:
       contents: read
+      actions: write
 
   upload-coverage-report:
     needs:
@@ -108,11 +97,7 @@ jobs:
         uses: actions/checkout@v6.0.2
 
       - name: Abort if coverage failed
-        # coverage_report.yml uses continue-on-error so its job status is always
-        # "success" — the real outcome is exposed via the conclusion output.
-        # Failing here propagates the failure to finalize-release (skipped) and
-        # delete-release-on-failure (triggered), aborting the release correctly.
-        if: needs.run-coverage-report.outputs.conclusion != 'success'
+        if: needs.run-coverage-report.result != 'success'
         run: |
           echo "::error::Coverage failed — aborting release. Draft will be deleted."
           exit 1
@@ -120,12 +105,12 @@ jobs:
       - name: Download coverage report artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.run-coverage-report.outputs.artifact-name }}
+          name: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}
           path: ./
 
       - name: Upload coverage report to existing draft release
         run: |
-          gh release upload "${{ needs.create-draft-release.outputs.release-tag }}" "${{ needs.run-coverage-report.outputs.artifact-name }}.zip"
+          gh release upload "${{ needs.create-draft-release.outputs.release-tag }}" "${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -133,10 +118,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - create-draft-release
-      - run-build-and-test-host
+      - run-host-quality
       - run-build-and-test-qnx
-      - run-thread-sanitizer
-      - run-address-sanitizer
       - run-coverage-report
       - upload-coverage-report
     if: ${{ success() }}
@@ -154,10 +137,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - create-draft-release
-      - run-build-and-test-host
+      - run-host-quality
       - run-build-and-test-qnx
-      - run-thread-sanitizer
-      - run-address-sanitizer
       - run-coverage-report
       - upload-coverage-report
     if: ${{ failure() || cancelled() }}

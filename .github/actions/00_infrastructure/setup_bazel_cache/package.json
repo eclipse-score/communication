@@ -1,0 +1,20 @@
+{
+  "name": "bazel-post-cache-save",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GitHub Action: Post-step hook for saving Bazel caches",
+  "scripts": {
+    "build": "npm run build:main && npm run build:post",
+    "build:main": "ncc build src/main.js -o dist/main",
+    "build:post": "ncc build src/post.js -o dist/post"
+  },
+  "dependencies": {
+    "@actions/cache": "^4.0.0",
+    "@actions/core": "^1.11.0",
+    "@actions/exec": "^1.1.1",
+    "@actions/github": "^6.0.0"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.0"
+  }
+}

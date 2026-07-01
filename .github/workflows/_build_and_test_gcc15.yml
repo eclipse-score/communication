@@ -1,0 +1,59 @@
+# *******************************************************************************
+# Copyright (c) 2024 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Build & Test (Host)"
+
+on:
+  workflow_call:
+    inputs:
+      cache-mode:
+        description: "Cache mode override (empty = auto-compute from event context)."
+        type: string
+        default: ""
+      fetch-only:
+        description: "When true, runs --nobuild to fetch dependencies only."
+        type: string
+        default: "false"
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: ${{ inputs.fetch-only != 'true' && 'build_and_test_host' || '' }}
+          cache-mode: ${{ inputs.cache-mode }}
+
+      - name: Build all targets
+        if: inputs.fetch-only != 'true'
+        run: bazel build //...
+
+      - name: Run all tests
+        if: inputs.fetch-only != 'true'
+        run: bazel test //... --build_tests_only
+
+      - name: Build examples
+        if: inputs.fetch-only != 'true'
+        run: cd examples && bazel build //... && bazel mod deps --lockfile_mode=update
+
+      - name: Fetch dependencies (--nobuild)
+        if: inputs.fetch-only == 'true'
+        run: |
+          bazel build --nobuild //...
+          cd examples && bazel build --nobuild //...

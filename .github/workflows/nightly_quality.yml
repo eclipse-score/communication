@@ -40,8 +40,6 @@ permissions:
   contents: write
 
 env:
-  ANDROID_HOME: ""
-  ANDROID_SDK_ROOT: ""
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -49,7 +47,7 @@ jobs:
   # Quality job 1: Coverage
   # --------------------------------------------------------------------
   run-coverage:
-    uses: ./.github/workflows/coverage_report.yml
+    uses: ./.github/workflows/_coverage_report.yml
     permissions:
       contents: read
       actions: write
@@ -58,18 +56,19 @@ jobs:
   # Quality job 2: Clang-Tidy
   # --------------------------------------------------------------------
   run-clang-tidy:
-    uses: ./.github/workflows/clang_tidy.yml
+    uses: ./.github/workflows/_clang_tidy.yml
     permissions:
-      contents: read    
+      contents: read
       actions: write
 
   # --------------------------------------------------------------------
   # Quality job 3: CodeQL
   # --------------------------------------------------------------------
   run-codeql:
-    uses: ./.github/workflows/codeql.yml
+    uses: ./.github/workflows/_codeql.yml
     permissions:
       contents: read
+      actions: write
       security-events: write
 
   # --------------------------------------------------------------------
@@ -88,14 +87,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
 
-      - name: Setup Bazel with shared caching
-        uses: castler/setup-bazel@cache-optimized
+      - name: Setup Bazel
+        uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:
-          bazelisk-cache: true
-          disk-cache: "deploy_quality_reports"
-          repository-cache: true
-          cache-optimized: true
-          cache-save: ${{ github.ref == 'refs/heads/main' }}
+          disk-cache: ""
 
       - name: Allow linux-sandbox
         id: setup
@@ -106,17 +101,17 @@ jobs:
       # ------------------------------------------------------------------
       - name: Download coverage artifact
         id: download-coverage
-        if: needs.run-coverage.outputs.conclusion == 'success'
+        if: needs.run-coverage.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.run-coverage.outputs.artifact-name }}
+          name: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}
           path: /tmp/coverage_zip
 
       # ------------------------------------------------------------------
       # Extract coverage artifact to a known location for the dashboard generator
       # ------------------------------------------------------------------
       - name: Extract coverage HTML report
-        if: needs.run-coverage.outputs.conclusion == 'success' && steps.download-coverage.outcome == 'success'
+        if: needs.run-coverage.result == 'success' && steps.download-coverage.outcome == 'success'
         run: |
           bash quality/scripts/extract_coverage_artifact.sh \
             /tmp/coverage_zip \
@@ -130,7 +125,7 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.run-clang-tidy.outputs.artifact-name }}
+          name: clang-tidy-findings
           path: /tmp/clang_tidy
 
       - name: Copy clang-tidy findings into quality output
@@ -152,7 +147,7 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.run-codeql.outputs.artifact-name }}
+          name: codeql-csv-results
           path: /tmp/codeql
 
       - name: Copy CodeQL CSV into quality output
