@@ -58,7 +58,7 @@ std::unique_ptr<ProxyServiceElementBinding> CreateProxyEvent(ProxyBase& parent,
                                                         "ServiceInstanceId does not contain lola binding.");
 
             const auto lola_service_element_id =
-                GetServiceElementId<element_type>(lola_type_deployment, std::string{service_element_name});
+                GetServiceElementId<element_type>(lola_type_deployment, service_element_name);
             const lola::ElementFqId element_fq_id{lola_type_deployment.service_id_,
                                                   lola_service_element_id,
                                                   lola_service_instance_id->GetId(),

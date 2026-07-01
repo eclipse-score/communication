@@ -22,7 +22,7 @@ namespace detail
 {
 
 LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle,
-                                                     const std::string& method_name_str,
+                                                     const std::string_view method_name_str,
                                                      MethodType method_type)
 {
     // Field Get/Set methods are synchronous and always use a fixed queue size of 1.

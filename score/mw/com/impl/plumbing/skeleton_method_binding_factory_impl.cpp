@@ -52,13 +52,11 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
         LolaServiceElementId lola_element_id{};
         if ((method_type == MethodType::kGet) || (method_type == MethodType::kSet))
         {
-            lola_element_id =
-                GetServiceElementId<ServiceElementType::FIELD>(lola_type_deployment, std::string{method_name});
+            lola_element_id = GetServiceElementId<ServiceElementType::FIELD>(lola_type_deployment, method_name);
         }
         else
         {
-            lola_element_id =
-                GetServiceElementId<ServiceElementType::METHOD>(lola_type_deployment, std::string{method_name});
+            lola_element_id = GetServiceElementId<ServiceElementType::METHOD>(lola_type_deployment, method_name);
         }
 
         lola::UniqueMethodIdentifier unique_method_identifier{lola_element_id, method_type};

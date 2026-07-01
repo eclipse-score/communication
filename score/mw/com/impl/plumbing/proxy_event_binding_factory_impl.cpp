@@ -52,7 +52,7 @@ std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::C
             }
 
             const auto element_fq_id =
-                GetElementFqId(parent.GetHandle(), lola_type_deployment, std::string{event_name}, service_element_type);
+                GetElementFqId(parent.GetHandle(), lola_type_deployment, event_name, service_element_type);
             return std::make_unique<lola::GenericProxyEvent>(*lola_proxy, element_fq_id, event_name);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
