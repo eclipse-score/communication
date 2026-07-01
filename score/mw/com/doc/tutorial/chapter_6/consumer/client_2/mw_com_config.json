@@ -1,0 +1,44 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/mw/com/tutorial/HelloWorldService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 8711,
+          "events": [
+            {
+              "eventName": "message",
+              "eventId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "MyHelloWorldServiceInstance",
+      "serviceTypeName": "/score/mw/com/tutorial/HelloWorldService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM"
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM",
+    "applicationID": 18
+  }
+}

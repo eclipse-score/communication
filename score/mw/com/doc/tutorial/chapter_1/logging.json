@@ -1,0 +1,8 @@
+{
+  "appId": "EXP1",
+  "appDesc": "Tutorial Example1",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kConsole",
+  "dynamicDatarouterIdentifiers" : true
+}
