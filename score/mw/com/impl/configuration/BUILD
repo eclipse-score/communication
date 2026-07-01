@@ -235,6 +235,7 @@ cc_library(
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory:string_comparison_adaptor",
     ],
 )
 
@@ -351,6 +352,7 @@ cc_library(
         ":configuration_common_resources",
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/json",
+        "@score_baselibs//score/memory:string_comparison_adaptor",
     ],
 )
 

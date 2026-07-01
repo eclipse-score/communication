@@ -254,17 +254,17 @@ score::json::Object LolaServiceInstanceDeployment::Serialize() const noexcept
     return json_object;
 }
 
-bool LolaServiceInstanceDeployment::ContainsEvent(const std::string& event_name) const noexcept
+bool LolaServiceInstanceDeployment::ContainsEvent(const std::string_view event_name) const noexcept
 {
     return (events_.find(event_name) != events_.end());
 }
 
-bool LolaServiceInstanceDeployment::ContainsField(const std::string& field_name) const noexcept
+bool LolaServiceInstanceDeployment::ContainsField(const std::string_view field_name) const noexcept
 {
     return (fields_.find(field_name) != fields_.end());
 }
 
-bool LolaServiceInstanceDeployment::ContainsMethod(const std::string& method_name) const noexcept
+bool LolaServiceInstanceDeployment::ContainsMethod(const std::string_view method_name) const noexcept
 {
     return (methods_.find(method_name) != methods_.end());
 }

@@ -15,6 +15,7 @@
 
 #include "score/json/json_parser.h"
 
+#include "score/memory/string_comparison_adaptor.h"
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 #include "score/mw/com/impl/service_element_type.h"
 
@@ -67,11 +68,11 @@ template <typename ServiceElementIdType>
 // be sure json.As<T> call will return a value. See Ticket-177855.
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ConvertJsonToServiceElementIdMap(const json::Object& json_object, const std::string_view key) noexcept
-    -> std::unordered_map<std::string, ServiceElementIdType>
+    -> std::unordered_map<score::memory::StringComparisonAdaptor, ServiceElementIdType>
 {
     const auto& service_element_json = GetValueFromJson<json::Object>(json_object, key);
 
-    std::unordered_map<std::string, ServiceElementIdType> service_element_map{};
+    std::unordered_map<score::memory::StringComparisonAdaptor, ServiceElementIdType> service_element_map{};
     for (auto& it : service_element_json)
     {
         const auto event_name_view{it.first.GetAsStringView()};
@@ -167,7 +168,7 @@ template <ServiceElementType service_element_type,
           typename ServiceIdType>
 auto GetServiceElementId(const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>&
                              binding_service_type_deployment,
-                         const std::string& service_element_name)
+                         const std::string_view service_element_name)
 {
     static_assert(service_element_type != ServiceElementType::INVALID);
 
