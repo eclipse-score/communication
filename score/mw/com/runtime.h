@@ -69,7 +69,8 @@ class RuntimeMockHolder
  * \return container with InstanceIdentifiers
  * \requirement SWS_CM_00118
  */
-score::Result<score::mw::com::InstanceIdentifierContainer> ResolveInstanceIDs(const InstanceSpecifier model_name);
+[[nodiscard]] score::Result<score::mw::com::InstanceIdentifierContainer> ResolveInstanceIDs(
+    const InstanceSpecifier model_name);
 
 /**
  * \api

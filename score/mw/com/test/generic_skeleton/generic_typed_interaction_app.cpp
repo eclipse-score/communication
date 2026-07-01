@@ -20,6 +20,8 @@
 #include "score/mw/log/logging.h"
 #include <score/stop_token.hpp>
 
+#include "score/result/result.h"
+
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -164,11 +166,11 @@ int run_consumer()
     std::uint64_t expected{0};
     int data_mismatches{0};
     bool is_first_sample{true};
-    proxy.event_.Subscribe(kSamplesToSubscribe);
+    [[maybe_unused]] score::Result<void> res = proxy.event_.Subscribe(kSamplesToSubscribe);
 
     while (received < kSamplesToProcess)
     {
-        proxy.event_.GetNewSamples(
+        [[maybe_unused]] score::Result<std::size_t> res = proxy.event_.GetNewSamples(
             [&](score::mw::com::SamplePtr<MyEventData> sample) {
                 if (is_first_sample)
                 {

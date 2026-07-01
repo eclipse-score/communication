@@ -4,8 +4,12 @@
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
+
 #include "score/mw/log/logging.h"
+
 #include <score/stop_token.hpp>
+
+#include "score/result/result.h"
 
 #include <chrono>
 #include <cstdint>
@@ -152,7 +156,7 @@ int run_consumer()
 
     // Get reference to the GenericProxyEvent
     auto& generic_event = event_it->second;
-    generic_event.Subscribe(kSamplesToSubscribe);
+    [[maybe_unused]] score::Result<void> res = generic_event.Subscribe(kSamplesToSubscribe);
 
     std::uint64_t expected{0};
     std::uint64_t received{0};

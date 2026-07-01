@@ -65,7 +65,7 @@ class GenericProxy : public ProxyBase
      * \param instance_handle Handle to the instance
      * \return Result containing the created GenericProxy instance or an error code.
      */
-    static Result<GenericProxy> Create(HandleType instance_handle) noexcept;
+    [[nodiscard]] static Result<GenericProxy> Create(HandleType instance_handle) noexcept;
 
     ~GenericProxy() noexcept;
 

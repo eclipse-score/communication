@@ -46,7 +46,7 @@ class InstanceIdentifier final
      * \param serialized_format The serialized format to create the InstanceIdentifier from
      * \return The created InstanceIdentifier or an error
      */
-    static score::Result<InstanceIdentifier> Create(std::string&& serialized_format) noexcept;
+    [[nodiscard]] static score::Result<InstanceIdentifier> Create(std::string&& serialized_format) noexcept;
 
     InstanceIdentifier() = delete;
     ~InstanceIdentifier() noexcept = default;

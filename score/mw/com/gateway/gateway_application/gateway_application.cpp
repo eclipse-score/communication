@@ -470,7 +470,11 @@ score::Result<void> GatewayApplication::RegisterUpdateNotification(impl::Instanc
     }
 
     auto& proxy_event = event_it->second;
-    proxy_event.Subscribe(kGatewaySubscribeSamples);
+    if (!proxy_event.Subscribe(kGatewaySubscribeSamples).has_value())
+    {
+        score::mw::log::LogWarn() << "GatewayApplication: Subscribe failed for event " << element_name << " of "
+                                  << specifier_str << " (may already be subscribed)";
+    }
 
     using ReceiveCallback = safecpp::MoveOnlyScopedFunction<void()>;
     auto scoped_handler = std::make_shared<ReceiveCallback>(
@@ -521,7 +525,11 @@ score::Result<void> GatewayApplication::UnregisterUpdateNotification(impl::Insta
         return MakeUnexpected(GatewayErrorc::kUnknownServiceElement);
     }
 
-    event_it->second.UnsetReceiveHandler();
+    if (!event_it->second.UnsetReceiveHandler().has_value())
+    {
+        score::mw::log::LogWarn() << "GatewayApplication: Failed to unset receive handler for event " << element_name
+                                  << " of " << specifier_str;
+    }
     event_it->second.Unsubscribe();
     return {};
 }
