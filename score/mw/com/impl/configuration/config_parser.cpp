@@ -766,12 +766,12 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaEventTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service) -> bool
+void ParseLolaEventTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service)
 {
     const auto& events = json_map.find(kEventsKey.data());
     if (events == json_map.cend())
     {
-        return false;
+        return;
     }
     auto events_list_result = events->second.As<score::json::List>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(events_list_result.has_value(),
@@ -798,17 +798,16 @@ auto ParseLolaEventTypeDeployments(const score::json::Object& json_map, LolaServ
                                                           "Configuration corrupted, check with json schema");
         EmplaceOrFatal(service.events_, event_name_casted.value().get(), event_id_casted.value(), "An event");
     }
-    return true;
 }
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaFieldTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service) -> bool
+void ParseLolaFieldTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service)
 {
     const auto& fields = json_map.find(kFieldsKey.data());
     if (fields == json_map.cend())
     {
-        return false;
+        return;
     }
 
     auto fields_list_result = fields->second.As<score::json::List>();
@@ -836,17 +835,16 @@ auto ParseLolaFieldTypeDeployments(const score::json::Object& json_map, LolaServ
                                                           "Configuration corrupted, check with json schema");
         EmplaceOrFatal(service.fields_, field_name_casted.value().get(), field_id_casted.value(), "A field");
     }
-    return true;
 }
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service) -> bool
+void ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service)
 {
     const auto& methods = json_map.find(kMethodsKey.data());
     if (methods == json_map.cend())
     {
-        return false;
+        return;
     }
 
     auto methods_list_result = methods->second.As<score::json::List>();
@@ -874,7 +872,6 @@ auto ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaSer
                                                           "Configuration corrupted, check with json schema");
         EmplaceOrFatal(service.methods_, method_name_casted.value().get(), method_id_casted.value(), "A method");
     }
-    return true;
 }
 
 // See Note 1
@@ -889,9 +886,9 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Object& json_map) -> Lol
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(service_id_casted.has_value(),
                                                       "Configuration corrupted, check with json schema");
     LolaServiceTypeDeployment lola{service_id_casted.value()};
-    score::cpp::ignore = ParseLolaEventTypeDeployments(json_map, lola);
-    score::cpp::ignore = ParseLolaFieldTypeDeployments(json_map, lola);
-    score::cpp::ignore = ParseLolaMethodTypeDeployments(json_map, lola);
+    ParseLolaEventTypeDeployments(json_map, lola);
+    ParseLolaFieldTypeDeployments(json_map, lola);
+    ParseLolaMethodTypeDeployments(json_map, lola);
     ValidateServiceTypeHasElements(lola);
     ValidateUniqueServiceElementIds(lola);
     return lola;
