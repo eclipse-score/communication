@@ -402,6 +402,38 @@ TEST_F(ConfigParserFixture, NoEventsOrFieldsWillCauseTermination)
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
+TEST_F(ConfigParserFixture, EmptyEventsFieldsMethodsListWillCauseTermination)
+{
+    // Given a JSON where events fields methods keys are present but all lists are empty
+    auto j2 = R"(
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "bindings": [
+        {
+             "binding": "SHM",
+             "serviceId": 1234,
+             "events": [],
+             "fields": [],
+             "methods": []
+        }
+      ]
+    }
+  ],
+  "serviceInstances": []
+}
+)"_json;
+
+    // When parsing the JSON
+    // That the application will terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
+}
+
 TEST_F(ConfigParserFixture, NoEventNameWillCauseTermination)
 {
     // Given a JSON with a missing event name

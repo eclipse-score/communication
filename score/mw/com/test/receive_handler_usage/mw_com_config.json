@@ -22,21 +22,6 @@
             ]
           }
         ]
-      },
-      {
-        "serviceTypeName": "/bmw/adp/DummyServiceType",
-        "version": {
-          "major": 1,
-          "minor": 0
-        },
-        "bindings": [
-          {
-            "binding": "SHM",
-            "serviceId": 6433,
-            "events": [
-            ]
-          }
-        ]
       }
     ],
     "serviceInstances": [
