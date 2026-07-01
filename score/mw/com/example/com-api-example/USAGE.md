@@ -35,13 +35,6 @@ The `com-api-example-lib` library is organized into the following modules:
 2. **Consumer Module** (`consumer.rs`)
    - Subscribes to vehicle events and handles them via both synchronous and asynchronous APIs
 
-3. **Shared Enum** (`lib.rs`)
-   - Defines `ExampleType`, a shared enum used for CLI parsing, consumer instantiation, and receive-mode dispatch
-
-4. **Vehicle Monitor Module** (`vehicle_monitor.rs`)
-   - Type definitions for `VehicleMonitorProducer` and `VehicleMonitorConsumer`
-
-
 ## Main Application
 
 The main application (`main.rs`) demonstrates:
@@ -51,8 +44,8 @@ The main application (`main.rs`) demonstrates:
 - **Consumer Thread**: Receives and processes data independently
 
 ### Async Operations
-- Uses `futures::executor::block_on()` for async operations
-- Supports multiple execution modes via command-line arguments
+- We are using `futures::executor::block_on()` for executing async APIs in this sample application,
+  user can use any other async executor or runtime based on requirement.
 
 ## Command-Line Options
 
@@ -104,10 +97,6 @@ bazel run //score/mw/com/example/com-api-example:com-api-example -- \
 
 A separate test target (`tests_using_tokio_runtime.rs`) provides comprehensive integration tests using the **Tokio async runtime**. These tests are independent of the main application and use the `com-api-gen` generated types together with the `com_api` runtime, service discovery, and subscription APIs directly.
 
-**Why Separate?**
-- Leverages Tokio's multi-threaded runtime to test concurrent scenarios and verify that subscription and other async APIs can be safely spawned on independent tasks or threads.
-- Validates async COM API behavior under a real async runtime
-
 ### Running Tests
 
 ```bash
@@ -122,6 +111,14 @@ bazel test //score/mw/com/example/com-api-example:com-api-example-tokio-integrat
 bazel test //score/mw/com/example/com-api-example:com-api-example-tokio-integration-test \
   --test_output=all --test_arg=--nocapture
 ```
+
+## Note
+- Running the application without any arguments uses the default configuration, executing all synchronous
+  APIs with both producer and consumer in the same process.
+- When running only the consumer in synchronous mode, start the producer first because in this example app
+  synchronous service discovery operation does not poll and will fail if no service is already offered.
+- When running the consumer with async API modes, asynchronous service discovery blocks until the producer
+  offers the service. Except for `async-receive-with-timeout`, all other async receive modes block until data arrives and all iterations complete.
 
 ## Further Reading
 - [COM API Documentation](../../impl/rust/com-api/README.md)
