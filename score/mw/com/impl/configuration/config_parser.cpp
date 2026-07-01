@@ -1385,7 +1385,8 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
             if (search == serviceTypeDeployment.events_.cend())
             {
                 ::score::mw::log::LogFatal("lola")
-                    << "Service instance " << service_instance.first << "event" << eventInstanceElement.first
+                    << "Service instance " << service_instance.first << "event"
+                    << eventInstanceElement.first.GetAsStringView()
                     << "refers to an event, which doesn't exist in the referenced service type ("
                     << service_instance.second.service_.ToString() << "). This is invalid, terminating";
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
@@ -1399,7 +1400,8 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
             if (search == serviceTypeDeployment.fields_.cend())
             {
                 ::score::mw::log::LogFatal("lola")
-                    << "Service instance " << service_instance.first << "field" << fieldInstanceElement.first
+                    << "Service instance " << service_instance.first << "field"
+                    << fieldInstanceElement.first.GetAsStringView()
                     << "refers to a field, which doesn't exist in the referenced service type ("
                     << service_instance.second.service_.ToString() << "). This is invalid, terminating";
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);

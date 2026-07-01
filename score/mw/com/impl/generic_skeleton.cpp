@@ -38,10 +38,10 @@ std::string_view GetEventName(const InstanceIdentifier& identifier, std::string_
 
     auto visitor = score::cpp::overload(
         [&](const LolaServiceTypeDeployment& deployment) -> std::string_view {
-            const auto it = deployment.events_.find(std::string{search_name});
+            const auto it = deployment.events_.find(search_name);
             if (it != deployment.events_.end())
             {
-                return it->first;  // Return the stable address of the Key from the Config Map
+                return it->first.GetAsStringView();  // Return the stable address of the Key from the Config Map
             }
             return {};
         },
