@@ -362,6 +362,7 @@ cc_library(
     srcs = ["general_resources.cpp"],
     hdrs = ["general_resources.h"],
     features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/test:__subpackages__"],
     deps = [
         ":check_point_control",
         ":child_process_guard",
