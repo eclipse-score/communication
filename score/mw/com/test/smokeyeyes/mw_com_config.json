@@ -18,21 +18,6 @@
           ]
         }
       ]
-    },
-    {
-      "serviceTypeName": "/bmw/adp/DummyServiceType",
-      "version": {
-        "major": 1,
-        "minor": 0
-      },
-      "bindings": [
-        {
-          "binding": "SHM",
-          "serviceId": 6433,
-          "events": [
-          ]
-        }
-      ]
     }
   ],
   "serviceInstances": [
@@ -96,9 +81,9 @@
   "global": {
     "asil-level": "B",
     "queue-size": {
-    "QM-receiver": 160,
-    "B-receiver": 160,
-    "B-sender": 160
+      "QM-receiver": 160,
+      "B-receiver": 160,
+      "B-sender": 160
     }
   }
 }
