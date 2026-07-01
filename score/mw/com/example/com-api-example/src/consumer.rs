@@ -15,20 +15,23 @@ use com_api::{
     ConsumerBuilder, FindServiceSpecifier, InstanceSpecifier, Result, Runtime, SampleContainer,
     ServiceDiscovery, Subscriber, Subscription,
 };
-use com_api_gen::VehicleInterface;
+use com_api_gen::{Exhaust, Tire, VehicleInterface};
 use futures::channel::oneshot;
 use futures::{FutureExt, StreamExt};
-use std::sync::{mpsc, OnceLock};
+use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-
-use crate::vehicle_monitor::VehicleMonitorConsumer;
-use crate::ExampleType;
 
 /// Timeout used when performing a cancellable async receive.
 const RECEIVE_TIMEOUT_MS: u64 = 500;
 /// Polling interval between iterations in synchronous receive loops.
 const SYNC_RECEIVE_POLL_INTERVAL_MS: u64 = 1000;
+
+pub struct VehicleMonitorConsumer<R: Runtime> {
+    tire_subscriber: <<R as Runtime>::Subscriber<Tire> as Subscriber<Tire, R>>::Subscription,
+    _exhaust_subscriber:
+        <<R as Runtime>::Subscriber<Exhaust> as Subscriber<Exhaust, R>>::Subscription,
+}
 
 impl<R: Runtime> VehicleMonitorConsumer<R> {
     /// Shared constructor logic: picks the first available service instance and subscribes.
@@ -52,135 +55,119 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
         Ok(Self {
             tire_subscriber,
             _exhaust_subscriber: exhaust_subscriber,
-            timer_tx: OnceLock::new(),
         })
     }
 
-    /// Create a new VehicleMonitorConsumer.
-    ///
-    /// Uses synchronous service discovery for `ExampleType::Sync` and
-    /// asynchronous service discovery for all other modes.
-    pub async fn new(
-        runtime: &R,
-        service_id: InstanceSpecifier,
-        mode: &ExampleType,
-    ) -> Result<Self> {
+    fn processing_data<S>(&self, result: Result<usize>, sample_buf: &mut SampleContainer<S>)
+    where
+        S: std::ops::Deref<Target = Tire>,
+    {
+        match result {
+            Ok(0) => println!("No tire data received"),
+            Ok(x) => {
+                let sample = sample_buf
+                    .pop_front()
+                    .expect("Sample buffer pop operation error");
+                println!("{x} samples received: sample[0] = {:?}", *sample);
+            }
+            Err(e) => eprintln!("Error receiving tire data: {:?}", e),
+        }
+    }
+
+    /// Finds available service instances and constructs a VehicleMonitorConsumer.
+    /// It will return immediately regardless of whether any instances are available or not.
+    pub fn find_available_instances(runtime: &R, service_id: InstanceSpecifier) -> Result<Self> {
         let consumer_discovery =
             runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
-        let instances = match mode {
-            ExampleType::Sync => consumer_discovery
-                .get_available_instances()
-                .expect("Failed to get available service instances"),
-            _ => {
-                let instances = consumer_discovery
-                    .get_available_instances_async()
-                    .await
-                    .expect("Failed to get available service instances asynchronously");
-                println!("Available service instances received asynchronously:");
-                instances
-            }
-        };
+        let instances = consumer_discovery
+            .get_available_instances()
+            .expect("Failed to get available service instances");
         Self::from_service_instances(instances)
     }
 
-    /// Read tire data sample using the strategy defined by `mode`.
-    ///
-    /// Takes `&self` to support all receive modes including streaming,
-    /// which requires exclusive access to the subscriber.
-    pub async fn read_tire_data(&self, mode: &ExampleType) -> Result<String> {
-        match mode {
-            ExampleType::Sync | ExampleType::AsyncServiceDiscovery => {
-                let mut sample_buf = SampleContainer::new(3);
-                let result = self.tire_subscriber.try_receive(&mut sample_buf, 1);
-                match result {
-                    Ok(0) => Ok("No tire data received".to_string()),
-                    Ok(x) => {
-                        let sample = sample_buf.pop_front().unwrap();
-                        Ok(format!("{x} samples received: sample[0] = {:?}", *sample))
-                    }
-                    Err(e) => Err(e),
-                }
-            }
-            ExampleType::AsyncReceive => {
-                println!("Performing asynchronous receive without timeout");
-                let sample_buf = SampleContainer::new(3);
-                let (mut sample_buf, result) = self.tire_subscriber.receive(sample_buf, 1, 3).await;
-                match result {
-                    Ok(0) => Ok("No tire data received".to_string()),
-                    Ok(x) => {
-                        let sample = sample_buf.pop_front().unwrap();
-                        Ok(format!("{x} samples received: sample[0] = {:?}", *sample))
-                    }
-                    Err(e) => Err(e),
-                }
-            }
-            ExampleType::AsyncReceiveWithTimeout => {
-                println!("Performing asynchronous receive with timeout");
-                let sample_buf = SampleContainer::new(3);
-                let (tx, rx) = oneshot::channel::<()>();
-                // Lazily spawn the timer thread on the first cancellable receive call.
-                // It is created only once and exits when the VehicleMonitorConsumer is dropped.
-                // This is just for demonstration purposes of API timeout handling.
-                let timer_tx = self.timer_tx.get_or_init(|| {
-                    let (timer_tx, timer_rx) = mpsc::sync_channel::<oneshot::Sender<()>>(0);
-                    thread::spawn(move || {
-                        while let Ok(reply_tx) = timer_rx.recv() {
-                            thread::sleep(Duration::from_millis(RECEIVE_TIMEOUT_MS));
-                            let _ = reply_tx.send(());
-                        }
-                    });
-                    timer_tx
-                });
-                timer_tx
-                    .send(tx)
-                    .expect("Timer thread unexpectedly stopped");
-                let timeout_future = rx.map(|_| ());
-                let (mut sample_buf, result) = self
-                    .tire_subscriber
-                    .cancellable_receive(sample_buf, 1, 3, timeout_future)
-                    .await;
-                match result {
-                    Ok(0) => Ok("No tire data received".to_string()),
-                    Ok(x) => {
-                        let sample = sample_buf.pop_front().unwrap();
-                        Ok(format!("{x} samples received: sample[0] = {:?}", *sample))
-                    }
-                    Err(e) => Err(e),
-                }
-            }
-            _ => unreachable!(
-                "Streaming mode should use run_receive with stream processing, not read_tire_data"
-            ),
-        }
+    /// Finds available service instances asynchronously and constructs a VehicleMonitorConsumer.
+    /// It will wait for the service availability and return once an instance is found.
+    pub async fn find_available_instances_async(
+        runtime: &R,
+        service_id: InstanceSpecifier,
+    ) -> Result<Self> {
+        let consumer_discovery =
+            runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
+        let instances = consumer_discovery
+            .get_available_instances_async()
+            .await
+            .expect("Failed to get available service instances asynchronously");
+        Self::from_service_instances(instances)
     }
 
-    /// Receive `count` tire data samples, printing each result.
-    ///
-    /// Sync modes add a polling delay between iterations; async/stream modes
-    /// block until data arrives.
-    pub async fn run_receive(&mut self, mode: &ExampleType, count: usize) {
-        if matches!(mode, ExampleType::Streaming) {
-            let mut stream = self.tire_subscriber.to_stream();
-            for _ in 0..count {
-                match stream.next().await {
-                    Some(Ok(sample)) => println!("Received tire data: {:?}", *sample),
-                    Some(Err(e)) => eprintln!("Failed to receive tire data: {:?}", e),
-                    None => {
-                        println!("Stream ended");
-                        break;
-                    }
-                }
-            }
-            return;
-        }
-
+    /// Reads tire data synchronously, returning a Result with the number of samples received.
+    pub fn read_tire_data(&self, count: usize) -> Result<String> {
+        let mut sample_buf = SampleContainer::new(3);
         for _ in 0..count {
-            match self.read_tire_data(mode).await {
-                Ok(data) => println!("{data}"),
-                Err(e) => eprintln!("Failed to receive tire data: {:?}", e),
+            let ret = self.tire_subscriber.try_receive(&mut sample_buf, 1);
+            self.processing_data(ret, &mut sample_buf);
+            // Sleep for a while before the next synchronous receive attempt
+            thread::sleep(Duration::from_millis(SYNC_RECEIVE_POLL_INTERVAL_MS));
+        }
+        Ok("All tire data read successfully".to_string())
+    }
+
+    /// Reads tire data asynchronously without a timeout, returning a Result with the number of samples received.
+    pub async fn read_tire_data_async_without_timeout(&self, count: usize) -> Result<String> {
+        println!("Performing asynchronous receive without timeout");
+        let mut sample_buf = SampleContainer::new(3);
+        for _ in 0..count {
+            let (mut buf, result) = self.tire_subscriber.receive(sample_buf, 1, 3).await;
+            self.processing_data(result, &mut buf);
+            sample_buf = buf;
+        }
+        Ok("All tire data read asynchronously".to_string())
+    }
+
+    /// Reads tire data asynchronously with a timeout, returning a Result with the number of samples received.
+    pub async fn read_tire_data_async_with_timeout(&self, count: usize) -> Result<String> {
+        println!("Performing asynchronous receive with timeout");
+        let mut sample_buf = SampleContainer::new(3);
+
+        // Thread for simulating a timeout mechanism.
+        // This is just for demonstration purposes, but in a real application you would likely use a more robust timer mechanism or library.
+        let (timer_tx, timer_rx) = mpsc::channel::<oneshot::Sender<()>>();
+        thread::spawn(move || {
+            while let Ok(reply_tx) = timer_rx.recv() {
+                thread::sleep(Duration::from_millis(RECEIVE_TIMEOUT_MS));
+                let _ = reply_tx.send(());
             }
-            if matches!(mode, ExampleType::Sync | ExampleType::AsyncServiceDiscovery) {
-                thread::sleep(Duration::from_millis(SYNC_RECEIVE_POLL_INTERVAL_MS));
+        });
+        for _ in 0..count {
+            // Request a timeout from the shared timer thread.
+            let (tx, rx) = oneshot::channel();
+            timer_tx
+                .send(tx)
+                .expect("Timer thread unexpectedly stopped");
+
+            // Map the receiver to resolve to () instead of Result<(), Canceled>
+            let timeout_future = rx.map(|_| ());
+            let (mut buf, result) = self
+                .tire_subscriber
+                .cancellable_receive(sample_buf, 1, 3, timeout_future)
+                .await;
+            self.processing_data(result, &mut buf);
+            sample_buf = buf;
+        }
+        Ok("All tire data read asynchronously with timeout".to_string())
+    }
+
+    /// Reads tire data as a stream, returning a Result with the number of samples received.
+    pub async fn read_tire_data_stream(&mut self, count: usize) {
+        let mut stream = self.tire_subscriber.to_stream();
+        for _ in 0..count {
+            match stream.next().await {
+                Some(Ok(sample)) => println!("Received tire data: {:?}", *sample),
+                Some(Err(e)) => eprintln!("Failed to receive tire data: {:?}", e),
+                None => {
+                    println!("Stream ended");
+                    break;
+                }
             }
         }
     }

@@ -13,23 +13,15 @@
 
 pub mod consumer;
 pub mod producer;
-pub mod vehicle_monitor;
-pub use vehicle_monitor::{
-    VehicleConsumer, VehicleMonitorConsumer, VehicleMonitorProducer, VehicleOfferedProducer,
-};
+pub use consumer::VehicleMonitorConsumer;
+pub use producer::VehicleMonitorProducer;
 
-/// All execution modes supported by the example application.
-/// Used by clap for CLI argument parsing and by the consumer/producer to select behaviour.
-#[derive(clap::ValueEnum, Clone, Debug)]
-pub enum ExampleType {
-    /// Synchronous service discovery and synchronous receive.
-    Sync,
-    /// Asynchronous service discovery, then synchronous receive.
-    AsyncServiceDiscovery,
-    /// Asynchronous service discovery and asynchronous receive (no timeout).
-    AsyncReceive,
-    /// Asynchronous service discovery and asynchronous receive with a cancellation timeout.
-    AsyncReceiveWithTimeout,
-    /// Asynchronous service discovery and stream-based receive.
-    Streaming,
-}
+use com_api::{Interface, Producer};
+use com_api_gen::VehicleInterface;
+
+// Type aliases for generated consumer and offered producer types for the Vehicle interface
+// VehicleConsumer is the consumer type generated for the Vehicle interface, parameterized by the runtime R
+pub type VehicleConsumer<R> = <VehicleInterface as Interface>::Consumer<R>;
+// VehicleOfferedProducer is the offered producer type generated for the Vehicle interface, parameterized by the runtime R
+pub type VehicleOfferedProducer<R> =
+    <<VehicleInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;

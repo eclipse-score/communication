@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+use crate::VehicleOfferedProducer;
 use com_api::{
     Builder, InstanceSpecifier, OfferedProducer, Producer, Publisher, Result, Runtime,
     SampleMaybeUninit, SampleMut,
@@ -19,10 +20,13 @@ use com_api_gen::{Tire, VehicleInterface};
 use std::thread;
 use std::time::Duration;
 
-use crate::vehicle_monitor::VehicleMonitorProducer;
-
 // Delay between sample data sending in the producer loop.
 const PPRODUCER_SEND_INTERVAL_MS: u64 = 1000;
+
+// Example struct demonstrating composition with VehicleConsumer
+pub struct VehicleMonitorProducer<R: Runtime> {
+    pub(crate) producer: VehicleOfferedProducer<R>,
+}
 
 impl<R: Runtime> VehicleMonitorProducer<R> {
     /// Create a new VehicleMonitorProducer

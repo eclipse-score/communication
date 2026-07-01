@@ -40,9 +40,15 @@ mod test {
 
     use futures::stream::StreamExt;
     use std::sync::OnceLock;
-    use std::time::Duration;
-    const TEST_CONFIG_PATH: &str = "./score/mw/com/example/com-api-example/etc/mw_com_config.json";
 
+    const TEST_CONFIG_PATH: &str = "./score/mw/com/example/com-api-example/etc/mw_com_config.json";
+    const INITIAL_TIRE_PRESSURE: f32 = 1.0;
+    const SAMPLE_COUNT: usize = 5;
+    const SAMPLE_INTERVAL_MS: u64 = 1000;
+    const RECEIVE_TIMEOUT_MS: u64 = 500;
+    const TIMEOUT_FOR_SIMULATION_MS: u64 = 1000;
+    const PRODUCER_ITERATIONS: usize = 5;
+    const CONSUMER_ITERATIONS: usize = 5;
     static LOLA_RUNTIME: OnceLock<com_api::LolaRuntimeImpl> = OnceLock::new();
     // it will create a singleton instance of LolaRuntime for testing,
     // and it will be shared across different test cases,
@@ -110,7 +116,7 @@ mod test {
     async fn async_data_sender_fn<R: Runtime>(
         offered_producer: VehicleOfferedProducer<R>,
     ) -> VehicleOfferedProducer<R> {
-        for i in 0..6 {
+        for i in 0..PRODUCER_ITERATIONS {
             let uninit_sample = match offered_producer.left_tire.allocate() {
                 Ok(sample) => sample,
                 Err(e) => {
@@ -119,14 +125,14 @@ mod test {
                 }
             };
             let sample = uninit_sample.write(Tire {
-                pressure: 1.0 + i as f32,
+                pressure: INITIAL_TIRE_PRESSURE + i as f32,
             });
             match sample.send() {
                 Ok(_) => (),
                 Err(e) => eprintln!("[SENDER] Failed to send sample: {:?}", e),
             }
             println!("[SENDER] Sent sample with pressure: {}", 1.0 + i as f32);
-            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(SAMPLE_INTERVAL_MS)).await;
         }
         offered_producer
     }
@@ -138,13 +144,14 @@ mod test {
         is_timeout: bool,
     ) {
         println!("[RECEIVER] Async data processor started");
-        let mut buffer = SampleContainer::new(5);
-        for _ in 0..3 {
+        let mut buffer = SampleContainer::new(SAMPLE_COUNT);
+        for _ in 0..CONSUMER_ITERATIONS {
             let (returned_buf, result) = if is_timeout {
-                let timeout = tokio::time::sleep(Duration::from_millis(1000));
-                subscribed.cancellable_receive(buffer, 2, 3, timeout).await
+                let timeout =
+                    tokio::time::sleep(tokio::time::Duration::from_millis(RECEIVE_TIMEOUT_MS));
+                subscribed.cancellable_receive(buffer, 1, 3, timeout).await
             } else {
-                subscribed.receive(buffer, 2, 3).await
+                subscribed.receive(buffer, 1, 3).await
             };
             match result {
                 Ok(count) => println!("[RECEIVER] Received {} samples", count),
@@ -160,11 +167,16 @@ mod test {
 
     async fn stream_processor_fn<R: Runtime>(mut subscribed: impl Subscription<Tire, R>) {
         let mut stream = subscribed.to_stream();
-        let mut cnt = 5usize;
+        let mut cnt = CONSUMER_ITERATIONS;
         println!("[RECEIVER] Stream processor started");
         while cnt > 0 {
             // Use timeout to avoid waiting indefinitely in case of issues with the producer or subscription
-            match tokio::time::timeout(tokio::time::Duration::from_secs(3), stream.next()).await {
+            match tokio::time::timeout(
+                tokio::time::Duration::from_millis(SAMPLE_INTERVAL_MS),
+                stream.next(),
+            )
+            .await
+            {
                 Ok(Some(Ok(sample))) => {
                     println!(
                         "[RECEIVER] Stream received sample: {:.2} psi",
@@ -195,7 +207,10 @@ mod test {
         //starting service discovery in async way, so that it can be discovered when producer offer service after some delay, and consumer is waiting for discovery result
         let consumer = tokio::spawn(create_consumer_async(consumer_runtime, service_id));
         //simulate some delay before producer offer service, so that consumer is waiting for discovery
-        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+        tokio::time::sleep(tokio::time::Duration::from_millis(
+            TIMEOUT_FOR_SIMULATION_MS,
+        ))
+        .await;
         //Producer create
         let producer_runtime = get_test_runtime();
         let producer = create_producer(producer_runtime, service_id_clone);
@@ -204,7 +219,7 @@ mod test {
         // Await consumer creation and subscribe to events
         let consumer = consumer.await.expect("Failed to create consumer");
         // Subscribe to one event
-        let subscribed = consumer.left_tire.subscribe(5).unwrap();
+        let subscribed = consumer.left_tire.subscribe(SAMPLE_COUNT).unwrap();
 
         let processor_join_handle = tokio::spawn(async_data_processor_fn(subscribed, false));
         processor_join_handle
@@ -233,7 +248,10 @@ mod test {
         //starting service discovery in async way, so that it can be discovered when producer offer service after some delay, and consumer is waiting for discovery result
         let consumer = tokio::spawn(create_consumer_async(consumer_runtime, service_id));
         //simulate some delay before producer offer service, so that consumer is waiting for discovery
-        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+        tokio::time::sleep(tokio::time::Duration::from_millis(
+            TIMEOUT_FOR_SIMULATION_MS,
+        ))
+        .await;
         //Producer create
         let producer_runtime = get_test_runtime();
         let producer = create_producer(producer_runtime, service_id_clone);
@@ -242,7 +260,7 @@ mod test {
         // Await consumer creation and subscribe to events
         let consumer = consumer.await.expect("Failed to create consumer");
         // Subscribe to one event
-        let subscribed = consumer.left_tire.subscribe(5).unwrap();
+        let subscribed = consumer.left_tire.subscribe(SAMPLE_COUNT).unwrap();
 
         let processor_join_handle = tokio::spawn(async_data_processor_fn(subscribed, true));
         processor_join_handle
@@ -272,7 +290,10 @@ mod test {
         //starting service discovery in async way, so that it can be discovered when producer offer service after some delay, and consumer is waiting for discovery result
         let consumer = tokio::spawn(create_consumer_async(consumer_runtime, service_id));
         //simulate some delay before producer offer service, so that consumer is waiting for discovery
-        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+        tokio::time::sleep(tokio::time::Duration::from_millis(
+            TIMEOUT_FOR_SIMULATION_MS,
+        ))
+        .await;
         //Producer create
         let producer_runtime = get_test_runtime();
         let producer = create_producer(producer_runtime, service_id_clone);
@@ -281,7 +302,7 @@ mod test {
         // Await consumer creation and subscribe to events
         let consumer = consumer.await.expect("Failed to create consumer");
         // Subscribe to one event
-        let subscribed = consumer.left_tire.subscribe(5).unwrap();
+        let subscribed = consumer.left_tire.subscribe(SAMPLE_COUNT).unwrap();
         let stream_processor_join_handle = tokio::spawn(stream_processor_fn(subscribed));
         stream_processor_join_handle
             .await
