@@ -30,6 +30,9 @@ build --incompatible_strict_action_env
 test --test_output=errors
 build --experimental_retain_test_configuration_across_testonly #https://github.com/bazelbuild/bazel/issues/6842
 
+# Silence all external warnings:
+build --output_filter=^//
+
 # Do not treat as errors the warnings from external libraries that are known
 build --per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
 build --host_per_file_copt=external/.*json_schema_validator.*@-Wno-error=switch
