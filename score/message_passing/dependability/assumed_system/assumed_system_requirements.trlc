@@ -25,3 +25,10 @@ ScoreReq.AssumedSystemReq SystemMessagingProtocol {
     rationale = "Application processes need to exchange requests and responses process boundaries, while adhearing to the failiure modes of ISO-26262."
     version = 1
 }
+
+ScoreReq.Mitigation SafeState {
+    description = "The Safe State of the system shall be *safe-silent*"
+    safety = ScoreReq.Asil.B
+    rationale = "Currently only fail safe systems are in scope"
+    version = 1
+}
