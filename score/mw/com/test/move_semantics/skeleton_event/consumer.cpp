@@ -27,133 +27,6 @@ namespace
 
 const std::string kInterprocessNotificationShmPath{"/skeleton_event_move_semantics_interprocess_notification"};
 
-template <typename ProxyEventType>
-class ProxyStateChangeNotifier
-{
-  public:
-    explicit ProxyStateChangeNotifier(ProxyEventType& proxy_event) : proxy_event_{proxy_event}
-    {
-        auto state_change_handler = [this](const SubscriptionState new_state) -> bool {
-            std::cout << "Service state changed, new state: " << static_cast<std::uint32_t>(new_state) << std::endl;
-            std::lock_guard lock(mutex_);
-            last_seen_state_ = new_state;
-            condition_variable_.notify_all();
-            return true;
-        };
-        proxy_event_.SetSubscriptionStateChangeHandler(state_change_handler);
-    }
-
-    ~ProxyStateChangeNotifier()
-    {
-        proxy_event_.UnsetSubscriptionStateChangeHandler();
-    }
-
-    ProxyStateChangeNotifier(const ProxyStateChangeNotifier&) = delete;
-    ProxyStateChangeNotifier& operator=(const ProxyStateChangeNotifier&) = delete;
-    ProxyStateChangeNotifier(const ProxyStateChangeNotifier&&) = delete;
-    ProxyStateChangeNotifier& operator=(const ProxyStateChangeNotifier&&) = delete;
-
-    bool WaitForStateChange(const score::cpp::stop_token& stop_token, SubscriptionState desired_state)
-    {
-        std::unique_lock lock(mutex_);
-        return condition_variable_.wait(lock, stop_token, [this, desired_state]() {
-            return last_seen_state_.has_value() && last_seen_state_.value() == desired_state;
-        });
-    }
-
-  private:
-    std::mutex mutex_{};
-    concurrency::InterruptibleConditionalVariable condition_variable_{};
-    std::optional<SubscriptionState> last_seen_state_{};
-    ProxyEventType& proxy_event_;
-};
-
-template <typename ProxyEventType>
-class ProxyEventReceiver
-{
-  public:
-    explicit ProxyEventReceiver(ProxyEventType& proxy_event) : proxy_event_{proxy_event}
-    {
-        auto receive_handler = [&received_sample_notification = received_sample_notification_]() {
-            std::cout << "Received event notification" << std::endl;
-            received_sample_notification.notify();
-        };
-        proxy_event_.SetReceiveHandler(receive_handler);
-    }
-
-    ~ProxyEventReceiver()
-    {
-        proxy_event_.UnsetReceiveHandler();
-    }
-
-    ProxyEventReceiver(const ProxyEventReceiver&) = delete;
-    ProxyEventReceiver& operator=(const ProxyEventReceiver&) = delete;
-    ProxyEventReceiver(const ProxyEventReceiver&&) = delete;
-    ProxyEventReceiver& operator=(const ProxyEventReceiver&&) = delete;
-
-    void WaitForSamples(const score::cpp::stop_token& stop_token, const std::size_t num_samples_to_receive)
-    {
-        std::size_t received_count{0U};
-        while (!stop_token.stop_requested())
-        {
-            auto get_samples_result = proxy_event_.GetNewSamples(
-                [this](SamplePtr<std::uint32_t> sample) {
-                    GetNewSamplesCallback(std::move(sample));
-                },
-                num_samples_to_receive);
-            if (!get_samples_result.has_value())
-            {
-                FailTest("skeleton_event_move_semantics consumer failed: GetNewSamples failed: ",
-                         get_samples_result.error());
-            }
-
-            received_count += get_samples_result.value();
-            std::cout << "Received " << get_samples_result.value() << " samples. " << received_count
-                      << " samples so far" << std::endl;
-
-            if (received_count == num_samples_to_receive)
-            {
-                break;
-            }
-
-            const auto notification_received = received_sample_notification_.waitWithAbort(stop_token);
-            if (!notification_received)
-            {
-                // spurious wake-up or stop requested, either way we should check the stop token and exit if stop was
-                // requested
-                continue;
-            }
-
-            received_sample_notification_.reset();
-        }
-        std::cout << "\nConsumer: Done receiving samples, received " << received_count << " samples in total\n";
-    }
-
-  private:
-    void GetNewSamplesCallback(SamplePtr<std::uint32_t> sample)
-    {
-        if (sample == nullptr)
-        {
-            FailTest("skeleton_event_move_semantics consumer failed: received null sample");
-        }
-        const std::uint32_t expected_value = latest_value_.has_value() ? latest_value_.value() + 1U : 1U;
-        if (*sample != expected_value)
-        {
-            FailTest("skeleton_event_move_semantics consumer failed: received value ",
-                     *sample,
-                     " does not match expected value ",
-                     expected_value);
-        }
-        latest_value_ = *sample;
-    }
-
-    score::concurrency::Notification received_sample_notification_{};
-    std::mutex mutex_{};
-    concurrency::InterruptibleConditionalVariable condition_variable_{};
-    std::optional<std::uint32_t> latest_value_{};
-    ProxyEventType& proxy_event_;
-};
-
 }  // namespace
 
 void RunConsumer(const InstanceSpecifier& instance_specifier,
@@ -182,7 +55,7 @@ void RunConsumer(const InstanceSpecifier& instance_specifier,
 
     // Step 2. Register receive handler
     std::cout << "\nConsumer: Step 2 - Register receive handler" << std::endl;
-    ProxyEventReceiver proxy_event_receiver{proxy.moved_event_};
+    ProxyEventReceiver proxy_event_receiver{proxy.moved_event_, "skeleton_event_move_semantics consumer failed:"};
 
     // Step 3. Register state change handler
     std::cout << "\nConsumer: Step 3 - Register state change handler" << std::endl;
