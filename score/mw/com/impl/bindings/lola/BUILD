@@ -1396,6 +1396,18 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "subscription_state_machine_stress_test",
+    srcs = [
+        "subscription_state_machine_stress_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":subscription_state_machine",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+    ],
+)
+
+cc_unit_test(
     name = "subscription_state_machine_states_test",
     srcs = [
         "subscription_state_machine_states_test.cpp",

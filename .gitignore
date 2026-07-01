@@ -1,6 +1,5 @@
 bazel-*
 examples/bazel-*
-MODULE.bazel.lock
 user.bazelrc
 _build
 

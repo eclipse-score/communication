@@ -63,7 +63,7 @@ class ProxyEvent final : public ProxyEventBase
     // shared private APIs which necessitates the use of the friend keyword.
     // coverity[autosar_cpp14_a11_3_1_violation]
     template <typename, typename...>
-    friend class ProxyField;
+    friend class ProxyFieldImpl;
 
     // Empty struct that is used to make the second constructor only accessible to ProxyField (as it is a friend).
     struct FieldOnlyConstructorEnabler
@@ -158,7 +158,9 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
 
 template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const std::string_view event_name)
-    : ProxyEvent{base, event_name, ProxyEventBindingFactory<SampleType>::Create(base, event_name)}
+    : ProxyEvent{base,
+                 event_name,
+                 ProxyEventBindingFactory<SampleType>::Create(base, event_name, ServiceElementType::EVENT)}
 {
     if (GetTypedEventBinding() != nullptr)
     {

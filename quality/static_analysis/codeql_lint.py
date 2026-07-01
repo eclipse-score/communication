@@ -162,6 +162,9 @@ def main():
         # Use standard Bazel output directory for database
         bazel_info = _get_bazel_info(source_root)
         output_path = args.output_dir or bazel_info.get('output_path')
+        # Ensure the output directory exists before CodeQL tries to create the
+        # database inside it (codeql database init does not create parents).
+        os.makedirs(output_path, exist_ok=True)
         db_loc = os.path.join(output_path, "codeql_database")
 
         create_database(codeql_path, args.config_path, target, source_root, db_loc)

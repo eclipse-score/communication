@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 
 #include "score/memory/shared/memory_resource_registry.h"
+#include "score/mw/com/impl/find_service_handle.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -127,7 +128,18 @@ void ProxyMockedMemoryFixture::InitialiseProxyWithConstructor(const InstanceIden
 {
     EnrichedInstanceIdentifier enriched_instance_identifier{instance_identifier};
     ON_CALL(service_discovery_mock_, StartFindService(_, enriched_instance_identifier))
-        .WillByDefault(Return(make_FindServiceHandle(10U)));
+        .WillByDefault(
+            testing::WithArg<0>(testing::Invoke([this](auto find_service_handler) -> Result<FindServiceHandle> {
+                // In practice, if a service is available at the point in time when the Proxy is created then the find
+                // service handler will be called synchronously in the StartFindService call. We simulate this here by
+                // calling the handler with a handle.
+                auto find_service_handle = make_FindServiceHandle(10U);
+                auto handle = make_HandleType(identifier_);
+                auto found_service_handle_container = ServiceHandleContainer<HandleType>{handle};
+
+                std::invoke(find_service_handler, found_service_handle_container, find_service_handle);
+                return find_service_handle;
+            })));
 
     Proxy::EventNameToElementFqIdConverter event_name_to_element_fq_id_converter{lola_service_deployment_,
                                                                                  lola_service_instance_id_.GetId()};

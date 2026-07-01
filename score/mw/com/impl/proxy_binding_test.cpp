@@ -29,8 +29,6 @@ class MyProxy final : public ProxyBinding
     {
         return true;
     }
-    void RegisterEventBinding(std::string_view, ProxyEventBindingBase&) noexcept override {}
-    void UnregisterEventBinding(std::string_view) noexcept override {}
     Result<void> SetupMethods() override
     {
         return {};

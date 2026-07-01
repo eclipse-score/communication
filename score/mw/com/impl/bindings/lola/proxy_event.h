@@ -73,6 +73,7 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
           aligned_sample_size_{memory::shared::CalculateAlignedSize(sizeof(SampleType), alignof(SampleType))},
           event_slots_raw_array_{InitialiseEventSlotsRawArray()}
     {
+        parent.RegisterEvent(event_name, *this);
     }
 
     ProxyEvent(const ProxyEvent&) = delete;

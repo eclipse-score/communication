@@ -53,10 +53,10 @@ class ProxyFieldAttorney;
 ///         GetFreeSampleCount(), GetNumNewSamplesAvailable(), SetReceiveHandler(), UnsetReceiveHandler(),
 ///         GetNewSamples().
 template <typename SampleDataType, typename... Tags>
-class ProxyField final : public ProxyFieldBase
+class ProxyFieldImpl : public ProxyFieldBase
 {
 
-    // A ProxyField must enable WithGetter or WithNotifier. A field with only WithSetter (or no tags at all)
+    // A ProxyFieldImpl must enable WithGetter or WithNotifier. A field with only WithSetter (or no tags at all)
     // gives the consumer no way to observe the value it can write, making the field useless.
     static_assert(
         contains_type<WithNotifier, Tags...>::value || contains_type<WithGetter, Tags...>::value,
@@ -85,28 +85,28 @@ class ProxyField final : public ProxyFieldBase
     /// \param get_method_binding Optional mock Get-method binding. If nullptr, no ProxyMethod is built for Get;
     ///        this avoids the ProxyMethod ctor calling ProxyBaseView::MarkServiceElementBindingInvalid() on the
     ///        parent, which would otherwise make AreBindingsValid() return false during proxy construction.
-    ProxyField(ProxyBase& proxy_base,
-               const std::string_view field_name,
-               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
-               std::unique_ptr<ProxyMethodBinding> set_method_binding = nullptr,
-               std::unique_ptr<ProxyMethodBinding> get_method_binding = nullptr)
-        : ProxyField{proxy_base,
-                     field_name,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
-                     set_method_binding == nullptr
-                         ? nullptr
-                         : std::make_unique<ProxyMethod<FieldType(FieldType)>>(
-                               proxy_base,
-                               field_name,
-                               std::move(set_method_binding),
-                               typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
-                     get_method_binding == nullptr
-                         ? nullptr
-                         : std::make_unique<ProxyMethod<FieldType()>>(
-                               proxy_base,
-                               field_name,
-                               std::move(get_method_binding),
-                               typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{})}
+    ProxyFieldImpl(ProxyBase& proxy_base,
+                   const std::string_view field_name,
+                   std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
+                   std::unique_ptr<ProxyMethodBinding> set_method_binding = nullptr,
+                   std::unique_ptr<ProxyMethodBinding> get_method_binding = nullptr)
+        : ProxyFieldImpl{proxy_base,
+                         field_name,
+                         std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
+                         set_method_binding == nullptr
+                             ? nullptr
+                             : std::make_unique<ProxyMethod<FieldType(FieldType)>>(
+                                   proxy_base,
+                                   field_name,
+                                   std::move(set_method_binding),
+                                   typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
+                         get_method_binding == nullptr
+                             ? nullptr
+                             : std::make_unique<ProxyMethod<FieldType()>>(
+                                   proxy_base,
+                                   field_name,
+                                   std::move(get_method_binding),
+                                   typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{})}
     {
     }
 
@@ -117,12 +117,12 @@ class ProxyField final : public ProxyFieldBase
     ///          WithNotifier is present.
     /// \param proxy_base Parent proxy that owns this field's registration.
     /// \param field_name Field's name as it appears in the deployment.
-    ProxyField(ProxyBase& proxy_base, const std::string_view field_name)
-        : ProxyField{proxy_base,
-                     field_name,
-                     MakeEventDispatchIfEnabled(proxy_base, field_name),
-                     MakeSetMethodDispatchIfEnabled(proxy_base, field_name),
-                     MakeGetMethodDispatchIfEnabled(proxy_base, field_name)}
+    ProxyFieldImpl(ProxyBase& proxy_base, const std::string_view field_name)
+        : ProxyFieldImpl{proxy_base,
+                         field_name,
+                         MakeEventDispatchIfEnabled(proxy_base, field_name),
+                         MakeSetMethodDispatchIfEnabled(proxy_base, field_name),
+                         MakeGetMethodDispatchIfEnabled(proxy_base, field_name)}
     {
         // Each Make*IfEnabled must have produced a non-null dispatch when the
         // corresponding tag is in the pack.
@@ -140,15 +140,15 @@ class ProxyField final : public ProxyFieldBase
         }
     }
 
-    /// \brief A ProxyField shall not be copyable
-    ProxyField(const ProxyField&) = delete;
-    ProxyField& operator=(const ProxyField&) = delete;
+    /// \brief A ProxyFieldImpl shall not be copyable
+    ProxyFieldImpl(const ProxyFieldImpl&) = delete;
+    ProxyFieldImpl& operator=(const ProxyFieldImpl&) = delete;
 
     /// \brief A ProxyField shall be moveable
-    ProxyField(ProxyField&&) noexcept = default;
-    ProxyField& operator=(ProxyField&&) noexcept = default;
+    ProxyFieldImpl(ProxyFieldImpl&&) noexcept = default;
+    ProxyFieldImpl& operator=(ProxyFieldImpl&&) noexcept = default;
 
-    ~ProxyField() noexcept = default;
+    ~ProxyFieldImpl() noexcept = default;
 
     /**
      * \api
@@ -401,11 +401,11 @@ class ProxyField final : public ProxyFieldBase
         }
     }
 
-    ProxyField(ProxyBase& proxy_base,
-               const std::string_view field_name,
-               std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
-               std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
-               std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch)
+    ProxyFieldImpl(ProxyBase& proxy_base,
+                   const std::string_view field_name,
+                   std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
+                   std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
+                   std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch)
         : ProxyFieldBase{field_name, proxy_event_dispatch.get()},
           proxy_event_dispatch_{std::move(proxy_event_dispatch)},
           proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)},
@@ -420,9 +420,24 @@ class ProxyField final : public ProxyFieldBase
     std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch_;
     std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch_;
 
-    static_assert(std::is_same_v<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>,
-                  "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "
-                  "we must ensure that it doesn't move when the ProxyField is moved to avoid dangling references. ");
+    static_assert(
+        std::is_same_v<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>,
+        "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "
+        "we must ensure that it doesn't move when the ProxyFieldImpl is moved to avoid dangling references. ");
+};
+
+template <typename SampleDataType, typename... Tags>
+class ProxyField final : public ProxyFieldImpl<SampleDataType, Tags...>
+{
+    using ProxyFieldImpl<SampleDataType, Tags...>::ProxyFieldImpl;
+};
+
+template <typename SampleDataType>
+class [[deprecated("Implicit deduction  of field semantics is deprecated. Choose at least WithNotifier or WithGetter")]]
+ProxyField<SampleDataType>
+    final : public ProxyFieldImpl<SampleDataType, WithNotifier>
+{
+    using ProxyFieldImpl<SampleDataType, WithNotifier>::ProxyFieldImpl;
 };
 
 }  // namespace score::mw::com::impl

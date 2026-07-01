@@ -265,15 +265,19 @@ cc_library(
     srcs = ["lola_proxy_element_building_blocks.cpp"],
     hdrs = ["lola_proxy_element_building_blocks.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
-        "//score/mw/com/impl:proxy_base",
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/configuration",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -304,6 +308,7 @@ cc_library(
     deps = [
         ":i_proxy_field_binding_factory",
         ":lola_proxy_element_building_blocks",
+        ":proxy_event_binding_factory",
         ":proxy_method_binding_factory",
         "//score/mw/com/impl:method_type",
         "@score_baselibs//score/language/futurecpp",

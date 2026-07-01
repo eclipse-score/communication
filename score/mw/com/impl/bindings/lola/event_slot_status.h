@@ -40,6 +40,12 @@ class EventSlotStatus final
     /// \brief The value_type represents the underlying data type of this structure
     using value_type = std::uint64_t;
 
+    /// \brief Represents an invalid/absent timestamp. A slot with this value has never been written.
+    static constexpr EventTimeStamp INVALID_TIMESTAMP = 0U;
+
+    /// \brief The first timestamp written to a slot when an event is sent for the first time.
+    static constexpr EventTimeStamp FIRST_VALID_TIMESTAMP = 1U;
+
     /// \brief The highest possible value that EventTimeStamp can reach
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
     // variables being given values that are not subsequently used"

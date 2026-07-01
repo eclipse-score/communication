@@ -869,6 +869,14 @@ TEST(SkeletonFieldSetHandlerTypeTraitsTest, RegisterSetHandlerOnlyExistsWhenWith
                   "RegisterSetHandler must be SFINAE-removed on a SkeletonField without WithSetter");
 }
 
+TEST(ProxyFieldNotifierGatingTest, RegisterSetHandlerDoesNotExistWhenNoTagPresent)
+{
+    using DefaultField = SkeletonField<TestSampleType>;
+
+    static_assert(!has_register_set_handler<DefaultField>::value,
+                  "RegisterSetHandler must be SFINAE-removed on a SkeletonField without WithSetter");
+}
+
 using SkeletonFieldSetHandlerTest = SkeletonFieldTestFixture;
 
 TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerForwardsToMethodBinding)

@@ -175,7 +175,7 @@ class GenericProxyFixture : public ::testing::Test
         // This ideally would be an ON_CALL as we want Create to create a mock binding and return it by default.
         // However, we get a "unknown file: Failure" while running the test in that case. Changing it to an EXPECT_CALL
         // solves the problem.
-        EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, _))
+        EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, _, _))
             .Times(AnyNumber())
             .WillRepeatedly([]() {
                 return std::make_unique<mock_binding::GenericProxyEvent>();
@@ -287,7 +287,8 @@ TEST_F(GenericProxyFixture, CreatingGenericProxyWithNoGenericProxyEventBindingRe
     // Given a handle created from valid instance and type deployments
     // and that the Create call on the ProxyEventBindingFactory returns a nullptr.
     CreateAHandle({kEventName1, kEventName2, kEventName3});
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName1}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
+                Create(_, std::string_view{kEventName1}, ServiceElementType::EVENT))
         .WillRepeatedly(Return(ByMove(nullptr)));
 
     // When creating a GenericProxy
@@ -313,11 +314,14 @@ TEST_F(GenericProxyFixture, GenericProxyWillCreateEventBindingsSpecifiedInHandle
     CreateAHandle({kEventName1, kEventName2, kEventName3});
 
     // Then bindings are created for the provided events
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName1}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
+                Create(_, std::string_view{kEventName1}, ServiceElementType::EVENT))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::GenericProxyEvent>())));
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName2}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
+                Create(_, std::string_view{kEventName2}, ServiceElementType::EVENT))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::GenericProxyEvent>())));
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName3}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
+                Create(_, std::string_view{kEventName3}, ServiceElementType::EVENT))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::GenericProxyEvent>())));
 
     // When constructing the generic proxy from the handle
@@ -366,10 +370,14 @@ TEST_F(GenericProxyFixture, GenericProxyWillOnlyCreateEventBindingsForEventsProv
     ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName3})).WillByDefault(Return(true));
 
     // Then bindings are only created for the provided events
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName1}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
+                Create(_, std::string_view{kEventName1}, ServiceElementType::EVENT))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::GenericProxyEvent>())));
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName2})).Times(0);
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName3}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
+                Create(_, std::string_view{kEventName2}, ServiceElementType::EVENT))
+        .Times(0);
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
+                Create(_, std::string_view{kEventName3}, ServiceElementType::EVENT))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::GenericProxyEvent>())));
 
     // When constructing the generic proxy

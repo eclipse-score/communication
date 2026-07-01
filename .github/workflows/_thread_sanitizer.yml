@@ -1,0 +1,49 @@
+# *******************************************************************************
+# Copyright (c) 2024 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Thread Sanitizer"
+
+on:
+  workflow_call:
+    inputs:
+      cache-mode:
+        description: "Cache mode override (empty = auto-compute from event context)."
+        type: string
+        default: ""
+      fetch-only:
+        description: "When true, runs --nobuild to fetch dependencies only."
+        type: string
+        default: "false"
+
+jobs:
+  tsan:
+    name: Build & Test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: ${{ inputs.fetch-only != 'true' && 'build_and_test_tsan' || '' }}
+          cache-mode: ${{ inputs.cache-mode }}
+
+      - name: Run tests with thread sanitizer
+        if: inputs.fetch-only != 'true'
+        run: bazel test --config=tsan //... --build_tests_only
+
+      - name: Fetch dependencies (--nobuild)
+        if: inputs.fetch-only == 'true'
+        run: bazel build --nobuild --config=tsan //...

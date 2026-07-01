@@ -131,11 +131,13 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
         switch (service_element_type_)
         {
             case ServiceElementTypes::PROXY_EVENT:
-                return ProxyEventBindingFactory<TestSampleType>::Create(*proxy_base_, kDummyEventName);
+                return ProxyEventBindingFactory<TestSampleType>::Create(
+                    *proxy_base_, kDummyEventName, ServiceElementType::EVENT);
             case ServiceElementTypes::PROXY_FIELD:
                 return ProxyFieldBindingFactory<TestSampleType>::CreateEventBinding(*proxy_base_, kDummyFieldName);
             case ServiceElementTypes::GENERIC_PROXY_EVENT:
-                return GenericProxyEventBindingFactory::Create(*proxy_base_, kDummyGenericProxyEventName);
+                return GenericProxyEventBindingFactory::Create(
+                    *proxy_base_, kDummyGenericProxyEventName, ServiceElementType::EVENT);
             default:
                 // This should never be reached since we assert the value of element_type_ in service_element_type_()
                 std::terminate();
