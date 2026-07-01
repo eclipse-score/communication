@@ -40,7 +40,6 @@ thread_local bool ProxyEventBase::is_in_receive_handler_context = false;
 // coverity[autosar_cpp14_a3_1_1_violation]
 
 ProxyEventBase::ProxyEventBase(std::string_view event_name,
-                               ProxyBinding* proxy_binding_ptr,
                                std::unique_ptr<ProxyEventBindingBase> proxy_event_binding) noexcept
     : EnableReferenceToMoveableFromThis<ProxyEventBase>(),
       binding_base_{std::move(proxy_event_binding)},
