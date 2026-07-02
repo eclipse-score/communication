@@ -92,26 +92,28 @@ The following sequence shows the instantiation of a service class up to its serv
 
 <img alt="SKELETON_CREATE_OFFER_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/skeleton_create_offer_seq.puml">
 
-#### Binding independent level Registration of skeleton events/fields at their parent skeleton
+#### Binding independent level Registration of skeleton events/fields/methods at their parent skeleton
 
 Due to our architectural constraints, the `impl::SkeletonBase` (the base class of the generated skeleton/`DummySkeleton`)
-doesn't "know" its event/field children. Because events/fields are the members of the generated skeleton and not the
-`impl::SkeletonBase`. But for various functionalities, we require the `impl::SkeletonBase` to have access to its
-events/fields.
-This is solved by a mechanism, where the event/field members of the generated skeleton class register themselves at
-their parent skeleton, which they got by reference during their creation/`ctor` call. So in their `ctor` they are
-calling `impl::SkeletonBase::RegisterEvent()` resp. `impl::SkeletonBase::RegisterField()`, with their own reference and
-name. So after creation of a generated skeleton, its base class (`impl::SkeletonBase`) has all the event/field members
-stored in `protected` members `events_` and `fields_`, so that in the future these could be even made `public`
-accessible to the generated (user facing) skeleton. Since these user facing skeletons have discrete event/field
-members anyhow, there is currently no need for such a generalized event/field access.
+doesn't "know" its event/field/method children. Because events/fields/methods are the members of the generated skeleton
+and not the `impl::SkeletonBase`. But for various functionalities, we require the `impl::SkeletonBase` to have access to
+its children.
+This is solved by a mechanism, where the event/field/method members of the generated skeleton class register themselves
+at their parent skeleton, which they got by reference during their creation/`ctor` call. So in their `ctor` they are
+calling `impl::SkeletonBase::RegisterEvent()`, `impl::SkeletonBase::RegisterField()` or
+`impl::SkeletonBase::RegisterMethod()`, with their own `special reference` (see below) and name. So after creation of a
+generated skeleton, its base class (`impl::SkeletonBase`) has all the event/field/method members stored in `protected`
+members `events_`, `fields_` and `methods_`, so that in the future these could be even made `public`
+accessible to the generated (user facing) skeleton. Since these user facing skeletons have discrete event/field/method
+members anyhow, there is currently no need for such a generalized access.
 
-So while we have this relation/accessibility of events/fields from the "parent" skeleton on the binding **independent**
+So while we have this relation/accessibility of children from the "parent" skeleton on the binding **independent**
 level, we **don't** have a symmetric setup on the binding **dependent** level. The binding specific implementation of
 `SkeletonBinding`, where `impl::SkeletonBase` is dispatching to via the `pImpl` idiom doesn't "know" its corresponding
-binding specific events and fields, which would be represented **both** as `SkeletonEventBinding` (as our field is a
+binding specific events, fields, which would be represented **both** as `SkeletonEventBinding` (as our field is a
 composite, which dispatches to `impl::SkeletonEventBase`, which then &ndash; also via `pImpl` idiom &ndash; dispatches
-to the binding specific `SkeletonEventBinding` [see here](#../todo)).
+to the binding specific `SkeletonEventBinding` [see here](#../todo)). Nor does it know its binding specific methods,
+which would be represented as `SkeletonMethodBinding`.
 
 This symmetry isn't currently needed as we don't have any use case yet, where on the binding dependent level our
 `lola::Skeleton` (implementing `SkeletonBinding`) would need to call functionality on its events/fields!
@@ -122,6 +124,39 @@ currently solely on the binding independent level.
 implementation of `SkeletonBinding`, since we do not have (yet) a field specific class on binding level! To detect,
 whether we have to deal with a "pure" event or the "event part" of a field, we would resort to checking the related
 `ElementFqId`, which contains this differentiation.
+
+#### How we handle moving of skeletons and their events/fields
+
+In the previous section we have seen, that impl::SkeletonEvent, impl::SkeletonField and impl::SkeletonMethod register
+themselves at their parent `impl::SkeletonBase` during their construction with a reference to their parent.
+The special reference is obviously not a normal reference, but a `ReferenceToMoveable<SkeletonEventBase>::Reference` type
+(or `ReferenceToMoveable<SkeletonFieldBase>::Reference` resp. `ReferenceToMoveable<SkeletonMethodBase>::Reference`).
+Why is that? If we stored a normal reference to the event/field/method in the parent skeleton, we would have the
+following problem: whenever the event/field/method instances get moved (which happens, when the user moves his outer
+skeleton instance), the references within the `impl::SkeletonBase` need to be updated. To accomplish this, the
+event/field/method instances would also need a reference to their parent () to do the update! This again complicates
+things further! In case the `impl::SkeletonBase` moves (also happens, when the user moves his outer skeleton instance),
+then also the parent reference has to be updated within all the event/field/method instances.
+
+Our solution to this issue is the following:
+For each event/field/method instance, we store a `ReferenceToMoveable<T>::Reference` on the heap.
+`T` is in this case one of:
+
+- `SkeletonEventBase`
+- `SkeletonFieldBase`
+- `SkeletonMethodBase`
+
+This "special reference" is created during the construction of the event/field/method instance and is passed to the
+`impl::SkeletonBase` during the registration call by reference. But since the `ReferenceToMoveable<T>::Reference` is
+stored on the heap and is **neither** copyable nor moveable, it doesn't get moved when the event/field/method is moved!
+Instead, the `ReferenceToMoveable<T>::Reference` instance is updated with the new address of the moved event/field/method
+instance within the move constructor/move assign op of the event/field/method. So the `impl::SkeletonBase` always has a
+valid reference to the event/field/method instance, even if the user moves the outer skeleton instance as long as it
+uses the `ReferenceToMoveable<T>::Reference::Get()` API to access the event/field/method instance!
+
+The mechanism to provide such a "special reference" for  `impl::SkeletonEventBase`, `impl::SkeletonFieldBase` and
+`impl::SkeletonMethodBase` is realized by inheriting from `EnableReferenceToMoveableFromThis<T>`, where `T` is one of
+the above-mentioned types. making it a `CRTP` pattern!
 
 #### LoLa binding level Registration of skeleton events/fields at their parent skeleton
 
