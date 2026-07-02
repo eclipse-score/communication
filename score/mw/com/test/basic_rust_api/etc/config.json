@@ -24,21 +24,6 @@
       ]
     },
     {
-      "serviceTypeName": "/score/adp/DummyServiceType",
-      "version": {
-        "major": 1,
-        "minor": 0
-      },
-      "bindings": [
-        {
-          "binding": "SHM",
-          "serviceId": 6433,
-          "events": [
-          ]
-        }
-      ]
-    },
-    {
       "serviceTypeName": "/score/test/MixedPrimitivesInterface",
       "version": {
         "major": 1,
@@ -187,4 +172,3 @@
     }
   ]
 }
-
