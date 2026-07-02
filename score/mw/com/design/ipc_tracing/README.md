@@ -271,7 +271,7 @@ by the `data`/`ShmDataChunkList` can be reclaimed again.
 To realize this shared-memory usage/reclaim pattern described above, the `IPC Tracing` implementation in `LoLa` falls
 back on existing functionality! The `IPC Tracing` subsystem is just another consumer/`proxy`, which subscribes to
 events/fields and accesses event/field samples. I.e. we use exactly the same ref-counting logic within our
-`lola::EventDataControl`, which our `ProxyEvents`/`ProxyFields` use. Accordingly, when an event/field sample shall
+`lola::ConsumerEventDataControlLocalView`, which our `ProxyEvents`/`ProxyFields` use. Accordingly, when an event/field sample shall
 be traced via the `Trace()` API overload for `ShmDataChunkList`, first a `SamplePtr` gets created, which manages the
 lifetime (i.e. usage/reclaim pattern) of the underlying sample data in shared-memory. So the steps, when an event-send/
 field-update call shall be traced are:

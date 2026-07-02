@@ -13,7 +13,8 @@ participant "lola::SkeletonEvent::instance" as LolaSkeletonEvent
 participant "<<shared memory>>\nlola::ServiceDataControl:lola::instance" as ServiceDataControl
 participant "<<shared memory>>\nlola::ServiceDataStorage:instance" as ServiceDataStorage
 participant "<<shared memory>>\nlola::EventDataStorage:instance" as EventDataStorage
-participant "<<shared memory>>\nlola::EventDataControl:instance" as EventDataControl
+participant "<<shared memory>>\nlola::EventControl:instance" as EventControl
+participant "<u>:SkeletonEventCommon</u>\n(inside LolaSkeletonEvent)" as SkeletonEventCommon
 participant "<u>:ServiceDiscovery</u>\naccessible via Runtime singleton" as ServiceDiscovery
 
 activate Process
@@ -115,11 +116,11 @@ activate ServiceDataStorage
 LolaSkeleton <-- ServiceDataStorage:
 deactivate ServiceDataStorage
 
-LolaSkeleton -> EventDataControl: create()
-activate EventDataControl
+LolaSkeleton -> EventControl: create()
+activate EventControl
 
-EventDataControl --> LolaSkeleton: return eventControlInstance
-deactivate EventDataControl
+EventControl --> LolaSkeleton: return eventControlInstance
+deactivate EventControl
 
 LolaSkeleton -> ServiceDataControl: eventControlMap[ElementId] = eventControlInstance
 activate ServiceDataControl
@@ -127,8 +128,16 @@ activate ServiceDataControl
 LolaSkeleton <-- ServiceDataControl
 deactivate ServiceDataControl
 
-LolaSkeleton --> LolaSkeletonEvent: return EventDataStorage, EventDataControl
+LolaSkeleton --> LolaSkeletonEvent: return EventDataStorage, EventControl
 deactivate LolaSkeleton
+
+LolaSkeletonEvent -> SkeletonEventCommon: PrepareOfferCommon(event_control_qm, event_control_asil_b)
+activate SkeletonEventCommon
+note right of SkeletonEventCommon
+  Creates local views into shared memory:\n  - ProviderEventDataControlLocalView (QM + optionally ASIL-B)\n  - ConsumerEventDataControlLocalView (for IPC-tracing)\n  - EventDataControlComposite
+end note
+SkeletonEventCommon --> LolaSkeletonEvent
+deactivate SkeletonEventCommon
 
 LolaSkeletonEvent --> SkeletonEvent: return Result<void>
 deactivate LolaSkeletonEvent

@@ -46,12 +46,14 @@ class "lola::Proxy" {
   +{static} Create(const LolaServiceInstanceDeployment& shm_binding, const LolaServiceTypeDeployment& service_deployment, QualityType quality_type, ServiceElementMap<GenericProxyEvent>&) : Result<Proxy>
   +Proxy(Proxy&&)
   +GetServiceHandles(instance_identifier : InstanceIdentifier) : score::Result<std::vector<HandleType>>
-  +GetEventDataControl(element_fq_id : const ElementFqId) : EventDataControl*
+  +GetEventControlLocal(element_fq_id : const ElementFqId) : ConsumerEventControlLocalView&
   +GetRawDataStorage(element_fq_id : const ElementFqId) : void*
   +GetEventMetaInfo(element_fq_id : const ElementFqId) :  const EventMetaInfo&
   +GetQualityType() : QualityType
   +GetSourcePid() : pid_t
   +{abstract} IsEventProvided(): bool
+  --
+  -service_data_control_local_ : ProxyServiceDataControlLocalView
 }
 
 class "mw::com::impl::ProxyEvent<SampleType>" {
@@ -110,14 +112,14 @@ class "ProxyBaseView" {
 }
 
 class "lola::SlotCollector" {
-  using SlotIndexVector = std::vector<EventDataControl::SlotIndexType>;
+  using SlotIndexVector = std::vector<SlotIndexType>;
   ..
-  -event_data_control_: EventDataControl&
-  -SlotCollector(EventDataControl&, const std::size_t max_slots)
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>&
+  +SlotCollector(event_data_control_local: ConsumerEventDataControlLocalView<>&, const std::size_t max_slots)
   +GetNumNewSamplesAvailable(): size_t
   +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
   <u>Notes:</u>
-  SlotCollector is not copyable.
+  SlotCollector is not copyable.\nUses ConsumerEventDataControlLocalView to avoid OffsetPtr overhead\nduring GetNewSamples().
 }
 
 class "DummyProxy" <<generated>>  {
@@ -158,6 +160,7 @@ class "lola::ProxyEventCommon" #yellow {
   -parent_: lola::Proxy&
   -subscription_event_state_machine_: std::shared_ptr<SubscriptionStateMachine>
   -test_slot_collector_: std::optional<SlotCollector>
+  -event_data_control_local_: ConsumerEventDataControlLocalView<>
   +ProxyEventCommon(lola::Proxy& parent, ElementFqId)
   +Subscribe(size_t max_sample_count): void
   +Unsubscribe(): void
@@ -167,10 +170,12 @@ class "lola::ProxyEventCommon" #yellow {
   +GetEventSourcePid() : pid_t
   +GetElementFQId() : ElementFqId
   +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +GetEventControl(): ConsumerEventControlLocalView&
   +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
   ..
   <u>Notes:</u>
   lola::ProxyEventCommon is not moveable or copyable.
+  event_control_local_ is obtained from Proxy::GetEventControlLocal() at construction.
   SlotCollector is instantiated by the SubscriptionStateMachine when it enters the
   Subscribed state. It is cleared if it subsequently leaves the Subscribed state.
 }
@@ -238,8 +243,12 @@ class "ServiceElementMapView<ElementType>" {
 "lola::ProxyEvent<SampleType>" *-- "lola::ProxyEventCommon" : common_dispatch_
 "lola::GenericProxyEvent" *-- "lola::ProxyEventCommon" : common_dispatch_
 
+"lola::ProxyEventCommon" o-- "ConsumerEventControlLocalView" : event_control_local_
 "lola::SubscriptionStateMachine" --* "lola::ProxyEventCommon"
-
-"lola::ProxyEventCommon" *-- "lola::SlotCollector" : slot_collector_
+"lola::ProxyEventCommon" *-- "lola::SlotCollector"
+"lola::SlotCollector" o-- "ConsumerEventDataControlLocalView"
+"lola::Proxy" *-- "ProxyServiceDataControlLocalView" : service_data_control_local_
+"ProxyServiceDataControlLocalView" *-- "1..n" "ConsumerEventControlLocalView"
+"ConsumerEventControlLocalView" *-- "ConsumerEventDataControlLocalView"
 
 @enduml

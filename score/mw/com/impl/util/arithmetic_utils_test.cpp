@@ -25,12 +25,22 @@ namespace score::mw::com::impl
 namespace
 {
 
+// Assigns a value to a volatile to force runtime evaluation of constexpr functions,
+// preventing the compiler from constant-folding and ensuring code coverage is recorded.
+// Caused by https://github.com/llvm/llvm-project/issues/35434
+template <typename T>
+T ForceRuntimeEvaluation(T value)
+{
+    volatile T sink = value;
+    return sink;
+}
+
 TEST(ArithmeticUtilsAdditionTest, AddWithoutOverflowReturnsCorrectValueWhenArgumentsDontOverflow)
 {
     // When calculating the sum of two values that should not overflow
     constexpr std::uint32_t lhs = 100U;
     constexpr std::uint32_t rhs = 200U;
-    constexpr auto result = add_without_overflow<std::uint32_t, lhs, rhs>();
+    const auto result = ForceRuntimeEvaluation(add_without_overflow<std::uint32_t, lhs, rhs>());
 
     // Then the result is as expected
     EXPECT_EQ(result, 300U);
@@ -41,7 +51,7 @@ TEST(ArithmeticUtilsAdditionUInt8Test, AddWithoutOverflowReturnsCorrectValueWhen
     // When calculating the sum of two values that should not overflow
     constexpr std::uint8_t lhs = 100U;
     constexpr std::uint8_t rhs = 50U;
-    constexpr auto result = add_without_overflow<std::uint8_t, lhs, rhs>();
+    const auto result = ForceRuntimeEvaluation(add_without_overflow<std::uint8_t, lhs, rhs>());
 
     // Then the result is as expected
     EXPECT_EQ(result, 150U);
@@ -52,7 +62,7 @@ TEST(ArithmeticUtilsAdditionTest, AddWithoutOverflowReturnsCorrectValueWhenArgum
     // When calculating the sum of two values that should not overflow
     constexpr std::uint32_t lhs = std::numeric_limits<std::uint32_t>::max() - 1U;
     constexpr std::uint32_t rhs = 1U;
-    constexpr auto result = add_without_overflow<std::uint32_t, lhs, rhs>();
+    const auto result = ForceRuntimeEvaluation(add_without_overflow<std::uint32_t, lhs, rhs>());
 
     // Then the result is as expected
     EXPECT_EQ(result, std::numeric_limits<std::uint32_t>::max());
@@ -63,7 +73,7 @@ TEST(ArithmeticUtilsAdditionUInt8Test, AddWithoutOverflowReturnsCorrectValueWhen
     // When calculating the sum of two values that should not overflow
     constexpr std::uint8_t lhs = std::numeric_limits<std::uint8_t>::max() - 1U;
     constexpr std::uint8_t rhs = 1U;
-    constexpr auto result = add_without_overflow<std::uint8_t, lhs, rhs>();
+    const auto result = ForceRuntimeEvaluation(add_without_overflow<std::uint8_t, lhs, rhs>());
 
     // Then the result is as expected
     EXPECT_EQ(result, std::numeric_limits<std::uint8_t>::max());
@@ -96,7 +106,7 @@ TEST(ArithmeticUtilsMultiplicationTest, MultiplyWithoutOverflowReturnsCorrectVal
     // When calculating the product of two values that should not overflow
     constexpr std::uint32_t lhs = 100U;
     constexpr std::uint32_t rhs = 200U;
-    constexpr auto result = multiply_without_overflow<std::uint32_t, lhs, rhs>();
+    const auto result = ForceRuntimeEvaluation(multiply_without_overflow<std::uint32_t, lhs, rhs>());
 
     // Then the result is as expected
     EXPECT_EQ(result, 20000U);
@@ -107,7 +117,7 @@ TEST(ArithmeticUtilsMultiplicationUInt8Test, MultiplyWithoutOverflowReturnsCorre
     // When calculating the product of two values that should not overflow
     constexpr std::uint8_t lhs = 10U;
     constexpr std::uint8_t rhs = 5U;
-    constexpr auto result = multiply_without_overflow<std::uint8_t, lhs, rhs>();
+    const auto result = ForceRuntimeEvaluation(multiply_without_overflow<std::uint8_t, lhs, rhs>());
 
     // Then the result is as expected
     EXPECT_EQ(result, 50U);

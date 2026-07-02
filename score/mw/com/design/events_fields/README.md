@@ -202,10 +202,11 @@ benefit. [↩](#lockfreeref)
 
 Our implementation of `score::mw::com::SamplePtr` resp. `score::mw::com::SampleAllocateePtr` hold a binding specific
 implementation of such a smartpointer. So in case of `LoLa` binding, we have `lola::SamplePtr`
-/`lola::SampleAllocateePtr`, which both hold an implicit (via `lola::SampleAllocateeDeleter`
-resp. `lola::SampleDeleter`) reference to `EventDataControl`. This reference is needed as the
-deleters (`lola::SampleAllocateeDeleter`, `lola::SampleDeleter`) alter state of event slots in
-the `EventDataStorage<SampleType>` (decreasing refcount or state/timestamp change).
+/`lola::SampleAllocateePtr`, which both hold a reference to a `ConsumerEventDataControlLocalView`. This reference is
+needed as the destructors alter state of event slots in the `EventDataStorage<SampleType>` (decreasing refcount or
+state/timestamp change). Specifically, `lola::SamplePtr` uses `lola::SlotDecrementer` (an RAII helper) which holds a
+pointer to `ConsumerEventDataControlLocalView` and calls `DereferenceEvent()` on destruction. `lola::SampleAllocateePtr`
+holds a `ConsumerEventDataControlLocalView*` used for IPC-tracing (skeleton-side slot referencing for trace output).
 
 ### Skeleton side Activities for Event Access
 
@@ -245,7 +246,8 @@ The main proxy algorithm above the shared memory data structures is broken into 
 `score::mw::com::impl::lola::ProxyEvent`, `score::mw::com::impl::lola::ProxyEventCommon` and `score::mw::com::impl::lola::SlotCollector`.
 While `ProxyEvent` is a type-aware templated class, `ProxyEventCommon` and `SlotCollector` are both type-agnostic. All ProxyEvent
 functionality that doesn't require awareness of the type or direct interaction with shared memory are dispatched from `ProxyEvent`
-to `ProxyEventCommon`. `SlotCollector` operates on the shared memory control structure without knowledge of the actual type.
+to `ProxyEventCommon`. `SlotCollector` operates on the shared memory control structure without knowledge of the actual type,
+using `ConsumerEventDataControlLocalView` to avoid `OffsetPtr` overhead on the hot-path.
 `ProxyEvent` implements the functionality (including direct interaction with shared memory) that require awareness of the type.
 Making `ProxyEventCommon` and `SlotCollector` type-agnostic results in a slight build time benefit since type-agnostic code doesn't
 need to be instantiated-then-merged by the build toolchain as this would be the case if that code was part of the templated class.

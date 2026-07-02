@@ -18,16 +18,16 @@ The main extensions on structural level have been done by the addition of `Trans
 is maintained per `ProxyEvent`. Each `ProxyEvent` during runtime modifies its shared state (subscribing and
 unsubscribing, and incrementing and decrementing the refcount of event samples) and therefore uses a related
 `TransactionLog` to be able to recreate the shared state after restarting.
-The `lola::EventDataControl` instance in shared memory manages the control of one `SkeletonEvent`. It has been
-extended with a `lola::TransactionLogSet`, which is a collection of all `TransactionLog`s of different N `ProxyEvent`s,
+The `lola::EventControl` instance in shared memory manages the control of one `SkeletonEvent`. It contains a
+`lola::TransactionLogSet`, which is a collection of all `TransactionLog`s of different N `ProxyEvent`s,
 related to the `SkeletonEvent`.
 
-`lola::EventDataControl` and therefore also the contained `lola::TransactionLogSet` is created by the provider/
+`lola::EventControl` and therefore also the contained `lola::TransactionLogSet` is created by the provider/
 skeleton side during service instance offering (`Skeleton::OfferService()`). The sizing (how many `Transaction Logs`
 shall be contained in a `lola::TransactionLogSet`) is deduced from the `max-subscribers` configuration parameter for
 the given `SkeletonEvent`.
 
-Additionally, we also have one `TransactionLog` in the `SkeletonEvent` specific `lola::EventDataControl`
+Additionally, we also have one `TransactionLog` in the `SkeletonEvent` specific `lola::EventControl`
 for skeleton/provider side `IPC Tracing`, where technically the `IPC Tracing` subsystem has the role of an event/field
 consumer, see description [here](../ipc_tracing/README.md#tracing_subsystem_as_an_event_field_consumer).
 
@@ -48,7 +48,7 @@ Since transaction logs are stored within shared memory (in the control shm-objec
 explicitly configured `applicationID` or, as a fallback, the process's user ID (`uid`).
 
 Unambiguous assignment from `ProxyEvent`s (contained in proxy instances created within user code) to their corresponding
-transaction logs stored in shared memory (`lola::EventDataControl`) is **not** possible, because an application can
+transaction logs stored in shared memory (`lola::EventControl`) is **not** possible, because an application can
 create **multiple** proxy instances, either:
 
 - From the same `InstanceSpecifier`,
@@ -140,7 +140,7 @@ During the creation of a `lola::Proxy` a `lola::TransactionLog` gets rolled back
 its `ProxyEvent`s. The transaction logs are contained in a `TransactionLogSet` and therefore specific for
 a specific `ProxyEvent` of a proxy instance.
 In this step for each `ProxyEvent` of the proxy instance to be created, the related `TransactionLogSet`
-is acquired from the `EventDataControl` instance and then
+is acquired from the `EventControl` instance and then
 `TransactionLogSet::RollbackProxyTransactions(TransactionLogId)` gets called.
 
 `TransactionLogSet::RollbackProxyTransactions(TransactionLogId)` picks the 1st transaction log it finds for the given

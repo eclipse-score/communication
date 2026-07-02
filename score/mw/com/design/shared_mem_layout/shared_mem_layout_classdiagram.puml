@@ -34,15 +34,17 @@ class "lola::EventDataStorage<SampleType>" <<Shared Memory>> <<typedef>> {
 
 class "lola::ServiceDataControl" <<Shared Memory>> {
   +event_controls_ : score::memory::shared::Map<ElementFqId, EventControl>
-  +uid_pid_mapping_ : UidPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<UidPidMappingEntry>>
+  +application_id_pid_mapping_ : ApplicationIdPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<ApplicationIdPidMappingEntry>>
 }
 
 class "lola::EventDataControl" <<Shared Memory>> <<typedef>> {
 }
 
 class "lola::detail_event_data_control::EventDataControl" as EventDataControl <<Shared Memory>> {
-  -state_slots_: std::vector<std::atomic<EventSlotStatus::value_type>, memory::shared::PolymorphicOffsetPtrAllocator<std::atomic<EventSlotStatus::value_type>>>
-  -transaction_log_set_ : TransactionLogSet
+  +state_slots_: DynamicArray<ControlSlotType, memory::shared::PolymorphicOffsetPtrAllocator<ControlSlotType>>
+  ..
+  <u>Notes:</u>
+  Pure data class. All runtime behaviour (AllocateNextSlot, ReferenceNextEvent, etc.)\nhas moved to ProviderEventDataControlLocalView / ConsumerEventDataControlLocalView.
 }
 
 class "memory::shared::SharedMemoryResource" {
@@ -55,28 +57,32 @@ class "ControlBlock" {
 }
 
 class "lola::Proxy" {
-  +GetEventDataControl(const ElementFqId element_fq_id) const : EventDataControl*
+  +GetEventControlLocal(const ElementFqId element_fq_id) : ConsumerEventControlLocalView&
   +GetRawDataStorage(ElementFqId) const : const void*
   +GetEventMetaInfo(ElementFqId) const : const EventMetaInfo&
-  -control_ : std::shared_ptr<memory::shared::ManagedMemoryResource>
+  -service_data_control_local_ : ProxyServiceDataControlLocalView
   -data_ : std::shared_ptr<memory::shared::ManagedMemoryResource>
   -quality_type_: QualityType
+  ..
+  <u>Notes:</u>
+  service_data_control_local_ caches raw-pointer-based local views into the shared\nmemory ServiceDataControl, avoiding per-call OffsetPtr overhead.
 }
 
 class "lola::ProxyEventCommon" {
-  -slot_collector_ : SlotCollector
+  -event_control_local_ : ConsumerEventControlLocalView&
 }
 
 class "lola::ProxyEvent" {
 }
 
 class "lola::SlotCollector" {
-  -event_data_control_ : EventDataControl*
+  -event_data_control_local_ : ConsumerEventDataControlLocalView<>&
 }
 
 class "lola::EventControl" <<Shared Memory>> {
   +data_control : EventDataControl
   +subscription_control : EventSubscriptionControl
+  +transaction_log_set_ : TransactionLogSet
 }
 
 class "lola::EventSubscriptionControl" <<Shared Memory>> <<typedef>> {
@@ -89,14 +95,44 @@ class "lola::EventSubscriptionControl<>" as EventSubscriptionControl <<Shared Me
   -enforce_max_samples_ : const bool
 }
 
-class "lola::UidPidMapping" <<Shared Memory>> {
-  +RegisterPid(const uid_t uid, const pid_t pid) : std::optional<pid_t>
-  -mapping_entries_ : score::containers::DynamicArray<UidPidMappingEntry, mapping_entry_alloc>
+class "lola::ApplicationIdPidMapping" <<Shared Memory>> {
+  +RegisterPid(const std::uint32_t application_id, const pid_t pid) : std::optional<pid_t>
+  -mapping_entries_ : score::containers::DynamicArray<ApplicationIdPidMappingEntry, mapping_entry_alloc>
 }
 
-class "lola::UidPidMappingEntry" <<Shared Memory>> {
-  +key_uid_status_ : std::atomic<key_type>
+class "lola::ApplicationIdPidMappingEntry" <<Shared Memory>> {
+  +key_application_id_status_ : std::atomic<key_type>
   +pid_ : pid_t
+}
+
+' Local view classes (process-local, non-shared-memory)
+class "ProviderEventDataControlLocalView" {
+  -state_slots_ : score::cpp::span<ControlSlotType>
+  +ProviderEventDataControlLocalView(event_data_control: EventDataControl&)
+  +AllocateNextSlot(): std::optional<SlotIndexType>
+  +EventReady(slot_index: SlotIndexType, time_stamp: EventTimeStamp): void
+  +Discard(slot_index: SlotIndexType): void
+}
+
+class "ConsumerEventDataControlLocalView" {
+  -state_slots_ : score::cpp::span<ControlSlotType>
+  +ConsumerEventDataControlLocalView(event_data_control: EventDataControl&)
+  +ReferenceNextEvent(last_search_time: EventTimeStamp, upper_limit: EventTimeStamp): std::optional<SlotIndexType>
+  +DereferenceEvent(slot_index: SlotIndexType): void
+  +GetNumNewEvents(reference_time: EventTimeStamp) const: std::size_t
+}
+
+class "ConsumerEventControlLocalView" {
+  +data_control : ConsumerEventDataControlLocalView<>
+  +subscription_control : std::reference_wrapper<EventSubscriptionControl<>>
+  +transaction_log_set : std::reference_wrapper<TransactionLogSet>
+  +ConsumerEventControlLocalView(event_control: EventControl&)
+}
+
+class "ProxyServiceDataControlLocalView" {
+  +event_controls_ : score::memory::shared::Map<ElementFqId, ConsumerEventControlLocalView>
+  +application_id_pid_mapping_ : ApplicationIdPidMapping<...>&
+  +ProxyServiceDataControlLocalView(service_data_control: ServiceDataControl&)
 }
 
 class "lola::TransactionLogSet" <<Shared Memory>> {
@@ -137,11 +173,13 @@ lola::Skeleton "1" o-up- "2..3" memory::shared::SharedMemoryResource
 memory::shared::SharedMemoryResource *-- ControlBlock
 
 lola::Proxy "1" o-up- "2" memory::shared::SharedMemoryResource
-lola::SlotCollector "n" *-- "1" lola::EventDataControl : event_data_control
+lola::Proxy *-- ProxyServiceDataControlLocalView : service_data_control_local_
 
 lola::Proxy *-- "1..n" lola::ProxyEvent
 lola::ProxyEvent *-- "1" lola::ProxyEventCommon
+lola::ProxyEventCommon o-- ConsumerEventControlLocalView : event_control_local_
 lola::ProxyEventCommon *-- "1" lola::SlotCollector
+lola::SlotCollector o-- ConsumerEventDataControlLocalView
 lola::ProxyEvent ..> "lola::EventDataStorage<SampleType>" : Uses in GetNewSamples()
 
 lola::ServiceDataStorage *-- "1..n" "lola::EventDataStorage<SampleType>"
@@ -149,17 +187,25 @@ lola::ServiceDataStorage *-- "1..n" lola::EventMetaInfo
 lola::EventMetaInfo *-- lola::DataTypeMetaInfo
 
 lola::ServiceDataControl *-- "1..n" lola::EventControl
-lola::ServiceDataControl *-- lola::UidPidMapping
+lola::ServiceDataControl *-- lola::ApplicationIdPidMapping
 
 lola::EventControl *-- lola::EventDataControl
 lola::EventControl *-- lola::EventSubscriptionControl
+lola::EventControl *-- lola::TransactionLogSet
 
-lola::UidPidMapping *-- "0..n" lola::UidPidMappingEntry
+lola::ApplicationIdPidMapping *-- "0..n" lola::ApplicationIdPidMappingEntry
 
 lola::EventDataControl .> EventDataControl : type
 lola::EventSubscriptionControl .> EventSubscriptionControl : type
 
-EventDataControl *-- lola::TransactionLogSet
+' Local view relationships
+ProxyServiceDataControlLocalView *-- "1..n" ConsumerEventControlLocalView
+ConsumerEventControlLocalView *-- ConsumerEventDataControlLocalView
+ConsumerEventControlLocalView ..> EventSubscriptionControl : subscription_control ref
+ConsumerEventControlLocalView ..> lola::TransactionLogSet : transaction_log_set ref
+ConsumerEventDataControlLocalView ..> EventDataControl : accesses via span
+ProviderEventDataControlLocalView ..> EventDataControl : accesses via span
+
 lola::TransactionLogSet *-- lola::TransactionLog
 lola::TransactionLog *-- "1..n" lola::TransactionLogSlot
 

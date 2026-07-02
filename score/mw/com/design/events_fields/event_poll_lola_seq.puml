@@ -5,11 +5,12 @@ hide footbox
 participant "<u>:Process</u>\nara::com application (server)" as Process1
 participant "<u>:lola::skeleton</u>" as skeleton
 participant "<u>:lola::SkeletonEvent</u>" as SkeletonEvent
-participant "<shared memory>\n<u>:lola::EventDataControl</u>" as EventDataControl
+participant "ProviderEventDataControlLocalView\n(wraps <<shm>> EventDataControl)" as ProviderLocalView
 participant "<shared memory>\n<u>:lola::EventDataStorage</u>" as EventDataStorage
+participant "ConsumerEventDataControlLocalView\n(wraps <<shm>> EventDataControl)" as ConsumerLocalView
 participant "<u>:lola::ProxyEvent</u>" as ProxyEvent
 participant "<u>:lola::proxy</u>" as proxy
-participant "<u>:lola::SampleDeleter</u>" as SampleDeleter
+participant "<u>:lola::SlotDecrementer</u>" as SlotDecrementer
 participant "<u>:lola::SamplePtr</u>" as SamplePtr
 participant "<u>:Process</u>\nara::com application (client)" as Process2
 
@@ -30,8 +31,14 @@ end
 
 group LoLa skeleton OFFER in skeleton_create_offer_seq
     |||
-    create EventDataControl
-    Process1 -[#white]> EventDataControl
+    create ProviderLocalView
+    Process1 -[#white]> ProviderLocalView
+    note right of ProviderLocalView
+      Created by SkeletonEventCommon::PrepareOfferCommon().
+      Holds a raw span into shared-memory EventDataControl.
+    end note
+    create ConsumerLocalView
+    Process1 -[#white]> ConsumerLocalView
     activate SkeletonEvent
     create EventDataStorage
     Process1 -[#white]> EventDataStorage
@@ -66,16 +73,16 @@ activate Process1
 Process1 -> SkeletonEvent: Update(sample)
 activate SkeletonEvent
 SkeletonEvent -> SkeletonEvent: AllocateSlot()
-SkeletonEvent -> EventDataControl: std::atomic::compare_exchange\nalgo on state_slots
-activate EventDataControl
-deactivate EventDataControl
+SkeletonEvent -> ProviderLocalView: std::atomic::compare_exchange\nalgo on state_slots
+activate ProviderLocalView
+deactivate ProviderLocalView
 SkeletonEvent -> SkeletonEvent: return: SlotIndex
 SkeletonEvent -> EventDataStorage: Update event_slots[SlotIndex]
 activate EventDataStorage
 deactivate EventDataStorage
-SkeletonEvent -> EventDataControl: Update timestamp state_slots[SlotIndex]
-activate EventDataControl
-deactivate EventDataControl
+SkeletonEvent -> ProviderLocalView: Update timestamp state_slots[SlotIndex]
+activate ProviderLocalView
+deactivate ProviderLocalView
 ref over SkeletonEvent, ProxyEvent: Message passing NotifyEvent in\nlola_msg_pass_notify_seq
 Process1 <-- SkeletonEvent: return
 deactivate SkeletonEvent
@@ -86,14 +93,14 @@ activate Process2
 Process2 -> ProxyEvent: GetNewSamples(maxSamples)
 activate ProxyEvent
 loop until maxSamples reached or no new samples available
-  ProxyEvent -> EventDataControl: referenceNextEvent(last_samples_check_timestamp)
-  activate EventDataControl
-  ProxyEvent <-- EventDataControl: return std::optional<EventSlotIndexType>
-  deactivate EventDataControl
-  create SampleDeleter
-  ProxyEvent -> SampleDeleter: Create(slot_index, EventDataControl&)
+  ProxyEvent -> ConsumerLocalView: referenceNextEvent(last_samples_check_timestamp)
+  activate ConsumerLocalView
+  ProxyEvent <-- ConsumerLocalView: return std::optional<EventSlotIndexType>
+  deactivate ConsumerLocalView
+  create SlotDecrementer
+  ProxyEvent -> SlotDecrementer: Create(slot_index, ConsumerEventDataControlLocalView&)
   create SamplePtr
-  ProxyEvent -> SamplePtr: Create(SampleDeleter)
+  ProxyEvent -> SamplePtr: Create(SlotDecrementer)
   Process2 <- ProxyEvent: Callable F(std::move(SamplePtr))
   Process2 --> ProxyEvent: return
 end
