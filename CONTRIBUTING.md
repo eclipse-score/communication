@@ -23,7 +23,9 @@ To ensure a smooth contribution process, please follow the steps below:
 3. **Write clean and modular code**, adhering to:
    - **C++17 standard**
    - **Google C++ Style Guide**
+   See the commit guidelines for how to structure your work.
 4. **Add tests** for any new functionality.
+   See the commit guidelines for how to structure your work.
 5. **Ensure all tests pass** before submitting:
    ```bash
    bazel test //...
@@ -31,6 +33,12 @@ To ensure a smooth contribution process, please follow the steps below:
 6. **Open a Pull Request** from your feature branch to the `main` branch of the upstream repository.
    - Provide a clear title and description of your changes.
    - Reference any related issues.
+
+### Commit Guidelines
+
+Commit messages in this project follow https://www.conventionalcommits.org/en/v1.0.0/
+
+We strongly discourage use of merge commits. This leads to a complex git history. Instead, do an interactive git rebase.
 
 ## Development Setup
 
