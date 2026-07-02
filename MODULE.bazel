@@ -309,7 +309,14 @@ download_file(
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
 )
 
-bazel_dep(name = "aspect_rules_lint", version = "2.3.0", dev_dependency = True)
+bazel_dep(name = "score_cpp_policies", dev_dependency = True)
+git_override(
+    module_name = "score_cpp_policies",
+    commit = "d762cc5cd9fe6ce5920c0f246303662f71a698ee",
+    remote = "https://github.com/eclipse-score/score_cpp_policies.git",
+)
+
+bazel_dep(name = "aspect_rules_lint", version = "2.5.0", dev_dependency = True)
 bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1", dev_dependency = True)

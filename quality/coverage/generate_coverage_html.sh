@@ -103,13 +103,13 @@ if [[ -f "${JUSTIFICATION_YAML}" ]]; then
   mkdir -p "${JUSTIFICATION_DIR}"
 
   # Run justify.py via Bazel to produce the resolved manifest.
-  if bazel run //quality/coverage/llvm_cov:justify -- \
+  if bazel run @score_cpp_policies//coverage:justify -- \
       --yaml "${JUSTIFICATION_YAML}" \
       --source-root "${BUILD_WORKSPACE_DIRECTORY}" \
       --output "${JUSTIFICATION_DIR}/manifest.json"; then
 
     # Run effective_coverage.py via Bazel to post-process HTML and calculate effective coverage.
-    bazel run //quality/coverage/llvm_cov:effective_coverage -- \
+    bazel run @score_cpp_policies//coverage:effective_coverage -- \
         --html-dir "${OUTPUT_DIR}" \
         --manifest "${JUSTIFICATION_DIR}/manifest.json" \
         --output "${JUSTIFICATION_DIR}/report.json"
