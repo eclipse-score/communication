@@ -83,7 +83,7 @@ std::vector<std::string_view> GetEventNameListFromHandle(const HandleType& handl
                            deployment.events_.cend(),
                            std::back_inserter(event_names),
                            [](const auto& event) -> std::string_view {
-                               return event.first;
+                               return event.first.GetAsStringView();
                            });
             return event_names;
         },

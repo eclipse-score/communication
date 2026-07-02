@@ -49,7 +49,7 @@ std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identif
             ReturnType event_names;
             for (const auto& event : deployment.events_)
             {
-                event_names.push_back(std::string_view{event.first});
+                event_names.push_back(event.first.GetAsStringView());
             }
             return event_names;
         },

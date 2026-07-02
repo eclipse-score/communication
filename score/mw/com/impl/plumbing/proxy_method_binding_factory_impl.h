@@ -41,12 +41,12 @@ namespace detail
 {
 
 LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle,
-                                                     const std::string& method_name_str,
+                                                     std::string_view method_name_str,
                                                      MethodType method_type);
 
 template <typename ReturnType, typename... ArgTypes>
 lola::TypeErasedCallQueue::TypeErasedElementInfo GetTypeErasedElementInfo(HandleType parent_handle,
-                                                                          const std::string& method_name_str,
+                                                                          std::string_view method_name_str,
                                                                           MethodType method_type)
 {
     std::optional<memory::DataTypeSizeInfo> in_arg_type_info{std::nullopt};
@@ -101,12 +101,12 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
     const std::string_view method_name,
     MethodType method_type) noexcept
 {
-    auto method_name_str = std::string{method_name};
+    auto method_name_str = method_name;
 
     using LambdaReturnType = std::unique_ptr<ProxyMethodBinding>;
 
     auto deployment_info_visitor = score::cpp::overload(
-        [&parent_handle, parent_binding, &method_name_str, method_type](
+        [&parent_handle, parent_binding, method_name_str, method_type](
             const LolaServiceTypeDeployment& lola_type_deployment) -> LambdaReturnType {
             auto* const lola_proxy = dynamic_cast<lola::Proxy*>(parent_binding);
             if (lola_proxy == nullptr)

@@ -18,10 +18,11 @@
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
-
 #include "score/mw/com/impl/service_element_type.h"
 
 #include "score/mw/log/logging.h"
+
+#include "score/memory/string_comparison_adaptor.h"
 
 #include <score/assert.hpp>
 #include <optional>
@@ -38,9 +39,12 @@ namespace score::mw::com::impl
 class LolaServiceInstanceDeployment
 {
   public:
-    using EventInstanceMapping = std::unordered_map<std::string, LolaEventInstanceDeployment>;
-    using FieldInstanceMapping = std::unordered_map<std::string, LolaFieldInstanceDeployment>;
-    using MethodInstanceMapping = std::unordered_map<std::string, LolaMethodInstanceDeployment>;
+    using EventInstanceMapping =
+        std::unordered_map<score::memory::StringComparisonAdaptor, LolaEventInstanceDeployment>;
+    using FieldInstanceMapping =
+        std::unordered_map<score::memory::StringComparisonAdaptor, LolaFieldInstanceDeployment>;
+    using MethodInstanceMapping =
+        std::unordered_map<score::memory::StringComparisonAdaptor, LolaMethodInstanceDeployment>;
 
     LolaServiceInstanceDeployment() = default;
     explicit LolaServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
@@ -86,9 +90,9 @@ class LolaServiceInstanceDeployment
     bool inter_vm_forwarded_{false};
 
     score::json::Object Serialize() const noexcept;
-    bool ContainsEvent(const std::string& event_name) const noexcept;
-    bool ContainsField(const std::string& field_name) const noexcept;
-    bool ContainsMethod(const std::string& method_name) const noexcept;
+    bool ContainsEvent(std::string_view event_name) const noexcept;
+    bool ContainsField(std::string_view field_name) const noexcept;
+    bool ContainsMethod(std::string_view method_name) const noexcept;
 };
 
 bool areCompatible(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept;
@@ -97,7 +101,7 @@ bool operator<(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstan
 
 template <ServiceElementType service_element_type>
 const auto& GetServiceElementInstanceDeployment(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
-                                                const std::string& event_name)
+                                                const std::string_view event_name)
 {
     static_assert(service_element_type != ServiceElementType::INVALID);
 

@@ -268,7 +268,7 @@ std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> Proxy::current_proxy_
 ElementFqId Proxy::EventNameToElementFqIdConverter::Convert(const std::string_view event_name) const noexcept
 {
     const auto& events = events_.get();
-    const auto event_it = events.find(std::string{event_name});
+    const auto event_it = events.find(event_name);
 
     std::stringstream sstream{};
     sstream << "Event name " << event_name << " does not exists in event map.";
@@ -620,8 +620,8 @@ score::Result<void> Proxy::SetupMethods()
         std::lock_guard lock{proxy_method_registration_mutex_};
         for (const auto& [field_name, field_instance_deployment] : lola_service_instance_deployment.fields_)
         {
-            const auto field_id =
-                GetServiceElementId<ServiceElementType::FIELD>(lola_service_type_deployment, field_name);
+            const auto field_id = GetServiceElementId<ServiceElementType::FIELD>(lola_service_type_deployment,
+                                                                                 field_name.GetAsStringView());
 
             if ((kUseGetIfAvailable) && (proxy_methods_.count({field_id, MethodType::kGet}) != 0U))
             {
@@ -769,8 +769,8 @@ Proxy::GetMethodIdAndQueueSizeForEnabledMethods() const
     {
         if (method_deployment.enabled_.has_value() && method_deployment.enabled_.value())
         {
-            const auto method_id =
-                GetServiceElementId<ServiceElementType::METHOD>(lola_service_type_deployment, method_name);
+            const auto method_id = GetServiceElementId<ServiceElementType::METHOD>(lola_service_type_deployment,
+                                                                                   method_name.GetAsStringView());
 
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
                 method_deployment.queue_size_.has_value(),

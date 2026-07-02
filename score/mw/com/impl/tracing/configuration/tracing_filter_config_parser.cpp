@@ -188,7 +188,7 @@ std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view s
             {
                 for (const auto& event : lola_service_deployment.events_)
                 {
-                    score::cpp::ignore = result.insert(event.first);
+                    score::cpp::ignore = result.insert(event.first.GetAsStringView());
                 }
             }
             // LCOV_EXCL_BR_START (Defensive programming: GetElementNamesOfServiceType is always called with either
@@ -200,7 +200,7 @@ std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view s
 
                 for (const auto& field : lola_service_deployment.fields_)
                 {
-                    score::cpp::ignore = result.insert(field.first);
+                    score::cpp::ignore = result.insert(field.first.GetAsStringView());
                 }
             }
             // LCOV_EXCL_START (Defensive programming: See comment directly above. This branch is only included to

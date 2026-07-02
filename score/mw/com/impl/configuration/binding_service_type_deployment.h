@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/service_element_type.h"
 
 #include "score/json/json_parser.h"
+#include "score/memory/string_comparison_adaptor.h"
 
 #include <cstdint>
 #include <string>
@@ -28,9 +29,9 @@ template <typename EventIdType, typename FieldIdType, typename MethodIdType, typ
 class BindingServiceTypeDeployment
 {
   public:
-    using EventIdMapping = std::unordered_map<std::string, EventIdType>;
-    using FieldIdMapping = std::unordered_map<std::string, FieldIdType>;
-    using MethodIdMapping = std::unordered_map<std::string, MethodIdType>;
+    using EventIdMapping = std::unordered_map<score::memory::StringComparisonAdaptor, EventIdType>;
+    using FieldIdMapping = std::unordered_map<score::memory::StringComparisonAdaptor, FieldIdType>;
+    using MethodIdMapping = std::unordered_map<score::memory::StringComparisonAdaptor, MethodIdType>;
     using ServiceId = ServiceIdType;
 
     explicit BindingServiceTypeDeployment(const score::json::Object& json_object) noexcept;
@@ -80,7 +81,7 @@ template <ServiceElementType service_element_type,
           typename ServiceIdType>
 auto GetServiceElementId(const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>&
                              binding_service_type_deployment,
-                         const std::string& service_element_name);
+                         std::string_view service_element_name);
 
 template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
 bool operator==(

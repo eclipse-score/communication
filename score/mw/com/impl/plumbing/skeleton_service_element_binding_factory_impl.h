@@ -108,14 +108,13 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
             const auto& lola_service_instance_deployment =
                 GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment);
 
-            const std::string service_element_name_str{service_element_name};
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
-                lola_service_instance_deployment, service_element_name_str);
+                lola_service_instance_deployment, service_element_name);
             const lola::SkeletonEventProperties skeleton_event_properties =
                 detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
 
             const auto lola_service_element_id =
-                GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_str);
+                GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name);
             const lola::ElementFqId element_fq_id{lola_service_type_deployment.service_id_,
                                                   lola_service_element_id,
                                                   lola_service_instance_deployment.instance_id_.value().GetId(),
@@ -161,12 +160,12 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
                 GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment);
 
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
-                lola_service_instance_deployment, std::string{service_element_name});
+                lola_service_instance_deployment, service_element_name);
             const lola::SkeletonEventProperties skeleton_event_properties =
                 detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
 
             const auto lola_service_element_id =
-                GetServiceElementId<element_type>(lola_service_type_deployment, std::string{service_element_name});
+                GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name);
             const lola::ElementFqId element_fq_id{lola_service_type_deployment.service_id_,
                                                   lola_service_element_id,
                                                   lola_service_instance_deployment.instance_id_.value().GetId(),

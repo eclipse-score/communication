@@ -657,7 +657,8 @@ class ConfigurationFixture : public ::testing::Test
 
         for (const auto& [event_name, event] : events)
         {
-            tracing_filter_config_.AddTracePoint(service_type_, event_name, kInstanceSpecifiersv, kDummyTracePointType);
+            tracing_filter_config_.AddTracePoint(
+                service_type_, event_name.GetAsStringView(), kInstanceSpecifiersv, kDummyTracePointType);
         }
     }
 

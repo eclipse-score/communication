@@ -34,18 +34,17 @@ lola::ElementFqId GetElementFqId(const HandleType& handle,
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_instance_id != nullptr,
                                                 "ServiceInstanceId does not contain lola binding.");
 
-    const std::string service_element_name_str{service_element_name};
-    const LolaServiceElementId element_id{[element_type, &lola_type_deployment, &service_element_name_str]() {
+    const LolaServiceElementId element_id{[element_type, &lola_type_deployment, &service_element_name]() {
         switch (element_type)
         {
             case ServiceElementType::EVENT:
-                return GetServiceElementId<ServiceElementType::EVENT>(lola_type_deployment, service_element_name_str);
+                return GetServiceElementId<ServiceElementType::EVENT>(lola_type_deployment, service_element_name);
                 break;
             case ServiceElementType::FIELD:
-                return GetServiceElementId<ServiceElementType::FIELD>(lola_type_deployment, service_element_name_str);
+                return GetServiceElementId<ServiceElementType::FIELD>(lola_type_deployment, service_element_name);
                 break;
             case ServiceElementType::METHOD:
-                return GetServiceElementId<ServiceElementType::METHOD>(lola_type_deployment, service_element_name_str);
+                return GetServiceElementId<ServiceElementType::METHOD>(lola_type_deployment, service_element_name);
                 break;
             case ServiceElementType::INVALID:
             default:
