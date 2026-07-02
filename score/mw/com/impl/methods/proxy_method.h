@@ -13,9 +13,11 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_H
 
+#include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/methods/method_signature_element_ptr.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
+#include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/util/type_erased_storage.h"
 
 #include "score/containers/dynamic_array.h"
@@ -146,12 +148,35 @@ score::Result<std::tuple<impl::MethodInArgPtr<ArgTypes>...>> AllocateImpl(
         std::move(method_in_arg_ptr_tuple));
 }
 
+template <typename T>
+void InitializeArg(void* arg_pointer, ProxyBinding& proxy_binding)
+{
+    if constexpr (std::is_constructible_v<T, const memory::shared::PolymorphicOffsetPtrAllocator<T>&>)
+    {
+        // Temporary workaround to support using types which dynamically allocate memory at runtime (SWP-269486). These
+        // types must take a memory::shared::PolymorphicOffsetPtrAllocator<T> as the only argument in their constructor.
+        // We need to propagate the shared memory resource from the lola binding to the constructor of the type so that
+        // the dynamic memory allocation can be done in shared memory. This is a temporary workaround and is not public.
+        auto* const lola_proxy_binding = dynamic_cast<lola::Proxy*>(&proxy_binding);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_proxy_binding != nullptr,
+                                                    "ProxyBinding must be of type lola::Proxy, since ArgType is "
+                                                    "constructible with a PolymorphicOffsetPtrAllocator");
+        auto& methods_memory_resource = lola_proxy_binding->GetMethodMemoryResource();
+        memory::shared::PolymorphicOffsetPtrAllocator<T> allocator{methods_memory_resource};
+        score::cpp::ignore = new (arg_pointer) T{allocator};
+    }
+    else
+    {
+        score::cpp::ignore = new (arg_pointer) T{};
+    }
+}
+
 /// \brief Initializes all InArgs by calling the default constructor for each argument.
 ///
 /// This step is important to avoid undefined behaviour (interpreting uninitialized memory) and also to ensure that any
 /// non-trivially constructible types are properly initialized.
 template <typename... ArgTypes>
-Result<void> InitializeInArgs(ProxyMethodBinding& binding, const std::size_t queue_size)
+Result<void> InitializeInArgs(ProxyBinding& proxy_binding, ProxyMethodBinding& binding, const std::size_t queue_size)
 {
     for (std::size_t queue_index = 0U; queue_index < queue_size; ++queue_index)
     {
@@ -165,8 +190,8 @@ Result<void> InitializeInArgs(ProxyMethodBinding& binding, const std::size_t que
         // std::apply takes a callable and a tuple. It calls the callable with the arguments from the unpacked tuple.
         // E.g. In this case, it will call the lambda, fn, with: `fn(get<0>(args), get<1>(args), ..., get<n>(args))`
         std::apply(
-            [](typename std::add_pointer<ArgTypes>::type... arg_pointers) {
-                ((score::cpp::ignore = new (arg_pointers) ArgTypes{}), ...);
+            [&proxy_binding](std::add_pointer_t<ArgTypes>... arg_pointers) {
+                (InitializeArg<ArgTypes>(arg_pointers, proxy_binding), ...);
             },
             deserialized_arg_pointers);
     }
@@ -178,7 +203,9 @@ Result<void> InitializeInArgs(ProxyMethodBinding& binding, const std::size_t que
 /// This step is important to avoid undefined behaviour (interpreting uninitialized memory) and also to ensure that any
 /// non-trivially constructible types are properly initialized.
 template <typename ReturnType>
-Result<void> InitializeReturnValue(ProxyMethodBinding& binding, const std::size_t queue_size)
+Result<void> InitializeReturnValue(ProxyBinding& proxy_binding,
+                                   ProxyMethodBinding& binding,
+                                   const std::size_t queue_size)
 {
     for (std::size_t queue_index = 0U; queue_index < queue_size; ++queue_index)
     {
@@ -187,7 +214,7 @@ Result<void> InitializeReturnValue(ProxyMethodBinding& binding, const std::size_
         {
             return Unexpected(allocated_return_value_storage.error());
         }
-        score::cpp::ignore = new (allocated_return_value_storage->data()) ReturnType{};
+        InitializeArg<ReturnType>(allocated_return_value_storage->data(), proxy_binding);
     }
     return {};
 }
