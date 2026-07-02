@@ -147,9 +147,28 @@ if _plantuml_path is None:
         "Ensure @score_tooling//tools/sphinx:plantuml is in sphinx_build data."
     )
 else:
+    _fta_metamodel_dir = ""
+    _metamodel_candidate = r.Rlocation("score_tooling/plantuml/fta_metamodel.puml", source_repo="")
+    if _metamodel_candidate and Path(_metamodel_candidate).exists():
+        _fta_metamodel_dir = str(Path(_metamodel_candidate).parent)
+        logger.info(f"fta_metamodel.puml found at: {_metamodel_candidate}")
+    else:
+        logger.warning(
+            "fta_metamodel.puml not found in runfiles — FTA diagrams using "
+            "!include fta_metamodel.puml will fail to render. "
+            "Ensure @score_tooling//plantuml:fta_metamodel is in sphinx_build data."
+        )
+
     # Use PlantUML's built-in Smetana layout engine (Java port of Graphviz).
     # This avoids requiring an external dot binary in the Bazel sandbox.
-    plantuml = f"{_plantuml_path} -Playout=smetana"
+    # --jvm_flag must precede program args or the java_binary launcher forwards
+    # it to PlantUML (which ignores it) instead of the JVM.
+    _include_flag = (
+        f" --jvm_flag=-Dplantuml.include.path={_fta_metamodel_dir}"
+        if _fta_metamodel_dir
+        else ""
+    )
+    plantuml = f"{_plantuml_path}{_include_flag} -Playout=smetana"
     plantuml_output_format = "svg_obj"
 
 

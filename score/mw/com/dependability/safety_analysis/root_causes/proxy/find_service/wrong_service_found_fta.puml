@@ -17,7 +17,7 @@
 
 $TopEvent("Wrong service found", "Communication.WrongServiceFound")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.WrongServiceFound")
 $IntermediateEvent("Service is offered under wrong IDs", "Event2", "Gate1")
 $TransferInGate("Transfer2", "Event2")
 $IntermediateEvent("Wrong service discovery marker file searched for", "Event3", "Gate1")

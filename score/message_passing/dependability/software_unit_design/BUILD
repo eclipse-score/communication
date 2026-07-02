@@ -27,3 +27,8 @@ unit_design(
     name = "qnx_dispatch_unit_design",
     visibility = ["//score/message_passing:__pkg__"],
 )
+
+unit_design(
+    name = "server_connection_unit_design",
+    visibility = ["//score/message_passing:__pkg__"],
+)

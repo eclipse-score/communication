@@ -17,7 +17,7 @@
 
 $TopEvent("StartFindService callback is called unexpectedly", "Communication.StartFindServiceCallbackCalledUnexpectedly")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.StartFindServiceCallbackCalledUnexpectedly")
 $BasicEvent("Called reduandently", "Communication.CalledReduandently", "Gate1")
 $BasicEvent("Called eventhough StopFindService has been called", "Communication.CalledEventhoughStopfindserviceHasBeenCalled", "Gate1")
 $IntermediateEvent("Called wrongly", "Event1", "Gate1")

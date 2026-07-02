@@ -17,7 +17,7 @@
 
 $TopEvent("In-Memory configuration wrong", "Communication.InMemoryConfigurationWrong")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.InMemoryConfigurationWrong")
 $BasicEvent("User provided wrong configuration", "Communication.UserProvidedWrongConfiguration", "Gate1")
 $IntermediateEvent("JSON-Tree corrupt", "Event2", "Gate1")
 $OrGate("Gate2", "Event2")

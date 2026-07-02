@@ -17,7 +17,7 @@
 
 $TopEvent("Changes User-Data", "Communication.SendingEventChangesUserData")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.SendingEventChangesUserData")
 $IntermediateEvent("Send via Copy", "Event2", "Gate1")
 $BasicEvent("Direct access to data", "Communication.DirectAccessToData", "Event2")
 $IntermediateEvent("Send via AllocateePtr", "Event1", "Gate1")

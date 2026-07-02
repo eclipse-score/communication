@@ -71,6 +71,7 @@ def _generate_quality_links_impl(ctx):
             "``bazel run //quality/static_analysis:codeql_lint``"
         )
     content = (
+        ":orphan:\n\n" +
         ".. |coverage_report_link| replace:: " + coverage_ref + "\n" +
         ".. |quality_dashboard_link| replace:: " + dashboard_ref + "\n" +
         ".. |clang_tidy_report_link| replace:: " + clang_tidy_ref + "\n" +

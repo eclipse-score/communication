@@ -30,4 +30,10 @@ dependable_element(
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],
     visibility = ["//visibility:public"],
+    deps = [
+        "//third_party/score_baselibs:bitmanipulation",
+        "//third_party/score_baselibs:containers",
+        "//third_party/score_baselibs:futurecpp",
+        "//third_party/score_baselibs:os",
+    ],
 )
