@@ -97,3 +97,16 @@ cc_unit_test(
         "@score_baselibs//score/result",
     ],
 )
+
+cc_library(
+    name = "gateway_core_mock",
+    hdrs = ["gateway_core_mock.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+    ],
+    deps = [
+        ":gateway_core",
+        "@googletest//:gtest",
+    ],
+)
