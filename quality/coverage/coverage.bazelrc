@@ -27,7 +27,7 @@ coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferr
 # Use llvm-cov directly for HTML report generation instead of genhtml/lcov.
 # The custom merger (per-test) receives profraw files and produces a zip with profdata + HTML.
 # The custom reporter (final) merges all profdata and generates the combined HTML report.
-coverage --coverage_output_generator=//quality/coverage/llvm_cov:merger
+coverage --coverage_output_generator=@score_cpp_policies//coverage:merger
 coverage --coverage_report_generator=//quality/coverage/llvm_cov:reporter_wrapper
 coverage --experimental_fetch_all_coverage_outputs
 
