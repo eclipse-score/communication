@@ -600,7 +600,7 @@ bool Proxy::IsEventProvided(const std::string_view event_name) const noexcept
     return event_exists;
 }
 
-score::Result<void> Proxy::SetupMethods()
+score::Result<void> Proxy::SetupMethods(const std::size_t additional_shm_size_bytes)
 {
     auto enabled_method_data = GetMethodIdAndQueueSizeForEnabledMethods();
 
@@ -672,7 +672,7 @@ score::Result<void> Proxy::SetupMethods()
     }
 
     const auto type_erased_element_infos = GetTypeErasedElementInfoForEnabledMethods(enabled_method_data);
-    const auto required_shm_size = CalculateRequiredShmSize(type_erased_element_infos);
+    const auto required_shm_size = CalculateRequiredShmSize(type_erased_element_infos) + additional_shm_size_bytes;
 
     const auto skeleton_shm_permissions = GetSkeletonShmPermissions();
     method_shm_resource_ = memory::shared::SharedMemoryFactory::Create(

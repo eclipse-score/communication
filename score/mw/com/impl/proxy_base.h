@@ -146,7 +146,18 @@ class ProxyBase
         return is_proxy_binding_valid && are_service_element_bindings_valid_;
     }
 
-    Result<void> SetupMethods();
+    /// \brief Dispatches to the binding for any binding specific setup and then initializes all method InArgs and
+    /// Return values.
+    ///
+    /// The initialization of the InArgs and Return values is done on the binding independent level since the binding
+    /// level is type erased. The values are initialized once on startup and then reused (i.e. we never re-initialize
+    /// the values when calling a method).
+    ///
+    /// \param additional_shm_size_bytes Additional shared memory size in bytes to be allocated for methods in addition
+    /// to the size calculated for the size of the method in args and return values. This is a temporary workaround
+    /// added to allow using types which dynamically allocate memory once at runtime. This is not currently public and
+    /// should not be used by user applications. (SWP-269486)
+    Result<void> SetupMethods(std::size_t additional_shm_size_bytes);
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". We need these data elements to exchange this information between the ProxyBase and the

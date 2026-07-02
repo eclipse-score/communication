@@ -167,7 +167,16 @@ class Proxy : public ProxyBinding
     /// \return True if the event name exists, otherwise, false
     bool IsEventProvided(const std::string_view event_name) const noexcept override;
 
-    score::Result<void> SetupMethods() override;
+    /// \brief Sets up the shared memory for all the methods of the proxy, notifies the skeleton to open the shared
+    /// memory and perform any setup on skeleton side.
+    ///
+    /// After creating the shared memory, the proxy sends a blocking message which waits for a reply via message passing
+    /// to the skeleton. The skeleton will then open the shared memory and perform any setup on its side. The proxy will
+    /// then wait for an acknowledgement from the skeleton that it has completed its setup.
+    ///
+    /// \return result which contains an error if setup on the proxy or skeleton side failed or if the message passing
+    /// communication with the skeleton failed.
+    score::Result<void> SetupMethods(const std::size_t additional_shm_size_bytes = 0) override;
 
     QualityType GetQualityType() const noexcept;
 
@@ -191,6 +200,14 @@ class Proxy : public ProxyBinding
     /// \brief Clears event and method registration state and marks the proxy ready for destruction.
     /// \note Idempotent: calling it more than once is safe.
     void FinalizeDeinitialize() override;
+
+    memory::shared::ManagedMemoryResource& GetMethodMemoryResource() noexcept
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            method_shm_resource_ != nullptr,
+            "Proxy::GetControlMemoryResource: Methods managed memory resource pointer is null");
+        return *method_shm_resource_;
+    }
 
   private:
     static std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> current_proxy_instance_counter_;
