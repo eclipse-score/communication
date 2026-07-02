@@ -11,17 +11,17 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-// Why dynamic FFI bridge instead of static macros which is already available in macros.rs -->
+// Why dynamic FFI bridge instead of static macros based -->
 //
 // DESIGN DECISION:  FFI Bridge for Compile-time decoupling of COM-API and Lola
 //
-// Problem with macros.rs approach:
-// - macros.rs file provides static, compile-time bindings tightly coupled with specific runtime
+// Problem with static macro based approach:
+// - macros provides compile-time bindings tightly coupled with specific runtime
 //   implementations
 // - This violates COM-API design principle of being independent of any specific runtime
 // - We cannot invoke macros defined in runtime-specific crates (like Lola, Mock) from COM-API
 //   library which is runtime-agnostic
-// - macros.rs mixes two concerns: API abstraction (what to communicate)
+// - macros mixes two concerns: API abstraction (what to communicate)
 //   and runtime binding (how to communicate)
 //
 // Why this file exists:
@@ -56,10 +56,8 @@
 // - This enables type-safe communication without C++ needing to know Rust types at compile time
 //
 // Dependencies:
-// - It relies on proxy_bridge_rs crate for FatPtr and ProxyWrapperClass definitions
 // - FatPtr provides binary representation of dyn trait objects (data pointer + vtable pointer)
-// - ProxyWrapperClass and related types provide necessary abstractions for
-//   proxy and skeleton handling
+// - common_ffi.rs holds the service-discovery types (InstanceSpecifier, HandleContainer) and their extern "C" declarations
 //
 // StringView:
 // - StringView implementation is inspired by C++ std::string_view
@@ -69,20 +67,17 @@
 use core::fmt::{Debug, Formatter};
 use core::marker::Unpin;
 use std::ffi::c_char;
+use std::path::Path;
 use std::ptr::NonNull;
+
+pub mod common;
+pub use common::{
+    HandleContainer, HandleType, InstanceSpecifier, NativeHandleContainer, NativeInstanceSpecifier,
+};
 
 /// Opaque C++ void* pointer wrapper
 pub type CVoidPtr = *const std::ffi::c_void;
 pub type CMutVoidPtr = *mut std::ffi::c_void;
-
-pub use mw_com::proxy::FatPtr;
-pub use mw_com::proxy::HandleContainer;
-pub use mw_com::proxy::HandleType;
-pub use mw_com::proxy::NativeHandleContainer;
-pub use mw_com::proxy::NativeInstanceSpecifier;
-pub use mw_com::proxy::ProxyEventBase;
-pub use mw_com::proxy::ProxyWrapperClass;
-pub use mw_com::InstanceSpecifier;
 
 /// FFIBridge trait defines the interface for FFI interactions between Rust COM-API and C++ Lola runtime.
 /// This trait abstracts the FFI calls and allows for different implementations
@@ -279,6 +274,40 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
         interface_id: &str,
         member_name: &str,
     ) -> Option<TypeOperationsManager>;
+
+    /// Find all service instances matching `instance_specifier`.
+    ///
+    /// Returns `Err(())` when the search fails or yields no container.
+    fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()>;
+
+    /// Initialize the `mw::com` subsystem.
+    ///
+    /// Optionally accepts a path to the service-instance manifest. When omitted the
+    /// default location compiled into the middleware is used.
+    fn initialize(&self, manifest_location: Option<&Path>);
+}
+
+/// Fat pointer: binary representation of a Rust `dyn` trait object (vtable + data pointer).
+/// Passed across FFI boundaries to represent type-erased Rust closures.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct FatPtr {
+    vtable: *const (),
+    data: *mut (),
+}
+
+// SAFETY: FatPtr is a plain pair of pointers. Whether it is safe to send/share
+// across threads depends entirely on the closure it points to — callers take that
+// responsibility. We declare Send+Sync here so that types containing FatPtr can
+// implement those bounds where their closure types warrant it.
+unsafe impl Send for FatPtr {}
+unsafe impl Sync for FatPtr {}
+
+/// Opaque C++ type: `score::mw::com::impl::ProxyEventBase`.
+#[repr(C)]
+#[derive(Default)]
+pub struct ProxyEventBase {
+    _dummy: [u8; 0],
 }
 
 /// Opaque proxy base struct

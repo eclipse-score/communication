@@ -320,7 +320,7 @@ impl<B: FFIBridge> NativeSkeletonHandle<B> {
     pub fn new(
         bridge: &B,
         interface_id: &str,
-        instance_specifier: &mw_com::InstanceSpecifier,
+        instance_specifier: &bridge_ffi_rs::InstanceSpecifier,
     ) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
         let raw_handle =
@@ -486,7 +486,7 @@ impl<I: Interface, B: FFIBridge> Builder<I::Producer<LolaRuntimeImpl<B>>>
 {
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl<B>>> {
         //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
-        let instance_specifier_runtime = mw_com::InstanceSpecifier::try_from(
+        let instance_specifier_runtime = bridge_ffi_rs::InstanceSpecifier::try_from(
             self.instance_specifier.as_ref(),
         )
         .map_err(|_| Error::ProducerError(ProducerFailedReason::InstanceSpecifierInvalid))?;
@@ -533,7 +533,7 @@ mod test {
 
     // Creates a `NativeSkeletonHandle<SharedMockBridge>` .
     fn make_skeleton_handle(bridge: &SharedMockBridge) -> NativeSkeletonHandle<SharedMockBridge> {
-        let spec = mw_com::InstanceSpecifier::try_from("/test_instance")
+        let spec = bridge_ffi_rs::InstanceSpecifier::try_from("/test_instance")
             .expect("valid instance specifier");
         NativeSkeletonHandle::<SharedMockBridge>::new(&bridge, "", &spec)
             .expect("SharedMockBridge::create_skeleton should not fail")
@@ -660,7 +660,7 @@ mod test {
             });
 
         let bridge = SharedMockBridge::new(mock);
-        let spec = mw_com::InstanceSpecifier::try_from("/test_instance")
+        let spec = bridge_ffi_rs::InstanceSpecifier::try_from("/test_instance")
             .expect("valid instance specifier");
         let skeleton_handle =
             NativeSkeletonHandle::<SharedMockBridge>::new(&bridge, "TestData", &spec)
