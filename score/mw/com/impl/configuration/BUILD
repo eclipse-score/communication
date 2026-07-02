@@ -44,6 +44,20 @@ cc_library(
 
 # A common library for configuration validation and parsing. It shall be used by both strategies (JSON & Flatbuffers) parsers.
 cc_library(
+    name = "i_configuration_parsing_strategy",
+    srcs = ["i_configuration_parsing_strategy.cpp"],
+    hdrs = ["i_configuration_parsing_strategy.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/configuration:__subpackages__",
+    ],
+    deps = [
+        ":configuration_local",
+    ],
+)
+
+cc_library(
     name = "config_validate",
     srcs = ["config_validate.cpp"],
     hdrs = ["config_validate.h"],
