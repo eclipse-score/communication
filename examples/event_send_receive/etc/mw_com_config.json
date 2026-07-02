@@ -1,0 +1,66 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/sensor/SensorInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 7000,
+          "events": [
+            {
+              "eventName": "reading",
+              "eventId": 1
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "calibration_status",
+              "fieldId": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "/sensor/event_send_receive/SensorInterface",
+      "serviceTypeName": "/sensor/SensorInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedProvider": {
+            "QM": [0]
+          },
+          "allowedConsumer": {
+            "QM": [0]
+          },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "reading",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "calibration_status",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
