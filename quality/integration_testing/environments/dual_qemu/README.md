@@ -73,6 +73,16 @@ block:
   connects on `host_port` (for the future socket control plane).
 - Each VM's `ssh_port` and `port_forwarding` must use **distinct host ports**.
 
+## Cross-VM lib-memory example
+
+[`example_xvm/`](example_xvm/README.md) drives the `score::memory::shared` allocator (the
+one LoLa uses) across both VMs over the ivshmem BAR. The one BAR is split into two
+page-aligned lib-memory regions, so the exchange is **bidirectional**: the producer creates
+a forward region holding a `Vector` (the consumer opens it), and the consumer creates a
+separate reverse region holding a `Map` (the producer opens it) — each container's
+`OffsetPtr`s resolve despite each VM mapping the BAR at a different base. See
+[`example_xvm/README.md`](example_xvm/README.md) for the details.
+
 ## Debugging guest boot
 
 Set `DUAL_QEMU_SERIAL_DIR` to capture each VM's serial console to
@@ -84,4 +94,3 @@ bazel test //path/to/your:dual_qemu_test \
     --test_env=DUAL_QEMU_SERIAL_DIR=/tmp/dqdbg
 # then inspect /tmp/dqdbg/vm0_serial.log and /tmp/dqdbg/vm1_serial.log
 ```
-
