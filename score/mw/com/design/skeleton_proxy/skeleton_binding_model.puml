@@ -147,6 +147,9 @@ class "lola::Skeleton" as lola_Skeleton {
 
     template <typename SampleType>
     +Register(ElementFqId, size_t num_slots): std::pair<EventDataStorage<SampleType>*,EventDataControlComposite<>>
+    ..
+    <u>Notes:</u>
+    Register() returns pointers/composites that are wrapped into local views\n(ProviderEventDataControlLocalView / ConsumerEventDataControlLocalView)\nby SkeletonEventCommon::PrepareOfferCommon() to avoid OffsetPtr overhead at runtime.
 }
 
 class "lola::SkeletonEvent<SampleType>" as lola_SkeletonEvent {
@@ -156,6 +159,11 @@ class "lola::SkeletonEvent<SampleType>" as lola_SkeletonEvent {
     +Allocate(): SampleAllocateePtr<SampleType>
     +PrepareOffer(): score::Result<void>
     +PrepareStopOffer(): void
+    --
+    -skeleton_event_common_: SkeletonEventCommon<SampleType>
+    ..
+    <u>Notes:</u>
+    Delegates all offer/stop-offer and slot allocation logic to\nSkeletonEventCommon which creates and owns the provider/consumer\nlocal views into shared-memory EventDataControl.
 }
 
 class "score::memory::shared::SharedMemoryFactory()" as shmfactory {
