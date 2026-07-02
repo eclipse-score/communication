@@ -54,7 +54,7 @@ class EventSlotStatus final
     static constexpr EventTimeStamp TIMESTAMP_MAX = std::numeric_limits<EventTimeStamp>::max();
 
     /// \brief If default constructed, SlotStatus is invalid
-    EventSlotStatus() noexcept = default;
+    EventSlotStatus() noexcept : EventSlotStatus{INVALID_TIMESTAMP} {}
     explicit EventSlotStatus(const value_type init_val) noexcept;
     EventSlotStatus(const EventTimeStamp timestamp, const SubscriberCount refcount) noexcept;
     EventSlotStatus(const EventSlotStatus&) noexcept = default;
@@ -89,9 +89,14 @@ class EventSlotStatus final
     bool IsTimeStampBetween(const EventTimeStamp min_timestamp, const EventTimeStamp max_timestamp) const noexcept;
 
   private:
+    /// \brief Timestamp value indicating that a slot was never written.
+    static constexpr EventTimeStamp UNINITIALIZED_TIMESTAMP{0U};
+
     value_type data_;
 };
 
+static_assert(sizeof(EventSlotStatus) <= sizeof(std::uint64_t),
+              "EventSlotStatus must fit inside a std::atomic which is currently 64 bit.");
 }  // namespace score::mw::com::impl::lola
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_SLOT_STATUS_H
