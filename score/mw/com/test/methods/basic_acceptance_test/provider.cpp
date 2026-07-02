@@ -53,10 +53,11 @@ void run_provider(const score::cpp::stop_token& stop_token)
 
     // Step 2. Register method handler
     std::cout << "\nProvider: Step 2" << std::endl;
-    auto handler_with_in_args_and_return = [](std::int32_t a, std::int32_t b) -> std::int32_t {
-        std::cout << "Provider: with_in_args_and_return called with " << a << " + " << b << std::endl;
-        return a + b;
-    };
+    auto handler_with_in_args_and_return =
+        [](std::int32_t& return_value, const std::int32_t& a, const std::int32_t& b) {
+            std::cout << "Provider: with_in_args_and_return called with " << a << " + " << b << std::endl;
+            return_value = a + b;
+        };
     const auto register_result =
         skeleton.with_in_args_and_return.RegisterHandler(std::move(handler_with_in_args_and_return));
     if (!register_result)
