@@ -962,7 +962,18 @@ where
 
         // SAFETY: dyn_callback has the signature FnMut(HandleContainer, NativeFindServiceHandle)
         // which matches the find-service callback contract required by FindServiceCallable.
-        let callable = unsafe { FindServiceCallable::new(std::mem::transmute(dyn_callback)) };
+        let callable = unsafe {
+            FindServiceCallable::new(std::mem::transmute::<
+                Box<
+                    dyn FnMut(
+                            mw_com::proxy::HandleContainer,
+                            bridge_ffi_rs::NativeFindServiceHandle,
+                        ) + Send
+                        + 'static,
+                >,
+                bridge_ffi_rs::FatPtr,
+            >(dyn_callback))
+        };
 
         let bridge = self.bridge.clone();
         let find_service_result = instance_specifier_lola.and_then(|spec| {
@@ -1201,7 +1212,7 @@ pub fn create_sample_callback<'a, T: CommData + Debug, B: FFIBridge>(
                 inner: LolaBinding {
                     data: ManuallyDrop::new(sample_ptr),
                     bridge: bridge.clone(),
-                    type_ops: type_ops.clone(),
+                    type_ops: *type_ops,
                 },
             };
 

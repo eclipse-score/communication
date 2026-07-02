@@ -131,3 +131,6 @@ try-import %workspace%/.bazelrc.ai_checker
 
 # Enable user-defined configs
 try-import %workspace%/user.bazelrc
+
+# Import Clippy linting configuration for Rust
+import %workspace%/quality/static_analysis/clippy.bazelrc
