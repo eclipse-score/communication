@@ -101,6 +101,11 @@ class GatewayApplication : public GatewayCore
                                     bool has_subscribers);
     void ReRegisterActiveEventSubscriptions(const std::string& specifier_str);
 
+    // Test-only: grant unit-test fixtures access to private members and methods.
+    friend class GatewayApplicationSubscriptionTest;
+    friend class GatewayApplicationRegisterCallbackTest;
+    friend class GatewayApplicationFlowTest;
+
     // Intentionally putting the scope as the last member, so that it gets destroyed first and thus all callbacks get
     // invalidated before any other member gets destroyed.
     safecpp::Scope<> scope_;

@@ -223,26 +223,30 @@ void GatewayApplication::RegisterEventReceiveHandlerCallback(impl::GenericSkelet
                                                              const std::string& specifier_str,
                                                              const std::string& event_name)
 {
-    // TODO: GenericSkeletonEvent::SetReceiveHandlerNotificationCallback is not yet available in the OSS impl.
-    // Once available, remove the (void) suppressions below and uncomment the implementation block.
-    (void)skeleton;
-    (void)specifier_str;
-    (void)event_name;
+    using NotificationCallback = safecpp::MoveOnlyScopedFunction<void(bool)>;
+    auto scoped_callback = std::make_shared<NotificationCallback>(
+        scope_, [this, specifier = specifier_str, event = event_name](bool has_subscribers) {
+            OnSubscriptionStateChanged(specifier, event, has_subscribers);
+        });
 
-    // using NotificationCallback = safecpp::MoveOnlyScopedFunction<void(bool)>;
-    // auto scoped_callback = std::make_shared<NotificationCallback>(
-    //     scope_, [this, specifier = specifier_str, event = event_name](bool has_subscribers) {
-    //         OnSubscriptionStateChanged(specifier, event, has_subscribers);
-    //     });
-    //
-    // auto result = skeleton.SetReceiveHandlerNotificationCallback(
-    //     event_name, [scoped_callback](bool has_subscribers) { (*scoped_callback)(has_subscribers); });
-    //
-    // if (!result.has_value())
-    // {
-    //     score::mw::log::LogError() << "GatewayApplication: Failed to set subscription callback for "
-    //                                << event_name << " of " << specifier_str;
-    // }
+    auto event_map = skeleton.GetEvents();
+    auto event_it = event_map.find(event_name);
+    if (event_it == event_map.cend())
+    {
+        score::mw::log::LogError() << "GatewayApplication: Event " << event_name << " not found in skeleton for "
+                                   << specifier_str;
+        return;
+    }
+
+    auto result = event_it->second.SetReceiveHandlerRegistrationChangedHandler([scoped_callback](bool has_subscribers) {
+        (*scoped_callback)(has_subscribers);
+    });
+
+    if (!result.has_value())
+    {
+        score::mw::log::LogError() << "GatewayApplication: Failed to set subscription callback for " << event_name
+                                   << " of " << specifier_str;
+    }
 }
 
 void GatewayApplication::OnSubscriptionStateChanged(const std::string& specifier_str,

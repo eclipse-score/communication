@@ -224,6 +224,9 @@ cc_library(
     hdrs = ["lola_service_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+    ],
     deps = [
         ":configuration_common_resources",
         ":lola_event_instance_deployment",
