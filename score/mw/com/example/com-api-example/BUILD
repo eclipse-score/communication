@@ -11,28 +11,49 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
-rust_binary(
-    name = "com-api-example",
-    srcs = ["basic-consumer-producer.rs"],
-    data = ["etc/mw_com_config.json"],
+rust_library(
+    name = "com-api-example-lib",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "com_api_example",
+    edition = "2024",
     features = ["link_std_cpp_lib"],
     visibility = ["//visibility:public"],
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",
         "//score/mw/com/impl/rust/com-api/com-api",
         "@score_communication_crate_index//:clap",
+        "@score_communication_crate_index//:futures",
+    ],
+)
+
+rust_binary(
+    name = "com-api-example",
+    srcs = ["main.rs"],
+    data = ["etc/mw_com_config.json"],
+    edition = "2024",
+    features = ["link_std_cpp_lib"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":com-api-example-lib",
+        "//score/mw/com/example/com-api-example/com-api-gen",
+        "//score/mw/com/impl/rust/com-api/com-api",
+        "@score_communication_crate_index//:clap",
+        "@score_communication_crate_index//:futures",
     ],
 )
 
 rust_test(
-    name = "com-api-example-test",
-    crate = ":com-api-example",
+    name = "com-api-example-tokio-integration-test",
+    srcs = ["tests_using_tokio_runtime.rs"],
     data = ["etc/mw_com_config.json"],
+    edition = "2024",
+    features = ["link_std_cpp_lib"],
     tags = ["manual"],
     deps = [
-        ":com-api-example",
+        "//score/mw/com/example/com-api-example/com-api-gen",
+        "//score/mw/com/impl/rust/com-api/com-api",
         "@score_communication_crate_index//:futures",
         "@score_communication_crate_index//:tokio",
     ],
