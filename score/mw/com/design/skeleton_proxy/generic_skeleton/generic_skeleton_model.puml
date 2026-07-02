@@ -32,15 +32,18 @@ abstract class "SkeletonBinding" {
 
 class "mw::com::impl::GenericSkeleton" #yellow {
   using EventMapView = ServiceElementMapView<GenericSkeletonEvent>
+  using FieldMapView = ServiceElementMapView<GenericSkeletonField>
   ..
   +Create(const InstanceIdentifier&, const GenericSkeletonServiceElementInfo&): Result<GenericSkeleton>
   +Create(const InstanceSpecifier&, const GenericSkeletonServiceElementInfo&): Result<GenericSkeleton>
   +GetEvents() : EventMapView
+  +GetFields(): FieldMapView
   +OfferService(): Result<void>
   +StopOfferService(): void
   ..
   -GenericSkeleton(const InstanceIdentifier&, std::unique_ptr<SkeletonBinding>)
   -events_ : std::unique_ptr<ServiceElementMapViewFactory<GenericSkeletonEvent>::map_type> events_
+  -fields_ : std::unique_ptr<ServiceElementMapViewFactory<GenericSkeletonField>::map_type>
 }
 
 class "lola::Skeleton" {
@@ -110,14 +113,42 @@ class "ServiceElementMapView<ElementType>" {
   +empty() : bool
 }
 
+abstract class "score::mw::com::impl::SkeletonFieldBase" {
+  #skeleton_event_dispatch_ : std::unique_ptr<impl::SkeletonEventBase>
+  +PrepareOffer(): Result<void>
+  +UpdateSkeletonReference(skeleton_base: SkeletonBase&): void
+  -{abstract} IsInitialValueSaved(): bool
+  -{abstract} DoDeferredUpdate(): Result<void>
+  -{abstract} IsSetHandlerMissing(): bool
+}
+
+class "mw::com::impl::GenericSkeletonField" #LightGreen {
+  -initial_field_value_ : std::vector<uint8_t>
+  -has_initial_value_ : bool
+  -has_getter_ : bool
+  -has_setter_ : bool
+  -has_notifier_ : bool
+  -is_set_handler_registered_ : bool
+  .. Notifier API ..
+  +Update(raw_value: span<const uint8_t>): Result<void>
+  +Update(SampleAllocateePtr<void> sample): Result<void>
+  +Allocate(): Result<SampleAllocateePtr<void>>
+  +UpdateSkeletonReference(skeleton_base: SkeletonBase&): void
+  .. Method Handlers (Stubs) ..
+  +RegisterGetHandler(std::function<std::vector<uint8_t>()> handler): Result<void>
+  +RegisterSetHandler(std::function<std::vector<uint8_t>(span<const uint8_t>)> handler): Result<void>
+}
+
 abstract class "mw::com::impl::SkeletonEventBase" #yellow {
   +SkeletonEventBase(SkeletonBase&, const std::string_view, std::unique_ptr<SkeletonEventBindingBase>)
   +OfferService(): Result<void>
   +StopOfferService(): void
+  +UpdateSkeletonReference(skeleton_base: SkeletonBase&): void
 }
 
 class "mw::com::impl::GenericSkeletonEvent" #yellow {
   +GenericSkeletonEvent(SkeletonBase&, const std::string_view, std::unique_ptr<GenericSkeletonEventBinding>)
+  +GenericSkeletonEvent(SkeletonBase&, const std::string_view, std::unique_ptr<GenericSkeletonEventBinding>, FieldOnlyConstructorEnabler)
   +Send(SampleAllocateePtr<void> sample): Result<void>
   +Allocate(): Result<SampleAllocateePtr<void>>
   +GetSizeInfo() const : DataTypeMetaInfo
@@ -175,6 +206,9 @@ class "DummySkeleton" <<generated>>  {
 "score::mw::com::impl::SkeletonBase" *--> "SkeletonBinding"
 "score::mw::com::impl::SkeletonBase" <|-- "DummySkeleton"
 "score::mw::com::impl::SkeletonBase" <|-- "mw::com::impl::GenericSkeleton"
+"mw::com::impl::GenericSkeleton" *-- "ServiceElementMapView"
+"score::mw::com::impl::SkeletonFieldBase" <|-- "mw::com::impl::GenericSkeletonField"
+"SkeletonFieldBase" "1" *-- "1" "mw::com::impl::SkeletonEventBase" : skeleton_event_dispatch_
 "SkeletonBindingFactory" ..> "SkeletonBinding" : creates
 "SkeletonBinding" <|-- "lola::Skeleton"
 
@@ -200,5 +234,6 @@ class "DummySkeleton" <<generated>>  {
 "mw::com::impl::GenericSkeleton" ..> "ServiceElementMapViewFactory<ElementType>" : uses
 "ServiceElementMapViewFactory<ElementType>" ..> "ServiceElementMapView<ElementType>" : creates
 "ServiceElementMapView<ElementType>" o-- "mw::com::impl::GenericSkeletonEvent" : "0..n"
+"mw::com::impl::GenericSkeleton" *--> "mw::com::impl::GenericSkeletonField" : "0..n"
 
 @enduml
