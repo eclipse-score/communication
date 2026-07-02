@@ -1,0 +1,130 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+' Unit design (static view) for the QNX Dispatch dispatch/transport unit.
+' Derived from the existing message-passing design in score/mw/com/design,
+' mapped onto the new score::message_passing units. The old mw::com roles are
+' shown as <<role: ...>> stereotypes to keep the design traceable.
+
+@startuml qnx_dispatch_class_diagram
+
+namespace score::message_passing {
+
+    interface IClientFactory <<role: SenderFactory>> {
+        + Create(protocol_config, client_config) : IClientConnection
+    }
+
+    ' Old: mw::com::message_passing::ReceiverFactory
+    interface IServerFactory <<role: ReceiverFactory>> {
+        + Create(protocol_config, server_config) : IServer
+    }
+
+    ' Old: mw::com::message_passing::IReceiver (StartListening + Register handlers).
+    interface IServer <<role: IReceiver>> {
+        + StartListening(ConnectCallback, DisconnectCallback, sent : MessageCallback, sentWithReply : MessageCallback) : expected<Error>
+        + StopListening() : void
+    }
+
+    ' Old: the server-side message dispatch performed inside MessagePassingFacade.
+    interface IServerConnection <<role: server message dispatch>> {
+        + GetClientIdentity() : ClientIdentity
+        + GetUserData() : UserData
+        + Reply(message) : expected<Error>
+        + Notify(message) : expected<Error>
+        + RequestDisconnect() : void
+    }
+
+    ' Old: the user-provided handlers the facade dispatched to.
+    interface IConnectionHandler <<user provided>> {
+        + OnMessageSent(connection, message) : expected<Error>
+        + OnMessageSentWithReply(connection, message) : expected<Error>
+        + OnDisconnect(connection) : void
+    }
+
+    interface ISharedResourceEngine <<role: MessagePassingControl>> {
+        + TryOpenClientConnection(identifier) : fd
+        + SendProtocolMessage(fd, code, message) : expected<Error>
+        + ReceiveProtocolMessage(fd, code) : message
+        + RegisterPosixEndpoint(endpoint) : void
+    }
+
+    ' Old: the OS-specific ISender/IReceiver implementation ("OS specific IPC,
+    ' QNX pulse"). Realized here by native QNX messaging via a resource manager
+    ' and a single shared dispatch loop (ASIL-qualified transport).
+    class QnxDispatchEngine <<transport: native QNX messaging>> {
+        + GetOsResources() : OsResources&
+    }
+
+    ' Resource-manager base classes hosted by the engine and reused by the
+    ' server and its connections (native QNX dispatch framework).
+    class ResourceManagerServer <<resmgr base>> {
+        + Start(path) : expected<Error>
+        + Stop() : void
+    }
+
+    class ResourceManagerConnection <<resmgr base>> {
+        + GetServer() : ResourceManagerServer&
+    }
+
+    class QnxDispatchClientFactory <<role: SenderFactory>> {
+        + Create(protocol_config, client_config) : IClientConnection
+        + GetEngine() : QnxDispatchEngine
+    }
+
+    class QnxDispatchServerFactory <<role: ReceiverFactory>> {
+        + Create(protocol_config, server_config) : IServer
+        + GetEngine() : QnxDispatchEngine
+    }
+
+}
+
+namespace score::message_passing::detail {
+
+    class QnxDispatchServer <<unit>> {
+        + StartListening(ConnectCallback, DisconnectCallback, sent, sentWithReply) : expected<Error>
+        + StopListening() : void
+    }
+
+    ' Nested class of QnxDispatchServer; one endpoint per accepted client;
+    ' dispatches incoming messages to the server callbacks or to the user
+    ' IConnectionHandler.
+    class ServerConnection <<nested in QnxDispatchServer>> {
+        + GetClientIdentity() : ClientIdentity
+        + GetUserData() : UserData
+        + Reply(message) : expected<Error>
+        + Notify(message) : expected<Error>
+        + RequestDisconnect() : void
+    }
+
+}
+
+QnxDispatchEngine ..|> ISharedResourceEngine
+QnxDispatchClientFactory ..|> IClientFactory
+QnxDispatchServerFactory ..|> IServerFactory
+QnxDispatchServer ..|> IServer
+QnxDispatchServer --|> ResourceManagerServer
+ServerConnection ..|> IServerConnection
+ServerConnection --|> ResourceManagerConnection
+
+QnxDispatchClientFactory o--> QnxDispatchEngine : shared transport
+QnxDispatchServerFactory o--> QnxDispatchEngine : shared transport
+QnxDispatchEngine ..> ResourceManagerServer : hosts
+QnxDispatchEngine ..> ResourceManagerConnection : hosts
+ResourceManagerConnection --> ResourceManagerServer : belongs to
+QnxDispatchServerFactory ..> QnxDispatchServer : creates
+QnxDispatchServer *--> ServerConnection : owns per client
+ServerConnection ..> IConnectionHandler : dispatches to
+
+note "Blend of mw/com: old ReceiverFactory/IReceiver + OS-specific ISender (QNX pulse) become a native QNX messaging engine shared by both factories; the facade message dispatch becomes ServerConnection + IConnectionHandler." as N1
+
+@enduml
