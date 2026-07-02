@@ -14,14 +14,14 @@ package MessagePassing
 
 import ScoreReq
 
-// TODO: Add Assumptions of Use (AoU) for message passing
-// Example:
-
 ScoreReq.AoU ExampleAoU {
-    description = "Example assumption description"
+    description = "It shall be ensured that each process which contains a message passing sender has a unique user-id."
     safety = ScoreReq.Asil.B
-    note = "Example note"
+    note = "The message passing server shall be able to distinguish the clients based on their UIDs"
     version = 1
-    mitigates = "FailureModeName"
+    mitigates = "tbd"
 }
+
+
+
 
