@@ -42,7 +42,7 @@ class ServiceDiscovery final : public IServiceDiscovery
     ServiceDiscovery& operator=(const ServiceDiscovery&) noexcept = delete;
     ServiceDiscovery(ServiceDiscovery&&) noexcept = delete;
     ServiceDiscovery& operator=(ServiceDiscovery&&) noexcept = delete;
-    ~ServiceDiscovery() override;
+    ~ServiceDiscovery() noexcept override;
 
     [[nodiscard]] Result<void> OfferService(InstanceIdentifier) noexcept override;
     [[nodiscard]] Result<void> StopOfferService(InstanceIdentifier) noexcept override;
