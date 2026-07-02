@@ -1,0 +1,7 @@
+{
+  "appId": "MSDM",
+  "appDesc": "semi_dynamic_methods",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}

@@ -85,7 +85,7 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     ProxyMethod(ProxyMethod&&) noexcept = default;
     ProxyMethod& operator=(ProxyMethod&&) noexcept = default;
 
-    Result<void> InitializeInArgsAndReturnValues() override
+    Result<void> InitializeInArgsAndReturnValues(ProxyBinding&) override
     {
         return {};
     }

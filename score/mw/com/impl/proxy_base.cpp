@@ -101,9 +101,9 @@ score::Result<void> ProxyBase::StopFindService(const FindServiceHandle handle) n
     return stop_find_service_result;
 }
 
-Result<void> ProxyBase::SetupMethods()
+Result<void> ProxyBase::SetupMethods(const std::size_t additional_shm_size_bytes)
 {
-    const auto result = proxy_binding_->SetupMethods();
+    const auto result = proxy_binding_->SetupMethods(additional_shm_size_bytes);
     if (!result.has_value())
     {
         return MakeUnexpected<void>(result.error());
@@ -112,7 +112,7 @@ Result<void> ProxyBase::SetupMethods()
     for (auto& method_key_value_pair : methods_)
     {
         auto& method = method_key_value_pair.second.get().Get();
-        const auto method_init_result = method.InitializeInArgsAndReturnValues();
+        const auto method_init_result = method.InitializeInArgsAndReturnValues(*proxy_binding_);
         if (!method_init_result.has_value())
         {
             return MakeUnexpected<void>(method_init_result.error());
