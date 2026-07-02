@@ -145,8 +145,7 @@ template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
                                    const std::string_view event_name,
                                    std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding)
-    : ProxyEventBase{event_name, ProxyBaseView{base}.GetBinding(), std::move(proxy_event_binding)},
-      proxy_event_mock_{nullptr}
+    : ProxyEventBase{event_name, std::move(proxy_event_binding)}, proxy_event_mock_{nullptr}
 {
     ProxyBaseView proxy_base_view{base};
     if (!binding_base_)

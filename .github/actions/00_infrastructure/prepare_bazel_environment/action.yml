@@ -1,0 +1,79 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Bazel Job"
+description: >
+  Sets up the runner for Bazel builds: environment variables, disk space,
+  cache restore, and sandbox. Cache save runs automatically at job end
+  via a post hook (even on failure/cancellation).
+
+  Place your bazel commands as normal 'run:' steps after this action.
+
+inputs:
+  disk-cache:
+    description: >
+      Name of the Bazel disk cache. Leave empty to skip disk caching
+      (e.g. for CodeQL where cached results are undesirable).
+    required: false
+    default: ""
+  cache-mode:
+    description: >
+      Cache mode override. If empty (default), auto-computed from event context:
+      PR/merge_group → read-only, push to main → update-disk, otherwise → disabled.
+      Explicit values: recreate, recreate-update, read-only, update-disk, disabled.
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set environment and compute cache mode
+      shell: bash
+      run: |
+        echo "ANDROID_HOME=" >> "$GITHUB_ENV"
+        echo "ANDROID_SDK_ROOT=" >> "$GITHUB_ENV"
+        echo "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true" >> "$GITHUB_ENV"
+
+        if [[ -n "${{ inputs.cache-mode }}" ]]; then
+          MODE="${{ inputs.cache-mode }}"
+        elif [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "pull_request_target" || "${{ github.event_name }}" == "merge_group" ]]; then
+          MODE="read-only"
+        elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+          MODE="update-disk"
+        else
+          MODE="disabled"
+        fi
+        echo "CACHE_MODE=${MODE}" >> "$GITHUB_ENV"
+        echo "Cache mode: ${MODE}"
+
+    - name: Install Bazelisk
+      uses: bazel-contrib/setup-bazel@0.14.0
+      with:
+        bazelisk-cache: true
+        disk-cache: false
+        repository-cache: false
+
+    - name: Register post cache save hook and restore caches
+      uses: ./.github/actions/00_infrastructure/setup_bazel_cache
+      with:
+        cache-mode: ${{ env.CACHE_MODE }}
+        disk-cache-name: ${{ inputs.disk-cache }}
+        github-token: ${{ github.token }}
+
+    - name: Free Disk Space (Ubuntu)
+      uses: eclipse-score/more-disk-space@v1
+      with:
+        level: 4
+
+    - name: Allow linux-sandbox
+      uses: eclipse-score/cicd-actions/unblock-user-namespace-for-linux-sandbox@f89865691445b60e9229c36adb1c37b675e1ca85

@@ -20,9 +20,7 @@ namespace score::mw::com::impl
 {
 
 GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const std::string_view event_name)
-    : ProxyEventBase{event_name,
-                     ProxyBaseView{base}.GetBinding(),
-                     GenericProxyEventBindingFactory::Create(base, event_name, ServiceElementType::EVENT)}
+    : ProxyEventBase{event_name, GenericProxyEventBindingFactory::Create(base, event_name, ServiceElementType::EVENT)}
 {
     ProxyBaseView proxy_base_view{base};
     if (!binding_base_)
@@ -35,7 +33,7 @@ GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const std::string_view eve
 GenericProxyEvent::GenericProxyEvent(ProxyBase& base,
                                      const std::string_view event_name,
                                      std::unique_ptr<GenericProxyEventBinding> proxy_binding)
-    : ProxyEventBase{event_name, ProxyBaseView{base}.GetBinding(), std::move(proxy_binding)}
+    : ProxyEventBase{event_name, std::move(proxy_binding)}
 {
     ProxyBaseView proxy_base_view{base};
     if (!binding_base_)

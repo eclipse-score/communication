@@ -38,24 +38,20 @@ class "lola::TransactionLogSet::TransactionLogNode" {
   -transaction_log_id_: std::atomic<TransactionLogId>
 }
 
-class "lola::EventDataControl" <<SharedMemory>> {
-  -SlotIndexType uint16_t
-  -state_slots: std::vector<std::atomic<EventSlotStatusType::value_type>, PolymorphicOffsetAllocator<std::atomic<EventSlotStatusType::value_type> > >
-  -<b>transaction_log_set_ : TransactionLogSet</b>
-  +EventDataControl(MemoryResourceProxy*, SlotIndexType maxSlots)
-  +AllocateNextSlot(): std::optional<SlotIndexType>
-  +EventReady(SlotIndexType, EventTimestamp): void
-  +Discard(SlotIndexType): void
-  +ReferenceNextEvent(lastSearchTime : EventTimestampType, upper_limit : const EventSlotStatus::EventTimeStamp = EventSlotStatus::TIMESTAMP_MAX): std::optional<SlotIndexType>
-  +DereferenceEvent(SlotIndexType eventSlotIndex): void
-  +GetNumNewEvents(reference_time : const EventSlotStatus::EventTimeStamp) const : std::size_t
-  +<b>GetTransactionLogSet() : TransactionLogSet&</b>
+class "lola::EventControl" <<SharedMemory>> {
+  +data_control : EventDataControl
+  +subscription_control : EventSubscriptionControl
+  +transaction_log_set_ : TransactionLogSet
   ..
   <u>Notes:</u>
-  Exists at least once per provided Event.
-  For an ASIL-B provider/skeleton, which has ASIL-B AND ASIL-QM consumer/subscriber,
-  it exists twice: One Control section per ASIL-level in seperated shm-objects.
-  Readable/Writable by Skeleton and Proxies
+  Composite shared-memory object per provided Event.\n  Groups EventDataControl (slot state), EventSubscriptionControl,\n  and TransactionLogSet together in shared memory.
+}
+
+class "lola::EventDataControl" <<SharedMemory>> {
+  -state_slots_ : DynamicArray<std::atomic<EventSlotStatusType::value_type>>
+  ..
+  <u>Notes:</u>
+  Pure data class. All behaviour (AllocateNextSlot, EventReady,\n  Discard, ReferenceNextEvent, DereferenceEvent, GetNumNewEvents)\n  has been moved to ProviderEventDataControlLocalView /\n  ConsumerEventDataControlLocalView (local views, no OffsetPtr on hot path).
 }
 
 class "lola::TransactionLogID" {
@@ -82,7 +78,8 @@ note right of "lola::TransactionLog"
   acts like a provider/skeleton side proxy.
 end note
 
-"lola::EventDataControl" *-- "lola::TransactionLogSet"
+"lola::EventControl" *-- "lola::EventDataControl"
+"lola::EventControl" *-- "lola::TransactionLogSet"
 "lola::TransactionLogSet" *-- "lola::TransactionLog" : proxy_transaction_logs_\n0..n
 "lola::TransactionLogSet" *-- "lola::TransactionLog" : skeleton_tracing_transaction_log_\n0..1
 "lola::TransactionLog" *-- "lola::TransactionLogSlot" : 1..n

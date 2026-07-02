@@ -223,34 +223,23 @@ independent level.
 
 #### Binding level Registration of proxy events/fields at their parent proxy
 
-On the binding **specific** level things look different!
-I.e. the binding specific proxy needs to interact with its dependent/child proxy events of type `ProxyEventBindingBase`
+On the binding **specific** level things look similar:
+the binding specific proxy needs to interact with its dependent/child proxy events of type `ProxyEventBindingBase`
 (at least the `LoLa`/shared-memory specific does, so we introduced it on the `ProxyBinding` interface level) .
 
-Therefore, `impl::ProxyBinding` has a method `RegisterEventBinding` (and `UnregisterEventBinding`) and our `LoLa`
-binding specific proxy `lola::Proxy`, which implements `impl::ProxyBinding`, has a member `event_bindings_` (a map
-containing its child proxy events), which it populates in its implementation of `RegisterEventBinding` with its
-dependent proxy events.
-
-The call to `RegisterEventBinding` happens during creation of a binding independent `impl::ProxyEvent` via an `RAII`
-style member `event_binding_registration_guard_` of type `EventBindingRegistrationGuard`, which the `impl::ProxyEvent`
-owns.
-This `EventBindingRegistrationGuard` takes over two functionalities:
-
-- setting `ProxyBase::are_service_element_bindings_valid_` member of its parent ProxyBase instance (see previous chapter)
-- calling `RegisterEventBinding` on the underlying `ProxyBinding` of the given `ProxyBase` on construction of the
-  `EventBindingRegistrationGuard` and calling `UnregisterEventBinding` on destruction. Since
-  `event_binding_registration_guard_` is owned by the `impl::ProxyEvent`, the registration / unregistration is done on
-  construction / destruction of an `impl::ProxyEvent`.
+Therefore, when each `lola::ProxyEvent` gets created (as a member of the generated proxy class), it registers itself 
+at its parent `lola::Proxy` via `lola::Proxy::RegisterEvent()`. The `lola::Proxy` stores the reference to each 
+child `lola::ProxyEvent`s in a map which it can later use.
 
 So **after** construction of user facing generated proxy class instance (`DummyProxy`), we have the following structure
 in place:
 
 1. Only an instance of the generated proxy class gets returned from the call to `<DummyProxy>::Create()` in case its
    binding on proxy level (its `pImpl` target) implementing `ProxyBinding` could be constructed and also for **all** its
-   aggregated events/fields their related `ProxyEventBinding`s (`pImpl` targets) could be constructed.
+   aggregated events/fields their related `ProxyEventBinding`s (`pImpl` targets) could be constructed. If this is not 
+   the case, then an error will be returned from `<DummyProxy>::Create()`.
 2. The `ProxyBinding` (`ProxyBase::proxy_binding_`) has complete access to all its child events/fields as
-   `ProxyBinding::RegisterEventBinding` has been called for all contained events/fields.
+   `lola::Proxy::RegisterEvent()` has been called for all contained events/fields.
 
 
 #### Extract type agnostic code

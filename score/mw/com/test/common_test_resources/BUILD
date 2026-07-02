@@ -288,6 +288,33 @@ cc_library(
 )
 
 cc_library(
+    name = "proxy_event_state_change_notifier",
+    srcs = ["proxy_event_state_change_notifier.cpp"],
+    hdrs = ["proxy_event_state_change_notifier.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/test:__subpackages__"],
+    deps = [
+        ":fail_test",
+        "//score/mw/com:types",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "proxy_event_receiver",
+    srcs = ["proxy_event_receiver.cpp"],
+    hdrs = ["proxy_event_receiver.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/test:__subpackages__"],
+    deps = [
+        ":fail_test",
+        "//score/mw/com:types",
+        "@score_baselibs//score/concurrency",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "generic_trace_api_test_resources",
     srcs = ["generic_trace_api_test_resources.cpp"],
     hdrs = ["generic_trace_api_test_resources.h"],

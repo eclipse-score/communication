@@ -205,51 +205,6 @@ TYPED_TEST(ProxyEventBaseCreationFixture, CreatingServiceElementWithInvalidProxy
     EXPECT_FALSE(dummy_proxy.AreBindingsValid());
 }
 
-TYPED_TEST(ProxyEventBaseCreationFixture,
-           CreatingServiceElementWithValidProxyEventBindingWillRegisterAndUnregisterEventBinding)
-{
-    auto valid_proxy_binding = std::make_unique<mock_binding::Proxy>();
-    auto valid_proxy_event_binding =
-        std::make_unique<typename ProxyEventBaseCreationFixture<TypeParam>::MockServiceElementType>();
-
-    auto* const mock_proxy_binding = valid_proxy_binding.get();
-    ProxyEventBindingBase* const mock_proxy_event_binding = valid_proxy_event_binding.get();
-
-    // Expecting that the ProxyEvent will register and unregister itself with the parent Proxy
-    EXPECT_CALL(*mock_proxy_binding, RegisterEventBinding(kEventName, Ref(*mock_proxy_event_binding)));
-    EXPECT_CALL(*mock_proxy_binding, UnregisterEventBinding(kEventName));
-
-    // Given a proxy with a valid binding
-    DummyProxy dummy_proxy(std::move(valid_proxy_binding),
-                           make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
-
-    // When creating a ProxyEvent with a valid binding
-    auto service_element = std::make_unique<typename ProxyEventBaseCreationFixture<TypeParam>::ServiceElementType>(
-        dummy_proxy, kEventName, std::move(valid_proxy_event_binding));
-}
-
-TYPED_TEST(ProxyEventBaseCreationFixture,
-           CreatingServiceElementWithInvalidProxyEventBindingWillNotRegisterOrUnregisterEventBinding)
-{
-    auto valid_proxy_binding = std::make_unique<mock_binding::Proxy>();
-
-    auto* const mock_proxy_binding = valid_proxy_binding.get();
-
-    // Expecting that the ProxyEvent will not register itself with the parent Proxy
-    EXPECT_CALL(*mock_proxy_binding, RegisterEventBinding(_, _)).Times(0);
-    EXPECT_CALL(*mock_proxy_binding, UnregisterEventBinding(_)).Times(0);
-
-    // Given a proxy with a valid binding
-    DummyProxy dummy_proxy(std::move(valid_proxy_binding),
-                           make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
-
-    // When creating a ProxyEvent with an invalid binding
-    auto service_element = std::make_unique<typename ProxyEventBaseCreationFixture<TypeParam>::ServiceElementType>(
-        dummy_proxy,
-        kEventName,
-        std::unique_ptr<typename ProxyEventBaseCreationFixture<TypeParam>::MockServiceElementType>(nullptr));
-}
-
 TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscribedCallsUnsubscribeOnBinding)
 {
     this->RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-14137271, SCR-21286218");
@@ -1070,8 +1025,7 @@ TEST(ProxyEventBaseTest, MoveConstructingProxyEventDoesNotCrash)
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
 
     // Given a Service Element, that is connected to a mock binding
-    mock_binding::Proxy proxy_binding{};
-    ProxyEventBase dummy_event{kEventName, &proxy_binding, std::move(mock_proxy_event_binding_ptr)};
+    ProxyEventBase dummy_event{kEventName, std::move(mock_proxy_event_binding_ptr)};
 
     // And a new Service Element is created with the move constructor
     ProxyEventBase dummy_event_2{std::move(dummy_event)};
@@ -1093,13 +1047,10 @@ TEST(ProxyEventBaseTest, MoveAssigningProxyEventDoesNotCrash)
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
 
     // Given a Service Element, that is connected to a mock binding
-    mock_binding::Proxy proxy_binding{};
-    ProxyEventBase dummy_event{kEventName, &proxy_binding, std::move(mock_proxy_event_binding_ptr)};
+    ProxyEventBase dummy_event{kEventName, std::move(mock_proxy_event_binding_ptr)};
 
     // And a new Service Element is created and move assigned
-    mock_binding::Proxy proxy_binding2{};
-    ProxyEventBase dummy_event_2{
-        kEventName2, &proxy_binding2, std::make_unique<StrictMock<mock_binding::ProxyEventBase>>()};
+    ProxyEventBase dummy_event_2{kEventName2, std::make_unique<StrictMock<mock_binding::ProxyEventBase>>()};
     dummy_event_2 = std::move(dummy_event);
 
     // Expect that Subscribe is called on the binding only once
@@ -1119,8 +1070,7 @@ TEST(ProxyEventBaseTest, SetSubscriptionStateChangeHandlerWorks)
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
 
     // Given a Service Element, that is connected to a mock binding
-    mock_binding::Proxy proxy_binding{};
-    ProxyEventBase dummy_event{kEventName, &proxy_binding, std::move(mock_proxy_event_binding_ptr)};
+    ProxyEventBase dummy_event{kEventName, std::move(mock_proxy_event_binding_ptr)};
 
     // Expect that SetSubscriptionStateChangeHandler is called
     EXPECT_CALL(mock_proxy_event_binding, SetSubscriptionStateChangeHandler).WillOnce(Return(score::Result<void>{}));
@@ -1138,8 +1088,7 @@ TEST(ProxyEventBaseTest, UnsetSubscriptionStateChangeHandlerWorks)
     auto& mock_proxy_event_binding = *mock_proxy_event_binding_ptr;
 
     // Given a Service Element, that is connected to a mock binding
-    mock_binding::Proxy proxy_binding{};
-    ProxyEventBase dummy_event{kEventName, &proxy_binding, std::move(mock_proxy_event_binding_ptr)};
+    ProxyEventBase dummy_event{kEventName, std::move(mock_proxy_event_binding_ptr)};
 
     // Expect that UnsetSubscriptionStateChangeHandler is called
     EXPECT_CALL(mock_proxy_event_binding, UnsetSubscriptionStateChangeHandler).WillOnce(Return(score::Result<void>{}));

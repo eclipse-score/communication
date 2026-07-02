@@ -430,14 +430,14 @@ TEST_F(ProxyAutoReconnectFixture, WhenStopFindServiceReturnsErrorOnProxyDestruct
     // Then the program does not terminate
 }
 
-TEST_F(ProxyAutoReconnectFixture, RegisterEventBindingCallsNotifyOnEventWithFalseWhenProviderInitiallyDoesNotExist)
+TEST_F(ProxyAutoReconnectFixture, RegisterEventCallsNotifyOnEventWithFalseWhenProviderInitiallyDoesNotExist)
 {
     const auto valid_find_service_handle = make_FindServiceHandle(10U);
     mock_binding::ProxyEvent<std::uint8_t> proxy_event{};
 
     // Expecting that StartFindService is called but the handler is not called since the provider does not exist
-    ON_CALL(service_discovery_mock_, StartFindService(_, EnrichedInstanceIdentifier{identifier_}))
-        .WillByDefault(Return(valid_find_service_handle));
+    EXPECT_CALL(service_discovery_mock_, StartFindService(_, EnrichedInstanceIdentifier{identifier_}))
+        .WillOnce(Return(valid_find_service_handle));
 
     // Then expecting that NotifyServiceInstanceChangedAvailability is called on the event with is_available false
     const bool is_available{false};
@@ -448,10 +448,10 @@ TEST_F(ProxyAutoReconnectFixture, RegisterEventBindingCallsNotifyOnEventWithFals
     EXPECT_NE(proxy_, nullptr);
 
     // and the ProxyEvent registers itself with the Proxy
-    proxy_->RegisterEventBinding("Event0", proxy_event);
+    proxy_->RegisterEvent("Event0", proxy_event);
 }
 
-TEST_F(ProxyAutoReconnectFixture, RegisterEventBindingCallsNotifyOnEventWithTrueWhenProviderInitiallyExists)
+TEST_F(ProxyAutoReconnectFixture, RegisterEventCallsNotifyOnEventWithTrueWhenProviderInitiallyExists)
 {
     const auto valid_find_service_handle = make_FindServiceHandle(10U);
     mock_binding::ProxyEvent<std::uint8_t> proxy_event{};
@@ -473,10 +473,10 @@ TEST_F(ProxyAutoReconnectFixture, RegisterEventBindingCallsNotifyOnEventWithTrue
     EXPECT_NE(proxy_, nullptr);
 
     // and the ProxyEvent registers itself with the Proxy
-    proxy_->RegisterEventBinding("Event0", proxy_event);
+    proxy_->RegisterEvent("Event0", proxy_event);
 }
 
-TEST_F(ProxyAutoReconnectFixture, RegisterEventBindingCallsNotifyOnEventWithLatestValueFromFindServiceHandler)
+TEST_F(ProxyAutoReconnectFixture, RegisterEventCallsNotifyOnEventWithLatestValueFromFindServiceHandler)
 {
     const auto valid_find_service_handle = make_FindServiceHandle(10U);
     mock_binding::ProxyEvent<std::uint8_t> proxy_event_0{};
@@ -526,14 +526,14 @@ TEST_F(ProxyAutoReconnectFixture, RegisterEventBindingCallsNotifyOnEventWithLate
     EXPECT_NE(proxy_, nullptr);
 
     // and the first ProxyEvent registers itself with the Proxy
-    proxy_->RegisterEventBinding("Event0", proxy_event_0);
+    proxy_->RegisterEvent("Event0", proxy_event_0);
 
     // And then the FindService handler is called with an empty service handle container
     ServiceHandleContainer<HandleType> empty_service_handle_container{};
     saved_find_service_handler(empty_service_handle_container, valid_find_service_handle);
 
     // and the second ProxyEvent registers itself with the Proxy
-    proxy_->RegisterEventBinding("Event1", proxy_event_1);
+    proxy_->RegisterEvent("Event1", proxy_event_1);
 
     // And then the FindService handler is called again with a non-empty service handle container
     ServiceHandleContainer<HandleType> filled_service_handle_container{make_HandleType(identifier_)};
@@ -619,8 +619,8 @@ TEST_F(ProxyEventBindingFixture, RegisteringEventBindingWillCallNotifyServiceIns
     // Expecting that NotifyServiceInstanceChangedAvailability will be called on the binding
     EXPECT_CALL(mock_proxy_event_base_binding, NotifyServiceInstanceChangedAvailability(_, _));
 
-    // When calling RegisterEventBinding
-    proxy_->RegisterEventBinding(kDummyEventName, mock_proxy_event_base_binding);
+    // When calling RegisterEvent
+    proxy_->RegisterEvent(kDummyEventName, mock_proxy_event_base_binding);
 }
 
 TEST_F(ProxyEventBindingFixture,
@@ -639,45 +639,12 @@ TEST_F(ProxyEventBindingFixture,
     InitialiseProxyWithCreate(identifier_);
 
     // and that two bindings are registered
-    proxy_->RegisterEventBinding(kDummyEventName, mock_proxy_event_base_binding);
-    proxy_->RegisterEventBinding("some_other_event", mock_proxy_event_base_binding_2);
+    proxy_->RegisterEvent(kDummyEventName, mock_proxy_event_base_binding);
+    proxy_->RegisterEvent("some_other_event", mock_proxy_event_base_binding_2);
 
     // When the find service handler is called
     const auto find_service_handler = find_service_handler_promise_.get_future().get();
     find_service_handler(ServiceHandleContainer<HandleType>{}, kDummyFindServiceHandle);
-}
-
-TEST_F(ProxyEventBindingFixture,
-       UnregisteringEventBindingAfterRegisteringWillMakeBindingUnavailableToServiceAvailabilityChangeHandler)
-{
-    mock_binding::ProxyEventBase mock_proxy_event_base_binding{};
-
-    // Expecting that NotifyServiceInstanceChangedAvailability will only be called on the binding once when it's
-    // registered and not again when the find service handler is called
-    EXPECT_CALL(mock_proxy_event_base_binding, NotifyServiceInstanceChangedAvailability(_, _));
-
-    // Given a constructed Proxy which registered an event binding
-    WhichCapturesFindServiceHandler(identifier_);
-    InitialiseProxyWithCreate(identifier_);
-    proxy_->RegisterEventBinding(kDummyEventName, mock_proxy_event_base_binding);
-
-    // and then unregistered the event binding
-    proxy_->UnregisterEventBinding(kDummyEventName);
-
-    // When the find service handler is called
-    const auto find_service_handler = find_service_handler_promise_.get_future().get();
-    find_service_handler(ServiceHandleContainer<HandleType>{}, kDummyFindServiceHandle);
-}
-
-TEST_F(ProxyEventBindingFixture, UnregisteringEventBindingBeforeRegisteringWillNotTerminate)
-{
-    // Given a constructed Proxy
-    InitialiseProxyWithCreate(identifier_);
-
-    // When calling UnregisterEventBinding when RegisterEventBinding was never called
-    proxy_->UnregisterEventBinding(kDummyEventName);
-
-    // Then we don't terminate
 }
 
 using ProxyGetEventMetaInfoFixture = ProxyMockedMemoryFixture;
