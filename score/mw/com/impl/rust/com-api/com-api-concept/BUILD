@@ -22,6 +22,7 @@ rust_library(
         "interface_macros.rs",
         "lib.rs",
         "reloc.rs",
+        "com_api_field.rs",
     ],
     edition = "2024",
     proc_macro_deps = [

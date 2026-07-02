@@ -190,7 +190,11 @@ where
     lifetime: PhantomData<&'a T>,
 }
 
-impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
+/// Base trait — no commit operation, just DerefMut access.
+impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T> where T: CommData + Debug {}
+
+/// Event-specific extension: `send()` consumes and publishes the sample.
+impl<'a, T> com_api_concept::EventSampleMut<T> for SampleMut<'a, T>
 where
     T: CommData + Debug,
 {
@@ -373,6 +377,12 @@ impl<T> com_api_concept::Publisher<T, MockRuntimeImpl> for Publisher<T>
 where
     T: CommData + Debug,
 {
+    // SampleMut<'a, T> implements EventSampleMut<T>, satisfying the CommittedSample bound.
+    type CommittedSample<'a>
+        = SampleMut<'a, T>
+    where
+        Self: 'a;
+
     type SampleMaybeUninit<'a>
         = SampleMaybeUninit<'a, T>
     where

@@ -28,3 +28,5 @@ pub use error::*;
 #[doc(hidden)]
 pub use paste;
 pub use reloc::Reloc;
+mod com_api_field;
+pub use com_api_field::*;

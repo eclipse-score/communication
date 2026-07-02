@@ -187,7 +187,12 @@ where
     }
 }
 
-impl<'a, T, B: FFIBridge> com_api_concept::SampleMut<T> for SampleMut<'a, T, B>
+impl<'a, T, B: FFIBridge> com_api_concept::SampleMut<T> for SampleMut<'a, T, B> where
+    T: CommData + Debug
+{
+}
+
+impl<'a, T, B: FFIBridge> com_api_concept::EventSampleMut<T> for SampleMut<'a, T, B>
 where
     T: CommData + Debug,
 {
@@ -405,6 +410,10 @@ impl<T, B: FFIBridge> com_api_concept::Publisher<T, LolaRuntimeImpl<B>> for Publ
 where
     T: CommData + Debug,
 {
+    type CommittedSample<'a>
+        = SampleMut<'a, T, B>
+    where
+        Self: 'a;
     type SampleMaybeUninit<'a>
         = SampleMaybeUninit<'a, T, B>
     where
