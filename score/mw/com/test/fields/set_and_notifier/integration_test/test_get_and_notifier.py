@@ -11,19 +11,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+from test_fixture import consumer, provider
 
-def client(target, **kwargs):
-    args = ["--num-retries", "20", "--backoff-time", "50"]
-    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True, **kwargs)
-
-
-def service(target, **kwargs):
-    args = ["--cycle-time", "250"]
-    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp", **kwargs)
-
-
-def test_field_initial_value(target):
-    """Test field initial value exchange between service and client."""
-    with service(target):
-        with client(target):
-            pass
+# TODO: Implement once get_and_notifier mode is supported by the provider and consumer binaries.
+# Scenarios to cover (same as notifier and get, verifying result of both GetNewSamples and getter):
+# 1. calling Update / send -> calling get returns value set with send
+# 2. calling Update / send -> calling GetNewSamples returns value set with send

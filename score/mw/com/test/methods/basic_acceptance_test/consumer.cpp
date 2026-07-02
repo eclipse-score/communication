@@ -13,9 +13,9 @@
 #include "score/mw/com/test/methods/basic_acceptance_test/consumer.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/proxy_container.h"
 #include "score/mw/com/test/methods/basic_acceptance_test/test_method_datatype.h"
-#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 #include "score/mw/com/types.h"
 
 #include <score/stop_token.hpp>

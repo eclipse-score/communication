@@ -40,11 +40,13 @@ cc_binary(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    visibility = ["//score/mw/com/test/field_initial_value:__pkg__"],
+    visibility = ["//score/mw/com/test/fields/field_initial_value:__pkg__"],
     deps = [
         ":test_datatype",
         "//score/mw/com",
-        "//score/mw/com/test/common_test_resources:sctf_test_runner",
+        "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:process_synchronizer",
+        "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -56,10 +58,11 @@ cc_binary(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    visibility = ["//score/mw/com/test/field_initial_value:__pkg__"],
+    visibility = ["//score/mw/com/test/fields/field_initial_value:__pkg__"],
     deps = [
         ":test_datatype",
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
         "@score_baselibs//score/mw/log",
     ],
@@ -75,7 +78,7 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/field_initial_value:__subpackages__",
+        "//score/mw/com/test/fields/field_initial_value:__subpackages__",
     ],
 )
 
@@ -89,6 +92,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/field_initial_value:__subpackages__",
+        "//score/mw/com/test/fields/field_initial_value:__subpackages__",
     ],
 )

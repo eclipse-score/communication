@@ -1,0 +1,47 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/mw/com/test/fields/set_and_notifier",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 3427,
+          "fields": [
+            {
+              "fieldName": "initial_only_field",
+              "fieldId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/fields/set_and_notifier",
+      "serviceTypeName": "/score/mw/com/test/fields/set_and_notifier",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1023,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "initial_only_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/score/mw/com/test/field_initial_value",
+      "serviceTypeName": "/score/mw/com/test/fields/field_initial_value",
       "version": {
         "major": 1,
         "minor": 0
@@ -22,8 +22,8 @@
   ],
   "serviceInstances": [
     {
-      "instanceSpecifier": "test/field_initial_value",
-      "serviceTypeName": "/score/mw/com/test/field_initial_value",
+      "instanceSpecifier": "test/fields/field_initial_value",
+      "serviceTypeName": "/score/mw/com/test/fields/field_initial_value",
       "version": {
         "major": 1,
         "minor": 0
@@ -45,4 +45,3 @@
     }
   ]
 }
-
