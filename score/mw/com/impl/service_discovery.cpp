@@ -45,7 +45,7 @@ ServiceDiscovery::ServiceDiscovery(score::mw::com::impl::IRuntime& runtime)
 {
 }
 
-ServiceDiscovery::~ServiceDiscovery()
+ServiceDiscovery::~ServiceDiscovery() noexcept
 {
     const auto copy_of_handles = handle_to_instances_;
     for (const auto& handle : copy_of_handles)
