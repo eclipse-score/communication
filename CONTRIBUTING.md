@@ -84,6 +84,36 @@ bazel build //...
 bazel test //...
 ```
 
+### Optional: Configure a local Ubuntu snapshot mirror
+
+The Ubuntu snapshot mirrors are sometimes unreliable. See: https://answers.launchpad.net/launchpad/+question/824541
+
+If you have access to a more reliable Ubuntu snapshot mirror, you can make Bazel try it first while keeping
+the public `snapshot.ubuntu.com` URL as fallback.
+
+An example for such a snapshot mirror service is https://stablebuild.com
+
+1. Create a local downloader config at `user.downloader_config` (this file is ignored by git).
+   Replace the `<private-mirror-tag>` with the tag provided by the StableBuild API
+
+```text
+rewrite snapshot.ubuntu.com/ubuntu/[^/]*/(.*) <private-mirror-tag>.debmirror.stablebuild.com/2026-04-01T10:40:01Z/archive.ubuntu.com/ubuntu/$1
+rewrite snapshot.ubuntu.com/ubuntu/[^/]*/(.*) <private-mirror-tag>.debmirror.stablebuild.com/2026-04-01T10:40:01Z/ports.ubuntu.com/$1
+rewrite snapshot.ubuntu.com/ubuntu/(.*) snapshot.ubuntu.com/ubuntu/$1
+```
+
+2. Point Bazel to this local config in `user.bazelrc` (also ignored by git):
+
+```text
+common --downloader_config=user.downloader_config
+```
+
+3. Restart the Bazel server to reload the downloader config
+
+```shell
+bazel shutdown
+```
+
 ### Linting Instructions
 
 For Linting the Code following solutions are available:

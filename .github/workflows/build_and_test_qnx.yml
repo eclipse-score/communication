@@ -41,6 +41,8 @@ on:
         required: true
       SCORE_QNX_PASSWORD:
         required: true
+      UBUNTU_SNAPSHOT_MIRROR_URL:
+        required: false
 
 concurrency:
   group: build_and_test_qnx-${{ github.event.pull_request.number || github.run_id }}
@@ -152,6 +154,7 @@ jobs:
           with:
             disk-cache: ${{ inputs.fetch_only != 'true' && 'build_and_test_qnx' || '' }}
             cache-mode: ${{ inputs.cache_mode }}
+            ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
         - name: Build QNX
           if: inputs.fetch_only != 'true'
           env:

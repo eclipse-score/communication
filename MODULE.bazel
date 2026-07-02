@@ -149,7 +149,7 @@ use_repo(imagefs, "score_qnx_aarch64_ifs_toolchain", "score_qnx_x86_64_ifs_toolc
 bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
 git_override(
     module_name = "rules_distroless",
-    commit = "f114b1f878345e623ef84dcda14d275348840199",
+    commit = "dbf25be1c3a9a1698511a4817582efe61dc5ec15",
     remote = "https://github.com/LittleHuba/rules_distroless.git",
 )
 
@@ -173,7 +173,7 @@ apt.sources_list(
         "noble-updates",
     ],
     types = ["deb"],
-    uris = ["https://snapshot.ubuntu.com/ubuntu/20260401T000000Z"],
+    uris = ["https://snapshot.ubuntu.com/ubuntu/20260401T104001Z"],
 )
 apt.install(
     dependency_set = "ubuntu24_04_sysroot",
