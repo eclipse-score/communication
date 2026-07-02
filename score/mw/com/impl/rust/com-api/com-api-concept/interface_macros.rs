@@ -102,11 +102,18 @@ macro_rules! interface {
         );
     };
 
-    (interface $id:ident { $($event_name:ident : Field<$event_type:ty>),+$(,)? }) => {
-        compile_error!(
-            "Field definitions are not supported in this macro version. \
-             Please use Event<T> syntax for defining events."
-        );
+    (interface $id:ident { $($field_name:ident : Field<$field_type:ty>),+$(,)? }) => {
+        $crate::interface_common!($id);
+        $crate::interface_consumer!($id, $($field_name, Field<$field_type>),+);
+        $crate::interface_producer!($id, $($field_name, Field<$field_type>),+);
+    };
+    (interface $id:ident, {
+        Id = $uid:expr,
+        $($field_name:ident : Field<$field_type:ty>),+ $(,)?
+    }) => {
+        $crate::interface_common!($id, $uid);
+        $crate::interface_consumer!($id, $($field_name, Field<$field_type>),+);
+        $crate::interface_producer!($id, $($field_name, Field<$field_type>),+);
     };
 }
 
@@ -172,6 +179,32 @@ macro_rules! interface_consumer {
             }
         }
     };
+
+    ($id:ident, $($field_name:ident, Field<$field_type:ty>),+$(,)?) => {
+        com_api::paste::paste!  {
+            pub struct [<$id Consumer>]<R: com_api::Runtime + ?Sized> {
+                $(
+                    pub $field_name: R::FieldSubscriber<$field_type>,
+                )+
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::Consumer<R> for [<$id Consumer>]<R> {
+                fn new(instance_info: R::ConsumerInfo) -> Self {
+                    [<$id Consumer>] {
+                        $(
+                            $field_name: R::FieldSubscriber::new(
+                                stringify!($field_name),
+                                instance_info.clone()
+                            ).expect(&format!(
+                                "Failed to create subscriber for {}",
+                                stringify!($field_name)
+                            )),
+                        )+
+                    }
+                }
+            }
+        }
+    };
 }
 
 /// Macro to implement the Producer and OfferedProducer traits for
@@ -205,6 +238,66 @@ macro_rules! interface_producer {
                             ).expect(&format!(
                                 "Failed to create publisher for {}",
                                 stringify!($event_name)
+                            )),
+                        )+
+                        instance_info: self.instance_info.clone(),
+                    };
+                    // Offer the service instance to make it discoverable
+                    self.instance_info.offer_service()?;
+                    Ok(offered)
+                }
+
+                fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
+                    Ok([<$id Producer>] {
+                        _runtime: core::marker::PhantomData,
+                        instance_info,
+                    })
+                }
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::OfferedProducer<R>
+                for [<$id OfferedProducer>]<R> {
+                type Interface = [<$id Interface>];
+                type Producer = [<$id Producer>]<R>;
+                fn unoffer(self) -> com_api::Result<Self::Producer> {
+                    let producer = [<$id Producer>] {
+                        _runtime: core::marker::PhantomData,
+                        instance_info: self.instance_info.clone(),
+                    };
+                    // Stop offering the service instance to withdraw it from system availability
+                    self.instance_info.stop_offer_service()?;
+                    Ok(producer)
+                }
+            }
+        }
+    };
+
+    ($id:ident, $($field_name:ident, Field<$field_type:ty>),+$(,)?) => {
+        com_api::paste::paste!  {
+            pub struct [<$id Producer>]<R: com_api::Runtime + ?Sized> {
+                _runtime: core::marker::PhantomData<R>,
+                instance_info: R::ProviderInfo,
+            }
+
+            pub struct [<$id OfferedProducer>]<R: com_api::Runtime + ?Sized> {
+                $(
+                    pub $field_name: R::FieldPublisher<$field_type>,
+                )+
+                instance_info: R::ProviderInfo,
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
+                type Interface = [<$id Interface>];
+                type OfferedProducer = [<$id OfferedProducer>]<R>;
+                fn offer(self) -> com_api::Result<Self::OfferedProducer> {
+                    let offered = [<$id OfferedProducer>] {
+                        $(
+                            $field_name: R::FieldPublisher::new(
+                                stringify!($field_name),
+                                self.instance_info.clone()
+                            ).expect(&format!(
+                                "Failed to create field publisher for {}",
+                                stringify!($field_name)
                             )),
                         )+
                         instance_info: self.instance_info.clone(),

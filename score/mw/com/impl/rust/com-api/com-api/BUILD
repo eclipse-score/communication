@@ -25,6 +25,6 @@ rust_library(
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api-concept",
         "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
-        "//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
+        #"//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
     ],
 )

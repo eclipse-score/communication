@@ -22,9 +22,9 @@ use clap::Parser;
 use std::path::PathBuf;
 
 use com_api::{
-    Builder, EventSampleMut, FindServiceSpecifier, InstanceSpecifier, Interface,
-    LolaRuntimeBuilderImpl, OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder,
-    SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    Builder, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
+    OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,
+    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
 
 use com_api_gen::{Exhaust, Tire, VehicleInterface};

@@ -1,31 +1,52 @@
-//field.rs
-// Need to discuss:
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+
+// TODO: Need to discuss:
 // 1.Get and Set methods for field it is enabled based on tag, do we want to keep same kind of mechanism
-// or by default we will enable for user, My suggestion is we can keep it default enable as of now,
+// or by default we will enable for user,
+// -> My suggestion is we can keep it default enable as of now,
 // and later we can add tag based mechanism if required because Interface side we need to check how we can do this
+
+// Note: We are using the event related trait as a base trait for whereever we have same common
+// APIs or functionality, as of now there are derived from concept crate but
+// we will create a module which will have common trait for event and field which will be used by both event and field as a super trait and
+// for this we need to create marker trait for event.
+
 use crate::*;
 use std::fmt::Debug;
 
 #[allow(dead_code)]
 
-//Temp for build test
-struct MethodReturnTypePtr<T: CommData + Debug> {
+// Temp for build test
+// We will remove this once memory layout of same created in rust side like SamplePtr.
+pub struct MethodReturnTypePtr<T: CommData + Debug> {
     pub value: T,
     pub status: Result<()>,
 }
 
-// we are using the event trait as a base trait for field, because we do offer same subscription APIs
-// Only addation to that is get and set methods for field, so we can keep it as a base trait for field as well.
-// FieldMethods trait is added to provide get and set methods for field.
+/// FieldSubscriber trait is used to subscribe to a field and get the value of the field.
+/// It provides the `get` and `set` methods to get and set the value of the field.
+/// It derived from `com_api_concept::Subscriber` trait which provides the `subscribe` method to create a field subscription.
+/// `FieldMethods` trait is used to provide the `get` and `set` methods for the field instance which can be used before subscription.
 pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
     FieldMethods<T, R> + com_api_concept::Subscriber<T, R>
 {
 }
 
-// Again we are using the event trait as a base trait for field, because we do offer same subscription APIs
-// Like try_receive(GetNewSamples) and receive with async,
-// Also we do need to provide get and set method because when subscription is created it takes the subscriber as a value.
-// It has additional methods to get the number of new samples available and get the number of free sample count available for subscription.
+/// FieldSubscriber trait is provides the receiving APIs for the field subscription and
+/// it is derived from `com_api_concept::Subscription` trait which provides the receiving APIs for the field subscription.
+/// Additional methods which the field subscription provides are added in this trait.
+/// `FieldMethods` trait is used to provide the `get` and `set` methods for the field subscription.
 pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
     com_api_concept::Subscription<T, R> + FieldMethods<T, R>
 {
@@ -37,8 +58,8 @@ pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
     fn get_free_sample_count(&self) -> Result<usize>;
 }
 
-/// FieldMethods trait provides get and set methods for field.
-// MethodReturnTypePtr is like samplePtr for event.
+/// FieldMethods trait provides the `get` and `set` methods for the field instance which can be used before subscription.
+/// The `get` method is used to get the current value of the field, and the `set` method is used to set the value of the field.
 pub trait FieldMethods<T: CommData + Debug, R: Runtime + ?Sized> {
     ///Get the current value of the field.
     ///
@@ -54,13 +75,12 @@ pub trait FieldMethods<T: CommData + Debug, R: Runtime + ?Sized> {
     /// # Returns
     /// Return the result of `MethodReturnTypePtr<T>` which contains the status of the set operation.
     /// with the current value of the field.
+    // TODO: should we pass value by reference as underlying API is taking value as reference.
     fn set(&self, value: T) -> Result<MethodReturnTypePtr<T>>;
 }
 
-// We can not use publisher trait from event because that contains the Send Method which is not correct semantic for field.
-// TODO: SampleMaybeUninit is return by allocated and that trait has write method but which return SampleMut
-// which has send method, we can add Update method there but in that case that will be exposed to Event and still Send is exposed to Event.
-// Tried to fix this issue making SampleMut trait as marker trait in concept and then implementing Event/Field specific SampleMut trait which has send/update method.
+/// FieldPublisher trait is used to publish a field and update the value of the field.
+//  Note:  We can not use publisher trait from event because that contains the Send Method which is not correct semantic for field.
 pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
     type CommittedSample<'a>: FieldSampleMut<T>
     where
@@ -75,16 +95,19 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
     where
         Self: Sized;
 
-    /// Allocate a buffer slot for the event publication.
+    /// Get the allocate sample ptr for the field publisher.
     fn allocate(&self) -> Result<Self::SampleMaybeUninit<'_>>;
 
-    /// Publish the event data to the field source.
+    /// Update the value of the field with the provided value.
+    /// This is not zero-copy API.
     fn update(&self, value: T) -> Result<()>;
 
-    /// Set a handler for the field publication from proxy set request.
-    fn set_handler<'a>(&self) -> impl Future<Output = Result<T>> + 'a;
+    /// This API will return a future whenever the field value is set by using `set' method of the field subscriber.
+    /// Future will be resolved with value.
+    fn register_set_handler<'a>(&self) -> impl Future<Output = Result<T>> + 'a;
 }
 
+/// FieldSampleMut trait is used to update the value of the field sample for zero-copy API.
 pub trait FieldSampleMut<T>: com_api_concept::SampleMut<T>
 where
     T: CommData + Debug,

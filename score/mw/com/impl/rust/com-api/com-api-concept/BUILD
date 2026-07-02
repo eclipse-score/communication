@@ -16,14 +16,7 @@ load("//quality/unit_testing:unit_testing.bzl", "rust_unit_test")
 
 rust_library(
     name = "com-api-concept",
-    srcs = [
-        "com_api_concept.rs",
-        "error.rs",
-        "interface_macros.rs",
-        "lib.rs",
-        "reloc.rs",
-        "com_api_field.rs",
-    ],
+    srcs = glob(["**/*.rs"]),
     edition = "2024",
     proc_macro_deps = [
         "//score/mw/com/impl/rust/com-api/com-api-concept-macros",

@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use com_api::{interface, CommData, ProviderInfo, Publisher, Reloc, Subscriber};
+use com_api::{interface, CommData, FieldPublisher, ProviderInfo, Publisher, Reloc, Subscriber};
 
 #[derive(Debug, Reloc, CommData)]
 #[repr(C)]
@@ -44,5 +44,13 @@ interface!(
         Id = "VehicleInterface",
         left_tire: Event<Tire>,
         exhaust: Event<Exhaust>,
+     }
+);
+
+interface!(
+    interface VehicleField, {
+        Id = "VehicleFieldInterface",
+        left_tire: Field<Tire>,
+        exhaust: Field<Exhaust>,
      }
 );
