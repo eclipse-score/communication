@@ -1,0 +1,32 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$TopEvent("IPC channel cannot be established or maintained between client and server", "MessagePassingFMEA.IpcChannelUnavailable")
+
+$OrGate("OG1", "MessagePassingFMEA.IpcChannelUnavailable")
+
+$IntermediateEvent("Startup fails", "IE_Startup", "OG1")
+$OrGate("OG_Startup", "IE_Startup")
+$BasicEvent("Startup arguments missing or incorrect", "MessagePassingFMEA.StartupArgumentValidation", "OG_Startup")
+$BasicEvent("Duplicate Server Name", "MessagePassingFMEA.UniqueServerNamePolicy", "OG_Startup")
+$BasicEvent("Server factory queue size configured below the required minimum", "BE_ServerQueueConfig", "OG_Startup")
+
+$BasicEvent("Server not accepting connections at runtime", "MessagePassingFMEA.ServerHealthCheck", "OG1")
+$BasicEvent("Client cannot connect to server at runtime", "MessagePassingFMEA.ClientRetryPolicy", "OG1")
+$BasicEvent("Unintended RequestDisconnect drops a live channel", "BE_UnintendedDisconnect", "OG1")
+
+@enduml
