@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_EXAMPLES_HEAP_FREE_COMMON_SENSOR_INTERFACE_H
 #define SCORE_MW_COM_EXAMPLES_HEAP_FREE_COMMON_SENSOR_INTERFACE_H
 
-// Shared typed service interface used by all four heap-free examples.
+// Shared typed service interface used by the heap-free skeleton/proxy examples.
 // Instantiate with AsSkeleton<SensorInterface> or AsProxy<SensorInterface>.
 
 #include "score/mw/com/types.h"
@@ -26,8 +26,8 @@ namespace sensor
 // Payload for the "reading" event.
 struct SensorReading
 {
-    std::uint32_t sequence;  // monotonically increasing counter
-    float value;             // sensor measurement for that cycle
+    std::uint32_t sequence;
+    float value;
 };
 
 // Service interface template. Trait resolves to SkeletonTrait or ProxyTrait.
@@ -40,9 +40,6 @@ class SensorInterface : public Trait::Base
     // Event: latest sensor reading. Skeleton sends; proxy receives.
     typename Trait::template Event<SensorReading> reading{*this, "reading"};
 
-    // Field: calibration status code.
-    // WithNotifier — proxy can subscribe and receive updates via GetNewSamples.
-    // Skeleton must call Update() before OfferService() to set the initial value.
     typename Trait::template Field<std::uint32_t, score::mw::com::WithNotifier> calibration_status{
         *this,
         "calibration_status"};

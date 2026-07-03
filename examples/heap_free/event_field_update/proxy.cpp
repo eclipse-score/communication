@@ -12,6 +12,7 @@
  ********************************************************************************/
 
 // Proxy: polling receive for event and field, no heap in the operational phase.
+// Run alongside the skeleton.
 #include "common/sensor_interface.h"
 #include "heap_check/heap_check.h"  // include in exactly ONE translation unit per binary
 

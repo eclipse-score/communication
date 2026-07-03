@@ -12,7 +12,6 @@
 # *******************************************************************************
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-# Common header sets used by all four heap-free example binaries.
 cc_library(
     name = "heap_check_lib",
     hdrs = ["heap_check/heap_check.h"],

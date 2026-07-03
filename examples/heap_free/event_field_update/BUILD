@@ -21,7 +21,6 @@ COM_DEP = [
     "@score_baselibs//score/mw/log",
 ]
 
-# Skeleton: event + field update with no heap in the operational phase.
 cc_binary(
     name = "skeleton",
     srcs = ["skeleton.cpp"],
@@ -44,8 +43,6 @@ validate_json_schema_test(
     tags = ["lint"],
 )
 
-# Proxy: polling receive via GetNewSamples for event and field, no heap
-# in the operational phase. Run alongside the skeleton.
 cc_binary(
     name = "proxy",
     srcs = ["proxy.cpp"],
