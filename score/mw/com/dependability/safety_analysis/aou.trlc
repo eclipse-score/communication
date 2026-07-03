@@ -370,3 +370,13 @@ ScoreReq.AoU MethodInArgPtrMatches {
     version = 1
     mitigates = "Communication.CallBlocksOnCaller, Communication.CallBlocksOnCallee, Communication.CallBlocksOnUserHandler"
 }
+
+/* broken_link_c/issue/79416086 */
+/* mitigates: GetSubscriptionState failure modes are deferred; restore the mitigates list once they are added to failure_modes.trlc */
+ScoreReq.AoU DoNotTrustGetSubscriptionStateReturnValue {
+    description = "It shall be ensured that an application does not use the value returned by GetSubscriptionState() to determine whether the event's producer is alive, whether new data is available, or whether reading is worthwhile. The application shall not treat kSubscribed as evidence that the producer is running or that its data is fresh, shall not treat kSubscriptionPending as a reason to stop or skip reading, and shall not wait for GetSubscriptionState() to report kSubscribed before calling GetNewSamples(). The precondition for reading is a successful Subscribe() call, after which both kSubscribed and kSubscriptionPending permit reading. Once Subscribe() has succeeded, the application shall call GetNewSamples() to consume data irrespective of the reported subscription state. Producer liveness and data freshness shall instead be supervised on the received event data itself, e.g. by monitoring whether new samples arrive within an expected time."
+    safety = ScoreReq.Asil.B
+    note = "GetSubscriptionState() reflects service-discovery notifications, not producer liveness. A graceful stop-offer moves the state to kSubscriptionPending; while pending, samples the producer already wrote but the consumer has not yet consumed remain available to read. A hard producer crash runs no destructors, so no unavailability is detected and the state remains kSubscribed even though no data is produced - see NoNotificationOnTerminationOfProducer. The returned value may also be wrong or delayed due to an implementation fault in the SubscriptionStateMachine or contention on its internal lock, e.g. by a long-running SubscriptionStateChangeHandler executing under that lock. This AoU constrains only the application's own reliance on the value: GetNewSamples() and GetNumNewSamplesAvailable() consult GetSubscriptionState() internally, so a systematic implementation fault on that path is covered separately by a preventive measure verifying the SubscriptionStateMachine."
+    version = 1
+    mitigates = ""
+}
