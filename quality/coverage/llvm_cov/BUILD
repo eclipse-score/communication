@@ -62,24 +62,3 @@ sh_binary(
     srcs = [":reporter_wrapper_gen"],
     data = [":reporter"],
 )
-
-py_binary(
-    name = "justify",
-    srcs = ["justify.py"],
-    deps = [
-        "@score_communication_pip//pyyaml",
-    ],
-)
-
-py_binary(
-    name = "effective_coverage",
-    srcs = ["effective_coverage.py"],
-)
-
-py_binary(
-    name = "lcov_to_html",
-    srcs = ["lcov_to_html.py"],
-    deps = [
-        "@score_communication_pip//gcovr",
-    ],
-)

@@ -25,9 +25,8 @@
 #                             containing the HTML report, raw LCOV data and JUnit XMLs.
 #   --platform <platform>     Target platform for justification filtering (linux or qnx).
 #                             Default: linux. Also affects the default output directory
-#                             (cpp_coverage for linux, cpp_coverage_qnx for qnx).
-#   output-dir                Directory to write the HTML report to (default: cpp_coverage
-#                             or cpp_coverage_<platform>)
+#                             (cpp_coverage_linux for linux, cpp_coverage_qnx for qnx).
+#   output-dir                Directory to write the HTML report to (default: cpp_coverage_<platform>)
 
 set -euo pipefail
 
@@ -54,11 +53,7 @@ done
 
 # Set default output directory based on platform if not explicitly provided.
 if [[ -z "${OUTPUT_DIR}" ]]; then
-  if [[ "${PLATFORM}" == "linux" ]]; then
-    OUTPUT_DIR="cpp_coverage"
-  else
     OUTPUT_DIR="cpp_coverage_${PLATFORM}"
-  fi
 fi
 
 # Change to the workspace root first so that all subsequent bazel calls
@@ -123,7 +118,7 @@ else
   cp "${COVERAGE_REPORT}" "${TMPDIR_EXTRACT}/lcov.dat"
 
   echo "Generating HTML report from LCOV data..."
-  bazel run //quality/coverage/llvm_cov:lcov_to_html -- \
+  bazel run //quality/coverage:lcov_to_html -- \
     --lcov "${TMPDIR_EXTRACT}/lcov.dat" \
     --output-dir "${OUTPUT_DIR}" \
     --source-root "${BUILD_WORKSPACE_DIRECTORY}" \
@@ -145,7 +140,7 @@ if [[ -f "${JUSTIFICATION_YAML}" ]]; then
   mkdir -p "${JUSTIFICATION_DIR}"
 
   # Run justify.py via Bazel to produce the resolved manifest.
-  if bazel run //quality/coverage/llvm_cov:justify -- \
+  if bazel run //quality/coverage:justify -- \
       --yaml "${JUSTIFICATION_YAML}" \
       --source-root "${BUILD_WORKSPACE_DIRECTORY}" \
       --platform "${PLATFORM}" \
@@ -161,7 +156,7 @@ if [[ -f "${JUSTIFICATION_YAML}" ]]; then
     if [[ -f "${TMPDIR_EXTRACT}/lcov.dat" ]]; then
       EFFECTIVE_COV_ARGS+=(--lcov "${TMPDIR_EXTRACT}/lcov.dat")
     fi
-    bazel run //quality/coverage/llvm_cov:effective_coverage -- "${EFFECTIVE_COV_ARGS[@]}"
+    bazel run //quality/coverage:effective_coverage -- "${EFFECTIVE_COV_ARGS[@]}"
   fi
 
   # Display effective coverage summary.

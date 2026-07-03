@@ -1,24 +1,27 @@
 # Coverage Infrastructure
 
-This directory contains the tooling to generate, post-process, and report C++ code coverage for the Score Communication project using LLVM's source-based coverage instrumentation (`llvm-cov`).
+This directory contains the tooling to generate, post-process, and report C++ code coverage for the Score Communication project. It supports two platforms:
+- **Linux**: LLVM source-based coverage (`llvm-cov`)
+- **QNX**: gcov-based coverage via gcovr
 
 ## Overview
 
 ```
 quality/coverage/
 ├── README.md                       ← You are here
-├── BUILD                           ← Bazel target for generate_coverage_html
+├── BUILD                           ← Bazel targets for coverage tools
 ├── coverage.bazelrc                ← Bazel coverage configuration flags
 ├── coverage_justifications.yaml    ← Central justification database
 ├── generate_coverage_html.sh       ← Orchestrator script (entry point)
-└── llvm_cov/                       ← Python tools for coverage processing
-    ├── README.md                   ← Detailed tool documentation
-    ├── BUILD                       ← Bazel targets for Python tools
+├── effective_coverage.py           ← HTML post-processor & effective coverage calculator
+├── justify.py                      ← Justification resolver
+├── lcov_to_html.py                 ← LCOV→HTML converter (uses gcovr, for QNX)
+└── llvm_cov/                       ← LLVM-specific coverage tools (Linux)
+    ├── README.md                   ← Detailed LLVM tool documentation
+    ├── BUILD                       ← Bazel targets for LLVM tools
     ├── merger.py                   ← Per-test coverage output generator
     ├── reporter.py                 ← Final combined report generator
-    ├── lcov_to_html.py             ← LCOV→HTML converter (uses gcovr for QNX)
-    ├── justify.py                  ← Justification resolver
-    └── effective_coverage.py       ← HTML post-processor & effective coverage calculator
+    └── filter_regexes.txt          ← Source filtering patterns for llvm-cov
 ```
 
 ## Requirements
@@ -75,7 +78,10 @@ bazel coverage //...
 bazel coverage //score/... --config=qnx
 
 # Specific target (Linux)
-bazel coverage //score/message_passing:client_connection_test_linux
+bazel coverage //score/message_passing:client_connection_test
+
+# Specific target (QNX)
+bazel coverage --config=qnx //score/message_passing:client_connection_test
 ```
 
 ### 2. Generate the HTML Report
@@ -95,7 +101,7 @@ The report is written to `cpp_coverage/` (Linux) or `cpp_coverage_qnx/` (QNX). O
 
 ```bash
 # Linux
-xdg-open cpp_coverage/index.html
+xdg-open cpp_coverage_linux/index.html
 
 # QNX
 xdg-open cpp_coverage_qnx/index.html
@@ -167,7 +173,7 @@ bazel run //quality/coverage:generate_coverage_html [-- --platform <linux|qnx>]
     │
     └── generate_coverage_html.sh
         ├── Detect format: zip (LLVM) or LCOV text (gcov)
-        ├── LLVM: Extract HTML from zip → cpp_coverage/
+        ├── LLVM: Extract HTML from zip → cpp_coverage_linux/
         │   gcov: Convert LCOV → HTML via lcov_to_html.py (gcovr) → cpp_coverage_qnx/
         ├── justify.py: YAML + code markers → manifest.json
         ├── effective_coverage.py: Post-process HTML + calculate effective %
@@ -223,7 +229,7 @@ See [`coverage_justifications.yaml`](coverage_justifications.yaml) for the justi
 justifications:
   - id: my-unique-id              # kebab-case, must be unique
     category: defensive_programming  # or: tool_false_positive, platform_specific, other
-    platforms: [linux, qnx]        # optional: omit for all platforms, or specify subset
+    platforms: [linux, qnx]        # required: choose one or more target platforms
     reason: >
       Explanation of why these lines cannot be covered by tests.
     locations:
@@ -259,14 +265,13 @@ better that justifications get outdated.
 
 ### Platform Scoping
 
-Each justification can optionally specify which platforms it applies to via the `platforms` field:
+Each justification must specify which platforms it applies to via the `platforms` field:
 
 | Value | Meaning |
 |-------|---------|
-| *(omitted)* | Justification applies to **all** platforms (Linux, QNX, ...) |
 | `[linux]` | Only applies when generating Linux coverage |
 | `[qnx]` | Only applies when generating QNX coverage |
-| `[linux, qnx]` | Applies to both (equivalent to omitting the field) |
+| `[linux, qnx]` | Applies to both platforms |
 
 The `--platform` argument to `generate_coverage_html.sh` controls which justifications are included.
 

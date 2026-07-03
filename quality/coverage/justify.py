@@ -161,11 +161,9 @@ def resolve_location_lines(location: Dict[str, Any]) -> List[int]:
 def _matches_platform(entry: Dict[str, Any], platform: str) -> bool:
     """Check if a justification entry applies to the given platform.
 
-    If the entry has no ``platforms`` field, it applies to all platforms.
+    The ``platforms`` field is mandatory and validated by ``validate_yaml``.
     """
-    platforms = entry.get("platforms")
-    if platforms is None:
-        return True
+    platforms = entry.get("platforms", [])
     return platform in platforms
 
 
@@ -332,24 +330,27 @@ def validate_yaml(data: Dict[str, Any]) -> None:
                     f"Must be one of: {sorted(VALID_CATEGORIES)}"
                 )
 
-            if "platforms" in entry:
-                if not isinstance(entry["platforms"], list):
-                    errors.append(
-                        f"{prefix}: 'platforms' must be a list, "
-                        f"got {type(entry['platforms']).__name__}"
-                    )
-                else:
-                    for p in entry["platforms"]:
-                        if not isinstance(p, str):
-                            errors.append(
-                                f"{prefix}: 'platforms' entries must be strings, "
-                                f"got {type(p).__name__}"
-                            )
-                        elif p not in VALID_PLATFORMS:
-                            errors.append(
-                                f"{prefix}: invalid platform '{p}'. "
-                                f"Must be one of: {sorted(VALID_PLATFORMS)}"
-                            )
+            if "platforms" not in entry:
+                errors.append(f"{prefix}: missing 'platforms'")
+            elif not isinstance(entry["platforms"], list):
+                errors.append(
+                    f"{prefix}: 'platforms' must be a list, "
+                    f"got {type(entry['platforms']).__name__}"
+                )
+            elif not entry["platforms"]:
+                errors.append(f"{prefix}: 'platforms' must not be empty")
+            else:
+                for p in entry["platforms"]:
+                    if not isinstance(p, str):
+                        errors.append(
+                            f"{prefix}: 'platforms' entries must be strings, "
+                            f"got {type(p).__name__}"
+                        )
+                    elif p not in VALID_PLATFORMS:
+                        errors.append(
+                            f"{prefix}: invalid platform '{p}'. "
+                            f"Must be one of: {sorted(VALID_PLATFORMS)}"
+                        )
 
             if "reason" not in entry:
                 errors.append(f"{prefix}: missing 'reason'")

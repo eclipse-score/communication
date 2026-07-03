@@ -13,12 +13,34 @@
 
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 sh_binary(
     name = "generate_coverage_html",
     srcs = ["generate_coverage_html.sh"],
     visibility = ["//visibility:private"],
+)
+
+py_binary(
+    name = "justify",
+    srcs = ["justify.py"],
+    deps = [
+        "@score_communication_pip//pyyaml",
+    ],
+)
+
+py_binary(
+    name = "effective_coverage",
+    srcs = ["effective_coverage.py"],
+)
+
+py_binary(
+    name = "lcov_to_html",
+    srcs = ["lcov_to_html.py"],
+    deps = [
+        "@score_communication_pip//gcovr",
+    ],
 )
 
 # These compile time options are required to cover abnormal termination cases. In GCC one can use `__gcc_dump()`, but this does not work with LLVM.
