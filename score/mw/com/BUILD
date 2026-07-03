@@ -13,6 +13,7 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
+load("//quality/api_surface:api_surface.bzl", "api_surface_test", "api_surface_update")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -156,4 +157,48 @@ cc_unit_test(
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/mw/log:recorder_mock",
     ],
+)
+
+# --- API Surface Stability Check ---
+
+api_surface_test(
+    name = "api_surface_test",
+    check_docs = False,
+    hdrs = [
+        "com_error_domain.h",
+        "runtime.h",
+        "runtime_configuration.h",
+        "types.h",
+    ],
+    lock_file = "api_surface.lock.json",
+    target_label = "//score/mw/com:com",
+    deps = [":com"],
+)
+
+api_surface_test(
+    name = "api_surface_docs_test",
+    check_docs = True,
+    hdrs = [
+        "com_error_domain.h",
+        "runtime.h",
+        "runtime_configuration.h",
+        "types.h",
+    ],
+    lock_file = "api_surface.lock.json",
+    tags = ["manual"],
+    target_label = "//score/mw/com:com",
+    deps = [":com"],
+)
+
+api_surface_update(
+    name = "api_surface_update",
+    hdrs = [
+        "com_error_domain.h",
+        "runtime.h",
+        "runtime_configuration.h",
+        "types.h",
+    ],
+    lock_file_path = "score/mw/com/api_surface.lock.json",
+    target_label = "//score/mw/com:com",
+    deps = [":com"],
 )
