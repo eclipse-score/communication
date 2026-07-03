@@ -20,8 +20,7 @@ namespace score::mw::com::test
 
 CombinedTestConfiguration ReadCommandLineArguments(int argc, const char** argv)
 {
-    auto args = ParseCommandLineArguments(
-        argc, argv, {{kScenario, ""}, {kNumberOfSamplesToSend, ""}, {kServiceInstanceManifest, ""}});
+    auto args = ParseCommandLineArguments(argc, argv, {{kScenario, ""}, {kServiceInstanceManifest, ""}});
 
     const auto scenario_index = GetValue<std::size_t>(args, kScenario);
     if (scenario_index >= static_cast<std::size_t>(SkeletonMoveScenario::kNumberOfScenarios))

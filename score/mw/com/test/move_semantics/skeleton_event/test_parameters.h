@@ -22,7 +22,6 @@ namespace score::mw::com::test
 {
 
 const std::string kScenario{"scenario"};
-const std::string kNumberOfSamplesToSend{"number-of-samples-to-send"};
 const std::string kServiceInstanceManifest{"service-instance-manifest"};
 
 constexpr std::size_t kNumberOfSamplesToSendPerOffer{10U};
