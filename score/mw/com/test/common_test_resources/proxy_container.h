@@ -14,6 +14,8 @@
 #define SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_PROXY_CONTAINER_H
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/proxy_event_receiver.h"
+#include "score/mw/com/test/common_test_resources/proxy_event_state_change_notifier.h"
 #include "score/mw/com/types.h"
 
 #include <chrono>
@@ -22,6 +24,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <utility>
 
 namespace score::mw::com::test
 {
@@ -37,6 +40,13 @@ class ProxyContainer
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_ != nullptr,
                                                     "Proxy was not successfully created! Cannot get it!");
         return *proxy_;
+    }
+
+    Proxy&& Extract()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_ != nullptr,
+                                                    "Proxy was not successfully created! Cannot extract it!");
+        return std::move(*proxy_);
     }
 
   private:
