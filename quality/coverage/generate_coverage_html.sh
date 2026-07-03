@@ -11,27 +11,38 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-# Extracts the HTML coverage report from the llvm-cov generated zip produced by
-# `bazel coverage`. Optionally assembles and zips the report together with
-# LCOV data and JUnit XMLs.
+# Generates an HTML coverage report from `bazel coverage` output.
+# Supports two coverage pipelines:
+#   - LLVM (Linux): Custom reporter produces a zip with html_report/ inside.
+#   - gcov (QNX):   Bazel's default reporter produces an LCOV text file;
+#                   we convert it to HTML using lcov_to_html.py.
 #
 # Usage:
-#   bazel run //quality/coverage:generate_coverage_html [-- [--archive <archive-name>] [output-dir]]
+#   bazel run //quality/coverage:generate_coverage_html [-- [--archive <archive-name>] [--platform <platform>] [output-dir]]
 #
 # Arguments:
 #   --archive <archive-name>  Also create a zip archive named <archive-name>.zip
 #                             containing the HTML report, raw LCOV data and JUnit XMLs.
-#   output-dir                Directory to write the HTML report to (default: cpp_coverage)
+#   --platform <platform>     Target platform for justification filtering (linux or qnx).
+#                             Default: linux. Also affects the default output directory
+#                             (cpp_coverage for linux, cpp_coverage_qnx for qnx).
+#   output-dir                Directory to write the HTML report to (default: cpp_coverage
+#                             or cpp_coverage_<platform>)
 
 set -euo pipefail
 
 ARCHIVE_NAME=""
-OUTPUT_DIR="cpp_coverage"
+PLATFORM="linux"
+OUTPUT_DIR=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --archive)
       ARCHIVE_NAME="${2:?--archive requires a name argument}"
+      shift 2
+      ;;
+    --platform)
+      PLATFORM="${2:?--platform requires a platform argument (linux or qnx)}"
       shift 2
       ;;
     *)
@@ -40,6 +51,15 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Set default output directory based on platform if not explicitly provided.
+if [[ -z "${OUTPUT_DIR}" ]]; then
+  if [[ "${PLATFORM}" == "linux" ]]; then
+    OUTPUT_DIR="cpp_coverage"
+  else
+    OUTPUT_DIR="cpp_coverage_${PLATFORM}"
+  fi
+fi
 
 # Change to the workspace root first so that all subsequent bazel calls
 # and relative paths work correctly.
@@ -62,30 +82,52 @@ cd "${BUILD_WORKSPACE_DIRECTORY}"
 # Resolve OUTPUT_DIR to absolute path (relative to workspace root).
 OUTPUT_DIR="${BUILD_WORKSPACE_DIRECTORY}/${OUTPUT_DIR}"
 
-# The coverage report generator produces a zip file at _coverage_report.dat
-# containing: html_report/, lcov_report/lcov.dat, text_report/summary.txt
-COVERAGE_ZIP="${BUILD_WORKSPACE_DIRECTORY}/bazel-out/_coverage/_coverage_report.dat"
+# The coverage report is at _coverage_report.dat. Its format depends on the
+# pipeline:
+#   - LLVM (--config=llvm_cov): zip containing html_report/, lcov_report/, text_report/
+#   - gcov (default/QNX):       plain LCOV text file
+COVERAGE_REPORT="${BUILD_WORKSPACE_DIRECTORY}/bazel-out/_coverage/_coverage_report.dat"
 
-if [[ ! -f "${COVERAGE_ZIP}" ]]; then
-  echo "ERROR: Coverage report not found at ${COVERAGE_ZIP}" >&2
+if [[ ! -f "${COVERAGE_REPORT}" ]]; then
+  echo "ERROR: Coverage report not found at ${COVERAGE_REPORT}" >&2
   echo "       Run 'bazel coverage //... --build_tests_only' first." >&2
   exit 1
 fi
 
-# Extract the HTML report from the zip.
 TMPDIR_EXTRACT="${TMPDIR:-/tmp}/coverage_extract_$$"
 mkdir -p "${TMPDIR_EXTRACT}"
 trap 'rm -rf "${TMPDIR_EXTRACT}"' EXIT
 
-unzip -q -o "${COVERAGE_ZIP}" -d "${TMPDIR_EXTRACT}"
-
-# Copy the HTML report to the output directory.
 rm -rf "${OUTPUT_DIR}"
-if [[ -d "${TMPDIR_EXTRACT}/html_report" ]]; then
-  cp -r "${TMPDIR_EXTRACT}/html_report" "${OUTPUT_DIR}"
+
+# Detect the report format: zip (LLVM pipeline) vs plain text (gcov pipeline).
+if file -b "${COVERAGE_REPORT}" | grep -q "Zip archive"; then
+  # -----------------------------------------------------------------------
+  # LLVM pipeline: extract HTML from the zip produced by our custom reporter.
+  # -----------------------------------------------------------------------
+  unzip -q -o "${COVERAGE_REPORT}" -d "${TMPDIR_EXTRACT}"
+
+  if [[ -d "${TMPDIR_EXTRACT}/html_report" ]]; then
+    cp -r "${TMPDIR_EXTRACT}/html_report" "${OUTPUT_DIR}"
+  else
+    echo "ERROR: html_report/ not found in ${COVERAGE_REPORT}" >&2
+    exit 1
+  fi
 else
-  echo "ERROR: html_report/ not found in ${COVERAGE_ZIP}" >&2
-  exit 1
+  # -----------------------------------------------------------------------
+  # gcov pipeline: _coverage_report.dat is an LCOV text file.
+  # Convert to HTML using lcov_to_html (genhtml-compatible Python tool).
+  # -----------------------------------------------------------------------
+
+  # Copy the raw LCOV data for later archiving.
+  cp "${COVERAGE_REPORT}" "${TMPDIR_EXTRACT}/lcov.dat"
+
+  echo "Generating HTML report from LCOV data..."
+  bazel run //quality/coverage/llvm_cov:lcov_to_html -- \
+    --lcov "${TMPDIR_EXTRACT}/lcov.dat" \
+    --output-dir "${OUTPUT_DIR}" \
+    --source-root "${BUILD_WORKSPACE_DIRECTORY}" \
+    --filter-regexes "${BUILD_WORKSPACE_DIRECTORY}/quality/coverage/llvm_cov/filter_regexes.txt"
 fi
 
 echo "Coverage report written to: ${OUTPUT_DIR}"
@@ -106,13 +148,20 @@ if [[ -f "${JUSTIFICATION_YAML}" ]]; then
   if bazel run //quality/coverage/llvm_cov:justify -- \
       --yaml "${JUSTIFICATION_YAML}" \
       --source-root "${BUILD_WORKSPACE_DIRECTORY}" \
+      --platform "${PLATFORM}" \
       --output "${JUSTIFICATION_DIR}/manifest.json"; then
 
     # Run effective_coverage.py via Bazel to post-process HTML and calculate effective coverage.
-    bazel run //quality/coverage/llvm_cov:effective_coverage -- \
-        --html-dir "${OUTPUT_DIR}" \
-        --manifest "${JUSTIFICATION_DIR}/manifest.json" \
+    EFFECTIVE_COV_ARGS=(
+        --html-dir "${OUTPUT_DIR}"
+        --manifest "${JUSTIFICATION_DIR}/manifest.json"
         --output "${JUSTIFICATION_DIR}/report.json"
+    )
+    # For gcov pipeline, pass the LCOV data for reliable totals parsing.
+    if [[ -f "${TMPDIR_EXTRACT}/lcov.dat" ]]; then
+      EFFECTIVE_COV_ARGS+=(--lcov "${TMPDIR_EXTRACT}/lcov.dat")
+    fi
+    bazel run //quality/coverage/llvm_cov:effective_coverage -- "${EFFECTIVE_COV_ARGS[@]}"
   fi
 
   # Display effective coverage summary.
@@ -149,9 +198,11 @@ if [[ -n "${ARCHIVE_NAME}" ]]; then
   # Copy the HTML coverage report
   cp -r "${OUTPUT_DIR}" artifacts/
 
-  # Include the LCOV .dat file from the zip (for backward compat with dashboards).
+  # Include the LCOV .dat file (from zip for LLVM, or directly for gcov).
   if [[ -f "${TMPDIR_EXTRACT}/lcov_report/lcov.dat" ]]; then
     cp "${TMPDIR_EXTRACT}/lcov_report/lcov.dat" artifacts/coverage_report.dat
+  elif [[ -f "${TMPDIR_EXTRACT}/lcov.dat" ]]; then
+    cp "${TMPDIR_EXTRACT}/lcov.dat" artifacts/coverage_report.dat
   fi
 
   zip -r "${ARCHIVE_NAME}.zip" artifacts/
