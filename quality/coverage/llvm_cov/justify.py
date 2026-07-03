@@ -46,6 +46,11 @@ VALID_CATEGORIES = {
     "other",
 }
 
+VALID_PLATFORMS = {
+    "linux",
+    "qnx",
+}
+
 
 def main() -> None:
     """Main entry point."""
@@ -59,13 +64,21 @@ def main() -> None:
     for entry in justifications_data.get("justifications", []):
         justifications_by_id[entry["id"]] = entry
 
+    # Filter justifications by platform if --platform is specified.
+    if args.platform:
+        justifications_by_id = {
+            jid: entry
+            for jid, entry in justifications_by_id.items()
+            if _matches_platform(entry, args.platform)
+        }
+
     # Resolve all justified lines
     resolved: Dict[str, Dict[int, Dict[str, str]]] = {}
     warnings: List[str] = []
     errors: List[str] = []
 
     # 1. Process YAML direct locations
-    for entry in justifications_data.get("justifications", []):
+    for jid, entry in justifications_by_id.items():
         for location in entry.get("locations", []):
             file_path = location["file"]
             full_path = Path(args.source_root) / file_path
@@ -143,6 +156,17 @@ def resolve_location_lines(location: Dict[str, Any]) -> List[int]:
     elif "line" in location:
         return [location["line"]]
     return []
+
+
+def _matches_platform(entry: Dict[str, Any], platform: str) -> bool:
+    """Check if a justification entry applies to the given platform.
+
+    If the entry has no ``platforms`` field, it applies to all platforms.
+    """
+    platforms = entry.get("platforms")
+    if platforms is None:
+        return True
+    return platform in platforms
 
 
 def scan_file_for_markers(
@@ -308,6 +332,25 @@ def validate_yaml(data: Dict[str, Any]) -> None:
                     f"Must be one of: {sorted(VALID_CATEGORIES)}"
                 )
 
+            if "platforms" in entry:
+                if not isinstance(entry["platforms"], list):
+                    errors.append(
+                        f"{prefix}: 'platforms' must be a list, "
+                        f"got {type(entry['platforms']).__name__}"
+                    )
+                else:
+                    for p in entry["platforms"]:
+                        if not isinstance(p, str):
+                            errors.append(
+                                f"{prefix}: 'platforms' entries must be strings, "
+                                f"got {type(p).__name__}"
+                            )
+                        elif p not in VALID_PLATFORMS:
+                            errors.append(
+                                f"{prefix}: invalid platform '{p}'. "
+                                f"Must be one of: {sorted(VALID_PLATFORMS)}"
+                            )
+
             if "reason" not in entry:
                 errors.append(f"{prefix}: missing 'reason'")
             elif not isinstance(entry["reason"], str):
@@ -394,6 +437,13 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="cpp,h,hpp,cc",
         help="Comma-separated file extensions to scan (default: cpp,h,hpp,cc)",
+    )
+    parser.add_argument(
+        "--platform",
+        type=str,
+        default=None,
+        choices=sorted(VALID_PLATFORMS),
+        help="Target platform for filtering justifications (default: all platforms apply)",
     )
     return parser.parse_args()
 
