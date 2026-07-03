@@ -48,3 +48,6 @@ coverage --cxxopt -runtime-counter-relocation
 # Then the first object is used, and it is pure luck if it contains the correct data or not. Even worse, small changes can change the order and then lead
 # to big coverage gaps. All these problems do not arise if no dynamic libs are used. Thus, we rather take bigger build times and binaries in advance for correct data.
 coverage --dynamic_mode=off
+
+# Disable treat_warnings_as_errors for coverage builds to avoid build failures from instrumentation-related warnings
+coverage --features=-score_communication_treat_warnings_as_errors
