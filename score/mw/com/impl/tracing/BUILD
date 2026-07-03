@@ -94,6 +94,9 @@ cc_library(
     srcs = ["common_event_tracing.cpp"],
     hdrs = ["common_event_tracing.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -102,7 +105,6 @@ cc_library(
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -131,6 +133,9 @@ cc_library(
     srcs = ["skeleton_event_tracing.cpp"],
     hdrs = ["skeleton_event_tracing.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -144,7 +149,6 @@ cc_library(
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -153,6 +157,9 @@ cc_library(
     srcs = ["proxy_event_tracing.cpp"],
     hdrs = ["proxy_event_tracing.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/mw/log",
+    ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -165,7 +172,6 @@ cc_library(
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -224,6 +230,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/analysis/tracing/generic_trace_library:implementation",
+        "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
     ],
     tags = ["FFI"],
@@ -232,7 +239,6 @@ cc_library(
         ":i_binding_tracing_runtime",
         ":i_tracing_runtime",
         ":trace_error",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
