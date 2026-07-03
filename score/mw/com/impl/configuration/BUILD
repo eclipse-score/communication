@@ -319,12 +319,14 @@ cc_library(
     srcs = ["service_type_deployment.cpp"],
     hdrs = ["service_type_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
         ":lola_service_type_deployment",
         "@score_baselibs//score/json",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -333,11 +335,13 @@ cc_library(
     srcs = ["service_version_type.cpp"],
     hdrs = ["service_version_type.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
         "@score_baselibs//score/json",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

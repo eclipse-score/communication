@@ -116,6 +116,9 @@ cc_library(
     srcs = ["binding_runtime_factory.cpp"],
     hdrs = ["binding_runtime_factory.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/plumbing:__subpackages__",
@@ -125,7 +128,6 @@ cc_library(
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/concurrency:executor",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -632,8 +634,8 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
-        # Removed unnecessary dependency
         "//score/mw/com/impl:i_generic_skeleton_event_binding_factory",
+        "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
     ],
 )
 

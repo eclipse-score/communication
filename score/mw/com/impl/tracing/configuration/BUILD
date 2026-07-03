@@ -223,6 +223,7 @@ cc_library(
     hdrs = ["tracing_filter_config_parser.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
@@ -233,7 +234,6 @@ cc_library(
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing:trace_error",
         "@score_baselibs//score/json",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
