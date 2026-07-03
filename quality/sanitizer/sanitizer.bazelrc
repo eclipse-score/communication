@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,38 +11,44 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# todo: Extract to toolchain feature once possible
-
-# Debug symbols (shared by sanitizer configs)
+build:with_debug_symbols --features=debug_symbols
 build:with_debug_symbols --cxxopt -gline-tables-only
 build:with_debug_symbols --cxxopt -gcolumn-info
 build:with_debug_symbols --strip=never
 
-# ASan + UBSan + LSan
-build:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:asan_ubsan_lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-build:asan_ubsan_lsan --config=with_debug_symbols
-build:asan_ubsan_lsan --//quality/sanitizer/flags:sanitizer=asan_ubsan_lsan
-build:asan_ubsan_lsan --cxxopt -fsanitize=undefined,address,leak
-build:asan_ubsan_lsan --cxxopt -fno-omit-frame-pointer
-build:asan_ubsan_lsan --cxxopt -fno-common
-build:asan_ubsan_lsan --linkopt -fsanitize=undefined,address,leak
-build:asan_ubsan_lsan --linkopt -fsanitize-link-c++-runtime
-build:asan_ubsan_lsan --platform_suffix=asan_ubsan
-test:asan_ubsan_lsan --run_under=//quality/sanitizer:wrapper
+build:sanitizer_common --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+build:sanitizer_common --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+build:sanitizer_common --config=with_debug_symbols
 
-build:asan --config=asan_ubsan_lsan
-build:ubsan --config=asan_ubsan_lsan
-build:lsan --config=asan_ubsan_lsan
+build:asan --config=sanitizer_common
+build:asan --features=score_asan
+build:asan --@score_cpp_policies//sanitizers/flags:asan=True
+build:asan --platform_suffix=asan
+test:asan  --run_under=@score_cpp_policies//sanitizers:wrapper
 
-# TSan
-build:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-build:tsan --config=with_debug_symbols
-build:tsan --//quality/sanitizer/flags:sanitizer=tsan
-build:tsan --cxxopt -fsanitize=thread
-build:tsan --cxxopt -O1
-build:tsan --linkopt -fsanitize=thread
-build:tsan --linkopt -fsanitize-link-c++-runtime
+build:ubsan --config=sanitizer_common
+build:ubsan --features=score_ubsan
+build:ubsan --@score_cpp_policies//sanitizers/flags:ubsan=True
+build:ubsan --platform_suffix=ubsan
+test:ubsan  --run_under=@score_cpp_policies//sanitizers:wrapper
+
+build:lsan --config=sanitizer_common
+build:lsan --features=score_lsan
+build:lsan --@score_cpp_policies//sanitizers/flags:lsan=True
+build:lsan --platform_suffix=lsan
+test:lsan  --run_under=@score_cpp_policies//sanitizers:wrapper
+
+build:tsan --config=sanitizer_common
+build:tsan --features=score_tsan
+build:tsan --@score_cpp_policies//sanitizers/flags:tsan=True
 build:tsan --platform_suffix=tsan
-test:tsan --run_under=//quality/sanitizer:wrapper
+test:tsan  --run_under=@score_cpp_policies//sanitizers:wrapper
+
+build:asan_ubsan_lsan --config=asan
+build:asan_ubsan_lsan --config=ubsan
+build:asan_ubsan_lsan --config=lsan
+build:asan_ubsan_lsan --platform_suffix=asan_ubsan_lsan
+
+build:tsan_ubsan --config=tsan
+build:tsan_ubsan --config=ubsan
+build:tsan_ubsan --platform_suffix=tsan_ubsan
