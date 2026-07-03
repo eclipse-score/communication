@@ -131,7 +131,7 @@ cc_library(
 unit(
     name = "client_connection",
     scope = [
-        ":message_passing_common",
+        "@@//score/message_passing:__subpackages__",
     ],
     tests = [
         "//score/message_passing:client_connection_test_linux",
@@ -140,6 +140,19 @@ unit(
     visibility = ["//score/message_passing/dependability:__pkg__"],
     implementation = [
         "//score/message_passing:message_passing_common",
+    ],
+)
+
+unit(
+    name = "server_connection",
+    scope = [
+        "@@//score/message_passing:__subpackages__",
+    ],
+    tests = [],
+    unit_design = ["//score/message_passing/dependability/software_unit_design:server_connection_unit_design"],
+    visibility = ["//score/message_passing/dependability:__pkg__"],
+    implementation = [
+        "//score/message_passing:common_headers",
     ],
 )
 
@@ -178,7 +191,7 @@ cc_library(
 unit(
     name = "unix_domain",
     scope = [
-        ":message_passing_unix_domain",
+        "@@//score/message_passing:__subpackages__",
     ],
     tests = [
         ":unix_domain_test_linux",
@@ -250,16 +263,12 @@ cc_library(
 unit(
     name = "qnx_dispatch",
     scope = [
-        "//score/message_passing:message_passing_qnx_dispatch",
+        "@@//score/message_passing:__subpackages__",
     ],
-    tests = [
-        ":qnx_dispatch_test_linux",
-    ],
+    tests = [],
     unit_design = ["//score/message_passing/dependability/software_unit_design:qnx_dispatch_unit_design"],
     visibility = ["//score/message_passing/dependability:__pkg__"],
-    implementation = [
-        ":message_passing_qnx_dispatch",
-    ],
+    implementation = [],
 )
 
 cc_library(

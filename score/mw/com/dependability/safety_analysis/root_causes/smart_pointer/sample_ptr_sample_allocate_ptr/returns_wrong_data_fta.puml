@@ -17,7 +17,7 @@
 
 $TopEvent("Returns wrong data", "Communication.ReturnsWrongData")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.ReturnsWrongData")
 $IntermediateEvent("Shared Memory no longer valid", "Event2", "Gate1")
 $BasicEvent("Life-Cycle issues", "Communication.LifeCycleIssues", "Event2")
 $BasicEvent("Wrong slot referenced", "Communication.WrongSlotReferenced", "Gate1")

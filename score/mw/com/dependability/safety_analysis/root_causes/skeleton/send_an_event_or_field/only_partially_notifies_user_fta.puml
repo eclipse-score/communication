@@ -17,7 +17,7 @@
 
 $TopEvent("Only partially notifies user", "Communication.SendingEventOnlyPartiallyNotifiesConsumer")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.SendingEventOnlyPartiallyNotifiesConsumer")
 $IntermediateEvent("Users did not successfully register", "Event1", "Gate1")
 $BasicEvent("Receive error on registration", "Communication.ReceiveErrorOnRegistration", "Event1")
 $IntermediateEvent("Notification is not send out", "Event3", "Gate1")

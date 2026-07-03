@@ -17,7 +17,7 @@
 
 $TopEvent("Does not free Resources after usage", "Communication.SendingEventDoesNotFreeResources")
 
-$IntermediateEvent("Slot state remains in Writing state after send", "Event1", "TopEvent")
+$IntermediateEvent("Slot state remains in Writing state after send", "Event1", "Communication.SendingEventDoesNotFreeResources")
 $OrGate("Gate1", "Event1")
 $BasicEvent("Writing State change is not working", "Communication.WritingStateChangeIsNotWorking", "Gate1")
 $BasicEvent("Copy on send does not destroy SampleAllocateePtr", "Communication.CopyOnSendDoesNotDestroySampleallocateeptr", "Gate1")

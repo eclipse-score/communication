@@ -16,7 +16,7 @@
 
 $TopEvent("Does not unsubscribe", "Communication.DoesNotUnsubscribe")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.DoesNotUnsubscribe")
 $BasicEvent("Explicit unsubscribe by user failed", "Communication.ExplicitUnsubscribeByUserFailed", "Gate1")
 $BasicEvent("Proxy crashes without unsubscription", "Communication.ProxyCrashesWithoutUnsubscription", "Gate1")
 

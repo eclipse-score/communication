@@ -17,7 +17,7 @@
 
 $TopEvent("Subscribe to Wrong Event or Field", "Communication.SubscribeToWrongEvent")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.SubscribeToWrongEvent")
 $IntermediateEvent("Generic Proxy\nMapping Error", "Event1", "Gate1")
 $BasicEvent("Event/Field name mapping clash", "Communication.EventFieldNameMappingClash", "Event1")
 $BasicEvent("Event/Field ID references wrong storage.", "Communication.EventFieldIdReferencesWrongStorage", "Gate1")
