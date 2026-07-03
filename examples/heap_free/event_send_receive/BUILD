@@ -12,6 +12,7 @@
 # *******************************************************************************
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("//bazel:json_schema_validator.bzl", "validate_json_schema_test")
 
 COM_DEP = [
     "//heap_free:heap_check_lib",
@@ -34,6 +35,12 @@ cc_binary(
         "aborts_upon_exception",
     ],
     deps = COM_DEP,
+)
+
+validate_json_schema_test(
+    name = "validate_mw_com_config_schema",
+    json = "etc/mw_com_config.json",
+    schema = "@score_communication//score/mw/com:config_schema",
 )
 
 # Proxy: FindService + Subscribe in init phase; verify subscription state

@@ -140,8 +140,8 @@ share the same `serviceId` (7000) and `instanceId`.
 
 ## ASIL-B Production Considerations
 
-These examples run at QM level. Teams adapting these patterns for ASIL-B production
-should additionally:
+These examples are configured at ASIL-B level. Teams adapting these patterns for
+production should additionally:
 
 - Register MISRA deviations for `heap_check.h` in the project deviation record
 - Notify the safety monitor before calling `std::abort()` on heap violation

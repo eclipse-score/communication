@@ -38,12 +38,12 @@
         {
           "instanceId": 1,
           "allowedProvider": {
-            "QM": [0]
+            "B": [0]
           },
           "allowedConsumer": {
-            "QM": [0]
+            "B": [0]
           },
-          "asil-level": "QM",
+          "asil-level": "B",
           "binding": "SHM",
           "events": [
             {
@@ -62,5 +62,8 @@
         }
       ]
     }
-  ]
+  ],
+  "global": {
+    "asil-level": "B"
+  }
 }
