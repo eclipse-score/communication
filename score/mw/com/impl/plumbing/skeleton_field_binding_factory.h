@@ -38,10 +38,10 @@ class SkeletonFieldBindingFactory final
   public:
     /// \brief See documentation in ISkeletonFieldBindingFactory.
     static std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(const InstanceIdentifier& identifier,
-                                                                                SkeletonBase& parent,
+                                                                                SkeletonBinding& parent_binding,
                                                                                 const std::string_view field_name)
     {
-        return instance().CreateEventBinding(identifier, parent, field_name);
+        return instance().CreateEventBinding(identifier, parent_binding, field_name);
     }
 
     /// \brief Inject a mock ISkeletonFieldBindingFactory. If a mock is injected, then all calls on

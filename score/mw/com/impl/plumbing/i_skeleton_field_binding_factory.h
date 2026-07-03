@@ -46,7 +46,7 @@ class ISkeletonFieldBindingFactory
     /// \param field_name The binding unspecific name of the field inside the skeleton denoted by instance identifier.
     /// \return An instance of SkeletonEventBinding or nullptr in case of an error.
     virtual auto CreateEventBinding(const InstanceIdentifier& identifier,
-                                    SkeletonBase& parent,
+                                    SkeletonBinding& parent_binding,
                                     const std::string_view field_name) noexcept
         -> std::unique_ptr<SkeletonEventBinding<SampleType>> = 0;
 };

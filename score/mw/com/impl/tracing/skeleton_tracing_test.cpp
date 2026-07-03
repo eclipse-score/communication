@@ -89,7 +89,7 @@ class SkeletonTracingFixture : public ::testing::Test
     SkeletonTracingFixture()
         : empty_skeleton_{std::make_unique<mock_binding::Skeleton>(), kInstanceIdentifier},
           mock_skeleton_binding_{
-              *dynamic_cast<mock_binding::Skeleton*>(SkeletonBaseView{empty_skeleton_}.GetBinding())},
+              *dynamic_cast<mock_binding::Skeleton*>(&SkeletonBaseView{empty_skeleton_}.GetBinding())},
           skeleton_event_base_{kEventName, std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>()},
           skeleton_field_base_{empty_skeleton_, kFieldName, std::make_unique<mock_binding::SkeletonEventBase>()},
           events_map_{{kEventName, skeleton_event_base_.GetReferenceToMoveable()}},

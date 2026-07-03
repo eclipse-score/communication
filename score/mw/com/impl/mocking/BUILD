@@ -178,6 +178,7 @@ cc_library(
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:instance_specifier",
         "//score/mw/com/impl:traits",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "@score_baselibs//score/result",
     ],
@@ -196,6 +197,7 @@ cc_library(
         ":proxy_event_mock",
         ":test_type_utilities",
         "//score/mw/com/impl:traits",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "@score_baselibs//score/result",
     ],
@@ -217,6 +219,7 @@ cc_unit_test(
         ":skeleton_base_mock",
         ":test_type_utilities",
         "//score/mw/com/impl:skeleton_base",
+        "//score/mw/com/impl/bindings/mock_binding",
     ],
 )
 
@@ -227,6 +230,7 @@ cc_unit_test(
         ":skeleton_event_mock",
         ":test_type_utilities",
         "//score/mw/com/impl:skeleton_event",
+        "//score/mw/com/impl/bindings/mock_binding",
     ],
 )
 
@@ -237,6 +241,7 @@ cc_unit_test(
         ":skeleton_field_mock",
         ":test_type_utilities",
         "//score/mw/com/impl:skeleton_field",
+        "//score/mw/com/impl/bindings/mock_binding",
     ],
 )
 

@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/skeleton_base.h"
 
+#include "gtest/gtest.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_method.h"
 #include "score/mw/com/impl/com_error.h"
@@ -67,10 +68,12 @@ class MyDummySkeleton final : public SkeletonBase
     SkeletonField<TestSampleType, WithNotifier> dummy_field{*this, kDummyFieldName};
 };
 
-mock_binding::Skeleton* GetMockBinding(MyDummySkeleton& skeleton) noexcept
+mock_binding::Skeleton& GetMockBinding(MyDummySkeleton& skeleton) noexcept
 {
-    auto* const binding_mock_raw = SkeletonBaseView{skeleton}.GetBinding();
-    return dynamic_cast<mock_binding::Skeleton*>(binding_mock_raw);
+    auto& binding_mock_ref = SkeletonBaseView{skeleton}.GetBinding();
+    auto* const mock_binding = dynamic_cast<mock_binding::Skeleton*>(&binding_mock_ref);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(mock_binding != nullptr);
+    return *mock_binding;
 }
 
 class SkeletonBaseFixture : public ::testing::Test
@@ -131,7 +134,7 @@ class SkeletonBaseFixture : public ::testing::Test
 
         skeleton_ = std::make_unique<MyDummySkeleton>(std::make_unique<mock_binding::Skeleton>(), instance_identifier);
 
-        binding_mock_ = GetMockBinding(*skeleton_);
+        binding_mock_ = &GetMockBinding(*skeleton_);
         ASSERT_NE(binding_mock_, nullptr);
         ON_CALL(*binding_mock_, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
         ON_CALL(*binding_mock_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
@@ -189,6 +192,16 @@ class SkeletonBaseFixture : public ::testing::Test
 
     std::unique_ptr<MyDummySkeleton> skeleton_{nullptr};
 };
+
+using SkeletonBaseCreationDeathTest = SkeletonBaseFixture;
+TEST_F(SkeletonBaseCreationDeathTest, CreatingSkeletonTerminatesWhenBindingIsNullTerminates)
+{
+    std::unique_ptr<SkeletonBinding> skeleton_binding_null{nullptr};
+
+    // When creating a Skeleton with a null binding
+    // Then the program terminates
+    EXPECT_DEATH(SkeletonBase(std::move(skeleton_binding_null), this->GetInstanceIdentifierWithValidBinding()), ".*");
+}
 
 using SkeletonBaseOfferFixture = SkeletonBaseFixture;
 TEST_F(SkeletonBaseOfferFixture, OfferService)
@@ -364,17 +377,6 @@ TEST_F(SkeletonBaseOfferDeathTest, TerminateOnOfferWithNoBinding)
     EXPECT_DEATH(offer_unit_with_prepare_offering_failure(), ".*");
 }
 
-TEST_F(SkeletonBaseOfferDeathTest, OfferServiceTerminatesWhenBindingIsNull)
-{
-    std::unique_ptr<SkeletonBinding> skeleton_binding_null{nullptr};
-
-    // Given a constructed Skeleton with null Binding
-    SkeletonBase unit{std::move(skeleton_binding_null), this->GetInstanceIdentifierWithValidBinding()};
-
-    // Expect to die, when offering a Service without a valid binding
-    EXPECT_DEATH({ score::cpp::ignore = unit.OfferService(); }, ".*");
-}
-
 using SkeletonBaseStopOfferFixture = SkeletonBaseFixture;
 TEST_F(SkeletonBaseStopOfferFixture, PrepareStopOffer)
 {
@@ -487,16 +489,14 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingServi
 
     // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
     MyDummySkeleton skeleton(std::make_unique<mock_binding::Skeleton>(), GetInstanceIdentifierWithValidBinding());
-    mock_binding::Skeleton* const binding_mock = GetMockBinding(skeleton);
+    mock_binding::Skeleton& binding_mock = GetMockBinding(skeleton);
 
-    ON_CALL(*binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
-    ON_CALL(*binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
-
-    ASSERT_NE(binding_mock, nullptr);
+    ON_CALL(binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+    ON_CALL(binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
 
     // Expecting that PrepareOffer gets called on the skeleton binding and each event twice, each time OfferService is
     // called (i.e. total of 6)
-    EXPECT_CALL(*binding_mock, PrepareOffer(_, _, _)).Times(2);
+    EXPECT_CALL(binding_mock, PrepareOffer(_, _, _)).Times(2);
     EXPECT_CALL(*event_binding_mock_1_, PrepareOffer()).Times(2);
     EXPECT_CALL(*event_binding_mock_2_, PrepareOffer()).Times(2);
     EXPECT_CALL(*field_binding_mock_, PrepareOffer()).Times(2);
@@ -540,15 +540,13 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterCallingStopOfferServi
 
         // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
         MyDummySkeleton skeleton(std::make_unique<mock_binding::Skeleton>(), GetInstanceIdentifierWithValidBinding());
-        mock_binding::Skeleton* const binding_mock = GetMockBinding(skeleton);
+        mock_binding::Skeleton& binding_mock = GetMockBinding(skeleton);
 
-        ON_CALL(*binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
-        ON_CALL(*binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
-
-        ASSERT_NE(binding_mock, nullptr);
+        ON_CALL(binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+        ON_CALL(binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
 
         // Expecting that PrepareOffer gets called on the skeleton binding and each event twice
-        EXPECT_CALL(*binding_mock, PrepareOffer(_, _, _))
+        EXPECT_CALL(binding_mock, PrepareOffer(_, _, _))
             .Times(2)
             .WillRepeatedly(Invoke([&skeleton_offer_count](
                                        SkeletonBinding::SkeletonEventBindings&,

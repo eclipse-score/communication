@@ -121,7 +121,7 @@ class SkeletonBaseView
 
     [[nodiscard]] InstanceIdentifier GetAssociatedInstanceIdentifier() const;
 
-    [[nodiscard]] SkeletonBinding* GetBinding() const;
+    [[nodiscard]] SkeletonBinding& GetBinding() const;
 
     void RegisterEvent(std::string_view event_name, ReferenceToMoveable<SkeletonEventBase>::Reference& event);
 

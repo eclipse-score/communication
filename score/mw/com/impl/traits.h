@@ -231,6 +231,13 @@ class SkeletonWrapperClass : public Interface<Trait>
         }
 
         auto skeleton_binding = SkeletonBindingFactory::Create(instance_identifier);
+        if (skeleton_binding == nullptr)
+        {
+            ::score::mw::log::LogError("lola")
+                << "Could not create SkeletonWrapperClass as Skeleton binding could not be created.";
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+
         SkeletonWrapperClass skeleton_wrapper(instance_identifier, std::move(skeleton_binding));
         if (!skeleton_wrapper.AreBindingsValid())
         {

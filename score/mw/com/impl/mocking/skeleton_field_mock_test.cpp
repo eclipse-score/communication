@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/mocking/skeleton_field_mock.h"
+#include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/mocking/test_type_utilities.h"
 #include "score/mw/com/impl/skeleton_field.h"
@@ -40,7 +41,7 @@ class SkeletonFieldMockFixture : public ::testing::Test
     }
 
     SkeletonFieldMock<TestSampleType> skeleton_field_mock_{};
-    SkeletonBase skeleton_base_{nullptr, MakeFakeInstanceIdentifier(1U)};
+    SkeletonBase skeleton_base_{std::make_unique<mock_binding::Skeleton>(), MakeFakeInstanceIdentifier(1U)};
     SkeletonField<TestSampleType, WithGetter, WithNotifier, WithSetter> unit_{skeleton_base_, kDummyFieldName, nullptr};
 };
 

@@ -105,6 +105,7 @@ cc_unit_test(
     deps = [
         ":skeleton_method_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
@@ -823,6 +824,8 @@ cc_unit_test(
     deps = [
         ":skeleton_event_binding_factory",
         ":skeleton_field_binding_factory",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
     ],

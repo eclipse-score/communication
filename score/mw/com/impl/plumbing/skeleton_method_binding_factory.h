@@ -33,7 +33,7 @@ class SkeletonMethodBindingFactory final
   public:
     /// \brief See documentation in ISkeletonMethodBindingFactory.
     static std::unique_ptr<SkeletonMethodBinding> Create(const InstanceIdentifier& instance_identifier,
-                                                         SkeletonBinding* parent_binding,
+                                                         SkeletonBinding& parent_binding,
                                                          const std::string_view method_name,
                                                          MethodType method_type);
 

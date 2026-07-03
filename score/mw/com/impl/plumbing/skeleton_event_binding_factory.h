@@ -40,10 +40,10 @@ class SkeletonEventBindingFactory final
   public:
     /// \brief See documentation in ISkeletonEventBindingFactory.
     static std::unique_ptr<SkeletonEventBinding<SampleType>> Create(const InstanceIdentifier& identifier,
-                                                                    SkeletonBase& parent,
+                                                                    SkeletonBinding& parent_binding,
                                                                     const std::string_view event_name) noexcept
     {
-        return instance().Create(identifier, parent, event_name);
+        return instance().Create(identifier, parent_binding, event_name);
     }
 
     /// \brief Inject a mock ISkeletonEventBindingFactory. If a mock is injected, then all calls on

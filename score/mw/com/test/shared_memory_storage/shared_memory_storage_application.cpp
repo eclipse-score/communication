@@ -82,7 +82,8 @@ template <typename ServiceElementViewType, typename LolaServiceElementType, type
 std::optional<score::mw::com::impl::lola::ElementFqId> GetElementFqId(ServiceElementType& service_element)
 {
     auto* const map_api_lanes_stamped_binding =
-        score::mw::com::test::GetLolaBinding<ServiceElementViewType, LolaServiceElementType>(service_element);
+        score::mw::com::test::GetLolaServiceElementBinding<ServiceElementViewType, LolaServiceElementType>(
+            service_element);
     if (map_api_lanes_stamped_binding == nullptr)
     {
         return {};
