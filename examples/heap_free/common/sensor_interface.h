@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_EXAMPLES_COMMON_SENSOR_INTERFACE_H
-#define SCORE_MW_COM_EXAMPLES_COMMON_SENSOR_INTERFACE_H
+#ifndef SCORE_MW_COM_EXAMPLES_HEAP_FREE_COMMON_SENSOR_INTERFACE_H
+#define SCORE_MW_COM_EXAMPLES_HEAP_FREE_COMMON_SENSOR_INTERFACE_H
 
 // Shared typed service interface used by all four heap-free examples.
 // Instantiate with AsSkeleton<SensorInterface> or AsProxy<SensorInterface>.
@@ -20,7 +20,7 @@
 
 #include <cstdint>
 
-namespace examples
+namespace sensor
 {
 
 // Payload for the "reading" event.
@@ -51,6 +51,6 @@ class SensorInterface : public Trait::Base
 using SensorSkeleton = score::mw::com::AsSkeleton<SensorInterface>;
 using SensorProxy = score::mw::com::AsProxy<SensorInterface>;
 
-}  // namespace examples
+}  // namespace sensor
 
-#endif  // SCORE_MW_COM_EXAMPLES_COMMON_SENSOR_INTERFACE_H
+#endif  // SCORE_MW_COM_EXAMPLES_HEAP_FREE_COMMON_SENSOR_INTERFACE_H

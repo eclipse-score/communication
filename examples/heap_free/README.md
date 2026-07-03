@@ -1,8 +1,8 @@
 # Heap-Free mw::com Examples
 
 These examples demonstrate how to use `mw::com` skeleton and proxy APIs without heap
-allocation in the operational (real-time) phase. They serve as a reference for components
-with ASIL-B or FFI heap-allocation constraints.
+allocation. They serve as a reference for components with ASIL-B or FFI heap-allocation
+constraints.
 
 For an overview of the `mw::com` module, its architecture, and the LoLa shared-memory
 transport, see the [Communication Module README](../../score/mw/com/README.md).
@@ -50,14 +50,13 @@ The boundary is enforced by `heap_check::forbid_heap()`. See
 
 The `mw::com` skeleton API does not currently provide a method to query subscriber
 count or detect subscriptions from the skeleton side. `Send()` and `Allocate()` succeed
-regardless of whether any proxy is subscribed — events are written to shared memory
+regardless of whether any proxy is subscribed, events are written to shared memory
 either way.
 
-For systems that require skeleton-proxy synchronization across LoLa domains (e.g.,
-between SoCs or VMs), the [LoLa inter-domain Gateway](../../score/mw/com/gateway/README.md)
-bridges services and forwards subscription notifications between domains. For
-SOME/IP-based network bridging, see the
-[SOME/IP Gateway](https://github.com/eclipse-score/inc_someip_gateway).
+For systems that require skeleton-proxy synchronization across LoLa domains, the
+[LoLa inter-domain Gateway](../../score/mw/com/gateway/README.md) bridges services
+and forwards subscription notifications between domains. For SOME/IP-based network
+bridging, see the [SOME/IP Gateway](https://github.com/eclipse-score/inc_someip_gateway).
 
 ### Polling vs. Receive Handler
 

@@ -50,11 +50,11 @@ int main(int argc, char* argv[])
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/event_send_receive/SensorInterface"});
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "InstanceSpecifier::Create failed");
 
-    score::Result<examples::SensorSkeleton> skeleton_result =
-        examples::SensorSkeleton::Create(specifier_result.value());
+    score::Result<sensor::SensorSkeleton> skeleton_result =
+        sensor::SensorSkeleton::Create(specifier_result.value());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton_result.has_value(),
                                                 "SensorSkeleton::Create failed — check mw_com_config.json");
-    examples::SensorSkeleton& sk = skeleton_result.value();
+    sensor::SensorSkeleton& sk = skeleton_result.value();
 
     score::Result<void> init_update_result = sk.calibration_status.Update(0U);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_update_result.has_value(),
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
 
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
-        score::Result<score::mw::com::SampleAllocateePtr<examples::SensorReading>> sample_result =
+        score::Result<score::mw::com::SampleAllocateePtr<sensor::SensorReading>> sample_result =
             sk.reading.Allocate();
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
             sample_result.has_value(), "reading.Allocate failed — all SHM slots may be held by slow subscribers");

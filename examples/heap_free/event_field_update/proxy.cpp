@@ -53,11 +53,11 @@ int main(int argc, char* argv[])
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/event_field_update/SensorInterface"});
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "InstanceSpecifier::Create failed");
 
-    score::mw::com::ServiceHandleContainer<examples::SensorProxy::HandleType> handles{};
+    score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType> handles{};
     for (std::uint32_t attempt = 0U; attempt < kMaxFindAttempts; ++attempt)
     {
-        score::Result<score::mw::com::ServiceHandleContainer<examples::SensorProxy::HandleType>> handles_result =
-            examples::SensorProxy::FindService(specifier_result.value());
+        score::Result<score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType>> handles_result =
+            sensor::SensorProxy::FindService(specifier_result.value());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(handles_result.has_value(),
                                                     "FindService failed — check mw_com_config.json");
         handles = std::move(handles_result.value());
@@ -70,9 +70,9 @@ int main(int argc, char* argv[])
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         !handles.empty(), "Service not found after all attempts — is event_field_update/skeleton running?");
 
-    score::Result<examples::SensorProxy> proxy_result = examples::SensorProxy::Create(handles.front());
+    score::Result<sensor::SensorProxy> proxy_result = sensor::SensorProxy::Create(handles.front());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_result.has_value(), "SensorProxy::Create failed");
-    examples::SensorProxy& proxy = proxy_result.value();
+    sensor::SensorProxy& proxy = proxy_result.value();
 
     score::Result<void> reading_subscribe_result = proxy.reading.Subscribe(kMaxSamples);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(reading_subscribe_result.has_value(), "reading.Subscribe failed");
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
         score::Result<std::size_t> reading_result = proxy.reading.GetNewSamples(
-            [](score::mw::com::SamplePtr<examples::SensorReading> sample) noexcept {
+            [](score::mw::com::SamplePtr<sensor::SensorReading> sample) noexcept {
                 static_cast<void>(sample->sequence);
                 static_cast<void>(sample->value);
             },

@@ -41,6 +41,7 @@ validate_json_schema_test(
     name = "validate_mw_com_config_schema",
     json = "etc/mw_com_config.json",
     schema = "@score_communication//score/mw/com:config_schema",
+    tags = ["lint"],
 )
 
 # Proxy: FindService + Subscribe in init phase; verify subscription state
