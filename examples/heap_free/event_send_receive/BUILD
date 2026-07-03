@@ -14,13 +14,13 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 COM_DEP = [
-    "//:heap_check_lib",
-    "//:sensor_interface",
+    "//heap_free:heap_check_lib",
+    "//heap_free:sensor_interface",
     "@score_communication//score/mw/com",
     "@score_baselibs//score/mw/log",
 ]
 
-# Skeleton: event + field update with no heap in the operational phase.
+# Skeleton: zero-copy event send loop with no heap in the operational phase.
 cc_binary(
     name = "skeleton",
     srcs = ["skeleton.cpp"],
@@ -36,8 +36,8 @@ cc_binary(
     deps = COM_DEP,
 )
 
-# Proxy: polling receive via GetNewSamples for event and field, no heap
-# in the operational phase. Run alongside the skeleton.
+# Proxy: FindService + Subscribe in init phase; verify subscription state
+# and Unsubscribe in the operational phase. Run alongside the skeleton.
 cc_binary(
     name = "proxy",
     srcs = ["proxy.cpp"],

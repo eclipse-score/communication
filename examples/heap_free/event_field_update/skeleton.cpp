@@ -12,8 +12,6 @@
  ********************************************************************************/
 
 // Skeleton: event + field update, no heap in the operational phase.
-// Update() before OfferService() allocates (initial value storage); after
-// OfferService() it writes directly to shared memory.
 #include "common/sensor_interface.h"
 #include "heap_check/heap_check.h"  // include in exactly ONE translation unit per binary
 
@@ -58,25 +56,20 @@ int main(int argc, char* argv[])
                                                 "SensorSkeleton::Create failed — check mw_com_config.json");
     examples::SensorSkeleton& sk = skeleton_result.value();
 
-    // Before OfferService, Update() stores the value on the heap (see skeleton_field.h:309 —
-    // std::make_unique<FieldType>), since shared memory isn't set up yet.
     score::Result<void> init_update_result = sk.calibration_status.Update(0U);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_update_result.has_value(),
                                                 "calibration_status.Update (initial) failed");
 
-    // OfferService sets up the shared memory bindings — allocates during this setup.
     score::Result<void> offer_result = sk.OfferService();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(),
                                                 "OfferService failed — check mw_com_config.json");
 
-    // ---- OPERATIONAL PHASE ----
+    // ---- OPERATIONAL PHASE (see README.md for heap behavior of each API) ----
     score::mw::log::LogInfo("SkEf") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
 
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
-        // Allocate() returns a slot in the SHM ring buffer, not heap memory
-        // (see plumbing/sample_allocatee_ptr.h — pimpl avoided to prevent dynamic allocation).
         score::Result<score::mw::com::SampleAllocateePtr<examples::SensorReading>> sample_result =
             sk.reading.Allocate();
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
@@ -85,12 +78,9 @@ int main(int argc, char* argv[])
         sample_result.value()->sequence = i;
         sample_result.value()->value = static_cast<float>(i) * 0.1F;
 
-        // Send() is the zero-copy mechanism (see skeleton_event.h:107-110) — no heap involved.
         score::Result<void> send_result = sk.reading.Send(std::move(sample_result.value()));
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(send_result.has_value(), "reading.Send failed");
 
-        // After OfferService, Update() writes directly to shared memory via the LoLa binding
-        // (see skeleton_field.h:331,345-346) — no heap.
         score::Result<void> field_result = sk.calibration_status.Update(i);
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(field_result.has_value(), "calibration_status.Update failed");
 

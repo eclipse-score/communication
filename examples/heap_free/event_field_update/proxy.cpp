@@ -12,8 +12,6 @@
  ********************************************************************************/
 
 // Proxy: polling receive for event and field, no heap in the operational phase.
-// SetReceiveHandler allocates internally (std::make_shared, see proxy_event_base.cpp),
-// so we poll with GetNewSamples instead — keeping the operational phase heap-free.
 #include "common/sensor_interface.h"
 #include "heap_check/heap_check.h"  // include in exactly ONE translation unit per binary
 
@@ -58,7 +56,6 @@ int main(int argc, char* argv[])
     score::mw::com::ServiceHandleContainer<examples::SensorProxy::HandleType> handles{};
     for (std::uint32_t attempt = 0U; attempt < kMaxFindAttempts; ++attempt)
     {
-        // FindService returns a ServiceHandleContainer (std::vector) — allocates, so it stays in init.
         score::Result<score::mw::com::ServiceHandleContainer<examples::SensorProxy::HandleType>> handles_result =
             examples::SensorProxy::FindService(specifier_result.value());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(handles_result.has_value(),
@@ -77,7 +74,6 @@ int main(int argc, char* argv[])
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_result.has_value(), "SensorProxy::Create failed");
     examples::SensorProxy& proxy = proxy_result.value();
 
-    // Subscribe sets up the SHM binding — allocates, so it stays in init.
     score::Result<void> reading_subscribe_result = proxy.reading.Subscribe(kMaxSamples);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(reading_subscribe_result.has_value(), "reading.Subscribe failed");
 
@@ -85,14 +81,12 @@ int main(int argc, char* argv[])
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(field_subscribe_result.has_value(),
                                                 "calibration_status.Subscribe failed");
 
-    // ---- OPERATIONAL PHASE ----
+    // ---- OPERATIONAL PHASE (see README.md for heap behavior of each API) ----
     score::mw::log::LogInfo("PxEf") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
 
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
-        // GetNewSamples reads from shared memory; the callback gets a SamplePtr into SHM, not the
-        // heap. The callback itself must not allocate either.
         score::Result<std::size_t> reading_result = proxy.reading.GetNewSamples(
             [](score::mw::com::SamplePtr<examples::SensorReading> sample) noexcept {
                 static_cast<void>(sample->sequence);
@@ -101,7 +95,6 @@ int main(int argc, char* argv[])
             kMaxSamples);
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(reading_result.has_value(), "reading.GetNewSamples failed");
 
-        // Field updates may not arrive every cycle — GetNewSamples returns 0 if nothing is new.
         score::Result<std::size_t> field_result = proxy.calibration_status.GetNewSamples(
             [](score::mw::com::SamplePtr<std::uint32_t> sample) noexcept {
                 static_cast<void>(*sample);

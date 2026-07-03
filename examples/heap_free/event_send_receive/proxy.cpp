@@ -12,7 +12,6 @@
  ********************************************************************************/
 
 // Proxy: service discovery and subscribe, no heap in the operational phase.
-// FindService and Subscribe allocate and must stay in the init phase.
 #include "common/sensor_interface.h"
 #include "heap_check/heap_check.h"  // include in exactly ONE translation unit per binary
 
@@ -56,7 +55,6 @@ int main(int argc, char* argv[])
     score::mw::com::ServiceHandleContainer<examples::SensorProxy::HandleType> handles{};
     for (std::uint32_t attempt = 0U; attempt < kMaxFindAttempts; ++attempt)
     {
-        // FindService returns a ServiceHandleContainer (std::vector) — allocates, so it stays in init.
         score::Result<score::mw::com::ServiceHandleContainer<examples::SensorProxy::HandleType>> handles_result =
             examples::SensorProxy::FindService(specifier_result.value());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(handles_result.has_value(),
@@ -71,20 +69,16 @@ int main(int argc, char* argv[])
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         !handles.empty(), "Service not found after all attempts — is event_send_receive/skeleton running?");
 
-    // Create() allocates the proxy's event and method bindings internally.
     score::Result<examples::SensorProxy> proxy_result = examples::SensorProxy::Create(handles.front());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_result.has_value(), "SensorProxy::Create failed");
     examples::SensorProxy& proxy = proxy_result.value();
 
-    // Subscribe sets up the SHM binding — allocates, so it stays in init.
     score::Result<void> subscribe_result = proxy.reading.Subscribe(kMaxSamples);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(subscribe_result.has_value(), "reading.Subscribe failed");
 
-    // ---- OPERATIONAL PHASE ----
+    // ---- OPERATIONAL PHASE (see README.md for heap behavior of each API) ----
     score::mw::log::LogInfo("PxEs") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
-
-    // GetSubscriptionState is an atomic read — no allocation.
     score::mw::com::SubscriptionState state = proxy.reading.GetSubscriptionState();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         state == score::mw::com::SubscriptionState::kSubscribed,
