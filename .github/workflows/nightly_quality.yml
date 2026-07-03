@@ -14,7 +14,7 @@
 # Workflow: Run nightly quality jobs and publish results to GitHub Pages.
 #
 # Runs every night at midnight UTC:
-#   - Coverage  : full C++ test suite with gcov/lcov → HTML report
+#   - Coverage  : full C++ test suite with llvm-cov → HTML report
 #   - Clang-Tidy: static analysis across all C++ targets → findings text file
 #   - CodeQL    : MISRA C++ compliance analysis → CSV findings
 #

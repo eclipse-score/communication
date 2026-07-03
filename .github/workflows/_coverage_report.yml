@@ -59,7 +59,7 @@ jobs:
         run: |
           bazel run //quality/coverage:generate_coverage_html -- \
             --archive "${{ github.event.repository.name }}_coverage_report_${{ github.sha }}" \
-            cpp_coverage
+            cpp_coverage_linux
 
       - name: Upload coverage artifacts
         if: inputs.fetch-only != 'true' && steps.generate-report.outcome == 'success'
