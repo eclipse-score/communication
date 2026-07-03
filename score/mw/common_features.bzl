@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 COMPILER_WARNING_FEATURES = [
-    "treat_warnings_as_errors",
-    "additional_warnings",
-    "strict_warnings",
+    "score_communication_treat_warnings_as_errors",
+    "score_communication_strict_warnings",
+    "score_communication_additional_warnings",
 ]

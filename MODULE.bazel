@@ -64,12 +64,20 @@ bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
 gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains", dev_dependency = True)
 gcc_toolchains.toolchain(
     name = "gcc_toolchain_x86_64",
+    # TODO: Add extra_known_features once gcc_toolchain supports it.
+    # See: https://github.com/f0rmiga/gcc-toolchain/issues/219
     extra_cxxflags = [
-        "-fdiagnostics-color=always",  # Adds copt to always use coloring in build output
-        "-Wsign-conversion",
-        "-Wswitch-enum",
-        "-Werror",
-        "-Wno-error=deprecated-declarations",
+        # Diagnostics
+        "-fdiagnostics-color=always",
+        # Minimal warning baseline (mirrors quality/compiler_warnings/gcc minimal_warnings)
+        # Ref: https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+        "-Wall",  # Foundation warning set (MISRA Dir 1.1)
+        "-Wswitch-enum",  # Warn on unhandled enum in switch (MISRA Rule 9.6.4)
+        "-Wno-error=deprecated-declarations",  # Allow deprecated API as warning
+        "-Wno-error=cpp",  # Allow #warning as warning
+        "-Wno-maybe-uninitialized",  # GCC 8/9 false positives (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635)
+        "-Wno-free-nonheap-object",  # GCC false positive (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=99578)
+        "-Wunused-but-set-parameter",  # Dead store detection (MISRA Rule 0.1.1)
     ],
     extra_ldflags = [
         "-lstdc++",
@@ -84,8 +92,31 @@ use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.4", dev_dependency = True)
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
+
+# Minimal warning baseline for the S-CORE GCC/QCC toolchains.
+# Mirrors //quality/compiler_warnings/gcc:minimal_warnings. The S-CORE GCC
+# toolchain extension does not consume cc_features, so the baseline is applied
+# directly as compiler flags. Warning-as-error enforcement stays in the
+# score_communication_* cc_features (currently consumed by the LLVM toolchain).
+SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
+    "-Wall",
+    "-Wno-error=deprecated-declarations",
+    "-Wno-error=cpp",
+    "-Wno-format-y2k",
+    "-Wno-free-nonheap-object",
+    "-Wno-maybe-uninitialized",
+    "-Wunused-but-set-parameter",
+]
+
+SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS = [
+    "-Wno-literal-suffix",
+    "-Wno-noexcept-type",
+]
+
 score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
+    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
+    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     target_cpu = "x86_64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -94,6 +125,8 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
+    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
+    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     target_cpu = "aarch64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -102,6 +135,8 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
+    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
+    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     sdp_version = "8.0.4",
     target_cpu = "x86_64",
     target_os = "qnx",
@@ -110,6 +145,8 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
+    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
+    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     sdp_version = "8.0.4",
     target_cpu = "aarch64",
     target_os = "qnx",
@@ -239,26 +276,23 @@ llvm = use_extension(
     dev_dependency = True,
 )
 llvm.toolchain(
-    compile_flags = {"": [
-        "-march=nehalem",
-        "-ffp-model=strict",
-        # Security
-        "-U_FORTIFY_SOURCE",  # https://github.com/google/sanitizers/issues/247
-        "-fstack-protector",
-        "-fno-omit-frame-pointer",
-        # Diagnostics
-        "-fcolor-diagnostics",
-        "-Wno-deprecated-declarations",
-        "-Wno-error=self-assign-overloaded",
-        "-Wthread-safety",
-    ]},
     cxx_standard = {"": "c++17"},
+    extra_enabled_features = [
+        "//quality/compiler_warnings:default_flags",
+        "//quality/compiler_warnings:default_link_flags",
+        "//quality/compiler_warnings/clang:minimal_warnings",
+    ],
     extra_known_features = [
         "@score_cpp_policies//sanitizers/features:debug_symbols",
         "@score_cpp_policies//sanitizers/features:asan",
         "@score_cpp_policies//sanitizers/features:ubsan",
         "@score_cpp_policies//sanitizers/features:lsan",
         "@score_cpp_policies//sanitizers/features:tsan",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
+        "//quality/compiler_warnings:additional_warnings",
+        "//quality/compiler_warnings/clang:strict_warnings",
+        "//quality/compiler_warnings/clang:strict_warnings_no_error",
+        "//quality/compiler_warnings/clang:third_party_warnings",
     ],
     link_libs = {"": [
         "-lrt",
@@ -326,6 +360,7 @@ download_file(
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.0", dev_dependency = True)
 bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "rules_build_error", version = "0.11.0", dev_dependency = True)
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1", dev_dependency = True)
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
