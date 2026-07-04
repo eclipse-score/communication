@@ -495,34 +495,32 @@ def extract_from_ast(
     alias_symbols = [s for s in symbols if s.kind in ("type_alias", "template_type_alias")]
     followed_members: list[ApiSymbol] = []
 
-    for alias_sym in alias_symbols:
-        # Find the original TypeAliasDecl/TypeAliasTemplateDecl node to get qualType
-        underlying_type = _get_underlying_type_for_alias(ast_root, alias_sym.name, alias_sym.qualified_name)
-        if not underlying_type:
-            continue
-
-        # Normalize the type name (remove leading ::, template args for lookup)
-        type_name = underlying_type.lstrip(":")
-        # Strip template arguments for lookup: Foo<T> -> Foo
-        base_type = type_name.split("<")[0].strip()
-
-        # Skip external/standard library types
-        if base_type.startswith("std::") or base_type.startswith("__"):
-            continue
-
-        # Look up in class index
-        class_node = class_index.get(base_type)
-        if not class_node:
-            # Try without common prefixes
-            for key, node in class_index.items():
-                if key.endswith("::" + base_type.split("::")[-1]) and base_type.endswith(key.split("::")[-1]):
-                    class_node = node
+    def _resolve_class_node(type_name: str) -> Optional[dict]:
+        """Resolve a type name to its CXXRecordDecl in the class index."""
+        name = type_name.lstrip(":")
+        base = name.split("<")[0].strip()
+        if base.startswith("std::") or base.startswith("__"):
+            return None
+        node = class_index.get(base)
+        if not node:
+            for key, n in class_index.items():
+                if key.endswith("::" + base.split("::")[-1]) and base.endswith(key.split("::")[-1]):
+                    node = n
                     break
-        if not class_node:
-            continue
+        return node
 
-        # Extract public members of the class
+    def _get_public_members(class_node: dict, visited: Optional[set] = None) -> list[dict]:
+        """Get all public method/constructor/destructor members, including inherited ones."""
+        if visited is None:
+            visited = set()
+        node_id = id(class_node)
+        if node_id in visited:
+            return []
+        visited.add(node_id)
+
+        members = []
         member_access = "private" if class_node.get("tagUsed") == "class" else "public"
+
         for child in class_node.get("inner", []):
             child_kind = child.get("kind", "")
             if child_kind == "AccessSpecDecl":
@@ -541,37 +539,72 @@ def extract_from_ast(
                 continue
 
             if child_kind in ("CXXMethodDecl", "CXXConstructorDecl", "CXXDestructorDecl", "FunctionTemplateDecl"):
-                type_info = child.get("type", {}).get("qualType", "")
-                if child_kind == "FunctionTemplateDecl":
-                    inner_func = next(
-                        (c for c in child.get("inner", [])
-                         if c.get("kind") in ("FunctionDecl", "CXXMethodDecl")), None
-                    )
-                    if inner_func:
-                        type_info = inner_func.get("type", {}).get("qualType", "")
+                members.append(child)
 
-                # Use the alias's qualified name as the parent
-                member_qualified = f"{alias_sym.qualified_name}::{child_name}"
-                comment = find_comment(child)
-                has_api, has_brief = get_comment_markers(comment)
+        # Walk public base classes and include their public members
+        for base in class_node.get("bases", []):
+            if base.get("access") != "public":
+                continue
+            base_type = base.get("type", {}).get("qualType", "")
+            base_node = _resolve_class_node(base_type)
+            if base_node:
+                members.extend(_get_public_members(base_node, visited))
 
-                kind_str = {
-                    "CXXMethodDecl": "method",
-                    "CXXConstructorDecl": "constructor",
-                    "CXXDestructorDecl": "destructor",
-                    "FunctionTemplateDecl": "template_function",
-                }.get(child_kind, "method")
+        return members
 
-                followed_members.append(ApiSymbol(
-                    name=child_name,
-                    qualified_name=member_qualified,
-                    kind=kind_str,
-                    signature=f"{child_name} : {type_info}" if type_info else child_name,
-                    file=alias_sym.file,
-                    line=alias_sym.line,
-                    has_api_marker=has_api,
-                    has_brief_doc=has_brief,
-                ))
+    for alias_sym in alias_symbols:
+        # Find the original TypeAliasDecl/TypeAliasTemplateDecl node to get qualType
+        underlying_type = _get_underlying_type_for_alias(ast_root, alias_sym.name, alias_sym.qualified_name)
+        if not underlying_type:
+            continue
+
+        # Skip external/standard library types
+        base_name = underlying_type.lstrip(":").split("<")[0].strip()
+        if base_name.startswith("std::") or base_name.startswith("__"):
+            continue
+
+        # Look up in class index
+        class_node = _resolve_class_node(underlying_type)
+        if not class_node:
+            continue
+
+        # Extract public members (including inherited)
+        public_members = _get_public_members(class_node)
+        for child in public_members:
+            child_kind = child.get("kind", "")
+            child_name = child.get("name", "")
+
+            type_info = child.get("type", {}).get("qualType", "")
+            if child_kind == "FunctionTemplateDecl":
+                inner_func = next(
+                    (c for c in child.get("inner", [])
+                     if c.get("kind") in ("FunctionDecl", "CXXMethodDecl")), None
+                )
+                if inner_func:
+                    type_info = inner_func.get("type", {}).get("qualType", "")
+
+            # Use the alias's qualified name as the parent
+            member_qualified = f"{alias_sym.qualified_name}::{child_name}"
+            comment = find_comment(child)
+            has_api, has_brief = get_comment_markers(comment)
+
+            kind_str = {
+                "CXXMethodDecl": "method",
+                "CXXConstructorDecl": "constructor",
+                "CXXDestructorDecl": "destructor",
+                "FunctionTemplateDecl": "template_function",
+            }.get(child_kind, "method")
+
+            followed_members.append(ApiSymbol(
+                name=child_name,
+                qualified_name=member_qualified,
+                kind=kind_str,
+                signature=f"{child_name} : {type_info}" if type_info else child_name,
+                file=alias_sym.file,
+                line=alias_sym.line,
+                has_api_marker=has_api,
+                has_brief_doc=has_brief,
+            ))
 
     # Add followed members to the symbols list
     symbols.extend(followed_members)

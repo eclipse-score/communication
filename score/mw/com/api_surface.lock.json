@@ -230,16 +230,124 @@
       "signature": "Create : Result<GenericProxy> (HandleType) noexcept"
     },
     {
+      "name": "FindService",
+      "qualified_name": "score::mw::com::GenericProxy::FindService",
+      "kind": "method",
+      "signature": "FindService : Result<ServiceHandleContainer<HandleType>> (InstanceSpecifier) noexcept"
+    },
+    {
+      "name": "FindService",
+      "qualified_name": "score::mw::com::GenericProxy::FindService",
+      "kind": "method",
+      "signature": "FindService : Result<ServiceHandleContainer<HandleType>> (InstanceIdentifier) noexcept"
+    },
+    {
       "name": "GetEvents",
       "qualified_name": "score::mw::com::GenericProxy::GetEvents",
       "kind": "method",
       "signature": "GetEvents : EventMapView () const noexcept"
     },
     {
+      "name": "GetHandle",
+      "qualified_name": "score::mw::com::GenericProxy::GetHandle",
+      "kind": "method",
+      "signature": "GetHandle : const HandleType &() const & noexcept"
+    },
+    {
+      "name": "StartFindService",
+      "qualified_name": "score::mw::com::GenericProxy::StartFindService",
+      "kind": "method",
+      "signature": "StartFindService : Result<FindServiceHandle> (FindServiceHandler<HandleType>, InstanceIdentifier) noexcept"
+    },
+    {
+      "name": "StartFindService",
+      "qualified_name": "score::mw::com::GenericProxy::StartFindService",
+      "kind": "method",
+      "signature": "StartFindService : Result<FindServiceHandle> (FindServiceHandler<HandleType>, InstanceSpecifier) noexcept"
+    },
+    {
+      "name": "StopFindService",
+      "qualified_name": "score::mw::com::GenericProxy::StopFindService",
+      "kind": "method",
+      "signature": "StopFindService : score::Result<void> (const FindServiceHandle) noexcept"
+    },
+    {
+      "name": "GetFreeSampleCount",
+      "qualified_name": "score::mw::com::GenericProxyEvent::GetFreeSampleCount",
+      "kind": "method",
+      "signature": "GetFreeSampleCount : std::size_t () const noexcept"
+    },
+    {
+      "name": "GetNumNewSamplesAvailable",
+      "qualified_name": "score::mw::com::GenericProxyEvent::GetNumNewSamplesAvailable",
+      "kind": "method",
+      "signature": "GetNumNewSamplesAvailable : Result<std::size_t> () const noexcept"
+    },
+    {
+      "name": "GetSubscriptionState",
+      "qualified_name": "score::mw::com::GenericProxyEvent::GetSubscriptionState",
+      "kind": "method",
+      "signature": "GetSubscriptionState : SubscriptionState () const noexcept"
+    },
+    {
+      "name": "IsBindingValid",
+      "qualified_name": "score::mw::com::GenericProxyEvent::IsBindingValid",
+      "kind": "method",
+      "signature": "IsBindingValid : bool () const noexcept"
+    },
+    {
+      "name": "SetReceiveHandler",
+      "qualified_name": "score::mw::com::GenericProxyEvent::SetReceiveHandler",
+      "kind": "method",
+      "signature": "SetReceiveHandler : Result<void> (EventReceiveHandler) noexcept"
+    },
+    {
+      "name": "SetSubscriptionStateChangeHandler",
+      "qualified_name": "score::mw::com::GenericProxyEvent::SetSubscriptionStateChangeHandler",
+      "kind": "method",
+      "signature": "SetSubscriptionStateChangeHandler : Result<void> (SubscriptionStateChangeHandler) noexcept"
+    },
+    {
+      "name": "Subscribe",
+      "qualified_name": "score::mw::com::GenericProxyEvent::Subscribe",
+      "kind": "method",
+      "signature": "Subscribe : Result<void> (const std::size_t) noexcept"
+    },
+    {
+      "name": "UnsetReceiveHandler",
+      "qualified_name": "score::mw::com::GenericProxyEvent::UnsetReceiveHandler",
+      "kind": "method",
+      "signature": "UnsetReceiveHandler : Result<void> () noexcept"
+    },
+    {
+      "name": "UnsetSubscriptionStateChangeHandler",
+      "qualified_name": "score::mw::com::GenericProxyEvent::UnsetSubscriptionStateChangeHandler",
+      "kind": "method",
+      "signature": "UnsetSubscriptionStateChangeHandler : Result<void> () noexcept"
+    },
+    {
+      "name": "Unsubscribe",
+      "qualified_name": "score::mw::com::GenericProxyEvent::Unsubscribe",
+      "kind": "method",
+      "signature": "Unsubscribe : void () noexcept"
+    },
+    {
       "name": "GenericSkeleton",
       "qualified_name": "score::mw::com::GenericSkeleton",
       "kind": "type_alias",
       "signature": "using GenericSkeleton = impl::GenericSkeleton"
+    },
+    {
+      "name": "OfferService",
+      "qualified_name": "score::mw::com::GenericSkeleton::OfferService",
+      "kind": "method",
+      "signature": "OfferService : Result<void> () noexcept"
+    },
+    {
+      "name": "StopOfferService",
+      "qualified_name": "score::mw::com::GenericSkeleton::StopOfferService",
+      "kind": "method",
+      "signature": "StopOfferService : void () noexcept"
     },
     {
       "name": "DataTypeMetaInfo",
@@ -273,6 +381,18 @@
     }
   ],
   "undocumented_symbols": [
+    {
+      "name": "ErrorDomain",
+      "qualified_name": "score::mw::com::ComErrorDomain::ErrorDomain",
+      "kind": "constructor",
+      "signature": "ErrorDomain : void ()"
+    },
+    {
+      "name": "MessageFor",
+      "qualified_name": "score::mw::com::ComErrorDomain::MessageFor",
+      "kind": "method",
+      "signature": "MessageFor : std::string_view (const score::result::ErrorCode &) const noexcept"
+    },
     {
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
@@ -520,6 +640,12 @@
       "signature": "GenericProxy : void (GenericProxy &&) noexcept"
     },
     {
+      "name": "ProxyBase",
+      "qualified_name": "score::mw::com::GenericProxy::ProxyBase",
+      "kind": "constructor",
+      "signature": "ProxyBase : void (std::unique_ptr<ProxyBinding>, HandleType)"
+    },
+    {
       "name": "operator=",
       "qualified_name": "score::mw::com::GenericProxy::operator=",
       "kind": "method",
@@ -532,10 +658,28 @@
       "signature": "~GenericProxy : void () noexcept"
     },
     {
+      "name": "~ProxyBase",
+      "qualified_name": "score::mw::com::GenericProxy::~ProxyBase",
+      "kind": "destructor",
+      "signature": "~ProxyBase : void () noexcept"
+    },
+    {
       "name": "GenericProxyEvent",
       "qualified_name": "score::mw::com::GenericProxyEvent",
       "kind": "type_alias",
       "signature": "using GenericProxyEvent = impl::GenericProxyEvent"
+    },
+    {
+      "name": "EnableReferenceToMoveableFromThis<T>",
+      "qualified_name": "score::mw::com::GenericProxyEvent::EnableReferenceToMoveableFromThis<T>",
+      "kind": "constructor",
+      "signature": "EnableReferenceToMoveableFromThis<T> : void ()"
+    },
+    {
+      "name": "EnableReferenceToMoveableFromThis<T>",
+      "qualified_name": "score::mw::com::GenericProxyEvent::EnableReferenceToMoveableFromThis<T>",
+      "kind": "constructor",
+      "signature": "EnableReferenceToMoveableFromThis<T> : void (EnableReferenceToMoveableFromThis<T> &&) noexcept"
     },
     {
       "name": "GenericProxyEvent",
@@ -556,6 +700,12 @@
       "signature": "GetNewSamples : Result<std::size_t> (F &&, std::size_t) noexcept"
     },
     {
+      "name": "GetReferenceToMoveable",
+      "qualified_name": "score::mw::com::GenericProxyEvent::GetReferenceToMoveable",
+      "kind": "method",
+      "signature": "GetReferenceToMoveable : typename ReferenceToMoveable<T>::Reference &()"
+    },
+    {
       "name": "GetSampleSize",
       "qualified_name": "score::mw::com::GenericProxyEvent::GetSampleSize",
       "kind": "method",
@@ -568,10 +718,46 @@
       "signature": "HasSerializedFormat : bool () const noexcept"
     },
     {
+      "name": "ProxyEventBase",
+      "qualified_name": "score::mw::com::GenericProxyEvent::ProxyEventBase",
+      "kind": "constructor",
+      "signature": "ProxyEventBase : void (std::string_view, std::unique_ptr<ProxyEventBindingBase>) noexcept"
+    },
+    {
+      "name": "ProxyEventBase",
+      "qualified_name": "score::mw::com::GenericProxyEvent::ProxyEventBase",
+      "kind": "constructor",
+      "signature": "ProxyEventBase : void (ProxyEventBase &&) noexcept"
+    },
+    {
+      "name": "operator=",
+      "qualified_name": "score::mw::com::GenericProxyEvent::operator=",
+      "kind": "method",
+      "signature": "operator= : ProxyEventBase &(ProxyEventBase &&) noexcept"
+    },
+    {
+      "name": "operator=",
+      "qualified_name": "score::mw::com::GenericProxyEvent::operator=",
+      "kind": "method",
+      "signature": "operator= : EnableReferenceToMoveableFromThis<T> &(EnableReferenceToMoveableFromThis<T> &&) & noexcept"
+    },
+    {
+      "name": "~EnableReferenceToMoveableFromThis<T>",
+      "qualified_name": "score::mw::com::GenericProxyEvent::~EnableReferenceToMoveableFromThis<T>",
+      "kind": "destructor",
+      "signature": "~EnableReferenceToMoveableFromThis<T> : void ()"
+    },
+    {
       "name": "~GenericProxyEvent",
       "qualified_name": "score::mw::com::GenericProxyEvent::~GenericProxyEvent",
       "kind": "destructor",
       "signature": "~GenericProxyEvent : void () noexcept"
+    },
+    {
+      "name": "~ProxyEventBase",
+      "qualified_name": "score::mw::com::GenericProxyEvent::~ProxyEventBase",
+      "kind": "destructor",
+      "signature": "~ProxyEventBase : void () noexcept"
     },
     {
       "name": "Create",
@@ -592,10 +778,22 @@
       "signature": "GetEvents : EventMapView () const noexcept"
     },
     {
+      "name": "InjectMock",
+      "qualified_name": "score::mw::com::GenericSkeleton::InjectMock",
+      "kind": "method",
+      "signature": "InjectMock : void (ISkeletonBase &)"
+    },
+    {
       "name": "OfferService",
       "qualified_name": "score::mw::com::GenericSkeleton::OfferService",
       "kind": "method",
       "signature": "OfferService : Result<void> () noexcept"
+    },
+    {
+      "name": "SkeletonBase",
+      "qualified_name": "score::mw::com::GenericSkeleton::SkeletonBase",
+      "kind": "constructor",
+      "signature": "SkeletonBase : void (std::unique_ptr<SkeletonBinding>, InstanceIdentifier)"
     },
     {
       "name": "StopOfferService",
@@ -604,16 +802,40 @@
       "signature": "StopOfferService : void () noexcept"
     },
     {
+      "name": "~SkeletonBase",
+      "qualified_name": "score::mw::com::GenericSkeleton::~SkeletonBase",
+      "kind": "destructor",
+      "signature": "~SkeletonBase : void () noexcept"
+    },
+    {
       "name": "Allocate",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::Allocate",
       "kind": "method",
       "signature": "Allocate : Result<SampleAllocateePtr<void>> () noexcept"
     },
     {
+      "name": "EnableReferenceToMoveableFromThis<T>",
+      "qualified_name": "score::mw::com::GenericSkeletonEvent::EnableReferenceToMoveableFromThis<T>",
+      "kind": "constructor",
+      "signature": "EnableReferenceToMoveableFromThis<T> : void ()"
+    },
+    {
+      "name": "EnableReferenceToMoveableFromThis<T>",
+      "qualified_name": "score::mw::com::GenericSkeletonEvent::EnableReferenceToMoveableFromThis<T>",
+      "kind": "constructor",
+      "signature": "EnableReferenceToMoveableFromThis<T> : void (EnableReferenceToMoveableFromThis<T> &&) noexcept"
+    },
+    {
       "name": "GenericSkeletonEvent",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::GenericSkeletonEvent",
       "kind": "constructor",
       "signature": "GenericSkeletonEvent : void (SkeletonBase &, const std::string_view, std::unique_ptr<GenericSkeletonEventBinding>)"
+    },
+    {
+      "name": "GetReferenceToMoveable",
+      "qualified_name": "score::mw::com::GenericSkeletonEvent::GetReferenceToMoveable",
+      "kind": "method",
+      "signature": "GetReferenceToMoveable : typename ReferenceToMoveable<T>::Reference &()"
     },
     {
       "name": "GetSizeInfo",
@@ -628,6 +850,18 @@
       "signature": "Notify : Result<void> () noexcept"
     },
     {
+      "name": "PrepareOffer",
+      "qualified_name": "score::mw::com::GenericSkeletonEvent::PrepareOffer",
+      "kind": "method",
+      "signature": "PrepareOffer : score::Result<void> () noexcept"
+    },
+    {
+      "name": "PrepareStopOffer",
+      "qualified_name": "score::mw::com::GenericSkeletonEvent::PrepareStopOffer",
+      "kind": "method",
+      "signature": "PrepareStopOffer : void () noexcept"
+    },
+    {
       "name": "Send",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::Send",
       "kind": "method",
@@ -640,10 +874,34 @@
       "signature": "SetReceiveHandlerRegistrationChangedHandler : Result<void> (ReceiveHandlerRegistrationChangedCallback) noexcept"
     },
     {
+      "name": "SkeletonEventBase",
+      "qualified_name": "score::mw::com::GenericSkeletonEvent::SkeletonEventBase",
+      "kind": "constructor",
+      "signature": "SkeletonEventBase : void (const std::string_view, std::unique_ptr<SkeletonEventBindingBase>)"
+    },
+    {
       "name": "UnsetReceiveHandlerRegistrationChangedHandler",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::UnsetReceiveHandlerRegistrationChangedHandler",
       "kind": "method",
       "signature": "UnsetReceiveHandlerRegistrationChangedHandler : Result<void> () noexcept"
+    },
+    {
+      "name": "operator=",
+      "qualified_name": "score::mw::com::GenericSkeletonEvent::operator=",
+      "kind": "method",
+      "signature": "operator= : EnableReferenceToMoveableFromThis<T> &(EnableReferenceToMoveableFromThis<T> &&) & noexcept"
+    },
+    {
+      "name": "~EnableReferenceToMoveableFromThis<T>",
+      "qualified_name": "score::mw::com::GenericSkeletonEvent::~EnableReferenceToMoveableFromThis<T>",
+      "kind": "destructor",
+      "signature": "~EnableReferenceToMoveableFromThis<T> : void ()"
+    },
+    {
+      "name": "~SkeletonEventBase",
+      "qualified_name": "score::mw::com::GenericSkeletonEvent::~SkeletonEventBase",
+      "kind": "destructor",
+      "signature": "~SkeletonEventBase : void () noexcept"
     }
   ],
   "version": "1"
