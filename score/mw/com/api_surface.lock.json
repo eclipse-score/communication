@@ -5,451 +5,271 @@
       "name": "ComErrc",
       "qualified_name": "score::mw::com::ComErrc",
       "kind": "type_alias",
-      "signature": "using ComErrc = score::mw::com::impl::ComErrc",
-      "file": "score/mw/com/com_error_domain.h",
-      "line": 27,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using ComErrc = score::mw::com::impl::ComErrc"
     },
     {
       "name": "ComErrorDomain",
       "qualified_name": "score::mw::com::ComErrorDomain",
       "kind": "type_alias",
-      "signature": "using ComErrorDomain = score::mw::com::impl::ComErrorDomain",
-      "file": "score/mw/com/com_error_domain.h",
-      "line": 31,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using ComErrorDomain = score::mw::com::impl::ComErrorDomain"
     },
     {
       "name": "MessageFor",
       "qualified_name": "score::mw::com::ComErrorDomain::MessageFor",
       "kind": "method",
-      "signature": "MessageFor : std::string_view (const score::result::ErrorCode &) const noexcept",
-      "file": "score/mw/com/com_error_domain.h",
-      "line": 31,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "MessageFor : std::string_view (const score::result::ErrorCode &) const noexcept"
     },
     {
       "name": "ResolveInstanceIDs",
       "qualified_name": "score::mw::com::runtime::ResolveInstanceIDs",
       "kind": "function",
-      "signature": "ResolveInstanceIDs : score::Result<score::mw::com::InstanceIdentifierContainer> (const InstanceSpecifier)",
-      "file": "score/mw/com/runtime.h",
-      "line": 72,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "ResolveInstanceIDs : score::Result<score::mw::com::InstanceIdentifierContainer> (const InstanceSpecifier)"
     },
     {
       "name": "InitializeRuntime",
       "qualified_name": "score::mw::com::runtime::InitializeRuntime",
       "kind": "function",
-      "signature": "InitializeRuntime : void (const std::int32_t, score::StringLiteral *)",
-      "file": "score/mw/com/runtime.h",
-      "line": 84,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "InitializeRuntime : void (const std::int32_t, score::StringLiteral *)"
     },
     {
       "name": "InitializeRuntime",
       "qualified_name": "score::mw::com::runtime::InitializeRuntime",
       "kind": "function",
-      "signature": "InitializeRuntime : void (const RuntimeConfiguration &)",
-      "file": "score/mw/com/runtime.h",
-      "line": 94,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "InitializeRuntime : void (const RuntimeConfiguration &)"
     },
     {
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration",
       "kind": "class",
-      "signature": "class RuntimeConfiguration",
-      "file": "score/mw/com/runtime_configuration.h",
-      "line": 30,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "class RuntimeConfiguration"
     },
     {
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
       "kind": "constructor",
-      "signature": "RuntimeConfiguration : void (const std::int32_t, score::StringLiteral *)",
-      "file": "score/mw/com/runtime_configuration.h",
-      "line": 49,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "RuntimeConfiguration : void (const std::int32_t, score::StringLiteral *)"
     },
     {
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
       "kind": "constructor",
-      "signature": "RuntimeConfiguration : void (filesystem::Path)",
-      "file": "score/mw/com/runtime_configuration.h",
-      "line": 56,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "RuntimeConfiguration : void (filesystem::Path)"
     },
     {
       "name": "GetConfigurationPath",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::GetConfigurationPath",
       "kind": "method",
-      "signature": "GetConfigurationPath : const filesystem::Path &() const &",
-      "file": "score/mw/com/runtime_configuration.h",
-      "line": 63,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "GetConfigurationPath : const filesystem::Path &() const &"
     },
     {
       "name": "InstanceIdentifier",
       "qualified_name": "score::mw::com::InstanceIdentifier",
       "kind": "type_alias",
-      "signature": "using InstanceIdentifier = ::score::mw::com::impl::InstanceIdentifier",
-      "file": "score/mw/com/types.h",
-      "line": 47,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using InstanceIdentifier = ::score::mw::com::impl::InstanceIdentifier"
     },
     {
       "name": "Create",
       "qualified_name": "score::mw::com::InstanceIdentifier::Create",
       "kind": "method",
-      "signature": "Create : score::Result<InstanceIdentifier> (std::string &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 47,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "Create : score::Result<InstanceIdentifier> (std::string &&) noexcept"
     },
     {
       "name": "InstanceIdentifier",
       "qualified_name": "score::mw::com::InstanceIdentifier::InstanceIdentifier",
       "kind": "constructor",
-      "signature": "InstanceIdentifier : void (const InstanceIdentifier &) noexcept(false)",
-      "file": "score/mw/com/types.h",
-      "line": 47,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "InstanceIdentifier : void (const InstanceIdentifier &) noexcept(false)"
     },
     {
       "name": "InstanceIdentifier",
       "qualified_name": "score::mw::com::InstanceIdentifier::InstanceIdentifier",
       "kind": "constructor",
-      "signature": "InstanceIdentifier : void (InstanceIdentifier &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 47,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "InstanceIdentifier : void (InstanceIdentifier &&) noexcept"
     },
     {
       "name": "ToString",
       "qualified_name": "score::mw::com::InstanceIdentifier::ToString",
       "kind": "method",
-      "signature": "ToString : std::string_view () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 47,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "ToString : std::string_view () const noexcept"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::InstanceIdentifier::operator=",
       "kind": "method",
-      "signature": "operator= : InstanceIdentifier &(const InstanceIdentifier &) noexcept(false)",
-      "file": "score/mw/com/types.h",
-      "line": 47,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "operator= : InstanceIdentifier &(const InstanceIdentifier &) noexcept(false)"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::InstanceIdentifier::operator=",
       "kind": "method",
-      "signature": "operator= : InstanceIdentifier &(InstanceIdentifier &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 47,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "operator= : InstanceIdentifier &(InstanceIdentifier &&) noexcept"
     },
     {
       "name": "InstanceSpecifier",
       "qualified_name": "score::mw::com::InstanceSpecifier",
       "kind": "type_alias",
-      "signature": "using InstanceSpecifier = ::score::mw::com::impl::InstanceSpecifier",
-      "file": "score/mw/com/types.h",
-      "line": 52,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using InstanceSpecifier = ::score::mw::com::impl::InstanceSpecifier"
     },
     {
       "name": "Create",
       "qualified_name": "score::mw::com::InstanceSpecifier::Create",
       "kind": "method",
-      "signature": "Create : score::Result<InstanceSpecifier> (std::string &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 52,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "Create : score::Result<InstanceSpecifier> (std::string &&) noexcept"
     },
     {
       "name": "ToString",
       "qualified_name": "score::mw::com::InstanceSpecifier::ToString",
       "kind": "method",
-      "signature": "ToString : std::string_view () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 52,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "ToString : std::string_view () const noexcept"
     },
     {
       "name": "InstanceIdentifierContainer",
       "qualified_name": "score::mw::com::InstanceIdentifierContainer",
       "kind": "type_alias",
-      "signature": "using InstanceIdentifierContainer = std::vector<InstanceIdentifier>",
-      "file": "score/mw/com/types.h",
-      "line": 58,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using InstanceIdentifierContainer = std::vector<InstanceIdentifier>"
     },
     {
       "name": "FindServiceHandle",
       "qualified_name": "score::mw::com::FindServiceHandle",
       "kind": "type_alias",
-      "signature": "using FindServiceHandle = ::score::mw::com::impl::FindServiceHandle",
-      "file": "score/mw/com/types.h",
-      "line": 63,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using FindServiceHandle = ::score::mw::com::impl::FindServiceHandle"
     },
     {
       "name": "FindServiceHandle",
       "qualified_name": "score::mw::com::FindServiceHandle::FindServiceHandle",
       "kind": "constructor",
-      "signature": "FindServiceHandle : void (const FindServiceHandle &) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 63,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "FindServiceHandle : void (const FindServiceHandle &) noexcept"
     },
     {
       "name": "FindServiceHandle",
       "qualified_name": "score::mw::com::FindServiceHandle::FindServiceHandle",
       "kind": "constructor",
-      "signature": "FindServiceHandle : void (FindServiceHandle &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 63,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "FindServiceHandle : void (FindServiceHandle &&) noexcept"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::FindServiceHandle::operator=",
       "kind": "method",
-      "signature": "operator= : FindServiceHandle &(const FindServiceHandle &) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 63,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "operator= : FindServiceHandle &(const FindServiceHandle &) noexcept"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::FindServiceHandle::operator=",
       "kind": "method",
-      "signature": "operator= : FindServiceHandle &(FindServiceHandle &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 63,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "operator= : FindServiceHandle &(FindServiceHandle &&) noexcept"
     },
     {
       "name": "HandleType",
       "qualified_name": "score::mw::com::HandleType",
       "kind": "type_alias",
-      "signature": "using HandleType = ::score::mw::com::impl::HandleType",
-      "file": "score/mw/com/types.h",
-      "line": 67,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using HandleType = ::score::mw::com::impl::HandleType"
     },
     {
       "name": "ServiceHandleContainer",
       "qualified_name": "score::mw::com::ServiceHandleContainer",
       "kind": "template_type_alias",
-      "signature": "using ServiceHandleContainer = ::score::mw::com::impl::ServiceHandleContainer<T>",
-      "file": "score/mw/com/types.h",
-      "line": 73,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using ServiceHandleContainer = ::score::mw::com::impl::ServiceHandleContainer<T>"
     },
     {
       "name": "FindServiceHandler",
       "qualified_name": "score::mw::com::FindServiceHandler",
       "kind": "template_type_alias",
-      "signature": "using FindServiceHandler = ::score::mw::com::impl::FindServiceHandler<T>",
-      "file": "score/mw/com/types.h",
-      "line": 79,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using FindServiceHandler = ::score::mw::com::impl::FindServiceHandler<T>"
     },
     {
       "name": "SubscriptionState",
       "qualified_name": "score::mw::com::SubscriptionState",
       "kind": "type_alias",
-      "signature": "using SubscriptionState = ::score::mw::com::impl::SubscriptionState",
-      "file": "score/mw/com/types.h",
-      "line": 84,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using SubscriptionState = ::score::mw::com::impl::SubscriptionState"
     },
     {
       "name": "MethodReturnTypePtr",
       "qualified_name": "score::mw::com::MethodReturnTypePtr",
       "kind": "template_type_alias",
-      "signature": "using MethodReturnTypePtr = impl::MethodReturnTypePtr<ReturnType>",
-      "file": "score/mw/com/types.h",
-      "line": 98,
-      "has_api_marker": true,
-      "has_brief_doc": false
+      "signature": "using MethodReturnTypePtr = impl::MethodReturnTypePtr<ReturnType>"
     },
     {
       "name": "MethodInArgTypePtr",
       "qualified_name": "score::mw::com::MethodInArgTypePtr",
       "kind": "template_type_alias",
-      "signature": "using MethodInArgTypePtr = impl::MethodInArgPtr<ReturnType>",
-      "file": "score/mw/com/types.h",
-      "line": 103,
-      "has_api_marker": true,
-      "has_brief_doc": false
+      "signature": "using MethodInArgTypePtr = impl::MethodInArgPtr<ReturnType>"
     },
     {
       "name": "EventReceiveHandler",
       "qualified_name": "score::mw::com::EventReceiveHandler",
       "kind": "type_alias",
-      "signature": "using EventReceiveHandler = impl::EventReceiveHandler",
-      "file": "score/mw/com/types.h",
-      "line": 108,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using EventReceiveHandler = impl::EventReceiveHandler"
     },
     {
       "name": "WithGetter",
       "qualified_name": "score::mw::com::WithGetter",
       "kind": "type_alias",
-      "signature": "using WithGetter = impl::WithGetter",
-      "file": "score/mw/com/types.h",
-      "line": 112,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using WithGetter = impl::WithGetter"
     },
     {
       "name": "AsProxy",
       "qualified_name": "score::mw::com::AsProxy",
       "kind": "template_type_alias",
-      "signature": "using AsProxy = impl::AsProxy<T>",
-      "file": "score/mw/com/types.h",
-      "line": 119,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using AsProxy = impl::AsProxy<T>"
     },
     {
       "name": "AsSkeleton",
       "qualified_name": "score::mw::com::AsSkeleton",
       "kind": "template_type_alias",
-      "signature": "using AsSkeleton = impl::AsSkeleton<T>",
-      "file": "score/mw/com/types.h",
-      "line": 124,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using AsSkeleton = impl::AsSkeleton<T>"
     },
     {
       "name": "GenericProxy",
       "qualified_name": "score::mw::com::GenericProxy",
       "kind": "type_alias",
-      "signature": "using GenericProxy = impl::GenericProxy",
-      "file": "score/mw/com/types.h",
-      "line": 128,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using GenericProxy = impl::GenericProxy"
     },
     {
       "name": "Create",
       "qualified_name": "score::mw::com::GenericProxy::Create",
       "kind": "method",
-      "signature": "Create : Result<GenericProxy> (HandleType) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 128,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "Create : Result<GenericProxy> (HandleType) noexcept"
     },
     {
       "name": "GetEvents",
       "qualified_name": "score::mw::com::GenericProxy::GetEvents",
       "kind": "method",
-      "signature": "GetEvents : EventMapView () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 128,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "GetEvents : EventMapView () const noexcept"
     },
     {
       "name": "GenericSkeleton",
       "qualified_name": "score::mw::com::GenericSkeleton",
       "kind": "type_alias",
-      "signature": "using GenericSkeleton = impl::GenericSkeleton",
-      "file": "score/mw/com/types.h",
-      "line": 135,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using GenericSkeleton = impl::GenericSkeleton"
     },
     {
       "name": "DataTypeMetaInfo",
       "qualified_name": "score::mw::com::DataTypeMetaInfo",
       "kind": "type_alias",
-      "signature": "using DataTypeMetaInfo = impl::DataTypeMetaInfo",
-      "file": "score/mw/com/types.h",
-      "line": 139,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using DataTypeMetaInfo = impl::DataTypeMetaInfo"
     },
     {
       "name": "EventInfo",
       "qualified_name": "score::mw::com::EventInfo",
       "kind": "type_alias",
-      "signature": "using EventInfo = impl::EventInfo",
-      "file": "score/mw/com/types.h",
-      "line": 143,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using EventInfo = impl::EventInfo"
     },
     {
       "name": "GenericSkeletonServiceElementInfo",
       "qualified_name": "score::mw::com::GenericSkeletonServiceElementInfo",
       "kind": "type_alias",
-      "signature": "using GenericSkeletonServiceElementInfo = impl::GenericSkeletonServiceElementInfo",
-      "file": "score/mw/com/types.h",
-      "line": 147,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using GenericSkeletonServiceElementInfo = impl::GenericSkeletonServiceElementInfo"
     },
     {
       "name": "GenericSkeletonEvent",
       "qualified_name": "score::mw::com::GenericSkeletonEvent",
       "kind": "type_alias",
-      "signature": "using GenericSkeletonEvent = impl::GenericSkeletonEvent",
-      "file": "score/mw/com/types.h",
-      "line": 151,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using GenericSkeletonEvent = impl::GenericSkeletonEvent"
     },
     {
       "name": "ReceiveHandlerRegistrationChangedCallback",
       "qualified_name": "score::mw::com::ReceiveHandlerRegistrationChangedCallback",
       "kind": "type_alias",
-      "signature": "using ReceiveHandlerRegistrationChangedCallback = impl::ReceiveHandlerRegistrationChangedCallback",
-      "file": "score/mw/com/types.h",
-      "line": 156,
-      "has_api_marker": true,
-      "has_brief_doc": true
+      "signature": "using ReceiveHandlerRegistrationChangedCallback = impl::ReceiveHandlerRegistrationChangedCallback"
     }
   ],
   "undocumented_symbols": [
@@ -457,621 +277,373 @@
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
       "kind": "constructor",
-      "signature": "RuntimeConfiguration : void ()",
-      "file": "score/mw/com/runtime_configuration.h",
-      "line": 38,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "RuntimeConfiguration : void ()"
     },
     {
       "name": "~InstanceIdentifier",
       "qualified_name": "score::mw::com::InstanceIdentifier::~InstanceIdentifier",
       "kind": "destructor",
-      "signature": "~InstanceIdentifier : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 47,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "~InstanceIdentifier : void () noexcept"
     },
     {
       "name": "Create",
       "qualified_name": "score::mw::com::InstanceSpecifier::Create",
       "kind": "template_function",
-      "signature": "Create : score::Result<InstanceSpecifier> (T &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 52,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "Create : score::Result<InstanceSpecifier> (T &&) noexcept"
     },
     {
       "name": "~FindServiceHandle",
       "qualified_name": "score::mw::com::FindServiceHandle::~FindServiceHandle",
       "kind": "destructor",
-      "signature": "~FindServiceHandle : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 63,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "~FindServiceHandle : void () noexcept"
     },
     {
       "name": "GetInstanceId",
       "qualified_name": "score::mw::com::HandleType::GetInstanceId",
       "kind": "method",
-      "signature": "GetInstanceId : ServiceInstanceId () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 67,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "GetInstanceId : ServiceInstanceId () const noexcept"
     },
     {
       "name": "GetInstanceIdentifier",
       "qualified_name": "score::mw::com::HandleType::GetInstanceIdentifier",
       "kind": "method",
-      "signature": "GetInstanceIdentifier : const InstanceIdentifier &() const & noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 67,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "GetInstanceIdentifier : const InstanceIdentifier &() const & noexcept"
     },
     {
       "name": "GetServiceInstanceDeployment",
       "qualified_name": "score::mw::com::HandleType::GetServiceInstanceDeployment",
       "kind": "method",
-      "signature": "GetServiceInstanceDeployment : const ServiceInstanceDeployment &() const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 67,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "GetServiceInstanceDeployment : const ServiceInstanceDeployment &() const noexcept"
     },
     {
       "name": "GetServiceTypeDeployment",
       "qualified_name": "score::mw::com::HandleType::GetServiceTypeDeployment",
       "kind": "method",
-      "signature": "GetServiceTypeDeployment : const ServiceTypeDeployment &() const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 67,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "GetServiceTypeDeployment : const ServiceTypeDeployment &() const noexcept"
     },
     {
       "name": "HandleType",
       "qualified_name": "score::mw::com::HandleType::HandleType",
       "kind": "constructor",
-      "signature": "HandleType : void (const HandleType &) noexcept(false)",
-      "file": "score/mw/com/types.h",
-      "line": 67,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "HandleType : void (const HandleType &) noexcept(false)"
     },
     {
       "name": "HandleType",
       "qualified_name": "score::mw::com::HandleType::HandleType",
       "kind": "constructor",
-      "signature": "HandleType : void (HandleType &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 67,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "HandleType : void (HandleType &&) noexcept"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::HandleType::operator=",
       "kind": "method",
-      "signature": "operator= : HandleType &(const HandleType &)",
-      "file": "score/mw/com/types.h",
-      "line": 67,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "operator= : HandleType &(const HandleType &)"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::HandleType::operator=",
       "kind": "method",
-      "signature": "operator= : HandleType &(HandleType &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 67,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "operator= : HandleType &(HandleType &&) noexcept"
     },
     {
       "name": "~HandleType",
       "qualified_name": "score::mw::com::HandleType::~HandleType",
       "kind": "destructor",
-      "signature": "~HandleType : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 67,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "~HandleType : void () noexcept"
     },
     {
       "name": "SamplePtr",
       "qualified_name": "score::mw::com::SamplePtr",
       "kind": "template_type_alias",
-      "signature": "using SamplePtr = impl::SamplePtr<SampleType>",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "using SamplePtr = impl::SamplePtr<SampleType>"
     },
     {
       "name": "SamplePtr<SampleType>",
       "qualified_name": "score::mw::com::SamplePtr::SamplePtr<SampleType>",
       "kind": "constructor",
-      "signature": "SamplePtr<SampleType> : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "SamplePtr<SampleType> : void () noexcept"
     },
     {
       "name": "SamplePtr<SampleType>",
       "qualified_name": "score::mw::com::SamplePtr::SamplePtr<SampleType>",
       "kind": "constructor",
-      "signature": "SamplePtr<SampleType> : void (std::nullptr_t) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "SamplePtr<SampleType> : void (std::nullptr_t) noexcept"
     },
     {
       "name": "SamplePtr<SampleType>",
       "qualified_name": "score::mw::com::SamplePtr::SamplePtr<SampleType>",
       "kind": "constructor",
-      "signature": "SamplePtr<SampleType> : void (pointer, ConsumerEventDataControlLocalView<> &, const SlotIndexType) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "SamplePtr<SampleType> : void (pointer, ConsumerEventDataControlLocalView<> &, const SlotIndexType) noexcept"
     },
     {
       "name": "SamplePtr<SampleType>",
       "qualified_name": "score::mw::com::SamplePtr::SamplePtr<SampleType>",
       "kind": "constructor",
-      "signature": "SamplePtr<SampleType> : void (SamplePtr<SampleType> &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "SamplePtr<SampleType> : void (SamplePtr<SampleType> &&) noexcept"
     },
     {
       "name": "get",
       "qualified_name": "score::mw::com::SamplePtr::get",
       "kind": "method",
-      "signature": "get : pointer () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "get : pointer () const noexcept"
     },
     {
       "name": "operator*",
       "qualified_name": "score::mw::com::SamplePtr::operator*",
       "kind": "template_function",
-      "signature": "operator* : typename std::add_lvalue_reference<const SampleType>::type () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "operator* : typename std::add_lvalue_reference<const SampleType>::type () const noexcept"
     },
     {
       "name": "operator->",
       "qualified_name": "score::mw::com::SamplePtr::operator->",
       "kind": "method",
-      "signature": "operator-> : pointer () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "operator-> : pointer () const noexcept"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::SamplePtr::operator=",
       "kind": "method",
-      "signature": "operator= : SamplePtr<SampleType> &(std::nullptr_t) & noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "operator= : SamplePtr<SampleType> &(std::nullptr_t) & noexcept"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::SamplePtr::operator=",
       "kind": "method",
-      "signature": "operator= : SamplePtr<SampleType> &(SamplePtr<SampleType> &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "operator= : SamplePtr<SampleType> &(SamplePtr<SampleType> &&) noexcept"
     },
     {
       "name": "~SamplePtr<SampleType>",
       "qualified_name": "score::mw::com::SamplePtr::~SamplePtr<SampleType>",
       "kind": "destructor",
-      "signature": "~SamplePtr<SampleType> : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 88,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "~SamplePtr<SampleType> : void () noexcept"
     },
     {
       "name": "SampleAllocateePtr",
       "qualified_name": "score::mw::com::SampleAllocateePtr",
       "kind": "template_type_alias",
-      "signature": "using SampleAllocateePtr = impl::SampleAllocateePtr<SampleType>",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "using SampleAllocateePtr = impl::SampleAllocateePtr<SampleType>"
     },
     {
       "name": "GetReferencedSlot",
       "qualified_name": "score::mw::com::SampleAllocateePtr::GetReferencedSlot",
       "kind": "method",
-      "signature": "GetReferencedSlot : SlotIndexType () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "GetReferencedSlot : SlotIndexType () const noexcept"
     },
     {
       "name": "SampleAllocateePtr<SampleType>",
       "qualified_name": "score::mw::com::SampleAllocateePtr::SampleAllocateePtr<SampleType>",
       "kind": "constructor",
-      "signature": "SampleAllocateePtr<SampleType> : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "SampleAllocateePtr<SampleType> : void () noexcept"
     },
     {
       "name": "SampleAllocateePtr<SampleType>",
       "qualified_name": "score::mw::com::SampleAllocateePtr::SampleAllocateePtr<SampleType>",
       "kind": "constructor",
-      "signature": "SampleAllocateePtr<SampleType> : void (std::nullptr_t) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "SampleAllocateePtr<SampleType> : void (std::nullptr_t) noexcept"
     },
     {
       "name": "SampleAllocateePtr<SampleType>",
       "qualified_name": "score::mw::com::SampleAllocateePtr::SampleAllocateePtr<SampleType>",
       "kind": "constructor",
-      "signature": "SampleAllocateePtr<SampleType> : void (pointer, const EventDataControlComposite<> &, ConsumerEventDataControlLocalView<> &, const SlotIndexType) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "SampleAllocateePtr<SampleType> : void (pointer, const EventDataControlComposite<> &, ConsumerEventDataControlLocalView<> &, const SlotIndexType) noexcept"
     },
     {
       "name": "SampleAllocateePtr<SampleType>",
       "qualified_name": "score::mw::com::SampleAllocateePtr::SampleAllocateePtr<SampleType>",
       "kind": "constructor",
-      "signature": "SampleAllocateePtr<SampleType> : void (SampleAllocateePtr<SampleType> &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "SampleAllocateePtr<SampleType> : void (SampleAllocateePtr<SampleType> &&) noexcept"
     },
     {
       "name": "get",
       "qualified_name": "score::mw::com::SampleAllocateePtr::get",
       "kind": "method",
-      "signature": "get : pointer () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "get : pointer () const noexcept"
     },
     {
       "name": "operator*",
       "qualified_name": "score::mw::com::SampleAllocateePtr::operator*",
       "kind": "method",
-      "signature": "operator* : typename std::add_lvalue_reference<SampleType>::type () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "operator* : typename std::add_lvalue_reference<SampleType>::type () const noexcept"
     },
     {
       "name": "operator->",
       "qualified_name": "score::mw::com::SampleAllocateePtr::operator->",
       "kind": "method",
-      "signature": "operator-> : pointer () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "operator-> : pointer () const noexcept"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::SampleAllocateePtr::operator=",
       "kind": "method",
-      "signature": "operator= : SampleAllocateePtr<SampleType> &(std::nullptr_t) & noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "operator= : SampleAllocateePtr<SampleType> &(std::nullptr_t) & noexcept"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::SampleAllocateePtr::operator=",
       "kind": "method",
-      "signature": "operator= : SampleAllocateePtr<SampleType> &(SampleAllocateePtr<SampleType> &&) & noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "operator= : SampleAllocateePtr<SampleType> &(SampleAllocateePtr<SampleType> &&) & noexcept"
     },
     {
       "name": "reset",
       "qualified_name": "score::mw::com::SampleAllocateePtr::reset",
       "kind": "method",
-      "signature": "reset : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "reset : void () noexcept"
     },
     {
       "name": "swap",
       "qualified_name": "score::mw::com::SampleAllocateePtr::swap",
       "kind": "method",
-      "signature": "swap : void (SampleAllocateePtr<SampleType> &) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "swap : void (SampleAllocateePtr<SampleType> &) noexcept"
     },
     {
       "name": "~SampleAllocateePtr<SampleType>",
       "qualified_name": "score::mw::com::SampleAllocateePtr::~SampleAllocateePtr<SampleType>",
       "kind": "destructor",
-      "signature": "~SampleAllocateePtr<SampleType> : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 93,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "~SampleAllocateePtr<SampleType> : void () noexcept"
     },
     {
       "name": "WithSetter",
       "qualified_name": "score::mw::com::WithSetter",
       "kind": "type_alias",
-      "signature": "using WithSetter = impl::WithSetter",
-      "file": "score/mw/com/types.h",
-      "line": 113,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "using WithSetter = impl::WithSetter"
     },
     {
       "name": "WithNotifier",
       "qualified_name": "score::mw::com::WithNotifier",
       "kind": "type_alias",
-      "signature": "using WithNotifier = impl::WithNotifier",
-      "file": "score/mw/com/types.h",
-      "line": 114,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "using WithNotifier = impl::WithNotifier"
     },
     {
       "name": "GenericProxy",
       "qualified_name": "score::mw::com::GenericProxy::GenericProxy",
       "kind": "constructor",
-      "signature": "GenericProxy : void (GenericProxy &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 128,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "GenericProxy : void (GenericProxy &&) noexcept"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::GenericProxy::operator=",
       "kind": "method",
-      "signature": "operator= : GenericProxy &(GenericProxy &&) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 128,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "operator= : GenericProxy &(GenericProxy &&) noexcept"
     },
     {
       "name": "~GenericProxy",
       "qualified_name": "score::mw::com::GenericProxy::~GenericProxy",
       "kind": "destructor",
-      "signature": "~GenericProxy : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 128,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "~GenericProxy : void () noexcept"
     },
     {
       "name": "GenericProxyEvent",
       "qualified_name": "score::mw::com::GenericProxyEvent",
       "kind": "type_alias",
-      "signature": "using GenericProxyEvent = impl::GenericProxyEvent",
-      "file": "score/mw/com/types.h",
-      "line": 131,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "using GenericProxyEvent = impl::GenericProxyEvent"
     },
     {
       "name": "GenericProxyEvent",
       "qualified_name": "score::mw::com::GenericProxyEvent::GenericProxyEvent",
       "kind": "constructor",
-      "signature": "GenericProxyEvent : void (ProxyBase &, const std::string_view, std::unique_ptr<GenericProxyEventBinding>)",
-      "file": "score/mw/com/types.h",
-      "line": 131,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "GenericProxyEvent : void (ProxyBase &, const std::string_view, std::unique_ptr<GenericProxyEventBinding>)"
     },
     {
       "name": "GenericProxyEvent",
       "qualified_name": "score::mw::com::GenericProxyEvent::GenericProxyEvent",
       "kind": "constructor",
-      "signature": "GenericProxyEvent : void (ProxyBase &, const std::string_view)",
-      "file": "score/mw/com/types.h",
-      "line": 131,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "GenericProxyEvent : void (ProxyBase &, const std::string_view)"
     },
     {
       "name": "GetNewSamples",
       "qualified_name": "score::mw::com::GenericProxyEvent::GetNewSamples",
       "kind": "template_function",
-      "signature": "GetNewSamples : Result<std::size_t> (F &&, std::size_t) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 131,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "GetNewSamples : Result<std::size_t> (F &&, std::size_t) noexcept"
     },
     {
       "name": "GetSampleSize",
       "qualified_name": "score::mw::com::GenericProxyEvent::GetSampleSize",
       "kind": "method",
-      "signature": "GetSampleSize : std::size_t () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 131,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "GetSampleSize : std::size_t () const noexcept"
     },
     {
       "name": "HasSerializedFormat",
       "qualified_name": "score::mw::com::GenericProxyEvent::HasSerializedFormat",
       "kind": "method",
-      "signature": "HasSerializedFormat : bool () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 131,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "HasSerializedFormat : bool () const noexcept"
     },
     {
       "name": "~GenericProxyEvent",
       "qualified_name": "score::mw::com::GenericProxyEvent::~GenericProxyEvent",
       "kind": "destructor",
-      "signature": "~GenericProxyEvent : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 131,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "~GenericProxyEvent : void () noexcept"
     },
     {
       "name": "Create",
       "qualified_name": "score::mw::com::GenericSkeleton::Create",
       "kind": "method",
-      "signature": "Create : Result<GenericSkeleton> (const InstanceIdentifier &, const GenericSkeletonServiceElementInfo &) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 135,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "Create : Result<GenericSkeleton> (const InstanceIdentifier &, const GenericSkeletonServiceElementInfo &) noexcept"
     },
     {
       "name": "Create",
       "qualified_name": "score::mw::com::GenericSkeleton::Create",
       "kind": "method",
-      "signature": "Create : Result<GenericSkeleton> (const InstanceSpecifier &, const GenericSkeletonServiceElementInfo &) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 135,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "Create : Result<GenericSkeleton> (const InstanceSpecifier &, const GenericSkeletonServiceElementInfo &) noexcept"
     },
     {
       "name": "GetEvents",
       "qualified_name": "score::mw::com::GenericSkeleton::GetEvents",
       "kind": "method",
-      "signature": "GetEvents : EventMapView () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 135,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "GetEvents : EventMapView () const noexcept"
     },
     {
       "name": "OfferService",
       "qualified_name": "score::mw::com::GenericSkeleton::OfferService",
       "kind": "method",
-      "signature": "OfferService : Result<void> () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 135,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "OfferService : Result<void> () noexcept"
     },
     {
       "name": "StopOfferService",
       "qualified_name": "score::mw::com::GenericSkeleton::StopOfferService",
       "kind": "method",
-      "signature": "StopOfferService : void () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 135,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "StopOfferService : void () noexcept"
     },
     {
       "name": "Allocate",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::Allocate",
       "kind": "method",
-      "signature": "Allocate : Result<SampleAllocateePtr<void>> () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 151,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "Allocate : Result<SampleAllocateePtr<void>> () noexcept"
     },
     {
       "name": "GenericSkeletonEvent",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::GenericSkeletonEvent",
       "kind": "constructor",
-      "signature": "GenericSkeletonEvent : void (SkeletonBase &, const std::string_view, std::unique_ptr<GenericSkeletonEventBinding>)",
-      "file": "score/mw/com/types.h",
-      "line": 151,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "GenericSkeletonEvent : void (SkeletonBase &, const std::string_view, std::unique_ptr<GenericSkeletonEventBinding>)"
     },
     {
       "name": "GetSizeInfo",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::GetSizeInfo",
       "kind": "method",
-      "signature": "GetSizeInfo : DataTypeMetaInfo () const noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 151,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "GetSizeInfo : DataTypeMetaInfo () const noexcept"
     },
     {
       "name": "Notify",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::Notify",
       "kind": "method",
-      "signature": "Notify : Result<void> () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 151,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "Notify : Result<void> () noexcept"
     },
     {
       "name": "Send",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::Send",
       "kind": "method",
-      "signature": "Send : Result<void> (SampleAllocateePtr<void>) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 151,
-      "has_api_marker": false,
-      "has_brief_doc": false
+      "signature": "Send : Result<void> (SampleAllocateePtr<void>) noexcept"
     },
     {
       "name": "SetReceiveHandlerRegistrationChangedHandler",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::SetReceiveHandlerRegistrationChangedHandler",
       "kind": "method",
-      "signature": "SetReceiveHandlerRegistrationChangedHandler : Result<void> (ReceiveHandlerRegistrationChangedCallback) noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 151,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "SetReceiveHandlerRegistrationChangedHandler : Result<void> (ReceiveHandlerRegistrationChangedCallback) noexcept"
     },
     {
       "name": "UnsetReceiveHandlerRegistrationChangedHandler",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::UnsetReceiveHandlerRegistrationChangedHandler",
       "kind": "method",
-      "signature": "UnsetReceiveHandlerRegistrationChangedHandler : Result<void> () noexcept",
-      "file": "score/mw/com/types.h",
-      "line": 151,
-      "has_api_marker": false,
-      "has_brief_doc": true
+      "signature": "UnsetReceiveHandlerRegistrationChangedHandler : Result<void> () noexcept"
     }
   ],
   "version": "1"

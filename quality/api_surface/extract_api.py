@@ -582,10 +582,17 @@ def extract_from_ast(
     documented = [s for s in symbols if s.has_api_marker]
     undocumented = [s for s in symbols if not s.has_api_marker]
 
+    # Lock file only tracks API shape (no file/line/doc metadata)
+    lock_fields = ("name", "qualified_name", "kind", "signature")
+
+    def to_lock_entry(s: ApiSymbol) -> dict:
+        d = asdict(s)
+        return {k: d[k] for k in lock_fields}
+
     return ApiSurface(
         target=target_label,
-        symbols=[asdict(s) for s in documented],
-        undocumented_symbols=[asdict(s) for s in undocumented],
+        symbols=[to_lock_entry(s) for s in documented],
+        undocumented_symbols=[to_lock_entry(s) for s in undocumented],
     )
 
 
