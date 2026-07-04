@@ -1,0 +1,26 @@
+{
+  "target": "//quality/api_surface/tests:internal_namespace_lib",
+  "symbols": [
+    {
+      "name": "PublicService",
+      "qualified_name": "test::PublicService",
+      "kind": "class",
+      "signature": "class PublicService"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "start",
+      "qualified_name": "test::PublicService::start",
+      "kind": "method",
+      "signature": "start : void ()"
+    },
+    {
+      "name": "stop",
+      "qualified_name": "test::PublicService::stop",
+      "kind": "method",
+      "signature": "stop : void ()"
+    }
+  ],
+  "version": "1"
+}

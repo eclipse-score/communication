@@ -1,0 +1,92 @@
+{
+  "target": "//quality/api_surface/tests:types_in_signatures_lib",
+  "symbols": [
+    {
+      "name": "Point",
+      "qualified_name": "test::Point",
+      "kind": "struct",
+      "signature": "struct Point"
+    },
+    {
+      "name": "Line",
+      "qualified_name": "test::Line",
+      "kind": "struct",
+      "signature": "struct Line"
+    },
+    {
+      "name": "GeometryCalculator",
+      "qualified_name": "test::GeometryCalculator",
+      "kind": "class",
+      "signature": "class GeometryCalculator"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "x",
+      "qualified_name": "test::Point::x",
+      "kind": "field",
+      "signature": "x"
+    },
+    {
+      "name": "y",
+      "qualified_name": "test::Point::y",
+      "kind": "field",
+      "signature": "y"
+    },
+    {
+      "name": "Point",
+      "qualified_name": "test::Point::Point",
+      "kind": "constructor",
+      "signature": "Point : void (double, double)"
+    },
+    {
+      "name": "distance",
+      "qualified_name": "test::Point::distance",
+      "kind": "method",
+      "signature": "distance : double () const"
+    },
+    {
+      "name": "p1",
+      "qualified_name": "test::Line::p1",
+      "kind": "field",
+      "signature": "p1"
+    },
+    {
+      "name": "p2",
+      "qualified_name": "test::Line::p2",
+      "kind": "field",
+      "signature": "p2"
+    },
+    {
+      "name": "Line",
+      "qualified_name": "test::Line::Line",
+      "kind": "constructor",
+      "signature": "Line : void (const Point &, const Point &)"
+    },
+    {
+      "name": "length",
+      "qualified_name": "test::Line::length",
+      "kind": "method",
+      "signature": "length : double () const"
+    },
+    {
+      "name": "calculateMidpoint",
+      "qualified_name": "test::GeometryCalculator::calculateMidpoint",
+      "kind": "method",
+      "signature": "calculateMidpoint : Point (const Point &, const Point &)"
+    },
+    {
+      "name": "calculateDistance",
+      "qualified_name": "test::GeometryCalculator::calculateDistance",
+      "kind": "method",
+      "signature": "calculateDistance : double (const Point &, const Point &)"
+    },
+    {
+      "name": "minLineDistance",
+      "qualified_name": "test::GeometryCalculator::minLineDistance",
+      "kind": "method",
+      "signature": "minLineDistance : double (const Line &, const Line &)"
+    }
+  ],
+  "version": "1"
+}

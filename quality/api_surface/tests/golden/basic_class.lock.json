@@ -1,0 +1,50 @@
+{
+  "target": "//quality/api_surface/tests:basic_class_lib",
+  "symbols": [
+    {
+      "name": "Calculator",
+      "qualified_name": "test::Calculator",
+      "kind": "class",
+      "signature": "class Calculator"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "Calculator",
+      "qualified_name": "test::Calculator::Calculator",
+      "kind": "constructor",
+      "signature": "Calculator : void ()"
+    },
+    {
+      "name": "~Calculator",
+      "qualified_name": "test::Calculator::~Calculator",
+      "kind": "destructor",
+      "signature": "~Calculator : void ()"
+    },
+    {
+      "name": "add",
+      "qualified_name": "test::Calculator::add",
+      "kind": "method",
+      "signature": "add : int (int, int)"
+    },
+    {
+      "name": "subtract",
+      "qualified_name": "test::Calculator::subtract",
+      "kind": "method",
+      "signature": "subtract : int (int, int)"
+    },
+    {
+      "name": "multiply",
+      "qualified_name": "test::Calculator::multiply",
+      "kind": "method",
+      "signature": "multiply : double (double, double)"
+    },
+    {
+      "name": "reset",
+      "qualified_name": "test::Calculator::reset",
+      "kind": "method",
+      "signature": "reset : void ()"
+    }
+  ],
+  "version": "1"
+}

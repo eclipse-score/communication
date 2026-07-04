@@ -155,6 +155,7 @@ def map_kind(node: dict) -> str:
         "EnumDecl": "enum",
         "EnumConstantDecl": "enum_value",
         "VarDecl": "variable",
+        "FieldDecl": "field",
     }
     if kind == "CXXRecordDecl":
         tag = node.get("tagUsed", "class")
@@ -424,7 +425,7 @@ def extract_from_ast(
         # Handle regular declarations
         if kind in ("FunctionDecl", "CXXMethodDecl", "CXXConstructorDecl",
                     "CXXDestructorDecl", "TypeAliasDecl", "TypedefDecl",
-                    "EnumDecl", "VarDecl"):
+                    "EnumDecl", "EnumConstantDecl", "VarDecl", "FieldDecl"):
             if not in_target or not name or access != "public":
                 return
             if node.get("isImplicit"):
@@ -538,7 +539,7 @@ def extract_from_ast(
             if not child_name:
                 continue
 
-            if child_kind in ("CXXMethodDecl", "CXXConstructorDecl", "CXXDestructorDecl", "FunctionTemplateDecl"):
+            if child_kind in ("CXXMethodDecl", "CXXConstructorDecl", "CXXDestructorDecl", "FunctionTemplateDecl", "FieldDecl"):
                 members.append(child)
 
         # Walk public base classes and include their public members
@@ -593,6 +594,7 @@ def extract_from_ast(
                 "CXXConstructorDecl": "constructor",
                 "CXXDestructorDecl": "destructor",
                 "FunctionTemplateDecl": "template_function",
+                "FieldDecl": "field",
             }.get(child_kind, "method")
 
             followed_members.append(ApiSymbol(

@@ -808,6 +808,36 @@
       "signature": "~SkeletonBase : void () noexcept"
     },
     {
+      "name": "alignment",
+      "qualified_name": "score::mw::com::DataTypeMetaInfo::alignment",
+      "kind": "field",
+      "signature": "alignment : std::size_t"
+    },
+    {
+      "name": "size",
+      "qualified_name": "score::mw::com::DataTypeMetaInfo::size",
+      "kind": "field",
+      "signature": "size : std::size_t"
+    },
+    {
+      "name": "data_type_meta_info",
+      "qualified_name": "score::mw::com::EventInfo::data_type_meta_info",
+      "kind": "field",
+      "signature": "data_type_meta_info : DataTypeMetaInfo"
+    },
+    {
+      "name": "name",
+      "qualified_name": "score::mw::com::EventInfo::name",
+      "kind": "field",
+      "signature": "name : std::string_view"
+    },
+    {
+      "name": "events",
+      "qualified_name": "score::mw::com::GenericSkeletonServiceElementInfo::events",
+      "kind": "field",
+      "signature": "events : score::cpp::span<const EventInfo>"
+    },
+    {
       "name": "Allocate",
       "qualified_name": "score::mw::com::GenericSkeletonEvent::Allocate",
       "kind": "method",

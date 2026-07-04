@@ -1,0 +1,56 @@
+{
+  "target": "//quality/api_surface/tests:enum_and_free_functions_lib",
+  "symbols": [
+    {
+      "name": "Status",
+      "qualified_name": "test::Status",
+      "kind": "enum",
+      "signature": "enum class Status"
+    },
+    {
+      "name": "Initialize",
+      "qualified_name": "test::Initialize",
+      "kind": "function",
+      "signature": "Initialize : void ()"
+    },
+    {
+      "name": "Shutdown",
+      "qualified_name": "test::Shutdown",
+      "kind": "function",
+      "signature": "Shutdown : void ()"
+    },
+    {
+      "name": "ProcessData",
+      "qualified_name": "test::ProcessData",
+      "kind": "function",
+      "signature": "ProcessData : int (const char *, int, Status *)"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "kOk",
+      "qualified_name": "test::Status::kOk",
+      "kind": "enum_value",
+      "signature": "kOk"
+    },
+    {
+      "name": "kError",
+      "qualified_name": "test::Status::kError",
+      "kind": "enum_value",
+      "signature": "kError"
+    },
+    {
+      "name": "kTimeout",
+      "qualified_name": "test::Status::kTimeout",
+      "kind": "enum_value",
+      "signature": "kTimeout"
+    },
+    {
+      "name": "kCancelled",
+      "qualified_name": "test::Status::kCancelled",
+      "kind": "enum_value",
+      "signature": "kCancelled"
+    }
+  ],
+  "version": "1"
+}
