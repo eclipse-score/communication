@@ -56,7 +56,7 @@ use crate::LolaRuntimeImpl;
 
 #[derive(Clone, Debug)]
 pub struct LolaConsumerInfo<B: FFIBridge> {
-    handle_container: Arc<mw_com::proxy::HandleContainer>,
+    handle_container: Arc<HandleContainer>,
     handle_index: usize,
     interface_id: &'static str,
     // LolaFFIBridge (Production case) is a ZST, so cloning it is not overhead,
@@ -849,7 +849,7 @@ impl<'a, T: CommData + Debug, B: FFIBridge> Stream for SampleStream<'a, T, B> {
 /// - C++ passes the same handle both as return value and callback argument; we use only the
 ///   return value to eliminate double-write races and ensure deterministic cleanup.
 struct DiscoveryStateData {
-    handles: Option<mw_com::proxy::HandleContainer>,
+    handles: Option<HandleContainer>,
 }
 
 impl std::fmt::Debug for DiscoveryStateData {
@@ -888,10 +888,12 @@ where
         //If ANY Support is added in Lola, then we need to return all available instances
         //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_lola =
-            mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
+            bridge_ffi_rs::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
                 .map_err(|_| Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid))?;
 
-        let service_handle = mw_com::proxy::find_service(instance_specifier_lola)
+        let service_handle = self
+            .bridge
+            .find_service(instance_specifier_lola)
             .map_err(|_| Error::ServiceError(ServiceFailedReason::ServiceNotFound))?;
 
         let service_handle_arc = Arc::new(service_handle);
@@ -928,7 +930,7 @@ where
         // Convert to Lola InstanceSpecifier early
         //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_lola =
-            mw_com::InstanceSpecifier::try_from(instance_specifier.as_ref())
+            bridge_ffi_rs::InstanceSpecifier::try_from(instance_specifier.as_ref())
                 .map_err(|_| Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid));
 
         let waker_storage = Arc::new(futures::task::AtomicWaker::new());
@@ -945,8 +947,7 @@ where
         // synchronously from `start_find_service`'s return value and stored
         // directly in `ServiceDiscoveryFuture`, eliminating the double-write race.
         let discovery_callback = Box::new(
-            move |handles: mw_com::proxy::HandleContainer,
-                  _find_handle: bridge_ffi_rs::NativeFindServiceHandle| {
+            move |handles: HandleContainer, _find_handle: NativeFindServiceHandle| {
                 if let Ok(mut state) = state_ref.lock() {
                     state.handles = Some(handles);
                 }
@@ -955,9 +956,7 @@ where
         );
 
         let dyn_callback: Box<
-            dyn FnMut(mw_com::proxy::HandleContainer, bridge_ffi_rs::NativeFindServiceHandle)
-                + Send
-                + 'static,
+            dyn FnMut(HandleContainer, NativeFindServiceHandle) + Send + 'static,
         > = discovery_callback;
 
         // SAFETY: dyn_callback has the signature FnMut(HandleContainer, NativeFindServiceHandle)
@@ -977,7 +976,7 @@ where
             } else {
                 // Single authoritative source of find_handle — return value only.
                 // Callback's find_handle argument is ignored to prevent double-write.
-                Ok(bridge_ffi_rs::NativeFindServiceHandle::new(raw_handle))
+                Ok(NativeFindServiceHandle::new(raw_handle))
             }
         });
         async move {
@@ -1005,7 +1004,7 @@ where
 /// Stop find service in Drop implementation to ensure that we clean up the find service if the
 /// future is dropped before completion
 struct ServiceDiscoveryFuture<I: Interface, B: FFIBridge> {
-    find_handle: bridge_ffi_rs::NativeFindServiceHandle,
+    find_handle: NativeFindServiceHandle,
     discovery_state: Arc<std::sync::Mutex<DiscoveryStateData>>,
     waker_storage: Arc<futures::task::AtomicWaker>,
     _interface: PhantomData<I>,
@@ -1019,9 +1018,8 @@ impl<I: Interface, B: FFIBridge> Drop for ServiceDiscoveryFuture<I, B> {
         // This unconditional call ensures the C++ discovery operation is always
         // cleaned up, even when the future is dropped before the callback fires.
         unsafe {
-            self.bridge.stop_find_service(
-                self.find_handle.as_mut() as *mut bridge_ffi_rs::FindServiceHandle
-            );
+            self.bridge
+                .stop_find_service(self.find_handle.as_mut() as *mut FindServiceHandle);
         }
     }
 }

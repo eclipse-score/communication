@@ -11,8 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
@@ -36,49 +35,6 @@ cc_binary(
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
-    ],
-)
-
-cc_library(
-    name = "bigdata_gen_cpp",
-    srcs = ["bigdata_gen.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        "//score/mw/com/impl/rust:bridge_macros",
-        "//score/mw/com/test/common_test_resources:bigdata_type",
-    ],
-)
-
-rust_library(
-    name = "bigdata_gen_rs",
-    srcs = ["bigdata_gen.rs"],
-    deps = [
-        ":bigdata_gen_cpp",
-        "//score/mw/com/impl/rust:mw_com",
-        "@score_communication_crate_index//:libc",
-    ],
-)
-
-rust_binary(
-    name = "bigdata_rs",
-    srcs = ["bigdata.rs"],
-    data = ["mw_com_config.json"],
-    features = ["link_std_cpp_lib"],
-    deps = [
-        ":bigdata_gen_rs",
-        "//score/mw/com/impl/rust:mw_com",
-        "@score_communication_crate_index//:futures",
-    ],
-)
-
-rust_binary(
-    name = "bigdata_skeleton_rs",
-    srcs = ["bigdata_skeleton.rs"],
-    data = ["mw_com_config.json"],
-    features = ["link_std_cpp_lib"],
-    deps = [
-        ":bigdata_gen_rs",
-        "//score/mw/com/impl/rust:proxy_bridge_rs",
     ],
 )
 
