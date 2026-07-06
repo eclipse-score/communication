@@ -12,6 +12,7 @@
 # *******************************************************************************
 
 load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
 cc_binary(
@@ -43,4 +44,14 @@ integration_test(
         "test_hello_world.py",
     ],
     filesystem = ":example-app-pkg",
+)
+
+# Signal probe: evidence test for the score_itf Docker network orphan bug.
+# See test_signal_probe.py for full instructions.
+# Scenario A (SIGKILL): bazel test :test_signal_probe --test_timeout=5
+# Scenario B (SIGTERM): bazel test :test_signal_probe  then Ctrl+C
+py_test(
+    name = "test_signal_probe",
+    timeout = "short",
+    srcs = ["test_signal_probe.py"],
 )

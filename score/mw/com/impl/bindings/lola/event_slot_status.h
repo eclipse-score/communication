@@ -30,6 +30,7 @@ namespace score::mw::com::impl::lola
 /// to be updated atomically.
 class EventSlotStatus final
 {
+
   public:
     /// \brief A EventTimeStamp represents a strictly monotonic counter that is increased every time an event is sent.
     using EventTimeStamp = std::uint32_t;
