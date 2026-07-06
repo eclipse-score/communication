@@ -410,6 +410,11 @@ class SkeletonAttorney
         return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetEventMetaInfo(element_fq_id);
     }
 
+    bool WasOldShmRegionReopened() const noexcept
+    {
+        return skeleton_.was_old_shm_region_reopened_;
+    }
+
   private:
     Skeleton& skeleton_;
 };
