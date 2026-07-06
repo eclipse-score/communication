@@ -20,6 +20,7 @@
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
 #include "score/mw/com/impl/proxy_base.h"
+#include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/util/type_erased_storage.h"
 
 #include "score/containers/dynamic_array.h"
@@ -124,7 +125,7 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     ProxyMethod(ProxyMethod&&) noexcept = default;
     ProxyMethod& operator=(ProxyMethod&&) noexcept = default;
 
-    Result<void> InitializeInArgsAndReturnValues() override;
+    Result<void> InitializeInArgsAndReturnValues(ProxyBinding& proxy_binding) override;
 
     /// \brief Allocates the necessary storage for the argument values and the return value of a method call.
     /// \return On success, a tuple of MethodInArgPtr for each argument type is returned. On failure, an error code is
@@ -221,16 +222,16 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes..
 }
 
 template <typename ReturnType, typename... ArgTypes>
-Result<void> ProxyMethod<ReturnType(ArgTypes...)>::InitializeInArgsAndReturnValues()
+Result<void> ProxyMethod<ReturnType(ArgTypes...)>::InitializeInArgsAndReturnValues(ProxyBinding& proxy_binding)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
-    const auto init_in_args_result = detail::InitializeInArgs<ArgTypes...>(*binding_, kCallQueueSize);
+    const auto init_in_args_result = detail::InitializeInArgs<ArgTypes...>(proxy_binding, *binding_, kCallQueueSize);
     if (!init_in_args_result.has_value())
     {
         return Unexpected(init_in_args_result.error());
     }
 
-    const auto init_return_result = detail::InitializeReturnValue<ReturnType>(*binding_, kCallQueueSize);
+    const auto init_return_result = detail::InitializeReturnValue<ReturnType>(proxy_binding, *binding_, kCallQueueSize);
     if (!init_return_result.has_value())
     {
         return Unexpected(init_return_result.error());

@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <string_view>
 #include <type_traits>
 
@@ -29,7 +30,7 @@ class MyProxy final : public ProxyBinding
     {
         return true;
     }
-    Result<void> SetupMethods() override
+    Result<void> SetupMethods(std::size_t) override
     {
         return {};
     }

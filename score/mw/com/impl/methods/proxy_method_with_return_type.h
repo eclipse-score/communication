@@ -115,7 +115,7 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     ProxyMethod(ProxyMethod&&) noexcept = default;
     ProxyMethod& operator=(ProxyMethod&&) noexcept = default;
 
-    Result<void> InitializeInArgsAndReturnValues() override;
+    Result<void> InitializeInArgsAndReturnValues(ProxyBinding& proxy_binding) override;
 
     /// \brief This is the call-operator of ProxyMethod with no arguments for a non-void ReturnType.
     score::Result<MethodReturnTypePtr<ReturnType>> operator()();
@@ -172,10 +172,10 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operat
 }
 
 template <typename ReturnType>
-Result<void> ProxyMethod<ReturnType()>::InitializeInArgsAndReturnValues()
+Result<void> ProxyMethod<ReturnType()>::InitializeInArgsAndReturnValues(ProxyBinding& proxy_binding)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
-    const auto init_return_result = detail::InitializeReturnValue<ReturnType>(*binding_, kCallQueueSize);
+    const auto init_return_result = detail::InitializeReturnValue<ReturnType>(proxy_binding, *binding_, kCallQueueSize);
     if (!init_return_result.has_value())
     {
         return Unexpected(init_return_result.error());

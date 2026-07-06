@@ -563,7 +563,7 @@ class DummyProxyMethod : public ProxyMethodBase
 {
   public:
     using ProxyMethodBase::ProxyMethodBase;
-    Result<void> InitializeInArgsAndReturnValues() override
+    Result<void> InitializeInArgsAndReturnValues(ProxyBinding&) override
     {
         return {};
     }

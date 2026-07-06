@@ -101,6 +101,11 @@ class ProxyMethodTestFixture : public ::testing::Test
         return &moved_method->second.get().Get();
     }
 
+    ProxyBinding& GetProxyBinding()
+    {
+        return *ProxyBaseView{proxy_base_}.GetBinding();
+    }
+
     alignas(8) std::array<std::byte, 1024> method_in_args_buffer_{};
     alignas(8) std::array<std::byte, 1024> method_return_type_buffer_{};
     ConfigurationStore config_store_{InstanceSpecifier::Create(std::string{"/my_dummy_instance_specifier"}).value(),
@@ -829,7 +834,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture, InitializeI
     this->GivenAValidProxyMethod();
 
     // When calling InitializeInArgsAndReturnValues
-    const auto result = this->unit_->InitializeInArgsAndReturnValues();
+    const auto result = this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then a valid result is returned
     EXPECT_TRUE(result.has_value());
@@ -858,7 +863,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture,
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
     // When calling InitializeInArgsAndReturnValues
-    const auto result = this->unit_->InitializeInArgsAndReturnValues();
+    const auto result = this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
@@ -875,7 +880,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture,
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
     // When calling InitializeInArgsAndReturnValues
-    const auto result = this->unit_->InitializeInArgsAndReturnValues();
+    const auto result = this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
@@ -888,7 +893,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture,
     this->GivenAValidProxyMethod();
 
     // When calling InitializeInArgsAndReturnValues
-    this->unit_->InitializeInArgsAndReturnValues();
+    this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then the zero copy call operator returns a pointer pointing to an initialized object (i.e. the non-trivial
     // default constructor was called, initializing value to NonTriviallyConstructibleType::kInitialValue
@@ -910,7 +915,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture,
     this->GivenAValidProxyMethod();
 
     // When calling InitializeInArgsAndReturnValues
-    this->unit_->InitializeInArgsAndReturnValues();
+    this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then the copy call operator returns a pointer pointing to an initialized object (i.e. the non-trivial
     // default constructor was called, initializing value to NonTriviallyConstructibleType::kInitialValue
@@ -926,7 +931,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsOnlyFixture, InitializeInArgs
     this->GivenAValidProxyMethod();
 
     // When calling InitializeInArgsAndReturnValues
-    this->unit_->InitializeInArgsAndReturnValues();
+    this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then Allocate returns a pointer pointing to an initialized object (i.e. the non-trivial default constructor was
     // called, initializing value to NonTriviallyConstructibleType::kInitialValue
@@ -952,7 +957,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsOnlyFixture,
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
     // When calling InitializeInArgsAndReturnValues
-    const auto result = this->unit_->InitializeInArgsAndReturnValues();
+    const auto result = this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
@@ -965,7 +970,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleReturnOnlyFixture,
     this->GivenAValidProxyMethod();
 
     // When calling InitializeInArgsAndReturnValues
-    this->unit_->InitializeInArgsAndReturnValues();
+    this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then the copy call operator returns a pointer pointing to an initialized object (i.e. the non-trivial
     // default constructor was called, initializing value to NonTriviallyConstructibleType::kInitialValue
@@ -986,7 +991,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleReturnOnlyFixture,
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
     // When calling InitializeInArgsAndReturnValues
-    const auto result = this->unit_->InitializeInArgsAndReturnValues();
+    const auto result = this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
