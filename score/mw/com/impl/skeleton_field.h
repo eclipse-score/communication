@@ -178,9 +178,10 @@ class SkeletonField : public SkeletonFieldBase
     }
 
     static constexpr bool kHasNotifier = detail::contains_type<WithNotifier, Tags...>::value;
-    static constexpr std::uint16_t kDefaultSlotCountWithoutNotifier{2U};
+    static constexpr std::uint16_t kDefaultSlotCountWithoutNotifier = 2U;
 
-    static void WarnIfSlotCountConfiguredWithoutNotifier(SkeletonBase& parent, const std::string_view field_name)
+    // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+    static void WarnIfConfiguredSlotCountIgnored(SkeletonBase& parent, const std::string_view field_name)
     {
         const auto identifier = SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier();
         const auto& deployment = InstanceIdentifierView{identifier}.GetServiceInstanceDeployment();
@@ -189,9 +190,6 @@ class SkeletonField : public SkeletonFieldBase
                 const auto it = lola.fields_.find(std::string{field_name});
                 if (it == lola.fields_.cend())
                 {
-                    score::mw::log::LogError("lola") << "Field '" << field_name
-                                                     << " is missing from LolaServiceInstanceDeployment; slot count "
-                                                        "configuration cannot be applied.";
                     return;
                 }
                 if (it->second.GetNumberOfSampleSlots().has_value())
@@ -210,11 +208,11 @@ class SkeletonField : public SkeletonFieldBase
     static std::unique_ptr<SkeletonEvent<FieldType>> MakeSkeletonEvent(SkeletonBase& parent,
                                                                        const std::string_view field_name)
     {
-        // WithNotifier disabled: it was decided to use 2 slots and warn if user tried to set a different value.
+        // WithNotifier disabled: use 2 slots internally, warn if config tried to set a different value.
         std::optional<SlotCountOverrideGuard> slot_count_guard;
         if constexpr (!kHasNotifier)
         {
-            WarnIfSlotCountConfiguredWithoutNotifier(parent, field_name);
+            WarnIfConfiguredSlotCountIgnored(parent, field_name);
             slot_count_guard.emplace(parent, kDefaultSlotCountWithoutNotifier);
         }
         return std::make_unique<SkeletonEvent<FieldType>>(

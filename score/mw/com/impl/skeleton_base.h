@@ -231,17 +231,18 @@ class SkeletonBaseView
     SkeletonBase& skeleton_base_;
 };
 
-/// RAII based slot counter update.
+/// RAII: writes a slot-count override on construction, restores the previous value on destruction.
 class SlotCountOverrideGuard
 {
   public:
-    SlotCountOverrideGuard(SkeletonBase& parent, std::uint16_t slot_count) noexcept : parent_{parent}
+    SlotCountOverrideGuard(SkeletonBase& parent, std::uint16_t slot_count) noexcept
+        : parent_{parent}, previous_override_{SkeletonBaseView{parent_}.GetSlotCountOverride()}
     {
         SkeletonBaseView{parent_}.SetSlotCountOverride(slot_count);
     }
     ~SlotCountOverrideGuard() noexcept
     {
-        SkeletonBaseView{parent_}.SetSlotCountOverride(std::nullopt);
+        SkeletonBaseView{parent_}.SetSlotCountOverride(previous_override_);
     }
 
     SlotCountOverrideGuard(const SlotCountOverrideGuard&) = delete;
@@ -251,8 +252,10 @@ class SlotCountOverrideGuard
 
   private:
     SkeletonBase& parent_;
+    std::optional<std::uint16_t> previous_override_;
+};
 
-    score::cpp::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpecifier& specifier);
+score::cpp::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpecifier& specifier);
 
 }  // namespace score::mw::com::impl
 
