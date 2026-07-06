@@ -22,9 +22,10 @@ use clap::Parser;
 use std::path::PathBuf;
 
 use com_api::{
-    Builder, FieldPublisher, FindServiceSpecifier, InstanceSpecifier, Interface,
-    LolaRuntimeBuilderImpl, OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder,
-    SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    Builder, FieldMethods, FieldPublisher, FieldSubscription, FindServiceSpecifier,
+    InstanceSpecifier, Interface, LolaRuntimeBuilderImpl, OfferedProducer, Producer, Publisher,
+    Result, Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit, SampleMut,
+    ServiceDiscovery, Subscriber, Subscription,
 };
 
 use com_api_gen::{Exhaust, Tire, VehicleFieldInterface, VehicleInterface};
@@ -50,6 +51,8 @@ type VehicleFieldProducer<R> = <VehicleFieldInterface as Interface>::Producer<R>
 // VehicleFieldOfferedProducer is the offered producer type for the VehicleField interface (fields support update/set-handler)
 type VehicleFieldOfferedProducer<R> =
     <<VehicleFieldInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
+
+type VehicleFieldConsumer<R> = <VehicleFieldInterface as Interface>::Consumer<R>;
 
 // Example struct demonstrating composition with VehicleConsumer
 pub struct VehicleMonitor<R: Runtime> {
@@ -221,6 +224,66 @@ fn create_producer_field<R: Runtime + 'static>(
     });
 
     producer.offer().expect("Failed to offer producer instance")
+}
+
+fn create_consumer_field<R: Runtime>(
+    runtime: &R,
+    service_id: InstanceSpecifier,
+) -> VehicleFieldConsumer<R> {
+    let consumer_discovery =
+        runtime.find_service::<VehicleFieldInterface>(FindServiceSpecifier::Specific(service_id));
+    let available_service_instances = consumer_discovery
+        .get_available_instances()
+        .expect("Failed to get available service instances");
+
+    // Select service instance at specific handle_index
+    let handle_index = 0; // or any index you need from vector of instances
+    let consumer_builder = available_service_instances
+        .into_iter()
+        .nth(handle_index)
+        .expect("Failed to get consumer builder at specified handle index");
+
+    consumer_builder
+        .build()
+        .expect("Failed to build consumer instance")
+}
+
+fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>) {
+    //currently we do not have MethodReturnTypePtr implementation for Lola runtime.
+    let _ = consumer.left_tire.get().expect("Failed to get field value");
+
+    let _ = consumer
+        .left_tire
+        .set(Tire { pressure: 30.0 })
+        .expect("Failed to set field value");
+
+    // Subscribe to the field to receive updates
+    let subscription = consumer
+        .left_tire
+        .subscribe(3)
+        .expect("Failed to subscribe to field");
+    let mut sample_buf = SampleContainer::new(3);
+
+    // Poll for updates (non-blocking)
+    match subscription.try_receive(&mut sample_buf, 1) {
+        Ok(n) if n > 0 => {
+            while let Some(sample) = sample_buf.pop_front() {
+                println!("Updated tire pressure: {:?}", *sample);
+            }
+        }
+        _ => {
+            println!("No new tire pressure updates available");
+        }
+    }
+
+    let _ = subscription
+        .set(Tire { pressure: 35.0 })
+        .expect("Failed to set field value");
+    let _ = subscription.get().expect("Failed to get field value");
+
+    drop(sample_buf);
+
+    let _ = subscription.unsubscribe();
 }
 
 // Run the example with the specified runtime

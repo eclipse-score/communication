@@ -22,8 +22,8 @@ use core::marker::PhantomData;
 
 use bridge_ffi_rs::FFIBridge;
 use com_api_concept::{
-    CommData, FieldMethods, FieldSubscriber, MethodReturnTypePtr, Result, SampleContainer,
-    Subscriber, Subscription,
+    CommData, FieldMethods, FieldSubscriber, FieldSubscription, MethodReturnTypePtr, Result,
+    SampleContainer, Subscriber, Subscription,
 };
 
 use crate::consumer::Sample;
@@ -75,6 +75,18 @@ pub struct LolaFieldSubscription<T: CommData + Debug, B: FFIBridge> {
     _bridge: PhantomData<B>,
 }
 
+impl<T: CommData + Debug, B: FFIBridge> FieldSubscription<T, LolaRuntimeImpl<B>>
+    for LolaFieldSubscription<T, B>
+{
+    fn get_free_sample_count(&self) -> Result<usize> {
+        todo!()
+    }
+
+    fn get_num_new_samples_available(&self) -> Result<usize> {
+        todo!()
+    }
+}
+
 /// Implementation of Subscription trait which provides receiving APIs.
 impl<T: CommData + Debug, B: FFIBridge> Subscription<T, LolaRuntimeImpl<B>>
     for LolaFieldSubscription<T, B>
@@ -112,5 +124,17 @@ impl<T: CommData + Debug, B: FFIBridge> Subscription<T, LolaRuntimeImpl<B>>
         &'a mut self,
     ) -> impl futures::stream::Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         futures::stream::empty()
+    }
+}
+
+/// Implementation of FieldMethods trait which provides `get` and `set` methods for LolaFieldSubscriber.
+impl<T: CommData + Debug, B: FFIBridge> FieldMethods<T, LolaRuntimeImpl<B>>
+    for LolaFieldSubscription<T, B>
+{
+    fn get(&self) -> Result<MethodReturnTypePtr<T>> {
+        todo!()
+    }
+    fn set(&self, _value: T) -> Result<MethodReturnTypePtr<T>> {
+        todo!()
     }
 }

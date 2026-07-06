@@ -40,8 +40,9 @@ pub struct MethodReturnTypePtr<T: CommData + Debug> {
 /// `FieldMethods` trait is used to provide the `get` and `set` methods for the field instance which can be used before subscription.
 /// Event related APIs follow the same restriction for concurrent access.
 pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
-    FieldMethods<T, R> + com_api_concept::Subscriber<T, R>
+    FieldMethods<T, R> + com_api_concept::Subscriber<T, R, Subscription: FieldSubscription<T, R>>
 {
+
 }
 
 /// FieldSubscriber trait is provides the receiving APIs for the field subscription and
