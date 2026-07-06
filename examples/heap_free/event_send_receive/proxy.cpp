@@ -29,6 +29,8 @@ namespace
 // Poll FindService for up to 5 seconds (100 attempts * 50 ms) before giving up.
 constexpr std::uint32_t kMaxFindAttempts{100U};
 constexpr std::chrono::milliseconds kFindRetryDelay{50};
+constexpr std::uint32_t kNumIterations{20U};
+constexpr std::chrono::milliseconds kCycleTime{50};
 constexpr std::size_t kMaxSamples{16U};
 
 }  // namespace
@@ -96,21 +98,77 @@ int main(int argc, char* argv[])
     // ---- OPERATIONAL PHASE (see README.md for heap behavior of each API) ----
     score::mw::log::LogInfo("PxEs") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
-    score::mw::com::SubscriptionState state = proxy.reading.GetSubscriptionState();
-    if (state != score::mw::com::SubscriptionState::kSubscribed)
-    {
-        score::mw::log::LogError("PxEs")
-            << "Expected kSubscribed — is event_send_receive/skeleton running and offering its service?";
-        heap_check::allow_heap();
-        return EXIT_FAILURE;
-    }
 
-    proxy.reading.Unsubscribe();
+    for (std::uint32_t i = 0U; i < kNumIterations; ++i)
+    {
+        // GetNewSamples reads from the LoLa shared-memory ring buffer — no heap allocation.
+        score::Result<std::size_t> reading_result = proxy.reading.GetNewSamples(
+            [](score::mw::com::SamplePtr<sensor::SensorReading> sample) noexcept {
+                static_cast<void>(sample->sequence);
+                static_cast<void>(sample->value);
+            },
+            kMaxSamples);
+        if (!reading_result.has_value())
+        {
+            score::mw::log::LogError("PxEs") << "reading.GetNewSamples failed";
+            heap_check::allow_heap();
+            return EXIT_FAILURE;
+        }
+
+        std::this_thread::sleep_for(kCycleTime);
+    }
 
     // ---- CLEANUP ----
     heap_check::allow_heap();
-    score::mw::log::LogInfo("PxEs") << "Subscription verified and unsubscribed";
+    score::mw::log::LogInfo("PxEs") << "Operational phase complete (" << kNumIterations << " iterations)";
+
+    proxy.reading.Unsubscribe();
 
     score::mw::log::LogInfo("PxEs") << "Completed successfully";
     return 0;
+
+    // ---- ASYNC RECEIVE HANDLER (NOT HEAP-FREE — kept for reference) ----
+    //
+    // NOT HEAP-FREE: registering a receive handler causes the skeleton to allocate.
+    // See TODO in score/mw/com/impl/scoped_event_receive_handler.h.
+    //
+    // How to use the async receive API:
+    //   1. In the init phase, call SetReceiveHandler to register a callback.
+    //   2. The callback fires on the middleware thread when new data arrives.
+    //   3. From your receive loop, call GetNewSamples to drain the available samples.
+    //   4. Use waitWithAbort(stop_token) on a Notification to block until the handler wakes you.
+    //
+    // #include "score/concurrency/notification.h"
+    // #include "score/stop_token.hpp"
+    //
+    // score::concurrency::Notification event_received{};
+    // score::cpp::stop_source stop_source{};
+    //
+    // score::Result<void> handler_result = proxy.reading.SetReceiveHandler(
+    //     [&event_received]() noexcept { event_received.notify(); });
+    // if (!handler_result.has_value())
+    // {
+    //     score::mw::log::LogError("PxEs") << "reading.SetReceiveHandler failed";
+    //     return EXIT_FAILURE;
+    // }
+    //
+    // heap_check::forbid_heap();
+    // for (std::uint32_t i = 0U; i < kNumIterations; ++i)
+    // {
+    //     event_received.waitWithAbort(stop_source.get_token());
+    //     event_received.reset();
+    //     score::Result<std::size_t> reading_result = proxy.reading.GetNewSamples(
+    //         [](score::mw::com::SamplePtr<sensor::SensorReading> sample) noexcept {
+    //             static_cast<void>(sample->sequence);
+    //             static_cast<void>(sample->value);
+    //         },
+    //         kMaxSamples);
+    //     if (!reading_result.has_value())
+    //     {
+    //         score::mw::log::LogError("PxEs") << "reading.GetNewSamples failed";
+    //         heap_check::allow_heap();
+    //         return EXIT_FAILURE;
+    //     }
+    // }
+    // heap_check::allow_heap();
 }
