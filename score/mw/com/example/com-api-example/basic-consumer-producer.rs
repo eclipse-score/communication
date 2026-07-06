@@ -11,13 +11,14 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+#![allow(unused)]
+
 // This demo app writing and reading tire pressure data using producer and consumer respectively.
 // It is demonstrating the composition of consumer and producer in one struct,
 // but they can be used separately as well.
 // The example is using Lola runtime, but it can be used with any runtime by changing the runtime initialization part.
 // Note: The example is using unwrap and panic in some places for simplicity,
 // but it is recommended to handle errors properly in production code.
-
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -219,9 +220,8 @@ fn create_producer_field<R: Runtime + 'static>(
     // Clone producer for the async handler task (TODO: need to think about clone)
     // As we need to clone publisher as well in macro.
     let producer_clone = producer.clone();
-    tokio::task::spawn_local(async move {
-        process_received_set_handler(producer_clone).await;
-    });
+    //TODO: Test this with tokio::spawn.
+    futures::executor::block_on(process_received_set_handler(producer_clone));
 
     producer.offer().expect("Failed to offer producer instance")
 }
