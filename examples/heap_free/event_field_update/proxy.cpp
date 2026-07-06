@@ -11,19 +11,16 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-// Proxy: polling receive for event and field, no heap in the operational phase.
-// Run alongside the skeleton.
 #include "common/sensor_interface.h"
-#include "heap_check/heap_check.h"  // include in exactly ONE translation unit per binary
+#include "heap_check/heap_check.h"
 
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/log/logging.h"
 
-#include <score/assert.hpp>
-
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <thread>
 
 namespace
@@ -52,15 +49,22 @@ int main(int argc, char* argv[])
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/event_field_update/SensorInterface"});
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "InstanceSpecifier::Create failed");
+    if (!specifier_result.has_value())
+    {
+        score::mw::log::LogError("PxEf") << "InstanceSpecifier::Create failed";
+        return EXIT_FAILURE;
+    }
 
     score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType> handles{};
     for (std::uint32_t attempt = 0U; attempt < kMaxFindAttempts; ++attempt)
     {
         score::Result<score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType>> handles_result =
             sensor::SensorProxy::FindService(specifier_result.value());
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(handles_result.has_value(),
-                                                    "FindService failed — check mw_com_config.json");
+        if (!handles_result.has_value())
+        {
+            score::mw::log::LogError("PxEf") << "FindService failed — check mw_com_config.json";
+            return EXIT_FAILURE;
+        }
         handles = std::move(handles_result.value());
         if (!handles.empty())
         {
@@ -68,19 +72,34 @@ int main(int argc, char* argv[])
         }
         std::this_thread::sleep_for(kFindRetryDelay);
     }
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        !handles.empty(), "Service not found after all attempts — is event_field_update/skeleton running?");
+    if (handles.empty())
+    {
+        score::mw::log::LogError("PxEf")
+            << "Service not found after all attempts — is event_field_update/skeleton running?";
+        return EXIT_FAILURE;
+    }
 
     score::Result<sensor::SensorProxy> proxy_result = sensor::SensorProxy::Create(handles.front());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_result.has_value(), "SensorProxy::Create failed");
+    if (!proxy_result.has_value())
+    {
+        score::mw::log::LogError("PxEf") << "SensorProxy::Create failed";
+        return EXIT_FAILURE;
+    }
     sensor::SensorProxy& proxy = proxy_result.value();
 
     score::Result<void> reading_subscribe_result = proxy.reading.Subscribe(kMaxSamples);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(reading_subscribe_result.has_value(), "reading.Subscribe failed");
+    if (!reading_subscribe_result.has_value())
+    {
+        score::mw::log::LogError("PxEf") << "reading.Subscribe failed";
+        return EXIT_FAILURE;
+    }
 
     score::Result<void> field_subscribe_result = proxy.calibration_status.Subscribe(1U);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(field_subscribe_result.has_value(),
-                                                "calibration_status.Subscribe failed");
+    if (!field_subscribe_result.has_value())
+    {
+        score::mw::log::LogError("PxEf") << "calibration_status.Subscribe failed";
+        return EXIT_FAILURE;
+    }
 
     // ---- OPERATIONAL PHASE (see README.md for heap behavior of each API) ----
     score::mw::log::LogInfo("PxEf") << "Entering operational phase (heap forbidden)";
@@ -94,15 +113,24 @@ int main(int argc, char* argv[])
                 static_cast<void>(sample->value);
             },
             kMaxSamples);
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(reading_result.has_value(), "reading.GetNewSamples failed");
+        if (!reading_result.has_value())
+        {
+            score::mw::log::LogError("PxEf") << "reading.GetNewSamples failed";
+            heap_check::allow_heap();
+            return EXIT_FAILURE;
+        }
 
         score::Result<std::size_t> field_result = proxy.calibration_status.GetNewSamples(
             [](score::mw::com::SamplePtr<std::uint32_t> sample) noexcept {
                 static_cast<void>(*sample);
             },
             1U);
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(field_result.has_value(),
-                                                    "calibration_status.GetNewSamples failed");
+        if (!field_result.has_value())
+        {
+            score::mw::log::LogError("PxEf") << "calibration_status.GetNewSamples failed";
+            heap_check::allow_heap();
+            return EXIT_FAILURE;
+        }
 
         std::this_thread::sleep_for(kCycleTime);
     }

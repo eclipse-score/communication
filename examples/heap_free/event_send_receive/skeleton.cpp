@@ -11,18 +11,16 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-// Skeleton: zero-copy event send loop, no heap in the operational phase.
 #include "common/sensor_interface.h"
-#include "heap_check/heap_check.h"  // include in exactly ONE translation unit per binary
+#include "heap_check/heap_check.h"
 
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/log/logging.h"
 
-#include <score/assert.hpp>
-
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <thread>
 
 namespace
@@ -48,21 +46,34 @@ int main(int argc, char* argv[])
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/event_send_receive/SensorInterface"});
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "InstanceSpecifier::Create failed");
+    if (!specifier_result.has_value())
+    {
+        score::mw::log::LogError("SkEs") << "InstanceSpecifier::Create failed";
+        return EXIT_FAILURE;
+    }
 
     score::Result<sensor::SensorSkeleton> skeleton_result =
         sensor::SensorSkeleton::Create(specifier_result.value());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton_result.has_value(),
-                                                "SensorSkeleton::Create failed — check mw_com_config.json");
+    if (!skeleton_result.has_value())
+    {
+        score::mw::log::LogError("SkEs") << "SensorSkeleton::Create failed — check mw_com_config.json";
+        return EXIT_FAILURE;
+    }
     sensor::SensorSkeleton& sk = skeleton_result.value();
 
     score::Result<void> init_update_result = sk.calibration_status.Update(0U);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_update_result.has_value(),
-                                                "calibration_status.Update (initial) failed");
+    if (!init_update_result.has_value())
+    {
+        score::mw::log::LogError("SkEs") << "calibration_status.Update (initial) failed";
+        return EXIT_FAILURE;
+    }
 
     score::Result<void> offer_result = sk.OfferService();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(),
-                                                "OfferService failed — check mw_com_config.json");
+    if (!offer_result.has_value())
+    {
+        score::mw::log::LogError("SkEs") << "OfferService failed — check mw_com_config.json";
+        return EXIT_FAILURE;
+    }
 
     // ---- OPERATIONAL PHASE (see README.md for heap behavior of each API) ----
     score::mw::log::LogInfo("SkEs") << "Entering operational phase (heap forbidden)";
@@ -72,14 +83,24 @@ int main(int argc, char* argv[])
     {
         score::Result<score::mw::com::SampleAllocateePtr<sensor::SensorReading>> sample_result =
             sk.reading.Allocate();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-            sample_result.has_value(), "reading.Allocate failed — all SHM slots may be held by slow subscribers");
+        if (!sample_result.has_value())
+        {
+            score::mw::log::LogError("SkEs")
+                << "reading.Allocate failed — all SHM slots may be held by slow subscribers";
+            heap_check::allow_heap();
+            return EXIT_FAILURE;
+        }
 
         sample_result.value()->sequence = i;
         sample_result.value()->value = static_cast<float>(i) * 0.1F;
 
         score::Result<void> send_result = sk.reading.Send(std::move(sample_result.value()));
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(send_result.has_value(), "reading.Send failed");
+        if (!send_result.has_value())
+        {
+            score::mw::log::LogError("SkEs") << "reading.Send failed";
+            heap_check::allow_heap();
+            return EXIT_FAILURE;
+        }
 
         std::this_thread::sleep_for(kCycleTime);
     }
