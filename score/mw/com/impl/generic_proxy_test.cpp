@@ -649,5 +649,18 @@ TEST(GenericProxyEventMapTest, CheckEventMapClassInterface)
     score::cpp::ignore = event_map.empty();
 }
 
+TEST_F(GenericProxyFixture, CreatingGenericProxyWithLolaBindingAndNoEventsReturnsValidResult)
+{
+    // Given a handle created from a LolaServiceTypeDeployment with no events
+    CreateAHandle({});
+
+    // When constructing the generic proxy from the handle
+    auto generic_proxy_result = GenericProxy::Create(*handle_);
+
+    // Then a valid GenericProxy is created with an empty event map
+    ASSERT_TRUE(generic_proxy_result.has_value());
+    EXPECT_TRUE(generic_proxy_result.value().GetEvents().empty());
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl
