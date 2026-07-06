@@ -20,8 +20,14 @@ load(
 filegroup(
     name = "fta_files",
     srcs = [
-        "fta_client_connection_failed.puml",
-        "fta_server_not_listening.puml",
+        "fta_connection_context_data_wrong.puml",
+        "fta_ipc_api_misuse_or_lifecycle_violation.puml",
+        "fta_ipc_channel_unavailable.puml",
+        "fta_message_not_delivered_correctly.puml",
+        "fta_message_timing_violated.puml",
+        "fta_notification_not_delivered.puml",
+        "fta_server_message_handling_failure.puml",
+        "fta_state_machine_error.puml",
     ],
     visibility = ["//score/message_passing/dependability:__pkg__"],
 )
