@@ -22,12 +22,12 @@ use clap::Parser;
 use std::path::PathBuf;
 
 use com_api::{
-    Builder, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
-    OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,
-    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    Builder, FieldPublisher, FindServiceSpecifier, InstanceSpecifier, Interface,
+    LolaRuntimeBuilderImpl, OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder,
+    SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
 
-use com_api_gen::{Exhaust, Tire, VehicleInterface};
+use com_api_gen::{Exhaust, Tire, VehicleFieldInterface, VehicleInterface};
 
 #[derive(Parser)]
 struct Arguments {
@@ -45,6 +45,11 @@ type VehicleConsumer<R> = <VehicleInterface as Interface>::Consumer<R>;
 // VehicleOfferedProducer is the offered producer type generated for the Vehicle interface, parameterized by the runtime R
 type VehicleOfferedProducer<R> =
     <<VehicleInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
+// VehicleFieldProducer is the producer type for the VehicleField interface (before offering)
+type VehicleFieldProducer<R> = <VehicleFieldInterface as Interface>::Producer<R>;
+// VehicleFieldOfferedProducer is the offered producer type for the VehicleField interface (fields support update/set-handler)
+type VehicleFieldOfferedProducer<R> =
+    <<VehicleFieldInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
 
 // Example struct demonstrating composition with VehicleConsumer
 pub struct VehicleMonitor<R: Runtime> {
@@ -176,6 +181,45 @@ fn create_producer<R: Runtime>(
     let producer = producer_builder
         .build()
         .expect("Failed to build producer instance");
+    producer.offer().expect("Failed to offer producer instance")
+}
+
+async fn process_received_set_handler<R: Runtime>(producer: VehicleFieldProducer<R>) {
+    loop {
+        let value: Tire = producer
+            .left_tire
+            .register_set_handler()
+            .await
+            .expect("Failed to register set handler");
+        producer
+            .left_tire
+            .update(value)
+            .expect("Failed to update producer instance");
+    }
+}
+
+fn create_producer_field<R: Runtime + 'static>(
+    runtime: &R,
+    service_id: InstanceSpecifier,
+    initial_value: Tire,
+) -> VehicleFieldOfferedProducer<R> {
+    let producer_builder = runtime.producer_builder::<VehicleFieldInterface>(service_id);
+    let producer = producer_builder
+        .build()
+        .expect("Failed to build producer instance");
+    producer
+        .left_tire
+        .update(initial_value)
+        .expect("Failed to update producer instance");
+
+    // Register set handler BEFORE offering
+    // Clone producer for the async handler task (TODO: need to think about clone)
+    // As we need to clone publisher as well in macro.
+    let producer_clone = producer.clone();
+    tokio::task::spawn_local(async move {
+        process_received_set_handler(producer_clone).await;
+    });
+
     producer.offer().expect("Failed to offer producer instance")
 }
 

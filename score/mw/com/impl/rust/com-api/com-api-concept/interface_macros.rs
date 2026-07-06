@@ -275,8 +275,21 @@ macro_rules! interface_producer {
     ($id:ident, $($field_name:ident, Field<$field_type:ty>),+$(,)?) => {
         com_api::paste::paste!  {
             pub struct [<$id Producer>]<R: com_api::Runtime + ?Sized> {
-                _runtime: core::marker::PhantomData<R>,
+                $(
+                    pub $field_name: R::FieldPublisher<$field_type>,
+                )+
                 instance_info: R::ProviderInfo,
+            }
+
+            impl<R: com_api::Runtime + ?Sized> Clone for [<$id Producer>]<R> {
+                fn clone(&self) -> Self {
+                    [<$id Producer>] {
+                        $(
+                            $field_name: self.$field_name.clone(),
+                        )+
+                        instance_info: self.instance_info.clone(),
+                    }
+                }
             }
 
             pub struct [<$id OfferedProducer>]<R: com_api::Runtime + ?Sized> {
@@ -286,19 +299,24 @@ macro_rules! interface_producer {
                 instance_info: R::ProviderInfo,
             }
 
+            impl<R: com_api::Runtime + ?Sized> Clone for [<$id OfferedProducer>]<R> {
+                fn clone(&self) -> Self {
+                    [<$id OfferedProducer>] {
+                        $(
+                            $field_name: self.$field_name.clone(),
+                        )+
+                        instance_info: self.instance_info.clone(),
+                    }
+                }
+            }
+
             impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
                 type Interface = [<$id Interface>];
                 type OfferedProducer = [<$id OfferedProducer>]<R>;
                 fn offer(self) -> com_api::Result<Self::OfferedProducer> {
                     let offered = [<$id OfferedProducer>] {
                         $(
-                            $field_name: R::FieldPublisher::new(
-                                stringify!($field_name),
-                                self.instance_info.clone()
-                            ).expect(&format!(
-                                "Failed to create field publisher for {}",
-                                stringify!($field_name)
-                            )),
+                            $field_name: self.$field_name.clone(),
                         )+
                         instance_info: self.instance_info.clone(),
                     };
@@ -309,7 +327,15 @@ macro_rules! interface_producer {
 
                 fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
                     Ok([<$id Producer>] {
-                        _runtime: core::marker::PhantomData,
+                        $(
+                            $field_name: R::FieldPublisher::new(
+                                stringify!($field_name),
+                                instance_info.clone()
+                            ).expect(&format!(
+                                "Failed to create field publisher for {}",
+                                stringify!($field_name)
+                            )),
+                        )+
                         instance_info,
                     })
                 }
@@ -321,7 +347,9 @@ macro_rules! interface_producer {
                 type Producer = [<$id Producer>]<R>;
                 fn unoffer(self) -> com_api::Result<Self::Producer> {
                     let producer = [<$id Producer>] {
-                        _runtime: core::marker::PhantomData,
+                        $(
+                            $field_name: self.$field_name.clone(),
+                        )+
                         instance_info: self.instance_info.clone(),
                     };
                     // Stop offering the service instance to withdraw it from system availability

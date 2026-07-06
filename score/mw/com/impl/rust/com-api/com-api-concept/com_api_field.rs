@@ -38,6 +38,7 @@ pub struct MethodReturnTypePtr<T: CommData + Debug> {
 /// It provides the `get` and `set` methods to get and set the value of the field.
 /// It derived from `com_api_concept::Subscriber` trait which provides the `subscribe` method to create a field subscription.
 /// `FieldMethods` trait is used to provide the `get` and `set` methods for the field instance which can be used before subscription.
+/// Event related APIs follow the same restriction for concurrent access.
 pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
     FieldMethods<T, R> + com_api_concept::Subscriber<T, R>
 {
@@ -50,11 +51,13 @@ pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
 pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
     com_api_concept::Subscription<T, R> + FieldMethods<T, R>
 {
-    /// Get the number of new samples available in the field subscription.
-    /// This does not take max_samples parameter like try_receive, but returns the number of samples available to be received.
+    /// Returns the number of new samples a call to try_receive (given parameter max_num_samples
+    /// doesn't restrict it) would currently provide.
+    /// How many new sample available for the user of this field subscription to receive.
     fn get_num_new_samples_available(&self) -> Result<usize>;
 
-    /// Get the number of sample count that can be received from the field subscription.
+    /// Get the number of samples that can still be received by the user of this field.
+    /// This is for checking the capacity of the field subscription and to avoid overflow of the field subscription limit.
     fn get_free_sample_count(&self) -> Result<usize>;
 }
 
@@ -81,12 +84,12 @@ pub trait FieldMethods<T: CommData + Debug, R: Runtime + ?Sized> {
 
 /// FieldPublisher trait is used to publish a field and update the value of the field.
 //  Note:  We can not use publisher trait from event because that contains the Send Method which is not correct semantic for field.
-pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
-    type CommittedSample<'a>: FieldSampleMut<T>
+pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized>: Clone {
+    type FieldSample<'a>: FieldSampleMut<T>
     where
         Self: 'a;
 
-    type SampleMaybeUninit<'a>: SampleMaybeUninit<T, SampleMut = Self::CommittedSample<'a>> + 'a
+    type SampleMaybeUninit<'a>: SampleMaybeUninit<T, SampleMut = Self::FieldSample<'a>> + 'a
     where
         Self: 'a;
 
