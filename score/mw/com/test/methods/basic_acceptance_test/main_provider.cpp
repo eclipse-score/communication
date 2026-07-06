@@ -15,13 +15,17 @@
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/test/methods/basic_acceptance_test/provider.h"
+#include "score/mw/com/test/methods/methods_test_resources/common_resources.h"
 
 #include <score/stop_token.hpp>
 
 int main(int argc, const char** argv)
 {
+    auto service_instance_manifest_path = score::mw::com::test::ParseServiceInstanceManifest(argc, argv);
+
     score::mw::com::test::SetupAssertHandler();
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(
+        score::mw::com::runtime::RuntimeConfiguration{service_instance_manifest_path});
 
     score::cpp::stop_source stop_source{};
     const bool sig_term_handler_setup_success = score::mw::com::SetupStopTokenSigTermHandler(stop_source);

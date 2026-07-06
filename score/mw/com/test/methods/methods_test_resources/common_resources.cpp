@@ -10,19 +10,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/runtime.h"
-
-#include "score/mw/com/test/common_test_resources/assert_handler.h"
-#include "score/mw/com/test/methods/basic_acceptance_test/consumer.h"
 #include "score/mw/com/test/methods/methods_test_resources/common_resources.h"
 
-int main(int argc, const char** argv)
-{
-    auto service_instance_manifest_path = score::mw::com::test::ParseServiceInstanceManifest(argc, argv);
+#include "score/mw/com/test/common_test_resources/command_line_parser.h"
 
-    score::mw::com::test::SetupAssertHandler();
-    score::mw::com::runtime::InitializeRuntime(
-        score::mw::com::runtime::RuntimeConfiguration{service_instance_manifest_path});
-    score::mw::com::test::run_consumer();
-    return EXIT_SUCCESS;
+namespace score::mw::com::test
+{
+
+std::string ParseServiceInstanceManifest(int argc, const char** argv)
+{
+    const std::string service_instance_manifest_name = "service_instance_manifest";
+
+    auto args = ParseCommandLineArguments(argc, argv, {{service_instance_manifest_name, ""}});
+    return GetValue<std::string>(args, service_instance_manifest_name);
 }
+
+}  // namespace score::mw::com::test

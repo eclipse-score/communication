@@ -13,7 +13,7 @@
 
 
 def consumer_and_provider(target, **kwargs):
-    args = []
+    args = ["--service_instance_manifest", "./etc/mw_com_config.json"]
     return target.wrap_exec(
         "bin/main_consumer_and_provider", args, cwd="/opt/MainConsumerAndProviderApp", wait_on_exit=True, **kwargs
     )
