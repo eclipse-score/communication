@@ -55,7 +55,7 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     template <typename, typename...>
     friend class ProxyFieldImpl;
 
-    struct FieldOnlyConstructorEnabler
+    struct FieldGetterConstructorEnabler
     {
     };
 
@@ -94,7 +94,7 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::string_view method_name,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                FieldOnlyConstructorEnabler) noexcept
+                FieldGetterConstructorEnabler) noexcept
         : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kGet)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};

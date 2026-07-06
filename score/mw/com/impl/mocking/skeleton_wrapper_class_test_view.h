@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_MOCKING_SKELETON_WRAPPER_CLASS_TEST_VIEW_H
 #define SCORE_MW_COM_IMPL_MOCKING_SKELETON_WRAPPER_CLASS_TEST_VIEW_H
 
+#include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/mocking/skeleton_base_mock.h"
@@ -96,7 +97,7 @@ class SkeletonWrapperClassTestView
         [[maybe_unused]] std::tuple<SkeletonEventBindingFactoryMockGuard<EventTypes>...> event_binding_factories{};
         [[maybe_unused]] std::tuple<SkeletonFieldBindingFactoryMockGuard<FieldTypes>...> field_binding_factories{};
 
-        SkeletonWrapperClass skeleton{MakeFakeInstanceIdentifier(0U), nullptr};
+        SkeletonWrapperClass skeleton{MakeFakeInstanceIdentifier(0U), std::make_unique<mock_binding::Skeleton>()};
 
         skeleton.InjectMock(skeleton_mock);
         InjectEventAndFieldMocks(skeleton, event_mocks, field_mocks);

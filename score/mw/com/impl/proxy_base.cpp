@@ -37,6 +37,9 @@ ProxyBase::ProxyBase(std::unique_ptr<ProxyBinding> proxy_binding, HandleType han
       fields_{},
       methods_{}
 {
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        proxy_binding_ != nullptr,
+        "Proxy binding should be checked in ProxyWrapperClass::Create() before constructing the ProxyBase.");
 }
 
 const HandleType& ProxyBase::GetHandle() const& noexcept
@@ -143,9 +146,12 @@ void ProxyBase::Deinitialize()
 
 ProxyBaseView::ProxyBaseView(ProxyBase& proxy_base) noexcept : proxy_base_(proxy_base) {}
 
-ProxyBinding* ProxyBaseView::GetBinding() noexcept
+ProxyBinding& ProxyBaseView::GetBinding() noexcept
 {
-    return proxy_base_.proxy_binding_.get();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        proxy_base_.proxy_binding_ != nullptr,
+        "Proxy binding should be checked in ProxyWrapperClass::Create() before constructing the ProxyBase.");
+    return *proxy_base_.proxy_binding_;
 }
 
 const HandleType& ProxyBaseView::GetAssociatedHandleType() const& noexcept

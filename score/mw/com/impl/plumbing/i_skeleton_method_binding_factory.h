@@ -45,7 +45,7 @@ class ISkeletonMethodBindingFactory
     /// \param method_name The binding unspecific name of the  inside the skeleton denoted by instance identifier.
     /// \return An instance of SkeletonMethodBinding or nullptr in case of an error.
     virtual auto Create(const InstanceIdentifier& instance_identifier,
-                        SkeletonBinding* parent_binding,
+                        SkeletonBinding& parent_binding,
                         const std::string_view method_name,
                         MethodType method_type) -> std::unique_ptr<SkeletonMethodBinding> = 0;
 };

@@ -25,7 +25,7 @@ class SkeletonMethodBindingFactoryMock : public ISkeletonMethodBindingFactory
   public:
     MOCK_METHOD(std::unique_ptr<SkeletonMethodBinding>,
                 Create,
-                (const InstanceIdentifier&, SkeletonBinding*, const std::string_view, MethodType),
+                (const InstanceIdentifier&, SkeletonBinding&, const std::string_view, MethodType),
                 (override));
 };
 

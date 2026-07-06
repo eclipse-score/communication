@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -92,18 +93,6 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
                     (service_element_type_ == ServiceElementTypes::GENERIC_PROXY_EVENT));
     }
 
-    ProxyServiceElementBindingFactoryParamaterisedFixture& WithAProxyBaseWithValidBinding(const HandleType& handle)
-    {
-        proxy_base_ = std::make_unique<ProxyBase>(std::move(proxy_), handle);
-        return *this;
-    }
-
-    ProxyServiceElementBindingFactoryParamaterisedFixture& WithAProxyBaseWithInvalidBinding(const HandleType& handle)
-    {
-        proxy_base_ = std::make_unique<ProxyBase>(nullptr, handle);
-        return *this;
-    }
-
     lola::ElementFqId GetElementFqId()
     {
         switch (service_element_type_)
@@ -120,24 +109,20 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
         }
     }
 
-    std::unique_ptr<ProxyEventBindingBase> CreateServiceElementBinding()
+    std::unique_ptr<ProxyEventBindingBase> CreateServiceElementBinding(const HandleType& handle,
+                                                                       ProxyBinding& proxy_binding)
     {
-        EXPECT_NE(proxy_base_, nullptr);
-        if (proxy_base_ == nullptr)
-        {
-            return nullptr;
-        }
-
         switch (service_element_type_)
         {
             case ServiceElementTypes::PROXY_EVENT:
                 return ProxyEventBindingFactory<TestSampleType>::Create(
-                    *proxy_base_, kDummyEventName, ServiceElementType::EVENT);
+                    handle, proxy_binding, kDummyEventName, ServiceElementType::EVENT);
             case ServiceElementTypes::PROXY_FIELD:
-                return ProxyFieldBindingFactory<TestSampleType>::CreateEventBinding(*proxy_base_, kDummyFieldName);
+                return ProxyFieldBindingFactory<TestSampleType>::CreateEventBinding(
+                    handle, proxy_binding, kDummyFieldName);
             case ServiceElementTypes::GENERIC_PROXY_EVENT:
                 return GenericProxyEventBindingFactory::Create(
-                    *proxy_base_, kDummyGenericProxyEventName, ServiceElementType::EVENT);
+                    handle, proxy_binding, kDummyGenericProxyEventName, ServiceElementType::EVENT);
             default:
                 // This should never be reached since we assert the value of element_type_ in service_element_type_()
                 std::terminate();
@@ -145,22 +130,7 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
     }
 
     ServiceElementTypes service_element_type_{GetParam()};
-    std::unique_ptr<ProxyBase> proxy_base_{nullptr};
     DummyInstanceIdentifierBuilder dummy_instance_identifier_builder_{};
-
-    void TearDown() override
-    {
-        if (proxy_base_ != nullptr)
-        {
-            auto* const binding = ProxyBaseView{*proxy_base_}.GetBinding();
-            if (binding != nullptr)
-            {
-                binding->PrepareDeinitialize();
-                binding->FinalizeDeinitialize();
-            }
-        }
-        lola::ProxyMockedMemoryFixture::TearDown();
-    }
 };
 
 INSTANTIATE_TEST_CASE_P(ProxyServiceElementBindingFactoryParamaterisedFixture,
@@ -186,27 +156,12 @@ TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CanConstructProxyS
 
     // and a Proxy that contains a lola binding
     const auto handle = kConfigStoreAsilB.GetHandle();
-    WithAProxyBaseWithValidBinding(handle);
 
     // When creating a ProxyEvent binding
-    const auto proxy_event = CreateServiceElementBinding();
+    const auto proxy_event = CreateServiceElementBinding(handle, *proxy_);
 
     // Then a valid binding can be created
     ASSERT_NE(proxy_event, nullptr);
-}
-
-TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CannotCreateProxyServiceWhenProxyBindingIsNullptr)
-{
-    // Given a ProxyBase that does not contain a valid binding i.e. the binding is a nullptr
-    const auto handle = kConfigStoreAsilB.GetHandle();
-    const auto instance_identifier = kConfigStoreAsilB.GetInstanceIdentifier();
-    WithAProxyBaseWithInvalidBinding(handle);
-
-    // When creating a Proxy without valid proxy-binding
-    const auto proxy_event = CreateServiceElementBinding();
-
-    // Then a nullptr is returned
-    ASSERT_EQ(proxy_event, nullptr);
 }
 
 TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CannotConstructEventFromBlankBinding)
@@ -214,10 +169,10 @@ TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CannotConstructEve
     // Given a ProxyBase that contains a blank binding
     const auto instance_identifier = dummy_instance_identifier_builder_.CreateBlankBindingInstanceIdentifier();
     const auto handle = make_HandleType(instance_identifier, ServiceInstanceId{LolaServiceInstanceId{kInstanceId}});
-    WithAProxyBaseWithValidBinding(handle);
 
     // When constructing a proxy service element
-    const auto unit = CreateServiceElementBinding();
+    mock_binding::Proxy proxy_binding_mock{};
+    const auto unit = CreateServiceElementBinding(handle, proxy_binding_mock);
 
     // Then a nullptr is returned
     EXPECT_EQ(unit, nullptr);

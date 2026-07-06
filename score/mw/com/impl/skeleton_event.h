@@ -136,7 +136,7 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base, const 
     : SkeletonEventBase{event_name,
                         SkeletonEventBindingFactory<EventType>::Create(
                             SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
-                            skeleton_base,
+                            SkeletonBaseView{skeleton_base}.GetBinding(),
                             event_name)},
       skeleton_event_mock_{nullptr}
 {

@@ -149,6 +149,14 @@ std::ostream& operator<<(std::ostream& output_stream, const BigDataServiceElemen
 template <typename ImplViewType, typename LolaType, typename ImplType>
 LolaType* GetLolaBinding(ImplType& element)
 {
+    auto& binding = ImplViewType(element).GetBinding();
+    auto* const lola_binding = dynamic_cast<LolaType*>(&binding);
+    return lola_binding;
+}
+
+template <typename ImplViewType, typename LolaType, typename ImplType>
+LolaType* GetLolaServiceElementBinding(ImplType& element)
+{
     auto* const binding = ImplViewType(element).GetBinding();
     auto* const lola_binding = dynamic_cast<LolaType*>(binding);
     return lola_binding;

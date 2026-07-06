@@ -80,7 +80,8 @@ class ProxyBaseFixture : public ::testing::Test
 
     ProxyBaseFixture& WithAProxyBaseWithMockBinding(const HandleType& handle_type)
     {
-        base_proxy_ = std::make_unique<ProxyBase>(std::move(proxy_binding_mock_), handle_type);
+        base_proxy_ =
+            std::make_unique<ProxyBase>(std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_), handle_type);
         return *this;
     }
 
@@ -100,18 +101,19 @@ class ProxyBaseFixture : public ::testing::Test
     RuntimeMockGuard runtime_mock_guard_{};
     ServiceDiscoveryMock service_discovery_mock_{};
 
-    std::unique_ptr<mock_binding::Proxy> proxy_binding_mock_{nullptr};
+    mock_binding::Proxy proxy_binding_mock_{};
     std::unique_ptr<ProxyBase> base_proxy_{nullptr};
 
     safecpp::Scope<> event_receive_handler_scope_{};
 };
 
-TEST_F(ProxyBaseFixture, CanConstructProxyBaseWithABindingContainingNullptr)
+TEST_F(ProxyBaseFixture, ConstructingProxyBaseWithABindingContainingNullptrTerminates)
 {
     // Given a handle to a service with a lola binding
 
-    // When constructing a Proxybase with a binding that is a nullptr nothing bad happens
-    ProxyBase proxy_base{nullptr, handle_};
+    // When constructing a Proxybase with a binding that is a nullptr
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED((ProxyBase{nullptr, handle_}));
 }
 
 TEST_F(ProxyBaseFixture, GetImplReturnsProxyBindingPassedToConstructor)
@@ -119,12 +121,15 @@ TEST_F(ProxyBaseFixture, GetImplReturnsProxyBindingPassedToConstructor)
     // Given a ProxyBase with a mock binding and valid handle
     WithAProxyBaseWithMockBinding(handle_);
 
-    // When getting the proxy binding
-    auto* proxy_binding = ProxyBaseView{*base_proxy_}.GetBinding();
+    // Expecting that IsEventProvided is called on the Proxy binding that was passed to the constructor
+    EXPECT_CALL(proxy_binding_mock_, IsEventProvided("test_event")).WillOnce(Return(true));
 
-    // Then the returned binding will have the same address as the binding provided to the constructor of ProxyBase
-    const auto* const proxy_binding_address = proxy_binding_mock_.get();
-    EXPECT_EQ(proxy_binding, proxy_binding_address);
+    // When getting the proxy binding
+    auto& proxy_binding = ProxyBaseView{*base_proxy_}.GetBinding();
+
+    // Then the returned binding will be the same one that was provided to the constructor (checked by calling a
+    // function on the returned binding and checking that the mock was called)
+    proxy_binding.IsEventProvided("test_event");
 }
 
 TEST_F(ProxyBaseFixture, StoredHandleTypeEqualToSuppliedOne)
@@ -605,8 +610,8 @@ class ProxyBaseServiceElementReferencesFixture : public ::testing::Test
     ProxyFieldBase field_0_{field_name_0_, &field_event_dispatch_0_};
     ProxyFieldBase field_1_{field_name_1_, &field_event_dispatch_1_};
 
-    DummyProxyMethod method_0_{method_name_0_, std::make_unique<mock_binding::ProxyMethod>()};
-    DummyProxyMethod method_1_{method_name_1_, std::make_unique<mock_binding::ProxyMethod>()};
+    DummyProxyMethod method_0_{method_name_0_, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod};
+    DummyProxyMethod method_1_{method_name_1_, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod};
 };
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringServiceElementStoresReferenceInMap)
@@ -702,7 +707,7 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     ProxyEventBase event{other_event_name, std::make_unique<mock_binding::ProxyEventBase>()};
     ProxyEventBase field_event_dispatch{other_field_name, std::make_unique<mock_binding::ProxyEventBase>()};
     ProxyFieldBase field{other_field_name, &field_event_dispatch};
-    DummyProxyMethod method{other_method_name, std::make_unique<mock_binding::ProxyMethod>()};
+    DummyProxyMethod method{other_method_name, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod};
     ProxyBaseView{proxy_2}.RegisterEvent(other_event_name, event.GetReferenceToMoveable());
     ProxyBaseView{proxy_2}.RegisterField(other_field_name, field.GetReferenceToMoveable());
     ProxyBaseView{proxy_2}.RegisterMethod(other_method_name, method.GetReferenceToMoveable());

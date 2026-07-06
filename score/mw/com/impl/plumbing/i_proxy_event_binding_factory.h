@@ -14,7 +14,8 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_I_PROXY_EVENT_BINDING_FACTORY_H
 
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
-#include "score/mw/com/impl/proxy_base.h"
+#include "score/mw/com/impl/handle_type.h"
+#include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
 #include <memory>
@@ -43,7 +44,8 @@ class IProxyEventBindingFactory
     /// \param handle The handle containing the binding information.
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
-    virtual auto Create(ProxyBase& parent,
+    virtual auto Create(HandleType parent_handle,
+                        ProxyBinding& parent_binding,
                         const std::string_view event_name,
                         const ServiceElementType service_element_type) noexcept
         -> std::unique_ptr<ProxyEventBinding<SampleType>> = 0;
@@ -68,7 +70,8 @@ class IGenericProxyEventBindingFactory
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
     virtual std::unique_ptr<GenericProxyEventBinding> Create(
-        ProxyBase& parent,
+        HandleType parent_handle,
+        ProxyBinding& parent_binding,
         const std::string_view event_name,
         const ServiceElementType service_element_type) noexcept = 0;
 };

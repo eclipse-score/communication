@@ -184,9 +184,7 @@ class ProxyBaseView final
     explicit ProxyBaseView(ProxyBase& proxy_base) noexcept;
 
     /// \brief Return a reference to the underlying implementation provided by the binding.
-    ///
-    /// \return Pointer to the proxy binding.
-    ProxyBinding* GetBinding() noexcept;
+    ProxyBinding& GetBinding() noexcept;
 
     const HandleType& GetAssociatedHandleType() const& noexcept;
 

@@ -94,6 +94,9 @@ SkeletonBase::SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding, In
       skeleton_mock_{nullptr},
       service_offered_flag_{}
 {
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        binding_ != nullptr,
+        "Skeleton binding should be checked in SkeletonWrapperClass::Create() before constructing the SkeletonBase.");
 }
 
 score::Result<void> SkeletonBase::OfferServiceEvents() const noexcept
@@ -141,12 +144,6 @@ auto SkeletonBase::OfferService() noexcept -> Result<void>
     if (skeleton_mock_ != nullptr)
     {
         return skeleton_mock_->OfferService();
-    }
-
-    if (binding_ == nullptr)
-    {
-        score::mw::log::LogFatal("lola") << "Trying to call OfferService() on a skeleton WITHOUT a binding!";
-        std::terminate();
     }
 
     auto event_bindings = GetSkeletonEventBindingsMap(events_);
@@ -204,7 +201,7 @@ auto SkeletonBase::StopOfferService() noexcept -> void
         skeleton_mock_->StopOfferService();
     }
 
-    if (binding_ != nullptr && service_offered_flag_.IsSet())
+    if (service_offered_flag_.IsSet())
     {
         StopOfferServiceInServiceDiscovery(instance_id_);
 
@@ -226,7 +223,6 @@ auto SkeletonBase::StopOfferService() noexcept -> void
 
 auto SkeletonBase::AreBindingsValid() const noexcept -> bool
 {
-    const bool is_skeleton_binding_valid{binding_ != nullptr};
     bool are_service_element_bindings_valid{true};
 
     score::cpp::ignore =
@@ -252,7 +248,7 @@ auto SkeletonBase::AreBindingsValid() const noexcept -> bool
             }
         });
 
-    return is_skeleton_binding_valid && are_service_element_bindings_valid;
+    return are_service_element_bindings_valid;
 }
 
 SkeletonBaseView::SkeletonBaseView(SkeletonBase& skeleton_base) : skeleton_base_{skeleton_base} {}
@@ -262,9 +258,12 @@ InstanceIdentifier SkeletonBaseView::GetAssociatedInstanceIdentifier() const
     return skeleton_base_.instance_id_;
 }
 
-SkeletonBinding* SkeletonBaseView::GetBinding() const
+SkeletonBinding& SkeletonBaseView::GetBinding() const
 {
-    return skeleton_base_.binding_.get();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        skeleton_base_.binding_ != nullptr,
+        "Skeleton binding should be checked in SkeletonWrapperClass::Create() before constructing the SkeletonBase.");
+    return *skeleton_base_.binding_;
 }
 
 void SkeletonBaseView::RegisterEvent(const std::string_view event_name,

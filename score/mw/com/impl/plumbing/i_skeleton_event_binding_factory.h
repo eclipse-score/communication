@@ -46,7 +46,7 @@ class ISkeletonEventBindingFactory
     /// \param event_name The binding unspecific name of the event inside the skeleton denoted by instance identifier.
     /// \return An instance of SkeletonEventBinding or nullptr in case of an error.
     virtual auto Create(const InstanceIdentifier& identifier,
-                        SkeletonBase& parent,
+                        SkeletonBinding& parent_binding,
                         const std::string_view event_name) noexcept
         -> std::unique_ptr<SkeletonEventBinding<SampleType>> = 0;
 };
