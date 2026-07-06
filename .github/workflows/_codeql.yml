@@ -24,6 +24,9 @@ on:
         description: "When true, runs --nobuild to fetch dependencies only."
         type: string
         default: "false"
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL:
+        required: false
 
 jobs:
   codeql:
@@ -40,6 +43,7 @@ jobs:
         with:
           disk-cache: ""
           cache-mode: ${{ inputs.cache-mode }}
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
       - name: Fetch dependencies (--nobuild)
         if: inputs.fetch-only == 'true'

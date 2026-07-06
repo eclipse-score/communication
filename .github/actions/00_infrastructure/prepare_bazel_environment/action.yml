@@ -33,6 +33,13 @@ inputs:
       Explicit values: recreate, recreate-update, read-only, update-disk, disabled.
     required: false
     default: ""
+  ubuntu-snapshot-mirror-url:
+    description: >
+      Optional secret URL part to override for public Ubuntu snapshot mirror base URL.
+      If set, Bazel downloader rewrites snapshot.ubuntu.com URLs to this mirror first
+      and keeps the original URL as fallback.
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -69,6 +76,39 @@ runs:
         cache-mode: ${{ env.CACHE_MODE }}
         disk-cache-name: ${{ inputs.disk-cache }}
         github-token: ${{ github.token }}
+
+    - name: Configure optional Ubuntu snapshot mirror for Bazel downloader
+      shell: bash
+      env:
+        UBUNTU_SNAPSHOT_MIRROR_URL: ${{ inputs.ubuntu-snapshot-mirror-url }}
+      run: |
+        if [[ -z "${UBUNTU_SNAPSHOT_MIRROR_URL}" ]]; then
+          echo "No override for public Ubuntu snapshot mirror configured; using default snapshot.ubuntu.com URL."
+          exit 0
+        fi
+
+        MIRROR_URL="${UBUNTU_SNAPSHOT_MIRROR_URL}"
+        DOWNLOADER_CONFIG="${GITHUB_WORKSPACE}/user.downloader_config"
+
+        MIRROR_URL="${MIRROR_URL}" DOWNLOADER_CONFIG="${DOWNLOADER_CONFIG}" python3 - <<'PY'
+        import os
+        from pathlib import Path
+
+        mirror_url = os.environ["MIRROR_URL"]
+        downloader_config = Path(os.environ["DOWNLOADER_CONFIG"])
+        downloader_config.write_text(
+            "\n".join([
+                f"rewrite snapshot.ubuntu.com/ubuntu/[^/]*/(.*) {mirror_url}.debmirror.stablebuild.com/2026-04-01T10:40:01Z/archive.ubuntu.com/ubuntu/$1",
+                f"rewrite snapshot.ubuntu.com/ubuntu/[^/]*/(.*) {mirror_url}.debmirror.stablebuild.com/2026-04-01T10:40:01Z/ports.ubuntu.com/$1",
+                # Retain public mirror as fallback should quota of override mirror be exhausted
+                "rewrite snapshot.ubuntu.com/ubuntu/(.*) snapshot.ubuntu.com/ubuntu/$1",
+            ]) + "\n",
+            encoding="utf-8",
+        )
+        PY
+
+        echo "common --downloader_config=${DOWNLOADER_CONFIG}" >> "${GITHUB_WORKSPACE}/user.bazelrc"
+        echo "Configured Bazel downloader mirror with fallback for Ubuntu snapshot URLs."
 
     - name: Free Disk Space (Ubuntu)
       uses: eclipse-score/more-disk-space@v1

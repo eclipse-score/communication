@@ -65,6 +65,8 @@ jobs:
     permissions:
       contents: read
       actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
   run-build-and-test-qnx:
     needs: create-draft-release
@@ -77,6 +79,7 @@ jobs:
       SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
       SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
       SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
   run-coverage-report:
     needs: create-draft-release
@@ -84,6 +87,8 @@ jobs:
     permissions:
       contents: read
       actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
   upload-coverage-report:
     needs:
