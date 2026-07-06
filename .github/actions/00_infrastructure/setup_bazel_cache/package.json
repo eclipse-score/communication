@@ -4,9 +4,7 @@
   "private": true,
   "description": "GitHub Action: Post-step hook for saving Bazel caches",
   "scripts": {
-    "build": "npm run build:main && npm run build:post",
-    "build:main": "ncc build src/main.js -o dist/main",
-    "build:post": "ncc build src/post.js -o dist/post"
+    "build": "node build.mjs"
   },
   "dependencies": {
     "@actions/cache": "^6.1.0",
@@ -15,6 +13,6 @@
     "@actions/github": "^9.1.1"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.38.0"
+    "esbuild": "^0.25.0"
   }
 }
