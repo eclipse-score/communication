@@ -85,7 +85,7 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
         IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback,
         IMessagePassingService::AllowedConsumerUids allowed_proxy_uids) override;
 
-    ResultBlank RegisterOnServiceMethodUnsubscribedHandler(
+    Result<void> RegisterOnServiceMethodUnsubscribedHandler(
         const SkeletonInstanceIdentifier skeleton_instance_identifier,
         IMessagePassingService::ServiceMethodUnsubscribedHandler unsubscribed_callback) override;
 
@@ -126,9 +126,9 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
                                         const ProxyInstanceIdentifier& proxy_instance_identifier,
                                         const pid_t target_node_id) override;
 
-    ResultBlank UnsubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
-                                         const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                         const pid_t target_node_id) override;
+    Result<void> UnsubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                          const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                          const pid_t target_node_id) override;
 
     Result<void> CallMethod(const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
                             const std::size_t queue_position,
@@ -209,8 +209,8 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     score::Result<void> HandleSubscribeServiceMethodMsg(const score::cpp::span<const std::uint8_t> payload,
                                                         const uid_t sender_uid,
                                                         const pid_t sender_node_id);
-    score::ResultBlank HandleUnsubscribeServiceMethodMsg(const score::cpp::span<const std::uint8_t> payload,
-                                                         const pid_t sender_node_id);
+    score::Result<void> HandleUnsubscribeServiceMethodMsg(const score::cpp::span<const std::uint8_t> payload,
+                                                          const pid_t sender_node_id);
     score::Result<void> HandleCallMethodMsg(const score::cpp::span<const std::uint8_t> payload, const uid_t sender_uid);
 
     std::uint32_t NotifyEventLocally(const ElementFqId event_id) noexcept;
@@ -227,7 +227,7 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
         const uid_t proxy_uid,
         const pid_t proxy_pid);
 
-    score::ResultBlank CallUnsubscribeServiceMethodLocally(
+    score::Result<void> CallUnsubscribeServiceMethodLocally(
         const SkeletonInstanceIdentifier& skeleton_instance_identifier,
         const ProxyInstanceIdentifier& proxy_instance_identifier);
 
@@ -239,9 +239,9 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
                                                     const ProxyInstanceIdentifier& proxy_instance_identifier,
                                                     const pid_t target_node_id);
 
-    ResultBlank CallUnsubscribeServiceMethodRemotely(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
-                                                     const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                                     const pid_t target_node_id);
+    Result<void> CallUnsubscribeServiceMethodRemotely(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                                      const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                                      const pid_t target_node_id);
 
     Result<void> CallServiceMethodRemotely(const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
                                            const std::size_t queue_position,

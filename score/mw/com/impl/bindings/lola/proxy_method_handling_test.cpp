@@ -1125,7 +1125,7 @@ TEST_F(ProxyCleanupMethodsFixture, DestroyingProxyCallsUnsubscribeServiceMethodW
     // configuration (service_id = kLolaServiceId, instance_id = kLolaInstanceId) and the skeleton pid from shared
     // memory (kDummyPid)
     EXPECT_CALL(*mock_service_, UnsubscribeServiceMethod(_, _, _, kDummyPid))
-        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> ResultBlank {
+        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> Result<void> {
             EXPECT_EQ(skeleton_instance_identifier.service_id, kLolaServiceId);
             EXPECT_EQ(skeleton_instance_identifier.instance_id, kLolaInstanceId);
             return {};

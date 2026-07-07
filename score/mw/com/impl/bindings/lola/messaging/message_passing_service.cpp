@@ -225,7 +225,7 @@ Result<void> MessagePassingService::SubscribeServiceMethod(
     return instance.SubscribeServiceMethod(skeleton_instance_identifier, proxy_instance_identifier, target_node_id);
 }
 
-ResultBlank MessagePassingService::UnsubscribeServiceMethod(
+Result<void> MessagePassingService::UnsubscribeServiceMethod(
     const QualityType asil_level,
     const SkeletonInstanceIdentifier& skeleton_instance_identifier,
     const ProxyInstanceIdentifier& proxy_instance_identifier,

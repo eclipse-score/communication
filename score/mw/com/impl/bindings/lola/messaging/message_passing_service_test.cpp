@@ -509,7 +509,7 @@ TEST_F(MessagePassingServiceQMDelegationTest, RegisterOnServiceMethodUnsubscribe
     // Expecting a call to RegisterOnServiceMethodUnsubscribedHandler of ASIL-QM mock instance and no call to ASIL-B
     EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
                 RegisterOnServiceMethodUnsubscribedHandler(kSkeletonInstanceId, _))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
     EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, RegisterOnServiceMethodUnsubscribedHandler(_, _))
         .Times(0);
 
@@ -529,7 +529,7 @@ TEST_F(MessagePassingServiceQMDelegationTest, RegisterOnServiceMethodUnsubscribe
     // Expecting a call to RegisterOnServiceMethodUnsubscribedHandler of ASIL-B mock instance and no call to QM
     EXPECT_CALL(*asil_b_message_passing_service_instance_mock_,
                 RegisterOnServiceMethodUnsubscribedHandler(kSkeletonInstanceId, _))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
     EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_, RegisterOnServiceMethodUnsubscribedHandler(_, _))
         .Times(0);
 
@@ -566,7 +566,7 @@ TEST_F(MessagePassingServiceQMDelegationTest, UnsubscribeServiceMethodDispatches
     // Expecting a call to UnsubscribeServiceMethod of ASIL-QM mock instance and no call to ASIL-B
     EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
                 UnsubscribeServiceMethod(kSkeletonInstanceId, kProxyInstanceId, kTargetNodeId))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
     EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, UnsubscribeServiceMethod(_, _, _)).Times(0);
 
     // When calling UnsubscribeServiceMethod with QualityType::kASIL_QM
@@ -582,7 +582,7 @@ TEST_F(MessagePassingServiceQMDelegationTest, UnsubscribeServiceMethodDispatches
     // Expecting a call to UnsubscribeServiceMethod of ASIL-B mock instance and no call to QM
     EXPECT_CALL(*asil_b_message_passing_service_instance_mock_,
                 UnsubscribeServiceMethod(kSkeletonInstanceId, kProxyInstanceId, kTargetNodeId))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
     EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_, UnsubscribeServiceMethod(_, _, _)).Times(0);
 
     // When calling UnsubscribeServiceMethod with QualityType::kASIL_B
@@ -598,7 +598,7 @@ TEST_F(MessagePassingServiceQMDelegationTest, UnregisterOnServiceMethodUnsubscri
     // Expecting a call to RegisterOnServiceMethodUnsubscribedHandler of ASIL-QM mock instance (to set it up)
     EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
                 RegisterOnServiceMethodUnsubscribedHandler(kSkeletonInstanceId, _))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
 
     // and expecting that UnregisterOnServiceMethodUnsubscribedHandler is called on ASIL-QM (not ASIL-B) when the guard
     // is destroyed
@@ -620,7 +620,7 @@ TEST_F(MessagePassingServiceQMDelegationTest, UnregisterOnServiceMethodUnsubscri
     // Expecting a call to RegisterOnServiceMethodUnsubscribedHandler of ASIL-B mock instance (to set it up)
     EXPECT_CALL(*asil_b_message_passing_service_instance_mock_,
                 RegisterOnServiceMethodUnsubscribedHandler(kSkeletonInstanceId, _))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
 
     // and expecting that UnregisterOnServiceMethodUnsubscribedHandler is called on ASIL-B (not QM) when the guard
     // is destroyed

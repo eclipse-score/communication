@@ -65,7 +65,7 @@ class MessagePassingServiceMock : public IMessagePassingService
                 SubscribeServiceMethod,
                 (QualityType, const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&, pid_t),
                 (override));
-    MOCK_METHOD(ResultBlank,
+    MOCK_METHOD(Result<void>,
                 UnsubscribeServiceMethod,
                 (QualityType, const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&, pid_t),
                 (override));
