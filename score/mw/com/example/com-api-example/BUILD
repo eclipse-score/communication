@@ -24,6 +24,7 @@ rust_binary(
         "//score/mw/com/impl/rust/com-api/com-api",
         "@score_communication_crate_index//:clap",
         "@score_communication_crate_index//:futures",
+        "@score_communication_crate_index//:tokio",
     ],
 )
 

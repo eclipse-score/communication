@@ -206,7 +206,11 @@ fn create_producer_field<R: Runtime + 'static>(
     runtime: &R,
     service_id: InstanceSpecifier,
     initial_value: Tire,
-) -> VehicleFieldOfferedProducer<R> {
+) -> VehicleFieldOfferedProducer<R>
+where
+    <R as Runtime>::FieldPublisher<Tire>: Send,
+    <R as Runtime>::FieldPublisher<Exhaust>: Send,
+{
     let producer_builder = runtime.producer_builder::<VehicleFieldInterface>(service_id);
     let producer = producer_builder
         .build()
@@ -220,8 +224,11 @@ fn create_producer_field<R: Runtime + 'static>(
     // Clone producer for the async handler task (TODO: need to think about clone)
     // As we need to clone publisher as well in macro.
     let producer_clone = producer.clone();
-    //TODO: Test this with tokio::spawn.
-    futures::executor::block_on(process_received_set_handler(producer_clone));
+    //TODO: Test with tokio spawn as well
+    // Spawn handler in a separate thread to avoid blocking
+    std::thread::spawn(move || {
+        futures::executor::block_on(process_received_set_handler(producer_clone));
+    });
 
     producer.offer().expect("Failed to offer producer instance")
 }
