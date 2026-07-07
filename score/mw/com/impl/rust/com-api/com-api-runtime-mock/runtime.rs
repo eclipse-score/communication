@@ -723,11 +723,11 @@ impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublis
         })
     }
 
-    fn update(&self, _value: T) -> Result<()> {
+    fn update(&self, _value: &T) -> Result<()> {
         todo!()
     }
 
-    fn register_set_handler<'a>(&self) -> impl Future<Output = Result<T>> + 'a {
+    fn register_set_handler<'a>(&self) -> impl Future<Output = Result<&'a T>> + 'a {
         async { todo!() }
     }
 }

@@ -104,11 +104,11 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized>: Clone {
 
     /// Update the value of the field with the provided value.
     /// This is not zero-copy API.
-    fn update(&self, value: T) -> Result<()>;
+    fn update(&self, value: &T) -> Result<()>;
 
     /// This API will return a future whenever the field value is set by using `set' method of the field subscriber.
     /// Future will be resolved with value.
-    fn register_set_handler<'a>(&self) -> impl Future<Output = Result<T>> + 'a;
+    fn register_set_handler<'a>(&self) -> impl Future<Output = Result<&'a T>> + 'a;
 }
 
 /// FieldSampleMut trait is used to update the value of the field sample for zero-copy API.

@@ -109,10 +109,10 @@ impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>>
     fn allocate(&self) -> Result<Self::SampleMaybeUninit<'_>> {
         todo!()
     }
-    fn update(&self, _value: T) -> Result<()> {
+    fn update(&self, _value: &T) -> Result<()> {
         todo!()
     }
-    fn register_set_handler<'a>(&self) -> impl core::future::Future<Output = Result<T>> + 'a {
+    fn register_set_handler<'a>(&self) -> impl core::future::Future<Output = Result<&'a T>> + 'a {
         async { todo!() }
     }
 }

@@ -190,11 +190,15 @@ fn create_producer<R: Runtime>(
 
 async fn process_received_set_handler<R: Runtime>(producer: VehicleFieldProducer<R>) {
     loop {
-        let value: Tire = producer
+        // When register callback called C++ has internal update call to notify the other consumer
+        // Here producer can process the value or do some operation.
+        // Value return from C++ side is reference of FieldType.
+        let value: &Tire = producer
             .left_tire
             .register_set_handler()
             .await
             .expect("Failed to register set handler");
+        //just for demonstration, updating same value.
         producer
             .left_tire
             .update(value)
@@ -217,7 +221,7 @@ where
         .expect("Failed to build producer instance");
     producer
         .left_tire
-        .update(initial_value)
+        .update(&initial_value)
         .expect("Failed to update producer instance");
 
     // Register set handler BEFORE offering
