@@ -215,7 +215,7 @@ class Skeleton final : public SkeletonBinding
                                             const QualityType asil_level,
                                             const pid_t proxy_pid);
 
-    ResultBlank OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier);
+    Result<void> OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier);
 
     Result<std::pair<MethodSubscriptionRegistrationGuard, MethodUnsubscriptionRegistrationGuard>>
     RegisterMethodHandlers(const QualityType asil_level,
