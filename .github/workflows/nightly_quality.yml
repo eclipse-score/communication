@@ -27,7 +27,7 @@
 #   https://eclipse-score.github.io/communication/latest/quality/index.html               ← dashboard
 #   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html      ← lcov HTML
 #   https://eclipse-score.github.io/communication/latest/quality/clang_tidy_findings.txt  ← raw findings
-#   https://eclipse-score.github.io/communication/latest/quality/codeql/index.html       ← CodeQL report
+#   https://eclipse-score.github.io/communication/latest/quality/codeql/index.html       ← CodeQL reports
 
 name: Nightly Quality Jobs
 
@@ -164,9 +164,51 @@ jobs:
           if [[ -f /tmp/codeql/codeql-nightly.csv ]]; then
             cp /tmp/codeql/codeql-nightly.csv \
                "${GITHUB_WORKSPACE}/_quality/codeql_findings.txt"
-          else
-            echo "::warning::codeql-nightly.csv not found; skipping copy."
           fi
+
+      # ------------------------------------------------------------------
+      # Download CodeQL MISRA compliance reports artifact
+      # ------------------------------------------------------------------
+      - name: Download CodeQL MISRA reports artifact
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: codeql-misra-reports
+          path: /tmp/codeql_reports
+
+      - name: Copy CodeQL MISRA reports into quality output
+        if: always()
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/_quality/codeql"
+          # Find all .md files recursively (handles both flat and nested layouts)
+          if [ -d /tmp/codeql_reports ]; then
+            find /tmp/codeql_reports -name '*.md' -type f | while read -r src; do
+              filename=$(basename "$src")
+              cp "$src" "${GITHUB_WORKSPACE}/_quality/codeql/$filename"
+            done
+          fi
+
+          # Ensure all 4 expected reports exist — create placeholders for any
+          # that the analysis_report tool did not generate. This prevents 404
+          # errors on GitHub Pages for reports with longer filenames.
+          for report in database_integrity_report deviations_report \
+                        guideline_compliance_summary guideline_recategorizations_report; do
+            if [ ! -f "${GITHUB_WORKSPACE}/_quality/codeql/${report}.md" ]; then
+              TITLE=$(echo "$report" | sed 's/_/ /g' | sed 's/\b\(.\)/\u\1/g')
+              cat > "${GITHUB_WORKSPACE}/_quality/codeql/${report}.md" <<EOF
+          # ${TITLE}
+
+          > Report not yet available — will be generated on the next successful CodeQL nightly run.
+
+          This report is expected to be produced by the \`analysis_report\` tool as part of
+          the MISRA C++ compliance analysis pipeline.
+          EOF
+            fi
+          done
+
+          echo "Files in _quality/codeql/:"
+          ls -la "${GITHUB_WORKSPACE}/_quality/codeql/" 2>/dev/null || echo "No files found"
 
       # ------------------------------------------------------------------
       # Generate coverage KPI dashboard via generate_dashboard py_binary
@@ -180,11 +222,9 @@ jobs:
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
             --clang-tidy /tmp/clang_tidy/clang_tidy_findings.txt \
             --codeql-csv "${GITHUB_WORKSPACE}/_quality/codeql_findings.txt" \
+            --codeql-reports-dir "${GITHUB_WORKSPACE}/_quality/codeql" \
             --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
             --github-summary
-
-          echo "Dashboard generated. Contents of _quality/:"
-          find "${GITHUB_WORKSPACE}/_quality" -type f | sort
 
       # ------------------------------------------------------------------
       # Upload all quality reports as a single artifact for docs.yml to
@@ -197,6 +237,14 @@ jobs:
           name: nightly-quality-reports
           path: _quality/
           retention-days: 7
+
+      - name: Debug - Show final artifact contents
+        if: always()
+        run: |
+          echo "Final _quality/ directory structure:"
+          find "${GITHUB_WORKSPACE}/_quality" -type f | sort
+          echo "---"
+          echo "Total files: $(find "${GITHUB_WORKSPACE}/_quality" -type f | wc -l)"
 
       - name: Print dashboard URL
         if: always()

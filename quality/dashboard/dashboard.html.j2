@@ -33,6 +33,7 @@
   .spark-wrap { display:flex; align-items:flex-end; gap:3px; height:32px; background:var(--surface); padding:4px 6px; border-radius:4px; }
   .spark-bar { width:10px; border-radius:2px 2px 0 0; min-height:2px; cursor:default; transition:opacity .15s; }
   .spark-bar:hover { opacity:.7; }
+  .report-content { padding:1rem; border-top:1px solid var(--border); font-size:.9rem; line-height:1.55; color:var(--text); background:rgba(255,255,255,0.01); white-space:pre-wrap; word-break:break-word; font-family:monospace; }
 </style>
 </head>
 <body>
@@ -98,6 +99,37 @@
   </div>
 </div>
 {% else %}
+<p class="muted" style="margin-bottom:1rem">No CodeQL CSV data available.</p>
+{% endif %}
+
+{# ── CodeQL MISRA Compliance Reports (always shown if reports exist) ── #}
+{% if codeql_reports %}
+<div style="margin:1rem 0 .5rem">
+  <div style="font-size:.85rem;color:var(--muted);margin-bottom:.5rem;">MISRA C++ Compliance Reports:</div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <a href="codeql/database_integrity_report.md" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.4rem .8rem;color:var(--accent);text-decoration:none;font-size:.82rem;">🔍 Database Integrity</a>
+    <a href="codeql/deviations_report.md" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.4rem .8rem;color:var(--accent);text-decoration:none;font-size:.82rem;">📋 Deviations</a>
+    <a href="codeql/guideline_compliance_summary.md" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.4rem .8rem;color:var(--accent);text-decoration:none;font-size:.82rem;">✅ Compliance Summary</a>
+    <a href="codeql/guideline_recategorizations_report.md" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.4rem .8rem;color:var(--accent);text-decoration:none;font-size:.82rem;">🔄 Recategorizations</a>
+  </div>
+</div>
+
+{# ── Inline Report Content (expandable, same .md format) ── #}
+{% set report_labels = {
+  'database_integrity_report': '🔍 Database Integrity Report',
+  'deviations_report': '📋 Deviations Report',
+  'guideline_compliance_summary': '✅ Guideline Compliance Summary',
+  'guideline_recategorizations_report': '🔄 Guideline Recategorizations Report'
+} %}
+{% for name, content in codeql_reports.items() %}
+<details style="margin:.5rem 0;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+  <summary style="padding:.8rem 1rem;cursor:pointer;font-weight:600;color:var(--accent);font-size:.9rem;">
+    {{ report_labels.get(name, name) }}
+  </summary>
+  <pre class="report-content">{{ content }}</pre>
+</details>
+{% endfor %}
+{% elif not codeql %}
 <p class="muted" style="margin-bottom:1.5rem">No CodeQL data available.</p>
 {% endif %}
 
