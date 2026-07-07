@@ -84,14 +84,12 @@ class ProxyFieldImpl : public ProxyFieldBase
     /// \param event_binding Mock event binding. Must be provided (use nullptr if no event binding is needed).
     /// \param set_method_binding Optional mock Set-method binding. If nullptr, no ProxyMethod is built for Set.
     /// \param get_method_binding Optional mock Get-method binding. If nullptr, no ProxyMethod is built for Get.
-    ProxyFieldImpl(ProxyBase& proxy_base,
-                   const std::string_view field_name,
+    ProxyFieldImpl(const std::string_view field_name,
                    std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
                    std::unique_ptr<ProxyMethodBinding> set_method_binding = nullptr,
                    std::unique_ptr<ProxyMethodBinding> get_method_binding = nullptr)
-        : ProxyFieldImpl{proxy_base,
-                         field_name,
-                         std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
+        : ProxyFieldImpl{field_name,
+                         std::make_unique<ProxyEvent<FieldType>>(field_name, std::move(event_binding)),
                          set_method_binding == nullptr
                              ? nullptr
                              : std::make_unique<ProxyMethod<FieldType(FieldType)>>(
@@ -115,8 +113,7 @@ class ProxyFieldImpl : public ProxyFieldBase
     /// \param proxy_base Parent proxy that owns this field's registration.
     /// \param field_name Field's name as it appears in the deployment.
     ProxyFieldImpl(ProxyBase& proxy_base, const std::string_view field_name)
-        : ProxyFieldImpl{proxy_base,
-                         field_name,
+        : ProxyFieldImpl{field_name,
                          MakeEventDispatchIfEnabled(proxy_base, field_name),
                          MakeSetMethodDispatchIfEnabled(proxy_base, field_name),
                          MakeGetMethodDispatchIfEnabled(proxy_base, field_name)}
@@ -135,6 +132,8 @@ class ProxyFieldImpl : public ProxyFieldBase
         {
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_method_get_dispatch_ != nullptr);
         }
+        ProxyBaseView proxy_base_view{proxy_base};
+        proxy_base_view.RegisterField(field_name, GetReferenceToMoveable());
     }
 
     /// \brief A ProxyFieldImpl shall not be copyable
@@ -399,8 +398,7 @@ class ProxyFieldImpl : public ProxyFieldBase
         }
     }
 
-    ProxyFieldImpl(ProxyBase& proxy_base,
-                   const std::string_view field_name,
+    ProxyFieldImpl(const std::string_view field_name,
                    std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
                    std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
                    std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch)
@@ -412,8 +410,6 @@ class ProxyFieldImpl : public ProxyFieldBase
           proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)},
           proxy_method_get_dispatch_{std::move(proxy_method_get_dispatch)}
     {
-        ProxyBaseView proxy_base_view{proxy_base};
-        proxy_base_view.RegisterField(field_name, GetReferenceToMoveable());
     }
 
     std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;

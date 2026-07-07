@@ -78,9 +78,7 @@ class ProxyEvent final : public ProxyEventBase
     /// Instantiates the base class and members of ProxyEvent. Should only be called directly in tests.
     ///
     /// \param proxy_binding The binding that shall be associated with this proxy.
-    ProxyEvent(ProxyBase& base,
-               const std::string_view event_name,
-               std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding);
+    ProxyEvent(const std::string_view event_name, std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding);
 
     /// \brief Constructor that allows to set the binding directly.
     ///
@@ -141,8 +139,7 @@ class ProxyEvent final : public ProxyEventBase
 };
 
 template <typename SampleType>
-ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
-                                   const std::string_view event_name,
+ProxyEvent<SampleType>::ProxyEvent(const std::string_view event_name,
                                    std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding)
     : ProxyEventBase{event_name, std::unique_ptr<ProxyEventBindingBase>{std::move(proxy_event_binding)}},
       proxy_event_mock_{nullptr}

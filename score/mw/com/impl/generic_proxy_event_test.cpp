@@ -21,8 +21,6 @@
 
 #include "score/mw/com/impl/generic_proxy_event.h"
 #include "score/mw/com/impl/bindings/mock_binding/generic_proxy_event.h"
-#include "score/mw/com/impl/bindings/mock_binding/proxy.h"
-#include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_base.h"
 #include "score/mw/com/impl/test/proxy_resources.h"
 #include "score/mw/com/types.h"
@@ -84,10 +82,8 @@ TEST(GenericProxyEventTest, SamplePtrsToSlotDataAreConst)
 
     auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
-    ProxyBase empty_proxy(std::make_unique<mock_binding::Proxy>(),
-                          make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
-    GenericProxyEvent proxy_event{
-        empty_proxy, kEventName, std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
+    GenericProxyEvent proxy_event{kEventName,
+                                  std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
 
     EXPECT_CALL(mock_proxy_event, Subscribe(max_num_samples));
     EXPECT_CALL(mock_proxy_event, GetNewSamples(_, _));
@@ -117,10 +113,8 @@ TEST(GenericProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
 
     auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
-    ProxyBase empty_proxy(std::make_unique<mock_binding::Proxy>(),
-                          make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
     auto proxy_event = std::make_unique<GenericProxyEvent>(
-        empty_proxy, kEventName, std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)});
+        kEventName, std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)});
 
     EXPECT_CALL(mock_proxy_event, Subscribe(max_num_samples));
     EXPECT_CALL(mock_proxy_event, GetNewSamples(_, _));
@@ -155,10 +149,8 @@ TEST(GenericProxyEventGetSampleSizeTest, GetSampleSizeDispatchesToBinding)
     // Given a generic proxy event based on a mock binding
     auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
-    ProxyBase empty_proxy(std::make_unique<mock_binding::Proxy>(),
-                          make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
-    GenericProxyEvent proxy_event{
-        empty_proxy, kEventName, std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
+    GenericProxyEvent proxy_event{kEventName,
+                                  std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
 
     // Expect that GetSampleSize is called once on the binding
     EXPECT_CALL(mock_proxy_event, GetSampleSize()).WillOnce(Return(expected_sample_size));
@@ -183,10 +175,8 @@ TEST(GenericProxyEventHasSerializedFormatTest, HasSerializedFormatDispatchesToBi
     // Given a generic event proxy, that is connected to a mock binding
     auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
-    ProxyBase empty_proxy(std::make_unique<mock_binding::Proxy>(),
-                          make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
-    GenericProxyEvent proxy_event{
-        empty_proxy, kEventName, std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
+    GenericProxyEvent proxy_event{kEventName,
+                                  std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
 
     // Expect that HasSerializedFormat is called once on the binding
     EXPECT_CALL(mock_proxy_event, HasSerializedFormat()).WillOnce(Return(expected_has_serialized_format));
@@ -214,10 +204,8 @@ TEST(GenericProxyEventGetNewSamplesTest, GetNewSamplesContainsCorrectReceiverSig
     // Given a generic event proxy, that is connected to a mock binding
     auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
-    ProxyBase empty_proxy(std::make_unique<mock_binding::Proxy>(),
-                          make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
-    GenericProxyEvent proxy_event{
-        empty_proxy, kEventName, std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
+    GenericProxyEvent proxy_event{kEventName,
+                                  std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
 
     // Expect that GetNewSamples is called once on the binding
     EXPECT_CALL(mock_proxy_event, GetNewSamples(_, _))
