@@ -11,11 +11,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // *******************************************************************************
 
-const core = require("@actions/core");
-const cache = require("@actions/cache");
-const path = require("path");
-const os = require("os");
-const fs = require("fs");
+import * as core from "@actions/core";
+import * as cache from "@actions/cache";
+import path from "path";
+import os from "os";
+import fs from "fs";
 
 async function run() {
   try {
