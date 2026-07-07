@@ -1,0 +1,223 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Adjust bazel dependency version"
+description: >
+  Append or update a single_version_override in the specified MODULE.bazel so the provided dependency resolves to the
+  provided version.
+
+inputs:
+  module-file:
+    description: >
+      Path to the MODULE.bazel file to modify.
+    required: true
+  module-name:
+    description: >
+      Name of the dependency to override.
+    required: true
+  version:
+    description: >
+      Version of the dependency to select.
+    required: true
+  retain-patches:
+    description: >
+      When converting a matching git_override to single_version_override, retain patch_strip/patches if present.
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Adjust Bazel dependency version
+      shell: bash
+      env:
+        MODULE_FILE: ${{ inputs.module-file }}
+        DEPENDENCY: ${{ inputs.module-name }}
+        VERSION: ${{ inputs.version }}
+        RETAIN_PATCHES: ${{ inputs.retain-patches }}
+      run: |
+        set -euo pipefail
+
+        python3 - <<'PY'
+        import os
+        import re
+        from pathlib import Path
+
+        def resolve_path(raw: str) -> Path:
+            path = Path(raw)
+            if path.is_absolute():
+                return path
+            return Path(os.environ["GITHUB_WORKSPACE"]) / path
+
+        module_file = resolve_path(os.environ["MODULE_FILE"])
+        dependency = os.environ["DEPENDENCY"]
+        version = os.environ["VERSION"]
+        retain_patches = os.environ["RETAIN_PATCHES"].strip().lower() not in {"", "0", "false", "no", "off"}
+
+        text = module_file.read_text(encoding="utf-8")
+        lines = text.splitlines()
+
+        def find_blocks(block_name: str):
+            blocks = []
+            index = 0
+            while index < len(lines):
+                if not lines[index].lstrip().startswith(f"{block_name}("):
+                    index += 1
+                    continue
+
+                start = index
+                end = index
+                depth = lines[index].count("(") - lines[index].count(")")
+
+                while depth > 0:
+                    end += 1
+                    if end >= len(lines):
+                        raise SystemExit(f"Unterminated {block_name} block in {module_file}")
+                    depth += lines[end].count("(") - lines[end].count(")")
+
+                blocks.append((start, end))
+                index = end + 1
+
+            return blocks
+
+        def matches_dependency(block_start: int, block_end: int) -> bool:
+            block_text = "\n".join(lines[block_start : block_end + 1])
+            return re.search(rf'\bmodule_name\s*=\s*"{re.escape(dependency)}"\s*(?:,|\))', block_text) is not None
+
+        def extract_assignment_chunk(block_lines, attribute):
+            for idx, line in enumerate(block_lines):
+                if not re.match(rf'^\s*{attribute}\s*=', line):
+                    continue
+
+                chunk = [line]
+                bracket_depth = line.count("[") - line.count("]")
+                while (
+                    bracket_depth > 0 or not chunk[-1].strip().endswith(",")
+                ) and idx + 1 < len(block_lines):
+                    idx += 1
+                    chunk.append(block_lines[idx])
+                    bracket_depth += block_lines[idx].count("[") - block_lines[idx].count("]")
+
+                return [f"    {entry.lstrip()}" for entry in chunk]
+
+            return []
+
+        def matches_bazel_dep(block_start: int, block_end: int) -> bool:
+            block_text = "\n".join(lines[block_start : block_end + 1])
+            return re.search(rf'\bname\s*=\s*"{re.escape(dependency)}"\s*(?:,|\))', block_text) is not None
+
+        bazel_dep_blocks = find_blocks("bazel_dep")
+        has_direct_bazel_dep = any(matches_bazel_dep(start, end) for start, end in bazel_dep_blocks)
+
+        if not has_direct_bazel_dep:
+            insertion_index = 0
+            if bazel_dep_blocks:
+                insertion_index = bazel_dep_blocks[-1][1] + 1
+            else:
+                module_blocks = find_blocks("module")
+                if module_blocks:
+                    insertion_index = module_blocks[0][1] + 1
+
+            if insertion_index > 0 and lines[insertion_index - 1] != "":
+                lines.insert(insertion_index, "")
+                insertion_index += 1
+
+            lines.insert(insertion_index, f'bazel_dep(name = "{dependency}", version = "{version}")')
+
+            if insertion_index + 1 < len(lines) and lines[insertion_index + 1] != "":
+                lines.insert(insertion_index + 1, "")
+
+        matching_single_blocks = [
+            (start, end)
+            for start, end in find_blocks("single_version_override")
+            if matches_dependency(start, end)
+        ]
+
+        matching_git_blocks = [
+            (start, end)
+            for start, end in find_blocks("git_override")
+            if matches_dependency(start, end)
+        ]
+
+        if len(matching_single_blocks) > 1:
+            raise SystemExit(
+                f"Found multiple single_version_override blocks for dependency '{dependency}' in {module_file}; refusing to guess"
+            )
+        if len(matching_git_blocks) > 1:
+            raise SystemExit(
+                f"Found multiple git_override blocks for dependency '{dependency}' in {module_file}; refusing to guess"
+            )
+        if matching_single_blocks and matching_git_blocks:
+            raise SystemExit(
+                f"Found both single_version_override and git_override for dependency '{dependency}' in {module_file}; refusing to guess"
+            )
+
+        if matching_git_blocks:
+            start, end = matching_git_blocks[0]
+            git_block_lines = lines[start : end + 1]
+            replacement_lines = [
+                "single_version_override(",
+                f'    module_name = "{dependency}",',
+                f'    version = "{version}",',
+            ]
+
+            if retain_patches:
+                replacement_lines.extend(extract_assignment_chunk(git_block_lines, "patch_strip"))
+                replacement_lines.extend(extract_assignment_chunk(git_block_lines, "patches"))
+
+            replacement_lines.append(")")
+            lines[start : end + 1] = replacement_lines
+            action = "converted git_override"
+        elif matching_single_blocks:
+            start, end = matching_single_blocks[0]
+            block_lines = lines[start : end + 1]
+            version_line_index = next(
+                (
+                    index
+                    for index, line in enumerate(block_lines)
+                    if re.match(r'^\s*version\s*=\s*".*"\s*,?\s*$', line)
+                ),
+                None,
+            )
+
+            if version_line_index is None:
+                module_name_index = next(
+                    index
+                    for index, line in enumerate(block_lines)
+                    if re.match(r'^\s*module_name\s*=\s*".*"\s*,?\s*$', line)
+                )
+                indent = re.match(r'^(\s*)', block_lines[module_name_index]).group(1)
+                block_lines.insert(module_name_index + 1, f'{indent}version = "{version}",')
+            else:
+                indent = re.match(r'^(\s*)', block_lines[version_line_index]).group(1)
+                block_lines[version_line_index] = f'{indent}version = "{version}",'
+
+            lines[start : end + 1] = block_lines
+            action = "updated single_version_override"
+        else:
+            if lines and lines[-1] != "":
+                lines.append("")
+
+            lines.extend(
+                [
+                "single_version_override(",
+                f'    module_name = "{dependency}",',
+                f'    version = "{version}",',
+                ")",
+                ]
+            )
+            action = "appended single_version_override"
+
+        module_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        print(f"Updated {module_file}: {dependency} -> {version} ({action})")
+        PY

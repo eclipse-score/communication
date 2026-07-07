@@ -1,0 +1,268 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Test Dependency Version Combinations (Host)"
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # every day at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      # Test all combinations of bazel version and main dependency versions.
+      # We start with the version that is selected by the module (minimum supported version)
+      # From there we test every latest patch of every minor release
+      matrix:
+        bazel_version: ["8.5.1", "8.6.0", "8.7.0", "9.0.2", "9.1.1"]
+        rules_cc: ["0.2.17", "0.2.21"]
+        rules_python: ["1.8.5", "1.9.1", "2.0.3", "2.1.0", "2.2.0"]
+        rules_rust: ["0.68.1-score"]
+        score_baselibs: ["0.2.9"]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.0
+
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          # We only ever read from disk-cache since this matrix would either confuse or spam the cache
+          disk-cache: 'build_and_test_host'
+          cache-mode: 'read-only'
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+      - uses: ./.github/actions/01_integration/adjust_bazel_version
+        with:
+          bazelversion-file: "examples/.bazelversion"
+          version: ${{ matrix.bazel_version }}
+
+      - uses: ./.github/actions/01_integration/adjust_bazel_version
+        with:
+          bazelversion-file: ".bazelversion"
+          version: ${{ matrix.bazel_version }}
+
+      - uses: ./.github/actions/01_integration/adjust_bazel_dep_version
+        with:
+          module-file: "examples/MODULE.bazel"
+          module-name: "rules_cc"
+          version: ${{ matrix.rules_cc }}
+
+      - uses: ./.github/actions/01_integration/adjust_bazel_dep_version
+        with:
+          module-file: "MODULE.bazel"
+          module-name: "rules_cc"
+          version: ${{ matrix.rules_cc }}
+
+      - uses: ./.github/actions/01_integration/adjust_bazel_dep_version
+        with:
+          module-file: "examples/MODULE.bazel"
+          module-name: "rules_python"
+          version: ${{ matrix.rules_python }}
+
+      - uses: ./.github/actions/01_integration/adjust_bazel_dep_version
+        with:
+          module-file: "MODULE.bazel"
+          module-name: "rules_python"
+          version: ${{ matrix.rules_python }}
+
+      - uses: ./.github/actions/01_integration/adjust_bazel_dep_version
+        with:
+          module-file: "examples/MODULE.bazel"
+          module-name: "rules_rust"
+          version: ${{ matrix.rules_rust }}
+
+      - uses: ./.github/actions/01_integration/adjust_bazel_dep_version
+        with:
+          module-file: "MODULE.bazel"
+          module-name: "rules_rust"
+          version: ${{ matrix.rules_rust }}
+
+      - uses: ./.github/actions/01_integration/adjust_bazel_dep_version
+        with:
+          module-file: "examples/MODULE.bazel"
+          module-name: "score_baselibs"
+          version: ${{ matrix.score_baselibs }}
+
+      - uses: ./.github/actions/01_integration/adjust_bazel_dep_version
+        with:
+          module-file: "MODULE.bazel"
+          module-name: "score_baselibs"
+          version: ${{ matrix.score_baselibs }}
+
+      - name: Print examples/MODULE.bazel
+        run: cat examples/MODULE.bazel
+
+      - name: Print MODULE.bazel
+        run: cat MODULE.bazel
+
+      - name: Reformat MODULE.bazel to pass formatting check
+        run: bazel run //:format_Starlark_with_buildifier
+
+      - name: Build module
+        run: bazel build //... && bazel test //... --build_tests_only
+
+      - name: Build examples
+        run: cd examples && bazel build //... && bazel mod deps --lockfile_mode=update
+
+      - name: Persist matrix result
+        if: ${{ always() }}
+        env:
+          JOB_STATUS: ${{ job.status }}
+          MATRIX_INDEX: ${{ strategy.job-index }}
+          BAZEL_VERSION: ${{ matrix.bazel_version }}
+          RULES_CC: ${{ matrix.rules_cc }}
+          RULES_PYTHON: ${{ matrix.rules_python }}
+          RULES_RUST: ${{ matrix.rules_rust }}
+          SCORE_BASELIBS: ${{ matrix.score_baselibs }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p matrix-results
+
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data = {
+              "job_status": os.environ["JOB_STATUS"],
+              "matrix_index": int(os.environ["MATRIX_INDEX"]),
+              "bazel_version": os.environ["BAZEL_VERSION"],
+              "rules_cc": os.environ["RULES_CC"],
+              "rules_python": os.environ["RULES_PYTHON"],
+              "rules_rust": os.environ["RULES_RUST"],
+              "score_baselibs": os.environ["SCORE_BASELIBS"],
+          }
+
+          output_file = Path("matrix-results") / f"result-{data['matrix_index']}.json"
+          output_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+          print(f"Wrote {output_file}")
+          PY
+
+      - name: Upload matrix result
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: matrix-result-${{ strategy.job-index }}
+          path: matrix-results/result-${{ strategy.job-index }}.json
+          if-no-files-found: error
+
+  build-html-report:
+    name: Build matrix HTML report
+    runs-on: ubuntu-24.04
+    needs: build-and-test
+    if: ${{ always() }}
+    permissions:
+      contents: read
+    steps:
+      - name: Download matrix results
+        uses: actions/download-artifact@v8.0.1
+        with:
+          pattern: matrix-result-*
+          path: matrix-results
+          merge-multiple: true
+
+      - name: Generate HTML report
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          import html
+          import json
+          from pathlib import Path
+
+          results_dir = Path("matrix-results")
+          result_files = sorted(results_dir.glob("result-*.json"))
+
+          results = []
+          for result_file in result_files:
+              results.append(json.loads(result_file.read_text(encoding="utf-8")))
+
+          results.sort(key=lambda item: item["matrix_index"])
+
+          rows = []
+          failures = 0
+
+          for data in results:
+              status = data["job_status"]
+              failures += 1 if status != "success" else 0
+              rows.append(
+                  "<tr>"
+                  f"<td>{data['matrix_index']}</td>"
+                  f"<td>{html.escape(data['bazel_version'])}</td>"
+                  f"<td>{html.escape(data['rules_cc'])}</td>"
+                  f"<td>{html.escape(data['rules_python'])}</td>"
+                  f"<td>{html.escape(data['rules_rust'])}</td>"
+                  f"<td>{html.escape(data['score_baselibs'])}</td>"
+                  f"<td>{html.escape(status)}</td>"
+                  "</tr>"
+              )
+
+          total = len(rows)
+          successes = total - failures
+
+          if not rows:
+              rows_html = '<tr><td colspan="6">No matrix result artifacts found.</td></tr>'
+          else:
+              rows_html = "\n".join(rows)
+
+          report = f"""<!doctype html>
+          <html lang=\"en\">
+          <head>
+            <meta charset=\"utf-8\" />
+            <title>Dependency Matrix Report</title>
+            <style>
+              body {{ font-family: Arial, sans-serif; margin: 24px; }}
+              table {{ border-collapse: collapse; width: 100%; }}
+              th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+              th {{ background: #f3f3f3; }}
+            </style>
+          </head>
+          <body>
+            <h1>Dependency Version Matrix Report</h1>
+            <p>Total: {total} | Success: {successes} | Failed: {failures}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Index</th>
+                  <th>Bazel</th>
+                  <th>rules_cc</th>
+                  <th>rules_python</th>
+                  <th>rules_rust</th>
+                  <th>score_baselibs</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows_html}
+              </tbody>
+            </table>
+          </body>
+          </html>
+          """
+
+          Path("dependency-matrix-report.html").write_text(report, encoding="utf-8")
+          print("Generated dependency-matrix-report.html")
+          PY
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: dependency-matrix-report
+          path: dependency-matrix-report.html
+          if-no-files-found: error

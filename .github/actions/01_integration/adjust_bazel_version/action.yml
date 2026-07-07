@@ -1,0 +1,66 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Adjust Bazel version"
+description: >
+  Replace the Bazel version in the specified .bazelversion file with the provided version.
+
+inputs:
+  bazelversion-file:
+    description: >
+      Path to the .bazelversion file to modify.
+    required: true
+  version:
+    description: >
+      Bazel version to write to the file.
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Adjust Bazel version
+      shell: bash
+      env:
+        BAZELVERSION_FILE: ${{ inputs.bazelversion-file }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+
+        python3 - <<'PY'
+        import os
+        from pathlib import Path
+
+        def resolve_path(raw: str) -> Path:
+            path = Path(raw)
+            if path.is_absolute():
+                return path
+            workspace = os.environ.get("GITHUB_WORKSPACE")
+            if workspace:
+                return Path(workspace) / path
+            return Path.cwd() / path
+
+        bazelversion_file = resolve_path(os.environ["BAZELVERSION_FILE"])
+        raw_version = os.environ["VERSION"]
+        version = raw_version.strip()
+
+        if not bazelversion_file.exists():
+            raise SystemExit(f"File not found: {bazelversion_file}")
+        if not version:
+            raise SystemExit("VERSION must not be empty")
+        if "\n" in raw_version or "\r" in raw_version:
+            raise SystemExit("VERSION must be a single line")
+
+        bazelversion_file.write_text(f"{version}\n", encoding="utf-8")
+        print(f"Updated {bazelversion_file}: Bazel -> {version}")
+        PY
+
