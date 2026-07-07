@@ -12,91 +12,43 @@
 # *******************************************************************************
 
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load("//bazel/rules:expand_template.bzl", "expand_template")
-
-sh_test(
-    name = "sanitizers_functional_test",
-    srcs = ["sanitizers_functional_test.sh"],
-    data = [
-        "sanitizer.bazelrc",
-        "test_workspace/BUILD.tpl",
-        "test_workspace/MODULE.bazel",
-        "test_workspace/asan_fail_heap_out_of_bounds.cpp",
-        "test_workspace/lsan_fail_leak.cpp",
-        "test_workspace/tsan_fail_data_race.cpp",
-    ],
-    env_inherit = [
-        "PATH",
-        "http_proxy",
-        "https_proxy",
-    ],
-    tags = [
-        "local",  # Test marked local because it uses bazel.
-        "manual",  # Due to long-runtime and local dependencies
-    ],
-    deps = ["@bazel_tools//tools/bash/runfiles"],
-)
 
 filegroup(
-    name = "env_template",
-    srcs = select({
-        "//quality/sanitizer/flags:tsan": ["tsan.env.template"],
-        "//quality/sanitizer/flags:asan_ubsan_lsan": ["asan_ubsan_lsan.env.template"],
-    }),
-    target_compatible_with = ["//quality/sanitizer/constraints:any_sanitizer"],
+    name = "repo_suppressions",
+    srcs = [
+        "asan.supp",
+        "lsan.supp",
+        "tsan.supp",
+        "ubsan.supp",
+    ],
 )
 
-[
-    expand_template(
-        name = name + "_env",
-        out = name + "_sanitizer.env",
-        substitutions = {
-            "%ROOT%": root,
-        },
-        target_compatible_with = ["//quality/sanitizer/constraints:any_sanitizer"],
-        template = ":env_template",
-        visibility = ["//:__subpackages__"],
-    )
-    for name, root in (
-        [
-            "absolute",
-            "/",
-        ],
-        [
-            "relative",
-            "./",
-        ],
-    )
-]
-
-filegroup(
-    name = "suppressions",
+# FIXME: remove once score_cpp_policies provides a pre-merged env target — https://github.com/eclipse-score/score_cpp_policies/issues/30
+genrule(
+    name = "merged_absolute_env",
     srcs = select({
-        "//quality/sanitizer/flags:tsan": ["tsan.supp"],
-        "//quality/sanitizer/flags:asan_ubsan_lsan": [
-            "asan.supp",
-            "lsan.supp",
-            "ubsan.supp",
-        ],
+        "@score_cpp_policies//sanitizers/flags:asan_on": ["@score_cpp_policies//sanitizers:asan_absolute_env"],
+        "//conditions:default": [],
+    }) + select({
+        "@score_cpp_policies//sanitizers/flags:ubsan_on": ["@score_cpp_policies//sanitizers:ubsan_absolute_env"],
+        "//conditions:default": [],
+    }) + select({
+        "@score_cpp_policies//sanitizers/flags:lsan_on": ["@score_cpp_policies//sanitizers:lsan_absolute_env"],
+        "//conditions:default": [],
+    }) + select({
+        "@score_cpp_policies//sanitizers/flags:tsan_on": ["@score_cpp_policies//sanitizers:tsan_absolute_env"],
+        "//conditions:default": [],
     }),
-    target_compatible_with = ["//quality/sanitizer/constraints:any_sanitizer"],
+    outs = ["merged_absolute_sanitizer.env"],
+    cmd = "cat $(SRCS) > $@",
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:any_sanitizer"],
+    visibility = ["//visibility:public"],
 )
 
 pkg_tar(
     name = "suppressions_pkg",
-    srcs = [":suppressions"],
+    srcs = [":repo_suppressions"],
     mode = "0444",
-    package_dir = "quality/sanitizer",
-    target_compatible_with = ["//quality/sanitizer/constraints:any_sanitizer"],
-    visibility = ["//:__subpackages__"],
-)
-
-sh_binary(
-    name = "wrapper",
-    srcs = ["wrapper.sh"],
-    data = [
-        ":relative_env",
-        ":suppressions",
-    ],
-    target_compatible_with = ["//quality/sanitizer/constraints:any_sanitizer"],
+    package_dir = "sanitizers/suppressions",
+    visibility = ["//visibility:public"],
 )

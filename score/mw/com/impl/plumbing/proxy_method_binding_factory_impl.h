@@ -89,7 +89,7 @@ class ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)> : public IProxyMeth
     /// \param method_name The binding unspecific name of the method inside the proxy denoted by handle.
     /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
     std::unique_ptr<ProxyMethodBinding> Create(HandleType parent_handle,
-                                               ProxyBinding* parent_binding,
+                                               ProxyBinding& parent_binding,
                                                const std::string_view method_name,
                                                MethodType method_type) noexcept override;
 };
@@ -97,7 +97,7 @@ class ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)> : public IProxyMeth
 template <typename ReturnType, typename... ArgTypes>
 std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)>::Create(
     HandleType parent_handle,
-    ProxyBinding* parent_binding,
+    ProxyBinding& parent_binding,
     const std::string_view method_name,
     MethodType method_type) noexcept
 {
@@ -106,9 +106,9 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
     using LambdaReturnType = std::unique_ptr<ProxyMethodBinding>;
 
     auto deployment_info_visitor = score::cpp::overload(
-        [&parent_handle, parent_binding, &method_name_str, method_type](
+        [&parent_handle, &parent_binding, &method_name_str, method_type](
             const LolaServiceTypeDeployment& lola_type_deployment) -> LambdaReturnType {
-            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(parent_binding);
+            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(&parent_binding);
             if (lola_proxy == nullptr)
             {
                 score::mw::log::LogError("lola") << "Proxy Method binding could not be created for" << method_name_str

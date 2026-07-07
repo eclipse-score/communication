@@ -32,7 +32,8 @@ namespace score::mw::com::impl
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::Create(
-    ProxyBase& parent,
+    HandleType parent_handle,
+    ProxyBinding& parent_binding,
     const std::string_view event_name,
     const ServiceElementType service_element_type) noexcept
 {
@@ -41,9 +42,9 @@ std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::C
 
     using ReturnType = std::unique_ptr<lola::GenericProxyEvent>;
     auto deployment_info_visitor = score::cpp::overload(
-        [&parent, event_name, service_element_type](
+        [&parent_handle, &parent_binding, event_name, service_element_type](
             const LolaServiceTypeDeployment& lola_type_deployment) -> ReturnType {
-            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(ProxyBaseView{parent}.GetBinding());
+            auto* const lola_proxy = dynamic_cast<lola::Proxy*>(&parent_binding);
             if (lola_proxy == nullptr)
             {
                 score::mw::log::LogError("lola") << "Generic proxy event binding could not be created for" << event_name
@@ -52,15 +53,14 @@ std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::C
             }
 
             const auto element_fq_id =
-                GetElementFqId(parent.GetHandle(), lola_type_deployment, std::string{event_name}, service_element_type);
+                GetElementFqId(parent_handle, lola_type_deployment, std::string{event_name}, service_element_type);
             return std::make_unique<lola::GenericProxyEvent>(*lola_proxy, element_fq_id, event_name);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
         });
 
-    const HandleType& handle = parent.GetHandle();
-    const auto& type_deployment = handle.GetServiceTypeDeployment();
+    const auto& type_deployment = parent_handle.GetServiceTypeDeployment();
     return std::visit(deployment_info_visitor, type_deployment.binding_info_);
 }
 

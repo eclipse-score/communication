@@ -216,11 +216,13 @@ cc_library(
         "mw_log_logger.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
+        "@score_baselibs//score/mw/log",
+    ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
-        "@score_baselibs//score/mw/log",
         "@score_communication//score/message_passing",
     ],
 )
@@ -349,6 +351,7 @@ cc_unit_test(
     ],
     deps = [
         ":mw_log_logger",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )

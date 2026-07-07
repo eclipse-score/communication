@@ -71,7 +71,7 @@
 //! This mock back-end is used for unit testing of Lola-Runtime.
 
 use bridge_ffi_rs::{
-    FatPtr, FindServiceCallable, FindServiceHandle, HandleType, InstanceSpecifier,
+    FatPtr, FindServiceCallable, FindServiceHandle, HandleContainer, HandleType, InstanceSpecifier,
     NativeInstanceSpecifier, ProxyBase, ProxyEventBase, SkeletonBase, SkeletonEventBase,
     TypeOperationsManager,
 };
@@ -196,6 +196,10 @@ mock! {
             interface_id: &str,
             member_name: &str,
         ) -> Option<TypeOperationsManager>;
+
+        fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()>;
+
+        fn initialize<'a>(&self, manifest_location: Option<&'a std::path::Path>);
 }
 }
 
@@ -438,6 +442,14 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
             self.locked()
                 .get_type_ops_instance(interface_id, member_name)
         }
+    }
+
+    fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()> {
+        self.locked().find_service(instance_specifier)
+    }
+
+    fn initialize(&self, manifest_location: Option<&'_ std::path::Path>) {
+        self.locked().initialize(manifest_location)
     }
 }
 

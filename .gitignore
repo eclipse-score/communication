@@ -1,5 +1,6 @@
 bazel-*
 examples/bazel-*
+user.downloader_config
 user.bazelrc
 _build
 

@@ -17,6 +17,7 @@
 
 #include "score/result/result.h"
 #include <gmock/gmock.h>
+#include <cstddef>
 
 namespace score::mw::com::impl::mock_binding
 {
@@ -29,7 +30,7 @@ class Proxy : public ProxyBinding
     ~Proxy() override = default;
 
     MOCK_METHOD(bool, IsEventProvided, (const std::string_view), (const, noexcept, override));
-    MOCK_METHOD(Result<void>, SetupMethods, (), (override));
+    MOCK_METHOD(Result<void>, SetupMethods, (std::size_t), (override));
     MOCK_METHOD(void, PrepareDeinitialize, (), (override));
     MOCK_METHOD(void, FinalizeDeinitialize, (), (override));
 };
@@ -45,9 +46,9 @@ class ProxyFacade : public ProxyBinding
         return proxy_.IsEventProvided(event_name);
     }
 
-    Result<void> SetupMethods() override
+    Result<void> SetupMethods(std::size_t additional_shm_size_bytes) override
     {
-        return proxy_.SetupMethods();
+        return proxy_.SetupMethods(additional_shm_size_bytes);
     }
 
     void PrepareDeinitialize() override

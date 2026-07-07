@@ -20,7 +20,7 @@
 namespace score::mw::com::impl
 {
 auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance_identifier,
-                                              SkeletonBinding* parent_binding,
+                                              SkeletonBinding& parent_binding,
                                               const std::string_view method_name,
                                               MethodType method_type) -> std::unique_ptr<SkeletonMethodBinding>
 {
@@ -28,9 +28,9 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
     const InstanceIdentifierView instance_identifier_view{instance_identifier};
 
     using LambdaReturnType = std::unique_ptr<SkeletonMethodBinding>;
-    auto lola_deployment_handler = [&instance_identifier_view, parent_binding, &method_name, method_type](
+    auto lola_deployment_handler = [&instance_identifier_view, &parent_binding, &method_name, method_type](
                                        const LolaServiceTypeDeployment& lola_type_deployment) -> LambdaReturnType {
-        auto* const lola_parent = dynamic_cast<lola::Skeleton*>(parent_binding);
+        auto* const lola_parent = dynamic_cast<lola::Skeleton*>(&parent_binding);
         if (lola_parent == nullptr)
         {
             constexpr std::string_view error_msg =

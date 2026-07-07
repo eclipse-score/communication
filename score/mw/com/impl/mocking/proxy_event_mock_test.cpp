@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/mocking/proxy_event_mock.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/mocking/test_type_utilities.h"
@@ -22,6 +23,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <memory>
 
 using namespace ::testing;
 
@@ -52,7 +54,7 @@ class ProxyEventFieldMockFixture : public ::testing::Test
     }
 
     ProxyEventFieldMock proxy_service_element_mock_{};
-    ProxyBase proxy_base_{nullptr, MakeFakeHandle(1U)};
+    ProxyBase proxy_base_{std::make_unique<mock_binding::Proxy>(), MakeFakeHandle(1U)};
     ProxyEventField unit_{proxy_base_,
                           kDummyEventFieldName,
                           std::unique_ptr<ProxyEventBinding<TestSampleType>>{nullptr}};

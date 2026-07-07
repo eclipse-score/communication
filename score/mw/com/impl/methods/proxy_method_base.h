@@ -27,12 +27,14 @@
 namespace score::mw::com::impl
 {
 
+class ProxyBinding;
+
 class ProxyMethodBase : public EnableReferenceToMoveableFromThis<ProxyMethodBase>
 {
   public:
     ProxyMethodBase(std::string_view method_name,
                     std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                    MethodType method_type = MethodType::kMethod) noexcept
+                    MethodType method_type) noexcept
         : EnableReferenceToMoveableFromThis<ProxyMethodBase>(),
           method_name_{method_name},
           method_type_{method_type},
@@ -58,7 +60,7 @@ class ProxyMethodBase : public EnableReferenceToMoveableFromThis<ProxyMethodBase
     /// reinitialized on every method call. This potentially would have performance benefits but more importantly this
     /// allows us to support "semi-dynamic" types in which a type dynamically allocates once on construction and the
     /// constructor is then never called again.
-    virtual Result<void> InitializeInArgsAndReturnValues() = 0;
+    virtual Result<void> InitializeInArgsAndReturnValues(ProxyBinding& proxy_binding) = 0;
 
   protected:
     /// \brief Size of the call-queue is currently fixed to 1! As soon as we are going to support larger call-queues,

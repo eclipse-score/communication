@@ -1,0 +1,26 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$TopEvent("IPC operation invoked at wrong lifecycle stage or outside valid call context", "MessagePassingFMEA.IpcApiMisuseOrLifecycleViolation")
+
+$OrGate("OG1", "MessagePassingFMEA.IpcApiMisuseOrLifecycleViolation")
+
+$BasicEvent("API invoked before lifecycle initialization completes", "MessagePassingFMEA.LifecycleOrderEnforcement", "OG1")
+$BasicEvent("Send or reply triggered outside intended call flow", "MessagePassingFMEA.CallFlowConformance", "OG1")
+$BasicEvent("RequestDisconnect invoked outside a valid call context", "BE_RequestDisconnectMisuse", "OG1")
+
+@enduml

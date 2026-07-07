@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/mocking/skeleton_base_mock.h"
+#include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/mocking/test_type_utilities.h"
@@ -35,7 +36,7 @@ class SkeletonMockFixture : public ::testing::Test
     }
 
     SkeletonBaseMock skeleton_mock_{};
-    SkeletonBase unit_{nullptr, MakeFakeInstanceIdentifier(1U)};
+    SkeletonBase unit_{std::make_unique<mock_binding::Skeleton>(), MakeFakeInstanceIdentifier(1U)};
 };
 
 TEST_F(SkeletonMockFixture, OfferServiceDispatchesToMockAfterInjectingMock)

@@ -1,0 +1,3 @@
+# Mark bundled GitHub Action dist files as generated so GitHub collapses them
+# in pull request diffs by default.
+.github/actions/**/dist/** linguist-generated=true

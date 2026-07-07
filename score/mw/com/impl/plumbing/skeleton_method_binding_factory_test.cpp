@@ -14,6 +14,7 @@
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
 
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
+#include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
@@ -66,7 +67,7 @@ class SkeletonMethodFactoryFixture : public lola::SkeletonMockedMemoryFixture
         return dummy_instance_identifier_builder_.CreateBlankBindingInstanceIdentifier();
     }
 
-    SkeletonBinding* GetBindingFromInstanceIdentifier(const InstanceIdentifier& instance_identifier)
+    SkeletonBinding& GetBindingFromInstanceIdentifier(const InstanceIdentifier& instance_identifier)
     {
         skeleton_base_ = std::make_unique<SkeletonBase>(std::move(this->skeleton_), instance_identifier);
         return SkeletonBaseView{*skeleton_base_}.GetBinding();
@@ -87,25 +88,10 @@ TEST_F(SkeletonMethodFactoryFixture, CanConstructSkeletonMethod)
 
     // When creating a SkeletonMethod using MethodBindingFactory
     auto skeleton_method = SkeletonMethodBindingFactory::Create(
-        instance_identifier, skeleton_.get(), kDummyMethodName, MethodType::kMethod);
+        instance_identifier, *skeleton_.get(), kDummyMethodName, MethodType::kMethod);
 
     // Then a valid binding can be created
     ASSERT_NE(skeleton_method, nullptr);
-}
-
-TEST_F(SkeletonMethodFactoryFixture, CannotCreateSkeletonServiceWhenSkeletonBindingIsNullptr)
-{
-    const auto instance_identifier = GetValidLoLaInstanceIdentifier();
-
-    // Given a SkeletonBase that does not contain a valid binding i.e. the binding is a nullptr
-    auto skeleton_base{nullptr};
-
-    // When creating a SkeletonMethod using MethodBindingFactory
-    auto skeleton_method =
-        SkeletonMethodBindingFactory::Create(instance_identifier, skeleton_base, kDummyMethodName, MethodType::kMethod);
-
-    // Then a nullptr is returned
-    ASSERT_EQ(skeleton_method, nullptr);
 }
 
 TEST_F(SkeletonMethodFactoryFixture, CannotConstructEventFromBlankBinding)
@@ -113,11 +99,11 @@ TEST_F(SkeletonMethodFactoryFixture, CannotConstructEventFromBlankBinding)
     const auto instance_identifier = GetBlankBindingInstanceIdentifier();
 
     // Given a blank binding
-    auto skeleton_binding = GetBindingFromInstanceIdentifier(instance_identifier);
+    mock_binding::Skeleton mock_skeleton_binding{};
 
     // When creating a SkeletonMethod using MethodBindingFactory
     auto skeleton_method = SkeletonMethodBindingFactory::Create(
-        instance_identifier, skeleton_binding, kDummyMethodName, MethodType::kMethod);
+        instance_identifier, mock_skeleton_binding, kDummyMethodName, MethodType::kMethod);
 
     // Then a nullptr is returned
     EXPECT_EQ(skeleton_method, nullptr);

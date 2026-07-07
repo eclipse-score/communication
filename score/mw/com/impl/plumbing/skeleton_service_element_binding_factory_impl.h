@@ -84,7 +84,7 @@ template <typename SkeletonServiceElementBinding, typename SkeletonServiceElemen
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
-                                SkeletonBase& parent,
+                                SkeletonBinding& parent_binding,
                                 const std::string_view service_element_name) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
@@ -94,9 +94,9 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
 
     using ReturnType = std::unique_ptr<SkeletonServiceElementBinding>;
     auto visitor = score::cpp::overload(
-        [identifier_view, &parent, &service_element_name](
+        [identifier_view, &parent_binding, &service_element_name](
             const LolaServiceTypeDeployment& lola_service_type_deployment) -> ReturnType {
-            auto* const lola_parent = dynamic_cast<lola::Skeleton*>(SkeletonBaseView{parent}.GetBinding());
+            auto* const lola_parent = dynamic_cast<lola::Skeleton*>(&parent_binding);
             if (lola_parent == nullptr)
             {
                 score::mw::log::LogFatal("lola") << "Skeleton service element could not be created because parent "
@@ -148,7 +148,7 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
     auto visitor = score::cpp::overload(
         [identifier_view, &parent, &service_element_name, &meta_info](
             const LolaServiceTypeDeployment& lola_service_type_deployment) -> ReturnType {
-            auto* const lola_parent = dynamic_cast<lola::Skeleton*>(SkeletonBaseView{parent}.GetBinding());
+            auto* const lola_parent = dynamic_cast<lola::Skeleton*>(&SkeletonBaseView{parent}.GetBinding());
             if (lola_parent == nullptr)
             {
                 score::mw::log::LogFatal("lola") << "Skeleton service element could not be created because parent "

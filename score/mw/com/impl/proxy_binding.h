@@ -17,6 +17,7 @@
 
 #include "score/result/result.h"
 
+#include <cstddef>
 #include <string_view>
 #include <vector>
 
@@ -54,7 +55,13 @@ class ProxyBinding
     /// \return True if the event name exists, otherwise, false
     virtual bool IsEventProvided(const std::string_view event_name) const noexcept = 0;
 
-    virtual Result<void> SetupMethods() = 0;
+    /// \brief Performs any binding specific setup required.
+    ///
+    /// \param additional_shm_size_bytes Additional shared memory size in bytes to be allocated for methods in addition
+    /// to the size calculated for the size of the method in args and return values. This is a temporary workaround
+    /// added to allow using types which dynamically allocate memory once at runtime. This is not currently public and
+    /// should not be used by user applications. (SWP-269486)
+    virtual Result<void> SetupMethods(std::size_t additional_shm_size_bytes) = 0;
 
     /// \brief Contains all cleanup logic for the binding that needs to be executed before any of the service elements
     /// are deinitialized (Called by ProxyBase::Deinitialize).

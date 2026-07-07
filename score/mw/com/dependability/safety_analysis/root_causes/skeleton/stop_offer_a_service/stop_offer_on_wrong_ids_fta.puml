@@ -17,7 +17,7 @@
 
 $TopEvent("Stop Offer on wrong IDS", "Communication.ServiceStopOfferingWrongIds")
 
-$OrGate("Gate2", "TopEvent")
+$OrGate("Gate2", "Communication.ServiceStopOfferingWrongIds")
 $IntermediateEvent("Wrong service discovery file system elements are removed", "Event1", "Gate2")
 $OrGate("Gate3", "Event1")
 $BasicEvent("On destruction wrong service instance is selected", "Communication.OnDestructionWrongServiceInstanceIsSelected", "Gate3")

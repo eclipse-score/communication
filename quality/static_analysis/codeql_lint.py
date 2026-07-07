@@ -21,6 +21,8 @@ import time
 import glob
 
 
+TMP_PATH_FOR_DATABASES = "/var/tmp/codeql_databases"
+
 def create_database(code_ql_path, config_path, target, source_root, database_path):
     """Create the CodeQL database: init, build with tracing, finalize."""
     subprocess.run(
@@ -165,14 +167,15 @@ def main():
         # Ensure the output directory exists before CodeQL tries to create the
         # database inside it (codeql database init does not create parents).
         os.makedirs(output_path, exist_ok=True)
-        db_loc = os.path.join(output_path, "codeql_database")
+        os.makedirs(TMP_PATH_FOR_DATABASES, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=TMP_PATH_FOR_DATABASES) as database_location:
 
-        create_database(codeql_path, args.config_path, target, source_root, db_loc)
-        analyze_database(codeql_path, db_loc, source_root,
-                       analysis_report_path=args.analysis_report_path,
-                       query_spec=args.query_spec, output_prefix=args.output_prefix,
-                       output_dir=args.output_dir)
-        print(f"  Use this database for future report generation")
+            create_database(codeql_path, args.config_path, target, source_root, database_location)
+            analyze_database(codeql_path, database_location, source_root,
+                           analysis_report_path=args.analysis_report_path,
+                           query_spec=args.query_spec, output_prefix=args.output_prefix,
+                           output_dir=args.output_dir)
+            print(f"  Use this database for future report generation")
 
 
 def _get_action_env_extension(codeql_env):

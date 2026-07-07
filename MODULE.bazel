@@ -54,7 +54,7 @@ download_archive(
 bazel_dep(name = "score_tooling")
 git_override(
     module_name = "score_tooling",
-    commit = "bd09ae241b94f9d77d4c837a38c93b04e2df8cc8",
+    commit = "7099e272c3f6114bad17736debd54139601aedd4",
     remote = "https://github.com/eclipse-score/tooling.git",
 )
 
@@ -64,12 +64,20 @@ bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
 gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains", dev_dependency = True)
 gcc_toolchains.toolchain(
     name = "gcc_toolchain_x86_64",
+    # TODO: Add extra_known_features once gcc_toolchain supports it.
+    # See: https://github.com/f0rmiga/gcc-toolchain/issues/219
     extra_cxxflags = [
-        "-fdiagnostics-color=always",  # Adds copt to always use coloring in build output
-        "-Wsign-conversion",
-        "-Wswitch-enum",
-        "-Werror",
-        "-Wno-error=deprecated-declarations",
+        # Diagnostics
+        "-fdiagnostics-color=always",
+        # Minimal warning baseline (mirrors quality/compiler_warnings/gcc minimal_warnings)
+        # Ref: https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+        "-Wall",  # Foundation warning set (MISRA Dir 1.1)
+        "-Wswitch-enum",  # Warn on unhandled enum in switch (MISRA Rule 9.6.4)
+        "-Wno-error=deprecated-declarations",  # Allow deprecated API as warning
+        "-Wno-error=cpp",  # Allow #warning as warning
+        "-Wno-maybe-uninitialized",  # GCC 8/9 false positives (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635)
+        "-Wno-free-nonheap-object",  # GCC false positive (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=99578)
+        "-Wunused-but-set-parameter",  # Dead store detection (MISRA Rule 0.1.1)
     ],
     extra_ldflags = [
         "-lstdc++",
@@ -84,8 +92,31 @@ use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.4", dev_dependency = True)
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
+
+# Minimal warning baseline for the S-CORE GCC/QCC toolchains.
+# Mirrors //quality/compiler_warnings/gcc:minimal_warnings. The S-CORE GCC
+# toolchain extension does not consume cc_features, so the baseline is applied
+# directly as compiler flags. Warning-as-error enforcement stays in the
+# score_communication_* cc_features (currently consumed by the LLVM toolchain).
+SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
+    "-Wall",
+    "-Wno-error=deprecated-declarations",
+    "-Wno-error=cpp",
+    "-Wno-format-y2k",
+    "-Wno-free-nonheap-object",
+    "-Wno-maybe-uninitialized",
+    "-Wunused-but-set-parameter",
+]
+
+SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS = [
+    "-Wno-literal-suffix",
+    "-Wno-noexcept-type",
+]
+
 score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
+    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
+    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     target_cpu = "x86_64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -94,6 +125,8 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
+    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
+    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     target_cpu = "aarch64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -102,6 +135,8 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
+    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
+    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     sdp_version = "8.0.4",
     target_cpu = "x86_64",
     target_os = "qnx",
@@ -110,6 +145,8 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
+    extra_compile_flags = SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS,
+    extra_cxx_compile_flags = SCORE_GCC_MINIMAL_WARNING_CXX_FLAGS,
     sdp_version = "8.0.4",
     target_cpu = "aarch64",
     target_os = "qnx",
@@ -149,7 +186,7 @@ use_repo(imagefs, "score_qnx_aarch64_ifs_toolchain", "score_qnx_x86_64_ifs_toolc
 bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
 git_override(
     module_name = "rules_distroless",
-    commit = "f114b1f878345e623ef84dcda14d275348840199",
+    commit = "dbf25be1c3a9a1698511a4817582efe61dc5ec15",
     remote = "https://github.com/LittleHuba/rules_distroless.git",
 )
 
@@ -173,7 +210,7 @@ apt.sources_list(
         "noble-updates",
     ],
     types = ["deb"],
-    uris = ["https://snapshot.ubuntu.com/ubuntu/20260401T000000Z"],
+    uris = ["https://snapshot.ubuntu.com/ubuntu/20260401T104001Z"],
 )
 apt.install(
     dependency_set = "ubuntu24_04_sysroot",
@@ -223,6 +260,14 @@ apt.sysroot(
 apt.lock(into = ":rules_distroless.lock.json")
 use_repo(apt, "ubuntu24_04_integration_testing", "ubuntu24_04_sysroot_amd64", "ubuntu24_04_sysroot_arm64")
 
+# FIXME: remove git_override once score_cpp_policies is released to BCR.
+bazel_dep(name = "score_cpp_policies", version = "0.0.0", dev_dependency = True)
+git_override(
+    module_name = "score_cpp_policies",
+    commit = "cdfd6ac4217b9e7413fa1e959ccb857bf803165f",
+    remote = "https://github.com/eclipse-score/score_cpp_policies.git",
+)
+
 bazel_dep(name = "toolchains_llvm", version = "1.8.0", dev_dependency = True)
 
 llvm = use_extension(
@@ -231,20 +276,24 @@ llvm = use_extension(
     dev_dependency = True,
 )
 llvm.toolchain(
-    compile_flags = {"": [
-        "-march=nehalem",
-        "-ffp-model=strict",
-        # Security
-        "-U_FORTIFY_SOURCE",  # https://github.com/google/sanitizers/issues/247
-        "-fstack-protector",
-        "-fno-omit-frame-pointer",
-        # Diagnostics
-        "-fcolor-diagnostics",
-        "-Wno-deprecated-declarations",
-        "-Wno-error=self-assign-overloaded",
-        "-Wthread-safety",
-    ]},
     cxx_standard = {"": "c++17"},
+    extra_enabled_features = [
+        "//quality/compiler_warnings:default_flags",
+        "//quality/compiler_warnings:default_link_flags",
+        "//quality/compiler_warnings/clang:minimal_warnings",
+    ],
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+        "@score_cpp_policies//sanitizers/features:asan",
+        "@score_cpp_policies//sanitizers/features:ubsan",
+        "@score_cpp_policies//sanitizers/features:lsan",
+        "@score_cpp_policies//sanitizers/features:tsan",
+        "//quality/compiler_warnings:treat_warnings_as_errors",
+        "//quality/compiler_warnings:additional_warnings",
+        "//quality/compiler_warnings/clang:strict_warnings",
+        "//quality/compiler_warnings/clang:strict_warnings_no_error",
+        "//quality/compiler_warnings/clang:third_party_warnings",
+    ],
     link_libs = {"": [
         "-lrt",
         # This is the agreed way to ensure linking for targets using std::atomic operations.
@@ -263,7 +312,7 @@ llvm.sysroot(
     label = "@ubuntu24_04_sysroot_arm64//sysroot",
     targets = ["linux-aarch64"],
 )
-use_repo(llvm, "llvm_toolchain")
+use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
 
 bazel_dep(name = "score_toolchains_rust", version = "0.9.1", dev_dependency = True)
 
@@ -309,8 +358,9 @@ download_file(
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
 )
 
-bazel_dep(name = "aspect_rules_lint", version = "2.3.0", dev_dependency = True)
+bazel_dep(name = "aspect_rules_lint", version = "2.5.0", dev_dependency = True)
 bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "rules_build_error", version = "0.11.0", dev_dependency = True)
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1", dev_dependency = True)
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
@@ -374,7 +424,7 @@ use_repo(pip, "codeql_coding_standards_pip_hub")
 bazel_dep(name = "trlc", version = "0.0.0", dev_dependency = True)
 git_override(
     module_name = "trlc",
-    commit = "c4c531b9d667085daa09dfc1590edacc314bfda4",
+    commit = "8d25f639ff44976893d7866ba421a04db5698ebe",
     remote = "https://github.com/bmw-software-engineering/trlc.git",
 )
 

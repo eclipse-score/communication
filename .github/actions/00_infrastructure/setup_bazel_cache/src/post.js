@@ -11,14 +11,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // *******************************************************************************
 
-const core = require("@actions/core");
-const cache = require("@actions/cache");
-const exec = require("@actions/exec");
-const github = require("@actions/github");
-const path = require("path");
-const os = require("os");
-const fs = require("fs");
-const crypto = require("crypto");
+import * as core from "@actions/core";
+import * as cache from "@actions/cache";
+import * as exec from "@actions/exec";
+import * as github from "@actions/github";
+import path from "path";
+import os from "os";
+import fs from "fs";
+import crypto from "crypto";
 
 async function computeRepoCacheHash(repoCacheDir) {
   const caDir = path.join(repoCacheDir, "content_addressable", "sha256");

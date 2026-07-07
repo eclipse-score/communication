@@ -1,0 +1,32 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$TopEvent("Connection context data absent, incomplete, or incorrect", "MessagePassingFMEA.ConnectionContextDataWrong")
+
+$OrGate("OG1", "MessagePassingFMEA.ConnectionContextDataWrong")
+
+$IntermediateEvent("Client identity wrong or incomplete", "IE_Identity", "OG1")
+$OrGate("OG_Identity", "IE_Identity")
+$BasicEvent("Client Identity wrong or swapped", "MessagePassingFMEA.ClientIdentityIntegrityCheck", "OG_Identity")
+$BasicEvent("Client Identitiy incomplete or empty", "MessagePassingFMEA.ClientIdentityValidation", "OG_Identity")
+
+$IntermediateEvent("User data wrong or incomplete", "IE_UserData", "OG1")
+$OrGate("OG_UserData", "IE_UserData")
+$BasicEvent("Connect callback returns wrong data", "MessagePassingFMEA.ConnectCallbackReturnValueValidation", "OG_UserData")
+$BasicEvent("Connect callback returns null or incomplete data", "MessagePassingFMEA.ConnectCallbackValidation", "OG_UserData")
+
+@enduml

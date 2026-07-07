@@ -23,12 +23,15 @@
 
 #include "score/mw/com/impl/rust/com-api/com-api-ffi-lola/registry_bridge_macro.h"
 #include "score/mw/com/impl/find_service_handler.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event.h"
 #include "score/mw/com/impl/proxy_event_base.h"
+#include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
+#include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
 #include "score/mw/log/logging.h"
 
@@ -471,6 +474,105 @@ const void* mw_com_get_type_ops_instance(StringView interface_id, StringView mem
     }
 
     return registry->GetTypeOps();
+}
+
+/// \brief Create an InstanceSpecifier from a UTF-8 string
+/// \details Allocates and returns a new InstanceSpecifier based on the provided UTF-8 string
+/// \param instance_specifier UTF-8 string representing the instance specifier
+/// \param instance_specifier_length Length of the UTF-8 string
+/// \return Pointer to newly allocated InstanceSpecifier, or nullptr on failure
+::score::mw::com::InstanceSpecifier* mw_com_impl_instance_specifier_create(
+    const char* const instance_specifier,
+    const std::uint32_t instance_specifier_length) noexcept
+{
+    if (auto result =
+            ::score::mw::com::InstanceSpecifier::Create(std::string{instance_specifier, instance_specifier_length});
+        result.has_value())
+    {
+        return new ::score::mw::com::InstanceSpecifier{std::move(result).value()};
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+/// \brief Clone an existing InstanceSpecifier
+/// \details Allocates and returns a new InstanceSpecifier that is a copy of the provided one
+/// \param instance_specifier Reference to the existing InstanceSpecifier to clone
+/// \return Pointer to newly allocated InstanceSpecifier, or nullptr on failure
+::score::mw::com::InstanceSpecifier* mw_com_impl_instance_specifier_clone(
+    const ::score::mw::com::InstanceSpecifier& instance_specifier) noexcept
+{
+    return new ::score::mw::com::InstanceSpecifier{instance_specifier};
+}
+
+void mw_com_impl_instance_specifier_delete(::score::mw::com::InstanceSpecifier* instance_specifier) noexcept
+{
+    delete instance_specifier;
+}
+
+/// \brief Find services matching an InstanceSpecifier
+/// \details Performs service discovery for services matching the provided InstanceSpecifier.
+/// \param instance_specifier Pointer to InstanceSpecifier specifying the service criteria
+/// \return Pointer to ServiceHandleContainer containing matching handles, or nullptr if none found
+::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>* mw_com_impl_find_service(
+    ::score::mw::com::InstanceSpecifier* instance_specifier) noexcept
+{
+    if (auto result = ::score::mw::com::impl::Runtime::getInstance().GetServiceDiscovery().FindService(
+            std::move(*instance_specifier));
+        result.has_value())
+    {
+        return new ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>{
+            std::move(result).value()};
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+/// \brief Delete a ServiceHandleContainer
+/// \param container Pointer to the ServiceHandleContainer to delete
+void mw_com_impl_handle_container_delete(
+    ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>* container) noexcept
+{
+    delete container;
+}
+
+/// \brief Get the size of a ServiceHandleContainer
+/// \param container Pointer to the ServiceHandleContainer
+/// \return Number of elements in the container
+std::uint32_t mw_com_impl_handle_container_get_size(
+    const ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>* container)
+{
+    return static_cast<std::uint32_t>(container->size());
+}
+
+/// \brief Get a handle at a specific position in a ServiceHandleContainer
+/// \param container Pointer to the ServiceHandleContainer
+/// \param pos Index of the handle to retrieve
+/// \return Pointer to the handle at the specified position, or nullptr if out of bounds
+const ::score::mw::com::impl::HandleType* mw_com_impl_handle_container_get_handle_at(
+    const ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>* container,
+    std::uint32_t pos) noexcept
+{
+    return &container->at(pos);
+}
+
+/// \brief Initialize the runtime
+/// \param argv Array of command-line arguments
+/// \param argc Number of command-line arguments
+void mw_com_impl_initialize(const char* argv[], std::int32_t argc)
+{
+    ::score::mw::com::runtime::InitializeRuntime(argc, argv);
+}
+
+/// \brief Get the size of a SamplePtr
+/// \return Size of the SamplePtr type in bytes
+std::uint32_t mw_com_impl_sample_ptr_get_size() noexcept
+{
+    return sizeof(::score::mw::com::impl::SamplePtr<std::uint32_t>);
 }
 
 }  // extern "C"

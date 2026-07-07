@@ -16,7 +16,7 @@
 
 $TopEvent("Subscribe with wrong max. sample count", "Communication.SubscribeWithWrongMaxSampleCount")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.SubscribeWithWrongMaxSampleCount")
 $BasicEvent("Message passing corrupts the max. sample value", "Communication.MessagePassingCorruptsTheMaxSampleValue", "Gate1")
 $BasicEvent("Wrong value is passed to message passing library", "Communication.WrongValueIsPassedToMessagePassingLibrary", "Gate1")
 

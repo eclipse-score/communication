@@ -17,7 +17,7 @@
 
 $TopEvent("No resources freed", "Communication.NoResourcesFreed")
 
-$IntermediateEvent("No Unlink / unmap shm-region", "Event1", "TopEvent")
+$IntermediateEvent("No Unlink / unmap shm-region", "Event1", "Communication.NoResourcesFreed")
 $OrGate("Gate1", "Event1")
 $BasicEvent("No unmap on destruction", "Communication.NoUnmapOnDestruction", "Gate1")
 $BasicEvent("Shared Memory segment is not unlinked", "Communication.SharedMemorySegmentIsNotUnlinked", "Gate1")

@@ -35,7 +35,7 @@ class SkeletonMethodBase : public EnableReferenceToMoveableFromThis<SkeletonMeth
   public:
     SkeletonMethodBase(const std::string_view method_name,
                        std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding,
-                       MethodType method_type = MethodType::kMethod)
+                       MethodType method_type)
         : EnableReferenceToMoveableFromThis<SkeletonMethodBase>(),
           method_name_{method_name},
           method_type_{method_type},

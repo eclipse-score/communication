@@ -36,7 +36,7 @@ class SkeletonEventBindingFactoryImpl : public ISkeletonEventBindingFactory<Samp
 {
   public:
     std::unique_ptr<SkeletonEventBinding<SampleType>> Create(const InstanceIdentifier& identifier,
-                                                             SkeletonBase& parent,
+                                                             SkeletonBinding& parent_binding,
                                                              const std::string_view event_name) noexcept override;
 };
 
@@ -50,13 +50,13 @@ template <typename SampleType>
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto SkeletonEventBindingFactoryImpl<SampleType>::Create(const InstanceIdentifier& identifier,
-                                                         SkeletonBase& parent,
+                                                         SkeletonBinding& parent_binding,
                                                          const std::string_view event_name) noexcept
     -> std::unique_ptr<SkeletonEventBinding<SampleType>>
 {
     return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
                                       lola::SkeletonEvent<SampleType>,
-                                      ServiceElementType::EVENT>(identifier, parent, event_name);
+                                      ServiceElementType::EVENT>(identifier, parent_binding, event_name);
 }
 
 }  // namespace score::mw::com::impl

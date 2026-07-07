@@ -15,9 +15,9 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Method Call blocks", "Communication.CallBlocks")
+$TopEvent("Method Call blocks", "Communication.MethodCallBlocksLongerThanExpected")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.MethodCallBlocksLongerThanExpected")
 $BasicEvent("Method call blocks in message-passing at the caller side -> send blocked", "Communication.BlocksOnCaller", "Gate1")
 $BasicEvent("Method call blocks in user-handler at the callee side", "Communication.CallBlocksOnUserHandler", "Gate1")
 $BasicEvent("Method call blocks in reply at the callee side -> send blocked ", "Communication.CallBlocksOnCallee", "Gate1")

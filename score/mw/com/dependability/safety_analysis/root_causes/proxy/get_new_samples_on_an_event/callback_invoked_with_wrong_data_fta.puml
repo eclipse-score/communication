@@ -17,7 +17,7 @@
 
 $TopEvent("Callback invoked with wrong data", "Communication.CallbackInvokedWithWrongData")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.CallbackInvokedWithWrongData")
 $IntermediateEvent("Manipulated received data", "Event1", "Gate1")
 $OrGate("Gate4", "Event1")
 $IntermediateEvent("Dangling data", "Event6", "Gate4")

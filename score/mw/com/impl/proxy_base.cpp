@@ -37,6 +37,9 @@ ProxyBase::ProxyBase(std::unique_ptr<ProxyBinding> proxy_binding, HandleType han
       fields_{},
       methods_{}
 {
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        proxy_binding_ != nullptr,
+        "Proxy binding should be checked in ProxyWrapperClass::Create() before constructing the ProxyBase.");
 }
 
 const HandleType& ProxyBase::GetHandle() const& noexcept
@@ -101,9 +104,9 @@ score::Result<void> ProxyBase::StopFindService(const FindServiceHandle handle) n
     return stop_find_service_result;
 }
 
-Result<void> ProxyBase::SetupMethods()
+Result<void> ProxyBase::SetupMethods(const std::size_t additional_shm_size_bytes)
 {
-    const auto result = proxy_binding_->SetupMethods();
+    const auto result = proxy_binding_->SetupMethods(additional_shm_size_bytes);
     if (!result.has_value())
     {
         return MakeUnexpected<void>(result.error());
@@ -112,7 +115,7 @@ Result<void> ProxyBase::SetupMethods()
     for (auto& method_key_value_pair : methods_)
     {
         auto& method = method_key_value_pair.second.get().Get();
-        const auto method_init_result = method.InitializeInArgsAndReturnValues();
+        const auto method_init_result = method.InitializeInArgsAndReturnValues(*proxy_binding_);
         if (!method_init_result.has_value())
         {
             return MakeUnexpected<void>(method_init_result.error());
@@ -143,9 +146,12 @@ void ProxyBase::Deinitialize()
 
 ProxyBaseView::ProxyBaseView(ProxyBase& proxy_base) noexcept : proxy_base_(proxy_base) {}
 
-ProxyBinding* ProxyBaseView::GetBinding() noexcept
+ProxyBinding& ProxyBaseView::GetBinding() noexcept
 {
-    return proxy_base_.proxy_binding_.get();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        proxy_base_.proxy_binding_ != nullptr,
+        "Proxy binding should be checked in ProxyWrapperClass::Create() before constructing the ProxyBase.");
+    return *proxy_base_.proxy_binding_;
 }
 
 const HandleType& ProxyBaseView::GetAssociatedHandleType() const& noexcept

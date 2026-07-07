@@ -119,7 +119,7 @@ class ProxyEventTracingFixture : public ::testing::Test
     {
         auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent<TestSampleType>>();
         mock_proxy_event_binding_ = proxy_event_binding_mock_ptr.get();
-        EXPECT_CALL(factory_mock_guard.factory_mock_, Create(_, kServiceElementName, ServiceElementType::EVENT))
+        EXPECT_CALL(factory_mock_guard.factory_mock_, Create(_, _, kServiceElementName, ServiceElementType::EVENT))
             .WillOnce(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     }
 
@@ -127,7 +127,7 @@ class ProxyEventTracingFixture : public ::testing::Test
     {
         auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent<TestSampleType>>();
         mock_proxy_event_binding_ = proxy_event_binding_mock_ptr.get();
-        EXPECT_CALL(factory_mock_guard.factory_mock_, CreateEventBinding(_, kServiceElementName))
+        EXPECT_CALL(factory_mock_guard.factory_mock_, CreateEventBinding(_, _, kServiceElementName))
             .WillOnce(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     }
 

@@ -39,6 +39,7 @@
 
 #include <score/utility.hpp>
 
+#include <cstddef>
 #include <exception>
 #include <optional>
 #include <queue>
@@ -86,6 +87,9 @@ class SkeletonWrapperClassTestView;
 
 template <typename T>
 class ProxyWrapperClassTestView;
+
+template <typename T>
+class ProxyWithSemiDynamicMethodFactory;
 
 /// The main idea of these traits are to ease the interface creation for a user. It reduces the necessary generated code
 /// to a bare minimum.
@@ -227,6 +231,13 @@ class SkeletonWrapperClass : public Interface<Trait>
         }
 
         auto skeleton_binding = SkeletonBindingFactory::Create(instance_identifier);
+        if (skeleton_binding == nullptr)
+        {
+            ::score::mw::log::LogError("lola")
+                << "Could not create SkeletonWrapperClass as Skeleton binding could not be created.";
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+
         SkeletonWrapperClass skeleton_wrapper(instance_identifier, std::move(skeleton_binding));
         if (!skeleton_wrapper.AreBindingsValid())
         {
@@ -322,6 +333,8 @@ class ProxyWrapperClass : public Interface<Trait>
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyWrapperClassTestView<ProxyWrapperClass>;
 
+    friend class ProxyWithSemiDynamicMethodFactory<ProxyWrapperClass>;
+
   public:
     /// \api
     /// \brief Create a proxy instance from a service handle.
@@ -331,31 +344,7 @@ class ProxyWrapperClass : public Interface<Trait>
     /// \return On success, returns a ProxyWrapperClass instance. On failure, returns an error code.
     static Result<ProxyWrapperClass> Create(const HandleType instance_handle) noexcept
     {
-        if (creation_results_.has_value())
-        {
-            return detail::ExtractCreationResultFrom(instance_handle, creation_results_.value());
-        }
-
-        auto proxy_binding = ProxyBindingFactory::Create(instance_handle);
-
-        ProxyWrapperClass proxy_wrapper(instance_handle, std::move(proxy_binding));
-
-        if (!proxy_wrapper.AreBindingsValid())
-        {
-            ::score::mw::log::LogError("lola")
-                << "Could not create ProxyWrapperClass as Proxy binding or service element "
-                   "bindings could not be created.";
-            return MakeUnexpected(ComErrc::kBindingFailure);
-        }
-
-        const auto setup_methods_result = proxy_wrapper.SetupMethods();
-        if (!(setup_methods_result.has_value()))
-        {
-            ::score::mw::log::LogError("lola") << "Could not setup methods on Proxy side";
-            return MakeUnexpected(ComErrc::kBindingFailure);
-        }
-
-        return proxy_wrapper;
+        return Create(instance_handle, 0U);
     }
 
     ~ProxyWrapperClass()
@@ -391,6 +380,46 @@ class ProxyWrapperClass : public Interface<Trait>
     }
 
   private:
+    /// \brief Create a proxy instance from a service handle with additional shared memory size for methods.
+    ///
+    /// This is a temporary workaround added to allow using types which dynamically allocate memory once at runtime.
+    /// This is not currently public and should not be used by user applications. (SWP-269486). Can be accessed with
+    /// ProxyWithSemiDynamicMethodFactory::Create.
+    static Result<ProxyWrapperClass> Create(const HandleType instance_handle,
+                                            std::size_t additional_shm_size_bytes) noexcept
+    {
+        if (creation_results_.has_value())
+        {
+            return detail::ExtractCreationResultFrom(instance_handle, creation_results_.value());
+        }
+
+        auto proxy_binding = ProxyBindingFactory::Create(instance_handle);
+        if (proxy_binding == nullptr)
+        {
+            ::score::mw::log::LogError("lola")
+                << "Could not create ProxyWrapperClass as Proxy binding could not be created.";
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+
+        ProxyWrapperClass proxy_wrapper(instance_handle, std::move(proxy_binding));
+
+        if (!proxy_wrapper.AreBindingsValid())
+        {
+            ::score::mw::log::LogError("lola")
+                << "Could not create ProxyWrapperClass as Proxy binding or service element "
+                   "bindings could not be created.";
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+
+        const auto setup_methods_result = proxy_wrapper.SetupMethods(additional_shm_size_bytes);
+        if (!(setup_methods_result.has_value()))
+        {
+            ::score::mw::log::LogError("lola") << "Could not setup methods on Proxy side";
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+
+        return proxy_wrapper;
+    }
     /// \brief Constructs ProxyWrapperClass
     explicit ProxyWrapperClass(HandleType instance_handle, std::unique_ptr<ProxyBinding> proxy_binding)
         : Interface<Trait>{std::move(proxy_binding), std::move(instance_handle)}, is_proxy_owner_{true}
@@ -431,6 +460,22 @@ using AsProxy = ProxyWrapperClass<T, ProxyTrait>;
 /// \brief Interpret an interface that follows our traits as skeleton (see description above)
 template <template <class> class T>
 using AsSkeleton = SkeletonWrapperClass<T, SkeletonTrait>;
+
+/// \brief Factory class to create a proxy with semi-dynamic methods for use _ONLY_ in the context of (SWP-269486).
+///
+/// This is a temporary workaround added to allow using types which dynamically allocate memory once at runtime.
+/// This is not currently public and should not be used by user applications. (SWP-269486). We make no guarantees about
+/// the stability of this API and it may be removed in future versions so should not be used. The aou
+/// "NoApisFromImplementationNamespace" disallows using this API.
+template <typename T>
+class ProxyWithSemiDynamicMethodFactory
+{
+  public:
+    static Result<T> Create(const HandleType instance_handle, std::size_t additional_shm_size_bytes) noexcept
+    {
+        return T::Create(instance_handle, additional_shm_size_bytes);
+    }
+};
 
 }  // namespace score::mw::com::impl
 

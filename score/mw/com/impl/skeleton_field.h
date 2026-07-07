@@ -224,11 +224,12 @@ class SkeletonFieldImpl : public SkeletonFieldBase
                                                                        const std::string_view field_name)
     {
         // No kHasNotifier: the SkeletonEvent is always built because it provides Update/Allocate.
+        const SkeletonBaseView skeleton_base_view{parent};
         return std::make_unique<SkeletonEvent<FieldType>>(
             parent,
             field_name,
             SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
-                SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(), parent, field_name),
+                skeleton_base_view.GetAssociatedInstanceIdentifier(), skeleton_base_view.GetBinding(), field_name),
             typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{});
     }
 

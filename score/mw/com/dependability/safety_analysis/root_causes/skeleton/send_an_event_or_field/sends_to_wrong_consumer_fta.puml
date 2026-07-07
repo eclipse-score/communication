@@ -17,7 +17,7 @@
 
 $TopEvent("Sends to wrong consumer", "Communication.SendingEventSendsToWrongConsumer")
 
-$OrGate("Gate1", "TopEvent")
+$OrGate("Gate1", "Communication.SendingEventSendsToWrongConsumer")
 $IntermediateEvent("Writing Data into totally wrong Shared Memory segment", "Event1", "Gate1")
 $IntermediateEvent("Writing data into wrong slot", "Event2", "Gate1")
 

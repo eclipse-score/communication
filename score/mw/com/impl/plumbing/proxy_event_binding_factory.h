@@ -14,15 +14,17 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_PROXY_EVENT_BINDING_FACTORY_H
 
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
+#include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/plumbing/i_proxy_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_event_binding_factory_impl.h"
-#include "score/mw/com/impl/proxy_base.h"
+#include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
 #include <score/overload.hpp>
 
 #include <memory>
 #include <string_view>
+#include <utility>
 
 namespace score::mw::com::impl
 {
@@ -34,11 +36,12 @@ class ProxyEventBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyEventBindingFactory.
-    static std::unique_ptr<ProxyEventBinding<SampleType>> Create(ProxyBase& parent,
+    static std::unique_ptr<ProxyEventBinding<SampleType>> Create(HandleType parent_handle,
+                                                                 ProxyBinding& parent_binding,
                                                                  std::string_view event_name,
                                                                  const ServiceElementType service_element_type)
     {
-        return instance().Create(parent, event_name, service_element_type);
+        return instance().Create(std::move(parent_handle), parent_binding, event_name, service_element_type);
     }
 
     /// \brief Inject a mock IProxyEventBindingFactory. If a mock is injected, then all calls on
@@ -59,11 +62,12 @@ class GenericProxyEventBindingFactory final
 {
   public:
     /// \brief See documentation in IGenericProxyEventBindingFactory.
-    static std::unique_ptr<GenericProxyEventBinding> Create(ProxyBase& parent,
+    static std::unique_ptr<GenericProxyEventBinding> Create(HandleType parent_handle,
+                                                            ProxyBinding& parent_binding,
                                                             std::string_view event_name,
                                                             const ServiceElementType service_element_type)
     {
-        return instance().Create(parent, event_name, service_element_type);
+        return instance().Create(std::move(parent_handle), parent_binding, event_name, service_element_type);
     }
 
     /// \brief Inject a mock IGenericProxyEventBindingFactory. If a mock is injected, then all calls on

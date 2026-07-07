@@ -87,6 +87,9 @@ cc_library(
     srcs = ["runtime_configuration.cpp"],
     hdrs = ["runtime_configuration.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/mw/log",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -95,7 +98,6 @@ cc_library(
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory:string_literal",
-        "@score_baselibs//score/mw/log",
     ],
 )
 

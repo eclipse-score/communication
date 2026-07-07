@@ -105,6 +105,7 @@ cc_unit_test(
     deps = [
         ":skeleton_method_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
@@ -116,6 +117,9 @@ cc_library(
     srcs = ["binding_runtime_factory.cpp"],
     hdrs = ["binding_runtime_factory.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/plumbing:__subpackages__",
@@ -125,7 +129,6 @@ cc_library(
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/concurrency:executor",
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -628,11 +631,12 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
+        "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
-        # Removed unnecessary dependency
         "//score/mw/com/impl:i_generic_skeleton_event_binding_factory",
+        "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
     ],
 )
 
@@ -768,6 +772,7 @@ cc_unit_test(
     deps = [
         ":proxy_method_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
@@ -782,6 +787,7 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
     ],
@@ -818,6 +824,8 @@ cc_unit_test(
     deps = [
         ":skeleton_event_binding_factory",
         ":skeleton_field_binding_factory",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
     ],
