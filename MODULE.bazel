@@ -26,19 +26,15 @@ bazel_dep(name = "rules_rust", version = "0.68.1-score")
 
 # Cannot be dev-dependency due to being required in "load" statements
 bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
-bazel_dep(name = "score_baselibs", version = "0.2.7")
-git_override(
+bazel_dep(name = "score_baselibs", version = "0.2.9")
+single_version_override(
     module_name = "score_baselibs",
-    # Required until a new release of baselibs is available that includes the tracing API
-    commit = "8d4e0847424a565846e7a8a24c4c0018e3b14da9",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
     patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
-    remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
-bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.10", repo_name = "score_communication_crate_index")
 
@@ -387,13 +383,7 @@ single_version_override(
     patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
 )
 
-bazel_dep(name = "score_docs_as_code", version = "3.0.1", dev_dependency = True)
-
-# Force score_docs_as_code to 3.0.1 to resolve compatibility conflict between score_logging and score_baselibs
-single_version_override(
-    module_name = "score_docs_as_code",
-    version = "3.0.1",
-)
+bazel_dep(name = "score_docs_as_code", version = "4.6.0", dev_dependency = True)
 
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension", dev_dependency = True)
