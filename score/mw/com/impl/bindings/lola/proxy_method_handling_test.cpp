@@ -20,6 +20,8 @@
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_element_id.h"
 #include "score/mw/com/impl/configuration/lola_service_id.h"
@@ -112,6 +114,31 @@ const LolaServiceTypeDeployment kLolaServiceTypeDeploymentWithMethods{
     {},
     {},
     {{kDummyMethodName0, kDummyMethodId0}, {kDummyMethodName1, kDummyMethodId1}, {kDummyMethodName2, kDummyMethodId2}}};
+
+const std::string kDummyFieldName0{"my_dummy_field_0"};
+constexpr LolaServiceElementId kDummyFieldId0{20U};
+const std::string kDummyFieldName1{"my_dummy_field_1"};
+constexpr LolaServiceElementId kDummyFieldId1{21U};
+const std::string kDummyFieldName2{"my_dummy_field_2"};
+constexpr LolaServiceElementId kDummyFieldId2{22U};
+const std::string kDummyFieldName3{"my_dummy_field_3"};
+constexpr LolaServiceElementId kDummyFieldId3{23U};
+const LolaEventInstanceDeployment kFieldEventInstanceDeployment(LolaEventInstanceDeployment::SampleSlotCountType{1U},
+                                                                LolaEventInstanceDeployment::SubscriberCountType{1U},
+                                                                std::uint8_t{1U},
+                                                                true,
+                                                                LolaEventInstanceDeployment::TracingSlotSizeType{0U});
+const LolaServiceTypeDeployment kLolaServiceTypeDeploymentWithField{kLolaServiceId,
+                                                                    {},
+                                                                    {{kDummyFieldName0, kDummyFieldId0}},
+                                                                    {}};
+const LolaServiceTypeDeployment kLolaServiceTypeDeploymentWithFields{kLolaServiceId,
+                                                                     {},
+                                                                     {{kDummyFieldName0, kDummyFieldId0},
+                                                                      {kDummyFieldName1, kDummyFieldId1},
+                                                                      {kDummyFieldName2, kDummyFieldId2},
+                                                                      {kDummyFieldName3, kDummyFieldId3}},
+                                                                     {}};
 
 const std::optional<DataTypeSizeInfo> kEmptyInArgsTypeErasedDataInfo{};
 const std::optional<DataTypeSizeInfo> kEmptyReturnTypeTypeErasedDataInfo{};
@@ -221,6 +248,37 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
                                                                                  {method_id, method_type}};
             proxy_method_storage_.emplace_back(*proxy_, proxy_method_instance_identifier, type_erased_element_info);
         }
+        return *this;
+    }
+
+    ProxyMethodHandlingFixture& GivenAConfigurationWithField(const bool use_get_if_available,
+                                                             const bool use_set_if_available)
+    {
+        configuration_store_ = std::make_unique<ConfigurationStore>(
+            ConfigurationStore{InstanceSpecifier::Create(std::string{"my_instance_spec"}).value(),
+                               make_ServiceIdentifierType("foo"),
+                               QualityType::kASIL_B,
+                               kLolaServiceTypeDeploymentWithField,
+                               LolaServiceInstanceDeployment{
+                                   LolaServiceInstanceId{kLolaInstanceId},
+                                   {},
+                                   {{kDummyFieldName0,
+                                     LolaFieldInstanceDeployment{
+                                         kFieldEventInstanceDeployment, use_get_if_available, use_set_if_available}}},
+                                   {}}});
+        return *this;
+    }
+
+    ProxyMethodHandlingFixture& GivenAConfigurationWithMultipleFields(
+        const LolaServiceTypeDeployment& service_type_deployment,
+        LolaServiceInstanceDeployment::FieldInstanceMapping fields)
+    {
+        configuration_store_ = std::make_unique<ConfigurationStore>(ConfigurationStore{
+            InstanceSpecifier::Create(std::string{"my_instance_spec"}).value(),
+            make_ServiceIdentifierType("foo"),
+            QualityType::kASIL_B,
+            service_type_deployment,
+            LolaServiceInstanceDeployment{LolaServiceInstanceId{kLolaInstanceId}, {}, std::move(fields), {}}});
         return *this;
     }
 
@@ -379,6 +437,96 @@ TEST_F(ProxyMethodHandlingFixture, SetsInArgsAndReturnStoragesForEachMethodInShm
     {
         score::cpp::ignore = method.GetInArgsBuffer(0);
     }
+}
+
+TEST_F(ProxyMethodHandlingFixture, FieldMethodsAreCreatedInShmOnlyForEnabledCombinations)
+{
+    // Given 4 fields covering all combinations of Get/Set enabled/disabled in config,
+    // with the enabled method variants registered as proxy methods:
+    //   field0: Get=true,  Set=true  -> both queued
+    //   field1: Get=true,  Set=false -> Get only
+    //   field2: Get=false, Set=true  -> Set only
+    //   field3: Get=false, Set=false -> neither queued
+    GivenAConfigurationWithMultipleFields(
+        kLolaServiceTypeDeploymentWithFields,
+        {{kDummyFieldName0, LolaFieldInstanceDeployment{kFieldEventInstanceDeployment, true, true}},
+         {kDummyFieldName1, LolaFieldInstanceDeployment{kFieldEventInstanceDeployment, true, false}},
+         {kDummyFieldName2, LolaFieldInstanceDeployment{kFieldEventInstanceDeployment, false, true}},
+         {kDummyFieldName3, LolaFieldInstanceDeployment{kFieldEventInstanceDeployment, false, false}}})
+        .GivenAProxy()
+        .GivenAFakeSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kEmptyInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kGet},
+             {kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kEmptyReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kSet},
+             {kDummyFieldId1,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kEmptyInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kGet},
+             {kDummyFieldId2,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kEmptyReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kSet}});
+
+    // When setting up methods
+    score::cpp::ignore = proxy_->SetupMethods();
+
+    // Then the shm contains exactly the enabled method call queues:
+    // field0 Get+Set,
+    //  field1 Get only,
+    //  field2 Set only;
+    //  field3 (both disabled) is absent
+    const auto& method_data = GetMethodDataFromShm();
+    EXPECT_THAT(method_data.method_call_queues_,
+                UnorderedElementsAre(Pair(UniqueMethodIdentifier{kDummyFieldId0, MethodType::kGet}, _),
+                                     Pair(UniqueMethodIdentifier{kDummyFieldId0, MethodType::kSet}, _),
+                                     Pair(UniqueMethodIdentifier{kDummyFieldId1, MethodType::kGet}, _),
+                                     Pair(UniqueMethodIdentifier{kDummyFieldId2, MethodType::kSet}, _)));
+}
+
+TEST_F(ProxyMethodHandlingFixture, FieldGetNotRegisteredDoesAbort)
+{
+    // Given a field whose Get and Set are enabled in config, but only the Set was registered (Get unregistered
+    // showcasing a programming bug).
+    auto use_get_if_available = true;
+    auto use_set_if_available = true;
+    GivenAConfigurationWithField(use_get_if_available, use_set_if_available)
+        .GivenAProxy()
+        .GivenAFakeSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kValidInArgsTypeErasedDataInfo, kEmptyReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kSet}});
+
+    // When setting up methods.
+    // Then the program terminates.
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(proxy_->SetupMethods());
+}
+
+TEST_F(ProxyMethodHandlingFixture, FieldSetNotRegisteredDoesAbort)
+{
+    // Given a field whose Get and Set are enabled in config, but only the Get was registered (Set unregistered
+    // showcasing a programming bug).
+    auto use_get_if_available = true;
+    auto use_set_if_available = true;
+    GivenAConfigurationWithField(use_get_if_available, use_set_if_available)
+        .GivenAProxy()
+        .GivenAFakeSharedMemoryResource()
+        .WithRegisteredProxyMethods(
+            {{kDummyFieldId0,
+              TypeErasedCallQueue::TypeErasedElementInfo{
+                  kEmptyInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0},
+              MethodType::kGet}});
+
+    // When setting up methods.
+    // Then the program terminates.
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(proxy_->SetupMethods());
 }
 
 TEST_F(ProxyMethodHandlingFixture, CreatesSharedMemoryWithUserPermissionsContainingSkeletonApplicationId)
