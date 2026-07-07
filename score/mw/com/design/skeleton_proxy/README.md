@@ -94,6 +94,12 @@ The following sequence shows the instantiation of a service class up to its serv
 
 #### Binding independent level Registration of skeleton events/fields/methods at their parent skeleton
 
+On construction, the generated skeleton (`DummySkeleton`) checks that all the bindings of its contained service elements
+(events/fields/methods) are valid. This is done by calling the `AreBindingsValid()` on `SkeletonBase`. This will then 
+iterate over the maps of references to its service elements described [below](#binding-independent-level-registration-of-skeleton-eventsfields-at-their-parent-skeleton) 
+and check if each binding was successfully created. If this is not the case, the construction of the skeleton instance 
+returns an error.
+
 Due to our architectural constraints, the `impl::SkeletonBase` (the base class of the generated skeleton/`DummySkeleton`)
 doesn't "know" its event/field/method children. Because events/fields/methods are the members of the generated skeleton
 and not the `impl::SkeletonBase`. But for various functionalities, we require the `impl::SkeletonBase` to have access to
@@ -203,23 +209,12 @@ On `ProxyBase` level we have two types of methods:
   a generated proxy instance, to detect, whether the instance can be successfully returned from
   `static Result<generated proxy class> <generated proxy class>::Create()` or not.
 
-The implementation of the latter one contains some indirection &ndash; again due to our architectural constraints, which
-are the same at proxy and skeleton side and have been laid out
-[here on the skeleton side](#binding-independent-level-registration-of-skeleton-eventsfields-at-their-parent-skeleton).
-
-The indirection is that for `ProxyBase::AreBindingsValid()` to work, the binding independent `impl::ProxyEvent`s set
-the member of its semantic parent `ProxyBase::are_service_element_bindings_valid_` to `false` during their construction,
-if they detect, that they don't have a valid underlying `pImpl` member of type `ProxyEventBindingBase` to dispatch to.
-This is an indication, that the binding specific implementation of the `ProxyEvent` couldn't be successfully created by
-the proxy side factories.
-
-So, the binding independent `impl::ProxyBase` doesn't "know" its semantically aggregated `ProxyEvent`s.
-Although the `ProxyEvent`s get a reference to their parent `ProxyBase` during construction (and therefore "know" their
-parent in the context of their `ctor`), they don't store this reference (as it isn't really needed currently and
-would require additional logic to update this reference if the parent `impl::ProxyBase` gets moved).
-Instead, they only set once (see above) the `ProxyBase::are_service_element_bindings_valid_` member variable of their
-parent during construction as this is currently the only feedback needed between proxy and its proxy events on binding
-independent level.
+Similarly to the skeleton side, the `impl::ProxyBase` doesn't "know" its event/field/method children. Therefore,
+the `impl::ProxyEventBase` registers itself with the `impl::ProxyBase` in the same way as `impl::SkeletonEventBase`
+(as explained
+[here on the skeleton side](#binding-independent-level-registration-of-skeleton-eventsfields-at-their-parent-skeleton). 
+It will then call `impl::ProxyBase::GetConstructionResult()` and will return a valid proxy to the user if none of the 
+bindings received an error from the binding factory when trying to construct the binding.
 
 #### Binding level Registration of proxy events/fields at their parent proxy
 

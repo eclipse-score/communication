@@ -34,15 +34,16 @@ namespace score::mw::com::impl
 // Initialization of static thread_local variables!
 thread_local bool ProxyEventBase::is_in_receive_handler_context = false;
 
-// Suppress "AUTOSAR C++14 A3-1-1", The rule states: "It shall be possible to include any header file
-// in multiple translation units without violating the One Definition Rule."
-// This is false positive. Function is declared only once.
-// coverity[autosar_cpp14_a3_1_1_violation]
-
 ProxyEventBase::ProxyEventBase(std::string_view event_name,
-                               std::unique_ptr<ProxyEventBindingBase> proxy_event_binding) noexcept
+                               Result<std::unique_ptr<ProxyEventBindingBase>> proxy_event_binding) noexcept
     : EnableReferenceToMoveableFromThis<ProxyEventBase>(),
-      binding_base_{std::move(proxy_event_binding)},
+      binding_construction_result_{},
+      binding_base_{std::move(proxy_event_binding)
+                        .or_else([this](auto&& error) -> Result<std::unique_ptr<ProxyEventBindingBase>> {
+                            binding_construction_result_ = Unexpected{error};
+                            return nullptr;
+                        })
+                        .value()},
       event_name_{event_name},
       tracker_{std::make_unique<SampleReferenceTracker>()},
       tracing_data_{},

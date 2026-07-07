@@ -51,28 +51,22 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
 
   public:
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
-        : ProxyMethod(proxy_base,
-                      method_name,
-                      ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
-                                                                           ProxyBaseView{proxy_base}.GetBinding(),
-                                                                           method_name,
-                                                                           MethodType::kMethod))
-    {
-    }
-
-    ProxyMethod(ProxyBase& proxy_base,
-                std::string_view method_name,
-                std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
-        : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kMethod),
+        : ProxyMethodBase(method_name,
+                          ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                               ProxyBaseView{proxy_base}.GetBinding(),
+                                                                               method_name,
+                                                                               MethodType::kMethod),
+                          MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
-        if (binding_ == nullptr)
-        {
-            proxy_base_view.MarkServiceElementBindingInvalid();
-            return;
-        }
+    }
+
+    ProxyMethod(std::string_view method_name, std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
+        : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kMethod),
+          are_in_arg_ptrs_active_(kCallQueueSize)
+    {
     }
 
     ~ProxyMethod() final = default;
@@ -92,6 +86,12 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
     /// returned.
     score::Result<std::tuple<impl::MethodInArgPtr<ArgTypes>...>> Allocate()
     {
+        if (binding_ == nullptr)
+        {
+            score::mw::log::LogError("lola")
+                << "ProxyMethod::Allocate: Binding is not initialized for method " << method_name_;
+            return Unexpected(ComErrc::kMethodBindingDisabled);
+        }
         return detail::AllocateImpl<ArgTypes...>(*binding_, are_in_arg_ptrs_active_, is_return_type_ptr_active_);
     };
 
@@ -128,6 +128,12 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
 template <typename... ArgTypes>
 score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(const ArgTypes&... args)
 {
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola") << "ProxyMethod::operator(): Binding is not initialized for method "
+                                         << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     auto allocate_result = Allocate();
     if (!allocate_result.has_value())
     {
@@ -148,6 +154,12 @@ score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(const ArgTypes&..
 template <typename... ArgTypes>
 score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(MethodInArgPtr<ArgTypes>... args)
 {
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola") << "ProxyMethod::operator(): Binding is not initialized for method "
+                                         << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     auto queue_position = detail::GetCommonQueuePosition(args...);
     auto call_result = binding_->DoCall(queue_position);
     if (!call_result.has_value())
@@ -160,7 +172,12 @@ score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(MethodInArgPtr<Ar
 template <typename... ArgTypes>
 Result<void> ProxyMethod<void(ArgTypes...)>::InitializeInArgsAndReturnValues(ProxyBinding& proxy_binding)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola")
+            << "ProxyMethod::InitializeInArgsAndReturnValues: Binding is not initialized for method " << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     const auto init_in_args_result = detail::InitializeInArgs<ArgTypes...>(proxy_binding, *binding_, kCallQueueSize);
     if (!init_in_args_result.has_value())
     {

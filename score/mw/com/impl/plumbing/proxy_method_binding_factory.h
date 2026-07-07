@@ -41,10 +41,10 @@ class ProxyMethodBindingFactory<ReturnType(ArgTypes...)> final
 {
   public:
     /// \brief See documentation in IProxyMethodBindingFactory.
-    static std::unique_ptr<ProxyMethodBinding> Create(HandleType parent_handle,
-                                                      ProxyBinding& parent_binding,
-                                                      const std::string_view method_name,
-                                                      MethodType method_type) noexcept
+    static Result<std::unique_ptr<ProxyMethodBinding>> Create(HandleType parent_handle,
+                                                              ProxyBinding& parent_binding,
+                                                              const std::string_view method_name,
+                                                              MethodType method_type) noexcept
     {
         return instance().Create(parent_handle, parent_binding, method_name, method_type);
     }
@@ -78,6 +78,7 @@ auto ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::instance() noexcept -> 
 
 template <typename ReturnType, typename... ArgTypes>
 IProxyMethodBindingFactory* ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::mock_{nullptr};
+
 }  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_PLUMBING_PROXY_METHOD_BINDING_FACTORY_H

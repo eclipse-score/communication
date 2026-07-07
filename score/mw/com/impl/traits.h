@@ -393,11 +393,17 @@ class ProxyWrapperClass : public Interface<Trait>
             return detail::ExtractCreationResultFrom(instance_handle, creation_results_.value());
         }
 
-        auto proxy_binding = ProxyBindingFactory::Create(instance_handle);
-        if (proxy_binding == nullptr)
+        auto proxy_binding_result = ProxyBindingFactory::Create(instance_handle);
+        if (!proxy_binding_result.has_value())
         {
             ::score::mw::log::LogError("lola")
-                << "Could not create ProxyWrapperClass as Proxy binding could not be created.";
+                << "Could not create Proxy as binding failed with error: " << proxy_binding_result.error();
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+        auto proxy_binding = std::move(proxy_binding_result).value();
+        if (proxy_binding == nullptr)
+        {
+            ::score::mw::log::LogError("lola") << "Could not create Proxy as binding is null.";
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
@@ -405,9 +411,8 @@ class ProxyWrapperClass : public Interface<Trait>
 
         if (!proxy_wrapper.AreBindingsValid())
         {
-            ::score::mw::log::LogError("lola")
-                << "Could not create ProxyWrapperClass as Proxy binding or service element "
-                   "bindings could not be created.";
+            ::score::mw::log::LogError("lola") << "Could not create ProxyWrapperClass as Proxy service element "
+                                                  "bindings could not be created.";
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 

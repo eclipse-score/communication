@@ -43,8 +43,8 @@ class IProxyBindingFactory
     ///
     /// \param handle A handle that describes the desired service instance location that this proxy instance shall
     ///               connect to.
-    /// \return An instantiated ProxyBinding, or nullptr in case the instantiation failed for some reason.
-    virtual std::unique_ptr<ProxyBinding> Create(const HandleType& handle) noexcept = 0;
+    /// \return An instantiated ProxyBinding on success, or an error otherwise.
+    virtual Result<std::unique_ptr<ProxyBinding>> Create(const HandleType& handle) noexcept = 0;
 };
 
 }  // namespace score::mw::com::impl
