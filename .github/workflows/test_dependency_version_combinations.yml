@@ -16,6 +16,9 @@ name: "Test Dependency Version Combinations (Host)"
 on:
   schedule:
     - cron: "0 0 * * *" # every day at midnight UTC
+  # TODO used for testing - remove before merge
+  pull_request:
+    types: [ opened, reopened, synchronize ]
   workflow_dispatch:
 
 jobs:
