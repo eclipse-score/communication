@@ -35,7 +35,6 @@ single_version_override(
     patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
 )
 
-bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.10", repo_name = "score_communication_crate_index")
 

@@ -32,7 +32,7 @@ rust_library(
         "//visibility:public",  # platform_only
     ],
     deps = [
-        "@score_baselibs_rust//src/containers",
+        "@score_baselibs//src/containers",
         "@score_communication_crate_index//:futures",
         "@score_communication_crate_index//:thiserror",
     ],
