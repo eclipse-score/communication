@@ -13,11 +13,19 @@
 
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@score_tooling//:defs.bzl", "copyright_checker")
 load("//tools/lint:linters.bzl", "use_clang_tidy_targets")
 
 exports_files(["MODULE.bazel"])
+
+sphinx_docs_library(
+    name = "contributing_md",
+    srcs = ["CONTRIBUTING.md"],
+    prefix = "docs/sphinx/",  # Place under sphinx out folder
+    visibility = ["//docs/sphinx:__pkg__"],
+)
 
 compile_pip_requirements(
     name = "pip_requirements",

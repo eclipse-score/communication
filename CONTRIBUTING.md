@@ -1,4 +1,4 @@
-# Contributing to the Communication Module
+# Contributing
 
 - Thank you for your interest in contributing to the Communication Module of the Eclipse SCORE project!
 - This guide will walk you through the necessary steps to get started with development, adhere to our standards, and successfully submit your contributions.
@@ -160,5 +160,92 @@ bazel test //score/mw/com/message_passing:all
 ## Additional Resources
 
 For project details, documentation, and support resources, please refer to the main [README.md](README.md).
+
+---
+
+## How to Document
+
+This section explains how to document C++ code so it appears in the generated API documentation.
+
+> API documentation is generated using Doxygen and integrated via Breathe.
+> Due to Sphinx version < 9.x limitations with complex C++ templates, use specific class
+> and function directives rather than namespace-level documentation.
+
+### Automatic API Documentation with @api Tag
+
+The project includes an automated RST generation utility that extracts items
+tagged with `@api` in Doxygen comments and generates categorized documentation.
+
+Add the `@api` tag to any Doxygen comment block to include it in the generated API documentation:
+
+```cpp
+/**
+ * @brief Connection handler for client communication
+ * @api
+ */
+class ClientConnection {
+    // ...
+};
+
+/**
+ * @brief Initialize the communication system
+ * @return true if successful
+ * @api
+ */
+bool initialize();
+```
+
+The utility automatically creates:
+
+- **API Index** — overview of all tagged items
+- **Namespace Reference** — namespaces containing `@api` items
+- **Class Reference** — classes and structs with `@api` tag
+- **Member Reference** — functions and methods with `@api` tag
+
+Build integration:
+
+```starlark
+generate_api_rst(
+    name = "generate_api_rst",
+    doxygen_xml = "//path/to:doxygen_target",
+    output_dir = "generated",
+    project_name = "mw::com",
+)
+```
+
+The generated RST files are automatically included in the Sphinx documentation
+under the "Generated API Documentation" section.
+
+### Using Breathe Directives
+
+To document specific classes or functions, use these Breathe directives in RST files:
+
+**Document a specific class:**
+
+```rst
+.. doxygenclass:: score::message_passing::detail::ClientConnection
+    :members:
+    :protected-members:
+    :undoc-members:
+```
+
+**Document a specific function:**
+
+```rst
+.. doxygenfunction:: score::mw::com::functionName
+```
+
+**Document a struct:**
+
+```rst
+.. doxygenstruct:: score::mw::com::ConfigStruct
+    :members:
+```
+
+### Further Resources
+
+- Browse the Doxygen-generated HTML at `bazel-bin/score/mw/com/design/doxygen_build/html/index.html`
+- Review header files in `score/mw/com/` for inline documentation
+- Check the design documentation at `score/mw/com/design/`
 
 **Thank you for contributing to the Eclipse SCORE Communication Module!**

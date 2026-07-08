@@ -69,18 +69,19 @@ sphinx_module(
     testonly = True,
     srcs =
         [
-            "how_to_document.rst",
             "index.rst",
-            "introduction.rst",
+            "lola.rst",
             "message_passing.rst",
             "quality_reports.rst",
-            "safety_reports.rst",
             ":doxygen_xml",
             ":generate_api_rst",
             ":quality_links",
             ":static_assets",
         ],
     docs_library_deps = [
+        "//score/mw/com/dependability:mw_com_rst",
+        "//score/message_passing/dependability:dependable_element_message_passing_rst",
+        "//:contributing_md",
         "//score/mw/com:readme_md",
     ],
     exec_compatible_with = ["@platforms//os:linux"],
@@ -94,8 +95,5 @@ sphinx_module(
     index = "index.rst",
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
-    deps = [
-        "//score/message_passing/dependability:dependable_element_message_passing_doc",
-        "//score/mw/com/dependability:mw_com_doc",
-    ],
+    deps = [],
 )
