@@ -48,9 +48,10 @@ TEST(CopyableAtomicTest, SelfAssigningCopyableAtomicWillNotModifyStoredValue)
     // Given a CopyableAtomic storing a value
     const bool initial_value{true};
     auto unit = CopyableAtomic<bool>(initial_value);
+    auto& self_alias = unit;
 
-    // When assigning the CopyableAtomic to itself
-    unit = unit;
+    // When assigning through an alias that refers to the same object
+    unit = self_alias;
 
     // Then the CopyableAtomic will still store the same value
     EXPECT_EQ(unit, initial_value);
