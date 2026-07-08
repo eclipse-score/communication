@@ -49,16 +49,6 @@ jobs:
           cache-mode: 'read-only'
           ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
-      - uses: ./.github/actions/01_integration/adjust_bazel_version
-        with:
-          bazelversion-file: "examples/.bazelversion"
-          version: ${{ matrix.bazel_version }}
-
-      - uses: ./.github/actions/01_integration/adjust_bazel_version
-        with:
-          bazelversion-file: ".bazelversion"
-          version: ${{ matrix.bazel_version }}
-
       - uses: ./.github/actions/01_integration/adjust_bazel_dep_version
         with:
           module-file: "examples/MODULE.bazel"
@@ -114,12 +104,18 @@ jobs:
         run: cat MODULE.bazel
 
       - name: Reformat MODULE.bazel to pass formatting check
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
         run: bazel run //:format_Starlark_with_buildifier
 
       - name: Build module
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
         run: bazel build //... && bazel test //... --build_tests_only
 
       - name: Build examples
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
         run: cd examples && bazel build //... && bazel mod deps --lockfile_mode=update
 
       - name: Persist matrix result
