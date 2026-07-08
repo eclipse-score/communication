@@ -294,5 +294,60 @@ TEST_F(ServiceDiscoveryClientStopFindServiceFixture,
     score::cpp::ignore = service_discovery_client_->StopFindService(handle_1);
 }
 
+TEST_F(ServiceDiscoveryClientStopFindServiceFixture, StopFindServiceForNeverStartedHandleDoesNotTerminate)
+{
+    std::promise<void> stop_find_service_called_barrier{};
+    auto stop_find_service_called_future = stop_find_service_called_barrier.get_future();
+    std::promise<void> processing_complete_barrier{};
+
+    // The worker thread blocks in the first Read() until StopFindService is called, then returns empty events.
+    EXPECT_CALL(inotify_instance_mock_, Read())
+        .WillOnce([&stop_find_service_called_future]() {
+            stop_find_service_called_future.wait();
+            return score::cpp::static_vector<os::InotifyEvent, os::InotifyInstance::max_events>{};
+        })
+        .WillOnce([&processing_complete_barrier]() {
+            processing_complete_barrier.set_value();
+            return score::cpp::static_vector<os::InotifyEvent, os::InotifyInstance::max_events>{};
+        })
+        .WillRepeatedly(Return(score::cpp::static_vector<os::InotifyEvent, os::InotifyInstance::max_events>{}));
+
+    // Given a ServiceDiscoveryClient
+    WhichContainsAServiceDiscoveryClient();
+
+    // When StopFindService is called for a handle that was never passed to StartFindService
+    const FindServiceHandle never_started_handle{make_FindServiceHandle(99U)};
+    EXPECT_TRUE(service_discovery_client_->StopFindService(never_started_handle).has_value());
+    stop_find_service_called_barrier.set_value();
+
+    // Then the worker thread processes the stop request without terminating
+    processing_complete_barrier.get_future().wait();
+}
+
+TEST_F(ServiceDiscoveryClientStopFindServiceFixture, StopFindServiceForFindAnySearchErasesServiceDirectoryWatch)
+{
+    std::promise<void> watch_removed_barrier{};
+
+    // Expecting that a watch is removed when StopFindService is called for a find-any search
+    EXPECT_CALL(inotify_instance_mock_, RemoveWatch(_)).WillOnce([this, &watch_removed_barrier](auto watch_descriptor) {
+        watch_removed_barrier.set_value();
+        return inotify_instance_->RemoveWatch(watch_descriptor);
+    });
+
+    // Given a ServiceDiscoveryClient with an active find-any StartFindService call
+    FindServiceHandle handle{make_FindServiceHandle(1U)};
+    WhichContainsAServiceDiscoveryClient().WithAnActiveStartFindService(kConfigStoreFindAny.GetInstanceIdentifier(),
+                                                                        handle);
+
+    // When calling StopFindService for the find-any handle (service directory watch has no instance ID)
+    ASSERT_TRUE(service_discovery_client_->StopFindService(handle).has_value());
+
+    // Trigger an inotify event to unblock the worker thread so it processes the obsolete search request
+    CreateRegularFile(filesystem_, GenerateExpectedServiceDirectoryPath(kServiceId) / "trigger");
+
+    // Then the watch on the service directory is removed (exercising EraseWatch without instance-ID path)
+    watch_removed_barrier.get_future().wait();
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola::test
