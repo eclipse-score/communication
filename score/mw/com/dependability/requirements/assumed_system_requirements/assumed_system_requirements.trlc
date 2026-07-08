@@ -10,11 +10,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-package AssumedSystemRequirements
+package Communication
 
 import ScoreReq
 
-ScoreReq.AssumedSystemReq ErrorHandling {
+ScoreReq.AssumedSystemReq SystemErrorHandling {
     description = """(C++) exceptions shall not be used for error handling.
 The best way to deal with errors is to try to resolve those component internally. If not possible the caller of the function shall be notified of the error.
 For (error) returns there is a specific library to be used in S-CORE, it is the Score::Result library which is part of
@@ -52,7 +52,7 @@ ScoreReq.AssumedSystemReq ExtensibleExternalCommunication {
     version = 1
 }
 
-ScoreReq.AssumedSystemReq SafeCommunication {
+ScoreReq.AssumedSystemReq SystemSafeCommunication {
     description = "The platform shall support safe communication."
     safety = ScoreReq.Asil.B
     rationale = "Distributed safe systems often require communication to be safe."
@@ -73,14 +73,14 @@ ScoreReq.AssumedSystemReq SupportForTimeBasedArchitectures {
     version = 1
 }
 
-ScoreReq.AssumedSystemReq SupportForDataDrivenArchitecture {
+ScoreReq.AssumedSystemReq SystemSupportForDataDrivenArchitecture {
     description = "The platform shall support an event-driven, high-throughput application architecture where execution is triggered by data changes."
     safety = ScoreReq.Asil.QM
     rationale = "tbd - potentially above explanation"
     version = 1
 }
 
-ScoreReq.AssumedSystemReq SupportForRequestDrivenArchitecture {
+ScoreReq.AssumedSystemReq SystemSupportForRequestDrivenArchitecture {
     description = "The platform shall support a request-driven, asynchronous application architecture that processes requests on-demand."
     safety = ScoreReq.Asil.QM
     rationale = "tbd - potentially above explanation"
