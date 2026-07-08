@@ -109,20 +109,38 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
         }
     }
 
-    std::unique_ptr<ProxyEventBindingBase> CreateServiceElementBinding(const HandleType& handle,
-                                                                       ProxyBinding& proxy_binding)
+    Result<std::unique_ptr<ProxyEventBindingBase>> CreateServiceElementBinding(const HandleType& handle,
+                                                                               ProxyBinding& proxy_binding)
     {
         switch (service_element_type_)
         {
             case ServiceElementTypes::PROXY_EVENT:
+            {
                 return ProxyEventBindingFactory<TestSampleType>::Create(
-                    handle, proxy_binding, kDummyEventName, ServiceElementType::EVENT);
+                           handle, proxy_binding, kDummyEventName, ServiceElementType::EVENT)
+                    .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBindingBase>> {
+                        return std::unique_ptr<ProxyEventBindingBase>{
+                            static_cast<ProxyEventBindingBase*>(binding.release())};
+                    });
+            }
             case ServiceElementTypes::PROXY_FIELD:
+            {
                 return ProxyFieldBindingFactory<TestSampleType>::CreateEventBinding(
-                    handle, proxy_binding, kDummyFieldName);
+                           handle, proxy_binding, kDummyFieldName)
+                    .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBindingBase>> {
+                        return std::unique_ptr<ProxyEventBindingBase>{
+                            static_cast<ProxyEventBindingBase*>(binding.release())};
+                    });
+            }
             case ServiceElementTypes::GENERIC_PROXY_EVENT:
+            {
                 return GenericProxyEventBindingFactory::Create(
-                    handle, proxy_binding, kDummyGenericProxyEventName, ServiceElementType::EVENT);
+                           handle, proxy_binding, kDummyGenericProxyEventName, ServiceElementType::EVENT)
+                    .and_then([](auto&& binding) -> Result<std::unique_ptr<ProxyEventBindingBase>> {
+                        return std::unique_ptr<ProxyEventBindingBase>{
+                            static_cast<ProxyEventBindingBase*>(binding.release())};
+                    });
+            }
             default:
                 // This should never be reached since we assert the value of element_type_ in service_element_type_()
                 std::terminate();
@@ -161,7 +179,8 @@ TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CanConstructProxyS
     const auto proxy_event = CreateServiceElementBinding(handle, *proxy_);
 
     // Then a valid binding can be created
-    ASSERT_NE(proxy_event, nullptr);
+    ASSERT_TRUE(proxy_event.has_value());
+    ASSERT_NE(proxy_event.value(), nullptr);
 }
 
 TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CannotConstructEventFromBlankBinding)
@@ -174,8 +193,8 @@ TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CannotConstructEve
     mock_binding::Proxy proxy_binding_mock{};
     const auto unit = CreateServiceElementBinding(handle, proxy_binding_mock);
 
-    // Then a nullptr is returned
-    EXPECT_EQ(unit, nullptr);
+    // Then an error is returned
+    EXPECT_FALSE(unit.has_value());
 }
 
 }  // namespace score::mw::com::impl

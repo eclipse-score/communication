@@ -42,19 +42,21 @@ class ProxyFieldBindingFactoryImpl final : public IProxyFieldBindingFactory<Samp
     /// \tparam SampleType Type of the data that is exchanges
     /// \param handle The handle containing the binding information.
     /// \param field_name The binding unspecific name of the event inside the proxy denoted by handle.
-    /// \return An instance of ProxyEventBinding or nullptr in case of an error.
-    std::unique_ptr<ProxyEventBinding<SampleType>> CreateEventBinding(
+    /// \return An instance of ProxyEventBinding or an error in case binding creation fails.
+    Result<std::unique_ptr<ProxyEventBinding<SampleType>>> CreateEventBinding(
         HandleType parent_handle,
         ProxyBinding& parent_binding,
         const std::string_view field_name) noexcept override;
 
-    std::unique_ptr<ProxyMethodBinding> CreateGetMethodBinding(HandleType parent_handle,
-                                                               ProxyBinding& parent_binding,
-                                                               const std::string_view field_name) noexcept override;
+    Result<std::unique_ptr<ProxyMethodBinding>> CreateGetMethodBinding(
+        HandleType parent_handle,
+        ProxyBinding& parent_binding,
+        const std::string_view field_name) noexcept override;
 
-    std::unique_ptr<ProxyMethodBinding> CreateSetMethodBinding(HandleType parent_handle,
-                                                               ProxyBinding& parent_binding,
-                                                               const std::string_view field_name) noexcept override;
+    Result<std::unique_ptr<ProxyMethodBinding>> CreateSetMethodBinding(
+        HandleType parent_handle,
+        ProxyBinding& parent_binding,
+        const std::string_view field_name) noexcept override;
 };
 
 template <typename SampleType>
@@ -66,17 +68,17 @@ template <typename SampleType>
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyFieldBindingFactoryImpl<SampleType>::CreateEventBinding(
-    HandleType parent_handle,
-    ProxyBinding& parent_binding,
-    const std::string_view field_name) noexcept
+inline Result<std::unique_ptr<ProxyEventBinding<SampleType>>>
+ProxyFieldBindingFactoryImpl<SampleType>::CreateEventBinding(HandleType parent_handle,
+                                                             ProxyBinding& parent_binding,
+                                                             const std::string_view field_name) noexcept
 {
     return ProxyEventBindingFactory<SampleType>::Create(
         std::move(parent_handle), parent_binding, field_name, ServiceElementType::FIELD);
 }
 
 template <typename SampleType>
-inline std::unique_ptr<ProxyMethodBinding> ProxyFieldBindingFactoryImpl<SampleType>::CreateGetMethodBinding(
+inline Result<std::unique_ptr<ProxyMethodBinding>> ProxyFieldBindingFactoryImpl<SampleType>::CreateGetMethodBinding(
     HandleType parent_handle,
     ProxyBinding& parent_binding,
     const std::string_view field_name) noexcept
@@ -86,7 +88,7 @@ inline std::unique_ptr<ProxyMethodBinding> ProxyFieldBindingFactoryImpl<SampleTy
 }
 
 template <typename SampleType>
-inline std::unique_ptr<ProxyMethodBinding> ProxyFieldBindingFactoryImpl<SampleType>::CreateSetMethodBinding(
+inline Result<std::unique_ptr<ProxyMethodBinding>> ProxyFieldBindingFactoryImpl<SampleType>::CreateSetMethodBinding(
     HandleType parent_handle,
     ProxyBinding& parent_binding,
     const std::string_view field_name) noexcept

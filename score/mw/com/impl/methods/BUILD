@@ -178,6 +178,7 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/plumbing:proxy_method_binding_factory_mock",
+        "//score/mw/com/impl/test:binding_factory_resources",
         "@googletest//:gtest",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],

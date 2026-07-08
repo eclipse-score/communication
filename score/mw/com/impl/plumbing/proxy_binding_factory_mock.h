@@ -26,7 +26,7 @@ namespace score::mw::com::impl
 class ProxyBindingFactoryMock : public IProxyBindingFactory
 {
   public:
-    MOCK_METHOD(std::unique_ptr<ProxyBinding>, Create, (const HandleType&), (noexcept, override));
+    MOCK_METHOD(Result<std::unique_ptr<ProxyBinding>>, Create, (const HandleType&), (noexcept, override));
 };
 
 }  // namespace score::mw::com::impl

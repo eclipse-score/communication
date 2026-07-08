@@ -74,14 +74,12 @@ class ProxyEventBaseFixture : public ::testing::Test
         mock_service_element_binding_ = mock_service_element_binding_ptr.get();
 
         service_element_ =
-            std::make_unique<ServiceElementType>(empty_proxy_, kEventName, std::move(mock_service_element_binding_ptr));
+            std::make_unique<ServiceElementType>(kEventName, std::move(mock_service_element_binding_ptr));
 
         ON_CALL(*mock_service_element_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::Result<void>{}));
         ON_CALL(*mock_service_element_binding_, Subscribe(_)).WillByDefault(Return(score::Result<void>{}));
     }
 
-    DummyProxy empty_proxy_{std::make_unique<mock_binding::Proxy>(),
-                            make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment))};
     std::unique_ptr<ServiceElementType> service_element_{nullptr};
     MockServiceElementType* mock_service_element_binding_{nullptr};
 };
@@ -153,39 +151,6 @@ TEST(ProxyEventBaseTest, IsMoveable)
 {
     static_assert(std::is_move_constructible<ProxyEventBase>::value, "Is not move constructible");
     static_assert(std::is_move_assignable<ProxyEventBase>::value, "Is not move assignable");
-}
-
-TYPED_TEST(ProxyEventBaseCreationFixture, CreatingServiceElementWithValidEventBindingMarksProxyBindingValid)
-{
-    auto valid_proxy_event_binding =
-        std::make_unique<typename ProxyEventBaseCreationFixture<TypeParam>::MockServiceElementType>();
-
-    // Given a proxy with a valid binding
-    DummyProxy dummy_proxy(std::make_unique<mock_binding::Proxy>(),
-                           make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
-
-    // When creating a ProxyEvent with a valid binding
-    auto service_element = std::make_unique<typename ProxyEventBaseCreationFixture<TypeParam>::ServiceElementType>(
-        dummy_proxy, kEventName, std::move(valid_proxy_event_binding));
-
-    // Then the proxy should report that all bindings are valid
-    EXPECT_TRUE(dummy_proxy.AreBindingsValid());
-}
-
-TYPED_TEST(ProxyEventBaseCreationFixture, CreatingServiceElementWithInvalidEventBindingMarksProxyBindingInvalid)
-{
-    // Given a proxy with a valid binding
-    DummyProxy dummy_proxy(std::make_unique<mock_binding::Proxy>(),
-                           make_HandleType(make_InstanceIdentifier(kEmptyInstanceDeployment, kEmptyTypeDeployment)));
-
-    // When creating a ProxyEvent with an invalid binding
-    auto service_element = std::make_unique<typename ProxyEventBaseCreationFixture<TypeParam>::ServiceElementType>(
-        dummy_proxy,
-        kEventName,
-        std::unique_ptr<typename ProxyEventBaseCreationFixture<TypeParam>::MockServiceElementType>(nullptr));
-
-    // Then the proxy should report that all bindings are not valid
-    EXPECT_FALSE(dummy_proxy.AreBindingsValid());
 }
 
 TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscribedCallsUnsubscribeOnBinding)
@@ -330,7 +295,7 @@ class AServiceElement : public ::testing::Test
         mock_service_element_binding_ = mock_service_element_binding_ptr.get();
 
         service_element_ =
-            std::make_unique<ServiceElementType>(empty_proxy_, kEventName, std::move(mock_service_element_binding_ptr));
+            std::make_unique<ServiceElementType>(kEventName, std::move(mock_service_element_binding_ptr));
         ASSERT_NE(service_element_, nullptr);
 
         ON_CALL(*mock_service_element_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::Result<void>{}));

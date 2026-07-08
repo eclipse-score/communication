@@ -312,6 +312,10 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         {
             score::mw::log::LogDebug("lola") << "Using SHM of Skeleton (S:" << lola_service_id_
                                              << "I:" << lola_instance_id_ << ") for gateway-forwarded service";
+            // It is important to update was_old_shm_region_reopened_ BEFORE
+            // calling memory_manager_.OpenExistingSharedMemory, because it relies on this member being set correctly.
+            was_old_shm_region_reopened_ = false;
+            use_gateway_forwarded_shm_ = true;
             shm_setup_result = memory_manager_.OpenExistingSharedMemory(std::move(register_shm_object_trace_callback));
             if (!shm_setup_result.has_value())
             {
@@ -320,14 +324,16 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
                 return MakeUnexpected(ComErrc::kBindingFailure,
                                       "Could not open existing shared memory region for gateway-forwarded service.");
             }
-            was_old_shm_region_reopened_ = false;
-            use_gateway_forwarded_shm_ = true;
             break;
         }
 
         case ShmReuseStrategy::kRecreateShm:
             score::mw::log::LogDebug("lola")
                 << "Recreating SHM of Skeleton (S:" << lola_service_id_ << "I:" << lola_instance_id_ << ")";
+            // It is important to update was_old_shm_region_reopened_ BEFORE
+            // calling memory_manager_.CreateSharedMemory, because it relies on this member being set correctly.
+            was_old_shm_region_reopened_ = false;
+            use_gateway_forwarded_shm_ = false;
             memory_manager_.RemoveStaleSharedMemoryArtefacts();
             shm_setup_result =
                 memory_manager_.CreateSharedMemory(events, fields, std::move(register_shm_object_trace_callback));
@@ -335,13 +341,15 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
             {
                 score::mw::log::LogError("lola") << "Could not create shared memory region for Skeleton.";
             }
-            was_old_shm_region_reopened_ = false;
-            use_gateway_forwarded_shm_ = false;
             break;
 
         case ShmReuseStrategy::kReuseExistingShm:
             score::mw::log::LogDebug("lola")
                 << "Reusing SHM of Skeleton (S:" << lola_service_id_ << "I:" << lola_instance_id_ << ")";
+            // It is important to update was_old_shm_region_reopened_ BEFORE
+            // calling memory_manager_.OpenExistingSharedMemory, because it relies on this member being set correctly.
+            was_old_shm_region_reopened_ = true;
+            use_gateway_forwarded_shm_ = false;
             shm_setup_result = memory_manager_.OpenExistingSharedMemory(std::move(register_shm_object_trace_callback));
             if (!shm_setup_result.has_value())
             {
@@ -351,8 +359,6 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
             {
                 memory_manager_.CleanupSharedMemoryAfterCrash();
             }
-            was_old_shm_region_reopened_ = true;
-            use_gateway_forwarded_shm_ = false;
             break;
 
         // LCOV_EXCL_START (DetermineShmReuseStrategy always returns a valid strategy; kUnknownStrategy is unreachable)

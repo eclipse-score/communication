@@ -11,21 +11,19 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/methods/proxy_method.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy.h"
+#include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
+#include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/methods/proxy_method_with_in_args.h"
 #include "score/mw/com/impl/methods/proxy_method_with_in_args_and_return.h"
 #include "score/mw/com/impl/methods/proxy_method_with_return_type.h"
 #include "score/mw/com/impl/methods/proxy_method_without_in_args_or_return.h"
-
-#include "score/mw/com/impl/bindings/mock_binding/proxy.h"
-#include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
-#include "score/mw/com/impl/configuration/test/configuration_store.h"
-#include "score/mw/com/impl/method_type.h"
+#include "score/mw/com/impl/proxy_base.h"
+#include "score/mw/com/impl/test/binding_factory_resources.h"
 
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/result/result.h"
 
-#include "score/mw/com/impl/plumbing/proxy_method_binding_factory_mock.h"
-#include "score/mw/com/impl/proxy_base.h"
 #include <score/assert_support.hpp>
 #include <score/utility.hpp>
 
@@ -75,8 +73,6 @@ class ProxyMethodTestFixture : public ::testing::Test
   public:
     void SetUp() override
     {
-        ProxyMethodBindingFactory<MethodType>::InjectMockBinding(&proxy_method_binding_factory_mock_);
-
         ON_CALL(proxy_method_binding_mock_, GetInArgsBuffer(0))
             .WillByDefault(Return(score::Result<score::cpp::span<std::byte>>{
                 score::cpp::span{method_in_args_buffer_.data(), method_in_args_buffer_.size()}}));
@@ -88,7 +84,17 @@ class ProxyMethodTestFixture : public ::testing::Test
     ProxyMethodTestFixture& GivenAValidProxyMethod()
     {
         unit_ = std::make_unique<ProxyServiceMethodType>(
-            proxy_base_, kMethodName, std::make_unique<mock_binding::ProxyMethodFacade>(proxy_method_binding_mock_));
+            kMethodName, std::make_unique<mock_binding::ProxyMethodFacade>(proxy_method_binding_mock_));
+        return *this;
+    }
+
+    ProxyMethodTestFixture& GivenAProxyMethodWithoutBinding()
+    {
+        EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_,
+                    Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+            .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+
+        unit_ = std::make_unique<ProxyServiceMethodType>(proxy_base_, kMethodName);
         return *this;
     }
 
@@ -117,7 +123,7 @@ class ProxyMethodTestFixture : public ::testing::Test
     mock_binding::ProxyMethod proxy_method_binding_mock_;
     TestProxyBase proxy_base_{std::make_unique<mock_binding::Proxy>(), config_store_.GetHandle()};
 
-    ProxyMethodBindingFactoryMock proxy_method_binding_factory_mock_{};
+    ProxyMethodBindingFactoryMockGuard<MethodType> proxy_method_binding_factory_mock_guard_{};
     std::unique_ptr<ProxyServiceMethodType> unit_{nullptr};
 };
 
@@ -164,9 +170,7 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, Construction)
     // When constructing a ProxyMethod with all combinations of InArgs / return types
     // Then the ProxyMethod can be constructed
     using ProxyMethodType = ProxyMethod<TypeParam>;
-    ProxyMethodType{this->proxy_base_,
-                    kMethodName,
-                    std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
+    ProxyMethodType{kMethodName, std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
 }
 
 TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, WhenMoveConstructingProxyMethodUpdateMethodIsCalled)
@@ -174,12 +178,9 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, WhenMoveConstructingProxyMe
     using ProxyMethodType = ProxyMethod<TypeParam>;
 
     // Given a proxy method
-    auto proxy_method =
-        ProxyMethodType{this->proxy_base_,
-                        kMethodName,
-                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
+    auto proxy_method = ProxyMethodType{this->proxy_base_, kMethodName};
 
-    // When movie-constructing this method
+    // When move-constructing this method
     auto moved_method{std::move(proxy_method)};
 
     // Then the method is moved successfully and it updates itself with ProxyBase
@@ -193,17 +194,14 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, WhenMoveAssigningProxyMetho
     using ProxyMethodType = ProxyMethod<TypeParam>;
 
     // Given a proxy method
-    auto proxy_method =
-        ProxyMethodType{this->proxy_base_,
-                        kMethodName,
-                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
+    auto proxy_method = ProxyMethodType{this->proxy_base_, kMethodName};
 
     ProxyBase other_proxy_base = {std::make_unique<mock_binding::Proxy>(), this->config_store_.GetHandle()};
 
-    auto other_proxy_method =
-        ProxyMethodType{other_proxy_base,
-                        "this_method_will_be_overwritten_soon",
-                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
+    auto other_proxy_method = ProxyMethodType{
+        other_proxy_base,
+        "this_method_will_be_overwritten_soon",
+    };
 
     // When move-assigning this method
     other_proxy_method = std::move(proxy_method);
@@ -221,10 +219,7 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture,
     using ProxyMethodType = ProxyMethod<TypeParam>;
 
     // Given a proxy method
-    auto proxy_method =
-        ProxyMethodType{this->proxy_base_,
-                        kMethodName,
-                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_)};
+    auto proxy_method = ProxyMethodType{this->proxy_base_, kMethodName};
 
     auto same_method_ptr = &proxy_method;
     // When move-assigning this method to itself
@@ -263,50 +258,62 @@ TYPED_TEST(ProxyMethodWithInArgsTestFixture, GetInArgsBuffer_ReturnsInArgPointer
     EXPECT_EQ(pointer2.GetQueuePosition(), 0);
 }
 
-TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, InvalidBindingInConstructorMarksServiceElementAsInvalid)
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, SucceedingToCreateMethodBindingCreatesValidProxyMethod)
 {
-    using ProxyMethodType = ProxyMethod<TypeParam>;
-
-    // When a proxy method is created with an invalid binding
-    auto proxy_method = std::make_unique<ProxyMethodType>(this->proxy_base_, kMethodName, nullptr);
-
-    // Then calling AreBindingsValid returns false
-    EXPECT_FALSE(ProxyBaseView{this->proxy_base_}.AreBindingsValid());
-}
-
-TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture,
-           TwoParameterConstructorCorrectlyCallsBindingFactoryAndProxyMethodIsCreated)
-{
-
-    auto proxy_method_binding = std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_);
-
-    // expecting that a binding factory can create a binding
-    EXPECT_CALL(this->proxy_method_binding_factory_mock_,
+    // Expecting that a binding factory can create a binding
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
                 Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
-        .WillOnce(testing::Return(testing::ByMove(std::move(proxy_method_binding))));
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_))));
 
     // When the 2-parameter constructor of the ProxyMethod class is called
-    auto proxy_method = std::make_unique<ProxyMethod<TypeParam>>(this->proxy_base_, kMethodName);
+    ProxyMethod<TypeParam> proxy_method{this->proxy_base_, kMethodName};
 
-    // Then a valid proxy method is created
-    EXPECT_NE(proxy_method, nullptr);
+    // Then a valid proxy method is created without crashing
 }
 
-TYPED_TEST(
-    ProxyMethodAllArgCombinationsTestFixture,
-    TwoParameterConstructorCorrectlyCallsBindingFactoryButProxyMethodIsNotCreatedWhenTheBindingFactoryDoesNotReturnBinding)
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, SucceedingToCreateMethodBindingStoresValidConstructionResult)
 {
-    // expecting that a binding factory cannot create a binding
-    EXPECT_CALL(this->proxy_method_binding_factory_mock_,
+    // Expecting that a binding factory can create a binding
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
                 Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
-        .WillOnce(testing::Return(testing::ByMove(nullptr)));
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_))));
 
     // When the 2-parameter constructor of the ProxyMethod class is called
-    auto proxy_method = std::make_unique<ProxyMethod<TypeParam>>(this->proxy_base_, kMethodName);
+    ProxyMethod<TypeParam> proxy_method{this->proxy_base_, kMethodName};
 
-    // Then the binding cannot be created and calling AreBindingsValid returns false
-    EXPECT_FALSE(ProxyBaseView{this->proxy_base_}.AreBindingsValid());
+    // Then the stored construction result is valid
+    ProxyMethodBaseView proxy_method_view{proxy_method};
+    EXPECT_TRUE(proxy_method_view.GetBindingConstructionResult().has_value());
 }
+
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, FailingToCreateMethodBindingCreatesValidProxyMethod)
+{
+    // Expecting that a binding factory fails to create a binding and returns an error
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
+                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+
+    // When the 2-parameter constructor of the ProxyMethod class is called
+    ProxyMethod<TypeParam> proxy_method{this->proxy_base_, kMethodName};
+
+    // Then a valid proxy method is created without crashing
+}
+
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, FailingToCreateMethodBindingStoresConstructionError)
+{
+    // Expecting that a binding factory fails to create a binding and returns an error
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_guard_.factory_mock_,
+                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+
+    // When the 2-parameter constructor of the ProxyMethod class is called
+    ProxyMethod<TypeParam> proxy_method{this->proxy_base_, kMethodName};
+
+    // Then the stored construction result contains an error
+    ProxyMethodBaseView proxy_method_view{proxy_method};
+    EXPECT_FALSE(proxy_method_view.GetBindingConstructionResult().has_value());
+}
+
 TYPED_TEST(ProxyMethodWithInArgsTestFixture, GetInArgsBuffer_ReturnsInArgPointersPointingToInArgsAllocatedByBinding)
 {
     auto* const buffer_start_address = &(this->method_in_args_buffer_[0]);
@@ -379,6 +386,18 @@ TYPED_TEST(ProxyMethodWithInArgsTestFixture, GetInArgsBuffer_BindingErrorPropaga
     EXPECT_EQ(allocate_result.error(), ComErrc::kBindingFailure);
 }
 
+TYPED_TEST(ProxyMethodWithInArgsTestFixture, GetInArgsBuffer_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When calling Allocate() on a proxy method without a binding
+    auto allocate_result = this->unit_->Allocate();
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(allocate_result.has_value());
+    EXPECT_EQ(allocate_result.error(), ComErrc::kMethodBindingDisabled);
+}
+
 TYPED_TEST(ProxyMethodWithInArgsTestFixture, CallOperator_WithCopy)
 {
     this->GivenAValidProxyMethod();
@@ -443,6 +462,19 @@ TYPED_TEST(ProxyMethodWithInArgsTestFixture, CallOperator_PropagatesBindingError
     EXPECT_EQ(call_result.error(), ComErrc::kBindingFailure);
 }
 
+TYPED_TEST(ProxyMethodWithInArgsTestFixture, CallOperator_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When call operator is called on a proxy method without a binding
+    auto& proxy_method = *(this->unit_);
+    auto call_result = proxy_method(kDummyArg1, kDummyArg2, kDummyArg3);
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kMethodBindingDisabled);
+}
+
 TYPED_TEST(ProxyMethodWithoutInArgsTestFixture, CallOperator_NoArgs)
 {
     this->GivenAValidProxyMethod();
@@ -470,6 +502,19 @@ TYPED_TEST(ProxyMethodWithoutInArgsTestFixture, CallOperator_PropagatesBindingEr
     // Then the same error is returned
     ASSERT_FALSE(call_result.has_value());
     EXPECT_EQ(call_result.error(), ComErrc::kBindingFailure);
+}
+
+TYPED_TEST(ProxyMethodWithoutInArgsTestFixture, CallOperator_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When call operator is called on a proxy method without a binding
+    auto& proxy_method = *(this->unit_);
+    auto call_result = proxy_method();
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kMethodBindingDisabled);
 }
 
 TYPED_TEST(ProxyMethodWithInArgsTestFixture, CallOperator_ZeroCopy)
@@ -534,6 +579,71 @@ TEST_F(ProxyMethodWithInArgsAndReturnFixture, GetInArgsBuffer_BindingErrorPropag
     EXPECT_EQ(allocate_result.error(), ComErrc::kBindingFailure);
 }
 
+TEST_F(ProxyMethodWithInArgsAndReturnFixture, Allocate_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When Allocate is called on a proxy method without a binding
+    auto allocate_result = this->unit_->Allocate();
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(allocate_result.has_value());
+    EXPECT_EQ(allocate_result.error(), ComErrc::kMethodBindingDisabled);
+}
+
+TEST_F(ProxyMethodWithInArgsAndReturnFixture,
+       CallOperator_WithCopy_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When call operator is called with copy arguments on a proxy method without a binding
+    auto& proxy_method = *(this->unit_);
+    auto call_result = proxy_method(kDummyArg1, kDummyArg2, kDummyArg3);
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kMethodBindingDisabled);
+}
+
+TEST_F(ProxyMethodWithInArgsAndReturnFixture,
+       CallOperator_ZeroCopy_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // Given pre-allocated method argument pointers
+    int in_arg_0{kDummyArg1};
+    double in_arg_1{kDummyArg2};
+    char in_arg_2{kDummyArg3};
+    bool is_in_arg_ptr_active_0{false};
+    bool is_in_arg_ptr_active_1{false};
+    bool is_in_arg_ptr_active_2{false};
+    MethodInArgPtr<int> method_in_arg_ptr_0{in_arg_0, is_in_arg_ptr_active_0, 0U};
+    MethodInArgPtr<double> method_in_arg_ptr_1{in_arg_1, is_in_arg_ptr_active_1, 0U};
+    MethodInArgPtr<char> method_in_arg_ptr_2{in_arg_2, is_in_arg_ptr_active_2, 0U};
+
+    // When call operator is called with zero-copy arguments on a proxy method without a binding
+    auto& proxy_method = *(this->unit_);
+    auto call_result =
+        proxy_method(std::move(method_in_arg_ptr_0), std::move(method_in_arg_ptr_1), std::move(method_in_arg_ptr_2));
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kMethodBindingDisabled);
+}
+
+TEST_F(ProxyMethodWithInArgsAndReturnFixture,
+       InitializeInArgsAndReturnValues_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When calling InitializeInArgsAndReturnValues on a proxy method without a binding
+    auto result = this->unit_->InitializeInArgsAndReturnValues(GetProxyBinding());
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kMethodBindingDisabled);
+}
+
 TEST_F(ProxyMethodWithInArgsAndReturnFixture, CallOperator_WithCopy_GetInArgsBuffer_BindingErrorPropagation)
 {
     this->GivenAValidProxyMethod();
@@ -571,6 +681,32 @@ TEST_F(ProxyMethodWithReturnOnlyFixture, CallOperator_ReturnsReturnTypePointerPo
     EXPECT_EQ(method_in_arg_ptr.value().GetQueuePosition(), 0);
     auto* const pointed_to_address = reinterpret_cast<std::byte*>(method_in_arg_ptr.value().get());
     EXPECT_EQ(pointed_to_address, return_buffer_start_address);
+}
+
+TEST_F(ProxyMethodWithReturnOnlyFixture, CallOperator_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When call operator is called on a proxy method without a binding
+    auto& proxy_method = *(this->unit_);
+    auto call_result = proxy_method();
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kMethodBindingDisabled);
+}
+
+TEST_F(ProxyMethodWithReturnOnlyFixture,
+       InitializeInArgsAndReturnValues_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When calling InitializeInArgsAndReturnValues on a proxy method without a binding
+    auto result = this->unit_->InitializeInArgsAndReturnValues(GetProxyBinding());
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kMethodBindingDisabled);
 }
 
 TEST_F(ProxyMethodWithInArgsAndReturnFixture, CallOperator_GetReturnValueBuffer_BindingErrorPropagation)
@@ -684,6 +820,82 @@ TEST_F(ProxyMethodWithReturnOnlyFixture, CallOperator_DoCallError_AfterSuccessfu
     // Then the error from DoCall is propagated
     ASSERT_FALSE(call_result.has_value());
     EXPECT_EQ(call_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(ProxyMethodWithNoInArgsOrReturnFixture, CallOperator_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When call operator is called on a proxy method without a binding
+    auto& proxy_method = *(this->unit_);
+    auto call_result = proxy_method();
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kMethodBindingDisabled);
+}
+
+TEST_F(ProxyMethodWithInArgsOnlyFixture, Allocate_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When Allocate is called on a proxy method without a binding
+    auto allocate_result = this->unit_->Allocate();
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(allocate_result.has_value());
+    EXPECT_EQ(allocate_result.error(), ComErrc::kMethodBindingDisabled);
+}
+
+TEST_F(ProxyMethodWithInArgsOnlyFixture, CallOperator_WithCopy_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When call operator is called with copy arguments on a proxy method without a binding
+    auto& proxy_method = *(this->unit_);
+    auto call_result = proxy_method(kDummyArg1, kDummyArg2, kDummyArg3);
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kMethodBindingDisabled);
+}
+
+TEST_F(ProxyMethodWithInArgsOnlyFixture, CallOperator_ZeroCopy_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // Given pre-allocated method argument pointers
+    int in_arg_0{kDummyArg1};
+    double in_arg_1{kDummyArg2};
+    char in_arg_2{kDummyArg3};
+    bool is_in_arg_ptr_active_0{false};
+    bool is_in_arg_ptr_active_1{false};
+    bool is_in_arg_ptr_active_2{false};
+    MethodInArgPtr<int> method_in_arg_ptr_0{in_arg_0, is_in_arg_ptr_active_0, 0U};
+    MethodInArgPtr<double> method_in_arg_ptr_1{in_arg_1, is_in_arg_ptr_active_1, 0U};
+    MethodInArgPtr<char> method_in_arg_ptr_2{in_arg_2, is_in_arg_ptr_active_2, 0U};
+
+    // When call operator is called with zero-copy arguments on a proxy method without a binding
+    auto& proxy_method = *(this->unit_);
+    auto call_result =
+        proxy_method(std::move(method_in_arg_ptr_0), std::move(method_in_arg_ptr_1), std::move(method_in_arg_ptr_2));
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kMethodBindingDisabled);
+}
+
+TEST_F(ProxyMethodWithInArgsOnlyFixture,
+       InitializeInArgsAndReturnValues_ReturnsMethodBindingDisabledWhenBindingIsUnavailable)
+{
+    this->GivenAProxyMethodWithoutBinding();
+
+    // When calling InitializeInArgsAndReturnValues on a proxy method without a binding
+    auto result = this->unit_->InitializeInArgsAndReturnValues(GetProxyBinding());
+
+    // Then MethodBindingDisabled is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kMethodBindingDisabled);
 }
 
 TEST_F(ProxyMethodWithInArgsAndReturnFixture, ProxyMethodView_ReturnsTypeErasedInArgs)

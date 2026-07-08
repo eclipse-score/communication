@@ -12,10 +12,18 @@
  ********************************************************************************/
 #include "score/mw/com/impl/methods/proxy_method_without_in_args_or_return.h"
 
+#include "score/mw/log/logging.h"
+
 namespace score::mw::com::impl
 {
 score::Result<void> ProxyMethod<void()>::operator()()
 {
+    if (binding_ == nullptr)
+    {
+        score::mw::log::LogError("lola") << "ProxyMethod::operator(): Binding is not initialized for method "
+                                         << method_name_;
+        return Unexpected(ComErrc::kMethodBindingDisabled);
+    }
     auto queue_position = detail::DetermineNextAvailableQueueSlot(is_return_type_ptr_active_);
     if (!queue_position.has_value())
     {

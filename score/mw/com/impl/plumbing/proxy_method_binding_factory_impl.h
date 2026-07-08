@@ -22,6 +22,7 @@
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
+#include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/plumbing/i_proxy_method_binding_factory.h"
 #include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
 #include "score/mw/com/impl/proxy_base.h"
@@ -31,6 +32,8 @@
 
 #include "score/memory/data_type_size_info.h"
 #include "score/mw/log/logging.h"
+
+#include <score/assert.hpp>
 
 #include <memory>
 #include <string_view>
@@ -87,15 +90,15 @@ class ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)> : public IProxyMeth
     /// \tparam SampleType Type of the data that is exchanges
     /// \param handle The handle containing the binding information.
     /// \param method_name The binding unspecific name of the method inside the proxy denoted by handle.
-    /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
-    std::unique_ptr<ProxyMethodBinding> Create(HandleType parent_handle,
-                                               ProxyBinding& parent_binding,
-                                               const std::string_view method_name,
-                                               MethodType method_type) noexcept override;
+    /// \return An instance of ProxyMethodBinding or an error in case binding creation fails.
+    Result<std::unique_ptr<ProxyMethodBinding>> Create(HandleType parent_handle,
+                                                       ProxyBinding& parent_binding,
+                                                       const std::string_view method_name,
+                                                       MethodType method_type) noexcept override;
 };
 
 template <typename ReturnType, typename... ArgTypes>
-std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)>::Create(
+Result<std::unique_ptr<ProxyMethodBinding>> ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)>::Create(
     HandleType parent_handle,
     ProxyBinding& parent_binding,
     const std::string_view method_name,
@@ -103,7 +106,7 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
 {
     auto method_name_str = std::string{method_name};
 
-    using LambdaReturnType = std::unique_ptr<ProxyMethodBinding>;
+    using LambdaReturnType = Result<std::unique_ptr<ProxyMethodBinding>>;
 
     auto deployment_info_visitor = score::cpp::overload(
         [&parent_handle, &parent_binding, &method_name_str, method_type](
@@ -113,6 +116,23 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
             {
                 score::mw::log::LogError("lola") << "Proxy Method binding could not be created for" << method_name_str
                                                  << "because the parent proxy binding is not a lola binding.";
+                return MakeUnexpected(BindingFactoryErrorCode::kParentBindingIsNotLola);
+            }
+
+            const auto& service_instance_deployment = parent_handle.GetServiceInstanceDeployment();
+            const auto& lola_service_instance_deployment =
+                GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment);
+
+            const auto method_it = lola_service_instance_deployment.methods_.find(method_name_str);
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_it != lola_service_instance_deployment.methods_.end(),
+                                                        "Could not find method deployment information for method");
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_it->second.enabled_.has_value(),
+                                                        "Enabled flag must be set on proxy side for method!");
+            if (!method_it->second.enabled_.value())
+            {
+                score::mw::log::LogDebug("lola")
+                    << "Proxy Method " << method_name_str
+                    << " was disabled in the instance deployment configuration. Not creating a binding for it.";
                 return nullptr;
             }
 
@@ -137,7 +157,7 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
                 *lola_proxy, proxy_method_instance_identifier, type_erased_element_info);
         },
         [](const score::cpp::blank&) noexcept -> LambdaReturnType {
-            return nullptr;
+            return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);
         });
 
     const auto& type_deployment = parent_handle.GetServiceTypeDeployment();
