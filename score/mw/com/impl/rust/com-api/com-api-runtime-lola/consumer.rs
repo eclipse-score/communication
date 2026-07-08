@@ -965,7 +965,7 @@ where
             FindServiceCallable::new(std::mem::transmute::<
                 Box<
                     dyn FnMut(
-                            mw_com::proxy::HandleContainer,
+                            HandleContainer,
                             bridge_ffi_rs::NativeFindServiceHandle,
                         ) + Send
                         + 'static,
