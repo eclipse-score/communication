@@ -71,6 +71,8 @@ constexpr auto kMethodIdKey = "methodId"sv;
 constexpr auto kMethodQueueSizeKey = "queueSize"sv;
 constexpr auto kMethodEnabledKey = "use"sv;
 constexpr auto kMethodEnabledDefaultValue = true;
+constexpr auto kUseGetIfAvailableDefaultValue = true;
+constexpr auto kUseSetIfAvailableDefaultValue = true;
 constexpr auto kEventNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;
 constexpr auto kEventMaxSamplesKey = "maxSamples"sv;
 constexpr auto kEventMaxSubscribersKey = "maxSubscribers"sv;
@@ -493,8 +495,10 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
         const auto number_of_tracing_slots =
             deployment_parser.RetrieveJsonElement<NumberOfIpcTracingSlots_t>(kNumberOfIpcTracingSlotsKey)
                 .value_or(kNumberOfIpcTracingSlotsDefault);
-        const auto use_get_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseGetIfAvailableKey);
-        const auto use_set_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey);
+        const auto use_get_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseGetIfAvailableKey)
+                                              .value_or(kUseGetIfAvailableDefaultValue);
+        const auto use_set_if_available = deployment_parser.RetrieveJsonElement<bool>(kFieldUseSetIfAvailableKey)
+                                              .value_or(kUseSetIfAvailableDefaultValue);
 
         auto field_deployment =
             LolaFieldInstanceDeployment(LolaEventInstanceDeployment(number_of_sample_slots,

@@ -28,8 +28,8 @@ class LolaFieldInstanceDeployment
 {
   public:
     explicit LolaFieldInstanceDeployment(LolaEventInstanceDeployment event_deployment,
-                                         const std::optional<bool> use_get_if_available,
-                                         const std::optional<bool> use_set_if_available) noexcept;
+                                         const bool use_get_if_available,
+                                         const bool use_set_if_available) noexcept;
 
     explicit LolaFieldInstanceDeployment(const score::json::Object& json_object) noexcept;
 
@@ -43,9 +43,9 @@ class LolaFieldInstanceDeployment
     // coverity[autosar_cpp14_m11_0_1_violation]
     LolaEventInstanceDeployment lola_event_instance_deployment_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    std::optional<bool> use_get_if_available_;
+    bool use_get_if_available_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    std::optional<bool> use_set_if_available_;
+    bool use_set_if_available_;
 
     // False positive, variable is used outside of the file.
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
