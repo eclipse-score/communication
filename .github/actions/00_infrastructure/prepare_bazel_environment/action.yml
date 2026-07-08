@@ -69,6 +69,7 @@ runs:
         bazelisk-cache: true
         disk-cache: false
         repository-cache: false
+        cache-save: ${{ env.CACHE_MODE != 'read-only' && env.CACHE_MODE != 'disabled' }}
 
     - name: Register post cache save hook and restore caches
       uses: ./.github/actions/00_infrastructure/setup_bazel_cache
