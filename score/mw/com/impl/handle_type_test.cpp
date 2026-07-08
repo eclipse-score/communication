@@ -97,6 +97,21 @@ TEST(HandleTypeWithProvidedInstanceIdTest, CanBeCopiedAndEqualCompared)
     ASSERT_EQ(unit, unitCopy);
 }
 
+TEST(HandleTypeWithInstanceIdFromConfigTest, CopyAssignmentOperatorCopiesHandleType)
+{
+    // Given two different HandleType instances
+    const auto instanceIdentifier1 = make_InstanceIdentifier(kServiceInstanceDeployment1, kTestTypeDeployment);
+    const auto instanceIdentifier2 = make_InstanceIdentifier(kServiceInstanceDeployment2, kTestTypeDeployment);
+    auto unit1 = make_HandleType(instanceIdentifier1);
+    const auto unit2 = make_HandleType(instanceIdentifier2);
+
+    // When copy-assigning one to the other
+    unit1 = unit2;
+
+    // Then the assigned-to instance equals the source
+    ASSERT_EQ(unit1, unit2);
+}
+
 TEST(HandleTypeWithProvidedInstanceIdTest, LessCompareable)
 {
     RecordProperty("Verifies", "SCR-14116410");

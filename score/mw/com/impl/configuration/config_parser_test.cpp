@@ -5141,5 +5141,217 @@ TEST_F(ConfigParserFixtureDeathTest, InterVmSupportButNotInterVmForwardedWillNot
         score::mw::com::impl::configuration::Parse(std::move(config_with_inter_vm_support_no_vm_forwarding));
 }
 
+TEST(ConfigParser, OnlyBReceiverQueueSizes)
+{
+    // Given a JSON with only B-receiver queue size being explicitly configured
+    auto j2 = R"(
+  {
+    "serviceTypes": [],
+    "serviceInstances": [],
+    "global": {
+       "queue-size": {
+          "B-receiver": 5
+      }
+    }
+  }
+)"_json;
+    // When parsing the JSON
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+    // expect that the QM-receiver has the default value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_QM),
+              GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE);
+    // and that the B-receiver has the configured value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_B), 5);
+    // and that the not explicitly configured B-sender has the default value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetSenderMessageQueueSize(),
+              GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_TX_QUEUE);
+}
+
+TEST(ConfigParser, OnlyBSenderQueueSize)
+{
+    // Given a JSON with only B-sender queue size being explicitly configured
+    auto j2 = R"(
+  {
+    "serviceTypes": [],
+    "serviceInstances": [],
+    "global": {
+       "queue-size": {
+          "B-sender": 12
+      }
+    }
+  }
+)"_json;
+    // When parsing the JSON
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+    // expect that the QM-receiver has the default value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_QM),
+              GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE);
+    // and that the B-receiver has the default value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_B),
+              GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE);
+    // and that the B-sender has the configured value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetSenderMessageQueueSize(), 12);
+}
+
+TEST(ConfigParser, MultipleServiceInstancesParseSuccessfully)
+{
+    // Given a JSON with two valid service instances referencing the same service type
+    auto j2 = R"(
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 20
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort1",
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort2",
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 5678,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+)"_json;
+    // When parsing the JSON
+    // That the application will not terminate and both instances are present
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+    EXPECT_EQ(config.GetServiceInstances().size(), 2U);
+}
+
+TEST(ConfigParser, ServiceInstanceWithMultipleEventsAndFieldsParseSuccessfully)
+{
+    // Given a JSON with a service instance containing two events and two fields
+    auto j2 = R"(
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 20
+                        },
+                        {
+                            "eventName": "CurrentPressureFrontRight",
+                            "eventId": 21
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentTemperatureFrontLeft",
+                            "fieldId": 30
+                        },
+                        {
+                            "fieldName": "CurrentTemperatureFrontRight",
+                            "fieldId": 31
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft"
+                        },
+                        {
+                            "eventName": "CurrentPressureFrontRight"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentTemperatureFrontLeft"
+                        },
+                        {
+                            "fieldName": "CurrentTemperatureFrontRight"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+)"_json;
+    // When parsing the JSON
+    // That the application will not terminate
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+    const auto deployment =
+        config.GetServiceInstances().at(InstanceSpecifier::Create("abc/abc/TirePressurePort").value());
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_EQ(deploymentInfo.events_.size(), 2U);
+    EXPECT_EQ(deploymentInfo.fields_.size(), 2U);
+}
 }  // namespace
 }  // namespace score::mw::com::impl

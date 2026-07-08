@@ -123,6 +123,28 @@ TEST(InstanceIdentifierTest, CanBeCopiedAndEqualCompared)
     ASSERT_EQ(unit, unitCopy);
 }
 
+TEST(InstanceIdentifierTest, CopyAssignmentOperatorCopiesInstanceIdentifier)
+{
+    // Given two different InstanceIdentifier instances
+    const ServiceInstanceDeployment instance_deployment_1{kService1,
+                                                          LolaServiceInstanceDeployment{LolaServiceInstanceId{16U}},
+                                                          QualityType::kASIL_QM,
+                                                          kInstanceSpecifier1};
+    const ServiceInstanceDeployment instance_deployment_2{kService2,
+                                                          LolaServiceInstanceDeployment{LolaServiceInstanceId{17U}},
+                                                          QualityType::kASIL_QM,
+                                                          kInstanceSpecifier2};
+
+    auto unit1 = make_InstanceIdentifier(instance_deployment_1, kTestTypeDeployment1);
+    const auto unit2 = make_InstanceIdentifier(instance_deployment_2, kTestTypeDeployment1);
+
+    // When copy-assigning one to the other
+    unit1 = unit2;
+
+    // Then the assigned-to instance equals the source
+    ASSERT_EQ(unit1, unit2);
+}
+
 TEST(InstanceIdentifierTest, LessCompareable)
 {
     RecordProperty("Verifies", "SCR-17556907");
