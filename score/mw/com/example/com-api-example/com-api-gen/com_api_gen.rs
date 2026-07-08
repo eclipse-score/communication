@@ -20,10 +20,22 @@ pub struct Tire {
     pub pressure: f32,
 }
 
+impl Default for Tire {
+    fn default() -> Self {
+        Tire { pressure: 0.0 }
+    }
+}
+
 #[derive(Debug, Reloc, CommData)]
 #[repr(C)]
 // No explicit ID provided, so it will be auto-generated as "com_api_gen::Exhaust"
 pub struct Exhaust {}
+
+impl Default for Exhaust {
+    fn default() -> Self {
+        Exhaust {}
+    }
+}
 
 // Example interface definition using the interface macro with a custom UID for the interface.
 // This will generate the following types and trait implementations:
@@ -47,6 +59,8 @@ interface!(
      }
 );
 
+// Field intialize the intial value based on the default value of the field type at the time of creating field publisher.
+// If user want to update the value after that as well then they can use update method of the field publisher to update the value of the field.
 interface!(
     interface VehicleField, {
         Id = "VehicleFieldInterface",

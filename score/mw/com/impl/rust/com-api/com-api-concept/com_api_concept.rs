@@ -53,6 +53,7 @@ use crate::error::*;
 use crate::Reloc;
 pub use com_api_concept_macros::CommData;
 use containers::fixed_capacity::FixedCapacityQueue;
+use core::default::Default;
 use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
@@ -210,7 +211,13 @@ where
 /// avoid conflicts in the system.
 /// If no custom ID is provided, the type name will be used as the default ID with module path as
 /// prefix to ensure uniqueness.
-pub trait CommData: Reloc {
+///
+/// # Future Breaking Change
+/// **Note**: `Default` will become a required supertrait in a future version to support
+/// in-place initialization patterns. Existing `CommData` types should implement `Default`
+/// to prepare for this change and avoid future breakage.
+// TODO: Remove Default trait in final PR, with above warning
+pub trait CommData: Reloc + Default {
     const ID: &'static str;
 }
 

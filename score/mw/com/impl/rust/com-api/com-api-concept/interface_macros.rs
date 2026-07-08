@@ -326,7 +326,7 @@ macro_rules! interface_producer {
                 }
 
                 fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
-                    Ok([<$id Producer>] {
+                    let instance = Self {
                         $(
                             $field_name: R::FieldPublisher::new(
                                 stringify!($field_name),
@@ -337,7 +337,14 @@ macro_rules! interface_producer {
                             )),
                         )+
                         instance_info,
-                    })
+                    };
+                    $(
+                        instance.$field_name.update(&Default::default()).expect(&format!(
+                            "Failed to initialize field {} with default value",
+                            stringify!($field_name)
+                        ));
+                    )+
+                    Ok(instance)
                 }
             }
 
