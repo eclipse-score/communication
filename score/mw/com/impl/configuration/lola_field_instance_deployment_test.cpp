@@ -101,8 +101,8 @@ TEST_P(LolaFieldInstanceDeploymentUseGetSetPairParamFixture,
     const auto serialized_unit{unit.Serialize()};
     const LolaFieldInstanceDeployment reconstructed_unit{serialized_unit};
 
-    EXPECT_EQ(reconstructed_unit.use_get_if_available_, std::optional<bool>{use_get_if_available});
-    EXPECT_EQ(reconstructed_unit.use_set_if_available_, std::optional<bool>{use_set_if_available});
+    EXPECT_EQ(reconstructed_unit.use_get_if_available_, use_get_if_available);
+    EXPECT_EQ(reconstructed_unit.use_set_if_available_, use_set_if_available);
 }
 
 INSTANTIATE_TEST_SUITE_P(UseGetAndSetCombinations,
