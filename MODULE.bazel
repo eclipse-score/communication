@@ -50,7 +50,7 @@ download_archive(
 bazel_dep(name = "score_tooling")
 git_override(
     module_name = "score_tooling",
-    commit = "7099e272c3f6114bad17736debd54139601aedd4",
+    commit = "ade2a09e66423f788d207f8624358047f48ba209",
     remote = "https://github.com/eclipse-score/tooling.git",
 )
 

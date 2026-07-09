@@ -12,18 +12,15 @@
    # SPDX-License-Identifier: Apache-2.0
    # *******************************************************************************
 
-Safety Reports
+LoLa / mw::com
 ==============
 
-Safety documentation reports
+.. include:: README.md
+   :parser: myst_parser.sphinx_
 
-.. list-table::
-   :widths: 30 70
-   :header-rows: 1
+.. toctree::
+   :hidden:
 
-   * - Report
-     - Description
-   * - `Message Passing <dependable_element_message_passing_doc/index.html>`_
-     - Dependable Element
-   * - `MW::COM <mw_com_doc/index.html>`_
-     - Dependable Element
+   self
+   generated/api_index
+   mw_com_index/index
