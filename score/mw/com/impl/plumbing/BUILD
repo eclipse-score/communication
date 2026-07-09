@@ -520,7 +520,7 @@ cc_library(
     hdrs = ["proxy_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",  # platform_only
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_proxy_binding_factory",
@@ -535,7 +535,7 @@ cc_library(
     hdrs = ["proxy_event_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",  # platform_only
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_proxy_event_binding_factory",
@@ -550,7 +550,7 @@ cc_library(
     hdrs = ["proxy_field_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",  # platform_only
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_proxy_field_binding_factory",
@@ -580,7 +580,8 @@ cc_library(
     hdrs = ["skeleton_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",  # platform_only
+        "//score/mw/com/gateway:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_skeleton_binding_factory",
@@ -595,7 +596,7 @@ cc_library(
     hdrs = ["skeleton_event_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",  # platform_only
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_skeleton_event_binding_factory",
@@ -610,7 +611,7 @@ cc_library(
     hdrs = ["skeleton_field_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",  # platform_only
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_skeleton_field_binding_factory",
@@ -664,7 +665,8 @@ cc_library(
     hdrs = ["generic_skeleton_event_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",  # platform_only
+        "//score/mw/com/gateway:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:i_generic_skeleton_event_binding_factory",

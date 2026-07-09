@@ -16,5 +16,5 @@ filegroup(
     srcs = [
         "map_containing_nonexistent_events_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

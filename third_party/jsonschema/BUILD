@@ -14,5 +14,5 @@ alias(
     name = "jsonschema",
     actual = "@jsonschema//:lib",
     target_compatible_with = ["@platforms//os:linux"],
-    visibility = ["//visibility:public"],
+    visibility = ["//score:__subpackages__"],
 )

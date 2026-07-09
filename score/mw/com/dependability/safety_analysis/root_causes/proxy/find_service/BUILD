@@ -16,7 +16,7 @@ filegroup(
     srcs = [
         "service_not_found_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -24,5 +24,5 @@ filegroup(
     srcs = [
         "wrong_service_found_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

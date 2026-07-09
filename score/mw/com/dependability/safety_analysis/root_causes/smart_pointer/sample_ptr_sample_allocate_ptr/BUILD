@@ -17,5 +17,5 @@ filegroup(
         "does_not_free_resources_on_destruction_fta.puml",
         "returns_wrong_data_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

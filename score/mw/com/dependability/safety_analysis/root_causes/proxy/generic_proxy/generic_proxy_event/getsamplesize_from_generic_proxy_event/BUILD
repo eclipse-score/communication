@@ -16,5 +16,5 @@ filegroup(
     srcs = [
         "the_size_returned_is_bigger_then_actual_value_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

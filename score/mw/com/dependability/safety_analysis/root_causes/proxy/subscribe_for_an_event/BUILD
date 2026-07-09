@@ -16,7 +16,7 @@ filegroup(
     srcs = [
         "subscribe_to_wrong_event_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -24,5 +24,5 @@ filegroup(
     srcs = [
         "subscribe_with_wrong_max_sample_count_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

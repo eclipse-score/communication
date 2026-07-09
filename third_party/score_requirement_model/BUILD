@@ -5,7 +5,7 @@ trlc_specification(
     srcs = [
         "score_requirements_model.rsl",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score:__subpackages__"],
 )
 
 trlc_requirements_test(

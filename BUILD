@@ -50,7 +50,7 @@ copyright_checker(
     ],
     config = "//third_party/cr_checker:config",
     template = "//third_party/cr_checker:templates",
-    visibility = ["//visibility:public"],
+    visibility = ["//:__pkg__"],
 )
 
 exports_files([

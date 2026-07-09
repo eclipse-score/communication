@@ -49,9 +49,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//score/mw/com/gateway:__subpackages__",
-        "//score/mw/com/impl:__subpackages__",
-        "//score/mw/com/impl/bindings/lola:__subpackages__",
+        "//score/mw/com:__subpackages__",
     ],
     deps = [
         ":sample_ptr",
@@ -75,7 +73,7 @@ cc_library(
     srcs = ["generic_skeleton_event.cpp"],
     hdrs = ["generic_skeleton_event.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         "//score/mw/com/impl:generic_skeleton_event_binding",
         "@googletest//:gtest",

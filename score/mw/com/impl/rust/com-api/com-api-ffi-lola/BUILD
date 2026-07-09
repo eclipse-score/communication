@@ -20,9 +20,7 @@ cc_library(
     srcs = ["registry_bridge_macro.cpp"],
     hdrs = ["registry_bridge_macro.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/com:runtime",
         "//score/mw/com:runtime_configuration",

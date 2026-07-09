@@ -24,7 +24,7 @@ feature_requirements(
     name = "feature_requirements_ipc",
     srcs = ["feature_requirements_ipc.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
     deps = ["//score/mw/com/dependability/requirements/assumed_system_requirements"],
 )
 

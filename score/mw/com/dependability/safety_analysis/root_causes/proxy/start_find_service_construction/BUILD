@@ -16,5 +16,5 @@ filegroup(
     srcs = [
         "start_find_service_callback_is_redundantly_called_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

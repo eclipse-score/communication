@@ -16,7 +16,7 @@ filegroup(
     srcs = [
         "only_partially_stop_offer_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -24,5 +24,5 @@ filegroup(
     srcs = [
         "stop_offer_on_wrong_ids_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

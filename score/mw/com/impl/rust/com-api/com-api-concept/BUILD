@@ -28,9 +28,7 @@ rust_library(
         "//score/mw/com/impl/rust/com-api/com-api-concept-macros",
         "@score_communication_crate_index//:paste",
     ],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         "@score_baselibs//src/containers",
         "@score_baselibs//src/log/score_log",

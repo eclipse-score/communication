@@ -16,7 +16,7 @@ filegroup(
     srcs = [
         "changes_user_data_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -24,7 +24,7 @@ filegroup(
     srcs = [
         "does_not_free_resources_after_usage_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -32,7 +32,7 @@ filegroup(
     srcs = [
         "only_partially_notifies_user_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -40,5 +40,5 @@ filegroup(
     srcs = [
         "sends_to_wrong_consumer_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

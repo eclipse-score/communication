@@ -42,7 +42,7 @@ genrule(
     outs = ["merged_absolute_sanitizer.env"],
     cmd = "cat $(SRCS) > $@",
     target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:any_sanitizer"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 pkg_tar(
@@ -50,5 +50,5 @@ pkg_tar(
     srcs = [":repo_suppressions"],
     mode = "0444",
     package_dir = "sanitizers/suppressions",
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )

@@ -18,5 +18,5 @@ filegroup(
         "wrong_in_args_provided_fta.puml",
         "wrong_results_used_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

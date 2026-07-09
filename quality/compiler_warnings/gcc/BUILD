@@ -49,7 +49,7 @@ cc_feature(
         ":minimal_warnings_args_for_cpp_compile_actions",
     ],
     feature_name = "score_communication_minimal_warnings",
-    visibility = ["//visibility:public"],
+    visibility = ["//:__pkg__"],
 )
 
 cc_args(

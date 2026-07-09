@@ -35,5 +35,5 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/stop_offer_a_service:only_partially_stop_offer_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton/stop_offer_a_service:stop_offer_on_wrong_ids_fta",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

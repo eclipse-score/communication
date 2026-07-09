@@ -16,5 +16,5 @@ filegroup(
     srcs = [
         "in_memory_configuration_wrong_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

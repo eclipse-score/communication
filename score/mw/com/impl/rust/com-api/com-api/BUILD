@@ -19,9 +19,7 @@ rust_library(
     srcs = ["com_api.rs"],
     crate_name = "com_api",
     edition = "2024",
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api-concept",
         "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",

@@ -16,7 +16,7 @@ filegroup(
     srcs = [
         "allocate_in_wrong_memory_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -24,5 +24,5 @@ filegroup(
     srcs = [
         "to_few_memory_allocated_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

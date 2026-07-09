@@ -16,7 +16,7 @@ filegroup(
     srcs = [
         "only_partially_offered_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -24,7 +24,7 @@ filegroup(
     srcs = [
         "service_offered_under_wrong_id_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -32,7 +32,7 @@ filegroup(
     srcs = [
         "skeleton_not_offered_without_initial_fieled_value_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -40,7 +40,7 @@ filegroup(
     srcs = [
         "skeleton_offered_wrong_binding_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -48,7 +48,7 @@ filegroup(
     srcs = [
         "skeleton_not_offered_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -56,5 +56,5 @@ filegroup(
     srcs = [
         "offers_already_offered_service_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
