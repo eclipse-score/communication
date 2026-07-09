@@ -409,6 +409,7 @@ auto ServiceDiscoveryClient::HandleEvents(
                 << "Service discovery lost at least one event and is compromised now. Bailing out!";
             // Potential optimization: Resync the full service discovery with the file system and update all ongoing
             // searches with potential changes.
+            // no precondition, this is a runtime error caused by kernel or filesystem issues / faulty configuration --> keep std::terminate()
             std::terminate();
         }
 
@@ -475,6 +476,7 @@ auto ServiceDiscoveryClient::HandleDeletionEvents(const std::vector<os::InotifyE
                 mw::log::LogFatal("lola")
                     << "Directory" << GetSearchPathForIdentifier(enriched_instance_identifier) << "/" << event.GetName()
                     << "was deleted. Outside tampering with service discovery. Aborting!";
+                // no precondition, this is a runtime error caused by kernel or filesystem issues / faulty configuration --> keep std::terminate()
                 std::terminate();
             }
         }
