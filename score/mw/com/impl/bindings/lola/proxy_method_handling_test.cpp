@@ -106,9 +106,9 @@ const LolaServiceInstanceDeployment kLolaServiceInstanceDeploymentWithMethods{
     LolaServiceInstanceId{kLolaInstanceId},
     {},
     {},
-    {{kDummyMethodName0, LolaMethodInstanceDeployment{kDummyQueueSize0}},
-     {kDummyMethodName1, LolaMethodInstanceDeployment{kDummyQueueSize1}},
-     {kDummyMethodName2, LolaMethodInstanceDeployment{kDummyQueueSize2}}}};
+    {{kDummyMethodName0, LolaMethodInstanceDeployment{kDummyQueueSize0, true}},
+     {kDummyMethodName1, LolaMethodInstanceDeployment{kDummyQueueSize1, true}},
+     {kDummyMethodName2, LolaMethodInstanceDeployment{kDummyQueueSize2, true}}}};
 const LolaServiceTypeDeployment kLolaServiceTypeDeploymentWithMethods{
     kLolaServiceId,
     {},

@@ -136,31 +136,6 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, ConstructingLolaMethodBindingWhichIsD
     EXPECT_EQ(proxy_method.value(), nullptr);
 }
 
-TYPED_TEST(ProxyMethodFactoryTypedFixture, ConstructingLolaMethodBindingWithEmptyEnabledFieldTerminates)
-{
-    // Given a handle to a valid lola deployment which contains a method with empty Enabled field
-    const LolaServiceInstanceDeployment lola_service_instance_deployment_with_empty_enabled_method{
-        LolaServiceInstanceId{kInstanceId},
-        {},
-        {},
-        {{kDummyMethodName, LolaMethodInstanceDeployment{kQueueSize, std::nullopt}}}};
-    ConfigurationStore config_store_with_empty_enabled_method{
-        kInstanceSpecifier,
-        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
-        kQualityType,
-        kLolaServiceTypeDeployment,
-        lola_service_instance_deployment_with_empty_enabled_method};
-    const auto handle = config_store_with_empty_enabled_method.GetHandle();
-    this->InitialiseProxyWithConstructor(handle.GetInstanceIdentifier());
-
-    // when creating a ProxyMethod using MethodBindingFactory
-    // Then the program terminates
-    using MethodSignature = TypeParam;
-    EXPECT_DEATH(score::cpp::ignore = ProxyMethodBindingFactory<MethodSignature>::Create(
-                     handle, *this->proxy_, kDummyMethodName, MethodType::kMethod),
-                 ".*");
-}
-
 TYPED_TEST(ProxyMethodFactoryTypedFixture, ConstructingLolaMethodBindingWithInstanceDeploymentWithoutMethodTerminates)
 {
     // Given a handle to a valid lola deployment which does not contain the method

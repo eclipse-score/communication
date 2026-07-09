@@ -14,6 +14,9 @@
 
 #include <gtest/gtest.h>
 
+#include <score/assert_support.hpp>
+#include <score/utility.hpp>
+
 #include <cstdint>
 #include <limits>
 
@@ -25,8 +28,8 @@ namespace
 TEST(LolaMethodInstanceDeploymentTest, EqualityOperatorWithSameQueueSize)
 {
     // Given two LolaMethodInstanceDeployments with the same queue size
-    LolaMethodInstanceDeployment unit1{50U};
-    LolaMethodInstanceDeployment unit2{50U};
+    LolaMethodInstanceDeployment unit1{50U, true};
+    LolaMethodInstanceDeployment unit2{50U, true};
 
     // When comparing them
     // Then they should be equal
@@ -36,8 +39,8 @@ TEST(LolaMethodInstanceDeploymentTest, EqualityOperatorWithSameQueueSize)
 TEST(LolaMethodInstanceDeploymentTest, EqualityOperatorWithDifferentQueueSize)
 {
     // Given two LolaMethodInstanceDeployments with different queue sizes
-    LolaMethodInstanceDeployment unit1{10U};
-    LolaMethodInstanceDeployment unit2{20U};
+    LolaMethodInstanceDeployment unit1{10U, true};
+    LolaMethodInstanceDeployment unit2{20U, true};
 
     // When comparing them
     // Then they should not be equal
@@ -47,8 +50,8 @@ TEST(LolaMethodInstanceDeploymentTest, EqualityOperatorWithDifferentQueueSize)
 TEST(LolaMethodInstanceDeploymentTest, DefaultInstancesAreEqual)
 {
     // Given two LolaMethodInstanceDeployments constructed with std::nullopt
-    LolaMethodInstanceDeployment unit1{std::nullopt};
-    LolaMethodInstanceDeployment unit2{std::nullopt};
+    LolaMethodInstanceDeployment unit1{std::nullopt, true};
+    LolaMethodInstanceDeployment unit2{std::nullopt, true};
 
     // When comparing them
     // Then they should be equal
@@ -58,30 +61,33 @@ TEST(LolaMethodInstanceDeploymentTest, DefaultInstancesAreEqual)
 TEST(LolaMethodInstanceDeploymentTest, MaxQueueSize)
 {
     // Given a LolaMethodInstanceDeployment with maximum queue size
-    LolaMethodInstanceDeployment unit{std::numeric_limits<LolaMethodInstanceDeployment::QueueSize>::max()};
+    LolaMethodInstanceDeployment unit{std::numeric_limits<LolaMethodInstanceDeployment::QueueSize>::max(), true};
 
     // Then the queue size should match
     EXPECT_EQ(unit.queue_size_, std::numeric_limits<LolaMethodInstanceDeployment::QueueSize>::max());
 }
 
-TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithQueueSize)
+TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithQueueSizeAndEnabledFlag)
 {
     // Given a JSON object with queueSize
     const LolaMethodInstanceDeployment::QueueSize queue_size{20U};
     score::json::Object json_object{};
     json_object["queueSize"] = score::json::Any{queue_size};
+    json_object["use"] = score::json::Any{true};
 
     // When creating from JSON
     auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
 
     // Then the queue size should match the value from JSON
     EXPECT_EQ(unit.queue_size_, queue_size);
+    EXPECT_TRUE(unit.enabled_);
 }
 
 TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithoutQueueSizeResultsInNullopt)
 {
     // Given an empty JSON object
     score::json::Object json_object{};
+    json_object["use"] = score::json::Any{true};
 
     // When creating from JSON
     auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
@@ -91,7 +97,7 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithoutQueueSi
     EXPECT_EQ(unit.queue_size_, std::nullopt);
 }
 
-TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithoutEnabledLeavesEnabledUnset)
+TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithoutEnabledFlagTerminates)
 {
     // Given a JSON object without enabled
     const LolaMethodInstanceDeployment::QueueSize queue_size{20U};
@@ -99,11 +105,8 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithoutEnabled
     json_object["queueSize"] = score::json::Any{queue_size};
 
     // When creating from JSON
-    auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
-
-    // Then the method instance should keep enabled unset
-    EXPECT_FALSE(unit.enabled_.has_value());
-    EXPECT_EQ(unit.enabled_, std::nullopt);
+    // Then we terminate because the enabled flag is required.
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(LolaMethodInstanceDeployment::CreateFromJson(json_object));
 }
 
 TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithEnabledFalseDisablesMethod)
@@ -116,8 +119,7 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithEnabledFal
     auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
 
     // Then the method instance should be disabled
-    ASSERT_TRUE(unit.enabled_.has_value());
-    EXPECT_FALSE(unit.enabled_.value());
+    EXPECT_FALSE(unit.enabled_);
 }
 
 TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithEnabledTrueEnablesMethod)
@@ -130,8 +132,7 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithEnabledTru
     auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
 
     // Then the method instance should be enabled
-    ASSERT_TRUE(unit.enabled_.has_value());
-    EXPECT_TRUE(unit.enabled_.value());
+    EXPECT_TRUE(unit.enabled_);
 }
 
 TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeAndDeserializePreservesQueueSize)
@@ -140,6 +141,8 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeAndDeserializePrese
     const LolaMethodInstanceDeployment::QueueSize queue_size{100U};
     score::json::Object json_object{};
     json_object["queueSize"] = score::json::Any{queue_size};
+    json_object["use"] = score::json::Any{true};
+
     auto original_unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
 
     // When serializing and deserializing
@@ -157,6 +160,8 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeIncludesQueueSize)
     const LolaMethodInstanceDeployment::QueueSize queue_size{42U};
     score::json::Object json_object{};
     json_object["queueSize"] = score::json::Any{queue_size};
+    json_object["use"] = score::json::Any{true};
+
     auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
 
     // When serializing
@@ -180,8 +185,7 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeAndDeserializePrese
     auto reconstructed_unit = LolaMethodInstanceDeployment::CreateFromJson(serialized);
 
     // Then the use state should be preserved
-    ASSERT_TRUE(reconstructed_unit.enabled_.has_value());
-    EXPECT_FALSE(reconstructed_unit.enabled_.value());
+    EXPECT_FALSE(reconstructed_unit.enabled_);
     EXPECT_EQ(reconstructed_unit, original_unit);
 }
 

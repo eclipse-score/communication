@@ -44,7 +44,7 @@ const LolaServiceInstanceDeployment kLolaServiceInstanceDeployment{
     LolaServiceInstanceId{kInstanceId},
     {},
     {},
-    {{kDummyMethodName, LolaMethodInstanceDeployment{kQueueSize}}}};
+    {{kDummyMethodName, LolaMethodInstanceDeployment{kQueueSize, true}}}};
 
 const LolaServiceTypeDeployment kLolaServiceTypeDeployment{kServiceId, {}, {}, {{kDummyMethodName, kDummyMethodId}}};
 
