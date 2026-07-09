@@ -1,0 +1,98 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/sensor/SensorInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 7000,
+          "events": [
+            {
+              "eventName": "reading",
+              "eventId": 1
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "calibration_status",
+              "fieldId": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "/sensor/bidirectional_discovery/application_a",
+      "serviceTypeName": "/sensor/SensorInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 20,
+          "allowedProvider": {
+            "B": [0]
+          },
+          "asil-level": "B",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "reading",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "calibration_status",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/sensor/bidirectional_discovery/application_b",
+      "serviceTypeName": "/sensor/SensorInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 21,
+          "allowedConsumer": {
+            "B": [0]
+          },
+          "asil-level": "B",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "reading",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "calibration_status",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "B"
+  }
+}

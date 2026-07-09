@@ -11,10 +11,10 @@ transport, see the [Communication Module README](../../score/mw/com/README.md).
 
 Each example follows a two-phase model:
 
-1. **Init phase** — heap allocation is permitted. All `mw::com` setup happens here:
+1. **Init phase**: heap allocation is permitted. All `mw::com` setup happens here:
    runtime initialization, skeleton/proxy creation, `OfferService()`, `FindService()`,
    `Subscribe()`.
-2. **Operational phase** — heap allocation is forbidden. Only heap-free `mw::com`
+2. **Operational phase**: heap allocation is forbidden. Only heap-free `mw::com`
    operations are used: zero-copy event send/receive via shared memory, field updates,
    and subscription state queries.
 
@@ -23,7 +23,7 @@ The boundary is enforced by `heap_check::forbid_heap()`. See
 
 ## mw::com API Heap Behavior
 
-### Init phase only (allocates)
+### Init Phase (allocates)
 
 | API | Reason |
 |-----|--------|
@@ -37,7 +37,7 @@ The boundary is enforced by `heap_check::forbid_heap()`. See
 | `SetReceiveHandler()` | Allocates internally (see [Polling vs. Receive Handler](#polling-vs-receive-handler)) |
 | `Field::Update()` before `OfferService()` | Stores initial value on the heap |
 
-### Operational phase (heap-free)
+### Operational Phase (heap-free)
 
 | API | Mechanism |
 |-----|-----------|
@@ -76,24 +76,27 @@ the init phase before `forbid_heap()`.
 | `event_field_update` | `skeleton` | Event send + field `Update()` each cycle |
 | `event_field_update` | `proxy` | Polling with `GetNewSamples` for event and field |
 | `start_find_service` | `proxy` | `StartFindService` async discovery, wait-before-`forbid_heap` |
+| `bidirectional_discovery` | `application_a` | Both applications start concurrently: each offers its own service instance and discovers the other via `StartFindService` without deadlocking |
+| `bidirectional_discovery` | `application_b` | Symmetric counterpart of `application_a` |
 
-**Pairing:** start the skeleton before the proxy.
+**Pairing:** start the skeleton before the proxy. Pair D may be started in any order.
 
-- Pair A: `event_send_receive/skeleton` + `event_send_receive/proxy` (instanceId 1)
-- Pair B: `event_field_update/skeleton` + `event_field_update/proxy` (instanceId 11)
-- Pair C: `event_send_receive/skeleton` + `start_find_service/proxy` (instanceId 1; shares Pair A skeleton)
+* Pair A: `event_send_receive/skeleton` + `event_send_receive/proxy` (instanceId 1)
+* Pair B: `event_field_update/skeleton` + `event_field_update/proxy` (instanceId 11)
+* Pair C: `event_send_receive/skeleton` + `start_find_service/proxy` (instanceId 1; shares Pair A skeleton)
+* Pair D: `bidirectional_discovery/application_a` + `bidirectional_discovery/application_b` (instanceIds 20, 21; start in any order)
 
 ## Bi-directional Discovery / StartFindService
 
 `FindService()` polling blocks until the service appears. When two apps each wait for
-the other's service before calling `OfferService()`, neither proceeds — both time out.
+the other's service before calling `OfferService()`, neither proceeds; both time out.
 
 `StartFindService()` is non-blocking: it registers a callback and returns immediately,
 so each app can call `OfferService()` before discovery completes.
 
 ```
 StartFindService(handler, specifier)   // registers callback, returns immediately
-OfferService()                         // no blocking — other side can do the same
+OfferService()                         // non-blocking; other side can do the same
 wait for discovery callback            // Notification.waitForWithAbort(timeout, token)
 // callback has called Proxy::Create() — proxy is ready
 forbid_heap()
@@ -104,11 +107,13 @@ callback) both allocate. The main thread must wait for the callback to complete
 **before** calling `forbid_heap()`. If `forbid_heap()` races with an in-progress
 `Create()`, the process aborts.
 
-Dynamic reconnection after `forbid_heap()` is not supported — `Proxy::Create()` always
+Dynamic reconnection after `forbid_heap()` is not supported. `Proxy::Create()` always
 allocates.
 
 `examples/heap_free/start_find_service/proxy.cpp` demonstrates the full pattern paired
-with `event_send_receive/skeleton`.
+with `event_send_receive/skeleton`. `examples/heap_free/bidirectional_discovery/` takes
+this further: both `application_a` and `application_b` are simultaneously a skeleton and
+a proxy for each other, proving the pattern is deadlock-free even under mutual dependency.
 
 ## Build
 
@@ -143,7 +148,7 @@ bazel run //heap_free/event_field_update:skeleton
 bazel run //heap_free/event_field_update:proxy
 ```
 
-### Pair C — `StartFindService` async discovery
+### Pair C: `StartFindService` Async Discovery
 
 ```sh
 # Terminal 1
@@ -155,6 +160,18 @@ bazel run //heap_free/start_find_service:proxy
 The `start_find_service/proxy` uses `StartFindService` instead of `FindService` polling.
 The skeleton can be started simultaneously with (or after) the proxy — the proxy waits
 for the discovery callback instead of blocking in a retry loop.
+
+### Pair D: Bi-directional Discovery (start in any order)
+
+```sh
+# Terminal 1
+bazel run //heap_free/bidirectional_discovery:application_a
+# Terminal 2
+bazel run //heap_free/bidirectional_discovery:application_b
+```
+
+Each application offers its own service instance immediately and discovers the other via `StartFindService`.
+Both processes exit 0 regardless of which starts first.
 
 Binaries can also be run directly with a config path:
 
@@ -169,7 +186,7 @@ occurred during the operational phase.
 
 `heap_check/heap_check.h` replaces the global `operator new` with a version that
 calls `std::abort()` if the calling thread has entered the operational phase via
-`forbid_heap()`. The check is per-thread — library background threads (e.g., LoLa
+`forbid_heap()`. The check is per-thread. Library background threads (e.g., LoLa
 message-passing threads) are unaffected.
 
 Include `heap_check.h` in exactly one translation unit per binary. Call
@@ -186,8 +203,8 @@ share the same `serviceId` (7000) and `instanceId`.
 These examples are configured at ASIL-B level. Teams adapting these patterns for
 production should additionally:
 
-- Register MISRA deviations for `heap_check.h` in the project deviation record
-- Notify the safety monitor before calling `std::abort()` on heap violation
-- Add watchdog or timeout supervision to blocking waits
-- Verify that post-`forbid_heap()` cleanup paths (`StopOfferService`, `Unsubscribe`,
+* Register MISRA deviations for `heap_check.h` in the project deviation record
+* Notify the safety monitor before calling `std::abort()` on heap violation
+* Add watchdog or timeout supervision to blocking waits
+* Verify that post-`forbid_heap()` cleanup paths (`StopOfferService`, `Unsubscribe`,
   destructors) are heap-free in the target deployment
