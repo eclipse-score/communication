@@ -15,6 +15,7 @@
 
 use core::fmt::Debug;
 use core::marker::PhantomData;
+use core::todo;
 
 use bridge_ffi_rs::FFIBridge;
 use com_api_concept::{
@@ -112,7 +113,14 @@ impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>>
     fn update(&self, _value: &T) -> Result<()> {
         todo!()
     }
-    fn register_set_handler<'a>(&self) -> impl core::future::Future<Output = Result<&'a T>> + 'a {
-        async { todo!() }
+    fn register_set_handler<'a>(&self, callback: impl Fn(&T) + Send + 'a) -> Result<()> {
+
+        //If waker get the notification form FFI call then
+        //Create a task to call the callback with value.
+        //Thread pool is a option here to run the callback in a separate thread.
+        //But i feel we still need to think about exection order of that callback,
+        //Because separate thread can raise concurrency issue / race condition.
+
+        todo!()
     }
 }

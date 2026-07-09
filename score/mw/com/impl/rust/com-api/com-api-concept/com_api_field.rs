@@ -40,9 +40,11 @@ pub struct MethodReturnTypePtr<T: CommData + Debug> {
 /// `FieldMethods` trait is used to provide the `get` and `set` methods for the field instance which can be used before subscription.
 /// Event related APIs follow the same restriction for concurrent access.
 pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
-    FieldMethods<T, R> + com_api_concept::Subscriber<T, R, Subscription: FieldSubscription<T, R>>
+    com_api_concept::Subscriber<T, R, Subscription: FieldSubscription<T, R>>
 {
+    type FieldMethodsInstance: FieldMethods<T, R>;
 
+    fn get_field_method_instance(&self) -> Self::FieldMethodsInstance;
 }
 
 /// FieldSubscriber trait is provides the receiving APIs for the field subscription and
@@ -50,7 +52,7 @@ pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
 /// Additional methods which the field subscription provides are added in this trait.
 /// `FieldMethods` trait is used to provide the `get` and `set` methods for the field subscription.
 pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
-    com_api_concept::Subscription<T, R> + FieldMethods<T, R>
+    com_api_concept::Subscription<T, R>
 {
     /// Returns the number of new samples a call to try_receive (given parameter max_num_samples
     /// doesn't restrict it) would currently provide.
@@ -108,7 +110,7 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized>: Clone {
 
     /// This API will return a future whenever the field value is set by using `set' method of the field subscriber.
     /// Future will be resolved with value.
-    fn register_set_handler<'a>(&self) -> impl Future<Output = Result<&'a T>> + 'a;
+    fn register_set_handler<'a>(&self, callback: impl Fn(&T) + Send + 'a) -> Result<()>;
 }
 
 /// FieldSampleMut trait is used to update the value of the field sample for zero-copy API.

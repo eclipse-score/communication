@@ -188,22 +188,10 @@ fn create_producer<R: Runtime>(
     producer.offer().expect("Failed to offer producer instance")
 }
 
-async fn process_received_set_handler<R: Runtime>(producer: VehicleFieldProducer<R>) {
-    loop {
-        // When register callback called C++ has internal update call to notify the other consumer
-        // Here producer can process the value or do some operation.
-        // Value return from C++ side is reference of FieldType.
-        let value: &Tire = producer
-            .left_tire
-            .register_set_handler()
-            .await
-            .expect("Failed to register set handler");
-        //just for demonstration, updating same value.
-        producer
-            .left_tire
-            .update(value)
-            .expect("Failed to update producer instance");
-    }
+fn process_received<R: Runtime>(val: &Tire) {
+    //Update some internal value and process it
+    //maybe need to apply synchronation if we are using thread pool
+    //just for demonstration, updating same value with incremented pressure.
 }
 
 fn create_producer_field<R: Runtime + 'static>(
@@ -212,7 +200,7 @@ fn create_producer_field<R: Runtime + 'static>(
     initial_value: Tire,
 ) -> VehicleFieldOfferedProducer<R>
 where
-    <R as Runtime>::FieldPublisher<Tire>: Send,
+    <R as Runtime>::FieldPublisher<Tire>: Send + Sync,
     <R as Runtime>::FieldPublisher<Exhaust>: Send,
 {
     let producer_builder = runtime.producer_builder::<VehicleFieldInterface>(service_id);
@@ -224,15 +212,20 @@ where
         .update(&initial_value)
         .expect("Failed to update producer instance");
 
-    // Register set handler BEFORE offering
-    // Clone producer for the async handler task (TODO: need to think about clone)
-    // As we need to clone publisher as well in macro.
-    let producer_clone = producer.clone();
-    //TODO: Test with tokio spawn as well
-    // Spawn handler in a separate thread to avoid blocking
-    std::thread::spawn(move || {
-        futures::executor::block_on(process_received_set_handler(producer_clone));
-    });
+    producer
+        .left_tire
+        .register_set_handler(|value: &Tire| {
+            //just for demonstration, updating same value with incremented pressure.
+            //Update some internal value and process it
+            //maybe user need to apply synchronation mechanism if Lib is using thread pool
+            producer
+                .left_tire
+                .update(&Tire {
+                    pressure: value.pressure + 1.0,
+                })
+                .expect("Failed to update field value");
+        })
+        .expect("Failed to register set handler");
 
     producer.offer().expect("Failed to offer producer instance")
 }
@@ -261,9 +254,16 @@ fn create_consumer_field<R: Runtime>(
 
 fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>) {
     //currently we do not have MethodReturnTypePtr implementation for Lola runtime.
-    let _ = consumer.left_tire.get().expect("Failed to get field value");
 
-    let _ = consumer
+    //If user did not get the insatnce before the subscribe call then consumer will be consumed.
+    let field_method = consumer.get_field_method_instance();
+
+    let _ = field_method
+        .left_tire
+        .get()
+        .expect("Failed to get field value");
+
+    let _ = field_method
         .left_tire
         .set(Tire { pressure: 30.0 })
         .expect("Failed to set field value");
@@ -287,10 +287,10 @@ fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>) {
         }
     }
 
-    let _ = subscription
+    let _ = field_method
         .set(Tire { pressure: 35.0 })
         .expect("Failed to set field value");
-    let _ = subscription.get().expect("Failed to get field value");
+    let _ = field_method.get().expect("Failed to get field value");
 
     drop(sample_buf);
 
