@@ -62,6 +62,12 @@ namespace score::mw::com::impl
  */
 class Runtime final : public IRuntime
 {
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision: The "*Attorney" class is a test-only helper, which accesses private members of this class to
+    // verify internal invariants (e.g. that the ctor wires InstanceIdentifier to the configuration_ member).
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class RuntimeAttorney;
+
   public:
     /// \brief static initializer for the runtime. Must be called once per process, which intends to use ara::com
     ///        functionality.
@@ -125,10 +131,6 @@ class Runtime final : public IRuntime
     /// \pre the internal static initialization_config_ has to be initialized with a Configuration.
     static Runtime& getInstanceInternal() noexcept;
 
-    /// \brief Helper function to store the configuration in the initialization_config_ and sets the configuration in
-    /// InstanceIdentifier
-    static void StoreConfiguration(Configuration config) noexcept;
-
     /// \brief pointer to a mock to be used (set via InjectMock())
     static score::mw::com::impl::IRuntime* mock_;
 
@@ -144,6 +146,12 @@ class Runtime final : public IRuntime
     static std::optional<Configuration> initialization_config_;
 
     /// \brief configuration
+    ///
+    /// This is the stable, process-lifetime configuration owned by the Runtime singleton.
+    ///
+    /// \details The Runtime constructor registers a pointer to this member via InstanceIdentifier::SetConfiguration()
+    /// so that the InstanceIdentifier deserialization API (InstanceIdentifier::Create) adds reconstructed deployments
+    /// into this configuration.
     Configuration configuration_;
 
     /// \brief Tracing configuration parsed from json
