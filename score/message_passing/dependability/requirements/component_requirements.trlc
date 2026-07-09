@@ -10,10 +10,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-package MessagePassingComponent
+package MessagePassing
 
 import ScoreReq
-import MessagePassingSEooC
 
 ///////////////////////////////
 // Component Requirements
@@ -25,14 +24,14 @@ section "System Requirements" {
 ScoreReq.CompReq SafetyCertifiedTransportMechanismUnderQNX {
     description = "On the QNX operating system, the message passing component shall use the QNX-message-passing as the underlying IPC mechanism."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SafetyCertifiedTransportMechanism@1, MessagePassingSEooC.OSIndependentAPI@1]
+    derived_from = [MessagePassing.SafetyCertifiedTransportMechanism@1, MessagePassing.OSIndependentAPI@1]
     version = 1
 }
 
 ScoreReq.CompReq TransportMechanismOnLinux {
     description = "On the Linux operating system, the message passing component shall use unix domain-sockets as the underlying IPC mechanism."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SafetyCertifiedTransportMechanism@1, MessagePassingSEooC.OSIndependentAPI@1]
+    derived_from = [MessagePassing.SafetyCertifiedTransportMechanism@1, MessagePassing.OSIndependentAPI@1]
     version = 1
 }
 
@@ -40,14 +39,14 @@ ScoreReq.CompReq TransportMechanismOnLinux {
 ScoreReq.CompReq OSProvidedSenderIdentity {
     description = "The message passing server shall be able to identify the sender of each received message by the sender's OS-provided user ID (UID)."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.ServerInterface@1]
+    derived_from = [MessagePassing.ServerInterface@1]
     version = 1
 }
 
 ScoreReq.CompReq UnforgableSenderIdentity {
     description = "The transport mechanism shall ensure that the UID used to identify a message, cannot be forged by the client."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.ServerInterface@1]
+    derived_from = [MessagePassing.ServerInterface@1]
     version = 1
 }
 
@@ -58,56 +57,56 @@ section "Behaviour Requirements" {
 ScoreReq.CompReq ServerCallbacksAreSequential {
     description = "The server shall serialize all callbacks belonging to the same server instance, such that no two such callbacks execute concurrently."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.ServerInterface@1]
+    derived_from = [MessagePassing.ServerInterface@1]
     version = 1
 }
 
 ScoreReq.CompReq ServerProcessesSinglePendingRequest {
     description = "The server shall not dispatch a new sent-with-reply message callback on a given `ServerConnection` until the preceding request has been replied to."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SynchronousBidirectionalCommunication@1]
+    derived_from = [MessagePassing.SynchronousBidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq ClientConnectionMaintainsStateMachine {
     description = "The `ClientConnection` shall maintain a state machine with the states `Starting`, `Ready`, `Stopping`, and `Stopped`."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.OSIndependentAPI@1]
+    derived_from = [MessagePassing.OSIndependentAPI@1]
     version = 1
 }
 
 ScoreReq.CompReq SynchronousSendBlocksUntilServerReceives {
     description = "The `ClientConnection` shall block the calling thread during a `Send` call until the message has been and accepted by the server's receive buffer, when no client-side send queue is configured."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SynchronousUnidirectionalCommunication@1]
+    derived_from = [MessagePassing.SynchronousUnidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq AsynchronousSendReturnsAfterLocalAcceptance {
     description = "The `ClientConnection` shall return from a Send call after the message has been accepted by the local message passing layer, when a client-side send queue is configured."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.AsynchronousUnidirectionalCommunication@1]
+    derived_from = [MessagePassing.AsynchronousUnidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq SendWaitReplyBlocksUntilServerReply {
     description = "The ClientConnection shall block the calling thread during a SendWaitReply call until a reply from the server is received or an error is detected."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SynchronousBidirectionalCommunication@1]
+    derived_from = [MessagePassing.SynchronousBidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq MessageOrderPreservationPerConnection {
     description = "The message passing component shall deliver messages of the same delivery type from the same `IClientConnection` instance to the server in the order they were sent."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.PointToPointConnections@1]
+    derived_from = [MessagePassing.PointToPointConnections@1]
     version = 1
 }
 
 ScoreReq.CompReq SingleServerInstancePerServiceIdentifier {
     description = "The message passing component shall prevent more than one active `IServer` instance serves a any given service identifier at any point in time."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.PointToPointConnections@1]
+    derived_from = [MessagePassing.PointToPointConnections@1]
     version = 1
 }
 
@@ -118,70 +117,70 @@ section "API Requirements" {
 ScoreReq.CompReq IServerStartListeningAPI {
     description = "`IServer` shall provide a `StartListening` method that registers connection, disconnection, fire-and-forget message, and sent-with-reply message callbacks."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.ServerInterface@1]
+    derived_from = [MessagePassing.ServerInterface@1]
     version = 1
 }
 
 ScoreReq.CompReq IServerStopListeningAPI {
     description = "`IServer` shall provide a `StopListening` method that releases all registered callbacks and closes all active server connections."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.ServerInterface@1]
+    derived_from = [MessagePassing.ServerInterface@1]
     version = 1
 }
 
 ScoreReq.CompReq IClientConnectionSendAPI {
     description = "`IClientConnection` shall provide a Send method that accepts a byte-span message and transmits it to the server."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SynchronousUnidirectionalCommunication@1]
+    derived_from = [MessagePassing.SynchronousUnidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq IClientConnectionSendWaitReplyAPI {
     description = "`IClientConnection` shall provide a `SendWaitReply` method that accepts a message byte span and a reply buffer span and returns the received reply payload trimmed to its actual size."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SynchronousBidirectionalCommunication@1]
+    derived_from = [MessagePassing.SynchronousBidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq IClientConnectionSendWithCallbackAPI {
     description = "`IClientConnection` shall provide a `SendWithCallback` method that accepts a message byte span and a reply callback and returns after the message has been accepted by the local message passing layer."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.AsynchronousUnidirectionalCommunication@1]
+    derived_from = [MessagePassing.AsynchronousUnidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq IServerConnectionReplyAPI {
     description = "`IServerConnection` shall provide a Reply method that accepts a byte-span message and delivers it as the reply to the pending REQUEST from the client."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SynchronousBidirectionalCommunication@1]
+    derived_from = [MessagePassing.SynchronousBidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq IServerConnectionNotifyAPI {
     description = "`IServerConnection` shall provide a `Notify` method that accepts a byte-span message and sends it as an asynchronous notification to the client."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.ServerInterface@1]
+    derived_from = [MessagePassing.ServerInterface@1]
     version = 1
 }
 
 ScoreReq.CompReq ClientFactoryCreateAPI {
     description = "`IClientFactory` shall provide a `Create` method that accepts a `ServiceProtocolConfig` and a `ClientConfig` and returns a new `IClientConnection` instance configured for the service specified by the `ServiceProtocolConfig`."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.OSIndependentAPI@1]
+    derived_from = [MessagePassing.OSIndependentAPI@1]
     version = 1
 }
 
 ScoreReq.CompReq ServerFactoryCreateAPI {
     description = "`IServerFactory` shall provide a `Create` method that accepts a `ServiceProtocolConfig` and a `ServerConfig` and returns a new `IServer` instance configured for the service specified by the `ServiceProtocolConfig`."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.OSIndependentAPI@1]
+    derived_from = [MessagePassing.OSIndependentAPI@1]
     version = 1
 }
 
 ScoreReq.CompReq IClientConnectionGetStateAPI {
     description = "`IClientConnection` shall provide a `GetState` method that returns the current connection state."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.OSIndependentAPI@1]
+    derived_from = [MessagePassing.OSIndependentAPI@1]
     version = 1
 }
 
@@ -192,28 +191,28 @@ section "Server Unit Requirements" {
 ScoreReq.CompReq ServerPreallocatesConnectionObjects {
     description = "The server shall preallocate memory for the number of `IServerConnection` objects specified by `ServerConfig::pre_alloc_connections` at construction time, without allocating additional memory for each incoming client connection."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.AllowsBoundedMonotonicMemoryAllocation@1]
+    derived_from = [MessagePassing.AllowsBoundedMonotonicMemoryAllocation@1]
     version = 1
 }
 
 ScoreReq.CompReq ServerRingBufferQueueSizeConfigurable {
     description = "The server shall implement the shared incoming message queue as a ring buffer with the number of slots equal to `ServerConfig::max_queued_sends`, configured at construction time."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.AllowsBoundedMonotonicMemoryAllocation@1]
+    derived_from = [MessagePassing.AllowsBoundedMonotonicMemoryAllocation@1]
     version = 1
 }
 
 ScoreReq.CompReq ServerConnectionRefusal {
     description = "The server shall enable the connection callback to reject an incoming client connection by returning an error, without establishing a server connection for the rejected client."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.ServerInterface@1]
+    derived_from = [MessagePassing.ServerInterface@1]
     version = 1
 }
 
 ScoreReq.CompReq ServerIConnectionHandlerDispatch {
     description = "The server shall invoke the `IConnectionHandler` virtual methods of the `UserData` object for a given `IServerConnection` in place of the server-wide callbacks, when the UserData holds an `IConnectionHandler` instance."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.ServerInterface@1]
+    derived_from = [MessagePassing.ServerInterface@1]
     version = 1
 }
 
@@ -225,14 +224,14 @@ ScoreReq.CompReq ClientConnectionSendQueuePreallocation {
     description = "The `ClientConnection` shall preallocate send queue storage for the number of asynchronous messages specified by `ClientConfig::max_queued_sends` at construction time."
     note = "This requirement is intended to ensure a design that avoids dynamic memory allocation for the send queue, after the construction."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.AllowsBoundedMonotonicMemoryAllocation@1]
+    derived_from = [MessagePassing.AllowsBoundedMonotonicMemoryAllocation@1]
     version = 1
 }
 
 ScoreReq.CompReq ClientConnectionSharedResourceEngineInjection {
     description = "The `ClientConnection` shall accept an `ISharedResourceEngine` instance as a constructor parameter, which shouldbe the exclusive provider forall shared resources."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SingletonFreeImplementation@1]
+    derived_from = [MessagePassing.SingletonFreeImplementation@1]
     version = 1
 }
 
@@ -240,35 +239,35 @@ ScoreReq.CompReq ClientConnectionMockInjectionForTesting {
     description = "The `ClientConnection` shall use the `ISharedResourceEngine` interface for all OS interactions."
     note="This enables injection of mock implementations for unit testing."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.AllowsResourceMockInjectionForTesting@1]
+    derived_from = [MessagePassing.AllowsResourceMockInjectionForTesting@1]
     version = 1
 }
 
 ScoreReq.CompReq ClientConnectionSendFailsWhenStopped {
     description = "The `ClientConnection` shall return an error for a Send call when the connection is in the `Stopped` state."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SynchronousUnidirectionalCommunication@1]
+    derived_from = [MessagePassing.SynchronousUnidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq ClientConnectionSendWaitReplyFailsWhenStopped {
     description = "The `ClientConnection` shall return an error for a `SendWaitReply` call when the connection is in the `Stopped` state."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.SynchronousBidirectionalCommunication@1]
+    derived_from = [MessagePassing.SynchronousBidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq ClientConnectionSendWithCallbackFailsWhenStopped {
     description = "The `ClientConnection` shall return an error for a `SendWithCallback` call when the connection is in the `Stopped` state."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.AsynchronousUnidirectionalCommunication@1]
+    derived_from = [MessagePassing.AsynchronousUnidirectionalCommunication@1]
     version = 1
 }
 
 ScoreReq.CompReq ClientConnectionStateCallbackInvocation {
     description = "The `ClientConnection` shall invoke the registered `StateCallback` each time the connection state changes, passing the new state as the argument."
     safety = ScoreReq.Asil.B
-    derived_from = [MessagePassingSEooC.OSIndependentAPI@1]
+    derived_from = [MessagePassing.OSIndependentAPI@1]
     version = 1
 }
 

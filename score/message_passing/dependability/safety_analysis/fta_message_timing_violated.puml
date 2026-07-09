@@ -15,11 +15,11 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Message or reply delivered outside application timing bounds", "MessagePassingFMEA.MessageTimingViolated")
+$TopEvent("Message or reply delivered outside application timing bounds", "MessagePassing.MessageTimingViolated")
 
-$OrGate("OG1", "MessagePassingFMEA.MessageTimingViolated")
+$OrGate("OG1", "MessagePassing.MessageTimingViolated")
 
-$BasicEvent("OS scheduling or IPC queue delay not bounded by timing supervision", "MessagePassingFMEA.TimingSupervision", "OG1")
+$BasicEvent("OS scheduling or IPC queue delay not bounded by timing supervision", "MessagePassing.TimingSupervision", "OG1")
 $BasicEvent("sync_first_connect connection established from within a callback causes deadlock", "BE_SyncConnectDeadlock", "OG1")
 
 @enduml
