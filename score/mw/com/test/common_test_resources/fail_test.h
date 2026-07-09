@@ -63,6 +63,8 @@ class ExitFunctionGuard
     explicit ExitFunctionGuard(ExitFunction exit_function);
     ~ExitFunctionGuard();
 
+    static void Release();
+
     ExitFunctionGuard(const ExitFunctionGuard&) = delete;
     ExitFunctionGuard& operator=(const ExitFunctionGuard&) = delete;
     ExitFunctionGuard(ExitFunctionGuard&&) = delete;

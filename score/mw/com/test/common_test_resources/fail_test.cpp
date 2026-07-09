@@ -56,7 +56,16 @@ ExitFunctionGuard::ExitFunctionGuard(ExitFunction exit_function)
 
 ExitFunctionGuard::~ExitFunctionGuard()
 {
-    std::invoke(g_fail_test_exit_function.value());
+    if (g_fail_test_exit_function.has_value())
+    {
+        std::invoke(g_fail_test_exit_function.value());
+        g_fail_test_exit_function.reset();
+    }
+}
+
+void ExitFunctionGuard::Release()
+{
     g_fail_test_exit_function.reset();
 }
+
 }  // namespace score::mw::com::test

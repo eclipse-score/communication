@@ -176,6 +176,8 @@ bool CheckPointControl::WaitForCheckpointReachedOrError(const std::chrono::durat
     return notification_received;
 }
 
+std::string ToString(CheckPointControl::ProceedInstruction proceed_instruction);
+
 }  // namespace score::mw::com::test
 
 #endif  // SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_CHECK_POINT_CONTROL_H

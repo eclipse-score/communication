@@ -1,0 +1,7 @@
+{
+  "appId": "CR",
+  "appDesc": "consumer_restart",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}

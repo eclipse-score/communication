@@ -1,0 +1,65 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/methods/partial_restart/provider_restart/TestMethods",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 4000,
+          "methods": [
+            {
+              "methodName": "test_method",
+              "methodId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "partial_restart/methods/provider_restart",
+      "serviceTypeName": "/test/methods/partial_restart/provider_restart/TestMethods",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 4000,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "methods": [
+            {
+              "methodName": "test_method",
+              "queueSize": 1
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0,1263030
+            ],
+            "B": [
+              0,1263030
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0,1263030
+            ],
+            "B": [
+              0,1263030
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM"
+  }
+}

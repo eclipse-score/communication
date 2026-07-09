@@ -468,6 +468,14 @@ int DoProviderNormalRestartNoProxy(score::cpp::stop_token test_stop_token, int a
         return EXIT_FAILURE;
     }
 
+    if (provider_checkpoint_control.HasErrorOccurred())
+    {
+        object_cleanup_guard.CleanUp();
+        std::cerr << "Controller Step (10): Wait for provider to exit failed because provider reported an error."
+                  << std::endl;
+        return EXIT_FAILURE;
+    }
+
     // ********************************************************************************
     // Step (11) - Trigger consumer for proceeding to next checkpoint. (leads to consumer waiting for service instance
     // to appear.).

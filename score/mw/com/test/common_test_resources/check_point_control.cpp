@@ -123,4 +123,23 @@ int WaitAndVerifyCheckPoint(const std::string& tag,
     return EXIT_SUCCESS;
 }
 
+std::string ToString(CheckPointControl::ProceedInstruction proceed_instruction)
+{
+    switch (proceed_instruction)
+    {
+        case CheckPointControl::ProceedInstruction::INVALID:
+            return "INVALID";
+        case CheckPointControl::ProceedInstruction::STILL_PROCESSING:
+            return "STILL_PROCESSING";
+        case CheckPointControl::ProceedInstruction::PROCEED_NEXT_CHECKPOINT:
+            return "PROCEED_NEXT_CHECKPOINT";
+        case CheckPointControl::ProceedInstruction::FINISH_ACTIONS:
+            return "FINISH_ACTIONS";
+        case CheckPointControl::ProceedInstruction::WAIT_FOR_KILL:
+            return "WAIT_FOR_KILL";
+        default:
+            return "UNKNOWN_PROCEED_INSTRUCTION";
+    }
+}
+
 }  // namespace score::mw::com::test
