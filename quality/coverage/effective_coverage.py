@@ -13,16 +13,21 @@
 # *******************************************************************************
 """Effective coverage calculator and HTML post-processor.
 
-Takes the llvm-cov HTML report and the resolved justification manifest.
-Modifies the HTML to show justified lines in a distinct color (yellow/orange)
+Takes an HTML coverage report (llvm-cov or gcovr) and the resolved justification
+manifest. Modifies the HTML to show justified lines in a distinct color (yellow/orange)
 and calculates effective coverage metrics.
 
+Supports two HTML formats:
+  - llvm-cov: produced by our custom reporter (Linux)
+  - gcovr:    produced by lcov_to_html.py via gcovr (QNX)
+
 Usage:
-    python effective_coverage.py --html-dir <path> --manifest <manifest.json> --output <report.json>
+    python effective_coverage.py --html-dir <path> --manifest <manifest.json> --output <report.json> [--lcov <lcov.dat>]
 """
 
 import argparse
 import json
+import math
 import os
 import re
 import sys
@@ -35,6 +40,11 @@ from typing import Any, Dict, List, Tuple
 LINE_NUMBER_RE = re.compile(r"<a name='L(\d+)'")
 UNCOVERED_LINE_TD_RE = re.compile(r"<td class='uncovered-line'>")
 COVERED_LINE_TD_RE = re.compile(r"<td class='covered-line'>")
+
+
+def floor_two_decimals(value: float) -> float:
+    """Floor a percentage value to two decimal places."""
+    return math.floor(value * 100.0) / 100.0
 
 
 def main() -> None:
@@ -50,6 +60,18 @@ def main() -> None:
     if not html_dir.exists():
         print(f"ERROR: HTML report directory not found: {html_dir}", file=sys.stderr)
         sys.exit(1)
+
+    # Detect HTML format: llvm-cov uses style.css, gcovr uses index.<name>.<md5>.html naming.
+    html_format = detect_html_format(html_dir)
+
+    if html_format == "gcovr":
+        _main_gcovr(args, html_dir, justified_files)
+    else:
+        _main_llvm_cov(args, html_dir, justified_files)
+
+
+def _main_llvm_cov(args: argparse.Namespace, html_dir: Path, justified_files: Dict) -> None:
+    """Main logic for llvm-cov HTML format."""
 
     # Parse raw coverage totals from the index page (matches llvm-cov exactly).
     totals = parse_index_page_totals(html_dir)
@@ -98,16 +120,16 @@ def main() -> None:
         "justified_lines": total_justified,
         "unjustified_uncovered_lines": max(0, unjustified_uncovered),
         "stale_justifications": total_stale,
-        "raw_line_coverage_pct": round(100.0 * raw_covered / raw_total, 2) if raw_total > 0 else 0.0,
-        "effective_line_coverage_pct": round(
-            100.0 * (raw_covered + total_justified) / raw_total, 2
+        "raw_line_coverage_pct": floor_two_decimals(100.0 * raw_covered / raw_total) if raw_total > 0 else 0.0,
+        "effective_line_coverage_pct": floor_two_decimals(
+            100.0 * (raw_covered + total_justified) / raw_total
         ) if raw_total > 0 else 0.0,
         "total_branches": raw_branch_total,
         "covered_branches": raw_branch_covered,
         "justified_branches": total_justified_branches,
-        "raw_branch_coverage_pct": round(100.0 * raw_branch_covered / raw_branch_total, 2) if raw_branch_total > 0 else 0.0,
-        "effective_branch_coverage_pct": round(
-            100.0 * effective_branch_covered / raw_branch_total, 2
+        "raw_branch_coverage_pct": floor_two_decimals(100.0 * raw_branch_covered / raw_branch_total) if raw_branch_total > 0 else 0.0,
+        "effective_branch_coverage_pct": floor_two_decimals(
+            100.0 * effective_branch_covered / raw_branch_total
         ) if raw_branch_total > 0 else 0.0,
     }
 
@@ -519,7 +541,7 @@ def update_index_page(html_dir: Path, stats: Dict[str, Any], per_file_stats: Dic
             covered = int(line_cell.group(3))
             total = int(line_cell.group(4))
             eff_covered = covered + justified_lines
-            eff_pct = round(100.0 * eff_covered / total, 2) if total > 0 else 0.0
+            eff_pct = floor_two_decimals(100.0 * eff_covered / total) if total > 0 else 0.0
             color = _get_coverage_color(eff_pct)
             old_cell = line_cell.group(0)
             new_cell = (
@@ -534,7 +556,7 @@ def update_index_page(html_dir: Path, stats: Dict[str, Any], per_file_stats: Dic
             covered = int(branch_cell.group(3))
             total = int(branch_cell.group(4))
             eff_covered = covered + justified_branches
-            eff_pct = round(100.0 * eff_covered / total, 2) if total > 0 else 0.0
+            eff_pct = floor_two_decimals(100.0 * eff_covered / total) if total > 0 else 0.0
             color = _get_coverage_color(eff_pct)
             old_cell = branch_cell.group(0)
             new_cell = (
@@ -730,7 +752,443 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="Output path for justification report (JSON)",
     )
+    parser.add_argument(
+        "--lcov",
+        type=Path,
+        default=None,
+        help="Optional path to LCOV data file (used for gcovr format totals)",
+    )
     return parser.parse_args()
+
+
+# =============================================================================
+# Format detection
+# =============================================================================
+
+def detect_html_format(html_dir: Path) -> str:
+    """Detect whether the HTML report was generated by llvm-cov or gcovr.
+
+    Returns 'llvm_cov' or 'gcovr'.
+    """
+    # gcovr produces files named based on --html-details argument.
+    # We use index.html, so per-source files are index.<basename>.<md5>.html
+    if any(html_dir.glob("index.*.*.html")):
+        return "gcovr"
+    if (html_dir / "coverage_details.html").exists():
+        return "gcovr"
+    return "llvm_cov"
+
+def _parse_lcov_totals(lcov_path: Path) -> Dict[str, Tuple[int, int]]:
+    """Parse coverage totals from an LCOV data file.
+
+    Sums LH/LF (line hit/found) and BRH/BRF (branch hit/found) across all records.
+    """
+    total_lines = 0
+    hit_lines = 0
+    total_branches = 0
+    hit_branches = 0
+
+    with open(lcov_path, "r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("LF:"):
+                total_lines += int(line[3:])
+            elif line.startswith("LH:"):
+                hit_lines += int(line[3:])
+            elif line.startswith("BRF:"):
+                total_branches += int(line[4:])
+            elif line.startswith("BRH:"):
+                hit_branches += int(line[4:])
+
+    return {
+        "lines": (hit_lines, total_lines),
+        "branches": (hit_branches, total_branches),
+    }
+# =============================================================================
+# gcovr support
+# =============================================================================
+
+def _main_gcovr(args: argparse.Namespace, html_dir: Path, justified_files: Dict) -> None:
+    """Main logic for gcovr HTML format (produced by lcov_to_html.py via gcovr)."""
+
+    # Parse coverage totals from LCOV file or gcovr index page.
+    if args.lcov and args.lcov.exists():
+        totals = _parse_lcov_totals(args.lcov)
+    else:
+        totals = _parse_gcovr_index_totals(html_dir)
+
+    raw_covered, raw_total = totals["lines"]
+    raw_branch_covered, raw_branch_total = totals["branches"]
+
+    # Process each source HTML file
+    total_justified = 0
+    total_stale = 0
+    total_justified_branches = 0
+    applied_justifications: List[Dict[str, Any]] = []
+    stale_justifications: List[Dict[str, Any]] = []
+    per_file_stats: Dict[str, Dict[str, int]] = {}
+
+    source_html_files = _find_gcovr_source_files(html_dir)
+    for html_file in source_html_files:
+        rel_source_path = _extract_gcovr_source_path(html_file)
+        if not rel_source_path:
+            continue
+
+        file_justifications = find_matching_justifications(
+            rel_source_path, justified_files
+        )
+
+        file_stats = _process_gcovr_file(
+            html_file, file_justifications, applied_justifications, stale_justifications
+        )
+
+        total_justified += file_stats["justified"]
+        total_stale += file_stats["stale"]
+        total_justified_branches += file_stats["justified_branches"]
+
+        if file_stats["justified"] > 0 or file_stats["justified_branches"] > 0:
+            per_file_stats[rel_source_path] = file_stats
+
+    # Calculate stats
+    raw_uncovered = raw_total - raw_covered
+    unjustified_uncovered = raw_uncovered - total_justified
+    effective_branch_covered = raw_branch_covered + total_justified_branches
+
+    stats = {
+        "total_instrumented_lines": raw_total,
+        "covered_lines": raw_covered,
+        "justified_lines": total_justified,
+        "unjustified_uncovered_lines": max(0, unjustified_uncovered),
+        "stale_justifications": total_stale,
+        "raw_line_coverage_pct": floor_two_decimals(100.0 * raw_covered / raw_total) if raw_total > 0 else 0.0,
+        "effective_line_coverage_pct": floor_two_decimals(
+            100.0 * (raw_covered + total_justified) / raw_total
+        ) if raw_total > 0 else 0.0,
+        "total_branches": raw_branch_total,
+        "covered_branches": raw_branch_covered,
+        "justified_branches": total_justified_branches,
+        "raw_branch_coverage_pct": floor_two_decimals(100.0 * raw_branch_covered / raw_branch_total) if raw_branch_total > 0 else 0.0,
+        "effective_branch_coverage_pct": floor_two_decimals(
+            100.0 * effective_branch_covered / raw_branch_total
+        ) if raw_branch_total > 0 else 0.0,
+    }
+
+    # Inject CSS for justified lines
+    _inject_gcovr_justified_css(html_dir)
+
+    # Update the gcovr index page with effective coverage banner
+    _update_gcovr_index_page(html_dir, stats)
+
+    # Write output report
+    report = {
+        "version": 1,
+        "summary": stats,
+        "applied_justifications": applied_justifications,
+        "stale_justifications": stale_justifications,
+    }
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+        print(f"Effective coverage report written to: {args.output}")
+    else:
+        print(json.dumps(report, indent=2))
+
+
+def _parse_gcovr_index_totals(html_dir: Path) -> Dict[str, Tuple[int, int]]:
+    """Parse coverage totals from gcovr's index page.
+
+    gcovr format shows coverage in the summary header with patterns like:
+      <td ... class="headerTableEntry">75.0%</td>
+      <td ... class="headerTableEntry">30 / 40</td>
+    """
+    index_file = html_dir / "index.html"
+    if not index_file.exists():
+        # Fallback for older naming
+        index_file = html_dir / "coverage_details.html"
+    if not index_file.exists():
+        return {"lines": (0, 0), "branches": (0, 0)}
+
+    content = index_file.read_text(encoding="utf-8", errors="replace")
+
+    # gcovr summary table has rows with line/branch stats.
+    # Look for the summary div with class "summary" containing coverage percentages.
+    # Pattern: "N / M" in table cells for covered/total
+    lines_covered, lines_total = 0, 0
+    branches_covered, branches_total = 0, 0
+
+    # gcovr index uses meter elements with data attributes or text like "N / M"
+    # The summary section shows: Line Coverage: XX.X% (covered / total)
+    ratio_pattern = re.compile(r'(\d+)\s*/\s*(\d+)')
+
+    # Find the summary section — gcovr puts line/branch/function stats in order.
+    # Look for the summary-coverage section
+    summary_match = re.search(
+        r'class="[^"]*summary[^"]*".*?</div>', content, re.DOTALL
+    )
+    if summary_match:
+        summary_text = summary_match.group(0)
+        ratios = ratio_pattern.findall(summary_text)
+        # gcovr order: lines, functions, branches (if branches enabled)
+        if len(ratios) >= 1:
+            lines_covered, lines_total = int(ratios[0][0]), int(ratios[0][1])
+        if len(ratios) >= 3:
+            branches_covered, branches_total = int(ratios[2][0]), int(ratios[2][1])
+        elif len(ratios) >= 2:
+            # Might be lines then branches (no functions section)
+            branches_covered, branches_total = int(ratios[1][0]), int(ratios[1][1])
+
+    if lines_total == 0:
+        # Fallback: scan the whole page for ratio patterns
+        all_ratios = ratio_pattern.findall(content)
+        if len(all_ratios) >= 1:
+            lines_covered, lines_total = int(all_ratios[0][0]), int(all_ratios[0][1])
+        if len(all_ratios) >= 3:
+            branches_covered, branches_total = int(all_ratios[2][0]), int(all_ratios[2][1])
+
+    return {
+        "lines": (lines_covered, lines_total),
+        "branches": (branches_covered, branches_total),
+    }
+
+
+def _find_gcovr_source_files(html_dir: Path) -> List[Path]:
+    """Find all per-source HTML files in a gcovr report.
+
+    gcovr --html-details creates files named:
+      index.<basename>.<md5>.html
+    The index is index.html (no dot-separated parts after "index").
+    """
+    files = []
+    for html_file in sorted(html_dir.glob("index.*.html")):
+        # Skip function pages (contain ".functions." in name)
+        if ".functions." in html_file.name:
+            continue
+        files.append(html_file)
+    return files
+
+
+def _extract_gcovr_source_path(html_file: Path) -> str:
+    """Extract the source file path from a gcovr per-source HTML file.
+
+    gcovr embeds the directory in a "Directory:" table row and the filename
+    in the Box-header. Combining these gives the full relative source path.
+    """
+    try:
+        content = html_file.read_text(encoding="utf-8", errors="replace")[:8000]
+    except OSError:
+        return ""
+
+    # Extract directory from: <th scope="row">Directory:</th>\n<td>path/</td>
+    directory = ""
+    dir_match = re.search(
+        r'Directory:</th>\s*<td>([^<]*)</td>', content
+    )
+    if dir_match:
+        directory = dir_match.group(1).strip()
+
+    # Extract filename from the Box-header
+    filename = ""
+    name_match = re.search(
+        r'class="Box-header[^"]*d-flex flex-space-between[^"]*"[^>]*>\s*\n?\s*([^\n<]+)',
+        content,
+    )
+    if name_match:
+        filename = name_match.group(1).strip()
+
+    if not filename:
+        # Fallback: look in <title>
+        title_match = re.search(r'<title>([^<]+?)(?:\s*-\s*GCC[^<]*)?</title>', content)
+        if title_match:
+            filename = title_match.group(1).strip()
+
+    if directory and filename:
+        return directory + filename
+    return filename
+
+
+def _process_gcovr_file(
+    html_file: Path,
+    justifications: Dict[int, Dict[str, str]],
+    applied_justifications: List[Dict[str, Any]],
+    stale_justifications: List[Dict[str, Any]],
+) -> Dict[str, int]:
+    """Process a single gcovr source HTML file. Modifies it in-place.
+
+    gcovr line format:
+        <tr class="source-line">
+          <td class="lineno"><a id="l{num}" ...>{num}</a></td>
+          <td class="linebranch">...</td>
+          <td class="linecount coveredLine show_coveredLine">5</td>
+          <td class="src coveredLine show_coveredLine">source code</td>
+        </tr>
+
+    Coverage classes:
+      - coveredLine: line is covered (count > 0)
+      - uncoveredLine: line is not covered (count == 0)
+      - partialCoveredLine: some branches not taken
+      - excludedLine: excluded from coverage
+    """
+    file_stats = {"justified": 0, "stale": 0, "justified_branches": 0}
+
+    if not justifications:
+        return file_stats
+
+    with open(html_file, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Parse line coverage status from gcovr HTML.
+    # Each source line: <td class="lineno"><a id="l{num}"...>
+    # followed by <td class="linecount {covclass} ...">
+    line_pattern = re.compile(
+        r'<a id="l(\d+)"[^>]*>.*?'
+        r'<td class="linecount\s+(\w+)',
+        re.DOTALL,
+    )
+
+    # Also detect uncovered branches per line
+    # gcovr: <div class="notTakenBranch"> on lines with branch issues
+    branch_pattern = re.compile(
+        r'<a id="l(\d+)"[^>]*>.*?<td class="linebranch">(.*?)</td>',
+        re.DOTALL,
+    )
+
+    line_effective_status: Dict[int, str] = {}
+    lines_with_uncovered_branches: set = set()
+
+    for m in line_pattern.finditer(content):
+        line_num = int(m.group(1))
+        cov_class = m.group(2)
+        if cov_class == "coveredLine":
+            line_effective_status[line_num] = "covered"
+        elif cov_class == "uncoveredLine":
+            line_effective_status[line_num] = "uncovered"
+        elif cov_class == "partialCoveredLine":
+            line_effective_status[line_num] = "covered"
+            lines_with_uncovered_branches.add(line_num)
+
+    # Also check branch details for not-taken branches
+    for m in branch_pattern.finditer(content):
+        line_num = int(m.group(1))
+        branch_content = m.group(2)
+        if "notTakenBranch" in branch_content:
+            lines_with_uncovered_branches.add(line_num)
+
+    # Determine stale vs applicable justifications
+    for line_num, justification in justifications.items():
+        status = line_effective_status.get(line_num)
+        has_uncovered_branches = line_num in lines_with_uncovered_branches
+        if status == "covered" and not has_uncovered_branches:
+            file_stats["stale"] += 1
+            stale_justifications.append({
+                "file": _extract_gcovr_source_path(html_file),
+                "line": line_num,
+                "id": justification.get("id", ""),
+                "reason": "Line is already covered and has no uncovered branches — justification is stale",
+            })
+        elif status == "uncovered":
+            file_stats["justified"] += 1
+            applied_justifications.append({
+                "file": _extract_gcovr_source_path(html_file),
+                "line": line_num,
+                "id": justification.get("id", ""),
+                "category": justification.get("category", ""),
+            })
+            # Mark the line as justified in the HTML
+            content = _mark_gcovr_line_justified(content, line_num)
+        elif status == "covered" and has_uncovered_branches:
+            file_stats["justified_branches"] += 1
+            applied_justifications.append({
+                "file": _extract_gcovr_source_path(html_file),
+                "line": line_num,
+                "id": justification.get("id", ""),
+                "category": justification.get("category", ""),
+            })
+
+    # Write modified content back
+    if file_stats["justified"] > 0:
+        with open(html_file, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    return file_stats
+
+
+def _mark_gcovr_line_justified(content: str, line_num: int) -> str:
+    """Replace 'uncoveredLine' with 'justifiedLine' for a specific line in gcovr HTML."""
+    # Find the line anchor and replace the coverage class in that row
+    # Pattern: <a id="l{num}">...uncoveredLine... (within the same <tr>)
+    pattern = re.compile(
+        rf'(<a id="l{line_num}"[^>]*>.*?</tr>)',
+        re.DOTALL,
+    )
+    match = pattern.search(content)
+    if match:
+        original = match.group(0)
+        modified = original.replace("uncoveredLine", "justifiedLine")
+        modified = modified.replace("show_uncoveredLine", "show_justifiedLine")
+        content = content[:match.start()] + modified + content[match.end():]
+    return content
+
+
+def _inject_gcovr_justified_css(html_dir: Path) -> None:
+    """Inject CSS for justified lines into gcovr's stylesheet."""
+    # gcovr names its CSS file based on the output filename (coverage_details.css)
+    css_files = list(html_dir.glob("*.css"))
+    if not css_files:
+        return
+
+    justified_css = """
+/* Justified line styling (injected by effective_coverage.py) */
+.justifiedLine { background-color: #ffe4b5 !important; }
+.show_justifiedLine { display: table-cell; }
+.button_toggle_justifiedLine { background-color: #ffe4b5; border: 1px solid #daa520; }
+"""
+    # Inject into the first CSS file found
+    with open(css_files[0], "a", encoding="utf-8") as f:
+        f.write(justified_css)
+
+
+def _update_gcovr_index_page(html_dir: Path, stats: Dict[str, Any]) -> None:
+    """Update the gcovr index page with an effective coverage banner."""
+    index_file = html_dir / "index.html"
+    if not index_file.exists():
+        index_file = html_dir / "coverage_details.html"
+    if not index_file.exists():
+        return
+
+    with open(index_file, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    branch_info = ""
+    if stats.get("justified_branches", 0) > 0:
+        branch_info = (
+            f" | <strong>Effective Branch Coverage: {stats['effective_branch_coverage_pct']}%</strong>"
+            f" (Raw: {stats['raw_branch_coverage_pct']}%, Justified: {stats['justified_branches']} branches)"
+        )
+
+    banner = (
+        f'<div style="background:#ffe4b5;padding:10px;margin:10px;border-radius:5px;'
+        f'border:1px solid #daa520;font-family:sans-serif;">'
+        f'<strong>Effective Line Coverage: {stats["effective_line_coverage_pct"]}%</strong> '
+        f'(Raw: {stats["raw_line_coverage_pct"]}% | '
+        f'Justified: {stats["justified_lines"]} lines | '
+        f'Unjustified Uncovered: {stats["unjustified_uncovered_lines"]} lines)'
+        f'{branch_info}'
+        f'</div>'
+    )
+
+    # Insert before the file listing
+    if '<div class="Box m-3' in content:
+        content = content.replace(
+            '<div class="Box m-3',
+            f'{banner}<div class="Box m-3',
+            1,
+        )
+    elif "<body>" in content:
+        content = content.replace("<body>", f"<body>{banner}", 1)
+
+    with open(index_file, "w", encoding="utf-8") as f:
+        f.write(content)
 
 
 if __name__ == "__main__":

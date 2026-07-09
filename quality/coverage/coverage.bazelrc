@@ -11,16 +11,37 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# NOTE: --experimental_use_llvm_covmap (required for llvm-cov) causes Bazel to instrument
-# ALL targets regardless of --instrumentation_filter. The actual source filtering happens
-# in the merger/reporter via --ignore-filename-regex. The instrumentation_filter is kept
-# for documentation purposes and in case this Bazel limitation is fixed in the future.
+# ============================================================================
+# Platform-agnostic coverage settings
+# ============================================================================
 coverage --nocache_test_results
 coverage --cxxopt=-O0
 coverage --instrumentation_filter="^//score/message_passing[/:],^//score/mw/com/(impl|gateway|dependability|design|example|mocking|doc)"
+coverage --combined_report=lcov
+coverage --experimental_fetch_all_coverage_outputs
+
+# By default Bazel creates for each library a *.so for its tests. If there is a header that is used by multiple *.so files
+# and these *.so files have different instrumentation (production code has, test has not) a conflict arises which one to use when calculating coverage.
+# Then the first object is used, and it is pure luck if it contains the correct data or not. Even worse, small changes can change the order and then lead
+# to big coverage gaps. All these problems do not arise if no dynamic libs are used. Thus, we rather take bigger build times and binaries in advance for correct data.
+coverage --dynamic_mode=off
+
+# ============================================================================
+# LLVM source-based coverage (Linux)
+# ============================================================================
+# Use with: bazel coverage //...
+#
+# Uses LLVM's source-based coverage instrumentation (--experimental_use_llvm_covmap)
+# with custom merger/reporter that produce HTML reports via llvm-cov directly.
+#
+# NOTE: --experimental_use_llvm_covmap causes Bazel to instrument ALL targets
+# regardless of --instrumentation_filter. The actual source filtering happens
+# in the merger/reporter via --ignore-filename-regex. The instrumentation_filter
+# is kept for documentation purposes and in case this Bazel limitation is fixed
+# in the future.
+
 coverage --experimental_generate_llvm_lcov
 coverage --experimental_use_llvm_covmap
-coverage --combined_report=lcov
 coverage --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 
@@ -29,7 +50,6 @@ coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferr
 # The custom reporter (final) merges all profdata and generates the combined HTML report.
 coverage --coverage_output_generator=//quality/coverage/llvm_cov:merger
 coverage --coverage_report_generator=//quality/coverage/llvm_cov:reporter_wrapper
-coverage --experimental_fetch_all_coverage_outputs
 
 # Override GENERATE_LLVM_LCOV to keep raw profraw files instead of converting to LCOV.
 # The custom merger handles profraw→profdata→HTML directly.
@@ -37,17 +57,36 @@ coverage --test_env=GENERATE_LLVM_LCOV=0
 # Suppress the default gcov path since we use llvm-cov directly.
 coverage --test_env=COVERAGE_GCOV_PATH=/usr/bin/true
 
-# These compile time options are required to cover abnormal termination cases. In GCC one can use `__gcc_dump()`, but this does not work with LLVM
-# LLVM provided these compile-time options in combination with a specific profile setting which is enabled in bazel via `LLVM_PROFILE_CONTINUOUS_MODE`
+# These compile time options are required to cover abnormal termination cases. In GCC one can use `__gcc_dump()`, but this does not work with LLVM.
+# LLVM provides these compile-time options in combination with a specific profile setting which is enabled in bazel via `LLVM_PROFILE_CONTINUOUS_MODE`.
 coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
-coverage --cxxopt -mllvm
-coverage --cxxopt -runtime-counter-relocation
+coverage --features=enable_llvm_coverage_for_death_tests
 
-# By default Bazel creates for each library a *.so for its tests. If there is a header that is used by multiple *.so files
-# and these *.so files have different instrumentation (production code has, test has not) a conflict arises which one to use when calculating coverage.
-# Then the first object is used, and it is pure luck if it contains the correct data or not. Even worse, small changes can change the order and then lead
-# to big coverage gaps. All these problems do not arise if no dynamic libs are used. Thus, we rather take bigger build times and binaries in advance for correct data.
-coverage --dynamic_mode=off
+# ============================================================================
+# QNX x86_64 coverage configuration (gcov-based)
+# ============================================================================
+# Use with: bazel coverage //score/... --config=qnx
+#
+# QNX SDP 8 uses QCC which is GCC-based. Coverage uses the standard gcov
+# pipeline: QCC compiles with --coverage flags, tests produce .gcda/.gcno
+# files, and Bazel's default LCOV pipeline aggregates the results.
+
+coverage:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
+coverage:qnx_x86_64 --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0
+coverage:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_pc_nto_qnx800
+
+# Reset all values that were added for the default Linux coverage with llvm-cov
+coverage:qnx_x86_64 --noexperimental_generate_llvm_lcov
+coverage:qnx_x86_64 --noexperimental_use_llvm_covmap
+coverage:qnx_x86_64 --noexperimental_fetch_all_coverage_outputs
+coverage:qnx_x86_64 --coverage_output_generator=@bazel_tools//tools/test:lcov_merger
+coverage:qnx_x86_64 --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator
+coverage:qnx_x86_64 --test_env=GENERATE_LLVM_LCOV
+coverage:qnx_x86_64 --test_env=COVERAGE_GCOV_PATH
+coverage:qnx_x86_64 --test_env=LLVM_PROFILE_CONTINUOUS_MODE
+
+# Shorthand: --config=qnx uses qnx_x86_64 (consistent with .bazelrc).
+coverage:qnx --config=qnx_x86_64
 
 # Disable treat_warnings_as_errors for coverage builds to avoid build failures from instrumentation-related warnings
 coverage --features=-score_communication_treat_warnings_as_errors
