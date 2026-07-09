@@ -370,3 +370,11 @@ ScoreReq.AoU MethodInArgPtrMatches {
     version = 1
     mitigates = "Communication.CallBlocksOnCaller, Communication.CallBlocksOnCallee, Communication.CallBlocksOnUserHandler"
 }
+
+/* broken_link_c/issue/79416086 */
+ScoreReq.AoU NoGuaranteeOnSubscriptionStateCorrectness {
+    description = "For safety critical use cases, an application must treat a SubscriptionState of kSubscribed or kSubscriptionPending (returned by GetSubscriptionState() or reported by the SubscriptionStateChangeHandler) as the same."
+    safety = ScoreReq.Asil.B
+    note = "On a technical level, kSubscribed and kSubscriptionPending cannot be reliably differentiated, see {{SubscriptionState}} Component requirement for more details"
+    version = 1
+}
