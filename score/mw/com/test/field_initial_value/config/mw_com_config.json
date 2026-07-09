@@ -37,7 +37,9 @@
             {
               "fieldName": "test_field",
               "maxSubscribers": 1,
-              "numberOfSampleSlots": 1
+              "numberOfSampleSlots": 1,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
             }
           ]
         }
