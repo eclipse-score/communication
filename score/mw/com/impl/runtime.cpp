@@ -123,7 +123,7 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
     }
 
     auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
-    StoreConfiguration(std::move(config));
+    score::cpp::ignore = initialization_config_.emplace(std::move(config));
 }
 
 auto Runtime::getInstance() noexcept -> IRuntime&
@@ -179,6 +179,11 @@ Runtime::Runtime(std::pair<Configuration&&, std::optional<TracingFilterConfig>&&
       service_discovery_{*this},
       long_running_threads_{}
 {
+    // The InstanceIdentifier deserialization API (InstanceIdentifier::Create) needs to add the reconstructed
+    // ServiceType-/ServiceInstance-Deployments into a Configuration and store pointers into it. It must point to the
+    // stable configuration_ member owned by this singleton Runtime (whose lifetime spans the whole process), NOT to the
+    // transient initialization_config_ optional, which gets moved-from and reset() during singleton construction.
+    InstanceIdentifier::SetConfiguration(&configuration_);
     binding_runtimes_ = BindingRuntimeFactory::CreateBindingRuntimes(
         configuration_, long_running_threads_, tracing_filter_configuration_);
     if (configuration_.GetTracingConfiguration().IsTracingEnabled())
@@ -205,7 +210,10 @@ Runtime::Runtime(std::pair<Configuration&&, std::optional<TracingFilterConfig>&&
 
 Runtime::~Runtime() noexcept
 {
-    mw::log::LogDebug("lola") << "Starting destrcution of mw::com runtime";
+    // Reset the pointer InstanceIdentifier holds into our configuration_ member to avoid it dangling once this
+    // singleton Runtime (and thus configuration_) is destroyed.
+    InstanceIdentifier::SetConfiguration(nullptr);
+    mw::log::LogDebug("lola") << "Starting destruction of mw::com runtime";
 }
 
 std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specifier) const
@@ -270,12 +278,6 @@ tracing::ITracingRuntime* Runtime::GetTracingRuntime() const noexcept
 void Runtime::InjectMock(IRuntime* const mock) noexcept
 {
     mock_ = mock;
-}
-
-void Runtime::StoreConfiguration(Configuration config) noexcept
-{
-    score::cpp::ignore = initialization_config_.emplace(std::move(config));
-    InstanceIdentifier::SetConfiguration(&(*initialization_config_));
 }
 
 }  // namespace score::mw::com::impl

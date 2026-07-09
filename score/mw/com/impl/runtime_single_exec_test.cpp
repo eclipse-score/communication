@@ -38,6 +38,33 @@
 
 namespace score::mw::com::impl
 {
+
+// Test-only helper granting access to Runtime's private configuration_ member (befriended in runtime.h). Must live at
+// score::mw::com::impl scope (not in an anonymous namespace) so its name matches the friend declaration.
+class RuntimeAttorney
+{
+  public:
+    explicit RuntimeAttorney(Runtime& runtime) noexcept : runtime_{runtime} {}
+    const Configuration* GetConfigurationAddress() const noexcept
+    {
+        return &runtime_.configuration_;
+    }
+
+  private:
+    Runtime& runtime_;
+};
+
+// Test-only helper granting read access to the static InstanceIdentifier::configuration_ pointer (befriended in
+// instance_identifier.h). Must live at score::mw::com::impl scope so its name matches the friend declaration.
+class InstanceIdentifierAttorney
+{
+  public:
+    static const Configuration* GetConfiguration() noexcept
+    {
+        return InstanceIdentifier::configuration_;
+    }
+};
+
 namespace
 {
 
@@ -104,6 +131,56 @@ void WithConfigAtDefaultPath(const std::string& source_path)
 }
 
 using RuntimeInitializationTest = RuntimeSingleTestPerProcessFixture;
+
+TEST_F(RuntimeInitializationTest, ConstructorRegistersItsOwnConfigurationWithInstanceIdentifier)
+{
+    RecordProperty("Verifies", "SCR-18448357, SCR-18448382");
+    RecordProperty("Description",
+                   "The impl::Runtime constructor registers a pointer to its own "
+                   "configuration_ member with InstanceIdentifier::SetConfiguration, so that "
+                   "InstanceIdentifier::Create operates on the locked/stable runtime configuration.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    TestInSeparateProcess([this]() {
+        // Given an explicitly initialized runtime
+        const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+        Runtime::Initialize(runtime_configuration);
+
+        // When the Runtime singleton gets constructed (locked)
+        auto& runtime = static_cast<Runtime&>(Runtime::getInstance());
+
+        // Then InstanceIdentifier holds a pointer to exactly the runtime's own configuration_ member
+        const Configuration* const registered_configuration = InstanceIdentifierAttorney::GetConfiguration();
+        ASSERT_NE(registered_configuration, nullptr);
+        EXPECT_EQ(registered_configuration, RuntimeAttorney{runtime}.GetConfigurationAddress());
+    });
+}
+
+TEST_F(RuntimeInitializationTest, ImplicitInitializationAlsoRegistersConfigurationWithInstanceIdentifier)
+{
+    RecordProperty("Verifies", "SCR-18448357, SCR-18448382");
+    RecordProperty("Description",
+                   "Also for implicit (default) initialization the Runtime constructor registers its own "
+                   "configuration_ member with InstanceIdentifier, enabling InstanceIdentifier::Create.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    TestInSeparateProcess([this]() {
+        // Given a configuration at the default location and implicit default initialization
+        WithConfigAtDefaultPath(config_with_tire_pressure_port_);
+
+        // When implicitly constructing the Runtime singleton
+        auto& runtime = static_cast<Runtime&>(Runtime::getInstance());
+
+        // Then InstanceIdentifier holds a pointer to exactly the runtime's own configuration_ member
+        const Configuration* const registered_configuration = InstanceIdentifierAttorney::GetConfiguration();
+        ASSERT_NE(registered_configuration, nullptr);
+        EXPECT_EQ(registered_configuration, RuntimeAttorney{runtime}.GetConfigurationAddress());
+    });
+}
 
 TEST_F(RuntimeInitializationTest, InitializationLoadsCorrectConfiguration)
 {

@@ -45,6 +45,15 @@ class InstanceIdentifier final
      * InstanceIdentifier::ToString()
      * \param serialized_format The serialized format to create the InstanceIdentifier from
      * \return The created InstanceIdentifier or an error
+     *
+     * \pre The score::mw::com::impl::Runtime singleton must have been created (then the configuration is "locked")
+     * before calling this API, i.e. Only then has a valid Configuration pointer been registered (by the Runtime
+     * constructor) into which the reconstructed deployments are added.
+     * Currently, there is no public API whose sole purpose is to initialize/create the Runtime singleton; in practice
+     * any prior public score::mw::com call that reaches Runtime::getInstance()
+     * (e.g. creating a Skeleton/Proxy, FindService, or - as a last resort - score::mw::com::runtime::ResolveInstanceIDs
+     * called with a dummy InstanceSpecifier) triggers this.
+     * If the configuration has not been set, kInvalidConfiguration is returned.
      */
     static score::Result<InstanceIdentifier> Create(std::string&& serialized_format) noexcept;
 
