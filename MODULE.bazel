@@ -371,6 +371,7 @@ download_archive(
     name = "json_schema_validator",
     build = "//third_party/json_schema_validator:json_schema_validator.BUILD",
     dev_dependency = True,
+    integrity = "sha256-g/YdgRL0heDT8ectUWELo5JLF5kmqDdq7zwDh3D68gI=",
     strip_prefix = "json-schema-validator-2.1.0",
     urls = ["https://github.com/pboettch/json-schema-validator/archive/refs/tags/2.1.0.tar.gz"],
 )
@@ -443,8 +444,8 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 http_archive(
     name = "codeql_bundle",
     build_file = "//third_party/codeql:codeql.BUILD",
-    sha256 = "",
-    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.23.6/codeql-bundle-linux64.tar.gz",
+    sha256 = "0144d4bc415aee0d5638119dfb626a2d8689e2ff21758ba211a3984862b8522c",
+    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.26.0/codeql-bundle-linux64.tar.gz",
 )
 
 git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
@@ -452,7 +453,7 @@ git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "g
 git_repository(
     name = "codeql_coding_standards",
     build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
-    commit = "9fc970ff7eaedb64aa3cd172d45f4002c40f2a73",  # v2.60.0
+    commit = "06dc6bc32b05152fbe94dbf341a3e854574c9df5",  # v2.61.0
     remote = "https://github.com/github/codeql-coding-standards.git",
 )
 
