@@ -42,6 +42,11 @@ UNCOVERED_LINE_TD_RE = re.compile(r"<td class='uncovered-line'>")
 COVERED_LINE_TD_RE = re.compile(r"<td class='covered-line'>")
 
 
+def floor_two_decimals(value: float) -> float:
+    """Floor a percentage value to two decimal places."""
+    return math.floor(value * 100.0) / 100.0
+
+
 def main() -> None:
     """Main entry point."""
     args = parse_args()
@@ -115,15 +120,15 @@ def _main_llvm_cov(args: argparse.Namespace, html_dir: Path, justified_files: Di
         "justified_lines": total_justified,
         "unjustified_uncovered_lines": max(0, unjustified_uncovered),
         "stale_justifications": total_stale,
-        "raw_line_coverage_pct": math.floor(100.0 * raw_covered / raw_total) if raw_total > 0 else 0.0,
-        "effective_line_coverage_pct": math.floor(
+        "raw_line_coverage_pct": floor_two_decimals(100.0 * raw_covered / raw_total) if raw_total > 0 else 0.0,
+        "effective_line_coverage_pct": floor_two_decimals(
             100.0 * (raw_covered + total_justified) / raw_total
         ) if raw_total > 0 else 0.0,
         "total_branches": raw_branch_total,
         "covered_branches": raw_branch_covered,
         "justified_branches": total_justified_branches,
-        "raw_branch_coverage_pct": math.floor(100.0 * raw_branch_covered / raw_branch_total) if raw_branch_total > 0 else 0.0,
-        "effective_branch_coverage_pct": math.floor(
+        "raw_branch_coverage_pct": floor_two_decimals(100.0 * raw_branch_covered / raw_branch_total) if raw_branch_total > 0 else 0.0,
+        "effective_branch_coverage_pct": floor_two_decimals(
             100.0 * effective_branch_covered / raw_branch_total
         ) if raw_branch_total > 0 else 0.0,
     }
@@ -536,7 +541,7 @@ def update_index_page(html_dir: Path, stats: Dict[str, Any], per_file_stats: Dic
             covered = int(line_cell.group(3))
             total = int(line_cell.group(4))
             eff_covered = covered + justified_lines
-            eff_pct = math.floor(100.0 * eff_covered / total) if total > 0 else 0.0
+            eff_pct = floor_two_decimals(100.0 * eff_covered / total) if total > 0 else 0.0
             color = _get_coverage_color(eff_pct)
             old_cell = line_cell.group(0)
             new_cell = (
@@ -551,7 +556,7 @@ def update_index_page(html_dir: Path, stats: Dict[str, Any], per_file_stats: Dic
             covered = int(branch_cell.group(3))
             total = int(branch_cell.group(4))
             eff_covered = covered + justified_branches
-            eff_pct = math.floor(100.0 * eff_covered / total) if total > 0 else 0.0
+            eff_pct = floor_two_decimals(100.0 * eff_covered / total) if total > 0 else 0.0
             color = _get_coverage_color(eff_pct)
             old_cell = branch_cell.group(0)
             new_cell = (
@@ -855,15 +860,15 @@ def _main_gcovr(args: argparse.Namespace, html_dir: Path, justified_files: Dict)
         "justified_lines": total_justified,
         "unjustified_uncovered_lines": max(0, unjustified_uncovered),
         "stale_justifications": total_stale,
-        "raw_line_coverage_pct": math.floor(100.0 * raw_covered / raw_total) if raw_total > 0 else 0.0,
-        "effective_line_coverage_pct": math.floor(
+        "raw_line_coverage_pct": floor_two_decimals(100.0 * raw_covered / raw_total) if raw_total > 0 else 0.0,
+        "effective_line_coverage_pct": floor_two_decimals(
             100.0 * (raw_covered + total_justified) / raw_total
         ) if raw_total > 0 else 0.0,
         "total_branches": raw_branch_total,
         "covered_branches": raw_branch_covered,
         "justified_branches": total_justified_branches,
-        "raw_branch_coverage_pct": math.floor(100.0 * raw_branch_covered / raw_branch_total) if raw_branch_total > 0 else 0.0,
-        "effective_branch_coverage_pct": math.floor(
+        "raw_branch_coverage_pct": floor_two_decimals(100.0 * raw_branch_covered / raw_branch_total) if raw_branch_total > 0 else 0.0,
+        "effective_branch_coverage_pct": floor_two_decimals(
             100.0 * effective_branch_covered / raw_branch_total
         ) if raw_branch_total > 0 else 0.0,
     }
