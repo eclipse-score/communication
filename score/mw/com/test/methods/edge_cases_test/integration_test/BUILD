@@ -50,4 +50,10 @@ integration_test(
         "skeleton_recreation_test.py",
     ],
     filesystem = ":filesystem",
+    # Test fails regularly when running on qnx-8 due to a bug in
+    # inotify in which we receive spurious inotify events.
+    # To be enabled on qnx once the bug is fixed or
+    # service discovery is reimplemented to not rely on
+    # inotify events (SWP-214271).
+    target_compatible_with = ["@platforms//os:linux"],
 )
