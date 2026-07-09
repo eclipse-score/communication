@@ -214,6 +214,7 @@ cc_library(
     srcs = ["lola_method_instance_deployment.cpp"],
     hdrs = ["lola_method_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [":configuration_common_resources"],
     tags = ["FFI"],
     deps = ["@score_baselibs//score/json"],
 )
@@ -501,9 +502,13 @@ cc_unit_test(
 cc_unit_test(
     name = "lola_method_instance_deployment_test",
     srcs = ["lola_method_instance_deployment_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
     deps = [
         ":lola_method_instance_deployment",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 
