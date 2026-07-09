@@ -21,6 +21,7 @@
 
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
+#include "score/scope_exit/scope_exit.h"
 
 #include <chrono>
 #include <iostream>
@@ -119,6 +120,10 @@ void DoProviderActions(CheckPointControl& check_point_control,
                        int argc,
                        const char** argv) noexcept
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     // We enabled IPC Tracing in our mw_com_config.json. Since we don't want the full DMA-TraceLibrary functionality
     // integrated in this test (although it is an integration/ITF test), we mock it accordingly.
     GenericTraceApiMockContext trace_api_mock_context{};
@@ -186,7 +191,6 @@ void DoProviderActions(CheckPointControl& check_point_control,
     {
         std::cerr << "Provider Step (4): Expected to get notification to continue to next checkpoint but got: "
                   << static_cast<int>(wait_for_child_proceed_result) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
 
@@ -216,9 +220,9 @@ void DoProviderActions(CheckPointControl& check_point_control,
     {
         std::cerr << "Provider: Expected to get notification to finish but got: "
                   << static_cast<int>(wait_for_child_proceed_result) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
+    check_point_control_error_guard.Release();
     std::cerr << "Provider: Finishing Actions!" << std::endl;
 }
 
