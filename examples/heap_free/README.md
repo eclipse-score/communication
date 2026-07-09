@@ -31,6 +31,8 @@ The boundary is enforced by `heap_check::forbid_heap()`. See
 | `Skeleton::Create()` / `Proxy::Create()` | Allocates event and field bindings |
 | `OfferService()` | Sets up shared-memory bindings |
 | `FindService()` | Returns `ServiceHandleContainer` (`std::vector`) |
+| `StartFindService()` | Allocates internally (`make_shared` for handler storage); must be called before `forbid_heap()` |
+| `StopFindService()` | Tears down the discovery registration |
 | `Subscribe()` | Sets up the shared-memory subscription binding |
 | `SetReceiveHandler()` | Allocates internally (see [Polling vs. Receive Handler](#polling-vs-receive-handler)) |
 | `Field::Update()` before `OfferService()` | Stores initial value on the heap |
@@ -73,11 +75,40 @@ the init phase before `forbid_heap()`.
 | `event_send_receive` | `proxy` | `FindService`, `Subscribe`, subscription state check |
 | `event_field_update` | `skeleton` | Event send + field `Update()` each cycle |
 | `event_field_update` | `proxy` | Polling with `GetNewSamples` for event and field |
+| `start_find_service` | `proxy` | `StartFindService` async discovery, wait-before-`forbid_heap` |
 
 **Pairing:** start the skeleton before the proxy.
 
 - Pair A: `event_send_receive/skeleton` + `event_send_receive/proxy` (instanceId 1)
 - Pair B: `event_field_update/skeleton` + `event_field_update/proxy` (instanceId 11)
+- Pair C: `event_send_receive/skeleton` + `start_find_service/proxy` (instanceId 1; shares Pair A skeleton)
+
+## Bi-directional Discovery / StartFindService
+
+`FindService()` polling blocks until the service appears. When two apps each wait for
+the other's service before calling `OfferService()`, neither proceeds — both time out.
+
+`StartFindService()` is non-blocking: it registers a callback and returns immediately,
+so each app can call `OfferService()` before discovery completes.
+
+```
+StartFindService(handler, specifier)   // registers callback, returns immediately
+OfferService()                         // no blocking — other side can do the same
+wait for discovery callback            // Notification.waitForWithAbort(timeout, token)
+// callback has called Proxy::Create() — proxy is ready
+forbid_heap()
+```
+
+**Heap-free discipline:** `StartFindService()` and `Proxy::Create()` (called inside the
+callback) both allocate. The main thread must wait for the callback to complete
+**before** calling `forbid_heap()`. If `forbid_heap()` races with an in-progress
+`Create()`, the process aborts.
+
+Dynamic reconnection after `forbid_heap()` is not supported — `Proxy::Create()` always
+allocates.
+
+`examples/heap_free/start_find_service/proxy.cpp` demonstrates the full pattern paired
+with `event_send_receive/skeleton`.
 
 ## Build
 
@@ -111,6 +142,19 @@ bazel run //heap_free/event_field_update:skeleton
 # Terminal 2
 bazel run //heap_free/event_field_update:proxy
 ```
+
+### Pair C — `StartFindService` async discovery
+
+```sh
+# Terminal 1
+bazel run //heap_free/event_send_receive:skeleton
+# Terminal 2
+bazel run //heap_free/start_find_service:proxy
+```
+
+The `start_find_service/proxy` uses `StartFindService` instead of `FindService` polling.
+The skeleton can be started simultaneously with (or after) the proxy — the proxy waits
+for the discovery callback instead of blocking in a retry loop.
 
 Binaries can also be run directly with a config path:
 
