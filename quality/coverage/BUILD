@@ -60,7 +60,7 @@ cc_args(
 
 cc_feature(
     name = "enable_llvm_coverage_for_death_tests",
-    feature_name = "enable_llvm_coverage_for_death_tests",
     args = [":runtime_relocation_args"],
+    feature_name = "enable_llvm_coverage_for_death_tests",
     visibility = ["//visibility:public"],
 )

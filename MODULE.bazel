@@ -289,7 +289,7 @@ llvm.toolchain(
         "//quality/compiler_warnings/clang:strict_warnings",
         "//quality/compiler_warnings/clang:strict_warnings_no_error",
         "//quality/compiler_warnings/clang:third_party_warnings",
-        "//quality/coverage:enable_llvm_coverage_for_death_tests"
+        "//quality/coverage:enable_llvm_coverage_for_death_tests",
     ],
     link_libs = {"": [
         "-lrt",
