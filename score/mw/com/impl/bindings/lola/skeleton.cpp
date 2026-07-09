@@ -656,7 +656,7 @@ auto Skeleton::RegisterMethodHandlers(const QualityType asil_level,
         skeleton_instance_identifier,
         IMessagePassingService::ServiceMethodUnsubscribedHandler{
             on_service_method_subscribed_handler_scope_,
-            [this](const ProxyInstanceIdentifier proxy_instance_identifier) -> ResultBlank {
+            [this](const ProxyInstanceIdentifier proxy_instance_identifier) -> Result<void> {
                 return OnServiceMethodsUnsubscribed(proxy_instance_identifier);
             }});
     if (!unsubscription_result.has_value())
@@ -718,7 +718,7 @@ Result<void> Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier&
     return {};
 }
 
-ResultBlank Skeleton::OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier)
+Result<void> Skeleton::OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier)
 {
     std::lock_guard lock{on_service_methods_subscribed_mutex_};
 

@@ -1824,7 +1824,7 @@ section "com" {
 
                     Return values: returns score::Result which contains
 
-                    * on success, {{score::ResultBlank}}
+                    * on success, {{score::Result<void>}}
 
                     * {{score::result::Error}} containing the value {{ComErrc::kGenericSkeletonElementMissingTypeInformation}} if there is no correlated type information.
 
