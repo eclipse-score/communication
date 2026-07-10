@@ -267,11 +267,7 @@ void AppendEnabledMethodIdsAndQueueSizesImpl(
     const LolaMethodInstanceDeployment& lola_method_instance_deployment,
     LolaServiceElementId method_id)
 {
-    // At this point the enabled_ field must be set by the config parser.
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(lola_method_instance_deployment.enabled_.has_value(),
-                                                      "Method instance deployment must contain enabled on proxy side!");
-
-    if (lola_method_instance_deployment.enabled_.value())
+    if (lola_method_instance_deployment.enabled_)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
             lola_method_instance_deployment.queue_size_.has_value(),

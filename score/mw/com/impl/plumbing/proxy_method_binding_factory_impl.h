@@ -126,9 +126,7 @@ Result<std::unique_ptr<ProxyMethodBinding>> ProxyMethodBindingFactoryImpl<Return
             const auto method_it = lola_service_instance_deployment.methods_.find(method_name_str);
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_it != lola_service_instance_deployment.methods_.end(),
                                                         "Could not find method deployment information for method");
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_it->second.enabled_.has_value(),
-                                                        "Enabled flag must be set on proxy side for method!");
-            if (!method_it->second.enabled_.value())
+            if (!method_it->second.enabled_)
             {
                 score::mw::log::LogDebug("lola")
                     << "Proxy Method " << method_name_str

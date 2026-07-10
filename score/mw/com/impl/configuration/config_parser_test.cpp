@@ -129,8 +129,7 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
               1);
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, true);
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
-    ASSERT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_.has_value());
-    EXPECT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_.value());
+    EXPECT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_);
 
     const auto service_deployment = config.GetServiceTypes().at(deployments.service_);
     const auto* const lola_service_type_deployment =

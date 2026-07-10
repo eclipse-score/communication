@@ -61,13 +61,13 @@ LolaFieldInstanceDeployment MakeLolaFieldInstanceDeployment(
 
 LolaMethodInstanceDeployment MakeDefaultLolaMethodInstanceDeployment() noexcept
 {
-    return LolaMethodInstanceDeployment{std::nullopt};
+    return LolaMethodInstanceDeployment{std::nullopt, true};
 }
 
 LolaMethodInstanceDeployment MakeLolaMethodInstanceDeployment(
     const std::optional<LolaMethodInstanceDeployment::QueueSize> queue_size) noexcept
 {
-    const LolaMethodInstanceDeployment unit{queue_size};
+    const LolaMethodInstanceDeployment unit{queue_size, true};
     return unit;
 }
 
