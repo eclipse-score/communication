@@ -581,6 +581,60 @@ TEST_F(SkeletonPrepareOfferDeathTest, CallingPrepareOfferWhenLolaRuntimeCannotBe
     EXPECT_DEATH(test_function(), ".*");
 }
 
+TEST_F(SkeletonPrepareOfferFixture, PrepareOfferRecreateAfterReuseDoesNotUseStaleReopenedFlag)
+{
+    // Given a skeleton constructed from a valid QM deployment
+    InitialiseSkeleton(GetValidInstanceIdentifier());
+
+    // and given that on every Create() (which runs inside CreateSharedMemory) the reopened flag is observed to be false
+    EXPECT_CALL(shared_memory_factory_mock_, Create(test::kControlChannelPathQm, _, _, _, false))
+        .Times(AnyNumber())
+        .WillRepeatedly(
+            WithArg<1>([this](auto initialize_callback) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                EXPECT_FALSE(SkeletonAttorney{*skeleton_}.WasOldShmRegionReopened());
+                std::invoke(initialize_callback, control_qm_shared_memory_resource_mock_);
+                return control_qm_shared_memory_resource_mock_;
+            }));
+    EXPECT_CALL(shared_memory_factory_mock_, Create(test::kDataChannelPath, _, _, _, _))
+        .Times(AnyNumber())
+        .WillRepeatedly(
+            WithArg<1>([this](auto initialize_callback) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                std::invoke(initialize_callback, data_shared_memory_resource_mock_);
+                return data_shared_memory_resource_mock_;
+            }));
+
+    // and given the usage-marker flock drives the SHM strategy per phase, in order:
+    //   Offer #1:      lock succeeds        -> create SHM
+    //   StopOffer #1:  lock fails (proxy)   -> keep SHM
+    //   Offer #2:      lock fails (proxy)   -> reuse existing SHM (sets was_old_shm_region_reopened_ = true)
+    //   StopOffer #2:  lock succeeds        -> remove SHM
+    //   Offer #3:      lock succeeds        -> recreate SHM
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
+        .WillOnce(Return(score::cpp::blank{}))
+        .WillOnce(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EWOULDBLOCK))))
+        .WillOnce(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EWOULDBLOCK))))
+        .WillOnce(Return(score::cpp::blank{}))
+        .WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kUnlockOperation))
+        .Times(AnyNumber())
+        .WillRepeatedly(Return(score::cpp::blank{}));
+
+    // When the initial Offer is made, then it creates the shared memory
+    EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, {}).has_value());
+
+    // When StopOffer is called while a proxy is still attached, then the shared memory is kept
+    skeleton_->PrepareStopOffer({});
+
+    // When the service is offered again, then it reuses the existing shared memory
+    EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, {}).has_value());
+
+    // When StopOffer is called with no proxy attached, then the shared memory is removed
+    skeleton_->PrepareStopOffer({});
+
+    // When the service is offered a final time, then it recreates the shared memory
+    EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, {}).has_value());
+}
+
 using SkeletonPrepareStopOfferFixture = SkeletonTestMockedSharedMemoryFixture;
 TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferRemovesSharedMemoryIfUsageMarkerFileCanBeLocked)
 {
