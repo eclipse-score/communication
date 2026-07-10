@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -1211,6 +1212,65 @@ TEST_F(SkeletonFieldMoveConstructionFixture,
     // When calling the set handler that was captured by the method binding
     auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
     captured_set_handler_.value()(in_span, out_span);
+}
+
+class MyNotifierSkeleton : public SkeletonBase
+{
+  public:
+    using SkeletonBase::SkeletonBase;
+    SkeletonField<TestSampleType, WithGetter, WithNotifier> field_{*this, kFieldName};
+};
+
+class MyGetterOnlySkeleton : public SkeletonBase
+{
+  public:
+    using SkeletonBase::SkeletonBase;
+    SkeletonField<TestSampleType, WithGetter> field_{*this, kFieldName};
+};
+
+class SkeletonFieldNotifierTest : public ::testing::Test
+{
+  protected:
+    void SetUp() override
+    {
+        ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _, MethodType::kGet))
+            .WillByDefault(InvokeWithoutArgs([]() {
+                return std::make_unique<mock_binding::SkeletonMethod>();
+            }));
+
+        ON_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName, _))
+            .WillByDefault(Invoke([this](const InstanceIdentifier&,
+                                         SkeletonBinding&,
+                                         const std::string_view,
+                                         const FieldNotifier field_notifier) {
+                notifier_at_factory_call_ = field_notifier;
+                return std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+            }));
+    }
+
+    RuntimeMockGuard runtime_mock_guard_{};
+    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard_{};
+    SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard_{};
+
+    std::optional<FieldNotifier> notifier_at_factory_call_{};
+};
+
+TEST_F(SkeletonFieldNotifierTest, FieldWithNotifierReportsNotifierEnabledToTheFactory)
+{
+    // When constructing a skeleton whose field has WithNotifier in its tag pack
+    MyNotifierSkeleton skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // Then the field binding factory is told that the notifier is enabled
+    EXPECT_EQ(notifier_at_factory_call_, FieldNotifier::kEnabled);
+}
+
+TEST_F(SkeletonFieldNotifierTest, FieldWithoutNotifierReportsNotifierDisabledToTheFactory)
+{
+    // When constructing a skeleton whose field has no WithNotifier in its tag pack
+    MyGetterOnlySkeleton skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // Then the field binding factory is told that the notifier is disabled
+    EXPECT_EQ(notifier_at_factory_call_, FieldNotifier::kDisabled);
 }
 
 }  // namespace

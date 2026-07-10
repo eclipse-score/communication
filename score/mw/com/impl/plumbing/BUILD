@@ -849,6 +849,7 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
 

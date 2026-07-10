@@ -23,10 +23,15 @@
 #include "score/mw/com/impl/skeleton_binding.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
 
+#include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
+
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -278,6 +283,131 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
     EXPECT_DEATH(
         score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment, *skeleton_),
         ".*");
+}
+
+// Slot count for a field depends only on whether it has a notifier (WithNotifier):
+//   with notifier    + configured slots -> configured value is used, no warning
+//   with notifier    + missing slots    -> terminates (see death test above)
+//   without notifier + configured slots -> fixed count is used, configured value ignored with a warning
+//   without notifier + missing slots    -> fixed count is used, no warning
+// The observable behaviour (binding created, warning emitted) is checked below through the factory. The exact slot
+// numbers, which the built binding does not expose, are pinned at the CreateSkeletonEventProperties helper further
+// down.
+
+class SkeletonFieldNotifierSlotCountFixture : public lola::SkeletonMockedMemoryFixture
+{
+  protected:
+    void SetUp() override
+    {
+        lola::SkeletonMockedMemoryFixture::SetUp();
+        score::mw::log::SetLogRecorder(&recorder_mock_);
+    }
+
+    void TearDown() override
+    {
+        score::mw::log::SetLogRecorder(nullptr);
+        lola::SkeletonMockedMemoryFixture::TearDown();
+    }
+
+    InstanceIdentifier MakeFieldInstanceIdentifier(const std::optional<std::uint16_t> configured_field_slots)
+    {
+        config_store_.emplace(
+            kInstanceSpecifier,
+            make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+            QualityType::kASIL_QM,
+            kLolaServiceTypeDeployment,
+            LolaServiceInstanceDeployment{
+                LolaServiceInstanceId{kInstanceId},
+                {{kDummyEventName, LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0U}}},
+                {{kDummyFieldName,
+                  LolaFieldInstanceDeployment{
+                      LolaEventInstanceDeployment{configured_field_slots, {3U}, 1U, true, 0U}, false, false}}}});
+        return config_store_->GetInstanceIdentifier();
+    }
+
+    std::optional<ConfigurationStore> config_store_{};
+    score::mw::log::RecorderMock recorder_mock_{};
+};
+
+TEST_F(SkeletonFieldNotifierSlotCountFixture, FieldWithoutNotifierIsCreatedWithoutAConfiguredSlotCount)
+{
+    // Given a lola skeleton whose field does not configure numberOfSampleSlots
+    const auto instance_identifier = MakeFieldInstanceIdentifier(std::nullopt);
+    InitialiseSkeleton(instance_identifier);
+
+    // and no warning about an ignored slot count is expected
+    EXPECT_CALL(recorder_mock_, StartRecord(std::string_view{"lola"}, score::mw::log::LogLevel::kWarn)).Times(0);
+
+    // When creating the binding for a field whose notifier is disabled
+    const auto unit = SkeletonFieldBindingFactory<TestSampleType>::CreateEventBinding(
+        instance_identifier, *skeleton_, kDummyFieldName, FieldNotifier::kDisabled);
+
+    // Then a valid binding is created (with a notifier a missing slot count would terminate, see
+    // ConstructingWithoutNumberOfSamplesSlotsInServiceInstanceDeploymentTerminatestes test above)
+    EXPECT_NE(unit, nullptr);
+}
+
+TEST_F(SkeletonFieldNotifierSlotCountFixture, FieldWithoutNotifierWarnsWhenASlotCountIsConfigured)
+{
+    // Given a lola skeleton whose field configures a numberOfSampleSlots that a notifier-less field cannot use
+    const auto instance_identifier = MakeFieldInstanceIdentifier(std::uint16_t{5U});
+    InitialiseSkeleton(instance_identifier);
+
+    // Given a warning about the ignored slot count is expected
+    EXPECT_CALL(recorder_mock_, StartRecord(std::string_view{"lola"}, score::mw::log::LogLevel::kWarn)).Times(1);
+
+    // When creating the binding for a field whose notifier is disabled
+    const auto unit = SkeletonFieldBindingFactory<TestSampleType>::CreateEventBinding(
+        instance_identifier, *skeleton_, kDummyFieldName, FieldNotifier::kDisabled);
+
+    // Then a valid binding is still created
+    EXPECT_NE(unit, nullptr);
+}
+
+TEST_F(SkeletonFieldNotifierSlotCountFixture, FieldWithNotifierDoesNotWarnAboutTheConfiguredSlotCount)
+{
+    // Given a lola skeleton whose field configures a numberOfSampleSlots
+    const auto instance_identifier = MakeFieldInstanceIdentifier(std::uint16_t{5U});
+    InitialiseSkeleton(instance_identifier);
+
+    // Given no warning is expected because an enabled notifier uses the configured count
+    EXPECT_CALL(recorder_mock_, StartRecord(std::string_view{"lola"}, score::mw::log::LogLevel::kWarn)).Times(0);
+
+    // When creating the binding for a field whose notifier is enabled
+    const auto unit = SkeletonFieldBindingFactory<TestSampleType>::CreateEventBinding(
+        instance_identifier, *skeleton_, kDummyFieldName, FieldNotifier::kEnabled);
+
+    // Then a valid binding is created
+    EXPECT_NE(unit, nullptr);
+}
+
+// There is no Public API to check the slot count of a binding, so the exact slot count is pinned at the
+// CreateSkeletonEventProperties helper.
+
+TEST(CreateSkeletonEventPropertiesTest, UsesConfiguredSlotCountWhenNoOverrideIsGiven)
+{
+    // Given a field deployment configuring 5 sample slots and no tracing slots
+    const LolaFieldInstanceDeployment field_deployment{
+        LolaEventInstanceDeployment{{5U}, {3U}, 1U, true, 0U}, false, false};
+
+    // When creating the SkeletonEventProperties without a slot count override
+    const auto properties = detail::CreateSkeletonEventProperties(field_deployment, std::nullopt);
+
+    // Then the configured slot count is used
+    EXPECT_EQ(properties.number_of_slots, 5U);
+}
+
+TEST(CreateSkeletonEventPropertiesTest, OverrideReplacesConfiguredCountAndTracingSlotsAreAddedOnTop)
+{
+    // Given a field deployment configuring 9 sample slots and 3 tracing slots
+    const LolaFieldInstanceDeployment field_deployment{
+        LolaEventInstanceDeployment{{9U}, {3U}, 1U, true, 3U}, false, false};
+
+    // When creating the SkeletonEventProperties with a slot count override of 2
+    const auto properties = detail::CreateSkeletonEventProperties(field_deployment, std::uint16_t{2U});
+
+    // Then the override replaces the configured 9 and the tracing slots are added on top (2 + 3)
+    EXPECT_EQ(properties.number_of_slots, 5U);
 }
 
 }  // namespace
