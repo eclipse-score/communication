@@ -219,17 +219,20 @@ class SkeletonFieldImpl : public SkeletonFieldBase
 
     static constexpr bool kHasGetter = contains_type<WithGetter, Tags...>::value;
     static constexpr bool kHasSetter = contains_type<WithSetter, Tags...>::value;
+    static constexpr bool kHasNotifier = contains_type<WithNotifier, Tags...>::value;
 
     static std::unique_ptr<SkeletonEvent<FieldType>> MakeSkeletonEvent(SkeletonBase& parent,
                                                                        const std::string_view field_name)
     {
-        // No kHasNotifier: the SkeletonEvent is always built because it provides Update/Allocate.
         const SkeletonBaseView skeleton_base_view{parent};
         return std::make_unique<SkeletonEvent<FieldType>>(
             parent,
             field_name,
             SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
-                skeleton_base_view.GetAssociatedInstanceIdentifier(), skeleton_base_view.GetBinding(), field_name),
+                skeleton_base_view.GetAssociatedInstanceIdentifier(),
+                skeleton_base_view.GetBinding(),
+                field_name,
+                kHasNotifier ? FieldNotifier::kEnabled : FieldNotifier::kDisabled),
             typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{});
     }
 
