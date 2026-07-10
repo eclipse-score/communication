@@ -76,6 +76,23 @@ The same asymmetry shows up in how each side builds the field's event dispatch:
 - On the proxy side, the event dispatch (`proxy_event_dispatch_`) is only created when `WithNotifier` is set. Without it
   the member stays `nullptr` and the notifier methods are removed at compile time.
 
+The notifier also decides how many sample slots the provider allocates. `numberOfSampleSlots` exists to give
+subscribers something to read: the provider sizes the slot pool so all consumers can hold their samples while it
+keeps publishing (see the formula in the [configuration readme](../../impl/configuration/README.md)). Without
+`WithNotifier` no consumer can ever subscribe (proxy and skeleton are compiled from the same tag pack), so there is
+nothing to size. The skeleton only needs two slots for its own `Update()`: one holds the current value, one is
+written by the next update. The LoLa binding therefore ignores the configured value for such fields:
+
+| `WithNotifier` | `numberOfSampleSlots` | used slot count            |
+| -------------- | --------------------- | -------------------------- |
+| enabled        | configured            | as configured              |
+| enabled        | missing               | none, startup terminates   |
+| disabled       | missing               | 2                          |
+| disabled       | configured            | 2, a warning is logged     |
+
+Configured `numberOfIpcTracingSlots` come on top of the used slot count in all cases, because tracing holds a
+reference to each traced sample until the trace call has completed.
+
 The only combination we actually enforce is a `static_assert` on both `impl::ProxyField` and `impl::SkeletonField`: a
 field must have at least one of `WithGetter` or `WithNotifier`. Without one of them the consumer has no way to observe
 the value, which makes the field useless. We deliberately do not require a setter, since a read-only field is perfectly normal and the provider always sets the

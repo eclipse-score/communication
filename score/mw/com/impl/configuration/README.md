@@ -387,6 +387,10 @@ The properties of a field or an event object on the instance level are:
   `numberOfSampleSlots`. I.e. The sum of all `maxSamples` values of all subscribing consumers must not exceed
   `numberOfSampleSlots`. Otherwise, the subscribe call will be rejected. However, this check is not ASIL level
   overarching. See explanation in the `maxSubscribers` section below.
+  **Note**: For a field without `WithNotifier` this property is ignored, since no consumer can subscribe to it.
+  The provider always uses 2 slots there: one for the current value and one so `Update()` can write concurrently.
+  If a value is configured anyway, a warning is logged. See the
+  [events and fields design](../../design/events_fields/README.md) for details.
 - `maxSubscribers`: (mandatory on provider side) - how many consumers are allowed to subscribe to this event or field.
   This number is the combined number of `QM` and `ASIL-B` consumers.
   **Note**: The maximum number of subscribers can't currently be supervised ASIL level **overarching**. I.e. in case of
