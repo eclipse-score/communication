@@ -16,10 +16,8 @@ use quote::quote;
 use syn::spanned::Spanned;
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Type};
 
-/// Procedural macro to generate compile-time type-state validator for Field-based producers.
-///
-/// This macro generates a validator struct with phantom type parameters that track
-/// both the initialization state AND handler registration state of each field at compile time.
+/// The macro generates a validator struct with phantom type parameters that track
+/// both the initial value update AND handler registration of each field at compile time.
 /// The `offer()` method is only available when all fields have been initialized AND
 /// all handlers have been registered, preventing runtime errors.
 ///
@@ -30,10 +28,8 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields, Type};
 /// ```ignore
 /// #[derive(TypeStateFieldValidator)]
 /// struct VehicleFieldProducerInternal<R: Runtime> {
-///     #[field_name = "left_tire"]
-///     left_tire_field: R::FieldPublisher<Tire>,
-///     #[field_name = "exhaust"]
-///     exhaust_field: R::FieldPublisher<Exhaust>,
+///     left_tire: R::FieldPublisher<Tire>,
+///     exhaust: R::FieldPublisher<Exhaust>,
 /// }
 /// ```
 ///
@@ -88,6 +84,8 @@ pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream 
             let ident = f.ident.as_ref()?;
 
             // Skip instance_info field
+            // Note: type name is using here as we have same name in interface_macros
+            // If that change then this also need to be updated.
             if ident == "instance_info" {
                 return None;
             }
@@ -121,6 +119,8 @@ pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream 
             if let Type::Path(type_path) = ty {
                 // Look for the last segment which should be FieldPublisher<T>
                 if let Some(segment) = type_path.path.segments.last() {
+                    //Note: Same here we are using trait name directly
+                    // But if that change then this also need to be updated.
                     if segment.ident == "FieldPublisher" {
                         // Extract the type argument
                         if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {

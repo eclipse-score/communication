@@ -269,15 +269,12 @@ fn create_consumer_field<R: Runtime>(
 fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>) {
     //currently we do not have MethodReturnTypePtr implementation for Lola runtime.
 
-    //If user did not get the insatnce before the subscribe call then consumer will be consumed.
+    let _ = consumer.left_tire.get().expect("Failed to get field value");
 
-    // TODO: Field consumer API methods (get/set) not yet fully implemented
-    // let _ = consumer.left_tire.get().expect("Failed to get field value");
-
-    // let _ = consumer
-    //     .left_tire
-    //     .set(Tire { pressure: 30.0 })
-    //     .expect("Failed to set field value");
+    let _ = consumer
+        .left_tire
+        .set(Tire { pressure: 30.0 })
+        .expect("Failed to set field value");
 
     // Subscribe to the field to receive updates
     let subscription = consumer
@@ -299,10 +296,10 @@ fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>) {
     }
 
     // TODO: Field subscription API methods (set/get_async) not yet fully implemented
-    // let _ = subscription
-    //     .set(Tire { pressure: 35.0 })
-    //     .expect("Failed to set field value");
-    // let _ = subscription.get_async().expect("Failed to get field value");
+    let _ = subscription
+        .set(Tire { pressure: 35.0 })
+        .expect("Failed to set field value");
+    let _ = subscription.get().expect("Failed to get field value");
 
     drop(sample_buf);
 

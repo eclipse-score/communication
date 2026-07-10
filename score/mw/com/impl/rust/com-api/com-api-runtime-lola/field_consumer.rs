@@ -37,25 +37,15 @@ pub struct LolaFieldSubscriber<T: CommData + Debug, B: FFIBridge> {
     _bridge: PhantomData<B>,
 }
 
-pub struct LolaFieldMethods<T: CommData + Debug, B: FFIBridge> {
-    _data: PhantomData<T>,
-    _bridge: PhantomData<B>,
-}
-
 /// Marker implementation of FieldSubscriber trait.
 impl<T: CommData + Debug, B: FFIBridge> FieldSubscriber<T, LolaRuntimeImpl<B>>
     for LolaFieldSubscriber<T, B>
 {
-    type FieldMethodsInstance = LolaFieldMethods<T, B>;
-
-    fn get_field_method_instance(&self) -> Self::FieldMethodsInstance {
-        todo!()
-    }
 }
 
 /// Implementation of FieldMethods trait which provides `get` and `set` methods for LolaFieldSubscriber.
 impl<T: CommData + Debug, B: FFIBridge> FieldMethods<T, LolaRuntimeImpl<B>>
-    for LolaFieldMethods<T, B>
+    for LolaFieldSubscriber<T, B>
 {
     fn get(&self) -> Result<MethodReturnTypePtr<T>> {
         todo!()

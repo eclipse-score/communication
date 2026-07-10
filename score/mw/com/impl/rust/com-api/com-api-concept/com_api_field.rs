@@ -40,11 +40,8 @@ pub struct MethodReturnTypePtr<T: CommData + Debug> {
 /// `FieldMethods` trait is used to provide the `get` and `set` methods for the field instance which can be used before subscription.
 /// Event related APIs follow the same restriction for concurrent access.
 pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
-    com_api_concept::Subscriber<T, R, Subscription: FieldSubscription<T, R>>
+    com_api_concept::Subscriber<T, R, Subscription: FieldSubscription<T, R>> + FieldMethods<T, R>
 {
-    type FieldMethodsInstance: FieldMethods<T, R>;
-
-    fn get_field_method_instance(&self) -> Self::FieldMethodsInstance;
 }
 
 /// FieldSubscriber trait is provides the receiving APIs for the field subscription and
@@ -52,7 +49,7 @@ pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
 /// Additional methods which the field subscription provides are added in this trait.
 /// `FieldMethods` trait is used to provide the `get` and `set` methods for the field subscription.
 pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
-    com_api_concept::Subscription<T, R>
+    com_api_concept::Subscription<T, R> + FieldMethods<T, R>
 {
     /// Returns the number of new samples a call to try_receive (given parameter max_num_samples
     /// doesn't restrict it) would currently provide.
