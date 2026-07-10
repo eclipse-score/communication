@@ -63,6 +63,12 @@ use std::path::Path;
 /// Result type alias with `std::result::Result` using `com_api::Error` as error type
 pub type Result<T> = core::result::Result<T, Error>;
 
+pub enum TagValue {
+    Field,
+    Method,
+    Event,
+}
+
 /// A factory-like trait for constructing complex objects through a builder pattern.
 ///
 /// This trait enables type-safe construction of objects by moving self during the build phase,

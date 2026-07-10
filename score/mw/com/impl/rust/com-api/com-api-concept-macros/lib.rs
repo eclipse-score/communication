@@ -13,7 +13,10 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
+use syn::spanned::Spanned;
 use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, Generics, Meta, Type};
+
+mod type_state_validator;
 
 /// Derive macro for the `CommData` trait.
 ///
@@ -333,6 +336,37 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
     };
 
     Ok(out)
+}
+
+/// Procedural macro to generate compile-time type-state validator for Field-based producers.
+///
+/// This macro generates a validator struct with phantom type parameters that track
+/// the initialization state of each field at compile time. The `offer()` method is only
+/// available when all fields have been initialized, preventing runtime errors.
+///
+/// # Usage
+///
+/// Apply this macro alongside the `interface!` macro for Field-based interfaces:
+///
+/// ```ignore
+/// #[derive(TypeStateFieldValidator)]
+/// struct VehicleFieldProducerInternal<R: Runtime> {
+///     #[field_name = "left_tire"]
+///     left_tire_field: R::FieldPublisher<Tire>,
+///     #[field_name = "exhaust"]
+///     exhaust_field: R::FieldPublisher<Exhaust>,
+/// }
+/// ```
+///
+/// The macro generates:
+/// - `Uninit` and `Init` marker types
+/// - `ValidatorN<'a, R, Field1State, Field2State, ...>` struct
+/// - `update_field_name()` methods that transition states
+/// - `update_field_name()` methods for each field
+/// - `offer()` method that validates all fields initialized before proceeding
+#[proc_macro_derive(TypeStateFieldValidator, attributes(field_name))]
+pub fn derive_typestate_field_validator(input: TokenStream) -> TokenStream {
+    type_state_validator::derive_typestate_field_validator_impl(input)
 }
 
 // Use doctest to test failed compilations and successful ones

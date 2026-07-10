@@ -141,9 +141,10 @@ pub use com_api_concept::{
     interface, interface_common, interface_consumer, interface_producer, Builder, CommData,
     Consumer, ConsumerBuilder, ConsumerDescriptor, Error, EventSampleMut as SampleMut,
     FieldMethods, FieldPublisher, FieldSampleMut, FieldSubscriber, FieldSubscription,
-    FindServiceSpecifier, InstanceSpecifier, Interface, MethodReturnTypePtr, OfferedProducer,
-    PlacementDefault, Producer, ProducerBuilder, ProviderInfo, Publisher, Reloc, Result, Runtime,
-    RuntimeBuilder, SampleContainer, SampleMaybeUninit, ServiceDiscovery, Subscriber, Subscription,
+    FindServiceSpecifier, HandlerNotSet, HandlerSet, Init, InstanceSpecifier, Interface,
+    MethodReturnTypePtr, OfferedProducer, PlacementDefault, Producer, ProducerBuilder,
+    ProviderInfo, Publisher, Reloc, Result, Runtime, RuntimeBuilder, SampleContainer,
+    SampleMaybeUninit, ServiceDiscovery, Subscriber, Subscription, Uninit,
 };
 
 #[doc(hidden)]

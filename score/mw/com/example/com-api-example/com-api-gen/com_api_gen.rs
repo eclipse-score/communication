@@ -13,29 +13,17 @@
 
 use com_api::{interface, CommData, FieldPublisher, ProviderInfo, Publisher, Reloc, Subscriber};
 
-#[derive(Debug, Reloc, CommData)]
+#[derive(Debug, Clone, Default, Reloc, CommData)]
 #[repr(C)]
 #[comm_data(id = "Tire")]
 pub struct Tire {
     pub pressure: f32,
 }
 
-impl Default for Tire {
-    fn default() -> Self {
-        Tire { pressure: 0.0 }
-    }
-}
-
-#[derive(Debug, Reloc, CommData)]
+#[derive(Debug, Clone, Default, Reloc, CommData)]
 #[repr(C)]
 // No explicit ID provided, so it will be auto-generated as "com_api_gen::Exhaust"
 pub struct Exhaust {}
-
-impl Default for Exhaust {
-    fn default() -> Self {
-        Exhaust {}
-    }
-}
 
 // Example interface definition using the interface macro with a custom UID for the interface.
 // This will generate the following types and trait implementations:
@@ -51,6 +39,7 @@ impl Default for Exhaust {
 //   "exhaust" events.
 // - VehicleOfferedProducer<R> struct that implements OfferedProducer trait for offering
 //   "left_tire" and "exhaust" events.
+//Let's remove
 interface!(
     interface Vehicle, {
         Id = "VehicleInterface",
@@ -59,8 +48,9 @@ interface!(
      }
 );
 
-// Field intialize the intial value based on the default value of the field type at the time of creating field publisher.
-// If user want to update the value after that as well then they can use update method of the field publisher to update the value of the field.
+// Field-based interface with compile-time initialization safety.
+// All fields must be explicitly initialized via the validator pattern before offering.
+// The validator pattern ensures that you cannot call offer() until all fields have been updated.
 interface!(
     interface VehicleField, {
         Id = "VehicleFieldInterface",

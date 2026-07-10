@@ -188,7 +188,7 @@ fn create_producer<R: Runtime>(
     producer.offer().expect("Failed to offer producer instance")
 }
 
-fn process_received<R: Runtime>(val: &Tire) {
+fn process_received(val: &Tire) {
     //Update some internal value and process it
     //maybe need to apply synchronation if we are using thread pool
     //just for demonstration, updating same value with incremented pressure.
@@ -197,7 +197,8 @@ fn process_received<R: Runtime>(val: &Tire) {
 fn create_producer_field<R: Runtime + 'static>(
     runtime: &R,
     service_id: InstanceSpecifier,
-    initial_value: Tire,
+    initial_tire_value: Tire,
+    initial_exhaust_value: Exhaust,
 ) -> VehicleFieldOfferedProducer<R>
 where
     <R as Runtime>::FieldPublisher<Tire>: Send + Sync,
@@ -207,27 +208,40 @@ where
     let producer = producer_builder
         .build()
         .expect("Failed to build producer instance");
-    producer
-        .left_tire
-        .update(&initial_value)
-        .expect("Failed to update producer instance");
 
-    producer
-        .left_tire
-        .register_set_handler(|value: &Tire| {
-            //just for demonstration, updating same value with incremented pressure.
-            //Update some internal value and process it
-            //maybe user need to apply synchronation mechanism if Lib is using thread pool
-            producer
-                .left_tire
-                .update(&Tire {
-                    pressure: value.pressure + 1.0,
-                })
-                .expect("Failed to update field value");
+    // Use validator pattern with compile-time type-state validation
+    // Must register handlers AND initialize all fields before offer() is available
+    let offered = producer
+        .validator()
+        .register_set_handler_left_tire(move |val: &Tire| {
+            println!("Received tire pressure update: {:?}", val);
+            process_received(val);
         })
-        .expect("Failed to register set handler");
+        .register_set_handler_exhaust(|_val: &Exhaust| {
+            println!("Received exhaust update");
+        })
+        .update_left_tire(&initial_tire_value)
+        .expect("Failed to update left_tire field")
+        .update_exhaust(&initial_exhaust_value)
+        .expect("Failed to update exhaust field")
+        .offer()
+        .expect("Failed to offer producer instance");
 
-    producer.offer().expect("Failed to offer producer instance")
+    offered
+}
+
+fn offered_producer_process<R: Runtime>(offered_producer: VehicleFieldOfferedProducer<R>) {
+    // Use the offered producer to update fields
+    let new_tire_value = Tire { pressure: 32.0 };
+    let new_exhaust_value = Exhaust {};
+    offered_producer
+        .left_tire
+        .update(&new_tire_value)
+        .expect("Failed to update left_tire field");
+    offered_producer
+        .exhaust
+        .update(&new_exhaust_value)
+        .expect("Failed to update exhaust field");
 }
 
 fn create_consumer_field<R: Runtime>(
@@ -256,17 +270,14 @@ fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>) {
     //currently we do not have MethodReturnTypePtr implementation for Lola runtime.
 
     //If user did not get the insatnce before the subscribe call then consumer will be consumed.
-    let field_method = consumer.get_field_method_instance();
 
-    let _ = field_method
-        .left_tire
-        .get()
-        .expect("Failed to get field value");
+    // TODO: Field consumer API methods (get/set) not yet fully implemented
+    // let _ = consumer.left_tire.get().expect("Failed to get field value");
 
-    let _ = field_method
-        .left_tire
-        .set(Tire { pressure: 30.0 })
-        .expect("Failed to set field value");
+    // let _ = consumer
+    //     .left_tire
+    //     .set(Tire { pressure: 30.0 })
+    //     .expect("Failed to set field value");
 
     // Subscribe to the field to receive updates
     let subscription = consumer
@@ -287,10 +298,11 @@ fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>) {
         }
     }
 
-    let _ = field_method
-        .set(Tire { pressure: 35.0 })
-        .expect("Failed to set field value");
-    let _ = field_method.get().expect("Failed to get field value");
+    // TODO: Field subscription API methods (set/get_async) not yet fully implemented
+    // let _ = subscription
+    //     .set(Tire { pressure: 35.0 })
+    //     .expect("Failed to set field value");
+    // let _ = subscription.get_async().expect("Failed to get field value");
 
     drop(sample_buf);
 

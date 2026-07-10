@@ -11,6 +11,22 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+/// Type-state marker for uninitialized field state (compile-time tracking).
+#[allow(dead_code)]
+pub struct Uninit;
+
+/// Type-state marker for initialized field state (compile-time tracking).
+#[allow(dead_code)]
+pub struct Init;
+
+/// Type-state marker for handler not registered (compile-time tracking).
+#[allow(dead_code)]
+pub struct HandlerNotSet;
+
+/// Type-state marker for handler registered (compile-time tracking).
+#[allow(dead_code)]
+pub struct HandlerSet;
+
 /// Main interface macro that generates Consumer, Producer, and OfferedProducer types
 /// along with all necessary trait implementations.
 ///
@@ -259,6 +275,7 @@ macro_rules! interface_producer {
                 for [<$id OfferedProducer>]<R> {
                 type Interface = [<$id Interface>];
                 type Producer = [<$id Producer>]<R>;
+
                 fn unoffer(self) -> com_api::Result<Self::Producer> {
                     let producer = [<$id Producer>] {
                         _runtime: core::marker::PhantomData,
@@ -273,23 +290,14 @@ macro_rules! interface_producer {
     };
 
     ($id:ident, $($field_name:ident, Field<$field_type:ty>),+$(,)?) => {
-        com_api::paste::paste!  {
+        com_api::paste::paste! {
+            // Producer struct with proc macro validation
+            #[derive($crate::com_api_concept_macros::TypeStateFieldValidator)]
             pub struct [<$id Producer>]<R: com_api::Runtime + ?Sized> {
                 $(
                     pub $field_name: R::FieldPublisher<$field_type>,
                 )+
-                instance_info: R::ProviderInfo,
-            }
-
-            impl<R: com_api::Runtime + ?Sized> Clone for [<$id Producer>]<R> {
-                fn clone(&self) -> Self {
-                    [<$id Producer>] {
-                        $(
-                            $field_name: self.$field_name.clone(),
-                        )+
-                        instance_info: self.instance_info.clone(),
-                    }
-                }
+                pub instance_info: R::ProviderInfo,
             }
 
             pub struct [<$id OfferedProducer>]<R: com_api::Runtime + ?Sized> {
@@ -299,21 +307,12 @@ macro_rules! interface_producer {
                 instance_info: R::ProviderInfo,
             }
 
-            impl<R: com_api::Runtime + ?Sized> Clone for [<$id OfferedProducer>]<R> {
-                fn clone(&self) -> Self {
-                    [<$id OfferedProducer>] {
-                        $(
-                            $field_name: self.$field_name.clone(),
-                        )+
-                        instance_info: self.instance_info.clone(),
-                    }
-                }
-            }
-
             impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
                 type Interface = [<$id Interface>];
                 type OfferedProducer = [<$id OfferedProducer>]<R>;
+
                 fn offer(self) -> com_api::Result<Self::OfferedProducer> {
+                    // Create OfferedProducer from consumed producer
                     let offered = [<$id OfferedProducer>] {
                         $(
                             $field_name: self.$field_name.clone(),
@@ -326,7 +325,7 @@ macro_rules! interface_producer {
                 }
 
                 fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
-                    let instance = Self {
+                    Ok(Self {
                         $(
                             $field_name: R::FieldPublisher::new(
                                 stringify!($field_name),
@@ -337,14 +336,7 @@ macro_rules! interface_producer {
                             )),
                         )+
                         instance_info,
-                    };
-                    $(
-                        instance.$field_name.update(&Default::default()).expect(&format!(
-                            "Failed to initialize field {} with default value",
-                            stringify!($field_name)
-                        ));
-                    )+
-                    Ok(instance)
+                    })
                 }
             }
 
@@ -352,6 +344,7 @@ macro_rules! interface_producer {
                 for [<$id OfferedProducer>]<R> {
                 type Interface = [<$id Interface>];
                 type Producer = [<$id Producer>]<R>;
+
                 fn unoffer(self) -> com_api::Result<Self::Producer> {
                     let producer = [<$id Producer>] {
                         $(
@@ -359,7 +352,6 @@ macro_rules! interface_producer {
                         )+
                         instance_info: self.instance_info.clone(),
                     };
-                    // Stop offering the service instance to withdraw it from system availability
                     self.instance_info.stop_offer_service()?;
                     Ok(producer)
                 }
