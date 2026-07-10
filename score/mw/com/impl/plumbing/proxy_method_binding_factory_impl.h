@@ -104,6 +104,9 @@ Result<std::unique_ptr<ProxyMethodBinding>> ProxyMethodBindingFactoryImpl<Return
     const std::string_view method_name,
     MethodType method_type) noexcept
 {
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_type != MethodType::kUnknown,
+                                                "MethodType::kUnknown is not a valid method type");
+
     auto method_name_str = std::string{method_name};
 
     using LambdaReturnType = Result<std::unique_ptr<ProxyMethodBinding>>;

@@ -391,16 +391,21 @@ class ProxyFieldGetSetFixture : public ::testing::Test
 
 TEST_F(ProxyFieldGetSetFixture, GetDelegatesToProxyMethodBinding)
 {
-    // Given a Get-enabled ProxyField and a mock method binding
+    // Given a Get-enabled ProxyField and a mock method binding with a value pre-written into the return buffer
     auto field = CreateFieldWithGetOnly();
+    const TestSampleType expected_value{123U};
+    return_type_buffer_[0] = static_cast<std::byte>(expected_value);
+
+    // Expecting that the binding returns a buffer for the return value and then calls the method
     EXPECT_CALL(get_method_binding_mock_, GetReturnValueBuffer(0U));
     EXPECT_CALL(get_method_binding_mock_, DoCall(0U));
 
     // When calling Get()
     auto result = field.Get();
 
-    // Then the call is delegated to the underlying method binding and succeeds
-    EXPECT_TRUE(result.has_value());
+    // Then the call succeeds and returns the buffered value
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(*result.value(), expected_value);
 }
 
 TEST_F(ProxyFieldGetSetFixture, SetDelegatesToProxyMethodBindingAndCopiesValueIntoInArgsBuffer)
@@ -408,6 +413,8 @@ TEST_F(ProxyFieldGetSetFixture, SetDelegatesToProxyMethodBindingAndCopiesValueIn
     // Given a ProxyField with a setter (WithSetter, WithNotifier)
     auto field = CreateFieldWithSetAndNotifier();
     const TestSampleType value{42U};
+
+    // Expecting that the binding returns buffers for in-args and return value and then calls the method
     EXPECT_CALL(set_method_binding_mock_, GetInArgsBuffer(0U));
     EXPECT_CALL(set_method_binding_mock_, GetReturnValueBuffer(0U));
     EXPECT_CALL(set_method_binding_mock_, DoCall(0U));
@@ -415,7 +422,7 @@ TEST_F(ProxyFieldGetSetFixture, SetDelegatesToProxyMethodBindingAndCopiesValueIn
     // When Set is called
     auto result = field.Set(value);
 
-    // Then the call is delegated to the binding and the value lands in the in-args buffer
+    // Then the call succeeds and the value lands in the in-args buffer
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(static_cast<TestSampleType>(in_args_buffer_[0]), value);
 }
@@ -425,9 +432,11 @@ TEST_F(ProxyFieldGetSetFixture, GetPropagatesBindingError)
     // Given a Get-enabled ProxyField (WithGetter)
     auto field = CreateFieldWithGetOnly();
 
-    // When calling Get()
+    // Expecting that the binding returns an error when asked for the return value buffer
     EXPECT_CALL(get_method_binding_mock_, GetReturnValueBuffer(0U))
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When calling Get()
     auto result = field.Get();
 
     // Then the error is propagated back to the caller
@@ -441,9 +450,11 @@ TEST_F(ProxyFieldGetSetFixture, SetPropagatesBindingError)
     auto field = CreateFieldWithSetAndNotifier();
     const TestSampleType value{42U};
 
-    // When Set is called
+    // Expecting that the binding returns an error when asked for the in-args buffer
     EXPECT_CALL(set_method_binding_mock_, GetInArgsBuffer(0U))
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When Set is called
     auto result = field.Set(value);
 
     // Then the error is propagated back to the caller
