@@ -30,8 +30,10 @@
 #include <score/overload.hpp>
 
 #include <chrono>
+#include <cstdint>
 #include <exception>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -43,10 +45,25 @@ namespace score::mw::com::impl
 namespace detail
 {
 
+// slot_count_override is defaulted because only fields override the slot count. Events and generic events use the
+// configured count, so they call this without it and need not know the parameter exists.
 inline lola::SkeletonEventProperties GetSkeletonEventProperties(
-    const LolaEventInstanceDeployment& lola_event_instance_deployment)
+    const LolaEventInstanceDeployment& lola_event_instance_deployment,
+    const std::optional<std::uint16_t> slot_count_override = std::nullopt)
 {
-    if (!lola_event_instance_deployment.GetNumberOfSampleSlots().has_value())
+    std::optional<std::uint16_t> effective_slot_count{};
+    if (slot_count_override.has_value())
+    {
+        // The override plus the tracing slots (a std::uint8_t) cannot overflow a std::uint16_t, see the
+        // static_assert next to kSlotCountForFieldWithoutNotifier.
+        effective_slot_count = static_cast<std::uint16_t>(slot_count_override.value() +
+                                                          lola_event_instance_deployment.GetNumberOfTracingSlots());
+    }
+    else
+    {
+        effective_slot_count = lola_event_instance_deployment.GetNumberOfSampleSlots();
+    }
+    if (!effective_slot_count.has_value())
     {
         score::mw::log::LogFatal("lola")
             << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Number of sample slots "
@@ -61,15 +78,17 @@ inline lola::SkeletonEventProperties GetSkeletonEventProperties(
                "not specified in the configuration. Terminating.";
         std::terminate();
     }
-    return lola::SkeletonEventProperties{lola_event_instance_deployment.GetNumberOfSampleSlots().value(),
+    return lola::SkeletonEventProperties{effective_slot_count.value(),
                                          lola_event_instance_deployment.max_subscribers_.value(),
                                          lola_event_instance_deployment.enforce_max_samples_};
 }
 
 inline lola::SkeletonEventProperties GetSkeletonEventProperties(
-    const LolaFieldInstanceDeployment& lola_field_instance_deployment)
+    const LolaFieldInstanceDeployment& lola_field_instance_deployment,
+    const std::optional<std::uint16_t> slot_count_override = std::nullopt)
 {
-    return GetSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_);
+    return GetSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_,
+                                      slot_count_override);
 }
 
 }  // namespace detail
