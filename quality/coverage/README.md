@@ -95,7 +95,7 @@ bazel run //quality/coverage:generate_coverage_html -- --platform qnx
 ```
 
 For Linux (LLVM pipeline), the custom reporter produces a zip with an HTML report directly.
-For QNX (gcov pipeline), the script converts the LCOV data to HTML using `lcov_to_html.py` (which internally uses gcovr).
+For QNX (gcov pipeline), the script first resolves the collected coverage allowlist, then converts the LCOV data to HTML using `lcov_to_html.py` (which internally uses gcovr).
 
 The report is written to `cpp_coverage/` (Linux) or `cpp_coverage_qnx/` (QNX). Open it:
 
@@ -174,11 +174,13 @@ bazel run //quality/coverage:generate_coverage_html [-- --platform <linux|qnx>]
     └── generate_coverage_html.sh
         ├── Detect format: zip (LLVM) or LCOV text (gcov)
         ├── LLVM: Extract HTML from zip → cpp_coverage_linux/
-        │   gcov: Convert LCOV → HTML via lcov_to_html.py (gcovr) → cpp_coverage_qnx/
+        │   gcov: Build collected allowlist + merge baseline_coverage.dat inputs → convert LCOV → HTML via lcov_to_html.py (gcovr) → cpp_coverage_qnx/
         ├── justify.py: YAML + code markers → manifest.json
         ├── effective_coverage.py: Post-process HTML + calculate effective %
         └── Print summary + threshold check
 ```
+
+For QNX, the allowlist from `quality/coverage:coverage_scope` is the authoritative file scope for the HTML report. Regex-based file filters are no longer used in that path.
 
 ## Configuration
 

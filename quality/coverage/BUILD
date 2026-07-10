@@ -71,7 +71,7 @@ coverage_scope(
     testonly = True,
     visibility = ["//quality/coverage:__subpackages__"],
     deps = [
-        "//score/mw/com/dependability:mw_com_index",
-        "//score/message_passing/dependability:dependable_element_message_passing_index",
+        "//score/message_passing",
+        "//score/mw/com",
     ],
 )
