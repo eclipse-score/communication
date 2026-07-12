@@ -36,7 +36,7 @@ use std::collections::VecDeque;
 use std::path::Path;
 
 use com_api_concept::{
-    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, FieldMethods, FieldPublisher,
+    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, FieldPublisher,
     FieldSampleMut, FieldSubscriber, FieldSubscription, FindServiceSpecifier, InstanceSpecifier,
     Interface, MethodReturnTypePtr, Producer, ProducerBuilder, ProviderInfo, Result, Runtime,
     SampleContainer, SampleMaybeUninit as SampleMaybeUninitTrait, ServiceDiscovery, Subscriber,
@@ -533,16 +533,6 @@ pub struct MockFieldSubscriber<T: CommData + Debug> {
 /// Marker implementation of FieldSubscriber trait.
 impl<T: CommData + Debug> FieldSubscriber<T, MockRuntimeImpl> for MockFieldSubscriber<T> {}
 
-/// Implementation of FieldMethods trait for MockFieldSubscriber.
-impl<T: CommData + Debug> FieldMethods<T, MockRuntimeImpl> for MockFieldSubscriber<T> {
-    fn get(&self) -> Result<MethodReturnTypePtr<T>> {
-        todo!()
-    }
-    fn set(&self, _value: T) -> Result<MethodReturnTypePtr<T>> {
-        todo!()
-    }
-}
-
 /// Implementation of Subscriber trait for MockFieldSubscriber.
 impl<T: CommData + Debug> Subscriber<T, MockRuntimeImpl> for MockFieldSubscriber<T> {
     type Subscription = MockFieldSubscription<T>;
@@ -617,16 +607,6 @@ impl<T: CommData + Debug> Subscription<T, MockRuntimeImpl> for MockFieldSubscrip
 
     fn to_stream<'a>(&'a mut self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         stream::empty()
-    }
-}
-
-/// Implementation of FieldMethods trait for MockFieldSubscription.
-impl<T: CommData + Debug> FieldMethods<T, MockRuntimeImpl> for MockFieldSubscription<T> {
-    fn get(&self) -> Result<MethodReturnTypePtr<T>> {
-        todo!()
-    }
-    fn set(&self, _value: T) -> Result<MethodReturnTypePtr<T>> {
-        todo!()
     }
 }
 

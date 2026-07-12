@@ -23,8 +23,8 @@ use core::todo;
 
 use bridge_ffi_rs::FFIBridge;
 use com_api_concept::{
-    CommData, FieldMethods, FieldSubscriber, FieldSubscription, MethodReturnTypePtr, Result,
-    Runtime, SampleContainer, Subscriber, Subscription,
+    CommData, FieldSubscriber, FieldSubscription, MethodReturnTypePtr, Result, Runtime,
+    SampleContainer, Subscriber, Subscription,
 };
 
 use crate::consumer::Sample;
@@ -39,12 +39,6 @@ pub struct LolaFieldSubscriber<T: CommData + Debug, B: FFIBridge> {
 
 /// Marker implementation of FieldSubscriber trait.
 impl<T: CommData + Debug, B: FFIBridge> FieldSubscriber<T, LolaRuntimeImpl<B>>
-    for LolaFieldSubscriber<T, B>
-{
-}
-
-/// Implementation of FieldMethods trait which provides `get` and `set` methods for LolaFieldSubscriber.
-impl<T: CommData + Debug, B: FFIBridge> FieldMethods<T, LolaRuntimeImpl<B>>
     for LolaFieldSubscriber<T, B>
 {
     fn get(&self) -> Result<MethodReturnTypePtr<T>> {
@@ -86,6 +80,13 @@ impl<T: CommData + Debug, B: FFIBridge> FieldSubscription<T, LolaRuntimeImpl<B>>
     fn get_num_new_samples_available(&self) -> Result<usize> {
         todo!()
     }
+
+    fn get(&self) -> impl Future<Output = Result<MethodReturnTypePtr<T>>> + Send {
+        async { todo!() }
+    }
+    fn set(&self, _value: T) -> Result<MethodReturnTypePtr<T>> {
+        todo!()
+    }
 }
 
 /// Implementation of Subscription trait which provides receiving APIs.
@@ -125,17 +126,5 @@ impl<T: CommData + Debug, B: FFIBridge> Subscription<T, LolaRuntimeImpl<B>>
         &'a mut self,
     ) -> impl futures::stream::Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
         futures::stream::empty()
-    }
-}
-
-/// Implementation of FieldMethods trait which provides `get` and `set` methods for LolaFieldSubscriber.
-impl<T: CommData + Debug, B: FFIBridge> FieldMethods<T, LolaRuntimeImpl<B>>
-    for LolaFieldSubscription<T, B>
-{
-    fn get(&self) -> Result<MethodReturnTypePtr<T>> {
-        todo!()
-    }
-    fn set(&self, _value: T) -> Result<MethodReturnTypePtr<T>> {
-        todo!()
     }
 }

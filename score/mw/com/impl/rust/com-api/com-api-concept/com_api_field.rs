@@ -16,6 +16,8 @@
 // or by default we will enable for user,
 // -> My suggestion is we can keep it default enable as of now,
 // and later we can add tag based mechanism if required because Interface side we need to check how we can do this
+// 2. We are offering get method after subscrption async but before subscription it is sync,
+// It is because subscribe API take the consumer instance by value and if we offer async get method then it will create issue with subscription.
 
 // Note: We are using the event related trait as a base trait for whereever we have same common
 // APIs or functionality, as of now there are derived from concept crate but
@@ -24,11 +26,13 @@
 
 use crate::*;
 use std::fmt::Debug;
+use std::future::Future;
 
 #[allow(dead_code)]
-
 // Temp for build test
 // We will remove this once memory layout of same created in rust side like SamplePtr.
+#[repr(C)]
+#[derive(Debug)]
 pub struct MethodReturnTypePtr<T: CommData + Debug> {
     pub value: T,
     pub status: Result<()>,
@@ -37,19 +41,34 @@ pub struct MethodReturnTypePtr<T: CommData + Debug> {
 /// FieldSubscriber trait is used to subscribe to a field and get the value of the field.
 /// It provides the `get` and `set` methods to get and set the value of the field.
 /// It derived from `com_api_concept::Subscriber` trait which provides the `subscribe` method to create a field subscription.
-/// `FieldMethods` trait is used to provide the `get` and `set` methods for the field instance which can be used before subscription.
+/// The `get` and `set` methods for the field instance can be used before subscription.
 /// Event related APIs follow the same restriction for concurrent access.
 pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
-    com_api_concept::Subscriber<T, R, Subscription: FieldSubscription<T, R>> + FieldMethods<T, R>
+    com_api_concept::Subscriber<T, R, Subscription: FieldSubscription<T, R>>
 {
+    ///Get the current value of the field.
+    ///
+    /// #returns
+    /// Return the result of `MethodReturnTypePtr<T>` which contains the current value of the field.
+    fn get(&self) -> Result<MethodReturnTypePtr<T>>;
+
+    ///Set the value of the field.
+    ///
+    /// # Parameters
+    /// * `value` - The value to set for the field.
+    ///
+    /// # Returns
+    /// Return the result of `MethodReturnTypePtr<T>` which contains the status of the set operation.
+    /// with the current value of the field.
+    // TODO: should we pass value by reference as underlying API is taking value as reference.
+    fn set(&self, value: T) -> Result<MethodReturnTypePtr<T>>;
 }
 
 /// FieldSubscriber trait is provides the receiving APIs for the field subscription and
 /// it is derived from `com_api_concept::Subscription` trait which provides the receiving APIs for the field subscription.
 /// Additional methods which the field subscription provides are added in this trait.
-/// `FieldMethods` trait is used to provide the `get` and `set` methods for the field subscription.
 pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
-    com_api_concept::Subscription<T, R> + FieldMethods<T, R>
+    com_api_concept::Subscription<T, R>
 {
     /// Returns the number of new samples a call to try_receive (given parameter max_num_samples
     /// doesn't restrict it) would currently provide.
@@ -59,16 +78,12 @@ pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
     /// Get the number of samples that can still be received by the user of this field.
     /// This is for checking the capacity of the field subscription and to avoid overflow of the field subscription limit.
     fn get_free_sample_count(&self) -> Result<usize>;
-}
 
-/// FieldMethods trait provides the `get` and `set` methods for the field instance which can be used before subscription.
-/// The `get` method is used to get the current value of the field, and the `set` method is used to set the value of the field.
-pub trait FieldMethods<T: CommData + Debug, R: Runtime + ?Sized> {
     ///Get the current value of the field.
     ///
     /// #returns
-    /// Return the result of `MethodReturnTypePtr<T>` which contains the current value of the field.
-    fn get(&self) -> Result<MethodReturnTypePtr<T>>;
+    /// Return the result of `MethodReturnTypePtr<T>` which contains the current value of the field.    /// The returned future is `Send` to allow usage with `tokio::spawn`.
+    fn get(&self) -> impl Future<Output = Result<MethodReturnTypePtr<T>>> + Send;
 
     ///Set the value of the field.
     ///

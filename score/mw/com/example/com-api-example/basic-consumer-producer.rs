@@ -23,7 +23,7 @@ use clap::Parser;
 use std::path::PathBuf;
 
 use com_api::{
-    Builder, FieldMethods, FieldPublisher, FieldSubscription, FindServiceSpecifier,
+    Builder, FieldPublisher, FieldSubscriber, FieldSubscription, FindServiceSpecifier,
     InstanceSpecifier, Interface, LolaRuntimeBuilderImpl, OfferedProducer, Producer, Publisher,
     Result, Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit, SampleMut,
     ServiceDiscovery, Subscriber, Subscription,
@@ -266,44 +266,75 @@ fn create_consumer_field<R: Runtime>(
         .expect("Failed to build consumer instance")
 }
 
-fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>) {
-    //currently we do not have MethodReturnTypePtr implementation for Lola runtime.
+async fn process_subscription_async<S, R>(subscription: S)
+where
+    S: FieldSubscription<Tire, R>,
+    R: Runtime,
+{
+    // Get field value asynchronously
+    match subscription.get().await {
+        Ok(_method_return) => {
+            println!("Current tire pressure from spawned task");
+        }
+        Err(e) => eprintln!("Failed to get tire pressure: {:?}", e),
+    }
 
-    let _ = consumer.left_tire.get().expect("Failed to get field value");
+    println!("Async subscription processing in spawned task completed");
+}
+
+fn consumer_processing_field<R: Runtime + 'static>(consumer: VehicleFieldConsumer<R>)
+where
+    <<R as Runtime>::FieldSubscriber<Tire> as Subscriber<Tire, R>>::Subscription: Send + 'static,
+{
+    // Field consumer API methods
+    // But they demonstrate the correct API usage pattern
+    // TODO: Currently we are not offering the get method async in FieldSubscriber
+    // because async call will may run in different thread and that will cause the issue in subscription.
+    let _ = consumer
+        .left_tire
+        .get()
+        .map(|result| println!("Got field value via consumer: {:?}", result));
 
     let _ = consumer
         .left_tire
         .set(Tire { pressure: 30.0 })
-        .expect("Failed to set field value");
+        .map(|result| println!("Set field value via consumer: {:?}", result));
 
     // Subscribe to the field to receive updates
     let subscription = consumer
         .left_tire
         .subscribe(3)
         .expect("Failed to subscribe to field");
-    let mut sample_buf = SampleContainer::new(3);
 
-    // Poll for updates (non-blocking)
-    match subscription.try_receive(&mut sample_buf, 1) {
-        Ok(n) if n > 0 => {
-            while let Some(sample) = sample_buf.pop_front() {
-                println!("Updated tire pressure: {:?}", *sample);
+    // Create scope for sample_buf to ensure it's dropped before tokio::spawn
+    {
+        let mut sample_buf = SampleContainer::new(3);
+
+        // Poll for updates (non-blocking)
+        match subscription.try_receive(&mut sample_buf, 1) {
+            Ok(n) if n > 0 => {
+                while let Some(sample) = sample_buf.pop_front() {
+                    println!("Updated tire pressure: {:?}", *sample);
+                }
+            }
+            _ => {
+                println!("No new tire pressure updates available");
             }
         }
-        _ => {
-            println!("No new tire pressure updates available");
-        }
+        // sample_buf is dropped here at end of scope
     }
 
-    // TODO: Field subscription API methods (set/get_async) not yet fully implemented
+    // Set via subscription
     let _ = subscription
         .set(Tire { pressure: 35.0 })
-        .expect("Failed to set field value");
-    let _ = subscription.get().expect("Failed to get field value");
+        .map(|result| println!("Set field value via subscription: {:?}", result));
 
-    drop(sample_buf);
-
-    let _ = subscription.unsubscribe();
+    // Spawn async task with subscription
+    // The subscription is moved into the task
+    tokio::spawn(async move {
+        process_subscription_async(subscription).await;
+        // subscription is automatically unsubscribed when dropped at end of task
+    });
 }
 
 // Run the example with the specified runtime
