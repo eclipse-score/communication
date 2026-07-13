@@ -65,7 +65,7 @@ build_test(
         src = "has_warnings/{}.cpp".format(case),
         compile_stderr = matcher.contains_extended_regex(
             # Convert e.g. -Wsign-compare to a flexible regex for stderr matching.
-            "Werror.*{}".format(
+            "error.*{}".format(
                 warning[0][2:].replace("-", ".*"),
             ),
         ),

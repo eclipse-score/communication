@@ -301,7 +301,7 @@ llvm.toolchain(
         # This is the agreed way to ensure linking for targets using std::atomic operations.
         "-latomic",
     ]},
-    llvm_version = "19.1.7",
+    llvm_version = "22.1.7",
     stdlib = {"": "stdc++"},
 )
 llvm.sysroot(
