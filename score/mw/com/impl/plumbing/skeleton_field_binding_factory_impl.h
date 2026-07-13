@@ -63,9 +63,7 @@ auto SkeletonFieldBindingFactoryImpl<SampleType>::CreateEventBinding(const Insta
         field_notifier == FieldNotifier::kDisabled
             ? std::optional<LolaEventInstanceDeployment::SampleSlotCountType>{lola::kSlotCountForFieldWithoutNotifier}
             : std::nullopt;
-    return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
-                                      lola::SkeletonEvent<SampleType>,
-                                      ServiceElementType::FIELD>(
+    return CreateSkeletonField<SkeletonEventBinding<SampleType>, lola::SkeletonEvent<SampleType>>(
         identifier, parent_binding, field_name, slot_count_override);
 }
 

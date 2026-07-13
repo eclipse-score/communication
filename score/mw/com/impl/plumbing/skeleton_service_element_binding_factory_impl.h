@@ -135,10 +135,11 @@ auto CreateSkeletonServiceElement(
             const std::string service_element_name_str{service_element_name};
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_str);
-            // Only fields pass a slot count override (set when WithNotifier is disabled).
+
             if constexpr (element_type == ServiceElementType::FIELD)
             {
                 const bool slot_count_overridden = slot_count_override.has_value();
+
                 const bool sample_slot_count_configured =
                     lola_service_element_instance_deployment.lola_event_instance_deployment_
                         .GetNumberOfSampleSlotsExcludingTracingSlot()
@@ -168,6 +169,33 @@ auto CreateSkeletonServiceElement(
         });
 
     return std::visit(visitor, identifier_view.GetServiceTypeDeployment().binding_info_);
+}
+
+/// \brief Creates the binding for a skeleton event.
+template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement>
+auto CreateSkeletonEvent(const InstanceIdentifier& identifier,
+                         SkeletonBinding& parent_binding,
+                         const std::string_view event_name) noexcept -> std::unique_ptr<SkeletonServiceElementBinding>
+{
+    return CreateSkeletonServiceElement<SkeletonServiceElementBinding,
+                                        SkeletonServiceElement,
+                                        ServiceElementType::EVENT>(identifier, parent_binding, event_name);
+}
+
+/// \brief Creates the binding for a skeleton field. A field without a notifier passes a slot count override so the
+/// binding uses a fixed count instead of the configured one.
+template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement>
+auto CreateSkeletonField(
+    const InstanceIdentifier& identifier,
+    SkeletonBinding& parent_binding,
+    const std::string_view field_name,
+    const std::optional<LolaEventInstanceDeployment::SampleSlotCountType> slot_count_override) noexcept
+    -> std::unique_ptr<SkeletonServiceElementBinding>
+{
+    return CreateSkeletonServiceElement<SkeletonServiceElementBinding,
+                                        SkeletonServiceElement,
+                                        ServiceElementType::FIELD>(
+        identifier, parent_binding, field_name, slot_count_override);
 }
 
 /// @brief Overload for typed skeletons (which do not have a DataTypeMetaInfo).

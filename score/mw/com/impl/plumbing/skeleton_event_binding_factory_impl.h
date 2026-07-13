@@ -54,9 +54,8 @@ auto SkeletonEventBindingFactoryImpl<SampleType>::Create(const InstanceIdentifie
                                                          const std::string_view event_name) noexcept
     -> std::unique_ptr<SkeletonEventBinding<SampleType>>
 {
-    return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
-                                      lola::SkeletonEvent<SampleType>,
-                                      ServiceElementType::EVENT>(identifier, parent_binding, event_name);
+    return CreateSkeletonEvent<SkeletonEventBinding<SampleType>, lola::SkeletonEvent<SampleType>>(
+        identifier, parent_binding, event_name);
 }
 
 }  // namespace score::mw::com::impl
