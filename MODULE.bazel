@@ -55,7 +55,7 @@ git_override(
 )
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
-bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
+bazel_dep(name = "gcc_toolchain", version = "0.10.0", dev_dependency = True)
 
 gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains", dev_dependency = True)
 gcc_toolchains.toolchain(
