@@ -95,10 +95,6 @@ impl<'a, T: CommData + Debug> SampleMaybeUninitTrait<T> for LolaFieldSampleMaybe
 impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>>
     for LolaFieldPublisher<T, B>
 {
-    type FieldSample<'a>
-        = LolaFieldSampleMut<T>
-    where
-        Self: 'a;
     type SampleMaybeUninit<'a>
         = LolaFieldSampleMaybeUninit<'a, T>
     where
@@ -113,8 +109,7 @@ impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>>
     fn update(&self, _value: &T) -> Result<()> {
         todo!()
     }
-    fn register_set_handler<'a>(&self, callback: impl Fn(&T) + Send + 'a) -> Result<()> {
-
+    fn register_set_handler<'a>(&self, _callback: impl Fn(&T) + Send + 'a) -> Result<()> {
         //If waker get the notification form FFI call then
         //Create a task to call the callback with value.
         //Thread pool is a option here to run the callback in a separate thread.

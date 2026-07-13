@@ -72,6 +72,8 @@ impl Runtime for MockRuntimeImpl {
     type Publisher<T: CommData + Debug> = Publisher<T>;
     type ProviderInfo = MockProviderInfo;
     type ConsumerInfo = MockConsumerInfo;
+    type FieldSubscriber<T: CommData + Debug> = MockFieldSubscriber<T>;
+    type FieldPublisher<T: CommData + Debug> = MockFieldPublisher<T>;
 
     fn find_service<I: Interface + Send>(
         &self,

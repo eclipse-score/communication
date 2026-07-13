@@ -16,8 +16,8 @@ use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use crate::{
-    LolaConsumerDiscovery, LolaConsumerInfo, LolaProducerBuilder, LolaProviderInfo, Publisher,
-    SubscribableImpl,
+    LolaConsumerDiscovery, LolaConsumerInfo, LolaFieldPublisher, LolaFieldSubscriber,
+    LolaProducerBuilder, LolaProviderInfo, Publisher, SubscribableImpl,
 };
 use com_api_concept::{
     Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime,
@@ -37,6 +37,8 @@ impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
     type Publisher<T: CommData + Debug> = Publisher<T, B>;
     type ProviderInfo = LolaProviderInfo<B>;
     type ConsumerInfo = LolaConsumerInfo<B>;
+    type FieldPublisher<T: CommData + Debug> = LolaFieldPublisher<T, B>;
+    type FieldSubscriber<T: CommData + Debug> = LolaFieldSubscriber<T, B>;
 
     fn find_service<I: Interface + Send>(
         &self,

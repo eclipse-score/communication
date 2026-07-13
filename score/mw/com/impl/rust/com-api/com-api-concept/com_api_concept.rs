@@ -48,6 +48,7 @@
 //! - Structures
 //! - Tuples
 
+use crate::com_api_field::*;
 use crate::error::*;
 use crate::Reloc;
 pub use com_api_concept_macros::CommData;
@@ -105,6 +106,12 @@ pub trait Runtime {
 
     /// `ConsumerInfo` types for Configuration data for service consumers instances
     type ConsumerInfo: Send + Clone;
+
+    /// `FieldSubscription<T>` types for Manages subscriptions to field instance
+    type FieldSubscriber<T: CommData + Debug>: FieldSubscriber<T, Self>;
+
+    /// `FieldPublisher<T>` types for Publishes field constructs and update the data
+    type FieldPublisher<T: CommData + Debug>: FieldPublisher<T, Self>;
 
     /// Find a service instance for the given interface and instance specifier.
     /// Locate available instances of a service interface.
