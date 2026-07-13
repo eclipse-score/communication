@@ -62,28 +62,25 @@ int main(int argc, char* argv[])
     score::concurrency::Notification proxy_ready{};
     score::cpp::stop_source stop_source{};
 
-    score::Result<score::mw::com::FindServiceHandle> fshandle_result =
-        sensor::SensorProxy::StartFindService(
-            [&proxy_opt, &proxy_ready](
-                score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType> handles,
-                score::mw::com::FindServiceHandle /*fsh*/) {
-                if (handles.empty())
-                {
-                    // Service disappeared — ignore; this example uses one-shot discovery.
-                    return;
-                }
-                score::Result<sensor::SensorProxy> proxy_result =
-                    sensor::SensorProxy::Create(handles.front());
-                if (!proxy_result.has_value())
-                {
-                    score::mw::log::LogError("PxSF") << "SensorProxy::Create failed in discovery callback";
-                    proxy_ready.notify();  // unblock main so it can check proxy_opt and exit
-                    return;
-                }
-                proxy_opt.emplace(std::move(proxy_result.value()));
-                proxy_ready.notify();
-            },
-            specifier_result.value());
+    score::Result<score::mw::com::FindServiceHandle> fshandle_result = sensor::SensorProxy::StartFindService(
+        [&proxy_opt, &proxy_ready](score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType> handles,
+                                   score::mw::com::FindServiceHandle /*fsh*/) {
+            if (handles.empty())
+            {
+                // Service disappeared — ignore; this example uses one-shot discovery.
+                return;
+            }
+            score::Result<sensor::SensorProxy> proxy_result = sensor::SensorProxy::Create(handles.front());
+            if (!proxy_result.has_value())
+            {
+                score::mw::log::LogError("PxSF") << "SensorProxy::Create failed in discovery callback";
+                proxy_ready.notify();  // unblock main so it can check proxy_opt and exit
+                return;
+            }
+            proxy_opt.emplace(std::move(proxy_result.value()));
+            proxy_ready.notify();
+        },
+        specifier_result.value());
     if (!fshandle_result.has_value())
     {
         score::mw::log::LogError("PxSF") << "StartFindService failed";

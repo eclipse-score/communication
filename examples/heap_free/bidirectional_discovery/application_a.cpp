@@ -61,8 +61,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    score::Result<sensor::SensorSkeleton> skeleton_result =
-        sensor::SensorSkeleton::Create(own_spec_result.value());
+    score::Result<sensor::SensorSkeleton> skeleton_result = sensor::SensorSkeleton::Create(own_spec_result.value());
     if (!skeleton_result.has_value())
     {
         score::mw::log::LogError("BiA") << "SensorSkeleton::Create failed — check mw_com_config.json";
@@ -97,27 +96,24 @@ int main(int argc, char* argv[])
     score::concurrency::Notification proxy_ready{};
     score::cpp::stop_source stop_source{};
 
-    score::Result<score::mw::com::FindServiceHandle> fshandle_result =
-        sensor::SensorProxy::StartFindService(
-            [&remote_proxy, &proxy_ready](
-                score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType> handles,
-                score::mw::com::FindServiceHandle /*fsh*/) {
-                if (handles.empty())
-                {
-                    return;
-                }
-                score::Result<sensor::SensorProxy> proxy_result =
-                    sensor::SensorProxy::Create(handles.front());
-                if (!proxy_result.has_value())
-                {
-                    score::mw::log::LogError("BiA") << "SensorProxy::Create failed in discovery callback";
-                    proxy_ready.notify();
-                    return;
-                }
-                remote_proxy.emplace(std::move(proxy_result.value()));
+    score::Result<score::mw::com::FindServiceHandle> fshandle_result = sensor::SensorProxy::StartFindService(
+        [&remote_proxy, &proxy_ready](score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType> handles,
+                                      score::mw::com::FindServiceHandle /*fsh*/) {
+            if (handles.empty())
+            {
+                return;
+            }
+            score::Result<sensor::SensorProxy> proxy_result = sensor::SensorProxy::Create(handles.front());
+            if (!proxy_result.has_value())
+            {
+                score::mw::log::LogError("BiA") << "SensorProxy::Create failed in discovery callback";
                 proxy_ready.notify();
-            },
-            remote_spec_result.value());
+                return;
+            }
+            remote_proxy.emplace(std::move(proxy_result.value()));
+            proxy_ready.notify();
+        },
+        remote_spec_result.value());
     if (!fshandle_result.has_value())
     {
         score::mw::log::LogError("BiA") << "StartFindService failed";
@@ -155,8 +151,7 @@ int main(int argc, char* argv[])
 
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
-        score::Result<score::mw::com::SampleAllocateePtr<sensor::SensorReading>> sample_result =
-            sk.reading.Allocate();
+        score::Result<score::mw::com::SampleAllocateePtr<sensor::SensorReading>> sample_result = sk.reading.Allocate();
         if (!sample_result.has_value())
         {
             score::mw::log::LogError("BiA") << "reading.Allocate failed";

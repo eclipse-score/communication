@@ -13,7 +13,8 @@
 #ifndef SCORE_MW_COM_EXAMPLES_HEAP_FREE_COMMON_SENSOR_INTERFACE_H
 #define SCORE_MW_COM_EXAMPLES_HEAP_FREE_COMMON_SENSOR_INTERFACE_H
 
-// Service interface for the heap-free examples. Instantiate with AsSkeleton<SensorInterface> or AsProxy<SensorInterface>.
+// Service interface for the heap-free examples. Instantiate with AsSkeleton<SensorInterface> or
+// AsProxy<SensorInterface>.
 
 #include "score/mw/com/types.h"
 

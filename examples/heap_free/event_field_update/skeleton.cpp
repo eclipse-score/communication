@@ -52,8 +52,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    score::Result<sensor::SensorSkeleton> skeleton_result =
-        sensor::SensorSkeleton::Create(specifier_result.value());
+    score::Result<sensor::SensorSkeleton> skeleton_result = sensor::SensorSkeleton::Create(specifier_result.value());
     if (!skeleton_result.has_value())
     {
         score::mw::log::LogError("SkEf") << "SensorSkeleton::Create failed — check mw_com_config.json";
@@ -81,8 +80,7 @@ int main(int argc, char* argv[])
 
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
-        score::Result<score::mw::com::SampleAllocateePtr<sensor::SensorReading>> sample_result =
-            sk.reading.Allocate();
+        score::Result<score::mw::com::SampleAllocateePtr<sensor::SensorReading>> sample_result = sk.reading.Allocate();
         if (!sample_result.has_value())
         {
             score::mw::log::LogError("SkEf")
