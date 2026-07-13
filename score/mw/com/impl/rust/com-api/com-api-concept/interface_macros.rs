@@ -11,6 +11,22 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+/// Type-state marker for uninitialized field state (compile-time tracking).
+#[allow(dead_code)]
+pub struct Uninit;
+
+/// Type-state marker for initialized field state (compile-time tracking).
+#[allow(dead_code)]
+pub struct Init;
+
+/// Type-state marker for handler not registered (compile-time tracking).
+#[allow(dead_code)]
+pub struct HandlerNotSet;
+
+/// Type-state marker for handler registered (compile-time tracking).
+#[allow(dead_code)]
+pub struct HandlerSet;
+
 /// Main interface macro that generates Consumer, Producer, and OfferedProducer types
 /// along with all necessary trait implementations.
 ///
@@ -290,6 +306,8 @@ macro_rules! interface_producer {
     };
       ($id:ident, $($field_name:ident, Field<$field_type:ty>),+$(,)?) => {
         com_api::paste::paste! {
+            // Producer struct with proc macro validation
+            #[derive($crate::com_api_concept_macros::TypeStateFieldValidator)]
             pub struct [<$id Producer>]<R: com_api::Runtime + ?Sized> {
                 $(
                     pub $field_name: R::FieldPublisher<$field_type>,

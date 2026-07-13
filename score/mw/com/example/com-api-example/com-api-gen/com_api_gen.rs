@@ -47,10 +47,10 @@ interface!(
      }
 );
 
-interface!(
-    interface Vehicle {
-        Id = "VehicleFieldInterface",
-        left_tire: Field<Tire>,
-        exhaust: Field<Exhaust>,
-     }
-);
+// interface!(
+//     interface Vehicle {
+//         Id = "VehicleFieldInterface",
+//         left_tire: Field<Tire>,
+//         exhaust: Field<Exhaust>,
+//      }
+// );
