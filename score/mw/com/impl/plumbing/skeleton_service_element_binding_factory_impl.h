@@ -49,15 +49,18 @@ namespace detail
 // configured count, so they call this without it and need not know the parameter exists.
 inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
     const LolaEventInstanceDeployment& lola_event_instance_deployment,
-    const std::optional<std::uint16_t> slot_count_override = std::nullopt)
+    const std::optional<LolaEventInstanceDeployment::SampleSlotCountType> slot_count_override = std::nullopt)
 {
-    std::optional<std::uint16_t> effective_slot_count{};
+    std::optional<LolaEventInstanceDeployment::SampleSlotCountType> effective_slot_count{};
     if (slot_count_override.has_value())
     {
-        // The override plus the tracing slots (a std::uint8_t) cannot overflow a std::uint16_t, see the
-        // static_assert next to kSlotCountForFieldWithoutNotifier.
-        effective_slot_count = static_cast<std::uint16_t>(slot_count_override.value() +
-                                                          lola_event_instance_deployment.GetNumberOfTracingSlots());
+        static_assert(lola::kSlotCountForFieldWithoutNotifier +
+                              std::numeric_limits<LolaEventInstanceDeployment::TracingSlotSizeType>::max() <=
+                          std::numeric_limits<LolaEventInstanceDeployment::SampleSlotCountType>::max(),
+                      "Slot count for a field without notifier must leave room for the tracing slots.");
+
+        effective_slot_count = static_cast<LolaEventInstanceDeployment::SampleSlotCountType>(
+            slot_count_override.value() + lola_event_instance_deployment.GetNumberOfTracingSlots());
     }
     else
     {
@@ -85,7 +88,7 @@ inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
 
 inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
     const LolaFieldInstanceDeployment& lola_field_instance_deployment,
-    const std::optional<std::uint16_t> slot_count_override = std::nullopt)
+    const std::optional<LolaEventInstanceDeployment::SampleSlotCountType> slot_count_override = std::nullopt)
 {
     return CreateSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_,
                                          slot_count_override);
@@ -102,9 +105,11 @@ template <typename SkeletonServiceElementBinding, typename SkeletonServiceElemen
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
-                                SkeletonBinding& parent_binding,
-                                const std::string_view service_element_name) noexcept
+auto CreateSkeletonServiceElement(
+    const InstanceIdentifier& identifier,
+    SkeletonBinding& parent_binding,
+    const std::string_view service_element_name,
+    const std::optional<LolaEventInstanceDeployment::SampleSlotCountType> slot_count_override = std::nullopt) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
     static_assert((element_type == ServiceElementType::EVENT) || (element_type == ServiceElementType::FIELD));
@@ -113,7 +118,7 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
 
     using ReturnType = std::unique_ptr<SkeletonServiceElementBinding>;
     auto visitor = score::cpp::overload(
-        [identifier_view, &parent_binding, &service_element_name](
+        [identifier_view, &parent_binding, &service_element_name, slot_count_override](
             const LolaServiceTypeDeployment& lola_service_type_deployment) -> ReturnType {
             auto* const lola_parent = dynamic_cast<lola::Skeleton*>(&parent_binding);
             if (lola_parent == nullptr)
@@ -130,8 +135,23 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
             const std::string service_element_name_str{service_element_name};
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_str);
+            // Only fields pass a slot count override (set when WithNotifier is disabled).
+            if constexpr (element_type == ServiceElementType::FIELD)
+            {
+                const bool slot_count_overridden = slot_count_override.has_value();
+                const bool sample_slot_count_configured =
+                    lola_service_element_instance_deployment.lola_event_instance_deployment_
+                        .GetNumberOfSampleSlotsExcludingTracingSlot()
+                        .has_value();
+                if (slot_count_overridden && sample_slot_count_configured)
+                {
+                    score::mw::log::LogWarn("lola")
+                        << "Field '" << service_element_name_str
+                        << "' has WithNotifier disabled; configured numberOfSampleSlots is ignored.";
+                }
+            }
             const lola::SkeletonEventProperties skeleton_event_properties =
-                detail::CreateSkeletonEventProperties(lola_service_element_instance_deployment);
+                detail::CreateSkeletonEventProperties(lola_service_element_instance_deployment, slot_count_override);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_str);
