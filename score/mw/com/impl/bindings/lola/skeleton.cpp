@@ -40,6 +40,7 @@
 #include <score/span.hpp>
 #include <sys/types.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <exception>
 #include <mutex>
@@ -564,21 +565,11 @@ void Skeleton::RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMe
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");
 }
 
-bool Skeleton::VerifyAllMethodsRegistered() const
+bool Skeleton::VerifyAllMethodHandlersRegistered() const
 {
-    for (const auto& [method_id, method_reference] : skeleton_methods_)
-    {
-        // TODO: Remove this skip once the field Get handler is auto-registered in SkeletonField.
-        if (method_id.method_type == ::score::mw::com::impl::MethodType::kGet)
-        {
-            continue;
-        }
-        if (!method_reference.get().IsRegistered())
-        {
-            return false;
-        }
-    }
-    return true;
+    return std::all_of(skeleton_methods_.begin(), skeleton_methods_.end(), [](const auto& method_pair) {
+        return method_pair.second.get().IsRegistered();
+    });
 }
 
 auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
@@ -656,7 +647,7 @@ auto Skeleton::RegisterMethodHandlers(const QualityType asil_level,
         skeleton_instance_identifier,
         IMessagePassingService::ServiceMethodUnsubscribedHandler{
             on_service_method_subscribed_handler_scope_,
-            [this](const ProxyInstanceIdentifier proxy_instance_identifier) -> ResultBlank {
+            [this](const ProxyInstanceIdentifier proxy_instance_identifier) -> Result<void> {
                 return OnServiceMethodsUnsubscribed(proxy_instance_identifier);
             }});
     if (!unsubscription_result.has_value())
@@ -718,7 +709,7 @@ Result<void> Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier&
     return {};
 }
 
-ResultBlank Skeleton::OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier)
+Result<void> Skeleton::OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier)
 {
     std::lock_guard lock{on_service_methods_subscribed_mutex_};
 
@@ -746,28 +737,16 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
     {
         auto& [unique_method_identifier, type_erased_call_queue] = method_call_queues[method_idx];
 
-        if (skeleton_methods_.count(unique_method_identifier) == 0U)
-        {
-            // A proxy may register a Get or Set method for a field that has been disabled in the skeleton's
-            // interface definition. In that case, the skeleton has no handler for it.
-            if ((unique_method_identifier.method_type == MethodType::kGet) ||
-                (unique_method_identifier.method_type == MethodType::kSet))
-            {
-                score::mw::log::LogInfo("lola")
-                    << "Proxy registered a field Get/Set method that is not available on the skeleton side. Skipping.";
-                continue;
-            }
+        // Defensive check for skeleton method population.
+        // The skeleton_methods_ map is populated at skeleton construction time
+        // by the lola::SkeletonMethod constructor calling Skeleton::RegisterMethod().
+        // Under normal circumstances, this condition is never reached.
+        // Note : Skeleton must always provide all methods in its interface. Only on proxy side can we be selective with
+        // which method a specific proxy method wants to use.
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            (skeleton_methods_.count(unique_method_identifier) != 0U),
+            "Each regular method stored in shared memory by the proxy must be registered with the Skeleton!");
 
-            // This means that one misconfigured proxy can crash the skeleton and all other correctly configured proxies
-            // that are trying to subscribe to the same skeleton instance. However, since this is a configuration error,
-            // we consider it better to fail fast and loudly instead of silently ignoring the misconfiguration and
-            // potentially leaving the user wondering why their method calls are not working.
-            score::mw::log::LogFatal("lola")
-                << "Each regular method stored in shared memory by the proxy must be registered with the Skeleton!";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-                false,
-                "Each regular method stored in shared memory by the proxy must be registered with the Skeleton!");
-        }
         auto& skeleton_method = skeleton_methods_.at(unique_method_identifier);
         const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier,
                                                                              unique_method_identifier};

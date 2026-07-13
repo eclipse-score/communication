@@ -33,7 +33,7 @@ Test execution
 ┌───────────────────────────┐
 │ generate_coverage_html.sh │  ◄── bazel run //quality/coverage:generate_coverage_html
 └────┬──────────────────────┘
-     │  Extracts html_report/ → cpp_coverage/
+     │  Extracts html_report/ → cpp_coverage_<platform>/
      ▼
 ┌─────────────┐     coverage_justifications.yaml
 │  justify.py  │ ◄── + source files (COV_JUSTIFIED markers)
@@ -141,8 +141,12 @@ Resolves all justified lines from two sources and produces a unified manifest:
 ```
 python3 justify.py --yaml <justifications.yaml>  \
                    --source-root <workspace-path> \
-                   --output <manifest.json>
+                   --output <manifest.json>        \
+                   [--platform <linux|qnx>]
 ```
+
+When `--platform` is specified, only justifications that apply to that platform are included
+in the output manifest. Each justification must declare its `platforms` explicitly.
 
 **Output format (manifest.json):**
 
@@ -163,6 +167,7 @@ python3 justify.py --yaml <justifications.yaml>  \
 - Justification IDs must be unique and kebab-case (lowercase + hyphens)
 - Every justification must have a non-empty `reason`
 - Category must be one of: `defensive_programming`, `tool_false_positive`, `platform_specific`, `other`
+- Platforms are required and must be a non-empty list containing `linux` and/or `qnx`
 - In-code `COV_JUSTIFIED <id>` markers must reference an ID defined in the YAML
 
 **In-code marker patterns:**

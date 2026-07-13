@@ -616,7 +616,7 @@ score::Result<void> MessagePassingServiceInstance::HandleSubscribeServiceMethodM
                                              sender_node_id);
 }
 
-score::ResultBlank MessagePassingServiceInstance::HandleUnsubscribeServiceMethodMsg(
+score::Result<void> MessagePassingServiceInstance::HandleUnsubscribeServiceMethodMsg(
     const score::cpp::span<const std::uint8_t> payload,
     const pid_t /*sender_node_id*/)
 {
@@ -686,7 +686,7 @@ score::Result<void> MessagePassingServiceInstance::CallSubscribeServiceMethodLoc
     return invocation_result.value();
 }
 
-score::ResultBlank MessagePassingServiceInstance::CallUnsubscribeServiceMethodLocally(
+score::Result<void> MessagePassingServiceInstance::CallUnsubscribeServiceMethodLocally(
     const SkeletonInstanceIdentifier& skeleton_instance_identifier,
     const ProxyInstanceIdentifier& proxy_instance_identifier)
 {
@@ -789,7 +789,7 @@ Result<void> MessagePassingServiceInstance::CallSubscribeServiceMethodRemotely(
     return deserialization_result.value();
 }
 
-ResultBlank MessagePassingServiceInstance::CallUnsubscribeServiceMethodRemotely(
+Result<void> MessagePassingServiceInstance::CallUnsubscribeServiceMethodRemotely(
     const SkeletonInstanceIdentifier& skeleton_instance_identifier,
     const ProxyInstanceIdentifier& proxy_instance_identifier,
     const pid_t target_node_id)
@@ -817,7 +817,7 @@ ResultBlank MessagePassingServiceInstance::CallUnsubscribeServiceMethodRemotely(
         score::mw::log::LogError("lola")
             << "MessagePassingService: Parsing UnsubscribeServiceMethodMessage reply from node_id " << target_node_id
             << "failed during deserialization";
-        return MakeUnexpected<Blank>(deserialization_result.error());
+        return MakeUnexpected<void>(deserialization_result.error());
     }
     return deserialization_result.value();
 }
@@ -1229,7 +1229,7 @@ Result<void> MessagePassingServiceInstance::RegisterOnServiceMethodSubscribedHan
     return {};
 }
 
-ResultBlank MessagePassingServiceInstance::RegisterOnServiceMethodUnsubscribedHandler(
+Result<void> MessagePassingServiceInstance::RegisterOnServiceMethodUnsubscribedHandler(
     const SkeletonInstanceIdentifier skeleton_instance_identifier,
     IMessagePassingService::ServiceMethodUnsubscribedHandler unsubscribed_callback)
 {
@@ -1549,7 +1549,7 @@ Result<void> MessagePassingServiceInstance::SubscribeServiceMethod(
     }
 }
 
-ResultBlank MessagePassingServiceInstance::UnsubscribeServiceMethod(
+Result<void> MessagePassingServiceInstance::UnsubscribeServiceMethod(
     const SkeletonInstanceIdentifier& skeleton_instance_identifier,
     const ProxyInstanceIdentifier& proxy_instance_identifier,
     const pid_t target_node_id)

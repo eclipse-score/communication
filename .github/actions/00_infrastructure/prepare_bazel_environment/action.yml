@@ -63,12 +63,18 @@ runs:
         echo "CACHE_MODE=${MODE}" >> "$GITHUB_ENV"
         echo "Cache mode: ${MODE}"
 
+    - name: Free Disk Space (Ubuntu)
+      uses: eclipse-score/more-disk-space@v1
+      with:
+        level: 4
+
     - name: Install Bazelisk
-      uses: bazel-contrib/setup-bazel@0.14.0
+      uses: bazel-contrib/setup-bazel@0.19.0
       with:
         bazelisk-cache: true
         disk-cache: false
         repository-cache: false
+        cache-save: ${{ env.CACHE_MODE != 'read-only' && env.CACHE_MODE != 'disabled' }}
 
     - name: Register post cache save hook and restore caches
       uses: ./.github/actions/00_infrastructure/setup_bazel_cache
@@ -109,11 +115,6 @@ runs:
 
         echo "common --downloader_config=${DOWNLOADER_CONFIG}" >> "${GITHUB_WORKSPACE}/user.bazelrc"
         echo "Configured Bazel downloader mirror with fallback for Ubuntu snapshot URLs."
-
-    - name: Free Disk Space (Ubuntu)
-      uses: eclipse-score/more-disk-space@v1
-      with:
-        level: 4
 
     - name: Allow linux-sandbox
       uses: eclipse-score/cicd-actions/unblock-user-namespace-for-linux-sandbox@f89865691445b60e9229c36adb1c37b675e1ca85

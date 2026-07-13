@@ -15,12 +15,12 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Message lost, incomplete, or corrupted during IPC transmission", "MessagePassingFMEA.MessageNotDeliveredCorrectly")
+$TopEvent("Message lost, incomplete, or corrupted during IPC transmission", "MessagePassing.MessageNotDeliveredCorrectly")
 
-$OrGate("OG1", "MessagePassingFMEA.MessageNotDeliveredCorrectly")
+$OrGate("OG1", "MessagePassing.MessageNotDeliveredCorrectly")
 
-$BasicEvent("OS IPC transport failure not detected or handled", "MessagePassingFMEA.OsIpcFaultHandling", "OG1")
-$BasicEvent("Invalid buffer or size argument passed to SendWaitReply", "MessagePassingFMEA.SendBufferArgumentValidation", "OG1")
+$BasicEvent("OS IPC transport failure not detected or handled", "MessagePassing.OsIpcFaultHandling", "OG1")
+$BasicEvent("Invalid buffer or size argument passed to SendWaitReply", "MessagePassing.SendBufferArgumentValidation", "OG1")
 $BasicEvent("Message exceeds configured max_send_size or max_reply_size", "BE_MessageTooBig", "OG1")
 $BasicEvent("Send queue capacity exhausted or configured as zero", "BE_SendQueueExhausted", "OG1")
 

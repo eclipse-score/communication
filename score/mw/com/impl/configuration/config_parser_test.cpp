@@ -127,12 +127,9 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft")
                   .lola_event_instance_deployment_.max_concurrent_allocations_.value(),
               1);
-    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_,
-              std::optional<bool>{true});
-    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_,
-              std::optional<bool>{true});
-    ASSERT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_.has_value());
-    EXPECT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_.value());
+    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, true);
+    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
+    EXPECT_TRUE(secondDeploymentInfo.methods_.at("SetPressure").enabled_);
 
     const auto service_deployment = config.GetServiceTypes().at(deployments.service_);
     const auto* const lola_service_type_deployment =
@@ -2186,10 +2183,9 @@ TEST(ConfigParser, LolaFieldUseGetIfAvailableSetToTrue)
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
-    // Then use_get_if_available_ is true and use_set_if_available_ is not set
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_,
-              std::optional<bool>{true});
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, std::nullopt);
+    // Then use_get_if_available_ is true and use_set_if_available_ defaults to true
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, true);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
 }
 
 TEST(ConfigParser, LolaFieldUseSetIfAvailableSetToTrue)
@@ -2255,13 +2251,12 @@ TEST(ConfigParser, LolaFieldUseSetIfAvailableSetToTrue)
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
-    // Then use_set_if_available_ is true and use_get_if_available_ is not set
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, std::nullopt);
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_,
-              std::optional<bool>{true});
+    // Then use_set_if_available_ is true and use_get_if_available_ defaults to true
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, true);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
 }
 
-TEST(ConfigParser, LolaFieldOmittingBothFlagsKeepsBothUnset)
+TEST(ConfigParser, LolaFieldOmittingBothFlagsDefaultsToBothTrue)
 {
     // Given a JSON for a field without `useGetIfAvailable` or `useSetIfAvailable`
     auto j2 = R"(
@@ -2323,9 +2318,9 @@ TEST(ConfigParser, LolaFieldOmittingBothFlagsKeepsBothUnset)
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
-    // Then both flags are not set
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, std::nullopt);
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, std::nullopt);
+    // Then both flags default to true
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, true);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
 }
 
 TEST(ConfigParser, LolaFieldBothFlagsSetToTrue)
@@ -2391,10 +2386,77 @@ TEST(ConfigParser, LolaFieldBothFlagsSetToTrue)
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
     // Then both flags are true
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_,
-              std::optional<bool>{true});
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_,
-              std::optional<bool>{true});
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, true);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, true);
+}
+
+TEST(ConfigParser, LolaFieldBothFlagsExplicitlySetToFalse)
+{
+    // Given a JSON with both `useGetIfAvailable` and `useSetIfAvailable` explicitly set to false for a field
+    auto j2 = R"(
+  {
+    "serviceTypes": [
+        {
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
+          "version": {
+              "major": 12,
+              "minor": 34
+          },
+          "bindings": [
+              {
+                  "binding": "SHM",
+                  "serviceId": 1234,
+                  "fields": [
+                      {
+                          "fieldName": "CurrentTemperatureFrontLeft",
+                          "fieldId": 20
+                      }
+                  ]
+              }
+          ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                  "instanceId": 1234,
+                  "asil-level": "QM",
+                  "binding": "SHM",
+                  "events": [],
+                  "fields": [
+                    {
+                          "fieldName": "CurrentTemperatureFrontLeft",
+                          "numberOfSampleSlots": 50,
+                          "maxSubscribers": 5,
+                          "useGetIfAvailable": false,
+                          "useSetIfAvailable": false
+                      }
+                  ]
+                }
+            ]
+        }
+    ]
+  }
+)"_json;
+
+    // When parsing the JSON
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+
+    const auto deployment =
+        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+
+    // Then both flags are false (explicit false overrides the default of true)
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_, false);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_, false);
 }
 
 TEST(ConfigParser, EmptyServiceTypes)
@@ -5141,5 +5203,217 @@ TEST_F(ConfigParserFixtureDeathTest, InterVmSupportButNotInterVmForwardedWillNot
         score::mw::com::impl::configuration::Parse(std::move(config_with_inter_vm_support_no_vm_forwarding));
 }
 
+TEST(ConfigParser, OnlyBReceiverQueueSizes)
+{
+    // Given a JSON with only B-receiver queue size being explicitly configured
+    auto j2 = R"(
+  {
+    "serviceTypes": [],
+    "serviceInstances": [],
+    "global": {
+       "queue-size": {
+          "B-receiver": 5
+      }
+    }
+  }
+)"_json;
+    // When parsing the JSON
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+    // expect that the QM-receiver has the default value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_QM),
+              GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE);
+    // and that the B-receiver has the configured value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_B), 5);
+    // and that the not explicitly configured B-sender has the default value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetSenderMessageQueueSize(),
+              GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_TX_QUEUE);
+}
+
+TEST(ConfigParser, OnlyBSenderQueueSize)
+{
+    // Given a JSON with only B-sender queue size being explicitly configured
+    auto j2 = R"(
+  {
+    "serviceTypes": [],
+    "serviceInstances": [],
+    "global": {
+       "queue-size": {
+          "B-sender": 12
+      }
+    }
+  }
+)"_json;
+    // When parsing the JSON
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+    // expect that the QM-receiver has the default value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_QM),
+              GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE);
+    // and that the B-receiver has the default value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_B),
+              GlobalConfiguration::DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE);
+    // and that the B-sender has the configured value
+    EXPECT_EQ(config.GetGlobalConfiguration().GetSenderMessageQueueSize(), 12);
+}
+
+TEST(ConfigParser, MultipleServiceInstancesParseSuccessfully)
+{
+    // Given a JSON with two valid service instances referencing the same service type
+    auto j2 = R"(
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 20
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort1",
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort2",
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 5678,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+)"_json;
+    // When parsing the JSON
+    // That the application will not terminate and both instances are present
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+    EXPECT_EQ(config.GetServiceInstances().size(), 2U);
+}
+
+TEST(ConfigParser, ServiceInstanceWithMultipleEventsAndFieldsParseSuccessfully)
+{
+    // Given a JSON with a service instance containing two events and two fields
+    auto j2 = R"(
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 20
+                        },
+                        {
+                            "eventName": "CurrentPressureFrontRight",
+                            "eventId": 21
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentTemperatureFrontLeft",
+                            "fieldId": 30
+                        },
+                        {
+                            "fieldName": "CurrentTemperatureFrontRight",
+                            "fieldId": 31
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft"
+                        },
+                        {
+                            "eventName": "CurrentPressureFrontRight"
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentTemperatureFrontLeft"
+                        },
+                        {
+                            "fieldName": "CurrentTemperatureFrontRight"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+)"_json;
+    // When parsing the JSON
+    // That the application will not terminate
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+    const auto deployment =
+        config.GetServiceInstances().at(InstanceSpecifier::Create("abc/abc/TirePressurePort").value());
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_EQ(deploymentInfo.events_.size(), 2U);
+    EXPECT_EQ(deploymentInfo.fields_.size(), 2U);
+}
 }  // namespace
 }  // namespace score::mw::com::impl

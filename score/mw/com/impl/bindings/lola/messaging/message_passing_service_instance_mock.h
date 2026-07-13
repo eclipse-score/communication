@@ -44,7 +44,7 @@ class MessagePassingServiceInstanceMock : public IMessagePassingServiceInstance
                  IMessagePassingService::AllowedConsumerUids),
                 (override));
 
-    MOCK_METHOD(ResultBlank,
+    MOCK_METHOD(Result<void>,
                 RegisterOnServiceMethodUnsubscribedHandler,
                 (SkeletonInstanceIdentifier, IMessagePassingService::ServiceMethodUnsubscribedHandler),
                 (override));
@@ -68,7 +68,7 @@ class MessagePassingServiceInstanceMock : public IMessagePassingServiceInstance
                 (const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&, pid_t),
                 (override));
 
-    MOCK_METHOD(ResultBlank,
+    MOCK_METHOD(Result<void>,
                 UnsubscribeServiceMethod,
                 (const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&, pid_t),
                 (override));

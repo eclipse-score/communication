@@ -26,19 +26,15 @@ bazel_dep(name = "rules_rust", version = "0.68.1-score")
 
 # Cannot be dev-dependency due to being required in "load" statements
 bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
-bazel_dep(name = "score_baselibs", version = "0.2.7")
-git_override(
+bazel_dep(name = "score_baselibs", version = "0.2.9")
+single_version_override(
     module_name = "score_baselibs",
-    # Required until a new release of baselibs is available that includes the tracing API
-    commit = "8d4e0847424a565846e7a8a24c4c0018e3b14da9",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
     patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
-    remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
-bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.10", repo_name = "score_communication_crate_index")
 
@@ -54,12 +50,12 @@ download_archive(
 bazel_dep(name = "score_tooling")
 git_override(
     module_name = "score_tooling",
-    commit = "7099e272c3f6114bad17736debd54139601aedd4",
+    commit = "ade2a09e66423f788d207f8624358047f48ba209",
     remote = "https://github.com/eclipse-score/tooling.git",
 )
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
-bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
+bazel_dep(name = "gcc_toolchain", version = "0.10.0", dev_dependency = True)
 
 gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains", dev_dependency = True)
 gcc_toolchains.toolchain(
@@ -293,6 +289,7 @@ llvm.toolchain(
         "//quality/compiler_warnings/clang:strict_warnings",
         "//quality/compiler_warnings/clang:strict_warnings_no_error",
         "//quality/compiler_warnings/clang:third_party_warnings",
+        "//quality/coverage:enable_llvm_coverage_for_death_tests",
     ],
     link_libs = {"": [
         "-lrt",
@@ -374,6 +371,7 @@ download_archive(
     name = "json_schema_validator",
     build = "//third_party/json_schema_validator:json_schema_validator.BUILD",
     dev_dependency = True,
+    integrity = "sha256-g/YdgRL0heDT8ectUWELo5JLF5kmqDdq7zwDh3D68gI=",
     strip_prefix = "json-schema-validator-2.1.0",
     urls = ["https://github.com/pboettch/json-schema-validator/archive/refs/tags/2.1.0.tar.gz"],
 )
@@ -387,13 +385,7 @@ single_version_override(
     patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
 )
 
-bazel_dep(name = "score_docs_as_code", version = "3.0.1", dev_dependency = True)
-
-# Force score_docs_as_code to 3.0.1 to resolve compatibility conflict between score_logging and score_baselibs
-single_version_override(
-    module_name = "score_docs_as_code",
-    version = "3.0.1",
-)
+bazel_dep(name = "score_docs_as_code", version = "4.6.0", dev_dependency = True)
 
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension", dev_dependency = True)
@@ -452,8 +444,8 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 http_archive(
     name = "codeql_bundle",
     build_file = "//third_party/codeql:codeql.BUILD",
-    sha256 = "",
-    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.23.6/codeql-bundle-linux64.tar.gz",
+    sha256 = "0144d4bc415aee0d5638119dfb626a2d8689e2ff21758ba211a3984862b8522c",
+    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.26.0/codeql-bundle-linux64.tar.gz",
 )
 
 git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
@@ -461,7 +453,7 @@ git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "g
 git_repository(
     name = "codeql_coding_standards",
     build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
-    commit = "9fc970ff7eaedb64aa3cd172d45f4002c40f2a73",  # v2.60.0
+    commit = "06dc6bc32b05152fbe94dbf341a3e854574c9df5",  # v2.61.0
     remote = "https://github.com/github/codeql-coding-standards.git",
 )
 

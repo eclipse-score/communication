@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_PROXY_FIELD_BASE_H
 
 #include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
+#include "score/mw/com/impl/methods/proxy_method_base.h"
 #include "score/mw/com/impl/proxy_event_base.h"
 
 #include "score/result/result.h"
@@ -28,6 +29,7 @@ namespace score::mw::com::impl
 {
 
 class ProxyFieldBaseView;
+class ProxyMethodBase;
 
 class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
 {
@@ -38,9 +40,16 @@ class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
 
   public:
     /// \param proxy_event_base_dispatch May be nullptr when the field's tag pack does not include WithNotifier.
-    ProxyFieldBase(std::string_view field_name, ProxyEventBase* proxy_event_base_dispatch)
+    /// \param proxy_set_method_dispatch May be nullptr when the field's tag pack does not include WithSetter.
+    /// \param proxy_get_method_dispatch May be nullptr when the field's tag pack does not include WithGetter.
+    ProxyFieldBase(std::string_view field_name,
+                   ProxyEventBase* proxy_event_base_dispatch,
+                   ProxyMethodBase* proxy_set_method_dispatch,
+                   ProxyMethodBase* proxy_get_method_dispatch)
         : EnableReferenceToMoveableFromThis<ProxyFieldBase>(),
           proxy_event_base_dispatch_{proxy_event_base_dispatch},
+          proxy_set_method_dispatch_{proxy_set_method_dispatch},
+          proxy_get_method_dispatch_{proxy_get_method_dispatch},
           field_name_{field_name}
     {
     }
@@ -122,6 +131,8 @@ class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
     /// \}
 
     ProxyEventBase* proxy_event_base_dispatch_;
+    ProxyMethodBase* proxy_set_method_dispatch_;
+    ProxyMethodBase* proxy_get_method_dispatch_;
     std::string_view field_name_;
 };
 
@@ -136,19 +147,46 @@ class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
 class ProxyFieldBaseView
 {
   public:
-    explicit ProxyFieldBaseView(ProxyFieldBase& base) noexcept : base_{base} {}
+    explicit ProxyFieldBaseView(ProxyFieldBase& base) noexcept : proxy_field_base_{base} {}
 
     void Unsubscribe() noexcept
     {
         // if the WithNotifier tag is not set, proxy_event_base_dispatch_ will be nullptr.
-        if (base_.proxy_event_base_dispatch_ != nullptr)
+        if (proxy_field_base_.proxy_event_base_dispatch_ != nullptr)
         {
-            base_.Unsubscribe();
+            proxy_field_base_.Unsubscribe();
         }
     }
 
+    [[nodiscard]] Result<void> GetEventBindingConstructionResult() const noexcept
+    {
+        // If the WithNotifier tag is not set, proxy_event_base_dispatch_ will be nullptr. In that case, we never had to
+        // create the event binding so we report that there were no construction errors.
+        return proxy_field_base_.proxy_event_base_dispatch_ != nullptr
+                   ? ProxyEventBaseView{*proxy_field_base_.proxy_event_base_dispatch_}.GetBindingConstructionResult()
+                   : Result<void>{};
+    }
+
+    [[nodiscard]] Result<void> GetSetterBindingConstructionResult() const noexcept
+    {
+        // If the WithSetter tag is not set, proxy_set_method_dispatch_ will be nullptr. In that case, we never had to
+        // create the setter method binding so we report that there were no construction errors.
+        return proxy_field_base_.proxy_set_method_dispatch_ != nullptr
+                   ? ProxyMethodBaseView{*proxy_field_base_.proxy_set_method_dispatch_}.GetBindingConstructionResult()
+                   : Result<void>{};
+    }
+
+    [[nodiscard]] Result<void> GetGetterBindingConstructionResult() const noexcept
+    {
+        // If the WithGetter tag is not set, proxy_get_method_dispatch_ will be nullptr. In that case, we never had to
+        // create the getter method binding so we report that there were no construction errors.
+        return proxy_field_base_.proxy_get_method_dispatch_ != nullptr
+                   ? ProxyMethodBaseView{*proxy_field_base_.proxy_get_method_dispatch_}.GetBindingConstructionResult()
+                   : Result<void>{};
+    }
+
   private:
-    ProxyFieldBase& base_;
+    ProxyFieldBase& proxy_field_base_;
 };
 
 }  // namespace score::mw::com::impl

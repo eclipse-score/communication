@@ -156,10 +156,10 @@ class MessagePassingService final : public IMessagePassingService
     /// \brief Best-effort call made by a Proxy on destruction to notify the Skeleton that the proxy is being
     /// destroyed.
     /// \details see IMessagePassingService::UnsubscribeServiceMethod
-    ResultBlank UnsubscribeServiceMethod(const QualityType asil_level,
-                                         const SkeletonInstanceIdentifier& skeleton_instance_identifier,
-                                         const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                         const pid_t target_node_id) override;
+    Result<void> UnsubscribeServiceMethod(const QualityType asil_level,
+                                          const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                          const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                          const pid_t target_node_id) override;
 
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response

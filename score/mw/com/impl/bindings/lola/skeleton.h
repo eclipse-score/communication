@@ -171,7 +171,7 @@ class Skeleton final : public SkeletonBinding
     /// constructor of Skeleton) without locking a mutex.
     void RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMethod& skeleton_method);
 
-    bool VerifyAllMethodsRegistered() const override;
+    bool VerifyAllMethodHandlersRegistered() const override;
 
   private:
     /// \brief Strategies for handling shared memory during PrepareOffer
@@ -215,7 +215,7 @@ class Skeleton final : public SkeletonBinding
                                             const QualityType asil_level,
                                             const pid_t proxy_pid);
 
-    ResultBlank OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier);
+    Result<void> OnServiceMethodsUnsubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier);
 
     Result<std::pair<MethodSubscriptionRegistrationGuard, MethodUnsubscriptionRegistrationGuard>>
     RegisterMethodHandlers(const QualityType asil_level,

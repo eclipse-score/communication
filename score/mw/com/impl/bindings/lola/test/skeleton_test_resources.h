@@ -255,16 +255,17 @@ static const ServiceInstanceDeployment kValidInstanceDeploymentWithField{
 
 static const ServiceInstanceDeployment kValidInstanceDeploymentWithMethods{
     kFooService,
-    CreateLolaServiceInstanceDeployment(kDefaultLolaInstanceId,
-                                        {},
-                                        {},
-                                        {{test::kFooMethodName, LolaMethodInstanceDeployment{kFooMethodQueueSize}},
-                                         {test::kDumbMethodName, LolaMethodInstanceDeployment{kDumbMethodQueueSize}}},
-                                        {kAllowedQmMethodConsumer},
-                                        {},
-                                        kConfiguredDeploymentShmSize,
-                                        kConfiguredDeploymentControlAsilBShmSize,
-                                        kConfiguredDeploymentControlQmShmSize),
+    CreateLolaServiceInstanceDeployment(
+        kDefaultLolaInstanceId,
+        {},
+        {},
+        {{test::kFooMethodName, LolaMethodInstanceDeployment{kFooMethodQueueSize, true}},
+         {test::kDumbMethodName, LolaMethodInstanceDeployment{kDumbMethodQueueSize, true}}},
+        {kAllowedQmMethodConsumer},
+        {},
+        kConfiguredDeploymentShmSize,
+        kConfiguredDeploymentControlAsilBShmSize,
+        kConfiguredDeploymentControlQmShmSize),
     QualityType::kASIL_QM,
     kFooInstanceSpecifier};
 
@@ -301,16 +302,17 @@ static const ServiceInstanceDeployment kValidAsilInstanceDeploymentWithField{
 
 static const ServiceInstanceDeployment kValidAsilInstanceDeploymentWithMethods{
     kFooService,
-    CreateLolaServiceInstanceDeployment(kDefaultLolaInstanceId,
-                                        {},
-                                        {},
-                                        {{test::kFooMethodName, LolaMethodInstanceDeployment{kFooMethodQueueSize}},
-                                         {test::kDumbMethodName, LolaMethodInstanceDeployment{kDumbMethodQueueSize}}},
-                                        {},
-                                        {kAllowedAsilBMethodConsumer},
-                                        kConfiguredDeploymentShmSize,
-                                        kConfiguredDeploymentControlAsilBShmSize,
-                                        kConfiguredDeploymentControlQmShmSize),
+    CreateLolaServiceInstanceDeployment(
+        kDefaultLolaInstanceId,
+        {},
+        {},
+        {{test::kFooMethodName, LolaMethodInstanceDeployment{kFooMethodQueueSize, true}},
+         {test::kDumbMethodName, LolaMethodInstanceDeployment{kDumbMethodQueueSize, true}}},
+        {},
+        {kAllowedAsilBMethodConsumer},
+        kConfiguredDeploymentShmSize,
+        kConfiguredDeploymentControlAsilBShmSize,
+        kConfiguredDeploymentControlQmShmSize),
     QualityType::kASIL_B,
     kFooInstanceSpecifier};
 
@@ -408,6 +410,11 @@ class SkeletonAttorney
     std::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const
     {
         return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetEventMetaInfo(element_fq_id);
+    }
+
+    bool WasOldShmRegionReopened() const noexcept
+    {
+        return skeleton_.was_old_shm_region_reopened_;
     }
 
   private:

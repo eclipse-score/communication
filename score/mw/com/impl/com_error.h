@@ -62,6 +62,7 @@ enum class ComErrc : score::result::ErrorCode
     kInvalidHandle,
     kCallQueueFull,
     kServiceElementAlreadyExists,
+    kMethodBindingDisabled,
     kNumEnumElements
 };
 
@@ -204,6 +205,9 @@ class ComErrorDomain final : public score::result::ErrorDomain
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(ComErrc::kServiceElementAlreadyExists):
                 return "A service element (event, field, method) with the same name already exists.";
+            // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(ComErrc::kMethodBindingDisabled):
+                return "Method binding is not initialized (disabled).";
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(ComErrc::kInvalid):
             case static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements):

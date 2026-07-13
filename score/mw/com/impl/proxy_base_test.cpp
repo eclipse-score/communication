@@ -29,6 +29,7 @@
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
+#include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/proxy_event_base.h"
 #include "score/mw/com/impl/proxy_field_base.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
@@ -68,6 +69,20 @@ const auto kServiceIdentifier = make_ServiceIdentifierType("foo", 13, 37);
 const LolaServiceInstanceId kLolaInstanceId{23U};
 constexpr std::uint16_t kServiceId{34U};
 
+const ConfigurationStore kConfigStore{kInstanceSpecifier,
+                                      kServiceIdentifier,
+                                      QualityType::kASIL_QM,
+                                      kServiceId,
+                                      kLolaInstanceId};
+
+static constexpr auto kEventName = "event_name";
+static constexpr auto kFieldEventName = "field_event_name";
+static constexpr auto kFieldSetterName = "field_setter_name";
+static constexpr auto kFieldGetterName = "field_getter_name";
+static constexpr auto kFieldName = "field_name";
+static constexpr auto kMethodName = "method_name";
+static constexpr auto kMethodName2 = "method_name_2";
+
 class ProxyBaseFixture : public ::testing::Test
 {
   public:
@@ -90,13 +105,8 @@ class ProxyBaseFixture : public ::testing::Test
         return ScopedEventReceiveHandler(event_receive_handler_scope_, mock_function.AsStdFunction());
     }
 
-    ConfigurationStore config_store_{kInstanceSpecifier,
-                                     kServiceIdentifier,
-                                     QualityType::kASIL_QM,
-                                     kServiceId,
-                                     kLolaInstanceId};
-    InstanceIdentifier instance_identifier_{config_store_.GetInstanceIdentifier()};
-    HandleType handle_{config_store_.GetHandle()};
+    InstanceIdentifier instance_identifier_{kConfigStore.GetInstanceIdentifier()};
+    HandleType handle_{kConfigStore.GetHandle()};
 
     RuntimeMockGuard runtime_mock_guard_{};
     ServiceDiscoveryMock service_discovery_mock_{};
@@ -162,7 +172,7 @@ TEST_F(ProxyBaseFindServiceInstanceSpecifierFixture, FindServiceShouldReturnHand
 
     // Expecting that the ServiceDiscoveryMock will return the handle corresponding to the instance identifier when
     // finding the service
-    auto expected_handle = config_store_.GetHandle();
+    auto expected_handle = kConfigStore.GetHandle();
     EXPECT_CALL(service_discovery_mock_, FindService(kInstanceSpecifier))
         .WillOnce(Return(Result<std::vector<HandleType>>{{expected_handle}}));
 
@@ -191,7 +201,7 @@ TEST_F(ProxyBaseFindServiceInstanceSpecifierFixture, FindServiceShouldReturnErro
     // Given a valid instance identifier with a lola binding
 
     // Expecting that the ServiceDiscoveryMock will return an error
-    auto expected_handle = config_store_.GetHandle();
+    auto expected_handle = kConfigStore.GetHandle();
     EXPECT_CALL(service_discovery_mock_, FindService(kInstanceSpecifier))
         .WillOnce(Return(MakeUnexpected(binding_error_code)));
 
@@ -460,7 +470,7 @@ TEST_F(ProxyBaseFindServiceMultipleBindingsFixture,
         QualityType::kASIL_QM,
         kInstanceSpecifier};
     const auto instance_with_fake_binding_2 =
-        make_InstanceIdentifier(deployment_info_2, ServiceTypeDeployment{config_store_.lola_service_type_deployment_});
+        make_InstanceIdentifier(deployment_info_2, ServiceTypeDeployment{kConfigStore.lola_service_type_deployment_});
 
     const auto service_identifier_3 = make_ServiceIdentifierType("foo3", 15, 39);
     std::uint16_t instance_id_3{33U};
@@ -470,7 +480,7 @@ TEST_F(ProxyBaseFindServiceMultipleBindingsFixture,
         QualityType::kASIL_QM,
         kInstanceSpecifier};
     const auto instance_with_fake_binding_3 =
-        make_InstanceIdentifier(deployment_info_3, ServiceTypeDeployment{config_store_.lola_service_type_deployment_});
+        make_InstanceIdentifier(deployment_info_3, ServiceTypeDeployment{kConfigStore.lola_service_type_deployment_});
 
     // Given a valid instance identifier with a valid lola binding
 
@@ -515,7 +525,7 @@ TEST_F(ProxyBaseFindServiceMultipleBindingsFixture, DISABLED_FindServiceShouldRe
         QualityType::kASIL_QM,
         kInstanceSpecifier};
     const auto instance_with_fake_binding_2 =
-        make_InstanceIdentifier(deployment_info_2, ServiceTypeDeployment{config_store_.lola_service_type_deployment_});
+        make_InstanceIdentifier(deployment_info_2, ServiceTypeDeployment{kConfigStore.lola_service_type_deployment_});
 
     // Given a valid instance identifier with a valid lola binding
 
@@ -561,22 +571,16 @@ class MyProxy : public ProxyBase
     }
 };
 
-// Since ProxyMethodBase is an abstract class, we create a dummy ProxyMethod which has a dummy implementation of the
-// pure virtual method which is not required in these tests. We use this class instead of a real ProxyMethod since we
-// want to explicitly call RegisterMethod in the tests, and ProxyMethod already calls this on construction.
+// Since ProxyMethodBase is an abstract class, we create a dummy ProxyMethod which mocks the pure virtual method. We use
+// this class instead of a real ProxyMethod since we want to explicitly call RegisterMethod in the tests, and
+// ProxyMethod already calls this on construction.
 class DummyProxyMethod : public ProxyMethodBase
 {
   public:
     using ProxyMethodBase::ProxyMethodBase;
-    Result<void> InitializeInArgsAndReturnValues(ProxyBinding&) override
-    {
-        return {};
-    }
-};
 
-static_assert(std::is_nothrow_move_constructible_v<DummyProxyMethod>,
-              "DummyProxyMethod must be nothrow move constructible");
-static_assert(std::is_nothrow_move_assignable_v<DummyProxyMethod>, "DummyProxyMethod must be nothrow move assignable");
+    MOCK_METHOD(Result<void>, InitializeInArgsAndReturnValues, (ProxyBinding&), (override));
+};
 
 /// Note. Technically, these tests are testing internals of ProxyBase. While we generally strive to test only the public
 /// interface, we make an exception in this case since the reference updating of service elements is complex and can
@@ -607,8 +611,27 @@ class ProxyBaseServiceElementReferencesFixture : public ::testing::Test
 
     ProxyEventBase field_event_dispatch_0_{field_name_0_, std::make_unique<mock_binding::ProxyEventBase>()};
     ProxyEventBase field_event_dispatch_1_{field_name_1_, std::make_unique<mock_binding::ProxyEventBase>()};
-    ProxyFieldBase field_0_{field_name_0_, &field_event_dispatch_0_};
-    ProxyFieldBase field_1_{field_name_1_, &field_event_dispatch_1_};
+    DummyProxyMethod field_setter_dispatch_0_{method_name_0_,
+                                              std::make_unique<mock_binding::ProxyMethod>(),
+                                              MethodType::kSet};
+    DummyProxyMethod field_getter_dispatch_0_{method_name_0_,
+                                              std::make_unique<mock_binding::ProxyMethod>(),
+                                              MethodType::kGet};
+    DummyProxyMethod field_setter_dispatch_1_{method_name_1_,
+                                              std::make_unique<mock_binding::ProxyMethod>(),
+                                              MethodType::kSet};
+    DummyProxyMethod field_getter_dispatch_1_{method_name_1_,
+                                              std::make_unique<mock_binding::ProxyMethod>(),
+                                              MethodType::kGet};
+
+    ProxyFieldBase field_0_{field_name_0_,
+                            &field_event_dispatch_0_,
+                            &field_setter_dispatch_0_,
+                            &field_getter_dispatch_0_};
+    ProxyFieldBase field_1_{field_name_1_,
+                            &field_event_dispatch_1_,
+                            &field_setter_dispatch_1_,
+                            &field_getter_dispatch_1_};
 
     DummyProxyMethod method_0_{method_name_0_, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod};
     DummyProxyMethod method_1_{method_name_1_, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod};
@@ -706,7 +729,11 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     // and given that an Event, Field and Method were registered on the second proxy
     ProxyEventBase event{other_event_name, std::make_unique<mock_binding::ProxyEventBase>()};
     ProxyEventBase field_event_dispatch{other_field_name, std::make_unique<mock_binding::ProxyEventBase>()};
-    ProxyFieldBase field{other_field_name, &field_event_dispatch};
+    DummyProxyMethod field_setter_dispatch{
+        other_field_name, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kSet};
+    DummyProxyMethod field_getter_dispatch{
+        other_field_name, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kGet};
+    ProxyFieldBase field{other_field_name, &field_event_dispatch, &field_setter_dispatch, &field_getter_dispatch};
     DummyProxyMethod method{other_method_name, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod};
     ProxyBaseView{proxy_2}.RegisterEvent(other_event_name, event.GetReferenceToMoveable());
     ProxyBaseView{proxy_2}.RegisterField(other_field_name, field.GetReferenceToMoveable());
@@ -743,8 +770,270 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningToItselfDoesNotDoA
     proxy_2 = std::move(*other_name_same_proxy_p);
     // Then nothing happens.
     // In case of self assignement we would want to know that actually nothing happens and no sideffects occur.
-    // Abscence of sideeffects is not possible to test for. This test only validates that the self assignement branchcan
-    // be taken without crash.
+    // Absence of side effects is not possible to test for. This test only validates that the self assignment
+    // branch can be taken without crash.
+}
+
+// Attorney class which allows us to call the protected SetupMethods method of ProxyBase in the tests.
+class ProxyBaseSetupMethodsAttorney : public ProxyBase
+{
+  public:
+    using ProxyBase::ProxyBase;
+
+    Result<void> SetupMethods(const std::size_t additional_shm_size_bytes = 0)
+    {
+        return ProxyBase::SetupMethods(additional_shm_size_bytes);
+    }
+};
+
+class ProxyBaseAreBindingsValidFixture : public ::testing::Test
+{
+  public:
+    ProxyBaseAreBindingsValidFixture& GivenAProxyBaseWithValidBinding()
+    {
+        proxy_base_ = std::make_unique<ProxyBaseSetupMethodsAttorney>(
+            std::make_unique<mock_binding::ProxyFacade>(mock_proxy_binding_), kConfigStore.GetHandle());
+        return *this;
+    }
+
+    ProxyBaseAreBindingsValidFixture& WithAValidEventRegistered()
+    {
+        event_ = std::make_unique<ProxyEventBase>(kEventName, std::make_unique<mock_binding::ProxyEventBase>());
+        ProxyBaseView{*proxy_base_}.RegisterEvent(kEventName, event_->GetReferenceToMoveable());
+        return *this;
+    }
+
+    ProxyBaseAreBindingsValidFixture& WithAValidFieldRegistered()
+    {
+        field_event_dispatch_ =
+            std::make_unique<ProxyEventBase>(kFieldEventName, std::make_unique<mock_binding::ProxyEventBase>());
+        field_setter_dispatch_ = std::make_unique<DummyProxyMethod>(
+            kFieldSetterName, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kSet);
+        field_getter_dispatch_ = std::make_unique<DummyProxyMethod>(
+            kFieldGetterName, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kGet);
+        field_ = std::make_unique<ProxyFieldBase>(
+            kFieldName, field_event_dispatch_.get(), field_setter_dispatch_.get(), field_getter_dispatch_.get());
+        ProxyBaseView{*proxy_base_}.RegisterField(kFieldName, field_->GetReferenceToMoveable());
+        return *this;
+    }
+
+    ProxyBaseAreBindingsValidFixture& WithAValidMethodRegistered()
+    {
+        method_ = std::make_unique<DummyProxyMethod>(
+            kMethodName, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod);
+        ProxyBaseView{*proxy_base_}.RegisterMethod(kMethodName, method_->GetReferenceToMoveable());
+        return *this;
+    }
+
+    ProxyBaseAreBindingsValidFixture& WithASecondValidMethodRegistered()
+    {
+        method_2_ = std::make_unique<DummyProxyMethod>(
+            kMethodName2, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kMethod);
+        ProxyBaseView{*proxy_base_}.RegisterMethod(kMethodName2, method_2_->GetReferenceToMoveable());
+        return *this;
+    }
+
+    mock_binding::Proxy mock_proxy_binding_;
+    std::unique_ptr<ProxyBaseSetupMethodsAttorney> proxy_base_;
+
+    std::unique_ptr<ProxyEventBase> event_{nullptr};
+
+    std::unique_ptr<DummyProxyMethod> method_{nullptr};
+    std::unique_ptr<DummyProxyMethod> method_2_{nullptr};
+
+    std::unique_ptr<ProxyEventBase> field_event_dispatch_{nullptr};
+    std::unique_ptr<DummyProxyMethod> field_setter_dispatch_{nullptr};
+    std::unique_ptr<DummyProxyMethod> field_getter_dispatch_{nullptr};
+    std::unique_ptr<ProxyFieldBase> field_{nullptr};
+};
+
+TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsTrueIfAllBindingsAreValid)
+{
+    GivenAProxyBaseWithValidBinding()
+        .WithAValidEventRegistered()
+        .WithAValidFieldRegistered()
+        .WithAValidMethodRegistered();
+
+    // When calling AreBindingsValid
+    const bool are_bindings_valid = ProxyBaseView{*proxy_base_}.AreBindingsValid();
+
+    // Then the result is true
+    EXPECT_TRUE(are_bindings_valid);
+}
+
+TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsFalseIfRegisteredEventBindingConstructedWithError)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidFieldRegistered().WithAValidMethodRegistered();
+
+    // and given that an Event with a null binding was registered
+    ProxyEventBase event{kEventName, Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}};
+    ProxyBaseView{*proxy_base_}.RegisterEvent(kEventName, event.GetReferenceToMoveable());
+
+    // When calling AreBindingsValid
+    const bool are_bindings_valid = ProxyBaseView{*proxy_base_}.AreBindingsValid();
+
+    // Then the result is false
+    EXPECT_FALSE(are_bindings_valid);
+}
+
+TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsFalseIfRegisteredMethodBindingConstructedWithError)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidEventRegistered().WithAValidFieldRegistered();
+
+    // and given that a Method with a null binding was registered
+    DummyProxyMethod method{
+        kMethodName, Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}, MethodType::kMethod};
+    ProxyBaseView{*proxy_base_}.RegisterMethod(kMethodName, method.GetReferenceToMoveable());
+
+    // When calling AreBindingsValid
+    const bool are_bindings_valid = ProxyBaseView{*proxy_base_}.AreBindingsValid();
+
+    // Then the result is false
+    EXPECT_FALSE(are_bindings_valid);
+}
+
+TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsFalseIfRegisteredFieldEventBindingConstructedWithError)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidEventRegistered().WithAValidMethodRegistered();
+
+    // and given that a Field with a null event binding but valid get / set bindings was registered
+    ProxyEventBase invalid_field_event_dispatch{kFieldEventName,
+                                                Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}};
+    DummyProxyMethod valid_field_setter_dispatch{
+        kFieldSetterName, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kSet};
+    DummyProxyMethod valid_field_getter_dispatch{
+        kFieldGetterName, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kGet};
+    ProxyFieldBase field{
+        kFieldName, &invalid_field_event_dispatch, &valid_field_setter_dispatch, &valid_field_getter_dispatch};
+    ProxyBaseView{*proxy_base_}.RegisterField(kFieldName, field.GetReferenceToMoveable());
+
+    // When calling AreBindingsValid
+    const bool are_bindings_valid = ProxyBaseView{*proxy_base_}.AreBindingsValid();
+
+    // Then the result is false
+    EXPECT_FALSE(are_bindings_valid);
+}
+
+TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsFalseIfRegisteredFieldGetBindingConstructedWithError)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidEventRegistered().WithAValidMethodRegistered();
+
+    // and given that a Field with a null get binding but valid event / set bindings was registered
+    ProxyEventBase valid_field_event_dispatch{kFieldEventName, std::make_unique<mock_binding::ProxyEventBase>()};
+    DummyProxyMethod invalid_field_getter_dispatch{
+        kFieldGetterName, Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}, MethodType::kGet};
+    DummyProxyMethod valid_field_setter_dispatch{
+        kFieldSetterName, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kSet};
+    ProxyFieldBase field{
+        kFieldName, &valid_field_event_dispatch, &valid_field_setter_dispatch, &invalid_field_getter_dispatch};
+    ProxyBaseView{*proxy_base_}.RegisterField(kFieldName, field.GetReferenceToMoveable());
+
+    // When calling AreBindingsValid
+    const bool are_bindings_valid = ProxyBaseView{*proxy_base_}.AreBindingsValid();
+
+    // Then the result is false
+    EXPECT_FALSE(are_bindings_valid);
+}
+
+TEST_F(ProxyBaseAreBindingsValidFixture, AreBindingsValidReturnsFalseIfRegisteredFieldSetBindingConstructedWithError)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidEventRegistered().WithAValidMethodRegistered();
+
+    // and given that a Field with a null set binding but valid event / get bindings was registered
+    ProxyEventBase valid_field_event_dispatch{kFieldEventName, std::make_unique<mock_binding::ProxyEventBase>()};
+    DummyProxyMethod invalid_field_setter_dispatch{
+        kFieldSetterName, Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}, MethodType::kSet};
+    DummyProxyMethod valid_field_getter_dispatch{
+        kFieldGetterName, std::make_unique<mock_binding::ProxyMethod>(), MethodType::kGet};
+    ProxyFieldBase field{
+        kFieldName, &valid_field_event_dispatch, &invalid_field_setter_dispatch, &valid_field_getter_dispatch};
+    ProxyBaseView{*proxy_base_}.RegisterField(kFieldName, field.GetReferenceToMoveable());
+
+    // When calling AreBindingsValid
+    const bool are_bindings_valid = ProxyBaseView{*proxy_base_}.AreBindingsValid();
+
+    // Then the result is false
+    EXPECT_FALSE(are_bindings_valid);
+}
+
+using ProxyBaseSetupMethodsFixture = ProxyBaseAreBindingsValidFixture;
+TEST_F(ProxyBaseSetupMethodsFixture, DispatchesToBindingSetupMethods)
+{
+    GivenAProxyBaseWithValidBinding();
+
+    // Expecting that SetupMethods is called on the Proxy binding
+    EXPECT_CALL(mock_proxy_binding_, SetupMethods(_)).WillOnce(Return(Result<void>{}));
+
+    // When calling SetupMethods
+    const auto result = proxy_base_->SetupMethods();
+
+    // Then the result is valid
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(ProxyBaseSetupMethodsFixture, PropagatesErrorFromBindingSetupMethods)
+{
+    GivenAProxyBaseWithValidBinding();
+
+    // Expecting that SetupMethods is called on the Proxy binding and returns an error
+    const auto binding_error_code = ComErrc::kCommunicationLinkError;
+    EXPECT_CALL(mock_proxy_binding_, SetupMethods(_)).WillOnce(Return(MakeUnexpected(binding_error_code)));
+
+    // When calling SetupMethods
+    const auto result = proxy_base_->SetupMethods();
+
+    // Then the result is an error
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), binding_error_code);
+}
+
+TEST_F(ProxyBaseSetupMethodsFixture, CallsInitializeOnAllMethodBindings)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidMethodRegistered().WithASecondValidMethodRegistered();
+
+    // Expecting that Initialize is called on both method bindings and returns a valid result
+    EXPECT_CALL(*method_, InitializeInArgsAndReturnValues(_)).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(*method_2_, InitializeInArgsAndReturnValues(_)).WillOnce(Return(Result<void>{}));
+
+    // When calling SetupMethods
+    const auto result = proxy_base_->SetupMethods();
+
+    // Then the result is valid
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(ProxyBaseSetupMethodsFixture, ReturnsValidWhenInitializeReturnsBindingDisabled)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidMethodRegistered().WithASecondValidMethodRegistered();
+
+    // Expecting that Initialize is called on both method bindings and returns a kMethodBindingDisabled error from the
+    // first and a valid result from the second
+    EXPECT_CALL(*method_, InitializeInArgsAndReturnValues(_))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kMethodBindingDisabled)));
+    EXPECT_CALL(*method_2_, InitializeInArgsAndReturnValues(_)).WillOnce(Return(Result<void>{}));
+
+    // When calling SetupMethods
+    const auto result = proxy_base_->SetupMethods();
+
+    // Then the result is valid
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(ProxyBaseSetupMethodsFixture, ReturnsErrorWhenInitializeReturnsErrorOtherThanBindingDisabled)
+{
+    GivenAProxyBaseWithValidBinding().WithAValidMethodRegistered().WithASecondValidMethodRegistered();
+
+    // Expecting that Initialize is called on the first binding and returns an error other than kBindingDisabled
+    const auto binding_error_code = ComErrc::kCommunicationLinkError;
+    EXPECT_CALL(*method_, InitializeInArgsAndReturnValues(_)).WillOnce(Return(MakeUnexpected(binding_error_code)));
+    EXPECT_CALL(*method_2_, InitializeInArgsAndReturnValues(_)).Times(0);
+
+    // When calling SetupMethods
+    const auto result = proxy_base_->SetupMethods();
+
+    // Then the result is an error
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), binding_error_code);
 }
 
 }  // namespace score::mw::com::impl

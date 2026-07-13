@@ -18,6 +18,8 @@
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/proxy_binding.h"
 
+#include "score/result/result.h"
+
 #include <memory>
 #include <string_view>
 
@@ -43,11 +45,11 @@ class IProxyMethodBindingFactory
     /// \param parent_binding Reference to the parent binding which can be cast to the actual binding type like
     /// lola::Proxy.
     /// \param method_name The binding unspecific name of the method inside the proxy denoted by handle.
-    /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
+    /// \return An instance of ProxyMethodBinding or an error in case binding creation fails.
     virtual auto Create(HandleType parent_handle,
                         ProxyBinding& parent_binding,
                         const std::string_view method_name,
-                        MethodType method_type) noexcept -> std::unique_ptr<ProxyMethodBinding> = 0;
+                        MethodType method_type) noexcept -> Result<std::unique_ptr<ProxyMethodBinding>> = 0;
 };
 
 }  // namespace score::mw::com::impl

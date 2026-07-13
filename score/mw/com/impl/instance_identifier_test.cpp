@@ -33,6 +33,10 @@ class InstanceIdentifierAttorney
     {
         InstanceIdentifier::configuration_ = configuration;
     }
+    static Configuration* GetConfiguration() noexcept
+    {
+        return InstanceIdentifier::configuration_;
+    }
 };
 
 class ConfigurationGuard
@@ -121,6 +125,28 @@ TEST(InstanceIdentifierTest, CanBeCopiedAndEqualCompared)
     const auto unitCopy = unit;
 
     ASSERT_EQ(unit, unitCopy);
+}
+
+TEST(InstanceIdentifierTest, CopyAssignmentOperatorCopiesInstanceIdentifier)
+{
+    // Given two different InstanceIdentifier instances
+    const ServiceInstanceDeployment instance_deployment_1{kService1,
+                                                          LolaServiceInstanceDeployment{LolaServiceInstanceId{16U}},
+                                                          QualityType::kASIL_QM,
+                                                          kInstanceSpecifier1};
+    const ServiceInstanceDeployment instance_deployment_2{kService2,
+                                                          LolaServiceInstanceDeployment{LolaServiceInstanceId{17U}},
+                                                          QualityType::kASIL_QM,
+                                                          kInstanceSpecifier2};
+
+    auto unit1 = make_InstanceIdentifier(instance_deployment_1, kTestTypeDeployment1);
+    const auto unit2 = make_InstanceIdentifier(instance_deployment_2, kTestTypeDeployment1);
+
+    // When copy-assigning one to the other
+    unit1 = unit2;
+
+    // Then the assigned-to instance equals the source
+    ASSERT_EQ(unit1, unit2);
 }
 
 TEST(InstanceIdentifierTest, LessCompareable)
@@ -282,6 +308,54 @@ TEST_F(InstanceIdentifierFixture, CanCreateFromSerializedObject)
         InstanceIdentifierView{identifier}.GetServiceInstanceDeployment());
     ExpectServiceTypeDeploymentObjectsEqual(InstanceIdentifierView{reconstructed_identifier}.GetServiceTypeDeployment(),
                                             InstanceIdentifierView{identifier}.GetServiceTypeDeployment());
+}
+
+TEST_F(InstanceIdentifierFixture, CreateStoresDeploymentsIntoConfiguredConfiguration)
+{
+    RecordProperty("Verifies", "SCR-18448357, SCR-18448382");
+    RecordProperty("Description",
+                   "Checks that InstanceIdentifier::Create adds the reconstructed ServiceType-/ServiceInstance-"
+                   "Deployments into the Configuration set via InstanceIdentifier::SetConfiguration.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given an empty Configuration registered as the InstanceIdentifier configuration
+    Configuration configuration{Configuration::ServiceTypeDeployments{},
+                                Configuration::ServiceInstanceDeployments{},
+                                GlobalConfiguration{},
+                                TracingConfiguration{}};
+    InstanceIdentifierAttorney::SetConfiguration(&configuration);
+
+    const ServiceIdentifierType dummy_service = make_ServiceIdentifierType("foo", 1U, 0U);
+    const ServiceInstanceDeployment service_instance_deployment{
+        dummy_service, MakeLolaServiceInstanceDeployment(), QualityType::kASIL_B, kInstanceSpecifier1};
+    const ServiceTypeDeployment service_type_deployment{MakeLolaServiceTypeDeployment()};
+    const auto identifier = make_InstanceIdentifier(service_instance_deployment, service_type_deployment);
+
+    // and given the configuration does not yet contain any of these deployments
+    ASSERT_TRUE(configuration.GetServiceTypes().empty());
+    ASSERT_TRUE(configuration.GetServiceInstances().empty());
+
+    // When creating an InstanceIdentifier from its serialized form
+    const score::Result<InstanceIdentifier> reconstructed_identifier_result =
+        InstanceIdentifier::Create(std::string{identifier.ToString()});
+    ASSERT_TRUE(reconstructed_identifier_result.has_value());
+
+    // Then the deserialized deployments have been added into the configured Configuration
+    const auto& service_types = configuration.GetServiceTypes();
+    ASSERT_EQ(service_types.size(), 1);
+    const auto type_it = service_types.find(dummy_service);
+    ASSERT_NE(type_it, service_types.cend());
+    ExpectServiceTypeDeploymentObjectsEqual(type_it->second, service_type_deployment);
+
+    const auto& service_instances = configuration.GetServiceInstances();
+    ASSERT_EQ(service_instances.size(), 1);
+    const auto instance_it = service_instances.find(kInstanceSpecifier1);
+    ASSERT_NE(instance_it, service_instances.cend());
+    ExpectServiceInstanceDeploymentObjectsEqual(instance_it->second, service_instance_deployment);
+
+    InstanceIdentifierAttorney::SetConfiguration(nullptr);
 }
 
 TEST_F(InstanceIdentifierFixture, CreatingFromInvalidSerializedObjectReturnsError)

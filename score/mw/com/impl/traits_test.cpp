@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
@@ -203,6 +204,10 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
     auto proxy_binding_mock_ptr = std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_);
     auto proxy_event_binding_mock_ptr = std::make_unique<EventFacade>(proxy_event_binding_mock_);
     auto proxy_field_binding_mock_ptr = std::make_unique<EventFacade>(proxy_field_binding_mock_);
+    auto proxy_field_get_binding_mock_ptr =
+        std::make_unique<mock_binding::ProxyMethodFacade>(proxy_field_get_binding_mock_);
+    auto proxy_field_set_binding_mock_ptr =
+        std::make_unique<mock_binding::ProxyMethodFacade>(proxy_field_set_binding_mock_);
     auto proxy_method_binding_mock_ptr = std::make_unique<mock_binding::ProxyMethodFacade>(proxy_method_binding_mock_);
 
     // Expecting that valid bindings are created for the Proxy, ProxyEvent and ProxyField
@@ -213,6 +218,10 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
         .WillRepeatedly(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName))
         .WillRepeatedly(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, _, kFieldName))
+        .WillRepeatedly(Return(ByMove(std::move(proxy_field_get_binding_mock_ptr))));
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateSetMethodBinding(_, _, kFieldName))
+        .WillRepeatedly(Return(ByMove(std::move(proxy_field_set_binding_mock_ptr))));
     EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kMethodName, _))
         .WillRepeatedly(Return(ByMove(std::move(proxy_method_binding_mock_ptr))));
 
@@ -223,7 +232,7 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
     ASSERT_TRUE(dummy_proxy_result.has_value());
 }
 
-TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProxyBinding)
+TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyBindingCreationReturnsError)
 {
     RecordProperty("Verifies", "SCR-14108458, SCR-31295722, SCR-32158471, SCR-32158442, SCR-33047276");
     RecordProperty(
@@ -233,8 +242,9 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // Expecting that the Create call on the ProxyBindingFactory returns a nullptr.
-    EXPECT_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(handle_)).WillOnce(Return(ByMove(nullptr)));
+    // Expecting that the Create call on the ProxyBindingFactory returns an errer
+    EXPECT_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(handle_))
+        .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kProxyCreationFailed}));
 
     // When creating a MyProxy
     auto dummy_proxy_result = MyProxy::Create(std::move(handle_));
@@ -244,7 +254,7 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     EXPECT_EQ(dummy_proxy_result.error(), ComErrc::kBindingFailure);
 }
 
-TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProxyEventBinding)
+TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyEventBindingCreationReturnsError)
 {
     RecordProperty("Verifies", "SCR-14108458");
     RecordProperty("Description",
@@ -255,9 +265,10 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Expecting that the Create call on the ProxyEventBindingFactory returns an invalid binding for the event.
+
     EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_,
                 Create(_, _, kEventName, ServiceElementType::EVENT))
-        .WillOnce(Return(ByMove(nullptr)));
+        .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}));
 
     // When creating a MyProxy
     auto dummy_proxy_result = MyProxy::Create(std::move(handle_));
@@ -267,19 +278,20 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     EXPECT_EQ(dummy_proxy_result.error(), ComErrc::kBindingFailure);
 }
 
-TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProxyFieldBinding)
+TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldEventBindingCreationReturnsError)
 {
     RecordProperty("Verifies", "SCR-14108458");
-    RecordProperty("Description",
-                   "Proxy shall be created with Create function which returns an error if a ProxyEvent binding cannot "
-                   "be created.");
+    RecordProperty(
+        "Description",
+        "Proxy shall be created with Create function which returns an error if a ProxyField's event binding cannot "
+        "be created.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // Expecting that the Create call on the ProxyFieldBindingFactory returns an invalid binding for the field
+    // Expecting that the Create call on the ProxyFieldBindingFactory returns an invalid binding for the field's event
     EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName))
-        .WillOnce(Return(ByMove(nullptr)));
+        .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}));
 
     // When creating a MyProxy
     auto dummy_proxy_result = MyProxy::Create(std::move(handle_));
@@ -289,12 +301,55 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     EXPECT_EQ(dummy_proxy_result.error(), ComErrc::kBindingFailure);
 }
 
-TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProxyMethodBinding)
+TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldGetterBindingCreationReturnsError)
 {
+    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("Description",
+                   "Proxy shall be created with Create function which returns an error if a ProxyMethods getter "
+                   "binding cannot be created.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
 
+    // Expecting that the Create call on the ProxyFieldBindingFactory returns an invalid binding for the field's getter
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateGetMethodBinding(_, _, kFieldName))
+        .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}));
+
+    // When creating a MyProxy
+    auto dummy_proxy_result = MyProxy::Create(std::move(handle_));
+
+    // Then the result should contain an error
+    ASSERT_FALSE(dummy_proxy_result.has_value());
+    EXPECT_EQ(dummy_proxy_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldSetterBindingCreationReturnsError)
+{
+    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("Description",
+                   "Proxy shall be created with Create function which returns an error if a ProxyMethods setter "
+                   "binding cannot be created.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Expecting that the Create call on the ProxyFieldBindingFactory returns an invalid binding for the field's setter
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, kFieldName))
+        .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}));
+
+    // When creating a MyProxy
+    auto dummy_proxy_result = MyProxy::Create(std::move(handle_));
+
+    // Then the result should contain an error
+    ASSERT_FALSE(dummy_proxy_result.has_value());
+    EXPECT_EQ(dummy_proxy_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyMethodBindingCreationReturnsError)
+{
     // Expecting that the Create call on the ProxyMethodBindingFactory returns an invalid binding for the method.
     EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(handle_, _, kMethodName, _))
-        .WillOnce(Return(ByMove(nullptr)));
+        .WillOnce(Return(Unexpected{BindingFactoryErrorCode::kUnsupportedBindingType}));
 
     // When constructing a proxy with a handle
     const auto unit = MyProxy::Create(std::move(handle_));
@@ -653,7 +708,7 @@ class SkeletonCreationFixture : public ::testing::Test
         ON_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillByDefault(Return(resolved_instance_identifiers_));
 
         // By default the skeleton binding will report that all methods were correctly registered
-        ON_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+        ON_CALL(skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
 
         // By default the skeleton and service element bindings will report that offer service preparation succeeded
         ON_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));
@@ -966,8 +1021,8 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     EXPECT_CALL(skeleton_event_binding_mock_, Send(event_value, _));
     EXPECT_CALL(skeleton_field_binding_mock_, Send(field_value, _));
 
-    // and that VerifyAllMethodsRegistered returns true because there are no methods to register
-    EXPECT_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillOnce(Return(true));
+    // and that VerifyAllMethodHandlersRegistered returns true because there are no methods to register
+    EXPECT_CALL(skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillOnce(Return(true));
 
     // And that PrepareOffer is called on the skeleton binding and event / field
     EXPECT_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _))
@@ -1044,7 +1099,7 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
         }));
 
         // By default the skeleton binding will report that all methods were correctly registered
-        ON_CALL(skeleton_binding_mock_2_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+        ON_CALL(skeleton_binding_mock_2_, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
 
         // By default the skeleton and service element bindings will report that offer service preparation succeeded
         ON_CALL(skeleton_binding_mock_2_, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));

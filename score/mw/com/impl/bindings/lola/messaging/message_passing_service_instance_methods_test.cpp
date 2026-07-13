@@ -118,7 +118,7 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
         });
 
         ON_CALL(mock_subscribe_method_handler_, Call(_, _, _)).WillByDefault(Return(score::Result<void>{}));
-        ON_CALL(mock_unsubscribe_method_handler_, Call(_)).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(mock_unsubscribe_method_handler_, Call(_)).WillByDefault(Return(score::Result<void>{}));
     }
 
     MessagePassingServiceInstanceMethodsFixture& GivenAMessagePassingServiceInstance(
@@ -289,7 +289,7 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
     ::testing::MockFunction<void(std::size_t)> mock_method_call_handler_{};
     ::testing::MockFunction<score::Result<void>(ProxyInstanceIdentifier, uid_t, pid_t)>
         mock_subscribe_method_handler_{};
-    ::testing::MockFunction<score::ResultBlank(ProxyInstanceIdentifier)> mock_unsubscribe_method_handler_{};
+    ::testing::MockFunction<score::Result<void>(ProxyInstanceIdentifier)> mock_unsubscribe_method_handler_{};
 
     // Since an SendWaitReply returns an score::cpp::span to a message (which is essentially a pointer to a message), we
     // need a buffer to store the message.
@@ -1363,7 +1363,7 @@ using MessagePassingServiceInstanceRegisterUnsubscribeHandlerTest = MessagePassi
 TEST_F(MessagePassingServiceInstanceRegisterUnsubscribeHandlerTest,
        ReregisteringHandlerWhenOneIsAlreadyRegisteredReturnsError)
 {
-    ::testing::MockFunction<score::ResultBlank(ProxyInstanceIdentifier)> mock_unsubscribe_method_handler_2{};
+    ::testing::MockFunction<score::Result<void>(ProxyInstanceIdentifier)> mock_unsubscribe_method_handler_2{};
     safecpp::Scope<> unsubscribe_method_handler_scope_2{};
     IMessagePassingService::ServiceMethodUnsubscribedHandler scoped_unsubscribe_method_handler_2{
         unsubscribe_method_handler_scope_2, mock_unsubscribe_method_handler_2.AsStdFunction()};
@@ -1463,7 +1463,7 @@ TEST_F(MessagePassingServiceInstanceRemoteUnsubscribeMethodTest, CallingWithOthe
         EXPECT_EQ(actual_payload.skeleton_instance_identifier, kSkeletonInstanceIdentifier);
         EXPECT_EQ(actual_payload.proxy_instance_identifier, kProxyInstanceIdentifier);
 
-        return CreateSerializedMethodReply(score::ResultBlank{}, method_reply_buffer_);
+        return CreateSerializedMethodReply(score::Result<void>{}, method_reply_buffer_);
     })));
 
     // and expecting that the registered unsubscribe method handler will NOT be called (which would happen when the

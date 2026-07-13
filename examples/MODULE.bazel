@@ -16,17 +16,14 @@ local_path_override(
     path = "..",
 )
 
-bazel_dep(name = "rules_cc", version = "0.2.17")
-bazel_dep(name = "score_baselibs", version = "0.2.7")
-git_override(
+bazel_dep(name = "rules_cc", version = "0.1.5")
+bazel_dep(name = "score_baselibs", version = "0.2.9")
+single_version_override(
     module_name = "score_baselibs",
-    # Required until a new release of baselibs is available that includes the tracing API
-    commit = "8d4e0847424a565846e7a8a24c4c0018e3b14da9",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
     patches = ["//:restore_qnx8_poll_workaround.patch"],
-    remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
 bazel_dep(name = "aspect_rules_lint", version = "2.3.0", dev_dependency = True)
@@ -51,14 +48,14 @@ bazel_dep(name = "score_tooling")
 # Needed because we do not have a current release of score_tooling (as we are in dev phase of safety sentinel)
 git_override(
     module_name = "score_tooling",
-    commit = "bd09ae241b94f9d77d4c837a38c93b04e2df8cc8",
+    commit = "7099e272c3f6114bad17736debd54139601aedd4",
     remote = "https://github.com/eclipse-score/tooling.git",
 )
 
 # Needed because score_tooling depends on trlc/lobster which are not in any registry yet
 git_override(
     module_name = "trlc",
-    commit = "c4c531b9d667085daa09dfc1590edacc314bfda4",
+    commit = "8d25f639ff44976893d7866ba421a04db5698ebe",
     remote = "https://github.com/bmw-software-engineering/trlc.git",
 )
 
@@ -70,7 +67,7 @@ git_override(
 
 # Only required to build the example, shall be replaceable with nearly every other C++ Toolchain setup
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2", dev_dependency = True)
-bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.4", dev_dependency = True)
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.3.0", dev_dependency = True)
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
 score_gcc.toolchain(

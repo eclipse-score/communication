@@ -46,8 +46,7 @@ class GenericProxyEvent : public ProxyEventBase
     /// here.
     ///
     /// \param proxy_binding The binding that shall be associated with this proxy.
-    explicit GenericProxyEvent(ProxyBase& base,
-                               const std::string_view event_name,
+    explicit GenericProxyEvent(const std::string_view event_name,
                                std::unique_ptr<GenericProxyEventBinding> proxy_binding);
 
     /// \brief Constructs a ProxyEvent by querying the base proxie's ProxyBinding for the respective ProxyEventBinding.

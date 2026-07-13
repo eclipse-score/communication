@@ -34,16 +34,16 @@ class LolaMethodInstanceDeployment
 {
   public:
     using QueueSize = std::uint8_t;
+    using MethodEnabledType = bool;
 
     /**
      * @brief Construct LolaMethodInstanceDeployment with optional queue size, because LolaMethodInstanceDeployment for
      * a consumer will have a value while one for a provider will not.
      * @param queue_size The maximum number of pending method requests that can be queued.
-     * @param enabled Optional flag to disable/enable the method. It is always filled on proxy side and always empty
-     *                on skeleton side.
+     * @param enabled  Flag to disable/enable the method. It is always filled on proxy side and it is unused on skeleton
+     * side.
      */
-    explicit LolaMethodInstanceDeployment(std::optional<QueueSize> queue_size,
-                                          std::optional<bool> enabled = std::nullopt);
+    explicit LolaMethodInstanceDeployment(std::optional<QueueSize> queue_size, MethodEnabledType enabled);
 
     explicit LolaMethodInstanceDeployment(const score::json::Object& serialized_lola_method_instance_deployment);
 
@@ -73,7 +73,7 @@ class LolaMethodInstanceDeployment
      * @brief The maximum number of method requests that can be queued on the server side.
      */
     std::optional<QueueSize> queue_size_;
-    std::optional<bool> enabled_;
+    MethodEnabledType enabled_;
 };
 
 inline bool operator==(const LolaMethodInstanceDeployment& lhs, const LolaMethodInstanceDeployment& rhs) noexcept

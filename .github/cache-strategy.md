@@ -45,7 +45,9 @@ requirements, design decisions, and the implementation architecture.
 ### 3.3 Non-Requirements
 
 - Remote build caches (BuildBuddy, etc.) are out of scope.
-- Bazelisk binary caching is handled separately and not part of this design.
+- Bazelisk binary caching is handled by `bazel-contrib/setup-bazel` (`bazelisk-cache`). It is only
+  enabled in write modes (`update-disk`, `recreate`, `recreate-update`) to avoid spurious
+  "cache write denied" warnings in read-only and disabled modes.
 
 ## 4. Architecture
 

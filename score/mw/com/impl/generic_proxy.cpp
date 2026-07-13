@@ -63,10 +63,17 @@ std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identif
 
 Result<GenericProxy> GenericProxy::Create(HandleType instance_handle) noexcept
 {
-    auto proxy_binding = ProxyBindingFactory::Create(instance_handle);
+    auto proxy_binding_result = ProxyBindingFactory::Create(instance_handle);
+    if (!proxy_binding_result.has_value())
+    {
+        ::score::mw::log::LogError("lola")
+            << "Could not create GenericProxy as binding failed with error: " << proxy_binding_result.error();
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+    auto proxy_binding = std::move(proxy_binding_result).value();
     if (proxy_binding == nullptr)
     {
-        ::score::mw::log::LogError("lola") << "Could not create GenericProxy as binding could not be created.";
+        ::score::mw::log::LogError("lola") << "Could not create GenericProxy as binding is null.";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
@@ -75,7 +82,18 @@ Result<GenericProxy> GenericProxy::Create(HandleType instance_handle) noexcept
     const auto& instance_identifier = generic_proxy.handle_.GetInstanceIdentifier();
     const auto event_names = GetEventNameList(instance_identifier);
     generic_proxy.FillEventMap(event_names);
-    if (!generic_proxy.AreBindingsValid())
+    auto generic_proxy_events = generic_proxy.GetEvents();
+    const bool are_event_bindings_valid =
+        std::all_of(generic_proxy_events.cbegin(), generic_proxy_events.cend(), [](const auto& element) {
+            const auto binding_construction_result = ProxyEventBaseView{element.second}.GetBindingConstructionResult();
+            if (!binding_construction_result.has_value())
+            {
+                score::mw::log::LogError("lola") << "Generic proxy event binding construction failed with error: "
+                                                 << binding_construction_result.error();
+            }
+            return binding_construction_result.has_value();
+        });
+    if (!are_event_bindings_valid)
     {
         ::score::mw::log::LogError("lola") << "Could not create GenericProxy as binding is invalid.";
         return MakeUnexpected(ComErrc::kBindingFailure);

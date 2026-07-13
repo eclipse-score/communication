@@ -97,7 +97,7 @@ class IMessagePassingService
     /// from each SkeletonMethod.
     ///
     using ServiceMethodUnsubscribedHandler =
-        safecpp::CopyableScopedFunction<score::ResultBlank(ProxyInstanceIdentifier proxy_instance_identifier)>;
+        safecpp::CopyableScopedFunction<score::Result<void>(ProxyInstanceIdentifier proxy_instance_identifier)>;
 
     /// \brief Handler which will be called when the proxy process sends a message that it has called a method.
     ///
@@ -324,10 +324,10 @@ class IMessagePassingService
     /// \param skeleton_instance_identifier identification of the Skeleton corresponding to the Proxy.
     /// \param proxy_instance_identifier identification of the Proxy which is being destroyed.
     /// \param target_node_id PID of the Skeleton process which the unsubscribe call is sent to.
-    virtual ResultBlank UnsubscribeServiceMethod(const QualityType asil_level,
-                                                 const SkeletonInstanceIdentifier& skeleton_instance_identifier,
-                                                 const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                                 const pid_t target_node_id) = 0;
+    virtual Result<void> UnsubscribeServiceMethod(const QualityType asil_level,
+                                                  const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                                  const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                                  const pid_t target_node_id) = 0;
 
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response

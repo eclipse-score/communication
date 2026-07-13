@@ -27,6 +27,7 @@
 #include "score/mw/com/impl/generic_proxy_event.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_specifier.h"
+#include "score/mw/com/impl/plumbing/binding_factory_error.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/test/binding_factory_resources.h"
@@ -249,7 +250,7 @@ TEST_F(GenericProxyFixture, CreatingGenericProxyWithConfigurationContainingBlank
     EXPECT_TRUE(generic_proxy_result.has_value());
 }
 
-TEST_F(GenericProxyFixture, CreatingGenericProxyWithNoGenericProxyBindingReturnsError)
+TEST_F(GenericProxyFixture, CreatingGenericProxyReturnsErrorWhenBindingCreationReturnsNullptr)
 {
     RecordProperty("Verifies", "SCR-14005969");
     RecordProperty(
@@ -272,7 +273,23 @@ TEST_F(GenericProxyFixture, CreatingGenericProxyWithNoGenericProxyBindingReturns
     EXPECT_EQ(generic_proxy_result.error(), ComErrc::kBindingFailure);
 }
 
-TEST_F(GenericProxyFixture, CreatingGenericProxyWithNoGenericProxyEventBindingReturnsError)
+TEST_F(GenericProxyFixture, CreatingGenericProxyReturnsErrorWhenBindingCreationReturnsError)
+{
+    // Given a handle created from valid instance and type deployments
+    // and that the Create call on the ProxyBindingFactory returns an error.
+    CreateAHandle({kEventName1, kEventName2, kEventName3});
+    EXPECT_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(*handle_))
+        .WillOnce(Return(ByMove(MakeUnexpected(BindingFactoryErrorCode::kProxyCreationFailed))));
+
+    // When creating a GenericProxy
+    auto generic_proxy_result = GenericProxy::Create(*handle_);
+
+    // Then the result should contain an error
+    ASSERT_FALSE(generic_proxy_result.has_value());
+    EXPECT_EQ(generic_proxy_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(GenericProxyFixture, CreatingGenericProxyWhenGenericProxyEventBindingCreationReturnsError)
 {
     RecordProperty("Verifies", "SCR-14005969");
     RecordProperty(
@@ -283,11 +300,11 @@ TEST_F(GenericProxyFixture, CreatingGenericProxyWithNoGenericProxyEventBindingRe
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a handle created from valid instance and type deployments
-    // and that the Create call on the ProxyEventBindingFactory returns a nullptr.
+    // and that the Create call on the ProxyEventBindingFactory returns an error
     CreateAHandle({kEventName1, kEventName2, kEventName3});
     EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
                 Create(_, _, std::string_view{kEventName1}, ServiceElementType::EVENT))
-        .WillRepeatedly(Return(ByMove(nullptr)));
+        .WillRepeatedly(Return(ByMove(MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType))));
 
     // When creating a GenericProxy
     auto generic_proxy_result = GenericProxy::Create(*handle_);
@@ -642,6 +659,19 @@ TEST(GenericProxyEventMapTest, CheckEventMapClassInterface)
     score::cpp::ignore = event_map.find(std::string_view{""});
     score::cpp::ignore = event_map.size();
     score::cpp::ignore = event_map.empty();
+}
+
+TEST_F(GenericProxyFixture, CreatingGenericProxyWithLolaBindingAndNoEventsReturnsValidResult)
+{
+    // Given a handle created from a LolaServiceTypeDeployment with no events
+    CreateAHandle({});
+
+    // When constructing the generic proxy from the handle
+    auto generic_proxy_result = GenericProxy::Create(*handle_);
+
+    // Then a valid GenericProxy is created with an empty event map
+    ASSERT_TRUE(generic_proxy_result.has_value());
+    EXPECT_TRUE(generic_proxy_result.value().GetEvents().empty());
 }
 
 }  // namespace

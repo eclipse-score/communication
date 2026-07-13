@@ -34,7 +34,9 @@
           "binding": "SHM",
           "fields": [
             {
-              "fieldName": "test_field"
+              "fieldName": "test_field",
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
             }
           ]
         }

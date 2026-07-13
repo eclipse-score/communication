@@ -22,8 +22,6 @@
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/proxy_method_binding_factory_impl.h"
-#include "score/mw/com/impl/proxy_base.h"
-#include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
 
 #include <score/assert_support.hpp>
@@ -31,7 +29,6 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <utility>
 
@@ -55,7 +52,7 @@ const LolaServiceInstanceDeployment kLolaServiceInstanceDeployment{
     LolaServiceInstanceId{kInstanceId},
     {},
     {},
-    {{kDummyMethodName, LolaMethodInstanceDeployment{kQueueSize}}}};
+    {{kDummyMethodName, LolaMethodInstanceDeployment{kQueueSize, true}}}};
 
 const LolaServiceTypeDeployment kLolaServiceTypeDeployment{kServiceId, {}, {}, {{kDummyMethodName, kDummyMethodId}}};
 
@@ -65,19 +62,6 @@ ConfigurationStore kConfigStoreAsilB{kInstanceSpecifier,
                                      kQualityType,
                                      kLolaServiceTypeDeployment,
                                      kLolaServiceInstanceDeployment};
-
-const LolaServiceInstanceDeployment kLolaServiceInstanceDeploymentWithEmptyQueueSize{
-    LolaServiceInstanceId{kInstanceId},
-    {},
-    {},
-    {{kDummyMethodName, LolaMethodInstanceDeployment{std::nullopt}}}};
-
-ConfigurationStore kConfigStoreWithEmptyQueueSizeAsilB{
-    kInstanceSpecifier,
-    make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
-    kQualityType,
-    kLolaServiceTypeDeployment,
-    kLolaServiceInstanceDeploymentWithEmptyQueueSize};
 
 class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
 {
@@ -108,10 +92,9 @@ using RegisteredFunctionTypes = ::testing::
 
 TYPED_TEST_SUITE(ProxyMethodFactoryTypedFixture, RegisteredFunctionTypes, );
 
-TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructProxyMethod)
+TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructLolaProxyMethod)
 {
     // Given a valid lola binding
-
     const auto handle = this->GetValidLoLaHandle();
     this->InitialiseProxyWithConstructor(handle.GetInstanceIdentifier());
 
@@ -121,7 +104,58 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructProxyMethod)
         handle, *this->proxy_, kDummyMethodName, MethodType::kMethod);
 
     // Then a valid binding can be created
-    ASSERT_NE(proxy_method, nullptr);
+    ASSERT_TRUE(proxy_method.has_value());
+    ASSERT_NE(proxy_method.value(), nullptr);
+}
+
+TYPED_TEST(ProxyMethodFactoryTypedFixture, ConstructingLolaMethodBindingWhichIsDisabledInConfigurationReturnsNullptr)
+{
+    // Given a valid lola binding with a method which is disabled in the configuration
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_disabled_method{
+        LolaServiceInstanceId{kInstanceId},
+        {},
+        {},
+        {{kDummyMethodName, LolaMethodInstanceDeployment{kQueueSize, false}}}};
+    ConfigurationStore config_store_asil_b_disabled_method{
+        kInstanceSpecifier,
+        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+        kQualityType,
+        kLolaServiceTypeDeployment,
+        lola_service_instance_deployment_disabled_method};
+
+    const auto handle = config_store_asil_b_disabled_method.GetHandle();
+    this->InitialiseProxyWithConstructor(handle.GetInstanceIdentifier());
+
+    // When creating a ProxyMethod using MethodBindingFactory
+    using MethodSignature = TypeParam;
+    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
+        handle, *this->proxy_, kDummyMethodName, MethodType::kMethod);
+
+    // Then a null pointer is returned
+    ASSERT_TRUE(proxy_method.has_value());
+    EXPECT_EQ(proxy_method.value(), nullptr);
+}
+
+TYPED_TEST(ProxyMethodFactoryTypedFixture, ConstructingLolaMethodBindingWithInstanceDeploymentWithoutMethodTerminates)
+{
+    // Given a handle to a valid lola deployment which does not contain the method
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_without_method{
+        LolaServiceInstanceId{kInstanceId}, {}, {}, {}};
+    ConfigurationStore config_store_without_method{
+        kInstanceSpecifier,
+        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+        kQualityType,
+        kLolaServiceTypeDeployment,
+        lola_service_instance_deployment_without_method};
+    const auto handle = config_store_without_method.GetHandle();
+    this->InitialiseProxyWithConstructor(handle.GetInstanceIdentifier());
+
+    // when creating a ProxyMethod using MethodBindingFactory
+    // Then the program terminates
+    using MethodSignature = TypeParam;
+    EXPECT_DEATH(score::cpp::ignore = ProxyMethodBindingFactory<MethodSignature>::Create(
+                     handle, *this->proxy_, kDummyMethodName, MethodType::kMethod),
+                 ".*");
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
@@ -136,8 +170,9 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
     auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
         handle, proxy_binding_mock, kDummyMethodName, MethodType::kMethod);
 
-    // Then a nullptr is returned
-    EXPECT_EQ(proxy_method, nullptr);
+    // Then an error is returned
+    ASSERT_FALSE(proxy_method.has_value());
+    EXPECT_EQ(proxy_method.error(), BindingFactoryErrorCode::kUnsupportedBindingType);
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeReturnsValueForMethodInLolaDeployment)
@@ -190,9 +225,19 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeTerminatesForMethodNotInL
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeTerminatesForMethodInLolaDeploymentWithoutQueueSize)
 {
-
     // Given a handle to a valid lola deployment which contains a method with empty QueueSize
-    const auto handle = kConfigStoreWithEmptyQueueSizeAsilB.GetHandle();
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_with_empty_queue_size{
+        LolaServiceInstanceId{kInstanceId},
+        {},
+        {},
+        {{kDummyMethodName, LolaMethodInstanceDeployment{std::nullopt, true}}}};
+    ConfigurationStore config_store_with_empty_queue_size_asil_b{
+        kInstanceSpecifier,
+        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+        kQualityType,
+        kLolaServiceTypeDeployment,
+        lola_service_instance_deployment_with_empty_queue_size};
+    const auto handle = config_store_with_empty_queue_size_asil_b.GetHandle();
 
     // when GetQueueSize is called with the method name with empty QueueSize
     // Then the program terminates
