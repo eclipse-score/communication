@@ -1,0 +1,40 @@
+diff --git a/MODULE.bazel b/MODULE.bazel
+index 6b2c7fc..5fcfcd2 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -291,11 +291,32 @@ bazel_dep(name = "rules_distroless", version = "0.8.0")
+ bazel_dep(name = "tar.bzl", version = "0.6.0")
+ 
+ apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
++apt.sources_list(
++    architectures = ["amd64"],
++    components = [
++        "main",
++        "universe",
++    ],
++    suites = [
++        "noble",
++        "noble-security",
++        "noble-updates",
++    ],
++    types = ["deb"],
++    uris = ["https://snapshot.ubuntu.com/ubuntu/20260401T000000Z"],
++)
+ apt.install(
+-    name = "docs_runtime",
+-    lock = "//third_party/docs_runtime:docs_runtime.lock.json",
+-    manifest = "//third_party/docs_runtime:docs_runtime.yaml",
++    dependency_set = "docs_runtime",
+     mergedusr = True,
++    packages = [
++        "fakechroot",
++        "graphviz",
++    ],
++    suites = [
++        "noble",
++        "noble-security",
++        "noble-updates",
++    ],
+ )
+ use_repo(apt, "docs_runtime")
+ 
