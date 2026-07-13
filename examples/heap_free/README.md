@@ -46,7 +46,10 @@ The boundary is enforced by `heap_check::forbid_heap()`. See
 | `Field::Update()` after `OfferService()` | Writes directly to shared memory via the LoLa binding |
 | `GetNewSamples()` | Reads from shared memory; callback receives a `SamplePtr` into SHM |
 | `GetSubscriptionState()` | Atomic read |
-| `Unsubscribe()` | Tears down binding without allocation |
+
+### Cleanup Phase
+
+After the operational loop, examples call `allow_heap()` to re-enable heap allocation before teardown. `Unsubscribe()`, `StopOfferService()`, and skeleton/proxy destructors run in the cleanup phase (heap permitted). They are not demonstrated as heap-free operational APIs.
 
 ### Subscriber Detection
 
@@ -79,12 +82,12 @@ the init phase before `forbid_heap()`.
 | `bidirectional_discovery` | `application_a` | Both applications start concurrently: each offers its own service instance and discovers the other via `StartFindService` without deadlocking |
 | `bidirectional_discovery` | `application_b` | Symmetric counterpart of `application_a` |
 
-**Pairing:** start the skeleton before the proxy. Pair D may be started in any order.
+**Ordering:** Pairs A and B use blocking `FindService` polling; start the skeleton first. Pairs C and D are order-flexible.
 
-* Pair A: `event_send_receive/skeleton` + `event_send_receive/proxy` (instanceId 1)
-* Pair B: `event_field_update/skeleton` + `event_field_update/proxy` (instanceId 11)
-* Pair C: `event_send_receive/skeleton` + `start_find_service/proxy` (instanceId 1; shares Pair A skeleton)
-* Pair D: `bidirectional_discovery/application_a` + `bidirectional_discovery/application_b` (instanceIds 20, 21; start in any order)
+* Pair A: `event_send_receive:skeleton` + `event_send_receive:proxy` (instanceId 1; skeleton first)
+* Pair B: `event_field_update:skeleton` + `event_field_update:proxy` (instanceId 11; skeleton first)
+* Pair C: `event_send_receive:skeleton` + `start_find_service:proxy` (instanceId 1; order-flexible; skeleton lives in the `event_send_receive` group)
+* Pair D: `bidirectional_discovery:application_a` + `bidirectional_discovery:application_b` (instanceIds 20, 21; order-flexible)
 
 ## Bi-directional Discovery / StartFindService
 
@@ -124,63 +127,45 @@ bazel build //heap_free/...
 
 ## Run
 
-Remove stale shared-memory segments from previous runs if needed:
+Start the provider application and the consumer application. Both binaries exit 0 on success. An abort indicates a heap allocation in the operational phase.
+
+### event_send_receive
+
+What must be running: `:skeleton` (provider) and `:proxy` (consumer). The skeleton exits 0 on its own. The proxy polls `FindService` and fails after 5 seconds if no skeleton is found. Start skeleton first.
 
 ```sh
-rm -f /dev/shm/lola-*
-```
-
-### Pair A
-
-```sh
-# Terminal 1
 bazel run //heap_free/event_send_receive:skeleton
-# Terminal 2
 bazel run //heap_free/event_send_receive:proxy
 ```
 
-### Pair B
+### event_field_update
+
+What must be running: `:skeleton` (provider) and `:proxy` (consumer). Same ordering requirement as `event_send_receive`: the proxy polls `FindService` and requires the skeleton to be reachable. Start skeleton first.
 
 ```sh
-# Terminal 1
 bazel run //heap_free/event_field_update:skeleton
-# Terminal 2
 bazel run //heap_free/event_field_update:proxy
 ```
 
-### Pair C: `StartFindService` Async Discovery
+### start_find_service
+
+What must be running: `event_send_receive:skeleton` and `start_find_service:proxy`. There is no skeleton in the `start_find_service` directory. The proxy discovers the service offered by `event_send_receive/skeleton` (instanceSpecifier `/sensor/event_send_receive/SensorInterface`, instanceId 1).
+
+This pair is order-flexible. The proxy uses `StartFindService` and waits up to 5 seconds for the skeleton to appear, so either binary may start first.
 
 ```sh
-# Terminal 1
 bazel run //heap_free/event_send_receive:skeleton
-# Terminal 2
 bazel run //heap_free/start_find_service:proxy
 ```
 
-The `start_find_service/proxy` uses `StartFindService` instead of `FindService` polling.
-The skeleton can be started simultaneously with (or after) the proxy — the proxy waits
-for the discovery callback instead of blocking in a retry loop.
+### bidirectional_discovery
 
-### Pair D: Bi-directional Discovery (start in any order)
+What must be running: `:application_a` and `:application_b`. Neither exits 0 on its own. Each application calls `OfferService` before `StartFindService`, so each is discoverable the moment the other starts discovery. Start in any order.
 
 ```sh
-# Terminal 1
 bazel run //heap_free/bidirectional_discovery:application_a
-# Terminal 2
 bazel run //heap_free/bidirectional_discovery:application_b
 ```
-
-Each application offers its own service instance immediately and discovers the other via `StartFindService`.
-Both processes exit 0 regardless of which starts first.
-
-Binaries can also be run directly with a config path:
-
-```sh
-./bazel-bin/heap_free/event_send_receive/skeleton heap_free/event_send_receive/etc/mw_com_config.json
-```
-
-Both binaries exit with code 0 on success. An abort indicates a heap allocation
-occurred during the operational phase.
 
 ## Heap-Free Verification
 
