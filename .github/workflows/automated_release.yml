@@ -154,7 +154,10 @@ jobs:
 
       - name: Upload coverage report to existing draft release
         run: |
-          gh release upload "${{ needs.create-draft-release.outputs.release-tag }}" "${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip"
+          VERSION="${{ needs.create-draft-release.outputs.release-tag }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          mv "${REPO_NAME}_coverage_report_${{ github.sha }}.zip" "${REPO_NAME}_coverage_report_${VERSION}.zip"
+          gh release upload "${VERSION}" "${REPO_NAME}_coverage_report_${VERSION}.zip" --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
