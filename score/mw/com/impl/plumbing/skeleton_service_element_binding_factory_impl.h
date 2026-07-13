@@ -47,7 +47,7 @@ namespace detail
 
 // slot_count_override is defaulted because only fields override the slot count. Events and generic events use the
 // configured count, so they call this without it and need not know the parameter exists.
-inline lola::SkeletonEventProperties GetSkeletonEventProperties(
+inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
     const LolaEventInstanceDeployment& lola_event_instance_deployment,
     const std::optional<std::uint16_t> slot_count_override = std::nullopt)
 {
@@ -83,12 +83,12 @@ inline lola::SkeletonEventProperties GetSkeletonEventProperties(
                                          lola_event_instance_deployment.enforce_max_samples_};
 }
 
-inline lola::SkeletonEventProperties GetSkeletonEventProperties(
+inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
     const LolaFieldInstanceDeployment& lola_field_instance_deployment,
     const std::optional<std::uint16_t> slot_count_override = std::nullopt)
 {
-    return GetSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_,
-                                      slot_count_override);
+    return CreateSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_,
+                                         slot_count_override);
 }
 
 }  // namespace detail
@@ -131,7 +131,7 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_str);
             const lola::SkeletonEventProperties skeleton_event_properties =
-                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
+                detail::CreateSkeletonEventProperties(lola_service_element_instance_deployment);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_str);
@@ -182,7 +182,7 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, std::string{service_element_name});
             const lola::SkeletonEventProperties skeleton_event_properties =
-                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
+                detail::CreateSkeletonEventProperties(lola_service_element_instance_deployment);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, std::string{service_element_name});
