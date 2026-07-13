@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     score::mw::com::runtime::InitializeRuntime(runtime_config);
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
-        score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/event_send_receive/SensorInterface"});
+        score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/start_find_service/SensorInterface"});
     if (!specifier_result.has_value())
     {
         score::mw::log::LogError("PxSF") << "InstanceSpecifier::Create failed";
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
     if (!notified || !proxy_opt.has_value())
     {
         score::mw::log::LogError("PxSF")
-            << "Service not found within timeout — is event_send_receive/skeleton running?";
+            << "Service not found within timeout — is start_find_service/skeleton running?";
         return EXIT_FAILURE;
     }
 

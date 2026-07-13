@@ -24,6 +24,21 @@ COM_DEP = [
 ]
 
 cc_binary(
+    name = "skeleton",
+    srcs = ["skeleton.cpp"],
+    args = ["$(rootpath etc/mw_com_config.json)"],
+    data = [
+        "etc/logging.json",
+        "etc/mw_com_config.json",
+    ],
+    env = {"MW_LOG_CONFIG_FILE": "$(location etc/logging.json)"},
+    features = COMPILER_WARNING_FEATURES + [
+        "aborts_upon_exception",
+    ],
+    deps = COM_DEP,
+)
+
+cc_binary(
     name = "proxy",
     srcs = ["proxy.cpp"],
     args = ["$(rootpath etc/mw_com_config.json)"],

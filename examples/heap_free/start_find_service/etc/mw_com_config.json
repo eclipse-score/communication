@@ -28,7 +28,7 @@
   ],
   "serviceInstances": [
     {
-      "instanceSpecifier": "/sensor/event_send_receive/SensorInterface",
+      "instanceSpecifier": "/sensor/start_find_service/SensorInterface",
       "serviceTypeName": "/sensor/SensorInterface",
       "version": {
         "major": 1,
@@ -36,7 +36,10 @@
       },
       "instances": [
         {
-          "instanceId": 1,
+          "instanceId": 30,
+          "allowedProvider": {
+            "B": [0]
+          },
           "allowedConsumer": {
             "B": [0]
           },

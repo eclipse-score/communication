@@ -78,6 +78,7 @@ the init phase before `forbid_heap()`.
 | `event_send_receive` | `proxy` | `FindService`, `Subscribe`, subscription state check |
 | `event_field_update` | `skeleton` | Event send + field `Update()` each cycle |
 | `event_field_update` | `proxy` | Polling with `GetNewSamples` for event and field |
+| `start_find_service` | `skeleton` | Zero-copy event send loop (paired with `start_find_service:proxy`) |
 | `start_find_service` | `proxy` | `StartFindService` async discovery, wait-before-`forbid_heap` |
 | `bidirectional_discovery` | `application_a` | Both applications start concurrently: each offers its own service instance and discovers the other via `StartFindService` without deadlocking |
 | `bidirectional_discovery` | `application_b` | Symmetric counterpart of `application_a` |
@@ -86,7 +87,7 @@ the init phase before `forbid_heap()`.
 
 * Pair A: `event_send_receive:skeleton` + `event_send_receive:proxy` (instanceId 1; skeleton first)
 * Pair B: `event_field_update:skeleton` + `event_field_update:proxy` (instanceId 11; skeleton first)
-* Pair C: `event_send_receive:skeleton` + `start_find_service:proxy` (instanceId 1; order-flexible; skeleton lives in the `event_send_receive` group)
+* Pair C: `start_find_service:skeleton` + `start_find_service:proxy` (instanceId 30; order-flexible)
 * Pair D: `bidirectional_discovery:application_a` + `bidirectional_discovery:application_b` (instanceIds 20, 21; order-flexible)
 
 ## Bi-directional Discovery / StartFindService
@@ -114,7 +115,7 @@ Dynamic reconnection after `forbid_heap()` is not supported. `Proxy::Create()` a
 allocates.
 
 `examples/heap_free/start_find_service/proxy.cpp` demonstrates the full pattern paired
-with `event_send_receive/skeleton`. `examples/heap_free/bidirectional_discovery/` takes
+with `start_find_service/skeleton`. `examples/heap_free/bidirectional_discovery/` takes
 this further: both `application_a` and `application_b` are simultaneously a skeleton and
 a proxy for each other, proving the pattern is deadlock-free even under mutual dependency.
 
@@ -149,12 +150,10 @@ bazel run //heap_free/event_field_update:proxy
 
 ### start_find_service
 
-What must be running: `event_send_receive:skeleton` and `start_find_service:proxy`. There is no skeleton in the `start_find_service` directory. The proxy discovers the service offered by `event_send_receive/skeleton` (instanceSpecifier `/sensor/event_send_receive/SensorInterface`, instanceId 1).
-
-This pair is order-flexible. The proxy uses `StartFindService` and waits up to 5 seconds for the skeleton to appear, so either binary may start first.
+What must be running: `:skeleton` (provider) and `:proxy` (consumer). This pair is order-flexible. The proxy uses `StartFindService` and waits up to 5 seconds for the skeleton to appear, so either binary may start first.
 
 ```sh
-bazel run //heap_free/event_send_receive:skeleton
+bazel run //heap_free/start_find_service:skeleton
 bazel run //heap_free/start_find_service:proxy
 ```
 
