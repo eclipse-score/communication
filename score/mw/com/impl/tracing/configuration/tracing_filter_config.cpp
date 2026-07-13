@@ -256,7 +256,11 @@ std::size_t FindNumberOfTracingSlots(
                                                     return e.GetNumberOfTracingSlots();
                                                 });
             }
+            // LCOV_EXCL_BR_START (Defensive programming: FindNumberOfTracingSlots is only called internally with
+            // ServiceElementType::EVENT or ServiceElementType::FIELD. Entering the false branch of this check is
+            // therefore unreachable.)
             else if (service_element_type == ServiceElementType::FIELD)
+            // LCOV_EXCL_BR_STOP
             {
                 slots_per_tracing_point =
                     get_number_of_tracing_slots(lola_service_instance_deployment->fields_,
