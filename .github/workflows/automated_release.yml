@@ -90,6 +90,38 @@ jobs:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
+  run-docs-build:
+    needs: create-draft-release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Set up Bazel
+        uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: build_docs
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+      - name: Build and package Sphinx documentation
+        uses: ./.github/actions/10_docs/build_sphinx_package
+        with:
+          docs-version: ${{ needs.create-draft-release.outputs.release-tag }}
+          docs-base-url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          lobster-source-root: https://github.com/${{ github.repository }}/blob/main/
+          repository-name: ${{ github.event.repository.name }}
+          output-dir: docs_output
+          archive-name: docs-${{ needs.create-draft-release.outputs.release-tag }}.tar.gz
+
+      - name: Upload docs archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}_docs_release_${{ needs.create-draft-release.outputs.release-tag }}
+          path: docs-${{ needs.create-draft-release.outputs.release-tag }}.tar.gz
+
   upload-coverage-report:
     needs:
       - create-draft-release
@@ -119,6 +151,35 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  upload-docs-report:
+    needs:
+      - create-draft-release
+      - run-docs-build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Abort if docs build failed
+        if: needs.run-docs-build.result != 'success'
+        run: |
+          echo "::error::Documentation build failed — aborting release. Draft will be deleted."
+          exit 1
+
+      - name: Download docs archive artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}_docs_release_${{ needs.create-draft-release.outputs.release-tag }}
+          path: ./
+
+      - name: Upload docs archive to existing draft release
+        run: |
+          gh release upload "${{ needs.create-draft-release.outputs.release-tag }}" "docs-${{ needs.create-draft-release.outputs.release-tag }}.tar.gz" --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   finalize-release:
     runs-on: ubuntu-24.04
     needs:
@@ -126,7 +187,9 @@ jobs:
       - run-host-quality
       - run-build-and-test-qnx
       - run-coverage-report
+      - run-docs-build
       - upload-coverage-report
+      - upload-docs-report
     if: ${{ success() }}
     permissions:
       contents: write
@@ -145,7 +208,9 @@ jobs:
       - run-host-quality
       - run-build-and-test-qnx
       - run-coverage-report
+      - run-docs-build
       - upload-coverage-report
+      - upload-docs-report
     if: ${{ failure() || cancelled() }}
     permissions:
       contents: write
