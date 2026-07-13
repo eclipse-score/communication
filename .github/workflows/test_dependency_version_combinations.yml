@@ -28,13 +28,28 @@ jobs:
     continue-on-error: true
     strategy:
       fail-fast: false
-      # Test all combinations of bazel version and main dependency versions.
+      # Test all combinations of Bazel version and main dependency versions.
       # We start with the version that is selected by the module (minimum supported version)
       # From there we test every latest patch of every minor release
+      #
+      # To safe resources, we disable unsupported versions after creating a ticket.
+      # Part of the ticket DOD shall be to reenable the version here.
       matrix:
-        bazel_version: ["8.5.1", "8.6.0", "8.7.0", "9.0.2", "9.1.1"]
+        bazel_version: [
+          "8.5.1",
+          "8.6.0",
+          "8.7.0",
+          # "9.0.2", Bazel version 9+ is currently known to not work #694
+          # "9.1.1", Bazel version 9+ is currently known to not work #694
+        ]
         rules_cc: ["0.2.17", "0.2.21"]
-        rules_python: ["1.8.5", "1.9.1", "2.0.3", "2.1.0", "2.2.0"]
+        rules_python: [
+          "1.8.5",
+          "1.9.1",
+          # "2.0.3", Python version 2+ is currently known to not work #695
+          # "2.1.0", Python version 2+ is currently known to not work #695
+          # "2.2.0", Python version 2+ is currently known to not work #695
+        ]
         rules_rust: ["0.68.1-score"]
         score_baselibs: ["0.2.9"]
     permissions:
