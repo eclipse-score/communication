@@ -43,7 +43,7 @@ impl<T: CommData + Debug, B: FFIBridge> FieldSubscriber<T, LolaRuntimeImpl<B>>
     fn get(&self) -> Result<MethodReturnTypePtr<T>> {
         todo!()
     }
-    fn set(&self, _value: T) -> Result<MethodReturnTypePtr<T>> {
+    fn set(&self, _value: &T) -> Result<MethodReturnTypePtr<T>> {
         todo!()
     }
 }
@@ -83,7 +83,7 @@ impl<T: CommData + Debug, B: FFIBridge> FieldSubscription<T, LolaRuntimeImpl<B>>
     fn get(&self) -> impl Future<Output = Result<MethodReturnTypePtr<T>>> + Send {
         async { todo!() }
     }
-    fn set(&self, _value: T) -> Result<MethodReturnTypePtr<T>> {
+    fn set(&self, _value: &T) -> Result<MethodReturnTypePtr<T>> {
         todo!()
     }
 }

@@ -139,8 +139,9 @@ pub use com_api_runtime_mock::RuntimeBuilderImpl as MockRuntimeBuilderImpl;
 pub use com_api_concept::{
     interface, interface_common, interface_consumer, interface_producer, Builder, CommData,
     Consumer, ConsumerBuilder, ConsumerDescriptor, Error, EventSampleMut as SampleMut,
-    FindServiceSpecifier, InstanceSpecifier, Interface, OfferedProducer, PlacementDefault,
-    Producer, ProducerBuilder, ProviderInfo, Publisher, Reloc, Result, Runtime, RuntimeBuilder,
+    FieldPublisher, FieldSampleMut, FieldSubscriber, FieldSubscription, FindServiceSpecifier,
+    InstanceSpecifier, Interface, MethodReturnTypePtr, OfferedProducer, PlacementDefault, Producer,
+    ProducerBuilder, ProviderInfo, Publisher, Reloc, Result, Runtime, RuntimeBuilder,
     SampleContainer, SampleMaybeUninit, ServiceDiscovery, Subscriber, Subscription,
 };
 
