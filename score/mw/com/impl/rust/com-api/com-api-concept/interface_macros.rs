@@ -94,8 +94,8 @@ pub struct HandlerSet;
 ///   "left_tire" and "exhaust" events.
 // TODO: We need to enable the support for mixed types (Event, Method, Field) in the same interface definition.
 // Currently, we are supporting only one type of definition in the interface macro. We will add support for mixed types before enabling field and method for user.
-// Current limitation with declrative macro is at place of field type position we can not invoke another macro and generate the type.
-// We need to explore the procedural macro in the interface definition.
+// We will update this macro in such a way so it should not cause in backward compatibility issues for existing users.
+// Plan is to have only two match arm in the interface macro, and then validate if given struct field value has literal like Event, Method, Field.
 // Currently you may see duplicate code for field and event macro but field related macro just added to verify the example application for APIs usage.
 // This file will be optimized as mentioned above.
 #[macro_export]
@@ -345,10 +345,7 @@ macro_rules! interface_producer {
                             $field_name: R::FieldPublisher::new(
                                 stringify!($field_name),
                                 instance_info.clone()
-                            ).expect(&format!(
-                                "Failed to create field publisher for {}",
-                                stringify!($field_name)
-                            )),
+                            )?,
                         )+
                         instance_info,
                     })

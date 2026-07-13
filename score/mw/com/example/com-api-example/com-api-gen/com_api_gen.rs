@@ -11,16 +11,16 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use com_api::{interface, CommData, ProviderInfo, Publisher, Reloc, Subscriber};
+use com_api::{interface, CommData, FieldPublisher, ProviderInfo, Publisher, Reloc, Subscriber};
 
-#[derive(Debug, Reloc, CommData)]
+#[derive(Debug, Clone, Reloc, CommData)]
 #[repr(C)]
 #[comm_data(id = "Tire")]
 pub struct Tire {
     pub pressure: f32,
 }
 
-#[derive(Debug, Reloc, CommData)]
+#[derive(Debug, Clone, Reloc, CommData)]
 #[repr(C)]
 // No explicit ID provided, so it will be auto-generated as "com_api_gen::Exhaust"
 pub struct Exhaust {}
@@ -47,10 +47,13 @@ interface!(
      }
 );
 
-// interface!(
-//     interface Vehicle {
-//         Id = "VehicleFieldInterface",
-//         left_tire: Field<Tire>,
-//         exhaust: Field<Exhaust>,
-//      }
-// );
+// Field-based interface with compile-time initialization safety.
+// All fields must be explicitly initialized via the validator pattern before offering.
+// The validator pattern ensures that you cannot call offer() until all fields have been updated.
+interface!(
+    interface VehicleField {
+        Id = "VehicleFieldInterface",
+        left_tire: Field<Tire>,
+        exhaust: Field<Exhaust>,
+     }
+);

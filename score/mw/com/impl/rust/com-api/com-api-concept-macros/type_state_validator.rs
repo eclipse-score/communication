@@ -226,15 +226,15 @@ pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream 
                 where
                     <#runtime_param_name as com_api::Runtime>::FieldPublisher<#inner_ty>: Send,
                 {
-                    pub fn #register_fn<F>(mut self, handler: F) -> #validator_name<#runtime_param_name, #(#field_update_state_params),*, #(#after_handler_states),*>
+                    pub fn #register_fn<F>(mut self, handler: F) -> com_api::Result<#validator_name<#runtime_param_name, #(#field_update_state_params),*, #(#after_handler_states),*>>
                     where
                         F: Fn(&#inner_ty) + Send + 'static,
                     {
-                        self.producer.#struct_name.register_set_handler(handler);
-                        #validator_name {
+                        self.producer.#struct_name.register_set_handler(handler)?;
+                        Ok(#validator_name {
                             producer: self.producer,
                             _phantom: core::marker::PhantomData,
-                        }
+                        })
                     }
                 }
             }

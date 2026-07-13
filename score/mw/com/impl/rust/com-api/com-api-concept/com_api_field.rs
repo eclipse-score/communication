@@ -131,6 +131,7 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized>: Clone {
     ///
     /// # Returns
     /// Return the result of `Result<()>` which contains the status of the register operation.
+    // TODO: Do we need to make callback lifetime 'static or we keep same as field publisher lifetime.
     fn register_set_handler<'a>(&self, callback: impl Fn(&T) + Send + 'a) -> Result<()>;
 }
 
