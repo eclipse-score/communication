@@ -118,6 +118,14 @@ jobs:
       - name: Print MODULE.bazel
         run: cat MODULE.bazel
 
+      - name: Update lockfile
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        run: |
+          bazel mod deps --lockfile_mode=update
+          cd examples
+          bazel mod deps --lockfile_mode=update
+
       - name: Reformat MODULE.bazel to pass formatting check
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
@@ -131,7 +139,7 @@ jobs:
       - name: Build examples
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
-        run: cd examples && bazel build //... && bazel mod deps --lockfile_mode=update
+        run: cd examples && bazel build //...
 
       - name: Persist matrix result
         if: ${{ always() }}
