@@ -14,8 +14,45 @@ package MessagePassing
 
 import ScoreReq
 
-ScoreReq.ControlMeasure ToBeDefined {
-    safety = ScoreReq.Asil.B
-    description = "tbd"
-    version = 1
+// ---------------------------------------------------------------------------
+// Control measures for fta_message_not_delivered_correctly.puml
+// Each record name must match the $BasicEvent alias used in the FTA diagram
+// so that the fmea toolchain can resolve the tracing link automatically.
+// ---------------------------------------------------------------------------
+
+// Mitigates: MessagePassing.OsIpcFaultHandling
+// "OS IPC transport failure not detected or handled"
+ScoreReq.ControlMeasure OsIpcFaultHandling {
+    description = "The component shall detect OS IPC transport failures by checking the return value of every OS call."
+    safety      = ScoreReq.Asil.B
+    mitigates   = "MessagePassing.MessageNotDeliveredCorrectly"
+    version     = 1
 }
+
+// Mitigates: MessagePassing.SendBufferArgumentValidation
+// "Invalid buffer or size argument passed to SendWaitReply"
+ScoreReq.ControlMeasure SendBufferArgumentValidation {
+    description = "The component shall validate all arguments of Send, SendWaitReply, and SendWithCallback before any IPC operation is initiated."
+    safety      = ScoreReq.Asil.B
+    mitigates   = "MessagePassing.MessageNotDeliveredCorrectly"
+    version     = 1
+}
+
+// Mitigates: BE_MessageTooBig
+// "Message exceeds configured max_send_size or max_reply_size"
+ScoreReq.ControlMeasure BE_MessageTooBig {
+    description = "The component shall enforce the configured max_send_size, max_reply_size, and max_notify_size limits on every client send path and every server Reply and Notify path."
+    safety      = ScoreReq.Asil.B
+    mitigates   = "MessagePassing.MessageNotDeliveredCorrectly"
+    version     = 1
+}
+
+// Mitigates: BE_SendQueueExhausted
+// "Send queue capacity exhausted or configured as zero"
+ScoreReq.ControlMeasure BE_SendQueueExhausted {
+    description = "The component shall use a pre-allocated, bounded pool for asynchronous client send messages and return an error when the pool is exhausted without blocking or silently dropping the message."
+    safety      = ScoreReq.Asil.B
+    mitigates   = "MessagePassing.MessageNotDeliveredCorrectly"
+    version     = 1
+}
+
