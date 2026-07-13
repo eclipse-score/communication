@@ -98,7 +98,7 @@ class SkeletonServiceElementBindingFactoryParamaterisedFixture
                     instance_identifier, skeleton_binding, kDummyEventName);
             case ServiceElementType::FIELD:
                 return SkeletonFieldBindingFactory<TestSampleType>::CreateEventBinding(
-                    instance_identifier, skeleton_binding, kDummyFieldName);
+                    instance_identifier, skeleton_binding, kDummyFieldName, FieldNotifier::kEnabled);
             case ServiceElementType::METHOD:
             case ServiceElementType::INVALID:
             default:

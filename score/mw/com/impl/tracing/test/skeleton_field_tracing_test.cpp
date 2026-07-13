@@ -85,7 +85,7 @@ TEST(SkeletonFieldTracingTest, TracePointsAreDisabledIfConfigNotReturnedByRuntim
     // Expecting that a SkeletonField binding is created
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdentifier, _, kFieldName))
+                CreateEventBinding(kInstanceIdentifier, _, kFieldName, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
     EXPECT_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillOnce(Return(nullptr));
 
@@ -125,7 +125,7 @@ TEST_P(SkeletonFieldTracingParamaterisedFixture, TracePointsAreCorrectlySet)
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdentifier, _, kFieldName))
+                CreateEventBinding(kInstanceIdentifier, _, kFieldName, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
     EXPECT_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillOnce(Return(&tracing_mock));
     EXPECT_CALL(runtime_mock_guard.runtime_mock_, GetTracingRuntime()).WillOnce(Return(&tracing_runtime_mock));
@@ -204,7 +204,7 @@ class SkeletonFieldTracingFixture : public ::testing::Test
     {
         auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
         mock_skeleton_field_binding_ = skeleton_event_binding_mock_ptr.get();
-        EXPECT_CALL(factory_mock_guard.factory_mock_, CreateEventBinding(kInstanceIdentifier, _, kFieldName))
+        EXPECT_CALL(factory_mock_guard.factory_mock_, CreateEventBinding(kInstanceIdentifier, _, kFieldName, _))
             .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
     }
 
