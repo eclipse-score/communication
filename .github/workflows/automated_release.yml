@@ -62,6 +62,8 @@ jobs:
   run-host-quality:
     needs: create-draft-release
     uses: ./.github/workflows/build_and_test_host.yml
+    with:
+      cache-mode: read-only
     permissions:
       contents: read
       actions: write
@@ -71,6 +73,8 @@ jobs:
   run-build-and-test-qnx:
     needs: create-draft-release
     uses: ./.github/workflows/build_and_test_qnx.yml
+    with:
+      cache_mode: read-only
     permissions:
       contents: read
       pull-requests: read
@@ -84,6 +88,8 @@ jobs:
   run-coverage-report:
     needs: create-draft-release
     uses: ./.github/workflows/_coverage_report.yml
+    with:
+      cache-mode: read-only
     permissions:
       contents: read
       actions: write
@@ -104,6 +110,7 @@ jobs:
         uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:
           disk-cache: build_docs
+          cache-mode: read-only
           ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
       - name: Build and package Sphinx documentation
