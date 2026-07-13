@@ -145,7 +145,7 @@ bazel coverage //...
     │   • Packages profdata + metadata into a zip
     │
     └── Final: reporter.py (--coverage_report_generator)
-        • Merges all per-test profdata into one
+        • Merges per-test profdata artifacts into a single merged profdata and uses `llvm-cov --empty-profile` for baseline-only archives.
         • Runs llvm-cov show → HTML report
         • Runs llvm-cov export → LCOV data
         • Runs llvm-cov report → text summary

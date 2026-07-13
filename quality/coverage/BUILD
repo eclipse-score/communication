@@ -15,6 +15,7 @@ load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("//quality/coverage:coverage_scope.bzl", "coverage_scope")
 
 sh_binary(
     name = "generate_coverage_html",
@@ -63,4 +64,14 @@ cc_feature(
     args = [":runtime_relocation_args"],
     feature_name = "enable_llvm_coverage_for_death_tests",
     visibility = ["//visibility:public"],
+)
+
+coverage_scope(
+    name = "coverage_scope",
+    testonly = True,
+    visibility = ["//quality/coverage:__subpackages__"],
+    deps = [
+        "//score/mw/com/dependability:mw_com_index",
+        "//score/message_passing/dependability:dependable_element_message_passing_index",
+    ],
 )
