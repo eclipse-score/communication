@@ -81,7 +81,7 @@
                                             "eventId": {
                                                 "type": "integer",
                                                 "title": "Service Event Id",
-                                                "description": "Binding technology specific event id. LoLa supports 8 bit."
+                                                "description": "Binding technology specific event id. LoLa supports 16 bit values. The value needs to be unique across all events/fields/methods within the same binding, in case it is a SHM/LoLa binding."
                                             }
                                         }
                                     }
@@ -108,7 +108,7 @@
                                             "fieldId": {
                                                 "type": "integer",
                                                 "title": "Service Field Id",
-                                                "description": "Binding technology specific field id. LoLa supports 8 bit."
+                                                "description": "Binding technology specific field id. LoLa supports 16 bit values. The value needs to be unique across all events/fields/methods within the same binding, in case it is a SHM/LoLa binding."
                                             },
                                             "Get": {
                                                 "type": "boolean",
@@ -143,7 +143,7 @@
                                             },
                                             "methodId": {
                                                 "type": "integer",
-                                                "description": "Binding technology specific method id. LoLa supports 8 bit."
+                                                "description": "Binding technology specific method id. LoLa supports 16 bit values. The value needs to be unique across all events/fields/methods within the same binding, in case it is a SHM/LoLa binding."
                                             }
                                         }
                                     }
