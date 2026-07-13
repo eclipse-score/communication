@@ -30,6 +30,15 @@ on:
     types: [checks_requested]
   workflow_dispatch:
   workflow_call:
+    inputs:
+      cache-mode:
+        description: "Cache mode override (empty = auto-compute from event context)."
+        type: string
+        default: ""
+      fetch-only:
+        description: "When true, runs --nobuild to fetch dependencies only."
+        type: string
+        default: "false"
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL:
         required: false
@@ -42,6 +51,9 @@ jobs:
   build_and_test_host:
     name: GCC15
     uses: ./.github/workflows/_build_and_test_gcc15.yml
+    with:
+      cache-mode: ${{ inputs.cache-mode }}
+      fetch-only: ${{ inputs.fetch-only }}
     permissions:
       contents: read
       actions: write
@@ -51,6 +63,9 @@ jobs:
   build_and_test_tsan:
     name: Thread Sanitizer
     uses: ./.github/workflows/_thread_sanitizer.yml
+    with:
+      cache-mode: ${{ inputs.cache-mode }}
+      fetch-only: ${{ inputs.fetch-only }}
     permissions:
       contents: read
       actions: write
@@ -60,6 +75,9 @@ jobs:
   build_and_test_asan_ubsan_lsan:
     name: Address & Undefined Behavior Sanitizer
     uses: ./.github/workflows/_address_sanitizer.yml
+    with:
+      cache-mode: ${{ inputs.cache-mode }}
+      fetch-only: ${{ inputs.fetch-only }}
     permissions:
       contents: read
       actions: write
@@ -69,9 +87,11 @@ jobs:
   clang-tidy:
     name: Clang-Tidy
     uses: ./.github/workflows/_clang_tidy.yml
+    with:
+      cache-mode: ${{ inputs.cache-mode }}
+      fetch-only: ${{ inputs.fetch-only }}
     permissions:
       contents: read
       actions: write
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
-
