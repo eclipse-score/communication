@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_SKELETON_FIELD_BINDING_FACTORY_MOCK_H
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_FIELD_BINDING_FACTORY_MOCK_H
 
+#include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_field_binding_factory.h"
 
 #include <gmock/gmock.h>
@@ -26,7 +27,7 @@ class SkeletonFieldBindingFactoryMock : public ISkeletonFieldBindingFactory<Samp
   public:
     MOCK_METHOD(std::unique_ptr<SkeletonEventBinding<SampleType>>,
                 CreateEventBinding,
-                (const InstanceIdentifier&, SkeletonBinding&, const std::string_view),
+                (const InstanceIdentifier&, SkeletonBinding&, const std::string_view, const FieldNotifier),
                 (noexcept, override));
 };
 

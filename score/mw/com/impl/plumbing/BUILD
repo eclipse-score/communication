@@ -255,6 +255,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
+        "//score/mw/com/impl:field_tags",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:skeleton_base",
         "@score_baselibs//score/language/futurecpp",
@@ -408,6 +409,7 @@ cc_library(
     deps = [
         ":i_skeleton_field_binding_factory",
         ":skeleton_service_element_binding_factory_impl",
+        "//score/mw/com/impl:field_tags",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -509,6 +511,7 @@ cc_library(
     deps = [
         "skeleton_field_binding_factory_impl",
         ":i_skeleton_field_binding_factory",
+        "//score/mw/com/impl:field_tags",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -614,6 +617,7 @@ cc_library(
     ],
     deps = [
         ":i_skeleton_field_binding_factory",
+        "//score/mw/com/impl:field_tags",
         "@googletest//:gtest",
     ],
 )

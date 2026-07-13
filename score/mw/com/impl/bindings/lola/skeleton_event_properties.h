@@ -14,9 +14,14 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_PROPERTIES_H
 
 #include <cstddef>
+#include <cstdint>
 
 namespace score::mw::com::impl::lola
 {
+
+/// \brief Slot count a field without a notifier uses for its backing event: one slot for the current value, one so
+/// Update() can write concurrently.
+constexpr std::uint16_t kSlotCountForFieldWithoutNotifier{2U};
 
 struct SkeletonEventProperties
 {

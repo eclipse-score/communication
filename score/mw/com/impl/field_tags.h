@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_FIELD_TAGS_H
 #define SCORE_MW_COM_IMPL_FIELD_TAGS_H
 
+#include <cstdint>
 #include <type_traits>
 
 namespace score::mw::com::impl
@@ -30,6 +31,14 @@ struct WithSetter
 
 struct WithNotifier
 {
+};
+
+/// \brief Runtime form of the WithNotifier tag, for places the tag pack cannot reach (e.g. the binding
+/// factories).
+enum class FieldNotifier : std::uint8_t
+{
+    kEnabled = 0U,
+    kDisabled
 };
 
 template <typename TargetType, typename... Tags>
