@@ -1,0 +1,144 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+
+// TODOs:
+// 1.Get and Set methods for field it is enabled based on tag, do we want to keep same kind of mechanism
+// or by default we will enable for user,
+// -> we can keep it default enable as of now,
+// and later we can add tag based mechanism if required because Interface side we need to check how we can do this
+// 2. We are offering get method after subscrption async but before subscription it is sync,
+// It is because subscribe API take the consumer instance by value and if we offer async get method then it will create issue with subscription.
+
+// Note: We are using the event related trait as a base trait for where ever we have same common
+// APIs or functionality, as of now there are derived from concept crate but
+// we will create a module which will have common trait for event and field which will be used by both event and field as a super trait and
+// for this we need to create marker trait for event.
+
+use crate::*;
+use std::fmt::Debug;
+use std::future::Future;
+
+#[allow(dead_code)]
+// Temp for build test
+// We will remove this once memory layout of same created in rust side like SamplePtr.
+#[repr(C)]
+#[derive(Debug)]
+pub struct MethodReturnTypePtr<T: CommData + Debug> {
+    pub value: T,
+    pub status: Result<()>,
+}
+
+/// FieldSubscriber trait is used to subscribe to a field and get the value of the field.
+/// It provides the `get` and `set` methods to get and set the value of the field.
+/// It derived from `com_api_concept::Subscriber` trait which provides the `subscribe` method to create a field subscription.
+/// The `get` and `set` methods for the field instance can be used before subscription.
+/// Event related APIs follow the same restriction for concurrent access.
+pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
+    com_api_concept::Subscriber<T, R, Subscription: FieldSubscription<T, R>>
+{
+    /// Get the current value of the field.
+    ///
+    /// #returns
+    /// Return the result of `MethodReturnTypePtr<T>` which contains the current value of the field.
+    /// Note: Get Method before subscription is synchronous and after subscription it is asynchronous.
+    /// It is because subscribe API take the consumer instance by value and if we provide async get method then it will create issue with subscription.
+    fn get(&self) -> Result<MethodReturnTypePtr<T>>;
+
+    /// Set the value of the field.
+    ///
+    /// # Parameters
+    /// * `value` - The value to set for the field.
+    ///
+    /// # Returns
+    /// Return the result of `MethodReturnTypePtr<T>` which contains the status of the set operation.
+    /// with the current value of the field.
+    fn set(&self, value: &T) -> Result<MethodReturnTypePtr<T>>;
+}
+
+/// FieldSubscriber trait is provides the receiving APIs for the field subscription and
+/// it is derived from `com_api_concept::Subscription` trait which provides the receiving APIs for the field subscription.
+/// Additional methods which the field subscription provides are added in this trait.
+pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
+    com_api_concept::Subscription<T, R>
+{
+    /// Returns the number of new samples a call to try_receive (given parameter max_num_samples
+    /// doesn't restrict it) would currently provide.
+    /// How many new sample available for the user of this field subscription to receive.
+    fn get_num_new_samples_available(&self) -> Result<usize>;
+
+    /// Get the number of samples that can still be received by the user of this field.
+    /// This is for checking the capacity of the field subscription and to avoid overflow of the field subscription limit.
+    fn get_free_sample_count(&self) -> Result<usize>;
+
+    ///Get the current value of the field.
+    ///
+    /// #returns
+    /// Return the `Future<Output = Result<MethodReturnTypePtr<T>>>` which contains the current value of the field.
+    fn get(&self) -> impl Future<Output = Result<MethodReturnTypePtr<T>>> + Send;
+
+    ///Set the value of the field.
+    ///
+    /// # Parameters
+    /// * `value` - The value to set for the field.
+    ///
+    /// # Returns
+    /// Return the result of `MethodReturnTypePtr<T>` which contains the status of the set operation.
+    /// with the current value of the field.
+    fn set(&self, value: &T) -> Result<MethodReturnTypePtr<T>>;
+}
+
+/// FieldPublisher trait is used to publish a field and update the value of the field.
+//  Note:  We can not use publisher trait from event because that contains the Send Method which is not correct semantic for field.
+pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized>: Clone {
+    type SampleMaybeUninit<'a>: SampleMaybeUninit<T, SampleMut: FieldSampleMut<T>> + 'a
+    where
+        Self: 'a;
+
+    /// Create a new publisher for the specified event source.
+    fn new(identifier: &str, instance_info: R::ProviderInfo) -> Result<Self>
+    where
+        Self: Sized;
+
+    /// Get the allocate sample ptr for the field publisher.
+    fn allocate(&self) -> Result<Self::SampleMaybeUninit<'_>>;
+
+    /// Update the value of the field with the provided value.
+    /// This is not zero-copy API.
+    ///
+    /// # Parameters
+    /// * `value` - The value to update for the field.
+    ///
+    /// # Returns
+    /// Return the result of `Result<()>` which contains the status of the update operation.
+    fn update(&self, value: &T) -> Result<()>;
+
+    /// Register a callback function to handle the set operation for the field.
+    /// It will create new task or thread to handle the set operation callback function,
+    /// which will be mostly done using thread pool or async task pool, will be decided at the time of implementation.
+    ///
+    /// # Parameters
+    /// * `callback` - The callback function to handle the set operation for the field.
+    ///
+    /// # Returns
+    /// Return the result of `Result<()>` which contains the status of the register operation.
+    fn register_set_handler<'a>(&self, callback: impl Fn(&T) + Send + 'a) -> Result<()>;
+}
+
+/// FieldSampleMut trait is used to update the value of the field sample for zero-copy API.
+pub trait FieldSampleMut<T>: com_api_concept::SampleMut<T>
+where
+    T: CommData + Debug,
+{
+    /// Update the value for zero-copy API.
+    fn update(self) -> Result<()>;
+}

@@ -189,8 +189,9 @@ where
     data: T,
     lifetime: PhantomData<&'a T>,
 }
+impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T> where T: CommData + Debug {}
 
-impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
+impl<'a, T> com_api_concept::EventSampleMut<T> for SampleMut<'a, T>
 where
     T: CommData + Debug,
 {

@@ -187,7 +187,12 @@ where
     }
 }
 
-impl<'a, T, B: FFIBridge> com_api_concept::SampleMut<T> for SampleMut<'a, T, B>
+impl<'a, T, B: FFIBridge> com_api_concept::SampleMut<T> for SampleMut<'a, T, B> where
+    T: CommData + Debug
+{
+}
+
+impl<'a, T, B: FFIBridge> com_api_concept::EventSampleMut<T> for SampleMut<'a, T, B>
 where
     T: CommData + Debug,
 {
