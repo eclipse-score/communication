@@ -390,7 +390,7 @@ single_version_override(
     patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
 )
 
-bazel_dep(name = "score_docs_as_code", version = "4.6.0", dev_dependency = True)
+bazel_dep(name = "score_docs_as_code", version = "4.6.1", dev_dependency = True)
 
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension", dev_dependency = True)
