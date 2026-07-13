@@ -46,3 +46,11 @@ interface!(
         exhaust: Event<Exhaust>,
      }
 );
+
+interface!(
+    interface Vehicle {
+        Id = "VehicleFieldInterface",
+        left_tire: Field<Tire>,
+        exhaust: Field<Exhaust>,
+     }
+);
