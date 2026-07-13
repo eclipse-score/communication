@@ -14,24 +14,10 @@ single_version_override(
     patches = ["//:restore_qnx8_poll_workaround.patch"],
 )
 
-# Needed because we do not have a current release of score_tooling (as we are in dev phase of safety sentinel)
-git_override(
-    module_name = "score_tooling",
-    commit = "7099e272c3f6114bad17736debd54139601aedd4",
-    remote = "https://github.com/eclipse-score/tooling.git",
-)
-
-# Needed because of score_tooling not defining yet as dependency
-
-git_override(
-    module_name = "trlc",
-    commit = "8d25f639ff44976893d7866ba421a04db5698ebe",
-    remote = "https://github.com/bmw-software-engineering/trlc.git",
-)
-
+bazel_dep(name = "lobster", version = "1.0.3")
 git_override(
     module_name = "lobster",
-    commit = "2792e2daee2cf524fdc7b1545fd3537791ebc36c",
+    commit = "07382c33f95e22992e0f8788c0537ec06877e51f",
     remote = "https://github.com/bmw-software-engineering/lobster.git",
 )
 
