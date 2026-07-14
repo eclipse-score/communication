@@ -109,3 +109,14 @@ filegroup(
     ],
     visibility = ["//score/mw/com/doc:__subpackages__"],
 )
+
+filegroup(
+    name = "doc_files",
+    srcs = glob([
+        "**/*.rst",
+        "**/*.cpp",
+        "**/*.h",
+        "**/*.json",
+    ]),
+    visibility = ["//score/mw/com/doc/tutorial:__pkg__"],
+)
