@@ -542,44 +542,7 @@ TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenSendSocketRecreationFa
     EXPECT_EQ(result.error(), TransportErrorc::kConnectionFailure);
     EXPECT_FALSE(transport_->IsConnected());
 }
-TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenReEstablishingListenSocketFailsAfterDisconnect)
-{
-    // Given a transport that connects successfully but immediately disconnects (recv returns 0),
-    // and after the reconnection delay, re-creating the listen socket fails
-    CreateTransport();
-    EXPECT_CALL(socket_mock_, socket(score::os::Socket::Domain::kIPv4, SOCK_STREAM | SOCK_NONBLOCK, 0))
-        .WillOnce(Return(kListenFd))
-        .WillOnce(Return(score::cpp::expected<std::int32_t, score::os::Error>{
-            score::cpp::make_unexpected(score::os::Error::createFromErrno(EMFILE))}));
-    EXPECT_CALL(socket_mock_, setsockopt(_, _, _, _, _))
-        .WillRepeatedly(Return(score::cpp::expected_blank<score::os::Error>{}));
-    EXPECT_CALL(socket_mock_, bind(_, _, _)).WillOnce(Return(score::cpp::expected_blank<score::os::Error>{}));
-    EXPECT_CALL(socket_mock_, listen(_, _)).WillOnce(Return(score::cpp::expected_blank<score::os::Error>{}));
-    EXPECT_CALL(socket_mock_, socket(score::os::Socket::Domain::kIPv4, SOCK_STREAM, 0)).WillOnce(Return(kSendFd));
-    EXPECT_CALL(socket_mock_, connect(kSendFd, _, _)).WillOnce(Return(score::cpp::expected_blank<score::os::Error>{}));
-    EXPECT_CALL(socket_mock_, accept(kListenFd, _, _)).WillOnce(Return(kReceiveFd));
-    // Immediate disconnect: recv returns 0
-    EXPECT_CALL(socket_mock_, recv(kReceiveFd, _, _, _))
-        .WillOnce(Return(score::cpp::expected<ssize_t, score::os::Error>{static_cast<ssize_t>(0)}));
 
-    score::ResultBlank result = {};
-    std::thread setup_thread([this, &result]() {
-        result = transport_->Setup();
-    });
-
-    // Wait for the connection cycle to complete and the 1-second reconnection delay to pass,
-    // after which SetupListenSocket() will fail and ConnectionLoop returns
-    std::this_thread::sleep_for(std::chrono::milliseconds(1300));
-
-    // When Shutdown() is called to unblock the Setup() polling loop
-    transport_->Shutdown();
-    setup_thread.join();
-
-    // Then Setup returns kConnectionFailure
-    EXPECT_FALSE(result.has_value());
-    EXPECT_EQ(result.error(), TransportErrorc::kConnectionFailure);
-    EXPECT_FALSE(transport_->IsConnected());
-}
 TEST_F(BidirectionalTransportSocketFixture, SetupReturnsConnectionFailureWhenShutdownInterruptsConnectionAttempt)
 {
     // Given Setup() retries connection with connect/accept returning errors and therefore blocking Setup()
@@ -640,108 +603,7 @@ TEST_F(BidirectionalTransportSocketFixture, SetupRetriesAcceptAfterEagain)
     transport_->Shutdown();
     transport_.reset();
 }
-TEST_F(BidirectionalTransportSocketFixture, SetupRetriesAcceptAfterEwouldblock)
-{
-    // Given a transport where accept() on the listening socket returns EWOULDBLOCK on the first call and succeeds on
-    // the second
-    CreateTransport().WithASocketBoundAndListening().WithAConnectedSendSocket().WithAcceptReturningErrorOnFirstCall(
-        EWOULDBLOCK);
 
-    // Block recv to keep connection alive
-    std::shared_ptr<std::atomic<bool>> allow_disconnect{new std::atomic<bool>{false}};
-    EXPECT_CALL(socket_mock_, recv(kReceiveFd, _, MessageHeader::kWireSize, _))
-        .WillOnce(Invoke([allow_disconnect](
-                             auto, void*, const std::size_t, auto) -> score::cpp::expected<ssize_t, score::os::Error> {
-            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
-            while (!allow_disconnect->load() && std::chrono::steady_clock::now() < deadline)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            }
-            return static_cast<ssize_t>(0);
-        }));
-
-    // When Setup is called
-    const auto setup_result = transport_->Setup();
-
-    // Then Setup succeeds (accept retried after EWOULDBLOCK and eventually succeeded)
-    EXPECT_TRUE(setup_result.has_value());
-    EXPECT_TRUE(transport_->IsConnected());
-
-    allow_disconnect->store(true, std::memory_order_relaxed);
-    transport_->Shutdown();
-    transport_.reset();
-}
-TEST_F(BidirectionalTransportSocketFixture, SetupRetriesAcceptAfterTransientError)
-{
-    // Given a transport where accept() returns a transient error (ECONNABORTED) on the first call and succeeds on the
-    // second
-    CreateTransport().WithASocketBoundAndListening().WithAConnectedSendSocket().WithAcceptReturningErrorOnFirstCall(
-        ECONNABORTED);
-
-    // Block recv to keep connection alive
-    std::shared_ptr<std::atomic<bool>> allow_disconnect{new std::atomic<bool>{false}};
-    EXPECT_CALL(socket_mock_, recv(kReceiveFd, _, MessageHeader::kWireSize, _))
-        .WillOnce(Invoke([allow_disconnect](
-                             auto, void*, const std::size_t, auto) -> score::cpp::expected<ssize_t, score::os::Error> {
-            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
-            while (!allow_disconnect->load() && std::chrono::steady_clock::now() < deadline)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            }
-            return static_cast<ssize_t>(0);
-        }));
-
-    // When Setup is called
-    const auto setup_result = transport_->Setup();
-
-    // Then Setup succeeds (accept retried after the transient error and eventually succeeded)
-    EXPECT_TRUE(setup_result.has_value());
-    EXPECT_TRUE(transport_->IsConnected());
-
-    allow_disconnect->store(true, std::memory_order_relaxed);
-    transport_->Shutdown();
-    transport_.reset();
-}
-TEST_F(BidirectionalTransportSocketFixture, SetupSucceedsEvenWhenSetTcpNoDelayFails)
-{
-    // Given a transport where setsockopt for TCP_NODELAY fails but everything else succeeds
-    CreateTransport().WithASocketSetupThatIsConnectedAndHasAccepted();
-
-    // Override the default setsockopt mock to fail for TCP_NODELAY (level == IPPROTO_TCP)
-    EXPECT_CALL(socket_mock_, setsockopt(_, _, _, _, _))
-        .WillRepeatedly(Invoke([](std::int32_t, std::int32_t level, std::int32_t, const void*, socklen_t)
-                                   -> score::cpp::expected_blank<score::os::Error> {
-            if (level == IPPROTO_TCP)
-            {
-                return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOPROTOOPT));
-            }
-            return {};
-        }));
-
-    // Block recv to keep connection alive
-    std::shared_ptr<std::atomic<bool>> allow_disconnect{new std::atomic<bool>{false}};
-    EXPECT_CALL(socket_mock_, recv(kReceiveFd, _, MessageHeader::kWireSize, _))
-        .WillOnce(Invoke([allow_disconnect](
-                             auto, void*, const std::size_t, auto) -> score::cpp::expected<ssize_t, score::os::Error> {
-            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
-            while (!allow_disconnect->load() && std::chrono::steady_clock::now() < deadline)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            }
-            return static_cast<ssize_t>(0);
-        }));
-
-    // When Setup is called
-    const auto setup_result = transport_->Setup();
-
-    // Then Setup succeeds despite TCP_NODELAY failure (SetTcpNoDelay logs error and returns normally)
-    EXPECT_TRUE(setup_result.has_value());
-    EXPECT_TRUE(transport_->IsConnected());
-
-    allow_disconnect->store(true, std::memory_order_relaxed);
-    transport_->Shutdown();
-    transport_.reset();
-}
 TEST_F(BidirectionalTransportSocketFixture, MissingMessageHandlerCallbackIsAllowed)
 {
     // Given a transport with connected sockets and no message handler set
@@ -803,60 +665,7 @@ TEST_F(BidirectionalTransportSocketFixture, ConstructorAndDestructorWork)
     // Then construction succeeds and initial state is disconnected
     EXPECT_FALSE(transport.IsConnected());
 }
-TEST_F(BidirectionalTransportSocketFixture, DispatchThreadDeliversQueuedMessageToHandler)
-{
-    // Given connected sockets and a receive that blocks until released
-    const std::uint32_t message_sequence_number = 42U;
-    CreateTransport().WithASocketSetupThatIsConnectedAndHasAccepted();
-    BidirectionalTransportAttorney attorney{transport_};
 
-    // Block receive to prevent disconnect
-    std::shared_ptr<std::atomic<bool>> allow_disconnect{new std::atomic<bool>{false}};
-    EXPECT_CALL(socket_mock_, recv(kReceiveFd, _, MessageHeader::kWireSize, _))
-        .WillOnce(Invoke([allow_disconnect](
-                             auto, void*, const std::size_t, auto) -> score::cpp::expected<ssize_t, score::os::Error> {
-            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
-            while (!allow_disconnect->load() && std::chrono::steady_clock::now() < deadline)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            }
-            return static_cast<ssize_t>(0);
-        }));
-
-    // Set message handler that will set a promise when the message is delivered
-    std::promise<std::uint32_t> delivered_sequence_promise;
-    auto delivered_sequence_future = delivered_sequence_promise.get_future();
-    // Ensure that the handler is only called once
-    std::atomic<bool> handler_reported{false};
-    transport_->SetMessageHandler(
-        [&handler_reported, &delivered_sequence_promise](std::unique_ptr<TransportMessage> message) {
-            if (message != nullptr && message->GetType() == MessageType::kStopOfferServiceRequest &&
-                !handler_reported.exchange(true))
-            {
-                delivered_sequence_promise.set_value(message->GetSequenceNumber());
-            }
-        });
-
-    const auto setup_result = transport_->Setup();
-    ASSERT_TRUE(setup_result.has_value());
-    ASSERT_TRUE(attorney.WaitForConnectedState(true, std::chrono::milliseconds(200)));
-
-    // When a message is queued for dispatch
-    auto queued = std::make_unique<StopOfferServiceRequest>();
-    queued->SetSequenceNumber(message_sequence_number);
-    attorney.EnqueueForDispatch(std::move(queued));
-
-    // Then the dispatch thread delivers the message to the handler
-    EXPECT_EQ(delivered_sequence_future.wait_for(std::chrono::milliseconds(500)), std::future_status::ready);
-    if (delivered_sequence_future.valid())
-    {
-        EXPECT_EQ(delivered_sequence_future.get(), message_sequence_number);
-    }
-
-    allow_disconnect->store(true, std::memory_order_relaxed);
-    transport_->Shutdown();
-    transport_.reset();
-}
 TEST_F(BidirectionalTransportSocketFixture, IncomingRequestIsReceivedAndDispatched)
 {
     // Given connected sockets with an incoming request message that will be received

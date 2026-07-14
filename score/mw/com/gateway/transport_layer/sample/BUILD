@@ -175,9 +175,8 @@ cc_unit_test(
     ],
 )
 
-cc_test(
+cc_unit_test(
     name = "bidirectional_transport_test",
-    timeout = "long",
     srcs = [
         "bidirectional_transport_test.cpp",
         "mock_message_framer.h",
@@ -185,16 +184,11 @@ cc_test(
         "sample_transport_test_resources.h",
     ],
     features = COMPILER_WARNING_FEATURES,
-    tags = [
-        "unit",
-    ],
-    target_compatible_with = ["@platforms//os:linux"],  # @todo: Test works also under QNX, but in rare cases timeout of cc_unit_test is too strict.
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],
     deps = [
         ":bidirectional_transport",
-        "@googletest//:gtest_main",
         "@score_baselibs//score/os/mocklib:socket_mock",
     ],
 )
