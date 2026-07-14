@@ -210,9 +210,9 @@ where
         .expect("Failed to build producer instance");
 
     // Use validator pattern with compile-time type-state validation
-    // Must register handlers AND initialize all fields before offer() is available
+    // Must register handlers and initialize all fields before offer() is available
     let offered = producer
-        .validator()
+        .init_field()
         .register_set_handler_left_tire(move |val: &Tire| {
             println!("Received tire pressure update: {:?}", val);
             process_received(val);

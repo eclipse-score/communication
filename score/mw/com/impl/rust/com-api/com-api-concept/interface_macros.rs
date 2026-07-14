@@ -117,7 +117,7 @@ macro_rules! interface {
         $crate::interface_producer!($id, $($event_name, Event<$event_type>),+);
     };
 
-    // This is for backward compatibility for existing users with   (,)
+    // This is for backward compatibility for existing users with comma (,)
     (interface $id:ident, {
         Id = $uid:expr,
         $($event_name:ident : Event<$event_type:ty>),+ $(,)?

@@ -17,29 +17,13 @@ use syn::spanned::Spanned;
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Type};
 
 /// The macro generates a validator struct with phantom type parameters that track
-/// both the initial value update AND handler registration of each field at compile time.
-/// The `offer()` method is only available when all fields have been initialized AND
+/// both the initial value update and handler registration of each field at compile time.
+/// The `offer()` method is only available when all fields have been initialized and
 /// all handlers have been registered, preventing runtime errors.
 ///
-/// # Usage
-///
-/// Apply this macro alongside the `interface!` macro for Field-based interfaces:
-///
-/// ```ignore
-/// #[derive(TypeStateFieldValidator)]
-/// struct VehicleFieldProducerInternal<R: Runtime> {
-///     left_tire: R::FieldPublisher<Tire>,
-///     exhaust: R::FieldPublisher<Exhaust>,
-/// }
-/// ```
-///
-/// The macro generates:
-/// - `Uninit`/`Init` marker types for update state
-/// - `HandlerNotSet`/`HandlerSet` marker types for handler registration state
-/// - `ValidatorN<'a, R, S0, S1, ..., H0, H1, ...>` struct with dual type-state tracking
-/// - `update_field_name()` methods that transition update state from Uninit -> Init
-/// - `register_set_handler_field_name()` methods that transition handler state from HandlerNotSet -> HandlerSet
-/// - `offer()` method only available when all fields are Init AND all handlers are HandlerSet
+/// It generate the field updatd method with concatenated name like `update_<field_name>`
+/// and register handler method with concatenated name like `register_set_handler_<field_name>`.
+/// e.g. for field `left_tire`, the generated methods will be `update_left_tire` and `register_set_handler_left_tire`.
 pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
@@ -57,7 +41,7 @@ pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream 
         } else {
             (quote! { R }, quote! { R: com_api::Runtime + ?Sized })
         };
-
+    // Currently supporting only struct but in future if require will support enum.
     let fields = match &input.data {
         Data::Struct(data) => match &data.fields {
             Fields::Named(fields) => &fields.named,
@@ -86,13 +70,14 @@ pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream 
             // Skip instance_info field
             // Note: type name is using here as we have same name in interface_macros
             // If that change then this also need to be updated.
+            // Or we need to find some common solution like const name.
             if ident == "instance_info" {
                 return None;
             }
 
             Some((
                 ident, // struct field name
-                ident, // public field name (same as struct field)
+                ident, // public field name (same as struct field) for methods generation.
                 &f.ty, // field type
             ))
         })
@@ -135,7 +120,7 @@ pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream 
             *ty
         })
         .collect();
-
+    // Generate the validator struct name - e.g., for VehicleProducer, the validator will be VehicleValidator
     let validator_name = syn::Ident::new(&format!("{}Validator", name), name.span());
 
     // Generate type parameters for each field's UPDATE state (S0, S1, S2, ...)
@@ -160,6 +145,7 @@ pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream 
         .zip(inner_types.iter())
         .enumerate()
         .map(|(i, ((pub_name, struct_name), inner_ty))| {
+            // Generate the method name for updating this field - e.g., update_left_tire for field left_tire
             let update_fn = syn::Ident::new(&format!("update_{}", pub_name), pub_name.span());
 
             // Build the "after" UPDATE state parameter list where this field is Init
@@ -278,9 +264,9 @@ pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream 
             }
         }
 
-        // validator() method consumes producer and returns validator with all fields Uninit and all handlers HandlerNotSet
+        // init_field() method consumes producer and returns validator with all fields Uninit and all handlers HandlerNotSet
         impl<#runtime_param_with_bounds> #name<#runtime_param_name> {
-            pub fn validator(self) -> #validator_name<#runtime_param_name, #(#all_uninit_states),*, #(#all_handler_not_set_states),*> {
+            pub fn init_field(self) -> #validator_name<#runtime_param_name, #(#all_uninit_states),*, #(#all_handler_not_set_states),*> {
                 #validator_name {
                     producer: self,
                     _phantom: core::marker::PhantomData,

@@ -349,19 +349,17 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
 ///
 /// ```ignore
 /// #[derive(TypeStateFieldValidator)]
-/// struct VehicleFieldProducerInternal<R: Runtime> {
-///     left_tire_field: R::FieldPublisher<Tire>,
-///     exhaust_field: R::FieldPublisher<Exhaust>,
+/// struct VehicleFieldProducer<R: Runtime> {
+///     left_tire: R::FieldPublisher<Tire>,
+///     exhaust: R::FieldPublisher<Exhaust>,
 /// }
 /// ```
 ///
-/// The macro generates:
-/// - `Uninit` and `Init` marker types
-/// - `ValidatorN<'a, R, Field1State, Field2State, ...>` struct
-/// - `update_field_name()` methods that transition states
-/// - `update_field_name()` methods for each field
-/// - `offer()` method that validates all fields initialized before proceeding
-#[proc_macro_derive(TypeStateFieldValidator, attributes(field_name))]
+/// Macro will generate a `VehicleFieldProducerValidator<R, S0, S1, H0, H1>` struct with phantom type parameters
+/// representing the initialization state of each field and handler. The `offer()` method will only be
+/// available when all fields are initialized and all handlers are registered, ensuring compile-time safety.
+// TODO: Document tests need to be added for this macro, including successful and failed compilation cases.
+#[proc_macro_derive(TypeStateFieldValidator)]
 pub fn derive_typestate_field_validator(input: TokenStream) -> TokenStream {
     type_state_validator::derive_typestate_field_validator_impl(input)
 }

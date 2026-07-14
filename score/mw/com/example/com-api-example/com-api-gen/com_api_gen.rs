@@ -13,14 +13,14 @@
 
 use com_api::{interface, CommData, FieldPublisher, ProviderInfo, Publisher, Reloc, Subscriber};
 
-#[derive(Debug, Clone, Reloc, CommData)]
+#[derive(Debug, Reloc, CommData)]
 #[repr(C)]
 #[comm_data(id = "Tire")]
 pub struct Tire {
     pub pressure: f32,
 }
 
-#[derive(Debug, Clone, Reloc, CommData)]
+#[derive(Debug, Reloc, CommData)]
 #[repr(C)]
 // No explicit ID provided, so it will be auto-generated as "com_api_gen::Exhaust"
 pub struct Exhaust {}
@@ -50,6 +50,8 @@ interface!(
 // Field-based interface with compile-time initialization safety.
 // All fields must be explicitly initialized via the validator pattern before offering.
 // The validator pattern ensures that you cannot call offer() until all fields have been updated.
+// Just for demostration of APIs usage we are creating a seperate interface for field,
+// we have plan to update the interface macro to support mixed event and field interface in future.
 interface!(
     interface VehicleField {
         Id = "VehicleFieldInterface",
