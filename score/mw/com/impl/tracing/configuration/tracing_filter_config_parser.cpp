@@ -159,7 +159,11 @@ bool IsOptionalBoolPropertyEnabled(const score::json::Object& json, const std::s
 std::set<std::string_view> GetInstancesOfServiceType(const Configuration& configuration, std::string_view service_type)
 {
     std::set<std::string_view> result{};
+    // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed" despite all
+    // lines within the loop being covered. We also have a test for the case where GetServiceInstances() is empty.
+    // Suppression can be removed when the tooling bug is fixed.)
     for (const auto& service_instance_element : configuration.GetServiceInstances())
+    // LCOV_EXCL_BR_STOP
     {
         if (service_instance_element.second.service_.ToString() == service_type)
         {
@@ -186,7 +190,11 @@ std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view s
         [&result, element_type](const LolaServiceTypeDeployment& lola_service_deployment) {
             if (element_type == ServiceElementType::EVENT)
             {
+                // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed"
+                // despite all lines within the loop being covered. We also have a test for the case where
+                // lola_service_deployment.events_ is empty. Suppression can be removed when the tooling bug is fixed.)
                 for (const auto& event : lola_service_deployment.events_)
+                // LCOV_EXCL_BR_STOP
                 {
                     score::cpp::ignore = result.insert(event.first);
                 }
@@ -197,8 +205,11 @@ std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view s
             else if (element_type == ServiceElementType::FIELD)
             // LCOV_EXCL_BR_STOP
             {
-
+                // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed"
+                // despite all lines within the loop being covered. We also have a test for the case where
+                // lola_service_deployment.fields_ is empty. Suppression can be removed when the tooling bug is fixed.)
                 for (const auto& field : lola_service_deployment.fields_)
+                // LCOV_EXCL_BR_STOP
                 {
                     score::cpp::ignore = result.insert(field.first);
                 }
@@ -222,7 +233,12 @@ std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view s
         // LCOV_EXCL_STOP
     );
 
+    // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed". The false
+    // case (empty GetServiceTypes()) is structurally unreachable: GetElementNamesOfServiceType is only called from
+    // ParseEvents/ParseFields which are reached only after the service type was found in GetServiceTypes().
+    // Suppression can be removed when the tooling bug is fixed.)
     for (const auto& service_type_deployment : configuration.GetServiceTypes())
+    // LCOV_EXCL_BR_STOP
     {
         const ServiceIdentifierTypeView current_service_type_view{service_type_deployment.first};
         if (current_service_type_view.getInternalTypeName() == service_type)

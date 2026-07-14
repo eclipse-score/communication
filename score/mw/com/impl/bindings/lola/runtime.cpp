@@ -153,7 +153,10 @@ bool Runtime::AggregateAllowedUsers(std::set<uid_t>& aggregated_allowed_users,
             aggregated_allowed_users.clear();
             return true;
         }
+        // LCOV_EXCL_BR_START (Defensive programming: This for-loop's false/never-enters branch is unreachable.
+        // The empty-vector case is already handled above by the user_ids->second.empty() check which returns early.)
         for (const auto& user_identifier : user_ids->second)
+        // LCOV_EXCL_BR_STOP
         {
             // result of insert can be ignored, because at the end the element is in
             // the set and we have no expectation, if it already was in the set before or not.

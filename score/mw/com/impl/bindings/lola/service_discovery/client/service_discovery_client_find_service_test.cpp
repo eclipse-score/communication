@@ -58,6 +58,13 @@ ConfigurationStore kConfigStoreFindAny{kInstanceSpecifierString,
                                        QualityType::kASIL_QM,
                                        kServiceId,
                                        std::optional<LolaServiceInstanceId>{}};
+ConfigurationStore kConfigStoreAsilB{
+    kInstanceSpecifierString,
+    make_ServiceIdentifierType("foo"),
+    QualityType::kASIL_B,
+    kServiceId,
+    LolaServiceInstanceId{3U},
+};
 
 HandleType kHandleFindAnyQm1{
     kConfigStoreFindAny.GetHandle(ServiceInstanceId{kConfigStoreQm1.lola_instance_id_.value()})};
@@ -128,6 +135,21 @@ TEST_F(ServiceDiscoveryClientFindServiceFixture, FindServiceReturnNoHandleIfServ
         service_discovery_client_->FindService(kConfigStoreQm1.GetEnrichedInstanceIdentifier());
     EXPECT_TRUE(find_service_result.has_value());
     EXPECT_EQ(find_service_result.value().size(), 0);
+}
+
+TEST_F(ServiceDiscoveryClientFindServiceFixture, FindServiceReturnHandleIfAsilBServiceFound)
+{
+    // Given a service discovery client with an offered ASIL_B service
+    WhichContainsAServiceDiscoveryClient().WithAnOfferedService(kConfigStoreAsilB.GetInstanceIdentifier());
+
+    // When finding the ASIL_B service
+    const auto find_service_result =
+        service_discovery_client_->FindService(kConfigStoreAsilB.GetEnrichedInstanceIdentifier());
+
+    // Then a handle is returned
+    ASSERT_TRUE(find_service_result.has_value());
+    ASSERT_EQ(find_service_result.value().size(), 1);
+    EXPECT_EQ(find_service_result.value()[0], kConfigStoreAsilB.GetHandle());
 }
 
 using ServiceDiscoveryClientWithFakeFileSystemFindServiceFixture = ServiceDiscoveryClientWithFakeFileSystemFixture;

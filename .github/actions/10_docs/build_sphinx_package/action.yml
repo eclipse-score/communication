@@ -1,0 +1,97 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Build and Package Sphinx Docs"
+description: >
+  Builds //docs/sphinx:sphinx_doc, prepares docs output (including version-flyout
+  injection), verifies output, and optionally creates a tar.gz archive.
+
+inputs:
+  docs-version:
+    description: Documentation version value for DOCS_VERSION.
+    required: true
+  docs-base-url:
+    description: Documentation base URL value for DOCS_BASE_URL.
+    required: true
+  lobster-source-root:
+    description: Source root value for LOBSTER_SOURCE_ROOT.
+    required: true
+  repository-name:
+    description: Repository name used for shared version-flyout asset paths.
+    required: true
+  output-dir:
+    description: Directory where prepared HTML output is written.
+    required: false
+    default: docs_output
+  archive-name:
+    description: Optional tar.gz output file name. If empty, archive is skipped.
+    required: false
+    default: ""
+  inject-version-flyout:
+    description: Whether to inject version flyout CSS/JS tags into HTML files.
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build Sphinx documentation
+      shell: bash
+      run: |
+        bazel build //docs/sphinx:sphinx_doc \
+          --define=DOCS_VERSION="${{ inputs.docs-version }}" \
+          --define=DOCS_BASE_URL="${{ inputs.docs-base-url }}" \
+          --define=LOBSTER_SOURCE_ROOT="${{ inputs.lobster-source-root }}"
+
+    - name: Prepare documentation output
+      shell: bash
+      run: |
+        OUTPUT_DIR="${{ inputs.output-dir }}"
+        mkdir -p "${OUTPUT_DIR}"
+        cp -r bazel-bin/docs/sphinx/sphinx_doc/html/* "${OUTPUT_DIR}"/ || \
+          cp -r bazel-out/k8-fastbuild/bin/docs/sphinx/sphinx_doc/html/* "${OUTPUT_DIR}"/ || true
+        chmod -R u+w "${OUTPUT_DIR}/"
+        touch "${OUTPUT_DIR}/.nojekyll"
+
+    - name: Inject version flyout assets into HTML
+      if: ${{ inputs.inject-version-flyout == 'true' }}
+      shell: bash
+      run: |
+        OUTPUT_DIR="${{ inputs.output-dir }}"
+        REPO_NAME="${{ inputs.repository-name }}"
+        CSS_TAG="<link rel=\"stylesheet\" type=\"text/css\" href=\"/${REPO_NAME}/_shared/css/version_flyout.css\" />"
+        JS_TAG="<script src=\"/${REPO_NAME}/_shared/js/version_flyout.js\"></script>"
+        find "${OUTPUT_DIR}" -name '*.html' -exec sed -i \
+          "s|</head>|${CSS_TAG}\n</head>|" {} +
+        find "${OUTPUT_DIR}" -name '*.html' -exec sed -i \
+          "s|</body>|${JS_TAG}\n</body>|" {} +
+
+    - name: Verify build output
+      shell: bash
+      run: |
+        OUTPUT_DIR="${{ inputs.output-dir }}"
+        if [ ! -f "${OUTPUT_DIR}/index.html" ]; then
+          echo "::error::Documentation build failed - no index.html found"
+          exit 1
+        fi
+        echo "Documentation built successfully"
+        echo "Files generated:"
+        find "${OUTPUT_DIR}" -type f | head -20 || true
+
+    - name: Archive documentation output
+      if: ${{ inputs.archive-name != '' }}
+      shell: bash
+      run: |
+        ARCHIVE_PATH="${{ inputs.archive-name }}"
+        mkdir -p "$(dirname "${ARCHIVE_PATH}")"
+        tar czf "${ARCHIVE_PATH}" -C "${{ inputs.output-dir }}" .

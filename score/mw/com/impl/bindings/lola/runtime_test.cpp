@@ -337,6 +337,27 @@ TEST_F(RuntimeFixture, GetMessagePassingCfgOneEmptyQMConsumer)
     }
 }
 
+TEST_F(RuntimeFixture, GetMessagePassingCfgWithNoServiceInstances)
+{
+    constexpr std::size_t kExpectedQmQueueSize = 5U;
+    // Given a Runtime with no service instance deployments configured
+    GlobalConfiguration global_configuration{};
+    global_configuration.SetReceiverMessageQueueSize(QualityType::kASIL_QM, kExpectedQmQueueSize);
+
+    Configuration configuration{Configuration::ServiceTypeDeployments{},
+                                Configuration::ServiceInstanceDeployments{},
+                                std::move(global_configuration),
+                                TracingConfiguration{}};
+
+    // When creating a LoLa runtime and calling GetMessagePassingCfg with no instances
+    Runtime unit{configuration, long_running_threads_, nullptr};
+    AsilSpecificCfg cfg_qm = unit.GetMessagePassingCfg(QualityType::kASIL_QM);
+
+    // Then the allowed user IDs should be empty (the for loop over service instances does not execute)
+    EXPECT_EQ(cfg_qm.message_queue_rx_size_, kExpectedQmQueueSize);
+    EXPECT_TRUE(cfg_qm.allowed_user_ids_.empty());
+}
+
 TEST_F(RuntimeFixture, GetMessagePassingCfgMissingConsumer)
 {
     // Given a configuration with a LoLa service instance deployment without any allowed consumers (set fully missing)

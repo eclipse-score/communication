@@ -319,14 +319,20 @@ TEST_F(QnxDispatchEngineTestFixture, ServerOpenCheckSuccessConnectionAttached)
 
 TEST_F(QnxDispatchEngineTestFixture, ServerWriteChecksFailure)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.BE_MessageTooBig");
+    ::testing::Test::RecordProperty("given", "QNX dispatch engine with server attached and connection accepted");
     WithEngineRunningAndServerAttachedAndConnectionAccepted();
 
     EXPECT_CALL(*iofunc_, iofunc_write_verify)
         .Times(AnyNumber())
         .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_write_verify));
 
+    ::testing::Test::RecordProperty(
+        "when", "write requests arrive with invalid xtype, zero nbytes, or size exceeding protocol limit");
     // iofunc_write_verify unexpected
     helper_.HelperInsertIoWrite(score::cpp::unexpected{ENOMEM});
+    ::testing::Test::RecordProperty(
+        "then", "engine rejects each with ``ENOMEM``, ``ENOSYS``, ``EBADMSG``, or ``EMSGSIZE`` respectively");
     EXPECT_EQ(helper_.promises_.write.get_future().get(), ENOMEM);
     helper_.promises_.write = std::promise<std::int32_t>();  // reset
 
@@ -528,6 +534,8 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointEventFailures)
 
 TEST_F(QnxDispatchEngineTestFixture, PosixEndpointCoidDeathPulse)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "QNX dispatch engine running with a registered POSIX endpoint");
     std::int32_t obsolete_counter{0};
     std::int32_t crash_counter{0};
     LoggingCallback logger = [&obsolete_counter, &crash_counter](LogSeverity severity, LogItems items) -> void {
@@ -579,6 +587,7 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointCoidDeathPulse)
         this);
 
     // death pulses for unregistered endpoints are ignored
+    ::testing::Test::RecordProperty("when", "a death pulse arrives indicating the connected peer's coid is dead");
     helper_.HelperInsertPulse(_PULSE_CODE_COIDDEATH, kTestCoid + 1);
     helper_.promises_.pulse.get_future().wait();
     EXPECT_EQ(obsolete_counter, 0);
@@ -602,6 +611,7 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointCoidDeathPulse)
     EXPECT_EQ(obsolete_counter, 1);
     EXPECT_EQ(crash_counter, 1);
 
+    ::testing::Test::RecordProperty("then", "engine invokes the disconnect callback and logs the crash event");
     done.get_future().wait();
 }
 
@@ -619,6 +629,8 @@ TEST_F(QnxDispatchEngineTestFixture, SendProtocolMessageFailure)
 
 TEST_F(QnxDispatchEngineTestFixture, ReceiveProtocolMessageFailure)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "QNX dispatch engine running with ``MockOs``");
     WithEngineRunning();
 
     EXPECT_CALL(*unistd_, read).Times(2).WillOnce(Return(kFakeOsError)).WillOnce(Return(0));
@@ -626,7 +638,9 @@ TEST_F(QnxDispatchEngineTestFixture, ReceiveProtocolMessageFailure)
     constexpr std::int32_t kFakeFd{-1};
     std::uint8_t code{};
 
+    ::testing::Test::RecordProperty("when", "``read`` returns an OS error or zero bytes");
     const auto os_error_result = engine_->ReceiveProtocolMessage(kFakeFd, code);
+    ::testing::Test::RecordProperty("then", "``ReceiveProtocolMessage`` returns ``EINVAL`` or ``EPIPE`` respectively");
     EXPECT_FALSE(os_error_result);
     EXPECT_EQ(os_error_result.error().GetOsDependentErrorCode(), EINVAL);
 

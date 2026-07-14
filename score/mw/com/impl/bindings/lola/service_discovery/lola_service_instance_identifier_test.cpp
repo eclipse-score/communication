@@ -69,6 +69,23 @@ TEST(LolaServiceInstanceIdentifierTest, ConstructWithEnrichedInstanceIdentifier)
     EXPECT_EQ(identifier.GetInstanceId().value(), kLolaInstanceId);
 }
 
+TEST(LolaServiceInstanceIdentifierTest, ConstructWithEnrichedInstanceIdentifierWithoutInstanceId)
+{
+    // Given an enriched instance identifier without an instance id (deployment has no instance id)
+    const ServiceInstanceDeployment kLolaServiceInstanceDeploymentNoId{
+        kService, LolaServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier};
+    const InstanceIdentifier kLolaInstanceIdentifierNoId =
+        make_InstanceIdentifier(kLolaServiceInstanceDeploymentNoId, kLolaServiceTypeDeployment);
+    EnrichedInstanceIdentifier enriched_instance_identifier{kLolaInstanceIdentifierNoId};
+
+    // When creating an identifier
+    LolaServiceInstanceIdentifier identifier{enriched_instance_identifier};
+
+    // Then the service id is set but the instance id is absent
+    EXPECT_EQ(identifier.GetServiceId(), kLolaServiceId);
+    ASSERT_FALSE(identifier.GetInstanceId().has_value());
+}
+
 TEST(LolaServiceInstanceIdentifierTest, ComparesEqual)
 {
     // Given two identical identifiers

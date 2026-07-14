@@ -47,11 +47,16 @@ download_archive(
     urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
-bazel_dep(name = "score_tooling")
-git_override(
+bazel_dep(name = "score_tooling", version = "1.3.1")
+
+# Patch only required locally when this module is the root module.
+# We have rules_distroless as a dev-dependency and use a newer version with a different API.
+# This triggers errors in score_tooling where the old incompatible API is still used.
+single_version_override(
     module_name = "score_tooling",
-    commit = "ade2a09e66423f788d207f8624358047f48ba209",
-    remote = "https://github.com/eclipse-score/tooling.git",
+    patch_strip = 1,
+    patches = ["//third_party/score_tooling:bump_rules_distroless_api.patch"],
+    version = "1.3.1",
 )
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
@@ -159,7 +164,7 @@ use_repo(
     "score_qcc_x86_64_toolchain_pkg",
 )
 
-bazel_dep(name = "score_itf", version = "0.4.0", dev_dependency = True)
+bazel_dep(name = "score_itf", version = "0.5.0", dev_dependency = True)
 bazel_dep(name = "score_rules_imagefs", version = "0.0.3", dev_dependency = True)
 
 imagefs = use_extension("@score_rules_imagefs//extensions:imagefs.bzl", "imagefs", dev_dependency = True)
@@ -385,7 +390,7 @@ single_version_override(
     patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
 )
 
-bazel_dep(name = "score_docs_as_code", version = "4.6.0", dev_dependency = True)
+bazel_dep(name = "score_docs_as_code", version = "4.6.1", dev_dependency = True)
 
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension", dev_dependency = True)
@@ -413,28 +418,15 @@ pip.parse(
 use_repo(pip, "codeql_coding_standards_pip_hub")
 
 # TRLC dependency for requirements traceability
-bazel_dep(name = "trlc", version = "0.0.0", dev_dependency = True)
-git_override(
-    module_name = "trlc",
-    commit = "8d25f639ff44976893d7866ba421a04db5698ebe",
-    remote = "https://github.com/bmw-software-engineering/trlc.git",
-)
+bazel_dep(name = "trlc", version = "3.0.0", dev_dependency = True)
 
 # Lobster dependency for requirements traceability
-bazel_dep(name = "lobster", version = "0.0.0", dev_dependency = True)
+bazel_dep(name = "lobster", version = "1.0.4", dev_dependency = True)
 git_override(
     module_name = "lobster",
-    commit = "2792e2daee2cf524fdc7b1545fd3537791ebc36c",
+    commit = "07382c33f95e22992e0f8788c0537ec06877e51f",
     remote = "https://github.com/bmw-software-engineering/lobster.git",
 )
-
-# Use lobster's upstream requirements.txt directly for this module's Python hub
-pip.parse(
-    hub_name = "lobster_dependencies",
-    python_version = "3.12",
-    requirements_lock = "@lobster//:requirements.txt",
-)
-use_repo(pip, "lobster_dependencies")
 
 bazel_dep(name = "rules_oci", version = "2.2.7", dev_dependency = True)
 bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)

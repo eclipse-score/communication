@@ -1310,5 +1310,133 @@ TEST_F(TraceConfigParserFixture, EmptyTracingFilterConfigCanBeParsed)
     // expect, that there is no error
     EXPECT_TRUE(result.has_value());
 }
+
+TEST_F(TraceConfigParserFixture, NoTracePointsEnabledWhenServiceTypeHasNoInstances)
+{
+    // Given a mw_com_config with a service type that has no service instances
+    auto config_no_instances_json = R"(
+{
+    "serviceTypes": [{
+        "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+        "version": {"major": 12, "minor": 34},
+        "bindings": [{"binding": "SHM", "serviceId": 1234,
+                      "events": [{"eventName": "CurrentPressureFrontLeft", "eventId": 20}]}]
+    }],
+    "serviceInstances": []
+}
+)"_json;
+    auto config = score::mw::com::impl::configuration::Parse(std::move(config_no_instances_json));
+
+    // And a filter config referencing that service type with an event trace point
+    auto filter_config_json = R"(
+{
+    "services": [{
+        "shortname_path": "/bmw/ncar/services/TirePressureService",
+        "events": [{"shortname": "CurrentPressureFrontLeft", "trace_send": true}]
+    }]
+}
+)"_json;
+
+    // When parsing the filter config
+    auto result = Parse(std::move(filter_config_json), config);
+
+    // Then parsing succeeds without error (no instances means no trace points are registered)
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(TraceConfigParserFixture, EventsInFilterConfigIgnoredWhenServiceTypeHasNoEvents)
+{
+    // Given a mw_com_config with a service type that has only fields and no events,
+    // and a service instance for it
+    auto config_no_events_json = R"(
+{
+    "serviceTypes": [{
+        "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+        "version": {"major": 12, "minor": 34},
+        "bindings": [{"binding": "SHM", "serviceId": 1234, "events": [],
+                      "fields": [{"fieldName": "CurrentTemperatureFrontLeft", "fieldId": 30}]}]
+    }],
+    "serviceInstances": [{
+        "instanceSpecifier": "abc/abc/TirePressurePort",
+        "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+        "version": {"major": 12, "minor": 34},
+        "instances": [{
+            "instanceId": 1234,
+            "asil-level": "QM",
+            "binding": "SHM",
+            "fields": [{"fieldName": "CurrentTemperatureFrontLeft",
+                        "numberOfSampleSlots": 50, "maxSubscribers": 5,
+                        "numberOfIpcTracingSlots": 1}]
+        }]
+    }]
+}
+)"_json;
+    auto config = score::mw::com::impl::configuration::Parse(std::move(config_no_events_json));
+
+    // And a filter config that requests event trace points for a service that has no events
+    auto filter_config_json = R"(
+{
+    "services": [{
+        "shortname_path": "/bmw/ncar/services/TirePressureService",
+        "events": [{"shortname": "NonExistentEvent", "trace_send": true}]
+    }]
+}
+)"_json;
+
+    // When parsing the filter config
+    auto result = Parse(std::move(filter_config_json), config);
+
+    // Then parsing succeeds - the event is silently ignored because the service type has no events
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(TraceConfigParserFixture, FieldsInFilterConfigIgnoredWhenServiceTypeHasNoFields)
+{
+    // Given a mw_com_config with a service type that has only events and no fields,
+    // and a service instance for it
+    auto config_no_fields_json = R"(
+{
+    "serviceTypes": [{
+        "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+        "version": {"major": 12, "minor": 34},
+        "bindings": [{"binding": "SHM", "serviceId": 1234,
+                      "events": [{"eventName": "CurrentPressureFrontLeft", "eventId": 20}]}]
+    }],
+    "serviceInstances": [{
+        "instanceSpecifier": "abc/abc/TirePressurePort",
+        "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+        "version": {"major": 12, "minor": 34},
+        "instances": [{
+            "instanceId": 1234,
+            "asil-level": "QM",
+            "binding": "SHM",
+            "events": [{"eventName": "CurrentPressureFrontLeft",
+                        "numberOfSampleSlots": 50, "maxSubscribers": 5,
+                        "numberOfIpcTracingSlots": 1}]
+        }]
+    }]
+}
+)"_json;
+    auto config = score::mw::com::impl::configuration::Parse(std::move(config_no_fields_json));
+
+    // And a filter config that requests field trace points for a service that has no fields
+    auto filter_config_json = R"(
+{
+    "services": [{
+        "shortname_path": "/bmw/ncar/services/TirePressureService",
+        "fields": [{
+            "shortname": "NonExistentField",
+            "notifier": {"trace_subscribe_send": true}
+        }]
+    }]
+}
+)"_json;
+
+    // When parsing the filter config
+    auto result = Parse(std::move(filter_config_json), config);
+
+    // Then parsing succeeds - the field is silently ignored because the service type has no fields
+    EXPECT_TRUE(result.has_value());
+}
 }  // namespace
 }  // namespace score::mw::com::impl::tracing

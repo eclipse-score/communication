@@ -59,9 +59,10 @@ git_override(
     remote = "https://github.com/bmw-software-engineering/trlc.git",
 )
 
+bazel_dep(name = "lobster", version = "1.0.3")
 git_override(
     module_name = "lobster",
-    commit = "2792e2daee2cf524fdc7b1545fd3537791ebc36c",
+    commit = "07382c33f95e22992e0f8788c0537ec06877e51f",
     remote = "https://github.com/bmw-software-engineering/lobster.git",
 )
 

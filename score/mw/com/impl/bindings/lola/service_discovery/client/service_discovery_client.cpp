@@ -472,10 +472,13 @@ auto ServiceDiscoveryClient::HandleDeletionEvents(const std::vector<os::InotifyE
             }
             else
             {
+                // LCOV_EXCL_START : this is false positive, the following lines are tested with
+                // DeletingServiceSearchDirectoryCausesWorkerThreadToTerminate
                 mw::log::LogFatal("lola")
                     << "Directory" << GetSearchPathForIdentifier(enriched_instance_identifier) << "/" << event.GetName()
                     << "was deleted. Outside tampering with service discovery. Aborting!";
                 std::terminate();
+                // LCOV_EXCL_STOP
             }
         }
     }
@@ -518,7 +521,7 @@ auto ServiceDiscoveryClient::CallHandlers(const std::unordered_set<FindServiceHa
     {
         const auto search_iterator = search_requests_.find(search_key);
 
-        // LCOV_EXCL_BR_START (Defensive programming: Search keys can only be removed from search_requests_ by first
+        // LCOV_EXCL_START (Defensive programming: Search keys can only be removed from search_requests_ by first
         // calling StopFindService and then the worker thread calling TransferSearchRequests(). CallHandlers() is always
         // called in the worker thread after getting inotify events and after calling TransferSearchRequests(). If an
         // event doesn't correspond to a watch descriptor that we're interested in, then CallHandlers will never be
@@ -528,7 +531,7 @@ auto ServiceDiscoveryClient::CallHandlers(const std::unordered_set<FindServiceHa
         {
             continue;
         }
-        // LCOV_EXCL_BR_STOP
+        // LCOV_EXCL_STOP
 
         const auto obsolete_search_iterator = obsolete_search_requests_.find(search_key);
         if (obsolete_search_iterator != obsolete_search_requests_.cend())
