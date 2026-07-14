@@ -30,20 +30,6 @@ pub struct LolaFieldPublisher<T, B: FFIBridge> {
     _bridge: PhantomData<B>,
 }
 
-//TODO: Need to think about this clone, we added as Producer and OfferProducer both
-//Type is using same field publisher to call the Update and set handler.
-//As Set handler is async call so we need to keep producer active for that.
-impl<T, B: FFIBridge> Clone for LolaFieldPublisher<T, B> {
-    fn clone(&self) -> Self {
-        LolaFieldPublisher {
-            _data: PhantomData,
-            _bridge: PhantomData,
-        }
-    }
-}
-
-impl<T, B: FFIBridge> Copy for LolaFieldPublisher<T, B> {}
-
 #[derive(Debug)]
 pub struct LolaFieldSampleMut<T> {
     _data: PhantomData<T>,

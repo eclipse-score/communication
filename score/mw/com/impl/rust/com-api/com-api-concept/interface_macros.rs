@@ -330,7 +330,7 @@ macro_rules! interface_producer {
                     // Create OfferedProducer from consumed producer
                     let offered = [<$id OfferedProducer>] {
                         $(
-                            $field_name: self.$field_name.clone(),
+                            $field_name: self.$field_name,
                         )+
                         instance_info: self.instance_info.clone(),
                     };
@@ -360,7 +360,7 @@ macro_rules! interface_producer {
                 fn unoffer(self) -> com_api::Result<Self::Producer> {
                     let producer = [<$id Producer>] {
                         $(
-                            $field_name: self.$field_name.clone(),
+                            $field_name: self.$field_name,
                         )+
                         instance_info: self.instance_info.clone(),
                     };

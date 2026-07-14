@@ -99,7 +99,7 @@ pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
 
 /// FieldPublisher trait is used to publish a field and update the value of the field.
 //  Note:  We can not use publisher trait from event because that contains the Send Method which is not correct semantic for field.
-pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized>: Clone {
+pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
     type SampleMaybeUninit<'a>: SampleMaybeUninit<T, SampleMut: FieldSampleMut<T>> + 'a
     where
         Self: 'a;

@@ -620,14 +620,6 @@ pub struct MockFieldPublisher<T: CommData + Debug> {
     _data: PhantomData<T>,
 }
 
-impl<T: CommData + Debug> Clone for MockFieldPublisher<T> {
-    fn clone(&self) -> Self {
-        MockFieldPublisher { _data: PhantomData }
-    }
-}
-
-impl<T: CommData + Debug> Copy for MockFieldPublisher<T> {}
-
 /// Field sample mutable type.
 #[derive(Debug)]
 pub struct MockFieldSampleMut<'a, T: CommData + Debug> {

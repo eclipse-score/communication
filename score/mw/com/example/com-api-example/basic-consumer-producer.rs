@@ -188,12 +188,11 @@ fn create_producer<R: Runtime>(
     producer.offer().expect("Failed to offer producer instance")
 }
 
-fn process_received(val: &Tire) {
-    //Update some internal value and process it
-    //maybe need to apply synchronation if we are using thread pool
-    //just for demonstration, updating same value with incremented pressure.
-}
+// Below function just demonstrate the field APIs usage
+// This build fine but it can not run because we have not implemented the field APIs in Lola runtime yet.
 
+// Producer creation and intialization of fields with initial values and set handlers for the fields
+// It will return the offered producer instance which can be used to update the fields.
 fn create_producer_field<R: Runtime + 'static>(
     runtime: &R,
     service_id: InstanceSpecifier,
@@ -215,7 +214,10 @@ where
         .init_field()
         .register_set_handler_left_tire(move |val: &Tire| {
             println!("Received tire pressure update: {:?}", val);
-            process_received(val);
+            // Additional logic to handle the tire pressure update can be added here
+            // For example, we can increment value or conver unit and update the field again.
+            // TODO: in working example add that logic to demonstrate the set handler usage.
+            // Note: I think producer may be need clone ?
         })
         .expect("Failed to register set handlers")
         .register_set_handler_exhaust(|_val: &Exhaust| {
@@ -232,6 +234,7 @@ where
     offered
 }
 
+// Function to demonstrate the usage of the offered producer to update fields
 fn offered_producer_process<R: Runtime>(offered_producer: VehicleFieldOfferedProducer<R>) {
     // Use the offered producer to update fields
     let new_tire_value = Tire { pressure: 32.0 };
@@ -246,6 +249,7 @@ fn offered_producer_process<R: Runtime>(offered_producer: VehicleFieldOfferedPro
         .expect("Failed to update exhaust field");
 }
 
+// create the consumer.
 fn create_consumer_field<R: Runtime>(
     runtime: &R,
     service_id: InstanceSpecifier,
@@ -268,7 +272,7 @@ fn create_consumer_field<R: Runtime>(
         .expect("Failed to build consumer instance")
 }
 
-async fn process_subscription_async<S, R>(subscription: S)
+async fn process_get_method_async<S, R>(subscription: S)
 where
     S: FieldSubscription<Tire, R>,
     R: Runtime,
@@ -284,6 +288,8 @@ where
     println!("Async subscription processing in spawned task completed");
 }
 
+// Function to demonstrate the usage of the consumer to get and set fields,
+// Subscribe to the fields event and it provides the set and get method as well.
 fn consumer_processing_field<R: Runtime + 'static>(consumer: VehicleFieldConsumer<R>)
 where
     <<R as Runtime>::FieldSubscriber<Tire> as Subscriber<Tire, R>>::Subscription: Send + 'static,
@@ -334,7 +340,7 @@ where
     // Spawn async task with subscription
     // The subscription is moved into the task
     tokio::spawn(async move {
-        process_subscription_async(subscription).await;
+        process_get_method_async(subscription).await;
         // subscription is automatically unsubscribed when dropped at end of task
     });
 }
