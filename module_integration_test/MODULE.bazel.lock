@@ -936,8 +936,8 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_swift/2.1.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_baselibs/0.2.9/MODULE.bazel": "2f95cc2e07c5ed9df69e6af35a98843235ce43a96d0aef8c55398ebe6813b58a",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_baselibs/0.2.9/source.json": "b94fa0e611e51d35c4742e2e49e6ee09750d68d79dc61b6028e758f08f58f849",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_cpp_toolchains/0.3.0/MODULE.bazel": "a677d1489f33fc26cbf00fb6c84cc77599b190abe6478fb929a90c71c0bfb9e3",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_cpp_toolchains/0.3.0/source.json": "d693f4fc413802258fce26defb62e47c2e3bed9e09d17572efb320afd640dc62",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_cpp_toolchains/0.5.4/MODULE.bazel": "5f14457f9b708302db05b5dc3c07bd41ae19b91cabf98a0dbffdca622bd6ac91",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_cpp_toolchains/0.5.4/source.json": "2946be24c6b978aa788c934643aa7ec68aac4a926bea4eaa81d512fd48e9f4a8",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.1.1/MODULE.bazel": "236e5bdff6f2d6de6f96cc4f5f4b1bf2cd6137547ce279668a2dd4c54cd4236c",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.1.2/MODULE.bazel": "d1889bf36241521c5d5c401aaf1e98242a60f9cab9d223f8190e5d7087956e83",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.1.2/source.json": "549c18a968c1ab76135ad38fd15981fcc04d377a62f20e2e5e0b5faa9de2b01d",
@@ -9579,7 +9579,7 @@
     },
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
-        "bzlTransitiveDigest": "sSiH+6wYA9seKxUdXyYTUDxWBTage1O1lrx4+3s5RAE=",
+        "bzlTransitiveDigest": "ai2Pv4e3b5RYveddOf92aA5hIKBIU8guTi9rNxYSGpc=",
         "usagesDigest": "xzZmhnuL475GyH55pQ3F1vFZCCxwrH964nv7YnNZUo4=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -9608,6 +9608,7 @@
               "license_path": "/opt/score_qnx/license/licenses",
               "sdk_version": "",
               "sdp_version": "",
+              "tc_compiler_library_search_paths": [],
               "tc_cpu": "x86_64",
               "tc_identifier": "gcc_12.2.0",
               "tc_os": "linux",

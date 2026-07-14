@@ -1,3 +1,18 @@
+<!---- 
+*******************************************************************************
+Copyright (c) 2026 Contributors to the Eclipse Foundation
+
+See the NOTICE file(s) distributed with this work for additional
+information regarding copyright ownership.
+
+This program and the accompanying materials are made available under the
+terms of the Apache License Version 2.0 which is available at
+https://www.apache.org/licenses/LICENSE-2.0
+
+SPDX-License-Identifier: Apache-2.0
+*******************************************************************************
+-->
+
 # Communication Module (LoLa)
 
 [![Eclipse Score](https://img.shields.io/badge/Eclipse-Score-orange.svg)](https://eclipse-score.github.io/score/main/modules/communication/index.html)
@@ -107,7 +122,7 @@ communication/
 ### For Users
 - [User Guide](score/mw/com/README.md) - Getting started with the API
 - [API Reference](score/mw/com/design/README.md) - Detailed API documentation
-- [Examples](examples/) - Code examples and tutorials
+- [Tutorial](score/mw/com/doc/tutorial/README.md) - Guided user-facing API walkthrough
 
 ### For Developers
 - [Architecture Guide](score/mw/com/design/README.md) - System architecture overview
