@@ -49,10 +49,65 @@ jobs:
         if: inputs.fetch-only == 'true'
         run: bazel build --nobuild //...
 
+      - name: Validate CodeQL paths
+        if: inputs.fetch-only != 'true'
+        run: |
+          set -euo pipefail
+
+          CODEQL_BIN_REL=$(bazel cquery @codeql_bundle//:codeql_cli --output=files | head -n1)
+          REPORT_BIN_REL=$(bazel cquery @codeql_coding_standards//:analysis_report --output=files | head -n1)
+          BAZEL_OUTPUT_BASE=$(bazel info output_base)
+
+          # Resolve CODEQL_BIN
+          if [[ "$CODEQL_BIN_REL" = /* ]]; then
+            CODEQL_BIN="$CODEQL_BIN_REL"
+          else
+            CODEQL_BIN="${GITHUB_WORKSPACE}/${CODEQL_BIN_REL}"
+          fi
+
+          # Try to locate the actual CodeQL executable via Bazel external repo cache
+          CODEQL_REPO=$(echo "$CODEQL_BIN_REL" | sed -n 's|.*external/\([^/]*\)/.*|\1|p')
+          if [[ -n "$CODEQL_REPO" ]]; then
+            CANDIDATE_CODEQL="${BAZEL_OUTPUT_BASE}/external/${CODEQL_REPO}/codeql/codeql"
+            if [[ -x "$CANDIDATE_CODEQL" ]]; then
+              CODEQL_BIN="$CANDIDATE_CODEQL"
+            fi
+          fi
+
+          # REPORT_BIN_REL is typically external/<repo>/analysis_report. Use that repo name first.
+          REPORT_REPO=$(echo "$REPORT_BIN_REL" | sed -n 's|.*/external/\([^/]*\)/.*|\1|p')
+          CANDIDATE_QLPACK="${BAZEL_OUTPUT_BASE}/external/${REPORT_REPO}/cpp/common/src/qlpack.yml"
+
+          if [[ -f "${CANDIDATE_QLPACK}" ]]; then
+            PACK_QLPACK="${CANDIDATE_QLPACK}"
+          else
+            # Fallback for differing repo naming in external/. Keep this constrained to cpp/common/src.
+            PACK_QLPACK=$(find "${BAZEL_OUTPUT_BASE}/external" -type f -path "*codeql_coding_standards/cpp/common/src/qlpack.yml" -print -quit || true)
+          fi
+
+          if [[ -z "${PACK_QLPACK:-}" ]]; then
+            echo "::error::Could not resolve codeql_coding_standards cpp/common qlpack.yml"
+            exit 1
+          fi
+
+          PACK_ROOT=$(dirname "${PACK_QLPACK}")
+
+          if [[ ! -x "${CODEQL_BIN}" ]]; then
+            echo "::error::CodeQL binary not found or not executable: ${CODEQL_BIN}"
+            exit 1
+          fi
+
+          if [[ ! -d "${PACK_ROOT}" ]]; then
+            echo "::error::CodeQL pack root not found: ${PACK_ROOT}"
+            exit 1
+          fi
+
       - name: Run CodeQL analysis
         if: inputs.fetch-only != 'true'
         id: run-codeql
         run: |
+          set -euo pipefail
+
           bazel run //quality/static_analysis:codeql_lint -- \
             --output-dir /tmp/codeql-results \
             --output-prefix codeql-nightly \
@@ -60,6 +115,7 @@ jobs:
 
       - name: Upload SARIF to GitHub Code Scanning
         if: inputs.fetch-only != 'true' && always() && steps.run-codeql.outcome == 'success'
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: /tmp/codeql-results/codeql-nightly.sarif
@@ -72,3 +128,12 @@ jobs:
           name: codeql-csv-results
           path: /tmp/codeql-results/codeql-nightly.csv
           retention-days: 30
+
+      - name: Upload MISRA compliance reports
+        if: inputs.fetch-only != 'true' && always() && steps.run-codeql.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-misra-reports
+          path: /tmp/codeql-results/analysis_reports/
+          retention-days: 30
+          if-no-files-found: warn

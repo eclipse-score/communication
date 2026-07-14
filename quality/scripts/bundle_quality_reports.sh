@@ -29,8 +29,10 @@ EVENT_NAME="${1:?event_name required}"
 WORKFLOW_RUN_ID="${2:-}"
 REPOSITORY="${3:?repository required}"
 PUBLISH_DIR="${4:-publish/latest/quality}"
+CODEQL_REPORTS_DIR="${PUBLISH_DIR}/codeql"
 
 mkdir -p "${PUBLISH_DIR}"
+mkdir -p "${CODEQL_REPORTS_DIR}"
 
 if [[ "${EVENT_NAME}" == "workflow_run" ]]; then
     # Triggered by nightly — download the fresh artifact directly.
