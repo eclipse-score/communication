@@ -1,0 +1,100 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/mw/com/tutorial/TirePressureExtendedService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 8714,
+          "fields": [
+            {
+              "fieldName": "tire_pressure_front_left",
+              "fieldId": 1
+            },
+            {
+              "fieldName": "tire_pressure_front_right",
+              "fieldId": 2
+            },
+            {
+              "fieldName": "tire_pressure_rear_left",
+              "fieldId": 3
+            },
+            {
+              "fieldName": "tire_pressure_rear_right",
+              "fieldId": 4
+            },
+            {
+              "fieldName": "tire_pressure_thresholds",
+              "fieldId": 5
+            }
+          ],
+          "events": [
+            {
+              "eventName": "tire_pressure_warning",
+              "eventId": 6
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "MyTirePressureExtendedServiceInstance",
+      "serviceTypeName": "/score/mw/com/tutorial/TirePressureExtendedService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "tire_pressure_front_left",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "fieldName": "tire_pressure_front_right",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "fieldName": "tire_pressure_rear_left",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "fieldName": "tire_pressure_rear_right",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "fieldName": "tire_pressure_thresholds",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ],
+          "events": [
+            {
+              "eventName": "tire_pressure_warning",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM",
+    "applicationID": 42
+  }
+}

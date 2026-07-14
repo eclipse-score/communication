@@ -1,0 +1,50 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/mw/com/tutorial/LongRunningService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 8715,
+          "methods": [
+            {
+              "methodName": "PostLongRunningJob",
+              "methodId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "MyLongRunningServiceInstance",
+      "serviceTypeName": "/score/mw/com/tutorial/LongRunningService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "methods": [
+            {
+              "methodName": "PostLongRunningJob",
+              "queueSize": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM",
+    "applicationID": 50
+  }
+}
