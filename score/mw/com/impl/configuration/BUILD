@@ -443,6 +443,19 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "config_validate_test",
+    srcs = ["config_validate_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":config_validate",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_unit_test(
     name = "config_parser_methods_test",
     srcs = ["config_parser_methods_test.cpp"],
     data = ["example/mw_com_config.json"],
