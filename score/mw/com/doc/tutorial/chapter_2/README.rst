@@ -19,27 +19,27 @@ files:
 
    * - File Name
      - Description
-   * - `BUILD`
+   * - `BUILD <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/BUILD>`__
      - This file contains bazel targets for this example.
-   * - consumer/`consumer.cpp`
+   * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/consumer/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - consumer/`consumer.h`
+   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/consumer/consumer.h>`__
      - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
-   * - consumer/`consumer_config.json`
+   * - `consumer/consumer_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/consumer/consumer_config.json>`__
      - This file contains the configuration for `score::mw::com` for the consumer app.
-   * - consumer/`logging.json`
+   * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - provider/`provider.cpp`
+   * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/provider/provider.cpp>`__
      - Implementation of the service provider.
-   * - provider/`provider.h`
+   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/provider/provider.h>`__
      - Header (empty) of the service provider.
-   * - provider/`logging.json`
+   * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - provider/`mw_com_config.json`
+   * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/provider/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the provider app.
-   * - `hello_world_service.cpp`
+   * - `hello_world_service.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/hello_world_service.cpp>`__
      - This file is empty as the service interface is completely defined in the header.
-   * - `hello_world_service.h`
+   * - `hello_world_service.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/hello_world_service.h>`__
      - This file contains the definition of the service interface.
 
 
@@ -104,7 +104,7 @@ Consumer application
 
 
 The consumer application is also almost identical to the consumer application of chapter 1. The only difference is, that
-we now load a specific configuration! So, if you look at line 37 of `consumer.cpp <consumer/consumer.cpp>`__ file,
+we now load a specific configuration! So, if you look at line 37 of `consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/consumer/consumer.cpp>`__ file,
 you will see that we added a specific call:
 
 .. literalinclude:: consumer/consumer.cpp
@@ -214,7 +214,7 @@ configuration file!
 Let's now just compare the configuration files of the provider and the consumer app in our HelloWorld example of
 chapter 2 - here especially the service-instance deployment part!
 
-This is, how the provider app configuration looks like in `mw_com_config.json <provider/mw_com_config.json>`__
+This is, how the provider app configuration looks like in `mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/provider/mw_com_config.json>`__
 with regard to the service instance deployment:
 
 .. literalinclude:: provider/mw_com_config.json
@@ -226,7 +226,7 @@ with regard to the service instance deployment:
 Because the provider app is responsible for the resource allocations, it needs to know, how many sample slots it needs
 to reserve for the "message" event and how many maximum subscribers it needs to support for the "message" event!
 
-If you now look at the consumer app configuration in `consumer_config.json <consumer/consumer_config.json>`__
+If you now look at the consumer app configuration in `consumer_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_2/consumer/consumer_config.json>`__
 with regard to the service instance deployment, you will see, that it is much smaller and more concise:
 
 .. literalinclude:: consumer/consumer_config.json
@@ -241,7 +241,7 @@ service instance. So it does not need to define these properties in the configur
 In essence this has to do with the fact, that you always look at the configuration either in the role of a provider or
 in the role of a consumer. Depending on your role, different properties are relevant and need to be defined in the
 configuration.
-This is explained in detail in the configuration documentation `here <../../../impl/configuration/README.md#role-dependent-view>`__.
+This is explained in detail in the configuration documentation `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/configuration/README.md#role-dependent-view>`__.
 
 Summary
 ~~~~~~~

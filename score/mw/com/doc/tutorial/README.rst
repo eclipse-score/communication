@@ -18,7 +18,7 @@ you are already an `ara::com` expert, there is a good chance that you will feel 
 there are bigger deviations - beside the namespace differences - we will note this explicitly.
 
 In some of the chapters we will also shed some light on the design/architecture of `score::mw::com`, but in case you are
-really interested in a deeper understanding, please look into the `design documentation <../../design/README.md>`__.
+really interested in a deeper understanding, please look into the `design documentation <https://github.com/eclipse-score/communication/blob/main/score/mw/com/design/README.md>`__.
 
 Service Orientation, Proxies and Skeletons
 ------------------------------------------
