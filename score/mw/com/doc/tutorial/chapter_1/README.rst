@@ -54,7 +54,7 @@ To run the example (on host/Linux), you can use the following bazel commands:
 .. code-block:: bash
 
    # Build the provider and consumer targets
-   bazel build //score/mw/com/doc/tutorial/chapter_1:provider-tar 
+   bazel build //score/mw/com/doc/tutorial/chapter_1:provider-tar
    bazel build //score/mw/com/doc/tutorial/chapter_1:consumer-tar
 
 
@@ -249,6 +249,7 @@ Then in line 50 the provider app enters a loop, where it cyclically sends an upd
 Since we want to show the zero-copy approach here, this updating/sending of the event is a two-step approach:
 
 Step 1 in line 55 allocates memory for a new event-sample for the "message" event:
+
 .. literalinclude:: provider.cpp
    :language: cpp
    :lines: 55-55
@@ -256,6 +257,7 @@ Step 1 in line 55 allocates memory for a new event-sample for the "message" even
 
 Step 2 in line 74 then signals to score::mw::com, that updating/writing to the memory is done and this new sample
 can be made visible to consumers:
+
 .. literalinclude:: provider.cpp
    :language: cpp
    :lines: 74-74
@@ -287,6 +289,7 @@ the `HelloWorldInterface` via the `AsProxy` template, which we also introduce an
 
 In the while-loop starting in line 40, the consumer tries to find the service instance of the
 `HelloWorldService` via service discovery.
+
 .. literalinclude:: consumer.cpp
    :language: cpp
    :lines: 43-43
@@ -309,6 +312,7 @@ Our consumer app repeatedly searches for the service instance until it is availa
 
 If the `ServiceHandleContainer` contains a valid service handle (service instance has been found), we can create a proxy
 instance for the service instance via the `Create` method of the `HelloWorldProxy`. This is done in line 58:
+
 .. literalinclude:: consumer.cpp
    :language: cpp
    :lines: 58-58
@@ -318,6 +322,7 @@ instance for the service instance via the `Create` method of the `HelloWorldProx
 After this method returned a valid result containing the proxy instance, we now have our consumer side representation
 of the service instance, we can interact with.
 Symmetrically to the provider side, we move the proxy instance out of the result wrapper for convenience in line 65:
+
 .. literalinclude:: consumer.cpp
    :language: cpp
    :lines: 65-65
@@ -328,6 +333,7 @@ Just like the skeleton instance, a proxy instance is also not copyable but only 
 `std::move` here.
 Before being able to access samples of the "message" event, we need to **subscribe** to the event **first**. This is done in
 line 66:
+
 .. literalinclude:: consumer.cpp
    :language: cpp
    :lines: 66-66
@@ -344,6 +350,7 @@ After the `Subscribe` call succeeded (returned `Result<void>` contains no error)
 (in line 75), where it cyclically checks for updates for the "message" event.
 
 The API to do this, is the `ProxyEvent::GetNewSamples` API. You see the call in line 78:
+
 .. literalinclude:: consumer.cpp
    :language: cpp
    :lines: 78-84
@@ -369,6 +376,7 @@ sample. (Just accept this short explanation for now, in upcoming chapters we wil
 this `max_num_samples` argument and the `max_sample_count` argument of the `Subscribe` call.)
 
 The 1st argument (the callback) needs to be a callable with the following signature:
+
 .. code-block:: cpp
 
    void(SamplePtr<const SampleType>)
@@ -399,6 +407,7 @@ configurations. This relates to both roles a service instance can have: A provid
 consumed service instance (proxy).
 In our `HelloWorld` example, we have a single service instance configuration, which is used by both the provider and the
 consumer. The configuration is located in `mw_com_config.json <mw_com_config.json>`__ and looks like this:
+
 .. literalinclude:: mw_com_config.json
    :language: json
    :lines: 23-46

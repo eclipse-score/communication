@@ -22,5 +22,7 @@ LoLa / mw::com
    :hidden:
 
    self
+   tutorial/README
    generated/api_index
    mw_com_index/index
+

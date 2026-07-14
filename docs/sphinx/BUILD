@@ -83,6 +83,7 @@ sphinx_module(
         "//score/message_passing/dependability:dependable_element_message_passing_rst",
         "//:contributing_md",
         "//score/mw/com:readme_md",
+        "//score/mw/com/doc/tutorial:tutorial_rst",
     ],
     exec_compatible_with = ["@platforms//os:linux"],
     extra_opts = [
