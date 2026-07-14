@@ -107,7 +107,7 @@ communication/
 ### For Users
 - [User Guide](score/mw/com/README.md) - Getting started with the API
 - [API Reference](score/mw/com/design/README.md) - Detailed API documentation
-- [Examples](examples/) - Code examples and tutorials
+- [Tutorial](score/mw/com/doc/tutorial/README.md) - Guided user-facing API walkthrough
 
 ### For Developers
 - [Architecture Guide](score/mw/com/design/README.md) - System architecture overview

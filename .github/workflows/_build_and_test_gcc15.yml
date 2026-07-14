@@ -52,12 +52,12 @@ jobs:
         if: inputs.fetch-only != 'true'
         run: bazel test //... --build_tests_only
 
-      - name: Build examples
+      - name: Build module_integration_test
         if: inputs.fetch-only != 'true'
-        run: cd examples && bazel build //... && bazel mod deps --lockfile_mode=update
+        run: cd module_integration_test && bazel build //... && bazel mod deps --lockfile_mode=update
 
       - name: Fetch dependencies (--nobuild)
         if: inputs.fetch-only == 'true'
         run: |
           bazel build --nobuild //...
-          cd examples && bazel build --nobuild //...
+          cd module_integration_test && bazel build --nobuild //...
