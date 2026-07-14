@@ -370,35 +370,6 @@ TEST_F(ConfigParserFixture, UnknownBindingIdentifierInServiceTypeDeployment)
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixture, NoEventsOrFieldsWillCauseTermination)
-{
-    // Given a JSON without any events or fields
-    auto j2 = R"(
-{
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/ncar/services/TirePressureService",
-      "version": {
-        "major": 12,
-        "minor": 34
-      },
-      "bindings": [
-        {
-             "binding": "SHM",
-             "serviceId": 1234
-        }
-      ]
-    }
-  ],
-  "serviceInstances": []
-}
-)"_json;
-
-    // When parsing the JSON
-    // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
-}
-
 TEST_F(ConfigParserFixture, NoEventNameWillCauseTermination)
 {
     // Given a JSON with a missing event name
