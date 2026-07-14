@@ -10,4 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/doc/tutorial/chapter_8/calculator_service.h"
+#include "calculator_service.h"

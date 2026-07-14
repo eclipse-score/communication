@@ -14,7 +14,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
-load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
+load("@score_communication//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_library(
     name = "service_interface",
@@ -22,7 +22,7 @@ cc_library(
     hdrs = ["hello_world_service.h"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        "//score/mw/com",
+        "@score_communication//score/mw/com",
     ],
 )
 
@@ -38,7 +38,7 @@ cc_binary(
     ],
     deps = [
         ":service_interface",
-        "//score/mw/com",
+        "@score_communication//score/mw/com",
     ],
 )
 
@@ -53,7 +53,7 @@ cc_binary(
     ],
     deps = [
         ":service_interface",
-        "//score/mw/com",
+        "@score_communication//score/mw/com",
     ],
 )
 

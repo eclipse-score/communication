@@ -10,4 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/doc/tutorial/chapter_9/tire_pressure_extended_service.h"
+#include "tire_pressure_extended_service.h"

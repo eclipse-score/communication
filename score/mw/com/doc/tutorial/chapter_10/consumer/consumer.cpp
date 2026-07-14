@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/doc/tutorial/chapter_10/hello_world_service.h"
+#include "../hello_world_service.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
 

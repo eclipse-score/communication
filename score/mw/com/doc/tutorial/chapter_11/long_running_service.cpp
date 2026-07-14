@@ -10,4 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/doc/tutorial/chapter_11/long_running_service.h"
+#include "long_running_service.h"
