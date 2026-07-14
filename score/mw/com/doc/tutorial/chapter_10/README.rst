@@ -63,7 +63,7 @@ A few important rules:
 - If a property ``allowedConsumer`` or ``allowedProvider`` is an **empty list**, the meaning depends on the
   ``permission-checks`` property of the service instance (``file-permissions-on-empty`` – the default – falls back to
   basic ``ugo`` file-system rights; ``strict`` means really no-one is allowed). See the
-  `configuration documentation <../../../impl/configuration/README.md#serviceinstances>`__ for the details.
+  `configuration documentation <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/configuration/README.md#serviceinstances>`__ for the details.
 
 Files/artifacts used
 ~~~~~~~~~~~~~~~~~~~~~
@@ -80,27 +80,27 @@ only the two configuration files differ. The ``bazel`` project for this chapter 
 
    * - File Name
      - Description
-   * - `BUILD`
+   * - `BUILD <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/BUILD>`__
      - This file contains bazel targets for this example.
-   * - consumer/`consumer.cpp`
+   * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/consumer/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - consumer/`consumer.h`
+   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/consumer/consumer.h>`__
      - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
-   * - consumer/`consumer_config.json`
+   * - `consumer/consumer_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/consumer/consumer_config.json>`__
      - This file contains the configuration for `score::mw::com` for the consumer app.
-   * - consumer/`logging.json`
+   * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - provider/`provider.cpp`
+   * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/provider/provider.cpp>`__
      - Implementation of the service provider.
-   * - provider/`provider.h`
+   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/provider/provider.h>`__
      - Header (empty) of the service provider.
-   * - provider/`logging.json`
+   * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - provider/`mw_com_config.json`
+   * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/provider/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the provider app.
-   * - `hello_world_service.cpp`
+   * - `hello_world_service.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/hello_world_service.cpp>`__
      - This file is empty as the service interface is completely defined in the header.
-   * - `hello_world_service.h`
+   * - `hello_world_service.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_10/hello_world_service.h>`__
      - This file contains the definition of the service interface.
 
 

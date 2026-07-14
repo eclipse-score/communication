@@ -23,23 +23,23 @@ files:
 
    * - File Name
      - Description
-   * - `BUILD`
+   * - `BUILD <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/BUILD>`__
      - This file contains bazel targets for this example.
-   * - `consumer.cpp`
+   * - `consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - `consumer.h`
+   * - `consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/consumer.h>`__
      - Header (empty - we just aways want to have cpp/h pairs) of the service consumer.
-   * - `hello_world_service.cpp`
+   * - `hello_world_service.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/hello_world_service.cpp>`__
      - This file is empty as the service interface is completely defined in the header.
-   * - `hello_world_service.h`
+   * - `hello_world_service.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/hello_world_service.h>`__
      - This file contains the definition of the service interface.
-   * - `logging.json`
+   * - `logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - `mw_com_config.json`
+   * - `mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for our apps.
-   * - `provider.cpp`
+   * - `provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/provider.cpp>`__
      - Implementation of the service provider.
-   * - `provider.h`
+   * - `provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/provider.h>`__
      - Header (empty) of the service provider.
 
 
@@ -136,7 +136,7 @@ bottleneck.
    use cases the need for an IDL might come up midterm.
 
 
-This is our simple service interface, which is declared in `hello_world_service.h <hello_world_service.h>`__:
+This is our simple service interface, which is declared in `hello_world_service.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/hello_world_service.h>`__:
 
 .. literalinclude:: hello_world_service.h
    :language: cpp
@@ -158,10 +158,9 @@ instantiate the service interface with either a `ProxyTrait` or `SkeletonTrait` 
 skeleton class from the interface!
 
 You find the detailed documentation, how such a service interface should be defined in a doxygen comment in
-`traits.h <../../../impl/traits.h>`__. There you will also find the details of how to instantiate a proxy or skeleton class
-corresponding to the service interface, which we will discuss below in our HelloWorld example, when looking at trhe
-provider/
-consumer implementations.
+`traits.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/traits.h>`__. There you will also
+find the details of how to instantiate a proxy or skeleton class corresponding to the service interface, which we will
+discuss below in our HelloWorld example, when looking at the provider/consumer implementations.
 
 Restrictions on datatypes
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -180,7 +179,7 @@ Provider application
 
 
 Now let's have a look at the implementation of the provider of the `HelloWorldService`. It is
-contained in main function of `provider.cpp <provider.cpp>`__.
+contained in main function of `provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/provider.cpp>`__.
 
 The 1st important step happens in line 30:
 
@@ -206,7 +205,7 @@ by invoking `AsSkeleton<HelloWorldInterface>` and introduce an alias for it.
    where the `HelloWorldInterface<SkeletonTrait>` template instantiation contains the event declaration for the "message"
    event, which is of type `SkeletonEvent<FixedSizeString>`.
    This you could find out by looking into the implementation of the `AsSkeleton` template in
-   `traits.h <../../../impl/traits.h>`__ and following the inheritance chain of the generated skeleton class.
+   `traits.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/traits.h>`__ and following the inheritance chain of the generated skeleton class.
 
 Then in line 40 we create an instance of the skeleton class with the `Create` (named constructor) method:
 
@@ -233,7 +232,7 @@ its value in case of success), in line 43 we move the skeleton instance out of t
 This is just for convenience, as we want to work with the skeleton instance and not with the result wrapper.
 But it also shows a detail here: The `std::move` is needed, because a skeleton instance is not copyable, but only movable.
 This is a design decision, which we made, because a skeleton instance holds a lot of internal state and resources, which
-we don't want to be copied implicitly! In our design documentation `here <../../../design/skeleton_proxy/README.md#copymove-support-for-binding-independent-and-dependent-proxiesskeletons>`__
+we don't want to be copied implicitly! In our design documentation `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/design/skeleton_proxy/README.md#copymove-support-for-binding-independent-and-dependent-proxiesskeletons>`__
 you'll find a more detailed explanation, why skeletons (and also proxies by the way) are not copyable but only movable.
 
 After the call to `OfferService` in line 45 succeeds:
@@ -276,7 +275,7 @@ Consumer Application
 
 
 The implementation of the consumer of the `HelloWorldService` is contained in main function of
-`consumer.cpp <consumer.cpp>`__.
+`consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/consumer.cpp>`__.
 
 Symmetric to the provider side, the 1st important step on the consumer side is the creation of a proxy side type of
 the `HelloWorldInterface` via the `AsProxy` template, which we also introduce an alias for:
@@ -406,7 +405,7 @@ the current working directory of the application. The essential parts within the
 configurations. This relates to both roles a service instance can have: A provided service instance (skeleton) and a
 consumed service instance (proxy).
 In our `HelloWorld` example, we have a single service instance configuration, which is used by both the provider and the
-consumer. The configuration is located in `mw_com_config.json <mw_com_config.json>`__ and looks like this:
+consumer. The configuration is located in `mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/mw_com_config.json>`__ and looks like this:
 
 .. literalinclude:: mw_com_config.json
    :language: json
@@ -426,10 +425,10 @@ same service type. In our example, we have only a single service instance of the
 You also see in this config snippet above, that the service instance identified by the `instanceSpecifier`
 `MyHelloWorldServiceInstance` refers to the service type `HelloWorldService` via the property `serviceTypeName`. More
 concise, it refers to the service type via its fully qualified name, which is `/score/mw/com/tutorial/HelloWorldService`.
-If you scroll up in the `mw_com_config.json <mw_com_config.json>`__ file, you will find the definition of the service type
+If you scroll up in the `mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_1/mw_com_config.json>`__ file, you will find the definition of the service type
 `HelloWorldService` with its fully qualified name `/score/mw/com/tutorial/HelloWorldService`.
 
-This should be enough for now. There is a specific `configuration documentation <../../../impl/configuration/README.md>`__,
+This should be enough for now. There is a specific `configuration documentation <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/configuration/README.md>`__,
 which goes into more detail about the configuration structure and its semantics.
 
 Summary
@@ -439,7 +438,7 @@ Summary
 A short summary of what we have learned in this chapter:
 
 - The service interface is defined in terms of a C++ struct, which has to follow a certain pattern, which is documented
-  in `traits.h <../../../impl/traits.h>`__.
+  in `traits.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/traits.h>`__.
 - The provider side skeleton data type is generated via the `AsSkeleton` template, which is instantiated with the service
 interface.
 - The consumer side proxy data type is generated via the `AsProxy` template, which is instantiated with the service

@@ -37,27 +37,27 @@ files as chapter 4 (just adapted in content):
 
    * - File Name
      - Description
-   * - `BUILD`
+   * - `BUILD <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/BUILD>`__
      - This file contains bazel targets for this example.
-   * - consumer/`consumer.cpp`
+   * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/consumer/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - consumer/`consumer.h`
+   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/consumer/consumer.h>`__
      - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
-   * - consumer/`mw_com_config.json`
+   * - `consumer/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/consumer/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the consumer app.
-   * - consumer/`logging.json`
+   * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - provider/`provider.cpp`
+   * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/provider/provider.cpp>`__
      - Implementation of the service provider.
-   * - provider/`provider.h`
+   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/provider/provider.h>`__
      - Header (empty) of the service provider.
-   * - provider/`logging.json`
+   * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - provider/`mw_com_config.json`
+   * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/provider/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the provider app.
-   * - `hello_world_service.cpp`
+   * - `hello_world_service.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/hello_world_service.cpp>`__
      - This file is empty as the service interface is completely defined in the header.
-   * - `hello_world_service.h`
+   * - `hello_world_service.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/hello_world_service.h>`__
      - This file contains the definition of the service interface.
 
 
@@ -218,8 +218,8 @@ Configuration
 ~~~~~~~~~~~~~
 
 
-The configuration is **identical** to chapter 4: the provider (`provider/mw_com_config.json <provider/mw_com_config.json>`__)
-offers a single instance with `instanceId` 1, and the consumer (`consumer/mw_com_config.json <consumer/mw_com_config.json>`__)
+The configuration is **identical** to chapter 4: the provider (`provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/provider/mw_com_config.json>`__)
+offers a single instance with `instanceId` 1, and the consumer (`consumer/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_5/consumer/mw_com_config.json>`__)
 maps its `instanceSpecifier` to that type **with** the explicit `instanceId` 1.
 
 Summary

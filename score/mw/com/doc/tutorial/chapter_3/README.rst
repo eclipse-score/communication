@@ -27,27 +27,27 @@ files as chapter 2 (just adapted in content):
 
    * - File Name
      - Description
-   * - `BUILD`
+   * - `BUILD <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/BUILD>`__
      - This file contains bazel targets for this example.
-   * - consumer/`consumer.cpp`
+   * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/consumer/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - consumer/`consumer.h`
+   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/consumer/consumer.h>`__
      - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
-   * - consumer/`mw_com_config.json`
+   * - `consumer/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/consumer/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the consumer app.
-   * - consumer/`logging.json`
+   * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - provider/`provider.cpp`
+   * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/provider/provider.cpp>`__
      - Implementation of the service provider.
-   * - provider/`provider.h`
+   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/provider/provider.h>`__
      - Header (empty) of the service provider.
-   * - provider/`logging.json`
+   * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - provider/`mw_com_config.json`
+   * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/provider/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the provider app.
-   * - `hello_world_service.cpp`
+   * - `hello_world_service.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/hello_world_service.cpp>`__
      - This file is empty as the service interface is completely defined in the header.
-   * - `hello_world_service.h`
+   * - `hello_world_service.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/hello_world_service.h>`__
      - This file contains the definition of the service interface.
 
 
@@ -124,7 +124,7 @@ Provider application
 
 
 The provider now offers **3 instances** of the `HelloWorldService` instead of just one. In the
-`provider.cpp <provider/provider.cpp>`__ file we introduce a small array of instance specifiers – one per
+`provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/provider/provider.cpp>`__ file we introduce a small array of instance specifiers – one per
 instance to offer:
 
 .. literalinclude:: provider/provider.cpp
@@ -160,7 +160,7 @@ Consumer application
 
 
 This is where the biggest change happens. Instead of the synchronous `FindService()` polling loop from chapter 2, the
-consumer now uses the **asynchronous** `StartFindService()` API in `consumer.cpp <consumer/consumer.cpp>`__.
+consumer now uses the **asynchronous** `StartFindService()` API in `consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/consumer/consumer.cpp>`__.
 
 .. note::
 
@@ -255,7 +255,7 @@ Provider configuration - offering multiple instances
 
 
 To offer 3 instances of the `HelloWorldService`, the provider configuration
-`mw_com_config.json <provider/mw_com_config.json>`__ now contains **3 entries** in its `serviceInstances`
+`mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/provider/mw_com_config.json>`__ now contains **3 entries** in its `serviceInstances`
 array. Each entry maps a distinct `instanceSpecifier` to a distinct `instanceId` of the **same** `serviceTypeName`:
 
 .. literalinclude:: provider/mw_com_config.json
@@ -271,7 +271,7 @@ Consumer configuration - "find-any"
 
 
 The magic that enables the **"find-any"** search is in the consumer configuration
-`mw_com_config.json <consumer/mw_com_config.json>`__. Its single `serviceInstances` entry maps the
+`mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_3/consumer/mw_com_config.json>`__. Its single `serviceInstances` entry maps the
 `instanceSpecifier` `MyHelloWorldServiceInstance` to the `HelloWorldService` type, but **deliberately leaves out the
 `instanceId`** in the `instances` array:
 

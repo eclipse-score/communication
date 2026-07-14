@@ -57,27 +57,27 @@ files as chapter 3 (just adapted in content):
 
    * - File Name
      - Description
-   * - `BUILD`
+   * - `BUILD <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/BUILD>`__
      - This file contains bazel targets for this example.
-   * - consumer/`consumer.cpp`
+   * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/consumer/consumer.cpp>`__
      - Implementation of the service consumer app. The `main()` for the consumer
-   * - consumer/`consumer.h`
+   * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/consumer/consumer.h>`__
      - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
-   * - consumer/`mw_com_config.json`
+   * - `consumer/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/consumer/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the consumer app.
-   * - consumer/`logging.json`
+   * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/consumer/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - provider/`provider.cpp`
+   * - `provider/provider.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/provider/provider.cpp>`__
      - Implementation of the service provider.
-   * - provider/`provider.h`
+   * - `provider/provider.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/provider/provider.h>`__
      - Header (empty) of the service provider.
-   * - provider/`logging.json`
+   * - `provider/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/provider/logging.json>`__
      - This file contains the configuration for the logging system used by `score::mw::com`
-   * - provider/`mw_com_config.json`
+   * - `provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/provider/mw_com_config.json>`__
      - This file contains the configuration for `score::mw::com` for the provider app.
-   * - `hello_world_service.cpp`
+   * - `hello_world_service.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/hello_world_service.cpp>`__
      - This file is empty as the service interface is completely defined in the header.
-   * - `hello_world_service.h`
+   * - `hello_world_service.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/hello_world_service.h>`__
      - This file contains the definition of the service interface.
 
 
@@ -191,7 +191,7 @@ Note: `StopOfferService()` does **not** invalidate the consumer's proxy or its s
 "armed"; only its state changes to `kSubscriptionPending`. When the provider offers the service again, the state
 automatically goes back to `kSubscribed`. This functionality/behavior is called "proxy auto reconnect" and there is a
 specific chapter in the design documentation that explains it in detail
-(see `here <../../../design/skeleton_proxy/README.md#proxy-auto-reconnect-functionality>`__).
+(see `here <https://github.com/eclipse-score/communication/blob/main/score/mw/com/design/skeleton_proxy/README.md#proxy-auto-reconnect-functionality>`__).
 
 Consumer application
 ~~~~~~~~~~~~~~~~~~~~
@@ -279,7 +279,7 @@ Variation 2: proxy_2 – a subscription-state-change handler
 For proxy_2 we register a subscription-state-change handler **before** subscribing, so that we observe all state
 transitions. The handler is invoked on an internal middleware thread; it must be short and must **not** call any method
 on the same event instance (this could deadlock). Have a look at the documentation of
-`SubscriptionStateChangeHandler <../../../impl/subscription_state_change_handler.h>`__ for its details. Therefore, it merely
+`SubscriptionStateChangeHandler <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/subscription_state_change_handler.h>`__ for its details. Therefore, it merely
 records the new state in an atomic and returns `true` to stay registered:
 
 .. literalinclude:: consumer/consumer.cpp
@@ -302,12 +302,12 @@ Configuration
 ~~~~~~~~~~~~~
 
 
-The provider configuration (`provider/mw_com_config.json <provider/mw_com_config.json>`__) offers a single
+The provider configuration (`provider/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/provider/mw_com_config.json>`__) offers a single
 instance again, mapped to the `instanceSpecifier` "MyHelloWorldServiceInstance" with `instanceId` 1. The `message` event
 allows up to 3 subscribers (`maxSubscribers`), which is important here: the single consumer creates **two** proxies for
 the same instance, i.e. it produces **two** subscriptions on the same event.
 
-The consumer configuration (`consumer/mw_com_config.json <consumer/mw_com_config.json>`__) maps the
+The consumer configuration (`consumer/mw_com_config.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_4/consumer/mw_com_config.json>`__) maps the
 `instanceSpecifier` "MyHelloWorldServiceInstance" to the `HelloWorldService` type **with** an explicit `instanceId` (1).
 This is what makes the `StartFindService()` search an **explicit** instance search (as opposed to the "find-any" search
 of chapter 3, which omitted the `instanceId`).
