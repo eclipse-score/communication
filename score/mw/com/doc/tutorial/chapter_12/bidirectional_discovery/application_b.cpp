@@ -12,8 +12,16 @@
  ********************************************************************************/
 
 // Bi-directional discovery — application B.
-// Offers its own SensorInterface instance immediately (OfferService before discovery completes),
-// then discovers application A via StartFindService. Both applications can start in any order without deadlock.
+// Each application is both a provider of its own service and a consumer of the other's.
+//
+// Two facts determine the init-phase ordering required for heap-free operation:
+//   1. Proxy::Create() allocates heap memory and must succeed before forbid_heap().
+//   2. Proxy::Create() requires the provider to have already called OfferService(), because
+//      OfferService() creates the shared-memory region the proxy attaches to.
+//
+// Each application therefore calls OfferService() before StartFindService(), making its
+// own service available immediately so the other application can create a proxy against it.
+// Both applications can start in any order.
 
 #include "common/service_interface.h"
 #include "heap_check/heap_check.h"
@@ -67,7 +75,8 @@ int main()
         return EXIT_FAILURE;
     }
 
-    // Offer immediately — this is what avoids the deadlock when both applications start concurrently.
+    // Offer before starting discovery. OfferService() creates the shared-memory region that
+    // application A needs for Proxy::Create(). Both applications can start in any order.
     score::Result<void> offer_result = sk.OfferService();
     if (!offer_result.has_value())
     {
@@ -111,7 +120,8 @@ int main()
         return EXIT_FAILURE;
     }
 
-    // Wait for application A's service before forbid_heap() — Proxy::Create() allocates.
+    // Wait for application A's Proxy::Create() to complete before forbid_heap(). Proxy::Create()
+    // allocates heap memory and can only succeed after application A has called OfferService().
     bool notified = proxy_ready.waitForWithAbort(kDiscoveryTimeout, stop_source.get_token());
 
     score::Result<void> stop_result = sensor::SensorProxy::StopFindService(fshandle_result.value());

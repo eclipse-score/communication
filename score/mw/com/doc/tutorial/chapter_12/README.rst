@@ -246,17 +246,31 @@ Bidirectional discovery
 
 
 The ``bidirectional_discovery`` example takes the pattern one step further: both applications act as a
-provider and a consumer at the same time. Each must offer its own service **and** discover the other's
-service. With ``FindService()`` polling, this would still deadlock — neither application reaches
-``OfferService()`` because both are stuck in the discovery poll.
+provider and a consumer at the same time. Each must offer its own service **and** create a proxy against
+the other's service — all before entering the heap-free operational phase.
 
-The solution is straightforward: call ``OfferService()`` **before** ``StartFindService()``. Once the
-application's own service is visible, the other side can find it regardless of start order. The
-``bidirectional_discovery/application_a.cpp`` example shows this sequence:
+Two facts together make the init-phase ordering mandatory:
+
+- ``Proxy::Create()`` allocates heap memory and must therefore complete **before** ``forbid_heap()`` is
+  called.
+- ``Proxy::Create()`` requires the provider to have already called ``OfferService()``, because
+  ``OfferService()`` is the call that creates the shared-memory region the proxy attaches to. A proxy
+  cannot be created against a service that has not yet been offered.
+
+Each application therefore calls ``OfferService()`` first, making its shared-memory region available
+immediately. It then calls ``StartFindService()`` and waits with a bounded timeout for the other
+application's service to appear and for ``Proxy::Create()`` to complete inside the discovery callback.
+Only after that wait returns with a valid proxy does the application call ``forbid_heap()``.
+
+A structural consequence of this ordering is that neither application can deadlock: because each offers
+its service before waiting, the other application can always proceed with ``Proxy::Create()`` regardless
+of which application reaches ``OfferService()`` first.
+
+The ``bidirectional_discovery/application_a.cpp`` example shows this sequence:
 
 .. literalinclude:: bidirectional_discovery/application_a.cpp
    :language: cpp
-   :lines: 55-141
+   :lines: 63-151
    :caption: bidirectional_discovery/application_a.cpp — OfferService before StartFindService, then wait
 
 In the operational phase, application A simultaneously sends on its own skeleton event and polls the remote
@@ -264,7 +278,7 @@ proxy's event in the same loop — both heap-free:
 
 .. literalinclude:: bidirectional_discovery/application_a.cpp
    :language: cpp
-   :lines: 139-178
+   :lines: 149-188
    :caption: bidirectional_discovery/application_a.cpp — operational loop: send and receive without heap
 
 .. _chapter_12_asil_guidance:
@@ -356,9 +370,12 @@ A short summary of what we have learned in this chapter:
   The discovery callback may run on a middleware worker thread; ``Proxy::Create()`` (which allocates) runs
   there safely because the per-thread heap check does not constrain worker threads. The main thread must
   **wait for the callback to complete** (with a timeout) before calling ``forbid_heap()``.
-- **Bidirectional discovery** between two applications that each act as provider and consumer is deadlock-free
-  if each application calls ``OfferService()`` **before** ``StartFindService()``. This makes both services
-  visible to the other side immediately, regardless of start order.
+- **Bidirectional discovery** between two applications that each act as provider and consumer requires
+  ``OfferService()`` before ``StartFindService()``. The ordering satisfies two mandatory constraints:
+  ``Proxy::Create()`` allocates heap memory and must complete before ``forbid_heap()``, and
+  ``Proxy::Create()`` can only succeed after the provider has called ``OfferService()`` — which is the
+  call that creates the shared-memory region. A structural consequence is that both applications can
+  start in any order without deadlock.
 - Before calling ``forbid_heap()``: ``SensorSkeleton::Create()``, ``OfferService()``, the initial
   ``Field::Update()``, ``FindService()``/``StartFindService()``, ``Proxy::Create()``, ``Subscribe()``.
 - After the operational loop: call ``allow_heap()`` unconditionally, then ``Unsubscribe()``,
