@@ -354,5 +354,29 @@ class TestLockFileFormat(unittest.TestCase):
             self.assertNotIn("has_brief_doc", sym)
 
 
+class TestResultTypeRegression(unittest.TestCase):
+    """Regression: result type signatures resolve from transitive public headers."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("result_type_regression")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_known_result_signatures_are_not_degraded_to_int(self):
+        symbol = find_symbol(self.symbols, "test::ResultFactory::CreateWidget")
+        self.assertIsNotNone(symbol, "Missing symbol: test::ResultFactory::CreateWidget")
+        signature = symbol["signature"]
+        self.assertIn("support::Result<support::Widget>", signature)
+        self.assertNotIn(" : int ", signature)
+
+    def test_transitive_public_types_are_resolved(self):
+        qnames = qualified_names(self.symbols)
+        self.assertIn("test::support::Result", qnames)
+        self.assertIn("test::support::Widget", qnames)
+
+    def test_lock_file_scope_stays_reasonable(self):
+        self.assertLess(len(self.symbols), 50)
+
+
 if __name__ == "__main__":
     unittest.main()

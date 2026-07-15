@@ -164,41 +164,38 @@ cc_unit_test(
 api_surface_test(
     name = "api_surface_test",
     check_docs = False,
-    hdrs = [
-        "com_error_domain.h",
-        "runtime.h",
-        "runtime_configuration.h",
-        "types.h",
-    ],
     lock_file = "api_surface.lock.json",
     target_label = "//score/mw/com:com",
-    deps = [":com"],
+    deps = [
+        ":com_error_domain",
+        ":runtime",
+        ":runtime_configuration",
+        ":types",
+    ],
 )
 
 api_surface_test(
     name = "api_surface_docs_test",
     check_docs = True,
-    hdrs = [
-        "com_error_domain.h",
-        "runtime.h",
-        "runtime_configuration.h",
-        "types.h",
-    ],
     lock_file = "api_surface.lock.json",
     tags = ["manual"],
     target_label = "//score/mw/com:com",
-    deps = [":com"],
+    deps = [
+        ":com_error_domain",
+        ":runtime",
+        ":runtime_configuration",
+        ":types",
+    ],
 )
 
 api_surface_update(
     name = "api_surface_update",
-    hdrs = [
-        "com_error_domain.h",
-        "runtime.h",
-        "runtime_configuration.h",
-        "types.h",
-    ],
     lock_file_path = "score/mw/com/api_surface.lock.json",
     target_label = "//score/mw/com:com",
-    deps = [":com"],
+    deps = [
+        ":com_error_domain",
+        ":runtime",
+        ":runtime_configuration",
+        ":types",
+    ],
 )

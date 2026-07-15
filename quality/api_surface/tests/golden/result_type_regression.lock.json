@@ -1,0 +1,62 @@
+{
+  "target": "//quality/api_surface/tests:result_type_regression_lib",
+  "symbols": [
+    {
+      "name": "ResultFactory",
+      "qualified_name": "test::ResultFactory",
+      "kind": "class",
+      "signature": "class ResultFactory"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "CreateWidget",
+      "qualified_name": "test::ResultFactory::CreateWidget",
+      "kind": "method",
+      "signature": "CreateWidget : support::Result<support::Widget> ()"
+    },
+    {
+      "name": "Result",
+      "qualified_name": "test::support::Result",
+      "kind": "template_class",
+      "signature": "Result"
+    },
+    {
+      "name": "Result",
+      "qualified_name": "test::support::Result",
+      "kind": "class",
+      "signature": "class Result"
+    },
+    {
+      "name": "value",
+      "qualified_name": "test::support::Result::value",
+      "kind": "field",
+      "signature": "value"
+    },
+    {
+      "name": "Widget",
+      "qualified_name": "test::support::Widget",
+      "kind": "class",
+      "signature": "class Widget"
+    },
+    {
+      "name": "id",
+      "qualified_name": "test::support::Widget::id",
+      "kind": "field",
+      "signature": "id"
+    },
+    {
+      "name": "TransitiveLeak",
+      "qualified_name": "leak::TransitiveLeak",
+      "kind": "class",
+      "signature": "class TransitiveLeak"
+    },
+    {
+      "name": "should_not_be_public",
+      "qualified_name": "leak::TransitiveLeak::should_not_be_public",
+      "kind": "method",
+      "signature": "should_not_be_public : void ()"
+    }
+  ],
+  "version": "1"
+}

@@ -56,6 +56,17 @@ cc_library(
     hdrs = ["internal_namespace.h"],
 )
 
+cc_library(
+    name = "result_type_support_lib",
+    hdrs = ["result_type_support.h"],
+)
+
+cc_library(
+    name = "result_type_regression_lib",
+    hdrs = ["result_type_regression.h"],
+    deps = [":result_type_support_lib"],
+)
+
 # API surface generation for each test case - these produce JSON files
 # that the py_test will validate
 
@@ -122,7 +133,6 @@ api_surface_test(
     check_docs = False,
     target_label = "//quality/api_surface/tests:internal_namespace_lib",
 )
-
 # Update targets to regenerate golden files
 api_surface_update(
     name = "basic_class_api_update",
@@ -180,6 +190,14 @@ api_surface_update(
     target_label = "//quality/api_surface/tests:internal_namespace_lib",
 )
 
+api_surface_test(
+    name = "result_type_regression_api_test",
+    deps = [":result_type_regression_lib"],
+    lock_file = "golden/result_type_regression.lock.json",
+    check_docs = False,
+    target_label = "//quality/api_surface/tests:result_type_regression_lib",
+)
+
 # Python assertion test that validates the CONTENT of extracted API surfaces
 # (not just that they match a lock file, but that specific expectations hold)
 py_test(
@@ -195,5 +213,6 @@ py_test(
         ":types_in_signatures_api_test_gen",
         ":enum_and_free_functions_api_test_gen",
         ":internal_namespace_api_test_gen",
+        ":result_type_regression_api_test_gen",
     ],
 )
