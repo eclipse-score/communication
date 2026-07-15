@@ -209,12 +209,14 @@ cc_library(
 cc_library(
     name = "message_passing_qnx_dispatch",
     srcs = [
+        "qnx_dispatch/dispatch_thread_runner.cpp",
         "qnx_dispatch/qnx_dispatch_client_factory.cpp",
         "qnx_dispatch/qnx_dispatch_engine.cpp",
         "qnx_dispatch/qnx_dispatch_server.cpp",
         "qnx_dispatch/qnx_dispatch_server_factory.cpp",
     ],
     hdrs = [
+        "qnx_dispatch/dispatch_thread_runner.h",
         "qnx_dispatch/qnx_dispatch_client_factory.h",
         "qnx_dispatch/qnx_dispatch_engine.h",
         "qnx_dispatch/qnx_dispatch_server.h",
@@ -298,6 +300,7 @@ cc_unit_test(
 cc_unit_test(
     name = "qnx_dispatch_test",
     srcs = [
+        "dispatch_thread_runner_test.cpp",
         "qnx_dispatch_engine_test.cpp",
         "qnx_dispatch_mocked_server_test.cpp",
         "qnx_dispatch_server_test.cpp",

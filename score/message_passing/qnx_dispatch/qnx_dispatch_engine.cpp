@@ -33,14 +33,6 @@ struct select_msg_t
     sigevent ping_event;
 };
 
-// false-positive: vars are being used in pulse _attach _detach calls
-// coverity[autosar_cpp14_a0_1_1_violation]
-constexpr std::int32_t kTimerPulseCode = _PULSE_CODE_MINAVAIL;
-// coverity[autosar_cpp14_a0_1_1_violation]
-constexpr std::int32_t kEventPulseCode = _PULSE_CODE_MINAVAIL + 1;
-// coverity[autosar_cpp14_a0_1_1_violation]
-constexpr std::int32_t kSelectPulseCode = _PULSE_CODE_MINAVAIL + 2;
-
 constexpr std::uint16_t kIomgrStickySelect = _IOMGR_PRIVATE_BASE;
 
 // Pulse signals from server to client that we have...
@@ -116,55 +108,31 @@ QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_re
       memory_resource_{memory_resource},
       os_resources_{std::move(os_resources)},
       logger_{std::move(logger)},
-      quit_flag_{false},
-      thread_{},
-      thread_mutex_{},
-      thread_condition_{},
+      server_runner_{*os_resources_.channel, *os_resources_.dispatch, *os_resources_.signal},
+      client_runner_{*os_resources_.channel, *os_resources_.dispatch, *os_resources_.signal},
+      cleanup_ready_condition_{},
       poll_endpoints_{memory_resource},
       timer_queue_{},
       posix_endpoint_list_{},
       posix_receive_buffer_{memory_resource},
-      dispatch_pointer_{},
-      context_pointer_{},
-      side_channel_coid_{},
       timer_id_{},
-      attach_mutex_{},
+      // attach_mutex_{},
       connect_funcs_{},
       io_funcs_{}
 {
-    dispatch_pointer_ =  // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-        ValueOrTerminate(os_resources_.dispatch->dispatch_create_channel(-1, 0U), "Unable to allocate dispatch handle");
-    IfUnexpectedTerminate(
-        os_resources_.dispatch->pulse_attach(dispatch_pointer_, 0, kTimerPulseCode, &TimerPulseCallback, this),
-        "Unable to attach timer pulse code");
-    IfUnexpectedTerminate(
-        os_resources_.dispatch->pulse_attach(dispatch_pointer_, 0, kEventPulseCode, &EventPulseCallback, this),
-        "Unable to attach event pulse code");
-    IfUnexpectedTerminate(
-        os_resources_.dispatch->pulse_attach(dispatch_pointer_, 0, kSelectPulseCode, &SelectPulseCallback, this),
-        "Unable to attach select pulse code");
-    IfUnexpectedTerminate(os_resources_.dispatch->pulse_attach(
-                              dispatch_pointer_, 0, _PULSE_CODE_COIDDEATH, &CoidDeathPulseCallback, this),
-                          "Unable to attach CoidDeath pulse code");
+    SetupResourceManagerCallbacks();
 
-    /* resmgr_attach */
-    side_channel_coid_ =
-        ValueOrTerminate(os_resources_.dispatch->message_connect(dispatch_pointer_, MSG_FLAG_SIDE_CHANNEL),
-                         "Unable to create side channel");
+    client_runner_.Start([this]() noexcept {
+        InitClientThread();
+    });
+    server_runner_.Start([this]() noexcept {
+        InitServerThread();
+    });
+}
 
-    struct sigevent event{};
-    // Suppress "AUTOSAR C++14 M5-0-21" rule finding: "Bitwise operators shall only be applied to operands of unsigned
-    // underlying type.". 'SIGEV_PULSE' is a macro of QNX API, which defines bitwise operation of two flags. This macro
-    // cannot be modified.
-    // coverity[autosar_cpp14_m5_0_21_violation]
-    event.sigev_notify = static_cast<decltype(event.sigev_notify)>(SIGEV_PULSE);
-    event.sigev_coid = side_channel_coid_;
-    event.sigev_priority = SIGEV_PULSE_PRIO_INHERIT;
-    static_assert(kTimerPulseCode <= std::numeric_limits<decltype(event.sigev_code)>::max());
-    event.sigev_code = static_cast<decltype(event.sigev_code)>(kTimerPulseCode);
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) C API
-    event.sigev_value.sival_int = 0;
-    timer_id_ = ValueOrTerminate(os_resources_.timer->TimerCreate(CLOCK_MONOTONIC, &event), "Unable to create timer");
+void QnxDispatchEngine::InitServerThread() noexcept
+{
+    dispatch_t* dispatch_pointer = server_runner_.GetDispatchPointer();
 
     // it's actually the default settings for resmgr buffers; we are just making them explicit here
     // Ourselves, we are not limited by these values, as we use resmgr_msgget() and we don't use ctp.iov
@@ -172,43 +140,36 @@ QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_re
     resmgr_attr.nparts_max = 1U;
     resmgr_attr.msg_max_size = 2088U;
     IfUnexpectedTerminate(os_resources_.dispatch->resmgr_attach(
-                              dispatch_pointer_, &resmgr_attr, nullptr, _FTYPE_ANY, 0U, nullptr, nullptr, nullptr),
+                              dispatch_pointer, &resmgr_attr, nullptr, _FTYPE_ANY, 0U, nullptr, nullptr, nullptr),
                           "Unable to set up resource manager operations");
+}
 
-    // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-    context_pointer_ = ValueOrTerminate(os_resources_.dispatch->dispatch_context_alloc(dispatch_pointer_),
-                                        "Unable to allocate context pointer");
-
-    SetupResourceManagerCallbacks();
-
-    // Normally, during the application lifecycle initialization, LifeCycleManager blocks the SIGTERM on the main
-    // thread and creates a separate thread that catches all the SIGTERM signals coming to the process. The other
-    // threads created after that will inherit the sigmask of the main thread with SIGTERM blocked.
-    // However, LifeCycleManager starts using Logging before it blocks SIGTERM on the main thread. When this happens,
-    // Logging will initialize Message Passing, which will create the Message Passing background thread with a sigmask
-    // inherited without SIGTERM being blocked yet.
-    // Thus, we need to mask SIGTERM for this thread specifically, to let the LifeCycleManager desicated SIGTERM
-    // thread do its job.
-    sigset_t new_set;
-    sigset_t old_set;
-    // the signal functions below, used with the parameters below, can only return EOK
-    score::cpp::ignore = os_resources_.signal->SigEmptySet(new_set);
-    score::cpp::ignore = os_resources_.signal->AddTerminationSignal(new_set);
-    // NOLINTNEXTLINE(score-banned-function) by design of LifeCycleManager. Also see Ticket-101432
-    score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_BLOCK, new_set, old_set);
-    {
-        LogDebug(logger_, "QnxDispatchEngine thread-start ", this);
-        std::lock_guard acquire(thread_mutex_);  // postpone RunOnThread() till we assign thread_
-        thread_ = std::thread([this]() noexcept {
-            {
-                std::lock_guard release(thread_mutex_);  // guarantees that this->thread_ is already assigned
-            }
-            LogDebug(logger_, "QnxDispatchEngine thread-start-sync ", this);
-            RunOnThread();
-        });
-    }
-    // NOLINTNEXTLINE(score-banned-function) by design of LifeCycleManager. Also see Ticket-101432
-    score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_SETMASK, old_set);
+void QnxDispatchEngine::InitClientThread() noexcept
+{
+    dispatch_t* dispatch_pointer = client_runner_.GetDispatchPointer();
+    std::int32_t side_channel_coid = client_runner_.GetSideChannelCoid();
+    IfUnexpectedTerminate(
+        os_resources_.dispatch->pulse_attach(dispatch_pointer, 0, kTimerPulseCode, &TimerPulseCallback, this),
+        "Unable to attach timer pulse code");
+    IfUnexpectedTerminate(
+        os_resources_.dispatch->pulse_attach(dispatch_pointer, 0, kSelectPulseCode, &SelectPulseCallback, this),
+        "Unable to attach select pulse code");
+    IfUnexpectedTerminate(
+        os_resources_.dispatch->pulse_attach(dispatch_pointer, 0, _PULSE_CODE_COIDDEATH, &CoidDeathPulseCallback, this),
+        "Unable to attach CoidDeath pulse code");
+    struct sigevent event{};
+    // Suppress "AUTOSAR C++14 M5-0-21" rule finding: "Bitwise operators shall only be applied to operands of unsigned
+    // underlying type.". 'SIGEV_PULSE' is a macro of QNX API, which defines bitwise operation of two flags. This macro
+    // cannot be modified.
+    // coverity[autosar_cpp14_m5_0_21_violation]
+    event.sigev_notify = static_cast<decltype(event.sigev_notify)>(SIGEV_PULSE);
+    event.sigev_coid = side_channel_coid;
+    event.sigev_priority = SIGEV_PULSE_PRIO_INHERIT;
+    static_assert(kTimerPulseCode <= std::numeric_limits<decltype(event.sigev_code)>::max());
+    event.sigev_code = static_cast<decltype(event.sigev_code)>(kTimerPulseCode);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) C API
+    event.sigev_value.sival_int = 0;
+    timer_id_ = ValueOrTerminate(os_resources_.timer->TimerCreate(CLOCK_MONOTONIC, &event), "Unable to create timer");
 }
 
 // Note 'C++14 A8-4-10':
@@ -235,25 +196,6 @@ int QnxDispatchEngine::TimerPulseCallback(message_context_t* /*ctp*/,
 // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
-int QnxDispatchEngine::EventPulseCallback(message_context_t* ctp,
-                                          int /*code*/,
-                                          unsigned /*flags*/,
-                                          // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
-                                          void* handle) noexcept
-{
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) C API
-    const auto pulse_event = static_cast<std::int32_t>(ctp->msg->pulse.value.sival_int);
-    // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall not be
-    // converted to an object with pointer type".
-    // QNX API
-    // coverity[autosar_cpp14_m5_2_8_violation]
-    static_cast<QnxDispatchEngine*>(handle)->ProcessPulseEvent(pulse_event);
-    return 0;
-}
-
-// coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
-// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
-// coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
 int QnxDispatchEngine::SelectPulseCallback(message_context_t* ctp,
                                            int /*code*/,
                                            unsigned /*flags*/,
@@ -265,7 +207,6 @@ int QnxDispatchEngine::SelectPulseCallback(message_context_t* ctp,
     // QNX API
     // coverity[autosar_cpp14_m5_2_8_violation]
     QnxDispatchEngine& self = *static_cast<QnxDispatchEngine*>(handle);
-    LogDebug(self.logger_, "QnxDispatchEngine::SelectPulseCallback ", &self);
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) C API
     const auto pulse_value = reinterpret_cast<std::uintptr_t>(ctp->msg->pulse.value.sival_ptr);
@@ -273,20 +214,17 @@ int QnxDispatchEngine::SelectPulseCallback(message_context_t* ctp,
     if ((value.index >= self.poll_endpoints_.size()) || (self.poll_endpoints_[value.index].nonce != value.nonce) ||
         (self.poll_endpoints_[value.index].endpoint == nullptr))
     {
-        LogDebug(self.logger_, "QnxDispatchEngine::SelectPulseCallback pulse obsolete ", &self);
         // invalid or obsolete pulse; return without doing anything
         return 0;
     }
     if (value.signal == kSignalPing)
     {
-        LogDebug(self.logger_, "=== Pulse: ping ", &self);
         self.poll_endpoints_[value.index].endpoint->ping();
     }
     else
     {
         // event though it comes from IPC, we can only receive signals that we have registered locally,
         // and we only register kSignalPing and kSignalNewData. So, it's kSignalNewData here.
-        LogDebug(self.logger_, "=== Pulse: input ", &self);
         self.poll_endpoints_[value.index].endpoint->input();
     }
     return 0;
@@ -334,18 +272,11 @@ int QnxDispatchEngine::CoidDeathPulseCallback(message_context_t* ctp,
 
 QnxDispatchEngine::~QnxDispatchEngine() noexcept
 {
-    SendPulseEvent(PulseEvent::QUIT);
-    thread_.join();
-    score::cpp::ignore = os_resources_.timer->TimerDestroy(timer_id_);
-    score::cpp::ignore = os_resources_.channel->ConnectDetach(side_channel_coid_);
-    score::cpp::ignore = os_resources_.dispatch->pulse_detach(dispatch_pointer_, _PULSE_CODE_COIDDEATH, 0);
-    score::cpp::ignore = os_resources_.dispatch->pulse_detach(dispatch_pointer_, kSelectPulseCode, 0);
-    score::cpp::ignore = os_resources_.dispatch->pulse_detach(dispatch_pointer_, kEventPulseCode, 0);
-    score::cpp::ignore = os_resources_.dispatch->pulse_detach(dispatch_pointer_, kTimerPulseCode, 0);
-    // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-    score::cpp::ignore = os_resources_.dispatch->dispatch_destroy(dispatch_pointer_);
-    // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-    os_resources_.dispatch->dispatch_context_free(context_pointer_);
+    if (client_runner_.GetDispatchPointer() != nullptr)
+    {
+        // client was initialized, which means timer was created
+        score::cpp::ignore = os_resources_.timer->TimerDestroy(timer_id_);
+    }
 }
 
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
@@ -419,7 +350,8 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
         value.nonce = nonce;
         const uintptr_t pulse_value = PackSelectPulseValue(value);
 
-        SIGEV_PULSE_INIT(event_ptr, side_channel_coid_, SIGEV_PULSE_PRIO_INHERIT, kSelectPulseCode, pulse_value);
+        std::int32_t side_channel_coid = client_runner_.GetSideChannelCoid();
+        SIGEV_PULSE_INIT(event_ptr, side_channel_coid, SIGEV_PULSE_PRIO_INHERIT, kSelectPulseCode, pulse_value);
 
         // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
         const auto register_expected = os_resources_.channel->MsgRegisterEvent(event_ptr, endpoint.fd);
@@ -478,7 +410,8 @@ void QnxDispatchEngine::UnselectEndpoint(PosixEndpointEntry& endpoint) noexcept
             value.nonce = nonce;
             const uintptr_t pulse_value = PackSelectPulseValue(value);
 
-            SIGEV_PULSE_INIT(&event, side_channel_coid_, SIGEV_PULSE_PRIO_INHERIT, kSelectPulseCode, pulse_value);
+            std::int32_t side_channel_coid = client_runner_.GetSideChannelCoid();
+            SIGEV_PULSE_INIT(&event, side_channel_coid, SIGEV_PULSE_PRIO_INHERIT, kSelectPulseCode, pulse_value);
             // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
             score::cpp::ignore = os_resources_.channel->MsgUnregisterEvent(&event);
         }
@@ -497,7 +430,7 @@ void QnxDispatchEngine::EnqueueCommand(CommandQueueEntry& entry,
                                        const void* const owner) noexcept
 {
     timer_queue_.RegisterTimedEntry(entry, until, std::move(callback), owner);
-    SendPulseEvent(PulseEvent::TIMER);
+    WakeUpTimerQueue();
 }
 
 void QnxDispatchEngine::CleanUpOwner(const void* const owner) noexcept
@@ -512,7 +445,7 @@ void QnxDispatchEngine::CleanUpOwner(const void* const owner) noexcept
     }
     else
     {
-        detail::NonAllocatingFuture future(thread_mutex_, thread_condition_);
+        detail::NonAllocatingFuture future(client_runner_.GetMutex(), cleanup_ready_condition_);
         detail::TimedCommandQueue::Entry cleanup_command;
         timer_queue_.RegisterImmediateEntry(
             cleanup_command,
@@ -521,7 +454,7 @@ void QnxDispatchEngine::CleanUpOwner(const void* const owner) noexcept
                 future.MarkReady();
             },
             owner);
-        SendPulseEvent(PulseEvent::TIMER);
+        WakeUpTimerQueue();
         future.Wait();
     }
 }
@@ -578,23 +511,11 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Qnx
     return score::cpp::span<const std::uint8_t>{&posix_receive_buffer_[1], span_size};
 }
 
-void QnxDispatchEngine::SendPulseEvent(const PulseEvent pulse_event) noexcept
+void QnxDispatchEngine::WakeUpTimerQueue() noexcept
 {
+    std::int32_t side_channel_coid = client_runner_.GetSideChannelCoid();
     // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-    score::cpp::ignore = os_resources_.channel->MsgSendPulse(
-        side_channel_coid_, -1, kEventPulseCode, static_cast<std::int32_t>(pulse_event));
-}
-
-void QnxDispatchEngine::ProcessPulseEvent(const std::int32_t pulse_event) noexcept
-{
-    if (pulse_event == score::cpp::to_underlying(PulseEvent::TIMER))
-    {
-        ProcessTimerQueue();
-    }
-    else
-    {
-        quit_flag_ = true;
-    }
+    score::cpp::ignore = os_resources_.channel->MsgSendPulse(side_channel_coid, -1, kTimerPulseCode, 0);
 }
 
 void QnxDispatchEngine::ProcessCleanup(const void* const owner) noexcept
@@ -608,19 +529,6 @@ void QnxDispatchEngine::ProcessCleanup(const void* const owner) noexcept
         });
 
     timer_queue_.CleanUpOwner(owner);
-}
-
-void QnxDispatchEngine::RunOnThread() noexcept
-{
-    while (!quit_flag_)
-    {
-        // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-        if (os_resources_.dispatch->dispatch_block(context_pointer_))
-        {
-            // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-            score::cpp::ignore = os_resources_.dispatch->dispatch_handler(context_pointer_);
-        }
-    }
 }
 
 void QnxDispatchEngine::ProcessTimerQueue() noexcept
@@ -663,9 +571,9 @@ score::cpp::expected_blank<score::os::Error> QnxDispatchEngine::StartServer(Reso
                                                                             const QnxResourcePath& path) noexcept
 {
     // QNX defect PR# 2561573: resmgr_attach/message_attach calls are not thread-safe for the same dispatch_pointer
-    std::lock_guard guard(attach_mutex_);
+    std::lock_guard guard(server_runner_.GetMutex());
 
-    const auto id_expected = os_resources_.dispatch->resmgr_attach(dispatch_pointer_,
+    const auto id_expected = os_resources_.dispatch->resmgr_attach(server_runner_.GetDispatchPointer(),
                                                                    nullptr,
                                                                    path.c_str(),
                                                                    _FTYPE_ANY,
@@ -699,9 +607,9 @@ void QnxDispatchEngine::StopServer(ResourceManagerServer& server) noexcept
     if (server.resmgr_id_ != -1)
     {
         // QNX defect PR# 2561573: resmgr_attach/message_attach calls are not thread-safe for the same dispatch_pointer
-        std::lock_guard guard(attach_mutex_);
+        std::lock_guard guard(server_runner_.GetMutex());
         score::cpp::ignore = os_resources_.dispatch->resmgr_detach(
-            dispatch_pointer_, server.resmgr_id_, static_cast<std::uint32_t>(_RESMGR_DETACH_CLOSE));
+            server_runner_.GetDispatchPointer(), server.resmgr_id_, static_cast<std::uint32_t>(_RESMGR_DETACH_CLOSE));
         server.resmgr_id_ = -1;
     }
 }

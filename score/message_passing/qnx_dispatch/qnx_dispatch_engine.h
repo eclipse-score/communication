@@ -19,6 +19,7 @@
 #include <score/vector.hpp>
 
 #include "score/message_passing/i_shared_resource_engine.h"
+#include "score/message_passing/qnx_dispatch/dispatch_thread_runner.h"
 #include "score/message_passing/qnx_dispatch/qnx_resource_path.h"
 #include "score/message_passing/timed_command_queue.h"
 #include "score/os/fcntl.h"
@@ -244,8 +245,13 @@ class QnxDispatchEngine final : public ISharedResourceEngine
 
     bool IsOnCallbackThread() const noexcept override
     {
-        return std::this_thread::get_id() == thread_.get_id();
+        const std::thread::id id = std::this_thread::get_id();
+        return client_runner_.IsMyThread(id) || server_runner_.IsMyThread(id);
     }
+
+    // public, used in testing
+    constexpr static std::int32_t kTimerPulseCode = detail::DispatchThreadRunner::kQuitPulseCode + 1;
+    constexpr static std::int32_t kSelectPulseCode = kTimerPulseCode + 1;
 
   private:
     enum class PulseEvent : std::int32_t
@@ -254,13 +260,13 @@ class QnxDispatchEngine final : public ISharedResourceEngine
         TIMER
     };
 
-    void SendPulseEvent(const PulseEvent pulse_event) noexcept;
-    void ProcessPulseEvent(const std::int32_t pulse_event) noexcept;
+    void InitServerThread() noexcept;
+    void InitClientThread() noexcept;
+
+    void WakeUpTimerQueue() noexcept;
     void ProcessCleanup(const void* const owner) noexcept;
-    void RunOnThread() noexcept;
 
     static int TimerPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
-    static int EventPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
     static int SelectPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
     static int CoidDeathPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
 
@@ -316,11 +322,10 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     OsResources os_resources_;
     LoggingCallback logger_;
 
-    bool quit_flag_;
-    // NOLINTNEXTLINE(score-banned-type) TODO: wait for new clarification of CB #26380215 from QNX
-    std::thread thread_;
-    std::mutex thread_mutex_;
-    std::condition_variable thread_condition_;
+    detail::DispatchThreadRunner server_runner_;
+    detail::DispatchThreadRunner client_runner_;
+
+    std::condition_variable cleanup_ready_condition_;
 
     struct PollEndpoint
     {
@@ -334,11 +339,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     score::containers::intrusive_list<PosixEndpointEntry> posix_endpoint_list_;
     score::cpp::pmr::vector<std::uint8_t> posix_receive_buffer_;
 
-    dispatch_t* dispatch_pointer_;
-    dispatch_context_t* context_pointer_;
-    std::int32_t side_channel_coid_;
     timer_t timer_id_;
-    std::mutex attach_mutex_;
 
     resmgr_connect_funcs_t connect_funcs_;
     resmgr_io_funcs_t io_funcs_;

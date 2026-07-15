@@ -83,80 +83,45 @@ class QnxDispatchEngineTestFixture : public ResourceManagerFixtureBase
         EXPECT_CALL(*server_, ProcessConnect)
             .Times(1)
             .WillOnce([this](resmgr_context_t* const ctp, io_open_t* const msg) {
-                EXPECT_TRUE(helper_.HelperIsLocked());
+                EXPECT_TRUE(server_helper_.HelperIsLocked());
                 score::cpp::ignore = engine_->AttachConnection(ctp, msg, *server_, connection_);
                 return EOK;
             });
 
-        helper_.HelperInsertIoOpen(score::cpp::blank{});
-        EXPECT_EQ(helper_.promises_.open.get_future().get(), EOK);
-        helper_.promises_.open = std::promise<std::int32_t>();  // reset
-        EXPECT_FALSE(helper_.HelperIsLocked());
+        server_helper_.HelperInsertIoOpen(score::cpp::blank{});
+        EXPECT_EQ(server_helper_.promises_.open.get_future().get(), EOK);
+        server_helper_.promises_.open = std::promise<std::int32_t>();  // reset
+        EXPECT_FALSE(server_helper_.HelperIsLocked());
     }
 
     std::optional<StrictMock<ResourceManagerServerMock>> server_;
     StrictMock<ResourceManagerConnectionMock> connection_;
+    ResourceManagerMockHelper& server_helper_{helpers_[kServerIndex]};
 };
 
 using QnxDispatchEngineDeathTest = QnxDispatchEngineTestFixture;
 
-TEST_F(QnxDispatchEngineDeathTest, EngineCreation_CreateChannel)
-{
-    // Times(AnyNumber()) to satisfy death test logic
-    EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(AnyNumber()).WillOnce(Return(kFakeOsError));
-
-    std::optional<QnxDispatchEngine> engine;
-    EXPECT_DEATH(engine.emplace(score::cpp::pmr::get_default_resource(), MoveMockOsResources()),
-                 "Unable to allocate dispatch handle");
-}
-
 TEST_F(QnxDispatchEngineDeathTest, EngineCreation_AttachTimerPulse)
 {
-    // Times(AnyNumber()) to satisfy death test logic
-    EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(AnyNumber()).WillOnce(Return(kFakeDispatchPtr));
-    EXPECT_CALL(*dispatch_, pulse_attach).Times(AnyNumber()).WillOnce(Return(kFakeOsError));
+    ExpectEngineInConstructionForDeathTests();
+
+    EXPECT_CALL(*dispatch_, pulse_attach(_, _, QnxDispatchEngine::kTimerPulseCode, _, _))
+        .Times(AnyNumber())
+        .WillOnce(Return(kFakeOsError));
 
     std::optional<QnxDispatchEngine> engine;
     EXPECT_DEATH(engine.emplace(score::cpp::pmr::get_default_resource(), MoveMockOsResources()),
                  "Unable to attach timer pulse code");
 }
 
-TEST_F(QnxDispatchEngineDeathTest, EngineCreation_AttachEventPulse)
-{
-    // Times(AnyNumber()) to satisfy death test logic
-    EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(AnyNumber()).WillOnce(Return(kFakeDispatchPtr));
-    EXPECT_CALL(*dispatch_, pulse_attach)
-        .Times(AnyNumber())
-        .WillOnce(Invoke(&helper_, &ResourceManagerMockHelper::pulse_attach))
-        .WillOnce(Return(kFakeOsError));
-
-    std::optional<QnxDispatchEngine> engine;
-    EXPECT_DEATH(engine.emplace(score::cpp::pmr::get_default_resource(), MoveMockOsResources()),
-                 "Unable to attach event pulse code");
-}
-
-TEST_F(QnxDispatchEngineDeathTest, EngineCreation_ConnectSideChannel)
-{
-    // Times(AnyNumber()) to satisfy death test logic
-    EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(AnyNumber()).WillOnce(Return(kFakeDispatchPtr));
-    EXPECT_CALL(*dispatch_, pulse_attach)
-        .Times(AnyNumber())
-        .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::pulse_attach));
-    EXPECT_CALL(*dispatch_, message_connect).Times(AnyNumber()).WillOnce(Return(kFakeOsError));
-
-    std::optional<QnxDispatchEngine> engine;
-    EXPECT_DEATH(engine.emplace(score::cpp::pmr::get_default_resource(), MoveMockOsResources()),
-                 "Unable to create side channel");
-}
-
 TEST_F(QnxDispatchEngineDeathTest, EngineCreation_CreateTimer)
 {
-    // Times(AnyNumber()) to satisfy death test logic
-    EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(AnyNumber()).WillOnce(Return(kFakeDispatchPtr));
-    EXPECT_CALL(*dispatch_, pulse_attach)
-        .Times(AnyNumber())
-        .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::pulse_attach));
-    EXPECT_CALL(*dispatch_, message_connect).Times(AnyNumber()).WillOnce(Return(kFakeCoid));
+    ExpectEngineInConstructionForDeathTests();
+
+    EXPECT_CALL(*dispatch_, pulse_attach(_, _, QnxDispatchEngine::kTimerPulseCode, _, _)).Times(AnyNumber());
+    EXPECT_CALL(*dispatch_, pulse_attach(_, _, QnxDispatchEngine::kSelectPulseCode, _, _)).Times(AnyNumber());
+    EXPECT_CALL(*dispatch_, pulse_attach(_, _, _PULSE_CODE_COIDDEATH, _, _)).Times(AnyNumber());
+
     EXPECT_CALL(*timer_, TimerCreate).Times(AnyNumber()).WillOnce(Return(kFakeOsError));
 
     std::optional<QnxDispatchEngine> engine;
@@ -166,13 +131,13 @@ TEST_F(QnxDispatchEngineDeathTest, EngineCreation_CreateTimer)
 
 TEST_F(QnxDispatchEngineDeathTest, EngineCreation_SetUpResourceManager)
 {
-    // Times(AnyNumber()) to satisfy death test logic
-    EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(AnyNumber()).WillOnce(Return(kFakeDispatchPtr));
-    EXPECT_CALL(*dispatch_, pulse_attach)
-        .Times(AnyNumber())
-        .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::pulse_attach));
-    EXPECT_CALL(*dispatch_, message_connect).Times(AnyNumber()).WillOnce(Return(kFakeCoid));
-    EXPECT_CALL(*timer_, TimerCreate).Times(AnyNumber()).WillOnce(Return(kFakeTimerId));
+    ExpectEngineInConstructionForDeathTests();
+
+    EXPECT_CALL(*dispatch_, pulse_attach(_, _, QnxDispatchEngine::kTimerPulseCode, _, _)).Times(AnyNumber());
+    EXPECT_CALL(*dispatch_, pulse_attach(_, _, QnxDispatchEngine::kSelectPulseCode, _, _)).Times(AnyNumber());
+    EXPECT_CALL(*dispatch_, pulse_attach(_, _, _PULSE_CODE_COIDDEATH, _, _)).Times(AnyNumber());
+    EXPECT_CALL(*timer_, TimerCreate).Times(AnyNumber());
+
     EXPECT_CALL(*dispatch_, resmgr_attach(_, _, IsNull(), _, _, _, _, _))
         .Times(AnyNumber())
         .WillOnce(Return(kFakeOsError));
@@ -182,33 +147,13 @@ TEST_F(QnxDispatchEngineDeathTest, EngineCreation_SetUpResourceManager)
                  "Unable to set up resource manager operations");
 }
 
-TEST_F(QnxDispatchEngineDeathTest, EngineCreation_AllocateContext)
-{
-    // Times(AnyNumber()) to satisfy death test logic
-    EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(AnyNumber()).WillOnce(Return(kFakeDispatchPtr));
-    EXPECT_CALL(*dispatch_, pulse_attach)
-        .Times(AnyNumber())
-        .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::pulse_attach));
-    EXPECT_CALL(*dispatch_, message_connect).Times(AnyNumber()).WillOnce(Return(kFakeCoid));
-    EXPECT_CALL(*timer_, TimerCreate).Times(AnyNumber()).WillOnce(Return(kFakeTimerId));
-    EXPECT_CALL(*dispatch_, resmgr_attach(_, _, IsNull(), _, _, _, _, _))
-        .Times(AnyNumber())
-        .WillOnce(Return(kFakeResmgrEmptyId));
-    EXPECT_CALL(*dispatch_, dispatch_context_alloc).Times(AnyNumber()).WillOnce(Return(kFakeOsError));
-
-    std::optional<QnxDispatchEngine> engine;
-    EXPECT_DEATH(engine.emplace(score::cpp::pmr::get_default_resource(), MoveMockOsResources()),
-                 "Unable to allocate context pointer");
-}
-
 TEST_F(QnxDispatchEngineTestFixture, EngineCreationAndDestruction)
 {
     ExpectEngineConstructed();
-    ExpectEngineThreadRunning();
     QnxDispatchEngine engine(score::cpp::pmr::get_default_resource(), MoveMockOsResources());
 
     // Check that dispatch_block error does not break dispatch loop
-    helper_.HelperInsertDispatchBlockError(ENOMEM);
+    server_helper_.HelperInsertDispatchBlockError(ENOMEM);
 
     ExpectEngineDestructed();
 }
@@ -216,7 +161,6 @@ TEST_F(QnxDispatchEngineTestFixture, EngineCreationAndDestruction)
 TEST_F(QnxDispatchEngineDeathTest, PosixEndpoint_RegisterNotOnCallbackThread)
 {
     ExpectEngineConstructed();
-    ExpectEngineThreadRunning();
     QnxDispatchEngine engine(score::cpp::pmr::get_default_resource(), MoveMockOsResources());
 
     ISharedResourceEngine::PosixEndpointEntry posix_endpoint;
@@ -229,7 +173,6 @@ TEST_F(QnxDispatchEngineDeathTest, PosixEndpoint_RegisterNotOnCallbackThread)
 TEST_F(QnxDispatchEngineDeathTest, PosixEndpoint_UnregisterNotOnCallbackThread)
 {
     ExpectEngineConstructed();
-    ExpectEngineThreadRunning();
     QnxDispatchEngine engine(score::cpp::pmr::get_default_resource(), MoveMockOsResources());
 
     ISharedResourceEngine::PosixEndpointEntry posix_endpoint;
@@ -275,9 +218,9 @@ TEST_F(QnxDispatchEngineTestFixture, ServerOpenCheckFailure)
     WithEngineRunningAndServerAttached();
 
     ExpectConnectionOpen();
-    helper_.HelperInsertIoOpen(score::cpp::unexpected{ENOMEM});
-    EXPECT_EQ(helper_.promises_.open.get_future().get(), ENOMEM);
-    EXPECT_FALSE(helper_.HelperIsLocked());
+    server_helper_.HelperInsertIoOpen(score::cpp::unexpected{ENOMEM});
+    EXPECT_EQ(server_helper_.promises_.open.get_future().get(), ENOMEM);
+    EXPECT_FALSE(server_helper_.HelperIsLocked());
 }
 
 TEST_F(QnxDispatchEngineTestFixture, ServerOpenCheckSuccess)
@@ -286,13 +229,13 @@ TEST_F(QnxDispatchEngineTestFixture, ServerOpenCheckSuccess)
 
     ExpectConnectionOpen();
     EXPECT_CALL(*server_, ProcessConnect).Times(1).WillOnce([this](auto&&...) {
-        EXPECT_TRUE(helper_.HelperIsLocked());
+        EXPECT_TRUE(server_helper_.HelperIsLocked());
         return EOK;
     });
 
-    helper_.HelperInsertIoOpen(score::cpp::blank{});
-    EXPECT_EQ(helper_.promises_.open.get_future().get(), EOK);
-    EXPECT_FALSE(helper_.HelperIsLocked());
+    server_helper_.HelperInsertIoOpen(score::cpp::blank{});
+    EXPECT_EQ(server_helper_.promises_.open.get_future().get(), EOK);
+    EXPECT_FALSE(server_helper_.HelperIsLocked());
 }
 
 TEST_F(QnxDispatchEngineTestFixture, ServerOpenCheckSuccessConnectionAttached)
@@ -307,14 +250,14 @@ TEST_F(QnxDispatchEngineTestFixture, ServerOpenCheckSuccessConnectionAttached)
     EXPECT_CALL(*server_, ProcessConnect)
         .Times(1)
         .WillOnce([this, &connection](resmgr_context_t* const ctp, io_open_t* const msg) {
-            EXPECT_TRUE(helper_.HelperIsLocked());
+            EXPECT_TRUE(server_helper_.HelperIsLocked());
             score::cpp::ignore = engine_->AttachConnection(ctp, msg, *server_, connection);
             return EOK;
         });
 
-    helper_.HelperInsertIoOpen(score::cpp::blank{});
-    EXPECT_EQ(helper_.promises_.open.get_future().get(), EOK);
-    EXPECT_FALSE(helper_.HelperIsLocked());
+    server_helper_.HelperInsertIoOpen(score::cpp::blank{});
+    EXPECT_EQ(server_helper_.promises_.open.get_future().get(), EOK);
+    EXPECT_FALSE(server_helper_.HelperIsLocked());
 }
 
 TEST_F(QnxDispatchEngineTestFixture, ServerWriteChecksFailure)
@@ -325,30 +268,30 @@ TEST_F(QnxDispatchEngineTestFixture, ServerWriteChecksFailure)
 
     EXPECT_CALL(*iofunc_, iofunc_write_verify)
         .Times(AnyNumber())
-        .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_write_verify));
+        .WillRepeatedly(Invoke(&server_helper_, &ResourceManagerMockHelper::iofunc_write_verify));
 
     ::testing::Test::RecordProperty(
         "when", "write requests arrive with invalid xtype, zero nbytes, or size exceeding protocol limit");
     // iofunc_write_verify unexpected
-    helper_.HelperInsertIoWrite(score::cpp::unexpected{ENOMEM});
+    server_helper_.HelperInsertIoWrite(score::cpp::unexpected{ENOMEM});
     ::testing::Test::RecordProperty(
         "then", "engine rejects each with ``ENOMEM``, ``ENOSYS``, ``EBADMSG``, or ``EMSGSIZE`` respectively");
-    EXPECT_EQ(helper_.promises_.write.get_future().get(), ENOMEM);
-    helper_.promises_.write = std::promise<std::int32_t>();  // reset
+    EXPECT_EQ(server_helper_.promises_.write.get_future().get(), ENOMEM);
+    server_helper_.promises_.write = std::promise<std::int32_t>();  // reset
 
     // unsupported write request type
-    helper_.HelperInsertIoWrite(score::cpp::blank{}, _IO_XTYPE_READDIR);
-    EXPECT_EQ(helper_.promises_.write.get_future().get(), ENOSYS);
-    helper_.promises_.write = std::promise<std::int32_t>();  // reset
+    server_helper_.HelperInsertIoWrite(score::cpp::blank{}, _IO_XTYPE_READDIR);
+    EXPECT_EQ(server_helper_.promises_.write.get_future().get(), ENOSYS);
+    server_helper_.promises_.write = std::promise<std::int32_t>();  // reset
 
     // too small write request size
-    helper_.HelperInsertIoWrite(score::cpp::blank{}, _IO_XTYPE_NONE, 0UL, 4UL);
-    EXPECT_EQ(helper_.promises_.write.get_future().get(), EBADMSG);
-    helper_.promises_.write = std::promise<std::int32_t>();  // reset
+    server_helper_.HelperInsertIoWrite(score::cpp::blank{}, _IO_XTYPE_NONE, 0UL, 4UL);
+    EXPECT_EQ(server_helper_.promises_.write.get_future().get(), EBADMSG);
+    server_helper_.promises_.write = std::promise<std::int32_t>();  // reset
 
     // too large write request size
-    helper_.HelperInsertIoWrite(score::cpp::blank{}, _IO_XTYPE_NONE, 8UL, 4UL);
-    EXPECT_EQ(helper_.promises_.write.get_future().get(), EMSGSIZE);
+    server_helper_.HelperInsertIoWrite(score::cpp::blank{}, _IO_XTYPE_NONE, 8UL, 4UL);
+    EXPECT_EQ(server_helper_.promises_.write.get_future().get(), EMSGSIZE);
 }
 
 TEST_F(QnxDispatchEngineTestFixture, ServerWriteChecksSuccess)
@@ -357,7 +300,7 @@ TEST_F(QnxDispatchEngineTestFixture, ServerWriteChecksSuccess)
 
     EXPECT_CALL(*iofunc_, iofunc_write_verify)
         .Times(AnyNumber())
-        .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_write_verify));
+        .WillRepeatedly(Invoke(&server_helper_, &ResourceManagerMockHelper::iofunc_write_verify));
 
     EXPECT_CALL(connection_, ProcessInput)
         .Times(1)
@@ -367,8 +310,8 @@ TEST_F(QnxDispatchEngineTestFixture, ServerWriteChecksSuccess)
             return EOK;
         });
 
-    helper_.HelperInsertIoWrite(score::cpp::blank{}, _IO_XTYPE_NONE, 4UL, 4UL);
-    EXPECT_EQ(helper_.promises_.write.get_future().get(), EOK);
+    server_helper_.HelperInsertIoWrite(score::cpp::blank{}, _IO_XTYPE_NONE, 4UL, 4UL);
+    EXPECT_EQ(server_helper_.promises_.write.get_future().get(), EOK);
 }
 
 TEST_F(QnxDispatchEngineTestFixture, ServerReadChecksFailure)
@@ -377,21 +320,21 @@ TEST_F(QnxDispatchEngineTestFixture, ServerReadChecksFailure)
 
     EXPECT_CALL(*iofunc_, iofunc_read_verify)
         .Times(AnyNumber())
-        .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_read_verify));
+        .WillRepeatedly(Invoke(&server_helper_, &ResourceManagerMockHelper::iofunc_read_verify));
 
     // iofunc_reaf_verify unexpected
-    helper_.HelperInsertIoRead(score::cpp::unexpected{ENOMEM});
-    EXPECT_EQ(helper_.promises_.read.get_future().get(), ENOMEM);
-    helper_.promises_.read = std::promise<std::int32_t>();  // reset
+    server_helper_.HelperInsertIoRead(score::cpp::unexpected{ENOMEM});
+    EXPECT_EQ(server_helper_.promises_.read.get_future().get(), ENOMEM);
+    server_helper_.promises_.read = std::promise<std::int32_t>();  // reset
 
     // unsupported read request type
-    helper_.HelperInsertIoRead(score::cpp::blank{}, _IO_XTYPE_READDIR);
-    EXPECT_EQ(helper_.promises_.read.get_future().get(), ENOSYS);
-    helper_.promises_.read = std::promise<std::int32_t>();  // reset
+    server_helper_.HelperInsertIoRead(score::cpp::blank{}, _IO_XTYPE_READDIR);
+    EXPECT_EQ(server_helper_.promises_.read.get_future().get(), ENOSYS);
+    server_helper_.promises_.read = std::promise<std::int32_t>();  // reset
 
     // too small read request size
-    helper_.HelperInsertIoRead(score::cpp::blank{}, _IO_XTYPE_NONE, 0UL);
-    EXPECT_EQ(helper_.promises_.read.get_future().get(), _RESMGR_NPARTS(0));
+    server_helper_.HelperInsertIoRead(score::cpp::blank{}, _IO_XTYPE_NONE, 0UL);
+    EXPECT_EQ(server_helper_.promises_.read.get_future().get(), _RESMGR_NPARTS(0));
 }
 
 TEST_F(QnxDispatchEngineTestFixture, ServerReadChecksSuccess)
@@ -400,14 +343,14 @@ TEST_F(QnxDispatchEngineTestFixture, ServerReadChecksSuccess)
 
     EXPECT_CALL(*iofunc_, iofunc_read_verify)
         .Times(AnyNumber())
-        .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_read_verify));
+        .WillRepeatedly(Invoke(&server_helper_, &ResourceManagerMockHelper::iofunc_read_verify));
 
     EXPECT_CALL(connection_, ProcessReadRequest).Times(1).WillOnce([](auto) noexcept {
         return _RESMGR_NPARTS(1);
     });
 
-    helper_.HelperInsertIoRead(score::cpp::blank{}, _IO_XTYPE_NONE, 4UL);
-    EXPECT_EQ(helper_.promises_.read.get_future().get(), _RESMGR_NPARTS(1));
+    server_helper_.HelperInsertIoRead(score::cpp::blank{}, _IO_XTYPE_NONE, 4UL);
+    EXPECT_EQ(server_helper_.promises_.read.get_future().get(), _RESMGR_NPARTS(1));
 }
 
 TEST_F(QnxDispatchEngineTestFixture, ServerIoMsgSuccessScenarios)
@@ -429,12 +372,12 @@ TEST_F(QnxDispatchEngineTestFixture, ServerIoMsgSuccessScenarios)
         EXPECT_CALL(connection_, HasSomethingToRead).WillOnce(Return(true));
         EXPECT_CALL(*channel_, MsgDeliverEvent).Times(1);
     }
-    helper_.HelperInsertIoMsg(kIomgrStickySelect);
-    EXPECT_EQ(helper_.promises_.msg.get_future().get(), EOK);
-    helper_.promises_.msg = std::promise<std::int32_t>();  // reset
+    server_helper_.HelperInsertIoMsg(kIomgrStickySelect);
+    EXPECT_EQ(server_helper_.promises_.msg.get_future().get(), EOK);
+    server_helper_.promises_.msg = std::promise<std::int32_t>();  // reset
 
-    helper_.HelperInsertIoMsg(kIomgrStickySelect);
-    EXPECT_EQ(helper_.promises_.msg.get_future().get(), EOK);
+    server_helper_.HelperInsertIoMsg(kIomgrStickySelect);
+    EXPECT_EQ(server_helper_.promises_.msg.get_future().get(), EOK);
 }
 
 TEST_F(QnxDispatchEngineTestFixture, ServerIoMsgFailureScenarios)
@@ -445,16 +388,16 @@ TEST_F(QnxDispatchEngineTestFixture, ServerIoMsgFailureScenarios)
         .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(EFAULT))))
         .WillOnce(Return(1U));
 
-    helper_.HelperInsertIoMsg(kIomgrInvalidCode);
-    EXPECT_EQ(helper_.promises_.msg.get_future().get(), ENOSYS);
-    helper_.promises_.msg = std::promise<std::int32_t>();  // reset
+    server_helper_.HelperInsertIoMsg(kIomgrInvalidCode);
+    EXPECT_EQ(server_helper_.promises_.msg.get_future().get(), ENOSYS);
+    server_helper_.promises_.msg = std::promise<std::int32_t>();  // reset
 
-    helper_.HelperInsertIoMsg(kIomgrStickySelect);
-    EXPECT_EQ(helper_.promises_.msg.get_future().get(), EFAULT);
-    helper_.promises_.msg = std::promise<std::int32_t>();  // reset
+    server_helper_.HelperInsertIoMsg(kIomgrStickySelect);
+    EXPECT_EQ(server_helper_.promises_.msg.get_future().get(), EFAULT);
+    server_helper_.promises_.msg = std::promise<std::int32_t>();  // reset
 
-    helper_.HelperInsertIoMsg(kIomgrStickySelect);
-    EXPECT_EQ(helper_.promises_.msg.get_future().get(), EBADMSG);
+    server_helper_.HelperInsertIoMsg(kIomgrStickySelect);
+    EXPECT_EQ(server_helper_.promises_.msg.get_future().get(), EBADMSG);
 }
 
 TEST_F(QnxDispatchEngineTestFixture, PosixEndpoint)
@@ -536,6 +479,8 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointCoidDeathPulse)
 {
     ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
     ::testing::Test::RecordProperty("given", "QNX dispatch engine running with a registered POSIX endpoint");
+    ResourceManagerMockHelper& client_helper = helpers_[kClientIndex];
+
     std::int32_t obsolete_counter{0};
     std::int32_t crash_counter{0};
     LoggingCallback logger = [&obsolete_counter, &crash_counter](LogSeverity severity, LogItems items) -> void {
@@ -588,26 +533,26 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointCoidDeathPulse)
 
     // death pulses for unregistered endpoints are ignored
     ::testing::Test::RecordProperty("when", "a death pulse arrives indicating the connected peer's coid is dead");
-    helper_.HelperInsertPulse(_PULSE_CODE_COIDDEATH, kTestCoid + 1);
-    helper_.promises_.pulse.get_future().wait();
+    client_helper.HelperInsertPulse(_PULSE_CODE_COIDDEATH, kTestCoid + 1);
+    client_helper.promises_.pulse.get_future().wait();
     EXPECT_EQ(obsolete_counter, 0);
     EXPECT_EQ(crash_counter, 0);
-    helper_.promises_.pulse = std::promise<void>();  // reset
+    client_helper.promises_.pulse = std::promise<void>();  // reset
 
     // death pulses for the connections existing for QNX kernel
     // (ConnectServerInfo returns the same coid) are considered obsolete
     // (connections are newer than pulses)
-    helper_.HelperInsertPulse(_PULSE_CODE_COIDDEATH, kTestCoid);
-    helper_.promises_.pulse.get_future().wait();
+    client_helper.HelperInsertPulse(_PULSE_CODE_COIDDEATH, kTestCoid);
+    client_helper.promises_.pulse.get_future().wait();
     EXPECT_EQ(obsolete_counter, 1);
     EXPECT_EQ(crash_counter, 0);
-    helper_.promises_.pulse = std::promise<void>();  // reset
+    client_helper.promises_.pulse = std::promise<void>();  // reset
 
     // death pulses for the connections not existing for QNX kernel
     // (ConnectServerInfo returns the "next" coid) are considered the result of server crash
     // and lead to input callback that would cause connection closure
-    helper_.HelperInsertPulse(_PULSE_CODE_COIDDEATH, kTestCoid);
-    helper_.promises_.pulse.get_future().wait();
+    client_helper.HelperInsertPulse(_PULSE_CODE_COIDDEATH, kTestCoid);
+    client_helper.promises_.pulse.get_future().wait();
     EXPECT_EQ(obsolete_counter, 1);
     EXPECT_EQ(crash_counter, 1);
 
