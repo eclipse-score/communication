@@ -103,20 +103,10 @@ def analyze_database(
                  reports_output_dir],
                 capture_output=True, text=True, env=env, check=False)
 
-            # Check if reports were generated successfully
-            if result.returncode == 0 and os.path.exists(reports_output_dir):
-                report_files = [f for f in os.listdir(reports_output_dir) if f.endswith('.md')]
-                if report_files:
-                    pass  # Reports successfully generated
-                else:
-                    print(f"⚠️  No .md reports generated in {reports_output_dir}")
-            else:
-                if result.stderr:
-                    print(f"⚠️  analysis_report warning: {result.stderr}")
-                else:
-                    print(f"⚠️  analysis_report exited with code {result.returncode}")
-        except Exception as e:
-            print(f"⚠️  Report generation exception: {e}")
+            if result.returncode != 0:
+                result.check_returncode()
+        except subprocess.CalledProcessError as e:
+            pass
 
 
 def main():
