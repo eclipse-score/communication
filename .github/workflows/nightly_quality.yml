@@ -182,9 +182,12 @@ jobs:
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/_quality/codeql"
           if [ -d /tmp/codeql_reports ]; then
-            find /tmp/codeql_reports -name '*.md' -type f | while read -r src; do
-              cp "$src" "${GITHUB_WORKSPACE}/_quality/codeql/"
-            done
+            # Handle both direct files and nested analysis_reports subdirectory
+            if [ -d /tmp/codeql_reports/analysis_reports ]; then
+              find /tmp/codeql_reports/analysis_reports -name '*.md' -type f -exec cp {} "${GITHUB_WORKSPACE}/_quality/codeql/" \;
+            else
+              find /tmp/codeql_reports -name '*.md' -type f -exec cp {} "${GITHUB_WORKSPACE}/_quality/codeql/" \;
+            fi
           fi
 
       # ------------------------------------------------------------------
