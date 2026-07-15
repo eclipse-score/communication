@@ -221,6 +221,11 @@ pub trait CommData: Reloc {
     const ID: &'static str;
 }
 
+// TODO: Below impls are for tuples of CommData types, allowing up to 4 arguments.
+// It can be extended to support more arguments if needed.
+// Current IDs are just placeholders and need to update according to unique IDs.
+// One suggestion if we are not going to use ID in FFI layer then we can remove it.
+// And if we are using then for method i would suggest to use method name as ID.
 impl CommData for () {
     const ID: &'static str = "()";
 }

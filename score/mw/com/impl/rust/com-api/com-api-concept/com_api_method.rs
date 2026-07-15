@@ -45,7 +45,7 @@ pub trait MethodArgs: CommData {}
 /// Implement MethodArgs for empty args (no arguments)
 impl MethodArgs for () {}
 
-/// Implement MethodArgs for tuples of CommData types, allowing up to 6 arguments.
+/// Implement MethodArgs for tuples of CommData types, allowing up to 4 arguments.
 impl<T: CommData> MethodArgs for (T,) {}
 impl<T1: CommData, T2: CommData> MethodArgs for (T1, T2) {}
 impl<T1: CommData, T2: CommData, T3: CommData> MethodArgs for (T1, T2, T3) {}

@@ -29,7 +29,7 @@ use com_api::{
     SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
 
-use com_api_gen::{Exhaust, Tire, VehicleInterface, VehicleMethodsInterface,};
+use com_api_gen::{Exhaust, Tire, VehicleInterface, VehicleMethodsInterface};
 
 #[derive(Parser)]
 struct Arguments {
@@ -129,8 +129,10 @@ impl<R: Runtime> VehicleMonitor<R> {
     }
 }
 
-
-fn create_consumer_method<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> VehicleMethodConsumer<R> {
+fn create_consumer_method<R: Runtime>(
+    runtime: &R,
+    service_id: InstanceSpecifier,
+) -> VehicleMethodConsumer<R> {
     let consumer_discovery =
         runtime.find_service::<VehicleMethodsInterface>(FindServiceSpecifier::Specific(service_id));
     let available_service_instances = consumer_discovery
