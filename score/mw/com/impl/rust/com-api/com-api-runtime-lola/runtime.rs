@@ -16,11 +16,12 @@ use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use crate::{
-    LolaConsumerDiscovery, LolaConsumerInfo, LolaProducerBuilder, LolaProviderInfo, Publisher,
-    SubscribableImpl,
+    LolaConsumerDiscovery, LolaConsumerInfo, LolaMethodCaller, LolaMethodHandler,
+    LolaProducerBuilder, LolaProviderInfo, Publisher, SubscribableImpl,
 };
 use com_api_concept::{
-    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime,
+    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, MethodArgs, Result,
+    Runtime,
 };
 
 use bridge_ffi_lola::LolaFFIBridge;
@@ -35,6 +36,10 @@ impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
     type Subscriber<T: CommData + Debug> = SubscribableImpl<T, B>;
     type ProducerBuilder<I: Interface> = LolaProducerBuilder<I, B>;
     type Publisher<T: CommData + Debug> = Publisher<T, B>;
+    type MethodCaller<Args: MethodArgs, Return: CommData + Debug> =
+        LolaMethodCaller<Args, Return, Self>;
+    type MethodHandler<Args: MethodArgs, Return: CommData + Debug> =
+        LolaMethodHandler<Args, Return, Self>;
     type ProviderInfo = LolaProviderInfo<B>;
     type ConsumerInfo = LolaConsumerInfo<B>;
 

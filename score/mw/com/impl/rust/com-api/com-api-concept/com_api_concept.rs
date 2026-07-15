@@ -48,6 +48,7 @@
 //! - Structures
 //! - Tuples
 
+use crate::com_api_method::*;
 use crate::error::*;
 use crate::Reloc;
 pub use com_api_concept_macros::CommData;
@@ -99,6 +100,16 @@ pub trait Runtime {
 
     /// `Publisher<T>` types for Publishes event data to subscribers
     type Publisher<T: CommData + Debug>: Publisher<T, Self>;
+
+    /// `MethodCaller<Args, Return>` types for calling methods on the proxy/consumer side
+    type MethodCaller<Args: MethodArgs, Return: CommData + Debug>: MethodCaller<Args, Return, Self>;
+
+    /// `MethodHandler<Args, Return>` types for handling method calls on the skeleton/producer side
+    type MethodHandler<Args: MethodArgs, Return: CommData + Debug>: MethodHandler<
+        Args,
+        Return,
+        Self,
+    >;
 
     /// `ProviderInfo` types for Configuration data for service producers instances
     type ProviderInfo: ProviderInfo + Send + Clone;
@@ -208,6 +219,26 @@ where
 /// prefix to ensure uniqueness.
 pub trait CommData: Reloc {
     const ID: &'static str;
+}
+
+impl CommData for () {
+    const ID: &'static str = "()";
+}
+
+impl<T1: CommData> CommData for (T1,) {
+    const ID: &'static str = "(T1,)";
+}
+
+impl<T1: CommData, T2: CommData> CommData for (T1, T2) {
+    const ID: &'static str = "(T1, T2)";
+}
+
+impl<T1: CommData, T2: CommData, T3: CommData> CommData for (T1, T2, T3) {
+    const ID: &'static str = "(T1, T2, T3)";
+}
+
+impl<T1: CommData, T2: CommData, T3: CommData, T4: CommData> CommData for (T1, T2, T3, T4) {
+    const ID: &'static str = "(T1, T2, T3, T4)";
 }
 
 /// Technology independent description of a service instance "location"
