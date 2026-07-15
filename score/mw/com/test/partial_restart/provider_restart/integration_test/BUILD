@@ -21,6 +21,7 @@ integration_test(
         "test_provider_restart_graceful_no_proxy.py",
     ],
     filesystem = "//score/mw/com/test/partial_restart/provider_restart:provider_restart-pkg",
+    service_discovery_daemon = True,
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
@@ -33,6 +34,7 @@ integration_test(
         "test_provider_restart_graceful.py",
     ],
     filesystem = "//score/mw/com/test/partial_restart/provider_restart:provider_restart-pkg",
+    service_discovery_daemon = True,
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
@@ -45,6 +47,7 @@ integration_test(
         "test_provider_restart_kill_no_proxy.py",
     ],
     filesystem = "//score/mw/com/test/partial_restart/provider_restart:provider_restart-pkg",
+    service_discovery_daemon = True,
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
@@ -57,6 +60,7 @@ integration_test(
         "test_provider_restart_kill.py",
     ],
     filesystem = "//score/mw/com/test/partial_restart/provider_restart:provider_restart-pkg",
+    service_discovery_daemon = True,
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )

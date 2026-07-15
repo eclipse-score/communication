@@ -21,7 +21,17 @@ def shared_memory_storage(target, mode, **kwargs):
     )
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_shared_memory_storage(target):
     """Test shared memory storage functionality with sender and receiver."""
-    with shared_memory_storage(target, "send"), shared_memory_storage(target, "recv", wait_timeout=15):
+    with service_discovery_daemon(target), shared_memory_storage(target, "send"), shared_memory_storage(target, "recv", wait_timeout=15):
         pass

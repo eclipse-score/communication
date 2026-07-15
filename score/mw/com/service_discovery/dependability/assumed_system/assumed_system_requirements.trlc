@@ -1,0 +1,36 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package ServiceDiscovery
+
+import ScoreReq
+
+ScoreReq.AssumedSystemReq ServiceDiscoveryTransportAvailable {
+    description = "The system shall provide process-local IPC transport suitable for communication with the service discovery daemon."
+    rationale = "Service discovery relies on message passing transport and does not access the network stack under QNX."
+    safety = ScoreReq.Asil.B
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ProcessIdentityProvidedByOS {
+    description = "The operating system shall provide process identity data (UID and PID) for each daemon session."
+    rationale = "The daemon validates ownership and prevents spoofed unregister operations based on OS-provided identity."
+    safety = ScoreReq.Asil.B
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq MonotonicTimeSourceAvailable {
+    description = "The system shall provide a monotonic time source for lease and liveness supervision."
+    rationale = "Lease-based stale entry cleanup requires a monotonic notion of time."
+    safety = ScoreReq.Asil.B
+    version = 1
+}

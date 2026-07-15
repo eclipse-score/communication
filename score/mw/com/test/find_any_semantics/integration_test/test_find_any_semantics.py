@@ -13,6 +13,23 @@
 
 """Integration tests for find any semantics service discovery."""
 
+from contextlib import contextmanager
+
+
+def service_discovery_daemon(target, **kwargs):
+    del kwargs
+
+    @contextmanager
+    def _service_discovery_daemon():
+        daemon_process = target.execute_async(
+            "bin/service_discovery_daemon_app",
+            args=[],
+            cwd="/opt/ServiceDiscoveryDaemonApp",
+        )
+        yield daemon_process
+
+    return _service_discovery_daemon()
+
 
 def client(target, **kwargs):
     args = ["--num-retries", "20", "--backoff-time", "50"]
@@ -26,6 +43,6 @@ def service(target, **kwargs):
 
 def test_find_any_semantics(target):
     """Test service discovery with FindService (any semantics)."""
-    with service(target):
+    with service_discovery_daemon(target), service(target):
         with client(target):
             pass

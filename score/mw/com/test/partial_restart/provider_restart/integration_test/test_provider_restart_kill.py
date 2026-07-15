@@ -19,8 +19,6 @@ from provider_restart_test_fixture import partial_restart_provider
 NUMBER_RESTART_CYCLES = 3
 CREATE_PROXY = 1
 KILL_PROVIDER = 1
-
-
 def test_provider_restart_kill(target):
     """Test provider restart with kill (SIGKILL) signal."""
     with partial_restart_provider(target, NUMBER_RESTART_CYCLES, CREATE_PROXY, KILL_PROVIDER):

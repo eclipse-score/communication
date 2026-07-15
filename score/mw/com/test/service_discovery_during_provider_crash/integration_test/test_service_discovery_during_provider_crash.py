@@ -29,7 +29,17 @@ def controller_process(target, number_restart_cycles, **kwargs):
     )
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_service_discovery_during_provider_crash(target):
     """Test service discovery behavior when provider crashes and restarts."""
-    with controller_process(target, NUMBER_RESTART_CYCLES):
+    with service_discovery_daemon(target), controller_process(target, NUMBER_RESTART_CYCLES):
         pass

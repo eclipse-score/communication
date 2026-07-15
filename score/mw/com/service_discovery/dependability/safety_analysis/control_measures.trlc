@@ -1,0 +1,43 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package ServiceDiscovery
+
+import ScoreReq
+
+ScoreReq.ControlMeasure IntegrityClaimValidation {
+    description = "The daemon validates each registration and rejects integrity escalation attempts."
+    safety = ScoreReq.Asil.B
+    mitigates = "ServiceDiscovery.RegistrationIntegrityEscalation"
+    version = 1
+}
+
+ScoreReq.ControlMeasure LivenessSupervisionCleanup {
+    description = "The daemon removes stale registrations based on liveness supervision policy."
+    safety = ScoreReq.Asil.B
+    mitigates = "ServiceDiscovery.StaleRegistryEntry"
+    version = 1
+}
+
+ScoreReq.ControlMeasure NotificationFanoutValidation {
+    description = "The daemon validates subscriber state before dispatching asynchronous availability notifications."
+    safety = ScoreReq.Asil.B
+    mitigates = "ServiceDiscovery.MissedServiceDiscoveryNotification"
+    version = 1
+}
+
+ScoreReq.ControlMeasure DisconnectRemovesSubscriptions {
+    description = "The daemon removes all subscriptions owned by a disconnected client session."
+    safety = ScoreReq.Asil.B
+    mitigates = "ServiceDiscovery.StaleSubscriptionAfterDisconnect"
+    version = 1
+}

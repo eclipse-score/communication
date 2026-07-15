@@ -19,6 +19,24 @@ def consumer_and_provider(target, **kwargs):
     )
 
 
+from contextlib import contextmanager
+
+
+def service_discovery_daemon(target, **kwargs):
+    del kwargs
+
+    @contextmanager
+    def _service_discovery_daemon():
+        daemon_process = target.execute_async(
+            "bin/service_discovery_daemon_app",
+            args=[],
+            cwd="/opt/ServiceDiscoveryDaemonApp",
+        )
+        yield daemon_process
+
+    return _service_discovery_daemon()
+
+
 def test_basic_acceptance_same_process_test(target):
     """Test method call functionality between provider and consumer in the same process.
 
@@ -27,5 +45,5 @@ def test_basic_acceptance_same_process_test(target):
     subscribing to the Skeleton, calling zero-copy and with-copy methods, verifying both
     succeed with expected return values.
     """
-    with consumer_and_provider(target):
+    with service_discovery_daemon(target), consumer_and_provider(target):
         pass

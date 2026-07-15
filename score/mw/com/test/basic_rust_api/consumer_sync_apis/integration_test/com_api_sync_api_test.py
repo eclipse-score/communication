@@ -11,6 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+from contextlib import contextmanager
+
 
 def producer(target, num_cycles, data_type=None, **kwargs):
     args = ["-n", str(num_cycles)]
@@ -26,25 +28,42 @@ def consumer(target, num_cycles, data_type=None, **kwargs):
     return target.wrap_exec("bin/bigdata-consumer", args, cwd="/opt/bigdata-com-api-sync", wait_on_exit=True, **kwargs)
 
 
+def service_discovery_daemon(target, **kwargs):
+    del kwargs
+
+    @contextmanager
+    def _service_discovery_daemon():
+        daemon_process = target.execute_async(
+            "bin/service_discovery_daemon_app",
+            args=[],
+            cwd="/opt/ServiceDiscoveryDaemonApp",
+        )
+        yield daemon_process
+
+    return _service_discovery_daemon()
+
+
 def test_bigdata_exchange(target):
     # Sender runs for 30 cycles, Receiver receives 25 cycles
-    with producer(target, num_cycles=30), consumer(target, num_cycles=25, wait_timeout=120):
+    with service_discovery_daemon(target), producer(target, num_cycles=30), consumer(target, num_cycles=25, wait_timeout=120):
         pass
 
 
 def test_mixed_primitives_exchange(target):
     # Sender runs for 30 cycles, Receiver receives 25 cycles
-    with (
-        producer(target, num_cycles=30, data_type="mixed-primitives"),
-        consumer(target, num_cycles=25, data_type="mixed-primitives", wait_timeout=120),
-    ):
-        pass
+    with service_discovery_daemon(target):
+        with (
+            producer(target, num_cycles=30, data_type="mixed-primitives"),
+            consumer(target, num_cycles=25, data_type="mixed-primitives", wait_timeout=120),
+        ):
+            pass
 
 
 def test_complex_struct_exchange(target):
     # Sender runs for 30 cycles, Receiver receives 25 cycles
-    with (
-        producer(target, num_cycles=30, data_type="complex-struct"),
-        consumer(target, num_cycles=25, data_type="complex-struct", wait_timeout=120),
-    ):
-        pass
+    with service_discovery_daemon(target):
+        with (
+            producer(target, num_cycles=30, data_type="complex-struct"),
+            consumer(target, num_cycles=25, data_type="complex-struct", wait_timeout=120),
+        ):
+            pass

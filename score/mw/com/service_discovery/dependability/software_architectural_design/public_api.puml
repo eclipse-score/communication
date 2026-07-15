@@ -1,0 +1,29 @@
+@startuml
+
+namespace score::mw::com::service_discovery {
+
+    interface IServiceDiscoveryRegistry {
+        +Register()
+        +Unregister()
+        +Resolve()
+        +RemoveBySession()
+    }
+
+    interface IServiceDiscovery {
+        +OfferService()
+        +StopOfferService()
+        +StartFindService()
+        +StopFindService()
+        +FindService()
+    }
+
+    class ServiceDiscoveryRegistry
+    class ServiceDiscoveryDaemon
+    class ServiceDiscoveryProtocol
+    class ServiceDiscoveryMessagePassingClient
+    class ServiceDiscoveryMessagePassingServer
+    class ServiceDiscoveryCompat
+
+}
+
+@enduml

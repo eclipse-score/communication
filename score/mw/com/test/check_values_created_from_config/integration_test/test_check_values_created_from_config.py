@@ -24,10 +24,20 @@ def check_values_created_from_config(target, mode, **kwargs):
     )
 
 
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
+
 def test_check_values_created_from_config(target):
     """Test that config values are correctly created and exchanged."""
-    with (
-        check_values_created_from_config(target, mode="send", wait_timeout=15),
-        check_values_created_from_config(target, mode="recv", wait_timeout=15),
-    ):
-        pass
+    with service_discovery_daemon(target):
+        with (
+            check_values_created_from_config(target, mode="send", wait_timeout=15),
+            check_values_created_from_config(target, mode="recv", wait_timeout=15),
+        ):
+            pass

@@ -1,0 +1,245 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package ServiceDiscovery
+
+import ScoreReq
+
+section "System Requirements" {
+
+ScoreReq.CompReq SingleActiveRegistryAuthority {
+    description = "The service discovery component shall operate with exactly one active daemon authority in the system at a point in time."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.DaemonBasedRegistry@1]
+    version = 1
+}
+
+ScoreReq.CompReq DaemonCommunicationUsesMessagePassing {
+    description = "The service discovery component shall use the platform message passing interface for daemon communication on Linux and QNX."
+    safety = ScoreReq.Asil.B
+    derived_from = [
+        ServiceDiscovery.DaemonBasedRegistry@1,
+        ServiceDiscovery.OsIndependentDaemonProtocol@1,
+    ]
+    version = 1
+}
+
+ScoreReq.CompReq RegistrySupportsServiceKeyLookup {
+    description = "The service discovery component shall resolve service offers using a service key tuple of service identifier and instance identifier."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.DeterministicLookupBehavior@1]
+    version = 1
+}
+
+ScoreReq.CompReq RuntimeMaintainsDaemonSession {
+    description = "A score::mw::com application shall establish its daemon message-passing session during startup and release it during shutdown."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.SessionBoundClientLifecycle@1]
+    version = 1
+}
+
+ScoreReq.CompReq RegistrySupportsAnyInstanceLookup {
+    description = "The service discovery component shall support lookup and search requests that match any instance of a given service identifier."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.AnyInstanceServiceSelection@1]
+    version = 1
+}
+
+ScoreReq.CompReq StaticOfferAuthorizationLoadedAtStartup {
+    description = "The daemon shall accept a startup configuration that defines which UIDs are authorized to offer configured service instances."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.StaticOfferAuthorizationPolicy@1]
+    version = 1
+}
+
+}
+
+section "Behaviour Requirements" {
+
+ScoreReq.CompReq RegisterRejectsIntegrityEscalation {
+    description = "The service discovery daemon shall reject a registration request when the provider integrity is lower than the offered service integrity."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.PartitionedVisibilityForIntegrityLevels@1]
+    version = 1
+}
+
+ScoreReq.CompReq UnregisterChecksOwnership {
+    description = "The service discovery daemon shall remove a registration only when the unregister request identity matches the original provider identity."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.PartitionedVisibilityForIntegrityLevels@1]
+    version = 1
+}
+
+ScoreReq.CompReq LookupReturnsConsistentSnapshot {
+    description = "The service discovery daemon shall return a self-consistent snapshot of matching registrations for each lookup request."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.DeterministicLookupBehavior@1]
+    version = 1
+}
+
+ScoreReq.CompReq StaleEntriesAreRemoved {
+    description = "The service discovery daemon shall remove registrations that exceed the configured liveness supervision limits."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.StaleEntrySupervision@1]
+    version = 1
+}
+
+ScoreReq.CompReq StartFindServiceReturnsSnapshotAndHandle {
+    description = "The service discovery daemon shall return the current matching service-instance snapshot and a daemon-issued search handle in response to a start-find request."
+    safety = ScoreReq.Asil.B
+    derived_from = [
+        ServiceDiscovery.AsyncServiceDiscoveryUpdates@1,
+        ServiceDiscovery.DeterministicLookupBehavior@1,
+    ]
+    version = 1
+}
+
+ScoreReq.CompReq SearchHandleControlsNotifications {
+    description = "The service discovery daemon shall stop availability notifications for a search after the matching stop-find request for its handle is accepted."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.AsyncServiceDiscoveryUpdates@1]
+    version = 1
+}
+
+ScoreReq.CompReq ConnectionLossRemovesOwnedState {
+    description = "The service discovery daemon shall remove registrations, active searches, and daemon-managed locks that are owned by a disconnected client session."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.SessionBoundClientLifecycle@1]
+    version = 1
+}
+
+ScoreReq.CompReq RegisterRejectsUnauthorizedOfferer {
+    description = "The service discovery daemon shall reject a register request when the caller UID is not authorized for the requested service instance by the static offer policy."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.StaticOfferAuthorizationPolicy@1]
+    version = 1
+}
+
+ScoreReq.CompReq ServiceCreationLockIsExclusive {
+    description = "The service discovery daemon shall provide an exclusive service-creation lock so that at most one provider may prepare a given service instance at a time."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.DaemonManagedServiceInstanceLocks@1]
+    version = 1
+}
+
+ScoreReq.CompReq ServiceCreationLockReleasedOnUnregisterOrDisconnect {
+    description = "The service discovery daemon shall release a service-creation lock automatically when its owner unregisters the service instance or disconnects."
+    safety = ScoreReq.Asil.B
+    derived_from = [
+        ServiceDiscovery.DaemonManagedServiceInstanceLocks@1,
+        ServiceDiscovery.SessionBoundClientLifecycle@1,
+    ]
+    version = 1
+}
+
+ScoreReq.CompReq ServiceUsageLockSupportsSharedAndExclusiveModes {
+    description = "The service discovery daemon shall provide service-usage lock operations with shared mode for consumers and exclusive mode for providers."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.DaemonManagedServiceInstanceLocks@1]
+    version = 1
+}
+
+ScoreReq.CompReq ServiceUsageLocksReleasedOnDisconnect {
+    description = "The service discovery daemon shall release service-usage locks automatically when the owning client session disconnects."
+    safety = ScoreReq.Asil.B
+    derived_from = [
+        ServiceDiscovery.DaemonManagedServiceInstanceLocks@1,
+        ServiceDiscovery.SessionBoundClientLifecycle@1,
+    ]
+    version = 1
+}
+
+ScoreReq.CompReq BatchedOperationsPreservePerCallResults {
+    description = "The service discovery daemon shall process a batch request as an ordered set of daemon operations and return per-operation results to the caller."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.BatchedDaemonOperations@1]
+    version = 1
+}
+
+}
+
+section "API Requirements" {
+
+ScoreReq.CompReq RegistryRegisterApi {
+    description = "The registry interface shall provide a Register operation that accepts service key, endpoint, integrity, and provider identity."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.DaemonBasedRegistry@1]
+    version = 1
+}
+
+ScoreReq.CompReq RegistryUnregisterApi {
+    description = "The registry interface shall provide an Unregister operation that accepts service key and provider identity."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.DaemonBasedRegistry@1]
+    version = 1
+}
+
+ScoreReq.CompReq RegistryResolveApi {
+    description = "The registry interface shall provide a Resolve operation that returns all matching registrations for a service key."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.DeterministicLookupBehavior@1]
+    version = 1
+}
+
+ScoreReq.CompReq ProtocolEncodesRegisterUnregisterResolve {
+    description = "The daemon protocol shall encode register, unregister, and resolve operations with deterministic binary payloads."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.OsIndependentDaemonProtocol@1]
+    version = 1
+}
+
+ScoreReq.CompReq ProtocolEncodesAsyncDiscoveryUpdates {
+    description = "The daemon protocol shall encode subscribe, unsubscribe, and notification operations for asynchronous service discovery updates."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.AsyncServiceDiscoveryUpdates@1]
+    version = 1
+}
+
+ScoreReq.CompReq ProtocolEncodesStartAndStopFindService {
+    description = "The daemon protocol shall encode start-find and stop-find request-reply operations, and the start-find reply shall include the initial result snapshot and a search handle."
+    safety = ScoreReq.Asil.B
+    derived_from = [
+        ServiceDiscovery.AsyncServiceDiscoveryUpdates@1,
+        ServiceDiscovery.AnyInstanceServiceSelection@1,
+    ]
+    version = 1
+}
+
+ScoreReq.CompReq ProtocolEncodesDaemonManagedLockOperations {
+    description = "The daemon protocol shall encode service-creation lock and service-usage lock operations with deterministic binary payloads."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.DaemonManagedServiceInstanceLocks@1]
+    version = 1
+}
+
+ScoreReq.CompReq ProtocolEncodesBatchRequests {
+    description = "The daemon protocol shall encode batched daemon operations and their ordered result set within one request-reply exchange."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.BatchedDaemonOperations@1]
+    version = 1
+}
+
+ScoreReq.CompReq AuthorizationPolicyConfigurationApi {
+    description = "The service discovery component shall provide a configuration interface for loading the static offer-authorization policy into the daemon at startup."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.StaticOfferAuthorizationPolicy@1]
+    version = 1
+}
+
+ScoreReq.CompReq ServiceDiscoveryCompatibilityFacade {
+    description = "The service discovery component shall provide a compatibility facade that preserves the current IServiceDiscovery API shape while delegating to the daemon-backed implementation."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.DaemonBasedRegistry@1, ServiceDiscovery.AsyncServiceDiscoveryUpdates@1]
+    version = 1
+}
+
+}

@@ -41,6 +41,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
     ],
 )
 
@@ -306,6 +307,7 @@ cc_library(
     hdrs = ["lola_service_type_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
+    visibility = ["//score/mw/com/service_discovery:__pkg__"],
     deps = [
         ":binding_service_type_deployment",
         ":lola_event_id",
@@ -322,7 +324,10 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [":configuration_common_resources"],
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__pkg__",
+        "//score/mw/com/service_discovery:__pkg__",
+    ],
     deps = ["@score_baselibs//score/json"],
 )
 
@@ -364,7 +369,10 @@ cc_library(
     hdrs = ["service_instance_id.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl:__subpackages__"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
+    ],
     deps = [
         ":configuration_common_resources",
         ":lola_service_instance_id",
@@ -445,7 +453,10 @@ cc_library(
     name = "configuration",
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl:__subpackages__"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
+    ],
     deps = [
         ":config_parser",
         ":configuration_error",

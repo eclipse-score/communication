@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_check_values_created_from_config.py"],
     filesystem = "//score/mw/com/test/check_values_created_from_config:check_values_created_from_config-pkg",
+    service_discovery_daemon = True,
 )

@@ -21,11 +21,21 @@ def separate_reception_threads(target, **kwargs):
     )
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_separate_reception_threads(target):
     """Test separate reception threads functionality.
 
     NOTE: The main application code for this test is disabled (#if 0) and just returns
     EXIT_SUCCESS immediately. This test verifies the stub runs without error.
     """
-    with separate_reception_threads(target, wait_timeout=15):
+    with service_discovery_daemon(target), separate_reception_threads(target, wait_timeout=15):
         pass

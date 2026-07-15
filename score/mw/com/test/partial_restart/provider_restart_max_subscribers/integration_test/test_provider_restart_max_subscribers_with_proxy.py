@@ -17,8 +17,6 @@ from provider_restart_max_subscribers_test_fixture import provider_restart_max_s
 
 # Test configuration
 IS_PROXY_CONNECTED_DURING_RESTART = 1
-
-
 def test_provider_restart_max_subscribers_with_proxy(target):
     """Test provider restart with maximum subscribers and proxy connected during restart."""
     with provider_restart_max_subscribers(target, IS_PROXY_CONNECTED_DURING_RESTART):

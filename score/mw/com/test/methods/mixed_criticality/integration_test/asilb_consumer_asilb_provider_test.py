@@ -10,16 +10,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from test_fixture import Criticality, consumer, provider
+from test_fixture import Criticality, consumer, provider, service_discovery_daemon
 
 
 """
 Test all four method types (InArg and Return, InArg only, Return only, and no InArg or Return) with ASIL B criticality for both consumer and provider.
 Verifies that method calls are sent from consumer to provider with the correct values.
-Verifies that the provider executes the correct handler on the provided values. 
+Verifies that the provider executes the correct handler on the provided values.
 Verifies that the consumer receives the correct return values.
 """
 def test_mixed_criticality_consumer_provider(target):
-    with provider(target, Criticality.ASILB):
+    with service_discovery_daemon(target), provider(target, Criticality.ASILB):
         with consumer(target, consumer_criticality=Criticality.ASILB):
             pass

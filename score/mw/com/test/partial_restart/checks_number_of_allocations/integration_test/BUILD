@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_check_number_of_allocations.py"],
     filesystem = "//score/mw/com/test/partial_restart/checks_number_of_allocations:check_number_of_allocations-pkg",
+    service_discovery_daemon = True,
 )

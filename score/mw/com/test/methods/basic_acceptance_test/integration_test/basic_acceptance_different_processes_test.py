@@ -22,6 +22,24 @@ def consumer(target, **kwargs):
     return target.wrap_exec("bin/main_consumer", args, cwd="/opt/MainConsumerApp", wait_on_exit=True, **kwargs)
 
 
+from contextlib import contextmanager
+
+
+def service_discovery_daemon(target, **kwargs):
+    del kwargs
+
+    @contextmanager
+    def _service_discovery_daemon():
+        daemon_process = target.execute_async(
+            "bin/service_discovery_daemon_app",
+            args=[],
+            cwd="/opt/ServiceDiscoveryDaemonApp",
+        )
+        yield daemon_process
+
+    return _service_discovery_daemon()
+
+
 def test_basic_acceptance_different_processes_test(target):
     """Test method call functionality between provider and consumer in different processes.
 
@@ -31,5 +49,5 @@ def test_basic_acceptance_different_processes_test(target):
     The second process creates a Proxy instance subscribing to the Skeleton, calling
     zero-copy and with-copy methods, verifying both succeed with expected return values.
     """
-    with provider(target), consumer(target):
+    with service_discovery_daemon(target), provider(target), consumer(target):
         pass

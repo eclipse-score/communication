@@ -27,4 +27,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_service_discovery_offer_and_search.py"],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )

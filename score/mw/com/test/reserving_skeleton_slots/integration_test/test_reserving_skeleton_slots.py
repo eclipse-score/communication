@@ -26,16 +26,26 @@ def reserving_skeleton_slots(target, mode, **kwargs):
     )
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_reserving_skeleton_slots(target):
     """Test skeleton slot reservation with passing and failing configurations."""
     # Test that skeleton slots can be reserved correctly when numbers match
-    with reserving_skeleton_slots(target, "passing", wait_timeout=15):
+    with service_discovery_daemon(target), reserving_skeleton_slots(target, "passing", wait_timeout=15):
         pass
 
     # Test that requesting more skeleton slots than configured fails as expected
-    with reserving_skeleton_slots(target, "failing_extra_slots", wait_timeout=15):
+    with service_discovery_daemon(target), reserving_skeleton_slots(target, "failing_extra_slots", wait_timeout=15):
         pass
 
     # Test that requesting fewer skeleton slots than needed fails as expected
-    with reserving_skeleton_slots(target, "failing_less_slots", wait_timeout=15):
+    with service_discovery_daemon(target), reserving_skeleton_slots(target, "failing_less_slots", wait_timeout=15):
         pass

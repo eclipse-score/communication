@@ -21,7 +21,16 @@ def check_number_of_allocations(target, **kwargs):
     )
 
 
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
+
 def test_check_no_of_allocations(target):
     """Test checks number of allocations functionality."""
-    with check_number_of_allocations(target):
+    with service_discovery_daemon(target), check_number_of_allocations(target):
         pass

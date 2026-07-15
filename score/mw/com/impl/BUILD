@@ -446,6 +446,7 @@ cc_library(
         "//score/mw/com:__pkg__",
         "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
     ],
 )
 
@@ -459,6 +460,7 @@ cc_library(
         "//score/mw/com:__pkg__",
         "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
     ],
     deps = [
         ":find_service_handle",
@@ -480,6 +482,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
     ],
     deps = [
         ":find_service_handle",
@@ -680,6 +683,7 @@ cc_library(
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
     ],
     deps = [
         ":instance_identifier",
@@ -696,6 +700,7 @@ cc_library(
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
     ],
     deps = [
         ":error",
@@ -711,6 +716,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
     ],
     deps = [
         ":handle_type",
@@ -868,6 +874,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
     ],
 )
 
@@ -885,6 +892,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/service_discovery:__pkg__",
     ],
     deps = [
         ":binding_type",
@@ -1047,12 +1055,12 @@ cc_library(
         ":instance_identifier",
         ":instance_specifier",
         ":runtime_interfaces",
-        ":service_discovery",
         "//score/mw/com:runtime_configuration",
         "//score/mw/com/impl:event_receive_handler",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/plumbing:runtime",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config",
+        "//score/mw/com/service_discovery:service_discovery_compat",
         "@score_baselibs//score/concurrency:long_running_threads_container",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -1206,6 +1214,7 @@ cc_unit_test(
     deps = [
         ":impl",
         ":runtime_mock",
+        ":service_discovery",
         ":service_discovery_client_mock",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/configuration/test:configuration_store",

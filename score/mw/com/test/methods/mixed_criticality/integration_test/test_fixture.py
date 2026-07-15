@@ -11,7 +11,21 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+from contextlib import contextmanager
 from enum import Enum
+
+
+def service_discovery_daemon(target):
+    @contextmanager
+    def _service_discovery_daemon():
+        daemon_process = target.execute_async(
+            "bin/service_discovery_daemon_app",
+            args=[],
+            cwd="/opt/ServiceDiscoveryDaemonApp",
+        )
+        yield daemon_process
+
+    return _service_discovery_daemon()
 
 
 class Criticality(Enum):

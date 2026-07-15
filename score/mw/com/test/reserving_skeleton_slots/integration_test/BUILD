@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_reserving_skeleton_slots.py"],
     filesystem = "//score/mw/com/test/reserving_skeleton_slots:reserving_skeleton_slots-pkg",
+    service_discovery_daemon = True,
 )
