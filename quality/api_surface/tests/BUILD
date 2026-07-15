@@ -216,3 +216,10 @@ py_test(
         ":result_type_regression_api_test_gen",
     ],
 )
+
+py_test(
+    name = "test_diff_api",
+    srcs = ["test_diff_api.py"],
+    main = "test_diff_api.py",
+    deps = ["//quality/api_surface:diff_api_lib"],
+)

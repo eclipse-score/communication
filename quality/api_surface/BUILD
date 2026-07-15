@@ -11,16 +11,22 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+py_library(
+    name = "diff_api_lib",
+    srcs = ["diff_api.py"],
+    visibility = ["//:__subpackages__"],
+)
 
 py_binary(
     name = "extract_api",
     srcs = ["extract_api.py"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
-sh_binary(
+py_binary(
     name = "diff_api",
-    srcs = ["diff_api.sh"],
-    visibility = ["//visibility:public"],
+    srcs = ["diff_api.py"],
+    visibility = ["//:__subpackages__"],
 )
