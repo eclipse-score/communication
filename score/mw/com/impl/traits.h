@@ -175,12 +175,12 @@ class SkeletonTrait
     using Method = SkeletonMethod<MethodSignature>;
 };
 
-template <template <class> class Interface, class Trait>
+template <template <class> class Interface>
 // Passed template parameter \p Interface could be a struct that violates Autosar rule A11-0-2: "not be a base of
 // another struct or class". The fix may involve extra effort to replace particular structs with class types every used
 // entrance and/or special check whether passed template parameter is a class.
 // NOLINTNEXTLINE(score-struct-usage-compliance): Tolerated.
-class SkeletonWrapperClass : public Interface<Trait>
+class SkeletonWrapperClass : public Interface<SkeletonTrait>
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Design decision. This class provides a read only view to the private members of this class inside the impl
@@ -262,7 +262,7 @@ class SkeletonWrapperClass : public Interface<Trait>
     SkeletonWrapperClass& operator=(const SkeletonWrapperClass&) = delete;
 
     SkeletonWrapperClass(SkeletonWrapperClass&& other) noexcept
-        : Interface<Trait>{std::move(static_cast<Interface<Trait>&&>(other))},
+        : Interface<SkeletonTrait>{std::move(static_cast<Interface<SkeletonTrait>&&>(other))},
           is_service_owner_{std::move(other.is_service_owner_)}
     {
     }
@@ -276,7 +276,7 @@ class SkeletonWrapperClass : public Interface<Trait>
                 this->StopOfferService();
             }
 
-            Interface<Trait>::operator=(std::move(static_cast<Interface<Trait>&&>(other)));
+            Interface<SkeletonTrait>::operator=(std::move(static_cast<Interface<SkeletonTrait>&&>(other)));
             is_service_owner_ = std::move(other.is_service_owner_);
         }
         return *this;
@@ -285,7 +285,7 @@ class SkeletonWrapperClass : public Interface<Trait>
   private:
     explicit SkeletonWrapperClass(const InstanceIdentifier& instance_id,
                                   std::unique_ptr<SkeletonBinding> skeleton_binding)
-        : Interface<Trait>{std::move(skeleton_binding), instance_id}, is_service_owner_{true}
+        : Interface<SkeletonTrait>{std::move(skeleton_binding), instance_id}, is_service_owner_{true}
     {
     }
 
@@ -317,15 +317,15 @@ class SkeletonWrapperClass : public Interface<Trait>
     /// in the moved-from class so that that object doesn't call StopFindService on destruction.
     FlagOwner is_service_owner_;
 };
-template <template <class> class Interface, class Trait>
-std::optional<std::unordered_map<InstanceSpecifier, std::queue<Result<SkeletonWrapperClass<Interface, Trait>>>>>
-    SkeletonWrapperClass<Interface, Trait>::instance_specifier_creation_results_{};
-template <template <class> class Interface, class Trait>
-std::optional<std::unordered_map<InstanceIdentifier, std::queue<Result<SkeletonWrapperClass<Interface, Trait>>>>>
-    SkeletonWrapperClass<Interface, Trait>::instance_identifier_creation_results_{};
+template <template <class> class Interface>
+std::optional<std::unordered_map<InstanceSpecifier, std::queue<Result<SkeletonWrapperClass<Interface>>>>>
+    SkeletonWrapperClass<Interface>::instance_specifier_creation_results_{};
+template <template <class> class Interface>
+std::optional<std::unordered_map<InstanceIdentifier, std::queue<Result<SkeletonWrapperClass<Interface>>>>>
+    SkeletonWrapperClass<Interface>::instance_identifier_creation_results_{};
 
-template <template <class> class Interface, class Trait>
-class ProxyWrapperClass : public Interface<Trait>
+template <template <class> class Interface>
+class ProxyWrapperClass : public Interface<ProxyTrait>
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Design decision. This class provides a read only view to the private members of this class inside the impl
@@ -359,7 +359,7 @@ class ProxyWrapperClass : public Interface<Trait>
     ProxyWrapperClass& operator=(const ProxyWrapperClass&) = delete;
 
     ProxyWrapperClass(ProxyWrapperClass&& other) noexcept
-        : Interface<Trait>{std::move(static_cast<Interface<Trait>&&>(other))},
+        : Interface<ProxyTrait>{std::move(static_cast<Interface<ProxyTrait>&&>(other))},
           is_proxy_owner_{std::move(other.is_proxy_owner_)}
     {
     }
@@ -373,7 +373,7 @@ class ProxyWrapperClass : public Interface<Trait>
                 this->Deinitialize();
             }
 
-            Interface<Trait>::operator=(std::move(static_cast<Interface<Trait>&&>(other)));
+            Interface<ProxyTrait>::operator=(std::move(static_cast<Interface<ProxyTrait>&&>(other)));
             is_proxy_owner_ = std::move(other.is_proxy_owner_);
         }
         return *this;
@@ -427,11 +427,11 @@ class ProxyWrapperClass : public Interface<Trait>
     }
     /// \brief Constructs ProxyWrapperClass
     explicit ProxyWrapperClass(HandleType instance_handle, std::unique_ptr<ProxyBinding> proxy_binding)
-        : Interface<Trait>{std::move(proxy_binding), std::move(instance_handle)}, is_proxy_owner_{true}
+        : Interface<ProxyTrait>{std::move(proxy_binding), std::move(instance_handle)}, is_proxy_owner_{true}
     {
     }
 
-    ProxyWrapperClass() : Interface<Trait>{}, is_proxy_owner_{true} {}
+    ProxyWrapperClass() : Interface<ProxyTrait>{}, is_proxy_owner_{true} {}
 
     static void InjectCreationResults(
         std::unordered_map<HandleType, std::queue<Result<ProxyWrapperClass>>> creation_results)
@@ -452,19 +452,19 @@ class ProxyWrapperClass : public Interface<Trait>
     /// in the moved-from class so that that object doesn't call Unsubscribe on destruction.
     FlagOwner is_proxy_owner_;
 };
-template <template <class> class Interface, class Trait>
-std::optional<std::unordered_map<HandleType, std::queue<Result<ProxyWrapperClass<Interface, Trait>>>>>
-    ProxyWrapperClass<Interface, Trait>::creation_results_{};
+template <template <class> class Interface>
+std::optional<std::unordered_map<HandleType, std::queue<Result<ProxyWrapperClass<Interface>>>>>
+    ProxyWrapperClass<Interface>::creation_results_{};
 
 /// \api
 /// \brief Interpret an interface that follows our traits as proxy (see description above)
 template <template <class> class T>
-using AsProxy = ProxyWrapperClass<T, ProxyTrait>;
+using AsProxy = ProxyWrapperClass<T>;
 
 /// \api
 /// \brief Interpret an interface that follows our traits as skeleton (see description above)
 template <template <class> class T>
-using AsSkeleton = SkeletonWrapperClass<T, SkeletonTrait>;
+using AsSkeleton = SkeletonWrapperClass<T>;
 
 /// \brief Factory class to create a proxy with semi-dynamic methods for use _ONLY_ in the context of (SWP-269486).
 ///
