@@ -28,7 +28,7 @@ Provides:
 """
 
 def _get_include_args(compilation_context):
-    """Build -I arguments from a CcInfo compilation context."""
+    """Build include and define arguments from a CcInfo compilation context."""
     args = []
     for inc in compilation_context.includes.to_list():
         args.append("-I" + inc)
@@ -38,27 +38,75 @@ def _get_include_args(compilation_context):
     for inc in compilation_context.quote_includes.to_list():
         args.append("-iquote")
         args.append(inc)
+    for define in compilation_context.defines.to_list():
+        args.append("-D" + define)
+    for define in compilation_context.local_defines.to_list():
+        args.append("-D" + define)
     return args
 
 def _get_all_headers(compilation_context):
     """Get all transitive headers needed for compilation."""
     return compilation_context.headers.to_list()
 
+def _to_list(value):
+    if type(value) == "depset":
+        return value.to_list()
+    return value
+
+def _is_public_like_header(path, package):
+    if not path.startswith(package + "/"):
+        return False
+    if "/impl/" in path or "/internal/" in path or "/detail/" in path:
+        return False
+    return True
+
+def _is_package_root_header(path, package):
+    if not _is_public_like_header(path, package):
+        return False
+    return path.count("/") == package.count("/") + 1
+
 def _api_surface_gen_impl(ctx):
     """Generate current API surface JSON from headers using clang."""
     # Collect info from deps
     include_args = []
-    all_headers = []
+    all_headers_by_path = {}
+    target_hdrs_by_path = {}
 
     for dep in ctx.attr.deps:
         if CcInfo in dep:
             cc_info = dep[CcInfo]
             comp_ctx = cc_info.compilation_context
             include_args.extend(_get_include_args(comp_ctx))
-            all_headers.extend(_get_all_headers(comp_ctx))
+            for header in _get_all_headers(comp_ctx):
+                all_headers_by_path[header.path] = header
+            for attr_name in ["direct_public_headers", "direct_private_headers", "direct_textual_headers"]:
+                for header in _to_list(getattr(comp_ctx, attr_name, [])):
+                    all_headers_by_path[header.path] = header
 
-    # The target headers to analyze
-    target_hdrs = ctx.files.hdrs
+            direct_public_headers = _to_list(getattr(comp_ctx, "direct_public_headers", []))
+            if direct_public_headers:
+                for header in direct_public_headers:
+                    target_hdrs_by_path[header.path] = header
+            else:
+                # Fallback for aggregate targets (no direct public headers):
+                # prefer package-root public-like headers and avoid impl/internal/detail trees.
+                package_root_headers = []
+                for header in _get_all_headers(comp_ctx):
+                    if _is_package_root_header(header.path, dep.label.package):
+                        package_root_headers.append(header)
+
+                if package_root_headers:
+                    for header in package_root_headers:
+                        target_hdrs_by_path[header.path] = header
+                else:
+                    for header in _get_all_headers(comp_ctx):
+                        if _is_public_like_header(header.path, dep.label.package):
+                            target_hdrs_by_path[header.path] = header
+
+    target_hdrs = [target_hdrs_by_path[path] for path in sorted(target_hdrs_by_path.keys())]
+    all_headers = [all_headers_by_path[path] for path in sorted(all_headers_by_path.keys())]
+    if not target_hdrs:
+        fail("api_surface requires deps with public headers, but none were found.")
 
     # Output file
     output = ctx.actions.declare_file(ctx.label.name + ".json")
@@ -76,31 +124,11 @@ def _api_surface_gen_impl(ctx):
     # Create AST dump output file
     ast_dump = ctx.actions.declare_file(ctx.label.name + "_ast.json")
 
-    # Step 1: Run clang to produce AST JSON dump
-    clang_args = ctx.actions.args()
-    clang_args.add("-Xclang")
-    clang_args.add("-ast-dump=json")
-    clang_args.add("-fsyntax-only")
-    clang_args.add("-x")
-    clang_args.add("c++")
-    clang_args.add("-std=" + ctx.attr.std)
-    clang_args.add("-fparse-all-comments")
-    clang_args.add("-w")  # Suppress warnings (we only need the AST)
-
-    # Add workspace root as include path
-    clang_args.add("-I.")
-
-    # Add all include dirs from deps
-    for arg in include_args:
-        clang_args.add(arg)
-
-    clang_args.add(combined_header.path)
-
     ctx.actions.run_shell(
         outputs = [ast_dump],
         inputs = [combined_header] + target_hdrs + all_headers,
         tools = [ctx.file._clang],
-        command = "{clang} {args} > {output} 2>/dev/null || true".format(
+        command = "{clang} {args} > {output}".format(
             clang = ctx.file._clang.path,
             args = " ".join([
                 "-Xclang", "-ast-dump=json",
@@ -118,16 +146,20 @@ def _api_surface_gen_impl(ctx):
     )
 
     # Step 2: Run Python extractor on the AST dump
-    # Build the list of target header paths for filtering
-    header_paths = ",".join([h.path for h in target_hdrs])
+    # Write the target header paths to a file to avoid command-line length limits.
+    target_headers_file = ctx.actions.declare_file(ctx.label.name + "_target_headers.txt")
+    ctx.actions.write(
+        output = target_headers_file,
+        content = "\n".join([h.path for h in target_hdrs]) + "\n",
+    )
 
     ctx.actions.run(
         outputs = [output],
-        inputs = [ast_dump],
+        inputs = [ast_dump, target_headers_file],
         executable = ctx.executable._extractor,
         arguments = [
             "--ast-json", ast_dump.path,
-            "--target-headers", header_paths,
+            "--target-headers-file", target_headers_file.path,
             "--target-label", ctx.attr.target_label,
             "--output", output.path,
         ],
@@ -142,12 +174,7 @@ _api_surface_gen = rule(
     attrs = {
         "deps": attr.label_list(
             providers = [CcInfo],
-            doc = "cc_library targets whose compilation context provides includes.",
-        ),
-        "hdrs": attr.label_list(
-            allow_files = [".h", ".hpp"],
-            mandatory = True,
-            doc = "Header files that define the public API surface.",
+            doc = "cc_library targets whose direct public headers define the public API surface.",
         ),
         "target_label": attr.string(
             default = "",
@@ -296,16 +323,15 @@ _api_surface_update_rule = rule(
 
 # --- Public macros ---
 
-def api_surface_test(name, hdrs, lock_file, deps = [], target_label = "", check_docs = True, std = "c++17", tags = [], **kwargs):
+def api_surface_test(name, lock_file, deps = [], target_label = "", check_docs = True, std = "c++17", tags = [], **kwargs):
     """Verifies the public C++ API surface hasn't changed.
 
     Uses clang to parse headers and compare against a committed lock file.
 
     Args:
         name: Test target name.
-        hdrs: Header files forming the public API.
         lock_file: Committed JSON lock file label.
-        deps: cc_library targets providing compilation context (includes).
+        deps: cc_library targets whose direct public headers define the public API.
         target_label: Bazel label for metadata.
         check_docs: If True, also check all public symbols have \\api docs.
         std: C++ standard for parsing (default c++17).
@@ -314,7 +340,6 @@ def api_surface_test(name, hdrs, lock_file, deps = [], target_label = "", check_
     gen_name = name + "_gen"
     _api_surface_gen(
         name = gen_name,
-        hdrs = hdrs,
         deps = deps,
         target_label = target_label,
         std = std,
@@ -330,7 +355,7 @@ def api_surface_test(name, hdrs, lock_file, deps = [], target_label = "", check_
         **kwargs
     )
 
-def api_surface_update(name, hdrs, lock_file_path, deps = [], target_label = "", std = "c++17", tags = [], **kwargs):
+def api_surface_update(name, lock_file_path, deps = [], target_label = "", std = "c++17", tags = [], **kwargs):
     """Regenerates the API surface lock file.
 
     Run with `bazel run` to update the committed lock file after
@@ -338,9 +363,8 @@ def api_surface_update(name, hdrs, lock_file_path, deps = [], target_label = "",
 
     Args:
         name: Target name.
-        hdrs: Header files forming the public API.
         lock_file_path: Source-tree-relative path for the lock file.
-        deps: cc_library targets providing compilation context.
+        deps: cc_library targets whose direct public headers define the public API.
         target_label: Bazel label for metadata.
         std: C++ standard for parsing (default c++17).
         tags: Additional tags.
@@ -348,7 +372,6 @@ def api_surface_update(name, hdrs, lock_file_path, deps = [], target_label = "",
     gen_name = name + "_gen"
     _api_surface_gen(
         name = gen_name,
-        hdrs = hdrs,
         deps = deps,
         target_label = target_label,
         std = std,

@@ -496,13 +496,19 @@ def extract_from_ast(
     alias_symbols = [s for s in symbols if s.kind in ("type_alias", "template_type_alias")]
     followed_members: list[ApiSymbol] = []
 
-    def _resolve_class_node(type_name: str) -> Optional[dict]:
+    def _resolve_class_node(type_name: str, alias_qualified_name: str = "") -> Optional[dict]:
         """Resolve a type name to its CXXRecordDecl in the class index."""
         name = type_name.lstrip(":")
         base = name.split("<")[0].strip()
         if base.startswith("std::") or base.startswith("__"):
             return None
         node = class_index.get(base)
+        if not node and alias_qualified_name and "::" in alias_qualified_name:
+            alias_namespace = alias_qualified_name.rsplit("::", 1)[0]
+            if base.startswith("impl::"):
+                node = class_index.get(f"{alias_namespace}::{base}")
+            elif "::" not in base:
+                node = class_index.get(f"{alias_namespace}::{base}")
         if not node:
             for key, n in class_index.items():
                 if key.endswith("::" + base.split("::")[-1]) and base.endswith(key.split("::")[-1]):
@@ -565,7 +571,7 @@ def extract_from_ast(
             continue
 
         # Look up in class index
-        class_node = _resolve_class_node(underlying_type)
+        class_node = _resolve_class_node(underlying_type, alias_sym.qualified_name)
         if not class_node:
             continue
 
@@ -681,6 +687,7 @@ def main():
     )
     parser.add_argument("--ast-json", help="Path to pre-generated clang AST JSON dump")
     parser.add_argument("--target-headers", help="Comma-separated target header paths to filter on")
+    parser.add_argument("--target-headers-file", help="Path to newline-separated target header paths")
     parser.add_argument("--target-label", default="", help="Bazel target label (metadata)")
     parser.add_argument("--clang", help="Path to clang++ binary (direct mode)")
     parser.add_argument("--headers", nargs="+", help="Header files to parse (direct mode)")
@@ -691,17 +698,32 @@ def main():
     parser.add_argument("--output", default="-", help="Output file (- for stdout)")
     args = parser.parse_args()
 
-    # Mode 1: Pre-generated AST JSON (Bazel action mode)
-    if args.ast_json:
-        with open(args.ast_json, "r") as f:
-            ast = json.load(f)
+    def collect_target_files() -> set[str]:
         target_files = set()
         if args.target_headers:
             for h in args.target_headers.split(","):
                 h = h.strip()
+                if not h:
+                    continue
                 target_files.add(h)
                 target_files.add(os.path.normpath(h))
                 target_files.add(os.path.abspath(h))
+        if args.target_headers_file:
+            with open(args.target_headers_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    h = line.strip()
+                    if not h:
+                        continue
+                    target_files.add(h)
+                    target_files.add(os.path.normpath(h))
+                    target_files.add(os.path.abspath(h))
+        return target_files
+
+    # Mode 1: Pre-generated AST JSON (Bazel action mode)
+    if args.ast_json:
+        with open(args.ast_json, "r") as f:
+            ast = json.load(f)
+        target_files = collect_target_files()
         label = args.target_label or args.target or ""
         surface = extract_from_ast(ast, target_files, label)
 

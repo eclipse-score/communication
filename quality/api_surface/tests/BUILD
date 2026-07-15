@@ -61,7 +61,6 @@ cc_library(
 
 api_surface_test(
     name = "basic_class_api_test",
-    hdrs = ["basic_class.h"],
     deps = [":basic_class_lib"],
     lock_file = "golden/basic_class.lock.json",
     check_docs = False,
@@ -70,7 +69,6 @@ api_surface_test(
 
 api_surface_test(
     name = "type_alias_api_test",
-    hdrs = ["type_alias.h"],
     deps = [":type_alias_lib"],
     lock_file = "golden/type_alias.lock.json",
     check_docs = False,
@@ -79,7 +77,6 @@ api_surface_test(
 
 api_surface_test(
     name = "inheritance_api_test",
-    hdrs = ["inheritance.h"],
     deps = [":inheritance_lib"],
     lock_file = "golden/inheritance.lock.json",
     check_docs = False,
@@ -88,7 +85,6 @@ api_surface_test(
 
 api_surface_test(
     name = "template_alias_api_test",
-    hdrs = ["template_alias.h"],
     deps = [":template_alias_lib"],
     lock_file = "golden/template_alias.lock.json",
     check_docs = False,
@@ -97,7 +93,6 @@ api_surface_test(
 
 api_surface_test(
     name = "private_changes_api_test",
-    hdrs = ["private_changes.h"],
     deps = [":private_changes_lib"],
     lock_file = "golden/private_changes.lock.json",
     check_docs = False,
@@ -106,7 +101,6 @@ api_surface_test(
 
 api_surface_test(
     name = "types_in_signatures_api_test",
-    hdrs = ["types_in_signatures.h"],
     deps = [":types_in_signatures_lib"],
     lock_file = "golden/types_in_signatures.lock.json",
     check_docs = False,
@@ -115,7 +109,6 @@ api_surface_test(
 
 api_surface_test(
     name = "enum_and_free_functions_api_test",
-    hdrs = ["enum_and_free_functions.h"],
     deps = [":enum_and_free_functions_lib"],
     lock_file = "golden/enum_and_free_functions.lock.json",
     check_docs = False,
@@ -124,7 +117,6 @@ api_surface_test(
 
 api_surface_test(
     name = "internal_namespace_api_test",
-    hdrs = ["internal_namespace.h"],
     deps = [":internal_namespace_lib"],
     lock_file = "golden/internal_namespace.lock.json",
     check_docs = False,
@@ -134,7 +126,6 @@ api_surface_test(
 # Update targets to regenerate golden files
 api_surface_update(
     name = "basic_class_api_update",
-    hdrs = ["basic_class.h"],
     deps = [":basic_class_lib"],
     lock_file_path = "quality/api_surface/tests/golden/basic_class.lock.json",
     target_label = "//quality/api_surface/tests:basic_class_lib",
@@ -142,7 +133,6 @@ api_surface_update(
 
 api_surface_update(
     name = "type_alias_api_update",
-    hdrs = ["type_alias.h"],
     deps = [":type_alias_lib"],
     lock_file_path = "quality/api_surface/tests/golden/type_alias.lock.json",
     target_label = "//quality/api_surface/tests:type_alias_lib",
@@ -150,7 +140,6 @@ api_surface_update(
 
 api_surface_update(
     name = "inheritance_api_update",
-    hdrs = ["inheritance.h"],
     deps = [":inheritance_lib"],
     lock_file_path = "quality/api_surface/tests/golden/inheritance.lock.json",
     target_label = "//quality/api_surface/tests:inheritance_lib",
@@ -158,7 +147,6 @@ api_surface_update(
 
 api_surface_update(
     name = "template_alias_api_update",
-    hdrs = ["template_alias.h"],
     deps = [":template_alias_lib"],
     lock_file_path = "quality/api_surface/tests/golden/template_alias.lock.json",
     target_label = "//quality/api_surface/tests:template_alias_lib",
@@ -166,7 +154,6 @@ api_surface_update(
 
 api_surface_update(
     name = "private_changes_api_update",
-    hdrs = ["private_changes.h"],
     deps = [":private_changes_lib"],
     lock_file_path = "quality/api_surface/tests/golden/private_changes.lock.json",
     target_label = "//quality/api_surface/tests:private_changes_lib",
@@ -174,7 +161,6 @@ api_surface_update(
 
 api_surface_update(
     name = "types_in_signatures_api_update",
-    hdrs = ["types_in_signatures.h"],
     deps = [":types_in_signatures_lib"],
     lock_file_path = "quality/api_surface/tests/golden/types_in_signatures.lock.json",
     target_label = "//quality/api_surface/tests:types_in_signatures_lib",
@@ -182,7 +168,6 @@ api_surface_update(
 
 api_surface_update(
     name = "enum_and_free_functions_api_update",
-    hdrs = ["enum_and_free_functions.h"],
     deps = [":enum_and_free_functions_lib"],
     lock_file_path = "quality/api_surface/tests/golden/enum_and_free_functions.lock.json",
     target_label = "//quality/api_surface/tests:enum_and_free_functions_lib",
@@ -190,7 +175,6 @@ api_surface_update(
 
 api_surface_update(
     name = "internal_namespace_api_update",
-    hdrs = ["internal_namespace.h"],
     deps = [":internal_namespace_lib"],
     lock_file_path = "quality/api_surface/tests/golden/internal_namespace.lock.json",
     target_label = "//quality/api_surface/tests:internal_namespace_lib",

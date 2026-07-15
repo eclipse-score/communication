@@ -47,10 +47,7 @@ load("//quality/api_surface:api_surface.bzl", "api_surface_test", "api_surface_u
 ```python
 api_surface_test(
     name = "api_surface_test",
-    hdrs = [
-        "public_header_1.h",
-        "public_header_2.h",
-    ],
+    deps = [":your_cc_library"],
     check_docs = False,  # Set True to enforce \api documentation
     lock_file = "api_surface.lock.json",
     target_label = "//your/target:name",
@@ -58,10 +55,7 @@ api_surface_test(
 
 api_surface_update(
     name = "api_surface_update",
-    hdrs = [
-        "public_header_1.h",
-        "public_header_2.h",
-    ],
+    deps = [":your_cc_library"],
     lock_file_path = "your/target/api_surface.lock.json",
     target_label = "//your/target:name",
 )
@@ -81,8 +75,7 @@ bazel run //your/target:api_surface_update
 
 | Attribute       | Type     | Description                                                  |
 |-----------------|----------|--------------------------------------------------------------|
-| `hdrs`          | labels   | Header files that form the public API surface                |
-| `deps`          | labels   | cc_library targets whose headers form the API (alternative)  |
+| `deps`          | labels   | cc_library targets whose direct public headers form the API  |
 | `lock_file`     | label    | The committed JSON lock file to compare against              |
 | `check_docs`    | bool     | If true, fail when public symbols lack `\api` documentation  |
 | `target_label`  | string   | Bazel target label (metadata only)                           |
@@ -91,8 +84,7 @@ bazel run //your/target:api_surface_update
 
 | Attribute        | Type     | Description                                              |
 |------------------|----------|----------------------------------------------------------|
-| `hdrs`           | labels   | Header files that form the public API surface            |
-| `deps`           | labels   | cc_library targets whose headers form the API            |
+| `deps`           | labels   | cc_library targets whose direct public headers form the API |
 | `lock_file_path` | string   | Source-tree-relative path for the lock file              |
 | `target_label`   | string   | Bazel target label (metadata only)                       |
 
