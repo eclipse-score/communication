@@ -11,16 +11,14 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-// Bi-directional discovery — application B.
+// Bi-directional discovery — application A.
 // Offers its own SensorInterface instance immediately (OfferService before discovery completes),
-// then discovers application A via StartFindService. Both applications can start in any order without deadlock.
+// then discovers application B via StartFindService. Both applications can start in any order without deadlock.
 
-#include "common/sensor_interface.h"
+#include "common/service_interface.h"
 #include "heap_check/heap_check.h"
 
 #include "score/concurrency/notification.h"
-#include "score/mw/com/runtime.h"
-#include "score/mw/com/runtime_configuration.h"
 #include "score/mw/log/logging.h"
 #include "score/stop_token.hpp"
 
@@ -40,31 +38,24 @@ constexpr std::size_t kMaxSamples{16U};
 
 }  // namespace
 
-int main(int argc, char* argv[])
+int main()
 {
-    score::mw::log::LogInfo("BiB") << "Starting bidirectional_discovery/application_b";
+    score::mw::log::LogInfo("BiA") << "Starting bidirectional_discovery/application_a";
 
     // ---- INIT PHASE ----
 
-    score::mw::com::runtime::RuntimeConfiguration runtime_config{};
-    if (argc > 1)
-    {
-        runtime_config = score::mw::com::runtime::RuntimeConfiguration{score::filesystem::Path{argv[1]}};
-    }
-    score::mw::com::runtime::InitializeRuntime(runtime_config);
-
     score::Result<score::mw::com::InstanceSpecifier> own_spec_result =
-        score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/bidirectional_discovery/application_b"});
+        score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/bidirectional_discovery/application_a"});
     if (!own_spec_result.has_value())
     {
-        score::mw::log::LogError("BiB") << "InstanceSpecifier::Create failed for own specifier";
+        score::mw::log::LogError("BiA") << "InstanceSpecifier::Create failed for own specifier";
         return EXIT_FAILURE;
     }
 
     score::Result<sensor::SensorSkeleton> skeleton_result = sensor::SensorSkeleton::Create(own_spec_result.value());
     if (!skeleton_result.has_value())
     {
-        score::mw::log::LogError("BiB") << "SensorSkeleton::Create failed — check mw_com_config.json";
+        score::mw::log::LogError("BiA") << "SensorSkeleton::Create failed — check mw_com_config.json";
         return EXIT_FAILURE;
     }
     sensor::SensorSkeleton& sk = skeleton_result.value();
@@ -72,7 +63,7 @@ int main(int argc, char* argv[])
     score::Result<void> init_update_result = sk.calibration_status.Update(0U);
     if (!init_update_result.has_value())
     {
-        score::mw::log::LogError("BiB") << "calibration_status.Update (initial) failed";
+        score::mw::log::LogError("BiA") << "calibration_status.Update (initial) failed";
         return EXIT_FAILURE;
     }
 
@@ -80,15 +71,15 @@ int main(int argc, char* argv[])
     score::Result<void> offer_result = sk.OfferService();
     if (!offer_result.has_value())
     {
-        score::mw::log::LogError("BiB") << "OfferService failed — check mw_com_config.json";
+        score::mw::log::LogError("BiA") << "OfferService failed — check mw_com_config.json";
         return EXIT_FAILURE;
     }
 
     score::Result<score::mw::com::InstanceSpecifier> remote_spec_result =
-        score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/bidirectional_discovery/application_a"});
+        score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/bidirectional_discovery/application_b"});
     if (!remote_spec_result.has_value())
     {
-        score::mw::log::LogError("BiB") << "InstanceSpecifier::Create failed for remote specifier";
+        score::mw::log::LogError("BiA") << "InstanceSpecifier::Create failed for remote specifier";
         return EXIT_FAILURE;
     }
 
@@ -106,7 +97,7 @@ int main(int argc, char* argv[])
             score::Result<sensor::SensorProxy> proxy_result = sensor::SensorProxy::Create(handles.front());
             if (!proxy_result.has_value())
             {
-                score::mw::log::LogError("BiB") << "SensorProxy::Create failed in discovery callback";
+                score::mw::log::LogError("BiA") << "SensorProxy::Create failed in discovery callback";
                 proxy_ready.notify();
                 return;
             }
@@ -116,23 +107,23 @@ int main(int argc, char* argv[])
         remote_spec_result.value());
     if (!fshandle_result.has_value())
     {
-        score::mw::log::LogError("BiB") << "StartFindService failed";
+        score::mw::log::LogError("BiA") << "StartFindService failed";
         return EXIT_FAILURE;
     }
 
-    // Wait for application A's service before forbid_heap() — Proxy::Create() allocates.
+    // Wait for application B's service before forbid_heap() — Proxy::Create() allocates.
     bool notified = proxy_ready.waitForWithAbort(kDiscoveryTimeout, stop_source.get_token());
 
     score::Result<void> stop_result = sensor::SensorProxy::StopFindService(fshandle_result.value());
     if (!stop_result.has_value())
     {
-        score::mw::log::LogError("BiB") << "StopFindService failed";
+        score::mw::log::LogError("BiA") << "StopFindService failed";
         return EXIT_FAILURE;
     }
 
     if (!notified || !remote_proxy.has_value())
     {
-        score::mw::log::LogError("BiB") << "Application A not found within timeout — is application_a running?";
+        score::mw::log::LogError("BiA") << "Application B not found within timeout — is application_b running?";
         return EXIT_FAILURE;
     }
 
@@ -141,12 +132,12 @@ int main(int argc, char* argv[])
     score::Result<void> subscribe_result = proxy.reading.Subscribe(kMaxSamples);
     if (!subscribe_result.has_value())
     {
-        score::mw::log::LogError("BiB") << "reading.Subscribe failed";
+        score::mw::log::LogError("BiA") << "reading.Subscribe failed";
         return EXIT_FAILURE;
     }
 
-    // ---- OPERATIONAL PHASE (see README.md for heap behavior of each API) ----
-    score::mw::log::LogInfo("BiB") << "Entering operational phase (heap forbidden)";
+    // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
+    score::mw::log::LogInfo("BiA") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
 
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
@@ -154,7 +145,7 @@ int main(int argc, char* argv[])
         score::Result<score::mw::com::SampleAllocateePtr<sensor::SensorReading>> sample_result = sk.reading.Allocate();
         if (!sample_result.has_value())
         {
-            score::mw::log::LogError("BiB") << "reading.Allocate failed";
+            score::mw::log::LogError("BiA") << "reading.Allocate failed";
             heap_check::allow_heap();
             return EXIT_FAILURE;
         }
@@ -165,7 +156,7 @@ int main(int argc, char* argv[])
         score::Result<void> send_result = sk.reading.Send(std::move(sample_result.value()));
         if (!send_result.has_value())
         {
-            score::mw::log::LogError("BiB") << "reading.Send failed";
+            score::mw::log::LogError("BiA") << "reading.Send failed";
             heap_check::allow_heap();
             return EXIT_FAILURE;
         }
@@ -178,7 +169,7 @@ int main(int argc, char* argv[])
             kMaxSamples);
         if (!recv_result.has_value())
         {
-            score::mw::log::LogError("BiB") << "reading.GetNewSamples failed";
+            score::mw::log::LogError("BiA") << "reading.GetNewSamples failed";
             heap_check::allow_heap();
             return EXIT_FAILURE;
         }
@@ -188,11 +179,11 @@ int main(int argc, char* argv[])
 
     // ---- CLEANUP ----
     heap_check::allow_heap();
-    score::mw::log::LogInfo("BiB") << "Operational phase complete (" << kNumIterations << " iterations)";
+    score::mw::log::LogInfo("BiA") << "Operational phase complete (" << kNumIterations << " iterations)";
 
     proxy.reading.Unsubscribe();
     sk.StopOfferService();
 
-    score::mw::log::LogInfo("BiB") << "Completed successfully";
+    score::mw::log::LogInfo("BiA") << "Completed successfully";
     return 0;
 }

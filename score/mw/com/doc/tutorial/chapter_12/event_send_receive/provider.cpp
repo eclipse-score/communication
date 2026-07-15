@@ -11,11 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-#include "common/sensor_interface.h"
+#include "common/service_interface.h"
 #include "heap_check/heap_check.h"
 
-#include "score/mw/com/runtime.h"
-#include "score/mw/com/runtime_configuration.h"
 #include "score/mw/log/logging.h"
 
 #include <chrono>
@@ -31,31 +29,24 @@ constexpr std::chrono::milliseconds kCycleTime{10};
 
 }  // namespace
 
-int main(int argc, char* argv[])
+int main()
 {
-    score::mw::log::LogInfo("SKSF") << "Starting start_find_service/skeleton";
+    score::mw::log::LogInfo("SkEs") << "Starting event_send_receive/provider";
 
     // ---- INIT PHASE ----
 
-    score::mw::com::runtime::RuntimeConfiguration runtime_config{};
-    if (argc > 1)
-    {
-        runtime_config = score::mw::com::runtime::RuntimeConfiguration{score::filesystem::Path{argv[1]}};
-    }
-    score::mw::com::runtime::InitializeRuntime(runtime_config);
-
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
-        score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/start_find_service/SensorInterface"});
+        score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/event_send_receive/SensorInterface"});
     if (!specifier_result.has_value())
     {
-        score::mw::log::LogError("SKSF") << "InstanceSpecifier::Create failed";
+        score::mw::log::LogError("SkEs") << "InstanceSpecifier::Create failed";
         return EXIT_FAILURE;
     }
 
     score::Result<sensor::SensorSkeleton> skeleton_result = sensor::SensorSkeleton::Create(specifier_result.value());
     if (!skeleton_result.has_value())
     {
-        score::mw::log::LogError("SKSF") << "SensorSkeleton::Create failed — check mw_com_config.json";
+        score::mw::log::LogError("SkEs") << "SensorSkeleton::Create failed — check mw_com_config.json";
         return EXIT_FAILURE;
     }
     sensor::SensorSkeleton& sk = skeleton_result.value();
@@ -63,19 +54,19 @@ int main(int argc, char* argv[])
     score::Result<void> init_update_result = sk.calibration_status.Update(0U);
     if (!init_update_result.has_value())
     {
-        score::mw::log::LogError("SKSF") << "calibration_status.Update (initial) failed";
+        score::mw::log::LogError("SkEs") << "calibration_status.Update (initial) failed";
         return EXIT_FAILURE;
     }
 
     score::Result<void> offer_result = sk.OfferService();
     if (!offer_result.has_value())
     {
-        score::mw::log::LogError("SKSF") << "OfferService failed — check mw_com_config.json";
+        score::mw::log::LogError("SkEs") << "OfferService failed — check mw_com_config.json";
         return EXIT_FAILURE;
     }
 
-    // ---- OPERATIONAL PHASE (see README.md for heap behavior of each API) ----
-    score::mw::log::LogInfo("SKSF") << "Entering operational phase (heap forbidden)";
+    // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
+    score::mw::log::LogInfo("SkEs") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
 
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
@@ -83,7 +74,7 @@ int main(int argc, char* argv[])
         score::Result<score::mw::com::SampleAllocateePtr<sensor::SensorReading>> sample_result = sk.reading.Allocate();
         if (!sample_result.has_value())
         {
-            score::mw::log::LogError("SKSF")
+            score::mw::log::LogError("SkEs")
                 << "reading.Allocate failed — all SHM slots may be held by slow subscribers";
             heap_check::allow_heap();
             return EXIT_FAILURE;
@@ -95,7 +86,7 @@ int main(int argc, char* argv[])
         score::Result<void> send_result = sk.reading.Send(std::move(sample_result.value()));
         if (!send_result.has_value())
         {
-            score::mw::log::LogError("SKSF") << "reading.Send failed";
+            score::mw::log::LogError("SkEs") << "reading.Send failed";
             heap_check::allow_heap();
             return EXIT_FAILURE;
         }
@@ -107,7 +98,7 @@ int main(int argc, char* argv[])
     heap_check::allow_heap();
     sk.StopOfferService();
 
-    score::mw::log::LogInfo("SKSF") << "Operational phase complete (" << kNumIterations << " iterations)";
-    score::mw::log::LogInfo("SKSF") << "Completed successfully";
+    score::mw::log::LogInfo("SkEs") << "Operational phase complete (" << kNumIterations << " iterations)";
+    score::mw::log::LogInfo("SkEs") << "Completed successfully";
     return 0;
 }

@@ -11,12 +11,10 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-#include "common/sensor_interface.h"
+#include "common/service_interface.h"
 #include "heap_check/heap_check.h"
 
 #include "score/concurrency/notification.h"
-#include "score/mw/com/runtime.h"
-#include "score/mw/com/runtime_configuration.h"
 #include "score/mw/log/logging.h"
 #include "score/stop_token.hpp"
 
@@ -37,18 +35,11 @@ constexpr std::size_t kMaxSamples{16U};
 
 }  // namespace
 
-int main(int argc, char* argv[])
+int main()
 {
-    score::mw::log::LogInfo("PxSF") << "Starting start_find_service/proxy";
+    score::mw::log::LogInfo("PxSF") << "Starting start_find_service/consumer";
 
     // ---- INIT PHASE ----
-
-    score::mw::com::runtime::RuntimeConfiguration runtime_config{};
-    if (argc > 1)
-    {
-        runtime_config = score::mw::com::runtime::RuntimeConfiguration{score::filesystem::Path{argv[1]}};
-    }
-    score::mw::com::runtime::InitializeRuntime(runtime_config);
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/start_find_service/SensorInterface"});
@@ -101,7 +92,7 @@ int main(int argc, char* argv[])
     if (!notified || !proxy_opt.has_value())
     {
         score::mw::log::LogError("PxSF")
-            << "Service not found within timeout — is start_find_service/skeleton running?";
+            << "Service not found within timeout — is start_find_service/provider running?";
         return EXIT_FAILURE;
     }
 
@@ -114,7 +105,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    // ---- OPERATIONAL PHASE (see README.md for heap behavior of each API) ----
+    // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("PxSF") << "Entering operational phase (heap forbidden)";
     heap_check::forbid_heap();
 

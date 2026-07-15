@@ -1,15 +1,3 @@
-# *******************************************************************************
-# Copyright (c) 2026 Contributors to the Eclipse Foundation
-#
-# See the NOTICE file(s) distributed with this work for additional
-# information regarding copyright ownership.
-#
-# This program and the accompanying materials are made available under the
-# terms of the Apache License Version 2.0 which is available at
-# https://www.apache.org/licenses/LICENSE-2.0
-#
-# SPDX-License-Identifier: Apache-2.0
-# *******************************************************************************
 bazel_dep(name = "score_communication", version = "0.0.0")
 local_path_override(
     module_name = "score_communication",
@@ -24,39 +12,6 @@ single_version_override(
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
     patches = ["//:restore_qnx8_poll_workaround.patch"],
-)
-
-bazel_dep(name = "aspect_rules_lint", version = "2.3.0", dev_dependency = True)
-bazel_dep(name = "buildifier_prebuilt", version = "8.5.1", dev_dependency = True)
-
-# JSON schema validation for mw_com_config.json files (mirrors root project setup)
-bazel_dep(name = "download_utils", version = "1.2.2", dev_dependency = True)
-bazel_dep(name = "nlohmann_json", version = "3.11.3", dev_dependency = True)
-
-download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
-
-download_archive(
-    name = "json_schema_validator",
-    build = "@score_communication//third_party/json_schema_validator:json_schema_validator.BUILD",
-    dev_dependency = True,
-    strip_prefix = "json-schema-validator-2.1.0",
-    urls = ["https://github.com/pboettch/json-schema-validator/archive/refs/tags/2.1.0.tar.gz"],
-)
-
-bazel_dep(name = "score_tooling")
-
-# Needed because we do not have a current release of score_tooling (as we are in dev phase of safety sentinel)
-git_override(
-    module_name = "score_tooling",
-    commit = "7099e272c3f6114bad17736debd54139601aedd4",
-    remote = "https://github.com/eclipse-score/tooling.git",
-)
-
-# Needed because score_tooling depends on trlc/lobster which are not in any registry yet
-git_override(
-    module_name = "trlc",
-    commit = "8d25f639ff44976893d7866ba421a04db5698ebe",
-    remote = "https://github.com/bmw-software-engineering/trlc.git",
 )
 
 bazel_dep(name = "lobster", version = "1.0.3")

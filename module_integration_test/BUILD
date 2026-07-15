@@ -11,24 +11,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("@score_tooling//:defs.bzl", "copyright_checker", "use_format_targets")
 
 cc_binary(
     name = "example",
     srcs = ["main.cpp"],
     deps = ["@score_communication//score/mw/com"],
 )
-
-copyright_checker(
-    name = "copyright",
-    srcs = [
-        "heap_free",
-        "//:BUILD",
-        "//:MODULE.bazel",
-    ],
-    config = "@score_tooling//cr_checker/resources:config",
-    template = "@score_tooling//cr_checker/resources:templates",
-    visibility = ["//visibility:public"],
-)
-
-use_format_targets()

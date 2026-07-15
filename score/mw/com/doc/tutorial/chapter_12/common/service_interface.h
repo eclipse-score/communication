@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_EXAMPLES_HEAP_FREE_COMMON_SENSOR_INTERFACE_H
-#define SCORE_MW_COM_EXAMPLES_HEAP_FREE_COMMON_SENSOR_INTERFACE_H
+#ifndef SCORE_MW_COM_TUTORIAL_CHAPTER_12_COMMON_SERVICE_INTERFACE_H
+#define SCORE_MW_COM_TUTORIAL_CHAPTER_12_COMMON_SERVICE_INTERFACE_H
 
 // Service interface for the heap-free examples. Instantiate with AsSkeleton<SensorInterface> or
 // AsProxy<SensorInterface>.
@@ -49,4 +49,4 @@ using SensorProxy = score::mw::com::AsProxy<SensorInterface>;
 
 }  // namespace sensor
 
-#endif  // SCORE_MW_COM_EXAMPLES_HEAP_FREE_COMMON_SENSOR_INTERFACE_H
+#endif  // SCORE_MW_COM_TUTORIAL_CHAPTER_12_COMMON_SERVICE_INTERFACE_H
