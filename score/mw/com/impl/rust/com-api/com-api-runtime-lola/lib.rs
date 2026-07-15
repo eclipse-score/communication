@@ -26,12 +26,14 @@
 //! that utilize the COM API abstractions.
 
 mod consumer;
+mod method;
 mod producer;
 mod runtime;
 
-pub use consumer::{LolaConsumerInfo, Sample, LolaConsumerDiscovery, SubscribableImpl};
+pub use consumer::{LolaConsumerDiscovery, LolaConsumerInfo, Sample, SubscribableImpl};
+pub use method::{LolaMethodCaller, LolaMethodHandler};
 pub use producer::{
-    LolaProviderInfo, Publisher, SampleMaybeUninit, SampleMut, LolaProducerBuilder,
+    LolaProducerBuilder, LolaProviderInfo, Publisher, SampleMaybeUninit, SampleMut,
 };
 pub use runtime::{LolaRuntimeImpl, RuntimeBuilderImpl};
 
