@@ -188,7 +188,10 @@ cc_test(
     tags = [
         "unit",
     ],
-    target_compatible_with = ["@platforms//os:linux"],  # @todo: Test works also under QNX, but in rare cases timeout of cc_unit_test is too strict.
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@score_cpp_policies//sanitizers/constraints:no_tsan",
+    ],  # @todo: Test works also under QNX, but in rare cases timeout of cc_unit_test is too strict. Timeouts when building with tsan. Should be reenabled after https://github.com/eclipse-score/communication/issues/712 has been fixed.
     visibility = [
         "//score/mw/com/gateway:__subpackages__",
     ],

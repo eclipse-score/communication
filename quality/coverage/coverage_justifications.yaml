@@ -74,19 +74,19 @@ justifications:
         line_end: 29
 
   - id: gateway-clear-nonblock-on-accepted-socket
-     category: defensive_programming
-     reason: >
+    category: defensive_programming
+    reason: >
        Defensive programming: Posix system call can only go wrong if the socket file descriptor is invalid,
        but socket has just been accepted in an earlier step.
 
-   - id: gateway-handle-response-only-ack-response
-     category: defensive_programming
-     reason: >
+  - id: gateway-handle-response-only-ack-response
+    category: defensive_programming
+    reason: >
        Defensive programming: Type has already been checked before this function has been called.
 
-   - id: gateway-dispatch-loop-calls-handler
-     category: tool_false_positive
-     reason: >
+  - id: gateway-dispatch-loop-calls-handler
+    category: tool_false_positive
+    reason: >
        Coverage tool incorrectly marks this line as not covered. Lines immediately before and after are covered.
        Covered by the test BidirectionalTransportSocketFixture.DispatchThreadDeliversQueuedMessageToHandler
        inside score/mw/com/gateway/transport_layer/sample/bidirectional_transport_test.cpp
