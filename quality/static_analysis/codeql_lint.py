@@ -101,7 +101,7 @@ def analyze_database(
                  database_path,
                  sarif_path,
                  reports_output_dir],
-                capture_output=True, text=True, env=env)
+                capture_output=True, text=True, env=env, check=False)
 
             if result.returncode != 0:
                 result.check_returncode()
