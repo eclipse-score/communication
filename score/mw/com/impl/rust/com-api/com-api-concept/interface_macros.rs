@@ -337,11 +337,13 @@ macro_rules! interface_producer_method {
                 instance_info: R::ProviderInfo,
             }
 
-            impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
-                type Interface = [<$id Interface>];
-                type OfferedProducer = [<$id OfferedProducer>]<R>;
-
-                fn offer(self) -> com_api::Result<Self::OfferedProducer> {
+            // Internal implementation - only new() is exposed via Producer trait
+            // offer() is hidden to enforce typestate validation via init_handlers()
+            impl<R: com_api::Runtime + ?Sized> [<$id Producer>]<R> {
+                /// Internal offer implementation - do not call directly!
+                /// Use init_handlers().register_*_handler(...).offer() instead.
+                #[doc(hidden)]
+                pub fn _offer_internal(self) -> com_api::Result<[<$id OfferedProducer>]<R>> {
                     // Offer the service instance to make it discoverable
                     self.instance_info.offer_service()?;
                     Ok([<$id OfferedProducer>] {
@@ -350,6 +352,22 @@ macro_rules! interface_producer_method {
                         )+
                         instance_info: self.instance_info,
                     })
+                }
+            }
+
+            // We can not remove the offer method from the Producer trait, but we can override it to panic with a clear message.
+            // As adding compiler warning or error for this is not possible, we will rely on documentation and panic.
+            // if user call this directly, as we are not offering the offer method directly.
+            impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
+                type Interface = [<$id Interface>];
+                type OfferedProducer = [<$id OfferedProducer>]<R>;
+
+                fn offer(self) -> com_api::Result<Self::OfferedProducer> {
+                    panic!(
+                        "ERROR: Cannot call {}.offer() directly. Method handlers must be registered first.\n\
+                         Correct usage: producer.init_handlers().register_*_handler(...).offer()",
+                        stringify!([<$id Producer>])
+                    )
                 }
 
                 fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {

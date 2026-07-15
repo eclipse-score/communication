@@ -29,6 +29,8 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields, Type};
 ///
 // TODO: This has common part with TypeStateFieldValidator, we can refactor to avoid code duplication.
 // consider creating a common function to extract method information and generate the validator struct.
+// Macro currently do not validate if method handler is already registered, it will allow multiple registrations for the same method.
+// Which is not ideal but we can add that validation in future if required.
 pub fn derive_typestate_method_validator_impl(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
@@ -230,9 +232,8 @@ pub fn derive_typestate_method_validator_impl(input: TokenStream) -> TokenStream
         // offer() is only available when ALL handlers are HandlerSet
         impl<#runtime_param_with_bounds> #validator_name<#runtime_param_name, #(#all_handler_set_states),*> {
             pub fn offer(self) -> com_api::Result<<#name<#runtime_param_name> as com_api::Producer<#runtime_param_name>>::OfferedProducer> {
-                // Extract producer and call its offer() method
-                use com_api::Producer;
-                self.producer.offer()
+                // Call internal offer implementation after validating all handlers are registered
+                self.producer._offer_internal()
             }
         }
 
