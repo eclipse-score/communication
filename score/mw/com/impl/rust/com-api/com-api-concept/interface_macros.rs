@@ -10,6 +10,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+// Type-state marker for handler not registered (compile-time tracking).
+#[allow(dead_code)]
+pub struct HandlerNotSet;
+
+// Type-state marker for handler registered (compile-time tracking).
+#[allow(dead_code)]
+pub struct HandlerSet;
 
 /// Main interface macro that generates Consumer, Producer, and OfferedProducer types
 /// along with all necessary trait implementations.
@@ -107,11 +114,21 @@ macro_rules! interface {
         }}
     };
 
-    (interface $id:ident { $($event_name:ident : Method<$event_type:ty>),+$(,)? }) => {
-        compile_error!(
-            "Method definitions are not supported in this macro version. \
-             Please use Event<T> syntax for defining events."
-        );
+    // Method-only interface with auto-generated ID
+    (interface $id:ident { $($method_name:ident : Method<$args:ty, $return:ty>),+ $(,)? }) => {
+        $crate::interface_common!($id);
+        $crate::interface_consumer_method!($id, $($method_name, Method<$args, $return>),+);
+        $crate::interface_producer_method!($id, $($method_name, Method<$args, $return>),+);
+    };
+
+    // Method-only interface with custom ID
+    (interface $id:ident {
+        Id = $uid:expr,
+        $($method_name:ident : Method<$args:ty, $return:ty>),+ $(,)?
+    }) => {
+        $crate::interface_common!($id, $uid);
+        $crate::interface_consumer_method!($id, $($method_name, Method<$args, $return>),+);
+        $crate::interface_producer_method!($id, $($method_name, Method<$args, $return>),+);
     };
 
     (interface $id:ident { $($event_name:ident : Field<$event_type:ty>),+$(,)? }) => {
@@ -246,6 +263,122 @@ macro_rules! interface_producer {
                     // Stop offering the service instance to withdraw it from system availability
                     self.instance_info.stop_offer_service()?;
                     Ok(producer)
+                }
+            }
+        }
+    };
+}
+
+/// Macro to implement the Consumer trait for method-based interfaces (Proxy side).
+///
+/// Generates the Consumer struct with ProxyMethod wrappers for each method.
+#[macro_export]
+macro_rules! interface_consumer_method {
+    ($id:ident, $($method_name:ident, Method<$args:ty, $return:ty>),+$(,)?) => {
+        com_api::paste::paste! {
+            pub struct [<$id Consumer>]<R: com_api::Runtime + ?Sized> {
+                $(
+                    pub $method_name: R::MethodCaller<$args, $return>,
+                )+
+                instance_info: R::ConsumerInfo,
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::Consumer<R> for [<$id Consumer>]<R> {
+                fn new(instance_info: R::ConsumerInfo) -> Self {
+                    [<$id Consumer>] {
+                        $(
+                            $method_name: <R::MethodCaller<$args, $return> as com_api::MethodCaller<$args, $return, R>>::new(
+                                stringify!($method_name),
+                                instance_info.clone()
+                            ).expect(&format!(
+                                "Failed to create proxy method for {}",
+                                stringify!($method_name)
+                            )),
+                        )+
+                        instance_info,
+                    }
+                }
+            }
+
+            // Add convenience methods for calling methods on the consumer
+            impl<R: com_api::Runtime + ?Sized> [<$id Consumer>]<R> {
+                $(
+                    pub fn $method_name(&self, args: $args) -> com_api::Result<$return> {
+                        <R::MethodCaller<$args, $return> as com_api::MethodCaller<$args, $return, R>>::call_with_copy(&self.$method_name, args)
+                    }
+                )+
+            }
+        }
+    };
+}
+
+/// Macro to implement the Producer trait for method-based interfaces (Skeleton side).
+///
+/// Generates the Producer struct with SkeletonMethod wrappers for each method.
+/// The Producer struct derives TypeStateMethodValidator for compile-time handler registration validation.
+#[macro_export]
+macro_rules! interface_producer_method {
+    ($id:ident, $($method_name:ident, Method<$args:ty, $return:ty>),+$(,)?) => {
+        com_api::paste::paste! {
+            // Producer struct with method handlers - derives TypeStateMethodValidator
+            #[derive($crate::com_api_concept_macros::TypeStateMethodValidator)]
+            pub struct [<$id Producer>]<R: com_api::Runtime + ?Sized> {
+                $(
+                    pub $method_name: R::MethodHandler<$args, $return>,
+                )+
+                pub instance_info: R::ProviderInfo,
+            }
+
+            // OfferedProducer for methods (methods remain active when offered)
+            pub struct [<$id OfferedProducer>]<R: com_api::Runtime + ?Sized> {
+                $(
+                    pub $method_name: R::MethodHandler<$args, $return>,
+                )+
+                instance_info: R::ProviderInfo,
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
+                type Interface = [<$id Interface>];
+                type OfferedProducer = [<$id OfferedProducer>]<R>;
+
+                fn offer(self) -> com_api::Result<Self::OfferedProducer> {
+                    // Offer the service instance to make it discoverable
+                    self.instance_info.offer_service()?;
+                    Ok([<$id OfferedProducer>] {
+                        $(
+                            $method_name: self.$method_name,
+                        )+
+                        instance_info: self.instance_info,
+                    })
+                }
+
+                fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
+                    Ok([<$id Producer>] {
+                        $(
+                            $method_name: <R::MethodHandler<$args, $return> as com_api::MethodHandler<$args, $return, R>>::new(
+                                stringify!($method_name),
+                                instance_info.clone()
+                            )?,
+                        )+
+                        instance_info,
+                    })
+                }
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::OfferedProducer<R>
+                for [<$id OfferedProducer>]<R> {
+                type Interface = [<$id Interface>];
+                type Producer = [<$id Producer>]<R>;
+
+                fn unoffer(self) -> com_api::Result<Self::Producer> {
+                    // Stop offering the service instance
+                    self.instance_info.stop_offer_service()?;
+                    Ok([<$id Producer>] {
+                        $(
+                            $method_name: self.$method_name,
+                        )+
+                        instance_info: self.instance_info,
+                    })
                 }
             }
         }
