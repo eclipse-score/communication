@@ -37,33 +37,17 @@ int main()
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/start_find_service/SensorInterface"});
-    if (!specifier_result.has_value())
-    {
-        score::mw::log::LogError("SKSF") << "InstanceSpecifier::Create failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "Failed to create InstanceSpecifier!");
 
     score::Result<sensor::SensorSkeleton> skeleton_result = sensor::SensorSkeleton::Create(specifier_result.value());
-    if (!skeleton_result.has_value())
-    {
-        score::mw::log::LogError("SKSF") << "SensorSkeleton::Create failed — check mw_com_config.json";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton_result.has_value(), "Failed to create SensorSkeleton!");
     sensor::SensorSkeleton& sk = skeleton_result.value();
 
     score::Result<void> init_update_result = sk.calibration_status.Update(0U);
-    if (!init_update_result.has_value())
-    {
-        score::mw::log::LogError("SKSF") << "calibration_status.Update (initial) failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_update_result.has_value(), "Failed to set calibration_status!");
 
     score::Result<void> offer_result = sk.OfferService();
-    if (!offer_result.has_value())
-    {
-        score::mw::log::LogError("SKSF") << "OfferService failed — check mw_com_config.json";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(), "Failed to offer SensorSkeleton!");
 
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("SKSF") << "Entering operational phase (heap forbidden)";

@@ -41,11 +41,7 @@ int main()
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/event_send_receive/SensorInterface"});
-    if (!specifier_result.has_value())
-    {
-        score::mw::log::LogError("PxEs") << "InstanceSpecifier::Create failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "Failed to create InstanceSpecifier!");
 
     score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType> handles{};
     for (std::uint32_t attempt = 0U; attempt < kMaxFindAttempts; ++attempt)
@@ -72,19 +68,11 @@ int main()
     }
 
     score::Result<sensor::SensorProxy> proxy_result = sensor::SensorProxy::Create(handles.front());
-    if (!proxy_result.has_value())
-    {
-        score::mw::log::LogError("PxEs") << "SensorProxy::Create failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_result.has_value(), "Failed to create SensorProxy!");
     sensor::SensorProxy& proxy = proxy_result.value();
 
     score::Result<void> subscribe_result = proxy.reading.Subscribe(kMaxSamples);
-    if (!subscribe_result.has_value())
-    {
-        score::mw::log::LogError("PxEs") << "reading.Subscribe failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(subscribe_result.has_value(), "Failed to subscribe to reading!");
 
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("PxEs") << "Entering operational phase (heap forbidden)";

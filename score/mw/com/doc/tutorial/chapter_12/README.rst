@@ -151,7 +151,7 @@ allocate heap memory and are completed before ``forbid_heap()``:
 
 .. literalinclude:: event_send_receive/provider.cpp
    :language: cpp
-   :lines: 36-70
+   :lines: 36-54
    :caption: event_send_receive/provider.cpp — init phase
 
 Once ``heap_check::forbid_heap()`` is called, the application enters the **operational phase**. The provider
@@ -162,7 +162,7 @@ it. Both calls remain on the SHM ring buffer; no ``operator new`` is involved:
 
 .. literalinclude:: event_send_receive/provider.cpp
    :language: cpp
-   :lines: 68-103
+   :lines: 52-87
    :caption: event_send_receive/provider.cpp — operational phase and cleanup
 
 Note the ``heap_check::allow_heap()`` call on each early-return error path inside the operational loop,
@@ -179,7 +179,7 @@ of these calls allocate and are completed before ``forbid_heap()``:
 
 .. literalinclude:: event_send_receive/consumer.cpp
    :language: cpp
-   :lines: 50-91
+   :lines: 46-79
    :caption: event_send_receive/consumer.cpp — init phase (discovery, create, subscribe)
 
 After ``forbid_heap()``, the operational loop calls ``proxy.reading.GetNewSamples()``, which reads directly
@@ -188,7 +188,7 @@ SHM handle, carrying zero-copy access to the data the provider placed there:
 
 .. literalinclude:: event_send_receive/consumer.cpp
    :language: cpp
-   :lines: 89-119
+   :lines: 77-107
    :caption: event_send_receive/consumer.cpp — operational phase and cleanup
 
 Fields in the operational phase
@@ -207,7 +207,7 @@ in the same heap-free loop:
 
 .. literalinclude:: event_field_update/provider.cpp
    :language: cpp
-   :lines: 68-112
+   :lines: 52-95
    :caption: event_field_update/provider.cpp — operational phase with event and field update
 
 Async service discovery with StartFindService
@@ -234,7 +234,7 @@ completed and the proxy has been created, because ``Create()`` allocates:
 
 .. literalinclude:: start_find_service/consumer.cpp
    :language: cpp
-   :lines: 52-110
+   :lines: 48-94
    :caption: start_find_service/consumer.cpp — StartFindService with bounded wait before forbid_heap()
 
 The key discipline is: **wait for the discovery callback to complete before calling** ``forbid_heap()``. Here
@@ -270,7 +270,7 @@ The ``bidirectional_discovery/application_a.cpp`` example shows this sequence:
 
 .. literalinclude:: bidirectional_discovery/application_a.cpp
    :language: cpp
-   :lines: 63-151
+   :lines: 59-120
    :caption: bidirectional_discovery/application_a.cpp — OfferService before StartFindService, then wait
 
 In the operational phase, application A simultaneously sends on its own skeleton event and polls the remote
@@ -278,7 +278,7 @@ proxy's event in the same loop — both heap-free:
 
 .. literalinclude:: bidirectional_discovery/application_a.cpp
    :language: cpp
-   :lines: 149-188
+   :lines: 118-157
    :caption: bidirectional_discovery/application_a.cpp — operational loop: send and receive without heap
 
 .. _chapter_12_asil_guidance:

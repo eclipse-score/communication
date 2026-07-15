@@ -54,43 +54,24 @@ int main()
 
     score::Result<score::mw::com::InstanceSpecifier> own_spec_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/bidirectional_discovery/application_a"});
-    if (!own_spec_result.has_value())
-    {
-        score::mw::log::LogError("BiA") << "InstanceSpecifier::Create failed for own specifier";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(own_spec_result.has_value(), "Failed to create InstanceSpecifier!");
 
     score::Result<sensor::SensorSkeleton> skeleton_result = sensor::SensorSkeleton::Create(own_spec_result.value());
-    if (!skeleton_result.has_value())
-    {
-        score::mw::log::LogError("BiA") << "SensorSkeleton::Create failed — check mw_com_config.json";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton_result.has_value(), "Failed to create SensorSkeleton!");
     sensor::SensorSkeleton& sk = skeleton_result.value();
 
     score::Result<void> init_update_result = sk.calibration_status.Update(0U);
-    if (!init_update_result.has_value())
-    {
-        score::mw::log::LogError("BiA") << "calibration_status.Update (initial) failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_update_result.has_value(), "Failed to set calibration_status!");
 
     // Offer before starting discovery. OfferService() creates the shared-memory region that
     // application B needs for Proxy::Create(). Both applications can start in any order.
     score::Result<void> offer_result = sk.OfferService();
-    if (!offer_result.has_value())
-    {
-        score::mw::log::LogError("BiA") << "OfferService failed — check mw_com_config.json";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(), "Failed to offer SensorSkeleton!");
 
     score::Result<score::mw::com::InstanceSpecifier> remote_spec_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/bidirectional_discovery/application_b"});
-    if (!remote_spec_result.has_value())
-    {
-        score::mw::log::LogError("BiA") << "InstanceSpecifier::Create failed for remote specifier";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(remote_spec_result.has_value(),
+                                                "Failed to create remote InstanceSpecifier!");
 
     std::optional<sensor::SensorProxy> remote_proxy{};
     score::concurrency::Notification proxy_ready{};
@@ -114,22 +95,14 @@ int main()
             proxy_ready.notify();
         },
         remote_spec_result.value());
-    if (!fshandle_result.has_value())
-    {
-        score::mw::log::LogError("BiA") << "StartFindService failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(fshandle_result.has_value(), "Failed to start service discovery!");
 
     // Wait for application B's Proxy::Create() to complete before forbid_heap(). Proxy::Create()
     // allocates heap memory and can only succeed after application B has called OfferService().
     bool notified = proxy_ready.waitForWithAbort(kDiscoveryTimeout, stop_source.get_token());
 
     score::Result<void> stop_result = sensor::SensorProxy::StopFindService(fshandle_result.value());
-    if (!stop_result.has_value())
-    {
-        score::mw::log::LogError("BiA") << "StopFindService failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(stop_result.has_value(), "Failed to stop service discovery!");
 
     if (!notified || !remote_proxy.has_value())
     {
@@ -140,11 +113,7 @@ int main()
     sensor::SensorProxy& proxy = remote_proxy.value();
 
     score::Result<void> subscribe_result = proxy.reading.Subscribe(kMaxSamples);
-    if (!subscribe_result.has_value())
-    {
-        score::mw::log::LogError("BiA") << "reading.Subscribe failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(subscribe_result.has_value(), "Failed to subscribe to reading!");
 
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("BiA") << "Entering operational phase (heap forbidden)";

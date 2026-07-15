@@ -43,11 +43,7 @@ int main()
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/start_find_service/SensorInterface"});
-    if (!specifier_result.has_value())
-    {
-        score::mw::log::LogError("PxSF") << "InstanceSpecifier::Create failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "Failed to create InstanceSpecifier!");
 
     std::optional<sensor::SensorProxy> proxy_opt{};
     score::concurrency::Notification proxy_ready{};
@@ -72,22 +68,14 @@ int main()
             proxy_ready.notify();
         },
         specifier_result.value());
-    if (!fshandle_result.has_value())
-    {
-        score::mw::log::LogError("PxSF") << "StartFindService failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(fshandle_result.has_value(), "Failed to start service discovery!");
 
     // Wait for callback to complete Proxy::Create() before forbid_heap().
     bool notified = proxy_ready.waitForWithAbort(kDiscoveryTimeout, stop_source.get_token());
 
     // Stop continuous discovery — one-shot pattern, we only need to find once.
     score::Result<void> stop_result = sensor::SensorProxy::StopFindService(fshandle_result.value());
-    if (!stop_result.has_value())
-    {
-        score::mw::log::LogError("PxSF") << "StopFindService failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(stop_result.has_value(), "Failed to stop service discovery!");
 
     if (!notified || !proxy_opt.has_value())
     {
@@ -99,11 +87,7 @@ int main()
     sensor::SensorProxy& proxy = proxy_opt.value();
 
     score::Result<void> subscribe_result = proxy.reading.Subscribe(kMaxSamples);
-    if (!subscribe_result.has_value())
-    {
-        score::mw::log::LogError("PxSF") << "reading.Subscribe failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(subscribe_result.has_value(), "Failed to subscribe to reading!");
 
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("PxSF") << "Entering operational phase (heap forbidden)";

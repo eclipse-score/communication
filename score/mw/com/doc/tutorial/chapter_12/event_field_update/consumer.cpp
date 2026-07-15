@@ -40,11 +40,7 @@ int main()
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/event_field_update/SensorInterface"});
-    if (!specifier_result.has_value())
-    {
-        score::mw::log::LogError("PxEf") << "InstanceSpecifier::Create failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "Failed to create InstanceSpecifier!");
 
     score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType> handles{};
     for (std::uint32_t attempt = 0U; attempt < kMaxFindAttempts; ++attempt)
@@ -71,26 +67,16 @@ int main()
     }
 
     score::Result<sensor::SensorProxy> proxy_result = sensor::SensorProxy::Create(handles.front());
-    if (!proxy_result.has_value())
-    {
-        score::mw::log::LogError("PxEf") << "SensorProxy::Create failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_result.has_value(), "Failed to create SensorProxy!");
     sensor::SensorProxy& proxy = proxy_result.value();
 
     score::Result<void> reading_subscribe_result = proxy.reading.Subscribe(kMaxSamples);
-    if (!reading_subscribe_result.has_value())
-    {
-        score::mw::log::LogError("PxEf") << "reading.Subscribe failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(reading_subscribe_result.has_value(),
+                                                "Failed to subscribe to reading!");
 
     score::Result<void> field_subscribe_result = proxy.calibration_status.Subscribe(1U);
-    if (!field_subscribe_result.has_value())
-    {
-        score::mw::log::LogError("PxEf") << "calibration_status.Subscribe failed";
-        return EXIT_FAILURE;
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(field_subscribe_result.has_value(),
+                                                "Failed to subscribe to calibration_status!");
 
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("PxEf") << "Entering operational phase (heap forbidden)";
