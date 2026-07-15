@@ -46,3 +46,13 @@ interface!(
         exhaust: Event<Exhaust>,
      }
 );
+
+// Example interface definition using the interface macro with a custom UID for the interface.
+// First tuple is the input argument type, and the second tuple is the return type.
+interface!(
+    interface VehicleMethods {
+        Id = "VehicleMethodsInterface",
+        update_tire_pressure: Method<(Tire,), ()>,
+        get_tire_pressure: Method<(), Tire>,
+     }
+);

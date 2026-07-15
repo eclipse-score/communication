@@ -18,6 +18,8 @@
 // Note: The example is using unwrap and panic in some places for simplicity,
 // but it is recommended to handle errors properly in production code.
 
+#![allow(unused)]
+
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -27,7 +29,7 @@ use com_api::{
     SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
 
-use com_api_gen::{Exhaust, Tire, VehicleInterface};
+use com_api_gen::{Exhaust, Tire, VehicleInterface, VehicleMethodsInterface,};
 
 #[derive(Parser)]
 struct Arguments {
@@ -45,6 +47,11 @@ type VehicleConsumer<R> = <VehicleInterface as Interface>::Consumer<R>;
 // VehicleOfferedProducer is the offered producer type generated for the Vehicle interface, parameterized by the runtime R
 type VehicleOfferedProducer<R> =
     <<VehicleInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
+
+type VehicleMethodConsumer<R> = <VehicleMethodsInterface as Interface>::Consumer<R>;
+
+type VehicleMethodOfferedProducer<R> =
+    <<VehicleMethodsInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
 
 // Example struct demonstrating composition with VehicleConsumer
 pub struct VehicleMonitor<R: Runtime> {
@@ -120,6 +127,66 @@ impl<R: Runtime> VehicleMonitor<R> {
         println!("Tire data sent");
         Ok(())
     }
+}
+
+
+fn create_consumer_method<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> VehicleMethodConsumer<R> {
+    let consumer_discovery =
+        runtime.find_service::<VehicleMethodsInterface>(FindServiceSpecifier::Specific(service_id));
+    let available_service_instances = consumer_discovery
+        .get_available_instances()
+        .expect("Failed to get available service instances");
+
+    // Select service instance at specific handle_index
+    let handle_index = 0; // or any index you need from vector of instances
+    let consumer_builder = available_service_instances
+        .into_iter()
+        .nth(handle_index)
+        .expect("Failed to get consumer builder at specified handle index");
+
+    consumer_builder
+        .build()
+        .expect("Failed to build consumer instance")
+}
+
+fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
+    // Call the update_tire_pressure method with a sample tire pressure value
+    let tire = Tire { pressure: 30.0 };
+    match consumer.update_tire_pressure((tire,)) {
+        Ok(_) => println!("Successfully called update_tire_pressure method"),
+        Err(e) => eprintln!("Failed to call update_tire_pressure method: {:?}", e),
+    }
+
+    // Call the get_tire_pressure method to retrieve the current tire pressure
+    match consumer.get_tire_pressure(()) {
+        Ok(tire) => println!("Current tire pressure: {:?}", tire),
+        Err(e) => eprintln!("Failed to call get_tire_pressure method: {:?}", e),
+    }
+}
+
+fn create_producer_method<R: Runtime>(
+    runtime: &R,
+    service_id: InstanceSpecifier,
+) -> VehicleMethodOfferedProducer<R> {
+    let producer_builder = runtime.producer_builder::<VehicleMethodsInterface>(service_id);
+    let producer = producer_builder
+        .build()
+        .expect("Failed to build producer instance");
+    producer
+        .init_handlers()
+        .register_update_tire_pressure_handler(|tire: Tire| {
+            println!("Received update_tire_pressure call with tire: {:?}", tire);
+            ()
+        })
+        .expect("Failed to register update_tire_pressure handler")
+        .register_get_tire_pressure_handler(|| {
+            println!("Received get_tire_pressure call");
+            // Return a sample tire pressure value, just dummy value returned for demonstration
+            Tire { pressure: 32.0 }
+        })
+        .expect("Failed to register get_tire_pressure handler")
+        .offer()
+        .expect("Failed to offer producer instance")
 }
 
 // Create a consumer for the specified service identifier
