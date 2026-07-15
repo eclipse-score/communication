@@ -27,4 +27,5 @@ integration_test(
         "stop_offer_during_call_test.py",
     ],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )

@@ -11,11 +11,28 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+from contextlib import contextmanager
+
+
+def service_discovery_daemon(target):
+    @contextmanager
+    def _service_discovery_daemon():
+        daemon_process = target.execute_async(
+            "bin/service_discovery_daemon_app",
+            args=[],
+            cwd="/opt/ServiceDiscoveryDaemonApp",
+        )
+        yield daemon_process
+
+    return _service_discovery_daemon()
+
+
 def consumer_and_provider(target, **kwargs):
     args = ["--service_instance_manifest", "./etc/mw_com_config.json"]
-    return target.wrap_exec("./bin/main_stop_offer_during_call",args,
-                           cwd="/opt/StopOfferDuringCallApp/", wait_on_exit=True, **kwargs)
+    return target.wrap_exec("./bin/main_stop_offer_during_call", args,
+                            cwd="/opt/StopOfferDuringCallApp/", wait_on_exit=True, **kwargs)
 
-def test_stop_offer_during_call(target, **kwargs):
-    with consumer_and_provider(target, **kwargs):
+
+def test_stop_offer_during_call(target):
+    with service_discovery_daemon(target), consumer_and_provider(target):
         pass

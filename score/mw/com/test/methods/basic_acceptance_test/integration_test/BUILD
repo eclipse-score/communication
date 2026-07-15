@@ -20,6 +20,7 @@ integration_test(
         "basic_acceptance_same_process_test.py",
     ],
     filesystem = "//score/mw/com/test/methods/basic_acceptance_test:main_consumer_and_provider-pkg",
+    service_discovery_daemon = True,
 )
 
 pkg_filegroup(
@@ -36,4 +37,5 @@ integration_test(
         "basic_acceptance_different_processes_test.py",
     ],
     filesystem = ":different_processes_filesystem",
+    service_discovery_daemon = True,
 )

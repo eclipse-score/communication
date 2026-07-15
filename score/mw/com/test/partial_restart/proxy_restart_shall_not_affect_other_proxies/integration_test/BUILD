@@ -21,6 +21,7 @@ integration_test(
         "test_proxy_restart_shall_not_affect_other_proxies_graceful.py",
     ],
     filesystem = "//score/mw/com/test/partial_restart/proxy_restart_shall_not_affect_other_proxies:proxy_restart_shall_not_affect_other_proxies-pkg",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -31,4 +32,5 @@ integration_test(
         "test_proxy_restart_shall_not_affect_other_proxies_kill.py",
     ],
     filesystem = "//score/mw/com/test/partial_restart/proxy_restart_shall_not_affect_other_proxies:proxy_restart_shall_not_affect_other_proxies-pkg",
+    service_discovery_daemon = True,
 )

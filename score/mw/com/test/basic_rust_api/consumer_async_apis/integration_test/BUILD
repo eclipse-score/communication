@@ -19,4 +19,5 @@ integration_test(
         "com_api_async_api_test.py",
     ],
     filesystem = "//score/mw/com/test/basic_rust_api/consumer_async_apis:bigdata-com-api-async-pkg",
+    service_discovery_daemon = True,
 )

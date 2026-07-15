@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_subscribe_handler.py"],
     filesystem = "//score/mw/com/test/subscribe_handler:subscribe_handler-pkg",
+    service_discovery_daemon = True,
 )

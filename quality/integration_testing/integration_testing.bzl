@@ -28,10 +28,15 @@ def _extend_list_in_kwargs_without_duplicates(kwargs, key, values):
     kwargs[key] = kwargs_values
     return kwargs
 
-def integration_test(name, srcs, filesystem, **kwargs):
+def integration_test(name, srcs, filesystem, service_discovery_daemon = False, **kwargs):
     image_name = "_image_{}".format(name)
     image_loader = "_image_{}_loader".format(name)
     repo_tag = "{}:latest".format(name)
+
+    filesystem_srcs = [filesystem]
+    test_srcs = srcs
+    if service_discovery_daemon:
+        filesystem_srcs.append("//score/mw/com/test/service_discovery_daemon:service_discovery_daemon-pkg")
 
     LINUX_TARGET_COMPATIBLE_WITH = select({
         "@platforms//cpu:x86_64": ["@platforms//cpu:x86_64"],
@@ -42,7 +47,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
 
     pkg_tar(
         name = "_oci_filesystem_{}".format(name),
-        srcs = [filesystem],
+        srcs = filesystem_srcs,
     )
 
     oci_image(
@@ -86,7 +91,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
         name = qemu_image,
         out = "init_ifs_{}".format(name),
         build_file = "//quality/integration_testing/environments/qnx8_qemu:init_build",
-        srcs = [filesystem, "//quality/integration_testing/environments/qnx8_qemu:qnx_config"],
+        srcs = filesystem_srcs + ["//quality/integration_testing/environments/qnx8_qemu:qnx_config"],
         target_compatible_with = QNX_TARGET_COMPATIBLE_WITH,
     )
 
@@ -130,7 +135,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
 
     py_itf_test(
         name = name,
-        srcs = srcs,
+        srcs = test_srcs,
         plugins = select({
             "//conditions:default": [
                 "@score_itf//score/itf/plugins:docker_plugin",

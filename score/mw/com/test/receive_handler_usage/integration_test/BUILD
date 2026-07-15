@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_receive_handler_usage.py"],
     filesystem = "//score/mw/com/test/receive_handler_usage:receive_handler_usage-pkg",
+    service_discovery_daemon = True,
 )

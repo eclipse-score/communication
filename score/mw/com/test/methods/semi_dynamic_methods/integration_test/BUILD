@@ -18,6 +18,7 @@ integration_test(
     name = "semi_dynamic_methods_same_process_test",
     srcs = ["semi_dynamic_methods_same_process_test.py"],
     filesystem = "//score/mw/com/test/methods/semi_dynamic_methods:main_consumer_and_provider-pkg",
+    service_discovery_daemon = True,
 )
 
 pkg_filegroup(
@@ -32,4 +33,5 @@ integration_test(
     name = "semi_dynamic_methods_different_processes_test",
     srcs = ["semi_dynamic_methods_different_processes_test.py"],
     filesystem = ":different_processes_filesystem",
+    service_discovery_daemon = True,
 )

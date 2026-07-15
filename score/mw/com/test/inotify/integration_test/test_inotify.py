@@ -19,7 +19,17 @@ def inotify(target, **kwargs):
     return target.wrap_exec("bin/inotify_test", args, cwd="/opt/InotifyTestApp", wait_on_exit=True, **kwargs)
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_inotify(target):
     """Test inotify functionality."""
-    with inotify(target, wait_timeout=60):
+    with service_discovery_daemon(target), inotify(target, wait_timeout=60):
         pass

@@ -10,14 +10,27 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+from contextlib import contextmanager
 
 
-def proxy_restart_shall_not_affect_other_proxies(target, number_of_consumer_restarts, kill_consumer, **kwargs):
-    args = ["--kill", f"{kill_consumer}", "--number-consumer-restarts", f"{number_of_consumer_restarts}"]
+def service_discovery_daemon(target, **kwargs):
     return target.wrap_exec(
-        "./bin/proxy_restart_shall_not_affect_other_proxies",
-        args,
-        cwd="/opt/proxy_restart_shall_not_affect_other_proxies",
-        wait_on_exit=True,
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
         **kwargs,
     )
+
+
+@contextmanager
+def proxy_restart_shall_not_affect_other_proxies(target, number_of_consumer_restarts, kill_consumer, **kwargs):
+    args = ["--kill", f"{kill_consumer}", "--number-consumer-restarts", f"{number_of_consumer_restarts}"]
+    with service_discovery_daemon(target):
+        with target.wrap_exec(
+            "./bin/proxy_restart_shall_not_affect_other_proxies",
+            args,
+            cwd="/opt/proxy_restart_shall_not_affect_other_proxies",
+            wait_on_exit=True,
+            **kwargs,
+        ):
+            yield

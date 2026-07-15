@@ -24,7 +24,17 @@ def service(target):
     return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp")
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_service_discovery_offer_and_search(target):
     """Test service discovery where service offers first, then client searches."""
-    with service(target), client(target):
+    with service_discovery_daemon(target), service(target), client(target):
         pass

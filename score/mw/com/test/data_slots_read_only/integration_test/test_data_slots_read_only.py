@@ -11,6 +11,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+from contextlib import contextmanager
+
+
 """Integration test for data_slots_read_only."""
 
 
@@ -26,6 +29,21 @@ def data_slots_read_only(target, mode, should_modify_data_segment, cycle_time=No
     )
 
 
+def service_discovery_daemon(target, **kwargs):
+    del kwargs
+
+    @contextmanager
+    def _service_discovery_daemon():
+        daemon_process = target.execute_async(
+            "bin/service_discovery_daemon_app",
+            args=[],
+            cwd="/opt/ServiceDiscoveryDaemonApp",
+        )
+        yield daemon_process
+
+    return _service_discovery_daemon()
+
+
 def test_data_slots_read_only(target):
     """Test data slots read-only functionality."""
     sigabort_return_code = 134
@@ -33,30 +51,31 @@ def test_data_slots_read_only(target):
     sanitizer_error_code = 55
     expected_return_codes = [sigabort_return_code, sigsegv_return_code, sanitizer_error_code]
 
-    # Running the test without modification of the data segment should pass
-    with data_slots_read_only(target, "send", should_modify_data_segment=False, cycle_time=10, num_cycles=100, wait_timeout=30):
-        with data_slots_read_only(
-            target, "recv", should_modify_data_segment=False, num_cycles=25, wait_timeout=30
-        ) as receiver:
-            pass
+    with service_discovery_daemon(target):
+        # Running the test without modification of the data segment should pass
+        with data_slots_read_only(target, "send", should_modify_data_segment=False, cycle_time=10, num_cycles=100, wait_timeout=30):
+            with data_slots_read_only(
+                target, "recv", should_modify_data_segment=False, num_cycles=25, wait_timeout=30
+            ) as receiver:
+                pass
 
-    # Running the test with modification of the data segment should not pass.
-    # The receiver is expected to crash (SIGABRT, SIGSEGV, or sanitizer error).
-    # The sender may also fail (e.g. SIGPIPE) when the receiver's IPC endpoint dies.
-    actual_return_code = None
-    try:
-        with data_slots_read_only(target, "send", should_modify_data_segment=True, cycle_time=10, num_cycles=100, wait_timeout=60):
-            try:
-                with data_slots_read_only(
-                    target, "recv", should_modify_data_segment=True, num_cycles=25, wait_timeout=60
-                ) as receiver:
-                    pass
-            except RuntimeError:
-                actual_return_code = receiver.ret_code
-    except RuntimeError:
-        pass  # Sender may fail with SIGPIPE when receiver crashes
+        # Running the test with modification of the data segment should not pass.
+        # The receiver is expected to crash (SIGABRT, SIGSEGV, or sanitizer error).
+        # The sender may also fail (e.g. SIGPIPE) when the receiver's IPC endpoint dies.
+        actual_return_code = None
+        try:
+            with data_slots_read_only(target, "send", should_modify_data_segment=True, cycle_time=10, num_cycles=100, wait_timeout=60):
+                try:
+                    with data_slots_read_only(
+                        target, "recv", should_modify_data_segment=True, num_cycles=25, wait_timeout=60
+                    ) as receiver:
+                        pass
+                except RuntimeError:
+                    actual_return_code = receiver.ret_code
+        except RuntimeError:
+            pass  # Sender may fail with SIGPIPE when receiver crashes
 
-    assert actual_return_code is not None, "Expected RuntimeError was not raised"
-    assert actual_return_code in expected_return_codes, (
-        f"Application exit code: {receiver.ret_code} is not equal to one of the expected return code: {expected_return_codes}"
-    )
+        assert actual_return_code is not None, "Expected RuntimeError was not raised"
+        assert actual_return_code in expected_return_codes, (
+            f"Application exit code: {receiver.ret_code} is not equal to one of the expected return code: {expected_return_codes}"
+        )

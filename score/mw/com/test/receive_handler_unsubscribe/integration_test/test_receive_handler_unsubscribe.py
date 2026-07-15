@@ -30,6 +30,16 @@ def receive_handler_unsubscribe(target, cycle_time=None, num_cycles=None, **kwar
     )
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_receive_handler_unsubscribe(target):
     """Test that receive handler is no longer invoked after unsubscribe.
 
@@ -37,5 +47,5 @@ def test_receive_handler_unsubscribe(target):
     The skeleton publishes events and the proxy receives notifications via a callback.
     When Unsubscribe is called, it verifies the callback is no longer invoked.
     """
-    with receive_handler_unsubscribe(target, cycle_time=10, num_cycles=100, wait_timeout=60):
+    with service_discovery_daemon(target), receive_handler_unsubscribe(target, cycle_time=10, num_cycles=100, wait_timeout=60):
         pass

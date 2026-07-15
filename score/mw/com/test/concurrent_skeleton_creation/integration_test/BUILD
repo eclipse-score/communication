@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_concurrent_skeleton_creation.py"],
     filesystem = "//score/mw/com/test/concurrent_skeleton_creation:concurrent_skeleton_creation-pkg",
+    service_discovery_daemon = True,
 )

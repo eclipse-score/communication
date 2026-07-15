@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_receive_handler_unsubscribe.py"],
     filesystem = "//score/mw/com/test/receive_handler_unsubscribe:receive_handler_unsubscribe-pkg",
+    service_discovery_daemon = True,
 )

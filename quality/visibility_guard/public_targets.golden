@@ -111,6 +111,11 @@
 //score/mw/com/performance_benchmarks/macro_benchmark:lola_benchmarking_client
 //score/mw/com/performance_benchmarks/macro_benchmark:lola_benchmarking_service
 //score/mw/com/performance_benchmarks/macro_benchmark:mw_com_config.json
+//score/mw/com/service_discovery/dependability:dependable_element_service_discovery
+//score/mw/com/service_discovery/dependability:dependable_element_service_discovery_doc
+//score/mw/com/service_discovery/dependability:dependable_element_service_discovery_doc_needs
+//score/mw/com/service_discovery/dependability:dependable_element_service_discovery_index
+//score/mw/com/service_discovery/dependability:dependable_element_service_discovery_rst
 //score/mw/com/test/generic_skeleton/integration_test:_image_test_generic_generic_interaction
 //score/mw/com/test/generic_skeleton/integration_test:_image_test_generic_generic_interaction.digest
 //score/mw/com/test/generic_skeleton/integration_test:_image_test_generic_generic_interaction_index_json

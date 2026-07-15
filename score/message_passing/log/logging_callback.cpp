@@ -13,7 +13,6 @@
 #include "score/message_passing/log/logging_callback.h"
 
 #include <iostream>
-#include <mutex>
 
 namespace score::message_passing
 {
@@ -21,8 +20,6 @@ namespace score::message_passing
 LoggingCallback GetCerrLogger()
 {
     return [](LogSeverity /*severity*/, LogItems items) -> void {
-        static std::mutex cerr_mutex;
-        std::lock_guard<std::mutex> guard(cerr_mutex);
         for (auto& item : items)
         {
             std::visit(

@@ -28,6 +28,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -37,6 +38,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -46,6 +48,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -55,4 +58,5 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )

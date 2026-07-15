@@ -10,10 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-from test_fixture import consumer_and_provider, SkeletonMoveScenario
-
-
+from test_fixture import consumer_and_provider, service_discovery_daemon, SkeletonMoveScenario
 def test_move_assign_not_offered_same_process(target):
-    with consumer_and_provider(target, SkeletonMoveScenario.MOVE_ASSIGN_NOT_OFFERED):
+    with service_discovery_daemon(target), consumer_and_provider(target, SkeletonMoveScenario.MOVE_ASSIGN_NOT_OFFERED):
         pass
 
