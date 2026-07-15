@@ -22,6 +22,7 @@
 
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
+#include "score/scope_exit/scope_exit.h"
 
 #include <iostream>
 #include <mutex>
@@ -39,6 +40,10 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
                                 score::cpp::stop_token test_stop_token,
                                 const ConsumerParameters&) noexcept
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     // ********************************************************************************
     // Step (2) - Create Proxy for found service
     // ********************************************************************************
@@ -84,7 +89,6 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
         if (!event_received.waitWithAbort(test_stop_token))
         {
             std::cerr << "Consumer: Event reception aborted via stop-token!" << std::endl;
-            check_point_control.ErrorOccurred();
             return;
         }
         std::cout << "Consumer: Calling GetNewSamples" << std::endl;
@@ -99,7 +103,6 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
         if (!(get_new_samples_result.has_value()))
         {
             std::cerr << "Consumer: GetNewSamples failed with error: " << get_new_samples_result.error() << std::endl;
-            check_point_control.ErrorOccurred();
             return;
         }
         num_samples_received += get_new_samples_result.value();
@@ -119,7 +122,6 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
     {
         std::cerr << "Consumer: Expected to get notification to continue to next checkpoint but got: "
                   << static_cast<int>(wait_for_child_proceed_result) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
 
@@ -152,7 +154,6 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
     {
         std::cerr << "Consumer: Expected to get notification to continue to next checkpoint but got: "
                   << static_cast<int>(wait_for_child_proceed_result) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
 
@@ -182,7 +183,6 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
     {
         std::cerr << "Consumer: Expected to get notification to continue to next checkpoint but got: "
                   << static_cast<int>(wait_for_child_proceed_result) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
 
@@ -195,7 +195,6 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
         if ((event.member_1 != events.at(i).member_1) || (event.member_2 != events.at(i).member_2))
         {
             std::cerr << "Consumer: Data integrity check failed.\n";
-            check_point_control.ErrorOccurred();
             return;
         }
     }
@@ -214,7 +213,6 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
         if (!event_received.waitWithAbort(test_stop_token))
         {
             std::cerr << "Consumer: Event reception aborted via stop-token!" << std::endl;
-            check_point_control.ErrorOccurred();
             return;
         }
         auto get_new_samples_result = lola_proxy.simple_event_.GetNewSamples(
@@ -227,7 +225,6 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
         if (!(get_new_samples_result.has_value()))
         {
             std::cerr << "Consumer: GetNewSamples failed with error: " << get_new_samples_result.error() << std::endl;
-            check_point_control.ErrorOccurred();
             return;
         }
         num_samples_received += get_new_samples_result.value();
@@ -247,9 +244,9 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
     {
         std::cerr << "Consumer: Expected to get notification to finish but got: "
                   << static_cast<int>(wait_for_child_proceed_result) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
+    check_point_control_error_guard.Release();
     std::cerr << "Consumer: Finishing Actions!" << std::endl;
 }
 
@@ -258,6 +255,10 @@ void DoConsumerActionsWithOutProxy(CheckPointControl& check_point_control,
                                    score::cpp::stop_token test_stop_token,
                                    const ConsumerParameters& /*test_params*/) noexcept
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     // ********************************************************************************
     // Step (2): Checkpoint (1) reached - notify to Controller.
     // ********************************************************************************
@@ -276,7 +277,6 @@ void DoConsumerActionsWithOutProxy(CheckPointControl& check_point_control,
     {
         std::cerr << "Consumer Step (3): Unexpected proceed instruction received: "
                   << static_cast<int>(proceed_instruction) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
 
@@ -305,7 +305,6 @@ void DoConsumerActionsWithOutProxy(CheckPointControl& check_point_control,
     {
         std::cerr << "Consumer Step (6): Unexpected proceed instruction received: "
                   << static_cast<int>(proceed_instruction) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
 
@@ -316,7 +315,6 @@ void DoConsumerActionsWithOutProxy(CheckPointControl& check_point_control,
     if (!WaitTillServiceAppears(handle_notification_data, kMaxHandleNotificationWaitTime))
     {
         std::cerr << "Consumer Step (7): Did not receive handle in time!" << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
 
@@ -337,9 +335,9 @@ void DoConsumerActionsWithOutProxy(CheckPointControl& check_point_control,
     {
         std::cerr << "Consumer Step (9): Unexpected proceed instruction received: "
                   << static_cast<int>(proceed_instruction) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
+    check_point_control_error_guard.Release();
 }
 
 /// \brief Implements Actions/Steps done by the Consumer process in the Partial Restart ITF
@@ -353,6 +351,10 @@ void DoConsumerActions(CheckPointControl& check_point_control,
                        const char** argv,
                        ConsumerParameters test_params) noexcept
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     // we also set up IPC-Tracing mocks for the consumer side, although we technically don't do tracing on the proxy
     // side. But we are sharing ONE mw_com_config.json between producer and consumer (which has IPC tracing enabled).
     // The alternative would have been to apply different mw_com_config.json configs for both provider/consumer
@@ -386,7 +388,6 @@ void DoConsumerActions(CheckPointControl& check_point_control,
     {
         std::cerr << "Consumer: Could not create instance specifier due to error "
                   << std::move(instance_specifier_result).error() << ", terminating!\n";
-        check_point_control.ErrorOccurred();
         return;
     }
 
@@ -406,7 +407,6 @@ void DoConsumerActions(CheckPointControl& check_point_control,
     if (!WaitTillServiceAppears(handle_notification_data, kMaxHandleNotificationWaitTime))
     {
         std::cerr << "Consumer Step (1): Did not receive handle in time!" << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
 
@@ -432,6 +432,7 @@ void DoConsumerActions(CheckPointControl& check_point_control,
         // ********************************************************************************
         DoConsumerActionsWithOutProxy(check_point_control, handle_notification_data, test_stop_token, test_params);
     }
+    check_point_control_error_guard.Release();
     std::cerr << "Consumer: Finishing Actions." << std::endl;
 }
 

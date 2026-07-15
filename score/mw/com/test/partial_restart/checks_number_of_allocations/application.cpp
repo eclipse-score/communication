@@ -19,6 +19,7 @@
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/test/partial_restart/test_datatype.h"
 #include "score/mw/com/types.h"
+#include "score/scope_exit/scope_exit.h"
 #include <cstdlib>
 #include <iostream>
 
@@ -34,6 +35,10 @@ const std::chrono::seconds kMaxWaitTimeToReachCheckpoint{30U};
 
 void PerformProviderActions(CheckPointControl& check_point_control, score::cpp::stop_token stop_token)
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     // *********************************************
     // Step (1)- Provider: create and offer service
     // *********************************************
@@ -61,7 +66,6 @@ void PerformProviderActions(CheckPointControl& check_point_control, score::cpp::
         if (!sample_result.has_value())
         {
             std::cout << "Provider Step (2): Allocation of a sample failed" << sample_result.error() << "\n";
-            check_point_control.ErrorOccurred();
             return;
         }
         sample_ptrs.push_back(std::move(sample_result.value()));
@@ -75,7 +79,6 @@ void PerformProviderActions(CheckPointControl& check_point_control, score::cpp::
     {
         std::cout << "Provider Step (3): Allocating one additional sample. This should not be possible."
                   << "\n";
-        check_point_control.ErrorOccurred();
         return;
     }
 
@@ -92,9 +95,9 @@ void PerformProviderActions(CheckPointControl& check_point_control, score::cpp::
     {
         std::cerr << "Consumer Step (5): Received proceed-trigger from controller, but expected finish-trigger!"
                   << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
+    check_point_control_error_guard.Release();
     std::cout << "Provider Step (5): after waiting for proceed\n";
 }
 

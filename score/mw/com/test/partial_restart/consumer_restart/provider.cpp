@@ -19,6 +19,7 @@
 #include "score/mw/com/test/partial_restart/test_datatype.h"
 
 #include "score/mw/com/runtime.h"
+#include "score/scope_exit/scope_exit.h"
 
 #include <chrono>
 #include <iostream>
@@ -41,6 +42,10 @@ void DoProviderActions(CheckPointControl& check_point_control,
                        int argc,
                        const char** argv) noexcept
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     if (argc > 0 && argv != nullptr)
     {
         std::cerr
@@ -102,10 +107,10 @@ void DoProviderActions(CheckPointControl& check_point_control,
         {
             std::cerr << "Provider Step (P.3): Unexpected proceed instruction received: "
                       << static_cast<int>(proceed_instruction) << std::endl;
-            check_point_control.ErrorOccurred();
             return;
         }
     }
+    check_point_control_error_guard.Release();
     std::cout << "Provider: Finishing actions!" << std::endl;
 }
 
