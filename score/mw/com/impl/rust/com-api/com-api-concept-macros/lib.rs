@@ -15,6 +15,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, Generics, Meta, Type};
 
+mod type_state_method_validator;
+
 /// Derive macro for the `CommData` trait.
 ///
 /// Implements `CommData` for a struct or C-like enum, providing a stable string identity
@@ -333,6 +335,42 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
     };
 
     Ok(out)
+}
+
+/// Derive macro to generate type-state validation for method handler registration.
+///
+/// This macro generates a validator struct that enforces compile-time verification
+/// that all method handlers are registered before the service can be offered.
+/// Unlike `TypeStateFieldValidator`, this only tracks handler registration state
+/// (no field update tracking).
+///
+/// # Generated Code
+///
+/// For a producer struct with methods, this macro generates:
+/// - A `<Name>Validator<R, H0, H1, ...>` struct with handler state type parameters
+/// - `register_handler_<method_name>()` methods that transition handler state to `HandlerSet`
+/// - An `init_handlers()` method that starts the type-state flow with all handlers as `HandlerNotSet`
+/// - An `offer()` method only available when all handlers are `HandlerSet`
+///
+/// # Usage
+///
+/// Apply this macro alongside the `interface!` macro for Method-based interfaces:
+///
+/// ```ignore
+/// #[derive(TypeStateMethodValidator)]
+/// struct VehicleMethodsProducer<R: Runtime> {
+///     update_tire_pressure: SkeletonMethod<R, (Tire,), ()>,
+///     get_tire_pressure: SkeletonMethod<R, (), Tire>,
+///     instance_info: R::ProviderInfo,
+/// }
+/// ```
+///
+/// The macro will generate a `VehicleMethodsProducerValidator<R, H0, H1>` struct with phantom
+/// type parameters representing the handler registration state of each method. The `offer()`
+/// method will only be available when all handlers are registered, ensuring compile-time safety.
+#[proc_macro_derive(TypeStateMethodValidator)]
+pub fn derive_typestate_method_validator(input: TokenStream) -> TokenStream {
+    type_state_method_validator::derive_typestate_method_validator_impl(input)
 }
 
 // Use doctest to test failed compilations and successful ones
