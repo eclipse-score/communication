@@ -322,11 +322,12 @@ macro_rules! interface_producer {
                 instance_info: R::ProviderInfo,
             }
 
-            impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
-                type Interface = [<$id Interface>];
-                type OfferedProducer = [<$id OfferedProducer>]<R>;
-
-                fn offer(self) -> com_api::Result<Self::OfferedProducer> {
+            // Internal implementation
+            impl<R: com_api::Runtime + ?Sized> [<$id Producer>]<R> {
+                /// Internal offer implementation
+                /// Use init_field().update_*(...).register_set_handler_*(...).offer() instead.
+                #[doc(hidden)]
+                fn _offer_internal(self) -> com_api::Result<[<$id OfferedProducer>]<R>> {
                     // Create OfferedProducer from consumed producer
                     let offered = [<$id OfferedProducer>] {
                         $(
@@ -337,6 +338,21 @@ macro_rules! interface_producer {
                     // Offer the service instance to make it discoverable
                     self.instance_info.offer_service()?;
                     Ok(offered)
+                }
+            }
+
+            // We can not remove the offer method from the Producer trait, but we can override it to panic with a clear message.
+            // Also adding compiler warning or error for this is not possible, we will rely on documentation and panic.
+            // if user call this directly, then it will panic and it is against the intended usage of the APIs.
+            // TODO: Need to think about this more, when we have more complex interface with mixed types.
+            // Also update the documentation for this, so user should not call offer() directly from Producer struct.
+            impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
+                type Interface = [<$id Interface>];
+                type OfferedProducer = [<$id OfferedProducer>]<R>;
+                fn offer(self) -> com_api::Result<Self::OfferedProducer> {
+                    panic!("Cannot offer field-based producer without initializing fields and registering handlers.\n\
+                    Use: producer.init_field().update_*(...).register_set_handler_*(...).offer()");
+
                 }
 
                 fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {

@@ -258,9 +258,8 @@ pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream 
         // offer() is only available when ALL fields are Init AND all handlers are HandlerSet
         impl<#runtime_param_with_bounds> #validator_name<#runtime_param_name, #(#all_init_states),*, #(#all_handler_set_states),*> {
             pub fn offer(self) -> com_api::Result<<#name<#runtime_param_name> as com_api::Producer<#runtime_param_name>>::OfferedProducer> {
-                // Extract producer and call its offer() method
-                use com_api::Producer;
-                self.producer.offer()
+                // Call internal offer implementation after validating all fields are initialized and handlers registered
+                self.producer._offer_internal()
             }
         }
 
