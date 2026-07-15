@@ -13,7 +13,7 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
-load("//quality/api_surface:api_surface.bzl", "api_surface_test", "api_surface_update")
+load("//quality/api_surface:api_surface.bzl", "api_surface_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -165,13 +165,7 @@ api_surface_test(
     name = "api_surface_test",
     check_docs = False,
     lock_file = "api_surface.lock.json",
-    target_label = "//score/mw/com:com",
-    deps = [
-        ":com_error_domain",
-        ":runtime",
-        ":runtime_configuration",
-        ":types",
-    ],
+    target = ":com",
 )
 
 api_surface_test(
@@ -179,23 +173,5 @@ api_surface_test(
     check_docs = True,
     lock_file = "api_surface.lock.json",
     tags = ["manual"],
-    target_label = "//score/mw/com:com",
-    deps = [
-        ":com_error_domain",
-        ":runtime",
-        ":runtime_configuration",
-        ":types",
-    ],
-)
-
-api_surface_update(
-    name = "api_surface_update",
-    lock_file_path = "score/mw/com/api_surface.lock.json",
-    target_label = "//score/mw/com:com",
-    deps = [
-        ":com_error_domain",
-        ":runtime",
-        ":runtime_configuration",
-        ":types",
-    ],
+    target = ":com",
 )

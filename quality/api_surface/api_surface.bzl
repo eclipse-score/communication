@@ -23,8 +23,8 @@ Architecture:
   3. A test rule compares the generated API surface against the committed lock file
 
 Provides:
-  - api_surface_test: A test that verifies the public API hasn't changed
-  - api_surface_update: A runnable target to regenerate the lock file
+  - api_surface_test: A test that verifies the public API hasn't changed;
+    also implicitly creates a <name>.update runnable target to regenerate the lock file
 """
 
 def _get_include_args(compilation_context):
@@ -53,24 +53,58 @@ def _to_list(value):
         return value.to_list()
     return value
 
-def _is_public_like_header(path, package):
-    if not path.startswith(package + "/"):
-        return False
-    if "/impl/" in path or "/internal/" in path or "/detail/" in path:
-        return False
-    return True
+def _is_under_any_package(path, packages):
+    for package in packages:
+        if path.startswith(package + "/"):
+            return True
+    return False
 
-def _is_package_root_header(path, package):
-    if not _is_public_like_header(path, package):
-        return False
-    return path.count("/") == package.count("/") + 1
+_ApiSurfaceHeadersInfo = provider(
+    doc = "Aggregated header sets for API surface extraction.",
+    fields = {
+        "public_headers": "depset(File) of transitive direct public headers",
+        "all_headers": "depset(File) of transitive compilation headers",
+    },
+)
+
+def _collect_api_surface_headers_aspect_impl(target, ctx):
+    public_direct = []
+    all_direct = []
+    public_transitive = []
+    all_transitive = []
+
+    if CcInfo in target:
+        comp_ctx = target[CcInfo].compilation_context
+        all_direct.extend(_get_all_headers(comp_ctx))
+        for attr_name in ["direct_public_headers", "direct_private_headers", "direct_textual_headers"]:
+            all_direct.extend(_to_list(getattr(comp_ctx, attr_name, [])))
+        public_direct.extend(_to_list(getattr(comp_ctx, "direct_public_headers", [])))
+
+    for dep in getattr(ctx.rule.attr, "deps", []):
+        if _ApiSurfaceHeadersInfo in dep:
+            public_transitive.append(dep[_ApiSurfaceHeadersInfo].public_headers)
+            all_transitive.append(dep[_ApiSurfaceHeadersInfo].all_headers)
+
+    return [
+        _ApiSurfaceHeadersInfo(
+            public_headers = depset(public_direct, transitive = public_transitive),
+            all_headers = depset(all_direct, transitive = all_transitive),
+        ),
+    ]
+
+_collect_api_surface_headers_aspect = aspect(
+    implementation = _collect_api_surface_headers_aspect_impl,
+    attr_aspects = ["deps"],
+)
 
 def _api_surface_gen_impl(ctx):
     """Generate current API surface JSON from headers using clang."""
+
     # Collect info from deps
     include_args = []
     all_headers_by_path = {}
     target_hdrs_by_path = {}
+    root_dep_packages = [dep.label.package for dep in ctx.attr.deps]
 
     for dep in ctx.attr.deps:
         if CcInfo in dep:
@@ -83,25 +117,12 @@ def _api_surface_gen_impl(ctx):
                 for header in _to_list(getattr(comp_ctx, attr_name, [])):
                     all_headers_by_path[header.path] = header
 
-            direct_public_headers = _to_list(getattr(comp_ctx, "direct_public_headers", []))
-            if direct_public_headers:
-                for header in direct_public_headers:
+        if _ApiSurfaceHeadersInfo in dep:
+            for header in dep[_ApiSurfaceHeadersInfo].all_headers.to_list():
+                all_headers_by_path[header.path] = header
+            for header in dep[_ApiSurfaceHeadersInfo].public_headers.to_list():
+                if _is_under_any_package(header.path, root_dep_packages):
                     target_hdrs_by_path[header.path] = header
-            else:
-                # Fallback for aggregate targets (no direct public headers):
-                # prefer package-root public-like headers and avoid impl/internal/detail trees.
-                package_root_headers = []
-                for header in _get_all_headers(comp_ctx):
-                    if _is_package_root_header(header.path, dep.label.package):
-                        package_root_headers.append(header)
-
-                if package_root_headers:
-                    for header in package_root_headers:
-                        target_hdrs_by_path[header.path] = header
-                else:
-                    for header in _get_all_headers(comp_ctx):
-                        if _is_public_like_header(header.path, dep.label.package):
-                            target_hdrs_by_path[header.path] = header
 
     target_hdrs = [target_hdrs_by_path[path] for path in sorted(target_hdrs_by_path.keys())]
     all_headers = [all_headers_by_path[path] for path in sorted(all_headers_by_path.keys())]
@@ -114,7 +135,8 @@ def _api_surface_gen_impl(ctx):
     # Create a combined header file that includes all target headers
     combined_header = ctx.actions.declare_file(ctx.label.name + "_combined.cpp")
     includes_content = "\n".join([
-        '#include "{}"'.format(h.path) for h in target_hdrs
+        '#include "{}"'.format(h.path)
+        for h in target_hdrs
     ])
     ctx.actions.write(
         output = combined_header,
@@ -131,9 +153,11 @@ def _api_surface_gen_impl(ctx):
         command = "{clang} {args} > {output}".format(
             clang = ctx.file._clang.path,
             args = " ".join([
-                "-Xclang", "-ast-dump=json",
+                "-Xclang",
+                "-ast-dump=json",
                 "-fsyntax-only",
-                "-x", "c++",
+                "-x",
+                "c++",
                 "-std=" + ctx.attr.std,
                 "-fparse-all-comments",
                 "-w",
@@ -158,10 +182,14 @@ def _api_surface_gen_impl(ctx):
         inputs = [ast_dump, target_headers_file],
         executable = ctx.executable._extractor,
         arguments = [
-            "--ast-json", ast_dump.path,
-            "--target-headers-file", target_headers_file.path,
-            "--target-label", ctx.attr.target_label,
-            "--output", output.path,
+            "--ast-json",
+            ast_dump.path,
+            "--target-headers-file",
+            target_headers_file.path,
+            "--target-label",
+            ctx.attr.target_label,
+            "--output",
+            output.path,
         ],
         mnemonic = "ExtractApiSurface",
         progress_message = "Extracting API surface: %s" % ctx.label,
@@ -174,7 +202,8 @@ _api_surface_gen = rule(
     attrs = {
         "deps": attr.label_list(
             providers = [CcInfo],
-            doc = "cc_library targets whose direct public headers define the public API surface.",
+            aspects = [_collect_api_surface_headers_aspect],
+            doc = "cc_library targets whose transitive direct public headers define the public API surface.",
         ),
         "target_label": attr.string(
             default = "",
@@ -323,27 +352,32 @@ _api_surface_update_rule = rule(
 
 # --- Public macros ---
 
-def api_surface_test(name, lock_file, deps = [], target_label = "", check_docs = True, std = "c++17", tags = [], **kwargs):
+def api_surface_test(name, lock_file, target, check_docs = True, std = "c++17", tags = [], **kwargs):
     """Verifies the public C++ API surface hasn't changed.
+
+    Also creates an implicit `<name>.update` runnable target that regenerates
+    the lock file (run with `bazel run`).
 
     Uses clang to parse headers and compare against a committed lock file.
 
     Args:
-        name: Test target name.
-        lock_file: Committed JSON lock file label.
-        deps: cc_library targets whose direct public headers define the public API.
-        target_label: Bazel label for metadata.
+        name: Test target name. An implicit `<name>.update` target is also created.
+        lock_file: Committed JSON lock file label (must be in the current package).
+        target: cc_library target whose transitive direct public headers define the public API.
         check_docs: If True, also check all public symbols have \\api docs.
         std: C++ standard for parsing (default c++17).
         tags: Additional tags for the test target.
     """
+    _linux_only = ["@platforms//os:linux"]
+
     gen_name = name + "_gen"
     _api_surface_gen(
         name = gen_name,
-        deps = deps,
-        target_label = target_label,
+        deps = [target],
+        target_label = target,
         std = std,
         tags = tags,
+        target_compatible_with = _linux_only,
     )
 
     _api_surface_compare_test(
@@ -352,36 +386,14 @@ def api_surface_test(name, lock_file, deps = [], target_label = "", check_docs =
         lock_file = lock_file,
         check_docs = check_docs,
         tags = tags,
+        target_compatible_with = _linux_only,
         **kwargs
-    )
-
-def api_surface_update(name, lock_file_path, deps = [], target_label = "", std = "c++17", tags = [], **kwargs):
-    """Regenerates the API surface lock file.
-
-    Run with `bazel run` to update the committed lock file after
-    intentional API changes.
-
-    Args:
-        name: Target name.
-        lock_file_path: Source-tree-relative path for the lock file.
-        deps: cc_library targets whose direct public headers define the public API.
-        target_label: Bazel label for metadata.
-        std: C++ standard for parsing (default c++17).
-        tags: Additional tags.
-    """
-    gen_name = name + "_gen"
-    _api_surface_gen(
-        name = gen_name,
-        deps = deps,
-        target_label = target_label,
-        std = std,
-        tags = tags,
     )
 
     _api_surface_update_rule(
-        name = name,
+        name = name + ".update",
         generated = ":" + gen_name,
-        lock_file_path = lock_file_path,
+        lock_file_path = native.package_name() + "/" + lock_file,
         tags = tags,
-        **kwargs
+        target_compatible_with = _linux_only,
     )

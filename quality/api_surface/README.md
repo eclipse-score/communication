@@ -12,7 +12,7 @@ conditional compilation.
 2. A Python tool (`extract_api.py`) parses the JSON AST and extracts public symbols
 3. The extracted API surface is compared against a committed lock file (JSON)
 4. If the API has changed, the test fails with a clear diff
-5. An update target allows intentional API changes to be committed
+5. An implicit `<name>.update` target allows intentional API changes to be committed
 
 ## Quick Start
 
@@ -25,7 +25,7 @@ bazel test //score/mw/com:api_surface_test
 ### Update the lock file after intentional API changes
 
 ```bash
-bazel run //score/mw/com:api_surface_update
+bazel run //score/mw/com:api_surface_test.update
 ```
 
 ### Check for undocumented public symbols
@@ -39,32 +39,24 @@ bazel test //score/mw/com:api_surface_docs_test
 1. Add the load statement to your `BUILD` file:
 
 ```python
-load("//quality/api_surface:api_surface.bzl", "api_surface_test", "api_surface_update")
+load("//quality/api_surface:api_surface.bzl", "api_surface_test")
 ```
 
-2. Add the test and update targets:
+2. Add the test target (an implicit `<name>.update` target is created automatically):
 
 ```python
 api_surface_test(
     name = "api_surface_test",
-    deps = [":your_cc_library"],
+    target = ":your_cc_library",
     check_docs = False,  # Set True to enforce \api documentation
     lock_file = "api_surface.lock.json",
-    target_label = "//your/target:name",
-)
-
-api_surface_update(
-    name = "api_surface_update",
-    deps = [":your_cc_library"],
-    lock_file_path = "your/target/api_surface.lock.json",
-    target_label = "//your/target:name",
 )
 ```
 
 3. Generate the initial lock file:
 
 ```bash
-bazel run //your/target:api_surface_update
+bazel run //your/target:api_surface_test.update
 ```
 
 4. Commit the generated `api_surface.lock.json`.
@@ -75,18 +67,13 @@ bazel run //your/target:api_surface_update
 
 | Attribute       | Type     | Description                                                  |
 |-----------------|----------|--------------------------------------------------------------|
-| `deps`          | labels   | cc_library targets whose direct public headers form the API  |
+| `target`        | label    | cc_library target whose transitive direct public headers form the API |
 | `lock_file`     | label    | The committed JSON lock file to compare against              |
 | `check_docs`    | bool     | If true, fail when public symbols lack `\api` documentation  |
-| `target_label`  | string   | Bazel target label (metadata only)                           |
 
-### `api_surface_update`
-
-| Attribute        | Type     | Description                                              |
-|------------------|----------|----------------------------------------------------------|
-| `deps`           | labels   | cc_library targets whose direct public headers form the API |
-| `lock_file_path` | string   | Source-tree-relative path for the lock file              |
-| `target_label`   | string   | Bazel target label (metadata only)                       |
+An implicit `<name>.update` runnable target is automatically created alongside every
+`api_surface_test`. Run it with `bazel run` to regenerate the lock file after an
+intentional API change.
 
 ## How Public Symbols Are Identified
 
