@@ -17,8 +17,6 @@ import json
 import subprocess
 import datetime
 import shutil
-import time
-import glob
 
 
 TMP_PATH_FOR_DATABASES = "/var/tmp/codeql_databases"
@@ -50,7 +48,15 @@ def create_database(code_ql_path, config_path, target, source_root, database_pat
     subprocess.run(f"{code_ql_path} database finalize -j=0 -- {database_path}", shell=True, check=True)
 
 
-def analyze_database(code_ql_path, database_path, source_root, analysis_report_path=None, query_spec=None, output_prefix="codeql", output_dir=None):
+def analyze_database(
+    code_ql_path,
+    database_path,
+    source_root,
+    analysis_report_path=None,
+    query_spec=None,
+    output_prefix="codeql",
+    output_dir=None,
+):
     """Run CodeQL analysis and generate MISRA C++ compliance reports."""
     output_base = output_dir or _get_bazel_info(source_root).get('output_path')
     os.makedirs(output_base, exist_ok=True)
@@ -60,7 +66,6 @@ def analyze_database(code_ql_path, database_path, source_root, analysis_report_p
     csv_path = f"{output_base}/{output_prefix}.csv"
 
     # Run CodeQL analysis (generates SARIF)
-    print("\n Running CodeQL analysis...")
     subprocess.run(
         f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
         f"--format=sarifv2.1.0 --output={sarif_path}",
@@ -74,33 +79,20 @@ def analyze_database(code_ql_path, database_path, source_root, analysis_report_p
 
     # Generate reports using CodeQL analysis_report tool
     if analysis_report_path and os.path.exists(analysis_report_path):
-        print(" Generating MISRA C++ compliance reports...")
         try:
             # Make analysis_report executable and run it
             os.chmod(analysis_report_path, 0o755)
-            print(f"  Using database: {database_path}")
-            print(f"  Using SARIF: {sarif_path}")
-            print(f"  Output directory: {output_base}")
 
-            # Prepare environment with CodeQL binary path
+            # Prepare environment with CodeQL binary path so analysis_report can find 'codeql' command
             env = os.environ.copy()
-            # codeql_cli is a symlink to the actual codeql binary
-            # Resolve the symlink to get the real directory
-            try:
-                real_codeql_path = os.path.realpath(code_ql_path)
-                codeql_bin_dir = os.path.dirname(real_codeql_path)
-            except:
-                codeql_bin_dir = os.path.dirname(os.path.abspath(code_ql_path))
-
-            # Prepend codeql directory to PATH
+            codeql_bin_dir = os.path.dirname(os.path.realpath(code_ql_path))
+            print(f" Resolved CodeQL bin dir: {codeql_bin_dir}")
+            print(f" CodeQL bin dir exists: {os.path.isdir(codeql_bin_dir)}")
             env["PATH"] = f"{codeql_bin_dir}:{env.get('PATH', '')}"
+            print(f" PATH for analysis_report: {env['PATH']}")
 
             # analysis_report expects positional args: database-dir sarif-file output-dir
             reports_output_dir = os.path.join(output_base, "analysis_reports")
-
-            # Remove existing reports directory if it exists
-            if os.path.exists(reports_output_dir):
-                shutil.rmtree(reports_output_dir)
 
             result = subprocess.run(
                 [analysis_report_path,
@@ -109,25 +101,18 @@ def analyze_database(code_ql_path, database_path, source_root, analysis_report_p
                  reports_output_dir],
                 capture_output=True, text=True, env=env)
 
-            # Check if reports were generated even if there was an error
-            # (analysis_report writes files before failing on some post-processing)
-            if os.path.exists(reports_output_dir):
-                report_files = glob.glob(os.path.join(reports_output_dir, "*"))
-                if report_files:
-                    print(f"✓ Reports generated successfully")
-                    print(f"\n  Generated Report Files:")
-                    for f in sorted(report_files):
-                        file_size = os.path.getsize(f) / 1024  # KB
-                        print(f"    ✓ {os.path.basename(f)} ({file_size:.1f} KB)")
-                else:
-                    # If no files, raise the error
-                    result.check_returncode()
-            else:
-                result.check_returncode()
-        except subprocess.CalledProcessError as e:
-            print(f"⚠️  Report generation warning: {e.stderr if e.stderr else e}")
-    else:
-        print(" Report generation skipped (analysis_report tool not available)")
+            # Always show subprocess output for diagnostics
+            if result.stdout:
+                print(f" [analysis_report stdout]: {result.stdout.strip()}")
+
+            if result.stderr:
+                print(f" [analysis_report stderr]: {result.stderr.strip()}")
+            if result.returncode != 0:
+                print(f" ⚠️  analysis_report exited with code {result.returncode}")
+                # Don't raise exception - allow workflow to continue
+
+        except Exception as e:
+            print(f"Report generation exception: {e}")
 
 
 def main():
@@ -175,7 +160,6 @@ def main():
                            analysis_report_path=args.analysis_report_path,
                            query_spec=args.query_spec, output_prefix=args.output_prefix,
                            output_dir=args.output_dir)
-            print(f"  Use this database for future report generation")
 
 
 def _get_action_env_extension(codeql_env):
