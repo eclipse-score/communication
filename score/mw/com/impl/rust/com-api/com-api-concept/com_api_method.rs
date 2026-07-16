@@ -14,12 +14,19 @@
 use crate::com_api_concept::*;
 
 /// Placeholder for allocated method arguments in zero-copy API
+// TODO: Remove this once memory layout implementation is added in rust side, same like samplePtr.
 pub struct MethodInArgPtr<Args> {
     _phantom: core::marker::PhantomData<Args>,
 }
 
-pub trait MethodHandler<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime + ?Sized>
-{
+// TODO: Do we need add the MethodArgs trait bound to MethodInArgsMaybeUninit?
+pub trait MethodInArgsMaybeUninit<Args> {
+    fn write(self, args: Args) -> MethodInArgPtr<Args>;
+
+    unsafe fn assume_init(self) -> MethodInArgPtr<Args>;
+}
+
+pub trait MethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
     fn new(method_name: &str, instance_info: R::ProviderInfo) -> Result<Self>
     where
         Self: Sized;
@@ -29,13 +36,18 @@ pub trait MethodHandler<Args: MethodArgs, Return: CommData + core::fmt::Debug, R
         F: MethodHandlerCall<Args, Return>;
 }
 
-pub trait MethodCaller<Args, Return, R: Runtime + ?Sized> {
+pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
+    type MethodInArgsMaybeUninit<'a>: MethodInArgsMaybeUninit<Args> + 'a
+    where
+        Self: 'a;
     fn new(method_name: &str, instance_info: R::ConsumerInfo) -> Result<Self>
     where
         Self: Sized;
 
     fn call_with_copy(&self, args: Args) -> Result<Return>;
-    fn allocate(&self) -> Result<MethodInArgPtr<Args>>;
+
+    fn allocate(&self) -> Result<Self::MethodInArgsMaybeUninit<'_>>;
+    //zero copy call
     fn call(&self, args: MethodInArgPtr<Args>) -> Result<Return>;
 }
 
