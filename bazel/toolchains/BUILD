@@ -28,10 +28,9 @@ py_binary(
     name = "sphinx_build",
     srcs = ["@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py"],
     data = [
-        "@score_tooling//tools/sphinx:plantuml",
-        # fta_metamodel.puml must be in runfiles so conf.template.py can set
-        # plantuml.include.path and resolve !include fta_metamodel.puml at render time.
         "@score_tooling//plantuml:fta_metamodel",
+        "@score_tooling//third_party/docs_runtime:dot",
+        "@score_tooling//third_party/plantuml",
     ],
     exec_compatible_with = ["@platforms//os:linux"],
     main = "@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py",

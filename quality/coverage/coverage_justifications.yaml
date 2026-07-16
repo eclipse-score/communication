@@ -20,6 +20,8 @@
 #   - id: Unique kebab-case identifier
 #   - category: One of: defensive_programming, tool_false_positive, platform_specific, other
 #   - reason: Explanation why the line(s) cannot be covered
+#   - platforms: (optional) List of platforms this justification applies to: [linux], [qnx], or [linux, qnx]
+#               When omitted, the justification applies to all platforms.
 #   - locations: (optional) File + line specifications where justification applies
 #
 # Lines can also be justified via in-code markers referencing the ID:
@@ -36,7 +38,7 @@
 
 version: 1
 
-justifications: []
+justifications:
   # Example entries (uncomment and adapt as needed):
   #
   # - id: config-parser-defensive-switch
@@ -52,6 +54,7 @@ justifications: []
   #
   # - id: runtime-tool-false-positive
   #   category: tool_false_positive
+  #   platforms: [linux]  # only applies to Linux coverage
   #   reason: >
   #     Coverage tool incorrectly marks this line as not covered. Lines immediately
   #     before and after are covered, indicating a tool bug.
@@ -59,12 +62,13 @@ justifications: []
   #     - file: score/mw/com/impl/runtime.cpp
   #       lines: [191]
   #
-  # - id: flag-file-crawler-defensive
-  #   category: defensive_programming
-  #   reason: >
-  #     Defensive guard for flag file parsing. Only entered if a flag file exists,
-  #     so the file must be parseable. Guard protects against filesystem race conditions.
-  #   locations:
-  #     - file: score/mw/com/impl/bindings/lola/service_discovery/flag_file_crawler.cpp
-  #       line_start: 81
-  #       line_end: 85
+  - id: flag-file-crawler-defensive
+    category: defensive_programming
+    platforms: [linux, qnx]  # applies to both platforms
+    reason: >
+      Defensive guard for flag file parsing. Only entered if a flag file exists,
+      so the file must be parseable. Guard protects against filesystem race conditions.
+    locations:
+      - file: score/mw/com/impl/generic_skeleton_event.cpp
+        line_start: 29
+        line_end: 29

@@ -162,10 +162,10 @@ To extract the HTML report (works for both full and single-target runs):
 bazel run //quality/coverage:generate_coverage_html
 ```
 
-The report is written to `cpp_coverage/index.html`. Open it with:
+The report is written to `cpp_coverage_<platform>/index.html`. Open it with:
 
 ```bash
-xdg-open cpp_coverage/index.html
+xdg-open cpp_coverage_linux/index.html
 ```
 
 ### Coverage Justifications

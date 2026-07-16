@@ -30,4 +30,4 @@ cd "${ZIP_DIR}"
 unzip *.zip -d extracted
 
 mkdir -p "${OUTPUT_DIR}"
-cp -r extracted/artifacts/cpp_coverage/. "${OUTPUT_DIR}/"
+cp -r extracted/artifacts/cpp_coverage_linux/. "${OUTPUT_DIR}/"
