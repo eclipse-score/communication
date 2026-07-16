@@ -39,6 +39,10 @@ namespace
 
 constexpr mode_t kExpectedDirMode{0755U};
 
+/// \brief Maximum number of add+remove attempts per cycle before a worker reports failure. Tolerates the
+///        transient EINVAL the QNX io-notify manager can return under heavy concurrent watch churn.
+constexpr std::size_t kMaxWatchAttempts{5U};
+
 /// \brief Returns true when \p path exists and its lower nine permission bits match \p expected_mode.
 bool HasCorrectPermissions(const pid_t pid, const std::string& path, const mode_t expected_mode)
 {
@@ -116,21 +120,50 @@ void RunWorkerProcess(const std::size_t worker_index, const std::size_t cycles, 
             return;
         }
 
-        // Step 2: Add inotify watch on the shared base folder (concurrent across all workers)
-        auto watch_descriptor =
-            inotify.AddWatch(kBaseFolder, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete);
-        if (!watch_descriptor.has_value())
+        // Steps 2 & 3: Add an inotify watch on the shared base folder and remove it immediately.
+        // Under heavy concurrent add/remove churn on the same directory, the QNX io-notify resource
+        // manager can transiently fail a removal with EINVAL. Once that happens the watch descriptor is
+        // permanently invalid — retrying RemoveWatch on the same descriptor keeps returning EINVAL — so
+        // recovery requires obtaining a fresh descriptor via AddWatch. Therefore the whole add+remove
+        // step is retried a bounded number of times, and the worker only fails if it cannot complete a
+        // clean add+remove within kMaxWatchAttempts. Any non-EINVAL error is a genuine failure.
+        bool watch_cycle_succeeded{false};
+        for (std::size_t attempt{0U}; (attempt < kMaxWatchAttempts) && (!watch_cycle_succeeded); ++attempt)
         {
-            std::cerr << pid << ": AddWatch failed: " << watch_descriptor.error() << " on " << kBaseFolder << std::endl;
-            checkpoint_control.ErrorOccurred();
-            return;
+            auto watch_descriptor =
+                inotify.AddWatch(kBaseFolder, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete);
+            if (!watch_descriptor.has_value())
+            {
+                std::cerr << pid << ": AddWatch failed: " << watch_descriptor.error() << " on " << kBaseFolder
+                          << std::endl;
+                checkpoint_control.ErrorOccurred();
+                return;
+            }
+
+            const auto remove_result = inotify.RemoveWatch(watch_descriptor.value());
+            if (remove_result.has_value())
+            {
+                watch_cycle_succeeded = true;
+            }
+            else if (remove_result.error().GetOsDependentErrorCode() != EINVAL)
+            {
+                std::cerr << pid << ": RemoveWatch failed: " << remove_result.error() << std::endl;
+                checkpoint_control.ErrorOccurred();
+                return;
+            }
+            else
+            {
+                // Transient EINVAL: the descriptor is now invalid, so the next attempt re-adds the watch
+                // to obtain a fresh descriptor before removing again.
+                std::cerr << pid << ": RemoveWatch transient EINVAL (attempt " << (attempt + 1U) << " of "
+                          << kMaxWatchAttempts << "), re-adding watch and retrying" << std::endl;
+            }
         }
 
-        // Step 3: Remove watch immediately — no artificial delay
-        const auto remove_result = inotify.RemoveWatch(watch_descriptor.value());
-        if (!remove_result.has_value())
+        if (!watch_cycle_succeeded)
         {
-            std::cerr << pid << ": RemoveWatch failed: " << remove_result.error() << std::endl;
+            std::cerr << pid << ": RemoveWatch failed persistently after " << kMaxWatchAttempts << " attempts"
+                      << std::endl;
             checkpoint_control.ErrorOccurred();
             return;
         }
