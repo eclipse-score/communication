@@ -11,9 +11,11 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+use core::todo;
+
 use com_api_concept::{
-    CommData, MethodArgs, MethodCaller, MethodHandler, MethodHandlerCall, MethodInArgPtr,
-    MethodInArgsMaybeUninit, Result, Runtime,
+    CommData, MethodArgs, MethodArgsAllocate, MethodCaller, MethodHandler, MethodHandlerCall,
+    MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr, Result, Runtime,
 };
 
 pub struct LolaMethodHandler<
@@ -31,31 +33,20 @@ impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime + ?Sized>
     where
         Self: Sized,
     {
-        // Implementation for creating a new method handler
         Ok(LolaMethodHandler {
             _phantom: core::marker::PhantomData,
         })
     }
 
+    // This function should have the thread-pool or async executor to handle the incoming method calls and dispatch them to the registered handler.
+    // For now, we will just have a placeholder implementation.
+    // So that concurrent method calls can happen on same consumer instance.
+    // If two consumer call same methods, which may happen then user should have synchronization mechanism in their handler implementation to handle concurrent calls.
     fn register_handler<F>(&self, _handler: F) -> Result<()>
     where
         F: MethodHandlerCall<Args, Return>,
     {
         todo!("Implement the logic to register the handler with the underlying system");
-    }
-}
-
-pub struct LolaMethodInArgsMaybeUninit<Args> {
-    _phantom: core::marker::PhantomData<Args>,
-}
-
-impl<Args> MethodInArgsMaybeUninit<Args> for LolaMethodInArgsMaybeUninit<Args> {
-    fn write(self, _args: Args) -> MethodInArgPtr<Args> {
-        todo!("Implement the logic to write the arguments into the allocated memory")
-    }
-
-    unsafe fn assume_init(self) -> MethodInArgPtr<Args> {
-        todo!("Implement the logic to assume the allocated memory is already initialized and return initialized args")
     }
 }
 
@@ -66,31 +57,54 @@ pub struct LolaMethodCaller<Args: MethodArgs, Return: CommData, R: Runtime> {
 impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime>
     MethodCaller<Args, Return, R> for LolaMethodCaller<Args, Return, R>
 {
-    type MethodInArgsMaybeUninit<'a>
-        = LolaMethodInArgsMaybeUninit<Args>
-    where
-        Self: 'a;
     fn new(_method_name: &str, _instance_info: R::ConsumerInfo) -> Result<Self>
     where
         Self: Sized,
     {
-        // Implementation for creating a new method caller
         Ok(LolaMethodCaller {
             _phantom: core::marker::PhantomData,
         })
     }
 
-    fn call_with_copy(&self, _args: Args) -> Result<Return> {
+    fn invoke_with_copy(&self, _args: Args) -> Result<Return> {
         todo!("Implement the logic to call the method with copied arguments");
     }
 
-    fn allocate(&self) -> Result<LolaMethodInArgsMaybeUninit<Args>> {
-        Ok(LolaMethodInArgsMaybeUninit {
-            _phantom: core::marker::PhantomData,
-        })
+    fn allocate(&self) -> Result<<Args as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
+    where
+        Args: MethodArgsAllocate<R::MethodInArgAllocator>,
+    {
+        todo!("Implement the logic to allocate argument slots using LolaMethodInArgAllocator");
     }
 
-    fn call(&self, _args: MethodInArgPtr<Args>) -> Result<Return> {
-        todo!("Implement the logic to call the method with allocated arguments");
+    fn invoke_zero_copy(&self, _ptrs: <Args as MethodArgs>::PtrTuple) -> Result<Return> {
+        todo!("Implement the logic to call the method with pre-allocated argument pointers");
+    }
+}
+
+/// Lola placeholder for a single pre-allocated method argument slot.
+pub struct LolaMethodInArgMaybeUninit<T> {
+    _phantom: core::marker::PhantomData<T>,
+}
+
+impl<T> MethodInArgMaybeUninit<T> for LolaMethodInArgMaybeUninit<T> {
+    fn write(self, _val: T) -> MethodInArgPtr<T> {
+        todo!("Implement write into Lola shared-memory slot");
+    }
+
+    unsafe fn assume_init(self) -> MethodInArgPtr<T> {
+        todo!("Implement assume_init for Lola shared-memory slot");
+    }
+}
+
+/// Lola placeholder allocator.
+pub struct LolaMethodInArgAllocator;
+
+impl MethodInArgAllocator for LolaMethodInArgAllocator {
+    type MethodInArgMaybeUninit<T: CommData> = LolaMethodInArgMaybeUninit<T>;
+    fn allocate<T: CommData>() -> LolaMethodInArgMaybeUninit<T> {
+        LolaMethodInArgMaybeUninit {
+            _phantom: core::marker::PhantomData,
+        }
     }
 }

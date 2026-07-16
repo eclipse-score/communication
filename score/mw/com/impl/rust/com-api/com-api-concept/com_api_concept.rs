@@ -101,6 +101,8 @@ pub trait Runtime {
     /// `Publisher<T>` types for Publishes event data to subscribers
     type Publisher<T: CommData + Debug>: Publisher<T, Self>;
 
+    type MethodInArgAllocator: MethodInArgAllocator;
+
     /// `MethodCaller<Args, Return>` types for calling methods on the proxy/consumer side
     type MethodCaller<Args: MethodArgs, Return: CommData + Debug>: MethodCaller<Args, Return, Self>;
 

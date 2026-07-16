@@ -25,7 +25,7 @@ use std::path::PathBuf;
 
 use com_api::{
     Builder, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
-    MethodCaller, MethodInArgsMaybeUninit, OfferedProducer, Producer, Publisher, Result, Runtime,
+    MethodCaller, MethodInArgMaybeUninit, OfferedProducer, Producer, Publisher, Result, Runtime,
     RuntimeBuilder, SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber,
     Subscription,
 };
@@ -152,21 +152,25 @@ fn create_consumer_method<R: Runtime>(
         .expect("Failed to build consumer instance")
 }
 
+// TODO: Currently all the method is synchronous, but in future we can add async version of method call as well, if needed.
+// We are having tuple of arguments, so we can have any number of arguments (currently up to 2) without any extra boilerplate.
+// But in Method signature, we need to have tuple of arguments, so for zero argument method, we need to pass empty tuple.
+// Which need to be improved using macro generated wrapper around method call, so that we can call zero argument method without empty tuple.
+// even with argument tuple, method call can be improve using macro generated wrapper, so that we can call method with any number of arguments without tuple.
+
 fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
     // Call the update_tire_pressure method with a sample tire pressure value
-    // TODO: If we need async call then need to expand the interface macro .....
     let tire = Tire { pressure: 30.0 };
     match consumer.update_tire_pressure((tire,)) {
         Ok(_) => println!("Successfully called update_tire_pressure method"),
         Err(e) => eprintln!("Failed to call update_tire_pressure method: {:?}", e),
     }
 
-    let tire1 = Tire { pressure: 31.0 };
-    let tire2 = Tire { pressure: 32.0 };
-    match consumer.update_front_tires_pressure((tire1, tire2)) {
-        Ok(_) => println!("Successfully called update_front_tires_pressure method"),
-        Err(e) => eprintln!("Failed to call update_front_tires_pressure method: {:?}", e),
-    }
+        let uninit1 = consumer
+        .update_tire_pressure
+        .allocate()
+        .expect("Failed to allocate method arguments");
+    let tire1ptr = uninit1.write(Tire { pressure: 35.0 });
 
     // Call the get_tire_pressure method to retrieve the current tire pressure
     // Note: Currently we need to pass empty tuple for zero argument method,
@@ -176,17 +180,9 @@ fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
         Ok(tire) => println!("Current tire pressure: {:?}", tire),
         Err(e) => eprintln!("Failed to call get_tire_pressure method: {:?}", e),
     }
-    let allocate_ptr = consumer
-        .update_tire_pressure
-        .allocate()
-        .expect("Failed to allocate method arguments");
-    let args_ptr = allocate_ptr.write((Tire { pressure: 35.0 },));
-    // As we can not use same semanics of method call for zero copy due to function overloading limitation in rust.
-    // So we have to use different function name for zero copy method call, which is suffixed with _zero_copy.
-    // TODO: Currently we are not following same approach like event or field has, which is like SampleMaybeUninit return the SampleMut
-    // and which can call the APIs for send or update.
-    // Because we
-    match consumer.update_tire_pressure_zero_copy(args_ptr) {
+
+    // Same method name as copy call - MethodCallInput dispatches to zero-copy path via ptr type
+    match consumer.update_tire_pressure(tire1ptr) {
         Ok(_) => println!("Successfully called update_tire_pressure method with allocated args"),
         Err(e) => eprintln!(
             "Failed to call update_tire_pressure method with allocated args: {:?}",
@@ -194,14 +190,21 @@ fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
         ),
     }
 
-    let allocate_ptr = consumer
+    let tire1 = Tire { pressure: 31.0 };
+    let tire2 = Tire { pressure: 32.0 };
+    match consumer.update_front_tires_pressure((tire1, tire2)) {
+        Ok(_) => println!("Successfully called update_front_tires_pressure method"),
+        Err(e) => eprintln!("Failed to call update_front_tires_pressure method: {:?}", e),
+    }
+
+    let (uninit1, uninit2) = consumer
         .update_front_tires_pressure
         .allocate()
         .expect("Failed to allocate method arguments");
-
-    let args_ptr = allocate_ptr.write((Tire { pressure: 36.0 }, Tire { pressure: 37.0 }));
-
-    match consumer.update_front_tires_pressure_zero_copy(args_ptr) {
+    let tire1ptr = uninit1.write(Tire { pressure: 36.0 });
+    let tire2ptr = uninit2.write(Tire { pressure: 37.0 });
+    // Same method name as copy call - tuple of MethodInArgPtr dispatches to zero-copy path
+    match consumer.update_front_tires_pressure((tire1ptr, tire2ptr)) {
         Ok(_) => {
             println!("Successfully called update_front_tires_pressure method with allocated args")
         }
