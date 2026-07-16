@@ -1,23 +1,27 @@
 # Coverage Infrastructure
 
-This directory contains the tooling to generate, post-process, and report C++ code coverage for the Score Communication project using LLVM's source-based coverage instrumentation (`llvm-cov`).
+This directory contains the tooling to generate, post-process, and report C++ code coverage for the Score Communication project. It supports two platforms:
+- **Linux**: LLVM source-based coverage (`llvm-cov`)
+- **QNX**: gcov-based coverage via gcovr
 
 ## Overview
 
 ```
 quality/coverage/
 ├── README.md                       ← You are here
-├── BUILD                           ← Bazel target for generate_coverage_html
+├── BUILD                           ← Bazel targets for coverage tools
 ├── coverage.bazelrc                ← Bazel coverage configuration flags
 ├── coverage_justifications.yaml    ← Central justification database
 ├── generate_coverage_html.sh       ← Orchestrator script (entry point)
-└── llvm_cov/                       ← Python tools for coverage processing
-    ├── README.md                   ← Detailed tool documentation
-    ├── BUILD                       ← Bazel targets for Python tools
+├── effective_coverage.py           ← HTML post-processor & effective coverage calculator
+├── justify.py                      ← Justification resolver
+├── lcov_to_html.py                 ← LCOV→HTML converter (uses gcovr, for QNX)
+└── llvm_cov/                       ← LLVM-specific coverage tools (Linux)
+    ├── README.md                   ← Detailed LLVM tool documentation
+    ├── BUILD                       ← Bazel targets for LLVM tools
     ├── merger.py                   ← Per-test coverage output generator
     ├── reporter.py                 ← Final combined report generator
-    ├── justify.py                  ← Justification resolver
-    └── effective_coverage.py       ← HTML post-processor & effective coverage calculator
+    └── filter_regexes.txt          ← Source filtering patterns for llvm-cov
 ```
 
 ## Requirements
@@ -67,40 +71,70 @@ The pipeline must support a configurable effective coverage threshold (default: 
 ### 1. Run Coverage Collection
 
 ```bash
-# Full project
+# Full project (Linux, LLVM source-based coverage)
 bazel coverage //...
 
-# Specific target
-bazel coverage //score/message_passing:client_connection_test_linux
+# Full project (QNX x86_64, gcov-based coverage)
+bazel coverage //score/... --config=qnx
+
+# Specific target (Linux)
+bazel coverage //score/message_passing:client_connection_test
+
+# Specific target (QNX)
+bazel coverage --config=qnx //score/message_passing:client_connection_test
 ```
 
 ### 2. Generate the HTML Report
 
 ```bash
+# Linux coverage report (default)
 bazel run //quality/coverage:generate_coverage_html
+
+# QNX coverage report
+bazel run //quality/coverage:generate_coverage_html -- --platform qnx
 ```
 
-This extracts the HTML report to `cpp_coverage/`, runs justification processing, and prints the coverage summary. Open the report:
+For Linux (LLVM pipeline), the custom reporter produces a zip with an HTML report directly.
+For QNX (gcov pipeline), the script converts the LCOV data to HTML using `lcov_to_html.py` (which internally uses gcovr).
+
+The report is written to `cpp_coverage/` (Linux) or `cpp_coverage_qnx/` (QNX). Open it:
 
 ```bash
-xdg-open cpp_coverage/index.html
+# Linux
+xdg-open cpp_coverage_linux/index.html
+
+# QNX
+xdg-open cpp_coverage_qnx/index.html
 ```
 
 ### 3. Create an Archive (CI)
 
 ```bash
+# Linux
 bazel run //quality/coverage:generate_coverage_html -- --archive coverage-report
+
+# QNX
+bazel run //quality/coverage:generate_coverage_html -- --platform qnx --archive coverage-report-qnx
 ```
 
-Creates `coverage-report.zip` containing the HTML report, LCOV data, and JUnit XML test results.
+Creates a zip archive containing the HTML report, LCOV data, and JUnit XML test results.
+
+## Coverage Pipelines
+
+The project supports two coverage pipelines depending on the target platform:
+
+| Pipeline | Config | Compiler | Tool | HTML Generation |
+|----------|--------|----------|------|-----------------|
+| **LLVM** (Linux) | *(default)* | Clang/LLVM | llvm-cov, llvm-profdata | Custom reporter (llvm-cov show) |
+| **gcov** (QNX) | `--config=qnx` | QCC (GCC-based) | gcov | lcov_to_html.py (gcovr) |
 
 ## Pipeline Architecture
 
-The coverage pipeline has two phases:
+The coverage pipeline has two phases. Phase 1 differs by platform; Phase 2 is shared.
 
 ### Phase 1: Bazel Coverage Collection
 
-Configured by `coverage.bazelrc`, Bazel runs tests with coverage instrumentation enabled:
+**LLVM pipeline** (Linux, default):
 
 ```
 bazel coverage //...
@@ -118,13 +152,29 @@ bazel coverage //...
         • Packages everything into _coverage_report.dat (zip)
 ```
 
+**gcov pipeline** (QNX, `--config=qnx`):
+
+```
+bazel coverage //score/... --config=qnx
+    │
+    ├── Per-test: Bazel default merger
+    │   • Runs gcov on .gcda/.gcno files
+    │   • Produces LCOV data per test
+    │
+    └── Final: Bazel default reporter
+        • Merges all per-test LCOV data
+        • Writes combined LCOV to _coverage_report.dat (text)
+```
+
 ### Phase 2: Report Extraction & Justification
 
 ```
-bazel run //quality/coverage:generate_coverage_html
+bazel run //quality/coverage:generate_coverage_html [-- --platform <linux|qnx>]
     │
     └── generate_coverage_html.sh
-        ├── Extract HTML from _coverage_report.dat → cpp_coverage/
+        ├── Detect format: zip (LLVM) or LCOV text (gcov)
+        ├── LLVM: Extract HTML from zip → cpp_coverage_linux/
+        │   gcov: Convert LCOV → HTML via lcov_to_html.py (gcovr) → cpp_coverage_qnx/
         ├── justify.py: YAML + code markers → manifest.json
         ├── effective_coverage.py: Post-process HTML + calculate effective %
         └── Print summary + threshold check
@@ -134,16 +184,32 @@ bazel run //quality/coverage:generate_coverage_html
 
 ### coverage.bazelrc
 
-Key settings:
+The configuration is split into platform-agnostic settings (applied globally) and
+platform-specific sections:
+
+**Platform-agnostic flags** (apply to all coverage runs):
+
+| Flag | Purpose |
+|------|---------|
+| `--instrumentation_filter` | Documents intended scope |
+| `--cxxopt=-O0` | Disable optimizations for accurate coverage |
+| `--dynamic_mode=off` | Static linking to avoid coverage conflicts |
+
+**LLVM-specific flags** (Linux, default):
 
 | Flag | Purpose |
 |------|---------|
 | `--experimental_use_llvm_covmap` | Use LLVM source-based coverage (not gcov) |
-| `--instrumentation_filter` | Documents intended scope (not enforced by Bazel with covmap) |
 | `--coverage_output_generator` | Points to `merger.py` for per-test processing |
 | `--coverage_report_generator` | Points to `reporter.py` for final aggregation |
 | `--test_env=LLVM_PROFILE_CONTINUOUS_MODE=1` | Enables profiling of abnormal terminations |
 | `-mllvm -runtime-counter-relocation` | Required for continuous-mode profiling with LLVM |
+
+**QNX-specific flags** (`--config=qnx`):
+
+| Flag | Purpose |
+|------|---------|
+| `--noexperimental_fetch_all_coverage_outputs` | Disables tree artifact validation (avoids dangling gcov symlink) |
 
 ### Environment Variables
 
@@ -163,6 +229,7 @@ See [`coverage_justifications.yaml`](coverage_justifications.yaml) for the justi
 justifications:
   - id: my-unique-id              # kebab-case, must be unique
     category: defensive_programming  # or: tool_false_positive, platform_specific, other
+    platforms: [linux, qnx]        # required: choose one or more target platforms
     reason: >
       Explanation of why these lines cannot be covered by tests.
     locations:
@@ -195,6 +262,18 @@ better that justifications get outdated.
 | `tool_false_positive` | Coverage tool incorrectly marks line as uncovered |
 | `platform_specific` | Code path only reachable on platforms not under test |
 | `other` | Any other valid reason |
+
+### Platform Scoping
+
+Each justification must specify which platforms it applies to via the `platforms` field:
+
+| Value | Meaning |
+|-------|---------|
+| `[linux]` | Only applies when generating Linux coverage |
+| `[qnx]` | Only applies when generating QNX coverage |
+| `[linux, qnx]` | Applies to both platforms |
+
+The `--platform` argument to `generate_coverage_html.sh` controls which justifications are included.
 
 ### Visual Indicators in HTML Report
 

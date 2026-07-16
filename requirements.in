@@ -23,6 +23,9 @@ sphinxcontrib_plantuml
 pydata_sphinx_theme
 myst_parser
 
+# Python dependencies for coverage report generation (QNX)
+gcovr
+
 # Fix security issues by forcing versions of transitive dependencies to a recent enough release
 idna>=3.15
 Pygments>=2.20.0

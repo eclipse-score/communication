@@ -20,5 +20,6 @@ rust-project.json
 
 # docs-as-code
 docs/ubproject.toml
-cpp_coverage/
+cpp_coverage_linux/
+cpp_coverage_qnx/
 __pycache__/
