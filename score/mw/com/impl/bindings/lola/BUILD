@@ -354,6 +354,7 @@ cc_library(
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/methods:skeleton_method_binding",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "//score/mw/com/impl/util:arithmetic_utils",
         "@score_baselibs//score/filesystem",
@@ -1129,6 +1130,7 @@ cc_unit_test(
     deps = [
         ":skeleton",
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
+        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
     ],
 )
 
@@ -1333,9 +1335,13 @@ cc_unit_test(
     srcs = [
         "skeleton_event_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
     deps = [
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 

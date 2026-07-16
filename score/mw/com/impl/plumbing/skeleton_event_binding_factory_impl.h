@@ -56,7 +56,7 @@ auto SkeletonEventBindingFactoryImpl<SampleType>::Create(const InstanceIdentifie
 {
     return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
                                       lola::SkeletonEvent<SampleType>,
-                                      ServiceElementType::EVENT>(identifier, parent_binding, event_name);
+                                      ServiceElementType::EVENT>(identifier, parent_binding, event_name, false);
 }
 
 }  // namespace score::mw::com::impl
