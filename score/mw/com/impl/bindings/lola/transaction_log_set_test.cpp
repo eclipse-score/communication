@@ -374,7 +374,7 @@ TEST_F(TransactionLogSetRollbackFixture,
 
     // When registering a TransactionLog
     const auto transaction_registration_guard =
-        unit_->RegisterSkeletonTracingElement(consumer_event_data_control_local_);
+        unit_->RegisterSkeletonTransactionLog(consumer_event_data_control_local_);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     TransactionLogLocalView transaction_log_local_view = unit_->GetTransactionLog(transaction_log_index);
@@ -410,7 +410,7 @@ TEST_F(TransactionLogSetRollbackFixture,
 
     // When registering a TransactionLog
     const auto transaction_registration_guard =
-        unit_->RegisterSkeletonTracingElement(consumer_event_data_control_local_);
+        unit_->RegisterSkeletonTransactionLog(consumer_event_data_control_local_);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     // and a reference transaction is begun but never finished, indicating a crash
@@ -536,7 +536,7 @@ TEST_F(TransactionLogSetRegisterFixture, CallingRegisterSkeletonWillCreateATrans
     WithATransactionLogSet(kNumberOfLogs);
 
     const auto transaction_registration_guard =
-        unit_->RegisterSkeletonTracingElement(consumer_event_data_control_local_);
+        unit_->RegisterSkeletonTransactionLog(consumer_event_data_control_local_);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
     EXPECT_EQ(transaction_log_index, TransactionLogSet::kSkeletonIndexSentinel);
     EXPECT_TRUE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
@@ -577,7 +577,7 @@ TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWillRemoveSkeletonTran
     WithATransactionLogSet(kNumberOfLogs);
 
     std::optional<TransactionLogRegistrationGuard> transaction_registration_guard{
-        unit_->RegisterSkeletonTracingElement(consumer_event_data_control_local_)};
+        unit_->RegisterSkeletonTransactionLog(consumer_event_data_control_local_)};
     transaction_registration_guard.reset();
     EXPECT_FALSE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
 }
@@ -593,7 +593,7 @@ TEST_F(TransactionLogSetRegisterFixtureDeathTest, CallingUnRegisterWhileTransact
 
         // When registering a TransactionLog
         TransactionLogRegistrationGuard transaction_registration_guard{
-            unit_->RegisterSkeletonTracingElement(consumer_event_data_control_local_)};
+            unit_->RegisterSkeletonTransactionLog(consumer_event_data_control_local_)};
         const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
         // and a reference transaction is begun but never finished, indicating a crash
