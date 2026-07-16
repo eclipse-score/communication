@@ -104,13 +104,13 @@ Checks: >
   modernize-redundant-void-arg,
   modernize-return-braced-init-list,
   modernize-shrink-to-fit,
-  modernize-type-traits,
+  #modernize-type-traits, Disabled because of too much noise, will later be re-enabled with a campaign to fix findings
   modernize-unary-static-assert,
   modernize-use-bool-literals,
   modernize-use-emplace,
   modernize-use-equals-delete,
   modernize-use-integer-sign-comparison,
-  modernize-use-nodiscard,
+  #modernize-use-nodiscard, Disabled because of too much noise, will later be re-enabled with a campaign to fix findings
   modernize-use-nullptr,
   modernize-use-transparent-functors,
   performance-faster-string-find,
