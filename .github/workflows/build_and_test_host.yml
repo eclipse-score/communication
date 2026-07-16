@@ -93,5 +93,6 @@ jobs:
     permissions:
       contents: read
       actions: write
+      security-events: write
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}

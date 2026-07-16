@@ -35,6 +35,7 @@ jobs:
     permissions:
       contents: read
       actions: write
+      security-events: write
     steps:
       - uses: actions/checkout@v6.0.2
 
@@ -44,79 +45,122 @@ jobs:
           cache-mode: ${{ inputs.cache-mode }}
           ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
+      - name: Install Aspect CLI
+        if: inputs.fetch-only != 'true'
+        # v2026.26.9 (https://github.com/aspect-build/setup-aspect/releases/tag/v2026.26.9)
+        uses: aspect-build/setup-aspect@2306377a61c45954ab2df7c7311698b109364352
+        with:
+          # Bazel/Bazelisk and disk/repository caching are already handled by
+          # the prepare_bazel_environment step above; avoid duplicating them
+          # here. No `aspect-api-token` is set, so this step never talks to
+          # Aspect's hosted backend.
+          bazelisk-cache: "false"
+          disk-cache: "false"
+          repository-cache: "false"
+
       - name: Fetch dependencies (--nobuild)
         if: inputs.fetch-only == 'true'
         run: bazel build --nobuild --config=clang-tidy //...
 
-      - name: Run clang-tidy via Bazel
+      - name: Run clang-tidy via aspect lint
         if: inputs.fetch-only != 'true'
         id: run-clang-tidy
         run: |
-          bazel test --config=clang-tidy //... 2>&1 | tee clang_tidy_raw.log || true
+          # --bazel-flag=--config=clang-tidy reuses the same aspect + toolchain configuration as
+          # `bazel test --config=clang-tidy` (see quality/static_analysis/static_analysis.bazelrc) — the aspect is
+          # deliberately NOT also passed via `--aspect=` here, since Bazel rejects the same aspect being registered
+          # twice.
+          #
+          # --bazel-flag=--build_event_json_file writes a Build Event Protocol JSON stream alongside the build, letting
+          # us enumerate every emitted rules_lint_machine SARIF report file below without crawling bazel-bin with
+          # `find`.
+          #
+          # The three github-*:enabled=false flags disable Aspect CLI features that post PR comments / check runs /
+          # status comments directly via Aspect's own hosted backend (requires `aspect auth login` / an Aspect-managed
+          # GitHub App). We deliberately don't use those — findings are surfaced via the SARIF upload below instead,
+          # using only the standard GITHUB_TOKEN.
+          #
+          # --artifact-upload:enabled=false disables the CLI's own attempt to upload its internal Build Event artifact
+          # via GitHub's native ArtifactService (this uses GitHub's own OIDC token, not Aspect's backend, but would need
+          # `id-token: write` and isn't needed here since we collect/upload the SARIF report ourselves below).
+          #
+          # Ideally, merge gating for newly introduced findings would be handled by a branch ruleset that blocks PRs
+          # with Code Scanning alerts above a configured severity, using GitHub's own new-vs-baseline diff instead of
+          # Aspect's locally computed one. That's blocked for now on otterdog support for the `code_scanning` ruleset
+          # rule (see eclipse-csi/otterdog#639). Until that lands, fall back to gating via aspect's own exit code:
+          # `--strategy=hold-the-line` (fails only on error-severity diagnostics — per `WarningsAsErrors` in
+          # `.clang-tidy`) for PR/push/merge_group
+          # runs, where the result should actually gate the job;
+          # `--strategy=soft` (never fails) for other triggers (e.g. nightly, manual dispatch), which only want the
+          # report/SARIF, not a pass/fail verdict.
+          case "${{ github.event_name }}" in
+            pull_request|push|merge_group) STRATEGY=hold-the-line ;;
+            *) STRATEGY=soft ;;
+          esac
 
-      - name: Collect findings
-        if: inputs.fetch-only != 'true'
-        id: findings
+          set -o pipefail
+          aspect lint \
+            --bazel-flag=--config=clang-tidy \
+            --bazel-flag=--build_event_json_file=/tmp/bep.json \
+            --github-lint-comments:enabled=false \
+            --github-status-checks:enabled=false \
+            --github-status-comments:enabled=false \
+            --artifact-upload:enabled=false \
+            --strategy="${STRATEGY}" \
+            -- //... 2>&1 | tee clang_tidy_raw.log
+
+      - name: Collect SARIF reports
+        if: always() && inputs.fetch-only != 'true'
+        id: sarif
         run: |
-          ERRORS=$(find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
-            | xargs cat 2>/dev/null \
-            | grep -c "error:" || true)
-          WARNINGS=$(find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
-            | xargs cat 2>/dev/null \
-            | grep -c "warning:" || true)
-          TOTAL=$((ERRORS + WARNINGS))
+          mkdir -p /tmp/sarif-reports
 
-          CHANGED_CPP=$(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" 2>/dev/null \
-            | grep -E '\.(cpp|h|cc|cxx|hpp)$' || true)
+          # Ask Bazel directly (via its Build Event Protocol JSON stream) which
+          # files were produced by the rules_lint_machine output group.
+          ALL_REPORTS=$(jq -r '
+            select(.id.namedSet != null)
+            | .namedSetOfFiles.files[]?
+            | select(.name | endswith(".AspectRulesLintClangTidy.report"))
+            | .uri
+          ' /tmp/bep.json 2>/dev/null | sed 's|^file://||' | sort -u)
 
-          if [[ -z "$CHANGED_CPP" ]]; then
-            ERRORS_BLOCKING=0
-          else
-            PATTERN=$(echo "$CHANGED_CPP" | tr '\n' '|' | sed 's/|$//')
-            ERRORS_BLOCKING=$(find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
-              | xargs cat 2>/dev/null \
-              | grep -E "(${PATTERN})" \
-              | grep -c "error:" || true)
+          # Reports for targets with no violations are declared but empty;
+          # skip those before merging.
+          REPORTS=""
+          for f in ${ALL_REPORTS}; do
+            [[ -s "${f}" ]] && REPORTS+="${f}"$'\n'
+          done
+          REPORTS=$(echo "${REPORTS}" | sed '/^$/d')
+
+          if [[ -z "${REPORTS}" ]]; then
+            echo "No non-empty SARIF reports found; nothing to merge/upload."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-          echo "errors=${ERRORS}"                   >> $GITHUB_OUTPUT
-          echo "warnings=${WARNINGS}"               >> $GITHUB_OUTPUT
-          echo "total=${TOTAL}"                     >> $GITHUB_OUTPUT
-          echo "errors_blocking=${ERRORS_BLOCKING}" >> $GITHUB_OUTPUT
+          # Merge all per-file SARIF reports (one per linted source file) into a
+          # single SARIF document with one combined "runs[0].results" array,
+          # since they all share the same ClangTidy tool driver.
+          echo "${REPORTS}" | xargs jq -s '{
+            "$schema": .[0]["$schema"],
+            version: .[0].version,
+            runs: [ (.[0].runs[0] * { results: (map(.runs[0].results) | add) }) ]
+          }' > /tmp/sarif-reports/clang-tidy.sarif
 
-          find -L bazel-bin -name "*.AspectRulesLintClangTidy.out" 2>/dev/null \
-            | xargs cat 2>/dev/null > clang_tidy_findings.txt || true
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "Merged $(echo "${REPORTS}" | wc -l) report(s) into /tmp/sarif-reports/clang-tidy.sarif"
 
-          if [[ ! -s clang_tidy_findings.txt ]]; then
-            {
-              echo "No clang-tidy findings were produced for this run."
-              echo "errors=${ERRORS} warnings=${WARNINGS} total=${TOTAL}"
-            } > clang_tidy_findings.txt
-          fi
-
-          grep "error:" clang_tidy_findings.txt > clang_tidy_errors.txt || true
-
-          {
-            echo "## Clang-Tidy Results"
-            echo ""
-            echo "| Metric | Count |"
-            echo "|--------|------:|"
-            echo "| :x: Errors | **${ERRORS}** |"
-            echo "| :warning: Warnings | **${WARNINGS}** |"
-            echo "| Total | **${TOTAL}** |"
-            if [[ "${ERRORS_BLOCKING}" -gt 0 ]]; then
-              echo ""
-              echo "> :x: **Check failed** — clang-tidy errors found in changed files. Fix before merging."
-              echo ""
-              echo "### First 20 errors in changed files"
-              echo '```'
-              head -20 clang_tidy_errors.txt || true
-              echo '```'
-            else
-              echo ""
-              echo "> :white_check_mark: **Check passed** — no clang-tidy errors in changed files."
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload SARIF reports to GitHub Code Scanning
+        if: always() && inputs.fetch-only != 'true' && steps.sarif.outputs.found == 'true'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: /tmp/sarif-reports/clang-tidy.sarif
+          category: clang-tidy
+          # Block this step until GitHub has finished processing the
+          # uploaded SARIF (default, made explicit here) so that any
+          # downstream step relying on the resulting Code Scanning alerts
+          # (e.g. a required status check) sees them immediately.
+          wait-for-processing: true
 
       - name: Upload clang-tidy findings as artifact
         if: always() && inputs.fetch-only != 'true'
@@ -127,14 +171,6 @@ jobs:
             clang_tidy_findings.txt
             clang_tidy_errors.txt
             clang_tidy_raw.log
+            /tmp/sarif-reports/clang-tidy.sarif
           if-no-files-found: ignore
           retention-days: 7
-
-      - name: Fail check if clang-tidy errors found in changed files
-        if: inputs.fetch-only != 'true' && (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'merge_group') && steps.findings.outputs.errors_blocking != '0'
-        run: |
-          echo "::error::Clang-tidy found ${{ steps.findings.outputs.errors_blocking }} error(s) in changed files. See the 'clang-tidy-findings' artifact for details."
-          echo ""
-          echo "=== Clang-tidy errors ==="
-          cat clang_tidy_errors.txt || true
-          exit 1

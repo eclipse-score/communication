@@ -11,10 +11,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+# Config shared by all linters. This config is required to generate the correct outputs for our CI workflows.
+build:_lint --extra_toolchains=@sarif_parser_toolchains//:all
+build:_lint --output_groups=+rules_lint_human,+rules_lint_machine
+
 # Clang-tidy configuration
 # Run clang-tidy on all C++ targets with: bazel test --config=clang-tidy //...
+build:clang-tidy --config=_lint
 build:clang-tidy --aspects=//tools/lint:linters.bzl%clang_tidy_aspect
-build:clang-tidy --output_groups=+rules_lint_human,+rules_lint_machine
 build:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 build:clang-tidy --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 

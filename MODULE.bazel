@@ -361,6 +361,11 @@ download_file(
 )
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.0", dev_dependency = True)
+
+lint_toolchains = use_extension("@aspect_rules_lint//lint:extensions.bzl", "toolchains", dev_dependency = True)
+lint_toolchains.sarif_parser()
+use_repo(lint_toolchains, "sarif_parser_toolchains")
+
 bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
 bazel_dep(name = "rules_build_error", version = "0.11.0", dev_dependency = True)
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
