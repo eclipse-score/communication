@@ -58,6 +58,31 @@ cc_library(
 )
 
 cc_library(
+    name = "configuration_json_parsing_strategy",
+    srcs = ["configuration_json_parsing_strategy.cpp"],
+    hdrs = ["configuration_json_parsing_strategy.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":config_validate",
+        ":lola_service_instance_deployment",
+        ":quality_type",
+        ":service_type_deployment",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/quality/compiler_warnings",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/configuration:__subpackages__",
+    ],
+    deps = [
+        ":configuration_local",
+        ":i_configuration_parsing_strategy",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "config_validate",
     srcs = ["config_validate.cpp"],
     hdrs = ["config_validate.h"],
@@ -82,12 +107,7 @@ cc_library(
     hdrs = ["config_parser.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        ":config_validate",
-        ":lola_service_instance_deployment",
-        ":quality_type",
-        ":service_type_deployment",
-        "@score_baselibs//score/mw/log",
-        "@score_baselibs//score/quality/compiler_warnings",
+        ":configuration_json_parsing_strategy",
     ],
     tags = ["FFI"],
     visibility = [
@@ -452,6 +472,21 @@ cc_unit_test(
     ],
     deps = [
         ":config_parser",
+        ":configuration_json_parsing_strategy",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_unit_test(
+    name = "configuration_json_parsing_strategy_test",
+    srcs = ["configuration_json_parsing_strategy_test.cpp"],
+    data = ["example/mw_com_config.json"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":configuration_json_parsing_strategy",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )

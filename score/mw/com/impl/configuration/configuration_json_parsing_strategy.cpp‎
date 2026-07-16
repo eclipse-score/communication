@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/configuration/config_parser.h"
+#include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 #include "score/mw/com/impl/configuration/config_validate.h"
 
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
@@ -1188,7 +1188,6 @@ auto ParseTracingProperties(const score::json::Object& top_level_object) -> Trac
 }
 
 }  // namespace
-}  // namespace score::mw::com::impl::configuration
 
 /**
  * \brief Parses json configuration under given path and returns a Configuration object on success.
@@ -1200,7 +1199,7 @@ auto ParseTracingProperties(const score::json::Object& top_level_object) -> Trac
 // see the suppression of Parse.
 // This is not an
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto score::mw::com::impl::configuration::Parse(const std::string_view path) -> Configuration
+Configuration ConfigurationJsonParsingStrategy::Parse(const std::string_view path) const
 {
     const score::json::JsonParser json_parser_obj;
     // Reason for banning is AoU of vaJson library about integrity of provided path.
@@ -1223,7 +1222,7 @@ auto score::mw::com::impl::configuration::Parse(const std::string_view path) -> 
 // implicit throw. Since the function checks if the variant holds the right alternative and explicitely throws if not,
 // after logging an error message.
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto score::mw::com::impl::configuration::Parse(score::json::Any json) -> Configuration
+Configuration ConfigurationJsonParsingStrategy::Parse(score::json::Any json) const
 {
     const auto json_obj = json.As<score::json::Object>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(json_obj.has_value(),
@@ -1245,3 +1244,5 @@ auto score::mw::com::impl::configuration::Parse(score::json::Any json) -> Config
 
     return configuration;
 }
+
+}  // namespace score::mw::com::impl::configuration

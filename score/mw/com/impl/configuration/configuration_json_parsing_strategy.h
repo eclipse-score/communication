@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -10,20 +10,25 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_CONFIGURATION_CONFIG_PARSER_H
-#define SCORE_MW_COM_IMPL_CONFIGURATION_CONFIG_PARSER_H
+#ifndef SCORE_MW_COM_IMPL_CONFIGURATION_CONFIGURATION_JSON_PARSING_STRATEGY_H
+#define SCORE_MW_COM_IMPL_CONFIGURATION_CONFIGURATION_JSON_PARSING_STRATEGY_H
+
+#include "score/mw/com/impl/configuration/i_configuration_parsing_strategy.h"
 
 #include "score/json/json_parser.h"
-#include "score/mw/com/impl/configuration/configuration.h"
 
 #include <string_view>
 
 namespace score::mw::com::impl::configuration
 {
 
-Configuration Parse(const std::string_view path);
-Configuration Parse(score::json::Any json);
+class ConfigurationJsonParsingStrategy final : public IConfigurationParsingStrategy
+{
+  public:
+    Configuration Parse(std::string_view path) const override;
+    Configuration Parse(score::json::Any json) const;
+};
 
 }  // namespace score::mw::com::impl::configuration
 
-#endif  // SCORE_MW_COM_IMPL_CONFIGURATION_CONFIG_PARSER_H
+#endif  // SCORE_MW_COM_IMPL_CONFIGURATION_CONFIGURATION_JSON_PARSING_STRATEGY_H
