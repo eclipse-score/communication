@@ -12,8 +12,8 @@
  ********************************************************************************/
 
 use com_api_concept::{
-    CommData, MethodArgs, MethodCaller, MethodHandler, MethodHandlerCall, MethodInArgPtr, Result,
-    Runtime,
+    CommData, MethodArgs, MethodCaller, MethodHandler, MethodHandlerCall, MethodInArgPtr,
+    MethodInArgsMaybeUninit, Result, Runtime,
 };
 
 pub struct LolaMethodHandler<
@@ -45,13 +45,31 @@ impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime + ?Sized>
     }
 }
 
-pub struct LolaMethodCaller<Args, Return, R: Runtime> {
+pub struct LolaMethodInArgsMaybeUninit<Args> {
+    _phantom: core::marker::PhantomData<Args>,
+}
+
+impl<Args> MethodInArgsMaybeUninit<Args> for LolaMethodInArgsMaybeUninit<Args> {
+    fn write(self, _args: Args) -> MethodInArgPtr<Args> {
+        todo!("Implement the logic to write the arguments into the allocated memory")
+    }
+
+    unsafe fn assume_init(self) -> MethodInArgPtr<Args> {
+        todo!("Implement the logic to assume the allocated memory is already initialized and return initialized args")
+    }
+}
+
+pub struct LolaMethodCaller<Args: MethodArgs, Return: CommData, R: Runtime> {
     _phantom: core::marker::PhantomData<(Args, Return, R)>,
 }
 
 impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime>
     MethodCaller<Args, Return, R> for LolaMethodCaller<Args, Return, R>
 {
+    type MethodInArgsMaybeUninit<'a>
+        = LolaMethodInArgsMaybeUninit<Args>
+    where
+        Self: 'a;
     fn new(_method_name: &str, _instance_info: R::ConsumerInfo) -> Result<Self>
     where
         Self: Sized,
@@ -66,8 +84,10 @@ impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime>
         todo!("Implement the logic to call the method with copied arguments");
     }
 
-    fn allocate(&self) -> Result<MethodInArgPtr<Args>> {
-        todo!("Implement the logic to allocate method arguments");
+    fn allocate(&self) -> Result<LolaMethodInArgsMaybeUninit<Args>> {
+        Ok(LolaMethodInArgsMaybeUninit {
+            _phantom: core::marker::PhantomData,
+        })
     }
 
     fn call(&self, _args: MethodInArgPtr<Args>) -> Result<Return> {

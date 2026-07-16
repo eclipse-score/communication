@@ -31,6 +31,7 @@ use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::AtomicUsize;
+use core::todo;
 use futures::stream::{self, Stream};
 use std::collections::VecDeque;
 use std::path::Path;
@@ -38,8 +39,8 @@ use std::path::Path;
 use com_api_concept::{
     Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, FindServiceSpecifier,
     InstanceSpecifier, Interface, MethodArgs, MethodCaller, MethodHandler, MethodHandlerCall,
-    MethodInArgPtr, Producer, ProducerBuilder, ProviderInfo, Result, Runtime, SampleContainer,
-    ServiceDiscovery, Subscriber, Subscription,
+    MethodInArgPtr, MethodInArgsMaybeUninit, Producer, ProducerBuilder, ProviderInfo, Result,
+    Runtime, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
 };
 
 pub struct MockRuntimeImpl {}
@@ -543,13 +544,32 @@ impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime + ?Sized>
     }
 }
 
-pub struct MockMethodCaller<Args, Return, R: Runtime> {
+pub struct MockMethodInArgsMaybeUninit<Args: MethodArgs> {
+    _phantom: core::marker::PhantomData<Args>,
+}
+
+impl<Args: MethodArgs> MethodInArgsMaybeUninit<Args> for MockMethodInArgsMaybeUninit<Args> {
+    fn write(self, _args: Args) -> MethodInArgPtr<Args> {
+        todo!("Implement the logic to write the arguments into the allocated memory")
+    }
+
+    unsafe fn assume_init(self) -> MethodInArgPtr<Args> {
+        todo!("Implement the logic to assume the allocated memory is already initialized and return initialized args")
+    }
+}
+
+pub struct MockMethodCaller<Args: MethodArgs, Return: CommData, R: Runtime> {
     _phantom: core::marker::PhantomData<(Args, Return, R)>,
 }
 
-impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime>
-    MethodCaller<Args, Return, R> for MockMethodCaller<Args, Return, R>
+impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, R>
+    for MockMethodCaller<Args, Return, R>
 {
+    type MethodInArgsMaybeUninit<'a>
+        = MockMethodInArgsMaybeUninit<Args>
+    where
+        Self: 'a;
+
     fn new(_method_name: &str, _instance_info: R::ConsumerInfo) -> Result<Self>
     where
         Self: Sized,
@@ -564,8 +584,10 @@ impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime>
         todo!("Implement the logic to call the method with copied arguments");
     }
 
-    fn allocate(&self) -> Result<MethodInArgPtr<Args>> {
-        todo!("Implement the logic to allocate method arguments");
+    fn allocate(&self) -> Result<MockMethodInArgsMaybeUninit<Args>> {
+        Ok(MockMethodInArgsMaybeUninit {
+            _phantom: core::marker::PhantomData,
+        })
     }
 
     fn call(&self, _args: MethodInArgPtr<Args>) -> Result<Return> {

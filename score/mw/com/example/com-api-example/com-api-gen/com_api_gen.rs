@@ -53,6 +53,7 @@ interface!(
     interface VehicleMethods {
         Id = "VehicleMethodsInterface",
         update_tire_pressure: Method<(Tire,), ()>,
+        update_front_tires_pressure: Method<(Tire,Tire), ()>,
         get_tire_pressure: Method<(), Tire>,
      }
 );

@@ -25,8 +25,9 @@ use std::path::PathBuf;
 
 use com_api::{
     Builder, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
-    OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,
-    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    MethodCaller, MethodInArgsMaybeUninit, OfferedProducer, Producer, Publisher, Result, Runtime,
+    RuntimeBuilder, SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber,
+    Subscription,
 };
 
 use com_api_gen::{Exhaust, Tire, VehicleInterface, VehicleMethodsInterface};
@@ -153,16 +154,61 @@ fn create_consumer_method<R: Runtime>(
 
 fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
     // Call the update_tire_pressure method with a sample tire pressure value
+    // TODO: If we need async call then need to expand the interface macro .....
     let tire = Tire { pressure: 30.0 };
     match consumer.update_tire_pressure((tire,)) {
         Ok(_) => println!("Successfully called update_tire_pressure method"),
         Err(e) => eprintln!("Failed to call update_tire_pressure method: {:?}", e),
     }
 
+    let tire1 = Tire { pressure: 31.0 };
+    let tire2 = Tire { pressure: 32.0 };
+    match consumer.update_front_tires_pressure((tire1, tire2)) {
+        Ok(_) => println!("Successfully called update_front_tires_pressure method"),
+        Err(e) => eprintln!("Failed to call update_front_tires_pressure method: {:?}", e),
+    }
+
     // Call the get_tire_pressure method to retrieve the current tire pressure
+    // Note: Currently we need to pass empty tuple for zero argument method,
+    // but in future we can change the API to not require empty tuple for zero argument method
+    // Maybe by implementing wrapper around in interface macro.
     match consumer.get_tire_pressure(()) {
         Ok(tire) => println!("Current tire pressure: {:?}", tire),
         Err(e) => eprintln!("Failed to call get_tire_pressure method: {:?}", e),
+    }
+    let allocate_ptr = consumer
+        .update_tire_pressure
+        .allocate()
+        .expect("Failed to allocate method arguments");
+    let args_ptr = allocate_ptr.write((Tire { pressure: 35.0 },));
+    // As we can not use same semanics of method call for zero copy due to function overloading limitation in rust.
+    // So we have to use different function name for zero copy method call, which is suffixed with _zero_copy.
+    // TODO: Currently we are not following same approach like event or field has, which is like SampleMaybeUninit return the SampleMut
+    // and which can call the APIs for send or update.
+    // Because we
+    match consumer.update_tire_pressure_zero_copy(args_ptr) {
+        Ok(_) => println!("Successfully called update_tire_pressure method with allocated args"),
+        Err(e) => eprintln!(
+            "Failed to call update_tire_pressure method with allocated args: {:?}",
+            e
+        ),
+    }
+
+    let allocate_ptr = consumer
+        .update_front_tires_pressure
+        .allocate()
+        .expect("Failed to allocate method arguments");
+
+    let args_ptr = allocate_ptr.write((Tire { pressure: 36.0 }, Tire { pressure: 37.0 }));
+
+    match consumer.update_front_tires_pressure_zero_copy(args_ptr) {
+        Ok(_) => {
+            println!("Successfully called update_front_tires_pressure method with allocated args")
+        }
+        Err(e) => eprintln!(
+            "Failed to call update_front_tires_pressure method with allocated args: {:?}",
+            e
+        ),
     }
 }
 
@@ -187,6 +233,14 @@ fn create_producer_method<R: Runtime>(
             Tire { pressure: 32.0 }
         })
         .expect("Failed to register get_tire_pressure handler")
+        .register_update_front_tires_pressure_handler(|tire1: Tire, tire2: Tire| {
+            println!(
+                "Received update_front_tires_pressure call with tire1: {:?}, tire2: {:?}",
+                tire1, tire2
+            );
+            ()
+        })
+        .expect("Failed to register update_front_tires_pressure handler")
         .offer()
         .expect("Failed to offer producer instance")
 }

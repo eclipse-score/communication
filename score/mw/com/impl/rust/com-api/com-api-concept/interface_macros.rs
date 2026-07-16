@@ -303,8 +303,14 @@ macro_rules! interface_consumer_method {
             // Add convenience methods for calling methods on the consumer
             impl<R: com_api::Runtime + ?Sized> [<$id Consumer>]<R> {
                 $(
+                    /// Call the remote method with copy semantics (args are copied)
                     pub fn $method_name(&self, args: $args) -> com_api::Result<$return> {
                         <R::MethodCaller<$args, $return> as com_api::MethodCaller<$args, $return, R>>::call_with_copy(&self.$method_name, args)
+                    }
+
+                    /// Call the remote method with zero-copy semantics (args moved directly)
+                    pub fn [<$method_name _zero_copy>](&self, args: com_api::MethodInArgPtr<$args>) -> com_api::Result<$return> {
+                        <R::MethodCaller<$args, $return> as com_api::MethodCaller<$args, $return, R>>::call(&self.$method_name, args)
                     }
                 )+
             }
