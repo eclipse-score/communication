@@ -31,7 +31,7 @@ mod producer;
 mod runtime;
 
 pub use consumer::{LolaConsumerDiscovery, LolaConsumerInfo, Sample, SubscribableImpl};
-pub use method::{LolaMethodCaller, LolaMethodHandler};
+pub use method::{LolaMethodCaller, LolaMethodHandler, LolaMethodInArgAllocator, LolaMethodInArgMaybeUninit};
 pub use producer::{
     LolaProducerBuilder, LolaProviderInfo, Publisher, SampleMaybeUninit, SampleMut,
 };
