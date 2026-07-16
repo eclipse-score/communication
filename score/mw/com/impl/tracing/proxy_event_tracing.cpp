@@ -443,10 +443,8 @@ void TraceSubscriptionStateChanged(ProxyEventTracingData& proxy_event_tracing_da
         }
 
         const auto binding_type = proxy_event_binding_base.GetBindingType();
-        const auto trace_result = TraceData(service_element_instance_identifier,
-                                            trace_point,
-                                            binding_type,
-                                            ConvertToFatPointer(new_state));
+        const auto trace_result =
+            TraceData(service_element_instance_identifier, trace_point, binding_type, ConvertToFatPointer(new_state));
         UpdateTracingDataFromTraceResult(
             trace_result, proxy_event_tracing_data, proxy_event_tracing_data.enable_subscription_state_changed);
     }
@@ -518,8 +516,9 @@ void TraceUnsetSubscriptionStateChangeHandler(ProxyEventTracingData& proxy_event
         const auto binding_type = proxy_event_binding_base.GetBindingType();
         const auto trace_result =
             TraceData(proxy_event_tracing_data.service_element_instance_identifier_view, trace_point, binding_type);
-        UpdateTracingDataFromTraceResult(
-            trace_result, proxy_event_tracing_data, proxy_event_tracing_data.enable_unset_subscription_state_change_handler);
+        UpdateTracingDataFromTraceResult(trace_result,
+                                         proxy_event_tracing_data,
+                                         proxy_event_tracing_data.enable_unset_subscription_state_change_handler);
     }
 }
 
@@ -552,10 +551,8 @@ void TraceCallSubscriptionStateChangeHandler(ProxyEventTracingData& proxy_event_
         }
 
         const auto binding_type = proxy_event_binding_base.GetBindingType();
-        const auto trace_result = TraceData(service_element_instance_identifier,
-                                            trace_point,
-                                            binding_type,
-                                            ConvertToFatPointer(new_state));
+        const auto trace_result =
+            TraceData(service_element_instance_identifier, trace_point, binding_type, ConvertToFatPointer(new_state));
         UpdateTracingDataFromTraceResult(trace_result,
                                          proxy_event_tracing_data,
                                          proxy_event_tracing_data.enable_call_subscription_state_change_handler);
