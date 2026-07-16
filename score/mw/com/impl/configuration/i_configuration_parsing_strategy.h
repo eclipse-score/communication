@@ -25,7 +25,7 @@ class IConfigurationParsingStrategy
   public:
     IConfigurationParsingStrategy() noexcept = default;
     virtual ~IConfigurationParsingStrategy();
-    virtual Configuration Parse(std::string_view path) = 0;
+    virtual Configuration Parse(std::string_view path) const = 0;
 
   protected:
     IConfigurationParsingStrategy(const IConfigurationParsingStrategy&) = default;
