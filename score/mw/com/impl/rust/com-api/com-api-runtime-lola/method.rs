@@ -11,23 +11,17 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use core::todo;
-
 use com_api_concept::{
     CommData, MethodArgs, MethodArgsAllocate, MethodCaller, MethodHandler, MethodHandlerCall,
     MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr, Result, Runtime,
 };
 
-pub struct LolaMethodHandler<
-    Args: MethodArgs,
-    Return: CommData + core::fmt::Debug,
-    R: Runtime + ?Sized,
-> {
+pub struct LolaMethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
     _phantom: core::marker::PhantomData<(Args, Return, R)>,
 }
 
-impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime + ?Sized>
-    MethodHandler<Args, Return, R> for LolaMethodHandler<Args, Return, R>
+impl<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> MethodHandler<Args, Return, R>
+    for LolaMethodHandler<Args, Return, R>
 {
     fn new(_method_name: &str, _instance_info: R::ProviderInfo) -> Result<Self>
     where
@@ -54,8 +48,8 @@ pub struct LolaMethodCaller<Args: MethodArgs, Return: CommData, R: Runtime> {
     _phantom: core::marker::PhantomData<(Args, Return, R)>,
 }
 
-impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime>
-    MethodCaller<Args, Return, R> for LolaMethodCaller<Args, Return, R>
+impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, R>
+    for LolaMethodCaller<Args, Return, R>
 {
     fn new(_method_name: &str, _instance_info: R::ConsumerInfo) -> Result<Self>
     where
@@ -102,9 +96,7 @@ pub struct LolaMethodInArgAllocator;
 
 impl MethodInArgAllocator for LolaMethodInArgAllocator {
     type MethodInArgMaybeUninit<T: CommData> = LolaMethodInArgMaybeUninit<T>;
-    fn allocate<T: CommData>() -> LolaMethodInArgMaybeUninit<T> {
-        LolaMethodInArgMaybeUninit {
-            _phantom: core::marker::PhantomData,
-        }
+    fn allocate<T: CommData>(&self) -> LolaMethodInArgMaybeUninit<T> {
+        todo!("Implement allocation from the Lola shared-memory region via &self context");
     }
 }

@@ -350,7 +350,10 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
 /// - A `<Name>Validator<R, H0, H1, ...>` struct with handler state type parameters
 /// - `register_handler_<method_name>()` methods that transition handler state to `HandlerSet`
 /// - An `init_handlers()` method that starts the type-state flow with all handlers as `HandlerNotSet`
-/// - An `offer()` method only available when all handlers are `HandlerSet`
+/// - An `offer()` method only available when all handlers are `HandlerSet`, this offer is from the validator struct,
+///   not the original producer struct.
+///   Original producer struct still have offer but that will panic if user tries to call directly without registering handlers.
+///   So user need to call the offer from validator struct which will be available only when all handlers are registered.
 ///
 /// # Usage
 ///
@@ -368,6 +371,7 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
 /// The macro will generate a `VehicleMethodsProducerValidator<R, H0, H1>` struct with phantom
 /// type parameters representing the handler registration state of each method. The `offer()`
 /// method will only be available when all handlers are registered, ensuring compile-time safety.
+// TODO: Document tests need to be added for this macro, including successful and failed compilation cases.
 #[proc_macro_derive(TypeStateMethodValidator)]
 pub fn derive_typestate_method_validator(input: TokenStream) -> TokenStream {
     type_state_method_validator::derive_typestate_method_validator_impl(input)
