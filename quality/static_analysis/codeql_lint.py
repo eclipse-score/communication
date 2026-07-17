@@ -21,6 +21,31 @@ import shutil
 
 TMP_PATH_FOR_DATABASES = "/var/tmp/codeql_databases"
 
+
+def _find_pack_root():
+    """Locate the MISRA C++ query pack root (cpp/common/src) via Bazel runfiles.
+
+    The codeql_coding_standards repo's cpp/** sources are already declared as a
+    `data` dependency of @codeql_coding_standards//:analysis_report, which is in
+    turn a `data` dependency of this py_binary. That means Bazel places them in
+    our own runfiles tree, so we can resolve the pack root the same way
+    everywhere (locally and in CI) without any manual filesystem searching.
+    """
+    from python.runfiles import Runfiles
+
+    runfiles = Runfiles.Create()
+    anchor = runfiles.Rlocation("codeql_coding_standards/cpp/common/src/qlpack.yml")
+    if not anchor or not os.path.exists(anchor):
+        raise RuntimeError("Unable to locate CodeQL pack root (cpp/common/src)")
+    return os.path.dirname(anchor)
+
+
+def _install_query_pack(code_ql_path):
+    """Resolve the MISRA C++ query pack's own dependencies (like `npm install`)."""
+    pack_root = _find_pack_root()
+    subprocess.run(f"{code_ql_path} pack install {pack_root}", shell=True, check=True)
+
+
 def create_database(code_ql_path, config_path, target, source_root, database_path):
     """Create the CodeQL database: init, build with tracing, finalize."""
     subprocess.run(
@@ -66,6 +91,7 @@ def analyze_database(
     csv_path = f"{output_base}/{output_prefix}.csv"
 
     # Run CodeQL analysis (generates SARIF)
+    print("\n Running CodeQL analysis...")
     subprocess.run(
         f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
         f"--format=sarifv2.1.0 --output={sarif_path}",
@@ -79,9 +105,15 @@ def analyze_database(
 
     # Generate reports using CodeQL analysis_report tool
     if analysis_report_path and os.path.exists(analysis_report_path):
+        print(" Generating MISRA C++ compliance reports...")
         try:
             # Make analysis_report executable and run it
             os.chmod(analysis_report_path, 0o755)
+
+            # Remove existing reports directory if it exists
+            reports_output_dir = os.path.join(output_base, "analysis_reports")
+            if os.path.exists(reports_output_dir):
+                shutil.rmtree(reports_output_dir)
 
             # Prepare environment with CodeQL binary path so analysis_report can find 'codeql' command
             env = os.environ.copy()
@@ -92,7 +124,6 @@ def analyze_database(
             print(f" PATH for analysis_report: {env['PATH']}")
 
             # analysis_report expects positional args: database-dir sarif-file output-dir
-            reports_output_dir = os.path.join(output_base, "analysis_reports")
 
             result = subprocess.run(
                 [analysis_report_path,
@@ -108,7 +139,7 @@ def analyze_database(
             if result.stderr:
                 print(f" [analysis_report stderr]: {result.stderr.strip()}")
             if result.returncode != 0:
-                print(f" ⚠️  analysis_report exited with code {result.returncode}")
+                print(f"   analysis_report exited with code {result.returncode}")
                 # Don't raise exception - allow workflow to continue
 
         except Exception as e:
@@ -134,6 +165,9 @@ def main():
 
     # Make codeql_path absolute
     codeql_path = os.path.abspath(args.codeql_path) if args.codeql_path else None
+
+    if codeql_path:
+        _install_query_pack(codeql_path)
 
     if args.phase == "create-database":
         os.makedirs(os.path.dirname(args.database_path), exist_ok=True)
