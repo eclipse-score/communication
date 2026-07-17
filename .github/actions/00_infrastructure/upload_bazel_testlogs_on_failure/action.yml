@@ -1,0 +1,83 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Upload Bazel testlogs on failure"
+description: "Collects Bazel test.log files and uploads them as a workflow artifact."
+
+inputs:
+  artifact-name:
+    description: "Artifact name for collected Bazel test logs."
+    required: true
+  retention-days:
+    description: "Artifact retention period in days."
+    required: false
+    default: "7"
+
+outputs:
+  log-count:
+    description: "Number of copied Bazel test.log files."
+    value: ${{ steps.collect.outputs.log-count }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Collect Bazel test logs
+      id: collect
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        OUTPUT_DIR="${RUNNER_TEMP}/bazel-failed-testlogs"
+        mkdir -p "${OUTPUT_DIR}"
+
+        declare -a SEARCH_ROOTS=()
+        if [[ -d "${GITHUB_WORKSPACE}/bazel-out" ]]; then
+          SEARCH_ROOTS+=("${GITHUB_WORKSPACE}")
+        fi
+        if [[ -d "/home/runner/.bazel" ]]; then
+          SEARCH_ROOTS+=("/home/runner/.bazel")
+        fi
+        if command -v bazel >/dev/null 2>&1; then
+          BAZEL_OUTPUT_BASE="$(bazel info output_base 2>/dev/null || true)"
+          if [[ -n "${BAZEL_OUTPUT_BASE}" && -d "${BAZEL_OUTPUT_BASE}" ]]; then
+            SEARCH_ROOTS+=("${BAZEL_OUTPUT_BASE}")
+          fi
+        fi
+
+        if [[ "${#SEARCH_ROOTS[@]}" -eq 0 ]]; then
+          echo "No Bazel output roots found for test log collection."
+          echo "log-count=0" >> "${GITHUB_OUTPUT}"
+          exit 0
+        fi
+
+        COUNT=0
+        while IFS= read -r -d '' LOG_FILE; do
+          RELATIVE_PATH="${LOG_FILE#/}"
+          DEST_FILE="${OUTPUT_DIR}/${RELATIVE_PATH}"
+          mkdir -p "$(dirname "${DEST_FILE}")"
+          cp "${LOG_FILE}" "${DEST_FILE}"
+          COUNT=$((COUNT + 1))
+        done < <(find -L "${SEARCH_ROOTS[@]}" -type f -path "*/testlogs/*/test.log" -print0 2>/dev/null)
+
+        echo "Copied ${COUNT} Bazel test logs."
+        echo "log-count=${COUNT}" >> "${GITHUB_OUTPUT}"
+
+    - name: Upload Bazel test logs artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ runner.temp }}/bazel-failed-testlogs
+        if-no-files-found: ignore
+        retention-days: ${{ inputs.retention-days }}
+
