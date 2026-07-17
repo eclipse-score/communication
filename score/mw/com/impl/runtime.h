@@ -72,9 +72,23 @@ class Runtime final : public IRuntime
     /// \brief static initializer for the runtime. Must be called once per process, which intends to use ara::com
     ///        functionality.
     /// \attention Multiple calls to one of the Initialize() overloads shall be avoided. They may have no effect after
-    ///            once our Runtime singleton has been created via getInstance()/getInstanceInternal()
+    ///            once our Runtime singleton has been created via getInstance()/getInstanceInternal().
+    ///            This call might lead to a std::terminate() if it has been detected that an add-on configuration has
+    ///            already been loaded.
     /// \param runtime_configuration object containing configuration needed to initialize the Runtime
     static void Initialize(const runtime::RuntimeConfiguration& runtime_configuration);
+
+    /// \brief Initializes or extends mw::com subsystem with the given add-on configuration.
+    /// \details This call is optional and shall allow loading additional mw::com configuration files in order to extend
+    /// already loaded
+    ///          configurations. This configuration will be used as the initial one if there is no other configuration
+    ///          loaded yet.
+    /// \attention This function may call std::terminate() in case that the configuration is incompatible to the
+    /// previously
+    ///            loaded one or if there is a mw::com configuration in the default path, but it has not yet been
+    ///            loaded.
+    /// \param runtime_configuration object containing configuration needed to initialize the Runtime
+    static Result<void> InitializeRuntimeAddonConfiguration(const runtime::RuntimeConfiguration& runtime_configuration);
 
     /// \brief get singleton.
     /// \details Might return either reference to a real Runtime instance or to a mock.
@@ -131,15 +145,27 @@ class Runtime final : public IRuntime
     /// \pre the internal static initialization_config_ has to be initialized with a Configuration.
     static Runtime& getInstanceInternal() noexcept;
 
+    /// \brief Merges the service types and instances into this configuration. Returns an error if one of those entries
+    /// in the given configuration already exists in this configuration.
+    Result<void> MergeAdditionalConfiguration(Configuration additional_configuration) noexcept;
+
     /// \brief pointer to a mock to be used (set via InjectMock())
     static score::mw::com::impl::IRuntime* mock_;
 
     /// \brief mutex to synchronize potentially concurrent calls to initialization logic of Runtime.
     static std::mutex mutex_;
 
+    /// \brief mutex to synchronize access to the configuration_ member of the Runtime singleton instance.
+    mutable std::mutex configuration_mutex_;
+
     /// \brief flag, whether the runtime is now locked in the sense, that the singleton has been already created
     ///        with a given configuration.
     static bool runtime_initialization_locked_;
+
+    /// \brief flag, to identify if an add-on configuration has already been loaded, which has been handled as the
+    /// initial configuration. Used to identify that such a configuration has been loaded before the user explicitly
+    /// loaded a configuration.
+    static bool addon_configuration_loaded_;
 
     /// \brief static configuration set by one of the static Initialize() overloads. Will then finally get moved into
     ///        the singleton instance member configuration_.

@@ -96,6 +96,7 @@ cc_library(
         "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
+        ":configuration_error",
         ":global_configuration",
         ":service_identifier_type",
         ":service_instance_deployment",
@@ -658,6 +659,18 @@ filegroup(
     name = "mw_com_config_other.json",
     srcs = ["example/mw_com_config_other.json"],
     visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "mw_com_config_to_merge.json",
+    srcs = ["example/mw_com_config_to_merge.json"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+)
+
+filegroup(
+    name = "mw_com_config_to_merge_second.json",
+    srcs = ["example/mw_com_config_to_merge_second.json"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
 )
 
 filegroup(

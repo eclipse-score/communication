@@ -16,6 +16,7 @@ This document contains examples of each mw::com user facing API.
 | [`RuntimeConfiguration(argc, argv)`](#example-3-using-runtimeconfiguration-for-configuration-management) |
 | [`RuntimeConfiguration(Path)`](#example-3-using-runtimeconfiguration-for-configuration-management) |
 | [`RuntimeConfiguration::GetConfigurationPath()`](#example-3-using-runtimeconfiguration-for-configuration-management) |
+| [`RuntimeConfiguration::InitializeRuntimeAddonConfiguration()`](#example-4-using-initializeruntimeaddonconfiguration-to-load-additional-mwcom-configurations) |
 | **Data Types** |
 | [`InstanceIdentifier::Create()`](#example-1-using-instanceidentifier-for-service-instance-management) |
 | [`InstanceIdentifier::ToString()`](#example-1-using-instanceidentifier-for-service-instance-management) |
@@ -272,7 +273,45 @@ const auto& config_path = default_config.GetConfigurationPath();
 
 </details>
 
----
+
+### Example 4: Using `InitializeRuntimeAddonConfiguration` to load additional `mw::com` configurations
+
+`Runtime` provides the API `InitializeRuntimeAddonConfiguration(RuntimeConfiguration&)` to load additional configurations. For example, this can be used
+by libraries that also rely on mw::com to load their configuration in addition to the application's configuration. It is assumed that each add-on configuration
+itself is a complete mw::com configuration, i.e. does not only include service definitions. 
+Those add-on configurations will be merged into the existing configuration, if such a configuration has been loaded already. 
+If no configuration has been loaded so far, the add-on configuration will be handled as the initial configuration. Merge conflicts 
+due to duplicate service type and service instance definitions will lead to an application termination. 
+In all cases of application termination, the error message will indicate the reason for the termination. 
+
+<details>
+
+```cpp
+#include "score/mw/com/runtime.h"
+
+int main(int argc, char* argv[]) {
+    // Initialize mw::com runtime with command line arguments
+    score::mw::com::runtime::InitializeRuntime(argc, argv);
+
+    // Load additional add-on configuration
+    score::mw::com::runtime::RuntimeConfiguration addon_config{"/path/to/addon/mw_com_addon_config.json"};
+    score::mw::com::runtime::InitializeAddOnConfiguration(addon_config); 
+    
+    // Ensure that runtime with combined configuration is loaded
+    Runtime::getInstance();
+
+    return 0;
+}
+```
+
+#### Key Points
+- Configurations will be merged if an configuration has been loaded earlier. 
+- If no configuration has been loaded so far, the add-on configuration will be handled as the initial configuration.
+- If no configuration has been loaded so far, but there is a file in the default configuration location, the application will terminate  
+- In case of merge conflicts, between the existing configuration and the add-on configuration, the application will terminate. 
+- Loading a configuration explicitly via Initialize() after an add-on configuration has been loaded as the default configuration will cause the application to terminate.
+
+</details>
 
 ## `mw::com Data Type` API Examples:
 
