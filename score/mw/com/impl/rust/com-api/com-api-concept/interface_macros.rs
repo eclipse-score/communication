@@ -83,6 +83,12 @@ pub struct HandlerSet;
 ///   "left_tire" and "exhaust" events.
 /// - `VehicleOfferedProducer<R>` struct that implements `OfferedProducer` trait for offering
 ///   "left_tire" and "exhaust" events.
+// TODO: We need to enable the support for mixed types (Event, Method, Field) in the same interface definition.
+// Currently, we are supporting only one type of definition in the interface macro. We will add support for mixed types before enabling field and method for user.
+// We will update this macro in such a way so it should not cause in backward compatibility issues for existing users.
+// Plan is to have only two match arm in the interface macro, and then validate if given struct field value has literal like Event, Method, Field.
+// Currently you may see duplicate code for field and event macro but field related macro just added to verify the example application for APIs usage.
+// This file will be optimized as mentioned above.
 #[macro_export]
 macro_rules! interface {
     // Default unique ID based on the module path and interface name
@@ -334,26 +340,23 @@ macro_rules! interface_producer_method {
             #[derive($crate::com_api_concept_macros::TypeStateMethodValidator)]
             pub struct [<$id Producer>]<R: com_api::Runtime + ?Sized> {
                 $(
-                    pub $method_name: R::MethodHandler<$args, $return>,
+                    $method_name: R::MethodHandler<$args, $return>,
                 )+
-                pub instance_info: R::ProviderInfo,
+                instance_info: R::ProviderInfo,
             }
 
             // OfferedProducer for methods (methods remain active when offered)
             pub struct [<$id OfferedProducer>]<R: com_api::Runtime + ?Sized> {
                 $(
-                    pub $method_name: R::MethodHandler<$args, $return>,
+                    $method_name: R::MethodHandler<$args, $return>,
                 )+
                 instance_info: R::ProviderInfo,
             }
 
-            // Internal implementation - only new() is exposed via Producer trait
-            // offer() is hidden to enforce typestate validation via init_handlers()
+            // Internal implementation.
             impl<R: com_api::Runtime + ?Sized> [<$id Producer>]<R> {
-                /// Internal offer implementation - do not call directly!
-                /// Use init_handlers().register_*_handler(...).offer() instead.
                 #[doc(hidden)]
-                pub fn _offer_internal(self) -> com_api::Result<[<$id OfferedProducer>]<R>> {
+                fn _offer_internal(self) -> com_api::Result<[<$id OfferedProducer>]<R>> {
                     // Offer the service instance to make it discoverable
                     self.instance_info.offer_service()?;
                     Ok([<$id OfferedProducer>] {
@@ -366,8 +369,10 @@ macro_rules! interface_producer_method {
             }
 
             // We can not remove the offer method from the Producer trait, but we can override it to panic with a clear message.
-            // As adding compiler warning or error for this is not possible, we will rely on documentation and panic.
-            // if user call this directly, as we are not offering the offer method directly.
+            // Also adding compiler warning or error for this is not possible, we will rely on documentation and panic.
+            // if user call this directly, then it will panic and it is against the intended usage of the APIs.
+            // TODO: Need to think about this more, when we have more complex interface with mixed types.
+            // Also update the documentation for this, so user should not call offer() directly from Producer struct.
             impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
                 type Interface = [<$id Interface>];
                 type OfferedProducer = [<$id OfferedProducer>]<R>;
@@ -401,6 +406,9 @@ macro_rules! interface_producer_method {
                 fn unoffer(self) -> com_api::Result<Self::Producer> {
                     // Stop offering the service instance
                     self.instance_info.stop_offer_service()?;
+                    // TODO: `unoffer()` returns a raw `[<$id Producer>]` which loses the validated
+                    // handler state. We may want to consider returning a type that retains the handler state,
+                    // but curreltly if producer is returned then user can call the inti_handlers() again and register handlers again.
                     Ok([<$id Producer>] {
                         $(
                             $method_name: self.$method_name,

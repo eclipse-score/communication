@@ -49,6 +49,21 @@ interface!(
 
 // Example interface definition using the interface macro with a custom UID for the interface.
 // First tuple is the input argument type, and the second tuple is the return type.
+// This will generate the following types and trait implementations:
+// - VehicleMethodsInterface struct with INTERFACE_ID = "VehicleMethodsInterface"
+// - VehicleMethodsConsumer<R>, VehicleMethodsProducer<R>, VehicleMethodsOfferedProducer<R>
+//   with appropriate trait implementations for the VehicleMethods interface.
+// As passed methods to macro it will generate the following methods:
+// - update_tire_pressure((Tire,)) -> ()
+// - update_front_tires_pressure((Tire, Tire)) -> ()
+// - get_tire_pressure(()) -> Tire
+// and this method can be accessed through the consumer instance of VehicleMethodsConsumer<R>.
+// Note: Yes currently macro is taking tuple based input and which makes littel bit not user-friendly,
+// but this can be improved in future by generating wrapper methods.
+// TODO: This interface macro need to be improved to support the mix of methods, events and fields in same interface.
+// Also for method this need to take the input and output types in more user-friendly way, instead of tuple based input and output.
+// example:  update_front_tires_pressure: Method<Input{Tire, Tire}, Output{Tire}>,
+// Currently it is taking tuple based input and output, which is fine for now as this is just for design APIs build/usage verification.
 interface!(
     interface VehicleMethods {
         Id = "VehicleMethodsInterface",

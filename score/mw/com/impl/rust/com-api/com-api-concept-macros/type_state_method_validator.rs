@@ -18,8 +18,6 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields, Type};
 
 /// The macro generates a validator struct with phantom type parameters that track
 /// handler registration of each method at compile time.
-/// The `offer()` method is only available when all handlers have been registered,
-/// preventing runtime errors.
 ///
 /// Unlike TypeStateFieldValidator which tracks both field updates and handler registration,
 /// this macro only tracks handler registration state (single dimension).
@@ -31,6 +29,8 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields, Type};
 // consider creating a common function to extract method information and generate the validator struct.
 // Macro currently do not validate if method handler is already registered, it will allow multiple registrations for the same method.
 // Which is not ideal but we can add that validation in future if required.
+// Note: This macro is not optimized for all the cases, it is just to validate the APIs design usage, but with runtimeimplementation,
+// this needs to be optimized and improved to support more generic patterns and better error handling.
 pub fn derive_typestate_method_validator_impl(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
@@ -80,30 +80,17 @@ pub fn derive_typestate_method_validator_impl(input: TokenStream) -> TokenStream
                 return None;
             }
 
-            // Extract Args and Return from either:
-            // 1. MethodHandler<R, Args, Return> (old 3-param pattern)
-            // 2. R::MethodHandler<Args, Return> (new 2-param associated type pattern)
+            // Extract Args and Return.
+            //TODO: This is not ideal, we can improve it in future to support more generic patterns.
+            // And improve if / else chain.
             let (args_ty, return_ty) = if let Type::Path(type_path) = &f.ty {
                 if let Some(segment) = type_path.path.segments.last() {
                     if segment.ident == "MethodHandler" {
                         if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
                             // Check for both patterns
                             match args.args.len() {
-                                // Old pattern: MethodHandler<R, Args, Return>
-                                // Why three and two pattern
-                                3 => {
-                                    if let (
-                                        Some(syn::GenericArgument::Type(_)),
-                                        Some(syn::GenericArgument::Type(args_ty)),
-                                        Some(syn::GenericArgument::Type(return_ty)),
-                                    ) = (args.args.get(0), args.args.get(1), args.args.get(2))
-                                    {
-                                        (args_ty.clone(), return_ty.clone())
-                                    } else {
-                                        return None;
-                                    }
-                                }
-                                // New pattern: R::MethodHandler<Args, Return>
+                                //pattern: R::MethodHandler<Args, Return>
+                                // TODO: This pattern is not ideal, we can improve it in future to support more generic patterns.
                                 2 => {
                                     if let (
                                         Some(syn::GenericArgument::Type(args_ty)),

@@ -104,14 +104,10 @@ pub trait Runtime {
     type MethodInArgAllocator: MethodInArgAllocator;
 
     /// `MethodCaller<Args, Return>` types for calling methods on the proxy/consumer side
-    type MethodCaller<Args: MethodArgs, Return: CommData + Debug>: MethodCaller<Args, Return, Self>;
+    type MethodCaller<Args: MethodArgs, Return: CommData>: MethodCaller<Args, Return, Self>;
 
     /// `MethodHandler<Args, Return>` types for handling method calls on the skeleton/producer side
-    type MethodHandler<Args: MethodArgs, Return: CommData + Debug>: MethodHandler<
-        Args,
-        Return,
-        Self,
-    >;
+    type MethodHandler<Args: MethodArgs, Return: CommData>: MethodHandler<Args, Return, Self>;
 
     /// `ProviderInfo` types for Configuration data for service producers instances
     type ProviderInfo: ProviderInfo + Send + Clone;

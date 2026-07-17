@@ -31,7 +31,6 @@ use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::AtomicUsize;
-use core::todo;
 use futures::stream::{self, Stream};
 use std::collections::VecDeque;
 use std::path::Path;
@@ -72,10 +71,8 @@ impl Runtime for MockRuntimeImpl {
     type ProducerBuilder<I: Interface> = MockProducerBuilder<I>;
     type Publisher<T: CommData + Debug> = Publisher<T>;
     type MethodInArgAllocator = MockMethodInArgAllocator;
-    type MethodCaller<Args: MethodArgs, Return: CommData + Debug> =
-        MockMethodCaller<Args, Return, Self>;
-    type MethodHandler<Args: MethodArgs, Return: CommData + Debug> =
-        MockMethodHandler<Args, Return, Self>;
+    type MethodCaller<Args: MethodArgs, Return: CommData> = MockMethodCaller<Args, Return, Self>;
+    type MethodHandler<Args: MethodArgs, Return: CommData> = MockMethodHandler<Args, Return, Self>;
     type ProviderInfo = MockProviderInfo;
     type ConsumerInfo = MockConsumerInfo;
 
@@ -517,16 +514,12 @@ impl RuntimeBuilderImpl {
     }
 }
 
-pub struct MockMethodHandler<
-    Args: MethodArgs,
-    Return: CommData + core::fmt::Debug,
-    R: Runtime + ?Sized,
-> {
+pub struct MockMethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
     _phantom: core::marker::PhantomData<(Args, Return, R)>,
 }
 
-impl<Args: MethodArgs, Return: CommData + core::fmt::Debug, R: Runtime + ?Sized>
-    MethodHandler<Args, Return, R> for MockMethodHandler<Args, Return, R>
+impl<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> MethodHandler<Args, Return, R>
+    for MockMethodHandler<Args, Return, R>
 {
     fn new(_method_name: &str, _instance_info: R::ProviderInfo) -> Result<Self>
     where
@@ -570,7 +563,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
     where
         Args: MethodArgsAllocate<R::MethodInArgAllocator>,
     {
-        Ok(Args::alloc_uninit())
+        todo!("Implement the logic to allocate method arguments using the MethodInArgAllocator");
     }
 
     fn invoke_zero_copy(&self, _ptrs: <Args as MethodArgs>::PtrTuple) -> Result<Return> {
@@ -600,7 +593,7 @@ pub struct MockMethodInArgAllocator;
 
 impl MethodInArgAllocator for MockMethodInArgAllocator {
     type MethodInArgMaybeUninit<T: CommData> = MockMethodInArgMaybeUninit<T>;
-    fn allocate<T: CommData>() -> MockMethodInArgMaybeUninit<T> {
+    fn allocate<T: CommData>(&self) -> MockMethodInArgMaybeUninit<T> {
         MockMethodInArgMaybeUninit {
             _phantom: core::marker::PhantomData,
         }

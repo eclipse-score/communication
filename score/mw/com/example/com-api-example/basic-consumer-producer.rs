@@ -130,6 +130,8 @@ impl<R: Runtime> VehicleMonitor<R> {
     }
 }
 
+// These functions are just to demonstrate the method APIs, and they can not be used in main of example app,
+// as runtime implementation is not available for method APIs.
 fn create_consumer_method<R: Runtime>(
     runtime: &R,
     service_id: InstanceSpecifier,
@@ -166,7 +168,7 @@ fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
         Err(e) => eprintln!("Failed to call update_tire_pressure method: {:?}", e),
     }
 
-        let uninit1 = consumer
+    let (uninit1,) = consumer
         .update_tire_pressure
         .allocate()
         .expect("Failed to allocate method arguments");
@@ -181,8 +183,8 @@ fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
         Err(e) => eprintln!("Failed to call get_tire_pressure method: {:?}", e),
     }
 
-    // Same method name as copy call - MethodCallInput dispatches to zero-copy path via ptr type
-    match consumer.update_tire_pressure(tire1ptr) {
+    // Same method name as copy call - MethodCallInput dispatches to zero-copy path via 1-tuple ptr type
+    match consumer.update_tire_pressure((tire1ptr,)) {
         Ok(_) => println!("Successfully called update_tire_pressure method with allocated args"),
         Err(e) => eprintln!(
             "Failed to call update_tire_pressure method with allocated args: {:?}",
