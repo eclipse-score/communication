@@ -12,6 +12,7 @@ abstract class SkeletonEventBinding<SampleType> {
   {abstract} +Send(SampleType const&): void
   {abstract} +Send(SampleAllocateePtr<SampleType>): void
   {abstract} +Allocate(): SampleAllocateePtr<SampleType>
+  {abstract} +GetLatestSample(QualityType): Result<SamplePtr<SampleType>>
   +GetMaxSize(): size_t
 }
 
@@ -44,6 +45,7 @@ class lola::SkeletonEvent<SampleType> {
   +Send(SampleType const&): void
   +Send(SampleAllocateePtr<SampleType>): void
   +Allocate(): SampleAllocateePtr<SampleType>
+  +GetLatestSample(QualityType): Result<SamplePtr<SampleType>>
   +PrepareOffer(): void
   +PrepareStopOffer(): void
 }
@@ -52,7 +54,7 @@ class lola::SkeletonEventCommon<SampleType> {
   -provider_control_local_view_qm_: std::optional<ProviderEventDataControlLocalView<>>
   -provider_control_local_view_asil_b_: std::optional<ProviderEventDataControlLocalView<>>
   -consumer_control_local_view_qm_: std::optional<ConsumerEventDataControlLocalView<>>
-  -consumer_control_local_view_asil_: std::optional<ConsumerEventDataControlLocalView<>>
+  -consumer_control_local_view_asil_b: std::optional<ConsumerEventDataControlLocalView<>>
   -event_data_control_composite_: std::optional<EventDataControlComposite<>>
   +PrepareOfferCommon(event_control_qm: EventControl&, event_control_asil_b: EventControl*): void
   +PrepareStopOfferCommon(): void
