@@ -92,6 +92,7 @@ package "Configuration (unchanged core)" {
     + GetTracingConfiguration() const noexcept : const TracingConfiguration&
     + AddServiceTypeDeployment(...) noexcept : ServiceTypeDeployment*
     + AddServiceInstanceDeployments(...) noexcept : ServiceInstanceDeployment*
+    + MergeServiceEntries(Configuration additional_configuration) noexcept : Result<void>
   }
 
   class "ServiceTypeDeployment" {
@@ -128,11 +129,15 @@ package "Configuration (unchanged core)" {
 class "score::mw::com::impl::Runtime" {
   - configuration_ : Configuration const&
   - parsing_strategy_ : std::unique_ptr<IConfigurationParsingStrategy>
+  - {static} addon_configuration_loaded_ : bool
+  - configuration_mutex_ : std::mutex {mutable}
   __
   {static} + Initialize() : void
   {static} + Initialize(arguments : score::cpp::span<const score::StringLiteral>) : void
+  {static} + InitializeRuntimeAddonConfiguration(const runtime::RuntimeConfiguration& runtime_configuration) : Result<void>
   {static} + getInstance() : Runtime&
   + resolve(const InstanceSpecifier&) : InstanceIdentifierContainer
+  - MergeAdditionalConfiguration(Configuration additional_configuration) : Result<void>
 }
 
 ' Relationships

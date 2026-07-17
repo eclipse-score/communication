@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
+#include "score/result/result.h"
 
 #include <cstdint>
 #include <string>
@@ -66,6 +67,12 @@ class Configuration final
     ServiceInstanceDeployment* AddServiceInstanceDeployments(
         InstanceSpecifier instance_specifier,
         ServiceInstanceDeployment service_instance_deployment) noexcept;
+
+    /// \brief Merge service types and instances into this configuration.
+    /// Checks for clashes in type names and instance names and will return error in this case.
+    /// \attention In case that the merge fails, the configuration will be left in an undefined state and should not be
+    /// used anymore.
+    Result<void> MergeServiceEntries(Configuration additional_configuration) noexcept;
 
     const ServiceTypeDeployments& GetServiceTypes() const& noexcept
     {

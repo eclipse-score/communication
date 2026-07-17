@@ -31,10 +31,14 @@
 #include <cstdlib>
 #include <fstream>
 #include <functional>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <variant>
+
+#include "configuration/configuration_error.h"
 
 namespace score::mw::com::impl
 {
@@ -48,6 +52,11 @@ class RuntimeAttorney
     const Configuration* GetConfigurationAddress() const noexcept
     {
         return &runtime_.configuration_;
+    }
+
+    bool IsAddonConfigurationLoaded() const noexcept
+    {
+        return Runtime::addon_configuration_loaded_;
     }
 
   private:
@@ -94,7 +103,8 @@ class RuntimeSingleTestPerProcessFixture : public singleton::test::SingleTestPer
     InstanceSpecifier tire_pressure_port_other_{
         InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePortOther"}).value()};
     std::string config_with_tire_pressure_port_other_{get_path("mw_com_config_other.json")};
-    bool tested_in_separate_process_{false};
+    std::string config_to_merge_{get_path("mw_com_config_to_merge.json")};
+    std::string config_to_merge_second_{get_path("mw_com_config_to_merge_second.json")};
 };
 
 std::vector<std::string_view> GetEventNameListFromHandle(const HandleType& handle_type) noexcept
@@ -128,6 +138,13 @@ void WithConfigAtDefaultPath(const std::string& source_path)
     ASSERT_TRUE(filesystem.CreateDirectories(dir).has_value());
     filesystem::Path target{"etc/mw_com_config.json"};
     ASSERT_TRUE(filesystem.CopyFile(filesystem::Path{source_path}, target).has_value());
+}
+
+void WithNoFileAtDefaultPath()
+{
+    auto& filesystem = filesystem::IStandardFilesystem::instance();
+    filesystem::Path dir{"etc"};
+    score::cpp::ignore = filesystem.RemoveAll(dir);
 }
 
 using RuntimeInitializationTest = RuntimeSingleTestPerProcessFixture;
@@ -261,6 +278,178 @@ TEST_F(RuntimeInitializationTest, ImplicitInitializationLoadsCorrectConfiguratio
         auto identifiers = runtime.resolve(tire_pressure_port_);
         EXPECT_EQ(identifiers.size(), 1);
     });
+}
+
+TEST_F(RuntimeInitializationTest, AddOnConfigurationInitializationSucceedsIfThereIsNoFileInTheDefaultPath)
+{
+    TestInSeparateProcess([this]() {
+        // Given there is no mw_com_config.json in the default path
+        WithNoFileAtDefaultPath();
+
+        const auto configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
+
+        // When loading the configuration as an add-on configuration
+        const auto init_result = Runtime::InitializeRuntimeAddonConfiguration(configuration);
+        auto& runtime = static_cast<Runtime&>(Runtime::getInstance());
+
+        RuntimeAttorney attorney{runtime};
+        // Then the configuration should be loaded successfully and the "add-on config" flag should be set
+        EXPECT_TRUE(init_result.has_value());
+        EXPECT_TRUE(attorney.IsAddonConfigurationLoaded());
+    });
+}
+
+TEST_F(RuntimeInitializationTest, ConfigurationGetsMergedAndLoadedIfInitialConfigurationIsLocked)
+{
+    TestInSeparateProcess([this]() {
+        // Given there is no mw_com_config.json in the default path
+        WithNoFileAtDefaultPath();
+
+        const auto configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
+
+        // When loading an initial mw_com_config.json and locking it (via GetInstance()) ...
+        Runtime::Initialize(configuration);
+        auto& init_runtime = static_cast<Runtime&>(Runtime::getInstance());
+
+        // ... and another add-on configuration afterward
+        const auto addon_init_result =
+            Runtime::InitializeRuntimeAddonConfiguration(runtime::RuntimeConfiguration{config_to_merge_});
+
+        auto& updated_runtime = static_cast<Runtime&>(Runtime::getInstance());
+
+        const RuntimeAttorney attorney{updated_runtime};
+
+        // Then both configurations are loaded and merged into the runtime's configuration
+        EXPECT_TRUE(addon_init_result.has_value());
+        EXPECT_EQ(attorney.GetConfigurationAddress()->GetServiceTypes().size(), 2);
+        // ... and the "add-on configuration loaded" flag is not set, because it was not loaded as the initial one
+        EXPECT_FALSE(attorney.IsAddonConfigurationLoaded());
+    });
+}
+
+TEST_F(RuntimeInitializationTest, ConfigurationGetsMergedIfInitialConfigurationExists)
+{
+    TestInSeparateProcess([this]() {
+        // Given there is no mw_com_config.json in the default path
+        WithNoFileAtDefaultPath();
+
+        const auto configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
+
+        // When loading an initial mw_com_config.json...
+        Runtime::Initialize(configuration);
+
+        // ... and another add-on configuration afterward and creating the Runtime afterwards
+        const auto addon_init_result =
+            Runtime::InitializeRuntimeAddonConfiguration(runtime::RuntimeConfiguration{config_to_merge_});
+
+        auto& runtime = static_cast<Runtime&>(Runtime::getInstance());
+
+        const RuntimeAttorney attorney{runtime};
+
+        // Then both configurations are loaded and merged into the runtime's configuration
+        EXPECT_TRUE(addon_init_result.has_value());
+        EXPECT_EQ(attorney.GetConfigurationAddress()->GetServiceTypes().size(), 2);
+        // ... and the "add-on configuration loaded" flag is not set, because it was not loaded as the initial one
+        EXPECT_FALSE(attorney.IsAddonConfigurationLoaded());
+    });
+}
+
+TEST_F(RuntimeInitializationTest, ConcurrentAddonConfigurationInitializationSucceeds)
+{
+    TestInSeparateProcess([this]() {
+        // Given there is no mw_com_config.json in the default path
+        WithNoFileAtDefaultPath();
+
+        // And an initial configuration has been loaded
+        const auto configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
+        Runtime::Initialize(configuration);
+
+        // When two threads concurrently add non-conflicting addon configurations
+        std::optional<Result<void>> result_thread_1{};
+        std::optional<Result<void>> result_thread_2{};
+
+        std::thread thread_1{[&result_thread_1, this]() {
+            result_thread_1 =
+                Runtime::InitializeRuntimeAddonConfiguration(runtime::RuntimeConfiguration{config_to_merge_});
+        }};
+
+        std::thread thread_2{[&result_thread_2, this]() {
+            result_thread_2 =
+                Runtime::InitializeRuntimeAddonConfiguration(runtime::RuntimeConfiguration{config_to_merge_second_});
+        }};
+
+        thread_1.join();
+        thread_2.join();
+
+        // Then both addon configurations are successfully merged
+        ASSERT_TRUE(result_thread_1.has_value());
+        ASSERT_TRUE(result_thread_2.has_value());
+        EXPECT_TRUE(result_thread_1->has_value());
+        EXPECT_TRUE(result_thread_2->has_value());
+
+        auto& runtime = static_cast<Runtime&>(Runtime::getInstance());
+        const RuntimeAttorney attorney{runtime};
+
+        // And all three configurations (initial + 2 addons) are present
+        EXPECT_EQ(attorney.GetConfigurationAddress()->GetServiceTypes().size(), 3);
+    });
+}
+
+using RuntimeInitializationDeathTest = RuntimeInitializationTest;
+TEST_F(RuntimeInitializationDeathTest, InitializationFailsIfAddonConfigurationHasBeenLoadedAlready)
+{
+    // EXPECT_DEATH forks a child process and GTest only allows one stderr capturer at a time
+    tested_in_separate_process_ = true;
+
+    EXPECT_DEATH(
+        {
+            // Given an add-on configuration has been loaded and because it was the first one, it was treated as initial
+            // configuration
+            const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+            Runtime::InitializeRuntimeAddonConfiguration(runtime_configuration);
+            auto& runtime = static_cast<Runtime&>(Runtime::getInstance());
+            // When loading another configuration via Initialize()
+            Runtime::Initialize(runtime_configuration);
+            // Then the process terminates via std::terminate()
+        },
+        ".*");
+}
+
+TEST_F(RuntimeInitializationDeathTest, AddOnConfigurationInitializationFailsIfThereIsAFileInTheDefaultPath)
+{
+    // EXPECT_DEATH forks a child process and GTest only allows one stderr capturer at a time
+    tested_in_separate_process_ = true;
+
+    EXPECT_DEATH(
+        {
+            // Given there is a valid mw_com_config.json in the default path
+            WithConfigAtDefaultPath(config_with_tire_pressure_port_);
+            // When calling InitializeRuntimeAddonConfiguration()
+            Runtime::InitializeRuntimeAddonConfiguration(
+                runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_});
+            // Then the process terminates via std::terminate()
+        },
+        ".*");
+}
+
+TEST_F(RuntimeInitializationDeathTest, AddOnConfigurationInitializationFailsIfMergingTheConfigurationFails)
+{
+    // EXPECT_DEATH forks a child process and GTest only allows one stderr capturer at a time
+    tested_in_separate_process_ = true;
+
+    EXPECT_DEATH(
+        {
+            WithNoFileAtDefaultPath();
+            // Given an add-on configuration has been loaded, and it is being locked by accessing the Runtime instance
+            const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+            Runtime::Initialize(runtime_configuration);
+            auto& runtime = static_cast<Runtime&>(Runtime::getInstance());
+            // When loading the same configuration via InitializeRuntimeAddonConfiguration()
+            const auto add_on_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+            Runtime::InitializeRuntimeAddonConfiguration(add_on_configuration);
+            // Then the process terminates via std::terminate() because there is a clash of service identifiers
+        },
+        ".*");
 }
 
 using RuntimeTest = RuntimeSingleTestPerProcessFixture;

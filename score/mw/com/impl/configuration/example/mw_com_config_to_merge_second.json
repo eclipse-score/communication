@@ -1,0 +1,102 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/ncar/services/BrakePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 1234,
+          "events": [
+            {
+              "eventName": "CurrentPressureFrontLeft",
+              "eventId": 20
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "CurrentTemperatureFrontLeft",
+              "fieldId": 30
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "abc/abc/BrakePressurePort",
+      "serviceTypeName": "/score/ncar/services/BrakePressureService",
+      "version": {
+        "major": 12,
+        "minor": 34
+      },
+      "instances": [
+        {
+          "instanceId": 1234,
+          "asil-level": "B",
+          "binding": "SHM",
+          "shm-size": 10000,
+          "control-asil-b-shm-size": 20000,
+          "control-qm-shm-size": 30000,
+          "events": [
+            {
+              "eventName": "CurrentPressureFrontLeft",
+              "numberOfSampleSlots": 50,
+              "maxSubscribers": 5,
+              "numberOfIpcTracingSlots": 0
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "CurrentTemperatureFrontLeft",
+              "numberOfSampleSlots": 60,
+              "maxSubscribers": 6,
+              "numberOfIpcTracingSlots": 7,
+              "useGetIfAvailable": true,
+              "useSetIfAvailable": true
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              42,
+              43
+            ],
+            "B": [
+              54,
+              55
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              15
+            ],
+            "B": [
+              15
+            ]
+          },
+          "interVmSupport": true,
+          "interVmForwarded": true
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "B",
+    "applicationID": 1234,
+    "queue-size": {
+      "QM-receiver": 8,
+      "B-receiver": 5,
+      "B-sender": 12
+    },
+    "shm-size-calc-mode": "SIMULATION"
+  },
+  "tracing": {
+    "enable": true,
+    "applicationInstanceID": "ara_com_example",
+    "traceFilterConfigPath": "./mw_com_trace_filter.json"
+  }
+}

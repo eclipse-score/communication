@@ -88,6 +88,7 @@ package "configuration" {
     + GetServiceInstances() const noexcept : const ServiceInstanceDeployments&
     + GetGlobalConfiguration() const noexcept : const GlobalConfiguration&
     + GetTracingConfiguration() const noexcept : const TracingConfiguration&
+    + MergeServiceEntries(Configuration additional_configuration) noexcept : Result<void>
   }
 
   class "score::mw::com::impl::LolaServiceTypeDeployment" {
@@ -199,16 +200,20 @@ class "nlhomann::json" {
 
 class "score::mw::com::impl::Runtime" {
   - configuration : Configuration const&
+  - {static} addon_configuration_loaded_ : bool
+  - configuration_mutex_ : std::mutex {mutable}
   __
   - Runtime(std::pair<Configuration&&, std::optional<tracing::TracingFilterConfig>&&> configs)
   {static} + Initialize() : void
   {static} + Initialize(const score::cpp::span<const score::StringLiteral> arguments) : void
+  {static} + InitializeRuntimeAddonConfiguration(const runtime::RuntimeConfiguration& runtime_configuration) : Result<void>
   {static} + getInstance() : Runtime&
   + resolve(const InstanceSpecifier&): score::mw::com::InstanceIdentifierContainer
   + GetBindingRuntime(const BindingType binding) const : IBindingRuntime*
   + GetServiceDiscovery() : IServiceDiscovery&
   + GetTracingFilterConfig() const : const tracing::ITracingFilterConfig*
   + GetTracingRuntime() const : tracing::ITracingRuntime*
+  - MergeAdditionalConfiguration(Configuration additional_configuration) : Result<void>
   ..
   <u>Notes:</u>
   AUTOSAR SWS talks about a Runtime singleton in chapter 7.1.2 Design decisions without directly requiring it!

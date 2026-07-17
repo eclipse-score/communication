@@ -13,13 +13,17 @@ enum BindingType {
 
 class "mw::com::impl::Runtime" as Runtime {
     -binding_runtimes_ : std::unordered_map<BindingType, std::unique_ptr<IBindingRuntime>>
+    -{static} addon_configuration_loaded_ : bool
+    -configuration_mutex_ : std::mutex {mutable}
     +{static} Initialize() : void
     +{static} Initialize(int argc, score::StringLiteral argv) : void
     +{static} Initialize(std::string const&) : void
+    +{static} InitializeRuntimeAddonConfiguration(const runtime::RuntimeConfiguration& runtime_configuration) : Result<void>
     +{static} getInstance() : Runtime&
     +Runtime(Configuration&& config)
     +resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>
     +getBindingRuntime(BindingType binding) : IBindingRuntime*
+    -MergeAdditionalConfiguration(Configuration additional_configuration) : Result<void>
     ..
     <u>Notes:</u>
     Runtime is not copyable.
