@@ -129,7 +129,20 @@ class SkeletonEvent : public SkeletonEventBase
 
   private:
     SkeletonEventBinding<EventType>* GetTypedEventBinding() const noexcept;
+
+    /// \brief Computes the typed event binding pointer from the type-erased binding_ (nullptr-check + downcast).
+    ///
+    /// This is called exactly once per SkeletonEvent (during construction) and its result is cached in
+    /// #typed_event_binding_ so that the hot paths Allocate()/Send() do not have to perform a dynamic_cast on every
+    /// call.
+    SkeletonEventBinding<EventType>* ComputeTypedEventBinding() const noexcept;
+
     ISkeletonEvent<EventType>* skeleton_event_mock_;
+
+    /// \brief Cached typed event binding, computed once during construction. Points to the same object owned by
+    /// SkeletonEventBase::binding_ (or nullptr if the binding construction failed). Remains valid across moves since
+    /// the defaulted move only transfers ownership of the underlying heap object without changing its address.
+    SkeletonEventBinding<EventType>* typed_event_binding_;
 };
 
 template <typename SampleDataType>
@@ -139,7 +152,8 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base, const 
                             SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                             SkeletonBaseView{skeleton_base}.GetBinding(),
                             event_name)},
-      skeleton_event_mock_{nullptr}
+      skeleton_event_mock_{nullptr},
+      typed_event_binding_{ComputeTypedEventBinding()}
 {
     SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, GetReferenceToMoveable());
 
@@ -159,7 +173,9 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
                                              const std::string_view event_name,
                                              std::unique_ptr<SkeletonEventBinding<EventType>> binding,
                                              FieldOnlyConstructorEnabler)
-    : SkeletonEventBase{event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
+    : SkeletonEventBase{event_name, std::move(binding)},
+      skeleton_event_mock_{nullptr},
+      typed_event_binding_{ComputeTypedEventBinding()}
 {
     if (binding_ != nullptr)
     {
@@ -176,7 +192,9 @@ template <typename SampleDataType>
 SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& /*skeleton_base*/,
                                              const std::string_view event_name,
                                              std::unique_ptr<SkeletonEventBinding<EventType>> binding)
-    : SkeletonEventBase{event_name, std::move(binding)}, skeleton_event_mock_{nullptr}
+    : SkeletonEventBase{event_name, std::move(binding)},
+      skeleton_event_mock_{nullptr},
+      typed_event_binding_{ComputeTypedEventBinding()}
 {
 }
 
@@ -262,6 +280,16 @@ Result<SampleAllocateePtr<SampleDataType>> SkeletonEvent<SampleDataType>::Alloca
 template <typename SampleDataType>
 auto SkeletonEvent<SampleDataType>::GetTypedEventBinding() const noexcept -> SkeletonEventBinding<SampleDataType>*
 {
+    return typed_event_binding_;
+}
+
+template <typename SampleDataType>
+auto SkeletonEvent<SampleDataType>::ComputeTypedEventBinding() const noexcept -> SkeletonEventBinding<SampleDataType>*
+{
+    if (binding_ == nullptr)
+    {
+        return nullptr;
+    }
     auto* const typed_binding = dynamic_cast<SkeletonEventBinding<EventType>*>(binding_.get());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_binding != nullptr,
                                                 "Downcast to SkeletonEventBinding<EventType> failed!");
