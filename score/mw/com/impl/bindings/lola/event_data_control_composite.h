@@ -132,6 +132,40 @@ class EventDataControlComposite
     void CheckForValidDataControls() const noexcept;
 };
 
+template <template <class> class AtomicIndirectorType>
+inline auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextSlot() noexcept -> AllocationResult
+{
+    if (asil_b_control_local_ == nullptr)
+    {
+        return {asil_qm_control_local_.get().AllocateNextSlot(), false};
+    }
+
+    if (ignore_qm_control_)
+    {
+        return {asil_b_control_local_->AllocateNextSlot(), true};
+    }
+
+    auto slot = AllocateNextMultiSlot();
+    if (!(slot.has_value()))
+    {
+        // we failed to allocate a "multi-slot". This is per our definition a misbehaviour of the QM consumers.
+        // Even if it could be, that the ASIL-B side (ASIL-B producer and ASIL-B consumers are occupying all slots!
+        // From this point onwards, we ignore/dismiss the whole qm control section -> although it might NOT guarantee us
+        // to be able to allocate a further slot ...
+        ignore_qm_control_ = true;
+        // fall back to allocation solely within asil_b control.
+        slot = asil_b_control_local_->AllocateNextSlot();
+    }
+    return {slot, ignore_qm_control_};
+}
+
+template <template <class> class AtomicIndirectorType>
+inline ProviderEventDataControlLocalView<AtomicIndirectorType>*
+EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControlLocal() noexcept
+{
+    return asil_b_control_local_;
+}
+
 }  // namespace score::mw::com::impl::lola
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
