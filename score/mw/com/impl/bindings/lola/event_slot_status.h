@@ -55,8 +55,12 @@ class EventSlotStatus final
 
     /// \brief If default constructed, SlotStatus is invalid
     EventSlotStatus() noexcept : EventSlotStatus{INVALID_TIMESTAMP} {}
-    explicit EventSlotStatus(const value_type init_val) noexcept;
-    EventSlotStatus(const EventTimeStamp timestamp, const SubscriberCount refcount) noexcept;
+    explicit EventSlotStatus(const value_type init_val) noexcept : data_{init_val} {}
+    EventSlotStatus(const EventTimeStamp timestamp, const SubscriberCount refcount) noexcept : data_{0U}
+    {
+        SetTimeStamp(timestamp);
+        SetReferenceCount(refcount);
+    }
     EventSlotStatus(const EventSlotStatus&) noexcept = default;
     EventSlotStatus(EventSlotStatus&&) noexcept = default;
     EventSlotStatus& operator=(const EventSlotStatus&) & noexcept = default;
@@ -64,31 +68,90 @@ class EventSlotStatus final
 
     ~EventSlotStatus() noexcept = default;
 
-    bool IsInvalid() const noexcept;
-    bool IsInWriting() const noexcept;
+    // Hot-path optimization: all accessors below are defined inline in this header (rather than out-of-line in the
+    // .cpp) so that they can be inlined into the GetNewSamples() sample-collection loop, avoiding a function call per
+    // slot for these trivial bit-manipulation operations.
 
-    void MarkInWriting() noexcept;
-    void MarkInvalid() noexcept;
+    bool IsInvalid() const noexcept
+    {
+        return data_ == kInvalidEvent;
+    }
+    bool IsInWriting() const noexcept
+    {
+        return data_ == kInWriting;
+    }
 
-    SubscriberCount GetReferenceCount() const noexcept;
-    EventTimeStamp GetTimeStamp() const noexcept;
+    void MarkInWriting() noexcept
+    {
+        data_ = kInWriting;
+    }
+    void MarkInvalid() noexcept
+    {
+        data_ = kInvalidEvent;
+    }
 
-    void SetTimeStamp(const EventTimeStamp time_stamp) noexcept;
-    void SetReferenceCount(const SubscriberCount ref_count) noexcept;
+    SubscriberCount GetReferenceCount() const noexcept
+    {
+        return static_cast<SubscriberCount>(data_ & 0x00000000FFFFFFFFU);  // ignore first 4 byte
+    }
+    EventTimeStamp GetTimeStamp() const noexcept
+    {
+        return static_cast<EventTimeStamp>(data_ >> 32U);  // ignore last 4 byte
+    }
 
-    explicit operator value_type&() & noexcept;
-    explicit operator const value_type&() const& noexcept;
+    void SetTimeStamp(const EventTimeStamp time_stamp) noexcept
+    {
+        data_ = static_cast<value_type>(time_stamp) << 32U;
+    }
+    void SetReferenceCount(const SubscriberCount ref_count) noexcept
+    {
+        data_ = (data_ & 0xFFFFFFFF00000000U) | static_cast<value_type>(ref_count);
+    }
 
-    bool IsUsed() const noexcept;
+    // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or
+    // references to private or protected data owned by the class.".
+    // The result reference of the cast operator to the underlying data type is used by atomic operations in a codebase,
+    // e.i. compare_exchange_weak and compare_exchange_strong. This a simple way without the need to extend these atomic
+    // operations with corresponding template specializations
+    // coverity[autosar_cpp14_a9_3_1_violation]
+    explicit operator value_type&() & noexcept
+    {
+        // coverity[autosar_cpp14_a9_3_1_violation]
+        return data_;
+    }
+    explicit operator const value_type&() const& noexcept
+    {
+        return data_;
+    }
+
+    bool IsUsed() const noexcept
+    {
+        return ((GetReferenceCount() != static_cast<SubscriberCount>(0)) || IsInWriting());
+    }
 
     /// Returns whether the timestamp is valid and within a certain range.
     ///
     /// \param min_tstmp Minimum timestamp
     /// \param max_tstmp Maximum timestamp
     /// \return true if timestamp is valid and within ]min; max[, false otherwise
-    bool IsTimeStampBetween(const EventTimeStamp min_timestamp, const EventTimeStamp max_timestamp) const noexcept;
+    bool IsTimeStampBetween(const EventTimeStamp min_timestamp, const EventTimeStamp max_timestamp) const noexcept
+    {
+        // Suppress "AUTOSAR C++14 A5-2-6" rule finding. This rule states:"The operands of a logical && or \\ shall be
+        // parenthesized if the operands contain binary operators".
+        // This a false-positive, all operands are parenthesized.
+        // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
+        // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
+        return ((IsInWriting() == false) && (IsInvalid() == false) && (GetTimeStamp() > min_timestamp) &&
+                (GetTimeStamp() < max_timestamp));
+    }
 
   private:
+    /// \brief Indicates that the event was never written.
+    static constexpr value_type kInvalidEvent = 0U;
+
+    /// \brief Indicates that the event data is altered and one should not increase the refcount.
+    static constexpr value_type kInWriting = std::numeric_limits<SubscriberCount>::max();
+
     value_type data_;
 };
 
