@@ -78,18 +78,6 @@ void ProviderEventDataControlLocalView<AtomicIndirectorType>::SetSlotValue(const
 }
 
 template <template <class> class AtomicIndirectorType>
-auto ProviderEventDataControlLocalView<AtomicIndirectorType>::EventReady(
-    const SlotIndexType slot_index,
-    const EventSlotStatus::EventTimeStamp time_stamp) noexcept -> void
-{
-    const EventSlotStatus initial{time_stamp, 0U};
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
-    state_slots_[slot_index].store(
-        static_cast<EventSlotStatus::value_type>(initial));  // no race-condition can happen, since event sender has
-                                                             // to be single-threaded/non-concurrent per AoU
-}
-
-template <template <class> class AtomicIndirectorType>
 auto ProviderEventDataControlLocalView<AtomicIndirectorType>::Discard(const SlotIndexType slot_index) -> void
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());

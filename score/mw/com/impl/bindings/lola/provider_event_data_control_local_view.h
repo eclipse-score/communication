@@ -185,6 +185,23 @@ inline auto ProviderEventDataControlLocalView<AtomicIndirectorType>::AllocateNex
     return {};
 }
 
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
+// called implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a
+// segmentation fault in case the index goes outside the range. As we already do an index check before
+// accessing, so no way for segmentation fault which leds to calling std::terminate().
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+template <template <class> class AtomicIndirectorType>
+inline auto ProviderEventDataControlLocalView<AtomicIndirectorType>::EventReady(
+    const SlotIndexType slot_index,
+    const EventSlotStatus::EventTimeStamp time_stamp) noexcept -> void
+{
+    const EventSlotStatus initial{time_stamp, 0U};
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
+    state_slots_[slot_index].store(
+        static_cast<EventSlotStatus::value_type>(initial));  // no race-condition can happen, since event sender has
+                                                             // to be single-threaded/non-concurrent per AoU
+}
+
 }  // namespace score::mw::com::impl::lola
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROVIDER_EVENT_DATA_CONTROL_LOCAL_VIEW_H
