@@ -166,6 +166,22 @@ EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControlLocal()
     return asil_b_control_local_;
 }
 
+template <template <class> class AtomicIndirectorType>
+inline auto EventDataControlComposite<AtomicIndirectorType>::EventReady(
+    const SlotIndexType slot_index,
+    EventSlotStatus::EventTimeStamp time_stamp) noexcept -> void
+{
+    if (asil_b_control_local_ != nullptr)
+    {
+        asil_b_control_local_->EventReady(slot_index, time_stamp);
+    }
+
+    if (!ignore_qm_control_)
+    {
+        asil_qm_control_local_.get().EventReady(slot_index, time_stamp);
+    }
+}
+
 }  // namespace score::mw::com::impl::lola
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_

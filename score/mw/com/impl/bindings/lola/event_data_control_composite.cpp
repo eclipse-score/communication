@@ -134,22 +134,6 @@ auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextMultiSlot() no
 }
 
 template <template <class> class AtomicIndirectorType>
-auto EventDataControlComposite<AtomicIndirectorType>::EventReady(const SlotIndexType slot_index,
-                                                                 EventSlotStatus::EventTimeStamp time_stamp) noexcept
-    -> void
-{
-    if (asil_b_control_local_ != nullptr)
-    {
-        asil_b_control_local_->EventReady(slot_index, time_stamp);
-    }
-
-    if (!ignore_qm_control_)
-    {
-        asil_qm_control_local_.get().EventReady(slot_index, time_stamp);
-    }
-}
-
-template <template <class> class AtomicIndirectorType>
 auto EventDataControlComposite<AtomicIndirectorType>::Discard(const SlotIndexType slot_index) -> void
 {
     if (asil_b_control_local_ != nullptr)
