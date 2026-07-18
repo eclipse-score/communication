@@ -20,6 +20,7 @@
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
+#include "score/mw/com/impl/bindings/lola/subscription_helpers.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
@@ -63,7 +64,14 @@ class ProxyEventCommon final
     Result<void> Subscribe(const std::size_t max_sample_count);
     void Unsubscribe();
 
-    SubscriptionState GetSubscriptionState() const noexcept;
+    // Hot-path optimization: GetSubscriptionState() is called on every GetNewSamples()/GetNumNewSamplesAvailable()
+    // invocation. It is defined inline here (dispatching to the now lock-free SubscriptionStateMachine::GetCurrentState
+    // and the inline SubscriptionStateMachineStateToSubscriptionState converter) to avoid an out-of-line call.
+    SubscriptionState GetSubscriptionState() const noexcept
+    {
+        const auto current_state = subscription_event_state_machine_.GetCurrentState();
+        return SubscriptionStateMachineStateToSubscriptionState(current_state);
+    }
 
     /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
     /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.
@@ -79,7 +87,18 @@ class ProxyEventCommon final
     ///
     /// The call is dispatched to SlotCollector. It is the responsibility of the calling code to ensure that
     /// GetNewSamplesSlotIndices() is only called when the event is in the subscribed state.
-    SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count) noexcept;
+    ///
+    /// Hot-path optimization: defined inline (part of the GetNewSamples() call chain) to avoid an out-of-line call.
+    SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
+    {
+        auto& slot_collector = test_slot_collector_.has_value()
+                                   ? test_slot_collector_
+                                   : subscription_event_state_machine_.GetSlotCollectorLockFree();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            slot_collector.has_value(),
+            "GetNewSamplesSlotIndices must be called after the slot collector is instantiated by calling Subscribe().");
+        return slot_collector.value().GetNewSamplesSlotIndices(max_count);
+    }
 
     Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler);
     Result<void> UnsetReceiveHandler();
