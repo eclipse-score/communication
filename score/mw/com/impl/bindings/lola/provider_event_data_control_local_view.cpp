@@ -23,49 +23,11 @@
 namespace score::mw::com::impl::lola
 {
 
-namespace
-{
-
-constexpr auto MAX_ALLOCATE_RETRIES = 100U;
-
-}  // namespace
-
 template <template <class> class AtomicIndirectorType>
 ProviderEventDataControlLocalView<AtomicIndirectorType>::ProviderEventDataControlLocalView(
     EventDataControl& event_data_control) noexcept
     : state_slots_{event_data_control.state_slots_.begin(), event_data_control.state_slots_.size()}
 {
-}
-
-template <template <class> class AtomicIndirectorType>
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from 'selected_index.value()' in case the selected_index doesn't
-// have a value but as we check before with 'has_value()' so no way for throwing std::bad_optional_access which leds
-// to std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto ProviderEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot() noexcept
-    -> std::optional<SlotIndexType>
-{
-    std::uint64_t retry_counter{0U};
-
-    for (; retry_counter <= MAX_ALLOCATE_RETRIES; ++retry_counter)
-    {
-        auto oldest_unused_slot_info_result = FindOldestUnusedSlot();
-        if (!oldest_unused_slot_info_result.has_value())
-        {
-            continue;
-        }
-
-        if (TryAllocateSlot(oldest_unused_slot_info_result.value()).has_value())
-        {
-            // ToDo: Don't call non-inlined "optional" func on the hot path! Make it conditional/configurable.
-            // LogPerformanceMetrics(retry_counter);
-            return oldest_unused_slot_info_result.value().slot_index;
-        }
-    }
-    // ToDo: Don't call non-inlined "optional" func on the hot path! Make it conditional/configurable.
-    // LogPerformanceMetrics(retry_counter);
-    return {};
 }
 
 template <template <class> class AtomicIndirectorType>
@@ -137,31 +99,6 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::Discard(const Slot
         slot.MarkInvalid();
         state_slots_[slot_index].store(static_cast<EventSlotStatus::value_type>(slot), std::memory_order_release);
     }
-}
-
-template <template <class> class AtomicIndirectorType>
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
-// called implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a
-// segmentation fault in case the index goes outside the range. As we already do an index check before
-// accessing, so no way for segmentation fault which leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto ProviderEventDataControlLocalView<AtomicIndirectorType>::TryAllocateSlot(const SlotInfo slot_info) noexcept
-    -> std::optional<EventSlotStatus::value_type>
-{
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_info.slot_index) < state_slots_.size());
-
-    EventSlotStatus in_writing{};
-    in_writing.MarkInWriting();
-    const auto in_writing_value = static_cast<EventSlotStatus::value_type>(in_writing);
-
-    auto old_slot_value = slot_info.slot_value;
-    const auto was_slot_allocated = AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_strong(
-        state_slots_[slot_info.slot_index], old_slot_value, in_writing_value, std::memory_order_acq_rel);
-    if (!was_slot_allocated)
-    {
-        return {};
-    }
-    return old_slot_value;
 }
 
 template <template <class> class AtomicIndirectorType>
