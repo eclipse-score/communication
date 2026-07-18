@@ -84,3 +84,24 @@ cc_binary(
         "@score_baselibs//score/mw/log",
     ],
 )
+
+cc_binary(
+    name = "lola_allocate_send_benchmark",
+    srcs = [
+        "lola_allocate_send_benchmarks.cpp",
+    ],
+    data = [
+        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_qm_high_frequency_send_large_data",
+        "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json",
+    ],
+    env = {"MW_LOG_CONFIG_FILE": "$(location //score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json)"},
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["benchmark"],
+    deps = [
+        ":lola_interface",
+        "//score/mw/com",
+        "@google_benchmark//:benchmark_main",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+    ],
+)
