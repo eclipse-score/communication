@@ -58,11 +58,13 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot()
 
         if (TryAllocateSlot(oldest_unused_slot_info_result.value()).has_value())
         {
-            LogPerformanceMetrics(retry_counter);
+            // ToDo: Don't call non-inlined "optional" func on the hot path! Make it conditional/configurable.
+            // LogPerformanceMetrics(retry_counter);
             return oldest_unused_slot_info_result.value().slot_index;
         }
     }
-    LogPerformanceMetrics(retry_counter);
+    // ToDo: Don't call non-inlined "optional" func on the hot path! Make it conditional/configurable.
+    // LogPerformanceMetrics(retry_counter);
     return {};
 }
 
