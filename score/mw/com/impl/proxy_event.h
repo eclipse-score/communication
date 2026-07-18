@@ -132,7 +132,19 @@ class ProxyEvent final : public ProxyEventBase
   private:
     ProxyEventBinding<SampleType>* GetTypedEventBinding() const noexcept;
 
+    /// \brief Computes the typed event binding pointer from the type-erased binding_base_ (nullptr-check + downcast).
+    ///
+    /// This is called exactly once per ProxyEvent (during construction) and its result is cached in
+    /// #typed_event_binding_ so that the hot path GetNewSamples() does not have to perform a dynamic_cast on every
+    /// call.
+    ProxyEventBinding<SampleType>* ComputeTypedEventBinding() const noexcept;
+
     IProxyEvent<SampleType>* proxy_event_mock_;
+
+    /// \brief Cached typed event binding, computed once during construction. Points to the same object owned by
+    /// ProxyEventBase::binding_base_ (or nullptr if the binding construction failed). Remains valid across moves since
+    /// the defaulted move only transfers ownership of the underlying heap object without changing its address.
+    ProxyEventBinding<SampleType>* typed_event_binding_;
 
     /// \brief Indicates whether this event is a field event (i.e. owned by a ProxyField, which is a composite of
     /// method/event) or not.
@@ -142,7 +154,8 @@ template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(const std::string_view event_name,
                                    std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding)
     : ProxyEventBase{event_name, std::unique_ptr<ProxyEventBindingBase>{std::move(proxy_event_binding)}},
-      proxy_event_mock_{nullptr}
+      proxy_event_mock_{nullptr},
+      typed_event_binding_{ComputeTypedEventBinding()}
 {
 }
 
@@ -157,11 +170,12 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const std::string_view event
                          .and_then([](std::unique_ptr<ProxyEventBinding<SampleType>> binding) {
                              return Result<std::unique_ptr<ProxyEventBindingBase>>{std::move(binding)};
                          })},
-      proxy_event_mock_{nullptr}
+      proxy_event_mock_{nullptr},
+      typed_event_binding_{ComputeTypedEventBinding()}
 {
     ProxyBaseView proxy_base_view{base};
     proxy_base_view.RegisterEvent(event_name, GetReferenceToMoveable());
-    if (GetTypedEventBinding() != nullptr)
+    if (typed_event_binding_ != nullptr)
     {
         const auto& instance_identifier = proxy_base_view.GetAssociatedHandleType().GetInstanceIdentifier();
         tracing_data_ = tracing::GenerateProxyTracingStructFromEventConfig(instance_identifier, event_name);
@@ -173,12 +187,14 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
                                    const std::string_view event_name,
                                    Result<std::unique_ptr<ProxyEventBinding<SampleType>>> proxy_event_binding,
                                    FieldOnlyConstructorEnabler)
-    : ProxyEventBase{event_name, std::move(proxy_event_binding)}, proxy_event_mock_{nullptr}
+    : ProxyEventBase{event_name, std::move(proxy_event_binding)},
+      proxy_event_mock_{nullptr},
+      typed_event_binding_{ComputeTypedEventBinding()}
 {
     // This is the specific ctor that is used by ProxyField for its "dispatch event" composite. Therefore, we do not
     // register the event in the ProxyBase's event map, since registration in the correct field map is done by
     // ProxyField ctor
-    if (GetTypedEventBinding() != nullptr)
+    if (typed_event_binding_ != nullptr)
     {
         ProxyBaseView proxy_base_view{base};
         const auto& instance_identifier = proxy_base_view.GetAssociatedHandleType().GetInstanceIdentifier();
@@ -213,8 +229,7 @@ Result<std::size_t> ProxyEvent<SampleType>::GetNewSamples(F&& receiver, std::siz
     auto tracing_receiver = tracing::CreateTracingGetNewSamplesCallback<SampleType, F>(
         tracing_data_, *binding_base_, std::forward<F>(receiver));
 
-    const auto get_new_samples_result =
-        GetTypedEventBinding()->GetNewSamples(std::move(tracing_receiver), guard_factory);
+    const auto get_new_samples_result = typed_event_binding_->GetNewSamples(std::move(tracing_receiver), guard_factory);
     if (!get_new_samples_result.has_value())
     {
         if (get_new_samples_result.error() == ComErrc::kNotSubscribed)
@@ -231,6 +246,12 @@ Result<std::size_t> ProxyEvent<SampleType>::GetNewSamples(F&& receiver, std::siz
 
 template <typename SampleType>
 auto ProxyEvent<SampleType>::GetTypedEventBinding() const noexcept -> ProxyEventBinding<SampleType>*
+{
+    return typed_event_binding_;
+}
+
+template <typename SampleType>
+auto ProxyEvent<SampleType>::ComputeTypedEventBinding() const noexcept -> ProxyEventBinding<SampleType>*
 {
     if (binding_base_ == nullptr)
     {
