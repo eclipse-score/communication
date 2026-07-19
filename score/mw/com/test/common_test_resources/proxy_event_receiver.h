@@ -63,7 +63,7 @@ class ProxyEventReceiver
         while (!stop_token.stop_requested())
         {
             auto get_samples_result = proxy_event_.GetNewSamples(
-                [this](SamplePtr<std::uint32_t> sample) {
+                [this](auto sample) {
                     std::invoke(get_new_samples_callback_, std::move(sample));
                 },
                 num_samples_to_receive);
