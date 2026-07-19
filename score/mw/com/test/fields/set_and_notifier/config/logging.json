@@ -1,0 +1,7 @@
+{
+  "appId": "FSAN",
+  "appDesc": "field_set_and_notifier",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}
