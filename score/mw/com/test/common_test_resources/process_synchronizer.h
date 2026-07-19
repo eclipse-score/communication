@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_PROCESS_SYNCHRONIZER_H
-#define SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_PROCESS_SYNCHRONIZER_H
+#ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_PROCESS_SYNCHRONIZER_H
+#define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_PROCESS_SYNCHRONIZER_H
 
 #include "score/mw/com/test/common_test_resources/shared_memory_object_creator.h"
 #include "score/mw/com/test/common_test_resources/shared_memory_object_guard.h"
@@ -48,4 +48,4 @@ class ProcessSynchronizer
 
 }  // namespace score::mw::com::test
 
-#endif  // SCORE_MW_COM_TEST_METHODS_METHODS_TEST_RESOURCES_PROCESS_SYNCHRONIZER_H
+#endif  // SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_PROCESS_SYNCHRONIZER_H

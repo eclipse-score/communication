@@ -12,8 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/test/methods/signature_variations/consumer.h"
 
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/methods/methods_test_resources/method_consumer.h"
-#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/methods/signature_variations/test_method_datatype.h"
 #include "score/mw/com/types.h"
 
