@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_TUTORIAL_CHAPTER_13_COMMON_TIRE_PRESSURE_SERVICE_H
-#define SCORE_MW_COM_TUTORIAL_CHAPTER_13_COMMON_TIRE_PRESSURE_SERVICE_H
+#ifndef SCORE_MW_COM_TUTORIAL_TIRE_PRESSURE_SERVICE_H
+#define SCORE_MW_COM_TUTORIAL_TIRE_PRESSURE_SERVICE_H
 
 // Service interface for the heap-free examples. Based on the TirePressureService from
 // chapter 7 (four per-wheel pressure fields with WithNotifier), extended with one event
@@ -58,4 +58,4 @@ using TirePressureProxy = score::mw::com::AsProxy<TirePressureInterface>;
 
 }  // namespace score::mw::com::tutorial
 
-#endif  // SCORE_MW_COM_TUTORIAL_CHAPTER_13_COMMON_TIRE_PRESSURE_SERVICE_H
+#endif  // SCORE_MW_COM_TUTORIAL_TIRE_PRESSURE_SERVICE_H
