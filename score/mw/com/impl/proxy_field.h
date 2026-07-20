@@ -92,16 +92,16 @@ class ProxyFieldImpl : public ProxyFieldBase
                          std::make_unique<ProxyEvent<FieldType>>(field_name, std::move(event_binding)),
                          set_method_binding == nullptr
                              ? nullptr
-                             : std::make_unique<ProxyMethod<FieldType(FieldType)>>(
+                             : std::make_unique<ProxyMethod<SetMethodSignature>>(
                                    field_name,
                                    std::move(set_method_binding),
-                                   typename ProxyMethod<FieldType(FieldType)>::FieldSetterConstructorEnabler{}),
+                                   typename ProxyMethod<SetMethodSignature>::FieldSetterConstructorEnabler{}),
                          get_method_binding == nullptr
                              ? nullptr
-                             : std::make_unique<ProxyMethod<FieldType()>>(
+                             : std::make_unique<ProxyMethod<GetMethodSignature>>(
                                    field_name,
                                    std::move(get_method_binding),
-                                   typename ProxyMethod<FieldType()>::FieldGetterConstructorEnabler{})}
+                                   typename ProxyMethod<GetMethodSignature>::FieldGetterConstructorEnabler{})}
     {
     }
 
@@ -329,6 +329,9 @@ class ProxyFieldImpl : public ProxyFieldBase
     }
 
   private:
+    using SetMethodSignature = FieldType(FieldType);
+    using GetMethodSignature = FieldType();
+
     static constexpr bool kHasNotifier = contains_type<WithNotifier, Tags...>::value;
     static constexpr bool kHasSetter = contains_type<WithSetter, Tags...>::value;
     static constexpr bool kHasGetter = contains_type<WithGetter, Tags...>::value;
@@ -357,17 +360,17 @@ class ProxyFieldImpl : public ProxyFieldBase
 
     /// \brief Builds the Set-method dispatch via the binding factory when WithSetter is enabled.
     /// \return A valid ProxyMethod dispatch when WithSetter is in the tag pack, nullptr otherwise.
-    static std::unique_ptr<ProxyMethod<FieldType(FieldType)>> MakeSetMethodDispatchIfEnabled(
+    static std::unique_ptr<ProxyMethod<SetMethodSignature>> MakeSetMethodDispatchIfEnabled(
         ProxyBase& proxy_base,
         const std::string_view field_name)
     {
         if constexpr (kHasSetter)
         {
-            return std::make_unique<ProxyMethod<FieldType(FieldType)>>(
+            return std::make_unique<ProxyMethod<SetMethodSignature>>(
                 field_name,
                 ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(
                     proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
-                typename ProxyMethod<FieldType(FieldType)>::FieldSetterConstructorEnabler{});
+                typename ProxyMethod<SetMethodSignature>::FieldSetterConstructorEnabler{});
         }
         else
         {
@@ -379,16 +382,17 @@ class ProxyFieldImpl : public ProxyFieldBase
 
     /// \brief Builds the Get-method dispatch via the binding factory when WithGetter is enabled.
     /// \return A valid ProxyMethod dispatch when WithGetter is in the tag pack, nullptr otherwise.
-    static std::unique_ptr<ProxyMethod<FieldType()>> MakeGetMethodDispatchIfEnabled(ProxyBase& proxy_base,
-                                                                                    const std::string_view field_name)
+    static std::unique_ptr<ProxyMethod<GetMethodSignature>> MakeGetMethodDispatchIfEnabled(
+        ProxyBase& proxy_base,
+        const std::string_view field_name)
     {
         if constexpr (kHasGetter)
         {
-            return std::make_unique<ProxyMethod<FieldType()>>(
+            return std::make_unique<ProxyMethod<GetMethodSignature>>(
                 field_name,
                 ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(
                     proxy_base.GetHandle(), ProxyBaseView{proxy_base}.GetBinding(), field_name),
-                typename ProxyMethod<FieldType()>::FieldGetterConstructorEnabler{});
+                typename ProxyMethod<GetMethodSignature>::FieldGetterConstructorEnabler{});
         }
         else
         {
@@ -400,8 +404,8 @@ class ProxyFieldImpl : public ProxyFieldBase
 
     ProxyFieldImpl(const std::string_view field_name,
                    std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
-                   std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
-                   std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch)
+                   std::unique_ptr<ProxyMethod<SetMethodSignature>> proxy_method_set_dispatch,
+                   std::unique_ptr<ProxyMethod<GetMethodSignature>> proxy_method_get_dispatch)
         : ProxyFieldBase{field_name,
                          proxy_event_dispatch.get(),
                          proxy_method_set_dispatch.get(),
@@ -414,8 +418,8 @@ class ProxyFieldImpl : public ProxyFieldBase
 
     std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;
 
-    std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch_;
-    std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch_;
+    std::unique_ptr<ProxyMethod<SetMethodSignature>> proxy_method_set_dispatch_;
+    std::unique_ptr<ProxyMethod<GetMethodSignature>> proxy_method_get_dispatch_;
 
     static_assert(
         std::is_same_v<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>,
