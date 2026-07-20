@@ -53,6 +53,8 @@ jobs:
         if: inputs.fetch-only != 'true'
         id: run-codeql
         run: |
+          set -euo pipefail
+
           bazel run //quality/static_analysis:codeql_lint -- \
             --output-dir /tmp/codeql-results \
             --output-prefix codeql-nightly \
@@ -60,6 +62,7 @@ jobs:
 
       - name: Upload SARIF to GitHub Code Scanning
         if: inputs.fetch-only != 'true' && always() && steps.run-codeql.outcome == 'success'
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: /tmp/codeql-results/codeql-nightly.sarif
@@ -72,3 +75,12 @@ jobs:
           name: codeql-csv-results
           path: /tmp/codeql-results/codeql-nightly.csv
           retention-days: 30
+
+      - name: Upload MISRA compliance reports
+        if: inputs.fetch-only != 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-misra-reports
+          path: /tmp/codeql-results/analysis_reports/
+          retention-days: 30
+          if-no-files-found: warn
