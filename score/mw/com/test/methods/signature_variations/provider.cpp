@@ -12,8 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/test/methods/signature_variations/provider.h"
 
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/methods/methods_test_resources/method_provider.h"
-#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/methods/signature_variations/test_method_datatype.h"
 #include "score/mw/com/types.h"
 

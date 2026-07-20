@@ -13,8 +13,8 @@
 #include "score/mw/com/test/methods/semi_dynamic_methods/provider.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/skeleton_container.h"
-#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/methods/semi_dynamic_methods/runtime_sized_array.h"
 #include "score/mw/com/test/methods/semi_dynamic_methods/semi_dynamic_method_datatype.h"
 #include "score/mw/com/types.h"
