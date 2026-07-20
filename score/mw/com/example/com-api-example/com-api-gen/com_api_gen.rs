@@ -12,8 +12,9 @@
  ********************************************************************************/
 
 use com_api::{interface, CommData, ProviderInfo, Publisher, Reloc, Subscriber};
+use score_log::ScoreDebug;
 
-#[derive(Debug, Reloc, CommData)]
+#[derive(Debug, Reloc, CommData, ScoreDebug)]
 #[repr(C)]
 #[comm_data(id = "Tire")]
 pub struct Tire {

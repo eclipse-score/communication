@@ -22,6 +22,7 @@ rust_library(
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",
         "//score/mw/com/impl/rust/com-api/com-api",
+        "@score_baselibs//src/log/score_log",
         "@score_communication_crate_index//:clap",
         "@score_communication_crate_index//:futures",
     ],
@@ -30,14 +31,22 @@ rust_library(
 rust_binary(
     name = "com-api-example",
     srcs = ["main.rs"],
-    data = ["etc/mw_com_config.json"],
+    data = [
+        "etc/logging.json",
+        "etc/mw_com_config.json",
+    ],
     edition = "2024",
+    env = {
+        "MW_LOG_CONFIG_FILE": "score/mw/com/example/com-api-example/etc/logging.json",
+    },
     features = ["link_std_cpp_lib"],
     visibility = ["//visibility:public"],
     deps = [
         ":com-api-example-lib",
         "//score/mw/com/example/com-api-example/com-api-gen",
         "//score/mw/com/impl/rust/com-api/com-api",
+        "@score_baselibs//src/log/score_log",
+        "@score_baselibs//src/log/stdout_logger",
         "@score_communication_crate_index//:clap",
         "@score_communication_crate_index//:futures",
     ],
