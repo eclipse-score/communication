@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-#include "common/service_interface.h"
+#include "common/tire_pressure_service.h"
 #include "heap_check/heap_check.h"
 
 #include "score/mw/log/logging.h"
@@ -20,6 +20,8 @@
 #include <cstdint>
 #include <cstdlib>
 #include <thread>
+
+using score::mw::com::tutorial::TirePressureSkeleton;
 
 namespace
 {
@@ -36,18 +38,19 @@ int main()
     // ---- INIT PHASE ----
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
-        score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/event_field_update/SensorInterface"});
+        score::mw::com::InstanceSpecifier::Create(std::string{"/tutorial/event_field_update/TirePressureService"});
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "Failed to create InstanceSpecifier!");
 
-    score::Result<sensor::SensorSkeleton> skeleton_result = sensor::SensorSkeleton::Create(specifier_result.value());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton_result.has_value(), "Failed to create SensorSkeleton!");
-    sensor::SensorSkeleton& sk = skeleton_result.value();
+    score::Result<TirePressureSkeleton> skeleton_result = TirePressureSkeleton::Create(specifier_result.value());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton_result.has_value(), "Failed to create TirePressureSkeleton!");
+    TirePressureSkeleton& skeleton = skeleton_result.value();
 
-    score::Result<void> init_update_result = sk.calibration_status.Update(0U);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_update_result.has_value(), "Failed to set calibration_status!");
+    score::Result<void> init_update_result = skeleton.tire_pressure_front_left.Update(0.0F);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_update_result.has_value(),
+                                                "Failed to set tire_pressure_front_left!");
 
-    score::Result<void> offer_result = sk.OfferService();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(), "Failed to offer SensorSkeleton!");
+    score::Result<void> offer_result = skeleton.OfferService();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_result.has_value(), "Failed to offer TirePressureSkeleton!");
 
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("SkEf") << "Entering operational phase (heap forbidden)";
@@ -55,30 +58,30 @@ int main()
 
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
-        score::Result<score::mw::com::SampleAllocateePtr<sensor::SensorReading>> sample_result = sk.reading.Allocate();
+        score::Result<score::mw::com::SampleAllocateePtr<float>> sample_result =
+            skeleton.tire_pressure_update.Allocate();
         if (!sample_result.has_value())
         {
             score::mw::log::LogError("SkEf")
-                << "reading.Allocate failed — all SHM slots may be held by slow subscribers";
+                << "tire_pressure_update.Allocate failed — all SHM slots may be held by slow subscribers";
             heap_check::allow_heap();
             return EXIT_FAILURE;
         }
 
-        sample_result.value()->sequence = i;
-        sample_result.value()->value = static_cast<float>(i) * 0.1F;
+        *sample_result.value() = static_cast<float>(i) * 0.1F;
 
-        score::Result<void> send_result = sk.reading.Send(std::move(sample_result.value()));
+        score::Result<void> send_result = skeleton.tire_pressure_update.Send(std::move(sample_result.value()));
         if (!send_result.has_value())
         {
-            score::mw::log::LogError("SkEf") << "reading.Send failed";
+            score::mw::log::LogError("SkEf") << "tire_pressure_update.Send failed";
             heap_check::allow_heap();
             return EXIT_FAILURE;
         }
 
-        score::Result<void> field_result = sk.calibration_status.Update(i);
+        score::Result<void> field_result = skeleton.tire_pressure_front_left.Update(static_cast<float>(i) * 0.1F);
         if (!field_result.has_value())
         {
-            score::mw::log::LogError("SkEf") << "calibration_status.Update failed";
+            score::mw::log::LogError("SkEf") << "tire_pressure_front_left.Update failed";
             heap_check::allow_heap();
             return EXIT_FAILURE;
         }
@@ -88,7 +91,7 @@ int main()
 
     // ---- CLEANUP ----
     heap_check::allow_heap();
-    sk.StopOfferService();
+    skeleton.StopOfferService();
 
     score::mw::log::LogInfo("SkEf") << "Operational phase complete (" << kNumIterations << " iterations)";
     score::mw::log::LogInfo("SkEf") << "Completed successfully";

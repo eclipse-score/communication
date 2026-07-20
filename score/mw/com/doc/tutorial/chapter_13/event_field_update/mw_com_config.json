@@ -1,7 +1,7 @@
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/sensor/SensorInterface",
+      "serviceTypeName": "/tutorial/TirePressureService",
       "version": {
         "major": 1,
         "minor": 0
@@ -12,13 +12,13 @@
           "serviceId": 7000,
           "events": [
             {
-              "eventName": "reading",
+              "eventName": "tire_pressure_update",
               "eventId": 1
             }
           ],
           "fields": [
             {
-              "fieldName": "calibration_status",
+              "fieldName": "tire_pressure_front_left",
               "fieldId": 2
             }
           ]
@@ -28,15 +28,15 @@
   ],
   "serviceInstances": [
     {
-      "instanceSpecifier": "/sensor/start_find_service/SensorInterface",
-      "serviceTypeName": "/sensor/SensorInterface",
+      "instanceSpecifier": "/tutorial/event_field_update/TirePressureService",
+      "serviceTypeName": "/tutorial/TirePressureService",
       "version": {
         "major": 1,
         "minor": 0
       },
       "instances": [
         {
-          "instanceId": 30,
+          "instanceId": 11,
           "allowedProvider": {
             "B": [0]
           },
@@ -47,14 +47,14 @@
           "binding": "SHM",
           "events": [
             {
-              "eventName": "reading",
+              "eventName": "tire_pressure_update",
               "numberOfSampleSlots": 16,
               "maxSubscribers": 3
             }
           ],
           "fields": [
             {
-              "fieldName": "calibration_status",
+              "fieldName": "tire_pressure_front_left",
               "numberOfSampleSlots": 16,
               "maxSubscribers": 3
             }

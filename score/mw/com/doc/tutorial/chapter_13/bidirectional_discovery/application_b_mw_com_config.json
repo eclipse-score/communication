@@ -1,7 +1,7 @@
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/sensor/SensorInterface",
+      "serviceTypeName": "/tutorial/TirePressureService",
       "version": {
         "major": 1,
         "minor": 0
@@ -12,13 +12,13 @@
           "serviceId": 7000,
           "events": [
             {
-              "eventName": "reading",
+              "eventName": "tire_pressure_update",
               "eventId": 1
             }
           ],
           "fields": [
             {
-              "fieldName": "calibration_status",
+              "fieldName": "tire_pressure_front_left",
               "fieldId": 2
             }
           ]
@@ -28,8 +28,8 @@
   ],
   "serviceInstances": [
     {
-      "instanceSpecifier": "/sensor/bidirectional_discovery/application_a",
-      "serviceTypeName": "/sensor/SensorInterface",
+      "instanceSpecifier": "/tutorial/bidirectional_discovery/application_a",
+      "serviceTypeName": "/tutorial/TirePressureService",
       "version": {
         "major": 1,
         "minor": 0
@@ -37,21 +37,21 @@
       "instances": [
         {
           "instanceId": 20,
-          "allowedProvider": {
+          "allowedConsumer": {
             "B": [0]
           },
           "asil-level": "B",
           "binding": "SHM",
           "events": [
             {
-              "eventName": "reading",
+              "eventName": "tire_pressure_update",
               "numberOfSampleSlots": 16,
               "maxSubscribers": 3
             }
           ],
           "fields": [
             {
-              "fieldName": "calibration_status",
+              "fieldName": "tire_pressure_front_left",
               "numberOfSampleSlots": 16,
               "maxSubscribers": 3
             }
@@ -60,8 +60,8 @@
       ]
     },
     {
-      "instanceSpecifier": "/sensor/bidirectional_discovery/application_b",
-      "serviceTypeName": "/sensor/SensorInterface",
+      "instanceSpecifier": "/tutorial/bidirectional_discovery/application_b",
+      "serviceTypeName": "/tutorial/TirePressureService",
       "version": {
         "major": 1,
         "minor": 0
@@ -69,21 +69,21 @@
       "instances": [
         {
           "instanceId": 21,
-          "allowedConsumer": {
+          "allowedProvider": {
             "B": [0]
           },
           "asil-level": "B",
           "binding": "SHM",
           "events": [
             {
-              "eventName": "reading",
+              "eventName": "tire_pressure_update",
               "numberOfSampleSlots": 16,
               "maxSubscribers": 3
             }
           ],
           "fields": [
             {
-              "fieldName": "calibration_status",
+              "fieldName": "tire_pressure_front_left",
               "numberOfSampleSlots": 16,
               "maxSubscribers": 3
             }

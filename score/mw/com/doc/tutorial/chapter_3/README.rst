@@ -292,6 +292,33 @@ Because no concrete `instanceId` is specified, a search using this instance spec
    reason we combine it with `StartFindService()` here is that in real systems instances typically appear and disappear
    over time, and the asynchronous API lets you react to those changes without polling.
 
+Avoiding discovery deadlocks with StartFindService
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+The synchronous ``FindService()`` polling loop used in chapter 2 works well when only one side
+needs to discover the other. In scenarios where two applications must each discover the other at
+the same time, polling can lead to a deadlock: if application A polls ``FindService()`` waiting for
+B to appear, and B polls ``FindService()`` waiting for A to appear, and neither calls
+``OfferService()`` until it has found the other, both applications block forever.
+
+``StartFindService()`` avoids this by separating the search from the wait. Each application
+calls ``StartFindService()`` immediately (non-blocking), which registers a callback that fires
+when the searched-for service appears. The main thread then waits with a **timeout** on a
+``Notification``. Because the wait has a deadline, the application cannot deadlock even if the
+other side never appears.
+
+The key rule is: call ``OfferService()`` before ``StartFindService()``. An application that has
+not called ``OfferService()`` is not registered in the service-discovery registry, so the other
+side's callback will not fire. Offering first means both sides become discoverable immediately,
+and whichever one calls ``StartFindService()`` second will find the first one already waiting.
+
+.. note::
+
+   Chapter 13 covers the heap-allocation implications of ``StartFindService()`` in detail,
+   including why ``Proxy::Create()`` must complete before the application enters its
+   heap-free operational phase.
+
 Summary
 ~~~~~~~
 
@@ -311,6 +338,9 @@ A short summary of what we have learned in this chapter:
   application threads.
 - `StartFindService()` returns a `FindServiceHandle` that is used to stop the discovery again via `StopFindService()`
   – either on shutdown, or directly from within the handler.
+- **Mutual discovery deadlocks** are avoided by calling ``OfferService()`` before ``StartFindService()``. An
+  application that has not offered its service is not visible to the other side's discovery callback. Pairing
+  a bounded timeout with ``waitForWithAbort()`` ensures the application cannot block forever.
 - User code must **never** include from `score/mw/com/impl` (impl-namespace) directly. To obtain a portable,
   binding-independent representation of a service instance id from a handle, use the public path
   `HandleType::GetInstanceId()` → `ServiceInstanceId::Serialize()` (which yields a `score::json::Object`).

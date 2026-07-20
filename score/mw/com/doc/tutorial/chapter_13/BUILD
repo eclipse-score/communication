@@ -28,7 +28,7 @@ cc_library(
 
 cc_library(
     name = "service_interface",
-    hdrs = ["common/service_interface.h"],
+    hdrs = ["common/tire_pressure_service.h"],
     includes = ["."],
     deps = [
         "//score/mw/com",
@@ -78,6 +78,22 @@ cc_binary(
     deps = _COM_DEP,
 )
 
+cc_binary(
+    name = "event_send_receive_consumer_receive_handler",
+    srcs = ["event_send_receive/consumer_receive_handler.cpp"],
+    data = ["event_send_receive/mw_com_config.json"],
+    features = COMPILER_WARNING_FEATURES + [
+        "aborts_upon_exception",
+    ],
+    deps = [
+        ":service_interface",
+        "//score/mw/com",
+        "@score_baselibs//score/concurrency:notification",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
 pkg_application(
     name = "event_send_receive_provider-pkg",
     app_name = "HeapFreeEventSendReceiveProvider",
@@ -115,6 +131,27 @@ pkg_application(
 pkg_tar(
     name = "event_send_receive_consumer-tar",
     srcs = [":event_send_receive_consumer-pkg"],
+    visibility = [
+        "//score/mw/com/doc:__subpackages__",
+    ],
+)
+
+pkg_application(
+    name = "event_send_receive_consumer_receive_handler-pkg",
+    app_name = "HeapFreeEventSendReceiveConsumerReceiveHandler",
+    bin = [":event_send_receive_consumer_receive_handler"],
+    etc = [
+        "event_send_receive/logging.json",
+        "event_send_receive/mw_com_config.json",
+    ],
+    visibility = [
+        "//score/mw/com/doc:__subpackages__",
+    ],
+)
+
+pkg_tar(
+    name = "event_send_receive_consumer_receive_handler-tar",
+    srcs = [":event_send_receive_consumer_receive_handler-pkg"],
     visibility = [
         "//score/mw/com/doc:__subpackages__",
     ],
@@ -331,17 +368,18 @@ pkg_tar(
 )
 
 # ---------------------------------------------------------------------------
-# chapter_12 — collects all distributable tars (mirrors chapters 1-11)
+# chapter_13 — collects all distributable tars (mirrors chapters 1-12)
 # ---------------------------------------------------------------------------
 
 filegroup(
-    name = "chapter_12",
+    name = "chapter_13",
     srcs = [
         ":bidirectional_discovery_application_a-tar",
         ":bidirectional_discovery_application_b-tar",
         ":event_field_update_consumer-tar",
         ":event_field_update_provider-tar",
         ":event_send_receive_consumer-tar",
+        ":event_send_receive_consumer_receive_handler-tar",
         ":event_send_receive_provider-tar",
         ":start_find_service_consumer-tar",
         ":start_find_service_provider-tar",

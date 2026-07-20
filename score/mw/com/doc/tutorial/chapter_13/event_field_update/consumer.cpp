@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-#include "common/service_interface.h"
+#include "common/tire_pressure_service.h"
 #include "heap_check/heap_check.h"
 
 #include "score/mw/log/logging.h"
@@ -20,6 +20,8 @@
 #include <cstdint>
 #include <cstdlib>
 #include <thread>
+
+using score::mw::com::tutorial::TirePressureProxy;
 
 namespace
 {
@@ -39,14 +41,14 @@ int main()
     // ---- INIT PHASE ----
 
     score::Result<score::mw::com::InstanceSpecifier> specifier_result =
-        score::mw::com::InstanceSpecifier::Create(std::string{"/sensor/event_field_update/SensorInterface"});
+        score::mw::com::InstanceSpecifier::Create(std::string{"/tutorial/event_field_update/TirePressureService"});
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(specifier_result.has_value(), "Failed to create InstanceSpecifier!");
 
-    score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType> handles{};
+    score::mw::com::ServiceHandleContainer<TirePressureProxy::HandleType> handles{};
     for (std::uint32_t attempt = 0U; attempt < kMaxFindAttempts; ++attempt)
     {
-        score::Result<score::mw::com::ServiceHandleContainer<sensor::SensorProxy::HandleType>> handles_result =
-            sensor::SensorProxy::FindService(specifier_result.value());
+        score::Result<score::mw::com::ServiceHandleContainer<TirePressureProxy::HandleType>> handles_result =
+            TirePressureProxy::FindService(specifier_result.value());
         if (!handles_result.has_value())
         {
             score::mw::log::LogError("PxEf") << "FindService failed — check mw_com_config.json";
@@ -66,17 +68,17 @@ int main()
         return EXIT_FAILURE;
     }
 
-    score::Result<sensor::SensorProxy> proxy_result = sensor::SensorProxy::Create(handles.front());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_result.has_value(), "Failed to create SensorProxy!");
-    sensor::SensorProxy& proxy = proxy_result.value();
+    score::Result<TirePressureProxy> proxy_result = TirePressureProxy::Create(handles.front());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_result.has_value(), "Failed to create TirePressureProxy!");
+    TirePressureProxy& proxy = proxy_result.value();
 
-    score::Result<void> reading_subscribe_result = proxy.reading.Subscribe(kMaxSamples);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(reading_subscribe_result.has_value(),
-                                                "Failed to subscribe to reading!");
+    score::Result<void> event_subscribe_result = proxy.tire_pressure_update.Subscribe(kMaxSamples);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_subscribe_result.has_value(),
+                                                "Failed to subscribe to tire_pressure_update!");
 
-    score::Result<void> field_subscribe_result = proxy.calibration_status.Subscribe(1U);
+    score::Result<void> field_subscribe_result = proxy.tire_pressure_front_left.Subscribe(1U);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(field_subscribe_result.has_value(),
-                                                "Failed to subscribe to calibration_status!");
+                                                "Failed to subscribe to tire_pressure_front_left!");
 
     // ---- OPERATIONAL PHASE (see README.rst for heap behavior of each API) ----
     score::mw::log::LogInfo("PxEf") << "Entering operational phase (heap forbidden)";
@@ -84,27 +86,26 @@ int main()
 
     for (std::uint32_t i = 0U; i < kNumIterations; ++i)
     {
-        score::Result<std::size_t> reading_result = proxy.reading.GetNewSamples(
-            [](score::mw::com::SamplePtr<sensor::SensorReading> sample) noexcept {
-                static_cast<void>(sample->sequence);
-                static_cast<void>(sample->value);
+        score::Result<std::size_t> event_result = proxy.tire_pressure_update.GetNewSamples(
+            [](score::mw::com::SamplePtr<float> sample) noexcept {
+                static_cast<void>(*sample);
             },
             kMaxSamples);
-        if (!reading_result.has_value())
+        if (!event_result.has_value())
         {
-            score::mw::log::LogError("PxEf") << "reading.GetNewSamples failed";
+            score::mw::log::LogError("PxEf") << "tire_pressure_update.GetNewSamples failed";
             heap_check::allow_heap();
             return EXIT_FAILURE;
         }
 
-        score::Result<std::size_t> field_result = proxy.calibration_status.GetNewSamples(
-            [](score::mw::com::SamplePtr<std::uint32_t> sample) noexcept {
+        score::Result<std::size_t> field_result = proxy.tire_pressure_front_left.GetNewSamples(
+            [](score::mw::com::SamplePtr<float> sample) noexcept {
                 static_cast<void>(*sample);
             },
             1U);
         if (!field_result.has_value())
         {
-            score::mw::log::LogError("PxEf") << "calibration_status.GetNewSamples failed";
+            score::mw::log::LogError("PxEf") << "tire_pressure_front_left.GetNewSamples failed";
             heap_check::allow_heap();
             return EXIT_FAILURE;
         }
@@ -116,8 +117,8 @@ int main()
     heap_check::allow_heap();
     score::mw::log::LogInfo("PxEf") << "Operational phase complete (" << kNumIterations << " iterations)";
 
-    proxy.reading.Unsubscribe();
-    proxy.calibration_status.Unsubscribe();
+    proxy.tire_pressure_update.Unsubscribe();
+    proxy.tire_pressure_front_left.Unsubscribe();
 
     score::mw::log::LogInfo("PxEf") << "Completed successfully";
     return 0;

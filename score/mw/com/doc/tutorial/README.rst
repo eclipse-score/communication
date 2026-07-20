@@ -91,4 +91,4 @@ dedicated `README.md` with the chapter text. Follow them in order – later chap
    Chapter 9: Fields - Get() and Set() <chapter_9/README>
    Chapter 10: Access control for service instances <chapter_10/README>
    Chapter 11: Direct use of an InstanceIdentifier <chapter_11/README>
-   Chapter 12: Heap-free mw::com for ASIL-B and FFI applications <chapter_12/README>
+   Chapter 13: Heap-free mw::com for ASIL-B and FFI applications <chapter_13/README>
