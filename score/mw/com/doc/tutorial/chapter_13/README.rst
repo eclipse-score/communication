@@ -7,10 +7,11 @@ happen. The middleware creates internal data structures, shared-memory handles, 
 records during startup, and that was fine.
 
 In ASIL-B and Freedom-From-Interference (FFI) applications things are different. Once the
-application enters its operational loop, heap allocation must stop: uncontrolled allocations can
-interfere with pre-allocated resources, introduce unpredictable latency, and violate the
-assumptions that safety-qualified software makes about its runtime behaviour. The application
-must therefore split its lifecycle into two distinct phases:
+application enters its operational loop, heap allocation can be prohibited depending on the
+system's safety requirements: uncontrolled allocations can interfere with pre-allocated
+resources, introduce unpredictable latency, and violate the assumptions that safety-qualified
+software makes about its runtime behaviour. When that prohibition applies, the application
+must split its lifecycle into two distinct phases:
 
 - An **init phase** (before the operational loop) in which all allocating calls are made:
   creating the skeleton or proxy, calling ``OfferService()``, subscribing to events, and

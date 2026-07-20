@@ -15,8 +15,8 @@
 
 // Include this file in exactly ONE translation unit per binary (main.cpp only).
 //
-// Replaces the global operator new with a version that aborts if the calling
-// thread allocates after forbid_heap() has been called on that thread.
+// Overrides ALL replaceable global allocation functions (throwing, nothrow, array,
+// and aligned forms) so no standard heap path bypasses the check.
 // Check is per-thread: library background threads may still allocate freely.
 
 #include <cstdlib>
@@ -86,6 +86,116 @@ void operator delete(void* ptr, std::size_t) noexcept
 
 // NOLINTNEXTLINE(misc-new-delete-overloads): sized-delete overrides required by the C++ standard
 void operator delete[](void* ptr, std::size_t) noexcept
+{
+    std::free(ptr);  // NOLINT(cppcoreguidelines-no-malloc)
+}
+
+// --- C++17 aligned forms ---
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): aligned operator new, C++17 replaceable global
+void* operator new(std::size_t sz, std::align_val_t al)
+{
+    if (heap_check::tl_heap_forbidden)
+    {
+        std::abort();
+    }
+    // aligned_alloc requires size to be a multiple of alignment; round up.
+    std::size_t align = static_cast<std::size_t>(al);
+    std::size_t rounded = (sz + align - 1U) & ~(align - 1U);
+    void* ptr = std::aligned_alloc(align, rounded);  // NOLINT(cppcoreguidelines-no-malloc)
+    if (ptr == nullptr)
+    {
+        throw std::bad_alloc{};
+    }
+    return ptr;
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): aligned array operator new, C++17 replaceable global
+void* operator new[](std::size_t sz, std::align_val_t al)
+{
+    return ::operator new(sz, al);
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): aligned operator delete, C++17 replaceable global
+void operator delete(void* ptr, std::align_val_t) noexcept
+{
+    std::free(ptr);  // NOLINT(cppcoreguidelines-no-malloc)
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): aligned array operator delete, C++17 replaceable global
+void operator delete[](void* ptr, std::align_val_t) noexcept
+{
+    std::free(ptr);  // NOLINT(cppcoreguidelines-no-malloc)
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): sized aligned operator delete, C++17 replaceable global
+void operator delete(void* ptr, std::size_t, std::align_val_t) noexcept
+{
+    std::free(ptr);  // NOLINT(cppcoreguidelines-no-malloc)
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): sized aligned array operator delete, C++17 replaceable global
+void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept
+{
+    std::free(ptr);  // NOLINT(cppcoreguidelines-no-malloc)
+}
+
+// --- Nothrow forms ---
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): nothrow operator new, replaceable global
+void* operator new(std::size_t sz, const std::nothrow_t&) noexcept
+{
+    if (heap_check::tl_heap_forbidden)
+    {
+        std::abort();
+    }
+    return std::malloc(sz);  // NOLINT(cppcoreguidelines-no-malloc)
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): nothrow array operator new, replaceable global
+void* operator new[](std::size_t sz, const std::nothrow_t& nt) noexcept
+{
+    return ::operator new(sz, nt);
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): aligned nothrow operator new, C++17 replaceable global
+void* operator new(std::size_t sz, std::align_val_t al, const std::nothrow_t&) noexcept
+{
+    if (heap_check::tl_heap_forbidden)
+    {
+        std::abort();
+    }
+    std::size_t align = static_cast<std::size_t>(al);
+    std::size_t rounded = (sz + align - 1U) & ~(align - 1U);
+    return std::aligned_alloc(align, rounded);  // NOLINT(cppcoreguidelines-no-malloc)
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): aligned nothrow array operator new, C++17 replaceable global
+void* operator new[](std::size_t sz, std::align_val_t al, const std::nothrow_t& nt) noexcept
+{
+    return ::operator new(sz, al, nt);
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): nothrow operator delete (placement delete for nothrow new)
+void operator delete(void* ptr, const std::nothrow_t&) noexcept
+{
+    std::free(ptr);  // NOLINT(cppcoreguidelines-no-malloc)
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): nothrow array operator delete (placement delete for nothrow new)
+void operator delete[](void* ptr, const std::nothrow_t&) noexcept
+{
+    std::free(ptr);  // NOLINT(cppcoreguidelines-no-malloc)
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): aligned nothrow operator delete, C++17 replaceable global
+void operator delete(void* ptr, std::align_val_t, const std::nothrow_t&) noexcept
+{
+    std::free(ptr);  // NOLINT(cppcoreguidelines-no-malloc)
+}
+
+// NOLINTNEXTLINE(misc-new-delete-overloads): aligned nothrow array operator delete, C++17 replaceable global
+void operator delete[](void* ptr, std::align_val_t, const std::nothrow_t&) noexcept
 {
     std::free(ptr);  // NOLINT(cppcoreguidelines-no-malloc)
 }
