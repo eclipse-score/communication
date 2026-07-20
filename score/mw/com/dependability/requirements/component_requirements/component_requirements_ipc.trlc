@@ -2155,7 +2155,7 @@ section "com" {
 
                   * Subscribe() has not been called or the last successful Subscribe() has been withdrawn with call to Unsubscribe()
 
-                  * Last call to Subscribe() has been rejected/negatively acknowledged by the provider side or provider side explicitly cancels an already acknowldged subscription.
+                  * Last call to Subscribe() has been rejected/negatively acknowledged by the provider side.
 
                 * {{kSubscriptionPending}}:
 
