@@ -12,6 +12,7 @@
  ********************************************************************************/
 
 use bridge_ffi_rs::*;
+use score_log as log;
 use std::ffi::CString;
 use std::path::Path;
 use std::ptr::NonNull;
@@ -35,7 +36,7 @@ unsafe extern "C" fn mw_com_impl_call_dyn_fnmut(ptr: *const FatPtr) {
     // SAFETY: the box is still alive (C++ only calls dispose after all invocations finish).
     if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe { (*dyn_fnmut)() })).is_err()
     {
-        // LOG the error here, Once logging mechanism is available.
+        log::error!("Panic caught in mw_com_impl_call_dyn_fnmut: aborting to prevent unwind across FFI boundary");
         // Abort to prevent a Rust panic from unwinding across the C++ stack boundary.
         std::process::abort();
     }
@@ -80,7 +81,7 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_sample(
     // Invoke the closure with the void* sample pointer.
     // catch_unwind prevents a Rust panic from unwinding across the C++ stack boundary.
     if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callable(sample_ptr))).is_err() {
-        // LOG the error here, Once logging mechanism is available.
+        log::error!("Panic caught in mw_com_impl_call_dyn_ref_fnmut_sample: aborting to prevent unwind across FFI boundary");
         // Abort to prevent unwinding across FFI boundary
         std::process::abort();
     }
@@ -121,7 +122,7 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_find_service(
     }))
     .is_err()
     {
-        // LOG the error here, Once logging mechanism is available.
+        log::error!("Panic caught in mw_com_impl_call_dyn_ref_fnmut_find_service: aborting to prevent unwind across FFI boundary");
         // Abort to prevent unwinding across FFI boundary
         std::process::abort();
     }

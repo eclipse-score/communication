@@ -44,6 +44,8 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::Arc;
 
+use score_log as log;
+
 use com_api_concept::{
     Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, ConsumerFailedReason, Error,
     EventFailedReason, InstanceSpecifier, Interface, ReceiveFailedReason, Result, SampleContainer,
@@ -314,6 +316,11 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
 {
     type Subscription = SubscriberImpl<T, B>;
     fn new(identifier: &'static str, instance_info: LolaConsumerInfo<B>) -> Result<Self> {
+        log::info!(
+            "Creating subscriber for identifier: {} with interface_id: {}",
+            identifier,
+            instance_info.interface_id
+        );
         let handle = instance_info.get_handle().ok_or(Error::ConsumerError(
             ConsumerFailedReason::ServiceHandleNotFound,
         ))?;
@@ -328,7 +335,17 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
         })
     }
     fn subscribe(self, max_num_samples: usize) -> Result<Self::Subscription> {
+        log::info!(
+            "Subscribing to event: {} for interface_id: {} with max_num_samples: {}",
+            self.identifier,
+            self.instance_info.interface_id,
+            max_num_samples
+        );
         if max_num_samples == 0 {
+            log::error!(
+                "Failed to subscribe: max_num_samples is 0 for event: {}",
+                self.identifier
+            );
             return Err(Error::EventError(EventFailedReason::InvalidMaxSamples));
         }
         let instance_info = self.instance_info.clone();
@@ -352,6 +369,11 @@ impl<T: CommData + Debug, B: FFIBridge> Subscriber<T, LolaRuntimeImpl<B>>
             )
         };
         if !status {
+            log::error!(
+                "Failed to subscribe to event: {} for interface_id: {}",
+                self.identifier,
+                self.instance_info.interface_id
+            );
             return Err(Error::EventError(EventFailedReason::EventNotAvailable));
         }
         let type_ops = unsafe {
