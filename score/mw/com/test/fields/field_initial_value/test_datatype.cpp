@@ -11,4 +11,4 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/field_initial_value/test_datatype.h"
+#include "score/mw/com/test/fields/field_initial_value/test_datatype.h"

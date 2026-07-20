@@ -10,20 +10,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup")
+load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
+pkg_filegroup(
+    name = "filesystem",
+    srcs = [
+        "//score/mw/com/test/fields/field_initial_value:client-pkg",
+        "//score/mw/com/test/fields/field_initial_value:service-pkg",
+    ],
+)
 
-def client(target, **kwargs):
-    args = ["--num-retries", "20", "--backoff-time", "50"]
-    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True, **kwargs)
-
-
-def service(target, **kwargs):
-    args = ["--cycle-time", "250"]
-    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp", **kwargs)
-
-
-def test_field_initial_value(target):
-    """Test field initial value exchange between service and client."""
-    with service(target):
-        with client(target):
-            pass
+integration_test(
+    name = "test_field_initial_value",
+    timeout = "moderate",
+    srcs = [
+        "test_field_initial_value.py",
+    ],
+    filesystem = ":filesystem",
+)
