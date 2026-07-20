@@ -40,14 +40,19 @@ class SkeletonEvent : public SkeletonEventBinding<SampleType>
   public:
     MOCK_METHOD(Result<void>,
                 Send,
-                (const SampleType& value, std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>),
+                (const SampleType& value,
+                 std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>,
+                 SampleAllocateeGuard),
                 (noexcept, override));
     MOCK_METHOD(Result<void>,
                 Send,
                 (score::mw::com::impl::SampleAllocateePtr<SampleType> sample,
                  std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>),
                 (noexcept, override));
-    MOCK_METHOD(Result<score::mw::com::impl::SampleAllocateePtr<SampleType>>, Allocate, (), (noexcept, override));
+    MOCK_METHOD(Result<score::mw::com::impl::SampleAllocateePtr<SampleType>>,
+                Allocate,
+                (SampleAllocateeGuard),
+                (noexcept, override));
     MOCK_METHOD(Result<score::mw::com::impl::SamplePtr<SampleType>>, GetLatestSample, (QualityType), (override));
     MOCK_METHOD(Result<void>, PrepareOffer, (), (noexcept, override));
     MOCK_METHOD(void, PrepareStopOffer, (), (noexcept, override));
@@ -68,11 +73,11 @@ class SkeletonEventFacade : public SkeletonEventBinding<SampleType>
     }
 
     ~SkeletonEventFacade() override = default;
-    Result<void> Send(
-        const SampleType& value,
-        std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> callback) noexcept override
+    Result<void> Send(const SampleType& value,
+                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> callback,
+                      SampleAllocateeGuard guard) noexcept override
     {
-        return skeleton_event_.Send(value, std::move(callback));
+        return skeleton_event_.Send(value, std::move(callback), std::move(guard));
     };
     Result<void> Send(
         score::mw::com::impl::SampleAllocateePtr<SampleType> sample,
@@ -80,9 +85,9 @@ class SkeletonEventFacade : public SkeletonEventBinding<SampleType>
     {
         return skeleton_event_.Send(std::move(sample), std::move(callback));
     }
-    Result<score::mw::com::impl::SampleAllocateePtr<SampleType>> Allocate() noexcept override
+    Result<impl::SampleAllocateePtr<SampleType>> Allocate(SampleAllocateeGuard guard) noexcept override
     {
-        return skeleton_event_.Allocate();
+        return skeleton_event_.Allocate(std::move(guard));
     };
     Result<score::mw::com::impl::SamplePtr<SampleType>> GetLatestSample(QualityType quality_type) override
     {

@@ -146,6 +146,7 @@ cc_library(
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:skeleton_event_binding",
+        "//score/mw/com/impl/bindings/lola:event_data_control_composite",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",

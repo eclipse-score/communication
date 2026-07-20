@@ -14,6 +14,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config_mock.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime.h"
@@ -173,7 +174,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreTracedWhenEnabled)
     // and then send is called
     auto tracing_handler =
         impl::tracing::CreateTracingSendCallback<test::TestSampleType>(expected_enabled_trace_points, *skeleton_event_);
-    std::ignore = skeleton_event_->Send(sample_data, {std::move(tracing_handler)});
+    std::ignore = skeleton_event_->Send(sample_data, {std::move(tracing_handler)}, SampleAllocateeGuard{});
 }
 
 TEST_F(SkeletonEventTracingSendFixture, MultipleSendCallsUsesCorrectTracePointDataId)
@@ -242,11 +243,11 @@ TEST_F(SkeletonEventTracingSendFixture, MultipleSendCallsUsesCorrectTracePointDa
     // and then send is called twice
     auto tracing_handler =
         impl::tracing::CreateTracingSendCallback<test::TestSampleType>(expected_enabled_trace_points, *skeleton_event_);
-    std::ignore = skeleton_event_->Send(sample_data[0], {std::move(tracing_handler)});
+    std::ignore = skeleton_event_->Send(sample_data[0], {std::move(tracing_handler)}, SampleAllocateeGuard{});
 
     auto tracing_handler_2 =
         impl::tracing::CreateTracingSendCallback<test::TestSampleType>(expected_enabled_trace_points, *skeleton_event_);
-    std::ignore = skeleton_event_->Send(sample_data[1], {std::move(tracing_handler_2)});
+    std::ignore = skeleton_event_->Send(sample_data[1], {std::move(tracing_handler_2)}, SampleAllocateeGuard{});
 }
 
 TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenAllocateFails)
@@ -279,7 +280,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenAllocateFails)
     std::list<impl::SampleAllocateePtr<test::TestSampleType>> data_vector{};
     for (size_t i = 0; i < max_samples_; ++i)
     {
-        auto slot_result = skeleton_event_->Allocate();
+        auto slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
         ASSERT_TRUE(slot_result.has_value());
         data_vector.push_back(std::move(slot_result.value()));
     }
@@ -287,7 +288,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenAllocateFails)
     // and then send is called
     auto tracing_handler =
         impl::tracing::CreateTracingSendCallback<test::TestSampleType>(expected_enabled_trace_points, *skeleton_event_);
-    std::ignore = skeleton_event_->Send(sample_data, {std::move(tracing_handler)});
+    std::ignore = skeleton_event_->Send(sample_data, {std::move(tracing_handler)}, SampleAllocateeGuard{});
 }
 
 using SkeletonEventTracingSendWithAllocateFixture = SkeletonEventTracingFixture;
@@ -353,7 +354,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendWithAllocateCallsAreTrac
     std::ignore = skeleton_event_->PrepareOffer();
 
     // When allocating a slot
-    auto slot_result = skeleton_event_->Allocate();
+    auto slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(slot_result.has_value());
     auto& slot = slot_result.value();
 
@@ -430,7 +431,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
     std::ignore = skeleton_event_->PrepareOffer();
 
     // When allocating a slot
-    auto slot_result = skeleton_event_->Allocate();
+    auto slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(slot_result.has_value());
     auto& slot = slot_result.value();
 
@@ -443,7 +444,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
     std::ignore = skeleton_event_->Send(std::move(slot), {std::move(tracing_handler)});
 
     // and then allocating another slot
-    auto slot_result_2 = skeleton_event_->Allocate();
+    auto slot_result_2 = skeleton_event_->Allocate(SampleAllocateeGuard{});
     ASSERT_TRUE(slot_result_2.has_value());
     auto& slot_2 = slot_result_2.value();
 

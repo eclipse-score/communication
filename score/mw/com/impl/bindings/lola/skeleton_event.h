@@ -83,14 +83,14 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     /// \brief Sends a value by _copy_ towards a consumer. It will allocate the necessary space and then copy the value
     /// into Shared Memory.
     Result<void> Send(const SampleType& value,
-                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
-                          send_trace_callback) noexcept override;
+                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback,
+                      SampleAllocateeGuard guard) noexcept override;
 
     Result<void> Send(impl::SampleAllocateePtr<SampleType> sample,
                       std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
                           send_trace_callback) noexcept override;
 
-    Result<impl::SampleAllocateePtr<SampleType>> Allocate() noexcept override;
+    Result<impl::SampleAllocateePtr<SampleType>> Allocate(SampleAllocateeGuard guard) noexcept override;
 
     Result<impl::SamplePtr<SampleType>> GetLatestSample(QualityType quality_type) override;
 
@@ -140,9 +140,10 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<void> SkeletonEvent<SampleType>::Send(
     const SampleType& value,
-    std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback) noexcept
+    std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback,
+    SampleAllocateeGuard guard) noexcept
 {
-    auto allocated_slot_result = Allocate();
+    auto allocated_slot_result = Allocate(std::move(guard));
     if (!(allocated_slot_result.has_value()))
     {
         return MakeUnexpected(ComErrc::kSampleAllocationFailure, "Could not allocate slot");
@@ -176,7 +177,7 @@ template <typename SampleType>
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access, which leads to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate() noexcept
+Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate(SampleAllocateeGuard guard) noexcept
 {
     const auto allocated_slot_result = skeleton_event_common_.AllocateSlot();
     if (!allocated_slot_result.has_value())
@@ -190,11 +191,13 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     //  Tracing is a diagnostic/monitoring feature with no safety requirement, so QM is sufficient.
     //  GetConsumerEventDataControlLocalView(kASIL_B) is a separate code path introduced specifically for
     //  GetLatestSample().
-    return MakeSampleAllocateePtr(SampleAllocateePtr<SampleType>(
-        &event_data_storage_->at(static_cast<std::uint64_t>(slot_index)),
-        skeleton_event_common_.GetEventDataControlComposite(),
-        skeleton_event_common_.GetConsumerEventDataControlLocalView(QualityType::kASIL_QM),
-        slot_index));
+    return MakeSampleAllocateePtr(
+        SampleAllocateePtr<SampleType>(
+            &event_data_storage_->at(static_cast<std::uint64_t>(slot_index)),
+            skeleton_event_common_.GetEventDataControlComposite(),
+            skeleton_event_common_.GetConsumerEventDataControlLocalView(QualityType::kASIL_QM),
+            slot_index),
+        std::move(guard));
 }
 
 template <typename SampleType>
