@@ -1,0 +1,5 @@
+@startuml
+package "mw_com" as mw_com <<SEooC>>  {
+component "service_discovery" as service_discovery <<unit>>
+}
+@enduml

@@ -10,21 +10,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load(
-    "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
-    "assumed_system_requirements",
-    "feature_requirements",
-)
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_design")
 
-assumed_system_requirements(
-    name = "assumed_system_requirements",
-    srcs = ["assumed_system_requirements.trlc"],
-    visibility = ["//score/mw/com:__subpackages__"],
-)
-
-feature_requirements(
-    name = "feature_requirements",
-    srcs = ["feature_requirements.trlc"],
-    visibility = ["//score/mw/com:__subpackages__"],
-    deps = [":assumed_system_requirements"],
+architectural_design(
+    name = "software_architectural_design",
+    static = ["static_view.puml"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

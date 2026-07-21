@@ -1,0 +1,11 @@
+package SkeletonUnit
+
+import ScoreReq
+import Communication
+
+ScoreReq.CompReq SkeletonOfferServiceDoesNotThrow {
+    description = '''[DummyRequirement] Calling OfferService shall call OfferService on .'''
+    safety = ScoreReq.Asil.B
+    derived_from = [Communication.SupportForOfferingService@1]
+    version = 1
+}

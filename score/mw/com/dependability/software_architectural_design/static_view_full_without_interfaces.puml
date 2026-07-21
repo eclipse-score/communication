@@ -1,0 +1,135 @@
+@startuml safety_sentinel_mwcom_design
+title "mw_com_static_architecture"
+
+package "mw_com" as mw_com <<SEooC>>  {
+  component "Configuration" as configuration <<unit>> 
+  component "BindingFactories" as binding_factories <<unit>>
+
+  package "Binding Independent" as binding_independent <<component>>  #F9E7A8 {
+    component "ServiceDiscovery" as service_discovery <<unit>> 
+    component "Mocks" as mocks <<unit>> 
+
+    component "impl::Runtime" as runtime <<unit>> 
+
+    package "impl::Skeleton" as skeleton <<component>>  {
+      component "impl::Skeleton" as impl_skeleton <<unit>> 
+      component "impl::SkeletonEvent" as impl_skeleton_event <<unit>> 
+      component "impl::SkeletonMethod" as impl_skeleton_method <<unit>> 
+      component "impl::SkeletonField" as impl_skeleton_field <<unit>> 
+    }
+
+    package "impl::Proxy" as proxy <<component>>  {
+      component "impl::Proxy" as impl_proxy <<unit>> 
+      component "impl::ProxyEvent" as impl_proxy_event <<unit>> 
+      component "impl::ProxyMethod" as impl_proxy_method <<unit>> 
+      component "impl::ProxyField" as impl_proxy_field <<unit>> 
+    }
+
+    package "impl::GenericSkeleton" as generic_skeleton <<component>>  {
+      component "impl::GenericSkeleton" as impl_generic_skeleton <<unit>> 
+      component "impl::GenericSkeletonEvent" as impl_generic_skeleton_event <<unit>> 
+      component "impl::GenericSkeletonMethod" as impl_generic_skeleton_method <<unit>> 
+      component "impl::GenericSkeletonField" as impl_generic_skeleton_field <<unit>> 
+    }
+
+    package "impl::GenericProxy" as generic_proxy <<component>>  {
+      component "impl::GenericProxy" as impl_generic_proxy <<unit>> 
+      component "impl::GenericProxyEvent" as impl_generic_proxy_event <<unit>> 
+      component "impl::GenericProxyMethod" as impl_generic_proxy_method <<unit>> 
+      component "impl::GenericProxyField" as impl_generic_proxy_field <<unit>> 
+    }
+  }
+
+  package "Lola" as lola_binding <<component>>  #DDECD2 {
+    component "lola::ServiceDiscovery" as lola_service_discovery <<unit>> 
+    component "lola::Runtime" as lola_runtime <<unit>> 
+    component "PartialRestart" as lola_partial_restart <<unit>>
+    component "Method Data and Control" as lola_method_data_control <<unit>> 
+    component "Event Data and Control" as lola_event_data_control <<unit>> 
+    component "MessagePassingService" as lola_message_passing_service <<unit>> 
+
+    package "lola::Skeleton" as lola_skeleton_component <<component>>  {
+      component "lola::Skeleton" as lola_skeleton <<unit>> 
+      component "lola::SkeletonEvent" as lola_skeleton_event <<unit>> 
+      component "lola::SkeletonMethod" as lola_skeleton_method <<unit>> 
+    }
+    
+    package "lola::Proxy" as lola_proxy_component <<component>>  {
+      component "lola::Proxy" as lola_proxy <<unit>> 
+      component "lola::ProxyEvent" as lola_proxy_event <<unit>> 
+      component "lola::ProxyMethod" as lola_proxy_method <<unit>> 
+    }
+
+    package "lola::GenericSkeleton" as lola_generic_skeleton_component <<component>>  {
+      component "lola::GenericSkeleton" as lola_generic_skeleton <<unit>> 
+      component "lola::GenericSkeletonEvent" as lola_generic_skeleton_event <<unit>> 
+      component "lola::GenericSkeletonMethod" as lola_generic_skeleton_method <<unit>> 
+    }
+
+    package "lola::GenericProxy" as lola_generic_proxy_component <<component>>  {
+      component "lola::GenericProxy" as lola_generic_proxy <<unit>> 
+      component "lola::GenericProxyEvent" as lola_generic_proxy_event <<unit>> 
+      component "lola::GenericProxyMethod" as lola_generic_proxy_method <<unit>> 
+    }
+   }
+
+  package "Someip" as someip_binding <<component>>  #A4DEF5 {
+    component "someip::ServiceDiscovery" as someip_service_discovery <<unit>> 
+    component "someip::Runtime" as someip_runtime <<unit>> 
+    
+    package "someip::Skeleton" as someip_skeleton_component <<component>>  {
+      component "someip::Skeleton" as someip_skeleton <<unit>> 
+      component "someip::SkeletonEvent" as someip_skeleton_event <<unit>> 
+      component "someip::SkeletonMethod" as someip_skeleton_method <<unit>> 
+    }
+
+    package "someip::Proxy" as someip_proxy_component <<component>>  {
+      component "someip::Proxy" as someip_proxy <<unit>> 
+      component "someip::ProxyEvent" as someip_proxy_event <<unit>> 
+      component "someip::ProxyMethod" as someip_proxy_method <<unit>> 
+    }
+
+    package "someip::GenericSkeleton" as someip_generic_skeleton_component <<component>>  {
+      component "someip::GenericSkeleton" as someip_generic_skeleton <<unit>> 
+      component "someip::GenericSkeletonEvent" as someip_generic_skeleton_event <<unit>> 
+      component "someip::GenericSkeletonMethod" as someip_generic_skeleton_method <<unit>> 
+    }
+
+    package "someip::GenericProxy" as someip_generic_proxy_component <<component>>  {
+      component "someip::GenericProxy" as someip_generic_proxy <<unit>> 
+      component "someip::GenericProxyEvent" as someip_generic_proxy_event <<unit>> 
+      component "someip::GenericProxyMethod" as someip_generic_proxy_method <<unit>> 
+    }
+   }
+
+  package "Mock_binding" as mock_binding <<component>>  #F099D6 {
+    package "mock_binding::Skeleton" as mock_binding_skeleton_component <<component>>  {
+      component "mock_binding::Skeleton" as mock_binding_skeleton <<unit>> 
+      component "mock_binding::SkeletonEvent" as mock_binding_skeleton_event <<unit>> 
+      component "mock_binding::SkeletonMethod" as mock_binding_skeleton_method <<unit>> 
+    }
+
+    package "mock_binding::Proxy" as mock_binding_proxy_component <<component>>  {
+      component "mock_binding::Proxy" as mock_binding_proxy <<unit>> 
+      component "mock_binding::ProxyEvent" as mock_binding_proxy_event <<unit>> 
+      component "mock_binding::ProxyMethod" as mock_binding_proxy_method <<unit>> 
+    }
+
+    package "mock_binding::GenericSkeleton" as mock_binding_generic_skeleton_component <<component>>  {
+      component "mock_binding::GenericSkeleton" as mock_binding_generic_skeleton <<unit>> 
+      component "mock_binding::GenericSkeletonEvent" as mock_binding_generic_skeleton_event <<unit>> 
+      component "mock_binding::GenericSkeletonMethod" as mock_binding_generic_skeleton_method <<unit>> 
+    }
+
+    package "mock_binding::GenericProxy" as mock_binding_generic_proxy_component <<component>>  {
+      component "mock_binding::GenericProxy" as mock_binding_generic_proxy <<unit>> 
+      component "mock_binding::GenericProxyEvent" as mock_binding_generic_proxy_event <<unit>> 
+      component "mock_binding::GenericProxyMethod" as mock_binding_generic_proxy_method <<unit>> 
+    }
+   }
+
+  component "tracing" as tracing <<component>> 
+  component "tracing_daemon" as tracing_daemon <<component>> 
+}
+
+@enduml

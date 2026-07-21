@@ -12,20 +12,17 @@
 # *******************************************************************************
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
-    "dependable_element",
+    "unit_design",
 )
 
-dependable_element(
-    name = "mw_com",
-    architectural_design = ["//score/mw/com/dependability/software_architectural_design:mw_com_software_architectural_design"],
-    assumptions_of_use = [],
-    components = [
-        "//score/mw/com/impl_new/binding_independent:binding_independent",
-        # "//score/mw/com/impl_new/binding_independent/skeleton:skeleton_component",
-    ],
-    dependability_analysis = [],
-    integrity_level = "B",
-    requirements = ["//score/mw/com/dependability/requirements:feature_requirements"],
-    tests = [],
-    # maturity = "development",
+# Class diagrams are passed through directly to Sphinx (sphinxcontrib-plantuml
+# renders them at doc-build time). The RST wrapper references the .puml file
+# via '.. uml::' so both must be listed together in 'static'.
+unit_design(
+    name = "unit_design",
+    static = glob([
+        "*.puml",
+        # "*.rst",
+    ]),
+    visibility = ["//visibility:public"],
 )

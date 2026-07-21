@@ -1,0 +1,28 @@
+@startuml
+
+namespace mw_com {
+  namespace lola_binding {
+
+    ' lola::Skeleton interface
+    interface "LolaSkeletonForImplSkeletonInterface" as lola_skeleton_for_impl_skeleton_interface <<interface>> {
+        PrepareOffer()
+        PrepareStopOffer()
+        VerifyAllMethodHandlersRegistered()
+    }
+
+    ' lola::SkeletonEvent interface
+    interface "LolaSkeletonEventForImplSkeletonEventInterface" as lola_skeleton_event_for_impl_skeleton_event_interface <<interface>> {
+      Send()
+      Allocate()
+      PrepareOffer()
+      PrepareStopOffer()
+    }
+
+    ' lola::SkeletonMethod interface
+    interface "LolaSkeletonMethodForImplSkeletonMethodInterface" as lola_skeleton_method_for_impl_skeleton_method_interface <<interface>> {
+      RegisterHandler()
+    }
+  }
+}
+
+@enduml

@@ -1,0 +1,11 @@
+package Communication
+
+import ScoreReq
+
+ScoreReq.AssumedSystemReq InterProcessCommunication {
+    description = "The platform shall support inter-process communication."
+    safety = ScoreReq.Asil.B
+    rationale = "Application software typically consists of multiple processes which need to interact."
+    version = 1
+}
+

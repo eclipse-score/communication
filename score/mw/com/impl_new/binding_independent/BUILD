@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2026 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -12,19 +12,19 @@
 # *******************************************************************************
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
-    "assumed_system_requirements",
-    "feature_requirements",
+    "component",
 )
 
-assumed_system_requirements(
-    name = "assumed_system_requirements",
-    srcs = ["assumed_system_requirements.trlc"],
-    visibility = ["//score/mw/com:__subpackages__"],
-)
-
-feature_requirements(
-    name = "feature_requirements",
-    srcs = ["feature_requirements.trlc"],
-    visibility = ["//score/mw/com:__subpackages__"],
-    deps = [":assumed_system_requirements"],
+component(
+    name = "binding_independent",
+    components = [
+        "//score/mw/com/impl_new/binding_independent/skeleton:skeleton_component",
+    ],
+    requirements = [
+        # "//score/mw/com/impl_new/binding_independent/skeleton/skeleton/docs/requirements:component_requirements",
+    ],
+    # tags = ["manual"],
+    # test_case_coverage_lock = "test_case_coverage.lock.yaml",
+    tests = [],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

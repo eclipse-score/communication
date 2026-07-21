@@ -13,7 +13,17 @@
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_design")
 
 architectural_design(
-    name = "software_architectural_design",
+    name = "mw_com_software_architectural_design",
+    dynamic = [],
+    # internal_api = ["internal_api/api_definition/lola_proxy_internal_api.puml"],
+    public_api = [],
     static = ["static_view.puml"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
+
+# component(
+#     name         = "binding_independent",
+#     #requirements = [":component_requirements"],
+#     #components   = [":unit_1", ":unit_2"],
+#     tests        = [],
+# )

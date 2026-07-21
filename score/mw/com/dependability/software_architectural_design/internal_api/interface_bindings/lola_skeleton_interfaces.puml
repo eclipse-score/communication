@@ -1,0 +1,20 @@
+@startuml safety_sentinel_mwcom_design
+title "lola_skeleton_interfaces"
+
+package "Lola" as lola_binding <<component>>  #DDECD2 {
+  package "lola::Skeleton" as lola_skeleton_component <<component>>  {
+    component "lola::Skeleton" as lola_skeleton <<unit>> 
+    component "lola::SkeletonEvent" as lola_skeleton_event <<unit>> 
+    component "lola::SkeletonMethod" as lola_skeleton_method <<unit>> 
+  }
+}   
+
+interface "LolaSkeletonForLolaSkeletonEventInterface" as lola_skeleton_for_lola_skeleton_event_interface <<interface>>
+lola_skeleton_event --( lola_skeleton_for_lola_skeleton_event_interface
+lola_skeleton -- lola_skeleton_for_lola_skeleton_event_interface
+
+interface "LolaSkeletonForLolaSkeletonMethodInterface" as lola_skeleton_for_lola_skeleton_method_interface <<interface>>
+lola_skeleton_method --( lola_skeleton_for_lola_skeleton_method_interface
+lola_skeleton -- lola_skeleton_for_lola_skeleton_method_interface
+
+@enduml

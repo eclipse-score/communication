@@ -1,0 +1,11 @@
+package Communication
+
+import ScoreReq
+
+ScoreReq.FeatReq SupportForOfferingService {
+    description  = "[DUMMY REQUIREMENT] The communication framework shall allow offering a service"
+    safety       = ScoreReq.Asil.B
+    derived_from = [Communication.InterProcessCommunication@1]
+    version      = 1
+}
+

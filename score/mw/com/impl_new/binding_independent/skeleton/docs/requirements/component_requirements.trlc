@@ -1,0 +1,11 @@
+package SkeletonComponent
+
+import ScoreReq
+import Communication
+
+ScoreReq.CompReq SkeletonWorks {
+    description = '''[DummyRequirement] '''
+    safety = ScoreReq.Asil.B
+    derived_from = [Communication.SupportForOfferingService@1]
+    version = 1
+}

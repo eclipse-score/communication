@@ -1,0 +1,82 @@
+@startuml
+
+namespace mw_com {
+  namespace lola_binding {
+
+    ' lola::Proxy interfaces
+    interface "LolaProxyForImplProxyInterface" as lola_proxy_for_impl_proxy_interface <<interface>> {
+      SetupMethods()
+      PrepareDeinitialize()
+      FinalizeDeinitialize()
+    }
+
+    interface "LolaProxyForImplGenericProxy" as lola_proxy_for_impl_generic_proxy_interface <<interface>> {
+      IsEventProvided()
+    }
+
+    interface "LolaProxyForLolaProxyEventInterface" as lola_proxy_for_lola_proxy_event_interface <<interface>> {
+      RegisterEvent()
+      GetConsumerEventDataControlLocalView()
+      GetEventSubscriptionControl()
+      GetTransactionLogSet()
+      GetEventMetaInfo()
+    }
+
+    interface "LolaProxyForLolaProxyMethodInterface" as lola_proxy_for_lola_proxy_method_interface <<interface>> {
+      RegisterMethod()
+      GetSourcePid()
+      GetMethodMemoryResource()
+    }
+
+    interface "LolaProxyForBindingFactoriesInterface" as lola_proxy_for_binding_factories_interface <<interface>> {
+      GetProxyInstanceIdentifier()
+    }
+
+    ' lola::ProxyEvent interfaces
+    interface "LolaProxyEventForImplProxyEventInterface" as lola_proxy_event_for_impl_proxy_event_interface <<interface>> {
+      Subscribe()
+      Unsubscribe()
+      GetSubscriptionState()
+      GetNumNewSamplesAvailable()
+      GetNewSamples()
+      SetReceiveHandler()
+      UnsetReceiveHandler()
+      SetSubscriptionStateChangeHandler()
+      UnsetSubscriptionStateChangeHandler()
+      GetMaxSampleCount()
+      GetBindingType()
+      NotifyServiceInstanceChangedAvailability()
+    }
+
+    interface "LolaGenericProxyEventForImplGenericProxyEventInterface" as lola_generic_proxy_event_for_impl_generic_proxy_event_interface <<interface>> {
+      Subscribe()
+      Unsubscribe()
+      GetSubscriptionState()
+      GetNumNewSamplesAvailable()
+      GetNewSamples()
+      SetReceiveHandler()
+      UnsetReceiveHandler()
+      SetSubscriptionStateChangeHandler()
+      UnsetSubscriptionStateChangeHandler()
+      GetMaxSampleCount()
+      GetBindingType()
+      NotifyServiceInstanceChangedAvailability()
+    }
+
+    ' lola::ProxyMethod interfaces
+    interface "LolaProxyMethodForImplProxyMethodInterface" as lola_proxy_method_for_impl_proxy_method_interface <<interface>> {
+      GetInArgsBuffer()
+      GetReturnValueBuffer()
+      DoCall()
+    }
+
+    interface "LolaProxyMethodForLolaProxyInterface" as lola_proxy_method_for_lola_proxy_interface <<interface>> {
+      GetTypeErasedElementInfo()
+      SetInArgsAndReturnStorages()
+      MarkSubscribed()
+      MarkUnsubscribed()
+    }
+  }
+}
+
+@enduml
