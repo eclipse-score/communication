@@ -115,17 +115,17 @@
 //!
 //! // Or wait asynchronously for events
 //! let (container, result) = subscription.receive(container, 1, 3).await;
-//! 
+//!
 //! // Or use the cancelable future to wait for events with timeout
 //! let timeout_future = tokio::time::sleep(std::time::Duration::from_secs(1));
 //! let (container, result) = subscription.cancellable_receive(container, 1, 3, timeout_future).await;
-//! 
+//!
 //! // Or use the stream interface to process events as they arrive
 //! let mut stream = subscription.to_stream();
 //! while let Some(sample) = stream.next().await {
 //!    println!("Tire pressure: {}", sample.pressure);
 //!  }
-//! 
+//!
 //! ```
 //! # Further reading
 //! - `com_api_concept` crate — trait definitions and full API documentation

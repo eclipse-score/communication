@@ -46,8 +46,8 @@ use std::sync::Arc;
 
 use concept::{
     Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, ConsumerFailedReason, Error,
-    EventFailedReason, InstanceSpecifier, Interface, ReceiveFailedReason, Result, SampleContainer,
-    ServiceDiscovery, ServiceFailedReason, Subscriber, Subscription, Sample,
+    EventFailedReason, InstanceSpecifier, Interface, ReceiveFailedReason, Result, Sample,
+    SampleContainer, ServiceDiscovery, ServiceFailedReason, Subscriber, Subscription,
 };
 
 use bridge_ffi_rs::*;

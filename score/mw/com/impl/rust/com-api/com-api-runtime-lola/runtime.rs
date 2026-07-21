@@ -20,7 +20,8 @@ use crate::{
     LolaSubscribableImpl,
 };
 use concept::{
-    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime, RuntimeBuilder,
+    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime,
+    RuntimeBuilder,
 };
 
 use bridge_ffi_lola::LolaFFIBridge;

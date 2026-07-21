@@ -38,8 +38,8 @@ use std::sync::Arc;
 
 use concept::{
     AllocationFailureReason, Builder, CommData, Error, EventFailedReason, InstanceSpecifier,
-    Interface, Producer, ProducerBuilder, ProducerFailedReason, ProviderInfo, Result,
-    ServiceFailedReason, Publisher,SampleMut,SampleMaybeUninit,
+    Interface, Producer, ProducerBuilder, ProducerFailedReason, ProviderInfo, Publisher, Result,
+    SampleMaybeUninit, SampleMut, ServiceFailedReason,
 };
 
 use bridge_ffi_rs::*;

@@ -37,9 +37,9 @@ use std::path::Path;
 
 use concept::{
     Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, FindServiceSpecifier,
-    InstanceSpecifier, Interface, Producer, ProducerBuilder, ProviderInfo, Result, Runtime,
-    SampleContainer, ServiceDiscovery, Subscriber, Subscription, Sample, SampleMut, SampleMaybeUninit,
-    RuntimeBuilder, Publisher,
+    InstanceSpecifier, Interface, Producer, ProducerBuilder, ProviderInfo, Publisher, Result,
+    Runtime, RuntimeBuilder, Sample, SampleContainer, SampleMaybeUninit, SampleMut,
+    ServiceDiscovery, Subscriber, Subscription,
 };
 
 pub struct MockRuntimeImpl {}
@@ -268,10 +268,7 @@ pub struct MockSubscribableImpl<T> {
 
 impl<T: CommData + Debug> Subscriber<T, MockRuntimeImpl> for MockSubscribableImpl<T> {
     type Subscription = MockSubscriberImpl<T>;
-    fn new(
-        identifier: &'static str,
-        instance_info: MockConsumerInfo,
-    ) -> Result<Self> {
+    fn new(identifier: &'static str, instance_info: MockConsumerInfo) -> Result<Self> {
         Ok(Self {
             identifier,
             instance_info,
