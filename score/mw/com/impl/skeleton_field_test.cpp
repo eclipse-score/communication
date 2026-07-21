@@ -93,7 +93,7 @@ class SkeletonFieldTestFixture : public ::testing::Test
     void SetUp() override
     {
         ON_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, _, _))
             .WillByDefault(InvokeWithoutArgs([this]() {
                 return std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(
                     skeleton_field_binding_mock_);
@@ -194,7 +194,7 @@ TEST(SkeletonFieldGetHandlerTest, RegisterGetHandlerInvokesGetLatestSampleOnBind
     SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     ON_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-            CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
+            CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, _, _))
         .WillByDefault(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard{};
@@ -729,7 +729,7 @@ TEST(SkeletonFieldInitialValueTest, MoveAssigningFieldBeforePrepareOfferWillKeep
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, _, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     EXPECT_CALL(skeleton_field_binding_mock, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -760,7 +760,8 @@ TEST(SkeletonFieldInitialValueTest, MoveAssigningFieldBeforePrepareOfferWillKeep
     // and Expecting that a second SkeletonField binding is created
     auto skeleton_field_binding_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock_2 = *skeleton_field_binding_mock_ptr_2;
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(identifier2, _, kFieldName))
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
+                CreateEventBinding(identifier2, _, kFieldName, _, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr_2))));
 
     EXPECT_CALL(skeleton_field_binding_mock_2, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -875,7 +876,7 @@ TEST_F(SkeletonFieldDeathTest, DestroyingSkeletonFieldWhileHoldingSampleAllocate
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, _, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() is called once on the field binding

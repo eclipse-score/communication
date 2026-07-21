@@ -301,7 +301,7 @@ TEST_F(SkeletonMethodStatefulCallbackFixture, PassingReferenceToHandlerUpdatesSt
     std::ignore = method_->RegisterHandler(test_functor);
 
     // When the type erased call is executed by the binding
-    captured_set_handler.value()({}, {});
+    captured_set_handler.value()({}, {}, QualityType{});
 
     // Then the state of the functor is updated in place when the handler is called by the binding
     EXPECT_EQ(test_functor.i_, kModifiedValue);

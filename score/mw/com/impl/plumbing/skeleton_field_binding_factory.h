@@ -42,10 +42,11 @@ class SkeletonFieldBindingFactory final
         const InstanceIdentifier& identifier,
         SkeletonBinding& parent_binding,
         const std::string_view field_name,
-        std::size_t additional_slots_for_field_get_set = 0U)
+        std::size_t additional_slots_for_field_get_set = 0U,
+        bool field_getter_enabled = false)
     {
         return instance().CreateEventBinding(
-            identifier, parent_binding, field_name, additional_slots_for_field_get_set);
+            identifier, parent_binding, field_name, additional_slots_for_field_get_set, field_getter_enabled);
     }
 
     /// \brief Inject a mock ISkeletonFieldBindingFactory. If a mock is injected, then all calls on

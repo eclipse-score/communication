@@ -33,6 +33,25 @@
 namespace score::mw::com::impl
 {
 
+namespace detail
+{
+
+/// \brief Invokes `callable`, forwarding `quality_type` only if the callable accepts it as its first argument.
+template <typename Callable, typename... Args>
+void InvokeWithOptionalQuality([[maybe_unused]] QualityType quality_type, Callable& callable, Args&&... args)
+{
+    if constexpr (std::is_invocable_v<Callable&, QualityType, Args&...>)
+    {
+        std::invoke(callable, quality_type, std::forward<Args>(args)...);
+    }
+    else
+    {
+        std::invoke(callable, std::forward<Args>(args)...);
+    }
+}
+
+}  // namespace detail
+
 template <typename, typename...>
 class SkeletonField;
 
@@ -105,11 +124,15 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
 
     /// \brief Register a handler with the binding, which will be executed by the binding when the Proxy calls this
     /// method.
-    /// \return score::cpp::blank on success and ComErrc code specified by the binding on failiure
+    /// \return score::cpp::blank on success and ComErrc code specified by the binding on failure
     template <typename Callable>
     Result<void> RegisterHandler(Callable&& callback);
 
-    /// \brief Overload for callables that accept QualityType.
+    /// \brief Overload for handlers that accept a QualityType as their first argument.
+    ///
+    /// Used when SkeletonField Get support is enabled: RegisterGetHandler registers the handler through this overload
+    /// so that the binding forwards the QualityType to it when invoked.
+    /// \return score::cpp::blank on success and ComErrc code specified by the binding on failure
     template <typename Callable>
     Result<void> RegisterHandler(Callable&& callback, QualityType);
 
@@ -137,27 +160,9 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
     AssertMethodCallableIsNotStdBind<FailureMode::COMPILE_TIME, Callable>();
     AssertMethodHandlerSupportsMethodSignature<FailureMode::COMPILE_TIME, Callable, ReturnType, ArgTypes...>();
 
-    constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
-    if constexpr (is_return_type_not_void)
-    {
-        // Wrap the callable to accept, then call it with the typed_return_ptr and
-        // the typed_in_arg_ptrs which are unpacked from the tuple into individual arguments.
-        auto wrapped_handler = [cb = std::forward<Callable>(callback)](
-                                   QualityType /*quality_type*/, ReturnType& ret, const ArgTypes&... args) {
-            std::invoke(cb, ret, args...);
-        };
-        return RegisterHandlerImpl(std::move(wrapped_handler));
-    }
-    else
-    {
-        // Wrap the callable to accept, then call it with the typed_in_arg_ptrs
-        // which are unpacked from the tuple into individual arguments.
-        auto wrapped_handler = [cb = std::forward<Callable>(callback)](QualityType /*quality_type*/,
-                                                                       const ArgTypes&... args) {
-            std::invoke(cb, args...);
-        };
-        return RegisterHandlerImpl(std::move(wrapped_handler));
-    }
+    // The user callback does not accept a QualityType. RegisterHandlerImpl detects this and invokes it without the
+    // QualityType. std::forward preserves the lvalue/rvalue category so the ownership split happens once, in the impl.
+    return RegisterHandlerImpl(std::forward<Callable>(callback));
 }
 
 template <typename ReturnType, typename... ArgTypes>
@@ -175,6 +180,7 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
         static_assert(std::is_invocable_r_v<void, Callable, QualityType, const ArgTypes&...>,
                       "Callable must have signature void(QualityType, const ArgTypes&...)");
     }
+    // The callback already accepts a QualityType. RegisterHandlerImpl detects this and forwards the QualityType to it.
     return RegisterHandlerImpl(std::forward<Callable>(callback));
 }
 
@@ -182,6 +188,12 @@ template <typename ReturnType, typename... ArgTypes>
 template <typename Callable>
 Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandlerImpl(Callable&& callback)
 {
+    // If no binding was provided (e.g. in tests with incomplete mock setup), skip registration silently.
+    if (binding_ == nullptr)
+    {
+        return Result<void>{};
+    }
+
     // Since callback can be an lvalue reference or an rvalue reference, we ideally would store it as a universal
     // reference in the type_erased_handler. However, in C++17, this is not supported. Instead, we create a callable
     // here which will be called below by another lambda which explicitly stores the callback as either an lvalue
@@ -209,24 +221,24 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandlerImpl(Callab
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
                 type_erased_return.has_value(),
                 "ReturnType is non void. Thus, type_erased_result needs to have a value!");
-            const auto typed_return_ptr_tuple = Deserialize<ReturnType>(type_erased_return.value());
-            auto* const typed_return_ptr = std::get<0>(typed_return_ptr_tuple);
+            auto* const typed_return_ptr = DeserializeArg<ReturnType>(type_erased_return.value());
 
-            // Call the callable with quality_type, typed_return_ptr and the typed_in_arg_ptrs which are
-            // unpacked from the tuple into individual arguments.
+            // Call the callable with the typed_return_ptr and the typed_in_arg_ptrs which are unpacked from the
+            // tuple into individual arguments. The QualityType is only forwarded if the callable accepts it.
             std::apply(
                 [&actual_callback, typed_return_ptr, quality_type](ArgTypes*... typed_in_arg_ptrs) {
-                    std::invoke(actual_callback, quality_type, *typed_return_ptr, *typed_in_arg_ptrs...);
+                    detail::InvokeWithOptionalQuality(
+                        quality_type, actual_callback, *typed_return_ptr, *typed_in_arg_ptrs...);
                 },
                 typed_in_arg_ptrs);
         }
         else
         {
-            // Call the callable with quality_type and the typed_in_arg_ptrs which are unpacked from the tuple
-            // into individual arguments.
+            // Call the callable with the typed_in_arg_ptrs which are unpacked from the tuple into individual
+            // arguments. The QualityType is only forwarded if the callable accepts it.
             std::apply(
                 [&actual_callback, quality_type](ArgTypes*... typed_in_arg_ptrs) {
-                    std::invoke(actual_callback, quality_type, *typed_in_arg_ptrs...);
+                    detail::InvokeWithOptionalQuality(quality_type, actual_callback, *typed_in_arg_ptrs...);
                 },
                 typed_in_arg_ptrs);
         }
