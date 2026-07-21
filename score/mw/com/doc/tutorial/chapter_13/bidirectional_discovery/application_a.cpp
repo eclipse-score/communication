@@ -70,6 +70,15 @@ int main()
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_update_result.has_value(),
                                                 "Failed to set tire_pressure_front_left!");
 
+    score::Result<void> init_fr_result = skeleton.tire_pressure_front_right.Update(0.0F);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_fr_result.has_value(), "Failed to set tire_pressure_front_right!");
+
+    score::Result<void> init_rl_result = skeleton.tire_pressure_rear_left.Update(0.0F);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_rl_result.has_value(), "Failed to set tire_pressure_rear_left!");
+
+    score::Result<void> init_rr_result = skeleton.tire_pressure_rear_right.Update(0.0F);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(init_rr_result.has_value(), "Failed to set tire_pressure_rear_right!");
+
     // Offer before starting discovery. OfferService() registers this application's service
     // in the service-discovery registry and creates the shared-memory region that
     // application B needs for Proxy::Create(). Both applications can start in any order.

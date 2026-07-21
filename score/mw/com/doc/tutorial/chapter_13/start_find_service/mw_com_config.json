@@ -20,6 +20,18 @@
             {
               "fieldName": "tire_pressure_front_left",
               "fieldId": 2
+            },
+            {
+              "fieldName": "tire_pressure_front_right",
+              "fieldId": 3
+            },
+            {
+              "fieldName": "tire_pressure_rear_left",
+              "fieldId": 4
+            },
+            {
+              "fieldName": "tire_pressure_rear_right",
+              "fieldId": 5
             }
           ]
         }
@@ -56,7 +68,30 @@
             {
               "fieldName": "tire_pressure_front_left",
               "numberOfSampleSlots": 16,
-              "maxSubscribers": 3
+              "maxSubscribers": 3,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
+            },
+            {
+              "fieldName": "tire_pressure_front_right",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
+            },
+            {
+              "fieldName": "tire_pressure_rear_left",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
+            },
+            {
+              "fieldName": "tire_pressure_rear_right",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
             }
           ]
         }

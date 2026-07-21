@@ -229,7 +229,7 @@ the **init phase**, the skeleton is created, the field is given an initial value
 
 .. literalinclude:: event_send_receive/provider.cpp
    :language: cpp
-   :lines: 38-61
+   :lines: 38-62
    :caption: event_send_receive/provider.cpp — init phase
 
 Once ``heap_check::forbid_heap()`` is called, the application enters the **operational phase**.
@@ -241,7 +241,7 @@ SHM ring buffer; no ``operator new`` is involved:
 
 .. literalinclude:: event_send_receive/provider.cpp
    :language: cpp
-   :lines: 59-91
+   :lines: 68-100
    :caption: event_send_receive/provider.cpp — operational phase and cleanup
 
 Note the ``heap_check::allow_heap()`` call on each early-return error path inside the
@@ -310,7 +310,7 @@ an event send and a field update in the same heap-free loop:
 
 .. literalinclude:: event_field_update/provider.cpp
    :language: cpp
-   :lines: 59-99
+   :lines: 68-108
    :caption: event_field_update/provider.cpp — operational phase with event and field update
 
 Async service discovery with StartFindService
@@ -375,7 +375,7 @@ The ``bidirectional_discovery/application_a.cpp`` example shows this sequence:
 
 .. literalinclude:: bidirectional_discovery/application_a.cpp
    :language: cpp
-   :lines: 59-132
+   :lines: 59-141
    :caption: bidirectional_discovery/application_a.cpp — OfferService before StartFindService, then wait
 
 In the operational phase, application A simultaneously sends on its own skeleton event and
@@ -383,7 +383,7 @@ polls the remote proxy's event in the same loop, both heap-free:
 
 .. literalinclude:: bidirectional_discovery/application_a.cpp
    :language: cpp
-   :lines: 141-178
+   :lines: 143-187
    :caption: bidirectional_discovery/application_a.cpp — operational loop: send and receive without heap
 
 .. _chapter_13_asil_guidance:

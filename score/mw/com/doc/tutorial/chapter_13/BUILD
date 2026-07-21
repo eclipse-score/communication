@@ -12,6 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
@@ -325,14 +326,40 @@ cc_binary(
     deps = _COM_DEP_WITH_DISCOVERY,
 )
 
+# The bidirectional_discovery configs and logging files are named application_a/b_*.json
+# in the source tree to avoid ambiguity between the two apps. The runtime resolves its
+# configs at ./etc/mw_com_config.json and ./etc/logging.json, so we rename during packaging.
+pkg_files(
+    name = "bidirectional_discovery_application_a_etc",
+    srcs = [
+        "bidirectional_discovery/application_a_logging.json",
+        "bidirectional_discovery/application_a_mw_com_config.json",
+    ],
+    renames = {
+        "bidirectional_discovery/application_a_logging.json": "logging.json",
+        "bidirectional_discovery/application_a_mw_com_config.json": "mw_com_config.json",
+    },
+    visibility = ["//visibility:private"],
+)
+
+pkg_files(
+    name = "bidirectional_discovery_application_b_etc",
+    srcs = [
+        "bidirectional_discovery/application_b_logging.json",
+        "bidirectional_discovery/application_b_mw_com_config.json",
+    ],
+    renames = {
+        "bidirectional_discovery/application_b_logging.json": "logging.json",
+        "bidirectional_discovery/application_b_mw_com_config.json": "mw_com_config.json",
+    },
+    visibility = ["//visibility:private"],
+)
+
 pkg_application(
     name = "bidirectional_discovery_application_a-pkg",
     app_name = "HeapFreeBidirectionalDiscoveryA",
     bin = [":bidirectional_discovery_application_a"],
-    etc = [
-        "bidirectional_discovery/application_a_logging.json",
-        "bidirectional_discovery/application_a_mw_com_config.json",
-    ],
+    etc_deps = [":bidirectional_discovery_application_a_etc"],
     visibility = [
         "//score/mw/com/doc:__subpackages__",
     ],
@@ -350,10 +377,7 @@ pkg_application(
     name = "bidirectional_discovery_application_b-pkg",
     app_name = "HeapFreeBidirectionalDiscoveryB",
     bin = [":bidirectional_discovery_application_b"],
-    etc = [
-        "bidirectional_discovery/application_b_logging.json",
-        "bidirectional_discovery/application_b_mw_com_config.json",
-    ],
+    etc_deps = [":bidirectional_discovery_application_b_etc"],
     visibility = [
         "//score/mw/com/doc:__subpackages__",
     ],
