@@ -96,3 +96,35 @@ jobs:
       security-events: write
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+  # --------------------------------------------------------------------
+  # TEMPORARY MIGRATION SHIM — remove once branch protection is updated.
+  #
+  # The clang-tidy job used to run directly in this workflow under the
+  # name "Clang-Tidy" (see git history of this file), and that exact
+  # status check name is still configured as a required check in this
+  # repository's branch protection rules. Clang-tidy now runs as part of
+  # the "Linters" matrix job above (surfaced as "Linters / clang-tidy"),
+  # so the old "Clang-Tidy" check is never reported anymore, which would
+  # otherwise leave every PR stuck waiting on it indefinitely.
+  #
+  # This job exists solely to keep reporting a "Clang-Tidy" status check
+  # so PRs stay mergeable. It does no actual linting — that is fully
+  # covered by the `lint` job above. Once the required status checks in
+  # the repository/branch protection config (e.g. otterdog) are updated
+  # to require "Linters / clang-tidy" instead of "Clang-Tidy", delete
+  # this job.
+  # --------------------------------------------------------------------
+  clang-tidy-legacy-check-shim:
+    name: Clang-Tidy
+    needs: lint
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mirror Linters/clang-tidy result
+        run: |
+          echo "This is a migration shim for the renamed 'Clang-Tidy' status check; see comment above the job in build_and_test_host.yml."
+          if [[ "${{ needs.lint.result }}" != "success" ]]; then
+            echo "::error::Linters job did not succeed (result: ${{ needs.lint.result }})"
+            exit 1
+          fi
