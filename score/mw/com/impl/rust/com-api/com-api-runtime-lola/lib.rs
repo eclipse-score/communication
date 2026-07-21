@@ -29,9 +29,9 @@ mod consumer;
 mod producer;
 mod runtime;
 
-pub use consumer::{LolaConsumerInfo, Sample, LolaConsumerDiscovery, SubscribableImpl};
+pub use consumer::{LolaConsumerInfo, LolaSample, LolaConsumerDiscovery, LolaSubscribableImpl};
 pub use producer::{
-    LolaProviderInfo, Publisher, SampleMaybeUninit, SampleMut, LolaProducerBuilder,
+    LolaProviderInfo, LolaPublisher, LolaSampleMaybeUninit, LolaSampleMut, LolaProducerBuilder,
 };
 pub use runtime::{LolaRuntimeImpl, RuntimeBuilderImpl};
 

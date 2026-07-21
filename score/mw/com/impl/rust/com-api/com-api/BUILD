@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,18 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
-
-# Default target with lola runtime
-rust_library(
+# DEPRECATED: This target has been moved to //score/mw/com/rust:api
+# This alias is provided for backward compatibility.
+# Please update your dependencies to use the new location.
+alias(
     name = "com-api",
-    srcs = ["com_api.rs"],
-    crate_name = "com_api",
-    edition = "2024",
+    actual = "//score/mw/com/rust:api",
+    deprecation = "Use //score/mw/com/rust:api instead. This target will be removed in a future release.",
     visibility = ["//visibility:public"],
-    deps = [
-        "//score/mw/com/impl/rust/com-api/com-api-concept",
-        "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
-        "//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
-    ],
 )

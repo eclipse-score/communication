@@ -11,12 +11,20 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# DEPRECATED: This target has been moved to //score/mw/com/rust/proc-macros
-# This alias is provided for backward compatibility.
-# Please update your dependencies to use the new location.
-alias(
-    name = "com-api-concept-macros",
-    actual = "//score/mw/com/rust/proc-macros",
-    deprecation = "Use //score/mw/com/rust/proc-macros instead. This target will be removed in a future release.",
-    visibility = ["//visibility:public"],
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+# Default target with lola runtime
+rust_library(
+    name = "api",
+    srcs = ["api.rs"],
+    crate_name = "com_api",
+    edition = "2024",
+    visibility = [
+        "//visibility:public",  # platform_only
+    ],
+    deps = [
+        "//score/mw/com/rust/concept",
+        "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
+        "//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
+    ],
 )

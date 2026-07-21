@@ -136,7 +136,7 @@ pub use com_api_runtime_lola::RuntimeBuilderImpl as LolaRuntimeBuilderImpl;
 pub use com_api_runtime_mock::MockRuntimeImpl;
 pub use com_api_runtime_mock::RuntimeBuilderImpl as MockRuntimeBuilderImpl;
 
-pub use com_api_concept::{
+pub use concept::{
     interface, interface_common, interface_consumer, interface_producer, Builder, CommData,
     Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier, InstanceSpecifier,
     Interface, OfferedProducer, PlacementDefault, Producer, ProducerBuilder, ProviderInfo,
@@ -146,4 +146,4 @@ pub use com_api_concept::{
 
 #[doc(hidden)]
 // See eclipse-score/communication/issues/173 - `paste`crate is still in discussion regarding rust safety certification.
-pub use com_api_concept::paste;
+pub use concept::paste;
