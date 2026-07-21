@@ -19,7 +19,7 @@
 /// communication interfaces,
 /// while the Reloc type provides a safe abstraction for moving data across thread or process
 /// boundaries without violating Rust's ownership rules.
-pub mod concept;
+mod concept;
 mod error;
 mod interface_macros;
 mod reloc;

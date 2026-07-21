@@ -17,6 +17,6 @@
 alias(
     name = "com-api-concept-macros",
     actual = "//score/mw/com/rust/proc-macros",
-    deprecation = "Use //score/mw/com/rust/proc-macros instead. This target will be removed in a future release.",
+    deprecation = "Use //score/mw/com/rust/proc-macros instead. This target will be removed before v1.0 release.",
     visibility = ["//visibility:public"],
 )
