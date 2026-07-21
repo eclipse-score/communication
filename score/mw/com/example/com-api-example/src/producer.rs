@@ -21,11 +21,11 @@ use std::thread;
 use std::time::Duration;
 
 // Delay between sample data sending in the producer loop.
-const PPRODUCER_SEND_INTERVAL_MS: u64 = 1000;
+const PRODUCER_SEND_INTERVAL_MS: u64 = 1000;
 
 // Example struct demonstrating composition with VehicleConsumer
 pub struct VehicleMonitorProducer<R: Runtime> {
-    pub(crate) producer: VehicleOfferedProducer<R>,
+    producer: VehicleOfferedProducer<R>,
 }
 
 impl<R: Runtime> VehicleMonitorProducer<R> {
@@ -57,7 +57,7 @@ impl<R: Runtime> VehicleMonitorProducer<R> {
                 Ok(_) => (),
                 Err(e) => eprintln!("Failed to publish tire data: {:?}", e),
             }
-            thread::sleep(Duration::from_millis(PPRODUCER_SEND_INTERVAL_MS));
+            thread::sleep(Duration::from_millis(PRODUCER_SEND_INTERVAL_MS));
         }
     }
 

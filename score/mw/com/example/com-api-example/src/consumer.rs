@@ -45,9 +45,7 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
             .nth(handle_index)
             .expect("Failed to get consumer builder at specified handle index");
 
-        let consumer = consumer_builder
-            .build()
-            .expect("Failed to build consumer instance");
+        let consumer = consumer_builder.build()?;
 
         let tire_subscriber = consumer.left_tire.subscribe(3)?;
         let exhaust_subscriber = consumer.exhaust.subscribe(3)?;
@@ -79,9 +77,7 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
     pub fn find_available_instances(runtime: &R, service_id: InstanceSpecifier) -> Result<Self> {
         let consumer_discovery =
             runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
-        let instances = consumer_discovery
-            .get_available_instances()
-            .expect("Failed to get available service instances");
+        let instances = consumer_discovery.get_available_instances()?;
         Self::from_service_instances(instances)
     }
 
@@ -93,10 +89,7 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
     ) -> Result<Self> {
         let consumer_discovery =
             runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
-        let instances = consumer_discovery
-            .get_available_instances_async()
-            .await
-            .expect("Failed to get available service instances asynchronously");
+        let instances = consumer_discovery.get_available_instances_async().await?;
         Self::from_service_instances(instances)
     }
 
