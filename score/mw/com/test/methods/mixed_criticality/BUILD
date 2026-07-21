@@ -11,26 +11,29 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 validate_json_schema_test(
-    name = "validate_config_schema",
-    json = "config/mw_com_config.json",
+    name = "validate_config_schema_asil_b_to_asil_b",
+    json = "config/asil_b_to_asil_b_mw_com_config.json",
     schema = "//score/mw/com:config_schema",
     tags = ["lint"],
 )
 
-cc_library(
-    name = "test_method_datatype",
-    srcs = ["test_method_datatype.cpp"],
-    hdrs = ["test_method_datatype.h"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        "//score/mw/com",
-    ],
+validate_json_schema_test(
+    name = "validate_config_schema_asil_b_to_qm",
+    json = "config/consumer_asil_b_to_qm_mw_com_config.json",
+    schema = "//score/mw/com:config_schema",
+    tags = ["lint"],
+)
+
+validate_json_schema_test(
+    name = "validate_config_schema_qm_to_qm",
+    json = "config/qm_to_qm_mw_com_config.json",
+    schema = "//score/mw/com:config_schema",
+    tags = ["lint"],
 )
 
 cc_library(
@@ -39,10 +42,10 @@ cc_library(
     hdrs = ["consumer.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        ":test_method_datatype",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:process_synchronizer",
-        "//score/mw/com/test/methods/methods_test_resources:method_consumer",
+        "//score/mw/com/test/methods/methods_test_resources/all_signatures_datatype",
+        "//score/mw/com/test/methods/methods_test_resources/all_signatures_datatype:all_signatures_method_consumer",
     ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -55,70 +58,68 @@ cc_library(
     hdrs = ["provider.h"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":test_method_datatype",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:process_synchronizer",
-        "//score/mw/com/test/methods/methods_test_resources:method_provider",
+        "//score/mw/com/test/methods/methods_test_resources/all_signatures_datatype",
+        "//score/mw/com/test/methods/methods_test_resources/all_signatures_datatype:all_signatures_method_provider",
     ],
 )
 
 cc_binary(
-    name = "main_provider",
-    srcs = ["main_provider.cpp"],
-    data = ["config/mw_com_config.json"],
+    name = "provider_main",
+    srcs = ["provider_main.cpp"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
     deps = [
         ":provider",
-        "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
+        "//score/mw/com/test/methods/methods_test_resources:common_resources",
     ],
 )
 
 cc_binary(
-    name = "main_consumer",
-    srcs = ["main_consumer.cpp"],
-    data = ["config/mw_com_config.json"],
+    name = "consumer_main",
+    srcs = ["consumer_main.cpp"],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
     deps = [
         ":consumer",
-        "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
+        "//score/mw/com/test/methods/methods_test_resources:common_resources",
+    ],
+)
+
+# --- Packages ---
+
+pkg_application(
+    name = "provider-pkg",
+    app_name = "ProviderApp",
+    bin = [":provider_main"],
+    etc = [
+        "config/asil_b_to_asil_b_mw_com_config.json",
+        "config/consumer_asil_b_to_qm_mw_com_config.json",
+        "config/qm_to_qm_mw_com_config.json",
+        "config/logging.json",
+    ],
+    visibility = [
+        "//score/mw/com/test/methods/mixed_criticality/integration_test:__pkg__",
     ],
 )
 
 pkg_application(
-    name = "main_provider-pkg",
-    app_name = "MainProviderApp",
-    bin = [":main_provider"],
+    name = "consumer-pkg",
+    app_name = "ConsumerApp",
+    bin = [":consumer_main"],
     etc = [
-        "config/mw_com_config.json",
+        "config/asil_b_to_asil_b_mw_com_config.json",
+        "config/consumer_asil_b_to_qm_mw_com_config.json",
+        "config/qm_to_qm_mw_com_config.json",
         "config/logging.json",
     ],
     visibility = [
-        "//score/mw/com/test/methods/signature_variations:__subpackages__",
+        "//score/mw/com/test/methods/mixed_criticality/integration_test:__pkg__",
     ],
-)
-
-pkg_application(
-    name = "main_consumer-pkg",
-    app_name = "MainConsumerApp",
-    bin = [":main_consumer"],
-    etc = [
-        "config/mw_com_config.json",
-        "config/logging.json",
-    ],
-    visibility = [
-        "//score/mw/com/test/methods/signature_variations:__subpackages__",
-    ],
-)
-
-test_suite(
-    name = "component_tests",
-    tests = [],
-    visibility = ["//score/mw/com/test/methods/signature_variations:__pkg__"],
 )

@@ -10,14 +10,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_TEST_METHODS_SIGNATURE_VARIATIONS_CONSUMER_H
-#define SCORE_MW_COM_TEST_METHODS_SIGNATURE_VARIATIONS_CONSUMER_H
+#ifndef SCORE_MW_COM_TEST_METHODS_MIXED_CRITICALITY_CONSUMER_H
+#define SCORE_MW_COM_TEST_METHODS_MIXED_CRITICALITY_CONSUMER_H
 
 namespace score::mw::com::test
 {
 
-int run_consumer();
+void run_consumer();
 
 }  // namespace score::mw::com::test
 
-#endif  // SCORE_MW_COM_TEST_METHODS_SIGNATURE_VARIATIONS_CONSUMER_H
+#endif  // SCORE_MW_COM_TEST_METHODS_MIXED_CRITICALITY_CONSUMER_H

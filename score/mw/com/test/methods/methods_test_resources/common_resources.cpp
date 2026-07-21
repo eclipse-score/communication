@@ -10,16 +10,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_TEST_METHODS_SIGNATURE_VARIATIONS_PROVIDER_H
-#define SCORE_MW_COM_TEST_METHODS_SIGNATURE_VARIATIONS_PROVIDER_H
+#include "score/mw/com/test/methods/methods_test_resources/common_resources.h"
 
-#include <score/stop_token.hpp>
+#include "score/mw/com/test/common_test_resources/command_line_parser.h"
 
 namespace score::mw::com::test
 {
 
-bool run_provider(const score::cpp::stop_token& stop_token);
+std::string ParseServiceInstanceManifest(int argc, const char** argv)
+{
+    const std::string service_instance_manifest_name = "service_instance_manifest";
+
+    auto args = ParseCommandLineArguments(argc, argv, {{service_instance_manifest_name, ""}});
+    return GetValue<std::string>(args, service_instance_manifest_name);
+}
 
 }  // namespace score::mw::com::test
-
-#endif  // SCORE_MW_COM_TEST_METHODS_SIGNATURE_VARIATIONS_PROVIDER_H

@@ -1,0 +1,7 @@
+{
+  "appId": "MMCT",
+  "appDesc": "mixed_criticality",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}

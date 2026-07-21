@@ -1,0 +1,7 @@
+{
+  "appId": "MECT",
+  "appDesc": "edge_cases_test",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}

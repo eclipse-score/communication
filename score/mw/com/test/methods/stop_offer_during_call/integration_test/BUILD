@@ -17,22 +17,14 @@ load("//quality/integration_testing:integration_testing.bzl", "integration_test"
 pkg_filegroup(
     name = "filesystem",
     srcs = [
-        "//score/mw/com/test/methods/signature_variations:main_consumer-pkg",
-        "//score/mw/com/test/methods/signature_variations:main_provider-pkg",
+        "//score/mw/com/test/methods/stop_offer_during_call:stop-offer-during-call-pkg",
     ],
 )
 
 integration_test(
-    name = "signature_variations_test",
+    name = "stop_offer_during_call",
     srcs = [
-        "signature_variations_test.py",
+        "stop_offer_during_call_test.py",
     ],
     filesystem = ":filesystem",
-)
-
-test_suite(
-    name = "component_tests",
-    tests = [
-        ":signature_variations_test",
-    ],
 )

@@ -1,6 +1,6 @@
 {
-  "appId": "SV",
-  "appDesc": "signature_variations",
+  "appId": "SODC",
+  "appDesc": "stop_offer_during_call",
   "logLevel": "kDebug",
   "logLevelThresholdConsole": "kDebug",
   "logMode": "kRemote|kConsole"

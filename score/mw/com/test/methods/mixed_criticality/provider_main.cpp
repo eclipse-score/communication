@@ -10,17 +10,22 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
-#include "score/mw/com/test/methods/signature_variations/provider.h"
+#include "score/mw/com/test/methods/methods_test_resources/common_resources.h"
+#include "score/mw/com/test/methods/mixed_criticality/provider.h"
 
 #include <score/stop_token.hpp>
 
 int main(int argc, const char** argv)
 {
+    auto service_instance_manifest_path = score::mw::com::test::ParseServiceInstanceManifest(argc, argv);
+
     score::mw::com::test::SetupAssertHandler();
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(
+        score::mw::com::runtime::RuntimeConfiguration{service_instance_manifest_path});
 
     score::cpp::stop_source stop_source{};
     const bool sig_term_handler_setup_success = score::mw::com::SetupStopTokenSigTermHandler(stop_source);
@@ -29,5 +34,6 @@ int main(int argc, const char** argv)
         std::cerr << "Unable to set signal handler for SIGINT and/or SIGTERM, cautiously continuing\n";
     }
 
-    return score::mw::com::test::run_provider(stop_source.get_token());
+    score::mw::com::test::run_provider(stop_source.get_token());
+    return EXIT_SUCCESS;
 }

@@ -10,13 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/runtime.h"
-#include "score/mw/com/test/common_test_resources/assert_handler.h"
-#include "score/mw/com/test/methods/signature_variations/consumer.h"
-
-int main(int argc, const char** argv)
-{
-    score::mw::com::test::SetupAssertHandler();
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
-    return score::mw::com::test::run_consumer();
-}
+#include "score/mw/com/test/methods/stop_offer_during_call/test_method_datatype.h"

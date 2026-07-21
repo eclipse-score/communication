@@ -10,4 +10,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/methods/signature_variations/test_method_datatype.h"
+#include "score/mw/com/test/methods/mixed_criticality/common_resources.h"
+
+#include "score/mw/com/test/common_test_resources/command_line_parser.h"
+
+namespace score::mw::com::test
+{
+
+std::string ParseServiceInstanceManifest(int argc, const char** argv)
+{
+    const std::string service_instance_manifest_name = "service_instance_manifest";
+
+    auto args = ParseCommandLineArguments(argc, argv, {{service_instance_manifest_name, ""}});
+    return GetValue<std::string>(args, service_instance_manifest_name);
+}
+
+}  // namespace score::mw::com::test

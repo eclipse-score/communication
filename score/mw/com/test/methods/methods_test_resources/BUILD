@@ -48,3 +48,16 @@ cc_library(
         "@score_baselibs//score/mw/log",
     ],
 )
+
+cc_library(
+    name = "common_resources",
+    srcs = ["common_resources.cpp"],
+    hdrs = ["common_resources.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/test/methods:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/test/common_test_resources:command_line_parser",
+    ],
+)

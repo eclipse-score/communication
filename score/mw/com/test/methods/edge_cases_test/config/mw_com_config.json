@@ -1,7 +1,7 @@
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/test/methods/signature_variations/MethodSignature",
+      "serviceTypeName": "/test/methods/edge_cases_test/MethodSignature",
       "version": {
         "major": 1,
         "minor": 0
@@ -34,8 +34,8 @@
   ],
   "serviceInstances": [
     {
-      "instanceSpecifier": "test/methods/signature_variations/MethodSignature",
-      "serviceTypeName": "/test/methods/signature_variations/MethodSignature",
+      "instanceSpecifier": "test/methods/edge_cases_test/MethodSignature",
+      "serviceTypeName": "/test/methods/edge_cases_test/MethodSignature",
       "version": {
         "major": 1,
         "minor": 0
@@ -43,7 +43,7 @@
       "instances": [
         {
           "instanceId": 1,
-          "asil-level": "QM",
+          "asil-level": "B",
           "binding": "SHM",
           "methods": [
             {
@@ -85,6 +85,6 @@
     }
   ],
   "global": {
-    "asil-level": "QM"
+    "asil-level": "B"
   }
 }

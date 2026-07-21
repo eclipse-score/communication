@@ -11,21 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-
 def consumer_and_provider(target, **kwargs):
     args = ["--service_instance_manifest", "./etc/mw_com_config.json"]
-    return target.wrap_exec(
-        "bin/main_consumer_and_provider", args, cwd="/opt/MainConsumerAndProviderApp", wait_on_exit=True, **kwargs
-    )
+    return target.wrap_exec("./bin/main_stop_offer_during_call",args,
+                           cwd="/opt/StopOfferDuringCallApp/", wait_on_exit=True, **kwargs)
 
-
-def test_basic_acceptance_same_process_test(target):
-    """Test method call functionality between provider and consumer in the same process.
-
-    The test starts a single process with two threads. The first thread creates a Skeleton
-    instance with a method (InArgs and Return value). The second thread creates a Proxy
-    subscribing to the Skeleton, calling zero-copy and with-copy methods, verifying both
-    succeed with expected return values.
-    """
-    with consumer_and_provider(target):
+def test_stop_offer_during_call(target, **kwargs):
+    with consumer_and_provider(target, **kwargs):
         pass
