@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-name: "Clang-Tidy Check"
+name: "Linter Checks"
 
 on:
   workflow_call:
@@ -29,19 +29,29 @@ on:
         required: false
 
 jobs:
-  clang-tidy:
-    name: Build & Test
+  lint:
+    name: ${{ matrix.id }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: write
       security-events: write
+    strategy:
+      # Let every linter run to completion (and upload its own findings/SARIF)
+      # even if another one in the matrix fails.
+      fail-fast: false
+      matrix:
+        include:
+          - id: clang-tidy
+            bazel-config: clang-tidy
+          - id: clippy
+            bazel-config: clippy
     steps:
       - uses: actions/checkout@v6.0.2
 
       - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:
-          disk-cache: ${{ inputs.fetch-only != 'true' && 'clang_tidy' || '' }}
+          disk-cache: ${{ inputs.fetch-only != 'true' && matrix.id || '' }}
           cache-mode: ${{ inputs.cache-mode }}
           ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
@@ -60,16 +70,16 @@ jobs:
 
       - name: Fetch dependencies (--nobuild)
         if: inputs.fetch-only == 'true'
-        run: bazel build --nobuild --config=clang-tidy //...
+        run: bazel build --nobuild --config=${{ matrix.bazel-config }} //...
 
-      - name: Run clang-tidy via aspect lint
+      - name: Run ${{ matrix.id }} via aspect lint
         if: inputs.fetch-only != 'true'
-        id: run-clang-tidy
+        id: run-lint
         run: |
-          # --bazel-flag=--config=clang-tidy reuses the same aspect + toolchain configuration as
-          # `bazel test --config=clang-tidy` (see quality/static_analysis/static_analysis.bazelrc) — the aspect is
-          # deliberately NOT also passed via `--aspect=` here, since Bazel rejects the same aspect being registered
-          # twice.
+          # --bazel-flag=--config=${{ matrix.bazel-config }} reuses the same aspect + toolchain configuration as
+          # `bazel test --config=${{ matrix.bazel-config }}` (see quality/static_analysis/static_analysis.bazelrc) —
+          # the aspect is deliberately NOT also passed via `--aspect=` here, since Bazel rejects the same aspect
+          # being registered twice.
           #
           # --bazel-flag=--build_event_json_file writes a Build Event Protocol JSON stream alongside the build, letting
           # us enumerate every emitted rules_lint_machine SARIF report file below without crawling bazel-bin with
@@ -88,9 +98,8 @@ jobs:
           # with Code Scanning alerts above a configured severity, using GitHub's own new-vs-baseline diff instead of
           # Aspect's locally computed one. That's blocked for now on otterdog support for the `code_scanning` ruleset
           # rule (see eclipse-csi/otterdog#639). Until that lands, fall back to gating via aspect's own exit code:
-          # `--strategy=hold-the-line` (fails only on error-severity diagnostics — per `WarningsAsErrors` in
-          # `.clang-tidy`) for PR/push/merge_group
-          # runs, where the result should actually gate the job;
+          # `--strategy=hold-the-line` (fails only on error-severity diagnostics) for PR/push/merge_group runs, where
+          # the result should actually gate the job;
           # `--strategy=soft` (never fails) for other triggers (e.g. nightly, manual dispatch), which only want the
           # report/SARIF, not a pass/fail verdict.
           case "${{ github.event_name }}" in
@@ -100,7 +109,7 @@ jobs:
 
           set -o pipefail
           aspect lint \
-            --bazel-flag=--config=clang-tidy \
+            --bazel-flag=--config=${{ matrix.bazel-config }} \
             --bazel-flag=--@aspect_rules_lint//lint:fail_on_violation=false \
             --bazel-flag=--build_event_json_file=/tmp/bep.json \
             --github-lint-comments:enabled=false \
@@ -108,7 +117,7 @@ jobs:
             --github-status-comments:enabled=false \
             --artifact-upload:enabled=false \
             --strategy="${STRATEGY}" \
-            -- //... 2>&1 | tee clang_tidy_raw.log
+            -- //... 2>&1 | tee "${{ matrix.id }}_raw.log"
 
       - name: Collect SARIF reports
         if: always() && inputs.fetch-only != 'true'
@@ -121,7 +130,7 @@ jobs:
           ALL_REPORTS=$(jq -r '
             select(.id.namedSet != null)
             | .namedSetOfFiles.files[]?
-            | select(.name | endswith(".AspectRulesLintClangTidy.report"))
+            | select(.name | endswith(".report"))
             | .uri
           ' /tmp/bep.json 2>/dev/null | sed 's|^file://||' | sort -u)
 
@@ -141,37 +150,35 @@ jobs:
 
           # Merge all per-file SARIF reports (one per linted source file) into a
           # single SARIF document with one combined "runs[0].results" array,
-          # since they all share the same ClangTidy tool driver.
+          # since they all share the same tool driver for a given linter.
           echo "${REPORTS}" | xargs jq -s '{
             "$schema": .[0]["$schema"],
             version: .[0].version,
             runs: [ (.[0].runs[0] * { results: (map(.runs[0].results) | add) }) ]
-          }' > /tmp/sarif-reports/clang-tidy.sarif
+          }' > "/tmp/sarif-reports/${{ matrix.id }}.sarif"
 
           echo "found=true" >> "$GITHUB_OUTPUT"
-          echo "Merged $(echo "${REPORTS}" | wc -l) report(s) into /tmp/sarif-reports/clang-tidy.sarif"
+          echo "Merged $(echo "${REPORTS}" | wc -l) report(s) into /tmp/sarif-reports/${{ matrix.id }}.sarif"
 
       - name: Upload SARIF reports to GitHub Code Scanning
         if: always() && inputs.fetch-only != 'true' && steps.sarif.outputs.found == 'true'
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: /tmp/sarif-reports/clang-tidy.sarif
-          category: clang-tidy
+          sarif_file: /tmp/sarif-reports/${{ matrix.id }}.sarif
+          category: ${{ matrix.id }}
           # Block this step until GitHub has finished processing the
           # uploaded SARIF (default, made explicit here) so that any
           # downstream step relying on the resulting Code Scanning alerts
           # (e.g. a required status check) sees them immediately.
           wait-for-processing: true
 
-      - name: Upload clang-tidy findings as artifact
+      - name: Upload ${{ matrix.id }} findings as artifact
         if: always() && inputs.fetch-only != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: clang-tidy-findings
+          name: ${{ matrix.id }}-findings
           path: |
-            clang_tidy_findings.txt
-            clang_tidy_errors.txt
-            clang_tidy_raw.log
-            /tmp/sarif-reports/clang-tidy.sarif
+            ${{ matrix.id }}_raw.log
+            /tmp/sarif-reports/${{ matrix.id }}.sarif
           if-no-files-found: ignore
           retention-days: 7

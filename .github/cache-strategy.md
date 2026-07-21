@@ -62,7 +62,7 @@ Workflows are organized into two layers:
 | `_build_and_test_gcc15.yml` | Full build + test + examples (GCC 15) |
 | `_thread_sanitizer.yml` | Tests with `--config=tsan` |
 | `_address_sanitizer.yml` | Tests with `--config=asan_ubsan_lsan` |
-| `_clang_tidy.yml` | Static analysis with findings collection and artifact upload |
+| `_linter.yml` | Static analysis matrix with findings collection and artifact upload |
 | `_codeql.yml` | CodeQL / MISRA analysis with SARIF + CSV upload |
 | `_coverage_report.yml` | Coverage report with HTML archive and artifact upload |
 | `build_and_test_qnx.yml` | QNX cross-compilation with approval gate and secrets |
@@ -77,9 +77,9 @@ Disk cache names are **internal** to each workflow and not exposed.
 
 | Orchestrator | Calls | Execution |
 |-------------|-------|-----------|
-| `build_and_test_host.yml` | host, tsan, asan, clang-tidy (reusable workflows) | **Parallel** (PR/merge_group) |
+| `build_and_test_host.yml` | host, tsan, asan, linters (reusable workflows) | **Parallel** (PR/merge_group) |
 | `nightly_cache_recreation.yml` | All 7 job types (reusable workflows) | **Sequential** fetch → **Parallel** build |
-| `nightly_quality.yml` | coverage, clang-tidy, codeql (reusable workflows) | **Parallel** (KPI reporting) |
+| `nightly_quality.yml` | coverage, linters, codeql (reusable workflows) | **Parallel** (KPI reporting) |
 | `automated_release.yml` | `build_and_test_host`, QNX, coverage | **Parallel** (via reusable workflows) |
 
 Nesting depth: `automated_release → build_and_test_host → _build_and_test_gcc15.yml` = 2 levels (max 4 allowed).
@@ -103,7 +103,7 @@ Nesting depth: `automated_release → build_and_test_host → _build_and_test_gc
 │   ├── _build_and_test_gcc15.yml
 │   ├── _thread_sanitizer.yml
 │   ├── _address_sanitizer.yml
-│   ├── _clang_tidy.yml
+│   ├── _linter.yml
 │   ├── _codeql.yml
 │   ├── _coverage_report.yml
 │   ├── build_and_test_qnx.yml
@@ -232,13 +232,13 @@ cache.
   │ fetch-tsan    │──▶ bazel build --nobuild --config=tsan //...
   └───────────────┘    saves repo-cache-<hash2>
           │
-          ▼ ... (asan, clang-tidy, coverage, codeql, qnx)
+          ▼ ... (asan, linters, coverage, codeql, qnx)
           │
           │ PHASE 2: Build (parallel)
           ▼ mode: recreate-update (restores complete repo cache)
-  ┌────────────┬──────┬──────┬─────────────┬──────────┬────────┬─────┐
-  │ host build │ tsan │ asan │ clang-tidy  │ coverage │ codeql │ qnx │
-  └────────────┴──────┴──────┴─────────────┴──────────┴────────┴─────┘
+  ┌────────────┬──────┬──────┬─────────┬──────────┬────────┬─────┐
+  │ host build │ tsan │ asan │ linters │ coverage │ codeql │ qnx │
+  └────────────┴──────┴──────┴─────────┴──────────┴────────┴─────┘
        Each: full build → saves disk-cache-<name>-<run_id>
 ```
 
@@ -275,7 +275,7 @@ All workflows that save or delete caches already declare this permission.
 | Workflow | Behavior |
 |----------|----------|
 | `automated_release.yml` | Calls `build_and_test_host.yml` (reusable workflows). Cache mode auto-computes to `disabled` (no PR/push trigger). |
-| `nightly_quality.yml` | Uses `_coverage_report.yml`, `_clang_tidy.yml`, and `_codeql.yml` reusable workflows. Cache mode auto-computes to `disabled`. |
+| `nightly_quality.yml` | Uses `_coverage_report.yml`, `_linter.yml`, and `_codeql.yml` reusable workflows. Cache mode auto-computes to `disabled`. |
 | `deploy_docs.yml` | Uses `prepare_bazel_environment` directly with `disk-cache: build_docs`. |
 | `stale_pr.yml` | Does not use Bazel — unaffected. |
 
@@ -286,7 +286,7 @@ All workflows that save or delete caches already declare this permission.
 | `_build_and_test_gcc15.yml` | `build_and_test_host` |
 | `_thread_sanitizer.yml` | `build_and_test_tsan` |
 | `_address_sanitizer.yml` | `build_and_test_asan_ubsan_lsan` |
-| `_clang_tidy.yml` | `clang_tidy` |
+| `_linter.yml` | (one per linter bazel-config) |
 | `_coverage_report.yml` | `coverage_report` |
 | `_codeql.yml` | _(none — empty)_ |
 | `build_and_test_qnx.yml` | `build_and_test_qnx` |

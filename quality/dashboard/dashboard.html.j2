@@ -77,6 +77,30 @@
 <p class="muted" style="margin-bottom:1.5rem">No clang-tidy data available.</p>
 {% endif %}
 
+{# ── Clippy summary cards ── #}
+<h2>Clippy</h2>
+{% if clippy %}
+<div class="cards">
+  <div class="card">
+    <div class="num" style="color:{% if clippy.errors == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ clippy.errors }}</div>
+    {% if prev and prev.clippy_errors is not none %}<div class="delta">{{ delta(clippy.errors, prev.clippy_errors, false) }}</div>{% endif %}
+    <div class="label">Errors</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:{% if clippy.warnings == 0 %}#27ae60{% else %}#e67e22{% endif %}">{{ clippy.warnings }}</div>
+    {% if prev and prev.clippy_warnings is not none %}<div class="delta">{{ delta(clippy.warnings, prev.clippy_warnings, false) }}</div>{% endif %}
+    <div class="label">Warnings</div>
+  </div>
+  <div class="card">
+    <div class="num" style="color:var(--muted)">{{ clippy.total }}</div>
+    {% if prev and prev.clippy_total is not none %}<div class="delta">{{ delta(clippy.total, prev.clippy_total, false) }}</div>{% endif %}
+    <div class="label">Total Findings</div>
+  </div>
+</div>
+{% else %}
+<p class="muted" style="margin-bottom:1.5rem">No clippy data available.</p>
+{% endif %}
+
 {# ── CodeQL summary cards ── #}
 <h2>CodeQL</h2>
 {% if codeql %}
@@ -137,7 +161,7 @@
 <h2>Run History</h2>
 <table>
   <thead>
-    <tr><th>Date</th><th>Line Cov</th><th>Function Cov</th><th>Branch Cov</th><th>CT Errors</th><th>CT Warnings</th><th>CQ Errors</th><th>CQ Warnings</th><th>CQ Total</th></tr>
+    <tr><th>Date</th><th>Line Cov</th><th>Function Cov</th><th>Branch Cov</th><th>CT Errors</th><th>CT Warnings</th><th>Clippy Errors</th><th>Clippy Warnings</th><th>Clippy Total</th><th>CQ Errors</th><th>CQ Warnings</th><th>CQ Total</th></tr>
   </thead>
   <tbody>
     {% for snap in history|reverse %}
@@ -155,6 +179,14 @@
       </td>
       {% endfor %}
       {% for key, higher_better in [('ct_errors', false), ('ct_warnings', false)] %}
+      <td>
+        {% if snap[key] is not none %}
+          <span style="color:{% if snap[key] == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ snap[key] }}</span>
+          {% if ps and ps[key] is not none %} {{ delta(snap[key], ps[key], higher_better) }}{% endif %}
+        {% else %}N/A{% endif %}
+      </td>
+      {% endfor %}
+      {% for key, higher_better in [('clippy_errors', false), ('clippy_warnings', false), ('clippy_total', false)] %}
       <td>
         {% if snap[key] is not none %}
           <span style="color:{% if snap[key] == 0 %}#27ae60{% else %}#e74c3c{% endif %}">{{ snap[key] }}</span>
