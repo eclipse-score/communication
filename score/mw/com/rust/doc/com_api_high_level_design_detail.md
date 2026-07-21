@@ -183,4 +183,4 @@ All naming in the COM-API adheres to [Rust Naming Guidelines](https://rust-lang.
 | Target | Purpose |
 |--------|---------|
 | `//score/mw/com/rust/concept` | Generic trait definitions and `CommData` / `Reloc` contracts |
-| `//score/mw/com/rust/proc-macros` | Derive macros for `CommData` and `Reloc` |
+| `//score/mw/com/rust/com-api-macros` | Derive macros for `CommData` and `Reloc` |

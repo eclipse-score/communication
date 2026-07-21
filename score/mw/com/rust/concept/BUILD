@@ -19,7 +19,7 @@ rust_library(
     srcs = glob(["**/*.rs"]),
     edition = "2024",
     proc_macro_deps = [
-        "//score/mw/com/rust/proc-macros",
+        "//score/mw/com/rust/com-api-macros",
         "@score_communication_crate_index//:paste",
     ],
     visibility = [

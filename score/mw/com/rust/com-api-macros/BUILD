@@ -14,7 +14,7 @@
 load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_proc_macro")
 
 rust_proc_macro(
-    name = "proc-macros",
+    name = "com-api-macros",
     srcs = ["lib.rs"],
     crate_name = "com_api_concept_macros",
     visibility = [
@@ -27,7 +27,7 @@ rust_proc_macro(
 )
 
 rust_doc_test(
-    name = "proc-macros-tests",
-    crate = ":proc-macros",
+    name = "com-api-macros-tests",
+    crate = ":com-api-macros",
     target_compatible_with = ["@platforms//os:linux"],
 )
