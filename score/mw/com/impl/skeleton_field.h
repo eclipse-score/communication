@@ -214,7 +214,7 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     /// SkeletonEvent::Send()
     Result<void> UpdateImpl(const FieldType& sample_value) noexcept;
 
-    SkeletonEvent<FieldType>* GetTypedEvent() const noexcept;
+    SkeletonEvent<FieldType>& GetTypedEvent() const noexcept;
 
     [[nodiscard]] bool IsSetHandlerMissing() const noexcept override
     {
@@ -363,7 +363,7 @@ Result<void> SkeletonFieldImpl<SampleDataType, Tags...>::Update(SampleAllocateeP
         return skeleton_field_mock_->Update(std::move(sample));
     }
 
-    return GetTypedEvent()->Send(std::move(sample));
+    return GetTypedEvent().Send(std::move(sample));
 }
 
 /// \brief Allocates memory for FieldType for the user to fill it. This is especially necessary for Zero-Copy
@@ -387,7 +387,7 @@ Result<SampleAllocateePtr<SampleDataType>> SkeletonFieldImpl<SampleDataType, Tag
                "called as the shared memory is not setup until OfferService() is called.";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
-    return GetTypedEvent()->Allocate();
+    return GetTypedEvent().Allocate();
 }
 
 template <typename SampleDataType, typename... Tags>
@@ -414,15 +414,15 @@ Result<void> SkeletonFieldImpl<SampleDataType, Tags...>::DoDeferredUpdate() noex
 template <typename SampleDataType, typename... Tags>
 Result<void> SkeletonFieldImpl<SampleDataType, Tags...>::UpdateImpl(const FieldType& sample_value) noexcept
 {
-    return GetTypedEvent()->Send(sample_value);
+    return GetTypedEvent().Send(sample_value);
 }
 
 template <typename SampleDataType, typename... Tags>
-auto SkeletonFieldImpl<SampleDataType, Tags...>::GetTypedEvent() const noexcept -> SkeletonEvent<SampleDataType>*
+auto SkeletonFieldImpl<SampleDataType, Tags...>::GetTypedEvent() const noexcept -> SkeletonEvent<SampleDataType>&
 {
     auto* const typed_event = dynamic_cast<SkeletonEvent<FieldType>*>(skeleton_event_dispatch_.get());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event != nullptr, "Downcast to SkeletonEvent<FieldType> failed!");
-    return typed_event;
+    return *typed_event;
 }
 
 template <typename SampleDataType, typename... Tags>
