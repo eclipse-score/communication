@@ -16,14 +16,7 @@ load("//quality/unit_testing:unit_testing.bzl", "rust_unit_test")
 
 rust_library(
     name = "concept",
-    srcs = [
-        "concept.rs",
-        "error.rs",
-        "interface_macros.rs",
-        "lib.rs",
-        "reloc.rs",
-    ],
-    #
+    srcs = glob(["**/*.rs"]),
     edition = "2024",
     proc_macro_deps = [
         "//score/mw/com/rust/proc-macros",

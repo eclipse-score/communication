@@ -24,7 +24,7 @@
 ///
 /// Usage is typically in generated code files:
 /// ```
-/// #include "score/mw/com/rust/codegen/register_interface.h"
+/// #include "score/mw/com/rust/ffi_bridge/register_interface.h"
 ///
 /// BEGIN_EXPORT_MW_COM_INTERFACE(VehicleInterface, VehicleProxy, VehicleSkeleton)
 /// EXPORT_MW_COM_EVENT(Tire, left_tire)
