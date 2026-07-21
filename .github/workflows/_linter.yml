@@ -101,6 +101,7 @@ jobs:
           set -o pipefail
           aspect lint \
             --bazel-flag=--config=clang-tidy \
+            --bazel-flag=--@aspect_rules_lint//lint:fail_on_violation=false \
             --bazel-flag=--build_event_json_file=/tmp/bep.json \
             --github-lint-comments:enabled=false \
             --github-status-checks:enabled=false \

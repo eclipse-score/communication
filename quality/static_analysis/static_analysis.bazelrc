@@ -14,6 +14,8 @@
 # Config shared by all linters. This config is required to generate the correct outputs for our CI workflows.
 build:_lint --extra_toolchains=@sarif_parser_toolchains//:all
 build:_lint --output_groups=+rules_lint_human,+rules_lint_machine
+build:_lint --@aspect_rules_lint//lint:fail_on_violation=true
+build:_lint --keep_going
 
 # Clang-tidy configuration
 # Run clang-tidy on all C++ targets with: bazel test --config=clang-tidy //...
