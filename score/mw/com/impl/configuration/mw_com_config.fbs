@@ -1,0 +1,232 @@
+// *******************************************************************************
+// Copyright (c) 2026 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// SPDX-License-Identifier: Apache-2.0
+// *******************************************************************************
+//
+// FlatBuffers schema mirroring the mw::com runtime configuration.
+//
+// This schema is the binary-serialization counterpart of the JSON configuration
+// schema `mw_com_config_schema.json`. Field structure, cardinality and semantics
+// are kept 1:1 with that JSON schema. Field names use idiomatic FlatBuffers
+// `snake_case`; where the corresponding JSON key differs (JSON uses `camelCase`
+// and `kebab-case`), the original key is given in a comment next to the field.
+//
+// Integer widths are chosen to match the concrete C++ types used by the
+// configuration data model (see e.g. lola_service_id.h, lola_event_instance_
+// deployment.h, lola_service_instance_deployment.h, global_configuration.h).
+//
+// Notes on FlatBuffers vs. JSON schema:
+//   * Scalar fields that are OPTIONAL in the JSON schema use the optional-scalar
+//     form (`= null`) so that "not configured" can be distinguished from a value.
+//     The documented JSON default (if any) is stated in a comment; applying that
+//     default is left to the reader/converter, exactly like the JSON case.
+//   * FlatBuffers scalars/enums cannot carry the `(required)` attribute; enum
+//     fields that are mandatory in the JSON schema (asil-level, binding) use a
+//     leading INVALID/0 value so that "unset" remains detectable. Mandatory
+//     strings, tables and vectors do use `(required)`.
+//   * FlatBuffers does not support default values for strings; such defaults are
+//     documented in comments only.
+
+namespace score.mw.com.impl.configuration;
+
+// -----------------------------------------------------------------------------
+// Enumerations
+// -----------------------------------------------------------------------------
+
+/// Binding technology (JSON: "binding" enum -> ["SHM"]).
+/// INVALID is a schema-only sentinel to detect an unset mandatory field.
+enum Binding : ubyte {
+    INVALID = 0,
+    SHM = 1,
+}
+
+/// ASIL level (JSON: "asil-level" enum -> ["QM", "B"]).
+/// Values mirror score::mw::com::impl::QualityType (quality_type.h).
+enum AsilLevel : ushort {
+    INVALID = 0,
+    QM = 1,
+    B = 2,
+}
+
+/// Strategy for empty user-id lists (JSON: "permission-checks").
+enum PermissionChecks : ubyte {
+    FILE_PERMISSIONS_ON_EMPTY = 0,  // JSON: "file-permissions-on-empty" (default)
+    STRICT = 1,                     // JSON: "strict"
+}
+
+/// Calculation mode for shared-memory size (JSON: "shm-size-calc-mode").
+/// Mirrors score::mw::com::impl::ShmSizeCalculationMode (shm_size_calc_mode.h).
+enum ShmSizeCalcMode : ubyte {
+    SIMULATION = 0,  // JSON: "SIMULATION" (default)
+}
+
+// -----------------------------------------------------------------------------
+// Shared definitions
+// -----------------------------------------------------------------------------
+
+/// JSON: $defs/serviceVersion. Mirrors ServiceVersionType (service_version_type.h).
+table ServiceVersion {
+    major:uint32;  // std::uint32_t, mandatory in JSON
+    minor:uint32;  // std::uint32_t, mandatory in JSON
+}
+
+// -----------------------------------------------------------------------------
+// serviceTypes[]
+// -----------------------------------------------------------------------------
+
+/// JSON: serviceTypes[].bindings[].events[]
+table ServiceTypeEvent {
+    event_name:string (required);  // JSON: "eventName"
+    event_id:uint16;               // JSON: "eventId"; LolaServiceElementId (LoLa uses 8 bit)
+}
+
+/// JSON: serviceTypes[].bindings[].fields[]
+table ServiceTypeField {
+    field_name:string (required);  // JSON: "fieldName"
+    field_id:uint16;               // JSON: "fieldId"; LolaServiceElementId
+    get:bool = false;              // JSON: "Get" (default false)
+    set:bool = false;              // JSON: "Set" (default false)
+}
+
+/// JSON: serviceTypes[].bindings[].methods[]
+table ServiceTypeMethod {
+    method_name:string (required);  // JSON: "methodName"
+    method_id:uint16;               // JSON: "methodId"; LolaServiceElementId
+}
+
+/// JSON: serviceTypes[].bindings[]
+table ServiceTypeBinding {
+    binding:Binding;                // mandatory in JSON; INVALID marks "unset"
+    service_id:uint16;              // JSON: "serviceId"; LolaServiceId (16 bit for LoLa/Shm)
+    events:[ServiceTypeEvent];      // optional
+    fields:[ServiceTypeField];      // optional
+    methods:[ServiceTypeMethod];    // optional
+}
+
+/// JSON: serviceTypes[]
+table ServiceType {
+    service_type_name:string (required);   // JSON: "serviceTypeName"
+    version:ServiceVersion (required);
+    bindings:[ServiceTypeBinding] (required);
+}
+
+// -----------------------------------------------------------------------------
+// serviceInstances[]
+// -----------------------------------------------------------------------------
+
+/// User-id lists grouped by ASIL level (JSON: "allowedConsumer" / "allowedProvider").
+/// uid values map to uid_t -> uint32.
+table UidList {
+    qm:[uint32];  // JSON: "QM"
+    b:[uint32];   // JSON: "B"
+}
+
+/// JSON: serviceInstances[].instances[].events[]
+table InstanceEvent {
+    event_name:string (required);              // JSON: "eventName"
+    max_samples:uint16 = null;                 // JSON: "maxSamples"; DEPRECATED (use number_of_sample_slots); 1..65535
+    number_of_sample_slots:uint16 = null;      // JSON: "numberOfSampleSlots"; 1..65535
+    max_subscribers:uint8 = null;              // JSON: "maxSubscribers"; SubscriberCountType (uint8)
+    enforce_max_samples:bool = null;           // JSON: "enforceMaxSamples"; default true
+    number_of_ipc_tracing_slots:uint8 = null;  // JSON: "numberOfIpcTracingSlots"; 0..255, default 0
+}
+
+/// JSON: serviceInstances[].instances[].fields[]
+table InstanceField {
+    field_name:string (required);              // JSON: "fieldName"
+    number_of_sample_slots:uint16 = null;      // JSON: "numberOfSampleSlots"; 1..65535
+    max_subscribers:uint8 = null;              // JSON: "maxSubscribers"; SubscriberCountType (uint8)
+    enforce_max_samples:bool = null;           // JSON: "enforceMaxSamples"; default true
+    number_of_ipc_tracing_slots:uint8 = null;  // JSON: "numberOfIpcTracingSlots"; 0..255, default 0
+    use_get_if_available:bool = null;          // JSON: "useGetIfAvailable"; default false
+    use_set_if_available:bool = null;          // JSON: "useSetIfAvailable"; default false
+}
+
+/// JSON: serviceInstances[].instances[].methods[]
+table InstanceMethod {
+    method_name:string (required);  // JSON: "methodName"
+    queue_size:uint8 = null;        // JSON: "queueSize"; QueueSize (uint8), 1..255
+    use:bool = null;                // JSON: "use"; default true
+}
+
+/// JSON: serviceInstances[].instances[] (a service instance bound to a technology).
+table ServiceInstanceBinding {
+    instance_id:uint16 = null;              // JSON: "instanceId"; absent => "any"
+    asil_level:AsilLevel;                   // JSON: "asil-level", mandatory; INVALID marks "unset"
+    binding:Binding;                        // mandatory in JSON; INVALID marks "unset"
+    shm_size:uint64 = null;                 // JSON: "shm-size"; std::size_t
+    control_asil_b_shm_size:uint64 = null;  // JSON: "control-asil-b-shm-size"; std::size_t
+    control_qm_shm_size:uint64 = null;      // JSON: "control-qm-shm-size"; std::size_t
+    permission_checks:PermissionChecks = FILE_PERMISSIONS_ON_EMPTY;  // JSON: "permission-checks"
+    allowed_consumer:UidList;               // JSON: "allowedConsumer"; optional
+    allowed_provider:UidList;               // JSON: "allowedProvider"; optional
+    events:[InstanceEvent];                 // optional
+    fields:[InstanceField];                 // optional
+    methods:[InstanceMethod];               // optional
+    inter_vm_support:bool = null;           // JSON: "interVmSupport"; default false
+    inter_vm_forwarded:bool = null;         // JSON: "interVmForwarded"; default false
+}
+
+/// JSON: serviceInstances[]
+table ServiceInstance {
+    instance_specifier:string (required);   // JSON: "instanceSpecifier"
+    service_type_name:string (required);    // JSON: "serviceTypeName"
+    version:ServiceVersion (required);
+    instances:[ServiceInstanceBinding] (required);
+}
+
+// -----------------------------------------------------------------------------
+// global
+// -----------------------------------------------------------------------------
+
+/// JSON: global."queue-size". Values map to std::int32_t (global_configuration.h).
+table QueueSize {
+    qm_receiver:int32 = 10;  // JSON: "QM-receiver" (default 10)
+    b_receiver:int32 = 10;   // JSON: "B-receiver"  (default 10)
+    b_sender:int32 = 20;     // JSON: "B-sender"    (default 20)
+}
+
+/// JSON: global
+table GlobalConfiguration {
+    asil_level:AsilLevel = QM;        // JSON: "asil-level" (default QM)
+    application_id:uint32 = null;     // JSON: "applicationID"; ApplicationId (uint32), 0..4294967295
+    queue_size:QueueSize;             // JSON: "queue-size"
+    shm_size_calc_mode:ShmSizeCalcMode = SIMULATION;  // JSON: "shm-size-calc-mode"
+}
+
+// -----------------------------------------------------------------------------
+// tracing
+// -----------------------------------------------------------------------------
+
+/// JSON: tracing
+table TracingConfiguration {
+    enable:bool = true;                        // JSON: "enable"; default true
+    application_instance_id:string (required); // JSON: "applicationInstanceID"
+    // JSON: "traceFilterConfigPath"; default "./etc/mw_com_trace_filter.json"
+    // (FlatBuffers has no string defaults; default is applied by the reader).
+    trace_filter_config_path:string;
+}
+
+// -----------------------------------------------------------------------------
+// Root
+// -----------------------------------------------------------------------------
+
+/// Top-level mw::com configuration (JSON root object).
+table Configuration {
+    service_types:[ServiceType] (required);        // JSON: "serviceTypes"
+    service_instances:[ServiceInstance] (required); // JSON: "serviceInstances"
+    global:GlobalConfiguration;    // optional
+    tracing:TracingConfiguration;  // optional
+}
+
+root_type Configuration;
+
+file_identifier "MWCC";

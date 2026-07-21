@@ -11,10 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@flatbuffers//:build_defs.bzl", "flatbuffer_cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+load(":flatbuffers_flags.bzl", "FLATBUFFERS_TARGET_COMPATIBLE_WITH", "flatbuffers_build_settings")
 
 validate_json_schema_test(
     name = "validate_mw_com_config_schema",
@@ -22,6 +24,34 @@ validate_json_schema_test(
     schema = ":mw_com_config_schema",
     tags = ["lint"],
     target_compatible_with = ["@platforms//os:linux"],
+)
+
+# Feature flag gating availability of FlatBuffers-based configuration tooling.
+# Disabled by default; enable with:
+#   bazel build --config=flatbuffers //...
+flatbuffers_build_settings(
+    visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
+)
+
+# FlatBuffers schema mirroring mw_com_config_schema.json. Compiling it in-build
+# validates the schema and provides the generated C++ header (mw_com_config_generated.h)
+# to consumers that read the binary configuration produced by the converter tool
+# (//score/mw/com/impl/configuration/converter:json_to_flatbuffer).
+flatbuffer_cc_library(
+    name = "mw_com_config_fbs",
+    srcs = ["mw_com_config.fbs"],
+    target_compatible_with = FLATBUFFERS_TARGET_COMPATIBLE_WITH,
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
+# Exported so the converter tool package can reference the schema (as the flatc
+# input) and the example config (in its rule/test).
+exports_files(
+    [
+        "mw_com_config.fbs",
+        "example/mw_com_config.json",
+    ],
+    visibility = ["//score/mw/com/impl/configuration/converter:__pkg__"],
 )
 
 filegroup(
