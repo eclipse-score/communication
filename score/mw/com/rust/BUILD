@@ -23,8 +23,8 @@ rust_library(
         "//visibility:public",  # platform_only
     ],
     deps = [
-        "//score/mw/com/rust/concept",
         "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
         "//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
+        "//score/mw/com/rust/concept",
     ],
 )
