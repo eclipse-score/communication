@@ -32,6 +32,7 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -169,6 +170,16 @@ class SkeletonFieldImpl : public SkeletonFieldBase
         auto set_handler = [state = std::move(state)](FieldType& final_value, const FieldType& desired_value) {
             auto& [skeleton_field_base_ref, actual_user_set_handler] = *state;
 
+            auto typed_field =
+                static_cast<SkeletonField<SampleDataType, Tags...>*>(&skeleton_field_base_ref.get().Get());
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(typed_field != nullptr);
+
+            // Lock the mutex to ensure that only one set_handler is executing at a time for this field. We
+            // don't want multiple consumers to be able to acquire multiple slots for writing a new field value
+            // at the same time as this would require allocating additional slots and we don't currently foresee
+            // a reasonable use case for that.
+            std::lock_guard set_handler_lock{*typed_field->set_handler_mutex_};
+
             // Copy desired_value (which is a method InArg) into final_value (which is the method return value).
             // final_value can then be modified in place by set_handler.
             final_value = desired_value;
@@ -177,9 +188,6 @@ class SkeletonFieldImpl : public SkeletonFieldBase
             std::invoke(actual_user_set_handler, final_value);
 
             // Copy the (possibly modified) value into the latest field value
-            auto typed_field =
-                static_cast<SkeletonField<SampleDataType, Tags...>*>(&skeleton_field_base_ref.get().Get());
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(typed_field != nullptr);
             auto update_result = typed_field->Update(final_value);
             if (!update_result.has_value())
             {
@@ -289,6 +297,16 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     // Tracks whether RegisterSetHandler() has been called.
     bool is_set_handler_registered_;
 
+    /// \brief Mutex to ensure that only one set_handler is executed at a time for this field.
+    ///
+    /// We don't want multiple consumers to be able to acquire multiple slots for writing a new field value at the
+    /// same time as this would require allocating additional slots and we don't currently foresee a reasonable use
+    /// case for that.
+    ///
+    /// This mutex must be allocated on the heap since SkeletonField must be moveable (and a std::mutex is not
+    /// moveable).
+    std::unique_ptr<std::mutex> set_handler_mutex_{};
+
     std::unique_ptr<SkeletonMethod<SetMethodSignature>> set_method_;
     std::unique_ptr<SkeletonMethod<GetMethodSignature>> get_method_;
 };
@@ -304,6 +322,7 @@ SkeletonFieldImpl<SampleDataType, Tags...>::SkeletonFieldImpl(
       initial_field_value_{nullptr},
       skeleton_field_mock_{nullptr},
       is_set_handler_registered_{false},
+      set_handler_mutex_{std::make_unique<std::mutex>()},
       set_method_{std::move(skeleton_set_method_dispatch)},
       get_method_{std::move(skeleton_get_method_dispatch)}
 {
