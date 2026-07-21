@@ -532,10 +532,6 @@ mod test {
     use concept::InstanceSpecifier;
     use mockall::predicate::*;
     use mockall::Sequence;
-    // Bring trait methods into scope without shadowing local struct names.
-    use concept::Publisher as _;
-    use concept::SampleMaybeUninit as _;
-    use concept::SampleMut as _;
 
     #[derive(Debug, Default)]
     #[repr(C)]
@@ -692,8 +688,8 @@ mod test {
             bridge: bridge.clone(),
         };
 
-        let publisher: Publisher<TestData, SharedMockBridge> =
-            Publisher::<TestData, SharedMockBridge>::new("TestEvent", instance_info)
+        let publisher: LolaPublisher<TestData, SharedMockBridge> =
+            LolaPublisher::<TestData, SharedMockBridge>::new("TestEvent", instance_info)
                 .expect("Failed to create publisher");
         let sample = publisher.allocate().expect("Failed to allocate sample");
         let test_data = TestData { value: 42 };

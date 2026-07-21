@@ -509,11 +509,11 @@ impl RuntimeBuilderImpl {
 
 #[cfg(test)]
 mod test {
-    use {Publisher, SampleContainer, SampleMaybeUninit, SampleMut, Subscription};
+    use concept::{Publisher, SampleContainer, SampleMaybeUninit, SampleMut, Subscription};
 
     #[test]
     fn receive_stuff() {
-        let test_subscriber = super::SubscriberImpl::<u32>::new();
+        let test_subscriber = super::MockSubscriberImpl::<u32>::new();
         for _ in 0..10 {
             let mut sample_buf = SampleContainer::new();
             let receive_result = test_subscriber.try_receive(&mut sample_buf, 1);
@@ -533,7 +533,7 @@ mod test {
 
     #[test]
     fn receive_async_stuff() {
-        let test_subscriber = super::SubscriberImpl::<u32>::new();
+        let test_subscriber = super::MockSubscriberImpl::<u32>::new();
         // block on an asynchronous reception of data from test_subscriber
         futures::executor::block_on(async {
             let sample_buf = SampleContainer::new(1);
@@ -547,7 +547,7 @@ mod test {
 
     #[test]
     fn send_stuff() {
-        let test_publisher = super::Publisher::<u32>::new();
+        let test_publisher = super::MockPublisher::<u32>::new();
         let sample = test_publisher.allocate().expect("Couldn't allocate sample");
         let sample = sample.write(42);
         sample.send().expect("Send failed for sample");

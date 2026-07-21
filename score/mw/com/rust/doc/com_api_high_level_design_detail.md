@@ -121,7 +121,7 @@ The LoLa Runtime is responsible for translating generic trait operations into co
 
 **FFI bridge layer**
 
-**Location**: [com-api-ffi-lola/](../../impl/rust/om-api/com-api-ffi-lola/)
+**Location**: [com-api-ffi-lola/](../../impl/rust/com-api/com-api-ffi-lola/)
 
 The FFI Bridge Layer translates between Rust and C++, defining the exact boundary where safe Rust code meets unsafe C++ middleware. This layer is kept thin and focused: it declares raw FFI functions from C++ and wraps them in safe Rust interfaces. The bridge handles the low-level details of memory layout, pointer conversions, and callback mechanisms.
 

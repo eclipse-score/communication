@@ -1339,7 +1339,7 @@ mod test {
         // Create a single shared mock with all necessary expectations
         let bridge = SharedMockBridge::new(mock);
 
-        let subscribable = SubscribableImpl::<TestData, SharedMockBridge> {
+        let subscribable = LolaSubscribableImpl::<TestData, SharedMockBridge> {
             identifier: "TestEvent",
             instance_info: make_instance_info(bridge.clone()),
             proxy_instance: make_proxy_instance(bridge.clone(), "TestInterface"),
@@ -1415,7 +1415,7 @@ mod test {
 
         // Create a single shared mock with all necessary expectations
         let bridge = SharedMockBridge::new(mock);
-        let subscribable = SubscribableImpl::<TestData, SharedMockBridge> {
+        let subscribable = LolaSubscribableImpl::<TestData, SharedMockBridge> {
             identifier: "TestEvent",
             instance_info: make_instance_info(bridge.clone()),
             proxy_instance: make_proxy_instance(bridge.clone(), "TestInterface"),
@@ -1472,7 +1472,7 @@ mod test {
             });
 
         let bridge = SharedMockBridge::new(mock);
-        let subscribable = SubscribableImpl::<TestData, SharedMockBridge> {
+        let subscribable = LolaSubscribableImpl::<TestData, SharedMockBridge> {
             identifier: "TestEvent",
             instance_info: make_instance_info(bridge.clone()),
             proxy_instance: make_proxy_instance(bridge.clone(), "TestInterface"),
