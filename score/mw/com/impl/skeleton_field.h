@@ -161,24 +161,27 @@ class SkeletonFieldImpl : public SkeletonFieldBase
         static_assert(std::is_same_v<ExpectedCallableInArgTypes, ActualCallableInArgType>,
                       "Registered method callable must have a single non-const reference argument of type FieldType&!");
 
-        // Since the pointer to SkeletonField and the user callable don't fit in the state of the type-erased handler,
+        // The set handler requires access to the event owned by the field in order to update the field value. We pass a
+        // reference to the event instead of the field itself since the field can be moved (if the owning Skeleton is
+        // moved) which would invalidate the reference to the field. Since the set handler is called in the message
+        // passing thread which is triggered by the proxy field calling the setter, we can't easily ensure that the
+        // field won't be moved while the handler is executing. The event is owned by the field as a unique_ptr so will
+        // never be moved, even if the field is moved. We pass in the set_handler_mutex_ directly for similar reasons.
+        // Since the reference to SkeletonEvent and the user callable don't fit in the state of the type-erased handler,
         // we have to allocate them on the heap and store a pointer to them.
-        auto state = std::make_unique<
-            std::pair<std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>, CallableType>>(
-            GetReferenceToMoveable(), std::forward<CallableType>(user_set_handler));
+        auto state = std::make_unique<std::tuple<std::reference_wrapper<SkeletonEvent<SampleDataType>>,
+                                                 std::reference_wrapper<std::mutex>,
+                                                 CallableType>>(
+            GetTypedEvent(), *set_handler_mutex_, std::forward<CallableType>(user_set_handler));
 
         auto set_handler = [state = std::move(state)](FieldType& final_value, const FieldType& desired_value) {
-            auto& [skeleton_field_base_ref, actual_user_set_handler] = *state;
-
-            auto typed_field =
-                static_cast<SkeletonField<SampleDataType, Tags...>*>(&skeleton_field_base_ref.get().Get());
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(typed_field != nullptr);
+            auto& [skeleton_event, set_handler_mutex, actual_user_set_handler] = *state;
 
             // Lock the mutex to ensure that only one set_handler is executing at a time for this field. We
             // don't want multiple consumers to be able to acquire multiple slots for writing a new field value
             // at the same time as this would require allocating additional slots and we don't currently foresee
             // a reasonable use case for that.
-            std::lock_guard set_handler_lock{*typed_field->set_handler_mutex_};
+            std::lock_guard set_handler_lock{set_handler_mutex.get()};
 
             // Copy desired_value (which is a method InArg) into final_value (which is the method return value).
             // final_value can then be modified in place by set_handler.
@@ -188,7 +191,7 @@ class SkeletonFieldImpl : public SkeletonFieldBase
             std::invoke(actual_user_set_handler, final_value);
 
             // Copy the (possibly modified) value into the latest field value
-            auto update_result = typed_field->Update(final_value);
+            auto update_result = skeleton_event.get().Send(final_value);
             if (!update_result.has_value())
             {
                 score::mw::log::LogError("lola") << "Set handler: failed to update field value.";
