@@ -366,6 +366,7 @@ lint_toolchains = use_extension("@aspect_rules_lint//lint:extensions.bzl", "tool
 lint_toolchains.sarif_parser()
 use_repo(lint_toolchains, "sarif_parser_toolchains")
 
+bazel_dep(name = "score_rust_policies", version = "0.0.5", dev_dependency = True)
 bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
 bazel_dep(name = "rules_build_error", version = "0.11.0", dev_dependency = True)
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
