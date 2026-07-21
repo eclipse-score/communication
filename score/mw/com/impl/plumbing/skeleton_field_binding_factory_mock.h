@@ -28,18 +28,8 @@ class SkeletonFieldBindingFactoryMock : public ISkeletonFieldBindingFactory<Samp
   public:
     MOCK_METHOD(std::unique_ptr<SkeletonEventBinding<SampleType>>,
                 CreateEventBinding,
-                (const InstanceIdentifier&, SkeletonBinding&, const std::string_view),
+                (const InstanceIdentifier&, SkeletonBinding&, const std::string_view, std::size_t, bool),
                 (noexcept, override));
-
-    auto CreateEventBinding(const InstanceIdentifier& identifier,
-                            SkeletonBinding& parent_binding,
-                            const std::string_view field_name,
-                            std::size_t additional_slots_for_field_get_set) noexcept
-        -> std::unique_ptr<SkeletonEventBinding<SampleType>> override
-    {
-        static_cast<void>(additional_slots_for_field_get_set);
-        return CreateEventBinding(identifier, parent_binding, field_name);
-    }
 };
 
 }  // namespace score::mw::com::impl

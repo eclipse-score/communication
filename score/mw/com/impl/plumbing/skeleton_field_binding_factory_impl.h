@@ -34,11 +34,11 @@ template <typename SampleType>
 class SkeletonFieldBindingFactoryImpl : public ISkeletonFieldBindingFactory<SampleType>
 {
   public:
-    std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(
-        const InstanceIdentifier& identifier,
-        SkeletonBinding& parent_binding,
-        const std::string_view field_name,
-        std::size_t additional_slots_for_field_get_set = 0U) noexcept override;
+    std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(const InstanceIdentifier& identifier,
+                                                                         SkeletonBinding& parent_binding,
+                                                                         const std::string_view field_name,
+                                                                         std::size_t additional_slots_for_field_get_set,
+                                                                         bool field_getter_enabled) noexcept override;
 };
 
 template <typename SampleType>
@@ -50,18 +50,17 @@ template <typename SampleType>
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonFieldBindingFactoryImpl<SampleType>::CreateEventBinding(
-    const InstanceIdentifier& identifier,
-    SkeletonBinding& parent_binding,
-    const std::string_view field_name,
-    std::size_t additional_slots_for_field_get_set) noexcept -> std::unique_ptr<SkeletonEventBinding<SampleType>>
+auto SkeletonFieldBindingFactoryImpl<SampleType>::CreateEventBinding(const InstanceIdentifier& identifier,
+                                                                     SkeletonBinding& parent_binding,
+                                                                     const std::string_view field_name,
+                                                                     std::size_t additional_slots_for_field_get_set,
+                                                                     bool field_getter_enabled) noexcept
+    -> std::unique_ptr<SkeletonEventBinding<SampleType>>
 {
-    // TODO: Currently field_getter_enabled is hard coded to false, will add support
-    //  when getter functionality of field is implemented.
     return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
                                       lola::SkeletonEvent<SampleType>,
                                       ServiceElementType::FIELD>(
-        identifier, parent_binding, field_name, additional_slots_for_field_get_set, false);
+        identifier, parent_binding, field_name, additional_slots_for_field_get_set, field_getter_enabled);
 }
 
 }  // namespace score::mw::com::impl

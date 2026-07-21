@@ -233,7 +233,8 @@ class SkeletonFieldImpl : public SkeletonFieldBase
                 skeleton_base_view.GetAssociatedInstanceIdentifier(),
                 skeleton_base_view.GetBinding(),
                 field_name,
-                (kHasGetter || kHasSetter) ? 1U : 0U),
+                (kHasGetter || kHasSetter) ? 1U : 0U,
+                kHasGetter),
             typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{});
     }
 
@@ -288,13 +289,19 @@ class SkeletonFieldImpl : public SkeletonFieldBase
             {
                 return;
             }
+            auto field_ref =
+                std::make_unique<std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>>(
+                    GetReferenceToMoveable());
+            auto mutex = std::make_unique<std::mutex>();
             const auto result = get_method_->RegisterHandler(
-                [this](QualityType quality_type, FieldType& return_value) {
+                [field_ref = std::move(field_ref), mutex = std::move(mutex)](QualityType quality_type,
+                                                                             FieldType& return_value) {
                     // need to serialize access to Get. In case of concurrent Get calls,
                     // we want to ensure that they are processed sequentially.
-                    std::lock_guard<std::mutex> lock{get_handler_mutex_};
+                    std::lock_guard<std::mutex> lock{*mutex};
+                    auto& typed_field = static_cast<SkeletonFieldImpl&>(field_ref->get().Get());
                     const auto sample_ptr_result =
-                        SkeletonEventView<FieldType>{*GetTypedEvent()}.GetLatestSample(quality_type);
+                        SkeletonEventView<FieldType>{*typed_field.GetTypedEvent()}.GetLatestSample(quality_type);
                     if (!sample_ptr_result.has_value())
                     {
                         score::mw::log::LogError("lola")
@@ -325,13 +332,6 @@ class SkeletonFieldImpl : public SkeletonFieldBase
 
     // Tracks whether RegisterSetHandler() has been called.
     bool is_set_handler_registered_;
-
-    // Zero-cost storage: only a real mutex when kHasGetter=true, otherwise an empty zero-size type.
-    struct NullMutex
-    {
-    };
-    using GetHandlerMutexType = std::conditional_t<kHasGetter, std::mutex, NullMutex>;
-    GetHandlerMutexType get_handler_mutex_{};
 
     std::unique_ptr<SkeletonMethod<SetMethodSignature>> set_method_;
     std::unique_ptr<SkeletonMethod<GetMethodSignature>> get_method_;

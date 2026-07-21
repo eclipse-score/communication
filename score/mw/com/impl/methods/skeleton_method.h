@@ -138,25 +138,52 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&&
     AssertMethodHandlerSupportsMethodSignature<FailureMode::COMPILE_TIME, Callable, ReturnType, ArgTypes...>();
 
     constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
+    constexpr bool is_lvalue = std::is_lvalue_reference_v<Callable>;
+
     if constexpr (is_return_type_not_void)
     {
-        // Wrap the callable to accept, then call it with the typed_return_ptr and
-        // the typed_in_arg_ptrs which are unpacked from the tuple into individual arguments.
-        auto wrapped_handler = [cb = std::forward<Callable>(callback)](
-                                   QualityType /*quality_type*/, ReturnType& ret, const ArgTypes&... args) {
-            std::invoke(cb, ret, args...);
-        };
-        return RegisterHandlerImpl(std::move(wrapped_handler));
+        if constexpr (is_lvalue)
+        {
+            // Lvalue callable: capture by reference so mutations to the original are visible to the caller.
+            auto ref_wrapper = std::ref(callback);
+            auto wrapped_handler = [ref_wrapper](
+                                       QualityType /*quality_type*/, ReturnType& ret, const ArgTypes&... args) mutable {
+                std::invoke(ref_wrapper.get(), ret, args...);
+            };
+            return RegisterHandlerImpl(std::move(wrapped_handler));
+        }
+        else
+        {
+            // Wrap the callable to accept, then call it with the typed_return_ptr and
+            // the typed_in_arg_ptrs which are unpacked from the tuple into individual arguments.
+            auto wrapped_handler = [cb = std::forward<Callable>(callback)](
+                                       QualityType /*quality_type*/, ReturnType& ret, const ArgTypes&... args) mutable {
+                std::invoke(cb, ret, args...);
+            };
+            return RegisterHandlerImpl(std::move(wrapped_handler));
+        }
     }
     else
     {
-        // Wrap the callable to accept, then call it with the typed_in_arg_ptrs
-        // which are unpacked from the tuple into individual arguments.
-        auto wrapped_handler = [cb = std::forward<Callable>(callback)](QualityType /*quality_type*/,
-                                                                       const ArgTypes&... args) {
-            std::invoke(cb, args...);
-        };
-        return RegisterHandlerImpl(std::move(wrapped_handler));
+        if constexpr (is_lvalue)
+        {
+            // Lvalue callable: capture by reference so mutations to the original are visible to the caller.
+            auto ref_wrapper = std::ref(callback);
+            auto wrapped_handler = [ref_wrapper](QualityType /*quality_type*/, const ArgTypes&... args) mutable {
+                std::invoke(ref_wrapper.get(), args...);
+            };
+            return RegisterHandlerImpl(std::move(wrapped_handler));
+        }
+        else
+        {
+            // Wrap the callable to accept, then call it with the typed_in_arg_ptrs
+            // which are unpacked from the tuple into individual arguments.
+            auto wrapped_handler = [cb = std::forward<Callable>(callback)](QualityType /*quality_type*/,
+                                                                           const ArgTypes&... args) mutable {
+                std::invoke(cb, args...);
+            };
+            return RegisterHandlerImpl(std::move(wrapped_handler));
+        }
     }
 }
 
@@ -182,6 +209,12 @@ template <typename ReturnType, typename... ArgTypes>
 template <typename Callable>
 Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandlerImpl(Callable&& callback)
 {
+    // If no binding was provided (e.g. in tests with incomplete mock setup), skip registration silently.
+    if (binding_ == nullptr)
+    {
+        return Result<void>{};
+    }
+
     // Since callback can be an lvalue reference or an rvalue reference, we ideally would store it as a universal
     // reference in the type_erased_handler. However, in C++17, this is not supported. Instead, we create a callable
     // here which will be called below by another lambda which explicitly stores the callback as either an lvalue
@@ -209,7 +242,7 @@ Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandlerImpl(Callab
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
                 type_erased_return.has_value(),
                 "ReturnType is non void. Thus, type_erased_result needs to have a value!");
-            const auto typed_return_ptr_tuple = Deserialize<ReturnType>(type_erased_return.value());
+            const auto typed_return_ptr_tuple = DeserializeArgs<ReturnType>(type_erased_return.value());
             auto* const typed_return_ptr = std::get<0>(typed_return_ptr_tuple);
 
             // Call the callable with quality_type, typed_return_ptr and the typed_in_arg_ptrs which are
