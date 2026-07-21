@@ -18,6 +18,7 @@
 #include "score/mw/com/test/partial_restart/test_datatype.h"
 
 #include "score/mw/com/runtime.h"
+#include "score/scope_exit/scope_exit.h"
 
 #include <iostream>
 
@@ -36,6 +37,10 @@ void DoProviderActions(CheckPointControl& check_point_control,
                        int argc,
                        const char** argv) noexcept
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     if (argc > 0 && argv != nullptr)
     {
         std::cerr
@@ -84,7 +89,6 @@ void DoProviderActions(CheckPointControl& check_point_control,
     {
         std::cerr << "Provider Step (P.3): Expected to get notification to continue to next checkpoint but got: "
                   << static_cast<int>(wait_for_child_proceed_result) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
     // ********************************************************************************
@@ -109,9 +113,9 @@ void DoProviderActions(CheckPointControl& check_point_control,
     {
         std::cerr << "Provider Step (P.6): Expected to get notification to finish but got: "
                   << static_cast<int>(wait_for_child_proceed_result) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
+    check_point_control_error_guard.Release();
     std::cerr << "Provider: Finishing Actions!" << std::endl;
 }
 

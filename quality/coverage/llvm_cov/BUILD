@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_python//python:defs.bzl", "py_binary")
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("//quality/coverage/llvm_cov:reporter_wrapper.bzl", "reporter_wrapper")
 
 py_binary(
     name = "merger",
@@ -21,9 +21,9 @@ py_binary(
 
 py_binary(
     name = "reporter",
+    testonly = True,
     srcs = ["reporter.py"],
     data = [
-        "filter_regexes.txt",
         "//:MODULE.bazel",
         "@llvm_toolchain//:llvm-cov",
         "@llvm_toolchain//:llvm-profdata",
@@ -31,34 +31,10 @@ py_binary(
     deps = ["@rules_python//python/runfiles"],
 )
 
-genrule(
-    name = "reporter_wrapper_gen",
-    srcs = [
-        "filter_regexes.txt",
-        "//:MODULE.bazel",
-    ],
-    outs = ["reporter_wrapper.sh"],
-    cmd = """
-cat > $@ << EOF
-#!/usr/bin/env bash
-set -euo pipefail
-if [[ -z "\\$${RUNFILES_DIR:-}" ]]; then
-  if [[ -d "\\$$0.runfiles" ]]; then
-    export RUNFILES_DIR="\\$$0.runfiles"
-  fi
-fi
-WORKSPACE_ROOT="\\$$(cd "\\$$(dirname "\\$$(readlink -f "\\$${RUNFILES_DIR}/$(rlocationpath //:MODULE.bazel)")")" && pwd)/"
-exec "\\$${RUNFILES_DIR}/_main/quality/coverage/llvm_cov/reporter" \\\\
-  --filter_regexes="$(rlocationpath filter_regexes.txt)" \\\\
-  --workspace_root="\\$${WORKSPACE_ROOT}" \\\\
-  "\\$$@"
-EOF
-chmod +x $@
-""",
-)
-
-sh_binary(
+reporter_wrapper(
     name = "reporter_wrapper",
-    srcs = [":reporter_wrapper_gen"],
-    data = [":reporter"],
+    testonly = True,
+    coverage_scope = "//quality/coverage:coverage_scope",
+    module_bazel = "//:MODULE.bazel",
+    reporter = ":reporter",
 )

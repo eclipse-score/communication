@@ -162,7 +162,7 @@ class TransactionLogSet
 
     /// \brief Sentinel index value used to identify the skeleton_tracing_transaction_log_
     ///
-    /// This value will be returned by RegisterSkeletonTracingElement() and when passed to GetTransactionLog(), the
+    /// This value will be returned by RegisterSkeletonTransactionLog() and when passed to GetTransactionLog(), the
     /// skeleton_tracing_transaction_log_ will be returned. We do this rather than having an additional
     /// GetTransactionLog overload for returned skeleton_tracing_transaction_log_ so that calling code can be agnostic
     /// to whether they're dealing with a proxy or skeleton transaction log.
@@ -231,15 +231,16 @@ class TransactionLogSet
     ///        which registered a TransactionLog. A cached TransactionLogLocalView will be injected into this
     ///        ConsumerEventDataControlLocalView which it uses for recording reference transactions. This is a
     ///        ConsumerEventDataControlLocalView even though it's provided by a Skeleton since it is used for
-    ///        referencing slots on the Skeleton side for tracing (so it behaves like a ProxyEvent within the
-    ///        SkeletonEvent).
+    ///        referencing slots on the Skeleton side (so it behaves like a ProxyEvent within the SkeletonEvent).
+    ///        It's used by tracing (to lock a slot which is currently being traced) and for a SkeletonField's getter
+    ///        (to lock a slot while getter reads the latest value).
     /// \return Returns TransactionLogRegistrationGuard which holds a special sentinel index value which will return the
-    ///         registered skeleton tracing transaction log when passing the sentinel value to GetTransactionLog.
+    ///         registered skeleton transaction log when passing the sentinel value to GetTransactionLog.
     ///         The guard will call TransactionLogSet::Unregister() and destroy the cached TransactionLogLocalView on
     ///         destruction.
     ///
-    /// Will terminate if a skeleton tracing transaction log was already registered.
-    TransactionLogRegistrationGuard RegisterSkeletonTracingElement(
+    /// Will terminate if a skeleton transaction log was already registered.
+    TransactionLogRegistrationGuard RegisterSkeletonTransactionLog(
         ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view);
 
     /// \brief Returns a reference to a TransactionLog corresponding to the provided index.
@@ -257,7 +258,7 @@ class TransactionLogSet
     ///
     /// Must not be called concurrently with GetTransactionLog() with the same transaction_log_index. This function is
     /// private and can only be called by the TransactionLogRegistrationGuard, which is returned by RegisterProxyElement
-    /// and RegisterSkeletonTracingElement.
+    /// and RegisterSkeletonTransactionLog.
     void Unregister(const TransactionLogIndex transaction_log_index);
 
     /// \brief Returns iterators to all TransactionLogNodes for the given target_transaction_log_id, which needs roll

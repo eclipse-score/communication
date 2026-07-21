@@ -35,7 +35,11 @@ nightly run of the `Nightly Quality Jobs`_ workflow.
      - |clang_tidy_report_link|
    * - CodeQL
      - MISRA C++ compliance findings via CodeQL (codeql/misra-cpp-coding-standards)
-     - |codeql_report_link|
+     - | |codeql_report_link|
+       | |codeql_integrity_report_link|
+       | |codeql_deviations_report_link|
+       | |codeql_compliance_report_link|
+       | |codeql_recat_report_link|
 
 |quality_dashboard_link|
 

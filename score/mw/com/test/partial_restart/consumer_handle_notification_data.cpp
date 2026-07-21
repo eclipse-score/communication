@@ -13,6 +13,8 @@
 
 #include "score/mw/com/test/partial_restart/consumer_handle_notification_data.h"
 
+#include "score/scope_exit/scope_exit.h"
+
 #include <chrono>
 #include <iostream>
 #include <mutex>
@@ -44,11 +46,14 @@ void HandleReceivedNotification(const ServiceHandleContainer<TestServiceProxy::H
                                 HandleNotificationData& handle_notification_data,
                                 CheckPointControl& check_point_control)
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     std::cout << "Consumer: find service handler called" << std::endl;
     if (service_handle_container.size() > 1)
     {
         std::cerr << "Consumer: Error - StartFindService() did find more than 1 service instance!" << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
     else if (service_handle_container.size() == 1)
@@ -72,6 +77,7 @@ void HandleReceivedNotification(const ServiceHandleContainer<TestServiceProxy::H
             handle_notification_data.condition_variable.notify_one();
         }
     }
+    check_point_control_error_guard.Release();
 }
 
 }  // namespace score::mw::com::test

@@ -29,4 +29,8 @@ integration_test(
         "test_bidirectional_transport_reconnect.py",
     ],
     filesystem = "//score/mw/com/gateway/transport_layer/sample/test:application-pkg",
+    # Flaky: In rare cases the reconnect seems to happen too early so that App1 does not detect it and times out waiting,
+    # while App2 finishes successfully. Test will be replaced with complete integration test (not just covering
+    # socket side channel communication) in the near future.
+    flaky = True,
 )

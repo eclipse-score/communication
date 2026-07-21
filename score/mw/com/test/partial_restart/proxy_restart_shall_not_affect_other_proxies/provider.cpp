@@ -17,6 +17,7 @@
 #include "score/mw/com/test/common_test_resources/provider_resources.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/test/partial_restart/test_datatype.h"
+#include "score/scope_exit/scope_exit.h"
 
 namespace score::mw::com::test
 {
@@ -33,6 +34,10 @@ void PerformProviderActions(CheckPointControl& check_point_control,
                             std::string_view mw_com_config_path,
                             score::cpp::stop_token stop_token)
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     std::cout << "Provider: Starting actions! mw_com_config_path: " << mw_com_config_path << std::endl;
     // Initialize mw::com runtime with our explicit configuration
     const char* argv[2U] = {"--service_instance_manifest", mw_com_config_path.data()};
@@ -64,7 +69,6 @@ void PerformProviderActions(CheckPointControl& check_point_control,
         if (!result.has_value())
         {
             std::cout << "Provider Step(2): Sending of event failed: " << result.error() << "\n";
-            check_point_control.ErrorOccurred();
             return;
         }
         std::this_thread::sleep_for(kDelayBetweenSendEvents);
@@ -78,10 +82,10 @@ void PerformProviderActions(CheckPointControl& check_point_control,
         {
             std::cerr << "Provider Step (2): Unexpected proceed instruction received: "
                       << static_cast<int>(proceed_instruction) << std::endl;
-            check_point_control.ErrorOccurred();
             return;
         }
     }
+    check_point_control_error_guard.Release();
     std::cout << "Provider: Finishing actions!" << std::endl;
 }
 

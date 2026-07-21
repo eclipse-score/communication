@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 namespace score::mw::com::impl::lola
@@ -28,7 +29,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_{size_info},
       event_data_storage_{nullptr},
-      skeleton_event_common_{parent, event_name, event_properties, element_fq_id, tracing_data}
+      skeleton_event_common_{parent, event_name, event_properties, element_fq_id, tracing_data, false}
 {
 }
 
@@ -53,7 +54,8 @@ Result<void> GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr
     return skeleton_event_common_.Send(sample);
 }
 
-Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
+Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate(
+    SampleAllocateeGuard guard) noexcept
 {
     auto allocated_slot_result = skeleton_event_common_.AllocateSlot();
     if (!allocated_slot_result.has_value())
@@ -68,11 +70,16 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
     std::size_t offset = static_cast<std::size_t>(slot_index) * aligned_size;
     void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(event_data_storage_, offset));
 
-    auto lola_ptr = lola::SampleAllocateePtr<void>(data_ptr,
-                                                   skeleton_event_common_.GetEventDataControlComposite(),
-                                                   skeleton_event_common_.GetConsumerEventDataControlLocalView(),
-                                                   slot_index);
-    return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
+    // The ConsumerEventDataControlLocalView stored inside SampleAllocateePtr is only used by the send-tracing path.
+    //  Tracing is a diagnostic/monitoring feature with no safety requirement, so QM is sufficient.
+    //  GetConsumerEventDataControlLocalView(kASIL_B) is a separate code path introduced specifically for
+    //  GetLatestSample().
+    auto lola_ptr = lola::SampleAllocateePtr<void>(
+        data_ptr,
+        skeleton_event_common_.GetEventDataControlComposite(),
+        skeleton_event_common_.GetConsumerEventDataControlLocalView(QualityType::kASIL_QM),
+        slot_index);
+    return impl::MakeSampleAllocateePtr(std::move(lola_ptr), std::move(guard));
 }
 
 Result<void> GenericSkeletonEvent::Notify() noexcept

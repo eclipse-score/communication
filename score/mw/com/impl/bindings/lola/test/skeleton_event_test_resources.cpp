@@ -37,11 +37,13 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
                                                    const std::size_t max_samples,
                                                    const std::uint8_t max_subscribers,
                                                    const bool enforce_max_samples,
-                                                   impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data)
+                                                   impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
+                                                   const bool field_getter_enabled,
+                                                   std::optional<InstanceIdentifier> instance_identifier)
 {
     // We defer initialisation of the Skeleton to InitialiseSkeletonEvent to allow test fixtures to set any mocked
     // expectations before creating the skeleton.
-    InitialiseSkeleton(GetValidInstanceIdentifier());
+    InitialiseSkeleton(instance_identifier.has_value() ? *instance_identifier : GetValidInstanceIdentifier());
 
     SkeletonBinding::SkeletonEventBindings events{};
     SkeletonBinding::SkeletonFieldBindings fields{};
@@ -53,7 +55,8 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
         element_fq_id,
         service_element_name,
         SkeletonEventProperties{max_samples, max_subscribers, enforce_max_samples},
-        skeleton_event_tracing_data);
+        skeleton_event_tracing_data,
+        field_getter_enabled);
 }
 
 EventControl* SkeletonEventFixture::GetEventControl(const ElementFqId element_fq_id,

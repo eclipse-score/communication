@@ -438,6 +438,7 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
                 promise.set_value(message.size() == static_cast<std::size_t>(notify_message.size()));
             };
             auto send_expected = client_->Send(message);
+            ASSERT_TRUE(send_expected.has_value());
             auto future = promise.get_future();
             ASSERT_EQ(future.wait_for(kFutureWaitTimeout), std::future_status::ready);
             EXPECT_TRUE(future.get());
@@ -451,6 +452,7 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
             promise.set_value(0 == static_cast<std::size_t>(notify_message.size()));
         };
         auto send_expected = client_->Send({});
+        ASSERT_TRUE(send_expected.has_value());
         auto future = promise.get_future();
         ASSERT_EQ(future.wait_for(kFutureWaitTimeout), std::future_status::ready);
         EXPECT_TRUE(future.get());
@@ -610,8 +612,7 @@ TEST_P(ServerToClientQnxFixture, EchoServerClientRestart)
     WaitClientStoppedExpectStatusStopped();
 }
 
-// "same engine" does not work for in-process client-server communications (_RESMGR_FLAG_SELF) on a single shared thread
-INSTANTIATE_TEST_SUITE_P(QnxDispatch, ServerToClientQnxFixture, testing::Values(false /*, true*/));
+INSTANTIATE_TEST_SUITE_P(QnxDispatch, ServerToClientQnxFixture, testing::Values(false, true));
 
 }  // namespace
 }  // namespace message_passing

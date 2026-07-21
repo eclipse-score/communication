@@ -63,7 +63,12 @@ class EventDataControlComposite
     explicit EventDataControlComposite(
         ProviderEventDataControlLocalView<AtomicIndirectorType>& asil_qm_control_local,
         ProviderEventDataControlLocalView<AtomicIndirectorType>* const asil_b_control_local);
-
+    /// \brief SampleAllocateePtr stores a raw pointer to this object, so any copy or move would silently invalidate
+    /// that pointer, causing undefined behaviour.
+    EventDataControlComposite(const EventDataControlComposite&) = delete;
+    EventDataControlComposite& operator=(const EventDataControlComposite&) = delete;
+    EventDataControlComposite(EventDataControlComposite&&) = delete;
+    EventDataControlComposite& operator=(EventDataControlComposite&&) = delete;
     /// \brief Checks for the oldest unused slot and acquires for writing (thread-safe, wait-free)
     ///
     /// \details This method will perform retries (bounded) on data-races. In order to ensure that _always_

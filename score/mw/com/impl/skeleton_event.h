@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_base.h"
@@ -195,7 +196,8 @@ Result<void> SkeletonEvent<SampleDataType>::Send(const EventType& sample_value) 
     }
     auto tracing_handler = impl::tracing::CreateTracingSendCallback<SampleDataType>(tracing_data_, *binding_);
 
-    const auto send_result = GetTypedEventBinding()->Send(sample_value, std::move(tracing_handler));
+    const auto send_result =
+        GetTypedEventBinding()->Send(sample_value, std::move(tracing_handler), sample_allocatee_tracker_->Allocate());
     if (!send_result.has_value())
     {
         score::mw::log::LogError("lola") << "SkeletonEvent::Send with copy failed: " << send_result.error().Message()
@@ -248,7 +250,7 @@ Result<SampleAllocateePtr<SampleDataType>> SkeletonEvent<SampleDataType>::Alloca
         return MakeUnexpected(ComErrc::kNotOffered);
     }
 
-    auto allocate_result = GetTypedEventBinding()->Allocate();
+    auto allocate_result = GetTypedEventBinding()->Allocate(sample_allocatee_tracker_->Allocate());
     if (!allocate_result.has_value())
     {
         score::mw::log::LogError("lola") << "SkeletonEvent::Allocate failed: " << allocate_result.error().Message()
@@ -276,6 +278,11 @@ class SkeletonEventView
     SkeletonEventBinding<SampleType>* GetBinding() const noexcept
     {
         return skeleton_event_.GetTypedEventBinding();
+    }
+
+    Result<SamplePtr<SampleType>> GetLatestSample(const QualityType& quality_type)
+    {
+        return GetBinding()->GetLatestSample(quality_type);
     }
 
   private:

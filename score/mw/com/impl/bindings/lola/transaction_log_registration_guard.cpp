@@ -58,7 +58,7 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
       ///   destroyed.
       ///
       /// Skeleton side:
-      ///   This function is called when tracing is enabled by TransactionLogSet::RegisterSkeletonTracingElement which
+      ///   This function is called when tracing is enabled by TransactionLogSet::RegisterSkeletonTransactionLog which
       ///   is called during SkeletonEventCommon::PrepareOfferCommon and destroyed in
       ///   SkeletonEventCommon::PrepareStopOfferCommon.
       ///

@@ -27,6 +27,7 @@ py_binary(
     main = "codeql_lint.py",
     tags = ["local"],
     target_compatible_with = ["@platforms//os:linux"],
+    deps = ["@rules_python//python/runfiles"],
 )
 
 filegroup(

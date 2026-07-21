@@ -27,7 +27,7 @@
 #   https://eclipse-score.github.io/communication/latest/quality/index.html               ← dashboard
 #   https://eclipse-score.github.io/communication/latest/quality/coverage/index.html      ← lcov HTML
 #   https://eclipse-score.github.io/communication/latest/quality/clang_tidy_findings.txt  ← raw findings
-#   https://eclipse-score.github.io/communication/latest/quality/codeql/index.html       ← CodeQL report
+#   https://eclipse-score.github.io/communication/latest/quality/codeql/index.html       ← CodeQL reports
 
 name: Nightly Quality Jobs
 
@@ -164,9 +164,24 @@ jobs:
           if [[ -f /tmp/codeql/codeql-nightly.csv ]]; then
             cp /tmp/codeql/codeql-nightly.csv \
                "${GITHUB_WORKSPACE}/_quality/codeql_findings.txt"
-          else
-            echo "::warning::codeql-nightly.csv not found; skipping copy."
           fi
+
+      # ------------------------------------------------------------------
+      # Download CodeQL MISRA compliance reports artifact
+      # ------------------------------------------------------------------
+      - name: Download CodeQL MISRA reports artifact
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: codeql-misra-reports
+          path: /tmp/codeql_reports
+
+      - name: Copy CodeQL MISRA reports into quality output
+        if: always()
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/_quality/codeql"
+          find /tmp/codeql_reports -name '*.md' -type f -exec cp {} "${GITHUB_WORKSPACE}/_quality/codeql/" \;
 
       # ------------------------------------------------------------------
       # Generate coverage KPI dashboard via generate_dashboard py_binary
@@ -182,9 +197,6 @@ jobs:
             --codeql-csv "${GITHUB_WORKSPACE}/_quality/codeql_findings.txt" \
             --html     "${GITHUB_WORKSPACE}/_quality/index.html" \
             --github-summary
-
-          echo "Dashboard generated. Contents of _quality/:"
-          find "${GITHUB_WORKSPACE}/_quality" -type f | sort
 
       # ------------------------------------------------------------------
       # Upload all quality reports as a single artifact for docs.yml to

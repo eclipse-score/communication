@@ -16,7 +16,6 @@
 # ============================================================================
 coverage --nocache_test_results
 coverage --cxxopt=-O0
-coverage --instrumentation_filter="^//score/message_passing[/:],^//score/mw/com/(impl|gateway|dependability|design|example|mocking|doc)"
 coverage --combined_report=lcov
 coverage --experimental_fetch_all_coverage_outputs
 
@@ -34,11 +33,10 @@ coverage --dynamic_mode=off
 # Uses LLVM's source-based coverage instrumentation (--experimental_use_llvm_covmap)
 # with custom merger/reporter that produce HTML reports via llvm-cov directly.
 #
-# NOTE: --experimental_use_llvm_covmap causes Bazel to instrument ALL targets
-# regardless of --instrumentation_filter. The actual source filtering happens
-# in the merger/reporter via --ignore-filename-regex. The instrumentation_filter
-# is kept for documentation purposes and in case this Bazel limitation is fixed
-# in the future.
+# NOTE: --experimental_use_llvm_covmap causes Bazel to instrument ALL targets.
+# Source filtering is handled at report time by the reporter using the coverage
+# allowlist generated from dependable_element declarations (coverage_scope rule).
+# See quality/coverage/coverage_scope.bzl for details.
 
 coverage --experimental_generate_llvm_lcov
 coverage --experimental_use_llvm_covmap

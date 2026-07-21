@@ -34,7 +34,9 @@ import re
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+
+PROC_SELF_CWD_PREFIX = "/proc/self/cwd/"
 
 
 def parse_lcov(lcov_path: Path) -> List[Dict[str, Any]]:
@@ -123,6 +125,187 @@ def parse_lcov(lcov_path: Path) -> List[Dict[str, Any]]:
     return files
 
 
+def _load_allowlist(path: Path) -> Set[str]:
+    """Load workspace-relative file paths from an allowlist file."""
+    if not path.exists():
+        print(f"WARNING: Allowlist file not found: {path}", file=sys.stderr)
+        return set()
+
+    entries = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            entries.add(line)
+    return entries
+
+
+def _normalize_entry_path(filename: str, source_root: str) -> str:
+    """Normalize LCOV paths to workspace-relative paths for comparison/output."""
+    normalized_source_root = source_root.rstrip("/")
+    if normalized_source_root and filename.startswith(normalized_source_root + "/"):
+        return filename[len(normalized_source_root) + 1:]
+    if filename.startswith(PROC_SELF_CWD_PREFIX):
+        return filename[len(PROC_SELF_CWD_PREFIX):]
+    if filename.startswith("./"):
+        return filename[2:]
+    return filename
+
+
+def _normalize_file_entries(
+    file_entries: Sequence[Dict[str, Any]],
+    source_root: str,
+) -> List[Dict[str, Any]]:
+    """Normalize all file paths in LCOV entries."""
+    normalized: List[Dict[str, Any]] = []
+    for entry in file_entries:
+        updated = dict(entry)
+        updated["file"] = _normalize_entry_path(entry["file"], source_root)
+        normalized.append(updated)
+    return normalized
+
+
+def _filter_file_entries_by_allowlist(
+    file_entries: Sequence[Dict[str, Any]],
+    allowlist: Set[str],
+    source_root: str,
+) -> List[Dict[str, Any]]:
+    """Keep LCOV entries in allowlist; return all entries unchanged when allowlist is empty."""
+    if not allowlist:
+        return list(file_entries)
+
+    filtered: List[Dict[str, Any]] = []
+    for entry in file_entries:
+        normalized = _normalize_entry_path(entry["file"], source_root)
+        if normalized in allowlist:
+            updated = dict(entry)
+            updated["file"] = normalized
+            filtered.append(updated)
+    return filtered
+
+
+def _merge_file_entries(
+    primary_entries: Sequence[Dict[str, Any]],
+    baseline_entries: Sequence[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Merge primary LCOV entries with baseline entries.
+
+    Primary entries keep precedence for execution counts; baseline contributes
+    missing files/lines with zero-hit data.
+    """
+    merged_by_file: Dict[str, Dict[str, Any]] = {}
+    order: List[str] = []
+
+    for entry in list(primary_entries) + list(baseline_entries):
+        filename = entry["file"]
+        if filename not in merged_by_file:
+            merged_by_file[filename] = {
+                "file": filename,
+                "lines": [],
+                "functions": [],
+            }
+            order.append(filename)
+        _merge_single_file_entry(merged_by_file[filename], entry)
+
+    return [merged_by_file[filename] for filename in order]
+
+
+def _merge_single_file_entry(target: Dict[str, Any], incoming: Dict[str, Any]) -> None:
+    """Merge one file entry into another in-place."""
+    target["lines"] = _merge_line_entries(
+        target.get("lines", []),
+        incoming.get("lines", []),
+    )
+    target["functions"] = _merge_function_entries(
+        target.get("functions", []),
+        incoming.get("functions", []),
+    )
+
+
+def _clone_line_entry(line_entry: Dict[str, Any]) -> Dict[str, Any]:
+    """Copy line entries with branch data to avoid mutating shared dictionaries."""
+    cloned = dict(line_entry)
+    cloned["branches"] = [dict(branch) for branch in line_entry.get("branches", [])]
+    return cloned
+
+
+def _merge_line_entries(
+    existing_lines: Sequence[Dict[str, Any]],
+    incoming_lines: Sequence[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Merge line coverage and branch data for a single source file.
+
+    We keep the maximum execution count per line/branch identity instead of summing:
+    the same line can appear in multiple LCOV inputs for identical instrumentation,
+    and summing those overlapping records inflates execution counts.
+    """
+    merged_lines = {
+        line["line_number"]: _clone_line_entry(line) for line in existing_lines
+    }
+    for incoming_line in incoming_lines:
+        line_number = incoming_line["line_number"]
+        incoming_copy = _clone_line_entry(incoming_line)
+
+        if line_number not in merged_lines:
+            merged_lines[line_number] = incoming_copy
+            continue
+
+        existing = merged_lines[line_number]
+        existing["count"] = max(existing.get("count", 0), incoming_copy.get("count", 0))
+        existing["branches"] = _merge_branch_entries(
+            existing.get("branches", []),
+            incoming_copy.get("branches", []),
+        )
+
+    return sorted(merged_lines.values(), key=lambda line: line["line_number"])
+
+
+def _merge_function_entries(
+    existing_functions: Sequence[Dict[str, Any]],
+    incoming_functions: Sequence[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Merge function coverage for a single source file."""
+    merged_functions = {func["name"]: dict(func) for func in existing_functions}
+    for incoming_func in incoming_functions:
+        name = incoming_func["name"]
+        incoming_lineno = incoming_func.get("lineno", 0)
+        incoming_execution_count = incoming_func.get("execution_count", 0)
+
+        if name not in merged_functions:
+            merged_functions[name] = dict(incoming_func)
+            continue
+
+        existing_func = merged_functions[name]
+        if existing_func.get("lineno", 0) == 0 and incoming_lineno != 0:
+            existing_func["lineno"] = incoming_lineno
+        existing_func["execution_count"] = max(
+            existing_func.get("execution_count", 0),
+            incoming_execution_count,
+        )
+
+    return sorted(merged_functions.values(), key=lambda func: func["name"])
+
+
+def _merge_branch_entries(
+    existing_branches: Sequence[Dict[str, Any]],
+    incoming_branches: Sequence[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Merge branch lists and keep max execution count per branch identity."""
+    merged: Dict[Tuple[Any, Any, Any, Any], Dict[str, Any]] = {}
+    for branch in list(existing_branches) + list(incoming_branches):
+        key = (
+            branch.get("source_block_id"),
+            branch.get("destination_block_id"),
+            branch.get("fallthrough", False),
+            branch.get("throw", False),
+        )
+        branch_copy = dict(branch)
+        if key in merged:
+            merged[key]["count"] = max(merged[key].get("count", 0), branch_copy.get("count", 0))
+        else:
+            merged[key] = branch_copy
+    return list(merged.values())
+
+
 def _build_file_entry(
     filename: str,
     lines: Dict[int, Dict[str, Any]],
@@ -190,16 +373,33 @@ def main() -> None:
 
     # Determine source root for gcovr (--root).
     source_root = args.source_root if args.source_root else os.getcwd()
+    file_entries = _normalize_file_entries(file_entries, source_root)
 
-    # Strip source root from filenames if they're absolute paths.
-    root_prefix = source_root.rstrip("/") + "/"
-    for entry in file_entries:
-        if entry["file"].startswith(root_prefix):
-            entry["file"] = entry["file"][len(root_prefix):]
-        elif entry["file"].startswith("/"):
-            # Absolute path not under source_root — keep as-is, gcovr will
-            # resolve relative to --root.
-            pass
+    if args.baseline_lcov:
+        baseline_lcov_path = Path(args.baseline_lcov)
+        if not baseline_lcov_path.exists():
+            print(f"ERROR: Baseline LCOV file not found: {baseline_lcov_path}", file=sys.stderr)
+            sys.exit(1)
+        baseline_entries = parse_lcov(baseline_lcov_path)
+        if baseline_entries:
+            baseline_entries = _normalize_file_entries(baseline_entries, source_root)
+            file_entries = _merge_file_entries(file_entries, baseline_entries)
+            print(
+                f"Merged baseline LCOV from {baseline_lcov_path} "
+                f"({len(baseline_entries)} file records)"
+            )
+
+    allowlist: Set[str] = set()
+    if args.allowlist:
+        allowlist = _load_allowlist(Path(args.allowlist))
+        if not allowlist:
+            print(f"ERROR: Allowlist is empty: {args.allowlist}", file=sys.stderr)
+            sys.exit(1)
+        before = len(file_entries)
+        file_entries = _filter_file_entries_by_allowlist(file_entries, allowlist, source_root)
+        removed = before - len(file_entries)
+        if removed > 0:
+            print(f"Filtered out {removed} files outside the allowlist ({len(file_entries)} remaining)")
 
     # Apply filename filters (exclude files matching any regex).
     if args.filter_regexes:
@@ -263,6 +463,10 @@ def parse_args() -> argparse.Namespace:
                         help="Source root for resolving relative paths (default: cwd)")
     parser.add_argument("--filter-regexes", default="",
                         help="Path to file with regexes (one per line) to exclude from report")
+    parser.add_argument("--allowlist", default="",
+                        help="Path to workspace-relative file allowlist (one path per line)")
+    parser.add_argument("--baseline-lcov", default="",
+                        help="Path to LCOV baseline tracefile to merge before filtering")
     return parser.parse_args()
 
 

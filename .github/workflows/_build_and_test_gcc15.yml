@@ -50,7 +50,14 @@ jobs:
 
       - name: Run all tests
         if: inputs.fetch-only != 'true'
+        id: run-tests
         run: bazel test //... --build_tests_only
+
+      - name: Upload failed Bazel test logs
+        if: inputs.fetch-only != 'true' && failure() && steps.run-tests.outcome == 'failure'
+        uses: ./.github/actions/00_infrastructure/upload_bazel_testlogs_on_failure
+        with:
+          artifact-name: bazel-testlogs-gcc15
 
       - name: Build module_integration_test
         if: inputs.fetch-only != 'true'
