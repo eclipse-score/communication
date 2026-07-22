@@ -49,17 +49,29 @@ score::Result<InstanceIdentifierContainer> ResolveInstanceIDs(const impl::Instan
 }
 
 // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
-void InitializeRuntime(const std::int32_t argc, score::StringLiteral argv[])
+void InitializeRuntime(const std::int32_t argc, const char* argv[])
 {
     if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock())
     {
-        const score::cpp::span<const score::StringLiteral> argv_span(
-            argv, static_cast<score::cpp::span<const score::StringLiteral>::size_type>(argc));
+        const score::cpp::span<const char*> argv_span(argv,
+                                                      static_cast<score::cpp::span<const char*>::size_type>(argc));
         runtime_mock_holder->InitializeRuntime(argc, argv_span);
         return;
     }
 
     const RuntimeConfiguration runtime_configuration{argc, argv};
+    InitializeRuntime(runtime_configuration);
+}
+
+void InitializeRuntime(const cpp::span<safecpp::zstring_view> command_line_arguments)
+{
+    if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock())
+    {
+        runtime_mock_holder->InitializeRuntime(command_line_arguments);
+        return;
+    }
+
+    const RuntimeConfiguration runtime_configuration{command_line_arguments};
     InitializeRuntime(runtime_configuration);
 }
 

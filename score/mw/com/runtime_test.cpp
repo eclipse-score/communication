@@ -149,7 +149,7 @@ TEST_F(RuntimeTestExternalJsonFixture, ResolveInstanceIdsIsThreadSafe)
 
     // Given a runtime initialised with the path to a configuration file
     auto json_path = get_path("mw_com_config.json");
-    score::StringLiteral test_args[] = {"dummyname", "-service_instance_manifest", json_path.c_str()};
+    const char* test_args[] = {"dummyname", "-service_instance_manifest", json_path.c_str()};
     const std::int32_t num_test_args{3};
     InitializeRuntime(num_test_args, test_args);
 

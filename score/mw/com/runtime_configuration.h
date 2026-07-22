@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_RUNTIME_CONFIGURATION_H
 
 #include "score/filesystem/path.h"
-#include "score/string_manipulation/string_literal.h"
+#include "score/language/safecpp/string_view/zstring_view.h"
 
 #include <score/span.hpp>
 
@@ -39,14 +39,30 @@ class RuntimeConfiguration
 
     /**
      * \api
-     * \brief Constructor which initialiases the stored configuration path from command line arguments.
+     * \brief Constructor which initializes the stored configuration path from command line arguments.
      * \details The constructor parses the command line arguments for a specific key to extract the configuration
      *          path. If the key is not found, a default path is used.
      * \param argc The number of command line arguments.
      * \param argv The array of command line arguments.
+     *
+     * \deprecated Please use RuntimeConfiguration(cpp::span<safecpp::zstring_view> command_line_arguments) for
+     * guaranteed NULL terminated arguments
      */
+    [[deprecated(
+        "Please use RuntimeConfiguration(cpp::span<safecpp::zstring_view> command_line_arguments) for guaranteed "
+        "NULL "
+        "terminated arguments")]]
     // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
-    RuntimeConfiguration(const std::int32_t argc, score::StringLiteral argv[]);
+    RuntimeConfiguration(const std::int32_t argc, const char* argv[]);
+
+    /**
+     * \api
+     * \brief Constructor which initializes the stored configuration path from command line arguments.
+     * \details The constructor parses the command line arguments for a specific key to extract the configuration
+     *          path. If the key is not found, a default path is used.
+     * \param command_line_arguments The command line arguments.
+     */
+    RuntimeConfiguration(cpp::span<safecpp::zstring_view> command_line_arguments);
 
     /**
      * \api
@@ -64,7 +80,7 @@ class RuntimeConfiguration
 
   private:
     static std::optional<filesystem::Path> ParseConfigurationPath(
-        const score::cpp::span<const score::StringLiteral> command_line_args);
+        const score::cpp::span<safecpp::zstring_view> command_line_args);
 
     filesystem::Path configuration_path_;
 };

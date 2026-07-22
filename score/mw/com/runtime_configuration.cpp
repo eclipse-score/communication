@@ -45,10 +45,26 @@ RuntimeConfiguration::RuntimeConfiguration(filesystem::Path configuration_path)
 }
 
 // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
-RuntimeConfiguration::RuntimeConfiguration(const std::int32_t argc, score::StringLiteral argv[]) : configuration_path_{}
+RuntimeConfiguration::RuntimeConfiguration(const std::int32_t argc, const char* argv[]) : configuration_path_{}
 {
-    const score::cpp::span<const score::StringLiteral> command_line_arguments(
-        argv, static_cast<score::cpp::span<const score::StringLiteral>::size_type>(argc));
+    // We convert the const char* arguments into safecpp::zstring_views to ensure that they are null-terminated and safe
+    // to use.
+    // This is a deprecated API for a reason! If the given argv[] is not null-terminated, it can lead to undefined
+    // behavior. But this isn't introduced newly by this conversion!
+    std::vector<safecpp::zstring_view> command_line_arguments{};
+    for (std::int32_t arg_idx = 0U; arg_idx < argc; arg_idx++)
+    {
+        auto argument = std::string_view{argv[arg_idx]};
+        command_line_arguments.push_back(safecpp::zstring_view{argument.data(), argument.size()});
+    }
+
+    auto configuration_path = ParseConfigurationPath(command_line_arguments);
+    configuration_path_ =
+        configuration_path.has_value() ? std::move(configuration_path).value() : kDefaultConfigurationPath;
+}
+
+RuntimeConfiguration::RuntimeConfiguration(cpp::span<safecpp::zstring_view> command_line_arguments)
+{
     auto configuration_path = ParseConfigurationPath(command_line_arguments);
     configuration_path_ =
         configuration_path.has_value() ? std::move(configuration_path).value() : kDefaultConfigurationPath;
@@ -60,7 +76,7 @@ const filesystem::Path& RuntimeConfiguration::GetConfigurationPath() const&
 }
 
 std::optional<filesystem::Path> RuntimeConfiguration::ParseConfigurationPath(
-    const score::cpp::span<const score::StringLiteral> command_line_args)
+    const score::cpp::span<safecpp::zstring_view> command_line_args)
 {
     const auto num_args = command_line_args.size();
 
@@ -68,7 +84,7 @@ std::optional<filesystem::Path> RuntimeConfiguration::ParseConfigurationPath(
     for (std::uint32_t arg_idx = 0U; arg_idx < num_args; arg_idx++)
     {
         const std::string& command_line_argument_key{
-            score::cpp::at(command_line_args, static_cast<std::ptrdiff_t>(arg_idx))};
+            score::cpp::at(command_line_args, static_cast<std::ptrdiff_t>(arg_idx)).data()};
         if (command_line_argument_key == kConfigurationPathCommandLineKey)
         {
             const auto index_of_configuration_path = arg_idx + 1U;
@@ -79,7 +95,7 @@ std::optional<filesystem::Path> RuntimeConfiguration::ParseConfigurationPath(
                     << "\" but no corresponding value. Terminating.";
                 std::terminate();
             }
-            return score::cpp::at(command_line_args, static_cast<std::ptrdiff_t>(index_of_configuration_path));
+            return score::cpp::at(command_line_args, static_cast<std::ptrdiff_t>(index_of_configuration_path)).data();
         }
         if (command_line_argument_key == kDeprecatedConfigurationPathCommandLineKey)
         {
@@ -93,7 +109,7 @@ std::optional<filesystem::Path> RuntimeConfiguration::ParseConfigurationPath(
                     << "\" but no corresponding value. Terminating.";
                 std::terminate();
             }
-            return score::cpp::at(command_line_args, static_cast<std::ptrdiff_t>(index_of_configuration_path));
+            return score::cpp::at(command_line_args, static_cast<std::ptrdiff_t>(index_of_configuration_path)).data();
         }
     }
     return configuration_path;

@@ -11,7 +11,7 @@ class "ComErrorDomain" {
 }
 
 class "<< Stereotype >>\nglobal function" as GlobalFunction {
-  +MakeError(code : ComErrc, message : score::StringLiteral) : score::result::Error
+  +MakeError(code : ComErrc, message : const char*) : score::result::Error
 }
 
 note top of ScoreResultErrorDomain

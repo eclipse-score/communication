@@ -89,10 +89,10 @@ TEST_F(RuntimeMockFixture, InitializeRuntimeDispatchesToMockAfterInjectingMock)
     // Expecting that InitializeRuntime will be called on the mock with the same argc / argv that is passed to
     // InitializeRuntime (where argv has been converted to an score::cpp::span
     constexpr std::int32_t argc{1U};
-    score::StringLiteral argv[] = {"some_argument"};
+    const char* argv[] = {"some_argument"};
     EXPECT_CALL(runtime_mock_, InitializeRuntime(argc, _)).WillOnce(Invoke([argv](auto, auto argv_span) {
-        const score::cpp::span<const score::StringLiteral> expected_argv_span(
-            argv, static_cast<score::cpp::span<const score::StringLiteral>::size_type>(argc));
+        const score::cpp::span<const char*> expected_argv_span(
+            const_cast<const char**>(argv), static_cast<score::cpp::span<const char*>::size_type>(argc));
         ASSERT_EQ(argv_span.size(), expected_argv_span.size());
         for (std::size_t i = 0; i < argv_span.size(); ++i)
         {
@@ -110,9 +110,10 @@ TEST_F(RuntimeMockFixture, InitializeRuntimeWithRuntimeConfigurationDispatchesTo
 
     // Expecting that InitializeRuntime will be called on the mock
     RuntimeConfiguration runtime_configuration{kDummyConfigurationPath};
-    EXPECT_CALL(runtime_mock_, InitializeRuntime(_)).WillOnce(Invoke([](auto& runtime_configuration) {
-        EXPECT_EQ(runtime_configuration.GetConfigurationPath(), kDummyConfigurationPath);
-    }));
+    EXPECT_CALL(runtime_mock_, InitializeRuntime(An<const RuntimeConfiguration&>()))
+        .WillOnce(Invoke([](auto& runtime_configuration) {
+            EXPECT_EQ(runtime_configuration.GetConfigurationPath(), kDummyConfigurationPath);
+        }));
 
     // When calling InitializeRuntime
     InitializeRuntime(runtime_configuration);

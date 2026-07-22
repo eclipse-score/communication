@@ -44,10 +44,15 @@ constexpr auto kDefaultConfigurationPath = "./etc/mw_com_config.json";
 constexpr auto kDummyConfigurationPath = "/my/configuration/path/mw_com_config.json";
 constexpr auto kDummyApplicationName = "dummyname";
 
-std::pair<std::int32_t, score::StringLiteral*> GenerateCommandLineArgs(std::vector<score::StringLiteral>& arguments)
+using safecpp::literals::operator""_zsv;
+constexpr auto kDummyApplicationNameZsv = "dummyname"_zsv;
+constexpr auto kConfigurationPathCommandLineKeyZsv = "--service_instance_manifest"_zsv;
+constexpr auto kDummyConfigurationPathZsv = "/my/configuration/path/mw_com_config.json"_zsv;
+
+std::pair<std::int32_t, const char**> GenerateCommandLineArgs(std::vector<const char*>& arguments)
 {
     constexpr auto kMaxArguments =
-        static_cast<std::vector<score::StringLiteral>::size_type>(std::numeric_limits<std::int32_t>::max());
+        static_cast<std::vector<const char*>::size_type>(std::numeric_limits<std::int32_t>::max());
     SCORE_LANGUAGE_FUTURECPP_ASSERT(arguments.size() < kMaxArguments);
     const auto number_of_args = static_cast<std::int32_t>(arguments.size());
     return std::make_pair(number_of_args, arguments.data());
@@ -76,7 +81,7 @@ TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsDe
 TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsPathInCommandLineArgs)
 {
     // Given command line arguments which contain a configuration path key and configuration path
-    std::vector<score::StringLiteral> arguments = {
+    std::vector<const char*> arguments = {
         kDummyApplicationName, kConfigurationPathCommandLineKey, kDummyConfigurationPath};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
@@ -88,10 +93,24 @@ TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsPa
     EXPECT_EQ(stored_configuration_path.Native(), kDummyConfigurationPath);
 }
 
+TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationZstringPathContainsPathInCommandLineArgs)
+{
+    // Given command line arguments which contain a configuration path key and configuration path
+    std::vector<safecpp::zstring_view> arguments = {
+        kDummyApplicationNameZsv, kConfigurationPathCommandLineKeyZsv, kDummyConfigurationPathZsv};
+
+    // When constructing a RuntimeConfiguration
+    const RuntimeConfiguration runtime_configuration{arguments};
+
+    // Then the stored configuration path should be the same as the path provided in the command line arguments
+    const auto& stored_configuration_path = runtime_configuration.GetConfigurationPath();
+    EXPECT_EQ(stored_configuration_path.Native(), kDummyConfigurationPath);
+}
+
 TEST(RuntimeConfigurationCommandLineConstructorTest, DeprecatedConfigurationCommandLineArg)
 {
     // Given command line arguments which contain the deprecated argument
-    std::vector<score::StringLiteral> arguments = {
+    std::vector<const char*> arguments = {
         kDummyApplicationName, kDeprecatedConfigurationPathCommandLineKey, kDummyConfigurationPath};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
@@ -123,7 +142,7 @@ TEST(RuntimeConfigurationCommandLineConstructorTest, DeprecatedConfigurationComm
 TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsDefaultPathIfNoPathKeyInCommandLineArgs)
 {
     // Given command line arguments which do not contain a configuration path key
-    std::vector<score::StringLiteral> arguments = {kDummyApplicationName, kDummyConfigurationPath};
+    std::vector<const char*> arguments = {kDummyApplicationName, kDummyConfigurationPath};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
     // When constructing a RuntimeConfiguration
@@ -137,7 +156,7 @@ TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsDe
 TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsDefaultPathIfNoPathOrKeyInCommandLineArgs)
 {
     // Given command line arguments which do not contain a configuration path key or configuration path
-    std::vector<score::StringLiteral> arguments = {kDummyApplicationName};
+    std::vector<const char*> arguments = {kDummyApplicationName};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
     // When constructing a RuntimeConfiguration
@@ -151,7 +170,7 @@ TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsDe
 TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsDefaultPathIfCommandLineArgumentsEmpty)
 {
     // Given command line arguments which are empty
-    std::vector<score::StringLiteral> arguments = {};
+    std::vector<const char*> arguments = {};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
     // When constructing a RuntimeConfiguration
@@ -165,7 +184,7 @@ TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsDe
 TEST(RuntimeConfigurationCommandLineConstructorDeathTest, TerminatesIfCommandLineArgsContainPathKeyButNoPath)
 {
     // Given command line arguments which contain a configuration path key but no configuration path
-    std::vector<score::StringLiteral> arguments = {kDummyApplicationName, kConfigurationPathCommandLineKey};
+    std::vector<const char*> arguments = {kDummyApplicationName, kConfigurationPathCommandLineKey};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
     // When constructing a RuntimeConfiguration
@@ -176,7 +195,7 @@ TEST(RuntimeConfigurationCommandLineConstructorDeathTest, TerminatesIfCommandLin
 TEST(RuntimeConfigurationCommandLineConstructorDeathTest, TerminatesIfCommandLineArgsContainDeprecatedPathKeyButNoPath)
 {
     // Given command line arguments which contain a configuration path key but no configuration path
-    std::vector<score::StringLiteral> arguments = {kDummyApplicationName, kDeprecatedConfigurationPathCommandLineKey};
+    std::vector<const char*> arguments = {kDummyApplicationName, kDeprecatedConfigurationPathCommandLineKey};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
     // When constructing a RuntimeConfiguration
