@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_EXAMPLES_HEAP_CHECK_HEAP_CHECK_H
 #define SCORE_MW_COM_EXAMPLES_HEAP_CHECK_HEAP_CHECK_H
 
-// Include this file in exactly ONE translation unit per binary (main.cpp only).
+// Include this file in exactly ONE translation unit per binary (the translation unit that defines main()).
 //
 // Overrides ALL replaceable global allocation functions (throwing, nothrow, array,
 // and aligned forms) so no standard heap path bypasses the check.

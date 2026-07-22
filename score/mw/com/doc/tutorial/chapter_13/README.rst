@@ -119,7 +119,7 @@ on any allocation after ``forbid_heap()`` has been called on that thread:
 
 .. note::
 
-   Include ``heap_check.h`` in **exactly one translation unit** per binary (the ``main.cpp``).
+   Include ``heap_check.h`` in **exactly one translation unit** per binary (the translation unit that defines main()).
    Including it in multiple translation units would produce duplicate ``operator new``
    definitions, which is an ODR violation.
 
@@ -233,7 +233,7 @@ the **init phase**, the skeleton is created, the field is given an initial value
 
 .. literalinclude:: event_send_receive/provider.cpp
    :language: cpp
-   :lines: 38-62
+   :lines: 39-63
    :caption: event_send_receive/provider.cpp — init phase
 
 Once ``heap_check::forbid_heap()`` is called, the application enters the **operational phase**.
@@ -245,7 +245,7 @@ SHM ring buffer; no ``operator new`` is involved:
 
 .. literalinclude:: event_send_receive/provider.cpp
    :language: cpp
-   :lines: 68-100
+   :lines: 69-101
    :caption: event_send_receive/provider.cpp — operational phase and cleanup
 
 Note the ``heap_check::allow_heap()`` call on each early-return error path inside the
@@ -263,17 +263,17 @@ subscribes to the event. All of these calls allocate and finish before ``forbid_
 
 .. literalinclude:: event_send_receive/consumer.cpp
    :language: cpp
-   :lines: 48-83
+   :lines: 49-84
    :caption: event_send_receive/consumer.cpp — init phase (discovery, create, subscribe)
 
 After ``forbid_heap()``, the operational loop calls
 ``proxy.tire_pressure_update.GetNewSamples()``, which reads directly from the LoLa SHM ring
-buffer. The callback lambda receives a ``SamplePtr<const float>``, a SHM handle that gives
+buffer. The callback lambda receives a ``SamplePtr<float>``, a SHM handle that gives
 zero-copy access to the data the provider placed there:
 
 .. literalinclude:: event_send_receive/consumer.cpp
    :language: cpp
-   :lines: 81-108
+   :lines: 82-109
    :caption: event_send_receive/consumer.cpp — operational phase and cleanup
 
 Async receive handler (not heap-free)
@@ -294,7 +294,7 @@ For a heap-free consumer, use ``GetNewSamples()`` polling as shown in
 
 .. literalinclude:: event_send_receive/consumer_receive_handler.cpp
    :language: cpp
-   :lines: 81-116
+   :lines: 82-117
    :caption: event_send_receive/consumer_receive_handler.cpp — handler registration and receive loop
 
 Fields in the operational phase
@@ -314,7 +314,7 @@ an event send and a field update in the same heap-free loop:
 
 .. literalinclude:: event_field_update/provider.cpp
    :language: cpp
-   :lines: 68-108
+   :lines: 69-109
    :caption: event_field_update/provider.cpp — operational phase with event and field update
 
 Async service discovery with StartFindService

@@ -19,6 +19,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <string>
 #include <thread>
 
 using score::mw::com::tutorial::TirePressureProxy;
