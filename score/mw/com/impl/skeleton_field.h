@@ -15,11 +15,9 @@
 
 #include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/method_type.h"
-#include "score/mw/com/impl/methods/method_traits_checker.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
-#include "score/mw/com/impl/reference_to_moveable.h"
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_field_base.h"
 
@@ -174,7 +172,8 @@ class SkeletonFieldImpl : public SkeletonFieldBase
                                                  CallableType>>(
             GetTypedEvent(), *set_handler_mutex_, std::forward<CallableType>(user_set_handler));
 
-        auto set_handler = [state = std::move(state)](FieldType& final_value, const FieldType& desired_value) {
+        auto set_handler = [state = std::move(state)](score::Result<FieldType>& final_value,
+                                                      const FieldType& desired_value) {
             auto& [skeleton_event, set_handler_mutex, actual_user_set_handler] = *state;
 
             // Lock the mutex to ensure that only one set_handler is executing at a time for this field. We
@@ -188,13 +187,15 @@ class SkeletonFieldImpl : public SkeletonFieldBase
             final_value = desired_value;
 
             // Allow user to validate/modify the value in-place
-            std::invoke(actual_user_set_handler, final_value);
+            std::invoke(actual_user_set_handler, final_value.value());
 
             // Copy the (possibly modified) value into the latest field value
-            auto update_result = skeleton_event.get().Send(final_value);
+            auto update_result = skeleton_event.get().Send(final_value.value());
             if (!update_result.has_value())
             {
-                score::mw::log::LogError("lola") << "Set handler: failed to update field value.";
+                // If the Update call failed, then we need to return an error code to the proxy so that it's aware that
+                // the field value was not updated.
+                final_value = score::Unexpected(std::move(update_result).error());
             }
         };
 
@@ -204,7 +205,11 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     }
 
   private:
-    using SetMethodSignature = FieldType(FieldType);
+    /// \brief Signatures of the internal Set and Get methods.
+    ///
+    /// Since the setter / getter functions can fail within the middleware code (e.g. when trying to update the field
+    /// value fails), we need to return a result from the setter and getter.
+    using SetMethodSignature = score::Result<FieldType>(FieldType);
     using GetMethodSignature = FieldType();
 
     [[nodiscard]] bool IsInitialValueSaved() const noexcept override

@@ -13,12 +13,15 @@
 #include "score/mw/com/impl/skeleton_field.h"
 
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_method.h"
+#include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/sample_allocatee_guard.h"
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
+
+#include "score/result/result.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -935,7 +938,7 @@ class SkeletonFieldSetHandlerTest : public SkeletonFieldTestFixture
     /// \brief Returns a span pointing to storage containing the provided field value
     std::pair<score::cpp::span<std::byte>, score::cpp::span<std::byte>> CreateFieldSetterInArgAndReturnSpans(
         const TestSampleType in_arg_value,
-        const TestSampleType return_value)
+        const score::Result<TestSampleType> return_value)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(!in_arg_storage_.has_value());
         SCORE_LANGUAGE_FUTURECPP_ASSERT(!return_storage_.has_value());
@@ -945,7 +948,7 @@ class SkeletonFieldSetHandlerTest : public SkeletonFieldTestFixture
         score::cpp::span<std::byte> in_span{reinterpret_cast<std::byte*>(&(in_arg_storage_.value())),
                                             sizeof(TestSampleType)};
         score::cpp::span<std::byte> out_span{reinterpret_cast<std::byte*>(&(return_storage_.value())),
-                                             sizeof(TestSampleType)};
+                                             sizeof(score::Result<TestSampleType>)};
 
         return {in_span, out_span};
     }
@@ -954,7 +957,7 @@ class SkeletonFieldSetHandlerTest : public SkeletonFieldTestFixture
     std::optional<SkeletonMethodBinding::TypeErasedHandler> captured_set_handler_{};
 
     std::optional<TestSampleType> in_arg_storage_{};
-    std::optional<TestSampleType> return_storage_{};
+    std::optional<score::Result<TestSampleType>> return_storage_{};
 };
 
 TEST_F(SkeletonFieldSetHandlerTest, RegisterSetHandlerForwardsToMethodBinding)
@@ -1075,7 +1078,8 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerInvokesUserCallback)
     WhichIsOffered();
 
     // When calling the set handler that was captured by the method binding
-    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
+    auto [in_span, out_span] =
+        CreateFieldSetterInArgAndReturnSpans(kDummySetValue, score::Result<TestSampleType>{kDummySetValue});
     captured_set_handler_.value()(in_span, out_span);
 }
 
@@ -1107,7 +1111,8 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerInvokesLatestRegisteredU
     WhichIsOffered();
 
     // When calling the set handler that was captured by the method binding
-    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
+    auto [in_span, out_span] =
+        CreateFieldSetterInArgAndReturnSpans(kDummySetValue, score::Result<TestSampleType>{kDummySetValue});
     captured_set_handler_.value()(in_span, out_span);
 }
 
@@ -1126,7 +1131,8 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerCallsSend)
     WhichIsOffered();
 
     // When calling the set handler that was captured by the method binding
-    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
+    auto [in_span, out_span] =
+        CreateFieldSetterInArgAndReturnSpans(kDummySetValue, score::Result<TestSampleType>{kDummySetValue});
     captured_set_handler_.value()(in_span, out_span);
 }
 
@@ -1146,10 +1152,14 @@ TEST_F(SkeletonFieldSetHandlerTest, MethodHandlerDoesNotTerminateWhenSendFails)
     WhichIsOffered();
 
     // When calling the set handler that was captured by the method binding
-    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
+    auto [in_span, out_span] =
+        CreateFieldSetterInArgAndReturnSpans(kDummySetValue, score::Result<TestSampleType>{kDummySetValue});
     captured_set_handler_.value()(in_span, out_span);
 
-    // Then we don't crash
+    // Then the out span contains an error indicating that the binding failed
+    const auto& return_value = *reinterpret_cast<score::Result<TestSampleType>*>(out_span.data());
+    ASSERT_FALSE(return_value.has_value());
+    EXPECT_EQ(static_cast<ComErrc>(*return_value.error()), ComErrc::kBindingFailure);
 }
 
 TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerCallsSendWithValueModifiedByUserCallback)
@@ -1176,7 +1186,8 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerCallsSendWithValueModifi
     WhichIsOffered();
 
     // When calling the set handler that was captured by the method binding
-    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
+    auto [in_span, out_span] =
+        CreateFieldSetterInArgAndReturnSpans(kDummySetValue, score::Result<TestSampleType>{kDummySetValue});
     captured_set_handler_.value()(in_span, out_span);
 }
 
@@ -1204,7 +1215,8 @@ TEST_F(SkeletonFieldSetHandlerTest, PassingReferenceToHandlerUpdatesStateInPlace
     WhichIsOffered();
 
     // When calling the set handler that was captured by the method binding
-    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
+    auto [in_span, out_span] =
+        CreateFieldSetterInArgAndReturnSpans(kDummySetValue, score::Result<TestSampleType>{kDummySetValue});
     captured_set_handler_.value()(in_span, out_span);
 
     // Then the state of the functor is updated in place when the handler is called by the binding
@@ -1256,7 +1268,8 @@ TEST_F(SkeletonFieldMoveConstructionFixture,
     MySetterSkeleton unit2{std::move(*unit_)};
 
     // When calling the set handler that was captured by the method binding
-    auto [in_span, out_span] = CreateFieldSetterInArgAndReturnSpans(kDummySetValue, TestSampleType{});
+    auto [in_span, out_span] =
+        CreateFieldSetterInArgAndReturnSpans(kDummySetValue, score::Result<TestSampleType>{kDummySetValue});
     captured_set_handler_.value()(in_span, out_span);
 }
 

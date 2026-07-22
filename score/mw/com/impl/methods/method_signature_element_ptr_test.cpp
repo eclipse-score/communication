@@ -29,6 +29,12 @@ struct TestElementType
     explicit TestElementType(int v) : value(v) {}
 };
 
+struct TestElementWrapperType
+{
+    TestElementType wrapped_element;
+    explicit TestElementWrapperType(int v) : wrapped_element(v) {}
+};
+
 class MethodSignatureElementPtrTestFixture : public ::testing::Test
 {
   public:
@@ -171,6 +177,53 @@ TEST_F(MethodSignatureElementPtrTestFixture, ArrowOperator_WorksCorrectly)
     // Then it returns the correct value
     MethodSignatureElementPtr<TestElementType>& unit_ref{*unit_};
     EXPECT_EQ(unit_ref->value, kTestElementValue);
+}
+
+TEST_F(MethodSignatureElementPtrTestFixture,
+       ConvertingMoveConstruction_PointsToConvertedElementAndKeepsOwnershipAfterMovedFromDestroyed)
+{
+    // Given a wrapper element and an active MethodSignatureElementPtr to that wrapper element
+    TestElementWrapperType wrapped_element{kTestElementValue};
+    auto wrapped_ptr = std::make_unique<MethodSignatureElementPtr<TestElementWrapperType>>(
+        wrapped_element, active_flag_, kDefaultQueuePosition);
+    ASSERT_TRUE(active_flag_);
+
+    // When move-converting to a MethodSignatureElementPtr that points to the wrapped element
+    MethodSignatureElementPtr<TestElementType> converted_ptr{wrapped_element.wrapped_element, std::move(*wrapped_ptr)};
+
+    // and when destroying the moved-from instance
+    wrapped_ptr.reset();
+
+    // Then ownership of the active flag remains with the converted instance
+    EXPECT_TRUE(active_flag_);
+    // and the converted instance points to the expected element with preserved metadata
+    EXPECT_EQ(converted_ptr.get(), &wrapped_element.wrapped_element);
+    EXPECT_EQ(converted_ptr->value, kTestElementValue);
+    EXPECT_EQ(converted_ptr.GetQueuePosition(), kDefaultQueuePosition);
+}
+
+TEST_F(MethodSignatureElementPtrTestFixture,
+       ConvertingMoveConstruction_ClearsActiveFlag_AfterConvertedInstanceDestroyed)
+{
+    // Given a wrapper element and an active MethodSignatureElementPtr to that wrapper element
+    TestElementWrapperType wrapped_element{kTestElementValue};
+    auto wrapped_ptr = std::make_unique<MethodSignatureElementPtr<TestElementWrapperType>>(
+        wrapped_element, active_flag_, kDefaultQueuePosition);
+    ASSERT_TRUE(active_flag_);
+
+    // and given a move-converted MethodSignatureElementPtr that points to the wrapped element
+    auto converted_ptr = std::make_unique<MethodSignatureElementPtr<TestElementType>>(wrapped_element.wrapped_element,
+                                                                                      std::move(*wrapped_ptr));
+
+    // and given that the moved-from instance was destroyed
+    wrapped_ptr.reset();
+    ASSERT_TRUE(active_flag_);
+
+    // When destroying the converted instance
+    converted_ptr.reset();
+
+    // Then the active flag is set to false
+    EXPECT_FALSE(active_flag_);
 }
 
 }  // namespace
