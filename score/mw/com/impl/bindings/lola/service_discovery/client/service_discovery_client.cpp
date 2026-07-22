@@ -25,8 +25,10 @@
 
 #include <cstdint>
 #include <exception>
+#include <iostream>
 #include <mutex>
 #include <optional>
+#include <unistd.h>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -392,6 +394,10 @@ auto ServiceDiscoveryClient::HandleEvents(
 
     const auto& events = expected_events.value();
 
+    std::stringstream handle_events_log{};
+    handle_events_log << "Inotify HandleEvents: received " << events.size() << " event(s) / pid=" << ::getpid();
+    std::cout << handle_events_log.str() << std::endl;
+
     std::vector<os::InotifyEvent> deletion_events{};
     std::vector<os::InotifyEvent> creation_events{};
     for (const auto& event : events)
@@ -402,6 +408,18 @@ auto ServiceDiscoveryClient::HandleEvents(
         const bool flag_file_was_removed = ReadMaskSet(event, os::InotifyEvent::ReadMask::kInDelete);
         const bool inode_was_removed = search_directory_was_removed || flag_file_was_removed;
         const bool inode_was_created = ReadMaskSet(event, os::InotifyEvent::ReadMask::kInCreate);
+
+        std::stringstream event_log{};
+        event_log << "Inotify event"
+                  << " / pid=" << ::getpid()
+                  << " / wd=" << event.GetWatchDescriptor().GetUnderlying()
+                  << " / mask=0x" << std::hex << static_cast<underlying_type_readmask>(event.GetMask()) << std::dec
+                  << " / name=" << event.GetName().data()
+                  << " / q_overflow=" << inotify_queue_overflowed
+                  << " / dir_removed=" << search_directory_was_removed
+                  << " / flag_removed=" << flag_file_was_removed
+                  << " / created=" << inode_was_created;
+        std::cout << event_log.str() << std::endl;
 
         if (inotify_queue_overflowed)
         {
