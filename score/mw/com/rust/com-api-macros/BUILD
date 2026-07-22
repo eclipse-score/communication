@@ -16,7 +16,7 @@ load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_proc_macro")
 rust_proc_macro(
     name = "com-api-macros",
     srcs = ["lib.rs"],
-    crate_name = "com_api_concept_macros",
+    crate_name = "com_api_macros",
     visibility = [
         "//score/mw/com:__subpackages__",
     ],

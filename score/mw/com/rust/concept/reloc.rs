@@ -29,7 +29,7 @@
 /// is unsafe for now. The expectation is that very few users ever need to implement this manually.
 pub unsafe trait Reloc: Send + Unpin + 'static {}
 
-pub use com_api_concept_macros::Reloc;
+pub use com_api_macros::Reloc;
 
 unsafe impl Reloc for () {}
 unsafe impl Reloc for u8 {}
