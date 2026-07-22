@@ -47,6 +47,9 @@ class SkeletonEventAttorney;
 
 class Skeleton;
 
+/// \brief Maximum number of concurrent SamplePtrs that can be held from GetLatestSample() at any time.
+static constexpr std::uint8_t kMaxConcurrentFieldGetterSamplePtrs{1U};
+
 /// @brief Common implementation for LoLa skeleton events, shared between SkeletonEvent and GenericSkeletonEvent.
 ///
 /// \tparam SampleType Will be the SampleType of the event for a regular SkeletonEvent and void for a
@@ -66,8 +69,7 @@ class SkeletonEventCommon
                         const std::string_view event_name,
                         const SkeletonEventProperties& event_properties,
                         const ElementFqId& element_fq_id,
-                        impl::tracing::SkeletonEventTracingData tracing_data,
-                        bool field_getter_enabled) noexcept;
+                        impl::tracing::SkeletonEventTracingData tracing_data) noexcept;
 
     SkeletonEventCommon(const SkeletonEventCommon&) = delete;
     SkeletonEventCommon(SkeletonEventCommon&&) noexcept = delete;
@@ -172,8 +174,6 @@ class SkeletonEventCommon
     EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
 
-    /// \brief Maximum number of concurrent SamplePtrs that can be held from GetLatestSample() at any time.
-    static constexpr std::uint8_t kMaxConcurrentFieldGetterSamplePtrs{1U};
     bool qm_disconnect_;
     bool field_getter_enabled_;
     SampleReferenceTracker getter_sample_tracker_;
@@ -211,8 +211,7 @@ SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
                                                      const std::string_view event_name,
                                                      const SkeletonEventProperties& event_properties,
                                                      const ElementFqId& element_fq_id,
-                                                     impl::tracing::SkeletonEventTracingData tracing_data,
-                                                     bool field_getter_enabled) noexcept
+                                                     impl::tracing::SkeletonEventTracingData tracing_data) noexcept
     : parent_{parent},
       event_name_{event_name},
       event_properties_{event_properties},
@@ -221,7 +220,7 @@ SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
       current_timestamp_{EventSlotStatus::INVALID_TIMESTAMP},
       tracing_data_{tracing_data},
       qm_disconnect_{false},
-      field_getter_enabled_{field_getter_enabled},
+      field_getter_enabled_{event_properties_.GetNumberOfFieldGetterSlots() > 0U},
       getter_sample_tracker_{kMaxConcurrentFieldGetterSamplePtrs}
 {
 }

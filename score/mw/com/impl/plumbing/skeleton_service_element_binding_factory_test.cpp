@@ -16,7 +16,6 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/instance_identifier.h"
-#include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -26,7 +25,9 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -98,7 +99,10 @@ class SkeletonServiceElementBindingFactoryParamaterisedFixture
                     instance_identifier, skeleton_binding, kDummyEventName);
             case ServiceElementType::FIELD:
                 return SkeletonFieldBindingFactory<TestSampleType>::CreateEventBinding(
-                    instance_identifier, skeleton_binding, kDummyFieldName);
+                    instance_identifier,
+                    skeleton_binding,
+                    kDummyFieldName,
+                    FieldTagsStore::Create<WithNotifier, WithGetter>());
             case ServiceElementType::METHOD:
             case ServiceElementType::INVALID:
             default:
