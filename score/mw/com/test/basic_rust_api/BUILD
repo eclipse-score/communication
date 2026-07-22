@@ -39,6 +39,6 @@ rust_library(
     ],
     deps = [
         ":bigdata_com_api_gen_cpp",
-        "//score/mw/com/rust:api",
+        "//score/mw/com/rust:com_api",
     ],
 )

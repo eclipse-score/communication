@@ -11,12 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# DEPRECATED: This target has been moved to //score/mw/com/rust:api
+# DEPRECATED: This target has been moved to //score/mw/com/rust:com_api
 # This alias is provided for backward compatibility.
 # Please update your dependencies to use the new location.
 alias(
     name = "com-api",
-    actual = "//score/mw/com/rust:api",
-    deprecation = "Use //score/mw/com/rust:api instead. This target will be removed before v1.0 release.",
+    actual = "//score/mw/com/rust:com_api",
+    deprecation = "Use //score/mw/com/rust:com_api instead. This target will be removed before v1.0 release.",
     visibility = ["//visibility:public"],
 )

@@ -15,8 +15,8 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 # Default target with lola runtime
 rust_library(
-    name = "api",
-    srcs = ["api.rs"],
+    name = "com_api",
+    srcs = ["com_api.rs"],
     crate_name = "com_api",
     edition = "2024",
     visibility = [

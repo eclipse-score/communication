@@ -49,12 +49,12 @@ rust_doc_test(
     # With LLVM's strict LLD linker, this results in undefined symbol errors when
     # the crate depends on C++ libraries. GCC masks this with broader archive scanning.
     tags = ["manual"],
-    deps = ["//score/mw/com/rust:api"],
+    deps = ["//score/mw/com/rust:com_api"],
 )
 
 rust_unit_test(
     name = "concept-macros-unit-tests",
     srcs = ["interface_macros.rs"],
     features = ["link_std_cpp_lib"],
-    deps = ["//score/mw/com/rust:api"],
+    deps = ["//score/mw/com/rust:com_api"],
 )

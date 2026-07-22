@@ -22,7 +22,7 @@ rust_library(
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",
         "@score_baselibs//src/log/score_log",
-        "//score/mw/com/rust:api",
+        "//score/mw/com/rust:com_api",
         "@score_communication_crate_index//:clap",
         "@score_communication_crate_index//:futures",
     ],
