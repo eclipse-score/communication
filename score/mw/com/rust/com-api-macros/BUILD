@@ -18,7 +18,7 @@ rust_proc_macro(
     srcs = ["lib.rs"],
     crate_name = "com_api_concept_macros",
     visibility = [
-        "//visibility:public",
+        "//score/mw/com:__subpackages__",
     ],
     deps = [
         "@score_communication_crate_index//:quote",

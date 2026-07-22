@@ -23,7 +23,7 @@ rust_library(
         "@score_communication_crate_index//:paste",
     ],
     visibility = [
-        "//visibility:public",  # platform_only
+        "//score/mw/com:__subpackages__",
     ],
     deps = [
         "@score_baselibs//src/containers",

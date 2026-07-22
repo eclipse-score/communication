@@ -29,8 +29,6 @@
 //score/mw/com/performance_benchmarks/macro_benchmark:lola_benchmarking_client
 //score/mw/com/performance_benchmarks/macro_benchmark:lola_benchmarking_service
 //score/mw/com/performance_benchmarks/macro_benchmark:mw_com_config.json
-//score/mw/com/rust/com-api-macros:com-api-macros
-//score/mw/com/rust/concept:concept
 //score/mw/com/rust/ffi_bridge:register_interface
 //score/mw/com/rust:api
 //score/mw/com:com
