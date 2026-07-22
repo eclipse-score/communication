@@ -99,6 +99,12 @@
     echo "---> Setting hostname"
     hostname qnx-score
 
+    # Enable core dumps via the QNX dumper service. Dumps are written to /tmp for ITF retrieval.
+    echo "---> Enabling core dumps"
+    dumper -d /tmp -I
+    waitfor /proc/dumper
+    ulimit -c unlimited
+
     # SSH daemon - ITF test harness communicates via SSH
     echo "---> Starting SSH daemon"
     /proc/boot/sshd -f /var/ssh/sshd_config
@@ -283,6 +289,7 @@ slog2info                                # System log viewer - displays logged m
 slogger2                                 # System logging daemon - collects and manages log messages
 sshd                                     # SSH daemon (ITF test harness communicates via SSH)
 sysctl                                   # View/modify kernel parameters
+dumper                                   # Core dump daemon configuration and crash dump collection
 
 /usr/lib/ssh/sftp-server=${QNX_TARGET}/${PROCESSOR}/usr/libexec/sftp-server  # SFTP server (file transfer for ITF)
 /usr/libexec/sshd-session=${QNX_TARGET}/${PROCESSOR}/usr/libexec/sshd-session  # SSH session handler (required by OpenSSH 9.8+)

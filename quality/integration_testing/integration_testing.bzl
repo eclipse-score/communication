@@ -144,14 +144,15 @@ def integration_test(name, srcs, filesystem, **kwargs):
         plugins = select({
             "//conditions:default": [
                 "@score_itf//score/itf/plugins:docker_plugin",
+                "@score_itf//score/itf/plugins:core_dump_plugin",
             ],
             "@platforms//os:qnx": [
                 "@score_itf//score/itf/plugins:qemu_plugin",
+                "@score_itf//score/itf/plugins:core_dump_plugin",
             ],
         }),
         env = {
             "DOCKER_HOST": "",
-            "TEST_UNDECLARED_OUTPUTS_DIR": "$(TEST_UNDECLARED_OUTPUTS_DIR)",
         },
         **kwargs
     )
