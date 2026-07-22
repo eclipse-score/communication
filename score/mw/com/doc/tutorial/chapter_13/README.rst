@@ -34,7 +34,8 @@ Files/artifacts used
 ~~~~~~~~~~~~~~~~~~~~~
 
 
-The ``bazel`` project for this chapter is located in ``score/mw/com/doc/tutorial/chapter_13``
+The ``bazel`` project for this chapter is located in
+`score/mw/com/doc/tutorial/chapter_13 <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_13/>`__
 and contains the following files:
 
 ----------------------------------------
@@ -209,13 +210,16 @@ must be completed **before** ``heap_check::forbid_heap()`` is called. Calls mark
 
 .. note::
 
-   ``SetReceiveHandler`` cannot be used in a fully heap-free provider-consumer pair today. When
-   the proxy registers a receive handler, the LoLa runtime's skeleton-side background thread
-   creates a ``std::make_shared<MoveOnlyScopedFunction<...>>`` to record the registration. If
-   the provider has already called ``forbid_heap()``, that allocation triggers the abort. A TODO
-   for a pre-allocated pool exists in the LoLa source. The heap-free examples therefore use
-   ``GetNewSamples()`` polling instead. See the async receive handler section below for the
-   full API demonstration.
+   ``SetReceiveHandler`` cannot be used in a fully heap-free provider-consumer pair today. On
+   the consumer side, calling ``SetReceiveHandler`` creates a
+   ``std::make_shared<ScopedEventReceiveHandler>`` once in the init phase, which is correctly
+   placed before ``forbid_heap()``. The problem is on the provider side: when the consumer
+   sends its registration message at runtime, the LoLa messaging layer inserts the consumer's
+   node identifier into an STL container that uses a default allocator
+   (``message_passing_service_instance.cpp``, marked ``// TODO: PMR``). If the provider has
+   already called ``forbid_heap()``, that insertion triggers the abort. The heap-free examples
+   therefore use ``GetNewSamples()`` polling instead. See the async receive handler section
+   below for the full API demonstration.
 
 Provider application: sending events without heap allocation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
