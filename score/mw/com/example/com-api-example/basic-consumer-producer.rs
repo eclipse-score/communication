@@ -226,7 +226,7 @@ fn create_producer_method<R: Runtime>(
         .build()
         .expect("Failed to build producer instance");
     producer
-        .init_handlers()
+        .init()
         .register_update_tire_pressure_handler(|tire: Tire| {
             println!("Received update_tire_pressure call with tire: {:?}", tire);
             ()

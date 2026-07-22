@@ -15,7 +15,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, Generics, Meta, Type};
 
-mod type_state_method_validator;
+mod type_state_validator;
 
 /// Derive macro for the `CommData` trait.
 ///
@@ -337,44 +337,48 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
     Ok(out)
 }
 
-/// Derive macro to generate type-state validation for method handler registration.
+/// Unified derive macro for compile-time type-state validation of Field and Method producers.
 ///
-/// This macro generates a validator struct that enforces compile-time verification
-/// that all method handlers are registered before the service can be offered.
-/// Unlike `TypeStateFieldValidator`, this only tracks handler registration state
-/// (no field update tracking).
+/// Detects member types by the last segment of each field's type path:
+/// - `FieldPublisher<T>` → generates `update_{name}()` and `register_set_handler_{name}()`
+/// - `MethodHandler<Args, Return>` → generates `register_{name}_handler()`
+/// - `instance_info` field is always skipped.
 ///
-/// # Generated Code
+/// # Generated validator struct
 ///
-/// For a producer struct with methods, this macro generates:
-/// - A `<Name>Validator<R, H0, H1, ...>` struct with handler state type parameters
-/// - `register_handler_<method_name>()` methods that transition handler state to `HandlerSet`
-/// - An `init_handlers()` method that starts the type-state flow with all handlers as `HandlerNotSet`
-/// - An `offer()` method only available when all handlers are `HandlerSet`, this offer is from the validator struct,
-///   not the original producer struct.
-///   Original producer struct still have offer but that will panic if user tries to call directly without registering handlers.
-///   So user need to call the offer from validator struct which will be available only when all handlers are registered.
+/// `{Name}Validator<R, S0..Sn, H0..Hn, M0..Mm>` where:
+/// - `Si` = field update state (`Uninit` / `Init`)
+/// - `Hi` = field set-handler state (`HandlerNotSet` / `HandlerSet`)
+/// - `Mj` = method handler state (`HandlerNotSet` / `HandlerSet`)
+///
+/// `offer()` is only available when ALL `Si = Init`, ALL `Hi = HandlerSet`, ALL `Mj = HandlerSet`.
+///
+/// Entry point on the producer: `init()` — begins the type-state chain.
+///
+/// Degenerates correctly:
+/// - Field-only struct → no `Mj` params
+/// - Method-only struct → no `Si`/`Hi` params
+/// - Mixed struct → all param groups combined
 ///
 /// # Usage
 ///
-/// Apply this macro alongside the `interface!` macro for Method-based interfaces:
-///
 /// ```ignore
-/// #[derive(TypeStateMethodValidator)]
-/// struct VehicleMethodsProducer<R: Runtime> {
-///     update_tire_pressure: SkeletonMethod<R, (Tire,), ()>,
-///     get_tire_pressure: SkeletonMethod<R, (), Tire>,
+/// #[derive(TypeStateValidator)]
+/// struct VehicleProducer<R: Runtime + ?Sized> {
+///     left_tire: R::FieldPublisher<Tire>,
+///     process: R::MethodHandler<(Tire,), Tire>,
 ///     instance_info: R::ProviderInfo,
 /// }
+/// // Generated: producer.init()
+/// //   .update_left_tire(&v)?
+/// //   .register_set_handler_left_tire(|v| {})?
+/// //   .register_process_handler(|req| { ... })?
+/// //   .offer()?
 /// ```
-///
-/// The macro will generate a `VehicleMethodsProducerValidator<R, H0, H1>` struct with phantom
-/// type parameters representing the handler registration state of each method. The `offer()`
-/// method will only be available when all handlers are registered, ensuring compile-time safety.
 // TODO: Document tests need to be added for this macro, including successful and failed compilation cases.
-#[proc_macro_derive(TypeStateMethodValidator)]
-pub fn derive_typestate_method_validator(input: TokenStream) -> TokenStream {
-    type_state_method_validator::derive_typestate_method_validator_impl(input)
+#[proc_macro_derive(TypeStateValidator)]
+pub fn derive_typestate_validator(input: TokenStream) -> TokenStream {
+    type_state_validator::derive_typestate_validator_impl(input)
 }
 
 // Use doctest to test failed compilations and successful ones

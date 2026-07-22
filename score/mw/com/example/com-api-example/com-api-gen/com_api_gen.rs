@@ -60,15 +60,13 @@ interface!(
 // and this method can be accessed through the consumer instance of VehicleMethodsConsumer<R>.
 // Note: Yes currently macro is taking tuple based input and which makes littel bit not user-friendly,
 // but this can be improved in future by generating wrapper methods.
-// TODO: This interface macro need to be improved to support the mix of methods, events and fields in same interface.
-// Also for method this need to take the input and output types in more user-friendly way, instead of tuple based input and output.
-// example:  update_front_tires_pressure: Method<Input{Tire, Tire}, Output{Tire}>,
-// Currently it is taking tuple based input and output, which is fine for now as this is just for design APIs build/usage verification.
+// Methods now use fn-like syntax: method_name(ArgsTupleType) -> ReturnType
+// The args type must be a valid MethodArgs tuple (e.g. (Tire,) for one arg, (Tire,Tire) for two).
 interface!(
     interface VehicleMethods {
         Id = "VehicleMethodsInterface",
-        update_tire_pressure: Method<(Tire,), ()>,
-        update_front_tires_pressure: Method<(Tire,Tire), ()>,
-        get_tire_pressure: Method<(), Tire>,
-     }
+        update_tire_pressure((Tire,)) -> (),
+        update_front_tires_pressure((Tire, Tire)) -> (),
+        get_tire_pressure(()) -> Tire,
+    }
 );
