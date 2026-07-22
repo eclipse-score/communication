@@ -1,0 +1,104 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/tutorial/TirePressureService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 7000,
+          "events": [
+            {
+              "eventName": "tire_pressure_update",
+              "eventId": 1
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "tire_pressure_front_left",
+              "fieldId": 2
+            },
+            {
+              "fieldName": "tire_pressure_front_right",
+              "fieldId": 3
+            },
+            {
+              "fieldName": "tire_pressure_rear_left",
+              "fieldId": 4
+            },
+            {
+              "fieldName": "tire_pressure_rear_right",
+              "fieldId": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "/tutorial/event_field_update/TirePressureService",
+      "serviceTypeName": "/tutorial/TirePressureService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 11,
+          "allowedProvider": {
+            "B": [0]
+          },
+          "allowedConsumer": {
+            "B": [0]
+          },
+          "asil-level": "B",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "tire_pressure_update",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3
+            }
+          ],
+          "fields": [
+            {
+              "fieldName": "tire_pressure_front_left",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
+            },
+            {
+              "fieldName": "tire_pressure_front_right",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
+            },
+            {
+              "fieldName": "tire_pressure_rear_left",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
+            },
+            {
+              "fieldName": "tire_pressure_rear_right",
+              "numberOfSampleSlots": 16,
+              "maxSubscribers": 3,
+              "useGetIfAvailable": false,
+              "useSetIfAvailable": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "B"
+  }
+}
