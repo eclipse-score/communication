@@ -60,19 +60,20 @@ inline std::tuple<EventControl*, EventDataStorage<SampleType>*> FakeMockedServic
     const SkeletonEventProperties event_properties)
 {
     bool inserted;
+    const auto total_number_of_slots = event_properties.GetTotalNumberOfSlots();
 
     score::memory::shared::Map<ElementFqId, EventControl>::iterator inserted_control;
     std::tie(inserted_control, inserted) =
         data_control->event_controls_.emplace(std::piecewise_construct,
                                               std::forward_as_tuple(id),
-                                              std::forward_as_tuple(event_properties.number_of_slots,
+                                              std::forward_as_tuple(total_number_of_slots,
                                                                     event_properties.max_subscribers,
                                                                     event_properties.enforce_max_samples,
                                                                     *control_memory));
     auto& event_control = std::get<EventControl>(*inserted_control);
 
     EventDataStorage<SampleType>* event_data_slots =
-        data_memory->construct<EventDataStorage<SampleType>>(event_properties.number_of_slots, *data_memory);
+        data_memory->construct<EventDataStorage<SampleType>>(total_number_of_slots, *data_memory);
     const memory::shared::OffsetPtr<void> rel_event_data_buffer{static_cast<void*>(event_data_slots)};
     data_storage->events_.emplace(id, rel_event_data_buffer);
 

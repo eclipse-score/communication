@@ -50,13 +50,15 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback{};
     std::ignore = skeleton_->PrepareOffer(events, fields, std::move(register_shm_object_trace_callback));
 
+    const auto number_of_field_getter_slots = field_getter_enabled ? kMaxConcurrentFieldGetterSamplePtrs : 0U;
+
     skeleton_event_ = std::make_unique<SkeletonEvent<test::TestSampleType>>(
         *skeleton_,
         element_fq_id,
         service_element_name,
-        SkeletonEventProperties{max_samples, max_subscribers, enforce_max_samples},
-        skeleton_event_tracing_data,
-        field_getter_enabled);
+        SkeletonEventProperties{
+            max_samples, 0U, number_of_field_getter_slots, false, max_subscribers, enforce_max_samples},
+        skeleton_event_tracing_data);
 }
 
 EventControl* SkeletonEventFixture::GetEventControl(const ElementFqId element_fq_id,

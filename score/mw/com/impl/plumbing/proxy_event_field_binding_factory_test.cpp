@@ -54,7 +54,7 @@ constexpr std::uint16_t kDummyGenericProxyId{7U};
 
 constexpr uint16_t kInstanceId = 0x31U;
 const LolaServiceId kServiceId{1U};
-constexpr lola::SkeletonEventProperties kSkeletonEventProperties{5U, 3U, true};
+const lola::SkeletonEventProperties kSkeletonEventProperties{5U, 0U, 0U, false, 3U, true};
 const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"/my_dummy_instance_specifier"}).value();
 
 const LolaServiceInstanceDeployment kLolaServiceInstanceDeployment{

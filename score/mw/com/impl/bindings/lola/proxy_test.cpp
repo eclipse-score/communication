@@ -651,7 +651,8 @@ using ProxyGetEventMetaInfoFixture = ProxyMockedMemoryFixture;
 TEST_F(ProxyGetEventMetaInfoFixture, GetEventMetaInfoWillReturnDataForEventThatWasCreatedBySkeleton)
 {
     // Given a dummy SkeletonEvent which creates the EventMeta Info
-    InitialiseDummySkeletonEvent(kDummyElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
+    InitialiseDummySkeletonEvent(kDummyElementFqId,
+                                 SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
 
     // and a constructed Proxy
     InitialiseProxyWithCreate(identifier_);
@@ -678,7 +679,8 @@ TEST_F(ProxyGetEventMetaInfoDeathTest, CallingGetEventMetaInfoWhenSkeletonEventD
 TEST_F(ProxyGetEventMetaInfoDeathTest, CallingGetEventMetaInfoWhenGettingDataSectionBaseAddressReturnsNullptrTerminates)
 {
     // Given a dummy SkeletonEvent which creates the EventMeta Info
-    InitialiseDummySkeletonEvent(kDummyElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
+    InitialiseDummySkeletonEvent(kDummyElementFqId,
+                                 SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
 
     // and a constructed Proxy
     InitialiseProxyWithCreate(identifier_);
@@ -746,7 +748,8 @@ class ProxyTransactionLogRollbackFixture : public ProxyMockedMemoryFixture
   protected:
     ProxyTransactionLogRollbackFixture() noexcept
     {
-        InitialiseDummySkeletonEvent(kDummyElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
+        InitialiseDummySkeletonEvent(kDummyElementFqId,
+                                     SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
         transaction_log_set_ = &event_control_->transaction_log_set_;
     }
 
@@ -834,7 +837,8 @@ TEST_F(ProxyIsEventProvidedFixture, IsEventProvidedReturnsTrueForEventPresentInS
 {
     // Given a service type deployment with the event mapped and the event initialised in shared memory
     lola_service_deployment_.events_.emplace(std::string{kDummyEventName}, kDummyElementFqId.element_id_);
-    InitialiseDummySkeletonEvent(kDummyElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
+    InitialiseDummySkeletonEvent(kDummyElementFqId,
+                                 SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
 
     // When creating a proxy
     InitialiseProxyWithConstructor(identifier_);
@@ -852,7 +856,8 @@ TEST_F(ProxyIsEventProvidedFixture, IsEventProvidedReturnsFalseForEventNotPresen
     // Given a service type deployment with two mapped events, where only one has a corresponding skeleton event
     lola_service_deployment_.events_.emplace(std::string{kDummyEventName}, kDummyElementFqId.element_id_);
     lola_service_deployment_.events_.emplace(std::string{kNotProvidedEventName}, kNotProvidedElementId);
-    InitialiseDummySkeletonEvent(kDummyElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
+    InitialiseDummySkeletonEvent(kDummyElementFqId,
+                                 SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
 
     // When creating a proxy
     InitialiseProxyWithConstructor(identifier_);
