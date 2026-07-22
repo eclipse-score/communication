@@ -11,8 +11,10 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
+#include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
-#include "score/mw/com/test/field_initial_value/test_datatype.h"
+#include "score/mw/com/test/fields/field_initial_value/test_datatype.h"
 #include "score/mw/com/types.h"
 
 #include <optional>
@@ -21,6 +23,7 @@
 #include <cstddef>
 #include <future>
 #include <iostream>
+#include <string>
 #include <thread>
 
 namespace score::mw::com::test
@@ -31,15 +34,22 @@ namespace
 
 constexpr auto kMaxNumSamples{1U};
 
-int run_client(const std::size_t num_retries, const std::chrono::milliseconds retry_backoff_time)
+const std::string kInterprocessNotificationShmPath{"/field_initial_value_interprocess_notification"};
+
+void run_client(const std::size_t num_retries, const std::chrono::milliseconds retry_backoff_time)
 {
     using score::mw::com::test::TestDataProxy;
+
+    auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
+    if (!process_synchronizer_result.has_value())
+    {
+        FailTest("Unable to create ProcessSynchronizer");
+    }
 
     auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
     if (!instance_specifier_result.has_value())
     {
-        std::cerr << "Unable to create instance specifier, terminating\n";
-        return -7;
+        FailTest("Unable to create instance specifier");
     }
     auto instance_specifier = std::move(instance_specifier_result).value();
 
@@ -54,22 +64,19 @@ int run_client(const std::size_t num_retries, const std::chrono::milliseconds re
 
     if (!lola_proxy_handles_result.has_value())
     {
-        std::cerr << "Unable to get handles, terminating\n";
-        return -1;
+        FailTest("Unable to get handles");
     }
 
     auto lola_proxy_handles = service_discovery_future.get();
     if (lola_proxy_handles.empty())
     {
-        std::cerr << "Unable to find lola service, terminating\n";
-        return -2;
+        FailTest("Unable to find lola service");
     }
 
     auto lola_proxy_result = TestDataProxy::Create(lola_proxy_handles[0]);
     if (!lola_proxy_result.has_value())
     {
-        std::cerr << "Unable to create lola proxy, terminating\n";
-        return -3;
+        FailTest("Unable to create lola proxy");
     }
     auto& lola_proxy = lola_proxy_result.value();
     std::optional<std::int32_t> received_value;
@@ -82,8 +89,7 @@ int run_client(const std::size_t num_retries, const std::chrono::milliseconds re
         retries--;
         if (retries <= 0)
         {
-            std::cerr << "Subscription failed!\n";
-            return -4;
+            FailTest("Subscription failed");
         }
     }
     std::ignore = lola_proxy.test_field.GetNewSamples(
@@ -96,17 +102,15 @@ int run_client(const std::size_t num_retries, const std::chrono::milliseconds re
 
     if (!received_value.has_value())
     {
-        std::cerr << "Lola didn't receive a sample!\n";
-        return -5;
+        FailTest("Lola didn't receive a sample");
     }
 
     if (received_value.value() != kTestValue)
     {
-        std::cerr << "Expecting:" << kTestValue << " Received:" << received_value.value() << "!\n ";
-        return -6;
+        FailTest("Received value does not match expected value");
     }
 
-    return 0;
+    process_synchronizer_result->Notify();
 }
 
 }  // namespace
@@ -122,7 +126,7 @@ int main(int argc, const char** argv)
     const auto& run_parameters = test_runner.GetRunParameters();
     const auto num_retries = run_parameters.GetNumRetries();
     const auto retry_backoff_time = run_parameters.GetRetryBackoffTime();
-    const auto stop_token = test_runner.GetStopToken();
 
-    return score::mw::com::test::run_client(num_retries, retry_backoff_time);
+    score::mw::com::test::run_client(num_retries, retry_backoff_time);
+    return EXIT_SUCCESS;
 }
