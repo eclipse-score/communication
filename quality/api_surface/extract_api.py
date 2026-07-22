@@ -19,16 +19,13 @@ handles preprocessor directives, macros, templates, and conditional compilation.
 
 Modes:
   1. --ast-json: Parse a pre-generated clang AST JSON dump (used by Bazel action)
-  2. --clang + --headers: Run clang directly (used for local development)
 """
 
 import argparse
 import json
 import os
 import re
-import subprocess
 import sys
-import tempfile
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
@@ -637,50 +634,6 @@ def extract_from_ast(
     )
 
 
-def run_clang_ast_dump(
-    clang_binary: str,
-    headers: list[str],
-    include_dirs: list[str],
-    std: str = "c++17",
-) -> dict:
-    """Run clang to get JSON AST dump of the headers."""
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".cpp", delete=False, prefix="api_surface_"
-    ) as f:
-        for header in headers:
-            f.write(f'#include "{os.path.abspath(header)}"\n')
-        combined_path = f.name
-
-    try:
-        cmd = [
-            clang_binary,
-            "-Xclang", "-ast-dump=json",
-            "-fsyntax-only",
-            "-x", "c++",
-            f"-std={std}",
-            "-fparse-all-comments",
-            "-w",
-        ]
-        for inc_dir in include_dirs:
-            cmd.extend(["-I", inc_dir])
-        cmd.append(combined_path)
-
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-
-        if result.returncode != 0 and result.stderr:
-            for line in result.stderr.split("\n"):
-                if "error:" in line or "fatal error:" in line:
-                    print(f"  {line}", file=sys.stderr)
-
-        if not result.stdout:
-            print("Error: clang produced no output", file=sys.stderr)
-            sys.exit(1)
-
-        return json.loads(result.stdout)
-    finally:
-        os.unlink(combined_path)
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Extract public C++ API surface from headers using clang AST"
@@ -689,12 +642,7 @@ def main():
     parser.add_argument("--target-headers", help="Comma-separated target header paths to filter on")
     parser.add_argument("--target-headers-file", help="Path to newline-separated target header paths")
     parser.add_argument("--target-label", default="", help="Bazel target label (metadata)")
-    parser.add_argument("--clang", help="Path to clang++ binary (direct mode)")
-    parser.add_argument("--headers", nargs="+", help="Header files to parse (direct mode)")
-    parser.add_argument("--include-dirs", nargs="*", default=[], help="Include directories")
-    parser.add_argument("--root", default=".", help="Workspace root")
     parser.add_argument("--target", default="", help="Target label (alias for --target-label)")
-    parser.add_argument("--std", default="c++17", help="C++ standard (default: c++17)")
     parser.add_argument("--output", default="-", help="Output file (- for stdout)")
     args = parser.parse_args()
 
@@ -726,24 +674,8 @@ def main():
         target_files = collect_target_files()
         label = args.target_label or args.target or ""
         surface = extract_from_ast(ast, target_files, label)
-
-    # Mode 2: Run clang directly
-    elif args.clang and args.headers:
-        target_files = set()
-        for h in args.headers:
-            target_files.add(h)
-            target_files.add(os.path.normpath(h))
-            if not os.path.isabs(h):
-                target_files.add(os.path.normpath(os.path.join(args.root, h)))
-                target_files.add(os.path.abspath(os.path.join(args.root, h)))
-        include_dirs = list(args.include_dirs)
-        if args.root and os.path.abspath(args.root) not in [os.path.abspath(d) for d in include_dirs]:
-            include_dirs.insert(0, os.path.abspath(args.root))
-        ast = run_clang_ast_dump(args.clang, args.headers, include_dirs, args.std)
-        label = args.target or args.target_label or ""
-        surface = extract_from_ast(ast, target_files, label)
     else:
-        parser.error("Either --ast-json or (--clang + --headers) must be provided")
+        parser.error("Either --ast-json must be provided")
         return
 
     result = asdict(surface)

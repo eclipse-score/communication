@@ -445,5 +445,36 @@ class TestLockFileFormat(unittest.TestCase):
         self.assertIn("undocumented_symbols", self.result)
 
 
+class TestCliModes(unittest.TestCase):
+    """Test CLI mode selection behavior."""
+
+    def test_direct_clang_mode_rejected(self):
+        """Direct clang mode is no longer supported; --ast-json is required."""
+        test_dir = os.path.dirname(os.path.abspath(__file__))
+        extract_script = os.path.join(os.path.dirname(test_dir), "extract_api.py")
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".h", delete=False, prefix="test_api_") as f:
+            f.write("// header for CLI mode test\n")
+            header_path = f.name
+
+        try:
+            result = subprocess.run(
+                [
+                    sys.executable, extract_script,
+                    "--clang", "/definitely/not/a/clang/binary",
+                    "--headers", header_path,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        finally:
+            os.unlink(header_path)
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("unrecognized arguments", result.stderr)
+        self.assertIn("--clang", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
