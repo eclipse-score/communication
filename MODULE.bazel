@@ -166,12 +166,11 @@ use_repo(
 
 bazel_dep(name = "score_itf", version = "0.5.0", dev_dependency = True)
 
-# Use a specific revision of score_itf that contains the core-dump extraction
-# feature (--extract-core / --core-output-dir in the docker plugin).
+# Pin score_itf to fork commit with QEMU core extraction support.
 git_override(
     module_name = "score_itf",
     remote = "https://github.com/Tejaswini-Janjale25/itf.git",
-    commit = "8d93ecb3f71661b1bcdf4957819df5e4e0f73768",
+    commit = "16a96e2559968d9ac17dfc3e4803efe6ad4963a8",
 )
 
 bazel_dep(name = "score_rules_imagefs", version = "0.0.3", dev_dependency = True)
