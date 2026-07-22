@@ -149,7 +149,10 @@ def integration_test(name, srcs, filesystem, **kwargs):
                 "@score_itf//score/itf/plugins:qemu_plugin",
             ],
         }),
-        env = {"DOCKER_HOST": ""},
+        env = {
+            "DOCKER_HOST": "",
+            "TEST_UNDECLARED_OUTPUTS_DIR": "$(TEST_UNDECLARED_OUTPUTS_DIR)",
+        },
         **kwargs
     )
 
