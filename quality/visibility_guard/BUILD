@@ -31,6 +31,15 @@ py_test(
         "no-cache",
         "no-sandbox",
     ],
+    env_inherit = [
+        # Required for internal bazel execution to be able to resolve proxies
+        "HTTP_PROXY",
+        "http_proxy",
+        "HTTPS_PROXY",
+        "https_proxy",
+        "NO_PROXY",
+        "no_proxy",
+    ],
     target_compatible_with = ["@platforms//os:linux"],
     deps = [":parser"],
 )
