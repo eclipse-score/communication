@@ -104,6 +104,10 @@ common:qnx_arm64 --test_env=QEMU_CPU=Cascadelake-Server-v5
 
 common:qnx --config=qnx_x86_64
 
+# Enables FlatBuffers-based mw::com configuration tooling (disabled by default,
+# see score/mw/com/impl/configuration/flatbuffers_flags.bzl).
+common:flatbuffers --//score/mw/com/impl/configuration:enable_flatbuffers=true
+
 # unshare /dev/shm and /tmp
 test --sandbox_tmpfs_path=/dev/shm
 test --sandbox_tmpfs_path=/tmp
