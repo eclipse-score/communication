@@ -346,7 +346,7 @@ std::unique_ptr<ServiceDataControl> SkeletonMockedMemoryFixture::CreateServiceDa
 {
     const auto created_resource = (quality_type == QualityType::kASIL_QM) ? control_qm_shared_memory_resource_mock_
                                                                           : control_asil_b_shared_memory_resource_mock_;
-    auto service_data_control = std::make_unique<ServiceDataControl>(*created_resource);
+    auto service_data_control = std::make_unique<ServiceDataControl>(1U, *created_resource);
 
     auto event_control =
         service_data_control->event_controls_.emplace(std::piecewise_construct,

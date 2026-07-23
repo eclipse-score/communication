@@ -246,10 +246,26 @@ cc_library(
 )
 
 cc_library(
+    name = "linear_search_map",
+    hdrs = [
+        "linear_search_map.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__pkg__",
+        "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
+    ],
+    deps = [
+        "@score_baselibs//score/containers:non_relocatable_vector",
+        "@score_baselibs//score/memory/shared",
+    ],
+)
+
+cc_library(
     name = "service_data_storage",
     srcs = ["service_data_storage.cpp"],
     hdrs = [
-        "linear_search_map.h",
         "service_data_storage.h",
     ],
     features = COMPILER_WARNING_FEATURES,
@@ -262,6 +278,7 @@ cc_library(
         ":element_fq_id",
         ":event_meta_info",
         ":i_runtime",
+        ":linear_search_map",
         "//score/mw/com/impl:runtime",
         "@score_baselibs//score/containers:non_relocatable_vector",
         "@score_baselibs//score/memory/shared",
@@ -282,6 +299,7 @@ cc_library(
         ":application_id_pid_mapping",
         ":element_fq_id",
         ":event_control",
+        ":linear_search_map",
         "@score_baselibs//score/memory/shared",
     ],
 )
@@ -1341,8 +1359,9 @@ cc_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":service_data_storage",
+        ":linear_search_map",
         "@score_baselibs//score/memory/shared:new_delete_delegate_resource",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

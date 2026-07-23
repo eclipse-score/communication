@@ -83,7 +83,7 @@ This anchor element of the `SharedMemoryResource` contains two members:
 > service-elements = events + fields) is known up-front, so the container performs exactly one allocation of a
 > deterministic size on construction. This makes the total size of the **Data** shared-memory object analytically
 > computable via `SkeletonMemoryManager::CalculateDataShmResourceStorageSize()` (selected through the
-> `ShmSizeCalculationMode::kEstimation` mode), avoiding the otherwise necessary (and costly) heap-based "simulation
+> `ShmSizeCalculationMode::kAnalysis` mode), avoiding the otherwise necessary (and costly) heap-based "simulation
 > run".
 
 ## Shared-Memory Object for Control
@@ -93,7 +93,9 @@ placed into the `SharedMemoryResource` for **Control** is an instance of `lola::
 created by a `LoLa` skeleton instance during `lola::Skeleton::PrepareOffer()` within the initialization
 callback of the newly created shared-memory object.
 This anchor element of the `SharedMemoryResource` contains the members:
-* `event_controls_`: a map containing an `EventControl` entry for every event the service provides. Each `EventControl`
+* `event_controls_`: a fixed-capacity `lola::LinearSearchMap` containing an `EventControl` entry for every event the
+  service provides. Its capacity equals the number of offered service elements (events + fields), which is known
+  up-front, so the required shared-memory size can be computed analytically (no simulation run). Each `EventControl`
   aggregates the event's data control slots (`EventDataControl`), subscription control (`EventSubscriptionControl`), and
   the transaction log set (`TransactionLogSet`).
 * `application_id_pid_mapping_`: a mapping from application identifiers to process IDs, used by proxy instances to

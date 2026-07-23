@@ -89,7 +89,7 @@ inline std::tuple<EventControl*, EventDataStorage<SampleType>*> FakeServiceData:
     const SkeletonEventProperties event_properties) noexcept
 {
     bool inserted;
-    score::memory::shared::Map<ElementFqId, EventControl>::iterator inserted_control;
+    typename std::decay_t<decltype(data_control->event_controls_)>::iterator inserted_control;
     std::tie(inserted_control, inserted) =
         data_control->event_controls_.emplace(std::piecewise_construct,
                                               std::forward_as_tuple(id),
