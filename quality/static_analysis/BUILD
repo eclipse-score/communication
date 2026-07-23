@@ -23,6 +23,7 @@ py_binary(
         "@codeql_bundle//:codeql_cli",
         "@codeql_coding_standards//:analysis_report",
         "@codeql_coding_standards//:process_coding_standards_config",
+        "@codeql_coding_standards_compiled//:pack",
     ],
     main = "codeql_lint.py",
     tags = ["local"],
