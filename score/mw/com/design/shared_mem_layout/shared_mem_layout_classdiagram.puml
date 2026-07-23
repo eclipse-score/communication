@@ -33,7 +33,7 @@ class "lola::EventDataStorage<SampleType>" <<Shared Memory>> <<typedef>> {
 }
 
 class "lola::ServiceDataControl" <<Shared Memory>> {
-  +event_controls_ : score::memory::shared::Map<ElementFqId, EventControl>
+  +event_controls_ : lola::LinearSearchMap<ElementFqId, EventControl>
   +application_id_pid_mapping_ : ApplicationIdPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<ApplicationIdPidMappingEntry>>
 }
 
