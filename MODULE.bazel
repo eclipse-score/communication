@@ -446,6 +446,8 @@ git_repository(
     name = "codeql_coding_standards",
     build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
     commit = "06dc6bc32b05152fbe94dbf341a3e854574c9df5",  # v2.61.0
+    patch_args = ["-p1"],
+    patches = ["//third_party/codeql:codeql_coding_standards_misra.patch"],
     remote = "https://github.com/github/codeql-coding-standards.git",
 )
 
