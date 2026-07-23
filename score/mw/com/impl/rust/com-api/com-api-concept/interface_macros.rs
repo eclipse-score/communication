@@ -43,9 +43,9 @@ pub struct HandlerSet;
 ///   but can be overridden by providing a custom UID as a second parameter to the macro.
 ///
 /// # Member types
-/// - `name: Event<T>` — event subscriber / publisher pair
-/// - `name: Field<T>` — field subscriber / publisher pair (with set-handler callback support)
-/// - `name(Args) -> Return` — method caller / handler pair (fn-like syntax)
+/// - `name: Event<T>` - event subscriber / publisher pair
+/// - `name: Field<T>` - field subscriber / publisher pair (with set-handler callback support)
+/// - `name(Args) -> Return` - method caller / handler pair (fn-like syntax)
 ///
 /// # Parameters
 /// - Keywords: `interface` followed by the interface identifier and a block of member definitions.
@@ -86,7 +86,7 @@ pub struct HandlerSet;
 /// The generated code will include:
 /// - `VehicleInterface` struct with `INTERFACE_ID = "AbcInterface"`
 /// - `VehicleConsumer<R>` with `left_tire: Subscriber<Tire>`, `left_tire_field: FieldSubscriber<Exhaust>`,
-///   `left_tire_method: MethodCaller<(Tire,), Tire>` and a convenience `left_tire_method(input)` method.
+///   `left_tire_method: MethodCaller<(Tire,), Tire>` and a convenience `left_tire_method(arg0: Tire)` method.
 /// - `VehicleProducer<R>` (derives `TypeStateValidator`) with `left_tire_field: FieldPublisher<Exhaust>`,
 ///   `left_tire_method: MethodHandler<(Tire,), Tire>`. Requires `.init()` chain before `.offer()`.
 /// - `VehicleOfferedProducer<R>` with event publisher `left_tire`, plus moved field publisher and
@@ -100,7 +100,7 @@ pub struct HandlerSet;
 ///
 /// # Mixed / unified arms
 /// When the body contains anything other than a homogeneous list of `Event<T>` members
-/// (i.e., any `Field<T>` or fn-like method member), the TT-muncher arms parse the body
+/// (i.e., any `Field<T>` or fn-like method member), the recursive-macro arms parse the body
 /// and delegate to `interface_consumer_mixed!` / `interface_producer_mixed!`.
 #[macro_export]
 macro_rules! interface {
@@ -140,7 +140,7 @@ macro_rules! interface {
         $($members:tt)*
     }) => {
         $crate::interface_common!($id, $uid);
-        $crate::__interface_collect_members!(
+        $crate::_interface_collect_members!(
             @id[$id, $uid]
             @ev[]
             @fi[]
@@ -149,10 +149,10 @@ macro_rules! interface {
         );
     };
 
-    // Mixed / unified: auto-generated ID — catch-all, must come last.
+    // Mixed / unified: auto-generated ID - catch-all, must come last.
     (interface $id:ident { $($members:tt)* }) => {
         $crate::interface_common!($id);
-        $crate::__interface_collect_members!(
+        $crate::_interface_collect_members!(
             @id[$id, concat!(module_path!(), "::", stringify!($id))]
             @ev[]
             @fi[]
@@ -162,7 +162,7 @@ macro_rules! interface {
     };
 }
 
-/// Internal TT-muncher helper for `interface!`.
+/// Internal recursive-macro helper for `interface!`.
 ///
 /// Accumulates members into three typed lists, then calls the mixed generator macros.
 ///
@@ -175,26 +175,26 @@ macro_rules! interface {
 /// ```
 #[doc(hidden)]
 #[macro_export]
-macro_rules! __interface_collect_members {
-    // Base case: nothing left — emit the mixed consumer and producer
+macro_rules! _interface_collect_members {
+    // Base case: nothing left - emit the mixed consumer and producer
     (
         @id[$id:ident, $uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
         @fi[$($fi_name:ident : $fi_type:ty ,)*]
-        @me[$($me_name:ident ($me_args:ty) -> $me_ret:ty ,)*]
+        @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
         $(,)?
     ) => {
         $crate::interface_consumer_mixed!(
             $id,
             events[$($ev_name : $ev_type ,)*],
             fields[$($fi_name : $fi_type ,)*],
-            methods[$($me_name ($me_args) -> $me_ret ,)*]
+            methods[$($me_name [$($me_arg_ty),*] -> $me_ret ,)*]
         );
         $crate::interface_producer_mixed!(
             $id,
             events[$($ev_name : $ev_type ,)*],
             fields[$($fi_name : $fi_type ,)*],
-            methods[$($me_name ($me_args) -> $me_ret ,)*]
+            methods[$($me_name [$($me_arg_ty),*] -> $me_ret ,)*]
         );
     };
 
@@ -203,15 +203,15 @@ macro_rules! __interface_collect_members {
         @id[$id:ident, $uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
         @fi[$($fi_name:ident : $fi_type:ty ,)*]
-        @me[$($me_name:ident ($me_args:ty) -> $me_ret:ty ,)*]
+        @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
         $name:ident : Event<$t:ty>
         $(, $($rest:tt)*)?
     ) => {
-        $crate::__interface_collect_members!(
+        $crate::_interface_collect_members!(
             @id[$id, $uid]
             @ev[$($ev_name : $ev_type ,)* $name : $t ,]
             @fi[$($fi_name : $fi_type ,)*]
-            @me[$($me_name ($me_args) -> $me_ret ,)*]
+            @me[$($me_name [$($me_arg_ty),*] -> $me_ret ,)*]
             $($($rest)*)?
         );
     };
@@ -221,33 +221,35 @@ macro_rules! __interface_collect_members {
         @id[$id:ident, $uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
         @fi[$($fi_name:ident : $fi_type:ty ,)*]
-        @me[$($me_name:ident ($me_args:ty) -> $me_ret:ty ,)*]
+        @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
         $name:ident : Field<$t:ty>
         $(, $($rest:tt)*)?
     ) => {
-        $crate::__interface_collect_members!(
+        $crate::_interface_collect_members!(
             @id[$id, $uid]
             @ev[$($ev_name : $ev_type ,)*]
             @fi[$($fi_name : $fi_type ,)* $name : $t ,]
-            @me[$($me_name ($me_args) -> $me_ret ,)*]
+            @me[$($me_name [$($me_arg_ty),*] -> $me_ret ,)*]
             $($($rest)*)?
         );
     };
 
-    // Method member (fn-like syntax): `name(Args) -> Ret ,?`
+    // Method member (fn-like syntax): `name(Arg0, Arg1, ...) -> Ret ,?`
+    // Positional types - no tuple wrapper needed at the user level.
+    // Internally stored as a bracketed list: name [Arg0, Arg1, ...] -> Ret
     (
         @id[$id:ident, $uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
         @fi[$($fi_name:ident : $fi_type:ty ,)*]
-        @me[$($me_name:ident ($me_args:ty) -> $me_ret:ty ,)*]
-        $name:ident ($args:ty) -> $ret:ty
+        @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
+        $name:ident ( $($arg_ty:ty),* ) -> $ret:ty
         $(, $($rest:tt)*)?
     ) => {
-        $crate::__interface_collect_members!(
+        $crate::_interface_collect_members!(
             @id[$id, $uid]
             @ev[$($ev_name : $ev_type ,)*]
             @fi[$($fi_name : $fi_type ,)*]
-            @me[$($me_name ($me_args) -> $me_ret ,)* $name ($args) -> $ret ,]
+            @me[$($me_name [$($me_arg_ty),*] -> $me_ret ,)* $name [$($arg_ty),*] -> $ret ,]
             $($($rest)*)?
         );
     };
@@ -257,7 +259,7 @@ macro_rules! __interface_collect_members {
         @id[$_id:ident, $_uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
         @fi[$($fi_name:ident : $fi_type:ty ,)*]
-        @me[$($me_name:ident ($me_args:ty) -> $me_ret:ty ,)*]
+        @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
         $($unknown:tt)+
     ) => {
         compile_error!(concat!(
@@ -265,14 +267,16 @@ macro_rules! __interface_collect_members {
             stringify!($($unknown)+),
             "`.\n",
             "Supported member types:\n",
-            "  name: Event<T>          — event subscriber / publisher pair\n",
-            "  name: Field<T>          — field subscriber / publisher pair\n",
-            "  name(ArgsTuple) -> Ret  — method caller / handler pair\n",
+            "  name: Event<T>                   - event subscriber / publisher pair\n",
+            "  name: Field<T>                   - field subscriber / publisher pair\n",
+            "  name(Arg0, Arg1, ...) -> Ret     - method caller / handler pair\n",
             "Example:\n",
             "  interface!(interface MyIface {\n",
             "      my_event: Event<MyData>,\n",
             "      my_field: Field<MyData>,\n",
-            "      my_method((MyData,)) -> MyData,\n",
+            "      my_method(MyData) -> MyData,\n",
+            "      my_void_method(MyData) -> (),\n",
+            "      my_no_arg_method() -> MyData,\n",
             "  });"
         ));
     };
@@ -313,6 +317,7 @@ macro_rules! interface_common {
 /// Macro to implement the Consumer trait for a given interface ID and its events.
 ///
 /// Generates the Consumer struct with subscribers for each event.
+// TODO: This can be removed once verification is done that the new interface_producer_mixed! macro works for event-only interfaces.
 #[macro_export]
 macro_rules! interface_consumer {
     ($id:ident, $($event_name:ident, Event<$event_type:ty>),+$(,)?) => {
@@ -340,36 +345,13 @@ macro_rules! interface_consumer {
             }
         }
     };
-    ($id:ident, $($field_name:ident, Field<$field_type:ty>),+$(,)?) => {
-        com_api::paste::paste!  {
-            pub struct [<$id Consumer>]<R: com_api::Runtime + ?Sized> {
-                $(
-                    pub $field_name: R::FieldSubscriber<$field_type>,
-                )+
-            }
-
-            impl<R: com_api::Runtime + ?Sized> com_api::Consumer<R> for [<$id Consumer>]<R> {
-                fn new(instance_info: R::ConsumerInfo) -> Self {
-                    [<$id Consumer>] {
-                        $(
-                            $field_name: R::FieldSubscriber::new(
-                                stringify!($field_name),
-                                instance_info.clone()
-                            ).expect(&format!(
-                                "Failed to create field subscriber for {}",
-                                stringify!($field_name)
-                            )),
-                        )+
-                    }
-                }
-            }
-        }
-    };
 }
 
+///  This is Event specific.
 /// Macro to implement the Producer and OfferedProducer traits for
 /// a given interface ID and its events.
 /// Generates Producer and OfferedProducer structs with publishers for each event.
+// TODO: This can be removed once verification is done that the new interface_producer_mixed! macro works for event-only interfaces.
 #[macro_export]
 macro_rules! interface_producer {
     ($id:ident, $($event_name:ident, Event<$event_type:ty>),+$(,)?) => {
@@ -433,163 +415,21 @@ macro_rules! interface_producer {
     };
 }
 
-/// Macro to implement the Consumer trait for method-based interfaces (Proxy side).
-///
-/// Generates the Consumer struct with ProxyMethod wrappers for each method.
-#[macro_export]
-macro_rules! interface_consumer_method {
-    ($id:ident, $($method_name:ident, Method<$args:ty, $return:ty>),+$(,)?) => {
-        com_api::paste::paste! {
-            pub struct [<$id Consumer>]<R: com_api::Runtime + ?Sized> {
-                $(
-                    pub $method_name: R::MethodCaller<$args, $return>,
-                )+
-                instance_info: R::ConsumerInfo,
-            }
-
-            impl<R: com_api::Runtime + ?Sized> com_api::Consumer<R> for [<$id Consumer>]<R> {
-                fn new(instance_info: R::ConsumerInfo) -> Self {
-                    [<$id Consumer>] {
-                        $(
-                            $method_name: <R::MethodCaller<$args, $return> as com_api::MethodCaller<$args, $return, R>>::new(
-                                stringify!($method_name),
-                                instance_info.clone()
-                            ).expect(&format!(
-                                "Failed to create proxy method for {}",
-                                stringify!($method_name)
-                            )),
-                        )+
-                        instance_info,
-                    }
-                }
-            }
-
-            // Add convenience methods for calling methods on the consumer.
-            //
-            // Each method accepts either the copy arg tuple OR the zero-copy pointer tuple
-            // via the `MethodCallInput` trait - one method name for both call paths:
-            //
-            //   copy - consumer.update_front_tires_pressure((tire1, tire2))?;
-            //   zero-copy - consumer.update_front_tires_pressure((ptr1, ptr2))?;
-            impl<R: com_api::Runtime + ?Sized> [<$id Consumer>]<R> {
-                $(
-                    pub fn $method_name<_Input>(&self, input: _Input) -> com_api::Result<$return>
-                    where
-                        _Input: com_api::MethodCallInput<$args, $return, R>,
-                        R::MethodCaller<$args, $return>: com_api::MethodCaller<$args, $return, R>,
-                    {
-                        input.invoke(&self.$method_name)
-                    }
-                )+
-            }
-        }
-    };
-}
-
-/// Macro to implement the Producer trait for method-based interfaces (Skeleton side).
-///
-/// Generates the Producer struct with SkeletonMethod wrappers for each method.
-/// The Producer struct derives TypeStateValidator for compile-time handler registration validation.
-#[macro_export]
-macro_rules! interface_producer_method {
-    ($id:ident, $($method_name:ident, Method<$args:ty, $return:ty>),+$(,)?) => {
-        com_api::paste::paste! {
-            // Producer struct with method handlers - derives TypeStateValidator
-            #[derive($crate::com_api_concept_macros::TypeStateValidator)]
-            pub struct [<$id Producer>]<R: com_api::Runtime + ?Sized> {
-                $(
-                    $method_name: R::MethodHandler<$args, $return>,
-                )+
-                instance_info: R::ProviderInfo,
-            }
-
-            // OfferedProducer for methods (methods remain active when offered)
-            pub struct [<$id OfferedProducer>]<R: com_api::Runtime + ?Sized> {
-                $(
-                    $method_name: R::MethodHandler<$args, $return>,
-                )+
-                instance_info: R::ProviderInfo,
-            }
-
-            // Internal implementation.
-            impl<R: com_api::Runtime + ?Sized> [<$id Producer>]<R> {
-                #[doc(hidden)]
-                fn _offer_internal(self) -> com_api::Result<[<$id OfferedProducer>]<R>> {
-                    // Offer the service instance to make it discoverable
-                    self.instance_info.offer_service()?;
-                    Ok([<$id OfferedProducer>] {
-                        $(
-                            $method_name: self.$method_name,
-                        )+
-                        instance_info: self.instance_info,
-                    })
-                }
-            }
-
-            // We can not remove the offer method from the Producer trait, but we can override it to panic with a clear message.
-            // Also adding compiler warning or error for this is not possible, we will rely on documentation and panic.
-            // if user call this directly, then it will panic and it is against the intended usage of the APIs.
-            // TODO: Need to think about this more, when we have more complex interface with mixed types.
-            // Also update the documentation for this, so user should not call offer() directly from Producer struct.
-            impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
-                type Interface = [<$id Interface>];
-                type OfferedProducer = [<$id OfferedProducer>]<R>;
-
-                fn offer(self) -> com_api::Result<Self::OfferedProducer> {
-                    panic!(
-                        "ERROR: Cannot call {}.offer() directly. Method handlers must be registered first.\n\
-                         Correct usage: producer.init().register_*_handler(...).offer()",
-                        stringify!([<$id Producer>])
-                    )
-                }
-
-                fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
-                    Ok([<$id Producer>] {
-                        $(
-                            $method_name: <R::MethodHandler<$args, $return> as com_api::MethodHandler<$args, $return, R>>::new(
-                                stringify!($method_name),
-                                instance_info.clone()
-                            )?,
-                        )+
-                        instance_info,
-                    })
-                }
-            }
-
-            impl<R: com_api::Runtime + ?Sized> com_api::OfferedProducer<R>
-                for [<$id OfferedProducer>]<R> {
-                type Interface = [<$id Interface>];
-                type Producer = [<$id Producer>]<R>;
-
-                fn unoffer(self) -> com_api::Result<Self::Producer> {
-                    // Stop offering the service instance
-                    self.instance_info.stop_offer_service()?;
-                    // TODO: `unoffer()` returns a raw `[<$id Producer>]` which loses the validated
-                    // handler state. We may want to consider returning a type that retains the handler state,
-                    // but curreltly if producer is returned then user can call the inti_handlers() again and register handlers again.
-                    Ok([<$id Producer>] {
-                        $(
-                            $method_name: self.$method_name,
-                        )+
-                        instance_info: self.instance_info,
-                    })
-                }
-            }
-        }
-    };
-}
-
 /// Generates the `{id}Consumer<R>` struct and its `Consumer<R>` trait implementation for
 /// interfaces that may contain any combination of events, fields, and methods.
 ///
 /// # Generated struct fields
-/// - `pub $ev_name: R::Subscriber<$ev_type>` — one per event
-/// - `pub $fi_name: R::FieldSubscriber<$fi_type>` — one per field
-/// - `pub $me_name: R::MethodCaller<$me_args, $me_ret>` — one per method
+/// - `pub $ev_name: R::Subscriber<$ev_type>` - one per event
+/// - `pub $fi_name: R::FieldSubscriber<$fi_type>` - one per field
+/// - `pub $me_name: R::MethodCaller<($me_arg_ty,...), $me_ret>` - one per method
 ///
-/// # Convenience method wrappers
-/// For each method member a `pub fn $me_name<I>(&self, input: I)` forwarding method is
-/// generated so callers can use the ergonomic `MethodCallInput`-dispatched call path.
+/// # method wrappers
+/// For each method member a positional-argument `pub fn $me_name(&self, arg0: A0, ...)` wrapper
+/// is generated (via `_gen_method_wrapper!`).  The wrapper packs the positional args into a tuple
+/// and dispatches through `MethodCallInput`, so both copy and zero-copy paths use the same call site.
+/// The wrapper returns `impl Future<Output = com_api::Result<Return>> + '_`.
+///   copy:       `consumer.method(val).await`          - `val: T` - copy path
+///   zero-copy:  `consumer.method(ptr).await`          - `ptr: MethodInArgPtr<T>` - zero-copy path
 #[doc(hidden)]
 #[macro_export]
 macro_rules! interface_consumer_mixed {
@@ -597,7 +437,7 @@ macro_rules! interface_consumer_mixed {
         $id:ident,
         events[$($ev_name:ident : $ev_type:ty ,)*],
         fields[$($fi_name:ident : $fi_type:ty ,)*],
-        methods[$($me_name:ident ($me_args:ty) -> $me_ret:ty ,)*]
+        methods[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
     ) => {
         com_api::paste::paste! {
             pub struct [<$id Consumer>]<R: com_api::Runtime + ?Sized> {
@@ -608,7 +448,7 @@ macro_rules! interface_consumer_mixed {
                     pub $fi_name: R::FieldSubscriber<$fi_type>,
                 )*
                 $(
-                    pub $me_name: R::MethodCaller<$me_args, $me_ret>,
+                    pub $me_name: R::MethodCaller<($($me_arg_ty,)*), $me_ret>,
                 )*
             }
 
@@ -634,8 +474,8 @@ macro_rules! interface_consumer_mixed {
                             )),
                         )*
                         $(
-                            $me_name: <R::MethodCaller<$me_args, $me_ret>
-                                as com_api::MethodCaller<$me_args, $me_ret, R>>::new(
+                            $me_name: <R::MethodCaller<($($me_arg_ty,)*), $me_ret>
+                                as com_api::MethodCaller<($($me_arg_ty,)*), $me_ret, R>>::new(
                                     stringify!($me_name),
                                     instance_info.clone()
                                 ).expect(&format!(
@@ -647,18 +487,14 @@ macro_rules! interface_consumer_mixed {
                 }
             }
 
-            // Convenience call wrappers — one per method member.
-            // Accepts either copy-arg tuple or zero-copy pointer tuple via MethodCallInput.
+            // Positional-argument convenience wrappers - one per method member.
+            // The wrapper packs args into a tuple and dispatches via MethodCallInput,
+            // so copy and zero-copy paths share the same call site.
+            //   copy:      consumer.method_name(val).await
+            //   zero-copy: consumer.method_name(ptr).await
             impl<R: com_api::Runtime + ?Sized> [<$id Consumer>]<R> {
                 $(
-                    pub fn $me_name<_Input>(&self, input: _Input) -> com_api::Result<$me_ret>
-                    where
-                        _Input: com_api::MethodCallInput<$me_args, $me_ret, R>,
-                        R::MethodCaller<$me_args, $me_ret>:
-                            com_api::MethodCaller<$me_args, $me_ret, R>,
-                    {
-                        input.invoke(&self.$me_name)
-                    }
+                    $crate::_gen_method_wrapper!($me_name ($($me_arg_ty),*) -> $me_ret);
                 )*
             }
         }
@@ -685,7 +521,7 @@ macro_rules! interface_consumer_mixed {
 #[macro_export]
 macro_rules! interface_producer_mixed {
     // Event-only specialisation (no fields, no methods):
-    // plain offer() without type-state validation — identical to interface_producer!
+    // plain offer() without type-state validation - identical to interface_producer!
     (
         $id:ident,
         events[$($ev_name:ident : $ev_type:ty ,)+],
@@ -700,10 +536,10 @@ macro_rules! interface_producer_mixed {
         $id:ident,
         events[$($ev_name:ident : $ev_type:ty ,)*],
         fields[$($fi_name:ident : $fi_type:ty ,)*],
-        methods[$($me_name:ident ($me_args:ty) -> $me_ret:ty ,)*]
+        methods[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
     ) => {
         com_api::paste::paste! {
-            // Producer struct — derives TypeStateValidator for compile-time offer() gating.
+            // Producer struct - derives TypeStateValidator for compile-time offer() gating.
             // Fields: FieldPublisher per field + MethodHandler per method.
             // Event publishers are NOT stored here; they are created during _offer_internal().
             #[derive($crate::com_api_concept_macros::TypeStateValidator)]
@@ -712,12 +548,12 @@ macro_rules! interface_producer_mixed {
                     $fi_name: R::FieldPublisher<$fi_type>,
                 )*
                 $(
-                    $me_name: R::MethodHandler<$me_args, $me_ret>,
+                    $me_name: R::MethodHandler<($($me_arg_ty,)*), $me_ret>,
                 )*
                 pub instance_info: R::ProviderInfo,
             }
 
-            // OfferedProducer struct — contains event publishers (created on offer),
+            // OfferedProducer struct - contains event publishers (created on offer),
             // plus the moved field publishers and method handlers from Producer.
             pub struct [<$id OfferedProducer>]<R: com_api::Runtime + ?Sized> {
                 $(
@@ -727,12 +563,12 @@ macro_rules! interface_producer_mixed {
                     pub $fi_name: R::FieldPublisher<$fi_type>,
                 )*
                 $(
-                    $me_name: R::MethodHandler<$me_args, $me_ret>,
+                    $me_name: R::MethodHandler<($($me_arg_ty,)*), $me_ret>,
                 )*
                 instance_info: R::ProviderInfo,
             }
 
-            // Internal implementation — called by the TypeStateValidator's offer() after all
+            // Internal implementation - called by the TypeStateValidator's offer() after all
             // states have been validated at compile time.
             impl<R: com_api::Runtime + ?Sized> [<$id Producer>]<R> {
                 #[doc(hidden)]
@@ -762,7 +598,11 @@ macro_rules! interface_producer_mixed {
                 }
             }
 
-            // Producer trait impl — offer() panics directing the user to the .init() chain.
+            // We can not remove the offer method from the Producer trait, but we can override it to panic with a clear message.
+            // Also adding compiler warning or error for this is not possible, we will rely on documentation and panic.
+            // if user call this directly, then it will panic and it is against the intended usage of the APIs.
+            // TODO: Need to think about this more, when we have more complex interface with mixed types.
+            // Also update the documentation for this, so user should not call offer() directly from Producer struct.
             impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
                 type Interface = [<$id Interface>];
                 type OfferedProducer = [<$id OfferedProducer>]<R>;
@@ -789,8 +629,8 @@ macro_rules! interface_producer_mixed {
                             )?,
                         )*
                         $(
-                            $me_name: <R::MethodHandler<$me_args, $me_ret>
-                                as com_api::MethodHandler<$me_args, $me_ret, R>>::new(
+                            $me_name: <R::MethodHandler<($($me_arg_ty,)*), $me_ret>
+                                as com_api::MethodHandler<($($me_arg_ty,)*), $me_ret, R>>::new(
                                     stringify!($me_name),
                                     instance_info.clone()
                                 )?,
@@ -800,7 +640,7 @@ macro_rules! interface_producer_mixed {
                 }
             }
 
-            // OfferedProducer trait impl — unoffer() stops the service and returns the Producer.
+            // OfferedProducer trait impl - unoffer() stops the service and returns the Producer.
             impl<R: com_api::Runtime + ?Sized> com_api::OfferedProducer<R>
                 for [<$id OfferedProducer>]<R>
             {
@@ -820,6 +660,111 @@ macro_rules! interface_producer_mixed {
                     })
                 }
             }
+        }
+    };
+}
+
+/// Entry-point wrapper generator.
+///
+/// - 0-arg: directly invokes `MethodCaller::invoke_with_copy` (no zero-copy path, nothing to allocate).
+/// - ≥1-arg: delegates to `_gen_method_wrapper_collect!`, which self-generates unique
+///   `(arg_name, generic_name)` identifiers for each position as it processes the positional
+///   type list, and calls `_gen_method_wrapper_body!` once for the complete function.
+///
+/// Every generated wrapper returns `impl Future<Output = com_api::Result<Return>> + '_`.
+///
+/// # Generated call sites
+/// ```text
+/// consumer.method(val).await   // copy path   - val: ArgType
+/// consumer.method(ptr).await   // zero-copy   - ptr: MethodInArgPtr<ArgType>
+/// ```
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _gen_method_wrapper {
+    // 0 args - invoke_with_copy directly; no zero-copy path (nothing to allocate).
+    // This is for kind of `get` methods that take no arguments and return a value.
+    ($me_name:ident () -> $me_ret:ty) => {
+        pub fn $me_name(&self) -> impl core::future::Future<Output = com_api::Result<$me_ret>> + '_ {
+            com_api::MethodCaller::invoke_with_copy(&self.$me_name, ())
+        }
+    };
+    // 1–N args - delegate to the self-counting recursive macro.
+    ($me_name:ident ($($t:ty),+) -> $me_ret:ty) => {
+        $crate::_gen_method_wrapper_collect!(
+            $me_name -> $me_ret ;
+            @counter[]
+            @acc[]
+            @types[$($t),+]
+        );
+    };
+}
+
+/// Recursive macro for `_gen_method_wrapper!`.
+///
+/// Self-counting: instead of zipping the method's positional type list against a
+/// pre-defined pool of `(arg_name, generic_name)` identifiers, this recursive macro synthesizes
+/// a fresh, unique `(argN : _AN : TypeN)` triplet at each recursion step directly from a
+/// growing counter of `n` marker tokens (via `paste!`), then calls
+/// `_gen_method_wrapper_body!` once the type list is exhausted.
+///
+/// This mirrors the self-contained recursion used by `impl_all_arities!` in
+/// `method_arities.rs`: there is no separate pool to keep in sync, and no fixed
+/// argument-count limit - any arity supported by `method_arities.rs` works automatically.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _gen_method_wrapper_collect {
+    // Base: all types consumed - emit the function via the body macro.
+    (
+        $me_name:ident -> $me_ret:ty ;
+        @counter[$($n:tt)*]
+        @acc[$($acc:tt),*]
+        @types[]
+    ) => {
+        $crate::_gen_method_wrapper_body!($me_name -> $me_ret ; [$($acc),*]);
+    };
+
+    // Step: consume one type, grow the counter by one `n`, and synthesize a fresh
+    // (param, generic) identifier pair from the counter via `paste!`.
+    (
+        $me_name:ident -> $me_ret:ty ;
+        @counter[$($n:tt)*]
+        @acc[$($acc:tt),*]
+        @types[$t:ty $(, $rest_t:ty)*]
+    ) => {
+        com_api::paste::paste! {
+            $crate::_gen_method_wrapper_collect!(
+                $me_name -> $me_ret ;
+                @counter[$($n)* n]
+                @acc[$($acc,)* ([<arg $($n)*>] : [<_A $($n)*>] : $t)]
+                @types[$($rest_t),*]
+            );
+        }
+    };
+}
+
+
+/// Generates the wrapper function from an accumulated list of `(argN : _AN : TypeN)`.
+///
+/// This generates a wrapper function template.
+/// All arities use this one arm - the function body is written once, not duplicated per arity.
+/// Called by `_gen_method_wrapper_collect!` after it has built the full triplet list.
+///
+/// The generated function returns `impl Future<Output = com_api::Result<$me_ret>> + '_` so callers
+/// can `.await` the method call, e.g. `consumer.method_name(arg0).await?`.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _gen_method_wrapper_body {
+    ($me_name:ident -> $me_ret:ty ; [$(($p:ident : $g:ident : $c:ty)),+]) => {
+        pub fn $me_name<$($g),+>(
+            &self,
+            $($p: $g),+
+        ) -> impl core::future::Future<Output = com_api::Result<$me_ret>> + '_
+        where
+            ($($g,)+): com_api::MethodCallInput<($($c,)+), $me_ret, R>,
+            R::MethodCaller<($($c,)+), $me_ret>:
+                com_api::MethodCaller<($($c,)+), $me_ret, R>,
+        {
+            com_api::MethodCallInput::invoke(($($p,)+), &self.$me_name)
         }
     };
 }
@@ -960,7 +905,7 @@ mod tests {
     /// - `VehicleConsumer<R>` has `left_tire: Subscriber<Tire>`,
     ///   `left_tire_field: FieldSubscriber<Exhaust>`,
     ///   `left_tire_method: MethodCaller<(Tire,), Tire>`,
-    ///   and a convenience `left_tire_method(input)` method.
+    ///   and a convenience `left_tire_method(arg0: Tire)` method.
     /// - `VehicleProducer<R>` derives `TypeStateValidator` and requires the `.init()` chain:
     ///   `producer.init().update_left_tire_field(&val)?.register_set_handler_left_tire_field(f)?.register_left_tire_method_handler(h)?.offer()?`
     /// - `VehicleOfferedProducer<R>` has `left_tire: Publisher<Tire>` (created lazily on offer),
@@ -1689,7 +1634,7 @@ mod validation_tests {
                     Id = "VehicleMixedInterface",
                     left_tire: Event<Tire>,
                     exhaust_field: Field<Exhaust>,
-                    update_pressure((Tire,)) -> Tire,
+                    update_pressure(Tire) -> Tire,
                 }
             );
 
@@ -1715,7 +1660,7 @@ mod validation_tests {
     }
 
     #[test]
-    fn test_mixed_interface_event_only_via_muncher() {
+    fn test_mixed_interface_event_only_via_recursive_macro() {
         // Verifies that a mixed-arm interface with only events still generates
         // the same types as the backward-compatible Event-only arm.
         mod test_module {
@@ -1730,7 +1675,7 @@ mod validation_tests {
                 const ID: &'static str = "Signal";
             }
 
-            // This goes through the TT-muncher path (mixed arm) but with only events.
+            // This goes through the recursive-macro path (mixed arm) but with only events.
             crate::interface!(
                 interface Radar {
                     target: Event<Signal>,

@@ -54,19 +54,17 @@ interface!(
 // - VehicleMethodsConsumer<R>, VehicleMethodsProducer<R>, VehicleMethodsOfferedProducer<R>
 //   with appropriate trait implementations for the VehicleMethods interface.
 // As passed methods to macro it will generate the following methods:
-// - update_tire_pressure((Tire,)) -> ()
-// - update_front_tires_pressure((Tire, Tire)) -> ()
-// - get_tire_pressure(()) -> Tire
+// - update_tire_pressure(Tire) -> ()
+// - update_front_tires_pressure(Tire, Tire) -> ()
+// - get_tire_pressure() -> Tire
 // and this method can be accessed through the consumer instance of VehicleMethodsConsumer<R>.
-// Note: Yes currently macro is taking tuple based input and which makes littel bit not user-friendly,
-// but this can be improved in future by generating wrapper methods.
-// Methods now use fn-like syntax: method_name(ArgsTupleType) -> ReturnType
-// The args type must be a valid MethodArgs tuple (e.g. (Tire,) for one arg, (Tire,Tire) for two).
+// Methods use fn-like syntax: method_name(ArgType0, ArgType1, ...) -> ReturnType
+// For void return, -> () is required so the macro can identify the member as a method.
 interface!(
     interface VehicleMethods {
         Id = "VehicleMethodsInterface",
-        update_tire_pressure((Tire,)) -> (),
-        update_front_tires_pressure((Tire, Tire)) -> (),
-        get_tire_pressure(()) -> Tire,
+        update_tire_pressure(Tire) -> (),
+        update_front_tires_pressure(Tire, Tire) -> (),
+        get_tire_pressure() -> Tire,
     }
 );

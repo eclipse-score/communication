@@ -154,16 +154,16 @@ fn create_consumer_method<R: Runtime>(
         .expect("Failed to build consumer instance")
 }
 
-// TODO: Currently all the method is synchronous, but in future we can add async version of method call as well, if needed.
+// Method calls return `impl Future<Output = com_api::Result<T>>`, so they must be `.await`ed.
 // We are having tuple of arguments, so we can have any number of arguments (currently up to 2) without any extra boilerplate.
 // But in Method signature, we need to have tuple of arguments, so for zero argument method, we need to pass empty tuple.
 // Which need to be improved using macro generated wrapper around method call, so that we can call zero argument method without empty tuple.
 // even with argument tuple, method call can be improve using macro generated wrapper, so that we can call method with any number of arguments without tuple.
 
-fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
-    // Call the update_tire_pressure method with a sample tire pressure value
+async fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
+    // Copy path: single positional argument — no tuple needed.
     let tire = Tire { pressure: 30.0 };
-    match consumer.update_tire_pressure((tire,)) {
+    match consumer.update_tire_pressure(tire).await {
         Ok(_) => println!("Successfully called update_tire_pressure method"),
         Err(e) => eprintln!("Failed to call update_tire_pressure method: {:?}", e),
     }
@@ -174,17 +174,14 @@ fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
         .expect("Failed to allocate method arguments");
     let tire1ptr = uninit1.write(Tire { pressure: 35.0 });
 
-    // Call the get_tire_pressure method to retrieve the current tire pressure
-    // Note: Currently we need to pass empty tuple for zero argument method,
-    // but in future we can change the API to not require empty tuple for zero argument method
-    // Maybe by implementing wrapper around in interface macro.
-    match consumer.get_tire_pressure(()) {
+    // Copy path: zero-argument method — empty parens, no empty-tuple needed.
+    match consumer.get_tire_pressure().await {
         Ok(tire) => println!("Current tire pressure: {:?}", tire),
         Err(e) => eprintln!("Failed to call get_tire_pressure method: {:?}", e),
     }
 
-    // Same method name as copy call - MethodCallInput dispatches to zero-copy path via 1-tuple ptr type
-    match consumer.update_tire_pressure((tire1ptr,)) {
+    // Zero-copy path: allocate, write, then call the same wrapper.
+    match consumer.update_tire_pressure(tire1ptr).await {
         Ok(_) => println!("Successfully called update_tire_pressure method with allocated args"),
         Err(e) => eprintln!(
             "Failed to call update_tire_pressure method with allocated args: {:?}",
@@ -192,9 +189,10 @@ fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
         ),
     }
 
+    // Copy path: two arguments method.
     let tire1 = Tire { pressure: 31.0 };
     let tire2 = Tire { pressure: 32.0 };
-    match consumer.update_front_tires_pressure((tire1, tire2)) {
+    match consumer.update_front_tires_pressure(tire1, tire2).await {
         Ok(_) => println!("Successfully called update_front_tires_pressure method"),
         Err(e) => eprintln!("Failed to call update_front_tires_pressure method: {:?}", e),
     }
@@ -205,8 +203,8 @@ fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
         .expect("Failed to allocate method arguments");
     let tire1ptr = uninit1.write(Tire { pressure: 36.0 });
     let tire2ptr = uninit2.write(Tire { pressure: 37.0 });
-    // Same method name as copy call - tuple of MethodInArgPtr dispatches to zero-copy path
-    match consumer.update_front_tires_pressure((tire1ptr, tire2ptr)) {
+    // Zero-copy path: allocate, write both args, then call the same method with allocated args.
+    match consumer.update_front_tires_pressure(tire1ptr, tire2ptr).await {
         Ok(_) => {
             println!("Successfully called update_front_tires_pressure method with allocated args")
         }

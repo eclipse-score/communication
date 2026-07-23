@@ -23,6 +23,7 @@ mod com_api_concept;
 mod com_api_method;
 mod error;
 mod interface_macros;
+mod method_arities;
 mod reloc;
 pub use com_api_concept::*;
 pub use com_api_method::*;
