@@ -44,6 +44,8 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::Arc;
 
+use score_log as log;
+
 use concept::{
     Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, ConsumerFailedReason, Error,
     EventFailedReason, InstanceSpecifier, Interface, ReceiveFailedReason, Result, Sample,

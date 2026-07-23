@@ -25,8 +25,8 @@ rust_library(
     ],
     deps = [
         ":vehicle_gen_cpp",
-        "@score_baselibs//src/log/score_log",
         "//score/mw/com/rust:com_api",
+        "@score_baselibs//src/log/score_log",
     ],
 )
 

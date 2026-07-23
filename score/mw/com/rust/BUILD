@@ -24,7 +24,24 @@ rust_library(
     ],
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
-        "//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
         "//score/mw/com/rust/concept",
+    ],
+)
+
+# Test-only target that additionally exposes the mock runtime.
+# Use this target (instead of :com_api) in test BUILD rules that need MockRuntimeBuilderImpl.
+# Mock Runtime is not yet ready - https://github.com/eclipse-score/communication/issues/490
+rust_library(
+    name = "com_api_mock",
+    testonly = True,
+    srcs = ["com_api_mock.rs"],
+    crate_name = "com_api",
+    edition = "2024",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":com_api",
+        "//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
     ],
 )

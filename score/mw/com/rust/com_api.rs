@@ -133,8 +133,6 @@
 
 pub use com_api_runtime_lola::LolaRuntimeImpl;
 pub use com_api_runtime_lola::RuntimeBuilderImpl as LolaRuntimeBuilderImpl;
-pub use com_api_runtime_mock::MockRuntimeImpl;
-pub use com_api_runtime_mock::RuntimeBuilderImpl as MockRuntimeBuilderImpl;
 
 pub use concept::{
     interface, interface_common, interface_consumer, interface_producer, Builder, CommData,

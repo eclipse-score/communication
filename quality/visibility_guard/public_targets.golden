@@ -22,15 +22,14 @@
 //score/mw/com/dependability:mw_com_doc_needs
 //score/mw/com/dependability:mw_com_index
 //score/mw/com/dependability:mw_com_rst
-//score/mw/com/impl/rust/com-api/com-api-concept-macros:com-api-concept-macros
 //score/mw/com/impl/rust/com-api/com-api-ffi-lola:registry_bridge_macro_cpp
-//score/mw/com/impl/rust/com-api/com-api:com-api
 //score/mw/com/performance_benchmarks/macro_benchmark:logging.json
 //score/mw/com/performance_benchmarks/macro_benchmark:lola_benchmarking_client
 //score/mw/com/performance_benchmarks/macro_benchmark:lola_benchmarking_service
 //score/mw/com/performance_benchmarks/macro_benchmark:mw_com_config.json
 //score/mw/com/rust/ffi_bridge:register_interface
 //score/mw/com/rust:com_api
+//score/mw/com/rust:com_api_mock
 //score/mw/com:com
 //score/mw/com:config_schema
 //score/mw/com:test_types

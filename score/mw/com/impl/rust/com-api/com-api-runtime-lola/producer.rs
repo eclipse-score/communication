@@ -36,6 +36,8 @@ use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use std::sync::Arc;
 
+use score_log as log;
+
 use concept::{
     AllocationFailureReason, Builder, CommData, Error, EventFailedReason, InstanceSpecifier,
     Interface, Producer, ProducerBuilder, ProducerFailedReason, ProviderInfo, Publisher, Result,
