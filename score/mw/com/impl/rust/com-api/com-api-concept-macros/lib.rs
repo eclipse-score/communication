@@ -15,6 +15,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, Generics, Meta, Type};
 
+mod type_state_validator;
+
 /// Derive macro for the `CommData` trait.
 ///
 /// Implements `CommData` for a struct or C-like enum, providing a stable string identity
@@ -333,6 +335,33 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
     };
 
     Ok(out)
+}
+
+/// Procedural macro to generate compile-time type-state validator for Field-based producers.
+///
+/// This macro generates a validator struct with phantom type parameters that track
+/// the initialization state of each field at compile time. The `offer()` method is only
+/// available when all fields have been initialized, preventing runtime errors.
+///
+/// # Usage
+///
+/// Apply this macro alongside the `interface!` macro for Field-based interfaces:
+///
+/// ```ignore
+/// #[derive(TypeStateFieldValidator)]
+/// struct VehicleFieldProducer<R: Runtime> {
+///     left_tire: R::FieldPublisher<Tire>,
+///     exhaust: R::FieldPublisher<Exhaust>,
+/// }
+/// ```
+///
+/// Macro will generate a `VehicleFieldProducerValidator<R, S0, S1, H0, H1>` struct with phantom type parameters
+/// representing the initialization state of each field and handler. The `offer()` method will only be
+/// available when all fields are initialized and all handlers are registered, ensuring compile-time safety.
+// TODO: Document tests need to be added for this macro, including successful and failed compilation cases.
+#[proc_macro_derive(TypeStateFieldValidator)]
+pub fn derive_typestate_field_validator(input: TokenStream) -> TokenStream {
+    type_state_validator::derive_typestate_field_validator_impl(input)
 }
 
 // Use doctest to test failed compilations and successful ones

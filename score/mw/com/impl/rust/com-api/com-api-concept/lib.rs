@@ -25,6 +25,11 @@ mod interface_macros;
 mod reloc;
 pub use com_api_concept::*;
 pub use error::*;
+pub use interface_macros::{HandlerNotSet, HandlerSet, Init, Uninit};
 #[doc(hidden)]
 pub use paste;
 pub use reloc::Reloc;
+mod com_api_field;
+#[doc(hidden)]
+pub use com_api_concept_macros;
+pub use com_api_field::*;

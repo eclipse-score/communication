@@ -23,6 +23,7 @@ rust_binary(
         "//score/mw/com/example/com-api-example/com-api-gen",
         "//score/mw/com/impl/rust/com-api/com-api",
         "@score_communication_crate_index//:clap",
+        "@score_communication_crate_index//:tokio",
     ],
 )
 

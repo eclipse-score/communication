@@ -11,6 +11,22 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+/// Type-state marker for uninitialized field state (compile-time tracking).
+#[allow(dead_code)]
+pub struct Uninit;
+
+/// Type-state marker for initialized field state (compile-time tracking).
+#[allow(dead_code)]
+pub struct Init;
+
+/// Type-state marker for handler not registered (compile-time tracking).
+#[allow(dead_code)]
+pub struct HandlerNotSet;
+
+/// Type-state marker for handler registered (compile-time tracking).
+#[allow(dead_code)]
+pub struct HandlerSet;
+
 /// Main interface macro that generates Consumer, Producer, and OfferedProducer types
 /// along with all necessary trait implementations.
 ///
@@ -76,6 +92,12 @@
 ///   "left_tire" and "exhaust" events.
 /// - `VehicleOfferedProducer<R>` struct that implements `OfferedProducer` trait for offering
 ///   "left_tire" and "exhaust" events.
+// TODO: We need to enable the support for mixed types (Event, Method, Field) in the same interface definition.
+// Currently, we are supporting only one type of definition in the interface macro. We will add support for mixed types before enabling field and method for user.
+// We will update this macro in such a way so it should not cause in backward compatibility issues for existing users.
+// Plan is to have only two match arm in the interface macro, and then validate if given struct field value has literal like Event, Method, Field.
+// Currently you may see duplicate code for field and event macro but field related macro just added to verify the example application for APIs usage.
+// This file will be optimized as mentioned above.
 #[macro_export]
 macro_rules! interface {
     // Default unique ID based on the module path and interface name
@@ -114,11 +136,18 @@ macro_rules! interface {
         );
     };
 
-    (interface $id:ident { $($event_name:ident : Field<$event_type:ty>),+$(,)? }) => {
-        compile_error!(
-            "Field definitions are not supported in this macro version. \
-             Please use Event<T> syntax for defining events."
-        );
+     (interface $id:ident { $($field_name:ident : Field<$field_type:ty>),+$(,)? }) => {
+        $crate::interface_common!($id);
+        $crate::interface_consumer!($id, $($field_name, Field<$field_type>),+);
+        $crate::interface_producer!($id, $($field_name, Field<$field_type>),+);
+    };
+    (interface $id:ident {
+        Id = $uid:expr,
+        $($field_name:ident : Field<$field_type:ty>),+ $(,)?
+    }) => {
+        $crate::interface_common!($id, $uid);
+        $crate::interface_consumer!($id, $($field_name, Field<$field_type>),+);
+        $crate::interface_producer!($id, $($field_name, Field<$field_type>),+);
     };
 }
 
@@ -177,6 +206,31 @@ macro_rules! interface_consumer {
                             ).expect(&format!(
                                 "Failed to create subscriber for {}",
                                 stringify!($event_name)
+                            )),
+                        )+
+                    }
+                }
+            }
+        }
+    };
+    ($id:ident, $($field_name:ident, Field<$field_type:ty>),+$(,)?) => {
+        com_api::paste::paste!  {
+            pub struct [<$id Consumer>]<R: com_api::Runtime + ?Sized> {
+                $(
+                    pub $field_name: R::FieldSubscriber<$field_type>,
+                )+
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::Consumer<R> for [<$id Consumer>]<R> {
+                fn new(instance_info: R::ConsumerInfo) -> Self {
+                    [<$id Consumer>] {
+                        $(
+                            $field_name: R::FieldSubscriber::new(
+                                stringify!($field_name),
+                                instance_info.clone()
+                            ).expect(&format!(
+                                "Failed to create subscriber for {}",
+                                stringify!($field_name)
                             )),
                         )+
                     }
@@ -244,6 +298,88 @@ macro_rules! interface_producer {
                         instance_info: self.instance_info.clone(),
                     };
                     // Stop offering the service instance to withdraw it from system availability
+                    self.instance_info.stop_offer_service()?;
+                    Ok(producer)
+                }
+            }
+        }
+    };
+      ($id:ident, $($field_name:ident, Field<$field_type:ty>),+$(,)?) => {
+        com_api::paste::paste! {
+            // Producer struct with proc macro validation
+            #[derive($crate::com_api_concept_macros::TypeStateFieldValidator)]
+            pub struct [<$id Producer>]<R: com_api::Runtime + ?Sized> {
+                $(
+                    pub $field_name: R::FieldPublisher<$field_type>,
+                )+
+                pub instance_info: R::ProviderInfo,
+            }
+
+            pub struct [<$id OfferedProducer>]<R: com_api::Runtime + ?Sized> {
+                $(
+                    pub $field_name: R::FieldPublisher<$field_type>,
+                )+
+                instance_info: R::ProviderInfo,
+            }
+
+            // Internal implementation
+            impl<R: com_api::Runtime + ?Sized> [<$id Producer>]<R> {
+                /// Internal offer implementation
+                /// Use init_field().update_*(...).register_set_handler_*(...).offer() instead.
+                #[doc(hidden)]
+                fn _offer_internal(self) -> com_api::Result<[<$id OfferedProducer>]<R>> {
+                    // Create OfferedProducer from consumed producer
+                    let offered = [<$id OfferedProducer>] {
+                        $(
+                            $field_name: self.$field_name,
+                        )+
+                        instance_info: self.instance_info.clone(),
+                    };
+                    // Offer the service instance to make it discoverable
+                    self.instance_info.offer_service()?;
+                    Ok(offered)
+                }
+            }
+
+            // We can not remove the offer method from the Producer trait, but we can override it to panic with a clear message.
+            // Also adding compiler warning or error for this is not possible, we will rely on documentation and panic.
+            // if user call this directly, then it will panic and it is against the intended usage of the APIs.
+            // TODO: Need to think about this more, when we have more complex interface with mixed types.
+            // Also update the documentation for this, so user should not call offer() directly from Producer struct.
+            impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
+                type Interface = [<$id Interface>];
+                type OfferedProducer = [<$id OfferedProducer>]<R>;
+                fn offer(self) -> com_api::Result<Self::OfferedProducer> {
+                    panic!("Cannot offer field-based producer without initializing fields and registering handlers.\n\
+                    Use: producer.init_field().update_*(...).register_set_handler_*(...).offer()");
+
+                }
+
+                fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
+                    Ok(Self {
+                        $(
+                            $field_name: R::FieldPublisher::new(
+                                stringify!($field_name),
+                                instance_info.clone()
+                            )?,
+                        )+
+                        instance_info,
+                    })
+                }
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::OfferedProducer<R>
+                for [<$id OfferedProducer>]<R> {
+                type Interface = [<$id Interface>];
+                type Producer = [<$id Producer>]<R>;
+
+                fn unoffer(self) -> com_api::Result<Self::Producer> {
+                    let producer = [<$id Producer>] {
+                        $(
+                            $field_name: self.$field_name,
+                        )+
+                        instance_info: self.instance_info.clone(),
+                    };
                     self.instance_info.stop_offer_service()?;
                     Ok(producer)
                 }

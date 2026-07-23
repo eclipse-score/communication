@@ -48,6 +48,7 @@
 //! - Structures
 //! - Tuples
 
+use crate::com_api_field::*;
 use crate::error::*;
 use crate::Reloc;
 pub use com_api_concept_macros::CommData;
@@ -105,6 +106,12 @@ pub trait Runtime {
 
     /// `ConsumerInfo` types for Configuration data for service consumers instances
     type ConsumerInfo: Send + Clone;
+
+    /// `FieldSubscription<T>` types for Manages subscriptions to field instance
+    type FieldSubscriber<T: CommData + Debug>: FieldSubscriber<T, Self>;
+
+    /// `FieldPublisher<T>` types for Publishes field constructs and update the data
+    type FieldPublisher<T: CommData + Debug>: FieldPublisher<T, Self>;
 
     /// Find a service instance for the given interface and instance specifier.
     /// Locate available instances of a service interface.
@@ -321,6 +328,12 @@ where
 {
 }
 
+pub trait SampleMut<T>: DerefMut<Target = T> + Debug
+where
+    T: CommData + Debug,
+{
+}
+
 /// A `SampleMut` provides a reference to a memory buffer of an event with mutable value.
 ///
 /// By implementing the `DerefMut` trait implementations of the trait support the `.` operator for
@@ -329,18 +342,10 @@ where
 ///
 /// # Type Parameters
 /// * `T` - The relocatable event data type
-pub trait SampleMut<T>: DerefMut<Target = T> + Debug
+pub trait EventSampleMut<T>: SampleMut<T>
 where
     T: CommData + Debug,
 {
-    /// Send the sample and consume it.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` indicating success or failure of the send operation.
-    ///
-    /// # Errors
-    /// Returns 'Error' if the send operation fails.
     fn send(self) -> Result<()>;
 }
 
@@ -477,8 +482,8 @@ pub trait Publisher<T, R: Runtime + ?Sized>
 where
     T: CommData + Debug,
 {
-    /// Associated sample type for uninitialized event data
-    type SampleMaybeUninit<'a>: SampleMaybeUninit<T> + 'a
+    /// Associated sample type for uninitialized event data.
+    type SampleMaybeUninit<'a>: SampleMaybeUninit<T, SampleMut: EventSampleMut<T> + 'a>
     where
         Self: 'a;
     /// Allocate a buffer slot for the event publication.
@@ -947,7 +952,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// If the stream encounters an error, it will yield `Err(Error)` for that sample, but will continue to yield subsequent samples as they become available.
     /// The stream only terminates when the subscription is unsubscribed or dropped or if the stream is explicitly dropped by the user.
     /// With this design, users can handle errors on it side and take appropriate actions.
-    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
+    fn to_stream<'a>(&'a mut self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.

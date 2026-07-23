@@ -11,23 +11,25 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+#![allow(unused)]
+
 // This demo app writing and reading tire pressure data using producer and consumer respectively.
 // It is demonstrating the composition of consumer and producer in one struct,
 // but they can be used separately as well.
 // The example is using Lola runtime, but it can be used with any runtime by changing the runtime initialization part.
 // Note: The example is using unwrap and panic in some places for simplicity,
 // but it is recommended to handle errors properly in production code.
-
 use clap::Parser;
 use std::path::PathBuf;
 
 use com_api::{
-    Builder, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
-    OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,
-    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    Builder, FieldPublisher, FieldSubscriber, FieldSubscription, FindServiceSpecifier,
+    InstanceSpecifier, Interface, LolaRuntimeBuilderImpl, OfferedProducer, Producer, Publisher,
+    Result, Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit, SampleMut,
+    ServiceDiscovery, Subscriber, Subscription,
 };
 
-use com_api_gen::{Exhaust, Tire, VehicleInterface};
+use com_api_gen::{Exhaust, Tire, VehicleFieldInterface, VehicleInterface};
 
 #[derive(Parser)]
 struct Arguments {
@@ -45,6 +47,13 @@ type VehicleConsumer<R> = <VehicleInterface as Interface>::Consumer<R>;
 // VehicleOfferedProducer is the offered producer type generated for the Vehicle interface, parameterized by the runtime R
 type VehicleOfferedProducer<R> =
     <<VehicleInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
+// VehicleFieldProducer is the producer type for the VehicleField interface (before offering)
+type VehicleFieldProducer<R> = <VehicleFieldInterface as Interface>::Producer<R>;
+// VehicleFieldOfferedProducer is the offered producer type for the VehicleField interface (fields support update/set-handler)
+type VehicleFieldOfferedProducer<R> =
+    <<VehicleFieldInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
+
+type VehicleFieldConsumer<R> = <VehicleFieldInterface as Interface>::Consumer<R>;
 
 // Example struct demonstrating composition with VehicleConsumer
 pub struct VehicleMonitor<R: Runtime> {
@@ -177,6 +186,163 @@ fn create_producer<R: Runtime>(
         .build()
         .expect("Failed to build producer instance");
     producer.offer().expect("Failed to offer producer instance")
+}
+
+// Below function just demonstrate the field APIs usage
+// This build fine but it can not run because we have not implemented the field APIs in Lola runtime yet.
+
+// Producer creation and intialization of fields with initial values and set handlers for the fields
+// It will return the offered producer instance which can be used to update the fields.
+fn create_producer_field<R: Runtime + 'static>(
+    runtime: &R,
+    service_id: InstanceSpecifier,
+    initial_tire_value: Tire,
+    initial_exhaust_value: Exhaust,
+) -> VehicleFieldOfferedProducer<R>
+where
+    <R as Runtime>::FieldPublisher<Tire>: Send + Sync,
+    <R as Runtime>::FieldPublisher<Exhaust>: Send,
+{
+    let producer_builder = runtime.producer_builder::<VehicleFieldInterface>(service_id);
+    let producer = producer_builder
+        .build()
+        .expect("Failed to build producer instance");
+
+    // Use validator pattern with compile-time type-state validation
+    // Must register handlers and initialize all fields before offer() is available
+    let offered = producer
+        .init_field()
+        .register_set_handler_left_tire(move |val: &Tire| {
+            println!("Received tire pressure update: {:?}", val);
+            // Additional logic to handle the tire pressure update can be added here
+            // For example, we can increment value or conver unit and update the field again.
+            // TODO: in working example add that logic to demonstrate the set handler usage.
+            // Note: I think producer may be need clone ?
+        })
+        .expect("Failed to register set handlers")
+        .register_set_handler_exhaust(|_val: &Exhaust| {
+            println!("Received exhaust update");
+        })
+        .expect("Failed to register set handlers")
+        .update_left_tire(&initial_tire_value)
+        .expect("Failed to update left_tire field")
+        .update_exhaust(&initial_exhaust_value)
+        .expect("Failed to update exhaust field")
+        .offer()
+        .expect("Failed to offer producer instance");
+
+    offered
+}
+
+// Function to demonstrate the usage of the offered producer to update fields
+fn offered_producer_process<R: Runtime>(offered_producer: VehicleFieldOfferedProducer<R>) {
+    // Use the offered producer to update fields
+    let new_tire_value = Tire { pressure: 32.0 };
+    let new_exhaust_value = Exhaust {};
+    offered_producer
+        .left_tire
+        .update(&new_tire_value)
+        .expect("Failed to update left_tire field");
+    offered_producer
+        .exhaust
+        .update(&new_exhaust_value)
+        .expect("Failed to update exhaust field");
+}
+
+// create the consumer.
+fn create_consumer_field<R: Runtime>(
+    runtime: &R,
+    service_id: InstanceSpecifier,
+) -> VehicleFieldConsumer<R> {
+    let consumer_discovery =
+        runtime.find_service::<VehicleFieldInterface>(FindServiceSpecifier::Specific(service_id));
+    let available_service_instances = consumer_discovery
+        .get_available_instances()
+        .expect("Failed to get available service instances");
+
+    // Select service instance at specific handle_index
+    let handle_index = 0; // or any index you need from vector of instances
+    let consumer_builder = available_service_instances
+        .into_iter()
+        .nth(handle_index)
+        .expect("Failed to get consumer builder at specified handle index");
+
+    consumer_builder
+        .build()
+        .expect("Failed to build consumer instance")
+}
+
+async fn process_get_method_async<S, R>(subscription: S)
+where
+    S: FieldSubscription<Tire, R>,
+    R: Runtime,
+{
+    // Get field value asynchronously
+    match subscription.get().await {
+        Ok(_method_return) => {
+            println!("Current tire pressure from spawned task");
+        }
+        Err(e) => eprintln!("Failed to get tire pressure: {:?}", e),
+    }
+
+    println!("Async subscription processing in spawned task completed");
+}
+
+// Function to demonstrate the usage of the consumer to get and set fields,
+// Subscribe to the fields event and it provides the set and get method as well.
+fn consumer_processing_field<R: Runtime + 'static>(consumer: VehicleFieldConsumer<R>)
+where
+    <<R as Runtime>::FieldSubscriber<Tire> as Subscriber<Tire, R>>::Subscription: Send + 'static,
+{
+    // Field consumer API methods
+    // But they demonstrate the correct API usage pattern
+    // TODO: Currently we are not offering the get method async in FieldSubscriber
+    // because async call will may run in different thread and that will cause the issue in subscription.
+    let _ = consumer
+        .left_tire
+        .get()
+        .map(|result| println!("Got field value via consumer: {:?}", result));
+
+    let _ = consumer
+        .left_tire
+        .set(&Tire { pressure: 30.0 })
+        .map(|result| println!("Set field value via consumer: {:?}", result));
+
+    // Subscribe to the field to receive updates
+    let subscription = consumer
+        .left_tire
+        .subscribe(3)
+        .expect("Failed to subscribe to field");
+
+    // Create scope for sample_buf to ensure it's dropped before tokio::spawn
+    {
+        let mut sample_buf = SampleContainer::new(3);
+
+        // Poll for updates (non-blocking)
+        match subscription.try_receive(&mut sample_buf, 1) {
+            Ok(n) if n > 0 => {
+                while let Some(sample) = sample_buf.pop_front() {
+                    println!("Updated tire pressure: {:?}", *sample);
+                }
+            }
+            _ => {
+                println!("No new tire pressure updates available");
+            }
+        }
+        // sample_buf is dropped here at end of scope
+    }
+
+    // Set via subscription
+    let _ = subscription
+        .set(&Tire { pressure: 35.0 })
+        .map(|result| println!("Set field value via subscription: {:?}", result));
+
+    // Spawn async task with subscription
+    // The subscription is moved into the task
+    tokio::spawn(async move {
+        process_get_method_async(subscription).await;
+        // subscription is automatically unsubscribed when dropped at end of task
+    });
 }
 
 // Run the example with the specified runtime
