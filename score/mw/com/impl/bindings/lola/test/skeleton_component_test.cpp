@@ -549,6 +549,73 @@ TEST_F(SkeletonComponentTestFixture,
     EXPECT_TRUE(prepare_offer_result.has_value());
 }
 
+/// \brief Verifies that the data shared-memory object size can be calculated analytically (mode kEstimation), i.e.
+///        WITHOUT relying on the value obtained from the simulation dry-run, and that the analytically sized shared
+///        memory is large enough to hold the actually registered events/fields.
+TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Estimation_QM)
+{
+    RecordProperty("Verifies", "SCR-5899126");
+    RecordProperty("Description",
+                   "Check that the data_shm size is calculated analytically (without a simulation run) and is "
+                   "sufficient to hold the registered events/fields.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a skeleton with one event "fooEvent" and one field "fooField" registered
+    WithAServiceInstanceDeploymentContainingSingleEventAndField(QualityType::kASIL_QM)
+        .WithAServiceTypeDeploymentContainingSingleEventAndField();
+    const auto instance_identifier = CreateInstanceIdentifier();
+
+    auto unit = CreateSkeleton(instance_identifier);
+    ASSERT_NE(unit, nullptr);
+
+    const auto* const lola_service_type_deployment =
+        std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
+    ASSERT_NE(lola_service_type_deployment, nullptr);
+
+    // Expect, that the LoLa runtime returns that ShmSize calculation shall be done via (analytic) estimation
+    EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kEstimation));
+
+    // The analytic size calculation queries the maximum sample-size of each event/field binding. Since the events are
+    // registered below as uint8_t, GetMaxSize() has to report the matching size.
+    ON_CALL(mock_event_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
+    ON_CALL(mock_field_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
+
+    // Expecting that the event and field are registered (both during the dry-run and into the real, analytically-sized
+    // shared-memory)
+    ON_CALL(mock_event_binding_, PrepareOffer())
+        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
+            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                      test::kFooEventId,
+                                      test::kDefaultLolaInstanceId,
+                                      ServiceElementType::EVENT};
+            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
+            return {};
+        }));
+    ON_CALL(mock_field_binding_, PrepareOffer())
+        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
+            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                      test::kFooFieldId,
+                                      test::kDefaultLolaInstanceId,
+                                      ServiceElementType::FIELD};
+            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
+            return {};
+        }));
+
+    // When offering a service and registering all events/fields into the analytically-sized shared-memory
+    const auto val = unit->PrepareOffer(events_, fields_, {});
+    std::ignore = mock_event_binding_.PrepareOffer();
+    std::ignore = mock_field_binding_.PrepareOffer();
+
+    // then expect, that it succeeds (i.e. the analytically calculated data-shm size was sufficient; had it been too
+    // small, the construction of the event-storage in the fixed-size shared-memory would have aborted)
+    EXPECT_TRUE(val.has_value());
+
+    // and the created data-shm is at least as large as the pure payload it must hold
+    EXPECT_GE(GetSize(data_shm), CalculateLowerBoundDataShmSize({{sizeof(TestSampleType), kNumberOfSlots}}));
+}
+
 using SkeletonComponentTestDeathTest = SkeletonComponentTestFixture;
 TEST_F(SkeletonComponentTestDeathTest, DataShmObjectSizeCalc_Simulation_QM_TerminatesWithTooSmallConfiguredSize)
 {

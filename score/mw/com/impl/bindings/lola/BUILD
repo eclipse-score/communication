@@ -248,10 +248,14 @@ cc_library(
 cc_library(
     name = "service_data_storage",
     srcs = ["service_data_storage.cpp"],
-    hdrs = ["service_data_storage.h"],
+    hdrs = [
+        "linear_search_map.h",
+        "service_data_storage.h",
+    ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
+        "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
     ],
     deps = [
@@ -260,6 +264,7 @@ cc_library(
         ":i_runtime",
         "//score/memory/shared",
         "//score/mw/com/impl:runtime",
+        "@score_baselibs//score/containers:non_relocatable_vector",
         "@score_baselibs//score/os:unistd",
     ],
 )
@@ -1321,12 +1326,23 @@ cc_unit_test(
         ":event_meta_info",
         ":runtime_mock",
         ":service_data_storage",
-        "//score/memory/shared:map",
         "//score/memory/shared:new_delete_delegate_resource",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@score_baselibs//score/os:object_seam",
         "@score_baselibs//score/os/mocklib:unistd_mock",
+    ],
+)
+
+cc_unit_test(
+    name = "linear_search_map_test",
+    srcs = [
+        "linear_search_map_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":service_data_storage",
+        "@score_baselibs//score/memory/shared:new_delete_delegate_resource",
     ],
 )
 
