@@ -19,7 +19,6 @@
 #include "score/mw/com/impl/configuration/global_configuration.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 
-#include "score/memory/shared/map.h"
 #include "score/memory/shared/new_delete_delegate_resource.h"
 #include "score/os/ObjectSeam.h"
 #include "score/os/mocklib/unistdmock.h"
@@ -37,6 +36,7 @@ namespace
 {
 
 const std::uint64_t kMemoryResourceId{10U};
+constexpr std::size_t kNumberOfServiceElements{4U};
 
 using namespace ::testing;
 
@@ -63,39 +63,35 @@ TEST(ServiceDataStorageTest, GenericProxyEventMetaInfoIsStoredInServiceDataStora
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    static_assert(std::is_same_v<score::memory::shared::Map<ElementFqId, EventMetaInfo>,
-                                 decltype(ServiceDataStorage::events_metainfo_)>,
+    static_assert(std::is_same_v<ServiceDataStorage::EventMetaInfoMap, decltype(ServiceDataStorage::events_metainfo_)>,
                   "ServiceDataStorage does not contain a map of EventMetaInfo.");
 }
 
-// When compiling for linux, we use a boost map. Since the tests for satisfying requirements must be on qnx, we only
-// check the service element event map type on qnx.
+// When compiling for linux, the underlying container allocator differs. Since the tests for satisfying requirements
+// must be on qnx, we only check the service element event map type on qnx.
 #if !defined(__linux__)
 TEST_F(ServiceDataStorageFixture, ServiceElementsAreIndexedUsingElementFqId)
 {
     RecordProperty("Verifies", "SCR-21555839");
     RecordProperty("Description",
-                   "Checks that service elements are stored in a std::map within ServiceDataStorage. A std::map is "
-                   "provided by the standard library which is ASIL-B certified. The standard requires that searching "
-                   "for elements e.g. via find() will return the value corresponding to the provided key and not any "
-                   "other key. Therefore, resolving a service element from an EventFqId will never return the wrong "
-                   "storage location for the service element.");
+                   "Checks that service elements are stored in a fixed-capacity LinearSearchMap within "
+                   "ServiceDataStorage. The LinearSearchMap resolves a key via find() by comparing it against the "
+                   "stored keys and returns the value corresponding to the provided key and not any other key. "
+                   "Therefore, resolving a service element from an EventFqId will never return the wrong storage "
+                   "location for the service element. Unlike dynamically allocating map-types, its memory footprint is "
+                   "deterministic and can be calculated up-front without a simulation run.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     memory::shared::NewDeleteDelegateMemoryResource memory{kMemoryResourceId};
-    const ServiceDataStorage unit{memory};
+    const ServiceDataStorage unit{kNumberOfServiceElements, memory};
     using ActualEventMapType = decltype(unit.events_);
 
     using ExpectedKeyType = ElementFqId;
     using ExpectedValueType = score::memory::shared::OffsetPtr<void>;
-    using ExpectedEventMapType = std::map<ExpectedKeyType,
-                                          ExpectedValueType,
-                                          std::less<ExpectedKeyType>,
-                                          std::scoped_allocator_adaptor<memory::shared::PolymorphicOffsetPtrAllocator<
-                                              typename std::map<ExpectedKeyType, ExpectedValueType>::value_type>>>;
+    using ExpectedEventMapType = LinearSearchMap<ExpectedKeyType, ExpectedValueType>;
 
-    static_assert(std::is_same_v<ActualEventMapType, ExpectedEventMapType>, "Event map is not a std::map");
+    static_assert(std::is_same_v<ActualEventMapType, ExpectedEventMapType>, "Event map is not a LinearSearchMap");
 }
 #endif  // not __linux__
 
@@ -107,7 +103,7 @@ TEST_F(ServiceDataStorageFixture, GetsPidFromUnistdAndStoresItOnConstruction)
 
     memory::shared::NewDeleteDelegateMemoryResource memory{kMemoryResourceId};
     // When creating a ServiceDataStorage
-    const ServiceDataStorage unit{memory};
+    const ServiceDataStorage unit{kNumberOfServiceElements, memory};
 
     // Then the ServiceDataStorage will contain the returned PID
     EXPECT_EQ(unit.skeleton_pid_, pid);
@@ -123,7 +119,7 @@ TEST_F(ServiceDataStorageFixture, GetsUidFromRuntimAndStoresItOnConstruction)
 
     memory::shared::NewDeleteDelegateMemoryResource memory{kMemoryResourceId};
     // When creating a ServiceDataStorage
-    const ServiceDataStorage unit{memory};
+    const ServiceDataStorage unit{kNumberOfServiceElements, memory};
 
     // Then the ServiceDataStorage will contain the returned UID
     EXPECT_EQ(unit.skeleton_uid_, uid);

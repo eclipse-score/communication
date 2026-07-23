@@ -13,8 +13,8 @@ class "lola::Skeleton" {
 }
 
 class "lola::ServiceDataStorage" <<Shared Memory>> {
-  +events_ : score::memory::shared::Map<ElementFqId, score::memory::shared::OffsetPtr<void>>
-  +events_metainfo_ : score::memory::shared::Map<ElementFqId, EventMetaInfo>
+  +events_ : lola::LinearSearchMap<ElementFqId, score::memory::shared::OffsetPtr<void>>
+  +events_metainfo_ : lola::LinearSearchMap<ElementFqId, EventMetaInfo>
   +skeleton_pid_ : pid_t
 }
 
