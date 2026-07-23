@@ -26,6 +26,7 @@ integration_test(
         "disabled_method_test.py",
     ],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -42,6 +43,7 @@ integration_test(
         "proxy_recreation_test.py",
     ],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -50,6 +52,7 @@ integration_test(
         "skeleton_recreation_test.py",
     ],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
     # Test fails regularly when running on qnx-8 due to a bug in
     # inotify in which we receive spurious inotify events.
     # To be enabled on qnx once the bug is fixed or

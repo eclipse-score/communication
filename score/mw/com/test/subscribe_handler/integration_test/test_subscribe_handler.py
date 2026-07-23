@@ -21,11 +21,21 @@ def subscribe_handler(target, mode):
     )
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_subscribe_handler(target):
     """Test subscription state callback handling when proxy is destroyed before callback.
 
     This test ensures that if a proxy event is destroyed before a subscription state
     callback is called, the subscription is revoked and the program doesn't crash.
     """
-    with subscribe_handler(target, "send"), subscribe_handler(target, "recv"):
+    with service_discovery_daemon(target), subscribe_handler(target, "send"), subscribe_handler(target, "recv"):
         pass

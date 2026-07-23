@@ -17,4 +17,5 @@ integration_test(
     name = "inotify",
     srcs = ["test_inotify.py"],
     filesystem = "//score/mw/com/test/inotify:inotify-test-pkg",
+    service_discovery_daemon = True,
 )

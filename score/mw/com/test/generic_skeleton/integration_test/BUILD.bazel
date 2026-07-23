@@ -19,6 +19,7 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_generic_typed_interaction.py"],
     filesystem = "//score/mw/com/test/generic_skeleton:generic_typed_interaction_app-pkg",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -26,6 +27,7 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_generic_generic_interaction.py"],
     filesystem = "//score/mw/com/test/generic_skeleton:generic_generic_interaction_app-pkg",
+    service_discovery_daemon = True,
 )
 
 test_suite(

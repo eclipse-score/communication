@@ -18,8 +18,6 @@ from consumer_restart_test_fixture import partial_restart_consumer
 # Test configuration
 NUMBER_RESTART_CYCLES = 3
 KILL_CONSUMER = 1
-
-
 def test_partial_restart_consumer_kill(target):
     """Test consumer restart with kill (SIGKILL) signal."""
     with partial_restart_consumer(target, NUMBER_RESTART_CYCLES, KILL_CONSUMER):

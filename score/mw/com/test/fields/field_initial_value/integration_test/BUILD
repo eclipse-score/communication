@@ -28,4 +28,5 @@ integration_test(
         "test_field_initial_value.py",
     ],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )

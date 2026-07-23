@@ -1,0 +1,16 @@
+@startuml
+
+package "Service Discovery" as dependable_element_service_discovery <<SEooC>> {
+
+	component "Service Discovery" as component_service_discovery <<component>> {
+		component "Protocol" as service_discovery_protocol_unit <<unit>>
+		component "Registry" as service_discovery_registry_unit <<unit>>
+		component "Daemon" as service_discovery_daemon_unit <<unit>>
+		component "MP Client Adapter" as service_discovery_message_passing_client_unit <<unit>>
+		component "MP Server Adapter" as service_discovery_message_passing_server_unit <<unit>>
+		component "Compatibility Facade" as service_discovery_compat_unit <<unit>>
+	}
+
+}
+
+@enduml

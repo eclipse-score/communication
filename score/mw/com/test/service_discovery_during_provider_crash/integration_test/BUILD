@@ -22,4 +22,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_service_discovery_during_provider_crash.py"],
     filesystem = "//score/mw/com/test/service_discovery_during_provider_crash:service_discovery_during_provider_crash-pkg",
+    service_discovery_daemon = True,
 )

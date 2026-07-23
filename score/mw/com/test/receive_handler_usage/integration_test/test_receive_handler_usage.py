@@ -21,7 +21,17 @@ def receive_handler_usage(target, **kwargs):
     )
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_receive_handler_usage(target):
     """Test that mw::com APIs can be called from within EventReceiveHandler without deadlocks."""
-    with receive_handler_usage(target, wait_timeout=15):
+    with service_discovery_daemon(target), receive_handler_usage(target, wait_timeout=15):
         pass

@@ -27,4 +27,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_find_any_semantics.py"],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )

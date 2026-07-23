@@ -21,6 +21,16 @@ def unsubscribe_deadlock(target, **kwargs):
     )
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_unsubscribe_deadlock(target):
     """Test that Unsubscribe doesn't deadlock when called concurrently with GetSubscriptionState.
 
@@ -28,5 +38,5 @@ def test_unsubscribe_deadlock(target):
     It tests that calling Unsubscribe() while GetSubscriptionState() is being called
     from a receive handler doesn't cause a deadlock.
     """
-    with unsubscribe_deadlock(target, wait_timeout=15):
+    with service_discovery_daemon(target), unsubscribe_deadlock(target, wait_timeout=15):
         pass

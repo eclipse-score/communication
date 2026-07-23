@@ -1,0 +1,51 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package ServiceDiscovery
+
+import ScoreReq
+
+ScoreReq.FailureMode RegistrationIntegrityEscalation {
+    guidewords = [ScoreReq.Guideword.UnintendedFunction, ScoreReq.Guideword.Corrupted]
+    description = "A lower integrity provider is accepted as a higher integrity service offer."
+    failureeffect = "Consumers may trust an offer that does not satisfy integrity expectations."
+    interface = "IServiceDiscoveryRegistry.Register"
+    version = 1
+    safety = ScoreReq.Asil.B
+}
+
+ScoreReq.FailureMode StaleRegistryEntry {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.TooLate]
+    description = "A stale service registration remains in the registry after provider liveness is lost."
+    failureeffect = "Consumers may attempt to connect to unavailable endpoints."
+    interface = "IServiceDiscoveryRegistry.Resolve"
+    version = 1
+    safety = ScoreReq.Asil.B
+}
+
+ScoreReq.FailureMode MissedServiceDiscoveryNotification {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.TooLate]
+    description = "A subscriber does not receive an availability change notification for a service key it is tracking."
+    failureeffect = "Consumers may continue to wait for a service that is already available or may not react to removal in time."
+    interface = "IServiceDiscovery.StartFindService"
+    version = 1
+    safety = ScoreReq.Asil.B
+}
+
+ScoreReq.FailureMode StaleSubscriptionAfterDisconnect {
+    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.TooLate]
+    description = "A subscription remains active after the owning connection disconnects."
+    failureeffect = "The daemon may retain obsolete callback state and route notifications to an invalid endpoint."
+    interface = "IServiceDiscovery.StartFindService"
+    version = 1
+    safety = ScoreReq.Asil.B
+}

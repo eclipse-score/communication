@@ -1,0 +1,8 @@
+{
+  "appId": "SDDM",
+  "appDesc": "service_discovery_daemon",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole",
+  "dynamicDatarouterIdentifiers" : true
+}

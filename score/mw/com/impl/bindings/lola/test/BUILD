@@ -203,6 +203,8 @@ cc_test(
         ":proxy_event_test_resources",
         ":service_discovery_test_resources",
         "//score/mw/com/impl:proxy_base",
+        "//score/mw/com/impl:service_discovery",
+        "//score/mw/com/impl:service_discovery_mock",
         "//score/mw/com/impl/bindings/lola:proxy",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/bindings/lola/service_discovery/client:service_discovery_client",

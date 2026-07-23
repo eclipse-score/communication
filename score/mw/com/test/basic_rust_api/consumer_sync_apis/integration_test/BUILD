@@ -19,4 +19,5 @@ integration_test(
         "com_api_sync_api_test.py",
     ],
     filesystem = "//score/mw/com/test/basic_rust_api/consumer_sync_apis:bigdata-com-api-sync-pkg",
+    service_discovery_daemon = True,
 )
