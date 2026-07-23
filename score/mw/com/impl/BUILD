@@ -275,6 +275,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":error",
         ":field_tags",
         ":method_type",
         ":skeleton_event",
