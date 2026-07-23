@@ -16,8 +16,8 @@
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 
-#include "score/memory/shared/atomic_indirector.h"
-#include "score/memory/shared/atomic_mock.h"
+#include "score/concurrency/atomic_indirector.h"
+#include "score/concurrency/atomic_mock.h"
 
 #include <score/utility.hpp>
 
@@ -68,7 +68,7 @@ class ProviderEventDataControlLocalViewFixture : public ::testing::Test
 
     void TearDown() override
     {
-        memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
+        concurrency::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
     }
 
     ProviderEventDataControlLocalViewFixture& GivenAProviderEventDataControlLocalViewUsingRealAtomics(
@@ -85,10 +85,10 @@ class ProviderEventDataControlLocalViewFixture : public ::testing::Test
     {
         event_data_control_ = std::make_unique<EventDataControl>(max_slots, memory_);
 
-        atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
-        memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
+        atomic_mock_ = std::make_unique<concurrency::AtomicMock<EventSlotStatus::value_type>>();
+        concurrency::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
 
-        unit_mock_ = std::make_unique<ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorMock>>(
+        unit_mock_ = std::make_unique<ProviderEventDataControlLocalView<concurrency::AtomicIndirectorMock>>(
             *event_data_control_);
 
         return *this;
@@ -104,11 +104,11 @@ class ProviderEventDataControlLocalViewFixture : public ::testing::Test
     }
 
     FakeMemoryResource memory_{};
-    std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
+    std::unique_ptr<concurrency::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
 
     std::unique_ptr<EventDataControl> event_data_control_{nullptr};
     std::unique_ptr<ProviderEventDataControlLocalView<>> unit_{nullptr};
-    std::unique_ptr<ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorMock>> unit_mock_{nullptr};
+    std::unique_ptr<ProviderEventDataControlLocalView<concurrency::AtomicIndirectorMock>> unit_mock_{nullptr};
 };
 
 TEST_F(ProviderEventDataControlLocalViewFixture, CanAllocateOneSlotWithoutContention)

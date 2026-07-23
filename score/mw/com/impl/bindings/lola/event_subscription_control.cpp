@@ -160,8 +160,8 @@ auto EventSubscriptionControl<AtomicIndirectorType>::Unsubscribe(SlotNumberType 
     std::terminate();
 }
 
-template class EventSubscriptionControl<memory::shared::AtomicIndirectorReal>;
-template class EventSubscriptionControl<memory::shared::AtomicIndirectorMock>;
+template class EventSubscriptionControl<concurrency::AtomicIndirectorReal>;
+template class EventSubscriptionControl<concurrency::AtomicIndirectorMock>;
 
 std::string_view ToString(SubscribeResult subscribe_result) noexcept
 {
