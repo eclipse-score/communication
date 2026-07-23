@@ -17,7 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
-#include "score/memory/shared/atomic_indirector.h"
+#include "score/concurrency/atomic_indirector.h"
 
 #include "score/mw/com/impl/bindings/lola/transaction_log_local_view.h"
 #include <score/span.hpp>
@@ -35,7 +35,7 @@ namespace score::mw::com::impl::lola
 /// control information directly in shared memory during runtime requires using (dereferencing, copying etc.) OffsetPtrs
 /// which can negatively affect performance. Therefore, the data in EventDataControl is created / opened once during
 /// Skeleton / Proxy creation, and then is accessed during runtime via EventDataControlLocal.
-template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
+template <template <class> class AtomicIndirectorType = concurrency::AtomicIndirectorReal>
 class ConsumerEventDataControlLocalView final
 {
     // Suppress "AUTOSAR C++14 A11-3-1"

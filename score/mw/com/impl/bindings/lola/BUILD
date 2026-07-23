@@ -548,8 +548,8 @@ cc_library(
     deps = [
         ":application_id_pid_mapping_entry",
         ":register_pid_fake",
+        "@score_baselibs//score/concurrency:atomic_indirector",
         "@score_baselibs//score/containers:dynamic_array",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
         "@score_baselibs//score/memory/shared:types",
     ],
 )
@@ -603,7 +603,7 @@ cc_library(
         ":control_slot_types",
         ":event_data_control",
         ":event_slot_status",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
+        "@score_baselibs//score/concurrency:atomic_indirector",
     ],
 )
 
@@ -619,7 +619,7 @@ cc_library(
         ":event_data_control",
         ":event_slot_status",
         ":transaction_log_local_view",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
+        "@score_baselibs//score/concurrency:atomic_indirector",
     ],
 )
 
@@ -665,7 +665,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         "//score/mw/com/impl/configuration",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
+        "@score_baselibs//score/concurrency:atomic_indirector",
     ],
 )
 
@@ -695,7 +695,7 @@ cc_library(
         ":event_data_control",
         ":event_slot_status",
         ":provider_event_data_control_local_view",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
+        "@score_baselibs//score/concurrency:atomic_indirector",
     ],
 )
 
@@ -937,8 +937,8 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":application_id_pid_mapping",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
-        "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "@score_baselibs//score/concurrency:atomic_indirector",
+        "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
     ],
 )
 
@@ -1041,7 +1041,7 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola:event_data_control",
         "//score/mw/com/impl/bindings/lola:event_slot_status",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
-        "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -1061,8 +1061,8 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola:event_data_control",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "//score/mw/com/impl/configuration",
+        "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -1078,9 +1078,9 @@ cc_unit_test(
         "//score/mw/com/impl/bindings/lola:event_data_control",
         "//score/mw/com/impl/bindings/lola:event_data_control_composite",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
+        "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
         "@score_baselibs//score/memory/shared:new_delete_delegate_resource",
     ],
 )
@@ -1258,7 +1258,7 @@ cc_unit_test(
     deps = [
         ":event_subscription_control",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
-        "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
     ],
 )
 

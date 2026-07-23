@@ -18,8 +18,8 @@
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 
-#include "score/memory/shared/atomic_indirector.h"
-#include "score/memory/shared/atomic_mock.h"
+#include "score/concurrency/atomic_indirector.h"
+#include "score/concurrency/atomic_mock.h"
 
 #include <score/assert_support.hpp>
 #include <score/utility.hpp>
@@ -60,14 +60,14 @@ template <typename T>
 class AtomicIndirectorMockGuard final
 {
   public:
-    explicit AtomicIndirectorMockGuard(memory::shared::AtomicMock<T>& mock)
+    explicit AtomicIndirectorMockGuard(concurrency::AtomicMock<T>& mock)
     {
-        memory::shared::AtomicIndirectorMock<T>::SetMockObject(&mock);
+        concurrency::AtomicIndirectorMock<T>::SetMockObject(&mock);
     }
 
     ~AtomicIndirectorMockGuard()
     {
-        memory::shared::AtomicIndirectorMock<T>::SetMockObject(nullptr);
+        concurrency::AtomicIndirectorMock<T>::SetMockObject(nullptr);
     }
 };
 
@@ -87,7 +87,7 @@ class ConsumerEventDataControlLocalViewFixture : public ::testing::Test
 
     void TearDown() override
     {
-        memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
+        concurrency::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
     }
 
     ConsumerEventDataControlLocalViewFixture& GivenAConsumerEventDataControlLocalViewUsingRealAtomics(
@@ -107,13 +107,13 @@ class ConsumerEventDataControlLocalViewFixture : public ::testing::Test
         event_data_control_ = std::make_unique<EventDataControl>(max_slots, memory_);
         auto& transaction_log = transaction_log_.emplace(max_slots, memory_);
 
-        atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
+        atomic_mock_ = std::make_unique<concurrency::AtomicMock<EventSlotStatus::value_type>>();
         atomic_indirector_mock_guard_ =
             std::make_unique<AtomicIndirectorMockGuard<EventSlotStatus::value_type>>(*atomic_mock_);
 
         unit_with_mock_atomics_ =
-            std::make_unique<ConsumerEventDataControlLocalView<memory::shared::AtomicIndirectorMock>>(
-                *event_data_control_, transaction_log);
+            std::make_unique<ConsumerEventDataControlLocalView<concurrency::AtomicIndirectorMock>>(*event_data_control_,
+                                                                                                   transaction_log);
         provider_event_data_control_local_ =
             std::make_unique<ProviderEventDataControlLocalView<>>(*event_data_control_);
 
@@ -130,13 +130,13 @@ class ConsumerEventDataControlLocalViewFixture : public ::testing::Test
     }
 
     FakeMemoryResource memory_{};
-    std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
+    std::unique_ptr<concurrency::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
 
     std::optional<TransactionLog> transaction_log_{};
     std::unique_ptr<EventDataControl> event_data_control_{nullptr};
     std::unique_ptr<ProviderEventDataControlLocalView<>> provider_event_data_control_local_{nullptr};
     std::unique_ptr<ConsumerEventDataControlLocalView<>> unit_{nullptr};
-    std::unique_ptr<ConsumerEventDataControlLocalView<memory::shared::AtomicIndirectorMock>> unit_with_mock_atomics_{
+    std::unique_ptr<ConsumerEventDataControlLocalView<concurrency::AtomicIndirectorMock>> unit_with_mock_atomics_{
         nullptr};
 
     std::unique_ptr<AtomicIndirectorMockGuard<EventSlotStatus::value_type>> atomic_indirector_mock_guard_{nullptr};

@@ -272,7 +272,7 @@ auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::ResetPerformanceCo
     num_ref_retries.store(0U);
 }
 
-template class ConsumerEventDataControlLocalView<memory::shared::AtomicIndirectorReal>;
-template class ConsumerEventDataControlLocalView<memory::shared::AtomicIndirectorMock>;
+template class ConsumerEventDataControlLocalView<concurrency::AtomicIndirectorReal>;
+template class ConsumerEventDataControlLocalView<concurrency::AtomicIndirectorMock>;
 
 }  // namespace score::mw::com::impl::lola

@@ -17,8 +17,8 @@
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 
-#include "score/memory/shared/atomic_indirector.h"
-#include "score/memory/shared/atomic_mock.h"
+#include "score/concurrency/atomic_indirector.h"
+#include "score/concurrency/atomic_mock.h"
 #include "score/memory/shared/new_delete_delegate_resource.h"
 
 #include <score/assert.hpp>
@@ -63,14 +63,14 @@ template <typename T>
 class AtomicIndirectorMockGuard final
 {
   public:
-    explicit AtomicIndirectorMockGuard(memory::shared::AtomicMock<T>& mock)
+    explicit AtomicIndirectorMockGuard(concurrency::AtomicMock<T>& mock)
     {
-        memory::shared::AtomicIndirectorMock<T>::SetMockObject(&mock);
+        concurrency::AtomicIndirectorMock<T>::SetMockObject(&mock);
     }
 
     ~AtomicIndirectorMockGuard()
     {
-        memory::shared::AtomicIndirectorMock<T>::SetMockObject(nullptr);
+        concurrency::AtomicIndirectorMock<T>::SetMockObject(nullptr);
     }
 };
 
@@ -117,11 +117,11 @@ class EventDataControlCompositeFixture : public ::testing::Test
         skeleton_qm_local_mock_.emplace(*qm_);
         skeleton_asil_local_mock_.emplace(*asil_);
 
-        atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
+        atomic_mock_ = std::make_unique<concurrency::AtomicMock<EventSlotStatus::value_type>>();
         atomic_indirector_mock_guard_ =
             std::make_unique<AtomicIndirectorMockGuard<EventSlotStatus::value_type>>(*atomic_mock_);
 
-        unit_with_mock_atomics_ = std::make_unique<EventDataControlComposite<memory::shared::AtomicIndirectorMock>>(
+        unit_with_mock_atomics_ = std::make_unique<EventDataControlComposite<concurrency::AtomicIndirectorMock>>(
             skeleton_qm_local_mock_.value(), &skeleton_asil_local_mock_.value());
 
         return *this;
@@ -147,11 +147,11 @@ class EventDataControlCompositeFixture : public ::testing::Test
 
         skeleton_qm_local_mock_.emplace(*qm_);
 
-        atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
+        atomic_mock_ = std::make_unique<concurrency::AtomicMock<EventSlotStatus::value_type>>();
         atomic_indirector_mock_guard_ =
             std::make_unique<AtomicIndirectorMockGuard<EventSlotStatus::value_type>>(*atomic_mock_);
 
-        unit_with_mock_atomics_ = std::make_unique<EventDataControlComposite<memory::shared::AtomicIndirectorMock>>(
+        unit_with_mock_atomics_ = std::make_unique<EventDataControlComposite<concurrency::AtomicIndirectorMock>>(
             skeleton_qm_local_mock_.value(), nullptr);
 
         return *this;
@@ -186,16 +186,16 @@ class EventDataControlCompositeFixture : public ::testing::Test
     std::unique_ptr<EventDataControl> asil_{nullptr};
     std::unique_ptr<EventDataControl> qm_{nullptr};
 
-    std::optional<ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorReal>> skeleton_qm_local_{};
-    std::optional<ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorReal>> skeleton_asil_local_{};
-    std::optional<ConsumerEventDataControlLocalView<memory::shared::AtomicIndirectorReal>> proxy_qm_local_{};
-    std::optional<ConsumerEventDataControlLocalView<memory::shared::AtomicIndirectorReal>> proxy_asil_local_{};
+    std::optional<ProviderEventDataControlLocalView<concurrency::AtomicIndirectorReal>> skeleton_qm_local_{};
+    std::optional<ProviderEventDataControlLocalView<concurrency::AtomicIndirectorReal>> skeleton_asil_local_{};
+    std::optional<ConsumerEventDataControlLocalView<concurrency::AtomicIndirectorReal>> proxy_qm_local_{};
+    std::optional<ConsumerEventDataControlLocalView<concurrency::AtomicIndirectorReal>> proxy_asil_local_{};
     std::unique_ptr<EventDataControlComposite<>> unit_{nullptr};
 
-    std::optional<ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorMock>> skeleton_qm_local_mock_{};
-    std::optional<ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorMock>> skeleton_asil_local_mock_{};
-    std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
-    std::unique_ptr<EventDataControlComposite<memory::shared::AtomicIndirectorMock>> unit_with_mock_atomics_{nullptr};
+    std::optional<ProviderEventDataControlLocalView<concurrency::AtomicIndirectorMock>> skeleton_qm_local_mock_{};
+    std::optional<ProviderEventDataControlLocalView<concurrency::AtomicIndirectorMock>> skeleton_asil_local_mock_{};
+    std::unique_ptr<concurrency::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
+    std::unique_ptr<EventDataControlComposite<concurrency::AtomicIndirectorMock>> unit_with_mock_atomics_{nullptr};
 
     std::unique_ptr<AtomicIndirectorMockGuard<EventSlotStatus::value_type>> atomic_indirector_mock_guard_{nullptr};
 

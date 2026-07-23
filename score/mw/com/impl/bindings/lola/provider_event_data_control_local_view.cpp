@@ -241,7 +241,7 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::ResetPerformanceCo
     num_alloc_retries.store(0U);
 }
 
-template class ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorReal>;
-template class ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorMock>;
+template class ProviderEventDataControlLocalView<concurrency::AtomicIndirectorReal>;
+template class ProviderEventDataControlLocalView<concurrency::AtomicIndirectorMock>;
 
 }  // namespace score::mw::com::impl::lola
