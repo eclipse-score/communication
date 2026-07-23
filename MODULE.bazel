@@ -436,8 +436,8 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 http_archive(
     name = "codeql_bundle",
     build_file = "//third_party/codeql:codeql.BUILD",
-    sha256 = "0144d4bc415aee0d5638119dfb626a2d8689e2ff21758ba211a3984862b8522c",
-    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.26.0/codeql-bundle-linux64.tar.gz",
+    sha256 = "a94f674bb3c23ea5e9a2ad06b64847dd0277b15014d2517ecd9c41c88e6caa65",
+    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.21.4/codeql-bundle-linux64.tar.gz",
 )
 
 git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
