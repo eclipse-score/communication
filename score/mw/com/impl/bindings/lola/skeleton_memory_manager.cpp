@@ -11,10 +11,15 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
+#include "score/mw/com/impl/bindings/lola/application_id_pid_mapping_entry.h"
+#include "score/mw/com/impl/bindings/lola/event_control.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
@@ -132,6 +137,12 @@ auto SkeletonMemoryManager::CreateSharedMemory(
     SkeletonBinding::SkeletonFieldBindings& fields,
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> Result<void>
 {
+    // The number of service-elements determines the (fixed) capacity of the containers within ServiceDataStorage and
+    // ServiceDataControl. It has to be known before either of them is constructed (in CreateSharedMemoryForData /
+    // CreateSharedMemoryForControl below), independent of how the shm-object sizes are determined (simulation,
+    // analytic estimation, or manually specified sizes).
+    number_of_service_elements_ = events.size() + fields.size();
+
     const auto storage_size_calc_result = CalculateShmResourceStorageSizes(events, fields);
 
     if (!CreateSharedMemoryForControl(
@@ -373,18 +384,8 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
     const auto shm_size_calculation_mode =
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetShmSizeCalculationMode();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE((shm_size_calculation_mode == ShmSizeCalculationMode::kSimulation) ||
-                                                    (shm_size_calculation_mode == ShmSizeCalculationMode::kEstimation),
-                                                "No other shm size calculation mode is currently suppored");
-
-    // The number of service-elements determines the (fixed) capacity of the containers within ServiceDataStorage. It
-    // has to be known before the ServiceDataStorage is constructed (which also happens during the simulation run
-    // below). Therefore, we set it here, before any ServiceDataStorage is created.
-    // It equals the number of offered event/field bindings: only offered service-elements are ever registered and thus
-    // placed into the containers. We deliberately do NOT use the number of configured events/fields, because a
-    // configuration may legitimately contain events/fields that are never offered/used (e.g. outdated or unused
-    // entries, which are not rejected during configuration parsing). Sizing by the configured count would therefore
-    // unnecessarily over-allocate the LinearSearchMaps.
-    number_of_service_elements_ = events.size() + fields.size();
+                                                    (shm_size_calculation_mode == ShmSizeCalculationMode::kAnalysis),
+                                                "No other shm size calculation mode is currently supported");
 
     if ((lola_service_instance_deployment_.shared_memory_size_.has_value()) &&
         (lola_service_instance_deployment_.control_asil_b_memory_size_.has_value()) &&
@@ -404,15 +405,24 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
                 lola_service_instance_deployment_.control_asil_b_memory_size_.value()};
     }
 
-    auto required_shm_storage_size = CalculateShmResourceStorageSizesBySimulation(events, fields);
-
-    // In kEstimation mode the size of the data shm-object (holding the ServiceDataStorage) is calculated analytically
-    // instead of relying on the value obtained from the simulation run. This is possible because ServiceDataStorage
-    // uses fixed-capacity containers. The control shm-objects are (for the time being) still sized via the simulation
-    // run above.
-    if (shm_size_calculation_mode == ShmSizeCalculationMode::kEstimation)
+    // Depending on the configured ShmSizeCalculationMode the required sizes of the shm-objects are determined either:
+    //  - analytically (kAnalysis): possible because ServiceDataStorage (data shm-object) and ServiceDataControl
+    //    (control shm-object) exclusively use fixed-capacity containers, or
+    //  - by a simulation dry-run (kSimulation): the shm-objects are constructed on a monitoring heap-memory-resource
+    //    and the resulting number of allocated bytes is read out.
+    ShmResourceStorageSizes required_shm_storage_size{};
+    if (shm_size_calculation_mode == ShmSizeCalculationMode::kAnalysis)
     {
-        required_shm_storage_size.data_size = CalculateDataShmResourceStorageSize(events, fields);
+        const std::size_t data_size = CalculateDataShmResourceStorageSize(events, fields);
+        const std::size_t control_size = CalculateControlShmResourceStorageSize(events, fields);
+        const auto control_asil_b_size = (quality_type_ == QualityType::kASIL_B)
+                                             ? std::optional<std::size_t>{control_size}
+                                             : std::optional<std::size_t>{};
+        required_shm_storage_size = ShmResourceStorageSizes{data_size, control_size, control_asil_b_size};
+    }
+    else
+    {
+        required_shm_storage_size = CalculateShmResourceStorageSizesBySimulation(events, fields);
     }
 
     const std::size_t control_asil_b_size_result = required_shm_storage_size.control_asil_b_size.has_value()
@@ -578,9 +588,8 @@ std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
     //    CalculateAlignedSize(sample_size, sample_alignment). The alignment is obtained from the generic binding.
     // In both cases the resulting allocation is finally rounded up to a multiple of alignof(std::max_align_t) (the real
     // code allocates it as an array of std::max_align_t elements).
-    const auto accumulate_service_elements = [this, &total_size, event_data_storage_object_size](
-                                                 SkeletonBinding::SkeletonEventBindings& bindings,
-                                                 const bool are_fields) {
+    const auto accumulate_service_elements = [this, &total_size](SkeletonBinding::SkeletonEventBindings& bindings,
+                                                                 const bool are_fields) {
         for (const auto& binding : bindings)
         {
             const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
@@ -611,6 +620,66 @@ std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
     return total_size;
 }
 
+std::size_t SkeletonMemoryManager::CalculateControlShmResourceStorageSize(
+    SkeletonBinding::SkeletonEventBindings& events,
+    SkeletonBinding::SkeletonFieldBindings& fields) const
+{
+    const std::size_t number_of_service_elements = number_of_service_elements_;
+
+    // (1) The ServiceDataControl object itself (including the inline bookkeeping of its event_controls_ LinearSearchMap
+    // and of its application_id_pid_mapping_).
+    std::size_t total_size = RoundUpToMaxAlign(sizeof(ServiceDataControl));
+
+    // (2) The backing array of the event_controls_ LinearSearchMap (allocated once, with capacity ==
+    // number_of_service_elements). number_of_service_elements_ is the capacity the ServiceDataControl is actually
+    // constructed with (see InitializeSharedMemoryForControl), hence we use exactly that value here.
+    total_size += RoundUpToMaxAlign(number_of_service_elements *
+                                    sizeof(decltype(ServiceDataControl::event_controls_)::value_type));
+
+    // (3) The backing array of the application_id_pid_mapping_ (a fixed-capacity DynamicArray with a capacity of
+    // kMaxApplicationIdPidMappings). It is allocated once during ServiceDataControl construction, independent of the
+    // number of service-elements.
+    total_size += RoundUpToMaxAlign(static_cast<std::size_t>(ServiceDataControl::kMaxApplicationIdPidMappings) *
+                                    sizeof(ApplicationIdPidMappingEntry));
+
+    // (4) For each event/field: the (deeply) nested fixed-capacity DynamicArrays contained within its EventControl.
+    // The EventControl object itself is stored inline within the event_controls_ backing array (accounted for in (2));
+    // only the backing arrays of its nested DynamicArrays allocate separately and are accounted for here.
+    const auto accumulate_service_elements = [this, &total_size](SkeletonBinding::SkeletonEventBindings& bindings,
+                                                                 const bool are_fields) {
+        for (const auto& binding : bindings)
+        {
+            const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
+            const std::size_t max_subscribers = GetMaxSubscribersFromConfig(binding.first, are_fields);
+
+            // (4a) EventControl::data_control (EventDataControl): its state_slots_ is a DynamicArray<ControlSlotType>
+            // with a capacity of number_of_slots.
+            total_size += RoundUpToMaxAlign(number_of_slots * sizeof(EventDataControl::EventControlSlots::value_type));
+
+            // (4b) EventControl::transaction_log_set_ (TransactionLogSet):
+            //   - proxy_transaction_logs_: a DynamicArray<TransactionLogNode> with a capacity of max_subscribers.
+            total_size += RoundUpToMaxAlign(max_subscribers * sizeof(TransactionLogSet::TransactionLogNode));
+
+            //   - each TransactionLogNode holds a TransactionLog whose reference_count_slots_ is a
+            //     DynamicArray<TransactionLogSlot> with a capacity of number_of_slots. The following separate
+            //     allocations of this array are made during construction of the TransactionLogSet:
+            //       * one per TransactionLogNode within proxy_transaction_logs_ (max_subscribers of them),
+            //       * one for the temporary prototype TransactionLogNode used by the DynamicArray fill-constructor.
+            //         Since the shared-memory resource is strictly monotonic (it never reclaims memory), this
+            //         temporary allocation permanently occupies space and must be accounted for.
+            //       * one for the inline skeleton_tracing_transaction_log_ member.
+            const std::size_t transaction_log_slots_array_size =
+                RoundUpToMaxAlign(number_of_slots * sizeof(TransactionLog::TransactionLogSlots::value_type));
+            const std::size_t number_of_transaction_log_slot_arrays = max_subscribers + 2U;
+            total_size += number_of_transaction_log_slot_arrays * transaction_log_slots_array_size;
+        }
+    };
+    accumulate_service_elements(events, false);
+    accumulate_service_elements(fields, true);
+
+    return total_size;
+}
+
 std::size_t SkeletonMemoryManager::GetNumberOfSampleSlotsFromConfig(const std::string_view service_element_name,
                                                                     const bool is_field) const
 {
@@ -632,6 +701,29 @@ std::size_t SkeletonMemoryManager::GetNumberOfSampleSlotsFromConfig(const std::s
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_slots.has_value(),
                                                 "Number of sample slots not specified for event.");
     return number_of_slots.value();
+}
+
+std::size_t SkeletonMemoryManager::GetMaxSubscribersFromConfig(const std::string_view service_element_name,
+                                                               const bool is_field) const
+{
+    const std::string name{service_element_name};
+    if (is_field)
+    {
+        const auto field_it = lola_service_instance_deployment_.fields_.find(name);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(field_it != lola_service_instance_deployment_.fields_.cend(),
+                                                    "Could not find field in deployment configuration.");
+        const auto max_subscribers = field_it->second.lola_event_instance_deployment_.max_subscribers_;
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_subscribers.has_value(),
+                                                    "Max subscribers not specified for field.");
+        return max_subscribers.value();
+    }
+    const auto event_it = lola_service_instance_deployment_.events_.find(name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_it != lola_service_instance_deployment_.events_.cend(),
+                                                "Could not find event in deployment configuration.");
+    const auto max_subscribers = event_it->second.max_subscribers_;
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_subscribers.has_value(),
+                                                "Max subscribers not specified for event.");
+    return max_subscribers.value();
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3":
@@ -844,7 +936,7 @@ void SkeletonMemoryManager::InitializeSharedMemoryForControl(
 {
     auto& control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
 
-    control = memory->construct<ServiceDataControl>(*memory);
+    control = memory->construct<ServiceDataControl>(number_of_service_elements_, *memory);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control != nullptr);
 }
 

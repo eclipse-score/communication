@@ -33,12 +33,12 @@ object "<< Shared Memory >>\nserviceDataStorage_SI_1 : lola::ServiceDataStorage"
 }
 
 object "<< Shared Memory >>\nserviceDataControl_qm_SI_1 : lola::ServiceDataControl" as control_qm {
-  +event_controls_ : score::memory::shared::Map<ElementFqId, EventControl>
+  +event_controls_ : lola::LinearSearchMap<ElementFqId, EventControl>
   +application_id_pid_mapping_ : ApplicationIdPidMapping<...>
 }
 
 object "<< Shared Memory >>\nserviceDataControl_asil_SI_1 : lola::ServiceDataControl" as control_asil {
-  +event_controls_ : score::memory::shared::Map<ElementFqId, EventControl>
+  +event_controls_ : lola::LinearSearchMap<ElementFqId, EventControl>
   +application_id_pid_mapping_ : ApplicationIdPidMapping<...>
 }
 

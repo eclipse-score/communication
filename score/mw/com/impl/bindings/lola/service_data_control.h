@@ -16,9 +16,11 @@
 #include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
+#include "score/mw/com/impl/bindings/lola/linear_search_map.h"
 
-#include "score/memory/shared/map.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
+
+#include <cstddef>
 
 namespace score::mw::com::impl::lola
 {
@@ -35,10 +37,15 @@ class ServiceDataControl
     /// \details ServiceDataControl is designed to be located in shared memory, therefore the explicit
     ///          MemoryResourceProxy argument! (Yes one could come up with a MemoryResourceProxy pointing to a local
     ///          memory resource, but this would be "uncommon")
-    /// \param proxy MemoryResourceProxy pointing to the memory-resource to be used
+    /// \param number_of_service_elements the (fixed) number of service-elements (events + fields) this service-instance
+    ///        provides. It is used as the fixed capacity of the event_controls_ container. Since event_controls_ uses a
+    ///        fixed-capacity container (LinearSearchMap), its capacity must be known at construction time.
+    /// \param resource MemoryResourceProxy pointing to the memory-resource to be used
 
-    explicit ServiceDataControl(score::memory::shared::ManagedMemoryResource& resource)
-        : event_controls_(resource), application_id_pid_mapping_(kMaxApplicationIdPidMappings, resource)
+    explicit ServiceDataControl(const std::size_t number_of_service_elements,
+                                score::memory::shared::ManagedMemoryResource& resource)
+        : event_controls_(number_of_service_elements, resource),
+          application_id_pid_mapping_(kMaxApplicationIdPidMappings, resource)
     {
     }
 
@@ -53,7 +60,7 @@ class ServiceDataControl
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::memory::shared::Map<ElementFqId, EventControl> event_controls_;
+    LinearSearchMap<ElementFqId, EventControl> event_controls_;
 
     /// \brief mapping of a proxy's application identifier to its process ID (pid).
     /// \details Every proxy instance for this service shall register itself in this mapping. The identifier used is

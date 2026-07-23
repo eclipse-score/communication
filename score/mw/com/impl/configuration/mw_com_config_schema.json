@@ -501,8 +501,9 @@
                 },
                 "shm-size-calc-mode": {
                     "title": "Calculation mode for shared memory size",
-                    "description": "How shall the sizes of the shm-objects get calculated (Currently we only support SIMULATION): Via an initial simulation run against a heap-memory resource. It has the advantage of perfect accuracy, but adds a minimal runtime overhead at startup plus some initial temporary heap allocation.",
+                    "description": "How shall the sizes of the shm-objects get calculated: Via an initial simulation run against a heap-memory resource. It has the advantage of perfect accuracy, but adds a minimal runtime overhead at startup plus some initial temporary heap allocation. Alternatively via an analysis based on the config/deployment. It has the advantage of no runtime overhead and no temporary heap allocation, but may lead to slightly overestimation of the required shm-size, because of conservative alignment usage. The default is simulation.",
                     "enum": [
+                        "ANALYSIS",
                         "SIMULATION"
                     ],
                     "default": "SIMULATION"
