@@ -555,8 +555,8 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         })
     }
 
-    fn invoke_with_copy(&self, _args: Args) -> Result<Return> {
-        todo!("Implement the logic to call the method with copied arguments");
+    fn invoke_with_copy<'a>(&'a self, _args: Args) -> impl Future<Output = Result<Return>> + 'a {
+        async move { todo!("Implement the logic to call the method with copied arguments") }
     }
 
     fn allocate(&self) -> Result<<Args as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
@@ -566,8 +566,11 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         todo!("Implement the logic to allocate method arguments using the MethodInArgAllocator");
     }
 
-    fn invoke_zero_copy(&self, _ptrs: <Args as MethodArgs>::PtrTuple) -> Result<Return> {
-        todo!("Implement the logic to call the method with pre-allocated argument pointers");
+    fn invoke_zero_copy<'a>(
+        &'a self,
+        _ptrs: <Args as MethodArgs>::PtrTuple,
+    ) -> impl Future<Output = Result<Return>> + 'a {
+        async move { todo!("Implement the logic to call the method with pre-allocated argument pointers") }
     }
 }
 
