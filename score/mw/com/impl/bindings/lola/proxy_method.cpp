@@ -85,6 +85,7 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::GetReturnValueBuffer(std
 
 score::Result<void> ProxyMethod::DoCall(std::size_t queue_position)
 {
+    std::cout << "DoCaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaall" << std::endl;
     if (!is_subscribed_)
     {
         score::mw::log::LogError("lola")

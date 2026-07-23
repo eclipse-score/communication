@@ -178,6 +178,7 @@ int main(int argc, const char** argv)
     }
 
     score::mw::com::test::RunSkeletonRecreationWithNewProxyTest();
+    // std::this_thread::sleep_for(std::chrono::seconds{2});
     score::mw::com::test::RunSkeletonRecreationWithSameProxyTest(stop_source.get_token());
 
     return EXIT_SUCCESS;

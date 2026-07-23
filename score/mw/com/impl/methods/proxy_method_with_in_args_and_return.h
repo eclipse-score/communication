@@ -195,11 +195,13 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes..
     auto allocated_return_type_storage = binding_->GetReturnValueBuffer(queue_position);
     if (!allocated_return_type_storage.has_value())
     {
+        score::mw::log::LogError("lola") << "Return value failed for the method: " << method_name_;
         return Unexpected(allocated_return_type_storage.error());
     }
     auto call_result = binding_->DoCall(queue_position);
     if (!call_result.has_value())
     {
+        score::mw::log::LogError("lola") << "DoCall failed for method: " << method_name_;
         return Unexpected(call_result.error());
     }
 

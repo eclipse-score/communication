@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <exception>
+#include <iostream>
 #include <mutex>
 #include <optional>
 #include <utility>
@@ -392,6 +393,12 @@ auto ServiceDiscoveryClient::HandleEvents(
 
     const auto& events = expected_events.value();
 
+    std::stringstream handle_events_log{};
+    handle_events_log << "\n\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n";
+    handle_events_log << "Inotify HandleEvents: received " << events.size() << " event(s) / pid=" << ::getpid();
+    handle_events_log << "\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n";
+    std::cout << handle_events_log.str() << std::endl;
+
     std::vector<os::InotifyEvent> deletion_events{};
     std::vector<os::InotifyEvent> creation_events{};
     for (const auto& event : events)
@@ -402,6 +409,36 @@ auto ServiceDiscoveryClient::HandleEvents(
         const bool flag_file_was_removed = ReadMaskSet(event, os::InotifyEvent::ReadMask::kInDelete);
         const bool inode_was_removed = search_directory_was_removed || flag_file_was_removed;
         const bool inode_was_created = ReadMaskSet(event, os::InotifyEvent::ReadMask::kInCreate);
+
+        auto watch_descriptor = event.GetWatchDescriptor();
+        auto watch_iter = watches_.find(watch_descriptor);
+        if (watch_iter == watches_.end())
+        {
+            std::cout << "Received event for unknown watch descriptor: " << watch_descriptor.GetUnderlying()
+                      << std::endl;
+        }
+        auto watch = watch_iter->second;
+
+        auto path = GetSearchPathForIdentifier(watch.enriched_instance_identifier);
+
+        std::stringstream event_log{};
+        event_log << "Inotify event"
+                  << " / pid=" << ::getpid() << " / wd=" << event.GetWatchDescriptor().GetUnderlying() << " / mask=0x"
+                  << std::hex << static_cast<underlying_type_readmask>(event.GetMask()) << std::dec
+                  << " / name=" << event.GetName().data() << " / q_overflow=" << inotify_queue_overflowed
+                  << " / dir_removed=" << search_directory_was_removed << " / flag_removed=" << flag_file_was_removed;
+
+        if (filesystem_.standard->Exists(path).value())
+        {
+            event_log << " / removed_path=" << path;
+        }
+        else
+        {
+            event_log << " / removed_path=COULDNT FINT PATH";
+        };
+
+        event_log << " / created=" << inode_was_created;
+        std::cout << event_log.str() << std::endl;
 
         if (inotify_queue_overflowed)
         {
@@ -459,7 +496,14 @@ auto ServiceDiscoveryClient::HandleDeletionEvents(const std::vector<os::InotifyE
             continue;
         }
 
-        const bool file_was_deleted = ReadMaskSet(event, os::InotifyEvent::ReadMask::kInDelete);
+        const bool file_only_was_deleted = ReadMaskSet(event, os::InotifyEvent::ReadMask::kInDelete);
+        const bool folder_was_deleted = ReadMaskSet(event, os::InotifyEvent::ReadMask::kInIgnored);
+        const bool file_was_deleted = file_only_was_deleted;  // || folder_was_deleted;
+
+        std::cout << "\n\n8888888888888888888888888888888888888888888888888888888888888888888888888888888888\n";
+        std::cout << "File was deleted: " << file_only_was_deleted << '\n';
+        std::cout << "Folder was deleted: " << folder_was_deleted << '\n';
+        std::cout << "8888888888888888888888888888888888888888888888888888888888888888888888888888888888" << std::endl;
 
         const auto& [enriched_instance_identifier, search_keys] = watch_iterator->second;
         if (file_was_deleted)

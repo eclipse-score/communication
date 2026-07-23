@@ -96,7 +96,7 @@ pkg_application(
     ],
     etc = [
         "config/disabled_methods_mw_com_config.json",
-        "config/logging.json",
+        # "config/logging.json",
         "config/mw_com_config.json",
     ],
     visibility = [
