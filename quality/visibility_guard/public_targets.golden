@@ -6,6 +6,7 @@
 //:copyright.fix.find_main
 //docs/sphinx:sphinx_doc
 //docs/sphinx:sphinx_doc_needs
+//quality/compiler_warnings/clang:default_flags
 //quality/compiler_warnings/clang:minimal_warnings
 //quality/compiler_warnings/clang:strict_warnings
 //quality/compiler_warnings/clang:strict_warnings_no_error
@@ -15,8 +16,8 @@
 //quality/compiler_warnings/gcc:strict_warnings_no_error
 //quality/compiler_warnings/gcc:third_party_warnings
 //quality/compiler_warnings:additional_warnings
-//quality/compiler_warnings:default_flags
-//quality/compiler_warnings:default_link_flags
+//quality/compiler_warnings:minimal_warnings
+//quality/compiler_warnings:strict_warnings
 //quality/compiler_warnings:treat_warnings_as_errors
 //quality/coverage:enable_llvm_coverage_for_death_tests
 //quality/sanitizer:merged_absolute_env
