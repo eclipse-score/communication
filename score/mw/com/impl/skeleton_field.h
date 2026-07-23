@@ -32,6 +32,7 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -229,7 +230,11 @@ class SkeletonFieldImpl : public SkeletonFieldBase
             parent,
             field_name,
             SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
-                skeleton_base_view.GetAssociatedInstanceIdentifier(), skeleton_base_view.GetBinding(), field_name),
+                skeleton_base_view.GetAssociatedInstanceIdentifier(),
+                skeleton_base_view.GetBinding(),
+                field_name,
+                (kHasGetter || kHasSetter) ? 1U : 0U,
+                kHasGetter),
             typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{});
     }
 
@@ -275,6 +280,45 @@ class SkeletonFieldImpl : public SkeletonFieldBase
         }
     }
 
+    /// \brief Registers a get handler into get_method_ so that proxy Get() calls are served automatically.
+    void RegisterGetHandler()
+    {
+        if constexpr (kHasGetter)
+        {
+            if (get_method_ == nullptr)
+            {
+                return;
+            }
+            auto field_ref =
+                std::make_unique<std::reference_wrapper<ReferenceToMoveable<SkeletonFieldBase>::Reference>>(
+                    GetReferenceToMoveable());
+            auto mutex = std::make_unique<std::mutex>();
+            const auto result = get_method_->RegisterHandler(
+                [field_ref = std::move(field_ref), mutex = std::move(mutex)](QualityType quality_type,
+                                                                             FieldType& return_value) {
+                    // need to serialize access to Get. In case of concurrent Get calls,
+                    // we want to ensure that they are processed sequentially.
+                    std::lock_guard<std::mutex> lock{*mutex};
+                    auto& typed_field = static_cast<SkeletonFieldImpl&>(field_ref->get().Get());
+                    const auto sample_ptr_result =
+                        SkeletonEventView<FieldType>{*typed_field.GetTypedEvent()}.GetLatestSample(quality_type);
+                    if (!sample_ptr_result.has_value())
+                    {
+                        score::mw::log::LogError("lola")
+                            << "Get handler: failed to get latest sample: " << sample_ptr_result.error();
+                        return;
+                    }
+                    return_value = *sample_ptr_result.value();
+                },
+                QualityType{});
+            if (!result.has_value())
+            {
+                score::mw::log::LogError("lola")
+                    << "RegisterGetHandler: failed to register get handler: " << result.error();
+            }
+        }
+    }
+
     /// \brief Single private delegating constructor. Both the production and test ctors funnel through here with
     ///        appropriate dispatches (real ones from the Make*IfEnabled helpers, or nullptr).
     SkeletonFieldImpl(SkeletonBase& parent,
@@ -309,6 +353,10 @@ SkeletonFieldImpl<SampleDataType, Tags...>::SkeletonFieldImpl(
 {
     SkeletonBaseView skeleton_base_view{parent};
     skeleton_base_view.RegisterField(field_name, GetReferenceToMoveable());
+    if constexpr (kHasGetter)
+    {
+        RegisterGetHandler();
+    }
 }
 
 /// \brief FieldType is allocated by the user and provided to the middleware to send. Dispatches to

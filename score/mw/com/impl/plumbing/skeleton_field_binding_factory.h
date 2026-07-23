@@ -22,6 +22,7 @@
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <string_view>
@@ -37,11 +38,15 @@ class SkeletonFieldBindingFactory final
 {
   public:
     /// \brief See documentation in ISkeletonFieldBindingFactory.
-    static std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(const InstanceIdentifier& identifier,
-                                                                                SkeletonBinding& parent_binding,
-                                                                                const std::string_view field_name)
+    static std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(
+        const InstanceIdentifier& identifier,
+        SkeletonBinding& parent_binding,
+        const std::string_view field_name,
+        std::size_t additional_slots_for_field_get_set = 0U,
+        bool field_getter_enabled = false)
     {
-        return instance().CreateEventBinding(identifier, parent_binding, field_name);
+        return instance().CreateEventBinding(
+            identifier, parent_binding, field_name, additional_slots_for_field_get_set, field_getter_enabled);
     }
 
     /// \brief Inject a mock ISkeletonFieldBindingFactory. If a mock is injected, then all calls on

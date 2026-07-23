@@ -21,6 +21,7 @@
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
+#include <cstddef>
 #include <memory>
 #include <string_view>
 
@@ -33,10 +34,11 @@ template <typename SampleType>
 class SkeletonFieldBindingFactoryImpl : public ISkeletonFieldBindingFactory<SampleType>
 {
   public:
-    std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(
-        const InstanceIdentifier& identifier,
-        SkeletonBinding& parent_binding,
-        const std::string_view field_name) noexcept override;
+    std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(const InstanceIdentifier& identifier,
+                                                                         SkeletonBinding& parent_binding,
+                                                                         const std::string_view field_name,
+                                                                         std::size_t additional_slots_for_field_get_set,
+                                                                         bool field_getter_enabled) noexcept override;
 };
 
 template <typename SampleType>
@@ -50,14 +52,15 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto SkeletonFieldBindingFactoryImpl<SampleType>::CreateEventBinding(const InstanceIdentifier& identifier,
                                                                      SkeletonBinding& parent_binding,
-                                                                     const std::string_view field_name) noexcept
+                                                                     const std::string_view field_name,
+                                                                     std::size_t additional_slots_for_field_get_set,
+                                                                     bool field_getter_enabled) noexcept
     -> std::unique_ptr<SkeletonEventBinding<SampleType>>
 {
-    // TODO: Currently field_getter_enabled is hard coded to false, will add support
-    //  when getter functionality of field is implemented.
     return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
                                       lola::SkeletonEvent<SampleType>,
-                                      ServiceElementType::FIELD>(identifier, parent_binding, field_name, false);
+                                      ServiceElementType::FIELD>(
+        identifier, parent_binding, field_name, additional_slots_for_field_get_set, field_getter_enabled);
 }
 
 }  // namespace score::mw::com::impl

@@ -17,6 +17,8 @@
 
 #include <gmock/gmock.h>
 
+#include <cstddef>
+
 namespace score::mw::com::impl
 {
 
@@ -26,7 +28,7 @@ class SkeletonFieldBindingFactoryMock : public ISkeletonFieldBindingFactory<Samp
   public:
     MOCK_METHOD(std::unique_ptr<SkeletonEventBinding<SampleType>>,
                 CreateEventBinding,
-                (const InstanceIdentifier&, SkeletonBinding&, const std::string_view),
+                (const InstanceIdentifier&, SkeletonBinding&, const std::string_view, std::size_t, bool),
                 (noexcept, override));
 };
 

@@ -301,7 +301,7 @@ TEST_F(SkeletonMethodStatefulCallbackFixture, PassingReferenceToHandlerUpdatesSt
     std::ignore = method_->RegisterHandler(test_functor);
 
     // When the type erased call is executed by the binding
-    captured_set_handler.value()({}, {});
+    captured_set_handler.value()({}, {}, QualityType{});
 
     // Then the state of the functor is updated in place when the handler is called by the binding
     EXPECT_EQ(test_functor.i_, kModifiedValue);
@@ -391,7 +391,7 @@ TEST_F(SkeletonMethodThingStuffFixture, DataTransferBetweenTypedAndTypeErasedCal
     SerializeBuffers(in_arg_1, in_arg_2, in_arg_3);
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
     // When the type erased call is executed by the binding
-    typeerased_callback_.value()(in_args_buffer_, out_arg_buffer_);
+    typeerased_callback_.value()(in_args_buffer_, out_arg_buffer_, QualityType{});
 
     // Then its return is deserialized to the correct return value of the typed callback
     auto res = GetTypedResultFromOutArgBuffer();
@@ -421,7 +421,7 @@ TEST_F(SkeletonMethodThingVoidFixture, DataTransferBetweenTypedAndTypeErasedCall
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
 
     // When the type erased call is executed by the binding
-    typeerased_callback_.value()(std::nullopt, out_arg_buffer_);
+    typeerased_callback_.value()(std::nullopt, out_arg_buffer_, QualityType{});
 
     // Then its return is deserialized to the correct return value of the typed callback
     auto res = GetTypedResultFromOutArgBuffer();
@@ -452,7 +452,7 @@ TEST_F(SkeletonMethodVoidStuffFixture, DataTransferBetweenTypedAndTypeErasedCall
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
 
     // When the type erased call is executed by the binding
-    typeerased_callback_.value()(in_args_buffer_, {});
+    typeerased_callback_.value()(in_args_buffer_, {}, QualityType{});
 }
 
 using SkeletonMethodVoidVoidFixture = SkeletonMethodGenericTestFixture<VoidVoid>;
@@ -473,7 +473,7 @@ TEST_F(SkeletonMethodVoidVoidFixture, DataTransferBetweenTypedAndTypeErasedCallb
 
     EXPECT_TRUE(method_->RegisterHandler(typed_callback_mock_.AsStdFunction()));
     // When the type erased call is executed by the binding
-    typeerased_callback_.value()({}, {});
+    typeerased_callback_.value()({}, {}, QualityType{});
 }
 
 }  // namespace

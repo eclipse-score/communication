@@ -63,7 +63,7 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
     const safecpp::Scope<>& method_call_handler_scope,
     uid_t allowed_proxy_uid,
     pid_t proxy_pid,
-    const QualityType asil_level)
+    const QualityType quality_type)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         type_erased_callback_.has_value(),
@@ -72,7 +72,8 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
     // StopOfferService.
     IMessagePassingService::MethodCallHandler method_call_callback{
         method_call_handler_scope,
-        [this, in_arg_queue_storage, return_queue_storage, type_erased_element_info](std::size_t queue_position) {
+        [this, in_arg_queue_storage, return_queue_storage, type_erased_element_info, quality_type](
+            std::size_t queue_position) {
             std::optional<score::cpp::span<std::byte>> in_args_element_storage{};
             std::optional<score::cpp::span<std::byte>> return_arg_element_storage{};
 
@@ -90,7 +91,7 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
                     queue_position, return_queue_storage.value(), type_erased_element_info);
             }
 
-            Call(in_args_element_storage, return_arg_element_storage);
+            Call(in_args_element_storage, return_arg_element_storage, quality_type);
         }};
 
     // Check SubscribeMethods for this skeleton_methods_ loop
@@ -99,7 +100,7 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& lola_message_passing = lola_runtime.GetLolaMessaging();
     auto registration_result = lola_message_passing.RegisterMethodCallHandler(
-        asil_level, proxy_method_instance_identifier, std::move(method_call_callback), allowed_proxy_uid);
+        quality_type, proxy_method_instance_identifier, std::move(method_call_callback), allowed_proxy_uid);
     if (!(registration_result.has_value()))
     {
         return MakeUnexpected<void>(registration_result.error());
@@ -142,14 +143,15 @@ bool SkeletonMethod::IsRegistered() const
 }
 
 void SkeletonMethod::Call(const std::optional<score::cpp::span<std::byte>> in_args,
-                          const std::optional<score::cpp::span<std::byte>> return_arg)
+                          const std::optional<score::cpp::span<std::byte>> return_arg,
+                          const QualityType quality_type)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         type_erased_callback_.has_value(),
         "Defensive programming: Call can only be called after OnProxyMethodSubscribeFinished has "
         "registered the callback with message passing. We check in OnProxyMethodSubscribeFinished "
         "that type_erased_callback_ has a value.");
-    std::invoke(type_erased_callback_.value(), in_args, return_arg);
+    std::invoke(type_erased_callback_.value(), in_args, return_arg, quality_type);
 }
 
 void SkeletonMethod::CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid)
