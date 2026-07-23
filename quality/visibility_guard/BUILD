@@ -22,6 +22,15 @@ py_test(
     name = "visibility_guard_test",
     srcs = ["visibility_guard_test.py"],
     data = [":public_targets.golden"],
+    env_inherit = [
+        # Required for internal bazel execution to be able to resolve proxies
+        "HTTP_PROXY",
+        "http_proxy",
+        "HTTPS_PROXY",
+        "https_proxy",
+        "NO_PROXY",
+        "no_proxy",
+    ],
     # local=True: needs source tree access to read BUILD files across all packages.
     # The test is deterministic — same source tree always produces the same result.
     local = True,
