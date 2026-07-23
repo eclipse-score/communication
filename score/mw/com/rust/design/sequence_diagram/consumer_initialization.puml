@@ -1,4 +1,4 @@
-@startuml com_api_consumer_initialization
+@startuml consumer_initialization
 
 ' Copyright (c) 2025 Contributors to the Eclipse Foundation
 '

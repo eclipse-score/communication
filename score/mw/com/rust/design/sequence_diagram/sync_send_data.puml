@@ -1,4 +1,4 @@
-@startuml com_api_sync_send_data
+@startuml sync_send_data
 
 ' Copyright (c) 2025 Contributors to the Eclipse Foundation
 '

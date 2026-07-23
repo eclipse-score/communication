@@ -26,9 +26,9 @@ This document describes the internal architecture, trait hierarchy, module struc
 ## Architecture Overview
 The COM API follows a layered architecture separating abstract contracts from concrete implementations:
 
-![COM API Module Structure](com_api_module_structure.svg)
+![COM API Module Structure](module_structure.svg)
 
-> Source: [doc/com_api_module_structure.puml](com_api_module_structure.puml)
+> Source: [doc/module_structure.puml](module_structure.puml)
 
 ## Layers
 
@@ -183,4 +183,4 @@ All naming in the COM-API adheres to [Rust Naming Guidelines](https://rust-lang.
 | Target | Purpose |
 |--------|---------|
 | `//score/mw/com/rust/concept` | Generic trait definitions and `CommData` / `Reloc` contracts |
-| `//score/mw/com/rust/com-api-macros` | Derive macros for `CommData` and `Reloc` |
+| `//score/mw/com/rust/com_api_macros` | Derive macros for `CommData` and `Reloc` |
