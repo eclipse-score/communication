@@ -945,6 +945,9 @@ class SkeletonRegisterParamaterisedFixture : public SkeletonTestMockedSharedMemo
 TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmRegionWasCreated)
 {
     // Given a Skeleton constructed from a valid identifier referencing an ASIL-B deployment
+    // The event that will be registered below is also offered here, so that the fixed-capacity containers within
+    // ServiceDataStorage are sized to hold it.
+    events_.emplace(test::kFooEventName, mock_event_binding_);
     InitialiseSkeleton(GetValidASILInstanceIdentifier()).WithNoConnectedProxy();
 
     // when calling PrepareOffer ... expect, that it succeeds
@@ -1442,7 +1445,10 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CallingRegisterWithSameServiceEleme
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     auto test_function = [this]() noexcept {
-        // Given a Skeleton constructed from a valid identifier referencing a QM deployment
+        // Given a Skeleton constructed from a valid identifier referencing a QM deployment. The event that will be
+        // registered below is offered, so that the fixed-capacity containers within ServiceDataStorage can hold it and
+        // the (intended) termination is triggered by the duplicate registration rather than by a capacity overflow.
+        events_.emplace(test::kFooEventName, mock_event_binding_);
         InitialiseSkeleton(GetValidASILInstanceIdentifier());
 
         EXPECT_TRUE(

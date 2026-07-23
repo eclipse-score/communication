@@ -28,8 +28,8 @@ object "shmResource_control_asil_SI_1 : SharedMemoryResource" as control_asil_re
 }
 
 object "<< Shared Memory >>\nserviceDataStorage_SI_1 : lola::ServiceDataStorage" as storage {
-  +events_ : score::memory::shared::Map<ElementFqId, score::memory::shared::OffsetPtr<void>>
-  +events_metainfo_ : score::memory::shared::Map<ElementFqId, EventMetaInfo>
+  +events_ : lola::LinearSearchMap<ElementFqId, score::memory::shared::OffsetPtr<void>>
+  +events_metainfo_ : lola::LinearSearchMap<ElementFqId, EventMetaInfo>
 }
 
 object "<< Shared Memory >>\nserviceDataControl_qm_SI_1 : lola::ServiceDataControl" as control_qm {

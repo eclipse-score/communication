@@ -19,12 +19,14 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 #include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/new_delete_delegate_resource.h"
+#include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/memory/shared/shared_memory_factory.h"
 #include "score/mw/log/logging.h"
 #include "score/os/acl.h"
@@ -118,6 +120,7 @@ SkeletonMemoryManager::SkeletonMemoryManager(QualityType quality_type,
       storage_{nullptr},
       control_qm_{nullptr},
       control_asil_b_{nullptr},
+      number_of_service_elements_{0U},
       storage_resource_{},
       control_qm_resource_{},
       control_asil_resource_{}
@@ -367,10 +370,22 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
     SkeletonBinding::SkeletonEventBindings& events,
     SkeletonBinding::SkeletonFieldBindings& fields)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetShmSizeCalculationMode() ==
-            ShmSizeCalculationMode::kSimulation,
-        "No other shm size calculation mode is currently suppored");
+    const auto shm_size_calculation_mode =
+        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetShmSizeCalculationMode();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE((shm_size_calculation_mode == ShmSizeCalculationMode::kSimulation) ||
+                                                    (shm_size_calculation_mode == ShmSizeCalculationMode::kEstimation),
+                                                "No other shm size calculation mode is currently suppored");
+
+    // The number of service-elements determines the (fixed) capacity of the containers within ServiceDataStorage. It
+    // has to be known before the ServiceDataStorage is constructed (which also happens during the simulation run
+    // below). Therefore, we set it here, before any ServiceDataStorage is created.
+    // It equals the number of offered event/field bindings: only offered service-elements are ever registered and thus
+    // placed into the containers. We deliberately do NOT use the number of configured events/fields, because a
+    // configuration may legitimately contain events/fields that are never offered/used (e.g. outdated or unused
+    // entries, which are not rejected during configuration parsing). Sizing by the configured count would therefore
+    // unnecessarily over-allocate the LinearSearchMaps.
+    number_of_service_elements_ = events.size() + fields.size();
+
     if ((lola_service_instance_deployment_.shared_memory_size_.has_value()) &&
         (lola_service_instance_deployment_.control_asil_b_memory_size_.has_value()) &&
         (lola_service_instance_deployment_.control_qm_memory_size_.has_value()))
@@ -390,6 +405,15 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
     }
 
     auto required_shm_storage_size = CalculateShmResourceStorageSizesBySimulation(events, fields);
+
+    // In kEstimation mode the size of the data shm-object (holding the ServiceDataStorage) is calculated analytically
+    // instead of relying on the value obtained from the simulation run. This is possible because ServiceDataStorage
+    // uses fixed-capacity containers. The control shm-objects are (for the time being) still sized via the simulation
+    // run above.
+    if (shm_size_calculation_mode == ShmSizeCalculationMode::kEstimation)
+    {
+        required_shm_storage_size.data_size = CalculateDataShmResourceStorageSize(events, fields);
+    }
 
     const std::size_t control_asil_b_size_result = required_shm_storage_size.control_asil_b_size.has_value()
                                                        ? required_shm_storage_size.control_asil_b_size.value()
@@ -502,6 +526,112 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
                                          : std::optional<std::size_t>{};
 
     return ShmResourceStorageSizes{control_data_size, control_qm_size, control_asil_b_size};
+}
+
+namespace
+{
+
+// Rounds size up to the next multiple of alignof(std::max_align_t).
+// The SharedMemoryResource is a monotonic (bump) allocator: the bytes it accounts for a single allocation are the
+// requested size plus the padding needed to bring the current offset to the requested alignment. All alignments
+// occurring within the data shm-object are <= alignof(std::max_align_t). By rounding every individual allocation up to
+// alignof(std::max_align_t) we keep the running offset max-aligned and therefore obtain a size that is guaranteed to be
+// sufficient (it is exact whenever the allocated sizes are multiples of the involved alignment, which is the common
+// case).
+constexpr std::size_t RoundUpToMaxAlign(const std::size_t size) noexcept
+{
+    constexpr std::size_t kMaxAlign = alignof(std::max_align_t);
+    const std::size_t remainder = size % kMaxAlign;
+    return (remainder == 0U) ? size : (size + (kMaxAlign - remainder));
+}
+
+}  // namespace
+
+std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
+    SkeletonBinding::SkeletonEventBindings& events,
+    SkeletonBinding::SkeletonFieldBindings& fields) const
+{
+    const std::size_t number_of_service_elements = number_of_service_elements_;
+
+    // (1) The ServiceDataStorage object itself (including the inline bookkeeping of its two LinearSearchMaps).
+    std::size_t total_size = RoundUpToMaxAlign(sizeof(ServiceDataStorage));
+
+    // (2) The two backing arrays of the LinearSearchMaps (allocated once, with capacity == number_of_service_elements).
+    // number_of_service_elements_ is the capacity the ServiceDataStorage is actually constructed with (see
+    // CalculateShmResourceStorageSizes), hence we use exactly that value here to stay consistent with the real
+    // allocation.
+    total_size +=
+        RoundUpToMaxAlign(number_of_service_elements * sizeof(ServiceDataStorage::EventDataStorageMap::value_type));
+    total_size +=
+        RoundUpToMaxAlign(number_of_service_elements * sizeof(ServiceDataStorage::EventMetaInfoMap::value_type));
+
+    // The size of the EventDataStorage control structure (a DynamicArray) is independent of the concrete sample-type
+    // (it only holds a fancy-pointer, an allocator and two size_t members).
+    const std::size_t event_data_storage_object_size = RoundUpToMaxAlign(sizeof(EventDataStorage<std::max_align_t>));
+
+    // (3) For each event/field: the EventDataStorage object plus its raw slot-array.
+    // The slot-array size mirrors exactly what the real construction allocates:
+    //  - For typed events the slots are a contiguous array of SampleType, i.e. number_of_slots * sizeof(SampleType).
+    //    sizeof(SampleType) is always a multiple of alignof(SampleType), hence there is no per-slot padding and the
+    //    array size equals number_of_slots * GetMaxSize().
+    //  - For generic (type-erased) events each slot is padded to the sample-alignment, hence the per-slot size is
+    //    CalculateAlignedSize(sample_size, sample_alignment). The alignment is obtained from the generic binding.
+    // In both cases the resulting allocation is finally rounded up to a multiple of alignof(std::max_align_t) (the real
+    // code allocates it as an array of std::max_align_t elements).
+    const auto accumulate_service_elements = [this, &total_size, event_data_storage_object_size](
+                                                 SkeletonBinding::SkeletonEventBindings& bindings,
+                                                 const bool are_fields) {
+        for (const auto& binding : bindings)
+        {
+            const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
+            SkeletonEventBindingBase& event_binding = binding.second.get();
+            const std::size_t sample_size = event_binding.GetMaxSize();
+
+            // Determine the per-slot (aligned) size. For generic events the sample-alignment can differ from the
+            // natural alignment of the size, so we replicate the alignment-padding done by the real allocation.
+            std::size_t aligned_sample_size = sample_size;
+            // coverity[autosar_cpp14_a5_2_2_violation]
+            auto* const generic_binding = dynamic_cast<GenericSkeletonEventBinding*>(&event_binding);
+            if (generic_binding != nullptr)
+            {
+                const std::size_t sample_alignment = generic_binding->GetSizeInfo().second;
+                if ((sample_size != 0U) && (sample_alignment != 0U))
+                {
+                    aligned_sample_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
+                }
+            }
+
+            total_size += event_data_storage_object_size;
+            total_size += RoundUpToMaxAlign(number_of_slots * aligned_sample_size);
+        }
+    };
+    accumulate_service_elements(events, false);
+    accumulate_service_elements(fields, true);
+
+    return total_size;
+}
+
+std::size_t SkeletonMemoryManager::GetNumberOfSampleSlotsFromConfig(const std::string_view service_element_name,
+                                                                    const bool is_field) const
+{
+    const std::string name{service_element_name};
+    if (is_field)
+    {
+        const auto field_it = lola_service_instance_deployment_.fields_.find(name);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(field_it != lola_service_instance_deployment_.fields_.cend(),
+                                                    "Could not find field in deployment configuration.");
+        const auto number_of_slots = field_it->second.lola_event_instance_deployment_.GetNumberOfSampleSlots();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_slots.has_value(),
+                                                    "Number of sample slots not specified for field.");
+        return number_of_slots.value();
+    }
+    const auto event_it = lola_service_instance_deployment_.events_.find(name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_it != lola_service_instance_deployment_.events_.cend(),
+                                                "Could not find event in deployment configuration.");
+    const auto number_of_slots = event_it->second.GetNumberOfSampleSlots();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_slots.has_value(),
+                                                "Number of sample slots not specified for event.");
+    return number_of_slots.value();
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3":
@@ -694,7 +824,7 @@ bool SkeletonMemoryManager::OpenSharedMemoryForControl(const QualityType asil_le
 void SkeletonMemoryManager::InitializeSharedMemoryForData(
     const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory)
 {
-    storage_ = memory->construct<ServiceDataStorage>(*memory);
+    storage_ = memory->construct<ServiceDataStorage>(number_of_service_elements_, *memory);
     storage_resource_ = memory;
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
     // variables being given values that are not subsequently used"

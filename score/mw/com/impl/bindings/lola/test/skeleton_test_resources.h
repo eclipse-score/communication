@@ -470,7 +470,7 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     template <typename SampleType>
     ServiceDataStorage CreateServiceDataStorageWithEvent(ElementFqId element_fq_id) noexcept
     {
-        ServiceDataStorage service_data_storage{*data_shared_memory_resource_mock_};
+        ServiceDataStorage service_data_storage{1U, *data_shared_memory_resource_mock_};
 
         auto* event_data_storage = data_shared_memory_resource_mock_->construct<EventDataStorage<SampleType>>(
             10U, *data_shared_memory_resource_mock_);

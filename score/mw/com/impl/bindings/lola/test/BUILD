@@ -83,6 +83,7 @@ cc_library(
         "//score/mw/com/impl:service_discovery_mock",
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_mock",
+        "//score/mw/com/impl/bindings/mock_binding",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp",
     ],
