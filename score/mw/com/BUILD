@@ -112,6 +112,8 @@ cc_library(
         ":runtime",
         ":types",
         "//score/mw/com/impl",
+        "//score/mw/com/impl/mocking:proxy_wrapper_class_test_view",
+        "//score/mw/com/impl/mocking:skeleton_wrapper_class_test_view",
         "//score/mw/com/impl/mocking:test_type_utilities",
         "//score/mw/com/mocking:i_runtime",
         "//score/mw/com/mocking:test_type_utilities",

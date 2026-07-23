@@ -81,7 +81,7 @@ void InsertSkeletonTransactionLogWithValidTransactions(
     TransactionLogRegistrationGuardDeactiveDestructionOperationGuard guard{};
 
     auto transaction_registration_guard =
-        transaction_log_set.RegisterSkeletonTracingElement(consumer_event_data_control_local);
+        transaction_log_set.RegisterSkeletonTransactionLog(consumer_event_data_control_local);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);
@@ -134,7 +134,7 @@ void InsertSkeletonTransactionLogWithInvalidTransactions(
     TransactionLogRegistrationGuardDeactiveDestructionOperationGuard guard{};
 
     auto transaction_registration_guard =
-        transaction_log_set.RegisterSkeletonTracingElement(consumer_event_data_control_local);
+        transaction_log_set.RegisterSkeletonTransactionLog(consumer_event_data_control_local);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);

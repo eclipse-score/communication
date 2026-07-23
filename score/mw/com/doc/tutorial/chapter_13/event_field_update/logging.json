@@ -1,0 +1,7 @@
+{
+    "appId": "EVFU",
+    "appDesc": "event_field_update_example",
+    "logLevel": "kInfo",
+    "logLevelThresholdConsole": "kInfo",
+    "logMode": "kConsole"
+}

@@ -80,7 +80,7 @@ class TransactionLogRegistrationGuard
     /// TransactionLogRegistrationGuards that were created would no longer exist. Therefore, we will never have a
     /// rollback and unregister_on_destruction_operation_ for the same TransactionLog called within a single process.
     /// However, in tests, we always return a TransactionLogRegistrationGuard from RegisterProxyElement /
-    /// RegisterSkeletonTracingElement. Therefore, even in tests in which we call rollback, there will still be a valid
+    /// RegisterSkeletonTransactionLog. Therefore, even in tests in which we call rollback, there will still be a valid
     /// TransactionLogRegistrationGuard which must be destroyed. When this happens, a check in the
     /// TransactionLogNode::Release function will fail since the TransactionLogNode would have already been rolled back
     /// and thus marked as inactive. Therefore, in these specific tests, we should set deactivate_destruction_operation_

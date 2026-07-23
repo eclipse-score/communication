@@ -23,9 +23,22 @@ namespace score::mw::com::impl
 /// \requirement SWS_CM_00310
 enum class SubscriptionState : std::uint8_t
 {
-    kSubscribed,           ///< Proxy is subscribed to a particular event and will receive data.
-    kNotSubscribed,        ///< Proxy is not subscribed, no data is received.
-    kSubscriptionPending,  ///< Subscription is requested but not yet acknowledged by the producer.
+    /// kSubscribed is entered when the subscription has been successfully acknowledged by the provider side and the
+    /// consumer has not been notified that the service is no longer offered (either the provider has called
+    /// stop_offer() or crashed).
+    kSubscribed,
+
+    /// kNotSubscribed is entered when Subscribe() has not been called or the last successful Subscribe() has been
+    /// withdrawn with call to Unsubscribe() Last call to Subscribe() has been rejected/negatively acknowledged by the
+    /// provider side or provider side explicitly cancels an already acknowledged subscription.
+    kNotSubscribed,
+
+    /// kSubscriptionPending state is entered when the Subscription() call is either in the state to being dispatched to
+    /// the provider side or has been already dispatched to the provider side, but acknowlegde from provider side is
+    /// pending state was already in kSubscribed, but then the consumer has been notified that the whole enclosing
+    /// providing service instance has stopped offering. This is the "auto-reconnect mode". As soon as the consumer is
+    /// notified that the service instance is being offered again, the state would transition back to kSubscribed.
+    kSubscriptionPending,
 };
 
 }  // namespace score::mw::com::impl

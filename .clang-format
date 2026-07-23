@@ -42,7 +42,6 @@ IndentWidth: 4
 InsertNewlineAtEOF: true
 KeepEmptyLinesAtTheStartOfBlocks: true
 QualifierAlignment: Left
-CommentPragmas: '^.*A2Lfactory:'
 ---
 # Make sure language specific settings are below the generic settings to be compatible to all languages.
 Language: Cpp

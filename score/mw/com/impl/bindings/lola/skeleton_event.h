@@ -20,19 +20,23 @@
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/bindings/lola/sample_ptr.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
-#include "score/mw/log/logging.h"
-
+#include "score/result/result.h"
 #include <score/assert.hpp>
 #include <score/utility.hpp>
 
+#include <cstdint>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -66,7 +70,8 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
                   const ElementFqId element_fq_id,
                   const std::string_view event_name,
                   const SkeletonEventProperties properties,
-                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {}) noexcept;
+                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
+                  bool field_getter_enabled) noexcept;
 
     SkeletonEvent(const SkeletonEvent&) = delete;
     SkeletonEvent(SkeletonEvent&&) noexcept = delete;
@@ -78,14 +83,16 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     /// \brief Sends a value by _copy_ towards a consumer. It will allocate the necessary space and then copy the value
     /// into Shared Memory.
     Result<void> Send(const SampleType& value,
-                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
-                          send_trace_callback) noexcept override;
+                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback,
+                      SampleAllocateeGuard guard) noexcept override;
 
     Result<void> Send(impl::SampleAllocateePtr<SampleType> sample,
                       std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
                           send_trace_callback) noexcept override;
 
-    Result<impl::SampleAllocateePtr<SampleType>> Allocate() noexcept override;
+    Result<impl::SampleAllocateePtr<SampleType>> Allocate(SampleAllocateeGuard guard) noexcept override;
+
+    Result<impl::SamplePtr<SampleType>> GetLatestSample(QualityType quality_type) override;
 
     /// @requirement SWS_CM_00700
     Result<void> PrepareOffer() noexcept override;
@@ -112,10 +119,16 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
                                          const ElementFqId element_fq_id,
                                          const std::string_view event_name,
                                          const SkeletonEventProperties properties,
-                                         impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
+                                         impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data,
+                                         bool field_getter_enabled) noexcept
     : SkeletonEventBinding<SampleType>{},
       event_data_storage_{nullptr},
-      skeleton_event_common_{parent, event_name, properties, element_fq_id, skeleton_event_tracing_data}
+      skeleton_event_common_{parent,
+                             event_name,
+                             properties,
+                             element_fq_id,
+                             skeleton_event_tracing_data,
+                             field_getter_enabled}
 {
 }
 
@@ -127,9 +140,10 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<void> SkeletonEvent<SampleType>::Send(
     const SampleType& value,
-    std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback) noexcept
+    std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback,
+    SampleAllocateeGuard guard) noexcept
 {
-    auto allocated_slot_result = Allocate();
+    auto allocated_slot_result = Allocate(std::move(guard));
     if (!(allocated_slot_result.has_value()))
     {
         return MakeUnexpected(ComErrc::kSampleAllocationFailure, "Could not allocate slot");
@@ -163,7 +177,7 @@ template <typename SampleType>
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access, which leads to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate() noexcept
+Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate(SampleAllocateeGuard guard) noexcept
 {
     const auto allocated_slot_result = skeleton_event_common_.AllocateSlot();
     if (!allocated_slot_result.has_value())
@@ -172,11 +186,54 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     }
 
     const auto slot_index = allocated_slot_result.value();
+
+    // The ConsumerEventDataControlLocalView stored inside SampleAllocateePtr is only used by the send-tracing path.
+    //  Tracing is a diagnostic/monitoring feature with no safety requirement, so QM is sufficient.
+    //  GetConsumerEventDataControlLocalView(kASIL_B) is a separate code path introduced specifically for
+    //  GetLatestSample().
     return MakeSampleAllocateePtr(
-        SampleAllocateePtr<SampleType>(&event_data_storage_->at(static_cast<std::uint64_t>(slot_index)),
-                                       skeleton_event_common_.GetEventDataControlComposite(),
-                                       skeleton_event_common_.GetConsumerEventDataControlLocalView(),
-                                       slot_index));
+        SampleAllocateePtr<SampleType>(
+            &event_data_storage_->at(static_cast<std::uint64_t>(slot_index)),
+            skeleton_event_common_.GetEventDataControlComposite(),
+            skeleton_event_common_.GetConsumerEventDataControlLocalView(QualityType::kASIL_QM),
+            slot_index),
+        std::move(guard));
+}
+
+template <typename SampleType>
+Result<impl::SamplePtr<SampleType>> SkeletonEvent<SampleType>::GetLatestSample(QualityType quality_type)
+{
+    const QualityType event_quality_type = skeleton_event_common_.GetParent().GetInstanceQualityType();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        !((event_quality_type == QualityType::kASIL_QM) && (quality_type == QualityType::kASIL_B)),
+        "ASIL-B event support ASIL-QM and ASIL-B quality types, but ASIL-QM event support only ASIL-QM quality type.");
+
+    auto guard = skeleton_event_common_.AllocateGetterGuard();
+    if (!guard.has_value())
+    {
+        ::score::mw::log::LogError("lola")
+            << "GetLatestSample called while a SamplePtr from a previous call is still alive";
+        return MakeUnexpected(ComErrc::kMaxSamplesReached);
+    }
+
+    auto& consumer_event_data_control_local = skeleton_event_common_.GetConsumerEventDataControlLocalView(quality_type);
+
+    // ReferenceNextEvent returns the slot with the highest timestamp in the exclusive range (min, max).
+    // We pass 0 and TIMESTAMP_MAX to span the entire valid timestamp range, so it always returns the
+    // most recently written sample regardless of its timestamp.
+    const auto slot_result = consumer_event_data_control_local.ReferenceNextEvent(EventSlotStatus::EventTimeStamp{0U},
+                                                                                  EventSlotStatus::TIMESTAMP_MAX);
+    if (!slot_result.has_value())
+    {
+        ::score::mw::log::LogError("lola") << "ReferenceNextEvent did not return a slot index";
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
+    return impl::SamplePtr<SampleType>{
+        lola::SamplePtr<SampleType>{&event_data_storage_->at(static_cast<std::uint64_t>(*slot_result)),
+                                    consumer_event_data_control_local,
+                                    slot_result.value()},
+        std::move(*guard)};
 }
 
 template <typename SampleType>
@@ -188,9 +245,13 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<void> SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
+    // Invariant: after a successful PrepareOffer(), event_data_storage_ is guaranteed to be non-null.
+    // All methods that require event_data_storage_ (e.g. GetLatestSample) rely on this invariant.
     const auto registration_result = skeleton_event_common_.GetParent().template Register<SampleType>(
         skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties());
     event_data_storage_ = &registration_result.event_data_storage;
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_storage_ != nullptr,
+                                                "event_data_storage_ must be non-null after PrepareOffer");
 
     skeleton_event_common_.PrepareOfferCommon(registration_result.event_control_qm,
                                               registration_result.event_control_asil_b);

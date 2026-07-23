@@ -14,11 +14,15 @@
 
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
 #include "score/mw/com/test/methods/basic_acceptance_test/consumer.h"
+#include "score/mw/com/test/methods/methods_test_resources/common_resources.h"
 
 int main(int argc, const char** argv)
 {
+    auto service_instance_manifest_path = score::mw::com::test::ParseServiceInstanceManifest(argc, argv);
+
     score::mw::com::test::SetupAssertHandler();
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(
+        score::mw::com::runtime::RuntimeConfiguration{service_instance_manifest_path});
     score::mw::com::test::run_consumer();
     return EXIT_SUCCESS;
 }

@@ -15,8 +15,8 @@
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
-
 #include "score/mw/com/impl/bindings/mock_binding/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/sample_allocatee_tracker.h"
 
 #include <score/assert.hpp>
 
@@ -67,6 +67,10 @@ class SampleAllocateePtrFixture : public ::testing::Test
         mock_binding::SampleAllocateePtr<std::uint8_t>(new std::uint8_t(42), [](std::uint8_t* p) {
             delete p;
         }))};
+
+    SampleAllocateeTracker tracker_{};
+    SampleAllocateePtr<std::uint8_t> unit_with_guard{
+        MakeSampleAllocateePtr(std::move(lola_allocatee_ptr_), tracker_.Allocate())};
 };
 
 TEST_F(SampleAllocateePtrFixture, ConstructFromNullptr)
@@ -550,6 +554,100 @@ TEST_F(SampleAllocateePtrFixture, UnderlyingLolaPtrIsFreedOnDestruction)
     // lola::SampleAllocateePtr will no longer point to the object.
     EXPECT_FALSE(is_destructed);
     EXPECT_EQ(lola_allocatee_ptr.get(), nullptr);
+}
+
+TEST_F(SampleAllocateePtrFixture, ConstructWithGuardDecrementsTrackerOnDestruction)
+{
+    // Given an impl::SampleAllocateePtr constructed with a guard
+    EXPECT_EQ(tracker_.GetNumAllocated(), 1U);
+
+    // When the SampleAllocateePtr goes out of scope
+    unit_with_guard = SampleAllocateePtr<std::uint8_t>{};
+
+    // Then the tracker count is decremented back to 0
+    EXPECT_EQ(tracker_.GetNumAllocated(), 0U);
+}
+
+TEST_F(SampleAllocateePtrFixture, ConstructWithGuardDecrementsTrackerOnReset)
+{
+    // Given an impl::SampleAllocateePtr constructed with a guard
+    ASSERT_EQ(tracker_.GetNumAllocated(), 1U);
+
+    // When reset() is called
+    unit_with_guard.reset();
+
+    // Then the tracker count is decremented immediately
+    EXPECT_EQ(tracker_.GetNumAllocated(), 0U);
+}
+
+TEST_F(SampleAllocateePtrFixture, ConstructWithGuardDecrementsTrackerOnNullptrAssignment)
+{
+    // Given an impl::SampleAllocateePtr constructed with a guard
+    ASSERT_EQ(tracker_.GetNumAllocated(), 1U);
+
+    // When assigning nullptr
+    unit_with_guard = nullptr;
+
+    // Then the tracker count is decremented immediately
+    EXPECT_EQ(tracker_.GetNumAllocated(), 0U);
+}
+
+TEST_F(SampleAllocateePtrFixture, MoveConstructorTransfersGuard)
+{
+    // Given a SampleAllocateePtr that owns a tracked allocation
+    ASSERT_EQ(tracker_.GetNumAllocated(), 1U);
+
+    // When move constructing from it
+    SampleAllocateePtr<std::uint8_t> moved_to{std::move(unit_with_guard)};
+
+    // Then the tracker count remains at 1 (the guard was transferred, not released)
+    EXPECT_EQ(tracker_.GetNumAllocated(), 1U);
+    // And the source no longer holds any allocation
+    EXPECT_EQ(unit_with_guard.Get(), nullptr);
+}
+
+TEST_F(SampleAllocateePtrFixture, MoveAssignmentTransfersGuard)
+{
+    // Given a SampleAllocateePtr that owns a tracked allocation
+    ASSERT_EQ(tracker_.GetNumAllocated(), 1U);
+
+    // When move assigning from it into an empty SampleAllocateePtr
+    SampleAllocateePtr<std::uint8_t> moved_to{};
+    moved_to = std::move(unit_with_guard);
+
+    // Then the tracker count remains at 1 (the guard was transferred, not released)
+    EXPECT_EQ(tracker_.GetNumAllocated(), 1U);
+    // And the source no longer holds any allocation
+    EXPECT_EQ(unit_with_guard.Get(), nullptr);
+}
+
+TEST_F(SampleAllocateePtrFixture, MoveConstructorDecrementsTrackerOnDestruction)
+{
+    // Given a SampleAllocateePtr with a guard that has been move-constructed into a new object
+    ASSERT_EQ(tracker_.GetNumAllocated(), 1U);
+    std::optional<SampleAllocateePtr<std::uint8_t>> moved_to{std::move(unit_with_guard)};
+    EXPECT_EQ(tracker_.GetNumAllocated(), 1U);
+
+    // When the moved-to object is explicitly destroyed
+    moved_to.reset();
+
+    // Then the tracker count is decremented to 0
+    EXPECT_EQ(tracker_.GetNumAllocated(), 0U);
+}
+
+TEST_F(SampleAllocateePtrFixture, MoveAssignmentDecrementsTrackerOnDestruction)
+{
+    // Given a SampleAllocateePtr with a guard that has been move-assigned into a new object
+    ASSERT_EQ(tracker_.GetNumAllocated(), 1U);
+    std::optional<SampleAllocateePtr<std::uint8_t>> moved_to{SampleAllocateePtr<std::uint8_t>{}};
+    moved_to.value() = std::move(unit_with_guard);
+    EXPECT_EQ(tracker_.GetNumAllocated(), 1U);
+
+    // When the moved-to object is explicitly destroyed
+    moved_to.reset();
+
+    // Then the tracker count is decremented to 0
+    EXPECT_EQ(tracker_.GetNumAllocated(), 0U);
 }
 
 }  // namespace

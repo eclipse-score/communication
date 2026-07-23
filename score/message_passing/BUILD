@@ -264,7 +264,6 @@ cc_library(
         "mock/server_mock.h",
         "mock/shared_resource_engine_mock.h",
     ],
-    deprecation = "DEPRECATED: use @score_communication//score/message_passing:mock instead",
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//visibility:public"],
     deps = [

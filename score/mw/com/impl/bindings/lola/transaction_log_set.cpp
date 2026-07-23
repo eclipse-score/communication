@@ -142,7 +142,7 @@ score::Result<TransactionLogRegistrationGuard> TransactionLogSet::RegisterProxyE
         *this, next_available_slot_result.value().second, consumer_event_data_control_local_view};
 }
 
-TransactionLogRegistrationGuard TransactionLogSet::RegisterSkeletonTracingElement(
+TransactionLogRegistrationGuard TransactionLogSet::RegisterSkeletonTransactionLog(
     ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view)
 {
     // we only do have one skeleton instance accessing the skeleton transaction log, so a dummy value is good enough,

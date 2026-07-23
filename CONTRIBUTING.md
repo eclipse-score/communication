@@ -58,10 +58,16 @@ This interferes with the bazel sandboxing mechanism and inhibits the linux-sandb
 Bazel falls back to a less powerful sandboxing mechanism that is insufficient for our project.
 This affects many bazel tests and potentially any bazel runnables.
 
-To work around this issue, you can run the following bash script:
+To work around this issue, you can run a bash script, which you can get by cloning the cicd-actions repository
+
+```
+git clone --depth=1 https://github.com/eclipse-score/cicd-actions
+```
+
+after which you can run
 
 ```bash
-bash actions/unblock_user_namespace_for_linux_sandbox/action_callable.sh
+bash <path to cicd-actions repository>/unblock_user_namespace_for_linux_sandbox/action_callable.sh
 ```
 
 Note. To take this into effect force, a bazel restart by shutting it down 1st

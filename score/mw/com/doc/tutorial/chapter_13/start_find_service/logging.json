@@ -1,0 +1,7 @@
+{
+    "appId": "PXSF",
+    "appDesc": "start_find_service_proxy_example",
+    "logLevel": "kInfo",
+    "logLevelThresholdConsole": "kInfo",
+    "logMode": "kConsole"
+}
