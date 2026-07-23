@@ -19,4 +19,5 @@ integration_test(
         "test_bigdata.py",
     ],
     filesystem = "//score/mw/com/test/bigdata:bigdata-pkg",
+    extract_core = True,
 )

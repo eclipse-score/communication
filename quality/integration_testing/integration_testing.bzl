@@ -28,7 +28,7 @@ def _extend_list_in_kwargs_without_duplicates(kwargs, key, values):
     kwargs[key] = kwargs_values
     return kwargs
 
-def integration_test(name, srcs, filesystem, **kwargs):
+def integration_test(name, srcs, filesystem, extract_core = False, core_output_dir = None, **kwargs):
     image_name = "_image_{}".format(name)
     image_loader = "_image_{}_loader".format(name)
     repo_tag = "{}:latest".format(name)
@@ -113,6 +113,24 @@ def integration_test(name, srcs, filesystem, **kwargs):
         }),
     )
 
+    if extract_core:
+        _extend_list_in_kwargs(kwargs, "args", ["--extract-core"])
+        # Only pass --core-output-dir if explicitly specified by user
+        # Otherwise, the plugin will use TEST_UNDECLARED_OUTPUTS_DIR/cores at runtime
+        if core_output_dir != None:
+            # Static validation only: filesystem checks are impossible here since
+            # this runs at loading time on the build host, while the directory is
+            # used at test runtime. The plugin creates the directory on demand.
+            if not core_output_dir:
+                fail("core_output_dir must be a non-empty path when specified")
+            if not core_output_dir.startswith("/"):
+                fail("core_output_dir must be an absolute path, got: {}".format(core_output_dir))
+            if ".." in core_output_dir.split("/"):
+                fail("core_output_dir must not contain '..' path segments, got: {}".format(core_output_dir))
+            _extend_list_in_kwargs(kwargs, "args", ["--core-output-dir={}".format(core_output_dir)])
+    elif core_output_dir != None:
+        fail("core_output_dir was specified but extract_core is False; set extract_core = True to enable core extraction")
+
     # Tests spin up docker or qemu which requires a significant amount of system resources.
     if "size" not in kwargs:
         kwargs["size"] = "enormous"
@@ -139,6 +157,9 @@ def integration_test(name, srcs, filesystem, **kwargs):
                 "@score_itf//score/itf/plugins:qemu_plugin",
             ],
         }),
-        env = {"DOCKER_HOST": ""},
+        env = {
+            "DOCKER_HOST": "",
+            "TEST_UNDECLARED_OUTPUTS_DIR": "$(TEST_UNDECLARED_OUTPUTS_DIR)",
+        },
         **kwargs
     )

@@ -172,6 +172,15 @@ use_repo(
 )
 
 bazel_dep(name = "score_itf", version = "0.5.0", dev_dependency = True)
+
+# Use a specific revision of score_itf that contains the core-dump extraction
+# feature (--extract-core / --core-output-dir in the docker plugin).
+git_override(
+    module_name = "score_itf",
+    remote = "https://github.com/Tejaswini-Janjale25/itf.git",
+    commit = "07e510ebd9429b1c726b0a7a7a404a98c3669beb",
+)
+
 bazel_dep(name = "score_rules_imagefs", version = "0.0.3", dev_dependency = True)
 
 imagefs = use_extension("@score_rules_imagefs//extensions:imagefs.bzl", "imagefs", dev_dependency = True)
