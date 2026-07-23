@@ -56,3 +56,13 @@ cc_library(
         ":service",
     ],
 )
+
+cc_library(
+    name = "proxy_data",
+    hdrs = ["proxy_data.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":service",
+    ],
+)
