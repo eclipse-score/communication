@@ -1,5 +1,9 @@
-packs:
-  - codeql/misra-cpp-coding-standards@2.61.0
+# CodeQL code-scanning configuration passed to `codeql database init`
+# (--codescanning-config). The MISRA C++ pack to run is intentionally NOT listed
+# here: it is pinned once by the vendored pre-compiled pack (see MODULE.bazel /
+# @codeql_coding_standards_compiled) and passed explicitly to `database analyze`
+# by codeql_lint.py, so the pack name and version have a single source of truth.
+# This file only carries analysis-wide query filters.
 query-filters:
   - exclude:
       tags: exclude-from-incremental
