@@ -48,6 +48,7 @@
 //! - Structures
 //! - Tuples
 
+use crate::com_api_method::*;
 use crate::error::*;
 use crate::Reloc;
 pub use com_api_concept_macros::CommData;
@@ -99,6 +100,14 @@ pub trait Runtime {
 
     /// `Publisher<T>` types for Publishes event data to subscribers
     type Publisher<T: CommData + Debug>: Publisher<T, Self>;
+
+    type MethodInArgAllocator: MethodInArgAllocator;
+
+    /// `MethodCaller<Args, Return>` types for calling methods on the proxy/consumer side
+    type MethodCaller<Args: MethodArgs, Return: CommData>: MethodCaller<Args, Return, Self>;
+
+    /// `MethodHandler<Args, Return>` types for handling method calls on the skeleton/producer side
+    type MethodHandler<Args: MethodArgs, Return: CommData>: MethodHandler<Args, Return, Self>;
 
     /// `ProviderInfo` types for Configuration data for service producers instances
     type ProviderInfo: ProviderInfo + Send + Clone;
@@ -208,6 +217,31 @@ where
 /// prefix to ensure uniqueness.
 pub trait CommData: Reloc {
     const ID: &'static str;
+}
+
+// TODO: Below impls are for tuples of CommData types, allowing up to 4 arguments.
+// It can be extended to support more arguments if needed.
+// Current IDs are just placeholders and need to update according to unique IDs.
+// One suggestion if we are not going to use ID in FFI layer then we can remove it.
+// And if we are using then for method i would suggest to use method name as ID.
+impl CommData for () {
+    const ID: &'static str = "()";
+}
+
+impl<T1: CommData> CommData for (T1,) {
+    const ID: &'static str = "(T1,)";
+}
+
+impl<T1: CommData, T2: CommData> CommData for (T1, T2) {
+    const ID: &'static str = "(T1, T2)";
+}
+
+impl<T1: CommData, T2: CommData, T3: CommData> CommData for (T1, T2, T3) {
+    const ID: &'static str = "(T1, T2, T3)";
+}
+
+impl<T1: CommData, T2: CommData, T3: CommData, T4: CommData> CommData for (T1, T2, T3, T4) {
+    const ID: &'static str = "(T1, T2, T3, T4)";
 }
 
 /// Technology independent description of a service instance "location"
@@ -947,7 +981,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// If the stream encounters an error, it will yield `Err(Error)` for that sample, but will continue to yield subsequent samples as they become available.
     /// The stream only terminates when the subscription is unsubscribed or dropped or if the stream is explicitly dropped by the user.
     /// With this design, users can handle errors on it side and take appropriate actions.
-    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
+    fn to_stream<'a>(&'a mut self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.

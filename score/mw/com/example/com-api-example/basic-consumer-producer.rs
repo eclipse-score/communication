@@ -18,16 +18,19 @@
 // Note: The example is using unwrap and panic in some places for simplicity,
 // but it is recommended to handle errors properly in production code.
 
+#![allow(unused)]
+
 use clap::Parser;
 use std::path::PathBuf;
 
 use com_api::{
     Builder, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
-    OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,
-    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    MethodCaller, MethodInArgMaybeUninit, OfferedProducer, Producer, Publisher, Result, Runtime,
+    RuntimeBuilder, SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber,
+    Subscription,
 };
 
-use com_api_gen::{Exhaust, Tire, VehicleInterface};
+use com_api_gen::{Exhaust, Tire, VehicleInterface, VehicleMethodsInterface};
 
 #[derive(Parser)]
 struct Arguments {
@@ -45,6 +48,11 @@ type VehicleConsumer<R> = <VehicleInterface as Interface>::Consumer<R>;
 // VehicleOfferedProducer is the offered producer type generated for the Vehicle interface, parameterized by the runtime R
 type VehicleOfferedProducer<R> =
     <<VehicleInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
+
+type VehicleMethodConsumer<R> = <VehicleMethodsInterface as Interface>::Consumer<R>;
+
+type VehicleMethodOfferedProducer<R> =
+    <<VehicleMethodsInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
 
 // Example struct demonstrating composition with VehicleConsumer
 pub struct VehicleMonitor<R: Runtime> {
@@ -120,6 +128,126 @@ impl<R: Runtime> VehicleMonitor<R> {
         println!("Tire data sent");
         Ok(())
     }
+}
+
+// These functions are just to demonstrate the method APIs, and they can not be used in main of example app,
+// as runtime implementation is not available for method APIs.
+fn create_consumer_method<R: Runtime>(
+    runtime: &R,
+    service_id: InstanceSpecifier,
+) -> VehicleMethodConsumer<R> {
+    let consumer_discovery =
+        runtime.find_service::<VehicleMethodsInterface>(FindServiceSpecifier::Specific(service_id));
+    let available_service_instances = consumer_discovery
+        .get_available_instances()
+        .expect("Failed to get available service instances");
+
+    // Select service instance at specific handle_index
+    let handle_index = 0; // or any index you need from vector of instances
+    let consumer_builder = available_service_instances
+        .into_iter()
+        .nth(handle_index)
+        .expect("Failed to get consumer builder at specified handle index");
+
+    consumer_builder
+        .build()
+        .expect("Failed to build consumer instance")
+}
+
+// TODO: Currently all the method is synchronous, but in future we can add async version of method call as well, if needed.
+// We are having tuple of arguments, so we can have any number of arguments (currently up to 2) without any extra boilerplate.
+// But in Method signature, we need to have tuple of arguments, so for zero argument method, we need to pass empty tuple.
+// Which need to be improved using macro generated wrapper around method call, so that we can call zero argument method without empty tuple.
+// even with argument tuple, method call can be improve using macro generated wrapper, so that we can call method with any number of arguments without tuple.
+
+fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
+    // Call the update_tire_pressure method with a sample tire pressure value
+    let tire = Tire { pressure: 30.0 };
+    match consumer.update_tire_pressure((tire,)) {
+        Ok(_) => println!("Successfully called update_tire_pressure method"),
+        Err(e) => eprintln!("Failed to call update_tire_pressure method: {:?}", e),
+    }
+
+    let (uninit1,) = consumer
+        .update_tire_pressure
+        .allocate()
+        .expect("Failed to allocate method arguments");
+    let tire1ptr = uninit1.write(Tire { pressure: 35.0 });
+
+    // Call the get_tire_pressure method to retrieve the current tire pressure
+    // Note: Currently we need to pass empty tuple for zero argument method,
+    // but in future we can change the API to not require empty tuple for zero argument method
+    // Maybe by implementing wrapper around in interface macro.
+    match consumer.get_tire_pressure(()) {
+        Ok(tire) => println!("Current tire pressure: {:?}", tire),
+        Err(e) => eprintln!("Failed to call get_tire_pressure method: {:?}", e),
+    }
+
+    // Same method name as copy call - MethodCallInput dispatches to zero-copy path via 1-tuple ptr type
+    match consumer.update_tire_pressure((tire1ptr,)) {
+        Ok(_) => println!("Successfully called update_tire_pressure method with allocated args"),
+        Err(e) => eprintln!(
+            "Failed to call update_tire_pressure method with allocated args: {:?}",
+            e
+        ),
+    }
+
+    let tire1 = Tire { pressure: 31.0 };
+    let tire2 = Tire { pressure: 32.0 };
+    match consumer.update_front_tires_pressure((tire1, tire2)) {
+        Ok(_) => println!("Successfully called update_front_tires_pressure method"),
+        Err(e) => eprintln!("Failed to call update_front_tires_pressure method: {:?}", e),
+    }
+
+    let (uninit1, uninit2) = consumer
+        .update_front_tires_pressure
+        .allocate()
+        .expect("Failed to allocate method arguments");
+    let tire1ptr = uninit1.write(Tire { pressure: 36.0 });
+    let tire2ptr = uninit2.write(Tire { pressure: 37.0 });
+    // Same method name as copy call - tuple of MethodInArgPtr dispatches to zero-copy path
+    match consumer.update_front_tires_pressure((tire1ptr, tire2ptr)) {
+        Ok(_) => {
+            println!("Successfully called update_front_tires_pressure method with allocated args")
+        }
+        Err(e) => eprintln!(
+            "Failed to call update_front_tires_pressure method with allocated args: {:?}",
+            e
+        ),
+    }
+}
+
+fn create_producer_method<R: Runtime>(
+    runtime: &R,
+    service_id: InstanceSpecifier,
+) -> VehicleMethodOfferedProducer<R> {
+    let producer_builder = runtime.producer_builder::<VehicleMethodsInterface>(service_id);
+    let producer = producer_builder
+        .build()
+        .expect("Failed to build producer instance");
+    producer
+        .init()
+        .register_update_tire_pressure_handler(|tire: Tire| {
+            println!("Received update_tire_pressure call with tire: {:?}", tire);
+            ()
+        })
+        .expect("Failed to register update_tire_pressure handler")
+        .register_get_tire_pressure_handler(|| {
+            println!("Received get_tire_pressure call");
+            // Return a sample tire pressure value, just dummy value returned for demonstration
+            Tire { pressure: 32.0 }
+        })
+        .expect("Failed to register get_tire_pressure handler")
+        .register_update_front_tires_pressure_handler(|tire1: Tire, tire2: Tire| {
+            println!(
+                "Received update_front_tires_pressure call with tire1: {:?}, tire2: {:?}",
+                tire1, tire2
+            );
+            ()
+        })
+        .expect("Failed to register update_front_tires_pressure handler")
+        .offer()
+        .expect("Failed to offer producer instance")
 }
 
 // Create a consumer for the specified service identifier

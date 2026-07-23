@@ -15,6 +15,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, Generics, Meta, Type};
 
+mod type_state_validator;
+
 /// Derive macro for the `CommData` trait.
 ///
 /// Implements `CommData` for a struct or C-like enum, providing a stable string identity
@@ -333,6 +335,50 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
     };
 
     Ok(out)
+}
+
+/// Unified derive macro for compile-time type-state validation of Field and Method producers.
+///
+/// Detects member types by the last segment of each field's type path:
+/// - `FieldPublisher<T>` → generates `update_{name}()` and `register_set_handler_{name}()`
+/// - `MethodHandler<Args, Return>` → generates `register_{name}_handler()`
+/// - `instance_info` field is always skipped.
+///
+/// # Generated validator struct
+///
+/// `{Name}Validator<R, S0..Sn, H0..Hn, M0..Mm>` where:
+/// - `Si` = field update state (`Uninit` / `Init`)
+/// - `Hi` = field set-handler state (`HandlerNotSet` / `HandlerSet`)
+/// - `Mj` = method handler state (`HandlerNotSet` / `HandlerSet`)
+///
+/// `offer()` is only available when ALL `Si = Init`, ALL `Hi = HandlerSet`, ALL `Mj = HandlerSet`.
+///
+/// Entry point on the producer: `init()` — begins the type-state chain.
+///
+/// Degenerates correctly:
+/// - Field-only struct → no `Mj` params
+/// - Method-only struct → no `Si`/`Hi` params
+/// - Mixed struct → all param groups combined
+///
+/// # Usage
+///
+/// ```ignore
+/// #[derive(TypeStateValidator)]
+/// struct VehicleProducer<R: Runtime + ?Sized> {
+///     left_tire: R::FieldPublisher<Tire>,
+///     process: R::MethodHandler<(Tire,), Tire>,
+///     instance_info: R::ProviderInfo,
+/// }
+/// // Generated: producer.init()
+/// //   .update_left_tire(&v)?
+/// //   .register_set_handler_left_tire(|v| {})?
+/// //   .register_process_handler(|req| { ... })?
+/// //   .offer()?
+/// ```
+// TODO: Document tests need to be added for this macro, including successful and failed compilation cases.
+#[proc_macro_derive(TypeStateValidator)]
+pub fn derive_typestate_validator(input: TokenStream) -> TokenStream {
+    type_state_validator::derive_typestate_validator_impl(input)
 }
 
 // Use doctest to test failed compilations and successful ones
