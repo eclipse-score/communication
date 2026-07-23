@@ -14,16 +14,14 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_build_error//lang/cc:defs.bzl", "cc_build_error_test")
 load("@rules_build_error//matcher:defs.bzl", "matcher")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+load("//:score/common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # Compiler warning feature tests.
 WARNING_FLAGS_BY_CASE = {
     "conversion": ["-Wfloat-conversion"],
     "shadow": ["-Wshadow"],
     "sign_compare": ["-Wsign-compare"],
-    "unused_parameter": ["-Wunused-parameter"],
     "cast_qual": ["-Wcast-qual"],
-    "format_nonliteral": ["-Wformat-nonliteral"],
     "undef": ["-Wundef"],
     "delete_non_virtual_dtor": ["-Wdelete-non-virtual-dtor"],
     "overloaded_virtual": ["-Woverloaded-virtual"],

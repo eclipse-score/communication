@@ -13,7 +13,7 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+load("//:score/common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 component(
     name = "mock_component",

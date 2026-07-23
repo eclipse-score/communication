@@ -201,16 +201,16 @@ bazel test --config=tsan //...
 
 ## Compiler Warnings
 
-Compiler warning features are defined in [`quality/compiler_warnings/`](compiler_warnings/) and referenced in targets through the shared bundle in [`score/mw/common_features.bzl`](../score/mw/common_features.bzl). Warning features are prefixed with `score_communication_` to avoid collisions with other modules.
+Compiler warning features are defined in [`quality/compiler_warnings/`](compiler_warnings/) and referenced in targets through the shared bundle in [`score/common_features.bzl`](../score/common_features.bzl). Warning features are prefixed with `score_communication_` to avoid collisions with other modules.
 
-Features are enabled per-target via the `features` attribute. The LLVM toolchain enables `score_communication_default_flags` and `score_communication_minimal_warnings` by default (see [`MODULE.bazel`](../MODULE.bazel)).
+Features are enabled per-target via the `features` attribute. The LLVM toolchain enables `score_communication_minimal_warnings` by default (see [`MODULE.bazel`](../MODULE.bazel)).
 
 ### Adding Warning Features to a Target
 
 Load the shared bundle and set it in your `cc_library` or `cc_unit_test`:
 
 ```starlark
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+load("//:score/common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "my_lib",

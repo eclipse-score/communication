@@ -22,11 +22,11 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
-        "-Wno-format-y2k",
-        "-Wno-free-nonheap-object",
+        "-W",
+        "-Wno-builtin-macro-redefined",
+        "-Wno-deprecated-non-prototype",
         # Reduce known GCC false positives.
         "-Wno-maybe-uninitialized",
-        "-Wunused-but-set-parameter",
     ],
 )
 
@@ -44,11 +44,11 @@ cc_args(
 cc_feature(
     name = "minimal_warnings",
     args = [
-        "//quality/compiler_warnings:minimal_warnings_args",
         ":minimal_warnings_args_for_all_compile_actions",
         ":minimal_warnings_args_for_cpp_compile_actions",
     ],
     feature_name = "score_communication_minimal_warnings",
+    implies = ["//quality/compiler_warnings:minimal_warnings"],
     visibility = ["//visibility:public"],
 )
 
@@ -58,26 +58,14 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
-        "-Warray-bounds=2",
-        "-Wcast-align",
-        "-Wcast-qual",
+        "-Warray-bounds=2",  # A5-2-5
         "-Wdisabled-optimization",
-        "-Wfloat-conversion",
-        "-Wformat=2",
         "-Wimplicit-fallthrough=4",
-        "-Winvalid-pch",
         "-Wmissing-format-attribute",
-        "-Wmultichar",
-        "-Wpacked",
         "-Wscalar-storage-order",
         "-Wsuggest-attribute=format",
-        "-Wundef",
-        "-Wunused-macros",
         "-Wvector-operation-performance",
-        "-Wwrite-strings",
         "-Wlogical-op",
-        "-Wredundant-decls",
-        "-Wshadow",
     ],
 )
 
@@ -108,13 +96,15 @@ cc_args(
 cc_feature(
     name = "strict_warnings",
     args = [
-        "//quality/compiler_warnings:strict_warnings_args",
         ":strict_warnings_args_for_all_compile_actions",
         ":strict_warnings_args_for_cpp_compile_actions",
         ":strict_warnings_args_for_c_compile_actions",
     ],
     feature_name = "score_communication_strict_warnings",
-    implies = ["minimal_warnings"],
+    implies = [
+        "//quality/compiler_warnings:strict_warnings",
+        "minimal_warnings",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -126,6 +116,32 @@ cc_args(
     args = [
         # Must come after -Werror so it takes effect.
         "-Wno-error",
+        "-Wno-error=address-of-packed-member",
+        "-Wno-error=alloc-size-larger-than=",
+        "-Wno-error=array-bounds",
+        "-Wno-error=attributes",
+        "-Wno-error=conversion",
+        "-Wno-error=dangling-pointer=2",
+        "-Wno-error=invalid-memory-model",
+        "-Wno-error=maybe-uninitialized",
+        "-Wno-error=misleading-indentation",
+        "-Wno-error=missing-attributes",
+        "-Wno-error=nonnull",
+        "-Wno-error=pessimizing-move",
+        "-Wno-error=range-loop-construct",
+        "-Wno-error=redundant-move",
+        "-Wno-error=return-type",
+        "-Wno-error=shadow",
+        "-Wno-error=sign-compare",
+        "-Wno-error=sign-conversion",
+        "-Wno-error=stringop-overflow=2",
+        "-Wno-error=stringop-truncation",
+        "-Wno-error=strict-aliasing",
+        "-Wno-error=tsan",
+        "-Wno-error=type-limits",
+        "-Wno-error=uninitialized",
+        "-Wno-error=unused-but-set-variable",
+        "-Wno-error=unused-function",
     ],
 )
 

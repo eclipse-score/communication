@@ -14,8 +14,8 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//third_party/itf:py_unittest_qnx_test.bzl", "py_unittest_qnx_test")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
+load("//:score/common_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 py_unittest_qnx_test(
     name = "unit_tests_qnx",
