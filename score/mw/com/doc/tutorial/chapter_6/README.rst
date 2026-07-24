@@ -180,7 +180,7 @@ Start the provider in the 1st terminal:
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_6/opt/HelloWorldServer
-   bin/provider
+   bin/provider_app
 
 
 ... and the two consumers (each with its own `max_sample_count`) in a 2nd and 3rd terminal, e.g.:
@@ -188,13 +188,13 @@ Start the provider in the 1st terminal:
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_6/opt/HelloWorldClient1
-   bin/consumer 4
+   bin/consumer_app 4
 
 
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_6/opt/HelloWorldClient2
-   bin/consumer 5
+   bin/consumer_app 5
 
 
 Playing with the sizing

@@ -239,7 +239,7 @@ Extract both archives (e.g. in a tmp-directory):
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_8/opt/CalculatorServer
-   bin/provider
+   bin/provider_app
 
 
 and the service-consumer in the 2nd terminal:
@@ -247,7 +247,7 @@ and the service-consumer in the 2nd terminal:
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_8/opt/CalculatorClient
-   bin/consumer
+   bin/consumer_app
 
 
 The consumer finds the service, creates the proxy, performs both method calls and then terminates on its own:

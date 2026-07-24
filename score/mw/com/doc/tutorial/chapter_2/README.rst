@@ -79,7 +79,7 @@ To run provider/consumer apps, extract both archives (e.g. in a tmp-directory):
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_2/opt/HelloWorldServer
-   bin/provider
+   bin/provider_app
 
 
 and the service-consumer in the 2nd terminal (this is notably different to chapter 1, because we now provide a specific
@@ -88,7 +88,7 @@ configuration for the consumer app, which is loaded via the `--service_instance_
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_2/opt/HelloWorldClient
-   bin/consumer --service_instance_manifest ./etc/consumer_config.json 
+   bin/consumer_app --service_instance_manifest ./etc/consumer_config.json 
 
 
 Provider application
@@ -146,7 +146,7 @@ run into an error like this, when starting the consumer app:
 
 .. code-block:: text
 
-   q240165@cmucw1079481:/tmp/tutorial/chapter_2/opt/HelloWorldClient$ bin/consumer --service_instance_manifest ./etc/consumer_config.json 
+   q240165@cmucw1079481:/tmp/tutorial/chapter_2/opt/HelloWorldClient$ bin/consumer_app --service_instance_manifest ./etc/consumer_config.json 
    2026/07/02 10:43:53.1833727 39169650 000 ECU1 EXP1 lola log fatal verbose 7 Parsing config file ./etc/mw_com_config.json failed with error: An error occurred during parsing. :  Failed to open file  . Terminating. 
    Aborted (core dumped)
 

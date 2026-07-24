@@ -114,7 +114,7 @@ Extract both archives (e.g. in a tmp-directory):
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_4/opt/HelloWorldServer
-   bin/provider
+   bin/provider_app
 
 
 and the service-consumer in the 2nd terminal:
@@ -122,7 +122,7 @@ and the service-consumer in the 2nd terminal:
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_4/opt/HelloWorldClient
-   bin/consumer
+   bin/consumer_app
 
 
 When both run, you will observe how the provider alternates between offering and stopping to offer the service:

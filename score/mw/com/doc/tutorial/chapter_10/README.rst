@@ -191,7 +191,7 @@ Now start the service-provider application as ``uid`` **777** in the 1st termina
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_10/opt/HelloWorldServer
-   sudo -u provider777 bin/provider
+   sudo -u provider777 bin/provider_app
 
 
 ... and the service-consumer as ``uid`` **778** in the 2nd terminal:
@@ -199,7 +199,7 @@ Now start the service-provider application as ``uid`` **777** in the 1st termina
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_10/opt/HelloWorldClient
-   sudo -u consumer778 bin/consumer --service_instance_manifest ./etc/consumer_config.json
+   sudo -u consumer778 bin/consumer_app --service_instance_manifest ./etc/consumer_config.json
 
 
 With this **matching** setup everything works exactly as in chapter 2: the provider grants ``uid`` 778 access to its
