@@ -414,6 +414,151 @@ void TraceCallReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
     }
 }
 
+void TraceSubscriptionStateChanged(ProxyEventTracingData& proxy_event_tracing_data,
+                                   const ProxyEventBindingBase& proxy_event_binding_base,
+                                   SubscriptionState new_state) noexcept
+{
+    if (proxy_event_tracing_data.enable_subscription_state_changed)
+    {
+        const auto service_element_instance_identifier =
+            proxy_event_tracing_data.service_element_instance_identifier_view;
+        const auto service_element_type =
+            service_element_instance_identifier.service_element_identifier_view.service_element_type;
+
+        TracingRuntime::TracePointType trace_point{};
+        if (service_element_type == ServiceElementType::EVENT)
+        {
+            trace_point = ProxyEventTracePointType::SUBSCRIBE_STATE_CHANGE;
+        }
+        else if (service_element_type == ServiceElementType::FIELD)
+        {
+            trace_point = ProxyFieldTracePointType::SUBSCRIBE_STATE_CHANGE;
+        }
+        else
+        {
+            // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
+            // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
+            // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+        }
+
+        const auto binding_type = proxy_event_binding_base.GetBindingType();
+        const auto trace_result =
+            TraceData(service_element_instance_identifier, trace_point, binding_type, ConvertToFatPointer(new_state));
+        UpdateTracingDataFromTraceResult(
+            trace_result, proxy_event_tracing_data, proxy_event_tracing_data.enable_subscription_state_changed);
+    }
+}
+
+void TraceSetSubscriptionStateChangeHandler(ProxyEventTracingData& proxy_event_tracing_data,
+                                            const ProxyEventBindingBase& proxy_event_binding_base) noexcept
+{
+    if (proxy_event_tracing_data.enable_set_subcription_state_change_handler)
+    {
+        const auto service_element_instance_identifier =
+            proxy_event_tracing_data.service_element_instance_identifier_view;
+        const auto service_element_type =
+            service_element_instance_identifier.service_element_identifier_view.service_element_type;
+
+        TracingRuntime::TracePointType trace_point{};
+        if (service_element_type == ServiceElementType::EVENT)
+        {
+            trace_point = ProxyEventTracePointType::SET_SUBSCRIPTION_STATE_CHANGE_HANDLER;
+        }
+        else if (service_element_type == ServiceElementType::FIELD)
+        {
+            trace_point = ProxyFieldTracePointType::SET_SUBSCRIPTION_STATE_CHANGE_HANDLER;
+        }
+        else
+        {
+            // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
+            // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
+            // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+        }
+
+        const auto binding_type = proxy_event_binding_base.GetBindingType();
+        const auto trace_result =
+            TraceData(proxy_event_tracing_data.service_element_instance_identifier_view, trace_point, binding_type);
+        UpdateTracingDataFromTraceResult(trace_result,
+                                         proxy_event_tracing_data,
+                                         proxy_event_tracing_data.enable_set_subcription_state_change_handler);
+    }
+}
+
+void TraceUnsetSubscriptionStateChangeHandler(ProxyEventTracingData& proxy_event_tracing_data,
+                                              const ProxyEventBindingBase& proxy_event_binding_base) noexcept
+{
+    if (proxy_event_tracing_data.enable_unset_subscription_state_change_handler)
+    {
+        const auto service_element_instance_identifier =
+            proxy_event_tracing_data.service_element_instance_identifier_view;
+        const auto service_element_type =
+            service_element_instance_identifier.service_element_identifier_view.service_element_type;
+
+        TracingRuntime::TracePointType trace_point{};
+        if (service_element_type == ServiceElementType::EVENT)
+        {
+            trace_point = ProxyEventTracePointType::UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER;
+        }
+        else if (service_element_type == ServiceElementType::FIELD)
+        {
+            trace_point = ProxyFieldTracePointType::UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER;
+        }
+        else
+        {
+            // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
+            // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
+            // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+        }
+
+        const auto binding_type = proxy_event_binding_base.GetBindingType();
+        const auto trace_result =
+            TraceData(proxy_event_tracing_data.service_element_instance_identifier_view, trace_point, binding_type);
+        UpdateTracingDataFromTraceResult(trace_result,
+                                         proxy_event_tracing_data,
+                                         proxy_event_tracing_data.enable_unset_subscription_state_change_handler);
+    }
+}
+
+void TraceCallSubscriptionStateChangeHandler(ProxyEventTracingData& proxy_event_tracing_data,
+                                             const ProxyEventBindingBase& proxy_event_binding_base,
+                                             SubscriptionState new_state) noexcept
+{
+    if (proxy_event_tracing_data.enable_call_subscription_state_change_handler)
+    {
+        const auto service_element_instance_identifier =
+            proxy_event_tracing_data.service_element_instance_identifier_view;
+        const auto service_element_type =
+            service_element_instance_identifier.service_element_identifier_view.service_element_type;
+
+        TracingRuntime::TracePointType trace_point{};
+        if (service_element_type == ServiceElementType::EVENT)
+        {
+            trace_point = ProxyEventTracePointType::SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK;
+        }
+        else if (service_element_type == ServiceElementType::FIELD)
+        {
+            trace_point = ProxyFieldTracePointType::SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK;
+        }
+        else
+        {
+            // Suppress "AUTOSAR C++14 M0-1-1", The rule states: "A project shall not contain unreachable code"
+            // This is false positive, the enum has more fields than EVENT and FIELD so we might reach this branch.
+            // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Service element type must be EVENT or FIELD");
+        }
+
+        const auto binding_type = proxy_event_binding_base.GetBindingType();
+        const auto trace_result =
+            TraceData(service_element_instance_identifier, trace_point, binding_type, ConvertToFatPointer(new_state));
+        UpdateTracingDataFromTraceResult(trace_result,
+                                         proxy_event_tracing_data,
+                                         proxy_event_tracing_data.enable_call_subscription_state_change_handler);
+    }
+}
+
 score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(
     ProxyEventTracingData& proxy_event_tracing_data,
     const ProxyEventBindingBase& proxy_event_binding_base,
