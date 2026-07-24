@@ -141,13 +141,9 @@ bool TracingRuntime::RegisterWithGenericTraceApi() noexcept
 impl::tracing::ServiceElementTracingData TracingRuntime::RegisterServiceElement(
     TracingSlotSizeType number_of_ipc_tracing_slots) noexcept
 {
-    if (number_of_ipc_tracing_slots == 0U)
-    {
-        score::mw::log::LogFatal("lola")
-            << "Value of number_of_ipc_tracing_slots is zero! Requesting zero ipc tracing slots for a trace enabled "
-            << "service element makes no sense. Something has gone wrong! Terminating.";
-        std::terminate();
-    }
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        number_of_ipc_tracing_slots != 0U,
+        "Requesting zero ipc tracing slots for a trace enabled service element makes no sense.");
 
     const auto start_of_current_range = next_available_position_for_new_service_element_range_start_;
     const auto end_of_current_range =
@@ -192,12 +188,8 @@ void TracingRuntime::RegisterShmObject(
     const auto map_value = std::make_pair(shm_object_handle, shm_memory_start_address);
     const auto insert_result =
         shm_object_handle_map_.insert(std::make_pair(service_element_instance_identifier_view, map_value));
-    if (!insert_result.second)
-    {
-        score::mw::log::LogFatal("lola") << "Could not insert shm object handle" << shm_object_handle
-                                         << "into map. Terminating.";
-        std::terminate();
-    }
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second,
+                                                "Could not insert shm object handle into map.");
 }
 
 void TracingRuntime::UnregisterShmObject(

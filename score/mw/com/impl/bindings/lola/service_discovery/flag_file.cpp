@@ -175,6 +175,7 @@ FlagFile::~FlagFile()
         {
             mw::log::LogFatal("lola") << "Outside tampering! Bailing! Failed to remove flag file"
                                       << flag_file_path.Native() << ":" << flag_file_result.error();
+            // no precondition but runtime error caused by issues in the filesystem --> keep std::terminate()
             std::terminate();
         }
     }

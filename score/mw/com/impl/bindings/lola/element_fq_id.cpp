@@ -14,8 +14,9 @@
 
 #include "score/mw/log/logging.h"
 
+#include <score/assert.hpp>
+
 #include <cstdint>
-#include <exception>
 #include <limits>
 #include <string>
 
@@ -40,12 +41,9 @@ ElementFqId::ElementFqId(const ServiceId service_id,
     // range coverity[autosar_cpp14_a7_2_1_violation]
     : ElementFqId(service_id, element_id, instance_id, static_cast<ServiceElementType>(element_type))
 {
-    if (element_type > static_cast<std::uint8_t>(ServiceElementType::FIELD))
-    {
-        score::mw::log::LogFatal("lola") << "ElementFqId::ElementFqId failed: Invalid ServiceElementType:"
-                                         << element_type;
-        std::terminate();
-    }
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        element_type <= static_cast<std::uint8_t>(ServiceElementType::FIELD),
+        "ElementFqId::ElementFqId failed: Invalid ServiceElementType.");
 }
 
 ElementFqId::ElementFqId(const ServiceId service_id,

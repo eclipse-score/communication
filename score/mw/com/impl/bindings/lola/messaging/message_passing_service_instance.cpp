@@ -290,6 +290,7 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(
     {
         score::mw::log::LogFatal("lola") << "MessagePassingService: Failed to start listening on " << service_identifier
                                          << " with following error: " << result.error();
+        // no precondition but a runtime error in QNX message passing service --> keep std::terminate()
         std::terminate();
     }
 }

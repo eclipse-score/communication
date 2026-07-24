@@ -19,7 +19,6 @@
 #include <score/assert.hpp>
 #include <score/utility.hpp>
 
-#include <exception>
 #include <set>
 #include <unordered_map>
 #include <vector>
@@ -111,13 +110,9 @@ AsilSpecificCfg Runtime::GetMessagePassingCfg(const QualityType asil_level) cons
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         ((asil_level == QualityType::kASIL_B) || (asil_level == QualityType::kASIL_QM)),
         "Asil level must be asil_qm or asil_b.");
-    if ((!HasAsilBSupport()) && (asil_level == QualityType::kASIL_B))
-    {
-        score::mw::log::LogFatal("lola")
-            << __func__ << __LINE__
-            << "Invalid call to GetMessagePassingCfg with asil_level B although app/process is configured for QM only.";
-        std::terminate();
-    }
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        HasAsilBSupport() || (asil_level != QualityType::kASIL_B),
+        "Invalid call to GetMessagePassingCfg with asil_level B although app/process is configured for QM only.");
     std::set<uid_t> aggregated_allowed_users;
 
     for (const auto& instanceDeplElement : configuration_.GetServiceInstances())
