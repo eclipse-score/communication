@@ -18,6 +18,7 @@ rust_library(
     name = "common_rs",
     srcs = ["common.rs"],
     visibility = [
+        "//quality/coverage:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
@@ -29,6 +30,7 @@ rust_library(
     name = "sample_allocatee_ptr_rs",
     srcs = ["sample_allocatee_ptr.rs"],
     visibility = [
+        "//quality/coverage:__pkg__",
         "//score/mw/com:__subpackages__",
     ],
     deps = [":common_rs"],
@@ -38,6 +40,7 @@ rust_library(
     name = "sample_ptr_rs",
     srcs = ["sample_ptr.rs"],
     visibility = [
+        "//quality/coverage:__pkg__",
         "//score/mw/com:__subpackages__",
     ],
     deps = [

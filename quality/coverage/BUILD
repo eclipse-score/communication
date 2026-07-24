@@ -73,5 +73,16 @@ coverage_scope(
     deps = [
         "//score/message_passing",
         "//score/mw/com",
+        # Rust production crates. Not reachable through the dependable_element
+        # indices above (those traverse C++ components only), so they are
+        # listed explicitly. Test-infrastructure crates (mocks, test_support)
+        # are deliberately excluded, matching the C++ scoping philosophy.
+        "//score/mw/com/impl/plumbing/rust:common_rs",
+        "//score/mw/com/impl/plumbing/rust:sample_allocatee_ptr_rs",
+        "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
+        "//score/mw/com/impl/rust/com-api/com-api",
+        "//score/mw/com/impl/rust/com-api/com-api-concept",
+        "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_rs",
+        "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
     ],
 )
