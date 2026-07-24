@@ -329,7 +329,7 @@ llvm.sysroot(
 )
 use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
 
-bazel_dep(name = "score_toolchains_rust", version = "0.9.1", dev_dependency = True)
+bazel_dep(name = "score_toolchains_rust", version = "0.9.2", dev_dependency = True)
 
 gcc_ferrocene = use_extension(
     "@score_toolchains_rust//extensions:ferrocene_toolchain_ext.bzl",
