@@ -53,13 +53,19 @@ def main() -> None:
         cleanup_dangling_symlinks(args.coverage_dir)
         sys.exit(0)
 
+    llvm_profdata = find_llvm_profdata()
+    if not llvm_profdata:
+        print("ERROR: llvm-profdata not found (neither LLVM_PROFDATA nor "
+              "RUST_LLVM_PROFDATA resolved to an existing binary).", file=sys.stderr)
+        sys.exit(1)
+
     # Merge profraw → profdata.
     profdata_dir = args.coverage_dir / "profdata"
     profdata_dir.mkdir(exist_ok=True)
     profdata_file = profdata_dir / "target.profdata"
 
     run_command([
-        str(os.environ.get("LLVM_PROFDATA")), "merge",
+        llvm_profdata, "merge",
         "--sparse",
         "--output", str(profdata_file),
     ] + [str(f) for f in profraw_files])
@@ -87,6 +93,29 @@ def main() -> None:
 
     target = os.environ.get("TEST_TARGET", "unknown")
     print(f"INFO: Coverage merger completed for '{target}'", file=sys.stderr)
+
+
+def find_llvm_profdata() -> str:
+    """Locate the llvm-profdata binary.
+
+    C++ tests: Bazel exports LLVM_PROFDATA from the cc toolchain.
+    Rust tests: rules_rust exports RUST_LLVM_PROFDATA (an execroot-relative
+    path to the rust_toolchain's llvm_profdata) instead; resolve it against
+    the current directory, ROOT and the runfiles dir.
+    """
+    direct = os.environ.get("LLVM_PROFDATA")
+    if direct and Path(direct).exists():
+        return direct
+
+    rust = os.environ.get("RUST_LLVM_PROFDATA")
+    if rust:
+        exec_root = Path(os.environ.get("ROOT", "."))
+        runfiles_dir = Path(os.environ.get("RUNFILES_DIR", "")) / os.environ.get("TEST_WORKSPACE", "_main")
+        for candidate in [Path(rust), exec_root / rust, runfiles_dir / rust]:
+            if candidate.exists():
+                return str(candidate)
+
+    return ""
 
 
 def cleanup_dangling_symlinks(directory: Path) -> None:
@@ -131,8 +160,30 @@ def get_object_files_from_manifest(source_file_manifest: Path) -> Set[str]:
                         object_files.add(str(candidate))
                     else:
                         object_files.add(str(exec_root / obj_path))
+        else:
+            # Rust tests: rules_rust lists the instrumented test executable
+            # itself in the manifest (via coverage metadata_files) instead of
+            # an objects_list.txt. Pick up manifest entries that are ELF
+            # binaries directly. Skip external/ entries: the rust_toolchain
+            # also lists its llvm-cov/llvm-profdata binaries as metadata
+            # files, and those are not instrumented objects.
+            if manifest.startswith("external/") or "/external/" in manifest:
+                continue
+            for candidate in [runfiles_dir / manifest, exec_root / manifest, Path(manifest)]:
+                if candidate.is_file() and is_elf(candidate):
+                    object_files.add(str(candidate))
+                    break
 
     return object_files
+
+
+def is_elf(path: Path) -> bool:
+    """Return True if the file at path is an ELF binary."""
+    try:
+        with open(path, "rb") as f:
+            return f.read(4) == b"\x7fELF"
+    except OSError:
+        return False
 
 
 def run_command(cmd: List[str]) -> subprocess.CompletedProcess:

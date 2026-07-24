@@ -246,10 +246,16 @@ def scan_file_for_markers(
 
 def collect_source_files(source_root: Path, file_filter: str) -> List[Path]:
     """Collect source files to scan for markers."""
-    extensions = file_filter.split(",") if file_filter else ["cpp", "h", "hpp", "cc"]
+    extensions = file_filter.split(",") if file_filter else ["cpp", "h", "hpp", "cc", "rs"]
     files = []
     for ext in extensions:
-        files.extend(source_root.rglob(f"*.{ext.strip()}"))
+        for path in source_root.rglob(f"*.{ext.strip()}"):
+            # Skip Bazel convenience symlinks (bazel-bin, bazel-out, bazel-<repo>, ...)
+            # so the marker scan does not descend into build outputs.
+            rel_parts = path.relative_to(source_root).parts
+            if rel_parts and rel_parts[0].startswith("bazel-"):
+                continue
+            files.append(path)
     return sorted(files)
 
 
@@ -436,8 +442,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--file-filter",
         type=str,
-        default="cpp,h,hpp,cc",
-        help="Comma-separated file extensions to scan (default: cpp,h,hpp,cc)",
+        default="cpp,h,hpp,cc,rs",
+        help="Comma-separated file extensions to scan (default: cpp,h,hpp,cc,rs)",
     )
     parser.add_argument(
         "--platform",

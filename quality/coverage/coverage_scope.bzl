@@ -22,7 +22,14 @@ cc_library, it collects the actual source files (srcs + hdrs).
 The resulting allowlist contains one source file path per line (relative to the
 workspace root). The coverage reporter uses this to restrict reports to exactly
 the files that are part of a dependable_element's implementation.
+
+Rust support: rust_library targets provide CcInfo (their rlib is exposed as a
+.a symlink) and their .rs files come from the srcs attribute, so the CcInfo
+branch covers them. rust_binary targets provide no CcInfo; a dedicated
+CrateInfo branch collects their sources and the coverage-built executable.
 """
+
+load("@rules_rust//rust:rust_common.bzl", "CrateInfo")
 
 # =============================================================================
 # Provider to carry collected source file paths through the aspect
@@ -65,6 +72,15 @@ def _coverage_scope_aspect_impl(target, ctx):
                         if archive and "/external/" not in archive.path and not archive.path.startswith("external/"):
                             direct_archives.append(archive)
                             break
+    elif CrateInfo in target:
+        # rust_binary: no CcInfo, collect .rs sources from CrateInfo and use the
+        # coverage-built executable as the baseline object.
+        for f in target[CrateInfo].srcs.to_list():
+            if not f.path.startswith("external/") and f.is_source:
+                direct_files.append(f.short_path)
+        out = target[CrateInfo].output
+        if out and "/external/" not in out.path and not out.path.startswith("external/"):
+            direct_archives.append(out)
 
     # Propagate from children traversed by the aspect
     for attr_name in ["components", "implementation", "deps", "implementation_deps", "exported_deps"]:
@@ -90,8 +106,6 @@ _coverage_scope_aspect = aspect(
 # =============================================================================
 
 def _coverage_scope_impl(ctx):
-    print(ctx.configuration.short_id)
-    print(ctx.configuration.coverage_enabled)
     """Aggregates source file paths from all deps and writes allowlist + baseline objects."""
     all_files = {}
     all_objects = []

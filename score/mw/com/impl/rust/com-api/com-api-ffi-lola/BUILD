@@ -39,6 +39,7 @@ rust_library(
     crate_root = "bridge_ffi.rs",
     edition = "2024",
     visibility = [
+        "//quality/coverage:__pkg__",
         "//score/mw/com:__subpackages__",
     ],
     deps = [

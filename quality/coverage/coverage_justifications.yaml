@@ -74,17 +74,20 @@ justifications:
         line_end: 29
 
   - id: gateway-clear-nonblock-on-accepted-socket
+    platforms: [linux, qnx]
     category: defensive_programming
     reason: >
        Defensive programming: Posix system call can only go wrong if the socket file descriptor is invalid,
        but socket has just been accepted in an earlier step.
 
   - id: gateway-handle-response-only-ack-response
+    platforms: [linux, qnx]
     category: defensive_programming
     reason: >
        Defensive programming: Type has already been checked before this function has been called.
 
   - id: gateway-dispatch-loop-calls-handler
+    platforms: [linux, qnx]
     category: tool_false_positive
     reason: >
        Coverage tool incorrectly marks this line as not covered. Lines immediately before and after are covered.

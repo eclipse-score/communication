@@ -69,6 +69,13 @@ def main() -> None:
     baseline_objects = load_baseline_objects(
         r, args.baseline_objects, args.workspace_root)
 
+    # Rust rlib archives (exposed as .a symlinks by rules_rust) start with a
+    # lib.rmeta member, which makes llvm-cov reject the whole archive with
+    # "no coverage data found" even though the .o members carry the covmap.
+    # Expand such archives into their object members.
+    baseline_objects = expand_rlib_archives(
+        baseline_objects, Path.cwd() / "rlib_baseline_objects")
+
     # Determine filter regexes: prefer allowlist-based filtering, fall back to manual regexes.
     workspace_root = args.workspace_root
     allowlist_files = []
@@ -273,9 +280,14 @@ def get_covered_files(
         match = re.match(r"^(.+?)\s{2,}\d+", line)
         if match:
             filename = match.group(1).strip()
-            # Strip workspace_root prefix if present
-            if filename.startswith(workspace_root):
-                filename = filename[len(workspace_root):]
+            # Normalize to workspace-relative form. llvm-cov report prints the
+            # raw covmap path: for C++ that is the recorded compilation dir
+            # /proc/self/cwd/<rel>, --path-equivalence does not rewrite the
+            # DISPLAYED path. Rust covmap paths are already exec-root relative.
+            for prefix in (workspace_root, "/proc/self/cwd/"):
+                if filename.startswith(prefix):
+                    filename = filename[len(prefix):]
+                    break
             files.add(filename)
 
     return files
@@ -304,8 +316,8 @@ def run_llvm_cov_show(
         "--show-region-summary=0",
     ]
 
-    cxxfilt = llvm_bin_path.parent / "llvm-cxxfilt"
-    if cxxfilt.exists():
+    cxxfilt = find_cxxfilt(llvm_bin_path)
+    if cxxfilt:
         cmd.append(f"--Xdemangler={cxxfilt}")
 
     for regex in filter_regexes:
@@ -436,6 +448,93 @@ def read_reports_file(reports_file: Path) -> List[str]:
     """Read the reports file listing all per-test coverage outputs."""
     with open(reports_file, encoding="utf-8") as f:
         return [line.strip() for line in f if line.strip()]
+
+
+def _read_ar_members(path: str) -> List[tuple]:
+    """Parse a Unix ar archive, returning (name, data_offset, size) tuples.
+
+    Handles the GNU long-name table ("//" member with "/<offset>" references).
+    Returns an empty list when the file is not an ar archive.
+    """
+    members = []
+    longnames = b""
+    with open(path, "rb") as f:
+        if f.read(8) != b"!<arch>\n":
+            return []
+        while True:
+            header = f.read(60)
+            if len(header) < 60:
+                break
+            name = header[0:16].decode(errors="replace").rstrip()
+            try:
+                size = int(header[48:58].decode().strip() or "0")
+            except ValueError:
+                break
+            data_offset = f.tell()
+            if name == "//":
+                longnames = f.read(size)
+            else:
+                if name.startswith("/") and name[1:].isdigit():
+                    start = int(name[1:])
+                    end = longnames.find(b"\n", start)
+                    name = longnames[start:end].decode(errors="replace").rstrip("/")
+                elif name.endswith("/"):
+                    name = name[:-1]
+                members.append((name, data_offset, size))
+                f.seek(size, 1)
+            if size % 2 == 1:
+                f.seek(1, 1)
+    return members
+
+
+def expand_rlib_archives(objects: List[str], workdir: Path) -> List[str]:
+    """Replace Rust rlib archives with their extracted object members.
+
+    llvm-cov rejects rlib archives ("no coverage data found") because of the
+    leading lib.rmeta member, even though the .o members carry the coverage
+    mapping. Non-rlib entries (C++ .a archives, executables) pass through
+    unchanged.
+    """
+    result = []
+    extracted = 0
+    for obj in objects:
+        members = _read_ar_members(obj) if obj.endswith((".a", ".rlib")) else []
+        if not any(name == "lib.rmeta" for name, _, _ in members):
+            result.append(obj)
+            continue
+        workdir.mkdir(parents=True, exist_ok=True)
+        with open(obj, "rb") as f:
+            for index, (name, offset, size) in enumerate(members):
+                if not name.endswith(".o"):
+                    continue
+                f.seek(offset)
+                out_path = workdir / f"{Path(obj).stem}.{index}.o"
+                out_path.write_bytes(f.read(size))
+                result.append(str(out_path))
+                extracted += 1
+    if extracted:
+        print(f"INFO: Expanded {extracted} object(s) from Rust rlib baseline archives.",
+              file=sys.stderr)
+    return result
+
+
+def find_cxxfilt(llvm_bin_path: Path) -> str:
+    """Locate llvm-cxxfilt for demangling (C++ Itanium and Rust v0/legacy symbols).
+
+    Tries the directory of llvm-cov first, then the @llvm_toolchain_llvm
+    distribution via runfiles (toolchains_llvm declares no alias for
+    llvm-cxxfilt, so it is wired as a direct data dependency).
+    Returns an empty string when unavailable (demangling is cosmetic).
+    """
+    sibling = llvm_bin_path.parent / "llvm-cxxfilt"
+    if sibling.exists():
+        return str(sibling)
+    r = Runfiles.Create()
+    if r:
+        location = r.Rlocation("llvm_toolchain_llvm/bin/llvm-cxxfilt")
+        if location and Path(location).exists():
+            return location
+    return ""
 
 
 def load_coverage_allowlist(runfiles: Runfiles, rlocation_path: str) -> List[str]:
