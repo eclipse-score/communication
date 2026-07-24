@@ -1,0 +1,37 @@
+{
+  "target": "//quality/api_surface/tests:globals_lib",
+  "symbols": [
+    {
+      "name": "kMaxItems",
+      "qualified_name": "test::kMaxItems",
+      "kind": "variable",
+      "signature": "constexpr kMaxItems : const int"
+    },
+    {
+      "name": "g_counter",
+      "qualified_name": "test::g_counter",
+      "kind": "variable",
+      "signature": "g_counter : int"
+    },
+    {
+      "name": "g_external",
+      "qualified_name": "test::g_external",
+      "kind": "variable",
+      "signature": "extern g_external : int"
+    },
+    {
+      "name": "GetVersion",
+      "qualified_name": "test::GetVersion",
+      "kind": "function",
+      "signature": "GetVersion : const char *()"
+    },
+    {
+      "name": "SetVerbose",
+      "qualified_name": "test::SetVerbose",
+      "kind": "function",
+      "signature": "SetVerbose : void (bool)"
+    }
+  ],
+  "undocumented_symbols": [],
+  "version": "1"
+}

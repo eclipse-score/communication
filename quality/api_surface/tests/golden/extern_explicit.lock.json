@@ -1,0 +1,62 @@
+{
+  "target": "//quality/api_surface/tests:extern_explicit_lib",
+  "symbols": [
+    {
+      "name": "Array",
+      "qualified_name": "test::Array",
+      "kind": "template_class",
+      "signature": "Array"
+    },
+    {
+      "name": "Array",
+      "qualified_name": "test::Array",
+      "kind": "class",
+      "signature": "class Array"
+    },
+    {
+      "name": "g_globalConfig",
+      "qualified_name": "test::g_globalConfig",
+      "kind": "variable",
+      "signature": "extern g_globalConfig : int"
+    },
+    {
+      "name": "g_appName",
+      "qualified_name": "test::g_appName",
+      "kind": "variable",
+      "signature": "extern g_appName : const char *"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "push",
+      "qualified_name": "test::Array::push",
+      "kind": "method",
+      "signature": "push : void (T)"
+    },
+    {
+      "name": "at",
+      "qualified_name": "test::Array::at",
+      "kind": "method",
+      "signature": "at : T (int) const"
+    },
+    {
+      "name": "size",
+      "qualified_name": "test::Array::size",
+      "kind": "method",
+      "signature": "size : int () const"
+    },
+    {
+      "name": "Array",
+      "qualified_name": "test::Array<int>",
+      "kind": "extern_template",
+      "signature": "extern template class Array<int>"
+    },
+    {
+      "name": "Array",
+      "qualified_name": "test::Array<double>",
+      "kind": "extern_template",
+      "signature": "extern template class Array<double>"
+    }
+  ],
+  "version": "1"
+}

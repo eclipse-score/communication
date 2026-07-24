@@ -1,0 +1,44 @@
+{
+  "target": "//quality/api_surface/tests:cpp_attributes_lib",
+  "symbols": [
+    {
+      "name": "Compute",
+      "qualified_name": "test::Compute",
+      "kind": "function",
+      "signature": "Compute : int (int) [[nodiscard]]"
+    },
+    {
+      "name": "OldCompute",
+      "qualified_name": "test::OldCompute",
+      "kind": "function",
+      "signature": "OldCompute : int (int) [[deprecated]]"
+    },
+    {
+      "name": "LegacyCompute",
+      "qualified_name": "test::LegacyCompute",
+      "kind": "function",
+      "signature": "LegacyCompute : int () [[nodiscard]] [[deprecated]]"
+    },
+    {
+      "name": "Handle",
+      "qualified_name": "test::Handle",
+      "kind": "class",
+      "signature": "class Handle"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "valid",
+      "qualified_name": "test::Handle::valid",
+      "kind": "method",
+      "signature": "valid : bool () const [[nodiscard]]"
+    },
+    {
+      "name": "reset",
+      "qualified_name": "test::Handle::reset",
+      "kind": "method",
+      "signature": "reset : void () [[deprecated]]"
+    }
+  ],
+  "version": "1"
+}

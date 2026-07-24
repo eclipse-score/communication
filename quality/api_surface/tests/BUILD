@@ -133,6 +133,146 @@ api_surface_test(
     target = ":result_type_regression_lib",
 )
 
+# --- Additional API surface cases (multi-inheritance, ref-qualifiers, member
+# function templates, globals, protected methods, constexpr, forward/incomplete
+# types, extern "C", extern templates, C++ attributes, SFINAE) ---
+
+# Minimal cc_library targets for the additional test headers.
+
+cc_library(
+    name = "multi_inheritance_lib",
+    hdrs = ["multi_inheritance.h"],
+)
+
+cc_library(
+    name = "ref_qualifiers_lib",
+    hdrs = ["ref_qualifiers.h"],
+)
+
+cc_library(
+    name = "member_function_templates_lib",
+    hdrs = ["member_function_templates.h"],
+)
+
+cc_library(
+    name = "globals_lib",
+    hdrs = ["globals.h"],
+)
+
+cc_library(
+    name = "protected_methods_lib",
+    hdrs = ["protected_methods.h"],
+)
+
+cc_library(
+    name = "constexpr_members_lib",
+    hdrs = ["constexpr_members.h"],
+)
+
+cc_library(
+    name = "forward_declared_lib",
+    hdrs = ["forward_declared.h"],
+)
+
+cc_library(
+    name = "extern_c_lib",
+    hdrs = ["extern_c.h"],
+)
+
+cc_library(
+    name = "extern_explicit_lib",
+    hdrs = ["extern_explicit.h"],
+)
+
+cc_library(
+    name = "cpp_attributes_lib",
+    hdrs = ["cpp_attributes.h"],
+)
+
+cc_library(
+    name = "sfinae_lib",
+    hdrs = ["sfinae.h"],
+)
+
+# API surface generation + comparison for the additional cases.
+
+api_surface_test(
+    name = "multi_inheritance_api_test",
+    check_docs = False,
+    lock_file = "golden/multi_inheritance.lock.json",
+    target = ":multi_inheritance_lib",
+)
+
+api_surface_test(
+    name = "ref_qualifiers_api_test",
+    check_docs = False,
+    lock_file = "golden/ref_qualifiers.lock.json",
+    target = ":ref_qualifiers_lib",
+)
+
+api_surface_test(
+    name = "member_function_templates_api_test",
+    check_docs = False,
+    lock_file = "golden/member_function_templates.lock.json",
+    target = ":member_function_templates_lib",
+)
+
+api_surface_test(
+    name = "globals_api_test",
+    check_docs = False,
+    lock_file = "golden/globals.lock.json",
+    target = ":globals_lib",
+)
+
+api_surface_test(
+    name = "protected_methods_api_test",
+    check_docs = False,
+    lock_file = "golden/protected_methods.lock.json",
+    target = ":protected_methods_lib",
+)
+
+api_surface_test(
+    name = "constexpr_members_api_test",
+    check_docs = False,
+    lock_file = "golden/constexpr_members.lock.json",
+    target = ":constexpr_members_lib",
+)
+
+api_surface_test(
+    name = "forward_declared_api_test",
+    check_docs = False,
+    lock_file = "golden/forward_declared.lock.json",
+    target = ":forward_declared_lib",
+)
+
+api_surface_test(
+    name = "extern_c_api_test",
+    check_docs = False,
+    lock_file = "golden/extern_c.lock.json",
+    target = ":extern_c_lib",
+)
+
+api_surface_test(
+    name = "extern_explicit_api_test",
+    check_docs = False,
+    lock_file = "golden/extern_explicit.lock.json",
+    target = ":extern_explicit_lib",
+)
+
+api_surface_test(
+    name = "cpp_attributes_api_test",
+    check_docs = False,
+    lock_file = "golden/cpp_attributes.lock.json",
+    target = ":cpp_attributes_lib",
+)
+
+api_surface_test(
+    name = "sfinae_api_test",
+    check_docs = False,
+    lock_file = "golden/sfinae.lock.json",
+    target = ":sfinae_lib",
+)
+
 # Python assertion test that validates the CONTENT of extracted API surfaces
 # (not just that they match a lock file, but that specific expectations hold)
 py_test(
@@ -140,11 +280,22 @@ py_test(
     srcs = ["test_api_extraction_validation.py"],
     data = [
         ":basic_class_api_test_gen",
+        ":constexpr_members_api_test_gen",
+        ":cpp_attributes_api_test_gen",
         ":enum_and_free_functions_api_test_gen",
+        ":extern_c_api_test_gen",
+        ":extern_explicit_api_test_gen",
+        ":forward_declared_api_test_gen",
+        ":globals_api_test_gen",
         ":inheritance_api_test_gen",
         ":internal_namespace_api_test_gen",
+        ":member_function_templates_api_test_gen",
+        ":multi_inheritance_api_test_gen",
         ":private_changes_api_test_gen",
+        ":protected_methods_api_test_gen",
+        ":ref_qualifiers_api_test_gen",
         ":result_type_regression_api_test_gen",
+        ":sfinae_api_test_gen",
         ":template_alias_api_test_gen",
         ":type_alias_api_test_gen",
         ":types_in_signatures_api_test_gen",
