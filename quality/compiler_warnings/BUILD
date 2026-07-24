@@ -23,23 +23,29 @@ cc_args(
     ],
     args = [
         "-march=nehalem",
-        "-ffp-model=strict",
-        # Undefine _FORTIFY_SOURCE to avoid conflict with sanitizers.
-        # See https://github.com/google/sanitizers/issues/247
-        "-U_FORTIFY_SOURCE",
-        "-fstack-protector",
         "-fno-omit-frame-pointer",
-        "-fcolor-diagnostics",
+        "-fPIC",
+        "-fstack-protector-strong",
+        "-fdiagnostics-color=always",
+        # Fortify libc calls (buffer-overflow checks) used by message (de)serialization.
+        # NOTE: effective only at -O1+; requires the non-executable stack link hardening below.
+        "-D_FORTIFY_SOURCE=2",
+        # Bounds/precondition checks on libstdc++ containers (ABI-safe; not _GLIBCXX_DEBUG).
+        "-D_GLIBCXX_ASSERTIONS",
+        # Per-page stack probing so a large VLA/alloca in deep IPC dispatch cannot skip the guard page.
+        "-fstack-clash-protection",
+        # x86-64 control-flow integrity (Intel CET: indirect-branch tracking + shadow stack); pairs with -march above.
+        "-fcf-protection=full",
+        # Mark emitted objects' stack non-executable (complements -Wl,-z,noexecstack in the link defaults).
+        "-Wa,--noexecstack",
+        "-D_QNX_SOURCE",
+        "-D_XOPEN_SOURCE=700",  # SUSv4 (POSIX.1-2008 base specification plus the XSI extension)
+        "-ffunction-sections",
+        "-fdata-sections",
+        "-no-canonical-prefixes",
+        "-pthread",
     ],
-)
-
-cc_feature(
-    name = "default_flags",
-    args = [
-        ":default_compile_args",
-    ],
-    feature_name = "score_communication_default_flags",
-    visibility = ["//visibility:public"],
+    visibility = ["//quality/compiler_warnings:__subpackages__"],
 )
 
 cc_args(
@@ -48,19 +54,25 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
     args = [
-        "-lrt",
-        # Required for targets using std::atomic.
-        "-latomic",
+        "-pipe",
+        # Full RELRO + BIND_NOW + non-executable stack for the IPC dispatch/plugin GOT.
+        "-Wl,-z,relro,-z,now,-z,noexecstack,-z,notext",
+        "-no-canonical-prefixes",
+        "-pthread",
+        "-Wl,--push-state",
+        "-Wl,-as-needed",
+        "-ldl",
+        "-Wl,--pop-state",
+        "-fuse-ld=gold",
+        "-Wl,-no-as-needed",
+        "-lc",
+        "-lm",
+        "-lstdc++",
+        "-Wl,--build-id=sha1",
+        "-Wl,--warn-execstack",
+        "-Wl,--no-fatal-warnings",
     ],
-)
-
-cc_feature(
-    name = "default_link_flags",
-    args = [
-        ":default_link_args",
-    ],
-    feature_name = "score_communication_default_link_flags",
-    visibility = ["//visibility:public"],
+    visibility = ["//quality/compiler_warnings:__subpackages__"],
 )
 
 cc_args(
@@ -71,6 +83,7 @@ cc_args(
     args = [
         "-Werror",
     ],
+    visibility = ["//quality/compiler_warnings:__subpackages__"],
 )
 
 cc_feature(
@@ -92,8 +105,21 @@ cc_args(
         # Keep #warning visible without failing the build.
         "-Wno-error=cpp",
         "-Wno-error=deprecated-declarations",
+        "-Wno-unused-macros",
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+        "-Wunused-but-set-parameter",
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],
+)
+
+cc_feature(
+    name = "minimal_warnings",
+    args = [
+        ":minimal_warnings_args",
+    ],
+    feature_name = "score_communication_common_minimal_warnings",
+    visibility = ["//visibility:public"],
 )
 
 cc_args(
@@ -103,11 +129,30 @@ cc_args(
     ],
     args = [
         "-Wextra",
-        "-Wpedantic",
-        "-Wconversion",
-        "-Wsign-conversion",
+        "-pedantic",
+        "-Wconversion",  # A4-7-1,M5-0-5,M5-0-6
+        "-Wsign-conversion",  # A4-7-1,M5-0-4,M5-0-9
+        "-Wfloat-conversion",  # M5-0-5
+        "-Wfloat-equal",
+        "-Wformat=2",
+        "-Winvalid-pch",
+        "-Wmultichar",
+        "-Wpacked",
+        "-Wunused-macros",
+        "-Wformat-security",
+        "-Wshadow",  # A2-10-1,A2-10-6
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],
+)
+
+cc_feature(
+    name = "strict_warnings",
+    args = [
+        ":strict_warnings_args",
+    ],
+    feature_name = "score_communication_common_strict_warnings",
+    implies = [":minimal_warnings"],
+    visibility = ["//visibility:public"],
 )
 
 cc_args(
@@ -118,21 +163,9 @@ cc_args(
     args = [
         "-Wcast-align",
         "-Wcast-qual",
-        "-Wdouble-promotion",
-        "-Wformat-nonliteral",
-        "-Wpointer-arith",
-        "-Wredundant-decls",
         "-Wundef",
-        "-Wwrite-strings",
+        "-Wwrite-strings",  # A2-13-4
+        "-Wredundant-decls",
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],
-)
-
-cc_feature(
-    name = "additional_warnings",
-    args = [
-        ":additional_warnings_args",
-    ],
-    feature_name = "score_communication_additional_warnings",
-    visibility = ["//visibility:public"],
 )

@@ -203,7 +203,7 @@ bazel test --config=tsan //...
 
 Compiler warning features are defined in [`quality/compiler_warnings/`](compiler_warnings/) and referenced in targets through the shared bundle in [`score/mw/common_features.bzl`](../score/mw/common_features.bzl). Warning features are prefixed with `score_communication_` to avoid collisions with other modules.
 
-Features are enabled per-target via the `features` attribute. The LLVM toolchain enables `score_communication_default_flags` and `score_communication_minimal_warnings` by default (see [`MODULE.bazel`](../MODULE.bazel)).
+Features are enabled per-target via the `features` attribute. The LLVM toolchain enables `score_communication_minimal_warnings` by default (see [`MODULE.bazel`](../MODULE.bazel)).
 
 ### Adding Warning Features to a Target
 
