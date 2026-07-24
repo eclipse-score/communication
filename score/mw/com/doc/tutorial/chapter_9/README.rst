@@ -299,7 +299,7 @@ Extract both archives (e.g. in a tmp-directory):
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_9/opt/TirePressureExtendedServer
-   bin/provider
+   bin/provider_app
 
 
 and the service-consumer in the 2nd terminal:
@@ -307,7 +307,7 @@ and the service-consumer in the 2nd terminal:
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_9/opt/TirePressureExtendedClient
-   bin/consumer
+   bin/consumer_app
 
 
 Summary

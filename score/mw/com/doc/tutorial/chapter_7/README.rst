@@ -108,7 +108,7 @@ Extract both archives (e.g. in a tmp-directory):
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_7/opt/TirePressureServer
-   bin/provider
+   bin/provider_app
 
 
 and the service-consumer in the 2nd terminal:
@@ -116,7 +116,7 @@ and the service-consumer in the 2nd terminal:
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_7/opt/TirePressureClient
-   bin/consumer
+   bin/consumer_app
 
 
 The provider first sets the **initial value** (`2.0` bar) of each field, offers the service and then waits 20 s

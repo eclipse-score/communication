@@ -27,7 +27,7 @@ cc_library(
 )
 
 cc_binary(
-    name = "provider",
+    name = "provider_app",
     srcs = [
         "provider/provider.cpp",
         "provider/provider.h",
@@ -43,7 +43,7 @@ cc_binary(
 )
 
 cc_binary(
-    name = "consumer",
+    name = "consumer_app",
     srcs = [
         "consumer/consumer.cpp",
         "consumer/consumer.h",
@@ -62,7 +62,7 @@ cc_binary(
 pkg_application(
     name = "provider-pkg",
     app_name = "TirePressureServer",
-    bin = [":provider"],
+    bin = [":provider_app"],
     etc = [
         "provider/logging.json",
         "provider/mw_com_config.json",
@@ -83,7 +83,7 @@ pkg_tar(
 pkg_application(
     name = "consumer-pkg",
     app_name = "TirePressureClient",
-    bin = [":consumer"],
+    bin = [":consumer_app"],
     etc = [
         "consumer/logging.json",
         "consumer/mw_com_config.json",

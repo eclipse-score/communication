@@ -76,7 +76,7 @@ To run provider/consumer apps, extract both archives (e.g. in a tmp-directory /t
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_1/opt/HelloWorldServer
-   bin/provider
+   bin/provider_app
 
 
 and the service-consumer in the 2nd terminal
@@ -84,7 +84,7 @@ and the service-consumer in the 2nd terminal
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_1/opt/HelloWorldClient
-   bin/consumer
+   bin/consumer_app
 
 
 .. note::

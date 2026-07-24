@@ -27,7 +27,7 @@ cc_library(
 )
 
 cc_binary(
-    name = "provider",
+    name = "provider_app",
     srcs = [
         "provider.cpp",
         "provider.h",
@@ -43,7 +43,7 @@ cc_binary(
 )
 
 cc_binary(
-    name = "consumer",
+    name = "consumer_app",
     srcs = [
         "consumer.cpp",
         "consumer.h",
@@ -61,7 +61,7 @@ cc_binary(
 pkg_application(
     name = "provider-pkg",
     app_name = "HelloWorldServer",
-    bin = [":provider"],
+    bin = [":provider_app"],
     etc = [
         "logging.json",
         "mw_com_config.json",
@@ -82,7 +82,7 @@ pkg_tar(
 pkg_application(
     name = "consumer-pkg",
     app_name = "HelloWorldClient",
-    bin = [":consumer"],
+    bin = [":consumer_app"],
     etc = [
         "logging.json",
         "mw_com_config.json",

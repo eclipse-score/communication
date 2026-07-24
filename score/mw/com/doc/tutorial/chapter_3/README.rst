@@ -85,7 +85,7 @@ Extract both archives (e.g. in a tmp-directory):
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_3/opt/HelloWorldServer
-   bin/provider
+   bin/provider_app
 
 
 and the service-consumer in the 2nd terminal. Note that we do **not** pass a `--service_instance_manifest` argument
@@ -95,7 +95,7 @@ here: the consumer uses the **implicit** configuration loading, which expects th
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_3/opt/HelloWorldClient
-   bin/consumer
+   bin/consumer_app
 
 
 When both run, you will observe how the provider brings up its 3 instances one after the other:

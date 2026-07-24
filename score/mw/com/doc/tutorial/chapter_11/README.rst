@@ -334,7 +334,7 @@ Start the service-provider application in the 1st terminal:
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_11/opt/LongRunningServer
-   bin/provider
+   bin/provider_app
 
 
 ... and the service-consumer in the 2nd terminal:
@@ -342,7 +342,7 @@ Start the service-provider application in the 1st terminal:
 .. code-block:: bash
 
    cd /tmp/tutorial/chapter_11/opt/LongRunningClient
-   bin/consumer
+   bin/consumer_app
 
 
 You will observe the consumer posting jobs every 500 ms (each getting ``queued at provider: true``), and – after a random
