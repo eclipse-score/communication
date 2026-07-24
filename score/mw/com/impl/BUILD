@@ -1203,6 +1203,13 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "method_type_test",
+    srcs = ["method_type_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [":method_type"],
+)
+
+cc_unit_test(
     name = "sample_reference_tracker_test",
     srcs = ["sample_reference_tracker_test.cpp"],
     deps = [
@@ -1283,9 +1290,11 @@ cc_unit_test(
     deps = [
         ":impl",
         ":runtime_mock",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
     ],
 )
 
