@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+ 
 use com_api_concept::{
     CommData, MethodArgs, MethodArgsAllocate, MethodCaller, MethodHandler, MethodHandlerCall,
     MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr, Result, Runtime,
@@ -37,7 +38,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> MethodHandler<Args
     // For now, we will just have a placeholder implementation.
     // So that concurrent method calls can happen on same consumer instance.
     // If two consumer call same methods, which may happen then user should have synchronization mechanism in their handler implementation to handle concurrent calls.
-    fn register_handler<F>(&self, _handler: F) -> Result<()>
+    fn register_handler<F>(&self, _handler: F)
     where
         F: MethodHandlerCall<Args, Return>,
     {

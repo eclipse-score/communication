@@ -613,8 +613,8 @@ macro_rules! interface_producer_mixed {
                          All fields must be initialized and all handlers must be registered first.\n\
                          Correct usage: producer.init()\
                              .update_<field>(&val)?\
-                             .register_set_handler_<field>(|v| {{ ... }})?\
-                             .register_<method>_handler(|args| {{ ... }})?\
+                             .register_set_handler_<field>(|v| {{ ... }})\
+                             .register_<method>_handler(|args| {{ ... }})\
                              .offer()?",
                         producer = stringify!([<$id Producer>])
                     )
@@ -907,7 +907,7 @@ mod tests {
     ///   `left_tire_method: MethodCaller<(Tire,), Tire>`,
     ///   and a convenience `left_tire_method(arg0: Tire)` method.
     /// - `VehicleProducer<R>` derives `TypeStateValidator` and requires the `.init()` chain:
-    ///   `producer.init().update_left_tire_field(&val)?.register_set_handler_left_tire_field(f)?.register_left_tire_method_handler(h)?.offer()?`
+    ///   `producer.init().update_left_tire_field(&val)?.register_set_handler_left_tire_field(f).register_left_tire_method_handler(h).offer()?`
     /// - `VehicleOfferedProducer<R>` has `left_tire: Publisher<Tire>` (created lazily on offer),
     ///   `left_tire_field: FieldPublisher<Exhaust>`, plus the active method handler.
     #[cfg(doctest)]

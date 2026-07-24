@@ -178,7 +178,7 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
         .collect();
 
     // All-satisfied states required by offer().
-    let satisfied_states: Vec<_> = (0..field_members.len())
+    let done_states: Vec<_> = (0..field_members.len())
         .map(|_| quote! { ::com_api::Init })
         .chain((0..field_members.len()).map(|_| quote! { ::com_api::HandlerSet }))
         .chain((0..method_members.len()).map(|_| quote! { ::com_api::HandlerSet }))
@@ -263,15 +263,15 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
                     pub fn #register_fn<F>(
                         mut self,
                         handler: F,
-                    ) -> com_api::Result<#validator_name<#runtime_param_name, #(#after),*>>
+                    ) -> #validator_name<#runtime_param_name, #(#after),*>
                     where
                         F: Fn(&#inner_ty) + Send + 'static,
                     {
-                        self.producer.#field_ident.register_set_handler(handler)?;
-                        Ok(#validator_name {
+                        self.producer.#field_ident.register_set_handler(handler);
+                        #validator_name {
                             producer: self.producer,
                             _phantom: core::marker::PhantomData,
-                        })
+                        }
                     }
                 }
             }
@@ -313,18 +313,18 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
                     pub fn #register_fn<F>(
                         mut self,
                         handler: F,
-                    ) -> com_api::Result<#validator_name<#runtime_param_name, #(#after),*>>
+                    ) -> #validator_name<#runtime_param_name, #(#after),*>
                     where
                         F: com_api::MethodHandlerCall<#args_ty, #return_ty>,
                     {
                         <_ as com_api::MethodHandler<#args_ty, #return_ty, #runtime_param_name>>::register_handler(
                             &self.producer.#method_ident,
                             handler,
-                        )?;
-                        Ok(#validator_name {
+                        );
+                        #validator_name {
                             producer: self.producer,
                             _phantom: core::marker::PhantomData,
-                        })
+                        }
                     }
                 }
             }
@@ -350,7 +350,7 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
 
         // offer() is only available when ALL Si = Init, ALL Hi = HandlerSet, ALL Mj = HandlerSet.
         impl<#runtime_param_with_bounds>
-            #validator_name<#runtime_param_name, #(#satisfied_states),*>
+            #validator_name<#runtime_param_name, #(#done_states),*>
         {
             pub fn offer(
                 self,

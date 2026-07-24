@@ -61,6 +61,10 @@
 /// which can be a plain closure or any FnMut with the matching signature,
 /// and it will automatically satisfy this trait,
 /// so that the interface macro can generate the necessary code to register the handler function for each interface method on the producer side.
+/// 
+// TODO: Add a blocking `.wait()` convenience for method-call futures, for sync callers who don't
+// want to bring their own async executor (similar in spirit to `futures::executor::block_on`).
+
 use crate::com_api_concept::*;
 use core::future::Future;
 
@@ -90,9 +94,7 @@ pub trait MethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized>
     ///
     /// # Arguments
     /// * `handler` - The handler function to register for the method, which has to bound the `MethodHandlerCall<Args, Return>` trait blanket implementation.
-    ///
-    /// Returns a `Result` indicating whether the handler was successfully registered.
-    fn register_handler<F>(&self, handler: F) -> Result<()>
+    fn register_handler<F>(&self, handler: F)
     where
         F: MethodHandlerCall<Args, Return>;
 }
