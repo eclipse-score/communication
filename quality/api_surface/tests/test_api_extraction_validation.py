@@ -378,5 +378,299 @@ class TestResultTypeRegression(unittest.TestCase):
         self.assertLess(len(self.symbols), 50)
 
 
+
+class TestMultiInheritance(unittest.TestCase):
+    """Multi-inheritance + private/protected inheritance."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("multi_inheritance")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_alias_extracted(self):
+        self.assertIn("test::Widget", qualified_names(self.symbols))
+
+    def test_public_base_members_exposed(self):
+        qnames = qualified_names(self.symbols)
+        self.assertIn("test::Widget::draw", qnames)
+        self.assertIn("test::Widget::serialize", qnames)
+
+    def test_own_members_exposed(self):
+        qnames = qualified_names(self.symbols)
+        self.assertIn("test::Widget::Widget", qnames)
+        self.assertIn("test::Widget::update", qnames)
+
+    def test_private_base_excluded(self):
+        self.assertNotIn("log", symbol_names(self.symbols))
+
+    def test_protected_base_excluded(self):
+        self.assertNotIn("track", symbol_names(self.symbols))
+
+
+class TestRefQualifiers(unittest.TestCase):
+    """Ref-qualified (& / &&) member overloads are distinct API symbols."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("ref_qualifiers")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_struct_extracted(self):
+        self.assertIn("test::Buffer", qualified_names(self.symbols))
+
+    def test_both_data_overloads_present(self):
+        sigs = [s["signature"] for s in self.symbols
+                if s["qualified_name"] == "test::Buffer::data"]
+        self.assertEqual(len(sigs), 2)
+        self.assertTrue(any(sig.rstrip().endswith("&&") for sig in sigs))
+        self.assertTrue(any(sig.rstrip().endswith("&") and not sig.rstrip().endswith("&&")
+                            for sig in sigs))
+
+    def test_const_lvalue_qualifier(self):
+        sym = find_symbol(self.symbols, "test::Buffer::size")
+        self.assertIsNotNone(sym)
+        self.assertIn("const &", sym["signature"])
+
+
+class TestMemberFunctionTemplates(unittest.TestCase):
+    """Member function templates are extracted as template_function."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("member_function_templates")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_class_extracted(self):
+        self.assertIn("test::Registry", qualified_names(self.symbols))
+
+    def test_member_templates_extracted(self):
+        add = find_symbol(self.symbols, "test::Registry::add")
+        get = find_symbol(self.symbols, "test::Registry::get")
+        self.assertIsNotNone(add)
+        self.assertIsNotNone(get)
+        self.assertEqual(add["kind"], "template_function")
+        self.assertEqual(get["kind"], "template_function")
+
+    def test_non_template_member_extracted(self):
+        clear = find_symbol(self.symbols, "test::Registry::clear")
+        self.assertIsNotNone(clear)
+        self.assertEqual(clear["kind"], "method")
+
+
+class TestGlobals(unittest.TestCase):
+    """Namespace-scope globals (variables and functions)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("globals")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_constexpr_global(self):
+        sym = find_symbol(self.symbols, "test::kMaxItems")
+        self.assertIsNotNone(sym)
+        self.assertIn("constexpr", sym["signature"])
+
+    def test_extern_global(self):
+        sym = find_symbol(self.symbols, "test::g_external")
+        self.assertIsNotNone(sym)
+        self.assertIn("extern", sym["signature"])
+
+    def test_plain_global(self):
+        self.assertIsNotNone(find_symbol(self.symbols, "test::g_counter"))
+
+    def test_free_functions(self):
+        qnames = qualified_names(self.symbols)
+        self.assertIn("test::GetVersion", qnames)
+        self.assertIn("test::SetVerbose", qnames)
+
+
+class TestProtectedMethods(unittest.TestCase):
+    """Protected members are part of the API, tagged with a protected_ kind."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("protected_methods")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_public_members(self):
+        pub = find_symbol(self.symbols, "test::Base::publicMethod")
+        self.assertIsNotNone(pub)
+        self.assertEqual(pub["kind"], "method")
+
+    def test_protected_members_tagged(self):
+        on_event = find_symbol(self.symbols, "test::Base::onEvent")
+        compute = find_symbol(self.symbols, "test::Base::computeInternal")
+        self.assertIsNotNone(on_event)
+        self.assertIsNotNone(compute)
+        self.assertEqual(on_event["kind"], "protected_method")
+        self.assertEqual(compute["kind"], "protected_method")
+
+    def test_private_members_excluded(self):
+        names = symbol_names(self.symbols)
+        self.assertNotIn("secret", names)
+        self.assertNotIn("state_", names)
+
+
+class TestConstexprMembers(unittest.TestCase):
+    """constexpr functions and (static) constexpr members are captured."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("constexpr_members")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_constexpr_methods(self):
+        x = find_symbol(self.symbols, "test::Vector2::x")
+        self.assertIsNotNone(x)
+        self.assertIn("constexpr", x["signature"])
+
+    def test_constexpr_constructor(self):
+        ctor = find_symbol(self.symbols, "test::Vector2::Vector2")
+        self.assertIsNotNone(ctor)
+        self.assertIn("constexpr", ctor["signature"])
+
+    def test_static_constexpr_member(self):
+        k = find_symbol(self.symbols, "test::Vector2::kUnit")
+        self.assertIsNotNone(k)
+        self.assertIn("constexpr", k["signature"])
+        self.assertIn("static", k["signature"])
+
+    def test_constexpr_free_function(self):
+        dot = find_symbol(self.symbols, "test::Dot")
+        self.assertIsNotNone(dot)
+        self.assertIn("constexpr", dot["signature"])
+
+
+class TestForwardDeclared(unittest.TestCase):
+    """Forward-declared / incomplete types (pimpl) are tracked."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("forward_declared")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_forward_class_tracked(self):
+        impl = find_symbol(self.symbols, "test::WidgetImpl")
+        self.assertIsNotNone(impl)
+        self.assertEqual(impl["kind"], "forward_class")
+
+    def test_incomplete_struct_tracked(self):
+        handle = find_symbol(self.symbols, "test::IncompleteHandle")
+        self.assertIsNotNone(handle)
+        self.assertEqual(handle["kind"], "forward_class")
+
+    def test_complete_class_extracted(self):
+        w = find_symbol(self.symbols, "test::Widget")
+        self.assertIsNotNone(w)
+        self.assertEqual(w["kind"], "class")
+        self.assertIn("test::Widget::render", qualified_names(self.symbols))
+
+    def test_private_pimpl_pointer_excluded(self):
+        self.assertNotIn("impl_", symbol_names(self.symbols))
+
+
+class TestExternC(unittest.TestCase):
+    """extern \"C\" symbols carry the linkage in their signature."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("extern_c")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_extern_c_block_functions(self):
+        for qn in ("test::c_init", "test::c_process"):
+            sym = find_symbol(self.symbols, qn)
+            self.assertIsNotNone(sym, qn)
+            self.assertIn('extern "C"', sym["signature"])
+
+    def test_standalone_extern_c_function(self):
+        sym = find_symbol(self.symbols, "test::c_shutdown")
+        self.assertIsNotNone(sym)
+        self.assertIn('extern "C"', sym["signature"])
+
+
+class TestExternExplicit(unittest.TestCase):
+    """Explicit extern template instantiations and extern globals."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("extern_explicit")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_extern_template_instantiations(self):
+        i = find_symbol(self.symbols, "test::Array<int>")
+        d = find_symbol(self.symbols, "test::Array<double>")
+        self.assertIsNotNone(i)
+        self.assertIsNotNone(d)
+        self.assertEqual(i["kind"], "extern_template")
+        self.assertEqual(d["kind"], "extern_template")
+
+    def test_template_class_present(self):
+        arr = find_symbol(self.symbols, "test::Array")
+        self.assertIsNotNone(arr)
+        self.assertEqual(arr["kind"], "template_class")
+
+    def test_extern_globals(self):
+        for qn in ("test::g_globalConfig", "test::g_appName"):
+            sym = find_symbol(self.symbols, qn)
+            self.assertIsNotNone(sym, qn)
+            self.assertIn("extern", sym["signature"])
+
+
+class TestCppAttributes(unittest.TestCase):
+    """C++ standard attributes ([[nodiscard]], [[deprecated]]) are captured."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("cpp_attributes")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_nodiscard_function(self):
+        sym = find_symbol(self.symbols, "test::Compute")
+        self.assertIsNotNone(sym)
+        self.assertIn("[[nodiscard]]", sym["signature"])
+
+    def test_deprecated_function(self):
+        sym = find_symbol(self.symbols, "test::OldCompute")
+        self.assertIsNotNone(sym)
+        self.assertIn("[[deprecated]]", sym["signature"])
+
+    def test_combined_attributes(self):
+        sym = find_symbol(self.symbols, "test::LegacyCompute")
+        self.assertIsNotNone(sym)
+        self.assertIn("[[nodiscard]]", sym["signature"])
+        self.assertIn("[[deprecated]]", sym["signature"])
+
+    def test_attributed_methods(self):
+        valid = find_symbol(self.symbols, "test::Handle::valid")
+        reset = find_symbol(self.symbols, "test::Handle::reset")
+        self.assertIsNotNone(valid)
+        self.assertIsNotNone(reset)
+        self.assertIn("[[nodiscard]]", valid["signature"])
+        self.assertIn("[[deprecated]]", reset["signature"])
+
+
+class TestSfinae(unittest.TestCase):
+    """SFINAE constraints in the signature are captured."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = load_api_surface("sfinae")
+        cls.symbols = get_all_symbols(cls.result)
+
+    def test_return_type_sfinae(self):
+        sym = find_symbol(self.symbols, "test::DoubleValue")
+        self.assertIsNotNone(sym)
+        self.assertEqual(sym["kind"], "template_function")
+        self.assertIn("enable_if", sym["signature"])
+        self.assertIn("is_integral", sym["signature"])
+
+    def test_trailing_return_sfinae(self):
+        sym = find_symbol(self.symbols, "test::Negate")
+        self.assertIsNotNone(sym)
+        self.assertEqual(sym["kind"], "template_function")
+        self.assertIn("enable_if", sym["signature"])
+        self.assertIn("is_signed", sym["signature"])
+
 if __name__ == "__main__":
     unittest.main()

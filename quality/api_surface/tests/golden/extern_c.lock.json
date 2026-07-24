@@ -1,0 +1,25 @@
+{
+  "target": "//quality/api_surface/tests:extern_c_lib",
+  "symbols": [
+    {
+      "name": "c_init",
+      "qualified_name": "test::c_init",
+      "kind": "function",
+      "signature": "extern \"C\" c_init : void (int)"
+    },
+    {
+      "name": "c_process",
+      "qualified_name": "test::c_process",
+      "kind": "function",
+      "signature": "extern \"C\" c_process : int (const char *, int)"
+    },
+    {
+      "name": "c_shutdown",
+      "qualified_name": "test::c_shutdown",
+      "kind": "function",
+      "signature": "extern \"C\" c_shutdown : void ()"
+    }
+  ],
+  "undocumented_symbols": [],
+  "version": "1"
+}

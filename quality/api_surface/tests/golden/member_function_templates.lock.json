@@ -1,0 +1,32 @@
+{
+  "target": "//quality/api_surface/tests:member_function_templates_lib",
+  "symbols": [
+    {
+      "name": "Registry",
+      "qualified_name": "test::Registry",
+      "kind": "class",
+      "signature": "class Registry"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "add",
+      "qualified_name": "test::Registry::add",
+      "kind": "template_function",
+      "signature": "add : void (const T &)"
+    },
+    {
+      "name": "get",
+      "qualified_name": "test::Registry::get",
+      "kind": "template_function",
+      "signature": "get : T (int) const"
+    },
+    {
+      "name": "clear",
+      "qualified_name": "test::Registry::clear",
+      "kind": "method",
+      "signature": "clear : void ()"
+    }
+  ],
+  "version": "1"
+}

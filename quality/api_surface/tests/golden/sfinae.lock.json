@@ -1,0 +1,19 @@
+{
+  "target": "//quality/api_surface/tests:sfinae_lib",
+  "symbols": [
+    {
+      "name": "DoubleValue",
+      "qualified_name": "test::DoubleValue",
+      "kind": "template_function",
+      "signature": "DoubleValue : std::enable_if_t<std::is_integral<T>::value, T> (T)"
+    },
+    {
+      "name": "Negate",
+      "qualified_name": "test::Negate",
+      "kind": "template_function",
+      "signature": "Negate : auto (T) -> std::enable_if_t<std::is_signed<T>::value, T>"
+    }
+  ],
+  "undocumented_symbols": [],
+  "version": "1"
+}
