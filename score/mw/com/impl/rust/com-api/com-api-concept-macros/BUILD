@@ -17,9 +17,7 @@ rust_proc_macro(
     name = "com-api-concept-macros",
     srcs = ["lib.rs"],
     crate_name = "com_api_concept_macros",
-    visibility = [
-        "//visibility:public",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "@score_communication_crate_index//:quote",
         "@score_communication_crate_index//:syn",

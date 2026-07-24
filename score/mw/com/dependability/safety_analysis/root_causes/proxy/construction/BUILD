@@ -16,5 +16,5 @@ filegroup(
     srcs = [
         "service_is_found_but_does_not_exist_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

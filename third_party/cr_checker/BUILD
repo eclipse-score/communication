@@ -16,7 +16,7 @@ filegroup(
     srcs = [
         "templates.ini",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__pkg__"],
 )
 
 filegroup(
@@ -24,5 +24,5 @@ filegroup(
     srcs = [
         "config.json",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__pkg__"],
 )

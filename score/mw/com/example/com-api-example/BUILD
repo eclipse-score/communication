@@ -40,7 +40,6 @@ rust_binary(
         "MW_LOG_CONFIG_FILE": "score/mw/com/example/com-api-example/etc/logging.json",
     },
     features = ["link_std_cpp_lib"],
-    visibility = ["//visibility:public"],
     deps = [
         ":com-api-example-lib",
         "//score/mw/com/example/com-api-example/com-api-gen",

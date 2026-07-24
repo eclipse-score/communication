@@ -13,6 +13,11 @@
 
 load("@rules_python//python:defs.bzl", "py_binary")
 
+exports_files(
+    ["config_generator_rule.bzl"],
+    visibility = ["//visibility:public"],
+)
+
 py_binary(
     name = "config_generator",
     srcs = [

@@ -700,25 +700,25 @@ cc_unit_test(
 filegroup(
     name = "mw_com_config.json",
     srcs = ["example/mw_com_config.json"],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com:__subpackages__"],
 )
 
 filegroup(
     name = "mw_com_config_other.json",
     srcs = ["example/mw_com_config_other.json"],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com:__subpackages__"],
 )
 
 filegroup(
     name = "mw_com_config_invalid_trace_config_path.json",
     srcs = ["example/mw_com_config_invalid_trace_config_path.json"],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com:__subpackages__"],
 )
 
 filegroup(
     name = "mw_com_config_disabled_trace_config.json",
     srcs = ["example/mw_com_config_disabled_trace_config.json"],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com:__subpackages__"],
 )
 
 filegroup(
@@ -727,5 +727,5 @@ filegroup(
         "example/mw_com_config_valid_trace_config.json",
         "example/mw_com_config_valid_trace_config_external.json",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com:__subpackages__"],
 )

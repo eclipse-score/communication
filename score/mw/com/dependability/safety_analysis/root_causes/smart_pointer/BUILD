@@ -17,5 +17,5 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/smart_pointer/method_signature_element_ptr:method_signature_element_ptr_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/smart_pointer/sample_ptr_sample_allocate_ptr",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

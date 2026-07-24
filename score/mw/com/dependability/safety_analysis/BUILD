@@ -25,7 +25,7 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/skeleton:root_causes_skeleton",
         "//score/mw/com/dependability/safety_analysis/root_causes/smart_pointer:smart_pointer_fta",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 fmea(
@@ -34,5 +34,5 @@ fmea(
     controlmeasures = ["aou.trlc"],
     failuremodes = ["failure_modes.trlc"],
     root_causes = [":root_causes"],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

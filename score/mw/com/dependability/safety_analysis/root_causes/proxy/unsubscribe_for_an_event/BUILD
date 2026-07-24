@@ -16,5 +16,5 @@ filegroup(
     srcs = [
         "does_not_unsubscribe_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

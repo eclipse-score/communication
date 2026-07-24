@@ -27,5 +27,5 @@ filegroup(
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/subscribe_for_an_event:subscribe_with_wrong_max_sample_count_fta",
         "//score/mw/com/dependability/safety_analysis/root_causes/proxy/unsubscribe_for_an_event:does_not_unsubscribe_fta",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

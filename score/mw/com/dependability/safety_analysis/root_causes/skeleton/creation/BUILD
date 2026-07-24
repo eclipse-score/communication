@@ -16,5 +16,5 @@ filegroup(
     srcs = [
         "creation_of_skeleton_not_possible_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

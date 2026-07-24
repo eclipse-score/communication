@@ -13,7 +13,7 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//score/mw/com/test/generic_skeleton:__subpackages__"])
 
 cc_binary(
     name = "generic_typed_interaction_64_byte_app",

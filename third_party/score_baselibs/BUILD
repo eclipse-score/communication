@@ -22,20 +22,24 @@ exports_files(["restore_qnx8_poll_workaround.patch"])
 score_baselibs_stub(
     name = "containers",
     scope_path = "@@score_baselibs+//score/containers:__subpackages__",
+    visibility = ["//:__subpackages__"],
 )
 
 score_baselibs_stub(
     name = "futurecpp",
     scope_path = "@@score_baselibs+//score/language/futurecpp:__subpackages__",
+    visibility = ["//:__subpackages__"],
 )
 
 # scope covers score/os AND score/os/utils via __subpackages__
 score_baselibs_stub(
     name = "os",
     scope_path = "@@score_baselibs+//score/os:__subpackages__",
+    visibility = ["//:__subpackages__"],
 )
 
 score_baselibs_stub(
     name = "bitmanipulation",
     scope_path = "@@score_baselibs+//score/bitmanipulation:__subpackages__",
+    visibility = ["//:__subpackages__"],
 )

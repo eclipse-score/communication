@@ -25,7 +25,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/message_passing:__subpackages__"],
 )
 
 cc_unit_test(
@@ -34,7 +34,7 @@ cc_unit_test(
         "non_allocating_future_samples_test.cpp",
         "non_allocating_future_unit_test.cpp",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/message_passing:__subpackages__"],
     deps = [
         ":non_allocating_future",
     ],

@@ -16,7 +16,7 @@ filegroup(
     srcs = [
         "wrong_in_args_used_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -24,7 +24,7 @@ filegroup(
     srcs = [
         "wrong_method_called_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
 
 filegroup(
@@ -32,5 +32,5 @@ filegroup(
     srcs = [
         "wrong_results_provided_fta.puml",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

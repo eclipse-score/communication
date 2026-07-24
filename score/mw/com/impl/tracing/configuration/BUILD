@@ -383,11 +383,11 @@ cc_unit_test(
 filegroup(
     name = "comtrace_filter_config_broken.json",
     srcs = ["example/comtrace_filter_config_broken.json"],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
 )
 
 filegroup(
     name = "comtrace_filter_config_small.json",
     srcs = ["example/comtrace_filter_config_small.json"],
-    visibility = ["//visibility:public"],
+    visibility = ["//score/mw/com/impl:__subpackages__"],
 )
