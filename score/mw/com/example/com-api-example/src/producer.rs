@@ -20,6 +20,8 @@ use com_api_gen::{Tire, VehicleInterface};
 use std::thread;
 use std::time::Duration;
 
+use score_log as log;
+
 // Delay between sample data sending in the producer loop.
 const PRODUCER_SEND_INTERVAL_MS: u64 = 1000;
 
@@ -44,7 +46,7 @@ impl<R: Runtime> VehicleMonitorProducer<R> {
         let uninit_sample = self.producer.left_tire.allocate()?;
         let sample = uninit_sample.write(tire);
         sample.send()?;
-        println!("Tire data sent");
+        log::info!("Tire data sent");
         Ok(())
     }
 
@@ -55,7 +57,7 @@ impl<R: Runtime> VehicleMonitorProducer<R> {
                 pressure: initial_pressure + i as f32,
             }) {
                 Ok(_) => (),
-                Err(e) => eprintln!("Failed to publish tire data: {:?}", e),
+                Err(e) => log::error!("Failed to publish tire data: {:?}", e),
             }
             thread::sleep(Duration::from_millis(PRODUCER_SEND_INTERVAL_MS));
         }
@@ -64,8 +66,8 @@ impl<R: Runtime> VehicleMonitorProducer<R> {
     /// Stop offering the service and release the producer.
     pub fn unoffer(self) {
         match self.producer.unoffer() {
-            Ok(_) => println!("Successfully unoffered the service"),
-            Err(e) => eprintln!("Failed to unoffer: {:?}", e),
+            Ok(_) => log::info!("Successfully unoffered the service"),
+            Err(e) => log::error!("Failed to unoffer: {:?}", e),
         }
     }
 }

@@ -22,6 +22,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
+use score_log as log;
+
 /// Timeout used when performing a cancellable async receive.
 const RECEIVE_TIMEOUT_MS: u64 = 500;
 /// Polling interval between iterations in synchronous receive loops.
@@ -61,14 +63,14 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
         S: std::ops::Deref<Target = Tire>,
     {
         match result {
-            Ok(0) => println!("No tire data received"),
+            Ok(0) => log::info!("No tire data received"),
             Ok(x) => {
                 let sample = sample_buf
                     .pop_front()
                     .expect("Sample buffer pop operation error");
-                println!("{x} samples received: sample[0] = {:?}", *sample);
+                log::info!("{} samples received: sample[0] = {:?}", x, *sample);
             }
-            Err(e) => eprintln!("Error receiving tire data: {:?}", e),
+            Err(e) => log::error!("Error receiving tire data: {:?}", e),
         }
     }
 
@@ -107,7 +109,7 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
 
     /// Reads tire data asynchronously without a timeout, returning a Result with the number of samples received.
     pub async fn read_tire_data_async_without_timeout(&self, count: usize) -> Result<String> {
-        println!("Performing asynchronous receive without timeout");
+        log::info!("Performing asynchronous receive without timeout");
         let mut sample_buf = SampleContainer::new(3);
         for _ in 0..count {
             let (mut buf, result) = self.tire_subscriber.receive(sample_buf, 1, 3).await;
@@ -119,7 +121,7 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
 
     /// Reads tire data asynchronously with a timeout, returning a Result with the number of samples received.
     pub async fn read_tire_data_async_with_timeout(&self, count: usize) -> Result<String> {
-        println!("Performing asynchronous receive with timeout");
+        log::info!("Performing asynchronous receive with timeout");
         let mut sample_buf = SampleContainer::new(3);
 
         // Thread for simulating a timeout mechanism.
@@ -155,10 +157,10 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
         let mut stream = self.tire_subscriber.to_stream();
         for _ in 0..count {
             match stream.next().await {
-                Some(Ok(sample)) => println!("Received tire data: {:?}", *sample),
-                Some(Err(e)) => eprintln!("Failed to receive tire data: {:?}", e),
+                Some(Ok(sample)) => log::info!("Received tire data: {:?}", *sample),
+                Some(Err(e)) => log::error!("Failed to receive tire data: {:?}", e),
                 None => {
-                    println!("Stream ended");
+                    log::info!("Stream ended");
                     break;
                 }
             }

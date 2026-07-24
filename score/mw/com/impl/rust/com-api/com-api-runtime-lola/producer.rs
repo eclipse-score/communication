@@ -36,6 +36,8 @@ use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use std::sync::Arc;
 
+use score_log as log;
+
 use com_api_concept::{
     AllocationFailureReason, Builder, CommData, Error, EventFailedReason, InstanceSpecifier,
     Interface, Producer, ProducerBuilder, ProducerFailedReason, ProviderInfo, Result,
@@ -69,8 +71,18 @@ impl<B: FFIBridge> ProviderInfo for LolaProviderInfo<B> {
                 .skeleton_offer_service(self.skeleton_handle.0.handle.as_ptr())
         };
         if !status {
+            log::error!(
+                "Failed to offer service for interface: {} with instance specifier: {}",
+                self.interface_id,
+                self.instance_specifier.as_ref()
+            );
             return Err(Error::ServiceError(ServiceFailedReason::OfferServiceFailed));
         }
+        log::info!(
+            "Service offered successfully for interface: {} with instance specifier: {}",
+            self.interface_id,
+            self.instance_specifier.as_ref()
+        );
         Ok(())
     }
 
@@ -81,6 +93,11 @@ impl<B: FFIBridge> ProviderInfo for LolaProviderInfo<B> {
             self.bridge
                 .skeleton_stop_offer_service(self.skeleton_handle.0.handle.as_ptr())
         };
+        log::info!(
+            "Service stopped successfully for interface: {} with instance specifier: {}",
+            self.interface_id,
+            self.instance_specifier.as_ref()
+        );
         Ok(())
     }
 }
@@ -206,8 +223,10 @@ where
                 )
         };
         if !status {
+            log::error!("Failed to send sample");
             return Err(Error::EventError(EventFailedReason::SendingDataFailed));
         }
+        log::debug!("Sample sent successfully");
         Ok(())
     }
 }
@@ -444,6 +463,7 @@ where
     }
 
     fn new(identifier: &str, instance_info: LolaProviderInfo<B>) -> Result<Self> {
+        log::info!("Publisher created for event: {}", identifier);
         let skeleton_event = NativeSkeletonEventBase::new::<B>(&instance_info, identifier)?;
         let type_ops = unsafe {
             instance_info

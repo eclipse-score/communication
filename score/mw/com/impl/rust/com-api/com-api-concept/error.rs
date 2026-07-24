@@ -11,11 +11,17 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+/// Both `Debug` and `ScoreDebug` are derived because `score_log` macros require `ScoreDebug`,
+/// while `Debug` is needed for standard Rust formatting. There is currently no blanket
+/// `impl<T: Debug> ScoreDebug for T` in `score_log_fmt`, so both must be explicitly derived
+/// for any type used across both contexts.
+// TODO: Need to explore if we can somehow avoid deriving both Debug and ScoreDebug for all types.
+use score_log::ScoreDebug;
 use thiserror::Error;
 
 /// Detailed information about Service Discovery failure reasons,
 /// including specific issues with service interfaces, instance specifiers, and handle retrieval.
-#[derive(Debug, Error)]
+#[derive(Debug, ScoreDebug, Error)]
 pub enum ServiceFailedReason {
     #[error("Invalid instance specifier format or content, which may not be according to the expected format or contain invalid content")]
     InstanceSpecifierInvalid,
@@ -28,7 +34,7 @@ pub enum ServiceFailedReason {
 }
 
 /// Reason for producer failure
-#[derive(Debug, Error)]
+#[derive(Debug, ScoreDebug, Error)]
 pub enum ProducerFailedReason {
     #[error("Invalid instance specifier format or content, which may not be according to the expected format or contain invalid content")]
     InstanceSpecifierInvalid,
@@ -39,7 +45,7 @@ pub enum ProducerFailedReason {
 }
 
 /// Reason for consumer failure
-#[derive(Debug, Error)]
+#[derive(Debug, ScoreDebug, Error)]
 pub enum ConsumerFailedReason {
     #[error("Invalid instance specifier format or content, which may not be according to the expected format or contain invalid content")]
     InstanceSpecifierInvalid,
@@ -50,7 +56,7 @@ pub enum ConsumerFailedReason {
 }
 
 /// Memory allocation error details
-#[derive(Debug, Error)]
+#[derive(Debug, ScoreDebug, Error)]
 pub enum AllocationFailureReason {
     #[error(
         "Requested size exceeds available memory which is configured during subscription setup"
@@ -63,7 +69,7 @@ pub enum AllocationFailureReason {
 }
 
 /// Comprehensive error reasons for receive failure
-#[derive(Debug, Error)]
+#[derive(Debug, ScoreDebug, Error)]
 pub enum ReceiveFailedReason {
     #[error("Error at the time of initializing receive operation")]
     InitializationFailed,
@@ -82,7 +88,7 @@ pub enum ReceiveFailedReason {
 }
 
 /// Comprehensive error reasons for event-related failures
-#[derive(Debug, Error)]
+#[derive(Debug, ScoreDebug, Error)]
 pub enum EventFailedReason {
     #[error("Event creation error, possibly due to invalid event type or internal error")]
     EventCreationFailed,
@@ -99,7 +105,7 @@ pub enum EventFailedReason {
 }
 
 /// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.
-#[derive(Debug, Error)]
+#[derive(Debug, ScoreDebug, Error)]
 pub enum Error {
     #[error("Service error due to: {0}")]
     ServiceError(ServiceFailedReason),

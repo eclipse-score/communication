@@ -947,7 +947,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// If the stream encounters an error, it will yield `Err(Error)` for that sample, but will continue to yield subsequent samples as they become available.
     /// The stream only terminates when the subscription is unsubscribed or dropped or if the stream is explicitly dropped by the user.
     /// With this design, users can handle errors on it side and take appropriate actions.
-    fn to_stream<'a>(&'a mut  self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
+    fn to_stream<'a>(&'a mut self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.
