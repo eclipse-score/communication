@@ -13,15 +13,18 @@
 # *******************************************************************************
 """Quality KPI dashboard.
 
-Reads LCOV coverage data, and clang-tidy findings, then renders a dark-themed HTML summary
+Reads LCOV coverage data plus static-analysis findings, then renders a dark-themed HTML summary
 page via the dashboard.html.j2 Jinja2 template.
 
 Usage (CI, called from nightly_quality.yml):
-    bazel run //quality/dashboard:generate_dashboard -- \\
-        --lcov           /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \\
-        --clang-tidy     /tmp/clang_tidy/clang_tidy_findings.txt \\
-        --html           _quality/index.html \\
+    bazel run //quality/dashboard:generate_dashboard -- \
+        --lcov           /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
+        --clang-tidy     /tmp/clang_tidy/clang-tidy.sarif \
+        --clippy         /tmp/clippy/clippy.sarif \
+        --html           _quality/index.html \
         --github-summary
+
+The linter inputs accept SARIF reports and fall back to the previous plain-text findings format.
 """
 
 import argparse
@@ -125,14 +128,100 @@ def load_lcov(path: pathlib.Path) -> tuple[dict, list[dict]]:
     }
     return summary, sorted(files, key=lambda f: f["line_pct"])
 
-def load_clang_tidy(path: pathlib.Path) -> dict | None:
-    """Return {errors, warnings, total} from a clang-tidy findings text file."""
+
+def _normalise_linter_level(level: str) -> str:
+    level = (level or "").lower().strip()
+    if level in {"error", "fail"}:
+        return "error"
+    if level in {"warning", "warn"}:
+        return "warning"
+    return "note"
+
+
+def _extract_sarif_rule_levels(run: dict) -> dict[str, str]:
+    tool = run.get("tool") or {}
+    rules = {}
+    for rule_set in [(tool.get("driver") or {}).get("rules") or []] + [
+        extension.get("rules") or [] for extension in tool.get("extensions") or []
+    ]:
+        for rule in rule_set:
+            rule_id = rule.get("id") or rule.get("name")
+            level = ((rule.get("defaultConfiguration") or {}).get("level") or "").lower().strip()
+            if rule_id and level:
+                rules[rule_id] = level
+    return rules
+
+
+def _load_linter_sarif(path: pathlib.Path) -> dict | None:
+    if not path or not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+    runs = data.get("runs")
+    if not isinstance(runs, list):
+        return None
+
+    errors = warnings = notes = 0
+    findings = []
+    for run in runs:
+        if not isinstance(run, dict):
+            continue
+        rule_levels = _extract_sarif_rule_levels(run)
+        for result in run.get("results") or []:
+            if not isinstance(result, dict):
+                continue
+            level = _normalise_linter_level(
+                result.get("level") or rule_levels.get(result.get("ruleId") or "", "")
+            )
+            if level == "error":
+                errors += 1
+            elif level == "warning":
+                warnings += 1
+            else:
+                notes += 1
+
+            first_location = ((result.get("locations") or [{}])[0]) or {}
+            physical_location = first_location.get("physicalLocation") or {}
+            artifact_location = physical_location.get("artifactLocation") or {}
+            region = physical_location.get("region") or {}
+            message = result.get("message") or {}
+            findings.append({
+                "severity": level,
+                "name": result.get("ruleId") or result.get("rule", {}).get("id") or "",
+                "message": message.get("text") or message.get("markdown") or "",
+                "path": artifact_location.get("uri") or "",
+                "line": region.get("startLine") or "",
+            })
+
+    return {
+        "loaded": True,
+        "errors": errors,
+        "warnings": warnings,
+        "notes": notes,
+        "total": errors + warnings + notes,
+        "findings": findings,
+    }
+
+
+def _load_linter_text(path: pathlib.Path) -> dict | None:
+    """Return {errors, warnings, total} from a legacy linter findings text file."""
     if not path or not path.is_file():
         return None
     text = path.read_text(encoding="utf-8", errors="replace")
     errors   = len([l for l in text.splitlines() if "error:"   in l])
     warnings = len([l for l in text.splitlines() if "warning:" in l])
-    return {"errors": errors, "warnings": warnings, "total": errors + warnings}
+    return {"errors": errors, "warnings": warnings, "notes": 0, "total": errors + warnings}
+
+
+def load_linter_findings(path: pathlib.Path) -> dict | None:
+    """Load a linter report from SARIF (preferred) or legacy text output."""
+    sarif = _load_linter_sarif(path)
+    if sarif is not None:
+        return sarif
+    return _load_linter_text(path)
 
 
 def load_codeql_csv(path: pathlib.Path) -> dict | None:
@@ -209,7 +298,7 @@ def save_history(path: pathlib.Path, history: list[dict]) -> None:
 
 # ── HTML rendering ────────────────────────────────────────────────────────────
 
-def render_dashboard(cov_summary, cov_files, clang_tidy, codeql, history, timestamp) -> str:
+def render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history, timestamp) -> str:
     env = Environment(loader=FileSystemLoader(str(_TEMPLATE_DIR)), autoescape=True)
     env.globals["cov_colour"] = _cov_colour
     env.globals["delta"]      = _delta_badge
@@ -221,6 +310,7 @@ def render_dashboard(cov_summary, cov_files, clang_tidy, codeql, history, timest
         cov=cov_summary or None,
         cov_files=cov_files,
         clang_tidy=clang_tidy,
+        clippy=clippy,
         codeql=codeql,
         history=history,
         prev=history[-2] if len(history) >= 2 else None,
@@ -229,7 +319,7 @@ def render_dashboard(cov_summary, cov_files, clang_tidy, codeql, history, timest
 
 # ── GitHub Actions step summary ───────────────────────────────────────────────
 
-def write_github_summary(cov_summary, clang_tidy, codeql, history, summary_path) -> None:
+def write_github_summary(cov_summary, clang_tidy, clippy, codeql, history, summary_path) -> None:
     lines = ["## Quality Dashboard\n"]
 
     lines.append("### Coverage\n")
@@ -256,6 +346,19 @@ def write_github_summary(cov_summary, clang_tidy, codeql, history, summary_path)
         ]
     else:
         lines.append("Clang-tidy data not available.\n")
+
+    lines.append("\n### Clippy\n")
+    if clippy:
+        err_icon = ":x:" if clippy["errors"] > 0 else ":white_check_mark:"
+        lines += [
+            "| Metric | Count |",
+            "|--------|------:|",
+            f"| {err_icon} Errors   | **{clippy['errors']}** |",
+            f"| :warning: Warnings | **{clippy['warnings']}** |",
+            f"| Total              | **{clippy['total']}** |",
+        ]
+    else:
+        lines.append("Clippy data not available.\n")
 
     lines.append("\n### CodeQL (MISRA C++)\n")
     if codeql:
@@ -284,6 +387,9 @@ def write_github_summary(cov_summary, clang_tidy, codeql, history, summary_path)
             ("Branch coverage %",   "branch_cov", True),
             ("Clang-Tidy errors",   "ct_errors",  False),
             ("Clang-Tidy warnings", "ct_warnings", False),
+            ("Clippy errors",       "clippy_errors", False),
+            ("Clippy warnings",     "clippy_warnings", False),
+            ("Clippy total",        "clippy_total", False),
             ("CodeQL errors",       "codeql_errors",   False),
             ("CodeQL warnings",     "codeql_warnings",  False),
             ("CodeQL total",        "codeql_total",     False),
@@ -314,7 +420,11 @@ def main() -> int:
     parser.add_argument(
         "--clang-tidy", default="",
         dest="clang_tidy",
-        help="Path to clang-tidy findings text file",
+        help="Path to clang-tidy SARIF report (or legacy findings text file)",
+    )
+    parser.add_argument(
+        "--clippy", default="",
+        help="Path to clippy SARIF report (or legacy findings text file)",
     )
     parser.add_argument(
         "--codeql-csv", default="",
@@ -337,6 +447,7 @@ def main() -> int:
 
     lcov_path      = pathlib.Path(args.lcov)       if args.lcov       else pathlib.Path("")
     ct_path        = pathlib.Path(args.clang_tidy) if args.clang_tidy else pathlib.Path("")
+    clippy_path    = pathlib.Path(args.clippy)     if args.clippy     else pathlib.Path("")
     codeql_path    = pathlib.Path(args.codeql_csv) if args.codeql_csv else pathlib.Path("")
     html_path      = pathlib.Path(args.html)
     hist_path      = pathlib.Path(args.history)    if args.history    else None
@@ -344,7 +455,8 @@ def main() -> int:
     html_path.parent.mkdir(parents=True, exist_ok=True)
 
     cov_summary, cov_files = load_lcov(lcov_path)
-    clang_tidy = load_clang_tidy(ct_path)
+    clang_tidy = load_linter_findings(ct_path)
+    clippy = load_linter_findings(clippy_path)
     codeql = load_codeql_csv(codeql_path)
     timestamp = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -356,6 +468,9 @@ def main() -> int:
         "branch_cov":             cov_summary.get("branch_pct") if cov_summary else None,
         "ct_errors":              clang_tidy["errors"]           if clang_tidy  else None,
         "ct_warnings":            clang_tidy["warnings"]         if clang_tidy  else None,
+        "clippy_errors":          clippy["errors"]               if clippy      else None,
+        "clippy_warnings":        clippy["warnings"]             if clippy      else None,
+        "clippy_total":           clippy["total"]                if clippy      else None,
         "codeql_errors":          codeql["errors"]               if codeql      else None,
         "codeql_warnings":        codeql["warnings"]             if codeql      else None,
         "codeql_recommendations": codeql["recommendations"]      if codeql      else None,
@@ -365,7 +480,7 @@ def main() -> int:
         save_history(hist_path, history)
 
     html_path.write_text(
-        render_dashboard(cov_summary, cov_files, clang_tidy, codeql, history, timestamp),
+        render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history, timestamp),
         encoding="utf-8",
     )
 
@@ -380,6 +495,10 @@ def main() -> int:
         print(f"  Clang-Tidy errors: {clang_tidy['errors']}  warnings: {clang_tidy['warnings']}")
     else:
         print("  Clang-Tidy: N/A")
+    if clippy:
+        print(f"  Clippy errors: {clippy['errors']}  warnings: {clippy['warnings']}")
+    else:
+        print("  Clippy: N/A")
     if codeql:
         print(f"  CodeQL errors: {codeql['errors']}  warnings: {codeql['warnings']}  recommendations: {codeql['recommendations']}")
     else:
@@ -387,7 +506,7 @@ def main() -> int:
 
     if args.github_summary:
         write_github_summary(
-            cov_summary, clang_tidy, codeql, history,
+            cov_summary, clang_tidy, clippy, codeql, history,
             os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"),
         )
 

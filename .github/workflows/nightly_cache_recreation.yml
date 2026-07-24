@@ -75,9 +75,9 @@ jobs:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
-  fetch-clang-tidy:
+  fetch-linters:
     needs: fetch-asan
-    uses: ./.github/workflows/_clang_tidy.yml
+    uses: ./.github/workflows/_linter.yml
     with:
       cache-mode: "recreate-update"
       fetch-only: "true"
@@ -88,7 +88,7 @@ jobs:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
   fetch-coverage:
-    needs: fetch-clang-tidy
+    needs: fetch-linters
     uses: ./.github/workflows/_coverage_report.yml
     with:
       cache-mode: "recreate-update"
@@ -165,9 +165,9 @@ jobs:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
-  build-clang-tidy:
+  build-linters:
     needs: fetch-qnx
-    uses: ./.github/workflows/_clang_tidy.yml
+    uses: ./.github/workflows/_linter.yml
     with:
       cache-mode: "recreate-update"
     permissions:
