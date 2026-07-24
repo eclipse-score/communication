@@ -828,5 +828,56 @@ TEST_F(ProxyTransactionLogRollbackFixture, FailureInRollingBackExistingTransacti
     EXPECT_EQ(proxy_, nullptr);
 }
 
+using ProxyIsEventProvidedFixture = ProxyMockedMemoryFixture;
+
+TEST_F(ProxyIsEventProvidedFixture, IsEventProvidedReturnsTrueForEventPresentInSharedMemory)
+{
+    // Given a service type deployment with the event mapped and the event initialised in shared memory
+    lola_service_deployment_.events_.emplace(std::string{kDummyEventName}, kDummyElementFqId.element_id_);
+    InitialiseDummySkeletonEvent(kDummyElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    ASSERT_NE(proxy_, nullptr);
+
+    // Then IsEventProvided returns true for the event present in shared memory
+    EXPECT_TRUE(proxy_->IsEventProvided(kDummyEventName));
+}
+
+TEST_F(ProxyIsEventProvidedFixture, IsEventProvidedReturnsFalseForEventNotPresentInSharedMemory)
+{
+    constexpr std::string_view kNotProvidedEventName{"not_provided_event"};
+    constexpr std::uint16_t kNotProvidedElementId{0x6U};
+
+    // Given a service type deployment with two mapped events, where only one has a corresponding skeleton event
+    lola_service_deployment_.events_.emplace(std::string{kDummyEventName}, kDummyElementFqId.element_id_);
+    lola_service_deployment_.events_.emplace(std::string{kNotProvidedEventName}, kNotProvidedElementId);
+    InitialiseDummySkeletonEvent(kDummyElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
+
+    // When creating a proxy
+    InitialiseProxyWithConstructor(identifier_);
+    ASSERT_NE(proxy_, nullptr);
+
+    // Then IsEventProvided returns false for the event not present in shared memory
+    EXPECT_FALSE(proxy_->IsEventProvided(kNotProvidedEventName));
+}
+
+using ProxyEventNameToElementFqIdConverterFixture = ProxyMockedMemoryFixture;
+
+TEST_F(ProxyEventNameToElementFqIdConverterFixture, ConvertReturnsExpectedElementFqIdForKnownEventName)
+{
+    // Given a service type deployment with a mapped event
+    lola_service_deployment_.events_.emplace(std::string{kDummyEventName}, kDummyElementFqId.element_id_);
+
+    // and a converter constructed from that deployment
+    const Proxy::EventNameToElementFqIdConverter converter{lola_service_deployment_, lola_service_instance_id_.GetId()};
+
+    // When converting the event name
+    const auto result = converter.Convert(kDummyEventName);
+
+    // Then the result matches the expected ElementFqId
+    EXPECT_EQ(result, kDummyElementFqId);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

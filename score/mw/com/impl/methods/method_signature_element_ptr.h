@@ -27,10 +27,23 @@ class MethodSignatureElementPtr
     /// \param ptr_active bool reference indicating, if the pointer is active. Will be set to true in ctor and set to
     /// false in dtor.
     /// \param queue_pos in which call-queue position this pointer is used.
-    explicit MethodSignatureElementPtr(SignatureElement& element, bool& ptr_active, std::size_t queue_pos)
+    MethodSignatureElementPtr(SignatureElement& element, bool& ptr_active, std::size_t queue_pos)
         : element_ptr_(&element), ptr_active_(ptr_active), queue_position_(queue_pos)
     {
         ptr_active_ = true;
+    }
+
+    /// \brief Converting constructor to allow conversion from a MethodSignatureElementPtr of a different signature
+    /// element type.
+    ///
+    /// This can be used if for example we want to point to a part of a type that is stored in a method slot. E.g. for
+    /// field setters/getters, we store a score::Result<T> in the method slot, but we want to return a
+    /// MethodReturTypePtr just to the T stored within it.
+    template <typename OtherSignatureElement>
+    MethodSignatureElementPtr(SignatureElement& element, MethodSignatureElementPtr<OtherSignatureElement>&& other)
+        : MethodSignatureElementPtr(element, other.ptr_active_, other.queue_position_)
+    {
+        other.element_ptr_ = nullptr;
     }
 
     MethodSignatureElementPtr(const MethodSignatureElementPtr&) = delete;
@@ -81,6 +94,9 @@ class MethodSignatureElementPtr
     }
 
   private:
+    template <typename>
+    friend class MethodSignatureElementPtr;
+
     SignatureElement* element_ptr_;
     bool& ptr_active_;
     std::size_t queue_position_;

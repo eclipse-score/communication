@@ -18,6 +18,7 @@
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/test/partial_restart/consumer_handle_notification_data.h"
 #include "score/mw/com/test/partial_restart/test_datatype.h"
+#include "score/scope_exit/scope_exit.h"
 
 #include <string>
 
@@ -41,12 +42,20 @@ bool StartFindServiceAndWait(const std::string& tag,
                              HandleNotificationData& handle_notification_data,
                              CheckPointControl& check_point_control)
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     //***************************************************
     // start find service
     //***************************************************
     std::cout << "Consumer Step: Call StartFindService" << std::endl;
     auto find_service_callback = [&tag, &check_point_control, &handle_notification_data](
                                      auto service_handle_container, auto find_service_handle) noexcept {
+        score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+            check_point_control.ErrorOccurred();
+        }};
+
         std::cerr << tag << ": find service handler called" << std::endl;
         if (service_handle_container.size() != 1)
         {
@@ -54,7 +63,6 @@ bool StartFindServiceAndWait(const std::string& tag,
                       << ": Error - StartFindService() is expected to find 1 service instance "
                          "but found: "
                       << service_handle_container.size() << std::endl;
-            check_point_control.ErrorOccurred();
             return;
         }
         std::lock_guard lock{handle_notification_data.mutex};
@@ -63,6 +71,7 @@ bool StartFindServiceAndWait(const std::string& tag,
         std::cerr << tag << ": FindServiceHandler handler done - found one service instance." << std::endl;
 
         std::ignore = TestServiceProxy::StopFindService(find_service_handle);
+        check_point_control_error_guard.Release();
     };
 
     auto find_service_handle_result =
@@ -87,10 +96,10 @@ bool StartFindServiceAndWait(const std::string& tag,
     if (!wait_result)
     {
         std::cerr << tag << ": Did not receive handle in time!" << std::endl;
-        check_point_control.ErrorOccurred();
         return false;
     }
 
+    check_point_control_error_guard.Release();
     return true;
 }
 
@@ -100,6 +109,10 @@ void PerformFirstConsumerActions(CheckPointControl& check_point_control,
                                  std::string_view mw_com_config_path,
                                  score::cpp::stop_token stop_token)
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     //***************************************************
     // Step (1)- initialize mw::com Runtime with correct config
     //***************************************************
@@ -154,7 +167,6 @@ void PerformFirstConsumerActions(CheckPointControl& check_point_control,
         {
             std::cout << "First Consumer Step (5): Failed to get new samples: " << get_new_samples_result.error()
                       << "\n";
-            check_point_control.ErrorOccurred();
             return;
         }
         samples_received += get_new_samples_result.value();
@@ -177,9 +189,10 @@ void PerformFirstConsumerActions(CheckPointControl& check_point_control,
     {
         std::cerr << "Provider Step (P.3): Unexpected proceed instruction received: "
                   << static_cast<int>(proceed_instruction) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
+
+    check_point_control_error_guard.Release();
 }
 
 void PerformSecondConsumerActions(CheckPointControl& check_point_control,
@@ -187,6 +200,10 @@ void PerformSecondConsumerActions(CheckPointControl& check_point_control,
                                   score::cpp::stop_token stop_token,
                                   const size_t create_proxy_and_receive_M_times)
 {
+    score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        check_point_control.ErrorOccurred();
+    }};
+
     //***************************************************
     // Step (1)- initialize mw::com Runtime with correct config
     //***************************************************
@@ -244,7 +261,6 @@ void PerformSecondConsumerActions(CheckPointControl& check_point_control,
             {
                 std::cout << "Second Consumer Step (5): Failed to get new samples: " << get_new_samples_result.error()
                           << "\n";
-                check_point_control.ErrorOccurred();
                 return;
             }
             samples_received += get_new_samples_result.value();
@@ -273,7 +289,6 @@ void PerformSecondConsumerActions(CheckPointControl& check_point_control,
         {
             std::cerr << "Second Consumer Step (8): Unexpected instruction received: "
                       << static_cast<int>(proceed_instruction) << std::endl;
-            check_point_control.ErrorOccurred();
             return;
         }
 
@@ -290,9 +305,10 @@ void PerformSecondConsumerActions(CheckPointControl& check_point_control,
     {
         std::cerr << "Second Consumer Step (9): Unexpected instruction received: "
                   << static_cast<int>(proceed_instruction) << std::endl;
-        check_point_control.ErrorOccurred();
         return;
     }
+
+    check_point_control_error_guard.Release();
 }
 
 }  // namespace score::mw::com::test

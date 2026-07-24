@@ -2149,13 +2149,13 @@ section "com" {
 
                 The SubscriptionState expresses the state of a event or field subscription on the consumer/proxy side. The semantics of the enum values shall be:
 
-                * {{kSubscribed}}: Subscription has been successfully acknowledged by the provider side and has not been withdrawn by the provider (implicitly by stop-offer of the enclosing service or a negative acknowlege/refusal of the subscribe)
+                * {{kSubscribed}}: Subscription has been successfully acknowledged by the provider side and the consumer has not been notified that the service is no longer offered (either the provider has called stop_offer() or crashed).
 
                 * {{kNotSubscribed}}:In case of the following cases:
 
-                  * Subscribe() has not been called or the last Subscribe() has been withdrawn with call to Unsubscribe()
+                  * Subscribe() has not been called or the last successful Subscribe() has been withdrawn with call to Unsubscribe()
 
-                  * Last call to Subscribe() has been rejected/negatively acknowledged by the provider side or provider side explicitly cancels an already acknowldged subscription.
+                  * Last call to Subscribe() has been rejected/negatively acknowledged by the provider side.
 
                 * {{kSubscriptionPending}}:
 
@@ -2165,7 +2165,9 @@ section "com" {
 
                   ** has been already dispatched to the provider side, but acknowlegde from provider side is pending
 
-                  * state was already in {{kSubscribed}}, but then the whole enclosing providing service instance has been stopped offering. This is the "auto-reconnect mode". As soon as the service instance is detected being offered again, the Subscribe() will get automatically dispatched to the provider again.'''
+                  * state was already in {{kSubscribed}}, but then the consumer has been notified that the whole enclosing providing service instance has stopped offering. This is the "auto-reconnect mode". As soon as the consumer is notified that the service instance is being offered again, the state would transition back to {{kSubscribed}}.'''
+
+                note = "The notification to the consumer that the provider has stopped offering may be delayed"
                 safety = ScoreReq.Asil.B
                 derived_from = [Communication.ProducerConsumerPattern@1]
                 version = 1

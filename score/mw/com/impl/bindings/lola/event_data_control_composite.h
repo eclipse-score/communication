@@ -18,7 +18,7 @@
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 
-#include "score/memory/shared/atomic_indirector.h"
+#include "score/concurrency/atomic_indirector.h"
 
 #include <functional>
 
@@ -34,7 +34,7 @@ class EventDataControlCompositeAttorney;
 /// whole codebase, we implemented this composite which takes care of setting the status correctly in all underlying
 /// control structures. Please be aware that the control structures will live in different shared memory segments, thus
 /// it is not possible to store them by value, but rather as pointer.
-template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
+template <template <class> class AtomicIndirectorType = concurrency::AtomicIndirectorReal>
 class EventDataControlComposite
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -63,7 +63,12 @@ class EventDataControlComposite
     explicit EventDataControlComposite(
         ProviderEventDataControlLocalView<AtomicIndirectorType>& asil_qm_control_local,
         ProviderEventDataControlLocalView<AtomicIndirectorType>* const asil_b_control_local);
-
+    /// \brief SampleAllocateePtr stores a raw pointer to this object, so any copy or move would silently invalidate
+    /// that pointer, causing undefined behaviour.
+    EventDataControlComposite(const EventDataControlComposite&) = delete;
+    EventDataControlComposite& operator=(const EventDataControlComposite&) = delete;
+    EventDataControlComposite(EventDataControlComposite&&) = delete;
+    EventDataControlComposite& operator=(EventDataControlComposite&&) = delete;
     /// \brief Checks for the oldest unused slot and acquires for writing (thread-safe, wait-free)
     ///
     /// \details This method will perform retries (bounded) on data-races. In order to ensure that _always_

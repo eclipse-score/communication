@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/lola/sample_ptr.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
@@ -63,11 +64,10 @@ TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<SampleType>
     const auto& binding_ptr_variant = SampleAllocateePtrView{sample_data_ptr}.GetUnderlyingVariant();
     auto visitor = score::cpp::overload(
         [](const lola::SampleAllocateePtr<SampleType>& lola_ptr) -> TracingData {
-            const auto& event_data_control_composite =
+            const lola::EventDataControlComposite<>& event_data_control_composite =
                 lola::SampleAllocateePtrView{lola_ptr}.GetEventDataControlComposite();
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite.has_value());
             const auto referenced_slot = lola_ptr.GetReferencedSlot();
-            const auto sample_timestamp = event_data_control_composite->GetEventSlotTimestamp(referenced_slot);
+            const auto sample_timestamp = event_data_control_composite.GetEventSlotTimestamp(referenced_slot);
             static_assert(
                 sizeof(lola::EventSlotStatus::EventTimeStamp) ==
                     sizeof(impl::tracing::ITracingRuntime::TracePointDataId),
@@ -107,7 +107,7 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
     auto& binding_ptr_variant = SampleAllocateePtrMutableView{sample_data_ptr}.GetUnderlyingVariant();
     auto visitor = score::cpp::overload(
         [](lola::SampleAllocateePtr<SampleType>& lola_ptr) -> TypeErasedSamplePtr {
-            auto& consumer_event_data_control_local =
+            lola::ConsumerEventDataControlLocalView<>& consumer_event_data_control_local =
                 lola::SampleAllocateePtrMutableView{lola_ptr}.GetConsumerEventDataControlLocalView();
 
             const auto event_slot_index = lola_ptr.GetReferencedSlot();

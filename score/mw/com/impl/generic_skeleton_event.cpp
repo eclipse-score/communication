@@ -76,7 +76,7 @@ Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
     }
     auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
 
-    auto result = binding->Allocate();
+    auto result = binding->Allocate(sample_allocatee_tracker_->Allocate());
 
     if (!result.has_value())
     {

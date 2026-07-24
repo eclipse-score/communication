@@ -1,0 +1,132 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *******************************************************************************/
+
+#include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
+#include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
+#include "score/mw/com/test/fields/field_initial_value/test_datatype.h"
+#include "score/mw/com/types.h"
+
+#include <optional>
+
+#include <chrono>
+#include <cstddef>
+#include <future>
+#include <iostream>
+#include <string>
+#include <thread>
+
+namespace score::mw::com::test
+{
+
+namespace
+{
+
+constexpr auto kMaxNumSamples{1U};
+
+const std::string kInterprocessNotificationShmPath{"/field_initial_value_interprocess_notification"};
+
+void run_client(const std::size_t num_retries, const std::chrono::milliseconds retry_backoff_time)
+{
+    using score::mw::com::test::TestDataProxy;
+
+    auto process_synchronizer_result = ProcessSynchronizer::Create(kInterprocessNotificationShmPath);
+    if (!process_synchronizer_result.has_value())
+    {
+        FailTest("Unable to create ProcessSynchronizer");
+    }
+
+    auto instance_specifier_result = InstanceSpecifier::Create(std::string{kInstanceSpecifierString});
+    if (!instance_specifier_result.has_value())
+    {
+        FailTest("Unable to create instance specifier");
+    }
+    auto instance_specifier = std::move(instance_specifier_result).value();
+
+    std::promise<std::vector<TestDataProxy::HandleType>> service_discovery_promise{};
+    auto service_discovery_future = service_discovery_promise.get_future();
+    auto lola_proxy_handles_result = TestDataProxy::StartFindService(
+        [moved_service_discovery_promise = std::move(service_discovery_promise)](auto handles, auto handle) mutable {
+            moved_service_discovery_promise.set_value(handles);
+            score::cpp::ignore = TestDataProxy::StopFindService(handle);
+        },
+        std::move(instance_specifier));
+
+    if (!lola_proxy_handles_result.has_value())
+    {
+        FailTest("Unable to get handles");
+    }
+
+    auto lola_proxy_handles = service_discovery_future.get();
+    if (lola_proxy_handles.empty())
+    {
+        FailTest("Unable to find lola service");
+    }
+
+    auto lola_proxy_result = TestDataProxy::Create(lola_proxy_handles[0]);
+    if (!lola_proxy_result.has_value())
+    {
+        FailTest("Unable to create lola proxy");
+    }
+    auto& lola_proxy = lola_proxy_result.value();
+    std::optional<std::int32_t> received_value;
+
+    std::ignore = lola_proxy.test_field.Subscribe(kMaxNumSamples);
+    std::size_t retries = num_retries;
+    while (lola_proxy.test_field.GetSubscriptionState() != score::mw::com::impl::SubscriptionState::kSubscribed)
+    {
+        std::this_thread::sleep_for(retry_backoff_time);
+        retries--;
+        if (retries <= 0)
+        {
+            FailTest("Subscription failed");
+        }
+    }
+    std::ignore = lola_proxy.test_field.GetNewSamples(
+        [&received_value](const auto& sample_ptr) noexcept {
+            received_value = *sample_ptr;
+        },
+        kMaxNumSamples);
+
+    lola_proxy.test_field.Unsubscribe();
+
+    if (!received_value.has_value())
+    {
+        FailTest("Lola didn't receive a sample");
+    }
+
+    if (received_value.value() != kTestValue)
+    {
+        FailTest("Received value does not match expected value");
+    }
+
+    process_synchronizer_result->Notify();
+}
+
+}  // namespace
+
+}  // namespace score::mw::com::test
+
+int main(int argc, const char** argv)
+{
+    using Parameters = score::mw::com::test::SctfTestRunner::RunParameters::Parameters;
+
+    const std::vector<Parameters> allowed_parameters{Parameters::NUM_RETRIES, Parameters::RETRY_BACKOFF_TIME};
+    score::mw::com::test::SctfTestRunner test_runner(argc, argv, allowed_parameters);
+    const auto& run_parameters = test_runner.GetRunParameters();
+    const auto num_retries = run_parameters.GetNumRetries();
+    const auto retry_backoff_time = run_parameters.GetRetryBackoffTime();
+
+    score::mw::com::test::run_client(num_retries, retry_backoff_time);
+    return EXIT_SUCCESS;
+}

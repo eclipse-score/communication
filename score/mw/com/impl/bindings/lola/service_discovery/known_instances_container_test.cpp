@@ -112,6 +112,19 @@ TEST_F(KnownInstancesContainerTest, CanRemoveInstance)
     EXPECT_FALSE(unit_.Empty());
 }
 
+TEST_F(KnownInstancesContainerTest, RemovingIdentifierWithoutInstanceIdIsANoOp)
+{
+    // Given a container with an instance already added
+    unit_.Insert(kEnrichedInstanceIdentifier1);
+
+    // When removing an identifier that has no instance ID
+    unit_.Remove(kEnrichedInstanceIdentifierAny);
+
+    // Then the container is unchanged
+    EXPECT_FALSE(unit_.Empty());
+    EXPECT_THAT(unit_.GetKnownHandles(kEnrichedInstanceIdentifierAny), Contains(kHandleTypeAny1));
+}
+
 TEST_F(KnownInstancesContainerTest, GetKnownHandlesReturnsMatchingSpecificInstance)
 {
     unit_.Insert(kEnrichedInstanceIdentifier1);

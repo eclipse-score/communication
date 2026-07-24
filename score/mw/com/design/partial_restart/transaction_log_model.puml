@@ -24,7 +24,7 @@ class "lola::TransactionLogSet" {
   +RollbackProxyTransactions(const TransactionLogId&, TransactionLogLocalView::DereferenceSlotCallback,TransactionLogLocalView::DereferenceSlotCallback) : Result<void>
   +RollbackSkeletonTracingTransactions(TransactionLogLocalView::DereferenceSlotCallback) : Result<void>
   +RegisterProxyElement(const TransactionLogId&) : score::Result<TransactionLogIndex>
-  +RegisterSkeletonTracingElement() : TransactionLogIndex
+  +RegisterSkeletonTransactionLog() : TransactionLogIndex
   +Unregister(TransactionLogIndex) : void
   +GetTransactionLog(TransactionLogIndex) : TransactionLog&
   +MarkTransactionLogsNeedRollback(const TransactionLogId& ) : void

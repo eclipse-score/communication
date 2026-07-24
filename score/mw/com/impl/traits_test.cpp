@@ -708,7 +708,7 @@ class SkeletonCreationFixture : public ::testing::Test
         ON_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillByDefault(Return(resolved_instance_identifiers_));
 
         // By default the skeleton binding will report that all methods were correctly registered
-        ON_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+        ON_CALL(skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
 
         // By default the skeleton and service element bindings will report that offer service preparation succeeded
         ON_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));
@@ -1018,11 +1018,11 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     EXPECT_CALL(skeleton_field_binding_mock_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // and that Send is called on the event binding once for the event and once for the field
-    EXPECT_CALL(skeleton_event_binding_mock_, Send(event_value, _));
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(field_value, _));
+    EXPECT_CALL(skeleton_event_binding_mock_, Send(event_value, _, _));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(field_value, _, _));
 
-    // and that VerifyAllMethodsRegistered returns true because there are no methods to register
-    EXPECT_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillOnce(Return(true));
+    // and that VerifyAllMethodHandlersRegistered returns true because there are no methods to register
+    EXPECT_CALL(skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillOnce(Return(true));
 
     // And that PrepareOffer is called on the skeleton binding and event / field
     EXPECT_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _))
@@ -1099,7 +1099,7 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
         }));
 
         // By default the skeleton binding will report that all methods were correctly registered
-        ON_CALL(skeleton_binding_mock_2_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+        ON_CALL(skeleton_binding_mock_2_, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
 
         // By default the skeleton and service element bindings will report that offer service preparation succeeded
         ON_CALL(skeleton_binding_mock_2_, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));

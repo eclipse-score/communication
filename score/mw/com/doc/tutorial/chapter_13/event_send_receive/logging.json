@@ -1,0 +1,7 @@
+{
+    "appId": "EVSR",
+    "appDesc": "event_send_receive_example",
+    "logLevel": "kInfo",
+    "logLevelThresholdConsole": "kInfo",
+    "logMode": "kConsole"
+}

@@ -97,7 +97,7 @@ cc_library(
     deps = [
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory:string_literal",
+        "@score_baselibs//score/string_manipulation:string_literal",
     ],
 )
 
@@ -112,6 +112,8 @@ cc_library(
         ":runtime",
         ":types",
         "//score/mw/com/impl",
+        "//score/mw/com/impl/mocking:proxy_wrapper_class_test_view",
+        "//score/mw/com/impl/mocking:skeleton_wrapper_class_test_view",
         "//score/mw/com/impl/mocking:test_type_utilities",
         "//score/mw/com/mocking:i_runtime",
         "//score/mw/com/mocking:test_type_utilities",

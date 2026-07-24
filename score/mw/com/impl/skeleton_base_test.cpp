@@ -137,7 +137,7 @@ class SkeletonBaseFixture : public ::testing::Test
         binding_mock_ = &GetMockBinding(*skeleton_);
         ASSERT_NE(binding_mock_, nullptr);
         ON_CALL(*binding_mock_, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
-        ON_CALL(*binding_mock_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+        ON_CALL(*binding_mock_, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
     }
 
     void ExpectOfferService() noexcept
@@ -219,7 +219,7 @@ TEST_F(SkeletonBaseOfferFixture, OfferService)
     ExpectOfferService();
 
     // and expecting that Send is called on the event binding with the initial value
-    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _));
+    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _, _));
 
     // and the initial field value is set
     std::ignore = skeleton_->dummy_field.Update(kInitialFieldValue);
@@ -237,8 +237,8 @@ TEST_F(SkeletonBaseOfferFixture, OfferServiceFailsIfAllMethodsHaveNotBeenRegiste
     // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
     CreateSkeleton(GetInstanceIdentifierWithValidBinding());
 
-    // When VerifyAllMethodsRegistered returns false
-    EXPECT_CALL(*binding_mock_, VerifyAllMethodsRegistered()).WillOnce(Return(false));
+    // When VerifyAllMethodHandlersRegistered returns false
+    EXPECT_CALL(*binding_mock_, VerifyAllMethodHandlersRegistered()).WillOnce(Return(false));
 
     // When offering a Service
     const auto offer_result = skeleton_->OfferService();
@@ -396,7 +396,7 @@ TEST_F(SkeletonBaseStopOfferFixture, PrepareStopOffer)
     ExpectStopOfferService();
 
     // and expecting that Send is called on the event binding with the initial value
-    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _));
+    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _, _));
 
     // and the initial field value is set
     std::ignore = skeleton_->dummy_field.Update(kInitialFieldValue);
@@ -492,7 +492,7 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingServi
     mock_binding::Skeleton& binding_mock = GetMockBinding(skeleton);
 
     ON_CALL(binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
-    ON_CALL(binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+    ON_CALL(binding_mock, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
 
     // Expecting that PrepareOffer gets called on the skeleton binding and each event twice, each time OfferService is
     // called (i.e. total of 6)
@@ -503,7 +503,7 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingServi
     EXPECT_CALL(service_discovery_mock_, OfferService(_)).Times(2);
 
     // and expecting that Send is called on the event binding once with the initial value
-    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _));
+    EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _, _));
 
     // and the initial field value is set
     std::ignore = skeleton.dummy_field.Update(kInitialFieldValue);
@@ -543,7 +543,7 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterCallingStopOfferServi
         mock_binding::Skeleton& binding_mock = GetMockBinding(skeleton);
 
         ON_CALL(binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
-        ON_CALL(binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+        ON_CALL(binding_mock, VerifyAllMethodHandlersRegistered()).WillByDefault(Return(true));
 
         // Expecting that PrepareOffer gets called on the skeleton binding and each event twice
         EXPECT_CALL(binding_mock, PrepareOffer(_, _, _))
@@ -576,7 +576,7 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterCallingStopOfferServi
         EXPECT_CALL(service_discovery_mock_, OfferService(_)).Times(2);
 
         // and expecting that Send is called on the event binding with the initial value
-        EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _));
+        EXPECT_CALL(*field_binding_mock_, Send(kInitialFieldValue, _, _));
 
         // and the initial field value is set
         std::ignore = skeleton.dummy_field.Update(kInitialFieldValue);

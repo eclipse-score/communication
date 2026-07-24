@@ -1,0 +1,47 @@
+bazel_dep(name = "score_communication", version = "0.0.0")
+local_path_override(
+    module_name = "score_communication",
+    path = "..",
+)
+
+bazel_dep(name = "rules_cc", version = "0.1.5")
+bazel_dep(name = "score_baselibs", version = "0.2.9")
+git_override(
+    module_name = "score_baselibs",
+    commit = "1571d37834543d781abb268b8038f5649fe367c2",
+    patch_strip = 1,
+    # Patch baselibs with a QNX8 workaround for poll
+    # until a fix is provided by the QNX SDP
+    patches = ["//:restore_qnx8_poll_workaround.patch"],
+    remote = "https://github.com/eclipse-score/baselibs.git",
+)
+
+single_version_override(
+    module_name = "rules_swift",
+    version = "3.1.2",
+)
+
+bazel_dep(name = "lobster", version = "1.0.3")
+git_override(
+    module_name = "lobster",
+    commit = "07382c33f95e22992e0f8788c0537ec06877e51f",
+    remote = "https://github.com/bmw-software-engineering/lobster.git",
+)
+
+# Only required to build the example, shall be replaceable with nearly every other C++ Toolchain setup
+bazel_dep(name = "score_bazel_platforms", version = "0.1.2", dev_dependency = True)
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.4", dev_dependency = True)
+
+score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
+score_gcc.toolchain(
+    name = "score_gcc_x86_64_toolchain",
+    target_cpu = "x86_64",
+    target_os = "linux",
+    use_base_constraints_only = True,
+    use_default_package = True,
+    version = "12.2.0",
+)
+use_repo(
+    score_gcc,
+    "score_gcc_x86_64_toolchain",
+)

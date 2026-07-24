@@ -14,7 +14,10 @@
 #define SCORE_MW_COM_IMPL_SKELETON_EVENT_BINDING_H
 
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include "score/result/result.h"
@@ -78,7 +81,7 @@ class SkeletonEventBinding : public SkeletonEventBindingBase
 
     /// \brief SampleType is allocated by the user and provided to the middleware to send
     /// \return On failure, returns an error code.
-    virtual Result<void> Send(const SampleType&, std::optional<SendTraceCallback>) noexcept = 0;
+    virtual Result<void> Send(const SampleType&, std::optional<SendTraceCallback>, SampleAllocateeGuard) noexcept = 0;
 
     /// \brief SampleType is previously allocated by middleware and provided by the user to indicate that he is finished
     /// filling the provided pointer with live.
@@ -87,7 +90,10 @@ class SkeletonEventBinding : public SkeletonEventBindingBase
 
     /// \brief Allocates memory for SampleType for the user to fill it. This is especially necessary for Zero-Copy
     /// implementations.
-    virtual Result<SampleAllocateePtr<SampleType>> Allocate() noexcept = 0;
+    virtual Result<SampleAllocateePtr<SampleType>> Allocate(SampleAllocateeGuard guard) noexcept = 0;
+
+    /// \brief Retrieves the latest sample, intended to support the getter of a SkeletonField.
+    virtual Result<SamplePtr<SampleType>> GetLatestSample(QualityType quality_type) = 0;
 
     std::size_t GetMaxSize() const noexcept override
     {

@@ -163,10 +163,16 @@ jobs:
           run: bazel build --config=qnx -- //score/...
         - name: Test QNX
           if: inputs.fetch_only != 'true'
+          id: run-tests
           env:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           run: bazel test --config=qnx -- //score/...
+        - name: Upload failed Bazel test logs
+          if: inputs.fetch_only != 'true' && failure() && steps.run-tests.outcome == 'failure'
+          uses: ./.github/actions/00_infrastructure/upload_bazel_testlogs_on_failure
+          with:
+            artifact-name: bazel-testlogs-qnx
         - name: Fetch dependencies (--nobuild)
           if: inputs.fetch_only == 'true'
           env:

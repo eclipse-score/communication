@@ -13,10 +13,10 @@
 #include "score/mw/com/test/move_semantics/skeleton_event/consumer.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/proxy_container.h"
 #include "score/mw/com/test/common_test_resources/proxy_event_receiver.h"
 #include "score/mw/com/test/common_test_resources/proxy_event_state_change_notifier.h"
-#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/move_semantics/skeleton_event/test_event_datatype.h"
 #include "score/mw/com/types.h"
 

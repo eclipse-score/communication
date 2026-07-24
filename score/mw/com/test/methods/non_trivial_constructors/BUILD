@@ -40,8 +40,8 @@ cc_library(
     implementation_deps = [
         ":test_method_datatype",
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:proxy_container",
-        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
     ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -56,8 +56,8 @@ cc_library(
     deps = [
         ":test_method_datatype",
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:skeleton_container",
-        "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
     ],
 )
 
@@ -73,6 +73,7 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
+        "//score/mw/com/test/methods/methods_test_resources:common_resources",
     ],
 )
 
@@ -87,6 +88,7 @@ cc_binary(
         ":consumer",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
+        "//score/mw/com/test/methods/methods_test_resources:common_resources",
     ],
 )
 

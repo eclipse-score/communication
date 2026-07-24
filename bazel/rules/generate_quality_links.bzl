@@ -36,23 +36,59 @@ def _generate_quality_links_impl(ctx):
     docs_version = ctx.var.get("DOCS_VERSION", "")
     docs_base_url = ctx.var.get("DOCS_BASE_URL", "").rstrip("/")
 
+    release_coverage_asset_url = ""
+    if docs_base_url.startswith("https://"):
+        url_without_scheme = docs_base_url[8:]
+        url_parts = url_without_scheme.split("/")
+        if len(url_parts) >= 2:
+            host = url_parts[0]
+            repo = url_parts[1]
+            if host.endswith(".github.io") and repo:
+                owner = host[:-len(".github.io")]
+                if owner.endswith("."):
+                    owner = owner[:-1]
+                if owner:
+                    release_coverage_asset_url = (
+                        "https://github.com/" + owner + "/" + repo +
+                        "/releases/download/" + docs_version + "/" +
+                        repo + "_coverage_report_" + docs_version + ".zip"
+                    )
+
     if docs_version == "latest":
         # quality reports are published alongside the latest/ docs
         coverage_ref = "`Coverage report <quality/coverage/index.html>`__"
         dashboard_ref = "`Quality Dashboard <quality/index.html>`__"
         clang_tidy_ref = "`Clang-Tidy report <quality/clang_tidy_findings.txt>`__"
         codeql_ref = "`CodeQL findings <quality/codeql_findings.txt>`__"
+        codeql_integrity_ref = "`Database integrity <quality/codeql/database_integrity_report.md>`__"
+        codeql_deviations_ref = "`Deviations <quality/codeql/deviations_report.md>`__"
+        codeql_compliance_ref = "`Compliance summary <quality/codeql/guideline_compliance_summary.md>`__"
+        codeql_recat_ref = "`Recategorizations <quality/codeql/guideline_recategorizations_report.md>`__"
     elif docs_version and docs_base_url:
         # versioned release — quality reports only live at latest/
         latest = docs_base_url + "/latest"
-        coverage_ref = ("`Coverage report (latest) <" + latest +
-                        "/quality/coverage/index.html>`__")
+        if release_coverage_asset_url:
+            coverage_ref = (
+                "`Coverage report (release artifact) <" +
+                release_coverage_asset_url + ">`__"
+            )
+        else:
+            coverage_ref = ("`Coverage report (latest) <" + latest +
+                            "/quality/coverage/index.html>`__")
         dashboard_ref = ("`Quality Dashboard (latest) <" + latest +
                          "/quality/index.html>`__")
         clang_tidy_ref = ("`Clang-Tidy report (latest) <" + latest +
                           "/quality/clang_tidy_findings.txt>`__")
         codeql_ref = ("`CodeQL findings (latest) <" + latest +
                       "/quality/codeql_findings.txt>`__")
+        codeql_integrity_ref = ("`Database integrity (latest) <" + latest +
+                                "/quality/codeql/database_integrity_report.md>`__")
+        codeql_deviations_ref = ("`Deviations (latest) <" + latest +
+                                 "/quality/codeql/deviations_report.md>`__")
+        codeql_compliance_ref = ("`Compliance summary (latest) <" + latest +
+                                 "/quality/codeql/guideline_compliance_summary.md>`__")
+        codeql_recat_ref = ("`Recategorizations (latest) <" + latest +
+                            "/quality/codeql/guideline_recategorizations_report.md>`__")
     else:
         # local build — no published reports; show the equivalent bazel command
         coverage_ref = (
@@ -70,12 +106,24 @@ def _generate_quality_links_impl(ctx):
             "*local build* — run " +
             "``bazel run //quality/static_analysis:codeql_lint``"
         )
+        codeql_report_hint = (
+            "*local build* — run " +
+            "``bazel run //quality/static_analysis:codeql_lint``"
+        )
+        codeql_integrity_ref = codeql_report_hint
+        codeql_deviations_ref = codeql_report_hint
+        codeql_compliance_ref = codeql_report_hint
+        codeql_recat_ref = codeql_report_hint
     content = (
         ":orphan:\n\n" +
         ".. |coverage_report_link| replace:: " + coverage_ref + "\n" +
         ".. |quality_dashboard_link| replace:: " + dashboard_ref + "\n" +
         ".. |clang_tidy_report_link| replace:: " + clang_tidy_ref + "\n" +
-        ".. |codeql_report_link| replace:: " + codeql_ref + "\n"
+        ".. |codeql_report_link| replace:: " + codeql_ref + "\n" +
+        ".. |codeql_integrity_report_link| replace:: " + codeql_integrity_ref + "\n" +
+        ".. |codeql_deviations_report_link| replace:: " + codeql_deviations_ref + "\n" +
+        ".. |codeql_compliance_report_link| replace:: " + codeql_compliance_ref + "\n" +
+        ".. |codeql_recat_report_link| replace:: " + codeql_recat_ref + "\n"
     )
 
     output = ctx.actions.declare_file(ctx.label.name + ".rst")

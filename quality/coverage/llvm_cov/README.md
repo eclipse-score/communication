@@ -92,7 +92,7 @@ merger.py --coverage_dir=<path>           \
 
 1. Reads the list of per-test zip files from `--reports_file`
 2. Extracts profdata + metadata from each zip
-3. Merges all profdata into a single `merged_coverage.profdata` via `llvm-profdata merge`
+3. Merges all per-test profdata artifacts into a single `merged_coverage.profdata` via `llvm-profdata merge`. For baseline-only archives (files not covered by test binaries), the reporter uses `llvm-cov --empty-profile` so baseline coverage no longer depends on synthesizing a baseline profdata file. If no reports are present (or no valid profdata/object files are extracted), the reporter exits early with an empty output file, matching Bazel's empty-coverage behavior.
 4. Generates three output formats:
    - **HTML report** via `llvm-cov show --format=html` with branch counts and expansion views
    - **LCOV data** via `llvm-cov export --format=lcov` (backward compatibility with dashboards)
@@ -105,6 +105,8 @@ merger.py --coverage_dir=<path>           \
 reporter.py --reports_file=<path>   \
             --output_file=<path>
 ```
+
+When invoked via the Bazel wrapper, these core args are accompanied by wrapper-injected arguments (such as `--coverage_allowlist`, `--baseline_objects`, and `--workspace_root`).
 
 **Source filtering:**
 

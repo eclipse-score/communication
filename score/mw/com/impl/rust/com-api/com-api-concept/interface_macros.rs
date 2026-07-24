@@ -59,7 +59,7 @@
 /// mod abc {
 ///     use com_api_concept::interface;
 ///     interface!(
-///         interface Vehicle, {
+///         interface Vehicle {
 ///             Id = "AbcInterface",
 ///             left_tire: Event<Tire>,
 ///             exhaust: Event<Exhaust>,
@@ -86,13 +86,25 @@ macro_rules! interface {
     };
 
     // Custom unique Id provided by the user
-    (interface $id:ident, {
+    (interface $id:ident {
         Id = $uid:expr,
         $($event_name:ident : Event<$event_type:ty>),+ $(,)?
     }) => {
         $crate::interface_common!($id, $uid);
         $crate::interface_consumer!($id, $($event_name, Event<$event_type>),+);
         $crate::interface_producer!($id, $($event_name, Event<$event_type>),+);
+    };
+
+    // This is for backward compatibility for existing users with comma (,)
+    (interface $id:ident, {
+        Id = $uid:expr,
+        $($event_name:ident : Event<$event_type:ty>),+ $(,)?
+    }) => {
+        $crate::interface! {
+            interface $id {
+            Id = $uid,
+            $($event_name : Event<$event_type>),+
+        }}
     };
 
     (interface $id:ident { $($event_name:ident : Method<$event_type:ty>),+$(,)? }) => {
@@ -292,7 +304,7 @@ mod tests {
     ///     }
     ///
     ///     interface!(
-    ///         interface Vehicle,{
+    ///         interface Vehicle {
     ///            Id = "CustomVehicleInterface",
     ///             left_tire: Event<Tire>,
     ///             exhaust: Event<Exhaust>,
@@ -306,6 +318,40 @@ mod tests {
     ///   trait implementations for the Vehicle interface.
     #[cfg(doctest)]
     fn interface_macro_with_custom_id() {}
+
+    /// ```
+    /// mod my_module {
+    ///     use com_api::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher};
+    ///
+    ///     #[derive(Debug, Reloc)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire {
+    ///         const ID: &'static str = "Tire";
+    ///     }
+    ///
+    ///     #[derive(Debug, Reloc)]
+    ///     #[repr(C)]
+    ///     pub struct Exhaust {}
+    ///     impl CommData for Exhaust {
+    ///         const ID: &'static str = "Exhaust";
+    ///     }
+    ///
+    ///     interface!(
+    ///         interface Vehicle, {
+    ///            Id = "CustomVehicleInterface",
+    ///             left_tire: Event<Tire>,
+    ///             exhaust: Event<Exhaust>,
+    ///         }
+    ///     );
+    /// }
+    /// ```
+    /// This will generate the following types and trait implementations:
+    /// - `VehicleInterface` struct with `INTERFACE_ID = "CustomVehicleInterface"`
+    /// - `VehicleConsumer<R>`, `VehicleProducer<R>`, `VehicleOfferedProducer<R>` with appropriate
+    ///   trait implementations for the Vehicle interface.
+    #[cfg(doctest)]
+    fn interface_macro_with_custom_id_with_comma_for_backend_compatibility() {}
 
     /// ```compile_fail
     /// mod my_module {
@@ -326,7 +372,7 @@ mod tests {
     ///     }
     ///
     ///     interface!(
-    ///         interface Vehicle,{
+    ///         interface Vehicle {
     ///            Id = "CustomVehicleInterface",
     ///             left_tire: Method<Tire>,
     ///             exhaust: Method<Exhaust>,

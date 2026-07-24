@@ -183,6 +183,21 @@ TEST_F(ServiceDiscoveryClientWithFakeFileSystemStopOfferFixture, StopOfferingSer
     EXPECT_EQ(stop_offer_service_result.error(), ComErrc::kBindingFailure);
 }
 
+TEST_F(ServiceDiscoveryClientWithFakeFileSystemStopOfferFixture, StopOfferServiceWithUnknownQualitySelectorReturnsError)
+{
+    // Given a ServiceDiscoveryClient with an offered service
+    WhichContainsAServiceDiscoveryClient();
+    score::cpp::ignore = service_discovery_client_->OfferService(kConfigStoreQm1.GetInstanceIdentifier());
+
+    // When stopping the offer with an unknown/invalid quality type selector
+    const auto stop_offer_result = service_discovery_client_->StopOfferService(
+        kConfigStoreQm1.GetInstanceIdentifier(), static_cast<IServiceDiscovery::QualityTypeSelector>(99));
+
+    // Then an error is returned
+    ASSERT_FALSE(stop_offer_result.has_value());
+    EXPECT_EQ(stop_offer_result.error(), ComErrc::kBindingFailure);
+}
+
 TEST_F(ServiceDiscoveryClientWithFakeFileSystemStopOfferFixture,
        StopOfferingServiceThatWasAlreadyStopOfferedreturnsError)
 {

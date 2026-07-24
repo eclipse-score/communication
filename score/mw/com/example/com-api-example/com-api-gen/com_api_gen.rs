@@ -40,7 +40,7 @@ pub struct Exhaust {}
 // - VehicleOfferedProducer<R> struct that implements OfferedProducer trait for offering
 //   "left_tire" and "exhaust" events.
 interface!(
-    interface Vehicle, {
+    interface Vehicle {
         Id = "VehicleInterface",
         left_tire: Event<Tire>,
         exhaust: Event<Exhaust>,

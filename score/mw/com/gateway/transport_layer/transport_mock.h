@@ -23,7 +23,7 @@ namespace score::mw::com::gateway
 class TransportMock : public Transport
 {
   public:
-    MOCK_METHOD(bool, IsMemorySharingSupported, (), (override));
+    MOCK_METHOD(bool, IsMemorySharingSupported, (), (const, override));
     MOCK_METHOD(score::Result<void>, Setup, (), (override));
     MOCK_METHOD(void, Shutdown, (), (override));
     MOCK_METHOD(score::Result<void>,

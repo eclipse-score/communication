@@ -15,9 +15,9 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Server notification lost, incomplete, corrupted, delayed, or spurious", "MessagePassingFMEA.NotificationNotDelivered")
+$TopEvent("Server notification lost, incomplete, corrupted, delayed, or spurious", "MessagePassing.NotificationNotDelivered")
 
-$OrGate("OG1", "MessagePassingFMEA.NotificationNotDelivered")
+$OrGate("OG1", "MessagePassing.NotificationNotDelivered")
 
 $BasicEvent("Notification dropped because max_queued_notifies is zero or exhausted", "BE_NotifyQueueExhausted", "OG1")
 $BasicEvent("Notification exceeds configured max_notify_size and is rejected", "BE_NotifyTooBig", "OG1")

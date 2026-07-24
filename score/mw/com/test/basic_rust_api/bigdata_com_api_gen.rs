@@ -94,7 +94,7 @@ impl Debug for DummyDataStamped {
 }
 
 interface!(
-    interface BigData, {
+    interface BigData {
         Id = "BigDataInterface",
         map_api_lanes_stamped_: Event<MapApiLanesStamped>,
         dummy_data_stamped_: Event<DummyDataStamped>,
@@ -206,5 +206,5 @@ define_com_type!(
     }
 );
 
-interface!(interface MixedPrimitives, { Id = "MixedPrimitivesInterface", mixed_event: Event<MixedPrimitivesPayload> });
-interface!(interface ComplexStruct, { Id = "ComplexStructInterface", complex_event: Event<ComplexStruct> });
+interface!(interface MixedPrimitives { Id = "MixedPrimitivesInterface", mixed_event: Event<MixedPrimitivesPayload> });
+interface!(interface ComplexStruct { Id = "ComplexStructInterface", complex_event: Event<ComplexStruct> });

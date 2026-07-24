@@ -574,25 +574,33 @@ TEST_F(ClientConnectionTest, SuccessfullySyncConnectingAtFirstAttemptThenExplici
 
 TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenFirstReadDisconnected)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "client connection established successfully");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
+    ::testing::Test::RecordProperty("when", "protocol receive returns ``EPIPE``");
     AtProtocolReceive_Return(0, score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE)));
     AtPosixEndpointUnregistration_InvokeDisconnect();
     ExpectCleanUpOwner(connection);
     ExpectCloseFd();
     InvokeEndpointInput();
+    ::testing::Test::RecordProperty("then", "connection stops with reason ``kClosedByPeer``");
     EXPECT_EQ(connection.GetState(), State::kStopped);
     EXPECT_EQ(connection.GetStopReason(), StopReason::kClosedByPeer);
 }
 
 TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenSpuriousReadGetsIgnored)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "client connection established successfully");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
+    ::testing::Test::RecordProperty("when", "protocol receive returns ``EAGAIN`` (spurious wake-up)");
     AtProtocolReceive_Return(0, score::cpp::make_unexpected(score::os::Error::createFromErrno(EAGAIN)));
     InvokeEndpointInput();
+    ::testing::Test::RecordProperty("then", "connection remains in ``kReady`` state");
     EXPECT_EQ(connection.GetState(), State::kReady);
 
     StopCurrentConnection(connection);
@@ -600,12 +608,16 @@ TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenSpuriousRea
 
 TEST_F(ClientConnectionTest, NotConnectedSendNotReady)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.SendBufferArgumentValidation");
+    ::testing::Test::RecordProperty("given", "client connection not yet connected");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
 
     std::array<std::uint8_t, kMaxSendSize> send_buffer;
     std::array<std::uint8_t, kMaxReplySize> reply_buffer;
 
+    ::testing::Test::RecordProperty("when", "``Send``, ``SendWaitReply``, or ``SendWithCallback`` is called");
     auto send_result = connection.Send(send_buffer);
+    ::testing::Test::RecordProperty("then", "each call returns ``EINVAL``");
     EXPECT_FALSE(send_result);
     EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), EINVAL);
 
@@ -631,13 +643,18 @@ TEST_F(ClientConnectionTest, ConnectedRestartdDoesNothing)
 
 TEST_F(ClientConnectionTest, SendTooLarge)
 {
+    ::testing::Test::RecordProperty("Verifies",
+                                    "MessagePassing.SendBufferArgumentValidation, MessagePassing.BE_MessageTooBig");
+    ::testing::Test::RecordProperty("given", "client connection established with ``max_send_size = kMaxSendSize``");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
     std::array<std::uint8_t, kMaxSendSize + 1> send_buffer;
     std::array<std::uint8_t, kMaxReplySize> reply_buffer;
 
+    ::testing::Test::RecordProperty("when", "any send variant is called with a buffer larger than ``kMaxSendSize``");
     auto send_result = connection.Send(send_buffer);
+    ::testing::Test::RecordProperty("then", "each call returns ``EMSGSIZE``");
     EXPECT_FALSE(send_result);
     EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), EMSGSIZE);
 
@@ -683,6 +700,8 @@ TEST_F(ClientConnectionTest, SendIsDirectWithFullyOrderedAndEmptyQueue)
 
 TEST_F(ClientConnectionTest, GivenTrulyAsyncWhenSendIsCalledItIsQueued)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.BE_SendQueueExhausted");
+    ::testing::Test::RecordProperty("given", "truly-async client connection with send queue capacity of 2");
     client_config_.max_queued_sends = 2;
     // Given Truly Async
     client_config_.truly_async = true;
@@ -691,8 +710,10 @@ TEST_F(ClientConnectionTest, GivenTrulyAsyncWhenSendIsCalledItIsQueued)
 
     CatchSendQueueCommand();
 
+    ::testing::Test::RecordProperty("when", "three ``Send`` calls are made before the queue is flushed");
     std::array<std::uint8_t, kMaxSendSize> send_buffer;
     auto send_result = connection.Send(send_buffer);
+    ::testing::Test::RecordProperty("then", "first two succeed, third returns ``ENOBUFS``");
     EXPECT_TRUE(send_result);
 
     send_result = connection.Send(send_buffer);
@@ -716,14 +737,18 @@ TEST_F(ClientConnectionTest, GivenTrulyAsyncWhenSendIsCalledItIsQueued)
 
 TEST_F(ClientConnectionTest, SendIsNotQueuedIfTrulyAsyncButNoSlots)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.BE_SendQueueExhausted");
+    ::testing::Test::RecordProperty("given", "truly-async client connection with send queue capacity of 0");
     // this is a meaningless case, but as we check for it in the implementation, we shall cover it
     client_config_.max_queued_sends = 0;
     client_config_.truly_async = true;
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
+    ::testing::Test::RecordProperty("when", "``Send`` is called");
     std::array<std::uint8_t, kMaxSendSize> send_buffer;
     auto send_result = connection.Send(send_buffer);
+    ::testing::Test::RecordProperty("then", "call returns ``ENOBUFS``");
     EXPECT_FALSE(send_result);
     EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), ENOBUFS);
 
@@ -732,6 +757,9 @@ TEST_F(ClientConnectionTest, SendIsNotQueuedIfTrulyAsyncButNoSlots)
 
 TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenCalledInCallback)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.SendBufferArgumentValidation");
+    ::testing::Test::RecordProperty("given",
+                                    "client connection established and a callback is executing on the callback thread");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
@@ -739,8 +767,10 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenCalledInCallback)
     std::array<std::uint8_t, kMaxReplySize> reply_buffer;
 
     on_callback_thread_ = true;
+    ::testing::Test::RecordProperty("when", "``SendWaitReply`` is called from within the callback");
     auto send_wait_reply_result = connection.SendWaitReply(send_buffer, reply_buffer);
     on_callback_thread_ = false;
+    ::testing::Test::RecordProperty("then", "call returns ``EAGAIN``");
     EXPECT_FALSE(send_wait_reply_result);
     EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), EAGAIN);
 
@@ -749,16 +779,21 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenCalledInCallback)
 
 TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenCannotSendMessageDirectly)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "client connection established");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
     std::array<std::uint8_t, kMaxSendSize> send_buffer;
     std::array<std::uint8_t, kMaxReplySize> reply_buffer;
 
+    ::testing::Test::RecordProperty("when",
+                                    "``SendWaitReply`` is called but ``SendProtocolMessage`` returns ``EPIPE``");
     EXPECT_CALL(*engine_, SendProtocolMessage)
         .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE))));
 
     auto send_wait_reply_result = connection.SendWaitReply(send_buffer, reply_buffer);
+    ::testing::Test::RecordProperty("then", "``SendWaitReply`` returns ``EPIPE``");
     EXPECT_FALSE(send_wait_reply_result);
     EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), EPIPE);
 
@@ -767,6 +802,8 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenCannotSendMessageDirectly)
 
 TEST_F(ClientConnectionTest, SendWaitReplyFailsDirectlyButUnblocksQueue)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "truly-async client connection with a message already queued");
     client_config_.truly_async = true;
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
@@ -784,7 +821,9 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsDirectlyButUnblocksQueue)
 
     CatchSendQueueCommand();
 
+    ::testing::Test::RecordProperty("when", "``SendWaitReply`` fails immediately with ``EPIPE``");
     auto send_wait_reply_result = connection.SendWaitReply(send_buffer, reply_buffer);
+    ::testing::Test::RecordProperty("then", "queued send is unblocked and dispatched via the next queue command");
     EXPECT_FALSE(send_wait_reply_result);
     EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), EPIPE);
 
@@ -796,6 +835,8 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsDirectlyButUnblocksQueue)
 
 TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenCannotQueueMessage)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.BE_SendQueueExhausted");
+    ::testing::Test::RecordProperty("given", "truly-async client connection with one send queue slot already occupied");
     client_config_.max_queued_sends = 1;  // explicitly
     client_config_.truly_async = true;    // make sure Send goes into queue
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
@@ -810,8 +851,10 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenCannotQueueMessage)
     auto send_result = connection.Send(send_buffer);
     EXPECT_TRUE(send_result);
 
+    ::testing::Test::RecordProperty("when", "``SendWaitReply`` is called");
     // second send shall fail as we only have one slot in the send queue
     auto send_wait_reply_result = connection.SendWaitReply(send_buffer, reply_buffer);
+    ::testing::Test::RecordProperty("then", "call returns ``ENOBUFS``");
     EXPECT_FALSE(send_wait_reply_result);
     EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), ENOBUFS);
 
@@ -823,6 +866,9 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenCannotQueueMessage)
 
 TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenQueuedMessageCancels)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty(
+        "given", "truly-async client connection with a ``SendWaitReply`` blocked waiting for a reply");
     client_config_.max_queued_sends = 2;
     client_config_.truly_async = true;
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
@@ -852,19 +898,25 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenQueuedMessageCancels)
     // unblock queue, it shall send both messages
     InvokeSendQueueCommand();
 
+    ::testing::Test::RecordProperty("when", "connection is stopped before the server sends the reply");
     // close connection without replying to SendWaitReply
     StopCurrentConnection(connection);
+    ::testing::Test::RecordProperty("then", "``SendWaitReply`` returns ``EPIPE``");
     background_thread_.join();
 }
 
 TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenReceiveTooLong)
 {
+    ::testing::Test::RecordProperty("Verifies",
+                                    "MessagePassing.SendBufferArgumentValidation, MessagePassing.BE_MessageTooBig");
+    ::testing::Test::RecordProperty("given", "client connection established with ``max_reply_size = kMaxReplySize``");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
     std::array<std::uint8_t, kMaxSendSize> send_buffer;
     std::array<std::uint8_t, kMaxReplySize> reply_buffer;
 
+    ::testing::Test::RecordProperty("when", "server sends a reply larger than ``kMaxReplySize``");
     EXPECT_CALL(*engine_, SendProtocolMessage).WillOnce([&](auto&&...) {
         std::array<std::uint8_t, kMaxReplySize + 1> long_reply_buffer;
         AtProtocolReceive_Return(score::cpp::to_underlying(detail::ServerToClient::REPLY), long_reply_buffer);
@@ -873,6 +925,7 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenReceiveTooLong)
     });
 
     auto send_wait_reply_result = connection.SendWaitReply(send_buffer, reply_buffer);
+    ::testing::Test::RecordProperty("then", "``SendWaitReply`` returns ``EMSGSIZE``");
     EXPECT_FALSE(send_wait_reply_result);
     EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), EMSGSIZE);
 
@@ -881,15 +934,20 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenReceiveTooLong)
 
 TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotSendMessageDirectly)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "client connection established");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
     std::array<std::uint8_t, kMaxSendSize> send_buffer;
 
+    ::testing::Test::RecordProperty("when",
+                                    "``SendWithCallback`` is called but ``SendProtocolMessage`` returns ``EPIPE``");
     EXPECT_CALL(*engine_, SendProtocolMessage)
         .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE))));
 
     auto send_with_callback_result = connection.SendWithCallback(send_buffer, IClientConnection::ReplyCallback{});
+    ::testing::Test::RecordProperty("then", "``SendWithCallback`` returns ``EPIPE``");
     EXPECT_FALSE(send_with_callback_result);
     EXPECT_EQ(send_with_callback_result.error().GetOsDependentErrorCode(), EPIPE);
 
@@ -898,6 +956,8 @@ TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotSendMessageDirectly)
 
 TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotQueueMessage)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.BE_SendQueueExhausted");
+    ::testing::Test::RecordProperty("given", "client connection with no async reply slots and no send queue slots");
     // without truly_async, the first SendWithCallback is not queued and does not need async reply slots
     client_config_.max_async_replies = 0;
     client_config_.max_queued_sends = 0;
@@ -912,8 +972,11 @@ TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotQueueMessage)
     auto send_with_callback_result = connection.SendWithCallback(send_buffer, [](auto&&) {});
     EXPECT_TRUE(send_with_callback_result);
 
+    ::testing::Test::RecordProperty(
+        "when", "``SendWithCallback`` is called a second time while the first reply is still pending");
     // second send shall fail as we only have one slot in the send queue
     send_with_callback_result = connection.SendWithCallback(send_buffer, [](auto&&) {});
+    ::testing::Test::RecordProperty("then", "second call returns ``ENOBUFS``");
     EXPECT_FALSE(send_with_callback_result);
     EXPECT_EQ(send_with_callback_result.error().GetOsDependentErrorCode(), ENOBUFS);
 
@@ -922,6 +985,9 @@ TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotQueueMessage)
 
 TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotQueueMessageTrulyAsync)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.BE_SendQueueExhausted");
+    ::testing::Test::RecordProperty("given",
+                                    "truly-async client connection with no async reply slots and no send queue slots");
     client_config_.truly_async = true;
     client_config_.max_async_replies = 0;
     client_config_.max_queued_sends = 0;
@@ -930,8 +996,10 @@ TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotQueueMessageTrulyAsy
 
     std::array<std::uint8_t, kMaxSendSize> send_buffer;
 
+    ::testing::Test::RecordProperty("when", "``SendWithCallback`` is called");
     // first send shall fail
     auto send_with_callback_result = connection.SendWithCallback(send_buffer, [](auto&&) {});
+    ::testing::Test::RecordProperty("then", "call immediately returns ``ENOBUFS``");
     EXPECT_EQ(send_with_callback_result.error().GetOsDependentErrorCode(), ENOBUFS);
 
     StopCurrentConnection(connection);
@@ -939,6 +1007,9 @@ TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotQueueMessageTrulyAsy
 
 TEST_F(ClientConnectionTest, SendWithCallbackReportsFailureWhenQueuedSendFailsTrulyAsync)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty(
+        "given", "truly-async client connection with one async reply slot and a send queued for dispatch");
     client_config_.truly_async = true;
     client_config_.max_async_replies = 1;
     client_config_.max_queued_sends = 0;
@@ -956,16 +1027,21 @@ TEST_F(ClientConnectionTest, SendWithCallbackReportsFailureWhenQueuedSendFailsTr
     });
     EXPECT_TRUE(send_with_callback_result);
 
+    ::testing::Test::RecordProperty("when", "the queued send dispatches but ``SendProtocolMessage`` returns ``EPIPE``");
     EXPECT_CALL(*engine_, SendProtocolMessage)
         .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE))));
 
     InvokeSendQueueCommand();
+    ::testing::Test::RecordProperty("then", "the reply callback is invoked with ``EPIPE``");
 
     StopCurrentConnection(connection);
 }
 
 TEST_F(ClientConnectionTest, SendWithCallbackStillHasItsSlotBusyWhenQueuedSendHappensTrulyAsync)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.BE_SendQueueExhausted");
+    ::testing::Test::RecordProperty(
+        "given", "truly-async client connection with one async reply slot busy with a pending ``SendWithCallback``");
     client_config_.truly_async = true;
     client_config_.max_async_replies = 1;
     client_config_.max_queued_sends = 0;
@@ -983,6 +1059,8 @@ TEST_F(ClientConnectionTest, SendWithCallbackStillHasItsSlotBusyWhenQueuedSendHa
     });
     EXPECT_TRUE(send_with_callback_result);
 
+    ::testing::Test::RecordProperty(
+        "when", "queued send dispatches and a second ``SendWithCallback`` is attempted concurrently");
     EXPECT_CALL(*engine_, SendProtocolMessage).WillOnce([&](auto&&...) {
         // with max_async_replies = 1, that single internal slot queued data shall still be busy.
         // (if it's not the case, we may have data corruption if we try to send data concurrently)
@@ -992,6 +1070,8 @@ TEST_F(ClientConnectionTest, SendWithCallbackStillHasItsSlotBusyWhenQueuedSendHa
         return score::cpp::make_unexpected(score::os::Error::createFromErrno(EPIPE));
     });
 
+    ::testing::Test::RecordProperty("then",
+                                    "second ``SendWithCallback`` returns ``ENOBUFS`` preventing concurrent slot reuse");
     InvokeSendQueueCommand();
 
     StopCurrentConnection(connection);
@@ -999,6 +1079,9 @@ TEST_F(ClientConnectionTest, SendWithCallbackStillHasItsSlotBusyWhenQueuedSendHa
 
 TEST_F(ClientConnectionTest, QueuedSendsCancelIfConnectionClosed)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty(
+        "given", "truly-async client connection with queued sends and a ``SendWaitReply`` pending reply");
     client_config_.max_queued_sends = 4;
     client_config_.truly_async = true;
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
@@ -1035,48 +1118,62 @@ TEST_F(ClientConnectionTest, QueuedSendsCancelIfConnectionClosed)
     });
     EXPECT_TRUE(send_with_callback_result);
 
+    ::testing::Test::RecordProperty("when", "connection is stopped before any reply is received");
     StopCurrentConnection(connection);
+    ::testing::Test::RecordProperty("then", "all pending callbacks and ``SendWaitReply`` receive ``EPIPE``");
     background_thread_.join();
 }
 
 TEST_F(ClientConnectionTest, ConnectedStopsIfReceivesIoError)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "client connection established");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
+    ::testing::Test::RecordProperty("when", "protocol receive returns ``EIO``");
     AtProtocolReceive_Return(0, score::cpp::make_unexpected(score::os::Error::createFromErrno(EIO)));
     AtPosixEndpointUnregistration_InvokeDisconnect();
     ExpectCleanUpOwner(connection);
     ExpectCloseFd();
     InvokeEndpointInput();
+    ::testing::Test::RecordProperty("then", "connection stops with reason ``kIoError``");
     EXPECT_EQ(connection.GetState(), State::kStopped);
     EXPECT_EQ(connection.GetStopReason(), StopReason::kIoError);
 }
 
 TEST_F(ClientConnectionTest, ConnectedStopsIfReceivesInvalidCode)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "client connection established");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
+    ::testing::Test::RecordProperty("when", "protocol receive returns an unrecognised message code");
     AtProtocolReceive_Return(score::cpp::to_underlying(detail::ServerToClient::NOTIFY) + 1, {});
     AtPosixEndpointUnregistration_InvokeDisconnect();
     ExpectCleanUpOwner(connection);
     ExpectCloseFd();
     InvokeEndpointInput();
+    ::testing::Test::RecordProperty("then", "connection stops with reason ``kIoError``");
     EXPECT_EQ(connection.GetState(), State::kStopped);
     EXPECT_EQ(connection.GetStopReason(), StopReason::kIoError);
 }
 
 TEST_F(ClientConnectionTest, ConnectedStopsIfReceivesReplyWithoutSend)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "MessagePassing.OsIpcFaultHandling");
+    ::testing::Test::RecordProperty("given", "client connection established with no pending ``SendWaitReply``");
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
+    ::testing::Test::RecordProperty("when", "a ``REPLY`` message arrives unexpectedly");
     AtProtocolReceive_Return(score::cpp::to_underlying(detail::ServerToClient::REPLY), {});
     AtPosixEndpointUnregistration_InvokeDisconnect();
     ExpectCleanUpOwner(connection);
     ExpectCloseFd();
     InvokeEndpointInput();
+    ::testing::Test::RecordProperty("then", "connection stops with reason ``kIoError``");
     EXPECT_EQ(connection.GetState(), State::kStopped);
     EXPECT_EQ(connection.GetStopReason(), StopReason::kIoError);
 }

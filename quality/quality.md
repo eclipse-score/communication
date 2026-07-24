@@ -104,6 +104,11 @@ This single command automatically:
 2. Generates SARIF file (JSON with 274+ findings)
 3. Generates 4 Markdown reports from SARIF + database
 
+The markdown reports are written to `bazel-out/analysis_reports/` for local runs.
+When `--output-dir` is used, they are written to `<output-dir>/analysis_reports/` instead.
+In CI, the nightly workflow copies that directory into `/tmp/codeql-results/analysis_reports/`
+before publishing the artifact.
+
 #### Generated Reports
 
 The following markdown files are automatically created in `bazel-out/analysis_reports/`:

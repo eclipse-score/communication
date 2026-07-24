@@ -42,17 +42,72 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola/messaging:__pkg__"],
 )
 
+# A common library for configuration validation and parsing. It shall be used by both strategies (JSON & Flatbuffers) parsers.
+cc_library(
+    name = "i_configuration_parsing_strategy",
+    srcs = ["i_configuration_parsing_strategy.cpp"],
+    hdrs = ["i_configuration_parsing_strategy.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/configuration:__subpackages__",
+    ],
+    deps = [
+        ":configuration_local",
+    ],
+)
+
+cc_library(
+    name = "configuration_json_parsing_strategy",
+    srcs = ["configuration_json_parsing_strategy.cpp"],
+    hdrs = ["configuration_json_parsing_strategy.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":config_validate",
+        ":lola_service_instance_deployment",
+        ":quality_type",
+        ":service_type_deployment",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/quality/compiler_warnings",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/configuration:__subpackages__",
+    ],
+    deps = [
+        ":configuration_local",
+        ":i_configuration_parsing_strategy",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "config_validate",
+    srcs = ["config_validate.cpp"],
+    hdrs = ["config_validate.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/configuration:__subpackages__",
+    ],
+    deps = [
+        ":configuration_local",
+        ":lola_service_instance_deployment",
+        ":lola_service_type_deployment",
+        "//score/mw/com/impl:instance_specifier",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
 cc_library(
     name = "config_parser",
     srcs = ["config_parser.cpp"],
     hdrs = ["config_parser.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        ":lola_service_instance_deployment",
-        ":quality_type",
-        ":service_type_deployment",
-        "@score_baselibs//score/mw/log",
-        "@score_baselibs//score/quality/compiler_warnings",
+        ":configuration_json_parsing_strategy",
     ],
     tags = ["FFI"],
     visibility = [
@@ -214,6 +269,7 @@ cc_library(
     srcs = ["lola_method_instance_deployment.cpp"],
     hdrs = ["lola_method_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [":configuration_common_resources"],
     tags = ["FFI"],
     deps = ["@score_baselibs//score/json"],
 )
@@ -416,6 +472,34 @@ cc_unit_test(
     ],
     deps = [
         ":config_parser",
+        ":configuration_json_parsing_strategy",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_unit_test(
+    name = "configuration_json_parsing_strategy_test",
+    srcs = ["configuration_json_parsing_strategy_test.cpp"],
+    data = ["example/mw_com_config.json"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":configuration_json_parsing_strategy",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_unit_test(
+    name = "config_validate_test",
+    srcs = ["config_validate_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":config_validate",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
@@ -501,9 +585,13 @@ cc_unit_test(
 cc_unit_test(
     name = "lola_method_instance_deployment_test",
     srcs = ["lola_method_instance_deployment_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
     deps = [
         ":lola_method_instance_deployment",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 

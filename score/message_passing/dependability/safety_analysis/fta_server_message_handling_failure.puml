@@ -15,9 +15,9 @@
 
 !include fta_metamodel.puml
 
-$TopEvent("Server fails to process a received message or produce a required reply", "MessagePassingFMEA.ServerMessageHandlingFailure")
+$TopEvent("Server fails to process a received message or produce a required reply", "MessagePassing.ServerMessageHandlingFailure")
 
-$OrGate("OG1", "MessagePassingFMEA.ServerMessageHandlingFailure")
+$OrGate("OG1", "MessagePassing.ServerMessageHandlingFailure")
 
 $BasicEvent("Message handler does not call Reply within OnMessageSentWithReply", "BE_HandlerNoReply", "OG1")
 $BasicEvent("Message handler returns an error that is not propagated to the client", "BE_HandlerErrorUnpropagated", "OG1")

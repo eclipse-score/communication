@@ -16,13 +16,14 @@ name: Deploy Documentation to GitHub Pages
 
 on:
   push:
-#     branches: [main]
+    branches: [main]
     tags: ['v*']
   pull_request:
     branches: [main]
     paths:
       - 'docs/**'
       - '.github/workflows/deploy_docs.yml'
+      - '.github/actions/10_docs/build_sphinx_package/action.yml'
   workflow_dispatch:
   workflow_run:
     workflows: ["Nightly Quality Jobs"]
@@ -72,54 +73,15 @@ jobs:
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build Sphinx documentation
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          BASE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
-          SOURCE_ROOT="https://github.com/${{ github.repository }}/blob/main/"
-          bazel build //docs/sphinx:sphinx_doc \
-            --define=DOCS_VERSION="${VERSION}" \
-            --define=DOCS_BASE_URL="${BASE_URL}" \
-            --define=LOBSTER_SOURCE_ROOT="${SOURCE_ROOT}"
-
-      - name: Prepare documentation output
-        run: |
-          mkdir -p docs_output
-          cp -r bazel-bin/docs/sphinx/sphinx_doc/html/* docs_output/ || \
-            cp -r bazel-out/k8-fastbuild/bin/docs/sphinx/sphinx_doc/html/* docs_output/ || true
-          # Fix read-only permissions from Bazel output
-          chmod -R u+w docs_output/
-          # Prevent Jekyll from ignoring _static directories
-          touch docs_output/.nojekyll
-          # Inject version flyout CSS and JS into all HTML files
-          # Use shared path so all versions use the same files
-          REPO_NAME="${{ github.event.repository.name }}"
-          CSS_TAG="<link rel=\"stylesheet\" type=\"text/css\" href=\"/${REPO_NAME}/_shared/css/version_flyout.css\" />"
-          JS_TAG="<script src=\"/${REPO_NAME}/_shared/js/version_flyout.js\"></script>"
-          find docs_output -name '*.html' -exec sed -i \
-            "s|</head>|${CSS_TAG}\n</head>|" {} +
-          find docs_output -name '*.html' -exec sed -i \
-            "s|</body>|${JS_TAG}\n</body>|" {} +
-
-      - name: Verify build output
-        run: |
-          if [ ! -f docs_output/index.html ]; then
-            echo "::error::Documentation build failed - no index.html found"
-            exit 1
-          fi
-          echo "Documentation built successfully"
-          echo "Files generated:"
-          find docs_output -type f | head -20 || true  # head closes the pipe early, causing find to get SIGPIPE. prevents set -e from failing the step
-
-      - name: Upload docs to release
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          tar czf "docs-${VERSION}.tar.gz" -C docs_output .
-          gh release create "${VERSION}" --draft=false --notes "Release ${VERSION}" 2>/dev/null || true
-          gh release upload "${VERSION}" "docs-${VERSION}.tar.gz" --clobber
+      - name: Build and package Sphinx documentation
+        uses: ./.github/actions/10_docs/build_sphinx_package
+        with:
+          docs-version: ${{ steps.version.outputs.version }}
+          docs-base-url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          lobster-source-root: https://github.com/${{ github.repository }}/blob/main/
+          repository-name: ${{ github.event.repository.name }}
+          output-dir: docs_output
+          archive-name: docs-${{ steps.version.outputs.version }}.tar.gz
 
       - name: Download previously released versions
         if: github.event_name != 'pull_request'

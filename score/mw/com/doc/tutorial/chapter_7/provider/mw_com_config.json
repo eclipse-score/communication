@@ -1,0 +1,78 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/mw/com/tutorial/TirePressureService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 8712,
+          "fields": [
+            {
+              "fieldName": "tire_pressure_front_left",
+              "fieldId": 1
+            },
+            {
+              "fieldName": "tire_pressure_front_right",
+              "fieldId": 2
+            },
+            {
+              "fieldName": "tire_pressure_rear_left",
+              "fieldId": 3
+            },
+            {
+              "fieldName": "tire_pressure_rear_right",
+              "fieldId": 4
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "MyTirePressureServiceInstance",
+      "serviceTypeName": "/score/mw/com/tutorial/TirePressureService",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "tire_pressure_front_left",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "fieldName": "tire_pressure_front_right",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "fieldName": "tire_pressure_rear_left",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "fieldName": "tire_pressure_rear_right",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM",
+    "applicationID": 42
+  }
+}

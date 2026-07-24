@@ -17,6 +17,10 @@
 
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/mocking/proxy_event_mock.h"
+#include "score/mw/com/impl/mocking/proxy_wrapper_class_test_view.h"
+#include "score/mw/com/impl/mocking/skeleton_event_mock.h"
+#include "score/mw/com/impl/mocking/skeleton_wrapper_class_test_view.h"
 #include "score/mw/com/impl/mocking/test_type_utilities.h"
 #include "score/mw/com/mocking/i_runtime.h"
 
@@ -37,6 +41,35 @@ void InjectRuntimeMock(IRuntime& runtime_mock);
 }
 
 using HandleType = impl::HandleType;
+
+template <typename SampleType>
+using ProxyEventMock = impl::ProxyEventMock<SampleType>;
+
+template <typename ProxyWrapperClass>
+using ProxyWrapperClassTestView = impl::ProxyWrapperClassTestView<ProxyWrapperClass>;
+
+template <typename EventType>
+using NamedProxyEventMock = impl::NamedProxyEventMock<EventType>;
+
+template <typename FieldType>
+using NamedProxyFieldMock = impl::NamedProxyFieldMock<FieldType>;
+
+using SkeletonBaseMock = impl::SkeletonBaseMock;
+
+template <typename SampleType>
+using SkeletonEventMock = impl::SkeletonEventMock<SampleType>;
+
+template <typename SampleType>
+using SkeletonFieldMock = impl::SkeletonFieldMock<SampleType>;
+
+template <typename SkeletonWrapperClass>
+using SkeletonWrapperClassTestView = impl::SkeletonWrapperClassTestView<SkeletonWrapperClass>;
+
+template <typename EventType>
+using NamedSkeletonEventMock = impl::NamedSkeletonEventMock<EventType>;
+
+template <typename FieldType, typename... Tags>
+using NamedSkeletonFieldMock = impl::NamedSkeletonFieldMock<FieldType, Tags...>;
 
 InstanceIdentifier MakeFakeInstanceIdentifier(const std::uint16_t unique_identifier);
 

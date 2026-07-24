@@ -249,6 +249,25 @@ TEST_F(ServiceDiscoveryClientWithFakeFileSystemOfferServiceFixture, RemovesFlagF
     EXPECT_FALSE(filesystem_mock_.standard->Exists(flag_file_path_.front()).value());
 }
 
+TEST_F(ServiceDiscoveryClientWithFakeFileSystemOfferServiceFixture,
+       OfferAsilBServiceWhenQmFlagFileCreationFailsReturnsError)
+{
+    // Given that ASIL_B flag file creation succeeds but QM flag file creation fails
+    const auto flag_file_qm_string_regex = GetServiceDiscoveryPath() / ".*asil-qm.*";
+    ON_CALL(*file_factory_mock_, Open(::testing::MatchesRegex(flag_file_qm_string_regex), _))
+        .WillByDefault(Return(ByMove(
+            score::MakeUnexpected<std::unique_ptr<std::iostream>>(filesystem::ErrorCode::kCouldNotOpenFileStream))));
+
+    WhichContainsAServiceDiscoveryClient();
+
+    // When offering an ASIL_B service
+    const auto result = service_discovery_client_->OfferService(kConfigStoreAsilB.GetInstanceIdentifier());
+
+    // Then an error is returned because the QM flag file could not be created
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kServiceNotOffered);
+}
+
 TEST_F(ServiceDiscoveryClientWithFakeFileSystemOfferServiceFixture, OfferingServiceWithInvalidQualityTypeReturnsError)
 {
     // Given a ServiceDiscoveryClient and a service configuration with an invalid quality type

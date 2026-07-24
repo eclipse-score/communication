@@ -117,12 +117,76 @@ else
   # Copy the raw LCOV data for later archiving.
   cp "${COVERAGE_REPORT}" "${TMPDIR_EXTRACT}/lcov.dat"
 
+  echo "Building collected coverage allowlist for QNX..."
+  # coverage_scope depends on Linux-only dependable element indices.
+  # Build it in the host/default config and reuse the workspace-relative allowlist for QNX filtering.
+  bazel build --config=qnx //quality/coverage:coverage_scope --output_groups=allowlist
+  ALLOWLIST_FILE="$(bazel info bazel-bin)/quality/coverage/coverage_scope_allowlist.txt"
+  if [[ ! -f "${ALLOWLIST_FILE}" ]]; then
+    echo "ERROR: Allowlist file not found at ${ALLOWLIST_FILE}" >&2
+    exit 1
+  fi
+
+  # Collect zero-coverage baseline LCOV records so that files not exercised by
+  # any test still appear in the HTML report with 0% coverage, rather than
+  # being silently omitted. Two sources contribute: (a) baseline_coverage.dat
+  # files placed alongside each coverage.dat by the Bazel coverage runner, and
+  # (b) _cc_coverage.dat files produced by dedicated baseline_coverage_test
+  # targets for C++ translation units that the GCOV runner handles separately.
+  BASELINE_LCOV="${TMPDIR_EXTRACT}/baseline_lcov.dat"
+  BASELINE_COUNT=0
+  LCOV_INPUT_LIST="${BUILD_WORKSPACE_DIRECTORY}/bazel-out/_coverage/lcov_files.tmp"
+  if [[ -f "${LCOV_INPUT_LIST}" ]]; then
+    # Collect baseline coverage next to each coverage.dat listed by Bazel.
+    # Some runners list baseline_coverage.dat directly, others only coverage.dat.
+    while IFS= read -r lcov_input; do
+      if [[ "${lcov_input}" == *"/baseline_coverage.dat" ]]; then
+        if [[ -f "${lcov_input}" ]]; then
+          printf "\n" >> "${BASELINE_LCOV}"
+          cat "${lcov_input}" >> "${BASELINE_LCOV}"
+          printf "\n" >> "${BASELINE_LCOV}"
+          BASELINE_COUNT=$((BASELINE_COUNT + 1))
+        fi
+        continue
+      fi
+      if [[ "${lcov_input}" == *"/coverage.dat" ]]; then
+        baseline_input="${lcov_input%coverage.dat}baseline_coverage.dat"
+        if [[ -f "${baseline_input}" ]]; then
+          printf "\n" >> "${BASELINE_LCOV}"
+          cat "${baseline_input}" >> "${BASELINE_LCOV}"
+          printf "\n" >> "${BASELINE_LCOV}"
+          BASELINE_COUNT=$((BASELINE_COUNT + 1))
+        fi
+      fi
+    done < <(sort -u "${LCOV_INPUT_LIST}")
+  fi
+
+  # Some baseline records with full DA line data are emitted through dedicated
+  # baseline_coverage_test targets and only exist as _cc_coverage.dat files.
+  # Merge them as additional baseline input.
+  while IFS= read -r cc_baseline; do
+    printf "\n" >> "${BASELINE_LCOV}"
+    cat "${cc_baseline}" >> "${BASELINE_LCOV}"
+    printf "\n" >> "${BASELINE_LCOV}"
+    BASELINE_COUNT=$((BASELINE_COUNT + 1))
+  done < <(find -L "${BUILD_WORKSPACE_DIRECTORY}/bazel-out" \
+    -path "*/testlogs/*/baseline_coverage_test/_coverage/_cc_coverage.dat" \
+    -type f | sort -u)
+
   echo "Generating HTML report from LCOV data..."
-  bazel run //quality/coverage:lcov_to_html -- \
-    --lcov "${TMPDIR_EXTRACT}/lcov.dat" \
-    --output-dir "${OUTPUT_DIR}" \
-    --source-root "${BUILD_WORKSPACE_DIRECTORY}" \
-    --filter-regexes "${BUILD_WORKSPACE_DIRECTORY}/quality/coverage/llvm_cov/filter_regexes.txt"
+  LCOV_TO_HTML_ARGS=(
+    --lcov "${TMPDIR_EXTRACT}/lcov.dat"
+    --output-dir "${OUTPUT_DIR}"
+    --source-root "${BUILD_WORKSPACE_DIRECTORY}"
+    --allowlist "${ALLOWLIST_FILE}"
+  )
+
+  if [[ -s "${BASELINE_LCOV}" ]]; then
+    echo "Merging ${BASELINE_COUNT} baseline_coverage.dat files into report input..."
+    LCOV_TO_HTML_ARGS+=(--baseline-lcov "${BASELINE_LCOV}")
+  fi
+
+  bazel run //quality/coverage:lcov_to_html -- "${LCOV_TO_HTML_ARGS[@]}"
 fi
 
 echo "Coverage report written to: ${OUTPUT_DIR}"

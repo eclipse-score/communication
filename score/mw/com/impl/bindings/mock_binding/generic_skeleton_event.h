@@ -29,7 +29,10 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 
     MOCK_METHOD(Result<void>, Send, (score::mw::com::impl::SampleAllocateePtr<void>), (noexcept, override));
 
-    MOCK_METHOD(Result<score::mw::com::impl::SampleAllocateePtr<void>>, Allocate, (), (noexcept, override));
+    MOCK_METHOD(Result<score::mw::com::impl::SampleAllocateePtr<void>>,
+                Allocate,
+                (SampleAllocateeGuard),
+                (noexcept, override));
 
     MOCK_METHOD(Result<void>, Notify, (), (noexcept, override));
 
