@@ -147,5 +147,48 @@ TEST_F(LinearSearchMapFixture, IterationVisitsAllElements)
     EXPECT_EQ(sum_values, 30);
 }
 
+// A custom key-equality predicate that considers two keys equal if they have the same absolute value.
+struct AbsoluteValueEqual
+{
+    bool operator()(const std::int32_t lhs, const std::int32_t rhs) const noexcept
+    {
+        return (lhs < 0 ? -lhs : lhs) == (rhs < 0 ? -rhs : rhs);
+    }
+};
+
+using CustomEqualMap = LinearSearchMap<std::int32_t, std::int32_t, AbsoluteValueEqual>;
+
+TEST_F(LinearSearchMapFixture, CustomKeyEqualIsUsedForFind)
+{
+    CustomEqualMap unit{4U, memory_};
+    std::ignore = unit.emplace(5, 500);
+
+    // -5 is considered equal to 5 by the custom predicate.
+    const auto it = unit.find(-5);
+    ASSERT_NE(it, unit.end());
+    EXPECT_EQ(it->second, 500);
+}
+
+TEST_F(LinearSearchMapFixture, CustomKeyEqualPreventsDuplicateInsertion)
+{
+    CustomEqualMap unit{4U, memory_};
+    std::ignore = unit.emplace(5, 500);
+
+    // Emplacing -5 must be treated as a duplicate of 5 and therefore not insert.
+    const auto result = unit.emplace(-5, 999);
+    EXPECT_FALSE(result.second);
+    EXPECT_EQ(unit.size(), 1U);
+    EXPECT_EQ(result.first->second, 500);
+}
+
+TEST_F(LinearSearchMapFixture, KeyEqAccessorReturnsPredicate)
+{
+    CustomEqualMap unit{4U, memory_};
+
+    const auto predicate = unit.key_eq();
+    EXPECT_TRUE(predicate(-7, 7));
+    EXPECT_FALSE(predicate(-7, 8));
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola
