@@ -20,6 +20,7 @@
 #include <score/assert.hpp>
 
 #include <cstddef>
+#include <functional>
 #include <tuple>
 #include <utility>
 
@@ -42,12 +43,23 @@ namespace score::mw::com::impl::lola
 /// LinearSearchMap is designed to be placeable in shared-memory: it uses the provided (shared-memory capable) allocator
 /// and NonRelocatableVector guarantees that no reallocation (which would invalidate offset-pointers) ever takes place.
 ///
-/// \tparam Key key type used to identify an element. Must be equality-comparable and copy-constructible.
+/// \note The complexity for lookup (find/at) is currently O(n). Since we typically use LinearSearchMap for a small
+/// number of elements (number of events + fields of a single service-instance), this is acceptable. If the number of
+/// elements grows, we could sort the underlying vector and then use std::binary_search for O(log n) lookup.
+/// This should be done if necessary.
+///
+/// \tparam Key key type used to identify an element. Must be copy-constructible and comparable via KeyEqual.
 /// \tparam MappedType mapped value type.
+/// \tparam KeyEqual binary predicate used to compare two keys for equality. Defaults to std::equal_to<Key> (i.e.
+///         operator==). A custom predicate can be supplied for keys without a suitable operator== or for alternative
+///         equality semantics (analogous to the KeyEqual parameter of std::unordered_map). Be careful: When placing
+///         the LinearSearchMap in shared-memory, the KeyEqual predicate must be stateless and trivially copyable
+///         (i.e. it must not contain any non-offset pointers or references).
 /// \tparam Allocator allocator used for the underlying storage. Defaults to the shared-memory capable
 ///         PolymorphicOffsetPtrAllocator.
 template <typename Key,
           typename MappedType,
+          typename KeyEqual = std::equal_to<Key>,
           typename Allocator = memory::shared::PolymorphicOffsetPtrAllocator<std::pair<Key, MappedType>>>
 class LinearSearchMap
 {
@@ -56,14 +68,18 @@ class LinearSearchMap
     using mapped_type = MappedType;
     using value_type = std::pair<Key, MappedType>;
     using size_type = std::size_t;
+    using key_equal = KeyEqual;
     using iterator = value_type*;
     using const_iterator = const value_type*;
 
     /// \brief Constructs an empty LinearSearchMap which can hold up to max_number_of_elements elements.
     /// \param max_number_of_elements maximum number of elements the map can hold (its fixed capacity).
     /// \param resource memory resource used to allocate the underlying storage.
-    LinearSearchMap(const size_type max_number_of_elements, memory::shared::ManagedMemoryResource& resource)
-        : storage_{max_number_of_elements, Allocator{resource}}
+    /// \param key_equal binary predicate used to compare keys for equality.
+    LinearSearchMap(const size_type max_number_of_elements,
+                    memory::shared::ManagedMemoryResource& resource,
+                    const KeyEqual& key_equal = KeyEqual{})
+        : storage_{max_number_of_elements, Allocator{resource}}, key_equal_{key_equal}
     {
     }
 
@@ -112,7 +128,7 @@ class LinearSearchMap
     {
         for (auto it = begin(); it != end(); ++it)
         {
-            if (it->first == key)
+            if (key_equal_(it->first, key))
             {
                 return it;
             }
@@ -124,12 +140,18 @@ class LinearSearchMap
     {
         for (auto it = cbegin(); it != cend(); ++it)
         {
-            if (it->first == key)
+            if (key_equal_(it->first, key))
             {
                 return it;
             }
         }
         return cend();
+    }
+
+    /// \brief Returns the key-equality predicate used by this map.
+    key_equal key_eq() const
+    {
+        return key_equal_;
     }
 
     mapped_type& at(const Key& key)
@@ -183,6 +205,7 @@ class LinearSearchMap
 
   private:
     score::containers::NonRelocatableVector<value_type, Allocator> storage_;
+    KeyEqual key_equal_;
 };
 
 }  // namespace score::mw::com::impl::lola
