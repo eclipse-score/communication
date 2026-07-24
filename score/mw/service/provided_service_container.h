@@ -69,12 +69,14 @@ class ProvidedServices final : public ProvidedServicesBase
     template <typename ServiceType, typename... Args>
     ProvidedServices& Add(Args&&... args) &
     {
+        ++count_;
         return *this;
     }
 
     template <typename ServiceType, typename... Args>
     ProvidedServices&& Add(Args&&... args) &&
     {
+        ++count_;
         return std::move(*this);
     }
 
@@ -168,7 +170,7 @@ class ProvidedServices final : public ProvidedServicesBase
 
     std::size_t Count() const noexcept override
     {
-        return 0;
+        return count_;
     }
 
     /// @brief Start all contained valid service instances
@@ -178,7 +180,10 @@ class ProvidedServices final : public ProvidedServicesBase
     void StopAll() override {}
 
     /// @brief Swap the content of this object with another one
-    void Swap(ProvidedServices& other) noexcept {}
+    void Swap(ProvidedServices& other) noexcept { std::swap(count_, other.count_); }
+
+  private:
+    std::size_t count_{0U};
 };
 
 class ProvidedServiceContainer
