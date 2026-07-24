@@ -153,11 +153,19 @@ void ProxyEventBase::Unsubscribe() noexcept
 
 Result<void> ProxyEventBase::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept
 {
+    if (binding_base_ != nullptr)
+    {
+        tracing::TraceSetSubscriptionStateChangeHandler(tracing_data_, *binding_base_);
+    }
     return binding_base_->SetSubscriptionStateChangeHandler(std::move(handler));
 }
 
 Result<void> ProxyEventBase::UnsetSubscriptionStateChangeHandler() noexcept
 {
+    if (binding_base_ != nullptr)
+    {
+        tracing::TraceUnsetSubscriptionStateChangeHandler(tracing_data_, *binding_base_);
+    }
     return binding_base_->UnsetSubscriptionStateChangeHandler();
 }
 
