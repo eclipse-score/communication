@@ -44,6 +44,11 @@ single_version_override(
 
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.10", repo_name = "score_communication_crate_index")
+git_override(
+    module_name = "score_crates",
+    commit = "4656dda8f04a3d88c8089f63111195840cfbd9e3",
+    remote = "https://github.com/eclipse-score/score-crates.git",
+)
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
 
