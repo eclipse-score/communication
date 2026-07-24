@@ -1,0 +1,47 @@
+{
+    "ivshmem": {
+        "size": "4M"
+    },
+    "intervm_network": {
+        "enabled": false,
+        "host_port": 12345
+    },
+    "vms": [
+        {
+            "networks": [
+                {
+                    "name": "vm_a_net",
+                    "ip_address": "127.0.0.1",
+                    "gateway": "127.0.0.1"
+                }
+            ],
+            "ssh_port": 2222,
+            "qemu_num_cores": "1",
+            "qemu_ram_size": "1G",
+            "port_forwarding": [
+                {
+                    "host_port": 2222,
+                    "guest_port": 22
+                }
+            ]
+        },
+        {
+            "networks": [
+                {
+                    "name": "vm_b_net",
+                    "ip_address": "127.0.0.1",
+                    "gateway": "127.0.0.1"
+                }
+            ],
+            "ssh_port": 2223,
+            "qemu_num_cores": "1",
+            "qemu_ram_size": "1G",
+            "port_forwarding": [
+                {
+                    "host_port": 2223,
+                    "guest_port": 22
+                }
+            ]
+        }
+    ]
+}
