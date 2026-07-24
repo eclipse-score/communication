@@ -13,6 +13,8 @@
 #include "score/mw/com/test/methods/methods_test_resources/all_signatures_datatype/all_signatures_method_consumer.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
+#include <chrono>
+#include <thread>
 
 namespace score::mw::com::test
 {
@@ -46,7 +48,7 @@ void AllSignaturesMethodConsumer::CallMethodWithInArgsAndReturn(const std::int32
             auto allocated_args_result = proxy.with_in_args_and_return.Allocate();
             if (!allocated_args_result.has_value())
             {
-                std::cerr << "Consumer: Could not allocate method args: " << allocated_args_result.error() << std::endl;
+                std::cout << "Consumer: Could not allocate method args: " << allocated_args_result.error() << std::endl;
                 return Unexpected(allocated_args_result.error());
             }
 
@@ -64,6 +66,7 @@ void AllSignaturesMethodConsumer::CallMethodWithInArgsAndReturn(const std::int32
     }();
     if (!call_result.has_value())
     {
+        std::this_thread::sleep_for(std::chrono::seconds{2});
         FailTest(failure_message_prefix, " Consumer: with_in_args_and_return call failed: ", call_result.error());
     }
     const auto return_value = *(call_result.value());
