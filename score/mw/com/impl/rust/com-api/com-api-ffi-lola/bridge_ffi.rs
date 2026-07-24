@@ -278,6 +278,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// Find all service instances matching `instance_specifier`.
     ///
     /// Returns `Err(())` when the search fails or yields no container.
+    #[allow(clippy::result_unit_err)]
     fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()>;
 
     /// Initialize the `mw::com` subsystem.

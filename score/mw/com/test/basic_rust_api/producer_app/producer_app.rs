@@ -89,8 +89,7 @@ fn run_bigdata_test<R: Runtime>(runtime: &R, num_cycles: u32) {
             .map_api_lanes_stamped_
             .allocate()
             .expect("Failed to allocate sample");
-        let mut sample = MapApiLanesStamped::default();
-        sample.x = x;
+        let sample = MapApiLanesStamped { x, ..Default::default() };
         let ready = uninit.write(sample);
         ready.send().expect("Failed to send sample");
         println!("[bigdata-producer] Sent sample x={}", x);
