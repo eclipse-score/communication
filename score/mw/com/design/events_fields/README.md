@@ -78,8 +78,31 @@ The same asymmetry shows up in how each side builds the field's event dispatch:
 
 The only combination we actually enforce is a `static_assert` on both `impl::ProxyField` and `impl::SkeletonField`: a
 field must have at least one of `WithGetter` or `WithNotifier`. Without one of them the consumer has no way to observe
-the value, which makes the field useless. We deliberately do not require a setter, since a read-only field is perfectly normal and the provider always sets the
-value itself via `Update()` with no explicit tag needed.
+the value, which makes the field useless. We deliberately do not require a setter, since a read-only field is perfectly 
+normal and the provider always sets the value itself via `Update()` with no explicit tag needed.
+
+The number of slots required for a field is dependent on the presence of `WithNotifier`, `WithGetter`, and `WithSetter`.
+If `WithNotifier` is present, the proxy can subscribe and receive notifications, so the configured value of
+`numberOfSampleSlots` is taken into account. The configured value should be calculated based on the total number of subscribers 
+and the max number of samples they subscribe with (see [here for details](#sizing-of-event_slots-and-state_slots-vectors)).
+If `WithNotifier` is not present, then `WithGetter` must be present (otherwise a consumer has no way of getting a field value).
+In this case, `numberOfSampleSlots` should be configured according to the number of SampleAllocateePtrs (can be allocated via a
+call to `Allocate()` on the `SkeletonField`) which can be made held while the maximum number of concurrent getter calls are in 
+progress. E.g. we currently support 1 concurrent getter call, so `numberOfSampleSlots` of 0 would mean that `Allocate()` can not
+be called while a getter call is in progress. `numberOfSampleSlots` of 1 would mean that `Allocate()` can be called once while a 
+getter call is in progress, but the next call to `Allocate()` would return an error until the getter completes or the previous 
+`SampleAllocateePtr` is released. This generalizes to `numberOfSampleSlots` of N.
+
+In addition, if `WithGetter` is present, the number of slots will be increased by the number of concurrent getter calls that 
+are allowed (currently 1), since each getter will reference (and thus prevent writing to the slot) while it copies the value 
+to the setter method call. 
+
+In addition, if `WithSetter` is present, the number of slots must be increased by 1, since the setter must call `Update()` 
+to write the new value into the slot, and thus must reference the slot while it copies the value from the setter method call. 
+These additional slots are added by the middleware implementation, and are not configurable by the user. 
+
+Configured `numberOfIpcTracingSlots` come on top of the used slot count in all cases, because tracing holds a
+reference to each traced sample until the trace call has completed.
 
 ## Event related datastructures in LoLa binding
 

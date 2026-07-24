@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -92,7 +93,7 @@ class SkeletonFieldTestFixture : public ::testing::Test
     void SetUp() override
     {
         ON_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, _))
             .WillByDefault(InvokeWithoutArgs([this]() {
                 return std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(
                     skeleton_field_binding_mock_);
@@ -173,6 +174,79 @@ TEST(SkeletonFieldTest, SkeletonFieldContainsPublicSampleType)
     static_assert(std::is_same<typename SkeletonField<TestSampleType, WithGetter, WithNotifier, WithSetter>::FieldType,
                                TestSampleType>::value,
                   "Incorrect FieldType.");
+}
+
+using SkeletonFieldCreationFixture = SkeletonFieldTestFixture;
+TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithNotifierCallsFactoryWithNotifier)
+{
+    // Expect that the factory is called with WithNotifier
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithNotifier>()));
+
+    // When creating a SkeletonField with WithNotifier
+    SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+    SkeletonField<TestSampleType, WithNotifier> my_dummy_field{skeleton, kFieldName};
+}
+
+TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithGetterCallsFactoryWithGetter)
+{
+    // Expect that the factory is called with WithGetter
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithGetter>()));
+
+    // When creating a SkeletonField with WithGetter
+    SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+    SkeletonField<TestSampleType, WithGetter> my_dummy_field{skeleton, kFieldName};
+}
+
+TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithNotifierAndSetterCallsFactoryWithNotifierAndSetter)
+{
+    // Expect that the factory is called with WithNotifier and WithSetter
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(
+                    kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithNotifier, WithSetter>()));
+
+    // When creating a SkeletonField with WithNotifier and WithSetter
+    SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+    SkeletonField<TestSampleType, WithNotifier, WithSetter> my_dummy_field{skeleton, kFieldName};
+}
+
+TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithGetterAndSetterCallsFactoryWithGetterAndSetter)
+{
+    // Expect that the factory is called with WithGetter and WithSetter
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(
+                    kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithGetter, WithSetter>()));
+
+    // When creating a SkeletonField with WithGetter and WithSetter
+    SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+    SkeletonField<TestSampleType, WithGetter, WithSetter> my_dummy_field{skeleton, kFieldName};
+}
+
+TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithNotifierAndGetterCallsFactoryWithNotifierAndGetter)
+{
+    // Expect that the factory is called with WithNotifier and WithGetter
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(
+                    kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithNotifier, WithGetter>()));
+
+    // When creating a SkeletonField with WithNotifier and WithGetter
+    SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+    SkeletonField<TestSampleType, WithNotifier, WithGetter> my_dummy_field{skeleton, kFieldName};
+}
+
+TEST_F(SkeletonFieldCreationFixture,
+       CreatingFieldWithNotifierAndGetterAndSetterCallsFactoryWithNotifierAndGetterAndSetter)
+{
+    // Expect that the factory is called with WithNotifier, WithGetter and WithSetter
+    EXPECT_CALL(
+        skeleton_field_binding_factory_mock_guard_.factory_mock_,
+        CreateEventBinding(
+            kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithNotifier, WithGetter, WithSetter>()));
+
+    // When creating a SkeletonField with WithNotifier, WithGetter and WithSetter
+    SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+    SkeletonField<TestSampleType, WithNotifier, WithGetter, WithSetter> my_dummy_field{skeleton, kFieldName};
 }
 
 // When Ticket-104261 is implemented, the Update call does not have to be deferred until OfferService is called. This
@@ -694,7 +768,7 @@ TEST(SkeletonFieldInitialValueTest, MoveAssigningFieldBeforePrepareOfferWillKeep
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     EXPECT_CALL(skeleton_field_binding_mock, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -725,7 +799,8 @@ TEST(SkeletonFieldInitialValueTest, MoveAssigningFieldBeforePrepareOfferWillKeep
     // and Expecting that a second SkeletonField binding is created
     auto skeleton_field_binding_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock_2 = *skeleton_field_binding_mock_ptr_2;
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(identifier2, _, kFieldName))
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
+                CreateEventBinding(identifier2, _, kFieldName, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr_2))));
 
     EXPECT_CALL(skeleton_field_binding_mock_2, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -840,7 +915,7 @@ TEST_F(SkeletonFieldDeathTest, DestroyingSkeletonFieldWhileHoldingSampleAllocate
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() is called once on the field binding

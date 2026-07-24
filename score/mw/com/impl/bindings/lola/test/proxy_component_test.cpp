@@ -192,7 +192,7 @@ TEST_F(ProxyWithRealMemFixture, IsEventProvidedOnlyReturnsTrueIfEventIsInSharedM
     ASSERT_NE(fake_data_result, nullptr);
 
     // Only provide the first event in shared memory
-    fake_data_result->AddEvent<std::uint8_t>(kElementFqId, SkeletonEventProperties{10U, 3U, true});
+    fake_data_result->AddEvent<std::uint8_t>(kElementFqId, SkeletonEventProperties{10U, 0U, 0U, false, 3U, true});
 
     const auto handle = config_store_->GetHandle();
 

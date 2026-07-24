@@ -773,6 +773,18 @@ cc_library(
 )
 
 cc_library(
+    name = "field_tags_store",
+    srcs = ["field_tags_store.cpp"],
+    hdrs = ["field_tags_store.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        ":field_tags",
+    ],
+)
+
+cc_library(
     name = "field_tags",
     srcs = ["field_tags.cpp"],
     hdrs = ["field_tags.h"],
@@ -786,6 +798,14 @@ cc_unit_test(
     srcs = ["field_tags_test.cpp"],
     deps = [
         ":field_tags",
+    ],
+)
+
+cc_unit_test(
+    name = "field_tags_store_test",
+    srcs = ["field_tags_store_test.cpp"],
+    deps = [
+        ":field_tags_store",
     ],
 )
 

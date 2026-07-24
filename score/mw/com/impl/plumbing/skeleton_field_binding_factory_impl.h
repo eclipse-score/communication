@@ -15,13 +15,17 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_field_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_service_element_binding_factory_impl.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string_view>
 
 namespace score::mw::com::impl
@@ -36,7 +40,8 @@ class SkeletonFieldBindingFactoryImpl : public ISkeletonFieldBindingFactory<Samp
     std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(
         const InstanceIdentifier& identifier,
         SkeletonBinding& parent_binding,
-        const std::string_view field_name) noexcept override;
+        const std::string_view field_name,
+        const FieldTagsStore field_tags_store) noexcept override;
 };
 
 template <typename SampleType>
@@ -50,14 +55,14 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto SkeletonFieldBindingFactoryImpl<SampleType>::CreateEventBinding(const InstanceIdentifier& identifier,
                                                                      SkeletonBinding& parent_binding,
-                                                                     const std::string_view field_name) noexcept
+                                                                     const std::string_view field_name,
+                                                                     const FieldTagsStore field_tags_store) noexcept
     -> std::unique_ptr<SkeletonEventBinding<SampleType>>
 {
-    // TODO: Currently field_getter_enabled is hard coded to false, will add support
-    //  when getter functionality of field is implemented.
     return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
                                       lola::SkeletonEvent<SampleType>,
-                                      ServiceElementType::FIELD>(identifier, parent_binding, field_name, false);
+                                      ServiceElementType::FIELD>(
+        identifier, parent_binding, field_name, field_tags_store);
 }
 
 }  // namespace score::mw::com::impl

@@ -29,7 +29,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_{size_info},
       event_data_storage_{nullptr},
-      skeleton_event_common_{parent, event_name, event_properties, element_fq_id, tracing_data, false}
+      skeleton_event_common_{parent, event_name, event_properties, element_fq_id, tracing_data}
 {
 }
 
