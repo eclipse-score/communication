@@ -123,15 +123,38 @@ Result<std::unique_ptr<ProxyMethodBinding>> ProxyMethodBindingFactoryImpl<Return
             const auto& lola_service_instance_deployment =
                 GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment);
 
-            const auto method_it = lola_service_instance_deployment.methods_.find(method_name_str);
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_it != lola_service_instance_deployment.methods_.end(),
-                                                        "Could not find method deployment information for method");
-            if (!method_it->second.enabled_)
+            if ((method_type == MethodType::kGet) || (method_type == MethodType::kSet))
             {
-                score::mw::log::LogDebug("lola")
-                    << "Proxy Method " << method_name_str
-                    << " was disabled in the instance deployment configuration. Not creating a binding for it.";
-                return nullptr;
+                const auto field_it = lola_service_instance_deployment.fields_.find(method_name_str);
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                    field_it != lola_service_instance_deployment.fields_.end(),
+                    "Could not find field deployment information for field method");
+
+                const bool is_method_enabled = (method_type == MethodType::kGet)
+                                                   ? field_it->second.use_get_if_available_
+                                                   : field_it->second.use_set_if_available_;
+
+                if (!is_method_enabled)
+                {
+                    score::mw::log::LogDebug("lola")
+                        << "Proxy field method " << method_name_str
+                        << " was disabled in the instance deployment configuration. Not creating a binding for it.";
+                    return nullptr;
+                }
+            }
+            else
+            {
+                const auto method_it = lola_service_instance_deployment.methods_.find(method_name_str);
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                    method_it != lola_service_instance_deployment.methods_.end(),
+                    "Could not find method deployment information for method");
+                if (!method_it->second.enabled_)
+                {
+                    score::mw::log::LogDebug("lola")
+                        << "Proxy Method " << method_name_str
+                        << " was disabled in the instance deployment configuration. Not creating a binding for it.";
+                    return nullptr;
+                }
             }
 
             // When method_type is Get or Set, method_name holds a field name, not a method name. A field
