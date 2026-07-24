@@ -27,6 +27,11 @@ TMP_PATH_FOR_DATABASES = "/var/tmp/codeql_databases"
 # suite selector in the `<pack>@<version>:<suite>` query specifier.
 MISRA_DEFAULT_SUITE_NAME = "codeql-suites/misra-cpp-default.qls"
 
+# Runfiles path of the vendored pre-compiled MISRA C++ query pack's manifest,
+# used to anchor the pack root. Provided by the @codeql_coding_standards_compiled
+# repository (see third_party/codeql/codeql_release_pack.bzl).
+COMPILED_PACK_RUNFILE = "codeql_coding_standards_compiled/pack/qlpack.yml"
+
 
 def _find_coding_standards_root():
     """Locate the vendored codeql-coding-standards repo root (the dir containing cpp/).
@@ -60,7 +65,7 @@ def _find_compiled_pack_root():
     queries and without downloading anything from the registry.
 
     This vendored pack is the ONLY supported query source: if it cannot be
-    located we raise instead of silently falling back to any other pack (e.g. a
+    located we raise an error instead of silently falling back to any other pack (e.g. a
     registry download or a runtime-compiled pack), so that the analysis always
     runs exactly the pinned, hermetic ruleset.
 
@@ -69,12 +74,11 @@ def _find_compiled_pack_root():
     from python.runfiles import Runfiles
 
     runfiles = Runfiles.Create()
-    anchor = runfiles.Rlocation(
-        "codeql_coding_standards_compiled/pack/qlpack.yml")
+    anchor = runfiles.Rlocation(COMPILED_PACK_RUNFILE)
     if not anchor or not os.path.exists(anchor):
         raise RuntimeError(
             "Vendored pre-compiled MISRA C++ query pack not found (expected "
-            "runfile 'codeql_coding_standards_compiled/pack/qlpack.yml'). "
+            f"runfile '{COMPILED_PACK_RUNFILE}'). "
             "Ensure the @codeql_coding_standards_compiled//:pack dependency is "
             "in this target's `data`. Refusing to fall back to any other query "
             "source.")
