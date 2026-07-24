@@ -229,13 +229,11 @@ fn create_producer_method<R: Runtime>(
             println!("Received update_tire_pressure call with tire: {:?}", tire);
             ()
         })
-        .expect("Failed to register update_tire_pressure handler")
         .register_get_tire_pressure_handler(|| {
             println!("Received get_tire_pressure call");
             // Return a sample tire pressure value, just dummy value returned for demonstration
             Tire { pressure: 32.0 }
         })
-        .expect("Failed to register get_tire_pressure handler")
         .register_update_front_tires_pressure_handler(|tire1: Tire, tire2: Tire| {
             println!(
                 "Received update_front_tires_pressure call with tire1: {:?}, tire2: {:?}",
@@ -243,7 +241,6 @@ fn create_producer_method<R: Runtime>(
             );
             ()
         })
-        .expect("Failed to register update_front_tires_pressure handler")
         .offer()
         .expect("Failed to offer producer instance")
 }

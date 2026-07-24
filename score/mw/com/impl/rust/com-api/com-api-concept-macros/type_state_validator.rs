@@ -263,15 +263,15 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
                     pub fn #register_fn<F>(
                         mut self,
                         handler: F,
-                    ) -> com_api::Result<#validator_name<#runtime_param_name, #(#after),*>>
+                    ) -> #validator_name<#runtime_param_name, #(#after),*>
                     where
                         F: Fn(&#inner_ty) + Send + 'static,
                     {
-                        self.producer.#field_ident.register_set_handler(handler)?;
-                        Ok(#validator_name {
+                        self.producer.#field_ident.register_set_handler(handler);
+                        #validator_name {
                             producer: self.producer,
                             _phantom: core::marker::PhantomData,
-                        })
+                        }
                     }
                 }
             }
@@ -313,18 +313,18 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
                     pub fn #register_fn<F>(
                         mut self,
                         handler: F,
-                    ) -> com_api::Result<#validator_name<#runtime_param_name, #(#after),*>>
+                    ) -> #validator_name<#runtime_param_name, #(#after),*>
                     where
                         F: com_api::MethodHandlerCall<#args_ty, #return_ty>,
                     {
                         <_ as com_api::MethodHandler<#args_ty, #return_ty, #runtime_param_name>>::register_handler(
                             &self.producer.#method_ident,
                             handler,
-                        )?;
-                        Ok(#validator_name {
+                        );
+                        #validator_name {
                             producer: self.producer,
                             _phantom: core::marker::PhantomData,
-                        })
+                        }
                     }
                 }
             }

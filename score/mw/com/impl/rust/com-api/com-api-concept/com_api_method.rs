@@ -90,9 +90,7 @@ pub trait MethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized>
     ///
     /// # Arguments
     /// * `handler` - The handler function to register for the method, which has to bound the `MethodHandlerCall<Args, Return>` trait blanket implementation.
-    ///
-    /// Returns a `Result` indicating whether the handler was successfully registered.
-    fn register_handler<F>(&self, handler: F) -> Result<()>
+    fn register_handler<F>(&self, handler: F)
     where
         F: MethodHandlerCall<Args, Return>;
 }

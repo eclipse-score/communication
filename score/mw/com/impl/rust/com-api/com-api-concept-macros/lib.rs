@@ -371,8 +371,8 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
 /// }
 /// // Generated: producer.init()
 /// //   .update_left_tire(&v)?
-/// //   .register_set_handler_left_tire(|v| {})?
-/// //   .register_process_handler(|req| { ... })?
+/// //   .register_set_handler_left_tire(|v| {})
+/// //   .register_process_handler(|req| { ... })
 /// //   .offer()?
 /// ```
 // TODO: Document tests need to be added for this macro, including successful and failed compilation cases.

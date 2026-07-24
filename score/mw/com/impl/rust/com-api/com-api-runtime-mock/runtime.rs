@@ -531,7 +531,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> MethodHandler<Args
         })
     }
 
-    fn register_handler<F>(&self, _handler: F) -> Result<()>
+    fn register_handler<F>(&self, _handler: F)
     where
         F: MethodHandlerCall<Args, Return>,
     {
