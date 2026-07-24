@@ -21,7 +21,7 @@ rust_library(
     features = ["link_std_cpp_lib"],
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",
-        "//score/mw/com/impl/rust/com-api/com-api",
+        "//score/mw/com/rust:com_api",
         "@score_baselibs//src/log/score_log",
         "@score_communication_crate_index//:clap",
         "@score_communication_crate_index//:futures",
@@ -43,7 +43,7 @@ rust_binary(
     deps = [
         ":com-api-example-lib",
         "//score/mw/com/example/com-api-example/com-api-gen",
-        "//score/mw/com/impl/rust/com-api/com-api",
+        "//score/mw/com/rust:com_api",
         "@score_baselibs//src/log/score_log",
         "@score_baselibs//src/log/stdout_logger",
         "@score_communication_crate_index//:clap",
@@ -60,7 +60,7 @@ rust_test(
     tags = ["manual"],
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",
-        "//score/mw/com/impl/rust/com-api/com-api",
+        "//score/mw/com/rust:com_api",
         "@score_communication_crate_index//:futures",
         "@score_communication_crate_index//:tokio",
     ],

@@ -38,7 +38,7 @@ use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, Generics, M
 /// pub trait CommData: Reloc {
 ///    const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// pub struct MyData {
@@ -51,7 +51,7 @@ use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, Generics, M
 /// pub trait CommData: Reloc {
 ///   const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// #[comm_data(id = "CustomID_MyData")]
@@ -339,7 +339,7 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
 
 /// ```
 /// pub unsafe trait Reloc: Send + Unpin + 'static {}
-/// use com_api_concept_macros::Reloc;
+/// use com_api_macros::Reloc;
 ///
 /// #[derive(Reloc)]
 /// #[repr(C)]
@@ -354,7 +354,7 @@ fn reloc_works_on_generic_types() {}
 
 /// ```
 /// pub unsafe trait Reloc: Send + Unpin + 'static {}
-/// use com_api_concept_macros::Reloc;
+/// use com_api_macros::Reloc;
 ///
 /// #[derive(Reloc)]
 /// #[repr(C)]
@@ -369,7 +369,7 @@ fn reloc_works_on_c_like_enums() {}
 
 /// ```
 /// pub unsafe trait Reloc: Send + Unpin + 'static {}
-/// use com_api_concept_macros::Reloc;
+/// use com_api_macros::Reloc;
 ///
 /// #[derive(Reloc)]
 /// #[repr(C)]
@@ -383,7 +383,7 @@ fn reloc_works_on_unit() {}
 /// unsafe impl Reloc for u32{}
 /// unsafe impl Reloc for u64{}
 ///
-/// use com_api_concept_macros::Reloc;
+/// use com_api_macros::Reloc;
 ///
 /// #[derive(Reloc)]
 /// #[repr(C)]
@@ -405,7 +405,7 @@ fn reloc_works_on_structs() {}
 /// unsafe impl Reloc for u32{}
 /// unsafe impl Reloc for u64{}
 ///
-/// use com_api_concept_macros::Reloc;
+/// use com_api_macros::Reloc;
 ///
 /// #[derive(Reloc)]
 /// #[repr(C)]
@@ -422,7 +422,7 @@ fn reloc_works_on_tuples() {}
 
 /// ```compile_fail
 /// pub unsafe trait Reloc: Send + Unpin + 'static {}
-/// use com_api_concept_macros::Reloc;
+/// use com_api_macros::Reloc;
 ///
 /// #[derive(Reloc)]
 /// #[repr(C)]
@@ -439,7 +439,7 @@ fn reloc_fail_on_non_c_like_enums() {}
 /// pub unsafe trait Reloc: Send + Unpin + 'static {}
 /// unsafe impl Reloc for u32{}
 ///
-/// use com_api_concept_macros::Reloc;
+/// use com_api_macros::Reloc;
 ///
 /// #[derive(Reloc)]
 /// #[repr(C)]
@@ -458,7 +458,7 @@ fn reloc_fails_if_member_is_not_reloc_on_struct() {}
 
 /// ```compile_fail
 /// pub unsafe trait Reloc: Send + Unpin + 'static {}
-/// use com_api_concept_macros::Reloc;
+/// use com_api_macros::Reloc;
 ///
 /// #[derive(Reloc)]
 /// #[repr(C)]
@@ -476,7 +476,7 @@ fn reloc_fails_on_generic_types_that_do_not_impl_reloc() {}
 /// pub trait CommData: Reloc {
 ///    const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// pub struct MyData {
 ///     value: u32,
@@ -491,7 +491,7 @@ fn comm_data_fails_without_repr_c() {}
 /// pub trait CommData: Reloc {
 ///   const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// pub enum MyEnum {
@@ -509,7 +509,7 @@ fn comm_data_fails_on_non_c_like_enum() {}
 /// pub trait CommData: Reloc {
 ///  const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// pub enum MyEnum {
@@ -528,7 +528,7 @@ fn comm_data_works_on_c_like_enum() {}
 /// pub trait CommData: Reloc {
 /// const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// pub struct MyStruct {
@@ -547,7 +547,7 @@ fn comm_data_works_on_struct() {}
 /// pub trait CommData: Reloc {
 /// const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// #[comm_data(id = "CustomID_MyStruct")]
@@ -565,7 +565,7 @@ fn comm_data_works_on_struct_with_custom_id() {}
 /// pub trait CommData: Reloc {
 ///    const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// #[comm_data(wrong = "value")]
@@ -582,7 +582,7 @@ fn comm_data_fails_with_invalid_attribute_key() {}
 /// pub trait CommData: Reloc {
 ///    const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// #[comm_data(id = 123)]
@@ -599,7 +599,7 @@ fn comm_data_fails_with_non_string_id() {}
 /// pub trait CommData: Reloc {
 ///    const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// #[comm_data]
@@ -616,7 +616,7 @@ fn comm_data_fails_with_malformed_attribute() {}
 /// pub trait CommData: Reloc {
 ///    const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// #[comm_data(id = "")]
@@ -633,7 +633,7 @@ fn comm_data_fails_with_empty_string_id() {}
 /// pub trait CommData: Reloc {
 ///    const ID: &'static str;
 /// }
-/// /// use com_api_concept_macros::{CommData, Reloc};
+/// /// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// pub struct MyData {
@@ -650,7 +650,7 @@ fn comm_data_fails_with_attribute_on_field() {}
 /// pub trait CommData: Reloc {
 ///  const ID: &'static str;
 /// }
-/// use com_api_concept_macros::{CommData, Reloc};
+/// use com_api_macros::{CommData, Reloc};
 /// #[derive(Reloc, CommData)]
 /// #[repr(C)]
 /// pub enum MyEnum {

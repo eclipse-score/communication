@@ -26,9 +26,9 @@ rust_library(
     deps = [
         "//score/mw/com/impl/plumbing/rust:sample_allocatee_ptr_rs",
         "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
-        "//score/mw/com/impl/rust/com-api/com-api-concept",
         "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_lola",
         "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_rs",
+        "//score/mw/com/rust/concept",
         "@score_baselibs//src/log/score_log",
         "@score_communication_crate_index//:futures",
     ],

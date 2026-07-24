@@ -115,17 +115,17 @@
 //!
 //! // Or wait asynchronously for events
 //! let (container, result) = subscription.receive(container, 1, 3).await;
-//! 
+//!
 //! // Or use the cancelable future to wait for events with timeout
 //! let timeout_future = tokio::time::sleep(std::time::Duration::from_secs(1));
 //! let (container, result) = subscription.cancellable_receive(container, 1, 3, timeout_future).await;
-//! 
+//!
 //! // Or use the stream interface to process events as they arrive
 //! let mut stream = subscription.to_stream();
 //! while let Some(sample) = stream.next().await {
 //!    println!("Tire pressure: {}", sample.pressure);
 //!  }
-//! 
+//!
 //! ```
 //! # Further reading
 //! - `com_api_concept` crate — trait definitions and full API documentation
@@ -133,10 +133,8 @@
 
 pub use com_api_runtime_lola::LolaRuntimeImpl;
 pub use com_api_runtime_lola::RuntimeBuilderImpl as LolaRuntimeBuilderImpl;
-pub use com_api_runtime_mock::MockRuntimeImpl;
-pub use com_api_runtime_mock::RuntimeBuilderImpl as MockRuntimeBuilderImpl;
 
-pub use com_api_concept::{
+pub use concept::{
     interface, interface_common, interface_consumer, interface_producer, Builder, CommData,
     Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier, InstanceSpecifier,
     Interface, OfferedProducer, PlacementDefault, Producer, ProducerBuilder, ProviderInfo,
@@ -146,4 +144,4 @@ pub use com_api_concept::{
 
 #[doc(hidden)]
 // See eclipse-score/communication/issues/173 - `paste`crate is still in discussion regarding rust safety certification.
-pub use com_api_concept::paste;
+pub use concept::paste;

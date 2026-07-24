@@ -1,4 +1,4 @@
-@startuml com_api_complete_publisher_subscriber_cycle
+@startuml complete_publisher_subscriber_cycle
 
 ' Copyright (c) 2025 Contributors to the Eclipse Foundation
 '

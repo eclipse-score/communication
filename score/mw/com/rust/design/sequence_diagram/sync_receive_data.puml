@@ -1,6 +1,6 @@
-@startuml com_api_async_receive_data
+@startuml synchronous_receive_data
 
-' Copyright (c) 2026 Contributors to the Eclipse Foundation
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
 '
 ' See the NOTICE file(s) distributed with this work for additional
 ' information regarding copyright ownership.
@@ -11,7 +11,7 @@
 '
 ' SPDX-License-Identifier: Apache-2.0
 
-title Async Receive Data
+title Receive Data
 
 actor User
 participant "Subscription<T, R>" as Subscription
@@ -21,9 +21,8 @@ participant "Sample<T>" as Sample
 User -> SampleContainer: new(capacity)
 SampleContainer --> User: Empty SampleContainer
 
-User -> Subscription: receive(\n  sample_container,\n  min_samples,\n  max_samples\n).await
-Note over Subscription: Async waits until\nmin_samples are available
-Subscription --> User: (SampleContainer, Result<usize>)
+User -> Subscription: try_receive(\n&mut sample_container,\nmax_samples)
+Subscription --> User: Result<usize>
 
 alt Samples Received (Ok(n))
     Note over User: n samples added to container
@@ -39,8 +38,13 @@ alt Samples Received (Ok(n))
         Note over User: Read-only access
     end
 
+else No Samples (Ok(0))
+    Note over User: No new samples received
+    Note over User: try_receive again later
+
 else Error
-    Note over User: Handle error,\ncontainer still returned
+    Subscription --> User: Result::Err(Error)
+    Note over User: Handle error
 end
 
 @enduml

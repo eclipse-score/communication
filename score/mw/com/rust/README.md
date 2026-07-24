@@ -19,7 +19,7 @@ It provides a clean, type-safe way for Rust applications to **offer** and **cons
 
 Application code is written against a runtime-agnostic set of concepts (traits and types). At build or deployment time you select a concrete runtime implementation (for example a production runtime, or a mock runtime for tests) without rewriting business logic.
 
-For internal architecture and implementation details, see [com_api_high_level_design_detail.md](../doc/com_api_high_level_design_detail.md)
+For internal architecture and implementation details, see [com_api_high_level_design_detail.md](design/com_api_high_level_design_detail.md)
 
 ### What This API Is For
 
@@ -31,9 +31,9 @@ For internal architecture and implementation details, see [com_api_high_level_de
 
 At a high level, applications interact with the COM API concepts (Runtime, Producer/Consumer, Publisher/Subscriber). A concrete runtime implementation connects those concepts to the underlying communication technology using an FFI (Foreign Function Interface) layer that bridges the underlying C++ COM API to Rust.
 
-![COM API Architecture Layers](../doc/com_api_architecture_layers.svg)
+![COM API Architecture Layers](design/com_api_architecture_layers.svg)
 
-If you’re interested in the detailed layering, module boundaries, and trait hierarchy, see [com_api_high_level_design_detail.md](../doc/com_api_high_level_design_detail.md).
+If you’re interested in the detailed layering, module boundaries, and trait hierarchy, see [com_api_high_level_design_detail.md](design/com_api_high_level_design_detail.md).
 
 ## How It Works
 
@@ -72,11 +72,11 @@ Publish events                      Subscribe and receive samples
 
 ### Example Application
 
-See [basic-consumer-producer.rs](../../../example/com-api-example/basic-consumer-producer.rs) for a complete working example demonstrating the producer/consumer workflow.
+See [basic-consumer-producer.rs](../example/com-api-example/basic-consumer-producer.rs) for a complete working example demonstrating the producer/consumer workflow.
 
 ## Further Reading
 
-- [com_api_high_level_design_detail.md](../doc/com_api_high_level_design_detail.md) — internal architecture, layer details, trait reference, and module structure
-- [user_facing_api_examples.md](../doc/user_facing_api_examples.md) — user-facing API examples and usage patterns
+- [com_api_high_level_design_detail.md](design/com_api_high_level_design_detail.md) — internal architecture, layer details, trait reference, and module structure
+- [user_facing_api_examples.md](doc/user_facing_api_examples.md) — user-facing API examples and usage patterns
 - **com_api_concept** crate — detailed trait definitions and API documentation (Runtime, Producer, Consumer, etc.)
 - **com_api** crate — public re-exports for user-side consumption

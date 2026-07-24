@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -15,14 +15,33 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 # Default target with lola runtime
 rust_library(
-    name = "com-api",
+    name = "com_api",
     srcs = ["com_api.rs"],
     crate_name = "com_api",
     edition = "2024",
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//visibility:public",  # platform_only
+    ],
     deps = [
-        "//score/mw/com/impl/rust/com-api/com-api-concept",
         "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
+        "//score/mw/com/rust/concept",
+    ],
+)
+
+# Test-only target that additionally exposes the mock runtime.
+# Use this target (instead of :com_api) in test BUILD rules that need MockRuntimeBuilderImpl.
+# Mock Runtime is not yet ready - https://github.com/eclipse-score/communication/issues/490
+rust_library(
+    name = "com_api_mock",
+    testonly = True,
+    srcs = ["com_api_mock.rs"],
+    crate_name = "com_api",
+    edition = "2024",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":com_api",
         "//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
     ],
 )

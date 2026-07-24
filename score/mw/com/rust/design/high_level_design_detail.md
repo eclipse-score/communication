@@ -26,9 +26,9 @@ This document describes the internal architecture, trait hierarchy, module struc
 ## Architecture Overview
 The COM API follows a layered architecture separating abstract contracts from concrete implementations:
 
-![COM API Module Structure](../doc/com_api_module_structure.svg)
+![COM API Module Structure](module_structure.svg)
 
-> Source: [../doc/com_api_module_structure.puml](../doc/com_api_module_structure.puml)
+> Source: [doc/module_structure.puml](module_structure.puml)
 
 ## Layers
 
@@ -41,7 +41,7 @@ The COM API follows a layered architecture separating abstract contracts from co
 
 
 ### Abstraction layer
-**Location**: [com-api-concept/](../com-api/com-api-concept/)
+**Location**: [concept/](../concept/concept.rs)
 
 The Abstraction Layer defines platform-independent interfaces through a carefully designed set of traits. These traits establish contracts that any runtime implementation must fulfill. The layer also contains generated code around the generic traits using Rust-macros, making the API convenient for applications to use.
 
@@ -84,7 +84,7 @@ The Runtime Layer provides concrete implementations of all traits defined in the
 The Runtime Layer is the bridge between platform-independent abstraction (what operations are possible) and backend-specific implementation (how those operations are performed). A runtime implementation is responsible for translating generic trait operations into concrete calls appropriate to its backend, managing the lifecycle of backend-specific objects (proxies, skeletons, channels), handling subscriptions, and publishers. Each runtime can depend on implementation-specific bridges (e.g., FFI for C++ backends) while keeping all higher layers agnostic to the backend choice. Different runtimes may support different feature sets or have different performance characteristics, but all must implement the same trait contracts.
 
 #### LoLa runtime (`com-api-runtime-lola`)
-**Location**: [com-api-runtime-lola/](../com-api/com-api-runtime-lola/)
+**Location**: [com-api-runtime-lola/](../../impl/rust/com-api/com-api-runtime-lola/)
 
 The LoLa Runtime is a concrete implementation of all traits from the Abstraction Layer, tailored specifically for the LoLa middleware communication. This runtime leverages shared memory and optimized communication patterns to achieve low-latency, zero-copy inter-process communication.
 
@@ -121,7 +121,7 @@ The LoLa Runtime is responsible for translating generic trait operations into co
 
 **FFI bridge layer**
 
-**Location**: [com-api-ffi-lola/](../com-api/com-api-ffi-lola/)
+**Location**: [com-api-ffi-lola/](../../impl/rust/com-api/com-api-ffi-lola/)
 
 The FFI Bridge Layer translates between Rust and C++, defining the exact boundary where safe Rust code meets unsafe C++ middleware. This layer is kept thin and focused: it declares raw FFI functions from C++ and wraps them in safe Rust interfaces. The bridge handles the low-level details of memory layout, pointer conversions, and callback mechanisms.
 
@@ -133,7 +133,7 @@ The FFI Bridge Layer translates between Rust and C++, defining the exact boundar
 - Resource allocators and deallocators for both sides
 
 #### Mock runtime (`com-api-runtime-mock`)
-**Location**: [com-api-runtime-mock/](../com-api/com-api-runtime-mock/)
+**Location**: [com-api-runtime-mock/](../../impl/rust/com-api/com-api-runtime-mock/)
 
 The Mock Runtime is an in-process, test-oriented implementation of all traits from the Abstraction Layer.
 
@@ -182,7 +182,5 @@ All naming in the COM-API adheres to [Rust Naming Guidelines](https://rust-lang.
 
 | Target | Purpose |
 |--------|---------|
-| `//platform/aas/mw/com/impl/rust/com-api/com-api-concept` | Generic trait definitions and `CommData` / `Reloc` contracts |
-| `//platform/aas/mw/com/impl/rust/com-api/com-api-runtime-lola` | LOLA runtime implementation (producers, consumers, publishers, subscribers) |
-| `//platform/aas/mw/com/impl/rust/com-api/com-api-concept-macros` | Derive macros for `CommData` and `Reloc` |
-| `//platform/aas/mw/com/impl/rust/com-api/com-api-runtime-mock` | Mock runtime for testing (not yet enabled) |
+| `//score/mw/com/rust/concept` | Generic trait definitions and `CommData` / `Reloc` contracts |
+| `//score/mw/com/rust/com_api_macros` | Derive macros for `CommData` and `Reloc` |

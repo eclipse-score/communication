@@ -1,4 +1,4 @@
-@startuml com_api_sync_offer_service
+@startuml sync_offer_service
 
 ' Copyright (c) 2025 Contributors to the Eclipse Foundation
 '

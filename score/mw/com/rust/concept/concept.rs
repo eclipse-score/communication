@@ -50,7 +50,7 @@
 
 use crate::error::*;
 use crate::Reloc;
-pub use com_api_concept_macros::CommData;
+pub use com_api_macros::CommData;
 use containers::fixed_capacity::FixedCapacityQueue;
 use core::fmt::Debug;
 use core::future::Future;

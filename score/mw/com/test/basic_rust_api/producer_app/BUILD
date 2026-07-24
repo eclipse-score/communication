@@ -32,7 +32,7 @@ rust_binary(
         "//score/mw/com/test/basic_rust_api:__subpackages__",
     ],
     deps = [
-        "//score/mw/com/impl/rust/com-api/com-api",
+        "//score/mw/com/rust:com_api",
         "//score/mw/com/test/basic_rust_api:bigdata_com_api_gen_rs",
         "@score_communication_crate_index//:clap",
     ],

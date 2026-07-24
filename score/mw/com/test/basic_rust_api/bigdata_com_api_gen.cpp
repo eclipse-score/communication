@@ -12,7 +12,7 @@
  *******************************************************************************/
 
 #include "score/mw/com/test/basic_rust_api/bigdata_com_api_gen.h"
-#include "score/mw/com/impl/rust/com-api/com-api-ffi-lola/registry_bridge_macro.h"
+#include "score/mw/com/rust/ffi_bridge/register_interface.h"
 
 // Register the BigData interface with the com-api FFI bridge.
 BEGIN_EXPORT_MW_COM_INTERFACE(BigDataInterface,

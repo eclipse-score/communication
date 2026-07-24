@@ -16,11 +16,12 @@ use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use crate::{
-    LolaConsumerDiscovery, LolaConsumerInfo, LolaProducerBuilder, LolaProviderInfo, Publisher,
-    SubscribableImpl,
+    LolaConsumerDiscovery, LolaConsumerInfo, LolaProducerBuilder, LolaProviderInfo, LolaPublisher,
+    LolaSubscribableImpl,
 };
-use com_api_concept::{
+use concept::{
     Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime,
+    RuntimeBuilder,
 };
 
 use bridge_ffi_lola::LolaFFIBridge;
@@ -32,9 +33,9 @@ pub struct LolaRuntimeImpl<B: FFIBridge = LolaFFIBridge> {
 
 impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
     type ServiceDiscovery<I: Interface + Send> = LolaConsumerDiscovery<I, B>;
-    type Subscriber<T: CommData + Debug> = SubscribableImpl<T, B>;
+    type Subscriber<T: CommData + Debug> = LolaSubscribableImpl<T, B>;
     type ProducerBuilder<I: Interface> = LolaProducerBuilder<I, B>;
-    type Publisher<T: CommData + Debug> = Publisher<T, B>;
+    type Publisher<T: CommData + Debug> = LolaPublisher<T, B>;
     type ProviderInfo = LolaProviderInfo<B>;
     type ConsumerInfo = LolaConsumerInfo<B>;
 
@@ -76,7 +77,7 @@ impl<B: FFIBridge> Builder<LolaRuntimeImpl<B>> for RuntimeBuilderImpl<B> {
     }
 }
 
-impl<B: FFIBridge> com_api_concept::RuntimeBuilder<LolaRuntimeImpl<B>> for RuntimeBuilderImpl<B> {
+impl<B: FFIBridge> RuntimeBuilder<LolaRuntimeImpl<B>> for RuntimeBuilderImpl<B> {
     fn load_config(&mut self, config: &Path) -> &mut Self {
         self.config_path = Some(config.to_path_buf());
         self
