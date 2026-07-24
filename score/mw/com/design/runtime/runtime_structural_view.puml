@@ -14,7 +14,7 @@ enum BindingType {
 class "mw::com::impl::Runtime" as Runtime {
     -binding_runtimes_ : std::unordered_map<BindingType, std::unique_ptr<IBindingRuntime>>
     +{static} Initialize() : void
-    +{static} Initialize(int argc, score::StringLiteral argv) : void
+    +{static} Initialize(int argc, const char* argv) : void
     +{static} Initialize(std::string const&) : void
     +{static} getInstance() : Runtime&
     +Runtime(Configuration&& config)
