@@ -22,28 +22,101 @@ import shutil
 TMP_PATH_FOR_DATABASES = "/var/tmp/codeql_databases"
 
 
-def _find_pack_root():
-    """Locate the MISRA C++ query pack root (cpp/common/src) via Bazel runfiles.
+# Default query suite (relative to the MISRA C++ pack root) run by the analysis.
+# Forward-slash relative path, used both to locate the suite on disk and as the
+# suite selector in the `<pack>@<version>:<suite>` query specifier.
+MISRA_DEFAULT_SUITE_NAME = "codeql-suites/misra-cpp-default.qls"
 
-    The codeql_coding_standards repo's cpp/** sources are already declared as a
-    `data` dependency of @codeql_coding_standards//:analysis_report, which is in
-    turn a `data` dependency of this py_binary. That means Bazel places them in
-    our own runfiles tree, so we can resolve the pack root the same way
-    everywhere (locally and in CI) without any manual filesystem searching.
+# Runfiles path of the vendored pre-compiled MISRA C++ query pack's manifest,
+# used to anchor the pack root. Provided by the @codeql_coding_standards_compiled
+# repository (see third_party/codeql/codeql_release_pack.bzl).
+COMPILED_PACK_RUNFILE = "codeql_coding_standards_compiled/pack/qlpack.yml"
+
+
+def _find_coding_standards_root():
+    """Locate the vendored codeql-coding-standards repo root (the dir containing cpp/).
+
+    The codeql_coding_standards repo's cpp/** sources are declared as a `data`
+    dependency of @codeql_coding_standards//:analysis_report, which is in turn a
+    `data` dependency of this py_binary, so Bazel places them in our runfiles
+    tree. Only used for the `--query-spec` override, which analyzes a query from
+    these sources rather than the pre-compiled release pack.
     """
     from python.runfiles import Runfiles
 
     runfiles = Runfiles.Create()
     anchor = runfiles.Rlocation("codeql_coding_standards/cpp/common/src/qlpack.yml")
     if not anchor or not os.path.exists(anchor):
-        raise RuntimeError("Unable to locate CodeQL pack root (cpp/common/src)")
-    return os.path.dirname(anchor)
+        raise RuntimeError("Unable to locate CodeQL coding standards repo root")
+    # anchor = <repo_root>/cpp/common/src/qlpack.yml -> go up four levels.
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(anchor))))
 
 
-def _install_query_pack(code_ql_path):
-    """Resolve the MISRA C++ query pack's own dependencies (like `npm install`)."""
-    pack_root = _find_pack_root()
-    subprocess.run(f"{code_ql_path} pack install {pack_root}", shell=True, check=True)
+def _find_compiled_pack_root():
+    """Locate the pre-compiled MISRA C++ query pack root from runfiles.
+
+    The pack is vendored by the @codeql_coding_standards_compiled repository
+    (see third_party/codeql/codeql_release_pack.bzl): a pre-compiled pack
+    published with the codeql-coding-standards release, containing the compiled
+    queries (`.qlx`), the default suites and all library dependencies bundled
+    under `.codeql/libraries/`. Analyzing against this pack (referenced by its
+    `<name>@<version>:<suite>` specifier and made discoverable via
+    --search-path) runs exactly the pinned ruleset without recompiling the
+    queries and without downloading anything from the registry.
+
+    This vendored pack is the ONLY supported query source: if it cannot be
+    located we raise an error instead of silently falling back to any other pack (e.g. a
+    registry download or a runtime-compiled pack), so that the analysis always
+    runs exactly the pinned, hermetic ruleset.
+
+    Returns the pack root directory (the one containing qlpack.yml).
+    """
+    from python.runfiles import Runfiles
+
+    runfiles = Runfiles.Create()
+    anchor = runfiles.Rlocation(COMPILED_PACK_RUNFILE)
+    if not anchor or not os.path.exists(anchor):
+        raise RuntimeError(
+            "Vendored pre-compiled MISRA C++ query pack not found (expected "
+            f"runfile '{COMPILED_PACK_RUNFILE}'). "
+            "Ensure the @codeql_coding_standards_compiled//:pack dependency is "
+            "in this target's `data`. Refusing to fall back to any other query "
+            "source.")
+    # anchor = <pack_root>/qlpack.yml
+    pack_root = os.path.dirname(anchor)
+
+    suite_path = os.path.join(pack_root, MISRA_DEFAULT_SUITE_NAME)
+    if not os.path.exists(suite_path):
+        raise RuntimeError(
+            "Vendored pre-compiled MISRA C++ query pack is incomplete: default "
+            f"suite '{suite_path}' is missing. Refusing to fall back to any "
+            "other query source.")
+    return pack_root
+
+
+def _read_pack_identity(pack_root):
+    """Return the (name, version) declared in the pack's qlpack.yml.
+
+    The codeql-coding-standards user manual recommends referencing a downloaded
+    release pack by its `<name>@<version>:<suite>` specifier (with the pack made
+    discoverable via --search-path) rather than by a bare suite path. Reading the
+    declared identity here lets CodeQL validate the pack's name and version, so
+    an accidental pack/version drift fails loudly instead of silently analyzing
+    whatever suite happens to live at a path.
+    """
+    name = None
+    version = None
+    with open(os.path.join(pack_root, "qlpack.yml")) as handle:
+        for line in handle:
+            stripped = line.strip()
+            if name is None and stripped.startswith("name:"):
+                name = stripped.split(":", 1)[1].strip().strip("'\"")
+            elif version is None and stripped.startswith("version:"):
+                version = stripped.split(":", 1)[1].strip().strip("'\"")
+    if not name or not version:
+        raise RuntimeError(
+            f"Could not read pack name/version from {pack_root}/qlpack.yml")
+    return name, version
 
 
 def create_database(code_ql_path, config_path, target, source_root, database_path):
@@ -86,7 +159,27 @@ def analyze_database(
     output_base = output_dir or _get_bazel_info(source_root).get('output_path')
     os.makedirs(output_base, exist_ok=True)
 
-    query_arg = f" {query_spec}" if query_spec else ""
+    # Analyze against the pre-compiled MISRA C++ query pack published with the
+    # codeql-coding-standards release and vendored by the
+    # @codeql_coding_standards_compiled repository (see _find_compiled_pack_root).
+    # Following the codeql-coding-standards user manual's recommended approach for
+    # released pack artifacts, the pack is referenced by its
+    # `<name>@<version>:<suite>` specifier and made discoverable via
+    # --search-path. The pack already contains the compiled queries and all their
+    # library dependencies, so this runs exactly the pinned ruleset without
+    # recompiling the queries and without downloading anything from the registry.
+    #
+    # --query-spec overrides this to analyze a single query straight from the
+    # vendored coding-standards sources (used for debugging individual rules).
+    if query_spec:
+        query_target = query_spec
+        common_analyze_flags = f"--additional-packs={_find_coding_standards_root()}"
+    else:
+        pack_root = _find_compiled_pack_root()
+        pack_name, pack_version = _read_pack_identity(pack_root)
+        query_target = f"{pack_name}@{pack_version}:{MISRA_DEFAULT_SUITE_NAME}"
+        common_analyze_flags = f"--search-path={pack_root}"
+    query_arg = f" {query_target}"
     sarif_path = f"{output_base}/{output_prefix}.sarif"
     csv_path = f"{output_base}/{output_prefix}.csv"
 
@@ -94,12 +187,14 @@ def analyze_database(
     print("\n Running CodeQL analysis...")
     subprocess.run(
         f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
+        f"{common_analyze_flags} "
         f"--format=sarifv2.1.0 --output={sarif_path}",
         shell=True, check=True)
 
     # Generate CSV results
     subprocess.run(
         f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
+        f"{common_analyze_flags} "
         f"--format=csv --output={csv_path}",
         shell=True, check=True)
 
@@ -165,9 +260,6 @@ def main():
 
     # Make codeql_path absolute
     codeql_path = os.path.abspath(args.codeql_path) if args.codeql_path else None
-
-    if codeql_path:
-        _install_query_pack(codeql_path)
 
     if args.phase == "create-database":
         os.makedirs(os.path.dirname(args.database_path), exist_ok=True)
