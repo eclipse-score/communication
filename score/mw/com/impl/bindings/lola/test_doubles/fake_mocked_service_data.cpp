@@ -31,6 +31,10 @@ using ::score::memory::shared::SharedMemoryResourceHeapAllocatorMock;
 const std::uint64_t kControlMemoryResourceId{std::numeric_limits<std::uint64_t>::max()};
 const std::uint64_t kDataMemoryResourceId{std::numeric_limits<std::uint64_t>::max() - 1U};
 
+// Fixed capacity used for the fixed-capacity containers within the fake ServiceDataStorage. Test-doubles add their
+// events dynamically, so we simply reserve a generous upper bound.
+constexpr std::size_t kMaxNumberOfServiceElements{100U};
+
 }  // namespace
 
 FakeMockedServiceData::FakeMockedServiceData(const pid_t skeleton_process_pid_in, uid_t skeleton_uid_in)
@@ -39,8 +43,8 @@ FakeMockedServiceData::FakeMockedServiceData(const pid_t skeleton_process_pid_in
         std::make_shared<::testing::NiceMock<SharedMemoryResourceHeapAllocatorMock>>(kControlMemoryResourceId);
     data_memory = std::make_shared<::testing::NiceMock<SharedMemoryResourceHeapAllocatorMock>>(kDataMemoryResourceId);
 
-    data_control = control_memory->construct<ServiceDataControl>(*control_memory);
-    data_storage = data_memory->construct<ServiceDataStorage>(*data_memory);
+    data_control = control_memory->construct<ServiceDataControl>(kMaxNumberOfServiceElements, *control_memory);
+    data_storage = data_memory->construct<ServiceDataStorage>(kMaxNumberOfServiceElements, *data_memory);
 
     data_storage->skeleton_pid_ = skeleton_process_pid_in;
     data_storage->skeleton_uid_ = skeleton_uid_in;

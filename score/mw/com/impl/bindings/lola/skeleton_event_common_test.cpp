@@ -54,6 +54,7 @@ class SkeletonEventCommonFixture : public SkeletonEventFixture
 
         SkeletonBinding::SkeletonEventBindings events{};
         SkeletonBinding::SkeletonFieldBindings fields{};
+        events.emplace(service_element_name, mock_event_binding_);
         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback{};
 
         std::ignore = skeleton_->PrepareOffer(events, fields, std::move(register_shm_object_trace_callback));

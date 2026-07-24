@@ -32,6 +32,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 
@@ -171,7 +172,7 @@ class SkeletonMemoryManager final
         std::optional<std::size_t> control_asil_b_size;
     };
 
-    /// \brief Calculates needed sizes for shm-objects for data and ctrl either via simulation or a rough estimation
+    /// \brief Calculates needed sizes for shm-objects for data and ctrl either via simulation or an analytic estimation
     /// depending on config.
     /// \return storage sizes for the different shm-objects
     ShmResourceStorageSizes CalculateShmResourceStorageSizes(SkeletonBinding::SkeletonEventBindings& events,
@@ -182,6 +183,42 @@ class SkeletonMemoryManager final
     ShmResourceStorageSizes CalculateShmResourceStorageSizesBySimulation(
         SkeletonBinding::SkeletonEventBindings& events,
         SkeletonBinding::SkeletonFieldBindings& fields);
+
+    /// \brief Calculates the needed size for the data shm-object (holding the ServiceDataStorage) analytically.
+    /// \details In contrast to the simulation based approach this function does NOT allocate any (heap) memory and does
+    /// not create a ServiceDataStorage. Instead it calculates the exactly needed (worst-case) size based on the
+    /// handed-over event/field bindings and the deployment configuration. This is possible because ServiceDataStorage
+    /// uses fixed-capacity containers (see LinearSearchMap / EventDataStorage) whose sizes are deterministic once the
+    /// number of service-elements and their number of slots / sample-sizes are known.
+    /// \return needed size (in bytes) for the data shm-object.
+    std::size_t CalculateDataShmResourceStorageSize(SkeletonBinding::SkeletonEventBindings& events,
+                                                    SkeletonBinding::SkeletonFieldBindings& fields) const;
+
+    /// \brief Calculates the needed size for a control shm-object (holding a ServiceDataControl) analytically.
+    /// \details Like CalculateDataShmResourceStorageSize this function does NOT allocate any (heap) memory and does not
+    /// create a ServiceDataControl. It calculates the exactly needed (worst-case) size based on the handed-over
+    /// event/field bindings and the deployment configuration. This is possible because - after the refactoring -
+    /// ServiceDataControl and all of its (deeply) nested containers use fixed-capacity containers (LinearSearchMap and
+    /// score::containers::DynamicArray) whose sizes are deterministic once the number of service-elements, their number
+    /// of slots and their number of max-subscribers are known.
+    /// The same size applies to the QM and (if present) the ASIL-B control shm-object, as both hold a
+    /// ServiceDataControl created with the very same configuration.
+    /// \return needed size (in bytes) for a single control shm-object.
+    std::size_t CalculateControlShmResourceStorageSize(SkeletonBinding::SkeletonEventBindings& events,
+                                                       SkeletonBinding::SkeletonFieldBindings& fields) const;
+
+    /// \brief Looks up the configured number of sample-slots for the given service-element.
+    /// \param service_element_name name of the event/field.
+    /// \param is_field true if the service-element is a field, false if it is an event.
+    /// \return the configured number of sample-slots.
+    std::size_t GetNumberOfSampleSlotsFromConfig(const std::string_view service_element_name,
+                                                 const bool is_field) const;
+
+    /// \brief Looks up the configured maximum number of subscribers for the given service-element.
+    /// \param service_element_name name of the event/field.
+    /// \param is_field true if the service-element is a field, false if it is an event.
+    /// \return the configured maximum number of subscribers.
+    std::size_t GetMaxSubscribersFromConfig(const std::string_view service_element_name, const bool is_field) const;
 
     /// Functions for creating / opening / initializing shared memory within PrepareOffer.
     bool CreateSharedMemoryForData(
@@ -224,6 +261,11 @@ class SkeletonMemoryManager final
     ServiceDataStorage* storage_;
     ServiceDataControl* control_qm_;
     ServiceDataControl* control_asil_b_;
+
+    /// \brief Number of service-elements (events + fields) of the service-instance.
+    /// \details Determines the fixed capacity of the containers within ServiceDataStorage. Set before the
+    /// ServiceDataStorage is constructed (see CalculateShmResourceStorageSizes).
+    std::size_t number_of_service_elements_;
 
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> storage_resource_;
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> control_qm_resource_;

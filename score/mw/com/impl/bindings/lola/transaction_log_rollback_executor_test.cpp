@@ -55,6 +55,9 @@ const SkeletonInstanceIdentifier kSkeletonInstanceIdentifier{kDummyElementFqId.s
 
 constexpr std::size_t kNumberOfSlots{20U};
 constexpr std::size_t kMaxSubscribers{20U};
+// The test registers a single event (see WithTransactionLogRollbackExecutor), hence a capacity of one is sufficient
+// for the fixed-capacity event_controls_ container within ServiceDataControl.
+constexpr std::size_t kNumberOfServiceElements{1U};
 const SkeletonEventProperties kDummySkeletonEventProperties{kNumberOfSlots, kMaxSubscribers, true};
 
 class TransactionLogRollbackExecutorFixture : public ::testing::Test
@@ -71,7 +74,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
 
     TransactionLogRollbackExecutorFixture& WithTransactionLogRollbackExecutor()
     {
-        service_data_control_ = std::make_unique<ServiceDataControl>(memory_resource_mock_);
+        service_data_control_ = std::make_unique<ServiceDataControl>(kNumberOfServiceElements, memory_resource_mock_);
         AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
 
         unit_ = std::make_unique<TransactionLogRollbackExecutor>(*service_data_control_,

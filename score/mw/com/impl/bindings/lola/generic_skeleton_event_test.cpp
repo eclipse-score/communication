@@ -35,9 +35,11 @@ class GenericSkeletonEventFixture : public SkeletonEventFixture
         // Initialize the skeleton
         InitialiseSkeleton(GetValidInstanceIdentifier());
 
-        // Prepare the skeleton with empty bindings
+        // Prepare the skeleton offering a single service-element, so the fixed-capacity containers within
+        // ServiceDataStorage are sized to hold the one generic event that the tests register below.
         SkeletonBinding::SkeletonEventBindings events{};
         SkeletonBinding::SkeletonFieldBindings fields{};
+        events.emplace(fake_event_name_, mock_event_binding_);
         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback{};
         std::ignore = skeleton_->PrepareOffer(events, fields, std::move(register_shm_object_trace_callback));
     }
