@@ -29,7 +29,7 @@ bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
 bazel_dep(name = "score_baselibs", version = "0.2.9")
 git_override(
     module_name = "score_baselibs",
-    commit = "1571d37834543d781abb268b8038f5649fe367c2",
+    commit = "82f9402474d6dd210fb0cfe5d1867f0d757318c4",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
@@ -37,13 +37,13 @@ git_override(
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
-single_version_override(
-    module_name = "rules_swift",
-    version = "3.1.2",
-)
-
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.10", repo_name = "score_communication_crate_index")
+git_override(
+    module_name = "score_crates",
+    commit = "4656dda8f04a3d88c8089f63111195840cfbd9e3",
+    remote = "https://github.com/eclipse-score/score-crates.git",
+)
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
 
