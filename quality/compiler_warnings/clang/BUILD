@@ -18,6 +18,34 @@ load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 
 cc_args(
+    name = "default_compile_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = [
+        # Clang-only: strict IEEE FP semantics (no contraction/reassociation) for deterministic
+        # IPC message (de)serialization. GCC has no -ffp-model (uses -ffp-contract/-frounding-math).
+        "-ffp-model=strict",
+        # Clang-only: raise the bracket-nesting limit (Clang default 256) for code generated from
+        # Simulink models by MATLAB (IP-Fahren ECU). GCC imposes no comparable limit.
+        "-fbracket-depth=512",
+    ],
+)
+
+# Complete default flag set for the LLVM/Clang toolchain: the shared compile and
+# link defaults plus the Clang-only compile args, combined into a single feature.
+cc_feature(
+    name = "default_flags",
+    args = [
+        "//quality/compiler_warnings:default_compile_args",
+        "//quality/compiler_warnings:default_link_args",
+        ":default_compile_args",
+    ],
+    feature_name = "score_communication_clang_default_flags",
+    visibility = ["//visibility:public"],
+)
+
+cc_args(
     name = "minimal_warnings_args",
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
@@ -26,16 +54,20 @@ cc_args(
         # Suppress false positive from Clang's self-assignment overloaded check.
         # See https://bugs.llvm.org/show_bug.cgi?id=43124
         "-Wno-error=self-assign-overloaded",
+        "-Wno-return-type-c-linkage",
+        "-Wno-unused-command-line-argument",
+        # Clang-only: GCC has no -Wdeprecated-non-prototype (C2x non-prototype decls).
+        "-Wno-deprecated-non-prototype",
     ],
 )
 
 cc_feature(
     name = "minimal_warnings",
     args = [
-        "//quality/compiler_warnings:minimal_warnings_args",
         ":minimal_warnings_args",
     ],
     feature_name = "score_communication_minimal_warnings",
+    implies = ["//quality/compiler_warnings:minimal_warnings"],
     visibility = ["//visibility:public"],
 )
 
@@ -45,26 +77,22 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
-        "-Wfloat-equal",
-        "-Wformat-security",
-        "-Wshadow-all",
-        # Demote shadow-uncaptured-local from error to warning. This diagnostic
-        # fires for code in external headers (e.g. score_baselibs simple_task.h)
-        # which we cannot fix.
-        # raised a ticket in score_baselibs to fix this issue, but for now we demote it to warning
-        # Bug ticket: (https://github.com/eclipse-score/baselibs/issues/304)
         "-Wno-error=shadow-uncaptured-local",
+        "-Warray-bounds",
+        "-Wimplicit-fallthrough",
     ],
 )
 
 cc_feature(
     name = "strict_warnings",
     args = [
-        "//quality/compiler_warnings:strict_warnings_args",
         ":strict_warnings_args",
     ],
     feature_name = "score_communication_strict_warnings",
-    implies = ["minimal_warnings"],
+    implies = [
+        "//quality/compiler_warnings:strict_warnings",
+        "minimal_warnings",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -74,17 +102,33 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
-        "-Wno-error",
+        "-Wno-error=shadow",
+        "-Wno-error=conversion",
+        "-Wno-error=sign-conversion",
     ],
 )
 
 cc_feature(
     name = "strict_warnings_no_error",
+    # Emit -Werror first, then the -Wno-error= demotions, so the demotions
+    # reliably take effect (ordering matters: a trailing blanket -Werror would
+    # re-promote them to errors).
     args = [
+        "//quality/compiler_warnings:treat_warnings_as_errors_args",
         ":strict_warnings_no_error_args",
     ],
     feature_name = "score_communication_strict_warnings_no_error",
     implies = ["strict_warnings"],
+    visibility = ["//visibility:public"],
+)
+
+cc_feature(
+    name = "additional_warnings",
+    args = [
+        "//quality/compiler_warnings:additional_warnings_args",
+    ],
+    feature_name = "score_communication_additional_warnings",
+    implies = [":strict_warnings"],
     visibility = ["//visibility:public"],
 )
 
@@ -93,12 +137,7 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
-    args = [
-        "--no-warnings",
-        # Keep default-error diagnostics non-fatal in third-party code.
-        "-Wno-error=implicit-function-declaration",
-        "-Wno-error=missing-template-arg-list-after-template-kw",
-    ],
+    args = ["-w"],
 )
 
 cc_feature(
@@ -108,7 +147,7 @@ cc_feature(
     ],
     feature_name = "score_communication_third_party_warnings",
     mutually_exclusive = [
-        "//quality/compiler_warnings:additional_warnings",
+        ":additional_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",
         ":minimal_warnings",
         ":strict_warnings",
