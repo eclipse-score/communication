@@ -24,6 +24,8 @@ cc_library(
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:fail_test",
+        "//score/mw/com/test/common_test_resources:proxy_event_receiver",
+        "//score/mw/com/test/common_test_resources:proxy_event_state_change_notifier",
     ],
 )
 
@@ -326,6 +328,19 @@ cc_library(
         ":fail_test",
         "//score/mw/com:types",
         "@score_baselibs//score/concurrency",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "proxy_event_consumer",
+    srcs = ["proxy_event_consumer.cpp"],
+    hdrs = ["proxy_event_consumer.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/test:__subpackages__"],
+    deps = [
+        ":fail_test",
+        "//score/mw/com:types",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
