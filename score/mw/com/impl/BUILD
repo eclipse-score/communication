@@ -1453,53 +1453,158 @@ cc_unit_test(
 )
 
 cc_unit_test(
-    name = "unit_test",
-    srcs = [
-        "enriched_instance_identifier_test.cpp",
-        "generic_proxy_event_test.cpp",
-        "handle_type_test.cpp",
-        "instance_identifier_test.cpp",
-        "instance_specifier_test.cpp",
-        "proxy_binding_test.cpp",
-        "proxy_event_base_test.cpp",
-        "proxy_event_binding_base_test.cpp",
-        "proxy_event_test.cpp",
-        "service_element_map_view_test.cpp",
-        "skeleton_binding_test.cpp",
-        "skeleton_event_base_test.cpp",
-        "skeleton_event_binding_test.cpp",
-        "skeleton_event_test.cpp",
-        "skeleton_field_base_test.cpp",
-        "skeleton_field_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES + [
-        "aborts_upon_exception",
-    ],
+    name = "enriched_instance_identifier_test",
+    srcs = ["enriched_instance_identifier_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":enriched_instance_identifier",
+    ],
+)
+
+cc_unit_test(
+    name = "generic_proxy_event_test",
+    srcs = ["generic_proxy_event_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":generic_proxy_event",
+        ":proxy_event_base",
+        "//score/mw/com:types",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/test:proxy_resources",
+    ],
+)
+
+cc_unit_test(
+    name = "handle_type_test",
+    srcs = ["handle_type_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":handle_type",
+    ],
+)
+
+cc_unit_test(
+    name = "instance_identifier_test",
+    srcs = ["instance_identifier_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":error",
+        ":instance_identifier",
+        "//score/mw/com/impl/configuration/test:configuration_test_resources",
+    ],
+)
+
+cc_unit_test(
+    name = "instance_specifier_test",
+    srcs = ["instance_specifier_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":error",
+        ":instance_specifier",
+    ],
+)
+
+cc_unit_test(
+    name = "proxy_binding_test",
+    srcs = ["proxy_binding_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":proxy_binding",
+    ],
+)
+
+cc_unit_test(
+    name = "proxy_event_base_test",
+    srcs = ["proxy_event_base_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":impl",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/test:proxy_resources",
+    ],
+)
+
+cc_unit_test(
+    name = "proxy_event_binding_base_test",
+    srcs = ["proxy_event_binding_base_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":proxy_event_binding",
+    ],
+)
+
+cc_unit_test(
+    name = "service_element_map_view_test",
+    srcs = ["service_element_map_view_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":service_element_map_view_factory",
+    ],
+)
+
+cc_unit_test(
+    name = "skeleton_binding_test",
+    srcs = ["skeleton_binding_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":skeleton_binding",
+    ],
+)
+
+cc_unit_test(
+    name = "skeleton_event_base_test",
+    srcs = ["skeleton_event_base_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
         ":impl",
         ":runtime_mock",
-        ":service_discovery_mock",
-        ":service_element_map_view",
-        "//score/mw/com:types",
-        "//score/mw/com/impl/bindings/lola:runtime_mock",
-        "//score/mw/com/impl/bindings/lola/test_doubles",
         "//score/mw/com/impl/bindings/mock_binding",
-        "//score/mw/com/impl/configuration/test:configuration_store",
-        "//score/mw/com/impl/configuration/test:configuration_test_resources",
-        "//score/mw/com/impl/plumbing:proxy_binding_factory_mock",
-        "//score/mw/com/impl/plumbing:proxy_event_binding_factory_mock",
-        "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
-        "//score/mw/com/impl/plumbing:skeleton_binding_factory_mock",
-        "//score/mw/com/impl/plumbing:skeleton_event_binding_factory_mock",
-        "//score/mw/com/impl/plumbing:skeleton_field_binding_factory_mock",
+    ],
+)
+
+cc_unit_test(
+    name = "skeleton_event_binding_test",
+    srcs = ["skeleton_event_binding_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":sample_allocatee_tracker",
+        ":skeleton_event_binding",
+    ],
+)
+
+cc_unit_test(
+    name = "skeleton_event_test",
+    srcs = ["skeleton_event_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":runtime_mock",
+        ":skeleton_event",
+        "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
-        "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
-        "//score/mw/com/impl/tracing:tracing_test_resources",
-        "@score_baselibs//score/analysis/tracing/generic_trace_library:mock",
-        "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/os/mocklib:mman_mock",
-        "@score_baselibs//score/os/mocklib:stat_mock",
+    ],
+)
+
+cc_unit_test(
+    name = "skeleton_field_base_test",
+    srcs = ["skeleton_field_base_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":impl",
+        ":runtime_mock",
+        "//score/mw/com/impl/bindings/mock_binding",
+    ],
+)
+
+cc_unit_test(
+    name = "skeleton_field_test",
+    srcs = ["skeleton_field_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":runtime_mock",
+        ":skeleton_field",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
     ],
 )
