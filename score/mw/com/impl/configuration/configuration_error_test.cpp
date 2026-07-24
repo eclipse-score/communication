@@ -50,6 +50,18 @@ TEST_F(ConfigurationErrorTest, MessageForSerializationShmbindinginformationInval
                      "serialization of <LoLaShmBindingInfo> is invalid");
 }
 
+TEST_F(ConfigurationErrorTest, MessageForMergeErrorDuplicateServiceType)
+{
+    testErrorMessage(configuration_errc::configuration_merge_duplicate_service_type,
+                     "Duplicate service type was found during configuration merge. Merge aborted.");
+}
+
+TEST_F(ConfigurationErrorTest, MessageForMergeErrorDuplicateServiceInstance)
+{
+    testErrorMessage(configuration_errc::configuration_merge_duplicate_service_instance,
+                     "Duplicate service instance was found during configuration merge. Merge aborted.");
+}
+
 TEST_F(ConfigurationErrorTest, MessageForDefault)
 {
     testErrorMessage(static_cast<configuration_errc>(-1), "unknown configuration error");

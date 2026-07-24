@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/configuration.h"
 
+#include "score/mw/com/impl/configuration/configuration_error.h"
 #include "score/mw/log/logging.h"
 
 #include <exception>
@@ -60,4 +61,32 @@ ServiceInstanceDeployment* Configuration::AddServiceInstanceDeployments(
     return &emplace_result.first->second;
 }
 
+Result<void> Configuration::MergeServiceEntries(Configuration additional_configuration) noexcept
+{
+    for (auto& service_type : additional_configuration.service_types_)
+    {
+        for (const auto& existing_service_type : service_types_)
+        {
+            if (existing_service_type.first.ToString() == service_type.first.ToString())
+            {
+                return Unexpected(MakeError(configuration_errc::configuration_merge_duplicate_service_type));
+            }
+        }
+
+        std::ignore = service_types_.emplace(std::move(service_type.first), std::move(service_type.second));
+    }
+
+    for (auto& service_instance : additional_configuration.service_instances_)
+    {
+        for (const auto& existing_service_instance : service_instances_)
+        {
+            if (existing_service_instance.first.ToString() == service_instance.first.ToString())
+            {
+                return Unexpected(MakeError(configuration_errc::configuration_merge_duplicate_service_instance));
+            }
+        }
+        std::ignore = service_instances_.emplace(std::move(service_instance.first), std::move(service_instance.second));
+    }
+    return {};
+}
 }  // namespace score::mw::com::impl
