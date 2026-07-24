@@ -13,6 +13,7 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
+load("//quality/api_surface:api_surface.bzl", "api_surface_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -158,4 +159,21 @@ cc_unit_test(
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/mw/log:recorder_mock",
     ],
+)
+
+# --- API Surface Stability Check ---
+
+api_surface_test(
+    name = "api_surface_test",
+    check_docs = False,
+    lock_file = "api_surface.lock.json",
+    target = ":com",
+)
+
+api_surface_test(
+    name = "api_surface_docs_test",
+    check_docs = True,
+    lock_file = "api_surface.lock.json",
+    tags = ["manual"],
+    target = ":com",
 )

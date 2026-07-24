@@ -1,0 +1,32 @@
+{
+  "target": "//quality/api_surface/tests:type_alias_lib",
+  "symbols": [
+    {
+      "name": "Point",
+      "qualified_name": "test::Point",
+      "kind": "type_alias",
+      "signature": "using Point = impl::PointImpl"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "distance",
+      "qualified_name": "test::Point::distance",
+      "kind": "method",
+      "signature": "distance : double () const"
+    },
+    {
+      "name": "x",
+      "qualified_name": "test::Point::x",
+      "kind": "method",
+      "signature": "x : double () const"
+    },
+    {
+      "name": "y",
+      "qualified_name": "test::Point::y",
+      "kind": "method",
+      "signature": "y : double () const"
+    }
+  ],
+  "version": "1"
+}

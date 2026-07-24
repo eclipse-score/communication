@@ -1,0 +1,38 @@
+{
+  "target": "//quality/api_surface/tests:inheritance_lib",
+  "symbols": [
+    {
+      "name": "Circle",
+      "qualified_name": "test::Circle",
+      "kind": "type_alias",
+      "signature": "using Circle = impl::Circle"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "Circle",
+      "qualified_name": "test::Circle::Circle",
+      "kind": "constructor",
+      "signature": "Circle : void (double)"
+    },
+    {
+      "name": "area",
+      "qualified_name": "test::Circle::area",
+      "kind": "method",
+      "signature": "area : double () const"
+    },
+    {
+      "name": "perimeter",
+      "qualified_name": "test::Circle::perimeter",
+      "kind": "method",
+      "signature": "perimeter : double () const"
+    },
+    {
+      "name": "radius",
+      "qualified_name": "test::Circle::radius",
+      "kind": "method",
+      "signature": "radius : double () const"
+    }
+  ],
+  "version": "1"
+}

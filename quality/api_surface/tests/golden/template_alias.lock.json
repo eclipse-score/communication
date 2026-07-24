@@ -1,0 +1,38 @@
+{
+  "target": "//quality/api_surface/tests:template_alias_lib",
+  "symbols": [
+    {
+      "name": "Container",
+      "qualified_name": "test::Container",
+      "kind": "template_type_alias",
+      "signature": "using Container = impl::ContainerImpl<T>"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "empty",
+      "qualified_name": "test::Container::empty",
+      "kind": "method",
+      "signature": "empty : bool () const"
+    },
+    {
+      "name": "pop",
+      "qualified_name": "test::Container::pop",
+      "kind": "method",
+      "signature": "pop : T ()"
+    },
+    {
+      "name": "push",
+      "qualified_name": "test::Container::push",
+      "kind": "method",
+      "signature": "push : void (const T &)"
+    },
+    {
+      "name": "size",
+      "qualified_name": "test::Container::size",
+      "kind": "method",
+      "signature": "size : int () const"
+    }
+  ],
+  "version": "1"
+}

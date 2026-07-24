@@ -1,0 +1,32 @@
+{
+  "target": "//quality/api_surface/tests:private_changes_lib",
+  "symbols": [
+    {
+      "name": "StableApi",
+      "qualified_name": "test::StableApi",
+      "kind": "class",
+      "signature": "class StableApi"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "StableApi",
+      "qualified_name": "test::StableApi::StableApi",
+      "kind": "constructor",
+      "signature": "StableApi : void ()"
+    },
+    {
+      "name": "process",
+      "qualified_name": "test::StableApi::process",
+      "kind": "method",
+      "signature": "process : int (int)"
+    },
+    {
+      "name": "name",
+      "qualified_name": "test::StableApi::name",
+      "kind": "method",
+      "signature": "name : const std::string &() const"
+    }
+  ],
+  "version": "1"
+}
