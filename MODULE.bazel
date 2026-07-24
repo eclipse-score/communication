@@ -433,6 +433,14 @@ bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# CodeQL Coding Standards release used for BOTH the query sources / report
+# scripts (@codeql_coding_standards) and the pre-compiled query pack
+# (@codeql_coding_standards_compiled). These two must always come from the same
+# release, so their version is defined once here and both derive their download
+# URL from it.
+CODING_STANDARDS_VERSION = "2.61.0"
+
+# The version of this tool needs to be deduced by the mentioned compatible version of the codeql_coding_standards release!
 http_archive(
     name = "codeql_bundle",
     build_file = "//third_party/codeql:codeql.BUILD",
@@ -440,15 +448,14 @@ http_archive(
     url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.21.4/codeql-bundle-linux64.tar.gz",
 )
 
-git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-
-git_repository(
+http_archive(
     name = "codeql_coding_standards",
     build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
-    commit = "06dc6bc32b05152fbe94dbf341a3e854574c9df5",  # v2.61.0
     patch_args = ["-p1"],
     patches = ["//third_party/codeql:codeql_coding_standards_misra.patch"],
-    remote = "https://github.com/github/codeql-coding-standards.git",
+    sha256 = "a0ab708bfcd06e29b5f1ddaf49470bd5f234aa23de527aa893572a25a6ff7f47",
+    strip_prefix = "codeql-coding-standards-{version}".format(version = CODING_STANDARDS_VERSION),
+    urls = ["https://github.com/github/codeql-coding-standards/archive/refs/tags/v{version}.tar.gz".format(version = CODING_STANDARDS_VERSION)],
 )
 
 # The MISRA C++ analysis runs a pre-compiled query pack published with the
@@ -464,7 +471,7 @@ codeql_release_pack(
     name = "codeql_coding_standards_compiled",
     pack_tarball = "misra-cpp-coding-standards.tgz",
     sha256 = "fdddef5a7ca1c66ebdbe6c79c60c7b5b6b274dbc3c9ecbc4bb9a0a13cead20a1",
-    urls = ["https://github.com/github/codeql-coding-standards/releases/download/v2.61.0/coding-standards-codeql-packs.zip"],
+    urls = ["https://github.com/github/codeql-coding-standards/releases/download/v{version}/coding-standards-codeql-packs.zip".format(version = CODING_STANDARDS_VERSION)],
 )
 
 register_toolchains(
