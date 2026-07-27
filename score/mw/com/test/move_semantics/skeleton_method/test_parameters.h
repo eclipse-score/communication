@@ -40,6 +40,8 @@ enum class SkeletonMoveScenario : std::uint8_t
     kMoveConstructAfterOffered = 1,
     kMoveAssignBeforeOffered = 2,
     kMoveAssignAfterOffered = 3,
+    kMoveConstructFuzzy = 4,
+    kMoveAssignFuzzy = 5,
     kNumberOfScenarios
 };
 
@@ -53,6 +55,9 @@ CombinedTestConfiguration ReadCommandLineArguments(int argc, const char** argv);
 
 /// \brief Returns true for scenarios where the skeleton is already offered before the move occurs.
 bool IsAfterOffered(SkeletonMoveScenario scenario);
+
+/// \brief Returns true for fuzzy scenarios (move happens at a random point after the proxy is connected).
+bool IsFuzzy(SkeletonMoveScenario scenario);
 
 /// \brief Returns the number of method call iterations the consumer performs for the given scenario.
 std::size_t GetNumberOfCallIterations(SkeletonMoveScenario scenario);

@@ -13,14 +13,16 @@
 #include "score/mw/com/test/move_semantics/skeleton_method/consumer.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
+#include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/proxy_container.h"
-#include "score/mw/com/test/methods/methods_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/move_semantics/skeleton_method/test_method_datatype.h"
 #include "score/mw/com/test/move_semantics/skeleton_method/test_parameters.h"
 
 #include <score/stop_token.hpp>
 
+#include <chrono>
 #include <iostream>
+#include <thread>
 
 namespace score::mw::com::test
 {
@@ -29,6 +31,30 @@ namespace
 
 const std::string kProxyDoneShmPath{"/skeleton_method_move_semantics_proxy_done_sync"};
 const std::string kSkeletonReadyShmPath{"/skeleton_method_move_semantics_skeleton_ready_sync"};
+
+// Fuzzy scenarios: the consumer keeps calling the method for this window while the provider moves the
+// skeleton at a random point.
+constexpr auto kFuzzyCallWindow = std::chrono::milliseconds{1000};
+// Small gap between consecutive calls so the loop covers the whole window.
+constexpr auto kFuzzyCallGap = std::chrono::milliseconds{5};
+
+std::int32_t CallMethodOrFail(SkeletonMethodMoveProxy& proxy)
+{
+    auto result = proxy.moved_method_(kTestArgA, kTestArgB);
+    if (!result.has_value())
+    {
+        FailTest("Consumer: moved_method_ call failed: ", result.error());
+    }
+    return *(result.value());
+}
+
+void VerifyResult(std::int32_t actual, std::int32_t expected, std::size_t call_index)
+{
+    if (actual != expected)
+    {
+        FailTest("Consumer: call ", call_index, " expected ", expected, " but got ", actual);
+    }
+}
 
 }  // namespace
 
@@ -68,6 +94,31 @@ void RunConsumer(const SkeletonMoveScenario& scenario, const score::cpp::stop_to
         proxy_done_sync->Notify();
     }
 
+    if (IsFuzzy(scenario))
+    {
+        std::cout << "\nConsumer: Step 3 (fuzzy) - Notify provider: proxy created" << std::endl;
+        auto proxy_created_sync = ProcessSynchronizer::CreateUniquePtr(kSkeletonReadyShmPath);
+        proxy_created_sync->Notify();
+
+        // Keep calling the method for a fixed window while the provider moves the skeleton at a random
+        // point inside that window.
+        const std::int32_t expected = GetExpectedResult(scenario, 0U);
+        const auto deadline = std::chrono::steady_clock::now() + kFuzzyCallWindow;
+        std::size_t call_count = 0U;
+        while (std::chrono::steady_clock::now() < deadline)
+        {
+            VerifyResult(CallMethodOrFail(proxy_moved_to), expected, call_count);
+            ++call_count;
+            std::this_thread::sleep_for(kFuzzyCallGap);
+        }
+        std::cout << "\nConsumer: fuzzy call loop done (" << call_count << " calls, all returned " << expected << ")"
+                  << std::endl;
+
+        // Notify provider: all calls done (safe to tear down)
+        proxy_done_sync->Notify();
+        return;
+    }
+
     // Step 4. Create skeleton_ready synchronizer for after-offered scenarios
     std::unique_ptr<ProcessSynchronizer> skeleton_ready_sync{};
     if (IsAfterOffered(scenario))
@@ -93,21 +144,11 @@ void RunConsumer(const SkeletonMoveScenario& scenario, const score::cpp::stop_to
             skeleton_ready_sync->Reset();
         }
 
-        //  Call the method
+        //  Call the method and verify the result
         std::cout << "\nConsumer: Calling moved_method_(" << kTestArgA << ", " << kTestArgB << ")" << std::endl;
-        auto result = proxy_moved_to.moved_method_(kTestArgA, kTestArgB);
-        if (!result.has_value())
-        {
-            FailTest("Consumer: moved_method_ call failed: ", result.error());
-        }
-        const std::int32_t actual = *(result.value());
-
-        // Verify result.
         const std::int32_t expected = GetExpectedResult(scenario, iteration);
-        if (actual != expected)
-        {
-            FailTest("Consumer: iteration ", iteration, " expected ", expected, " but got ", actual);
-        }
+        const std::int32_t actual = CallMethodOrFail(proxy_moved_to);
+        VerifyResult(actual, expected, iteration);
         std::cout << "\nConsumer: Iteration " << (iteration + 1U) << " passed (result=" << actual << ")" << std::endl;
 
         // Notify provider: call done

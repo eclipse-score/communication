@@ -46,6 +46,12 @@ bool IsAfterOffered(const SkeletonMoveScenario scenario)
            (scenario == SkeletonMoveScenario::kMoveAssignAfterOffered);
 }
 
+bool IsFuzzy(const SkeletonMoveScenario scenario)
+{
+    return (scenario == SkeletonMoveScenario::kMoveConstructFuzzy) ||
+           (scenario == SkeletonMoveScenario::kMoveAssignFuzzy);
+}
+
 std::size_t GetNumberOfCallIterations(const SkeletonMoveScenario scenario)
 {
     if (scenario == SkeletonMoveScenario::kMoveConstructBeforeOffered)
@@ -107,6 +113,39 @@ std::size_t GetNumberOfCallIterations(const SkeletonMoveScenario scenario)
         return 2U;
     }
 
+    else if (scenario == SkeletonMoveScenario::kMoveConstructFuzzy)
+    {
+        // In this scenario, the provider will:
+        //   - Create Skeleton A
+        //   - Register Handler A on Skeleton A
+        //   - Offer Skeleton A
+        //   - Wait for the consumer's proxy-created signal
+        //   - Sleep a random duration (0–500ms), then move construct once:
+        //     Skeleton B = std::move(Skeleton A)  [lands at a random point mid-loop]
+        //   - Wait for the consumer to finish its call loop
+        // Meanwhile the consumer loops calls for a fixed window (> the provider's max sleep), so the
+        // single move always lands while calls are in flight. Every call must return the same result
+        // regardless of when the move happens. Handler A (a + b = 15) is always called.
+        return 1U;
+    }
+    else if (scenario == SkeletonMoveScenario::kMoveAssignFuzzy)
+    {
+        // In this scenario, the provider will:
+        //   - Create Skeleton A (kMovedTo identity) and Skeleton B (kMovedFrom identity)
+        //   - Register Handler A (a + b) on Skeleton A
+        //   - Register a placeholder handler (a * b) on Skeleton B.
+        //   - Offer both skeletons
+        //   - Wait for the consumer's proxy-created signal
+        //   - Sleep a random duration (0–500ms), then move assign once:
+        //     Skeleton B = std::move(Skeleton A)  [lands at a random point mid-loop]
+        //     Skeleton B now holds kMovedTo identity + Handler A
+        //   - Wait for the consumer to finish its call loop
+        // Meanwhile the consumer loops calls on the kMovedTo proxy for a fixed window, so the single
+        // move always lands while calls are in flight. Every call returns the same result,
+        //(Handler A: a + b = 15) is always called.
+        return 1U;
+    }
+
     FailTest("GetNumberOfCallIterations: Unknown scenario");
     return 0U;
 }
@@ -127,6 +166,13 @@ std::int32_t GetExpectedResult(const SkeletonMoveScenario scenario, const std::s
         case SkeletonMoveScenario::kMoveAssignAfterOffered:
             // iter 0: Handler A (a + b), iter 1: Handler C (a - b)
             return (iteration == 0U) ? kTestArgA + kTestArgB : kTestArgA - kTestArgB;
+
+        case SkeletonMoveScenario::kMoveConstructFuzzy:
+        case SkeletonMoveScenario::kMoveAssignFuzzy:
+            // Fuzzy: the consumer loops calls while a single move lands mid-loop. Every call resolves
+            // to Handler A (a + b), before and after the move. (For move-assign, the moved-from
+            // skeleton's a * b handler is only a sentinel and is never observed by the consumer.)
+            return kTestArgA + kTestArgB;
 
         case SkeletonMoveScenario::kNumberOfScenarios:
             [[fallthrough]];
