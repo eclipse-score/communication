@@ -32,4 +32,6 @@ pub use interface_macros::{HandlerNotSet, HandlerSet};
 pub use method_concept::*;
 #[doc(hidden)]
 pub use paste;
+#[doc(hidden)]
+pub use score_com_macros;
 pub use reloc::Reloc;

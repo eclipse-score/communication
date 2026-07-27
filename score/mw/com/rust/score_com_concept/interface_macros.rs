@@ -542,7 +542,7 @@ macro_rules! interface_producer_mixed {
             // Producer struct - derives TypeStateValidator for compile-time offer() gating.
             // Fields: FieldPublisher per field + MethodHandler per method.
             // Event publishers are NOT stored here; they are created during _offer_internal().
-            #[derive($crate::score_com_concept_macros::TypeStateValidator)]
+            #[derive($crate::score_com_macros::TypeStateValidator)]
             pub struct [<$id Producer>]<R: score_com::Runtime + ?Sized> {
                 $(
                     $fi_name: R::FieldPublisher<$fi_type>,
