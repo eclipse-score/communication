@@ -103,6 +103,11 @@ pub trait Runtime {
 
     type MethodInArgAllocator: MethodInArgAllocator;
 
+    /// `MethodReturnSample<T>` wraps the return value of a method call.
+    /// It provides `Deref<Target = T>` access to the return data, similar to`Sample<T>` for
+    /// events, allowing the runtime to back the return value with shared memory without copying.
+    type MethodReturnSample<T: CommData>: Deref<Target = T>;
+
     /// `MethodCaller<Args, Return>` types for calling methods on the proxy/consumer side
     type MethodCaller<Args: MethodArgs, Return: CommData>: MethodCaller<Args, Return, Self>;
 

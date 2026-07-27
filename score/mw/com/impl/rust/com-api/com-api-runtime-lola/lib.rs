@@ -43,4 +43,5 @@ pub use runtime::{LolaRuntimeImpl, RuntimeBuilderImpl};
 
 pub use method::{
     LolaMethodCaller, LolaMethodHandler, LolaMethodInArgAllocator, LolaMethodInArgMaybeUninit,
+    LolaMethodReturnSample,
 };

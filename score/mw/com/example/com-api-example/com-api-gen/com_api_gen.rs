@@ -58,7 +58,8 @@ interface!(
 // - update_front_tires_pressure(Tire, Tire) -> ()
 // - get_tire_pressure() -> Tire
 // and this method can be accessed through the consumer instance of VehicleMethodsConsumer<R>.
-// Methods use fn-like syntax: method_name(ArgType0, ArgType1, ...) -> ReturnType
+// Methods use fn-like syntax:
+// method_name(ArgType0, ArgType1, ...) -> score_com::Result<R::MethodReturnSample<ReturnType>>.
 // For void return, -> () is required so the macro can identify the member as a method.
 interface!(
     interface VehicleMethods {
