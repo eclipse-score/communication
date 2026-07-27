@@ -130,9 +130,11 @@ pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> 
     /// # Arguments
     /// * `args` - The method arguments to pass to the method call.
     ///
-    /// Returns a future that resolves to a `Result` containing the method return value if any
-    /// otherwise unit or an error if the call failed.
-    fn invoke_with_copy<'a>(&'a self, args: Args) -> impl Future<Output = Result<Return>> + 'a;
+    /// Returns a future that resolves to a `Result` containing a `MethodReturnSample<Return>`
+    /// which provides `Deref<Target = Return>` access to the return value,
+    /// analogous to `Sample<T>` for events — allowing zero-copy access to the return data
+    /// when the runtime backs it with shared memory.
+    fn invoke_with_copy<'a>(&'a self, args: Args) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a;
 
     /// Allocate uninitialized method arguments for a zero-copy method call.
     ///
@@ -158,12 +160,12 @@ pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> 
     /// # Arguments
     /// * `ptrs` - The pre-allocated method argument pointers to pass to the method call in a tuple.
     ///
-    /// Returns a future that resolves to a `Result` containing the method return value if any
-    /// otherwise unit or an error if the call failed.
+    /// Returns a future that resolves to a `Result` containing a `MethodReturnSample<Return>`
+    /// which provides `Deref<Target = Return>` access to the return value.
     fn invoke_zero_copy<'a>(
         &'a self,
         ptrs: <Args as MethodArgs>::PtrTuple,
-    ) -> impl Future<Output = Result<Return>> + 'a;
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a;
 }
 
 /// This is the uninitialized type for a single method argument. It is used in the zero-copy method call path.
@@ -259,12 +261,12 @@ pub trait MethodCallInput<Args: MethodArgs, Return: CommData, R: Runtime + ?Size
     /// # Arguments
     /// * `caller` - The runtime-specific method caller to use for the invocation.
     ///
-    /// Returns a future that resolves to a `Result` containing the method return value if any
-    /// otherwise unit or an error if the call failed.
+    /// Returns a future that resolves to a `Result<R::MethodReturnSample<Return>>`,
+    /// providing `Deref<Target = Return>` access to the return value.
     fn invoke<'a>(
         self,
         caller: &'a R::MethodCaller<Args, Return>,
-    ) -> impl Future<Output = Result<Return>> + 'a
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a
     where
         R::MethodCaller<Args, Return>: MethodCaller<Args, Return, R> + 'a;
 }
@@ -281,7 +283,7 @@ where
     fn invoke<'a>(
         self,
         caller: &'a R::MethodCaller<Args, Return>,
-    ) -> impl Future<Output = Result<Return>> + 'a
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a
     where
         R::MethodCaller<Args, Return>: MethodCaller<Args, Return, R> + 'a,
     {

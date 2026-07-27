@@ -71,6 +71,7 @@ impl Runtime for MockRuntimeImpl {
     type ProducerBuilder<I: Interface> = MockProducerBuilder<I>;
     type Publisher<T: CommData + Debug> = MockPublisher<T>;
     type MethodInArgAllocator = MockMethodInArgAllocator;
+    type MethodReturnSample<T: CommData> = MockMethodReturnSample<T>;
     type MethodCaller<Args: MethodArgs, Return: CommData> = MockMethodCaller<Args, Return, Self>;
     type MethodHandler<Args: MethodArgs, Return: CommData> = MockMethodHandler<Args, Return, Self>;
     type ProviderInfo = MockProviderInfo;
@@ -536,6 +537,20 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> MethodHandler<Args
     }
 }
 
+/// Placeholder return sample for a mock method call result.
+/// Wraps the return value and provides `Deref<Target = T>` access,
+/// mirroring `LolaMethodReturnSample<T>` in the LoLa runtime.
+pub struct MockMethodReturnSample<T> {
+    value: T,
+}
+
+impl<T> Deref for MockMethodReturnSample<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.value
+    }
+}
+
 pub struct MockMethodCaller<Args: MethodArgs, Return: CommData, R: Runtime> {
     _phantom: core::marker::PhantomData<(Args, Return, R)>,
 }
@@ -552,7 +567,10 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         })
     }
 
-    fn invoke_with_copy<'a>(&'a self, _args: Args) -> impl Future<Output = Result<Return>> + 'a {
+    fn invoke_with_copy<'a>(
+        &'a self,
+        _args: Args,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
         async move { todo!("Implement the logic to call the method with copied arguments") }
     }
 
@@ -566,7 +584,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
     fn invoke_zero_copy<'a>(
         &'a self,
         _ptrs: <Args as MethodArgs>::PtrTuple,
-    ) -> impl Future<Output = Result<Return>> + 'a {
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
         async move {
             todo!("Implement the logic to call the method with pre-allocated argument pointers")
         }

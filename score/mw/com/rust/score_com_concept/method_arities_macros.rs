@@ -90,7 +90,7 @@ macro_rules! impl_all_arities {
             fn invoke<'a>(
                 self,
                 caller: &'a R::MethodCaller<($($T,)* $nextT,), Return>,
-            ) -> impl Future<Output = Result<Return>> + 'a
+            ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a
             where
                 R::MethodCaller<($($T,)* $nextT,), Return>:
                     MethodCaller<($($T,)* $nextT,), Return, R> + 'a,

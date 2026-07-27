@@ -18,10 +18,26 @@
 /// All the struct and trait implementations are placeholders for now,
 /// and will be implemented in future as per the requirements of the Lola runtime.
 use core::future::Future;
+use core::ops::Deref;
 use score_com_concept::{
     CommData, MethodArgs, MethodArgsAllocate, MethodCaller, MethodHandler, MethodHandlerCall,
     MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr, Result, Runtime,
 };
+
+/// Placeholder return sample for a method call result.
+/// Wraps the return value and provides `Deref<Target = T>` access,
+/// mirroring how `Sample<T>` works for event data.
+/// The real implementation will reference shared-memory backing (issue #782).
+pub struct LolaMethodReturnSample<T> {
+    value: T,
+}
+
+impl<T> Deref for LolaMethodReturnSample<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.value
+    }
+}
 
 pub struct LolaMethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
     _phantom: core::marker::PhantomData<(Args, Return, R)>,
@@ -69,7 +85,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         })
     }
 
-    fn invoke_with_copy<'a>(&'a self, _args: Args) -> impl Future<Output = Result<Return>> + 'a {
+    fn invoke_with_copy<'a>(&'a self, _args: Args) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
         async move { todo!("Implement the logic to call the method with copied arguments") }
     }
 
@@ -83,7 +99,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
     fn invoke_zero_copy<'a>(
         &'a self,
         _ptrs: <Args as MethodArgs>::PtrTuple,
-    ) -> impl Future<Output = Result<Return>> + 'a {
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
         async move {
             todo!("Implement the logic to call the method with pre-allocated argument pointers")
         }

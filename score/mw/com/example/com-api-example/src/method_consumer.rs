@@ -88,14 +88,16 @@ async fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<
 async fn method_get_call<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
     // Copy path: zero-argument method — empty parens, no empty-tuple needed.
     futures::executor::block_on(async {
+        // it returns a `Result<R::MethodReturnSample<Tire>>`
+        // which is a wrapper around the return value of the method call.
         match consumer.get_tire_pressure().await {
-            Ok(tire) => println!("Current tire pressure: {:?}", tire),
+            Ok(tire) => println!("Current tire pressure: {:?}", *tire),
             Err(e) => eprintln!("Failed to call get_tire_pressure method: {:?}", e),
         }
     });
 }
 
-//two arguments method.
+// two arguments method.
 // It demonstrates calling a method with two arguments, where the arguments are copied into the method call.
 // It also demonstrates the zero-copy path, where the arguments are allocated, written, and then passed to the method call.
 async fn consumer_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
