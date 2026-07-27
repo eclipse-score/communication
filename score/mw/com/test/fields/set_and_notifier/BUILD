@@ -30,16 +30,52 @@ validate_json_schema_test(
     tags = ["lint"],
 )
 
+validate_json_schema_test(
+    name = "validate_getter_only_lola_schema",
+    json = "config/getter_only_mw_com_config.json",
+    schema = "//score/mw/com:config_schema",
+    tags = ["lint"],
+)
+
+validate_json_schema_test(
+    name = "validate_get_and_notifier_lola_schema",
+    json = "config/get_and_notifier_mw_com_config.json",
+    schema = "//score/mw/com:config_schema",
+    tags = ["lint"],
+)
+
+validate_json_schema_test(
+    name = "validate_set_and_get_lola_schema",
+    json = "config/set_and_get_mw_com_config.json",
+    schema = "//score/mw/com:config_schema",
+    tags = ["lint"],
+)
+
+validate_json_schema_test(
+    name = "validate_set_get_and_notifier_lola_schema",
+    json = "config/set_get_and_notifier_mw_com_config.json",
+    schema = "//score/mw/com:config_schema",
+    tags = ["lint"],
+)
+
 cc_library(
     name = "field_types",
     srcs = [
+        "get_and_notifier_enabled_field.cpp",
+        "getter_only_field.cpp",
         "initial_only_field.cpp",
+        "set_and_get_enabled_field.cpp",
         "set_and_notifier_enabled_field.cpp",
+        "set_get_and_notifier_enabled_field.cpp",
         "test_constants.cpp",
     ],
     hdrs = [
+        "get_and_notifier_enabled_field.h",
+        "getter_only_field.h",
         "initial_only_field.h",
+        "set_and_get_enabled_field.h",
         "set_and_notifier_enabled_field.h",
+        "set_get_and_notifier_enabled_field.h",
         "test_constants.h",
     ],
     features = COMPILER_WARNING_FEATURES,
@@ -83,8 +119,12 @@ cc_binary(
     name = "provider",
     srcs = ["main_provider.cpp"],
     data = [
+        "config/get_and_notifier_mw_com_config.json",
+        "config/getter_only_mw_com_config.json",
         "config/initial_only_field_mw_com_config.json",
         "config/mw_com_config.json",
+        "config/set_and_get_mw_com_config.json",
+        "config/set_get_and_notifier_mw_com_config.json",
     ],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -104,8 +144,12 @@ cc_binary(
     name = "consumer",
     srcs = ["main_consumer.cpp"],
     data = [
+        "config/get_and_notifier_mw_com_config.json",
+        "config/getter_only_mw_com_config.json",
         "config/initial_only_field_mw_com_config.json",
         "config/mw_com_config.json",
+        "config/set_and_get_mw_com_config.json",
+        "config/set_get_and_notifier_mw_com_config.json",
     ],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -124,9 +168,13 @@ pkg_application(
     app_name = "MainProviderApp",
     bin = [":provider"],
     etc = [
+        "config/get_and_notifier_mw_com_config.json",
+        "config/getter_only_mw_com_config.json",
         "config/initial_only_field_mw_com_config.json",
         "config/logging.json",
         "config/mw_com_config.json",
+        "config/set_and_get_mw_com_config.json",
+        "config/set_get_and_notifier_mw_com_config.json",
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
@@ -139,9 +187,13 @@ pkg_application(
     app_name = "MainConsumerApp",
     bin = [":consumer"],
     etc = [
+        "config/get_and_notifier_mw_com_config.json",
+        "config/getter_only_mw_com_config.json",
         "config/initial_only_field_mw_com_config.json",
         "config/logging.json",
         "config/mw_com_config.json",
+        "config/set_and_get_mw_com_config.json",
+        "config/set_get_and_notifier_mw_com_config.json",
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",

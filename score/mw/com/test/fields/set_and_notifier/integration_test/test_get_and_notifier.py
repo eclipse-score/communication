@@ -11,9 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-from test_fixture import consumer, provider
+from test_fixture import consumer, provider, FieldScenario
 
-# TODO: Implement once get_and_notifier mode is supported by the provider and consumer binaries.
-# Scenarios to cover (same as notifier and get, verifying result of both GetNewSamples and getter):
-# 1. calling Update / send -> calling get returns value set with send
-# 2. calling Update / send -> calling GetNewSamples returns value set with send
+
+def test_get_and_notifier_returns_initial_value(target):
+    """Test that both GetNewSamples (notifier) and Get() return the value set by the provider via Update()."""
+    with provider(target, FieldScenario.GET_AND_NOTIFIER, "get_and_notifier_mw_com_config.json"):
+        with consumer(target, FieldScenario.GET_AND_NOTIFIER, "get_and_notifier_mw_com_config.json"):
+            pass

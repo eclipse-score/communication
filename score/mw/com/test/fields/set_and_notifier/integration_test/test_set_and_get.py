@@ -11,10 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-from test_fixture import consumer, provider
+from test_fixture import consumer, provider, FieldScenario
 
-# TODO: Implement once set_and_get mode is supported by the provider and consumer binaries.
-# Scenarios to cover:
-# 1. calling set with valid value -> calling get returns value set with setter
-# 2. calling set with invalid value (set handler clamps the value) -> calling get returns clamped value
-# 3. calling Update / send -> calling get returns value set with send
+
+def test_set_and_get_valid_clamped_and_update(target):
+    """Test Set/Get interactions: valid set, clamped set, and provider Update() all verifiable via Get()."""
+    with provider(target, FieldScenario.SET_AND_GET, "set_and_get_mw_com_config.json"):
+        with consumer(target, FieldScenario.SET_AND_GET, "set_and_get_mw_com_config.json"):
+            pass

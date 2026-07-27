@@ -25,6 +25,13 @@ constexpr std::int32_t kInitialValue = 18;
 constexpr std::int32_t kSetRequestValue = 1234;
 constexpr std::int32_t kUpdatedValue = 19;
 
+// Constants for getter-enabled field scenarios
+constexpr std::int32_t kValidSetValue = 42;
+constexpr std::int32_t kInvalidSetValue = 200;
+constexpr std::int32_t kMinFieldValue = 0;
+constexpr std::int32_t kMaxFieldValue = 100;
+constexpr std::int32_t kClampedSetValue = kMaxFieldValue;
+
 }  // namespace score::mw::com::test
 
 #endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_TEST_CONSTANTS_H

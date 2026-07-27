@@ -27,6 +27,10 @@ enum class ProviderMode
 {
     kNotifier,
     kSetAndNotifier,
+    kGet,
+    kGetAndNotifier,
+    kSetAndGet,
+    kSetGetAndNotifier,
 };
 
 /// \brief Parses the mode string (as provided on the command line) into a ProviderMode.

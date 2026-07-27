@@ -11,8 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-from test_fixture import consumer, provider
+from test_fixture import consumer, provider, FieldScenario
 
-# TODO: Implement once get mode is supported by the provider and consumer binaries.
-# Scenarios to cover:
-# 1. calling Update / send -> calling get returns value set with send
+
+def test_get_returns_value_set_by_update(target):
+    """Test that Get() on a getter-only field returns the value set by the provider via Update()."""
+    with provider(target, FieldScenario.GET, "getter_only_mw_com_config.json"):
+        with consumer(target, FieldScenario.GET, "getter_only_mw_com_config.json"):
+            pass

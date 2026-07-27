@@ -18,8 +18,12 @@
 #include "score/mw/com/test/common_test_resources/proxy_container.h"
 #include "score/mw/com/test/common_test_resources/proxy_event_receiver.h"
 #include "score/mw/com/test/common_test_resources/proxy_event_state_change_notifier.h"
+#include "score/mw/com/test/fields/set_and_notifier/get_and_notifier_enabled_field.h"
+#include "score/mw/com/test/fields/set_and_notifier/getter_only_field.h"
 #include "score/mw/com/test/fields/set_and_notifier/initial_only_field.h"
+#include "score/mw/com/test/fields/set_and_notifier/set_and_get_enabled_field.h"
 #include "score/mw/com/test/fields/set_and_notifier/set_and_notifier_enabled_field.h"
+#include "score/mw/com/test/fields/set_and_notifier/set_get_and_notifier_enabled_field.h"
 #include "score/mw/com/test/fields/set_and_notifier/test_constants.h"
 #include "score/mw/com/types.h"
 
@@ -195,8 +199,378 @@ std::optional<ConsumerMode> ParseConsumerMode(std::string_view mode)
     {
         return ConsumerMode::kSetAndNotifier;
     }
-    // TODO: Add "get" mode consumer scenario coverage once getter-enabled field variant is introduced.
+    if (mode == "get")
+    {
+        return ConsumerMode::kGet;
+    }
+    if (mode == "get_and_notifier")
+    {
+        return ConsumerMode::kGetAndNotifier;
+    }
+    if (mode == "set_and_get")
+    {
+        return ConsumerMode::kSetAndGet;
+    }
+    if (mode == "set_get_and_notifier")
+    {
+        return ConsumerMode::kSetGetAndNotifier;
+    }
     return std::nullopt;
+}
+
+void run_get_consumer(const score::cpp::stop_token& stop_token)
+{
+    const std::string kConsumerDoneShmPath{"/fields_getter_consumer_done"};
+
+    auto process_synchronizer_result = ProcessSynchronizer::Create(kConsumerDoneShmPath);
+    if (!process_synchronizer_result.has_value())
+    {
+        FailTest("Consumer: Could not create ProcessSynchronizer");
+    }
+    ExitFunctionGuard exit_guard{[&process_synchronizer_result]() {
+        process_synchronizer_result->Notify();
+    }};
+
+    // Step 1. Find service and create proxy
+    std::cout << "\nConsumer: Step 1 - Find service and create proxy" << std::endl;
+    ProxyContainer<GetterOnlyProxy> proxy_container{};
+    proxy_container.CreateProxy(kInstanceSpecifier, "get");
+    auto& proxy = proxy_container.GetProxy();
+
+    // Step 2. Call Get() and verify the value matches what the provider set via Update()
+    std::cout << "\nConsumer: Step 2 - Call Get() and verify initial value" << std::endl;
+    const auto get_result = proxy.getter_only_field.Get();
+    if (!get_result.has_value())
+    {
+        FailTest("Consumer: Get() failed: ", get_result.error());
+    }
+    if (*(get_result.value()) != kInitialValue)
+    {
+        FailTest("Consumer: Get() returned ", *(get_result.value()), " but expected ", kInitialValue);
+    }
+    std::cout << "\nConsumer: Get() returned expected value " << kInitialValue << std::endl;
+}
+
+void run_get_and_notifier_consumer(const score::cpp::stop_token& stop_token)
+{
+    const std::string kConsumerDoneShmPath{"/fields_get_and_notifier_consumer_done"};
+
+    auto process_synchronizer_result = ProcessSynchronizer::Create(kConsumerDoneShmPath);
+    if (!process_synchronizer_result.has_value())
+    {
+        FailTest("Consumer: Could not create ProcessSynchronizer");
+    }
+    ExitFunctionGuard exit_guard{[&process_synchronizer_result]() {
+        process_synchronizer_result->Notify();
+    }};
+
+    // Step 1. Find service and create proxy
+    std::cout << "\nConsumer: Step 1 - Find service and create proxy" << std::endl;
+    ProxyContainer<GetAndNotifierEnabledProxy> proxy_container{};
+    proxy_container.CreateProxy(kInstanceSpecifier, "get_and_notifier");
+    auto& proxy = proxy_container.GetProxy();
+
+    // Step 2. Subscribe and wait for the initial sample via the notifier
+    std::cout << "\nConsumer: Step 2 - Subscribe and wait for initial sample via notifier" << std::endl;
+    constexpr auto kMaxNumSamples{1U};
+    bool notifier_value_ok{false};
+    auto value_callback = [&notifier_value_ok](const auto& sample_ptr) noexcept {
+        if (*sample_ptr != kInitialValue)
+        {
+            FailTest("Consumer: Notifier received ", *sample_ptr, " but expected ", kInitialValue);
+        }
+        notifier_value_ok = true;
+    };
+    ProxyEventReceiver field_receiver{proxy.get_and_notifier_enabled_field, std::move(value_callback)};
+    ProxyEventStateChangeNotifier subscription_notifier{proxy.get_and_notifier_enabled_field};
+    std::ignore = proxy.get_and_notifier_enabled_field.Subscribe(kMaxNumSamples);
+
+    if (!subscription_notifier.WaitForStateChange(stop_token, SubscriptionState::kSubscribed))
+    {
+        FailTest("Consumer: Subscription failed in get_and_notifier scenario");
+    }
+    if (!field_receiver.WaitForSamples(stop_token, kMaxNumSamples))
+    {
+        FailTest("Consumer: Did not receive initial sample via notifier");
+    }
+
+    // Step 3. Also verify Get() returns the same initial value
+    std::cout << "\nConsumer: Step 3 - Call Get() and verify same initial value" << std::endl;
+    const auto get_result = proxy.get_and_notifier_enabled_field.Get();
+    if (!get_result.has_value())
+    {
+        FailTest("Consumer: Get() failed: ", get_result.error());
+    }
+    if (*(get_result.value()) != kInitialValue)
+    {
+        FailTest("Consumer: Get() returned ", *(get_result.value()), " but expected ", kInitialValue);
+    }
+    std::cout << "\nConsumer: Get() also returned expected value " << kInitialValue << std::endl;
+
+    proxy.get_and_notifier_enabled_field.Unsubscribe();
+}
+
+void run_set_and_get_consumer(const score::cpp::stop_token& stop_token)
+{
+    const std::string kSetsDoneShmPath{"/fields_set_and_get_sets_done"};
+    const std::string kProviderUpdatedShmPath{"/fields_set_and_get_provider_updated"};
+    const std::string kConsumerDoneShmPath{"/fields_set_and_get_consumer_done"};
+
+    auto sets_done_sync_result = ProcessSynchronizer::Create(kSetsDoneShmPath);
+    if (!sets_done_sync_result.has_value())
+    {
+        FailTest("Consumer: Could not create sets-done ProcessSynchronizer");
+    }
+    auto provider_updated_sync_result = ProcessSynchronizer::Create(kProviderUpdatedShmPath);
+    if (!provider_updated_sync_result.has_value())
+    {
+        FailTest("Consumer: Could not create provider-updated ProcessSynchronizer");
+    }
+    auto consumer_done_sync_result = ProcessSynchronizer::Create(kConsumerDoneShmPath);
+    if (!consumer_done_sync_result.has_value())
+    {
+        FailTest("Consumer: Could not create consumer-done ProcessSynchronizer");
+    }
+    ExitFunctionGuard exit_guard{[&consumer_done_sync_result]() {
+        consumer_done_sync_result->Notify();
+    }};
+
+    // Step 1. Find service and create proxy
+    std::cout << "\nConsumer: Step 1 - Find service and create proxy" << std::endl;
+    ProxyContainer<SetAndGetEnabledProxy> proxy_container{};
+    proxy_container.CreateProxy(kInstanceSpecifier, "set_and_get");
+    auto& proxy = proxy_container.GetProxy();
+
+    // Step 2. Get() initial value
+    std::cout << "\nConsumer: Step 2 - Get() initial value" << std::endl;
+    {
+        const auto get_result = proxy.set_and_get_enabled_field.Get();
+        if (!get_result.has_value())
+        {
+            FailTest("Consumer: initial Get() failed: ", get_result.error());
+        }
+        if (*(get_result.value()) != kInitialValue)
+        {
+            FailTest("Consumer: initial Get() returned ", *(get_result.value()), " expected ", kInitialValue);
+        }
+    }
+
+    // Step 3. Set valid value and verify accepted value via Get()
+    std::cout << "\nConsumer: Step 3 - Set valid value (" << kValidSetValue << ") and verify via Get()" << std::endl;
+    {
+        const auto set_result = proxy.set_and_get_enabled_field.Set(kValidSetValue);
+        if (!set_result.has_value())
+        {
+            FailTest("Consumer: Set(valid) failed: ", set_result.error());
+        }
+        const auto get_result = proxy.set_and_get_enabled_field.Get();
+        if (!get_result.has_value())
+        {
+            FailTest("Consumer: Get() after Set(valid) failed: ", get_result.error());
+        }
+        if (*(get_result.value()) != kValidSetValue)
+        {
+            FailTest("Consumer: Get() after Set(valid) returned ", *(get_result.value()), " expected ", kValidSetValue);
+        }
+    }
+
+    // Step 4. Set invalid value (above max) and verify clamped value via Get()
+    std::cout << "\nConsumer: Step 4 - Set invalid value (" << kInvalidSetValue << ") and verify clamped (" << kClampedSetValue << ") via Get()" << std::endl;
+    {
+        const auto set_result = proxy.set_and_get_enabled_field.Set(kInvalidSetValue);
+        if (!set_result.has_value())
+        {
+            FailTest("Consumer: Set(invalid) failed: ", set_result.error());
+        }
+        const auto get_result = proxy.set_and_get_enabled_field.Get();
+        if (!get_result.has_value())
+        {
+            FailTest("Consumer: Get() after Set(invalid) failed: ", get_result.error());
+        }
+        if (*(get_result.value()) != kClampedSetValue)
+        {
+            FailTest("Consumer: Get() after Set(invalid) returned ", *(get_result.value()), " expected clamped ", kClampedSetValue);
+        }
+    }
+
+    // Step 5. Signal provider that sets are done
+    std::cout << "\nConsumer: Step 5 - Signal provider sets done" << std::endl;
+    sets_done_sync_result->Notify();
+
+    // Step 6. Wait for provider to update the field
+    std::cout << "\nConsumer: Step 6 - Wait for provider updated notification" << std::endl;
+    if (!provider_updated_sync_result->WaitWithAbort(stop_token))
+    {
+        FailTest("Consumer: WaitWithAbort (provider-updated) stopped by stop_token");
+    }
+
+    // Step 7. Get() updated value
+    std::cout << "\nConsumer: Step 7 - Get() updated value" << std::endl;
+    {
+        const auto get_result = proxy.set_and_get_enabled_field.Get();
+        if (!get_result.has_value())
+        {
+            FailTest("Consumer: Get() after provider update failed: ", get_result.error());
+        }
+        if (*(get_result.value()) != kUpdatedValue)
+        {
+            FailTest("Consumer: Get() after provider update returned ", *(get_result.value()), " expected ", kUpdatedValue);
+        }
+    }
+}
+
+void run_set_get_and_notifier_consumer(const score::cpp::stop_token& stop_token)
+{
+    const std::string kSetsDoneShmPath{"/fields_set_get_notifier_sets_done"};
+    const std::string kProviderUpdatedShmPath{"/fields_set_get_notifier_provider_updated"};
+    const std::string kConsumerDoneShmPath{"/fields_set_get_notifier_consumer_done"};
+
+    auto sets_done_sync_result = ProcessSynchronizer::Create(kSetsDoneShmPath);
+    if (!sets_done_sync_result.has_value())
+    {
+        FailTest("Consumer: Could not create sets-done ProcessSynchronizer");
+    }
+    auto provider_updated_sync_result = ProcessSynchronizer::Create(kProviderUpdatedShmPath);
+    if (!provider_updated_sync_result.has_value())
+    {
+        FailTest("Consumer: Could not create provider-updated ProcessSynchronizer");
+    }
+    auto consumer_done_sync_result = ProcessSynchronizer::Create(kConsumerDoneShmPath);
+    if (!consumer_done_sync_result.has_value())
+    {
+        FailTest("Consumer: Could not create consumer-done ProcessSynchronizer");
+    }
+    ExitFunctionGuard exit_guard{[&consumer_done_sync_result]() {
+        consumer_done_sync_result->Notify();
+    }};
+
+    // Step 1. Find service and create proxy
+    std::cout << "\nConsumer: Step 1 - Find service and create proxy" << std::endl;
+    ProxyContainer<SetGetAndNotifierEnabledProxy> proxy_container{};
+    proxy_container.CreateProxy(kInstanceSpecifier, "set_get_and_notifier");
+    auto& proxy = proxy_container.GetProxy();
+
+    // Step 2. Subscribe and wait for initial sample via notifier, also verify Get()
+    std::cout << "\nConsumer: Step 2 - Subscribe and wait for initial sample, verify Get()" << std::endl;
+    constexpr auto kMaxNumSamples{3U};
+    std::size_t sample_index{0U};
+    auto value_callback = [&sample_index](const auto& sample_ptr) noexcept {
+        if (sample_index == 0U && *sample_ptr != kInitialValue)
+        {
+            FailTest("Consumer: Notifier sample[0] = ", *sample_ptr, " expected ", kInitialValue);
+        }
+        else if (sample_index == 1U && *sample_ptr != kValidSetValue)
+        {
+            FailTest("Consumer: Notifier sample[1] = ", *sample_ptr, " expected ", kValidSetValue);
+        }
+        else if (sample_index == 2U && *sample_ptr != kClampedSetValue)
+        {
+            FailTest("Consumer: Notifier sample[2] = ", *sample_ptr, " expected ", kClampedSetValue);
+        }
+        ++sample_index;
+    };
+    ProxyEventReceiver field_receiver{proxy.set_get_and_notifier_enabled_field, std::move(value_callback)};
+    ProxyEventStateChangeNotifier subscription_notifier{proxy.set_get_and_notifier_enabled_field};
+    std::ignore = proxy.set_get_and_notifier_enabled_field.Subscribe(kMaxNumSamples);
+
+    if (!subscription_notifier.WaitForStateChange(stop_token, SubscriptionState::kSubscribed))
+    {
+        FailTest("Consumer: Subscription failed in set_get_and_notifier scenario");
+    }
+    if (!field_receiver.WaitForSamples(stop_token, 1U))
+    {
+        FailTest("Consumer: Did not receive initial sample via notifier");
+    }
+
+    // Step 3. Get() initial value
+    {
+        const auto get_result = proxy.set_get_and_notifier_enabled_field.Get();
+        if (!get_result.has_value())
+        {
+            FailTest("Consumer: initial Get() failed: ", get_result.error());
+        }
+        if (*(get_result.value()) != kInitialValue)
+        {
+            FailTest("Consumer: initial Get() returned ", *(get_result.value()), " expected ", kInitialValue);
+        }
+    }
+
+    // Step 4. Set valid value, wait for notifier sample, verify Get()
+    std::cout << "\nConsumer: Step 4 - Set valid value (" << kValidSetValue << ") and verify via notifier + Get()" << std::endl;
+    {
+        const auto set_result = proxy.set_get_and_notifier_enabled_field.Set(kValidSetValue);
+        if (!set_result.has_value())
+        {
+            FailTest("Consumer: Set(valid) failed: ", set_result.error());
+        }
+        if (!field_receiver.WaitForSamples(stop_token, 1U))
+        {
+            FailTest("Consumer: Did not receive notifier sample after Set(valid)");
+        }
+        const auto get_result = proxy.set_get_and_notifier_enabled_field.Get();
+        if (!get_result.has_value())
+        {
+            FailTest("Consumer: Get() after Set(valid) failed: ", get_result.error());
+        }
+        if (*(get_result.value()) != kValidSetValue)
+        {
+            FailTest("Consumer: Get() after Set(valid) returned ", *(get_result.value()), " expected ", kValidSetValue);
+        }
+    }
+
+    // Step 5. Set invalid value, wait for notifier sample (clamped), verify Get()
+    std::cout << "\nConsumer: Step 5 - Set invalid value (" << kInvalidSetValue << ") and verify clamped (" << kClampedSetValue << ") via notifier + Get()" << std::endl;
+    {
+        const auto set_result = proxy.set_get_and_notifier_enabled_field.Set(kInvalidSetValue);
+        if (!set_result.has_value())
+        {
+            FailTest("Consumer: Set(invalid) failed: ", set_result.error());
+        }
+        if (!field_receiver.WaitForSamples(stop_token, 1U))
+        {
+            FailTest("Consumer: Did not receive notifier sample after Set(invalid)");
+        }
+        const auto get_result = proxy.set_get_and_notifier_enabled_field.Get();
+        if (!get_result.has_value())
+        {
+            FailTest("Consumer: Get() after Set(invalid) failed: ", get_result.error());
+        }
+        if (*(get_result.value()) != kClampedSetValue)
+        {
+            FailTest("Consumer: Get() after Set(invalid) returned ", *(get_result.value()), " expected clamped ", kClampedSetValue);
+        }
+    }
+
+    // Step 6. Signal provider that sets are done
+    std::cout << "\nConsumer: Step 6 - Signal provider sets done" << std::endl;
+    sets_done_sync_result->Notify();
+
+    // Step 7. Wait for provider to update the field
+    std::cout << "\nConsumer: Step 7 - Wait for provider updated notification" << std::endl;
+    if (!provider_updated_sync_result->WaitWithAbort(stop_token))
+    {
+        FailTest("Consumer: WaitWithAbort (provider-updated) stopped by stop_token");
+    }
+
+    // Step 8. Wait for notifier sample after provider Update(), verify Get()
+    std::cout << "\nConsumer: Step 8 - Wait for notifier sample from provider Update() and verify Get()" << std::endl;
+    {
+        if (!field_receiver.WaitForSamples(stop_token, 1U))
+        {
+            FailTest("Consumer: Did not receive notifier sample after provider update");
+        }
+        const auto get_result = proxy.set_get_and_notifier_enabled_field.Get();
+        if (!get_result.has_value())
+        {
+            FailTest("Consumer: Get() after provider update failed: ", get_result.error());
+        }
+        if (*(get_result.value()) != kUpdatedValue)
+        {
+            FailTest("Consumer: Get() after provider update returned ", *(get_result.value()), " expected ", kUpdatedValue);
+        }
+    }
+
+    proxy.set_get_and_notifier_enabled_field.Unsubscribe();
 }
 
 ConsumerConfig ParseConsumerConfig(int argc, const char** argv)
@@ -241,6 +615,18 @@ void run_consumer(const score::cpp::stop_token& stop_token, ConsumerMode mode)
             return;
         case ConsumerMode::kSetAndNotifier:
             run_set_and_notifier_consumer(stop_token);
+            return;
+        case ConsumerMode::kGet:
+            run_get_consumer(stop_token);
+            return;
+        case ConsumerMode::kGetAndNotifier:
+            run_get_and_notifier_consumer(stop_token);
+            return;
+        case ConsumerMode::kSetAndGet:
+            run_set_and_get_consumer(stop_token);
+            return;
+        case ConsumerMode::kSetGetAndNotifier:
+            run_set_get_and_notifier_consumer(stop_token);
             return;
     }
 }

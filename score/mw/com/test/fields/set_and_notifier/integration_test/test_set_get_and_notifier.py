@@ -11,10 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-from test_fixture import consumer, provider
+from test_fixture import consumer, provider, FieldScenario
 
-# TODO: Implement once set_get_and_notifier mode is supported by the provider and consumer binaries.
-# Scenarios to cover (same as set_and_notifier, but also verify result of getter):
-# 1. calling set with valid value -> calling get and GetNewSamples both return value set with setter
-# 2. calling set with invalid value (set handler clamps the value) -> calling get and GetNewSamples both return clamped value
-# 3. calling Update / send -> calling get and GetNewSamples both return value set with send
+
+def test_set_get_and_notifier_all_scenarios(target):
+    """Test Set/Get/Notifier interactions: each Set and provider Update() is verified via both notifier and Get()."""
+    with provider(target, FieldScenario.SET_GET_AND_NOTIFIER, "set_get_and_notifier_mw_com_config.json"):
+        with consumer(target, FieldScenario.SET_GET_AND_NOTIFIER, "set_get_and_notifier_mw_com_config.json"):
+            pass

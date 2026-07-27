@@ -46,3 +46,43 @@ integration_test(
     ],
     filesystem = ":filesystem",
 )
+
+integration_test(
+    name = "test_get",
+    timeout = "moderate",
+    srcs = [
+        "test_get.py",
+        ":test_fixture",
+    ],
+    filesystem = ":filesystem",
+)
+
+integration_test(
+    name = "test_get_and_notifier",
+    timeout = "moderate",
+    srcs = [
+        "test_get_and_notifier.py",
+        ":test_fixture",
+    ],
+    filesystem = ":filesystem",
+)
+
+integration_test(
+    name = "test_set_and_get",
+    timeout = "moderate",
+    srcs = [
+        "test_set_and_get.py",
+        ":test_fixture",
+    ],
+    filesystem = ":filesystem",
+)
+
+integration_test(
+    name = "test_set_get_and_notifier",
+    timeout = "moderate",
+    srcs = [
+        "test_set_get_and_notifier.py",
+        ":test_fixture",
+    ],
+    filesystem = ":filesystem",
+)

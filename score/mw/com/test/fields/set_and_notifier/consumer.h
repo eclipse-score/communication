@@ -27,6 +27,10 @@ enum class ConsumerMode
 {
     kNotifier,
     kSetAndNotifier,
+    kGet,
+    kGetAndNotifier,
+    kSetAndGet,
+    kSetGetAndNotifier,
 };
 
 struct ConsumerConfig
