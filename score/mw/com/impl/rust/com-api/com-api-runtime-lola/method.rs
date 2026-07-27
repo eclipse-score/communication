@@ -11,6 +11,12 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+// TODO: https://github.com/eclipse-score/communication/issues/782
+// Implement the method related interface for Lola runtime. This is a placeholder implementation for now.
+// also implement required FFI interface to call the Lola runtime for method calls and registration of handlers.
+
+/// All the struct and trait implementations are placeholders for now,
+/// and will be implemented in future as per the requirements of the Lola runtime.
 use core::future::Future;
 use score_com_concept::{
     CommData, MethodArgs, MethodArgsAllocate, MethodCaller, MethodHandler, MethodHandlerCall,
@@ -33,10 +39,12 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> MethodHandler<Args
         })
     }
 
-    // This function should have the thread-pool or async executor to handle the incoming method calls and dispatch them to the registered handler.
+    // This function should have the thread-pool or
+    // async executor to handle the incoming method calls and dispatch them to the registered handler.
     // For now, we will just have a placeholder implementation.
     // So that concurrent method calls can happen on same consumer instance.
-    // If two consumer call same methods, which may happen then user should have synchronization mechanism in their handler implementation to handle concurrent calls.
+    // If two consumer call same methods,
+    //which may happen then user should have synchronization mechanism in their handler implementation to handle concurrent calls.
     fn register_handler<F>(&self, _handler: F)
     where
         F: MethodHandlerCall<Args, Return>,
@@ -82,7 +90,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
     }
 }
 
-/// Lola placeholder for a single pre-allocated method argument slot.
+// Lola placeholder for a single pre-allocated method argument slot.
 pub struct LolaMethodInArgMaybeUninit<T> {
     _phantom: core::marker::PhantomData<T>,
 }
@@ -97,7 +105,7 @@ impl<T> MethodInArgMaybeUninit<T> for LolaMethodInArgMaybeUninit<T> {
     }
 }
 
-/// Lola placeholder allocator.
+// Lola placeholder allocator.
 pub struct LolaMethodInArgAllocator;
 
 impl MethodInArgAllocator for LolaMethodInArgAllocator {
