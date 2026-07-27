@@ -21,27 +21,17 @@
 //! `Reloc`, `CommData`, `MethodArgs`, `MethodArgsAllocate`, `MethodCallInput` (zero-copy
 //! path), and `MethodHandlerCall` - is generated using macros.
 //!
-//! `_gen_method_wrapper!` in `interface_macros.rs` self-generates its argument
+//! Note: `_gen_method_wrapper!` in `interface_macros.rs` self-generates its argument
 //! identifiers via a counting recursive macro, so it has no separate limit to keep in
 //! sync - raising the arity here is the only change needed.
 //! (I don't think this many arguments will support by clippy linting,
-//!  so we may need to reduce the limit to 8 or 10 in the future based on project clippy linting rules.)
+//!  so we may need to reduce the limit to 4 to 5 in the future based on project clippy linting rules.)
 //!
 //! # Arity 0 special case
 //!
 //! Arity 0 (`()`) is handled separately in `com_api_method.rs` because the zero-tuple
-//! has no positional variables to destructure.  This macro covers arities **1 and above**.
-//!
-//! # How the recursive macro works
-//!
-//! The macro maintains two accumulated token lists in parallel:
-//! - **Type vars** `[T1, T2, …]` - used as generic parameters in trait impls.
-//! - **Arg names** `[a0, a1, …]` - used for positional destructuring inside
-//!   `MethodHandlerCall::call` and `MethodCallInput::invoke`.
-//!
-//! At each step the next `(TypeIdent, arg_ident)` pair is peeled from the input, the
-//! two accumulated lists grow by one, all six impls for the new arity are emitted, and
-//! the recursion continues with the extended lists.
+//! has no positional variables to destructure.
+//! This macro covers arities 1 through 8 (inclusive) by default, but can be extended to higher arities if needed.
 
 use crate::{
     CommData, MethodArgs, MethodArgsAllocate, MethodCallInput, MethodCaller, MethodHandlerCall,

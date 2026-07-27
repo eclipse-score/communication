@@ -37,6 +37,9 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields, Type};
 ///
 /// Entry point on the producer: `init()` - returns the validator with every state
 /// parameter set to its initial value (`Uninit` / `HandlerNotSet`).
+///
+/// Note: This macro identifies member types by the member types so if member type is changed to a different type or renamed,
+/// then macro need to be updated to recognize the new type name or path segment.
 pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
@@ -67,6 +70,7 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
                 .into();
             }
         },
+        // TODO: If require support for enum or tuple struct then add support here.
         _ => {
             return syn::Error::new_spanned(name, "TypeStateValidator only supports structs")
                 .to_compile_error()
@@ -95,11 +99,13 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
             Some(i) => i.clone(),
             None => continue,
         };
-        // Skip the bookkeeping field — it carries no type-state.
+        // Skip the `instance_info` field, which is not part of the type-state validation.
         if ident == "instance_info" {
             continue;
         }
 
+        // Note: pattern matching ("FieldPublisher", "MethodHandler") must match the trait/type
+        // names used in the Runtime associated types. If those names change, update here too.
         if let Type::Path(type_path) = &f.ty {
             if let Some(segment) = type_path.path.segments.last() {
                 match segment.ident.to_string().as_str() {
@@ -135,7 +141,8 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
             }
         }
     }
-
+    // If no FieldPublisher or MethodHandler members were found, emit a compile error.
+    // because macro is only added to producer struct which has at least one FieldPublisher or MethodHandler member.
     if field_members.is_empty() && method_members.is_empty() {
         return syn::Error::new_spanned(
             name,
