@@ -18,6 +18,8 @@ class SkeletonMoveScenario(IntEnum):
     MOVE_CONSTRUCT_AFTER_OFFERED  = 1
     MOVE_ASSIGN_BEFORE_OFFERED    = 2
     MOVE_ASSIGN_AFTER_OFFERED     = 3
+    MOVE_CONSTRUCT_FUZZY          = 4
+    MOVE_ASSIGN_FUZZY             = 5
 
 
 def consumer_and_provider(target, scenario, **kwargs):

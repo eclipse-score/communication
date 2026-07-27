@@ -93,3 +93,39 @@ integration_test(
     ],
     filesystem = ":different_processes_filesystem",
 )
+
+integration_test(
+    name = "move_construct_fuzzy_skeleton_same_process_test",
+    srcs = [
+        "move_construct_fuzzy_skeleton_same_process_test.py",
+        "test_fixture.py",
+    ],
+    filesystem = "//score/mw/com/test/move_semantics/skeleton_method:main_consumer_and_provider-pkg",
+)
+
+integration_test(
+    name = "move_assign_fuzzy_skeleton_same_process_test",
+    srcs = [
+        "move_assign_fuzzy_skeleton_same_process_test.py",
+        "test_fixture.py",
+    ],
+    filesystem = "//score/mw/com/test/move_semantics/skeleton_method:main_consumer_and_provider-pkg",
+)
+
+integration_test(
+    name = "move_construct_fuzzy_skeleton_different_process_test",
+    srcs = [
+        "move_construct_fuzzy_skeleton_different_process_test.py",
+        "test_fixture.py",
+    ],
+    filesystem = ":different_processes_filesystem",
+)
+
+integration_test(
+    name = "move_assign_fuzzy_skeleton_different_process_test",
+    srcs = [
+        "move_assign_fuzzy_skeleton_different_process_test.py",
+        "test_fixture.py",
+    ],
+    filesystem = ":different_processes_filesystem",
+)
