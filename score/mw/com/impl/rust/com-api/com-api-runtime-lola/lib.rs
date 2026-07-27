@@ -28,6 +28,9 @@
 use core::fmt::Debug;
 
 mod consumer;
+// Note: The `method` module is currently a placeholder and
+// will be implemented in the future for the Lola runtime.
+// https://github.com/eclipse-score/communication/issues/782
 mod method;
 mod producer;
 mod runtime;

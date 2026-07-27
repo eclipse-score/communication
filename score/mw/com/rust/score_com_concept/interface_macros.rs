@@ -10,24 +10,36 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-// Type-state marker for handler not registered (compile-time tracking).
+/// Type-state marker for uninitialized field value state (compile-time tracking).
+///
+/// These marker types are never constructed as values - they only appear as generic
+/// type parameters inside `PhantomData<(S, H)>` on the generated `{Id}Validator` struct
+/// (see `TypeStateValidator` in `score_com_macros`). The compiler's `dead_code` lint
+/// flags unit structs that are never instantiated, so it is suppressed here deliberately.
 #[allow(dead_code)]
 pub struct Uninit;
 
-/// Type-state marker for initialized field state (compile-time tracking).
+/// Type-state marker for initialized field value state (compile-time tracking).
+/// See [`Uninit`] for why `dead_code` is suppressed.
 #[allow(dead_code)]
 pub struct Init;
 
 /// Type-state marker for handler not registered (compile-time tracking).
+/// See [`Uninit`] for why `dead_code` is suppressed.
 #[allow(dead_code)]
 pub struct HandlerNotSet;
 
 /// Type-state marker for handler registered (compile-time tracking).
+/// See [`Uninit`] for why `dead_code` is suppressed.
 #[allow(dead_code)]
 pub struct HandlerSet;
 
 /// Main interface macro that generates Consumer, Producer, and OfferedProducer types
 /// along with all necessary trait implementations.
+///
+/// Supports Event-only interfaces (backward compatible) and mixed interfaces containing
+/// any combination of `Event<T>`, `Field<T>`, and `method_name(Args) -> Return` members
+/// in the same definition block.
 ///
 /// Automatically generates unique type names from the identifier of macro invocation.
 /// For an interface with identifier `{id}`, it generates:
@@ -76,7 +88,7 @@ pub struct HandlerSet;
 ///         interface Vehicle {
 ///             Id = "AbcInterface",
 ///             left_tire: Event<Tire>,
-///             left_tire_field: Field<Exhaust>,
+///             left_tire_field: Field<Tire>,
 ///             left_tire_method(Tire) -> Tire,
 ///         }
 ///     );
@@ -91,17 +103,29 @@ pub struct HandlerSet;
 ///   `left_tire_method: MethodHandler<(Tire,), Tire>`. Requires `.init()` chain before `.offer()`.
 /// - `VehicleOfferedProducer<R>` with event publisher `left_tire`, plus moved field publisher and
 ///   method handler.
-/// Main interface macro that supports Event-only interfaces (backward compatible) and
-/// mixed interfaces containing any combination of `Event<T>`, `Field<T>`, and
-/// `method_name(Args) -> Return` members in the same definition block.
+/// - For `left_tire_field`, the user needs to both update the initial value and register the
+///   set-handler callback, using the same `init()` chain, before offering the producer instance.
 ///
-/// # Backward-compatible arms (unchanged)
-/// Event-only interfaces continue to work without any changes.
+/// The code will look like this:
+/// ```ignore
+/// let producer = producer_builder.build().expect("Failed to build producer instance");
+/// producer.init()
+///     .update_left_tire_field(&initial_value)?
+///     .register_set_handler_left_tire_field(|value| {
+///         println!("Received left_tire_field update: {:?}", value);
+///     })
+///     .register_left_tire_method_handler(|tire: Tire| {
+///         println!("Received left_tire_method call with tire: {:?}", tire);
+///         tire
+///     })
+///     .offer()?;
+/// ```
+/// In the code above, if the user forgets to register the field set-handler or the method
+/// handler, it will be a compile-time error, since `init()` requires all handlers to be
+/// registered before `offer()` becomes available.
 ///
-/// # Mixed / unified arms
-/// When the body contains anything other than a homogeneous list of `Event<T>` members
-/// (i.e., any `Field<T>` or fn-like method member), the recursive-macro arms parse the body
-/// and delegate to `interface_consumer_mixed!` / `interface_producer_mixed!`.
+/// If the user calls `producer.offer()` directly (without going through `init()`), it will
+/// panic at runtime, since the handlers have not been registered yet.
 #[macro_export]
 macro_rules! interface {
     // Backward-compatible: Event-only, auto-generated ID
@@ -347,7 +371,7 @@ macro_rules! interface_consumer {
     };
 }
 
-///  This is Event specific.
+/// This is Event specific.
 /// Macro to implement the Producer and OfferedProducer traits for
 /// a given interface ID and its events.
 /// Generates Producer and OfferedProducer structs with publishers for each event.
@@ -505,17 +529,17 @@ macro_rules! interface_consumer_mixed {
 /// interfaces that may contain any combination of events, fields, and methods.
 ///
 /// # Design
-/// - **Event publishers** (`R::Publisher<T>`) are created *lazily during `_offer_internal()`*
+/// - Event publishers (`R::Publisher<T>`) are created *lazily during `_offer_internal()`*
 ///   so they are only present on the `OfferedProducer`.
-/// - **Field publishers** (`R::FieldPublisher<T>`) are created eagerly in `Producer::new()` and
+/// - Field publishers (`R::FieldPublisher<T>`) are created eagerly in `Producer::new()` and
 ///   moved into `OfferedProducer` when the service is offered.
-/// - **Method handlers** (`R::MethodHandler<Args, Ret>`) likewise created eagerly and moved.
+/// - Method handlers (`R::MethodHandler<Args, Ret>`) likewise created eagerly and moved.
 ///
 /// When the interface has at least one field or method member, the `Producer` struct derives
 /// `TypeStateValidator` which generates the `.init()` entry point and the `update_*` /
 /// `register_set_handler_*` / `register_*_handler` chain required before `offer()`.
 ///
-/// When the interface has *only* events (no fields, no methods), a plain `offer()` is generated
+/// When the interface has only events (no fields, no methods), a plain `offer()` is generated
 /// directly (matching the existing event-only pattern).
 #[doc(hidden)]
 #[macro_export]
