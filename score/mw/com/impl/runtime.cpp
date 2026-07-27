@@ -19,7 +19,6 @@
 #include "score/mw/com/impl/tracing/i_binding_tracing_runtime.h"
 #include "score/mw/com/impl/tracing/tracing_runtime.h"
 
-#include "score/filesystem/filesystem.h"
 #include "score/memory/shared/memory_resource_registry.h"
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/log/logging.h"
@@ -85,7 +84,6 @@ using TracingFilterConfig = tracing::TracingFilterConfig;
 IRuntime* Runtime::mock_ = nullptr;
 std::optional<Configuration> Runtime::initialization_config_{};
 bool Runtime::runtime_initialization_locked_{false};
-bool Runtime::addon_configuration_loaded_{false};
 
 std::mutex score::mw::com::impl::Runtime::mutex_{};
 
@@ -116,15 +114,6 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
     std::lock_guard<std::mutex> lock{mutex_};
     if (runtime_initialization_locked_)
     {
-        if (addon_configuration_loaded_)
-        {
-            // Fail explicitly, because an add-on configuration has been loaded before this explicit call to
-            // Initialize() was made.
-            mw::log::LogError("lola")
-                << "Add-on configuration has already been loaded, before explicitly loading a different "
-                   "configuration. Aborting.";
-            std::terminate();
-        }
         error_double_init();
         return;
     }
@@ -139,52 +128,32 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
 
 Result<void> Runtime::InitializeRuntimeAddonConfiguration(const runtime::RuntimeConfiguration& runtime_configuration)
 {
-
     auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
 
-    if (runtime_initialization_locked_)
+    return HandleAddonConfiguration(std::move(config));
+}
+
+Result<void> Runtime::InitializeRuntimeAddonConfiguration(score::json::Any json)
+{
+    auto config = configuration::Parse(std::move(json));
+
+    return HandleAddonConfiguration(std::move(config));
+}
+
+Result<void> Runtime::HandleAddonConfiguration(const Configuration& config) noexcept
+{
+    if (config.GetGlobalConfiguration().GetApplicationId().has_value())
     {
-        // Runtime configuration is already locked. Merge entries into existing configuration
-        const auto merge_result = Runtime::getInstanceInternal().MergeAdditionalConfiguration(std::move(config));
-        if (!merge_result.has_value())
-        {
-            mw::log::LogError("lola") << merge_result.error();
-            std::terminate();
-        }
-        return {};
+        mw::log::LogWarn("lola") << "Add-on configuration contains global configuration data that will be ignored. "
+                                    "Please remove global configuration from add-on configuration.";
     }
 
-    // Initialize() has been called already, but runtime initialization is not yet locked. Merge into existing
-    // configuration so that services will be available when the runtime gets initialized and locked.
-    if (initialization_config_.has_value())
+    const auto merge_result = Runtime::getInstanceInternal().MergeAdditionalConfiguration(std::move(config));
+    if (!merge_result.has_value())
     {
-        std::lock_guard<std::mutex> lock{mutex_};
-        const auto merge_result = initialization_config_.value().MergeServiceEntries(std::move(config));
-        if (!merge_result.has_value())
-        {
-            mw::log::LogError("lola") << merge_result.error();
-            std::terminate();
-        }
-        return {};
-    }
-
-    // Check if there is a mw_com_config.json in the default path, which has not been loaded yet, because
-    // runtime_initialization_locked_ == false. In this case prevent loading an add-on configuration and inform user
-    // about this potential configuration issue.
-    const auto default_configuration_path = filesystem::Path{"./etc/mw_com_config.json"};
-    const auto default_configuration_file_exists =
-        filesystem::IStandardFilesystem::instance().Exists(default_configuration_path);
-    if (default_configuration_file_exists.has_value() && default_configuration_file_exists.value())
-    {
-        mw::log::LogError("lola")
-            << "Tried to load add-on configuration but configuration file exists in the default path.";
+        mw::log::LogError("lola") << merge_result.error();
         std::terminate();
     }
-
-    // Load add-on configuration as default stand-alone configuration
-    Initialize(runtime_configuration);
-
-    addon_configuration_loaded_ = true;
     return {};
 }
 
@@ -307,7 +276,7 @@ std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specif
     return result;
 }
 
-Result<void> Runtime::MergeAdditionalConfiguration(Configuration additional_configuration) noexcept
+Result<void> Runtime::MergeAdditionalConfiguration(const Configuration& additional_configuration) noexcept
 {
     std::lock_guard<std::mutex> lock{configuration_mutex_};
     const auto merge_result = configuration_.MergeServiceEntries(std::move(additional_configuration));

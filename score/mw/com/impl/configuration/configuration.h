@@ -72,7 +72,7 @@ class Configuration final
     /// Checks for clashes in type names and instance names and will return error in this case.
     /// \attention In case that the merge fails, the configuration will be left in an undefined state and should not be
     /// used anymore.
-    Result<void> MergeServiceEntries(Configuration additional_configuration) noexcept;
+    Result<void> MergeServiceEntries(const Configuration& additional_configuration) noexcept;
 
     const ServiceTypeDeployments& GetServiceTypes() const& noexcept
     {

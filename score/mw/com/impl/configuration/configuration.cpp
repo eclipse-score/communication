@@ -61,7 +61,7 @@ ServiceInstanceDeployment* Configuration::AddServiceInstanceDeployments(
     return &emplace_result.first->second;
 }
 
-Result<void> Configuration::MergeServiceEntries(Configuration additional_configuration) noexcept
+Result<void> Configuration::MergeServiceEntries(const Configuration& additional_configuration) noexcept
 {
     for (auto& service_type : additional_configuration.service_types_)
     {

@@ -276,12 +276,13 @@ const auto& config_path = default_config.GetConfigurationPath();
 
 ### Example 4: Using `InitializeRuntimeAddonConfiguration` to load additional `mw::com` configurations
 
-`Runtime` provides the API `InitializeRuntimeAddonConfiguration(RuntimeConfiguration&)` to load additional configurations. For example, this can be used
-by libraries that also rely on mw::com to load their configuration in addition to the application's configuration. It is assumed that each add-on configuration
-itself is a complete mw::com configuration, i.e. does not only include service definitions. 
-Those add-on configurations will be merged into the existing configuration, if such a configuration has been loaded already. 
-If no configuration has been loaded so far, the add-on configuration will be handled as the initial configuration. Merge conflicts 
-due to duplicate service type and service instance definitions will lead to an application termination. 
+`Runtime` provides the APIs `InitializeRuntimeAddonConfiguration(RuntimeConfiguration&)` and `InitializeRuntimeAddonConfiguration(score::json::Any)` 
+to load additional configurations. For example, this can be used by libraries that also rely on mw::com to load their 
+configuration in addition to the application's configuration. It is assumed that prior to that call a complete mw::com configuration has been 
+loaded via `InitializeRuntime()`. If not this call will cause an application termination. 
+Add-on configurations will be merged into the existing configuration. Merge conflicts due to duplicate service type 
+and service instance definitions will lead to an application termination. Add-on configurations are not supposed to contain a `global configuration`
+but only contains additional service types and service instances.
 In all cases of application termination, the error message will indicate the reason for the termination. 
 
 <details>
@@ -305,11 +306,10 @@ int main(int argc, char* argv[]) {
 ```
 
 #### Key Points
-- Configurations will be merged if an configuration has been loaded earlier. 
-- If no configuration has been loaded so far, the add-on configuration will be handled as the initial configuration.
-- If no configuration has been loaded so far, but there is a file in the default configuration location, the application will terminate  
+- Configurations will be merged into the existing configuration
+- If no (complete) configuration has been loaded so far, calling this function will cause an application termination.
 - In case of merge conflicts, between the existing configuration and the add-on configuration, the application will terminate. 
-- Loading a configuration explicitly via Initialize() after an add-on configuration has been loaded as the default configuration will cause the application to terminate.
+- Add-on configurations are not supposed to have a `global configuration`
 
 </details>
 

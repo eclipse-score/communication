@@ -24,6 +24,7 @@
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/types.h"
 
+#include "score/json/json_parser.h"
 #include "score/result/result.h"
 #include "score/string_manipulation/string_literal.h"
 
@@ -79,22 +80,30 @@ score::Result<score::mw::com::InstanceIdentifierContainer> ResolveInstanceIDs(co
  *         "-service_instance_manifest" pointing to the json config file to be used.
  * \attention This function shall only be called ONCE per application/process lifetime! A second call may have no
  *            effect after an internal runtime singleton has been already created/is in use!
- *            This call will cause a std::terminate() if an add-on configuration has
- *            already been loaded via "InitializeRuntimeAddonConfiguration(const RuntimeConfiguration&)".
  */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
 void InitializeRuntime(const std::int32_t argc, score::StringLiteral argv[]);
 
 /**
  * \api
- * \brief Initializes or extends mw::com subsystem with the given add-on configuration.
+ * \brief Extends mw::com subsystem with the given add-on configuration.
  * \details This call is optional and shall allow loading additional mw::com configuration files in order to extend
- *already loaded configurations. This configuration will be used as the initial one if there is no other configuration
- *loaded yet.
+ * already loaded configurations.
  * \attention This function will call std::terminate() in case that the configuration is incompatible to the previously
- * loaded one or if there is a mw::com configuration in the default path, that has not yet been loaded.
+ * loaded one or if no complete mw::com configuration has been loaded previously.
  **/
 Result<void> InitializeRuntimeAddonConfiguration(const RuntimeConfiguration& runtime_configuration);
+
+/**
+ * \api
+ * \brief Extends mw::com subsystem with the given add-on configuration provided as a JSON blob.
+ * \details This call is optional and shall allow loading additional mw::com configuration as an in-memory JSON
+ *          object in order to extend already loaded configurations.
+ * \attention This function will call std::terminate() in case that the configuration is incompatible to the previously
+ * loaded one or if no complete mw::com configuration has been loaded previously.
+ * \param json The JSON object containing the add-on configuration.
+ **/
+Result<void> InitializeRuntimeAddonConfiguration(score::json::Any json);
 
 /**
  * \api

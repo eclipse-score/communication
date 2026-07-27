@@ -90,6 +90,14 @@ class Runtime final : public IRuntime
     /// \param runtime_configuration object containing configuration needed to initialize the Runtime
     static Result<void> InitializeRuntimeAddonConfiguration(const runtime::RuntimeConfiguration& runtime_configuration);
 
+    /// \brief Extends mw::com subsystem with the given add-on configuration provided as a JSON object.
+    /// \details This call is optional and shall allow loading additional mw::com configuration as an in-memory JSON
+    /// object in order to extend already loaded configurations.
+    /// \attention This function may call std::terminate() in case that the configuration is incompatible to the
+    /// previously loaded one
+    /// \param json The JSON object containing the add-on configuration.
+    static Result<void> InitializeRuntimeAddonConfiguration(score::json::Any json);
+
     /// \brief get singleton.
     /// \details Might return either reference to a real Runtime instance or to a mock.
     /// \return singleton ref.
@@ -145,9 +153,13 @@ class Runtime final : public IRuntime
     /// \pre the internal static initialization_config_ has to be initialized with a Configuration.
     static Runtime& getInstanceInternal() noexcept;
 
+    /// \brief Extend loaded configuration with the Configuration provided as a parameter. Returns an error if
+    /// configurations are incompatible or there is no regular (complete) configuration loaded yet.
+    static Result<void> HandleAddonConfiguration(const Configuration& config) noexcept;
+
     /// \brief Merges the service types and instances into this configuration. Returns an error if one of those entries
     /// in the given configuration already exists in this configuration.
-    Result<void> MergeAdditionalConfiguration(Configuration additional_configuration) noexcept;
+    Result<void> MergeAdditionalConfiguration(const Configuration& additional_configuration) noexcept;
 
     /// \brief pointer to a mock to be used (set via InjectMock())
     static score::mw::com::impl::IRuntime* mock_;
@@ -161,11 +173,6 @@ class Runtime final : public IRuntime
     /// \brief flag, whether the runtime is now locked in the sense, that the singleton has been already created
     ///        with a given configuration.
     static bool runtime_initialization_locked_;
-
-    /// \brief flag, to identify if an add-on configuration has already been loaded, which has been handled as the
-    /// initial configuration. Used to identify that such a configuration has been loaded before the user explicitly
-    /// loaded a configuration.
-    static bool addon_configuration_loaded_;
 
     /// \brief static configuration set by one of the static Initialize() overloads. Will then finally get moved into
     ///        the singleton instance member configuration_.
