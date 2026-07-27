@@ -25,7 +25,10 @@
 //! The crate is structured to facilitate easy integration and usage of the Lola middleware within applications
 //! that utilize the COM API abstractions.
 
+use core::fmt::Debug;
+
 mod consumer;
+mod method;
 mod producer;
 mod runtime;
 
@@ -35,4 +38,6 @@ pub use producer::{
 };
 pub use runtime::{LolaRuntimeImpl, RuntimeBuilderImpl};
 
-use core::fmt::Debug;
+pub use method::{
+    LolaMethodCaller, LolaMethodHandler, LolaMethodInArgAllocator, LolaMethodInArgMaybeUninit,
+};
