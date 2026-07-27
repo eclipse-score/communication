@@ -1,0 +1,7 @@
+{
+  "appId": "PRMS",
+  "appDesc": "proxy_event_move_semantics",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}
