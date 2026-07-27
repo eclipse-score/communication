@@ -1,0 +1,7 @@
+{
+    "appId": "FSAG",
+    "appDesc": "field_set_and_get",
+    "logLevel": "kDebug",
+    "logLevelThresholdConsole": "kDebug",
+    "logMode": "kRemote|kConsole"
+}

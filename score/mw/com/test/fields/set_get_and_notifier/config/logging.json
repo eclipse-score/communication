@@ -1,0 +1,7 @@
+{
+    "appId": "FSNG",
+    "appDesc": "field_set_get_and_notifier",
+    "logLevel": "kDebug",
+    "logLevelThresholdConsole": "kDebug",
+    "logMode": "kRemote|kConsole"
+}
