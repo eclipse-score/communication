@@ -689,7 +689,7 @@ macro_rules! interface_producer_mixed {
 }
 
 /// Entry-point wrapper generator.
-/// Every generated wrapper returns `impl Future<Output = score_com::Result<Return>> + '_`.
+/// Every generated wrapper returns `impl Future<Output = score_com::Result<R::MethodReturnSample<Return>>> + '_`.
 ///
 /// # Generated call sites
 /// ```text
@@ -702,7 +702,7 @@ macro_rules! _gen_method_wrapper {
     // 0 args - invoke_with_copy directly; no zero-copy path (nothing to allocate).
     // This is for kind of `get` methods that take no arguments and return a value.
     ($me_name:ident () -> $me_ret:ty) => {
-        pub fn $me_name<'a>(&'a self) -> impl core::future::Future<Output = score_com::Result<$me_ret>> + 'a {
+        pub fn $me_name<'a>(&'a self) -> impl core::future::Future<Output = score_com::Result<<R as score_com::Runtime>::MethodReturnSample<$me_ret>>> + 'a {
             score_com::MethodCaller::invoke_with_copy(&self.$me_name, ())
         }
     };
@@ -766,7 +766,7 @@ macro_rules! _gen_method_wrapper_collect {
 /// All arities use this one arm - the function body is written once, not duplicated per arity.
 /// Called by `_gen_method_wrapper_collect!` after it has built the full triplet list.
 ///
-/// The generated function returns `impl Future<Output = score_com::Result<$me_ret>> + 'a` so callers
+/// The generated function returns `impl Future<Output = score_com::Result<R::MethodReturnSample<$me_ret>>> + 'a` so callers
 /// can `.await` the method call, e.g. `consumer.method_name(arg0).await?`.
 #[doc(hidden)]
 #[macro_export]
@@ -775,7 +775,7 @@ macro_rules! _gen_method_wrapper_body {
         pub fn $me_name<'a, $($g),+>(
             &'a self,
             $($p: $g),+
-        ) -> impl core::future::Future<Output = score_com::Result<$me_ret>> + 'a
+        ) -> impl core::future::Future<Output = score_com::Result<<R as score_com::Runtime>::MethodReturnSample<$me_ret>>> + 'a
         where
             ($($g,)+): score_com::MethodCallInput<($($c,)+), $me_ret, R>,
             R::MethodCaller<($($c,)+), $me_ret>:
