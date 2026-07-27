@@ -23,13 +23,13 @@
 mod concept;
 mod error;
 mod interface_macros;
-mod method;
 mod method_arities_macros;
+mod method_concept;
 mod reloc;
 pub use concept::*;
 pub use error::*;
 pub use interface_macros::{HandlerNotSet, HandlerSet};
-pub use method::*;
+pub use method_concept::*;
 #[doc(hidden)]
 pub use paste;
 pub use reloc::Reloc;
