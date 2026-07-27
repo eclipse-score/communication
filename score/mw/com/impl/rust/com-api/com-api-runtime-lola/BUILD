@@ -18,6 +18,7 @@ rust_library(
     srcs = [
         "consumer.rs",
         "lib.rs",
+        "method.rs",
         "producer.rs",
         "runtime.rs",
     ],
