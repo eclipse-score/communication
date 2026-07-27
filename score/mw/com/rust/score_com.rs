@@ -130,6 +130,12 @@
 //! # Further reading
 //! - `score_com_concept` crate — trait definitions and full API documentation
 //! - `doc/high_level_design_detail.md` — internal architecture and layer details
+//!
+//! Note: Event APIs are fully supported with the Lola runtime.
+//! Method API traits exported from this crate reflect the intended design but are not yet backed
+//! by a Lola runtime implementation in Rust side, they serve as a demonstration of the planned interface.
+//! Method APIs developmement is tracked in
+//! https://github.com/eclipse-score/communication/issues/782
 
 pub use com_api_runtime_lola::LolaRuntimeImpl;
 pub use com_api_runtime_lola::RuntimeBuilderImpl as LolaRuntimeBuilderImpl;
