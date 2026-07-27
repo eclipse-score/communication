@@ -126,8 +126,17 @@ def _read_pack_identity(pack_root):
     return name, version
 
 
-def create_database(code_ql_path, config_path, target, source_root, database_path):
-    """Create the CodeQL database: init, build with tracing, finalize."""
+def create_database(code_ql_path, config_path, target, source_root, database_path,
+                    build_configs=None):
+    """Create the CodeQL database: init, build with tracing, finalize.
+
+    ``build_configs`` is an optional list of additional Bazel ``--config`` names
+    layered on top of the base ``codeql`` config for the traced build. For
+    example ``["qnx"]`` produces ``bazel build --config=codeql --config=qnx``,
+    which retargets the traced compilation at the QNX platform + QCC toolchain
+    (see ``//.bazelrc`` ``common:qnx``). With no extra configs the build is the
+    unchanged Linux analysis.
+    """
     subprocess.run(
         f"{code_ql_path} database init --overwrite --begin-tracing --language=cpp "
         f"--codescanning-config={config_path} --source-root={source_root} -- {database_path}",
@@ -146,6 +155,8 @@ def create_database(code_ql_path, config_path, target, source_root, database_pat
     # Build with CodeQL tracing
     timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
     bazel_cmd = f"bazel build --config=codeql --stamp --action_env=CODEQL_SEED_FORCE_RECOMPILE={timestamp}"
+    for extra_config in (build_configs or []):
+        bazel_cmd += f" --config={extra_config}"
     bazel_cmd += _get_action_env_extension(codeql_env)
     subprocess.run(f"{bazel_cmd} {target}", shell=True, env=env, cwd=source_root, check=True)
 
@@ -188,21 +199,16 @@ def analyze_database(
         common_analyze_flags = f"--search-path={pack_root}"
     query_arg = f" {query_target}"
     sarif_path = f"{output_base}/{output_prefix}.sarif"
-    csv_path = f"{output_base}/{output_prefix}.csv"
 
-    # Run CodeQL analysis (generates SARIF)
+    # Run CodeQL analysis, producing SARIF only. The CSV is no longer generated
+    # here: it is derived later, once, from the final (merged/deduplicated)
+    # SARIF by //quality/static_analysis:merge_codeql_findings using
+    # sarif-tools, so no intermediate CSV is ever created or mutated.
     print("\n Running CodeQL analysis...")
     subprocess.run(
         f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
         f"{common_analyze_flags} "
         f"--format=sarifv2.1.0 --output={sarif_path}",
-        shell=True, check=True)
-
-    # Generate CSV results
-    subprocess.run(
-        f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
-        f"{common_analyze_flags} "
-        f"--format=csv --output={csv_path}",
         shell=True, check=True)
 
     # Generate reports using CodeQL analysis_report tool
@@ -260,6 +266,11 @@ def main():
     parser.add_argument("--query-spec", help="CodeQL query spec")
     parser.add_argument("--output-prefix", default="codeql", help="Output prefix")
     parser.add_argument("--output-dir", help="Output directory")
+    parser.add_argument(
+        "--build-config", action="append", default=[], dest="build_configs",
+        metavar="CONFIG",
+        help="Additional Bazel --config to layer on the traced build (repeatable). "
+             "E.g. --build-config qnx runs 'bazel build --config=codeql --config=qnx'.")
 
     args = parser.parse_args()
     target = " ".join(args.target) if args.target else ""
@@ -270,7 +281,8 @@ def main():
 
     if args.phase == "create-database":
         os.makedirs(os.path.dirname(args.database_path), exist_ok=True)
-        create_database(codeql_path, args.config_path, target, source_root, args.database_path)
+        create_database(codeql_path, args.config_path, target, source_root, args.database_path,
+                        build_configs=args.build_configs)
 
     elif args.phase == "analyze-database":
         analyze_database(codeql_path, args.database_path, source_root,
@@ -288,7 +300,8 @@ def main():
         os.makedirs(TMP_PATH_FOR_DATABASES, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=TMP_PATH_FOR_DATABASES) as database_location:
 
-            create_database(codeql_path, args.config_path, target, source_root, database_location)
+            create_database(codeql_path, args.config_path, target, source_root, database_location,
+                           build_configs=args.build_configs)
             analyze_database(codeql_path, database_location, source_root,
                            analysis_report_path=args.analysis_report_path,
                            query_spec=args.query_spec, output_prefix=args.output_prefix,

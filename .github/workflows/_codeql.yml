@@ -24,9 +24,23 @@ on:
         description: "When true, runs --nobuild to fetch dependencies only."
         type: string
         default: "false"
+      run-qnx:
+        description: "When true, additionally analyzes the --config=qnx build and
+          publishes the deduplicated union of the Linux and QNX findings.
+          Requires the SCORE_QNX_* secrets. Defaults to false so cache-warming
+          callers keep the Linux-only behavior."
+        type: string
+        default: "false"
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL:
         required: false
+      SCORE_QNX_LICENSE:
+        required: false
+      SCORE_QNX_USER:
+        required: false
+      SCORE_QNX_PASSWORD:
+        required: false
+
 
 jobs:
   codeql:
@@ -39,6 +53,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
+      - name: Setup QNX and QEMU environment
+        if: inputs.fetch-only != 'true' && inputs.run-qnx == 'true'
+        uses: ./.github/actions/00_infrastructure/setup_qnx_environment
+        with:
+          qnx-license: ${{ secrets.SCORE_QNX_LICENSE }}
+
       - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:
           disk-cache: ""
@@ -49,38 +69,76 @@ jobs:
         if: inputs.fetch-only == 'true'
         run: bazel build --nobuild //...
 
-      - name: Run CodeQL analysis
+      - name: Run CodeQL analysis (Linux)
         if: inputs.fetch-only != 'true'
         id: run-codeql
         run: |
           set -euo pipefail
 
           bazel run //quality/static_analysis:codeql_lint -- \
-            --output-dir /tmp/codeql-results \
+            --output-dir /tmp/codeql-results/linux \
             --output-prefix codeql-nightly \
             --target //score/message_passing //score/mw/com
 
+      - name: Run CodeQL analysis (QNX, --config=qnx)
+        if: inputs.fetch-only != 'true' && inputs.run-qnx == 'true' && steps.run-codeql.outcome == 'success'
+        id: run-codeql-qnx
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          bazel run //quality/static_analysis:codeql_lint -- \
+            --build-config qnx \
+            --output-dir /tmp/codeql-results/qnx \
+            --output-prefix codeql-nightly-qnx \
+            --target //score/message_passing //score/mw/com
+
+      # All merging/deduplication happens on the SARIF documents; the CSV is
+      # generated once, at the end, directly from the resulting deduplicated
+      # union SARIF (via sarif-tools). This step always runs (even Linux-only)
+      # since it is now the only place that produces the published CSV.
+      - name: Merge & deduplicate findings (Linux ∪ QNX union)
+        if: inputs.fetch-only != 'true' && steps.run-codeql.outcome == 'success'
+        id: merge-codeql
+        run: |
+          set -euo pipefail
+
+          sarif_inputs=(--input /tmp/codeql-results/linux/codeql-nightly.sarif)
+          if [[ "${{ inputs.run-qnx }}" == "true" && -f /tmp/codeql-results/qnx/codeql-nightly-qnx.sarif ]]; then
+            sarif_inputs+=(--input /tmp/codeql-results/qnx/codeql-nightly-qnx.sarif)
+          fi
+
+          mkdir -p /tmp/codeql-results/publish
+          bazel run //quality/static_analysis:merge_codeql_findings -- \
+            "${sarif_inputs[@]}" \
+            --out-prefix /tmp/codeql-results/publish/codeql-nightly
+
+      # Single canonical published SARIF/CSV: the deduplicated union of Linux
+      # and QNX findings (or just the deduplicated Linux findings when QNX was
+      # not run).
       - name: Upload SARIF to GitHub Code Scanning
-        if: inputs.fetch-only != 'true' && always() && steps.run-codeql.outcome == 'success'
+        if: inputs.fetch-only != 'true' && always() && steps.merge-codeql.outcome == 'success'
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: /tmp/codeql-results/codeql-nightly.sarif
+          sarif_file: /tmp/codeql-results/publish/codeql-nightly.sarif
           category: codeql-nightly
 
       - name: Upload CSV results
-        if: inputs.fetch-only != 'true' && always() && steps.run-codeql.outcome == 'success'
+        if: inputs.fetch-only != 'true' && always() && steps.merge-codeql.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: codeql-csv-results
-          path: /tmp/codeql-results/codeql-nightly.csv
+          path: /tmp/codeql-results/publish/codeql-nightly.csv
           retention-days: 30
 
-      - name: Upload MISRA compliance reports
+      - name: Upload MISRA compliance reports (Linux)
         if: inputs.fetch-only != 'true' && always()
         uses: actions/upload-artifact@v4
         with:
           name: codeql-misra-reports
-          path: /tmp/codeql-results/analysis_reports/
+          path: /tmp/codeql-results/linux/analysis_reports/
           retention-days: 30
           if-no-files-found: warn
