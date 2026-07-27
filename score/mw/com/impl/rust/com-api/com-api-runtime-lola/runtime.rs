@@ -17,8 +17,8 @@ use std::path::{Path, PathBuf};
 
 use crate::{
     LolaConsumerDiscovery, LolaConsumerInfo, LolaMethodCaller, LolaMethodHandler,
-    LolaMethodInArgAllocator, LolaProducerBuilder, LolaProviderInfo, LolaPublisher,
-    LolaSubscribableImpl,
+    LolaMethodInArgAllocator, LolaMethodReturnSample, LolaProducerBuilder, LolaProviderInfo,
+    LolaPublisher, LolaSubscribableImpl,
 };
 use score_com_concept::{
     Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, MethodArgs, Result,
@@ -38,6 +38,7 @@ impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
     type ProducerBuilder<I: Interface> = LolaProducerBuilder<I, B>;
     type Publisher<T: CommData + Debug> = LolaPublisher<T, B>;
     type MethodInArgAllocator = LolaMethodInArgAllocator;
+    type MethodReturnSample<T: CommData> = LolaMethodReturnSample<T>;
     type MethodCaller<Args: MethodArgs, Return: CommData> = LolaMethodCaller<Args, Return, Self>;
     type MethodHandler<Args: MethodArgs, Return: CommData> = LolaMethodHandler<Args, Return, Self>;
     type ProviderInfo = LolaProviderInfo<B>;
