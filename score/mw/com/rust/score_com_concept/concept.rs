@@ -49,7 +49,7 @@
 //! - Tuples
 
 use crate::error::*;
-use crate::method::*;
+use crate::method_concept::*;
 use crate::Reloc;
 use containers::fixed_capacity::FixedCapacityQueue;
 use core::fmt::Debug;
