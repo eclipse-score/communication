@@ -12,18 +12,17 @@
  ********************************************************************************/
 
 /// For method as rust side does not have any varadic function argument support,
-/// so we are having tuple of arguments, so we can have any number of arguments (currently up to 2) without any extra boilerplate.
+/// we are having tuple of arguments, so we can have any number of arguments (currently up to 8) without any extra boilerplate.
 /// we have implemeted blanket implementation of MethodArgs, MethodArgsAllocate and
-/// MethodCallInput traits for all supported arities (0–2 arguments) are provided in this crate.
+/// MethodCallInput traits for all supported arities (0–8 arguments) using `impl_all_arities!` macro in this crate.
 /// This blanket implementation help in design to have any number of arguments
-/// (currently up to 2) without runtime specific implementation for each arity.
+/// (currently up to 8) without runtime specific implementation for each arity.
 /// This crate provides the necessary traits and types to support method calls in a communication API,
 /// including handling of method arguments, allocation of uninitialized argument,
 /// and invocation of methods with both copy and zero-copy semantics.
-/// Which enable the interface macro to generate exactly a single consumer method per interface method -
-/// instead of two separate copy and zero-copy methods.
+///
 /// We want to follow the same semantics for method like c++ provide for method call,
-///  and because of that we have added few supporting traits which help to create similar semantics for method call in rust side.
+/// and because of that we have added few supporting traits which help to create similar semantics for method call in rust side.
 /// In the event and field we have `SampleMut` with that allocated memory can call send,
 /// but in method call we can not use that approach as we do not have any common API to call send/update,
 /// Method takes the argument whether it is by value or by zero-copy in same method function/method,
@@ -31,17 +30,17 @@
 /// Which is not user facing APIs but used by interface macro and supporting traits.
 ///
 /// trait details:
-/// MethodHandler: Producer side registration of method handlers,
+/// `MethodHandler`: Producer side registration of method handlers,
 /// this needs to be implemented by runtime for producer side method handler registration.
-/// MethodCaller: Consumer side caller of methods, this needs to be implemented by runtime for consumer side method calls.
+/// `MethodCaller`: Consumer side caller of methods, this needs to be implemented by runtime for consumer side method calls.
 /// This trait provides methods for invoking methods with both copy and zero-copy semantics,
 /// also handles allocation of uninitialized method arguments for zero-copy calls,
 /// this is user facing API for consumer side method calls.
 /// This trait is used by the interface macro to generate consumer methods for each interface method and
 /// invoke the runtime specific method caller implementation.
-/// MethodInArgMaybeUninit: This is the uninitialized type for a single method argument,
+/// `MethodInArgMaybeUninit`: This is the uninitialized type for a single method argument,
 /// it is used in the zero-copy method call path.
-/// MethodInArgAllocator: This is for runtime-specific method argument allocation,
+/// `MethodInArgAllocator`: This is for runtime-specific method argument allocation,
 /// it is used in the zero-copy method call path.
 /// Which provide the allocate API for specific argument type and
 /// return the uninitialized method argument type for that argument type.
@@ -49,27 +48,35 @@
 /// Now below traits are marker / marker-like (because it is implemented for all supported arities) traits and
 /// which no need to implement by runtime because blanket implementation is added in this crate.
 ///
-/// MethodArgs: Marker trait for method argument tuples,
+/// `MethodArgs`: Marker trait for method argument tuples,
 /// this is used to carry the matching tuple of MethodInArgPtr<T> used in the zero-copy call path.
-/// MethodArgsAllocate: Maps an Args tuple type to the matching uninitialized method argument tuple for a specific runtime allocator A,
+/// `MethodArgsAllocate`: Maps an Args tuple type to the matching uninitialized method argument tuple for a specific runtime allocator A,
 /// this is used to produce the uninitialized method arguments for zero-copy method call path.
-/// MethodCallInput: Unified input for a method call accepted by the interface macro-generated consumer methods,
+/// `MethodCallInput`: Unified input for a method call accepted by the interface macro-generated consumer methods,
 /// this is used to dispatch the method call to the appropriate runtime specific method -
 /// caller implementation based on the type of the input arguments.
-/// MethodHandlerCall: Callable handler function for a method with Args inputs and Return output,
+/// `MethodHandlerCall`: Callable handler function for a method with Args inputs and Return output,
 /// this is used to register the handler function for a method on the producer side,
 /// which can be a plain closure or any FnMut with the matching signature,
 /// and it will automatically satisfy this trait,
 /// so that the interface macro can generate the necessary code to register the handler function for each interface method on the producer side.
 ///
+/// We have method_arities_macros.rs which is used to generate the blanket implementation of MethodArgs, MethodArgsAllocate and
+/// MethodCallInput traits for all supported arities (0–8 arguments) are provided in this crate.
+/// This macro also extend the `Reloc` and `CommData` traits for all supported arities (0–8 arguments) are provided in this crate.
+/// Macro invocation happen in same file so no need to invoke from user side or runtime side.
+/// Also we can not depend on `interface_macros` because this macro code expand in library crate and interface macro is used in user crate,
+/// and library should be build before user crate, so we can not depend on that.
+///
 // TODO: Add a blocking `.wait()` convenience for method-call futures, for sync callers who don't
-// want to bring their own async executor (similar in spirit to `futures::executor::block_on`).
+// want to bring their own async executor (similar to `futures::executor::block_on`).
 use crate::concept::*;
 use core::future::Future;
 
 // This is a pointer type for a pre-allocated method argument. It is used in the zero-copy method call path.
 // TODO: Remove this once memory layout implementation is added in rust side, same like samplePtr.
 // Also need to check about lifetime of this pointer and add all the trait or type which is required.
+// https://github.com/eclipse-score/communication/issues/781
 pub struct MethodInArgPtr<T> {
     pub _phantom: core::marker::PhantomData<T>,
 }
@@ -92,7 +99,8 @@ pub trait MethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized>
     /// which is automatically satisfied by any function or closure with the appropriate signature.
     ///
     /// # Arguments
-    /// * `handler` - The handler function to register for the method, which has to bound the `MethodHandlerCall<Args, Return>` trait blanket implementation.
+    /// * `handler` - The handler function to register for the method,
+    /// which has to bound the `MethodHandlerCall<Args, Return>` trait blanket implementation.
     fn register_handler<F>(&self, handler: F)
     where
         F: MethodHandlerCall<Args, Return>;
@@ -101,7 +109,8 @@ pub trait MethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized>
 /// Consumer side caller of methods.
 /// This is the interface that a consumer implements to call methods on a producer.
 /// In this trait we have two methods for method call, one is `invoke_with_copy` and another is `invoke_zero_copy`,
-/// Which are not intended to be used by user directly, but used by interface macro to generate consumer methods for each interface method.
+/// Which are not intended to be used by user directly,
+/// but used by interface macro to generate consumer methods for each interface method.
 /// This used by runtime to implement the specific implementation for method call.
 /// Both call methods return a future so callers can `.await` the result.
 pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
@@ -132,9 +141,12 @@ pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> 
     /// Note: This method returns the tuple of uninitialized method arguments for the given `Args` type,
     /// which can then be written individually and passed to the method.
     /// Here `Args` is a tuple of method argument types for the given method,
-    /// and `UninitTuple` is the corresponding tuple of uninitialized method argument types for the given runtime's method argument allocator.
-    /// e.g., for a method with signature `fn my_method(arg1: T1, arg2: T2) -> Return`, the `Args` type would be `(T1, T2)`,
-    /// and the `UninitTuple` type would be `(A::MethodInArgMaybeUninit<T1>, A::MethodInArgMaybeUninit<T2>)` where `A` is the runtime's method argument allocator.
+    /// and `UninitTuple` is the corresponding tuple of uninitialized method argument types for
+    /// the given runtime's method argument allocator.
+    /// e.g., for a method with signature `fn my_method(arg1: T1, arg2: T2) -> Return`,
+    /// the `Args` type would be `(T1, T2)`,
+    /// and the `UninitTuple` type would be `(A::MethodInArgMaybeUninit<T1>, A::MethodInArgMaybeUninit<T2>)`
+    /// where `A` is the runtime's method argument allocator.
     fn allocate(
         &self,
     ) -> Result<<Args as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
@@ -162,8 +174,6 @@ pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> 
 /// API does not enforce at compile time that all method arguments in the tuple are written before
 /// method is called. A user can call `assume_init()` on an unwritten method argument, which
 /// is undefined behaviour once real shared memory backs these method arguments.
-///
-/// TODO: We can consider adding a typesatate or builder pattern to enforce this, if required.
 pub trait MethodInArgMaybeUninit<T> {
     /// Write a value into this pre-allocated method argument and return the initialized pointer.
     fn write(self, val: T) -> MethodInArgPtr<T>;
@@ -287,13 +297,6 @@ where
 ///
 /// Application code on the producer side passes a plain closure to `MethodHandler::register_handler`;
 /// any `Fn` with the matching signature automatically satisfies this trait.
-///
-/// `Fn` (immutable receiver) is required rather than `FnMut` because the runtime may dispatch
-/// concurrent calls from a thread pool.
-/// TODO: We can think about adding `FnMut` support in the future,
-/// but it would require a synchronization mechanism in the runtime to ensure that concurrent calls do not violate the `FnMut` contract.
-/// So this can be decided at the implementation time of the runtime, whether it wants to support `FnMut` or not.
-///
 /// Runtimes do not implement this trait.
 /// Blanket impls for all supported arities are provided in this crate so that closures just work without any extra boilerplate.
 pub trait MethodHandlerCall<Args, Return>: Send + Sync + 'static {
