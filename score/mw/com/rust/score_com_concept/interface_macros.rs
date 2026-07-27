@@ -439,7 +439,7 @@ macro_rules! interface_consumer_mixed {
         fields[$($fi_name:ident : $fi_type:ty ,)*],
         methods[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
     ) => {
-        score_com::paste::paste! {
+        score_com::pastey::paste! {
             pub struct [<$id Consumer>]<R: score_com::Runtime + ?Sized> {
                 $(
                     pub $ev_name: R::Subscriber<$ev_type>,
@@ -538,11 +538,11 @@ macro_rules! interface_producer_mixed {
         fields[$($fi_name:ident : $fi_type:ty ,)*],
         methods[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
     ) => {
-        score_com::paste::paste! {
+        score_com::pastey::paste! {
             // Producer struct - derives TypeStateValidator for compile-time offer() gating.
             // Fields: FieldPublisher per field + MethodHandler per method.
             // Event publishers are NOT stored here; they are created during _offer_internal().
-            #[derive($crate::score_com_concept_macros::TypeStateValidator)]
+            #[derive($crate::score_com_macros::TypeStateValidator)]
             pub struct [<$id Producer>]<R: score_com::Runtime + ?Sized> {
                 $(
                     $fi_name: R::FieldPublisher<$fi_type>,
@@ -725,7 +725,7 @@ macro_rules! _gen_method_wrapper_collect {
         @acc[$($acc:tt),*]
         @types[$t:ty $(, $rest_t:ty)*]
     ) => {
-        score_com::paste::paste! {
+        score_com::pastey::paste! {
             $crate::_gen_method_wrapper_collect!(
                 $me_name -> $me_ret ;
                 @counter[$($n)* n]
