@@ -77,6 +77,16 @@ cc_library(
 )
 
 cc_library(
+    name = "send_incrementing_sequence_of_samples",
+    hdrs = ["send_incrementing_sequence_of_samples.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/test:__subpackages__"],
+    deps = [
+        ":fail_test",
+    ],
+)
+
+cc_library(
     name = "fail_test",
     srcs = [
         "fail_test.cpp",
