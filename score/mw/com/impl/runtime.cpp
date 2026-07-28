@@ -28,6 +28,7 @@
 #include <score/assert.hpp>
 #include <score/utility.hpp>
 
+#include <exception>
 #include <string_view>
 #include <utility>
 
@@ -116,7 +117,6 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
         error_double_init();
         return;
     }
-
     if (initialization_config_.has_value())
     {
         warn_double_init();
@@ -124,6 +124,37 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
 
     auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
     score::cpp::ignore = initialization_config_.emplace(std::move(config));
+}
+
+Result<void> Runtime::InitializeRuntimeAddonConfiguration(const runtime::RuntimeConfiguration& runtime_configuration)
+{
+    auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
+
+    return HandleAddonConfiguration(std::move(config));
+}
+
+Result<void> Runtime::InitializeRuntimeAddonConfiguration(score::json::Any json)
+{
+    auto config = configuration::Parse(std::move(json));
+
+    return HandleAddonConfiguration(std::move(config));
+}
+
+Result<void> Runtime::HandleAddonConfiguration(const Configuration& config) noexcept
+{
+    if (config.GetGlobalConfiguration().GetApplicationId().has_value())
+    {
+        mw::log::LogWarn("lola") << "Add-on configuration contains global configuration data that will be ignored. "
+                                    "Please remove global configuration from add-on configuration.";
+    }
+
+    const auto merge_result = Runtime::getInstanceInternal().MergeAdditionalConfiguration(std::move(config));
+    if (!merge_result.has_value())
+    {
+        mw::log::LogError("lola") << merge_result.error();
+        std::terminate();
+    }
+    return {};
 }
 
 auto Runtime::getInstance() noexcept -> IRuntime&
@@ -218,6 +249,7 @@ Runtime::~Runtime() noexcept
 
 std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specifier) const
 {
+    std::lock_guard<std::mutex> lock{configuration_mutex_};
     std::vector<InstanceIdentifier> result;
     const auto instanceSearch = configuration_.GetServiceInstances().find(specifier);
     if (instanceSearch != configuration_.GetServiceInstances().end())
@@ -242,6 +274,18 @@ std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specif
     }
 
     return result;
+}
+
+Result<void> Runtime::MergeAdditionalConfiguration(const Configuration& additional_configuration) noexcept
+{
+    std::lock_guard<std::mutex> lock{configuration_mutex_};
+    const auto merge_result = configuration_.MergeServiceEntries(std::move(additional_configuration));
+    if (!merge_result.has_value())
+    {
+        return merge_result;
+    }
+    InstanceIdentifier::SetConfiguration(&configuration_);
+    return {};
 }
 
 auto Runtime::GetBindingRuntime(const BindingType binding) const noexcept -> IBindingRuntime*

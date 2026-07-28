@@ -1,5 +1,5 @@
 {
-  "target": "//score/mw/com:com",
+  "target": ":com",
   "symbols": [
     {
       "name": "ComErrc",
@@ -30,6 +30,18 @@
       "qualified_name": "score::mw::com::runtime::InitializeRuntime",
       "kind": "function",
       "signature": "InitializeRuntime : void (const std::int32_t, score::StringLiteral *)"
+    },
+    {
+      "name": "InitializeRuntimeAddonConfiguration",
+      "qualified_name": "score::mw::com::runtime::InitializeRuntimeAddonConfiguration",
+      "kind": "function",
+      "signature": "InitializeRuntimeAddonConfiguration : Result<void> (const RuntimeConfiguration &)"
+    },
+    {
+      "name": "InitializeRuntimeAddonConfiguration",
+      "qualified_name": "score::mw::com::runtime::InitializeRuntimeAddonConfiguration",
+      "kind": "function",
+      "signature": "InitializeRuntimeAddonConfiguration : Result<void> (score::json::Any)"
     },
     {
       "name": "InitializeRuntime",
@@ -385,13 +397,139 @@
       "name": "ErrorDomain",
       "qualified_name": "score::mw::com::ComErrorDomain::ErrorDomain",
       "kind": "constructor",
-      "signature": "ErrorDomain : void ()"
+      "signature": "ErrorDomain : void () noexcept"
     },
     {
       "name": "MessageFor",
       "qualified_name": "score::mw::com::ComErrorDomain::MessageFor",
       "kind": "method",
       "signature": "MessageFor : std::string_view (const score::result::ErrorCode &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : std::size_t (const score::mw::com::impl::lola::ElementFqId &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : std::size_t (const score::mw::com::impl::lola::ProxyMethodInstanceIdentifier &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : std::size_t (const score::mw::com::impl::lola::UniqueMethodIdentifier &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : std::size_t (const score::mw::com::impl::lola::ProxyInstanceIdentifier &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : std::size_t (const score::mw::com::impl::lola::LolaServiceInstanceIdentifier &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : std::size_t (const score::mw::com::impl::lola::SkeletonInstanceIdentifier &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : size_t (const score::mw::com::impl::ServiceIdentifierType &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : std::size_t (const score::mw::com::impl::FindServiceHandle &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : std::size_t (const score::mw::com::impl::HandleType &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "operator()",
+      "kind": "method",
+      "signature": "operator() : std::size_t (const score::mw::com::impl::InstanceIdentifier &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : std::size_t (const score::mw::com::impl::InstanceSpecifier &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : size_t (const score::mw::com::impl::tracing::ServiceElementIdentifier &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : size_t (const score::mw::com::impl::tracing::ServiceElementIdentifierView &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : size_t (const score::mw::com::impl::tracing::ServiceElementInstanceIdentifierView &) const noexcept"
+    },
+    {
+      "name": "operator()",
+      "qualified_name": "std::operator()",
+      "kind": "method",
+      "signature": "operator() : size_t (const score::mw::com::impl::tracing::TracePointKey &) const noexcept"
+    },
+    {
+      "name": "IRuntime",
+      "qualified_name": "score::mw::com::runtime::IRuntime",
+      "kind": "class",
+      "signature": "class IRuntime"
+    },
+    {
+      "name": "IRuntime",
+      "qualified_name": "score::mw::com::runtime::IRuntime::IRuntime",
+      "kind": "constructor",
+      "signature": "IRuntime : void ()"
+    },
+    {
+      "name": "~IRuntime",
+      "qualified_name": "score::mw::com::runtime::IRuntime::~IRuntime",
+      "kind": "destructor",
+      "signature": "~IRuntime : void ()"
+    },
+    {
+      "name": "ResolveInstanceIDs",
+      "qualified_name": "score::mw::com::runtime::IRuntime::ResolveInstanceIDs",
+      "kind": "method",
+      "signature": "ResolveInstanceIDs : score::Result<InstanceIdentifierContainer> (const InstanceSpecifier)"
+    },
+    {
+      "name": "InitializeRuntime",
+      "qualified_name": "score::mw::com::runtime::IRuntime::InitializeRuntime",
+      "kind": "method",
+      "signature": "InitializeRuntime : void (const std::int32_t, score::cpp::span<const score::StringLiteral>)"
+    },
+    {
+      "name": "InitializeRuntime",
+      "qualified_name": "score::mw::com::runtime::IRuntime::InitializeRuntime",
+      "kind": "method",
+      "signature": "InitializeRuntime : void (const runtime::RuntimeConfiguration &)"
     },
     {
       "name": "RuntimeConfiguration",
@@ -478,6 +616,24 @@
       "signature": "using SamplePtr = impl::SamplePtr<SampleType>"
     },
     {
+      "name": "Get",
+      "qualified_name": "score::mw::com::SamplePtr::Get",
+      "kind": "method",
+      "signature": "Get : pointer () const noexcept"
+    },
+    {
+      "name": "Reset",
+      "qualified_name": "score::mw::com::SamplePtr::Reset",
+      "kind": "method",
+      "signature": "Reset : void (SamplePtr<SampleType>) noexcept"
+    },
+    {
+      "name": "SamplePtr<SampleType>",
+      "qualified_name": "score::mw::com::SamplePtr::SamplePtr<SampleType>",
+      "kind": "template_function",
+      "signature": "SamplePtr<SampleType>"
+    },
+    {
       "name": "SamplePtr<SampleType>",
       "qualified_name": "score::mw::com::SamplePtr::SamplePtr<SampleType>",
       "kind": "constructor",
@@ -493,13 +649,13 @@
       "name": "SamplePtr<SampleType>",
       "qualified_name": "score::mw::com::SamplePtr::SamplePtr<SampleType>",
       "kind": "constructor",
-      "signature": "SamplePtr<SampleType> : void (pointer, ConsumerEventDataControlLocalView<> &, const SlotIndexType) noexcept"
+      "signature": "SamplePtr<SampleType> : void (SamplePtr<SampleType> &&) noexcept"
     },
     {
-      "name": "SamplePtr<SampleType>",
-      "qualified_name": "score::mw::com::SamplePtr::SamplePtr<SampleType>",
-      "kind": "constructor",
-      "signature": "SamplePtr<SampleType> : void (SamplePtr<SampleType> &&) noexcept"
+      "name": "Swap",
+      "qualified_name": "score::mw::com::SamplePtr::Swap",
+      "kind": "method",
+      "signature": "Swap : void (SamplePtr<SampleType> &) noexcept"
     },
     {
       "name": "get",
@@ -511,7 +667,7 @@
       "name": "operator*",
       "qualified_name": "score::mw::com::SamplePtr::operator*",
       "kind": "template_function",
-      "signature": "operator* : typename std::add_lvalue_reference<const SampleType>::type () const noexcept"
+      "signature": "operator* : std::add_lvalue_reference_t<element_type> () const noexcept"
     },
     {
       "name": "operator->",
@@ -520,16 +676,28 @@
       "signature": "operator-> : pointer () const noexcept"
     },
     {
-      "name": "operator=",
-      "qualified_name": "score::mw::com::SamplePtr::operator=",
+      "name": "operator<",
+      "qualified_name": "score::mw::com::SamplePtr::operator<",
       "kind": "method",
-      "signature": "operator= : SamplePtr<SampleType> &(std::nullptr_t) & noexcept"
+      "signature": "operator< : bool (const SamplePtr<SampleType> &) const noexcept"
     },
     {
       "name": "operator=",
       "qualified_name": "score::mw::com::SamplePtr::operator=",
       "kind": "method",
-      "signature": "operator= : SamplePtr<SampleType> &(SamplePtr<SampleType> &&) noexcept"
+      "signature": "operator= : SamplePtr<SampleType> &(SamplePtr<SampleType> &&) & noexcept"
+    },
+    {
+      "name": "operator=",
+      "qualified_name": "score::mw::com::SamplePtr::operator=",
+      "kind": "method",
+      "signature": "operator= : SamplePtr<SampleType> &(std::nullptr_t) noexcept"
+    },
+    {
+      "name": "operator>",
+      "qualified_name": "score::mw::com::SamplePtr::operator>",
+      "kind": "method",
+      "signature": "operator> : bool (const SamplePtr<SampleType> &) const noexcept"
     },
     {
       "name": "~SamplePtr<SampleType>",
@@ -544,10 +712,10 @@
       "signature": "using SampleAllocateePtr = impl::SampleAllocateePtr<SampleType>"
     },
     {
-      "name": "GetReferencedSlot",
-      "qualified_name": "score::mw::com::SampleAllocateePtr::GetReferencedSlot",
+      "name": "Get",
+      "qualified_name": "score::mw::com::SampleAllocateePtr::Get",
       "kind": "method",
-      "signature": "GetReferencedSlot : SlotIndexType () const noexcept"
+      "signature": "Get : pointer () const noexcept"
     },
     {
       "name": "SampleAllocateePtr<SampleType>",
@@ -565,37 +733,25 @@
       "name": "SampleAllocateePtr<SampleType>",
       "qualified_name": "score::mw::com::SampleAllocateePtr::SampleAllocateePtr<SampleType>",
       "kind": "constructor",
-      "signature": "SampleAllocateePtr<SampleType> : void (pointer, const EventDataControlComposite<> &, ConsumerEventDataControlLocalView<> &, const SlotIndexType) noexcept"
-    },
-    {
-      "name": "SampleAllocateePtr<SampleType>",
-      "qualified_name": "score::mw::com::SampleAllocateePtr::SampleAllocateePtr<SampleType>",
-      "kind": "constructor",
       "signature": "SampleAllocateePtr<SampleType> : void (SampleAllocateePtr<SampleType> &&) noexcept"
     },
     {
-      "name": "get",
-      "qualified_name": "score::mw::com::SampleAllocateePtr::get",
+      "name": "Swap",
+      "qualified_name": "score::mw::com::SampleAllocateePtr::Swap",
       "kind": "method",
-      "signature": "get : pointer () const noexcept"
+      "signature": "Swap : void (SampleAllocateePtr<SampleType> &) noexcept"
     },
     {
       "name": "operator*",
       "qualified_name": "score::mw::com::SampleAllocateePtr::operator*",
-      "kind": "method",
+      "kind": "template_function",
       "signature": "operator* : typename std::add_lvalue_reference<SampleType>::type () const noexcept"
     },
     {
       "name": "operator->",
       "qualified_name": "score::mw::com::SampleAllocateePtr::operator->",
-      "kind": "method",
+      "kind": "template_function",
       "signature": "operator-> : pointer () const noexcept"
-    },
-    {
-      "name": "operator=",
-      "qualified_name": "score::mw::com::SampleAllocateePtr::operator=",
-      "kind": "method",
-      "signature": "operator= : SampleAllocateePtr<SampleType> &(std::nullptr_t) & noexcept"
     },
     {
       "name": "operator=",
@@ -604,16 +760,16 @@
       "signature": "operator= : SampleAllocateePtr<SampleType> &(SampleAllocateePtr<SampleType> &&) & noexcept"
     },
     {
+      "name": "operator=",
+      "qualified_name": "score::mw::com::SampleAllocateePtr::operator=",
+      "kind": "method",
+      "signature": "operator= : SampleAllocateePtr<SampleType> &(std::nullptr_t) noexcept"
+    },
+    {
       "name": "reset",
       "qualified_name": "score::mw::com::SampleAllocateePtr::reset",
       "kind": "method",
       "signature": "reset : void () noexcept"
-    },
-    {
-      "name": "swap",
-      "qualified_name": "score::mw::com::SampleAllocateePtr::swap",
-      "kind": "method",
-      "signature": "swap : void (SampleAllocateePtr<SampleType> &) noexcept"
     },
     {
       "name": "~SampleAllocateePtr<SampleType>",
@@ -685,7 +841,7 @@
       "name": "GenericProxyEvent",
       "qualified_name": "score::mw::com::GenericProxyEvent::GenericProxyEvent",
       "kind": "constructor",
-      "signature": "GenericProxyEvent : void (ProxyBase &, const std::string_view, std::unique_ptr<GenericProxyEventBinding>)"
+      "signature": "GenericProxyEvent : void (const std::string_view, std::unique_ptr<GenericProxyEventBinding>)"
     },
     {
       "name": "GenericProxyEvent",
@@ -721,7 +877,7 @@
       "name": "ProxyEventBase",
       "qualified_name": "score::mw::com::GenericProxyEvent::ProxyEventBase",
       "kind": "constructor",
-      "signature": "ProxyEventBase : void (std::string_view, std::unique_ptr<ProxyEventBindingBase>) noexcept"
+      "signature": "ProxyEventBase : void (std::string_view, Result<std::unique_ptr<ProxyEventBindingBase>>) noexcept"
     },
     {
       "name": "ProxyEventBase",

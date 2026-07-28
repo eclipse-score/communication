@@ -27,6 +27,8 @@ enum class configuration_errc : score::result::ErrorCode
     serialization_deploymentinformation_invalid = 0,
     serialization_no_shmbindinginformation = 1,
     serialization_shmbindinginformation_invalid = 2,
+    configuration_merge_duplicate_service_type = 3,
+    configuration_merge_duplicate_service_instance = 4,
 };
 
 /// \brief See above explanation in configuration_errc
@@ -58,6 +60,13 @@ class ConfigurationErrorDomain final : public score::result::ErrorDomain
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(configuration_errc::serialization_shmbindinginformation_invalid):
                 return "serialization of <LoLaShmBindingInfo> is invalid";
+            // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(configuration_errc::configuration_merge_duplicate_service_type):
+                return "Duplicate service type was found during configuration merge. Merge aborted.";
+                // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(
+                configuration_errc::configuration_merge_duplicate_service_instance):
+                return "Duplicate service instance was found during configuration merge. Merge aborted.";
             // coverity[autosar_cpp14_m6_4_5_violation]
             default:
                 return "unknown configuration error";

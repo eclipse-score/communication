@@ -63,6 +63,16 @@ void InitializeRuntime(const std::int32_t argc, score::StringLiteral argv[])
     InitializeRuntime(runtime_configuration);
 }
 
+Result<void> InitializeRuntimeAddonConfiguration(const RuntimeConfiguration& runtime_configuration)
+{
+    return impl::Runtime::InitializeRuntimeAddonConfiguration(runtime_configuration);
+}
+
+Result<void> InitializeRuntimeAddonConfiguration(score::json::Any json)
+{
+    return impl::Runtime::InitializeRuntimeAddonConfiguration(std::move(json));
+}
+
 void InitializeRuntime(const RuntimeConfiguration& runtime_configuration)
 {
     if (auto* const runtime_mock_holder = detail::RuntimeMockHolder::GetRuntimeMock())
