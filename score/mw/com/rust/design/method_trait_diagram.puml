@@ -1,0 +1,123 @@
+@startuml
+
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam packageStyle rectangle
+skinparam defaultTextAlignment center
+
+interface Runtime {
+  type MethodCaller<Args, Return>
+  type MethodHandler<Args, Return>
+  type MethodInArgAllocator
+  type MethodReturnSample<T: CommData>
+  ---
+  + find_service()
+  + producer_builder()
+}
+
+interface MethodHandler<Args: MethodArgs, Return: CommData, R: Runtime> {
+  ---
+  + new(method_name, instance_info) -> Result<Self>
+  + register_handler(handler: impl MethodHandlerCall<Args, Return>)
+}
+
+interface MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime> {
+  ---
+  + new(method_name, instance_info) -> Result<Self>
+  + invoke_with_copy(args: Args) -> impl Future<Output = Result<R::MethodReturnSample<Return>>>
+  + allocate() -> Result<Args::UninitTuple>
+  + invoke_zero_copy(ptrs: Args::PtrTuple) -> impl Future<Output = Result<R::MethodReturnSample<Return>>>
+}
+
+interface MethodArgs {
+  type PtrTuple
+  ---
+  ' Blanket impls for arities 0-8 via impl_all_arities!()
+  ' PtrTuple = (MethodInArgPtr<T1>, ..., MethodInArgPtr<Tn>)
+}
+
+interface "MethodArgsAllocate<A: MethodInArgAllocator>" as MethodArgsAllocate {
+  type UninitTuple
+  ---
+  ' Blanket impls for arities 0-8 via impl_all_arities!()
+  + alloc_uninit(allocator: &A) -> UninitTuple
+}
+
+interface "MethodCallInput<Args, Return, R>" as MethodCallInput {
+  ---
+  + invoke(caller: &R::MethodCaller<Args, Return>) -> impl Future<Output = Result<R::MethodReturnSample<Return>>>
+  ---
+  ' Copy path: impl for Args itself (dispatches invoke_with_copy)
+  ' Zero-copy path: impl for Args::PtrTuple (dispatches invoke_zero_copy)
+  ' Both impls are blanket - no per-arity code in runtimes
+}
+
+interface "MethodHandlerCall<Args, Return>" as MethodHandlerCall {
+  ---
+  + call(args: Args) -> Return
+  ---
+  ' Blanket impl for Fn(...) -> Return + Send + Sync + 'static
+  ' Covers all arities 0-8 via impl_all_arities!()
+}
+
+interface "MethodInArgAllocator" as MethodInArgAllocator {
+  type MethodInArgMaybeUninit<T: CommData>
+  ---
+  + allocate<T: CommData>() -> MethodInArgMaybeUninit<T>
+}
+
+interface "MethodInArgMaybeUninit<T>" as MethodInArgMaybeUninit {
+  ---
+  + write(val: T) -> MethodInArgPtr<T>
+  + assume_init() -> MethodInArgPtr<T>
+}
+
+class "MethodReturnSample<T>" as MethodReturnSample {
+  ---
+  ' Wraps method return value, provides Deref<Target = T> access
+  ' Allows zero-copy return from shared memory (like Sample<T> for events)
+  ' Concrete types: LolaMethodReturnSample<T>, MockMethodReturnSample<T>
+}
+
+class "MethodInArgPtr<T>" as MethodInArgPtr {
+  ---
+  ' Placeholder for pre-allocated shared-memory argument pointer
+  ' Real layout implementation pending (issue #781)
+}
+
+Runtime --> MethodCaller : defines as\nassociated type
+Runtime --> MethodHandler : defines as\nassociated type
+Runtime --> MethodInArgAllocator : defines as\nassociated type
+Runtime --> MethodReturnSample : defines as\nassociated type
+
+MethodCaller --> MethodArgs : requires Args bound
+MethodCaller --> MethodArgsAllocate : uses for allocate()
+MethodCaller --> MethodInArgAllocator : via Runtime associated type
+MethodCaller --> MethodReturnSample : invoke returns
+
+MethodHandler --> MethodHandlerCall : accepts in\nregister_handler()
+
+MethodArgsAllocate --|> MethodArgs : extends
+
+MethodInArgAllocator --> MethodInArgMaybeUninit : allocate() produces
+
+MethodInArgMaybeUninit --> MethodInArgPtr : write() returns
+
+MethodArgs --> MethodInArgPtr : PtrTuple\ncomposed of
+
+MethodCallInput --> MethodCaller : invoke() dispatches to\ninvoke_with_copy or\ninvoke_zero_copy
+
+@enduml
