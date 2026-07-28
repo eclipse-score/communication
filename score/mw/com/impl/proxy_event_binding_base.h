@@ -20,6 +20,8 @@
 
 #include "score/result/result.h"
 
+#include <score/callback.hpp>
+
 #include <cstddef>
 #include <memory>
 
@@ -82,6 +84,10 @@ class ProxyEventBindingBase
 
     /// \brief Remove any receive handler registered via SetSubscriptionStateChangeHandler()
     virtual Result<void> UnsetSubscriptionStateChangeHandler() noexcept = 0;
+
+    /// \brief Sets a tracing callback for subscription state changes (used internally for tracing only)
+    virtual void SetSubscriptionStateChangeTracingCallback(
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept = 0;
 
     /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
     /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.

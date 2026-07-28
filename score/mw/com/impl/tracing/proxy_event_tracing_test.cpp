@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl::tracing
@@ -810,6 +811,397 @@ TEST_P(ProxyEventCreateTracingGetNewSamplesCallbackFixture,
 
     // When calling the created GetNewSamplesCallback
     get_new_samples_callback(nullptr, 1U);
+}
+
+using ProxyEventTraceSubscriptionStateChangedFixture = ProxyEventTracingFixture;
+INSTANTIATE_TEST_SUITE_P(ProxyEventTraceSubscriptionStateChangedFixture,
+                         ProxyEventTraceSubscriptionStateChangedFixture,
+                         ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+
+TEST_P(ProxyEventTraceSubscriptionStateChangedFixture, TraceSubscriptionStateChangedWillDispatchToBindingTracingRuntime)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called on the TracingRuntime binding
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _));
+
+    // When calling TraceSubscriptionStateChanged with SUBSCRIBED state
+    TraceSubscriptionStateChanged(proxy_event_tracing_data_, proxy_event_binding_base_, SubscriptionState::kSubscribed);
+}
+
+TEST_P(ProxyEventTraceSubscriptionStateChangedFixture, TraceSubscriptionStateChangedWillNotDispatchIfTracingDisabled)
+{
+    // Given a ProxyEventTracingData with all trace points disabled
+    WithAValidProxyEventTracingData();
+
+    // Expecting TraceData will not be called on the TracingRuntime binding
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _)).Times(0);
+
+    // When calling TraceSubscriptionStateChanged
+    TraceSubscriptionStateChanged(
+        proxy_event_tracing_data_, proxy_event_binding_base_, SubscriptionState::kNotSubscribed);
+}
+
+TEST_P(ProxyEventTraceSubscriptionStateChangedFixture,
+       TraceSubscriptionStateChangedWillDisableTracePointIfDisableInstanceErrorReturned)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called and return disable instance error
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _))
+        .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance)));
+
+    // When calling TraceSubscriptionStateChanged
+    TraceSubscriptionStateChanged(proxy_event_tracing_data_, proxy_event_binding_base_, SubscriptionState::kSubscribed);
+
+    // Then the enable_subscription_state_changed trace point is disabled
+    EXPECT_FALSE(proxy_event_tracing_data_.enable_subscription_state_changed);
+}
+
+TEST_P(ProxyEventTraceSubscriptionStateChangedFixture,
+       TraceSubscriptionStateChangedWillDisableAllTracePointsIfDisableAllErrorReturned)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called and return disable all error
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _))
+        .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints)));
+
+    // When calling TraceSubscriptionStateChanged
+    TraceSubscriptionStateChanged(
+        proxy_event_tracing_data_, proxy_event_binding_base_, SubscriptionState::kNotSubscribed);
+
+    // Then all trace points are disabled
+    EXPECT_TRUE(AreAllTracePointsDisabled(proxy_event_tracing_data_));
+}
+
+TEST_P(ProxyEventTraceSubscriptionStateChangedFixture, TraceSubscriptionStateChangedWillIgnoreUnknownError)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called and return unknown error
+    const auto unknown_error_code = static_cast<TraceErrorCode>(100U);
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _)).WillByDefault(Return(MakeUnexpected(unknown_error_code)));
+
+    // When calling TraceSubscriptionStateChanged
+    TraceSubscriptionStateChanged(proxy_event_tracing_data_, proxy_event_binding_base_, SubscriptionState::kSubscribed);
+
+    // Then the trace point remains enabled
+    EXPECT_TRUE(proxy_event_tracing_data_.enable_subscription_state_changed);
+}
+
+using ProxyEventTraceSetSubscriptionStateChangeHandlerFixture = ProxyEventTracingFixture;
+INSTANTIATE_TEST_SUITE_P(ProxyEventTraceSetSubscriptionStateChangeHandlerFixture,
+                         ProxyEventTraceSetSubscriptionStateChangeHandlerFixture,
+                         ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+
+TEST_P(ProxyEventTraceSetSubscriptionStateChangeHandlerFixture,
+       TraceSetSubscriptionStateChangeHandlerWillDispatchToBindingTracingRuntime)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called on the TracingRuntime binding
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _));
+
+    // When calling TraceSetSubscriptionStateChangeHandler
+    TraceSetSubscriptionStateChangeHandler(proxy_event_tracing_data_, proxy_event_binding_base_);
+}
+
+TEST_P(ProxyEventTraceSetSubscriptionStateChangeHandlerFixture,
+       TraceSetSubscriptionStateChangeHandlerWillNotDispatchIfTracingDisabled)
+{
+    // Given a ProxyEventTracingData with all trace points disabled
+    WithAValidProxyEventTracingData();
+
+    // Expecting TraceData will not be called on the TracingRuntime binding
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _)).Times(0);
+
+    // When calling TraceSetSubscriptionStateChangeHandler
+    TraceSetSubscriptionStateChangeHandler(proxy_event_tracing_data_, proxy_event_binding_base_);
+}
+
+TEST_P(ProxyEventTraceSetSubscriptionStateChangeHandlerFixture,
+       TraceSetSubscriptionStateChangeHandlerWillDisableTracePointIfDisableInstanceErrorReturned)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called and return disable instance error
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _))
+        .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance)));
+
+    // When calling TraceSetSubscriptionStateChangeHandler
+    TraceSetSubscriptionStateChangeHandler(proxy_event_tracing_data_, proxy_event_binding_base_);
+
+    // Then the enable_set_subscription_state_change_handler trace point is disabled
+    EXPECT_FALSE(proxy_event_tracing_data_.enable_set_subcription_state_change_handler);
+}
+
+TEST_P(ProxyEventTraceSetSubscriptionStateChangeHandlerFixture,
+       TraceSetSubscriptionStateChangeHandlerWillDisableAllTracePointsIfDisableAllErrorReturned)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called and return disable all error
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _))
+        .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints)));
+
+    // When calling TraceSetSubscriptionStateChangeHandler
+    TraceSetSubscriptionStateChangeHandler(proxy_event_tracing_data_, proxy_event_binding_base_);
+
+    // Then all trace points are disabled
+    EXPECT_TRUE(AreAllTracePointsDisabled(proxy_event_tracing_data_));
+}
+
+using ProxyEventTraceUnsetSubscriptionStateChangeHandlerFixture = ProxyEventTracingFixture;
+INSTANTIATE_TEST_SUITE_P(ProxyEventTraceUnsetSubscriptionStateChangeHandlerFixture,
+                         ProxyEventTraceUnsetSubscriptionStateChangeHandlerFixture,
+                         ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+
+TEST_P(ProxyEventTraceUnsetSubscriptionStateChangeHandlerFixture,
+       TraceUnsetSubscriptionStateChangeHandlerWillDispatchToBindingTracingRuntime)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called on the TracingRuntime binding
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _));
+
+    // When calling TraceUnsetSubscriptionStateChangeHandler
+    TraceUnsetSubscriptionStateChangeHandler(proxy_event_tracing_data_, proxy_event_binding_base_);
+}
+
+TEST_P(ProxyEventTraceUnsetSubscriptionStateChangeHandlerFixture,
+       TraceUnsetSubscriptionStateChangeHandlerWillNotDispatchIfTracingDisabled)
+{
+    // Given a ProxyEventTracingData with all trace points disabled
+    WithAValidProxyEventTracingData();
+
+    // Expecting TraceData will not be called on the TracingRuntime binding
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _)).Times(0);
+
+    // When calling TraceUnsetSubscriptionStateChangeHandler
+    TraceUnsetSubscriptionStateChangeHandler(proxy_event_tracing_data_, proxy_event_binding_base_);
+}
+
+TEST_P(ProxyEventTraceUnsetSubscriptionStateChangeHandlerFixture,
+       TraceUnsetSubscriptionStateChangeHandlerWillDisableTracePointIfDisableInstanceErrorReturned)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called and return disable instance error
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _))
+        .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance)));
+
+    // When calling TraceUnsetSubscriptionStateChangeHandler
+    TraceUnsetSubscriptionStateChangeHandler(proxy_event_tracing_data_, proxy_event_binding_base_);
+
+    // Then the enable_unset_subscription_state_change_handler trace point is disabled
+    EXPECT_FALSE(proxy_event_tracing_data_.enable_unset_subscription_state_change_handler);
+}
+
+TEST_P(ProxyEventTraceUnsetSubscriptionStateChangeHandlerFixture,
+       TraceUnsetSubscriptionStateChangeHandlerWillDisableAllTracePointsIfDisableAllErrorReturned)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called and return disable all error
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _))
+        .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints)));
+
+    // When calling TraceUnsetSubscriptionStateChangeHandler
+    TraceUnsetSubscriptionStateChangeHandler(proxy_event_tracing_data_, proxy_event_binding_base_);
+
+    // Then all trace points are disabled
+    EXPECT_TRUE(AreAllTracePointsDisabled(proxy_event_tracing_data_));
+}
+
+using ProxyEventTraceCallSubscriptionStateChangeHandlerFixture = ProxyEventTracingFixture;
+INSTANTIATE_TEST_SUITE_P(ProxyEventTraceCallSubscriptionStateChangeHandlerFixture,
+                         ProxyEventTraceCallSubscriptionStateChangeHandlerFixture,
+                         ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+
+TEST_P(ProxyEventTraceCallSubscriptionStateChangeHandlerFixture,
+       TraceCallSubscriptionStateChangeHandlerWillDispatchToBindingTracingRuntime)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called on the TracingRuntime binding
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _));
+
+    // When calling TraceCallSubscriptionStateChangeHandler with SUBSCRIBED state
+    TraceCallSubscriptionStateChangeHandler(
+        proxy_event_tracing_data_, proxy_event_binding_base_, SubscriptionState::kSubscribed);
+}
+
+TEST_P(ProxyEventTraceCallSubscriptionStateChangeHandlerFixture,
+       TraceCallSubscriptionStateChangeHandlerWillNotDispatchIfTracingDisabled)
+{
+    // Given a ProxyEventTracingData with all trace points disabled
+    WithAValidProxyEventTracingData();
+
+    // Expecting TraceData will not be called on the TracingRuntime binding
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _)).Times(0);
+
+    // When calling TraceCallSubscriptionStateChangeHandler
+    TraceCallSubscriptionStateChangeHandler(
+        proxy_event_tracing_data_, proxy_event_binding_base_, SubscriptionState::kNotSubscribed);
+}
+
+TEST_P(ProxyEventTraceCallSubscriptionStateChangeHandlerFixture,
+       TraceCallSubscriptionStateChangeHandlerWillDisableTracePointIfDisableInstanceErrorReturned)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called and return disable instance error
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _))
+        .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance)));
+
+    // When calling TraceCallSubscriptionStateChangeHandler
+    TraceCallSubscriptionStateChangeHandler(
+        proxy_event_tracing_data_, proxy_event_binding_base_, SubscriptionState::kSubscribed);
+
+    // Then the enable_call_subscription_state_change_handler trace point is disabled
+    EXPECT_FALSE(proxy_event_tracing_data_.enable_call_subscription_state_change_handler);
+}
+
+TEST_P(ProxyEventTraceCallSubscriptionStateChangeHandlerFixture,
+       TraceCallSubscriptionStateChangeHandlerWillDisableAllTracePointsIfDisableAllErrorReturned)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called and return disable all error
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _))
+        .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints)));
+
+    // When calling TraceCallSubscriptionStateChangeHandler
+    TraceCallSubscriptionStateChangeHandler(
+        proxy_event_tracing_data_, proxy_event_binding_base_, SubscriptionState::kNotSubscribed);
+
+    // Then all trace points are disabled
+    EXPECT_TRUE(AreAllTracePointsDisabled(proxy_event_tracing_data_));
+}
+
+TEST_P(ProxyEventTraceCallSubscriptionStateChangeHandlerFixture,
+       TraceCallSubscriptionStateChangeHandlerWillIgnoreUnknownError)
+{
+    // Given a ProxyEventTracingData with all trace points enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called and return unknown error
+    const auto unknown_error_code = static_cast<TraceErrorCode>(100U);
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _)).WillByDefault(Return(MakeUnexpected(unknown_error_code)));
+
+    // When calling TraceCallSubscriptionStateChangeHandler
+    TraceCallSubscriptionStateChangeHandler(
+        proxy_event_tracing_data_, proxy_event_binding_base_, SubscriptionState::kSubscribed);
+
+    // Then the trace point remains enabled
+    EXPECT_TRUE(proxy_event_tracing_data_.enable_call_subscription_state_change_handler);
+}
+
+using ProxyEventSetupSubscriptionStateChangeTracingFixture = ProxyEventTracingFixture;
+INSTANTIATE_TEST_SUITE_P(ProxyEventSetupSubscriptionStateChangeTracingFixture,
+                         ProxyEventSetupSubscriptionStateChangeTracingFixture,
+                         ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+
+TEST_P(ProxyEventSetupSubscriptionStateChangeTracingFixture,
+       SetupSubscriptionStateChangeTracingWillInstallCallbackWhenEnabled)
+{
+    // Given a ProxyEventTracingData with subscription state change tracing enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting SetSubscriptionStateChangeTracingCallback will be called on binding
+    EXPECT_CALL(proxy_event_binding_base_, SetSubscriptionStateChangeTracingCallback(_)).Times(1);
+
+    // When calling SetupSubscriptionStateChangeTracing
+    SetupSubscriptionStateChangeTracing(proxy_event_tracing_data_, proxy_event_binding_base_);
+}
+
+TEST_P(ProxyEventSetupSubscriptionStateChangeTracingFixture,
+       SetupSubscriptionStateChangeTracingWillNotInstallCallbackWhenDisabled)
+{
+    // Given a ProxyEventTracingData with subscription state change tracing disabled
+    WithAValidProxyEventTracingData();
+    proxy_event_tracing_data_.enable_subscription_state_changed = false;
+
+    // Expecting SetSubscriptionStateChangeTracingCallback will not be called
+    EXPECT_CALL(proxy_event_binding_base_, SetSubscriptionStateChangeTracingCallback(_)).Times(0);
+
+    // When calling SetupSubscriptionStateChangeTracing
+    SetupSubscriptionStateChangeTracing(proxy_event_tracing_data_, proxy_event_binding_base_);
+}
+
+TEST_P(ProxyEventSetupSubscriptionStateChangeTracingFixture,
+       SetupSubscriptionStateChangeTracingCallbackWillInvokeTraceFunction)
+{
+    // Given a ProxyEventTracingData with subscription state change tracing enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting SetSubscriptionStateChangeTracingCallback will be called
+    EXPECT_CALL(proxy_event_binding_base_, SetSubscriptionStateChangeTracingCallback(_)).Times(1);
+
+    // And expecting Trace will be called when the subscription state machine invokes the callback
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _)).Times(1);
+
+    // Capture and store the callback to invoke it
+    std::optional<score::cpp::callback<void(SubscriptionState), 64U>> captured_callback;
+    ON_CALL(proxy_event_binding_base_, SetSubscriptionStateChangeTracingCallback(_))
+        .WillByDefault([&captured_callback](score::cpp::callback<void(SubscriptionState), 64U> callback) {
+            captured_callback = std::move(callback);
+        });
+
+    // When calling SetupSubscriptionStateChangeTracing
+    SetupSubscriptionStateChangeTracing(proxy_event_tracing_data_, proxy_event_binding_base_);
+
+    // Then verify the callback was captured and can be invoked
+    ASSERT_TRUE(captured_callback.has_value());
+
+    // When the subscription state machine invokes the callback
+    captured_callback.value()(SubscriptionState::kSubscribed);
+
+    // Then Trace should have been called
+}
+
+TEST_P(ProxyEventSetupSubscriptionStateChangeTracingFixture,
+       SetupSubscriptionStateChangeTracingCallbackWillHandleMultipleStates)
+{
+    // Given a ProxyEventTracingData with subscription state change tracing enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called for each state change
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _)).Times(3);
+
+    // Capture and store the callback
+    std::optional<score::cpp::callback<void(SubscriptionState), 64U>> captured_callback;
+    ON_CALL(proxy_event_binding_base_, SetSubscriptionStateChangeTracingCallback(_))
+        .WillByDefault([&captured_callback](score::cpp::callback<void(SubscriptionState), 64U> callback) {
+            captured_callback = std::move(callback);
+        });
+
+    // When calling SetupSubscriptionStateChangeTracing
+    SetupSubscriptionStateChangeTracing(proxy_event_tracing_data_, proxy_event_binding_base_);
+
+    // Then verify the callback was captured
+    ASSERT_TRUE(captured_callback.has_value());
+
+    // When invoking the callback with different subscription states
+    captured_callback.value()(SubscriptionState::kNotSubscribed);
+    captured_callback.value()(SubscriptionState::kSubscriptionPending);
+    captured_callback.value()(SubscriptionState::kSubscribed);
+
+    // Then Trace should have been called 3 times
 }
 
 }  // namespace

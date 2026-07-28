@@ -407,6 +407,28 @@ add a lot of complexity and potential for deadlocks. The solution via the return
 machine called the handler, and before it releases the lock, it checks the return value. If it is `false`, it just resets
 &ndash; still under state-machine mutex lock &ndash; the internal `std::optional`, which holds the handler.
 
+#### Tracing of Subscription State Changes
+
+The subscription state machine supports optional tracing of state transitions to provide visibility into the subscription
+lifecycle. When IPC Tracing is enabled for a proxy event, a tracing callback is automatically installed during 
+`Subscribe()` to capture all subsequent state transitions.
+
+The tracing infrastructure provides four trace points:
+- **Subscription state changed** - Captures every state transition (fired by state machine at each `TransitionToState()`)
+- **Handler registered** - Captures when `SetSubscriptionStateChangeHandler()` is called
+- **Handler deregistered** - Captures when `UnsetSubscriptionStateChangeHandler()` is called
+- **Handler callback** - Reserved for future use; currently not invoked due to callback capacity constraints
+
+The tracing callback is managed at the binding level via `SetSubscriptionStateChangeTracingCallback()` on the 
+`ProxyEventBindingBase` interface. This callback receives the new subscription state at each transition and dispatches 
+it to the IPC Tracing subsystem. The callback is invoked **before** the user-provided handler to ensure complete 
+visibility into state transitions.
+
+The structural model of the subscription state machine with tracing callback support is shown in the 
+[proxy event state machine model](proxy_event_state_machine_model.puml). The interaction flow, 
+implementation pattern, and configuration details are documented in the 
+[IPC Tracing Design](../ipc_tracing/README.md#subscription-state-change-tracing).
+
 ### Event Update Notification
 
 Event Notification is a good showcase for the "smart" behavior of `lola::MessagePassingFacade` as already mentioned (see

@@ -86,6 +86,8 @@ class ProxyEventCommon final
 
     Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept;
     Result<void> UnsetSubscriptionStateChangeHandler() noexcept;
+    void SetSubscriptionStateChangeTracingCallback(
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept;
 
     pid_t GetEventSourcePid() const noexcept;
     ElementFqId GetElementFQId() const noexcept

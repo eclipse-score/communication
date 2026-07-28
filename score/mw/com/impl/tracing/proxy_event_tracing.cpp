@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/tracing/proxy_event_tracing.h"
 
 #include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/impl/subscription_state.h"
 #include "score/mw/com/impl/tracing/common_event_tracing.h"
 #include "score/mw/com/impl/tracing/configuration/proxy_event_trace_point_type.h"
 #include "score/mw/com/impl/tracing/configuration/proxy_field_trace_point_type.h"
@@ -443,10 +444,8 @@ void TraceSubscriptionStateChanged(ProxyEventTracingData& proxy_event_tracing_da
         }
 
         const auto binding_type = proxy_event_binding_base.GetBindingType();
-        const auto trace_result = TraceData(service_element_instance_identifier,
-                                            trace_point,
-                                            binding_type,
-                                            ConvertToFatPointer(new_state));
+        const auto trace_result =
+            TraceData(service_element_instance_identifier, trace_point, binding_type, ConvertToFatPointer(new_state));
         UpdateTracingDataFromTraceResult(
             trace_result, proxy_event_tracing_data, proxy_event_tracing_data.enable_subscription_state_changed);
     }
@@ -518,8 +517,9 @@ void TraceUnsetSubscriptionStateChangeHandler(ProxyEventTracingData& proxy_event
         const auto binding_type = proxy_event_binding_base.GetBindingType();
         const auto trace_result =
             TraceData(proxy_event_tracing_data.service_element_instance_identifier_view, trace_point, binding_type);
-        UpdateTracingDataFromTraceResult(
-            trace_result, proxy_event_tracing_data, proxy_event_tracing_data.enable_unset_subscription_state_change_handler);
+        UpdateTracingDataFromTraceResult(trace_result,
+                                         proxy_event_tracing_data,
+                                         proxy_event_tracing_data.enable_unset_subscription_state_change_handler);
     }
 }
 
@@ -552,13 +552,26 @@ void TraceCallSubscriptionStateChangeHandler(ProxyEventTracingData& proxy_event_
         }
 
         const auto binding_type = proxy_event_binding_base.GetBindingType();
-        const auto trace_result = TraceData(service_element_instance_identifier,
-                                            trace_point,
-                                            binding_type,
-                                            ConvertToFatPointer(new_state));
+        const auto trace_result =
+            TraceData(service_element_instance_identifier, trace_point, binding_type, ConvertToFatPointer(new_state));
         UpdateTracingDataFromTraceResult(trace_result,
                                          proxy_event_tracing_data,
                                          proxy_event_tracing_data.enable_call_subscription_state_change_handler);
+    }
+}
+
+void SetupSubscriptionStateChangeTracing(ProxyEventTracingData& proxy_event_tracing_data,
+                                         ProxyEventBindingBase& proxy_event_binding_base) noexcept
+{
+    // Create a callback that will be invoked when subscription state changes
+    if (proxy_event_tracing_data.enable_subscription_state_changed)
+    {
+        score::cpp::callback<void(SubscriptionState), 64U> tracing_callback =
+            [&proxy_event_tracing_data, &proxy_event_binding_base](SubscriptionState new_state) noexcept {
+                TraceSubscriptionStateChanged(proxy_event_tracing_data, proxy_event_binding_base, new_state);
+            };
+        // Set callback on the binding's state machine
+        proxy_event_binding_base.SetSubscriptionStateChangeTracingCallback(std::move(tracing_callback));
     }
 }
 

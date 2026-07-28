@@ -122,6 +122,13 @@ void SubscriptionStateMachine::UnsetSubscriptionStateChangeHandler() noexcept
     subscription_state_change_handler_.reset();
 }
 
+void SubscriptionStateMachine::SetSubscriptionStateChangeTracingCallback(
+    score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+{
+    std::lock_guard<std::mutex> lock{state_mutex_};
+    subscription_state_change_tracing_callback_ = std::move(callback);
+}
+
 std::optional<std::uint16_t> SubscriptionStateMachine::GetMaxSampleCount() const noexcept
 {
     std::lock_guard<std::mutex> lock{state_mutex_};
@@ -151,7 +158,15 @@ void SubscriptionStateMachine::TransitionToState(const SubscriptionStateMachineS
 {
     GetCurrentEventState().OnExit();
     current_state_idx_.store(newState);
+    const SubscriptionState new_subscription_state = SubscriptionStateMachineStateToSubscriptionState(newState);
     GetCurrentEventState().OnEntry();
+
+    // Call tracing callback if set
+    if (subscription_state_change_tracing_callback_.has_value())
+    {
+        subscription_state_change_tracing_callback_.value()(new_subscription_state);
+    }
+
     if (subscription_state_change_handler_.has_value())
     {
         // We call the user-provided handler under state_mutex_ lock, which has always been acquired within this method.

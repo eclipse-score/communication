@@ -1,0 +1,100 @@
+@startuml sequence_subscription_state_tracing
+title "Subscription State Change Tracing Setup and Invocation"
+hide footbox
+
+participant "<u>impl::ProxyEventBase</u>" as ProxyEventBase
+participant "<u>impl::tracing::SetupSubscriptionStateChangeTracing</u>" as TraceSetup
+participant "<u>SubscriptionStateTracingCallback:Lambda</u>" as TracingCallback
+participant "<u>ProxyEventBindingBase</u>" as BindingBase
+participant "<u>lola::SubscriptionStateMachine</u>" as StateMachine
+participant "<u>impl::tracing::TracingRuntime:Singleton</u>" as TracingRuntime
+
+activate ProxyEventBase
+ProxyEventBase -> ProxyEventBase: Subscribe(max_sample_count)
+
+ProxyEventBase -> BindingBase: Subscribe(max_sample_count)
+activate BindingBase
+
+alt subscription succeeds
+    BindingBase -> ProxyEventBase: return Result<void>::Success()
+    
+    ProxyEventBase -> TraceSetup: SetupSubscriptionStateChangeTracing(\nproxy_event_tracing_data_,\nproxy_event_binding_base_)
+    activate TraceSetup
+    
+    alt enable_subscription_state_changed == true
+        create TracingCallback
+        TraceSetup -> TracingCallback: create lambda callback\n[&tracing_data, &binding](SubscriptionState new_state) {
+        
+        TraceSetup -> BindingBase: SetSubscriptionStateChangeTracingCallback(\nstd::move(tracing_callback))
+        activate BindingBase
+        
+        BindingBase -> StateMachine: SetSubscriptionStateChangeTracingCallback(\nstd::move(callback))
+        activate StateMachine
+        
+        StateMachine -> StateMachine: subscription_state_change_tracing_callback_ = callback
+        
+        StateMachine --> BindingBase: return
+        deactivate StateMachine
+        
+        BindingBase --> TraceSetup: return
+        deactivate BindingBase
+        
+    else enable_subscription_state_changed == false
+        TraceSetup --> ProxyEventBase: return (no callback installed)
+    end
+    
+    deactivate TraceSetup
+    
+    ProxyEventBase --> ProxyEventBase: return Result<void>::Success()
+    
+end
+
+autonumber 1 50
+StateMachine -> StateMachine: TransitionToState(new_state)
+activate StateMachine
+
+alt subscription_state_change_tracing_callback_.has_value()
+    StateMachine -> TracingCallback: (*subscription_state_change_tracing_callback_)(new_state)
+    activate TracingCallback
+    
+    note right of TracingCallback
+        Callback captures:
+        - reference to proxy_event_tracing_data_
+        - reference to proxy_event_binding_base_
+    end note
+    
+    TracingCallback -> ProxyEventBase: TraceSubscriptionStateChanged(\ntracing_data, binding_base, new_state)
+    activate ProxyEventBase
+    
+    alt enable_subscription_state_changed == true
+        ProxyEventBase -> TracingRuntime: Trace(trace_point, ...)
+        activate TracingRuntime
+        
+        TracingRuntime --> ProxyEventBase: return
+        deactivate TracingRuntime
+    end
+    
+    ProxyEventBase --> TracingCallback: return
+    deactivate ProxyEventBase
+    
+    TracingCallback --> StateMachine: return
+    deactivate TracingCallback
+end
+
+note right of StateMachine
+    Tracing callback invoked BEFORE
+    user subscription state handler
+    to ensure state is traced even if
+    handler removes itself
+end note
+
+alt subscription_state_change_handler_.has_value()
+    StateMachine -> StateMachine: invoke user handler
+end
+
+StateMachine --> StateMachine: return
+deactivate StateMachine
+
+deactivate ProxyEventBase
+
+@enduml
