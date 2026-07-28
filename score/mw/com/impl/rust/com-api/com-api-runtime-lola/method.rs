@@ -20,8 +20,9 @@
 use core::future::Future;
 use core::ops::Deref;
 use score_com_concept::{
-    CommData, MethodArgs, MethodArgsAllocate, MethodCaller, MethodHandler, MethodHandlerCall,
-    MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr, Result, Runtime,
+    CommData, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple, MethodCaller, MethodHandler,
+    MethodHandlerCall, MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr,
+    MethodReturnSample, Result, Runtime, ZeroCopyArgs,
 };
 
 /// Placeholder return sample for a method call result.
@@ -38,6 +39,8 @@ impl<T> Deref for LolaMethodReturnSample<T> {
         &self.value
     }
 }
+
+impl<T> MethodReturnSample<T> for LolaMethodReturnSample<T> {}
 
 pub struct LolaMethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
     _phantom: core::marker::PhantomData<(Args, Return, R)>,
@@ -85,7 +88,10 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         })
     }
 
-    fn invoke_with_copy<'a>(&'a self, _args: Args) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
+    fn invoke_with_copy<'a>(
+        &'a self,
+        _args: Args,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
         async move { todo!("Implement the logic to call the method with copied arguments") }
     }
 
@@ -98,8 +104,11 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
 
     fn invoke_zero_copy<'a>(
         &'a self,
-        _ptrs: <Args as MethodArgs>::PtrTuple,
-    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
+        _ptrs: <Args as MethodArgsPtrTuple<R>>::PtrTuple,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a
+    where
+        Args: MethodArgsPtrTuple<R>,
+    {
         async move {
             todo!("Implement the logic to call the method with pre-allocated argument pointers")
         }
@@ -111,12 +120,21 @@ pub struct LolaMethodInArgMaybeUninit<T> {
     _phantom: core::marker::PhantomData<T>,
 }
 
+/// Runtime-specific concrete type for a fully-initialised Lola method argument pointer.
+pub struct LolaMethodInArgPtr<T> {
+    _phantom: core::marker::PhantomData<T>,
+}
+
+impl<T> MethodInArgPtr<T> for LolaMethodInArgPtr<T> {}
+
 impl<T> MethodInArgMaybeUninit<T> for LolaMethodInArgMaybeUninit<T> {
-    fn write(self, _val: T) -> MethodInArgPtr<T> {
+    type Ptr = LolaMethodInArgPtr<T>;
+
+    fn write(self, _val: T) -> ZeroCopyArgs<LolaMethodInArgPtr<T>> {
         todo!("Implement write into Lola shared-memory slot");
     }
 
-    unsafe fn assume_init(self) -> MethodInArgPtr<T> {
+    unsafe fn assume_init(self) -> ZeroCopyArgs<LolaMethodInArgPtr<T>> {
         todo!("Implement assume_init for Lola shared-memory slot");
     }
 }
@@ -125,6 +143,7 @@ impl<T> MethodInArgMaybeUninit<T> for LolaMethodInArgMaybeUninit<T> {
 pub struct LolaMethodInArgAllocator;
 
 impl MethodInArgAllocator for LolaMethodInArgAllocator {
+    type MethodInArgPtr<T: CommData> = LolaMethodInArgPtr<T>;
     type MethodInArgMaybeUninit<T: CommData> = LolaMethodInArgMaybeUninit<T>;
     fn allocate<T: CommData>(&self) -> LolaMethodInArgMaybeUninit<T> {
         todo!("Implement allocation from the Lola shared-memory region via &self context");
