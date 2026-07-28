@@ -34,8 +34,8 @@
 //! This macro covers arities 1 through 8 (inclusive) by default, but can be extended to higher arities if needed.
 
 use crate::{
-    CommData, MethodArgs, MethodArgsAllocate, MethodCallInput, MethodCaller, MethodHandlerCall,
-    MethodInArgAllocator, MethodInArgPtr, Reloc, Result, Runtime,
+    CommData, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple, MethodCallInput, MethodCaller,
+    MethodHandlerCall, MethodInArgAllocator, Reloc, Result, Runtime, ZeroCopyArgs,
 };
 use core::future::Future;
 
@@ -60,8 +60,15 @@ macro_rules! impl_all_arities {
             const ID: &'static str = stringify!(($($T,)* $nextT,));
         }
 
-        impl<$($T: CommData,)* $nextT: CommData> MethodArgs for ($($T,)* $nextT,) {
-            type PtrTuple = ($( MethodInArgPtr<$T>, )* MethodInArgPtr<$nextT>,);
+        impl<$($T: CommData,)* $nextT: CommData> MethodArgs for ($($T,)* $nextT,) {}
+
+        impl<$($T: CommData,)* $nextT: CommData, R: Runtime + ?Sized>
+            MethodArgsPtrTuple<R> for ($($T,)* $nextT,)
+        {
+            type PtrTuple = (
+                $( ZeroCopyArgs<<R::MethodInArgAllocator as MethodInArgAllocator>::MethodInArgPtr<$T>>, )*
+                ZeroCopyArgs<<R::MethodInArgAllocator as MethodInArgAllocator>::MethodInArgPtr<$nextT>>,
+            );
         }
 
         impl<$($T: CommData,)* $nextT: CommData, _Alloc: MethodInArgAllocator>
@@ -77,15 +84,20 @@ macro_rules! impl_all_arities {
             }
         }
 
-        // Accepts a tuple of `MethodInArgPtr<T>` values and dispatches to
-        // `invoke_zero_copy`. The copy path is already covered by the blanket impl
-        // in `com_api_method.rs` and does not need to be repeated here.
+        // Accepts a tuple of `ZeroCopyArgs<Alloc::MethodInArgPtr<T>>` values and dispatches to
+        // `invoke_zero_copy`. The `Ptr = Self::MethodInArgPtr<T>` constraint on MethodInArgAllocator
+        // ensures these types unify with what `write()` returns.
+        // The copy path is covered by the arity-agnostic blanket impl in `method_concept.rs`.
         impl<$($T: CommData,)* $nextT: CommData, Return: CommData, R: Runtime + ?Sized>
             MethodCallInput<($($T,)* $nextT,), Return, R>
-            for ($( MethodInArgPtr<$T>, )* MethodInArgPtr<$nextT>,)
+            for ($( ZeroCopyArgs<<R::MethodInArgAllocator as MethodInArgAllocator>::MethodInArgPtr<$T>>, )* ZeroCopyArgs<<R::MethodInArgAllocator as MethodInArgAllocator>::MethodInArgPtr<$nextT>>,)
         where
             R::MethodCaller<($($T,)* $nextT,), Return>:
                 MethodCaller<($($T,)* $nextT,), Return, R>,
+            // Equality constraint: lets the compiler unify Self with PtrTuple.
+            ($($T,)* $nextT,): MethodArgsPtrTuple<R, PtrTuple =
+                ($( ZeroCopyArgs<<R::MethodInArgAllocator as MethodInArgAllocator>::MethodInArgPtr<$T>>, )* ZeroCopyArgs<<R::MethodInArgAllocator as MethodInArgAllocator>::MethodInArgPtr<$nextT>>,)
+            >,
         {
             fn invoke<'a>(
                 self,
@@ -95,22 +107,18 @@ macro_rules! impl_all_arities {
                 R::MethodCaller<($($T,)* $nextT,), Return>:
                     MethodCaller<($($T,)* $nextT,), Return, R> + 'a,
             {
-                // Destructure with positional arg names, then reconstruct the ptr tuple.
-                #[allow(non_snake_case)]
-                let ($($a,)* $nextA,) = self;
+                // `self` IS <Args as MethodArgsPtrTuple<R>>::PtrTuple by the equality
+                // constraint above, so pass it directly to invoke_zero_copy.
                 <R::MethodCaller<($($T,)* $nextT,), Return> as
                     MethodCaller<($($T,)* $nextT,), Return, R>>::invoke_zero_copy(
                     caller,
-                    ($($a,)* $nextA,),
+                    self,
                 )
             }
         }
-
-        // Maps a plain `Fn(T1, T2, …) -> Return` closure to the tuple-based call
-        // convention used by the runtime.
-        impl<_F, $($T,)* $nextT, Return> MethodHandlerCall<($($T,)* $nextT,), Return> for _F
+        impl<F, $($T,)* $nextT, Return> MethodHandlerCall<($($T,)* $nextT,), Return> for F
         where
-            _F: Fn($($T,)* $nextT,) -> Return + Send + Sync + 'static,
+            F: Fn($($T,)* $nextT,) -> Return + Send + Sync + 'static,
         {
             fn call(&self, args: ($($T,)* $nextT,)) -> Return {
                 #[allow(non_snake_case)]

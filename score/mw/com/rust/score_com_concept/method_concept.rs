@@ -44,12 +44,20 @@
 /// it is used in the zero-copy method call path.
 /// Which provide the allocate API for specific argument type and
 /// return the uninitialized method argument type for that argument type.
+/// `MethodReturnSample`: This is a trait for the return value of a method call on the consumer side,
+/// it is used to provide `Deref<Target = T>` access to the return value,
+/// `MethodInArgPtr`: This is a trait for the pointer type for a single method argument,
+/// it is used in the zero-copy method call path.
+/// `ZeroCopyArgs<P>`: Newtype wrapper for the zero-copy dispatch, returned by `MethodInArgMaybeUninit::write()`
 ///
 /// Now below traits are marker / marker-like (because it is implemented for all supported arities) traits and
 /// which no need to implement by runtime because blanket implementation is added in this crate.
 ///
 /// `MethodArgs`: Marker trait for method argument tuples,
-/// this is used to carry the matching tuple of MethodInArgPtr<T> used in the zero-copy call path.
+/// no need to implement by runtime because blanket implementation is added in this crate.
+/// `MethodArgsPtrTuple`: Maps an Args tuple to the matching ZeroCopyArgs-wrapped pointer tuple for a given runtime R,
+/// this is used to provide the PtrTuple type for the zero-copy call path,
+/// it is a separate trait from MethodArgs because pointer types are runtime-specific.
 /// `MethodArgsAllocate`: Maps an Args tuple type to the matching uninitialized method argument tuple for a specific runtime allocator A,
 /// this is used to produce the uninitialized method arguments for zero-copy method call path.
 /// `MethodCallInput`: Unified input for a method call accepted by the interface macro-generated consumer methods,
@@ -70,16 +78,22 @@
 ///
 // TODO: Add a blocking `.wait()` convenience for method-call futures, for sync callers who don't
 // want to bring their own async executor (similar to `futures::executor::block_on`).
-use crate::concept::*;
+use crate::concept::{CommData, Result, Runtime};
 use core::future::Future;
+use core::ops::Deref;
 
-// This is a pointer type for a pre-allocated method argument. It is used in the zero-copy method call path.
-// TODO: Remove this once memory layout implementation is added in rust side, same like samplePtr.
-// Also need to check about lifetime of this pointer and add all the trait or type which is required.
-// https://github.com/eclipse-score/communication/issues/781
-pub struct MethodInArgPtr<T> {
-    pub _phantom: core::marker::PhantomData<T>,
-}
+/// Trait for the return value of a method call on the consumer side.
+// Mirrors `Sample<T>` in the event design
+pub trait MethodReturnSample<T>: Deref<Target = T> {}
+
+/// Marker trait for a fully-initialised, pre-allocated method argument.
+/// Runtimes implement this with a concrete type that stores an FFI pointer
+pub trait MethodInArgPtr<T> {}
+
+/// Newtype wrapper returned by `MethodInArgMaybeUninit::write()`.
+/// Passing a tuple of `ZeroCopyArgs<P>` to a consumer method selects the zero-copy call path.
+/// `P` is the runtime-specific type that implements `MethodInArgPtr<T>`.
+pub struct ZeroCopyArgs<P>(pub P);
 
 /// Producer side registration of method handlers.
 /// This is the interface that a producer implements to register handlers for its methods.
@@ -161,14 +175,18 @@ pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> 
     /// Invoke the method with zero-copy arguments. This is the zero-copy path for method calls.
     ///
     /// # Arguments
-    /// * `ptrs` - The pre-allocated method argument pointers to pass to the method call in a tuple.
+    /// * `ptrs` - A tuple of `ZeroCopyArgs<R::MethodInArgPtr<T>>`-wrapped pointers, one per
+    ///   method argument.  The runtime is responsible for destructuring the `ZeroCopyArgs`
+    ///   wrappers to access the inner runtime-specific pointer.
     ///
     /// Returns a future that resolves to a `Result` containing a `MethodReturnSample<Return>`
     /// which provides `Deref<Target = Return>` access to the return value.
     fn invoke_zero_copy<'a>(
         &'a self,
-        ptrs: <Args as MethodArgs>::PtrTuple,
-    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a;
+        ptrs: <Args as MethodArgsPtrTuple<R>>::PtrTuple,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a
+    where
+        Args: MethodArgsPtrTuple<R>;
 }
 
 /// This is the uninitialized type for a single method argument. It is used in the zero-copy method call path.
@@ -180,21 +198,31 @@ pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> 
 /// method is called. A user can call `assume_init()` on an unwritten method argument, which
 /// is undefined behaviour once real shared memory backs these method arguments.
 pub trait MethodInArgMaybeUninit<T> {
-    /// Write a value into this pre-allocated method argument and return the initialized pointer.
-    fn write(self, val: T) -> MethodInArgPtr<T>;
+    /// The runtime-specific concrete pointer type produced after initialisation.
+    // Mirrors `SampleMaybeUninit::SampleMut` in the event design.
+    type Ptr: MethodInArgPtr<T>;
 
-    /// Assume the method argument is already initialized and return the pointer.
+    /// Write a value into this pre-allocated method argument slot and return the initialised pointer.
+    fn write(self, val: T) -> ZeroCopyArgs<Self::Ptr>;
+
+    /// Assume the method argument slot is already initialised and return the pointer.
     ///
     /// # Safety
     /// The caller must ensure the memory has been properly initialized before calling this.
-    unsafe fn assume_init(self) -> MethodInArgPtr<T>;
+    unsafe fn assume_init(self) -> ZeroCopyArgs<Self::Ptr>;
 }
 
 /// This is for runtime-specific method argument allocation. It is used in the zero-copy method call path.
 /// This trait provides the allocate API for specific argument type and return the uninitialized method argument type for that argument type.
 pub trait MethodInArgAllocator {
+    /// The runtime-specific concrete pointer type this allocator's uninit slots produce after initialisation.
+    type MethodInArgPtr<T: CommData>: MethodInArgPtr<T>;
+
     /// The concrete uninitialized method argument type this allocator produces for argument type `T`.
-    type MethodInArgMaybeUninit<T: CommData>: MethodInArgMaybeUninit<T>;
+    type MethodInArgMaybeUninit<T: CommData>: MethodInArgMaybeUninit<
+        T,
+        Ptr = Self::MethodInArgPtr<T>,
+    >;
 
     /// Produce a new uninitialized method argument for argument type `T`.
     ///
@@ -208,18 +236,34 @@ pub trait MethodInArgAllocator {
 
 /// Marker trait for method argument tuples.
 ///
-/// Carries `PtrTuple` - the matching tuple of `MethodInArgPtr<T>` used in the zero-copy call path.
-/// For example, `(Tire, Tire)::PtrTuple = (MethodInArgPtr<Tire>, MethodInArgPtr<Tire>)`.
-///
 /// Runtimes do not implement this trait.
 /// Blanket impls for all supported arities (0–8 arguments) are provided in this crate.
-pub trait MethodArgs: CommData {
+pub trait MethodArgs: CommData {}
+
+// Arity-0 unit tuple - special-cased here, arities 1+ are generated by
+// `impl_all_arities!` in `method_arities_macros.rs`.
+impl MethodArgs for () {}
+
+/// Maps an `Args` tuple to the matching `ZeroCopyArgs`-wrapped pointer tuple for a given runtime `R`.
+///
+/// For runtime `R` and args `(Tire, Tire)`, `PtrTuple` becomes
+/// `(ZeroCopyArgs<R::MethodInArgPtr<Tire>>, ZeroCopyArgs<R::MethodInArgPtr<Tire>>)` —
+/// the types that the user produces from `write()` and passes to the consumer method,
+/// and that `MethodCaller::invoke_zero_copy` receives directly.
+///
+/// This is a separate runtime-parameterised trait because pointer types are runtime-specific,
+/// they live in `R::MethodInArgPtr<T>`, not in the concept crate.
+///
+/// Runtimes do not implement this trait.
+/// Blanket impls for all supported arities are generated by `impl_all_arities!` in `method_arities_macros.rs`.
+pub trait MethodArgsPtrTuple<R: Runtime + ?Sized>: MethodArgs {
+    /// The tuple of runtime-specific pointer types for this args tuple.
     type PtrTuple;
 }
 
-// Arity-0 unit tuple - special-cased here; arities 1+ are generated by
-// `impl_all_arities!` in `method_arities.rs`.
-impl MethodArgs for () {
+// Arity-0 unit tuple - zero args means no pointers, regardless of runtime.
+// Arities 1+ are generated by `impl_all_arities!` in `method_arities_macros.rs`.
+impl<R: Runtime + ?Sized> MethodArgsPtrTuple<R> for () {
     type PtrTuple = ();
 }
 
@@ -251,7 +295,7 @@ impl<A: MethodInArgAllocator> MethodArgsAllocate<A> for () {
 /// Allows the `interface!` macro to generate exactly a single consumer method per interface method
 /// instead of two separate copy and zero-copy methods. Implemented for:
 /// - `Args` itself - dispatches to `invoke_with_copy` (copy path)
-/// - `MethodInArgPtr<T>,...` - dispatches to `invoke_zero_copy` (zero-copy path)
+/// - `(ZeroCopyArgs<P1>, ...)` - dispatches to `invoke_zero_copy` (zero-copy path)
 ///
 /// The compiler selects the right impl purely from the type passed at the call site, no runtime branching.
 ///
@@ -275,7 +319,7 @@ pub trait MethodCallInput<Args: MethodArgs, Return: CommData, R: Runtime + ?Size
 }
 
 /// Copy path: blanket impl - arity-agnostic, no per-arity duplication needed.
-/// Copy path: pass `Args` directly.
+/// pass `Args` directly.
 impl<Args, Return, R> MethodCallInput<Args, Return, R> for Args
 where
     Args: MethodArgs + CommData,

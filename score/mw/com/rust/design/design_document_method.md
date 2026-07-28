@@ -34,8 +34,8 @@ This document describes the design of the **method** APIs and usage of it.
 
 ## Overview
 
-Methods implement a request/response communication pattern: a consumer calls a method on a producer with typed arguments and asynchronously awaits a typed return value.
-
+Rust Communication library provide the Method based communication pattern (mostly with alignment of c++ APIs), followings are major points
+of the design-
 - Method calls are always async and every generated wrapper returns `impl Future` and must be `.await`ed.
 - Arguments can be passed by value (copy path) or via pre-allocated pointers (zero-copy path) using the same call site and the compiler selects the correct dispatch based on argument type.
 - Return values are wrapped in `R::MethodReturnSample<T>`, which provides `Deref<Target = T>` access, allowing the runtime to back the return with shared memory without an extra copy.
@@ -125,8 +125,10 @@ pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> 
     where
         Args: MethodArgsAllocate<R::MethodInArgAllocator>;
 
-    fn invoke_zero_copy<'a>(&'a self, ptrs: <Args as MethodArgs>::PtrTuple)
-        -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a;
+    fn invoke_zero_copy<'a>(&'a self, ptrs: <Args as MethodArgsPtrTuple<R>>::PtrTuple)
+        -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a
+    where
+        Args: MethodArgsPtrTuple<R>;
 }
 ```
 
@@ -138,12 +140,16 @@ These traits form the zero-copy argument allocation pipeline.
 
 #### `MethodReturnSample<T>`
 
-A runtime-defined wrapper for the method return value. It implements `Deref<Target = T>`, giving the caller read access to the returned data without an additional copy, this is similar to `Sample<T>` for event data on the consumer side.
-
-The `Runtime` trait declares it as an associated type because interface macro needs to access this and also it is runtime specific.
+Trait for the return value of a method call on the consumer side. Mirrors `Sample<T>` in the event design, each runtime implements this trait on its own concrete type, which can provide zero-copy access to the return data by backing it with shared memory.
 
 ```rust
-type MethodReturnSample<T: CommData>: Deref<Target = T>;
+pub trait MethodReturnSample<T>: Deref<Target = T> {}
+```
+
+The `Runtime` trait declares it as an associated type bounded by this trait:
+
+```rust
+type MethodReturnSample<T: CommData>: MethodReturnSample<T>;
 ```
 
 Concrete implementations:
@@ -157,15 +163,17 @@ let sample = consumer.get_tire_pressure().await?;
 let pressure: &Tire = &*sample; // Deref<Target = Tire>
 ```
 
-Once the LoLa FFI implementation is complete (issue #https://github.com/eclipse-score/communication/issues/782), `LolaMethodReturnSample<T>` will reference a shared-memory slot rather than an owned copy.
-
 #### `MethodInArgAllocator`
 
-Runtime-specific allocator for method input arguments. An instance lives on the `MethodCaller` and hands out uninitialised slots.
+Runtime-specific allocator for method input arguments. An instance lives on the `MethodCaller` and hands out uninitialised slots. It also declares the runtime's concrete pointer type (`MethodInArgPtr<T>`) as an associated type, so both `write()` and `MethodArgsPtrTuple<R>` resolve to the same concrete type.
 
 ```rust
 pub trait MethodInArgAllocator {
-    type MethodInArgMaybeUninit<T: CommData>: MethodInArgMaybeUninit<T>;
+    /// The runtime-specific concrete pointer type produced after initialisation.
+    type MethodInArgPtr<T: CommData>: MethodInArgPtr<T>;
+
+    /// Equality constraint ensures write() returns ZeroCopyArgs<Self::MethodInArgPtr<T>>.
+    type MethodInArgMaybeUninit<T: CommData>: MethodInArgMaybeUninit<T, Ptr = Self::MethodInArgPtr<T>>;
 
     fn allocate<T: CommData>(&self) -> Self::MethodInArgMaybeUninit<T>;
 }
@@ -173,29 +181,40 @@ pub trait MethodInArgAllocator {
 
 #### `MethodInArgMaybeUninit<T>`
 
-A single uninitialised argument slot. The caller writes a value into it, obtaining an initialised `MethodInArgPtr<T>` that can be passed to the method call.
+A single uninitialised argument slot. The caller writes a value into it, obtaining a `ZeroCopyArgs<Self::Ptr>` that can be passed to the method call. Mirrors `SampleMaybeUninit<T>` in the event design.
 
 ```rust
 pub trait MethodInArgMaybeUninit<T> {
-    fn write(self, val: T) -> MethodInArgPtr<T>;
+    /// Runtime-specific concrete pointer type
+    type Ptr: MethodInArgPtr<T>;
+
+    fn write(self, val: T) -> ZeroCopyArgs<Self::Ptr>;
 
     /// # Safety
     /// The caller must ensure the memory has been properly initialized.
-    unsafe fn assume_init(self) -> MethodInArgPtr<T>;
+    unsafe fn assume_init(self) -> ZeroCopyArgs<Self::Ptr>;
 }
 ```
 
 #### `MethodInArgPtr<T>`
 
-A pointer to a fully-initialised, pre-allocated method argument. It is used in the zero-copy call path instead of passing `T` by value.
+Trait for a fully-initialised, pre-allocated method argument pointer. Mirrors `SampleMut<T>` in the event design, each runtime implements this on its own concrete type (e.g. `LolaMethodInArgPtr<T>`) which will store an FFI slot pointer and run RAII cleanup on `Drop` once shared-memory pointer layout is added (issue #781).
 
 ```rust
-pub struct MethodInArgPtr<T> {
-    pub _phantom: core::marker::PhantomData<T>,
-}
+pub trait MethodInArgPtr<T> {}
 ```
 
-> **Note**: `MethodInArgPtr<T>` is currently a placeholder. Real shared-memory layout support is tracked in [issue #781](https://github.com/eclipse-score/communication/issues/781).
+Runtime concrete types:
+- `LolaMethodInArgPtr<T>` - in `com-api-runtime-lola` (placeholder, `Drop` stub ready for issue #781)
+- `MockMethodInArgPtr<T>` - in `com-api-runtime-mock`
+
+#### `ZeroCopyArgs<P>`
+
+Newtype wrapper returned by `MethodInArgMaybeUninit::write()`. Passing a tuple of `ZeroCopyArgs<P>` to a consumer method selects the zero-copy call path. `P` is the runtime-specific type implementing `MethodInArgPtr<T>`.
+
+```rust
+pub struct ZeroCopyArgs<P>(pub P);
+```
 
 ### Macro-Internal Supporting Traits
 
@@ -204,13 +223,22 @@ These traits are not implemented by runtimes. Blanket implementations are provid
 
 #### `MethodArgs`
 
-Marker trait for method argument tuples. Carries `PtrTuple`- the matching tuple of `MethodInArgPtr<T>` values used in the zero-copy path.
+Marker trait for method argument tuples. Requires `CommData` because the tuple of argument values is the thing being transmitted in the copy path.
 
 ```rust
-pub trait MethodArgs: CommData {
+pub trait MethodArgs: CommData {}
+```
+
+#### `MethodArgsPtrTuple<R>`
+
+Maps an `Args` tuple to the matching `ZeroCopyArgs`-wrapped pointer tuple for a given runtime `R`. Separated from `MethodArgs` because pointer types are runtime-specific — they live in `R::MethodInArgAllocator::MethodInArgPtr<T>`.
+
+```rust
+pub trait MethodArgsPtrTuple<R: Runtime + ?Sized>: MethodArgs {
     type PtrTuple;
 }
-// e.g. (Tire, Tire)::PtrTuple = (MethodInArgPtr<Tire>, MethodInArgPtr<Tire>)
+// e.g. for R = LolaRuntime:
+// (Tire, Tire)::PtrTuple = (ZeroCopyArgs<LolaMethodInArgPtr<Tire>>, ZeroCopyArgs<LolaMethodInArgPtr<Tire>>)
 ```
 
 #### `MethodArgsAllocate<A>`
@@ -227,7 +255,7 @@ pub trait MethodArgsAllocate<A: MethodInArgAllocator>: MethodArgs {
 
 #### `MethodCallInput<Args, Return, R>`
 
-Unified input type for the `interface!`- generated consumer method wrapper. Implemented for both `Args` (copy path) and `Args::PtrTuple` (zero-copy path). The compiler selects the correct impl from the type passed at the call site - no runtime branching.
+Unified input type for the `interface!`-generated consumer method wrapper. Implemented for both `Args` (copy path) and `(ZeroCopyArgs<P1>, ...)` (zero-copy path). The compiler selects the correct impl from the type passed at the call site — no runtime branching.
 
 ```rust
 pub trait MethodCallInput<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
@@ -241,8 +269,8 @@ pub trait MethodCallInput<Args: MethodArgs, Return: CommData, R: Runtime + ?Size
 This is what allows a single generated method on the consumer to accept both calling conventions:
 
 ```rust
-consumer.update_tire_pressure(tire)        // copy path-Args impl
-consumer.update_tire_pressure(tire_ptr)    // zero-copy path-PtrTuple impl
+consumer.update_tire_pressure(tire)        // copy path — Args impl
+consumer.update_tire_pressure(tire_ptr)    // zero-copy path — ZeroCopyArgs PtrTuple impl
 ```
 
 #### `MethodHandlerCall<Args, Return>`
@@ -265,12 +293,13 @@ The macro generates blanket implementations of the following traits for each ari
 
 | Trait | Why blanket |
 |-------|-------------|
-| `MethodArgs` | `PtrTuple` construction per arity |
+| `MethodArgs` | Marker — arg tuple is `CommData` if all elements are |
+| `MethodArgsPtrTuple<R>` | `PtrTuple` construction per arity using `R::MethodInArgAllocator::MethodInArgPtr<T>` |
 | `MethodArgsAllocate<A>` | `alloc_uninit` loops per arity |
-| `MethodCallInput` | Zero-copy path dispatches per arity |
+| `MethodCallInput` | Zero-copy path dispatches per arity via `ZeroCopyArgs` tuples |
 | `MethodHandlerCall` | Handler `call()` unpacks tuple per arity |
 | `Reloc` | Arg tuple is relocatable if all elements are |
-| `CommData` | Arg tuple is `Communication data` if all elements are |
+| `CommData` | Arg tuple is `CommData` if all elements are |
 
 The result: adding a new runtime requires only implementing `MethodCaller` and `MethodHandler`. All arity-specific glue is already provided.
 
@@ -293,9 +322,9 @@ consumer.update_tire_pressure(tire).await?;
 ```rust
 // Allocate uninit slots from the runtime's MethodInArgAllocator
 let (uninit,) = consumer.update_tire_pressure.allocate()?;
-// Write the value into the slot, get back an initialised pointer
+// Write the value into the slot — returns ZeroCopyArgs<R::MethodInArgPtr<Tire>>
 let tire_ptr = uninit.write(Tire { pressure: 35.0 });
-// PtrTuple = (MethodInArgPtr<Tire>,)  -  MethodCallInput impl for PtrTuple  -  invoke_zero_copy
+// PtrTuple = (ZeroCopyArgs<R::MethodInArgPtr<Tire>>,) — MethodCallInput zero-copy impl — invoke_zero_copy
 consumer.update_tire_pressure(tire_ptr).await?;
 ```
 
@@ -476,9 +505,9 @@ All `LolaMethodCaller` and `LolaMethodHandler` methods in `com-api-runtime-lola/
 
 See: <https://github.com/eclipse-score/communication/issues/782>
 
-### Issue #781-Replace `MethodInArgPtr<T>` with a real shared-memory pointer
+### Issue #781 — Implement RAII lifecycle on `MethodInArgPtr<T>` concrete types
 
-`MethodInArgPtr<T>` is currently a `PhantomData` placeholder with no memory backing. Once the runtime implements zero-copy method arguments over shared memory, this type needs to carry a real pointer or reference to the allocated slot, with appropriate lifetime and safety constraints-analogous to `SampleMut<T>` for events.
+`MethodInArgPtr<T>` is now a trait (not a struct). Each runtime has its own concrete type (`LolaMethodInArgPtr<T>`, `MockMethodInArgPtr<T>`) that currently holds only `PhantomData`. Once shared-memory layout is added, these types need to store a real FFI slot pointer and implement `Drop` to release the slot if `invoke_zero_copy` is never called — analogous to `AllocateePtrWrapper` / `LolaBinding` in the event design.
 
 See: <https://github.com/eclipse-score/communication/issues/781>
 
