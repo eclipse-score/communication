@@ -134,7 +134,10 @@ pub trait MethodCaller<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> 
     /// which provides `Deref<Target = Return>` access to the return value,
     /// analogous to `Sample<T>` for events — allowing zero-copy access to the return data
     /// when the runtime backs it with shared memory.
-    fn invoke_with_copy<'a>(&'a self, args: Args) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a;
+    fn invoke_with_copy<'a>(
+        &'a self,
+        args: Args,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a;
 
     /// Allocate uninitialized method arguments for a zero-copy method call.
     ///
@@ -209,7 +212,7 @@ pub trait MethodInArgAllocator {
 /// For example, `(Tire, Tire)::PtrTuple = (MethodInArgPtr<Tire>, MethodInArgPtr<Tire>)`.
 ///
 /// Runtimes do not implement this trait.
-/// Blanket impls for all supported arities (0–2 arguments) are provided in this crate.
+/// Blanket impls for all supported arities (0–8 arguments) are provided in this crate.
 pub trait MethodArgs: CommData {
     type PtrTuple;
 }
