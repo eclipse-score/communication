@@ -19,6 +19,8 @@
 // for same consumer instance method / event/ field can be consume as per offer interface.
 // This can not be used or called in main of example app, as runtime implementation is not available for method APIs.
 
+// All the functions and types in this file are just for demonstration purpose,
+// as this are not part of any callable because of that unused warning is suppressed for this file.
 #![allow(unused)]
 
 use score_com::{
@@ -67,7 +69,8 @@ async fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<
         Ok(_) => println!("Successfully called update_tire_pressure method"),
         Err(e) => eprintln!("Failed to call update_tire_pressure method: {:?}", e),
     }
-
+    // Allocate return the tuple of uninitialized method argument slots,
+    // We need to store in tuple format, or user need to access using uninit1.0.write(...)
     let (uninit1,) = consumer
         .update_tire_pressure
         .allocate()

@@ -16,6 +16,8 @@
 // Notes: we are creating producer instance specific for method here but this is just for demonstration purpose,
 // for same producer instance method / event/ field can be offered as per offer interface.
 
+// All the functions and types in this file are just for demonstration purpose,
+// as this are not part of any callable because of that unused warning is suppressed for this file.
 #![allow(unused)]
 
 use score_com::{Builder, InstanceSpecifier, Interface, Producer, Runtime};
@@ -32,8 +34,11 @@ type VehicleMethodOfferedProducer<R> =
 // The method handlers are registered using the `register_<method_name>_handler` methods on the producer instance.
 // The handlers are registered before offering the producer instance, so that the consumer can call the methods on the producer instance.
 // If user call `producer.offer()` before registering the handlers, it will panic, as handlers are not registered yet.
-// And if user call the `producer.init()` but forget to register one of method handler then compiler will give error,
-// as offer method using `init()` will require all method handlers to be registered before offering the producer instance.
+// User must call the `producer.init()` and register all method handlers,
+// and if they forget to register one of the method handlers then the compiler will give an error,
+// as the offer method will require all method handlers to be registered before offering the producer instance.
+// Here assumption of use is user must call`init()` and register all method handlers ,
+// direct call to `offer()` API will panic.
 fn create_producer_method<R: Runtime>(
     runtime: &R,
     service_id: InstanceSpecifier,
