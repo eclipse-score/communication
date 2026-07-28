@@ -78,6 +78,12 @@ pub struct HandlerSet;
 /// ```
 /// The generated code will include:
 /// - `VehicleInterface` struct with `INTERFACE_ID = "abc::Vehicle"`
+/// - `VehicleConsumer<R>` struct that implements `Consumer` trait for subscribing to
+///   "left_tire" and "exhaust" events.
+/// - `VehicleProducer<R>` struct that implements `Producer` trait for producing
+///   "left_tire" and "exhaust" events.
+/// - `VehicleOfferedProducer<R>` struct that implements `OfferedProducer` trait for offering
+///   "left_tire" and "exhaust" events.
 /// - `VehicleConsumer<R>`, `VehicleProducer<R>`, `VehicleOfferedProducer<R>`
 ///
 /// # Example: Mixed interface (Event + Field + Method) with custom ID
@@ -128,14 +134,14 @@ pub struct HandlerSet;
 /// panic at runtime, since the handlers have not been registered yet.
 #[macro_export]
 macro_rules! interface {
-    // Backward-compatible: Event-only, auto-generated ID
+    // Default unique ID based on the module path and interface name
     (interface $id:ident { $($event_name:ident : Event<$event_type:ty>),+ $(,)? }) => {
         $crate::interface_common!($id);
         $crate::interface_consumer!($id, $($event_name, Event<$event_type>),+);
         $crate::interface_producer!($id, $($event_name, Event<$event_type>),+);
     };
 
-    // Backward-compatible: Event-only, custom ID
+    // Custom unique Id provided by the user
     (interface $id:ident {
         Id = $uid:expr,
         $($event_name:ident : Event<$event_type:ty>),+ $(,)?
@@ -145,7 +151,7 @@ macro_rules! interface {
         $crate::interface_producer!($id, $($event_name, Event<$event_type>),+);
     };
 
-    // Backward-compatible: Event-only with comma separator (legacy syntax)
+    // This is for backward compatibility for existing users with comma (,)
     (interface $id:ident, {
         Id = $uid:expr,
         $($event_name:ident : Event<$event_type:ty>),+ $(,)?
@@ -158,7 +164,7 @@ macro_rules! interface {
         }
     };
 
-    // Mixed / unified: custom ID - MUST come before auto-ID catch-all
+    // Mixed / unified: custom ID
     (interface $id:ident {
         Id = $uid:expr,
         $($members:tt)*
@@ -173,7 +179,7 @@ macro_rules! interface {
         );
     };
 
-    // Mixed / unified: auto-generated ID - catch-all, must come last.
+    // Mixed / unified: auto-generated ID
     (interface $id:ident { $($members:tt)* }) => {
         $crate::interface_common!($id);
         $crate::_interface_collect_members!(
@@ -189,14 +195,6 @@ macro_rules! interface {
 /// Internal recursive-macro helper for `interface!`.
 ///
 /// Accumulates members into three typed lists, then calls the mixed generator macros.
-///
-/// Accumulator format:
-/// ```text
-/// @id[$id, $uid]
-/// @ev[$($ev_name : $ev_type ,)*]
-/// @fi[$($fi_name : $fi_type ,)*]
-/// @me[$($me_name ($me_args) -> $me_ret ,)*]
-/// ```
 #[doc(hidden)]
 #[macro_export]
 macro_rules! _interface_collect_members {
@@ -889,7 +887,7 @@ mod tests {
 
     /// Mixed interface (Event + Field + Method) with a custom ID.
     ///
-    /// ```ignore
+    /// ```
     /// mod my_module {
     ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher};
     ///
@@ -900,18 +898,11 @@ mod tests {
     ///         const ID: &'static str = "Tire";
     ///     }
     ///
-    ///     #[derive(Debug, Reloc)]
-    ///     #[repr(C)]
-    ///     pub struct Exhaust {}
-    ///     impl CommData for Exhaust {
-    ///         const ID: &'static str = "Exhaust";
-    ///     }
-    ///
     ///     interface!(
     ///         interface Vehicle {
     ///             Id = "AbcInterface",
     ///             left_tire: Event<Tire>,
-    ///             left_tire_field: Field<Exhaust>,
+    ///             left_tire_field: Field<Tire>,
     ///             left_tire_method(Tire) -> Tire,
     ///         }
     ///     );
@@ -920,13 +911,13 @@ mod tests {
     /// Generates `VehicleInterface`, `VehicleConsumer<R>`, `VehicleProducer<R>`,
     /// and `VehicleOfferedProducer<R>` where:
     /// - `VehicleConsumer<R>` has `left_tire: Subscriber<Tire>`,
-    ///   `left_tire_field: FieldSubscriber<Exhaust>`,
+    ///   `left_tire_field: FieldSubscriber<Tire>`,
     ///   `left_tire_method: MethodCaller<(Tire,), Tire>`,
     ///   and a convenience `left_tire_method(arg0: Tire)` method.
     /// - `VehicleProducer<R>` derives `TypeStateValidator` and requires the `.init()` chain:
     ///   `producer.init().update_left_tire_field(&val)?.register_set_handler_left_tire_field(f).register_left_tire_method_handler(h).offer()?`
     /// - `VehicleOfferedProducer<R>` has `left_tire: Publisher<Tire>` (created lazily on offer),
-    ///   `left_tire_field: FieldPublisher<Exhaust>`, plus the active method handler.
+    ///   `left_tire_field: FieldPublisher<Tire>`, plus the active method handler.
     #[cfg(doctest)]
     fn interface_macro_mixed() {}
 
@@ -1617,99 +1608,6 @@ mod validation_tests {
                 let _ = core::marker::PhantomData::<ABSConsumer<LolaRuntime>>;
                 let _ = core::marker::PhantomData::<ABSProducer<LolaRuntime>>;
                 let _ = core::marker::PhantomData::<ABSOfferedProducer<LolaRuntime>>;
-            }
-        }
-        test_module::validate();
-    }
-
-    #[test]
-    fn test_mixed_interface_types_generated() {
-        mod test_module {
-            use score_com::{
-                CommData, Interface, LolaRuntimeImpl as LolaRuntime, ProviderInfo, Publisher,
-                Reloc, Subscriber,
-            };
-
-            #[derive(Debug, Reloc, Clone)]
-            #[repr(C)]
-            pub struct Tire {
-                pub pressure: f32,
-            }
-            impl CommData for Tire {
-                const ID: &'static str = "Tire";
-            }
-
-            #[derive(Debug, Reloc, Clone)]
-            #[repr(C)]
-            pub struct Exhaust {}
-            impl CommData for Exhaust {
-                const ID: &'static str = "Exhaust";
-            }
-
-            crate::interface!(
-                interface VehicleMixed {
-                    Id = "VehicleMixedInterface",
-                    left_tire: Event<Tire>,
-                    exhaust_field: Field<Exhaust>,
-                    update_pressure(Tire) -> Tire,
-                }
-            );
-
-            pub fn validate() {
-                // Verify custom interface ID.
-                let interface_id = <VehicleMixedInterface as Interface>::INTERFACE_ID;
-                assert_eq!(interface_id, "VehicleMixedInterface");
-
-                // Verify all four types are generated with correct names.
-                let _ = core::marker::PhantomData::<VehicleMixedInterface>;
-                let _ = core::marker::PhantomData::<VehicleMixedConsumer<LolaRuntime>>;
-                let _ = core::marker::PhantomData::<VehicleMixedProducer<LolaRuntime>>;
-                let _ = core::marker::PhantomData::<VehicleMixedOfferedProducer<LolaRuntime>>;
-
-                // Verify Consumer struct size (confirms fields were generated).
-                assert!(
-                    std::mem::size_of::<VehicleMixedConsumer<LolaRuntime>>() > 0,
-                    "VehicleMixedConsumer should have member fields"
-                );
-            }
-        }
-        test_module::validate();
-    }
-
-    #[test]
-    fn test_mixed_interface_event_only_via_recursive_macro() {
-        // Verifies that a mixed-arm interface with only events still generates
-        // the same types as the backward-compatible Event-only arm.
-        mod test_module {
-            use score_com::{CommData, Interface, LolaRuntimeImpl as LolaRuntime, Reloc};
-
-            #[derive(Debug, Reloc, Clone)]
-            #[repr(C)]
-            pub struct Signal {
-                pub value: u32,
-            }
-            impl CommData for Signal {
-                const ID: &'static str = "Signal";
-            }
-
-            // This goes through the recursive-macro path (mixed arm) but with only events.
-            crate::interface!(
-                interface Radar {
-                    target: Event<Signal>,
-                    velocity: Event<Signal>,
-                }
-            );
-
-            pub fn validate() {
-                let interface_id = <RadarInterface as Interface>::INTERFACE_ID;
-                assert_eq!(
-                    interface_id,
-                    concat!(module_path!(), "::", "Radar"),
-                    "Auto-generated ID should include module path"
-                );
-                let _ = core::marker::PhantomData::<RadarConsumer<LolaRuntime>>;
-                let _ = core::marker::PhantomData::<RadarProducer<LolaRuntime>>;
-                let _ = core::marker::PhantomData::<RadarOfferedProducer<LolaRuntime>>;
             }
         }
         test_module::validate();

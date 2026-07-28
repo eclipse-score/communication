@@ -12,8 +12,9 @@
  ********************************************************************************/
 
 pub mod consumer;
-pub mod method_consumer;
-pub mod method_producer;
+// Method modules are just for demonstration purpose, as runtime implementation is not available for method APIs.
+mod method_consumer;
+mod method_producer;
 pub mod producer;
 pub use consumer::VehicleMonitorConsumer;
 pub use producer::VehicleMonitorProducer;
