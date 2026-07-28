@@ -134,7 +134,7 @@
 //! Note: Event APIs are fully supported with the Lola runtime.
 //! Method API traits exported from this crate reflect the intended design but are not yet backed
 //! by a Lola runtime implementation in Rust side, they serve as a demonstration of the planned interface.
-//! Method APIs developmement is tracked in
+//! Method APIs development is tracked in
 //! https://github.com/eclipse-score/communication/issues/782
 
 pub use com_api_runtime_lola::LolaRuntimeImpl;
