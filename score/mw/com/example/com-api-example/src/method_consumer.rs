@@ -15,8 +15,8 @@
 // It shows how method can be called using copy and zero-copy arguments,
 // And async method call can be awaited to get the result.
 
-// Notes: we are creating consumer instance specific for method here but this is just for demonstration perpose,
-// for same consumer insatnce method / event/ field can be consume as per offer interface.
+// Notes: we are creating consumer instance specific for method here but this is just for demonstration purpose,
+// for same consumer instance method / event/ field can be consume as per offer interface.
 // This can not be used or called in main of example app, as runtime implementation is not available for method APIs.
 
 #![allow(unused)]
@@ -87,14 +87,12 @@ async fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<
 // Get Method call which has no argument and return a value, which is also async.
 async fn method_get_call<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
     // Copy path: zero-argument method — empty parens, no empty-tuple needed.
-    futures::executor::block_on(async {
-        // it returns a `Result<R::MethodReturnSample<Tire>>`
-        // which is a wrapper around the return value of the method call.
-        match consumer.get_tire_pressure().await {
-            Ok(tire) => println!("Current tire pressure: {:?}", *tire),
-            Err(e) => eprintln!("Failed to call get_tire_pressure method: {:?}", e),
-        }
-    });
+    // it returns a `Result<R::MethodReturnSample<Tire>>`
+    // which is a wrapper around the return value of the method call.
+    match consumer.get_tire_pressure().await {
+        Ok(tire) => println!("Current tire pressure: {:?}", *tire),
+        Err(e) => eprintln!("Failed to call get_tire_pressure method: {:?}", e),
+    }
 }
 
 // two arguments method.
