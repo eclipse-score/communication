@@ -247,6 +247,7 @@ cc_library(
 
 cc_library(
     name = "linear_search_map",
+    srcs = ["linear_search_map.cpp"],
     hdrs = [
         "linear_search_map.h",
     ],

@@ -32,15 +32,14 @@ class ServiceDataControl
     ///       calculation based on config settings and then hand over this calculated number ...
     static constexpr std::uint16_t kMaxApplicationIdPidMappings = 50U;
 
-    /// \brief Ctor for the ServiceDataControl to place it in given shared memory resource identified via given
-    ///        memory resource proxy.
+    /// \brief Ctor for the ServiceDataControl with a given memory resource to be used..
     /// \details ServiceDataControl is designed to be located in shared memory, therefore the explicit
-    ///          MemoryResourceProxy argument! (Yes one could come up with a MemoryResourceProxy pointing to a local
-    ///          memory resource, but this would be "uncommon")
+    ///          ManagedMemoryResource argument!
     /// \param number_of_service_elements the (fixed) number of service-elements (events + fields) this service-instance
     ///        provides. It is used as the fixed capacity of the event_controls_ container. Since event_controls_ uses a
     ///        fixed-capacity container (LinearSearchMap), its capacity must be known at construction time.
-    /// \param resource MemoryResourceProxy pointing to the memory-resource to be used
+    /// \param resource ManagedMemoryResource pointing to the memory-resource to be used for allocating underlying
+    ///        storage
 
     explicit ServiceDataControl(const std::size_t number_of_service_elements,
                                 score::memory::shared::ManagedMemoryResource& resource)
