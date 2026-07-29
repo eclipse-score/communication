@@ -39,9 +39,9 @@ use std::sync::Arc;
 use score_log as log;
 
 use score_com_concept::{
-    AllocationFailureReason, Builder, CommData, Error, EventFailedReason, InstanceSpecifier,
-    Interface, Producer, ProducerBuilder, ProducerFailedReason, ProviderInfo, Publisher, Result,
-    SampleMaybeUninit, SampleMut, ServiceFailedReason,
+    AllocationFailureReason, Builder, CommData, Error, EventFailedReason, EventSampleMut,
+    InstanceSpecifier, Interface, Producer, ProducerBuilder, ProducerFailedReason, ProviderInfo,
+    Publisher, Result, SampleMaybeUninit, SampleMut, ServiceFailedReason,
 };
 
 use bridge_ffi_rs::*;
@@ -204,7 +204,9 @@ where
     }
 }
 
-impl<'a, T, B: FFIBridge> SampleMut<T> for LolaSampleMut<'a, T, B>
+impl<'a, T, B: FFIBridge> SampleMut<T> for LolaSampleMut<'a, T, B> where T: CommData + Debug {}
+
+impl<'a, T, B: FFIBridge> EventSampleMut<T> for LolaSampleMut<'a, T, B>
 where
     T: CommData + Debug,
 {
@@ -531,9 +533,9 @@ impl<I: Interface, B: FFIBridge> Builder<I::Producer<LolaRuntimeImpl<B>>>
 mod test {
     use super::*;
     use bridge_ffi_mock::{MockFFIBridge, MockPointerAllocator, SharedMockBridge};
-    use score_com_concept::{InstanceSpecifier};
     use mockall::predicate::*;
     use mockall::Sequence;
+    use score_com_concept::InstanceSpecifier;
 
     #[derive(Debug, Default)]
     #[repr(C)]
