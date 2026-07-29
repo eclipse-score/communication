@@ -88,3 +88,7 @@ coverage:qnx --config=qnx_x86_64
 
 # Disable treat_warnings_as_errors for coverage builds to avoid build failures from instrumentation-related warnings
 coverage --features=-score_communication_treat_warnings_as_errors
+
+# Disable clang default hardening flags for coverage: -fuse-ld=gold breaks linking the LLVM coverage runtime (undefined reference to 'atexit') and _FORTIFY_SOURCE conflicts with the -O0 coverage build.
+coverage --features=-score_communication_clang_default_flags
+coverage --host_features=-score_communication_clang_default_flags
