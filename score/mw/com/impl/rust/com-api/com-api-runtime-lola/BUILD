@@ -17,6 +17,8 @@ rust_library(
     name = "com-api-runtime-lola",
     srcs = [
         "consumer.rs",
+        "field_consumer.rs",
+        "field_producer.rs",
         "lib.rs",
         "method.rs",
         "producer.rs",
