@@ -28,6 +28,7 @@ mod reloc;
 pub use concept::*;
 pub use error::*;
 pub use field_concept::*;
+pub use interface_macros::{HandlerNotSet, HandlerSet, Init, Uninit};
 #[doc(hidden)]
 pub use paste;
 pub use reloc::Reloc;
