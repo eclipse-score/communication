@@ -34,22 +34,6 @@ pub struct HandlerNotSet;
 #[allow(dead_code)]
 pub struct HandlerSet;
 
-/// Type-state marker for uninitialized field state (compile-time tracking).
-#[allow(dead_code)]
-pub struct Uninit;
-
-/// Type-state marker for initialized field state (compile-time tracking).
-#[allow(dead_code)]
-pub struct Init;
-
-/// Type-state marker for handler not registered (compile-time tracking).
-#[allow(dead_code)]
-pub struct HandlerNotSet;
-
-/// Type-state marker for handler registered (compile-time tracking).
-#[allow(dead_code)]
-pub struct HandlerSet;
-
 /// Main interface macro that generates Consumer, Producer, and OfferedProducer types
 /// along with all necessary trait implementations.
 ///
