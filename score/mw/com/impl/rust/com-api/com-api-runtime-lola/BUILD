@@ -15,7 +15,7 @@ load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_library", "rust_test")
 
 rust_library(
     name = "com-api-runtime-lola",
-     srcs = glob(["**/*.rs"]),
+    srcs = glob(["**/*.rs"]),
     edition = "2024",
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [

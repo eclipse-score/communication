@@ -13,259 +13,364 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::spanned::Spanned;
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Type};
 
-/// The macro generates a validator struct with phantom type parameters that track
-/// both the initial value update and handler registration of each field at compile time.
-/// The `offer()` method is only available when all fields have been initialized and
-/// all handlers have been registered, preventing runtime errors.
+/// Unified type-state validator for producers containing `FieldPublisher` and/or
+/// `MethodHandler` members.
 ///
-/// It generate the field updatd method with concatenated name like `update_<field_name>`
-/// and register handler method with concatenated name like `register_set_handler_<field_name>`.
-/// e.g. for field `left_tire`, the generated methods will be `update_left_tire` and `register_set_handler_left_tire`.
-pub fn derive_typestate_field_validator_impl(input: TokenStream) -> TokenStream {
+/// Detects member type by the last segment of each field's type path:
+/// - `FieldPublisher<T>` - generates `update_{name}()` (Uninit - Init) and
+///   `register_set_handler_{name}()` (HandlerNotSet - HandlerSet) per member.
+/// - `MethodHandler<Args, Return>` - generates `register_{name}_handler()`
+///   (HandlerNotSet - HandlerSet) per member.
+/// - `instance_info` field is always skipped.
+///
+/// # Generated validator struct
+///
+/// `{Name}Validator<R, S0..Sn, H0..Hn, M0..Mm>` where:
+/// - `Si` tracks update state of field member `i` (`Uninit` / `Init`)
+/// - `Hi` tracks set-handler state of field member `i` (`HandlerNotSet` / `HandlerSet`)
+/// - `Mj` tracks handler state of method member `j` (`HandlerNotSet` / `HandlerSet`)
+///
+/// `offer()` is only generated for the impl where ALL `Si = Init`, ALL `Hi = HandlerSet`,
+/// ALL `Mj = HandlerSet`. It calls `_offer_internal()` on the wrapped producer.
+///
+/// Entry point on the producer: `init()` - returns the validator with every state
+/// parameter set to its initial value (`Uninit` / `HandlerNotSet`).
+///
+/// Note: This macro identifies member types by the member types so if member type is changed to a different type or renamed,
+/// then macro need to be updated to recognize the new type name or path segment.
+pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
 
-    // Extract runtime generic parameter
+    // Extract runtime generic parameter from the first generic param of the struct.
     let (runtime_param_name, runtime_param_with_bounds) =
         if let Some(param) = input.generics.params.first() {
             match param {
                 syn::GenericParam::Type(type_param) => {
-                    let name = &type_param.ident;
-                    (quote! { #name }, quote! { #param })
+                    let n = &type_param.ident;
+                    (quote! { #n }, quote! { #param })
                 }
                 _ => (quote! { R }, quote! { R: score_com::Runtime + ?Sized }),
             }
         } else {
             (quote! { R }, quote! { R: score_com::Runtime + ?Sized })
         };
-    // Currently supporting only struct but in future if require will support enum.
+
     let fields = match &input.data {
         Data::Struct(data) => match &data.fields {
             Fields::Named(fields) => &fields.named,
             _ => {
                 return syn::Error::new_spanned(
                     name,
-                    "TypeStateFieldValidator only supports structs with named fields",
+                    "TypeStateValidator only supports structs with named fields",
                 )
                 .to_compile_error()
                 .into();
             }
         },
+        // TODO: If require support for enum or tuple struct then add support here.
         _ => {
-            return syn::Error::new_spanned(name, "TypeStateFieldValidator only supports structs")
+            return syn::Error::new_spanned(name, "TypeStateValidator only supports structs")
                 .to_compile_error()
                 .into();
         }
     };
 
-    // Extract field information - use all fields except instance_info
-    let field_info: Vec<_> = fields
-        .iter()
-        .filter_map(|f| {
-            let ident = f.ident.as_ref()?;
+    // Classify each field by the last segment of its type path.
+    // Note: these string names ("FieldPublisher", "MethodHandler") must match the trait/type
+    // names used in the Runtime associated types. If those names change, update here too.
+    struct FieldMember {
+        ident: syn::Ident,
+        inner_ty: Type, // T extracted from FieldPublisher<T>
+    }
+    struct MethodMember {
+        ident: syn::Ident,
+        args_ty: Type,   // Args extracted from MethodHandler<Args, Return>
+        return_ty: Type, // Return extracted from MethodHandler<Args, Return>
+    }
 
-            // Skip instance_info field
-            // Note: type name is using here as we have same name in interface_macros
-            // If that change then this also need to be updated.
-            // Or we need to find some common solution like const name.
-            if ident == "instance_info" {
-                return None;
+    let mut field_members: Vec<FieldMember> = Vec::new();
+    let mut method_members: Vec<MethodMember> = Vec::new();
+
+    for f in fields.iter() {
+        let ident = match f.ident.as_ref() {
+            Some(i) => i.clone(),
+            None => continue,
+        };
+        // Skip the `instance_info` field, which is not part of the type-state validation.
+        if ident == "instance_info" {
+            continue;
+        }
+
+        // Note: pattern matching ("FieldPublisher", "MethodHandler") must match the trait/type
+        // names used in the Runtime associated types. If those names change, update here too.
+        if let Type::Path(type_path) = &f.ty {
+            if let Some(segment) = type_path.path.segments.last() {
+                match segment.ident.to_string().as_str() {
+                    "FieldPublisher" => {
+                        if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
+                            if let Some(syn::GenericArgument::Type(inner)) = args.args.first() {
+                                field_members.push(FieldMember {
+                                    ident,
+                                    inner_ty: inner.clone(),
+                                });
+                            }
+                        }
+                    }
+                    "MethodHandler" => {
+                        if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
+                            if args.args.len() >= 2 {
+                                if let (
+                                    Some(syn::GenericArgument::Type(args_ty)),
+                                    Some(syn::GenericArgument::Type(return_ty)),
+                                ) = (args.args.get(0), args.args.get(1))
+                                {
+                                    method_members.push(MethodMember {
+                                        ident,
+                                        args_ty: args_ty.clone(),
+                                        return_ty: return_ty.clone(),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    _ => {} // Other fields (e.g. PhantomData) are ignored.
+                }
             }
-
-            Some((
-                ident, // struct field name
-                ident, // public field name (same as struct field) for methods generation.
-                &f.ty, // field type
-            ))
-        })
-        .collect();
-
-    if field_info.is_empty() {
+        }
+    }
+    // If no FieldPublisher or MethodHandler members were found, emit a compile error.
+    // because macro is only added to producer struct which has at least one FieldPublisher or MethodHandler member.
+    if field_members.is_empty() && method_members.is_empty() {
         return syn::Error::new_spanned(
             name,
-            "No fields found for validation (excluding instance_info)",
+            "TypeStateValidator: no FieldPublisher or MethodHandler fields found \
+             (excluding instance_info)",
         )
         .to_compile_error()
         .into();
     }
 
-    let struct_field_names: Vec<_> = field_info.iter().map(|(sf, _, _)| sf).collect();
-    let public_field_names: Vec<_> = field_info.iter().map(|(_, pf, _)| pf).collect();
-    let field_types: Vec<_> = field_info.iter().map(|(_, _, ty)| ty).collect();
+    let validator_name = syn::Ident::new(&format!("{}Validator", name), name.span());
 
-    // Extract inner types from R::FieldPublisher<T> -> T
-    let inner_types: Vec<_> = field_types
+    // State param naming:
+    //   S{i} — update state for field member i    (Uninit / Init)
+    //   H{i} — set-handler state for field member i (HandlerNotSet / HandlerSet)
+    //   M{j} — handler state for method member j  (HandlerNotSet / HandlerSet)
+    // Combined order in the validator struct: [S0..Sn, H0..Hn, M0..Mm]
+    let field_update_params: Vec<syn::Ident> = (0..field_members.len())
+        .map(|i| syn::Ident::new(&format!("S{}", i), proc_macro::Span::call_site().into()))
+        .collect();
+    let field_handler_params: Vec<syn::Ident> = (0..field_members.len())
+        .map(|i| syn::Ident::new(&format!("H{}", i), proc_macro::Span::call_site().into()))
+        .collect();
+    let method_handler_params: Vec<syn::Ident> = (0..method_members.len())
+        .map(|j| syn::Ident::new(&format!("M{}", j), proc_macro::Span::call_site().into()))
+        .collect();
+
+    // Flat list used in struct definition and impl generics: [S0..Sn, H0..Hn, M0..Mm]
+    let all_params: Vec<&syn::Ident> = field_update_params
         .iter()
-        .map(|ty| {
-            // Try to extract T from R::FieldPublisher<T>
-            if let Type::Path(type_path) = ty {
-                // Look for the last segment which should be FieldPublisher<T>
-                if let Some(segment) = type_path.path.segments.last() {
-                    //Note: Same here we are using trait name directly
-                    // But if that change then this also need to be updated.
-                    if segment.ident == "FieldPublisher" {
-                        // Extract the type argument
-                        if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
-                            if let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() {
-                                return inner_ty;
-                            }
+        .chain(field_handler_params.iter())
+        .chain(method_handler_params.iter())
+        .collect();
+
+    // Initial states for init() entry point.
+    let init_states: Vec<_> = (0..field_members.len())
+        .map(|_| quote! { ::score_com::Uninit })
+        .chain((0..field_members.len()).map(|_| quote! { ::score_com::HandlerNotSet }))
+        .chain((0..method_members.len()).map(|_| quote! { ::score_com::HandlerNotSet }))
+        .collect();
+
+    // All-satisfied states required by offer().
+    let done_states: Vec<_> = (0..field_members.len())
+        .map(|_| quote! { ::score_com::Init })
+        .chain((0..field_members.len()).map(|_| quote! { ::score_com::HandlerSet }))
+        .chain((0..method_members.len()).map(|_| quote! { ::score_com::HandlerSet }))
+        .collect();
+
+    // update_{name}() impls for each field member
+    // Transitions Si: Uninit - Init while all other state params stay generic.
+    let update_methods: Vec<_> = field_members
+        .iter()
+        .enumerate()
+        .map(|(i, member)| {
+            let update_fn =
+                syn::Ident::new(&format!("update_{}", member.ident), member.ident.span());
+            let inner_ty = &member.inner_ty;
+            let field_ident = &member.ident;
+
+            // After-state list: Si becomes Init, every other param stays generic.
+            let after: Vec<_> = all_params
+                .iter()
+                .enumerate()
+                .map(|(k, p)| {
+                    if k == i {
+                        quote! { ::score_com::Init }
+                    } else {
+                        quote! { #p }
+                    }
+                })
+                .collect();
+
+            quote! {
+                impl<#runtime_param_with_bounds, #(#all_params),*>
+                    #validator_name<#runtime_param_name, #(#all_params),*>
+                {
+                    pub fn #update_fn(
+                        mut self,
+                        value: &#inner_ty,
+                    ) -> score_com::Result<#validator_name<#runtime_param_name, #(#after),*>> {
+                        self.producer.#field_ident.update(value)?;
+                        Ok(#validator_name {
+                            producer: self.producer,
+                            _phantom: core::marker::PhantomData,
+                        })
+                    }
+                }
+            }
+        })
+        .collect();
+
+    // register_set_handler_{name}() impls for each field member
+    // Hi is at index field_members.len() + i in all_params.
+    // Transitions Hi: HandlerNotSet - HandlerSet while all other state params stay generic.
+    let register_set_handler_methods: Vec<_> = field_members
+        .iter()
+        .enumerate()
+        .map(|(i, member)| {
+            let register_fn = syn::Ident::new(
+                &format!("register_set_handler_{}", member.ident),
+                member.ident.span(),
+            );
+            let inner_ty = &member.inner_ty;
+            let field_ident = &member.ident;
+            let hi_index = field_members.len() + i;
+
+            let after: Vec<_> = all_params
+                .iter()
+                .enumerate()
+                .map(|(k, p)| {
+                    if k == hi_index {
+                        quote! { ::score_com::HandlerSet }
+                    } else {
+                        quote! { #p }
+                    }
+                })
+                .collect();
+
+            quote! {
+                impl<#runtime_param_with_bounds, #(#all_params),*>
+                    #validator_name<#runtime_param_name, #(#all_params),*>
+                where
+                    <#runtime_param_name as score_com::Runtime>::FieldPublisher<#inner_ty>: Send,
+                {
+                    pub fn #register_fn<F>(
+                        mut self,
+                        handler: F,
+                    ) -> #validator_name<#runtime_param_name, #(#after),*>
+                    where
+                        F: Fn(&#inner_ty) + Send + 'static,
+                    {
+                        self.producer.#field_ident.register_set_handler(handler);
+                        #validator_name {
+                            producer: self.producer,
+                            _phantom: core::marker::PhantomData,
                         }
                     }
                 }
             }
-            // Fallback: use the full type
-            *ty
         })
         .collect();
-    // Generate the validator struct name - e.g., for VehicleProducer, the validator will be VehicleValidator
-    let validator_name = syn::Ident::new(&format!("{}Validator", name), name.span());
 
-    // Generate type parameters for each field's UPDATE state (S0, S1, S2, ...)
-    let field_update_state_params: Vec<_> = public_field_names
+    // register_{name}_handler() impls for each method member
+    // Mj is at index 2 * field_members.len() + j in all_params.
+    // Transitions Mj: HandlerNotSet - HandlerSet while all other state params stay generic.
+    let register_handler_methods: Vec<_> = method_members
         .iter()
         .enumerate()
-        .map(|(i, _)| syn::Ident::new(&format!("S{}", i), proc_macro::Span::call_site().into()))
-        .collect();
-
-    // Generate type parameters for each field's HANDLER state (H0, H1, H2, ...)
-    let field_handler_state_params: Vec<_> = public_field_names
-        .iter()
-        .enumerate()
-        .map(|(i, _)| syn::Ident::new(&format!("H{}", i), proc_macro::Span::call_site().into()))
-        .collect();
-
-    // Generate update methods - each one changes its field's UPDATE state from current to Init
-    // while preserving HANDLER state
-    let update_methods = public_field_names
-        .iter()
-        .zip(struct_field_names.iter())
-        .zip(inner_types.iter())
-        .enumerate()
-        .map(|(i, ((pub_name, struct_name), inner_ty))| {
-            // Generate the method name for updating this field - e.g., update_left_tire for field left_tire
-            let update_fn = syn::Ident::new(&format!("update_{}", pub_name), pub_name.span());
-
-            // Build the "after" UPDATE state parameter list where this field is Init
-            let after_update_states: Vec<_> = field_update_state_params
-                .iter()
-                .enumerate()
-                .map(|(j, param)| {
-                    if i == j {
-                        quote! { ::score_com::Init }
-                    } else {
-                        quote! { #param }
-                    }
-                })
-                .collect();
-
-            quote! {
-                impl<#runtime_param_with_bounds, #(#field_update_state_params),*, #(#field_handler_state_params),*>
-                    #validator_name<#runtime_param_name, #(#field_update_state_params),*, #(#field_handler_state_params),*>
-                {
-                    pub fn #update_fn(
-                        mut self,
-                        value: &#inner_ty
-                    ) -> score_com::Result<#validator_name<#runtime_param_name, #(#after_update_states),*, #(#field_handler_state_params),*>>
-                    {
-                        self.producer.#struct_name.update(value)?;
-                        Ok(#validator_name {
-                            producer: self.producer,
-                            _phantom: core::marker::PhantomData,
-                        })
-                    }
-                }
-            }
-        });
-
-    // Generate register_set_handler methods - each one changes its field's HANDLER state
-    // from HandlerNotSet to HandlerSet while preserving UPDATE state
-    let register_handler_methods = public_field_names
-        .iter()
-        .zip(struct_field_names.iter())
-        .zip(inner_types.iter())
-        .enumerate()
-        .map(|(i, ((pub_name, struct_name), inner_ty))| {
+        .map(|(j, member)| {
             let register_fn = syn::Ident::new(
-                &format!("register_set_handler_{}", pub_name),
-                pub_name.span(),
+                &format!("register_{}_handler", member.ident),
+                member.ident.span(),
             );
+            let args_ty = &member.args_ty;
+            let return_ty = &member.return_ty;
+            let method_ident = &member.ident;
+            let mj_index = 2 * field_members.len() + j;
 
-            // Build the "after" HANDLER state parameter list where this field is HandlerSet
-            let after_handler_states: Vec<_> = field_handler_state_params
+            let after: Vec<_> = all_params
                 .iter()
                 .enumerate()
-                .map(|(j, param)| {
-                    if i == j {
+                .map(|(k, p)| {
+                    if k == mj_index {
                         quote! { ::score_com::HandlerSet }
                     } else {
-                        quote! { #param }
+                        quote! { #p }
                     }
                 })
                 .collect();
 
             quote! {
-                impl<#runtime_param_with_bounds, #(#field_update_state_params),*, #(#field_handler_state_params),*>
-                    #validator_name<#runtime_param_name, #(#field_update_state_params),*, #(#field_handler_state_params),*>
-                where
-                    <#runtime_param_name as score_com::Runtime>::FieldPublisher<#inner_ty>: Send,
+                impl<#runtime_param_with_bounds, #(#all_params),*>
+                    #validator_name<#runtime_param_name, #(#all_params),*>
                 {
-                    pub fn #register_fn<F>(mut self, handler: F) -> score_com::Result<#validator_name<#runtime_param_name, #(#field_update_state_params),*, #(#after_handler_states),*>>
+                    pub fn #register_fn<F>(
+                        mut self,
+                        handler: F,
+                    ) -> #validator_name<#runtime_param_name, #(#after),*>
                     where
-                        F: Fn(&#inner_ty) + Send + 'static,
+                        F: score_com::MethodHandlerCall<#args_ty, #return_ty>,
                     {
-                        self.producer.#struct_name.register_set_handler(handler)?;
-                        Ok(#validator_name {
+                        <_ as score_com::MethodHandler<#args_ty, #return_ty, #runtime_param_name>>::register_handler(
+                            &self.producer.#method_ident,
+                            handler,
+                        );
+                        #validator_name {
                             producer: self.producer,
                             _phantom: core::marker::PhantomData,
-                        })
+                        }
                     }
                 }
             }
-        });
-
-    // Generate list of all Init states for the offer() impl
-    let all_init_states = vec![quote! { ::score_com::Init }; field_update_state_params.len()];
-
-    // Generate list of all HandlerSet states for the offer() impl
-    let all_handler_set_states =
-        vec![quote! { ::score_com::HandlerSet }; field_handler_state_params.len()];
-
-    // Generate list of all Uninit states for the validator() method
-    let all_uninit_states = vec![quote! { ::score_com::Uninit }; field_update_state_params.len()];
-
-    // Generate list of all HandlerNotSet states for the validator() method
-    let all_handler_not_set_states =
-        vec![quote! { ::score_com::HandlerNotSet }; field_handler_state_params.len()];
+        })
+        .collect();
 
     let expanded = quote! {
-        // Validator struct with dual type-state tracking:
-        // - First set of params (S0, S1, ...) track field UPDATE state (Uninit/Init)
-        // - Second set of params (H0, H1, ...) track HANDLER registration state (HandlerNotSet/HandlerSet)
-        pub struct #validator_name<#runtime_param_with_bounds, #(#field_update_state_params),*, #(#field_handler_state_params),*> {
+        // Validator struct type params track state of every Field and Method member.
+        // Layout: <R, S0..Sn (field updates), H0..Hn (field handlers), M0..Mm (method handlers)>
+        pub struct #validator_name<#runtime_param_with_bounds, #(#all_params),*> {
             producer: #name<#runtime_param_name>,
-            _phantom: core::marker::PhantomData<(#(#field_update_state_params,)* #(#field_handler_state_params,)*)>,
+            _phantom: core::marker::PhantomData<(#(#all_params,)*)>,
         }
 
-        // Update methods that change UPDATE state types (Uninit -> Init)
+        // update_{name}() - transitions Si: Uninit - Init
         #(#update_methods)*
 
-        // Register set handler methods that change HANDLER state types (HandlerNotSet -> HandlerSet)
+        // register_set_handler_{name}() - transitions Hi: HandlerNotSet - HandlerSet
+        #(#register_set_handler_methods)*
+
+        // register_{name}_handler() - transitions Mj: HandlerNotSet - HandlerSet
         #(#register_handler_methods)*
 
-        // offer() is only available when ALL fields are Init AND all handlers are HandlerSet
-        impl<#runtime_param_with_bounds> #validator_name<#runtime_param_name, #(#all_init_states),*, #(#all_handler_set_states),*> {
-            pub fn offer(self) -> score_com::Result<<#name<#runtime_param_name> as score_com::Producer<#runtime_param_name>>::OfferedProducer> {
-                // Call internal offer implementation after validating all fields are initialized and handlers registered
+        // offer() is only available when ALL Si = Init, ALL Hi = HandlerSet, ALL Mj = HandlerSet.
+        impl<#runtime_param_with_bounds>
+            #validator_name<#runtime_param_name, #(#done_states),*>
+        {
+            pub fn offer(
+                self,
+            ) -> score_com::Result<<#name<#runtime_param_name> as score_com::Producer<#runtime_param_name>>::OfferedProducer> {
                 self.producer._offer_internal()
             }
         }
 
-        // init_field() method consumes producer and returns validator with all fields Uninit and all handlers HandlerNotSet
+        // init() - entry point on the original producer, begins the type-state chain.
         impl<#runtime_param_with_bounds> #name<#runtime_param_name> {
-            pub fn init_field(self) -> #validator_name<#runtime_param_name, #(#all_uninit_states),*, #(#all_handler_not_set_states),*> {
+            pub fn init(
+                self,
+            ) -> #validator_name<#runtime_param_name, #(#init_states),*> {
                 #validator_name {
                     producer: self,
                     _phantom: core::marker::PhantomData,

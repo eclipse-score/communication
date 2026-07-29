@@ -61,3 +61,18 @@ interface!(
         exhaust: Field<Exhaust>,
      }
 );
+
+// We can also define mix of event , field and method in one interface.
+// TODO : Remove the comment once method design PR is merged.
+// interface!(
+//     interface VehicleMonitor {
+//         Id = "VehicleMonitorInterface",
+//         left_tire: Event<Tire>,
+//         exhaust: Event<Exhaust>,
+//         left_tire_field: Field<Tire>,
+//         exhaust_field: Field<Exhaust>,
+//         update_tire_pressure(Tire) -> (),
+//         update_front_tires_pressure(Tire, Tire) -> (),
+//         get_tire_pressure() -> Tire,
+//     }
+// );
