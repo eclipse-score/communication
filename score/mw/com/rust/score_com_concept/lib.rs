@@ -32,3 +32,4 @@ pub use interface_macros::{HandlerNotSet, HandlerSet, Init, Uninit};
 #[doc(hidden)]
 pub use paste;
 pub use reloc::Reloc;
+pub use score_com_macros;

@@ -138,9 +138,10 @@ pub use score_com_concept::{
     interface, interface_common, interface_consumer, interface_producer, Builder, CommData,
     Consumer, ConsumerBuilder, ConsumerDescriptor, Error, EventSampleMut as SampleMut,
     FieldPublisher, FieldSampleMut, FieldSubscriber, FieldSubscription, FindServiceSpecifier,
-    InstanceSpecifier, Interface, OfferedProducer, PlacementDefault, Producer, ProducerBuilder,
-    ProviderInfo, Publisher, Reloc, Result, Runtime, RuntimeBuilder, SampleContainer,
-    SampleMaybeUninit, ServiceDiscovery, Subscriber, Subscription,
+    HandlerNotSet, HandlerSet, Init, InstanceSpecifier, Interface, OfferedProducer,
+    PlacementDefault, Producer, ProducerBuilder, ProviderInfo, Publisher, Reloc, Result, Runtime,
+    RuntimeBuilder, SampleContainer, SampleMaybeUninit, ServiceDiscovery, Subscriber, Subscription,
+    Uninit,
 };
 
 #[doc(hidden)]

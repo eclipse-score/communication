@@ -307,7 +307,7 @@ macro_rules! interface_producer {
       ($id:ident, $($field_name:ident, Field<$field_type:ty>),+$(,)?) => {
         score_com::paste::paste! {
             // Producer struct with proc macro validation
-            #[derive($crate::score_com_concept_macros::TypeStateFieldValidator)]
+            #[derive($crate::score_com_macros::TypeStateFieldValidator)]
             pub struct [<$id Producer>]<R: score_com::Runtime + ?Sized> {
                 $(
                     pub $field_name: R::FieldPublisher<$field_type>,

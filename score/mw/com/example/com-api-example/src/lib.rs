@@ -12,12 +12,14 @@
  ********************************************************************************/
 
 pub mod consumer;
+mod field_consumer;
+mod field_producer;
 pub mod producer;
 pub use consumer::VehicleMonitorConsumer;
 pub use producer::VehicleMonitorProducer;
 
-use score_com::{Interface, Producer};
 use com_api_gen::VehicleInterface;
+use score_com::{Interface, Producer};
 
 // Type aliases for generated consumer and offered producer types for the Vehicle interface
 // VehicleConsumer is the consumer type generated for the Vehicle interface, parameterized by the runtime R
