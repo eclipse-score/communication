@@ -46,7 +46,7 @@ where
     // Use validator pattern with compile-time type-state validation
     // Must register handlers and initialize all fields before offer() is available
     let offered = producer
-        .init_field()
+        .init()
         .register_set_handler_left_tire(move |val: &Tire| {
             println!("Received tire pressure update: {:?}", val);
             // Additional logic to handle the tire pressure update can be added here
@@ -54,11 +54,9 @@ where
             // TODO: in working example add that logic to demonstrate the set handler usage.
             // Note: I think producer may be need clone ?
         })
-        .expect("Failed to register set handlers")
         .register_set_handler_exhaust(|_val: &Exhaust| {
             println!("Received exhaust update");
         })
-        .expect("Failed to register set handlers")
         .update_left_tire(&initial_tire_value)
         .expect("Failed to update left_tire field")
         .update_exhaust(&initial_exhaust_value)
