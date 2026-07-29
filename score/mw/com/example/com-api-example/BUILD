@@ -24,6 +24,7 @@ rust_library(
         "@score_baselibs//score/log_rust/score_log",
         "@score_communication_crate_index//:clap",
         "@score_communication_crate_index//:futures",
+         "@score_communication_crate_index//:tokio",
     ],
 )
 
