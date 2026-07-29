@@ -47,3 +47,40 @@ interface!(
         exhaust: Event<Exhaust>,
      }
 );
+
+// Example interface definition using the interface macro with a custom UID for the interface.
+// This will generate the following types and trait implementations:
+// - VehicleMethodsInterface struct with INTERFACE_ID = "VehicleMethodsInterface"
+// - VehicleMethodsConsumer<R>, VehicleMethodsProducer<R>, VehicleMethodsOfferedProducer<R>
+//   with appropriate trait implementations for the VehicleMethods interface.
+// As passed methods to macro it will generate the following methods:
+// - update_tire_pressure(Tire) -> ()
+// - update_front_tires_pressure(Tire, Tire) -> ()
+// - get_tire_pressure() -> Tire
+// and this method can be accessed through the consumer instance of VehicleMethodsConsumer<R>.
+// Methods use fn-like syntax:
+// method_name(ArgType0, ArgType1, ...) -> score_com::Result<R::MethodReturnSample<ReturnType>>.
+// For void return, -> () is required so the macro can identify the member as a method.
+interface!(
+    interface VehicleMethods {
+        Id = "VehicleMethodsInterface",
+        update_tire_pressure(Tire) -> (),
+        update_front_tires_pressure(Tire, Tire) -> (),
+        get_tire_pressure() -> Tire,
+    }
+);
+
+// We can also define mix of event , field and method in one interface.
+// TODO : Remove the comment once field design PR is merged.
+// interface!(
+//     interface VehicleMonitor {
+//         Id = "VehicleMonitorInterface",
+//         left_tire: Event<Tire>,
+//         exhaust: Event<Exhaust>,
+//         left_tire_field: Field<Tire>,
+//         exhaust_field: Field<Exhaust>,
+//         update_tire_pressure(Tire) -> (),
+//         update_front_tires_pressure(Tire, Tire) -> (),
+//         get_tire_pressure() -> Tire,
+//     }
+// );

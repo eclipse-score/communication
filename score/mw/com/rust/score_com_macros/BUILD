@@ -15,7 +15,10 @@ load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_proc_macro")
 
 rust_proc_macro(
     name = "score-com-macros",
-    srcs = ["lib.rs"],
+    srcs = [
+        "lib.rs",
+        "type_state_validator.rs",
+    ],
     crate_name = "score_com_macros",
     visibility = [
         "//score/mw/com:__subpackages__",

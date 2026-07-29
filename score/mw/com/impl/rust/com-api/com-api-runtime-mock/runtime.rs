@@ -37,9 +37,11 @@ use std::path::Path;
 
 use score_com_concept::{
     Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, FindServiceSpecifier,
-    InstanceSpecifier, Interface, Producer, ProducerBuilder, ProviderInfo, Publisher, Result,
-    Runtime, RuntimeBuilder, Sample, SampleContainer, SampleMaybeUninit, SampleMut,
-    ServiceDiscovery, Subscriber, Subscription,
+    InstanceSpecifier, Interface, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple, MethodCaller,
+    MethodHandler, MethodHandlerCall, MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr,
+    MethodReturnSample, Producer, ProducerBuilder, ProviderInfo, Publisher, Result, Runtime,
+    RuntimeBuilder, Sample, SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery,
+    Subscriber, Subscription, ZeroCopyArgs,
 };
 
 pub struct MockRuntimeImpl {}
@@ -69,6 +71,10 @@ impl Runtime for MockRuntimeImpl {
     type Subscriber<T: CommData + Debug> = MockSubscribableImpl<T>;
     type ProducerBuilder<I: Interface> = MockProducerBuilder<I>;
     type Publisher<T: CommData + Debug> = MockPublisher<T>;
+    type MethodInArgAllocator = MockMethodInArgAllocator;
+    type MethodReturnSample<T: CommData> = MockMethodReturnSample<T>;
+    type MethodCaller<Args: MethodArgs, Return: CommData> = MockMethodCaller<Args, Return, Self>;
+    type MethodHandler<Args: MethodArgs, Return: CommData> = MockMethodHandler<Args, Return, Self>;
     type ProviderInfo = MockProviderInfo;
     type ConsumerInfo = MockConsumerInfo;
 
@@ -507,9 +513,134 @@ impl RuntimeBuilderImpl {
     }
 }
 
+pub struct MockMethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
+    _phantom: core::marker::PhantomData<(Args, Return, R)>,
+}
+
+impl<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> MethodHandler<Args, Return, R>
+    for MockMethodHandler<Args, Return, R>
+{
+    fn new(_method_name: &str, _instance_info: R::ProviderInfo) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        // Implementation for creating a new method handler
+        Ok(MockMethodHandler {
+            _phantom: core::marker::PhantomData,
+        })
+    }
+
+    fn register_handler<F>(&self, _handler: F)
+    where
+        F: MethodHandlerCall<Args, Return>,
+    {
+        todo!("Implement the logic to register the handler with the underlying system");
+    }
+}
+
+/// Placeholder return sample for a mock method call result.
+/// Wraps the return value and provides `Deref<Target = T>` access,
+/// mirroring `LolaMethodReturnSample<T>` in the LoLa runtime.
+pub struct MockMethodReturnSample<T> {
+    value: T,
+}
+
+impl<T> Deref for MockMethodReturnSample<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.value
+    }
+}
+
+impl<T> MethodReturnSample<T> for MockMethodReturnSample<T> {}
+
+pub struct MockMethodCaller<Args: MethodArgs, Return: CommData, R: Runtime> {
+    _phantom: core::marker::PhantomData<(Args, Return, R)>,
+}
+
+impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, R>
+    for MockMethodCaller<Args, Return, R>
+{
+    fn new(_method_name: &str, _instance_info: R::ConsumerInfo) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        Ok(MockMethodCaller {
+            _phantom: core::marker::PhantomData,
+        })
+    }
+
+    fn invoke_with_copy<'a>(
+        &'a self,
+        _args: Args,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
+        async move { todo!("Implement the logic to call the method with copied arguments") }
+    }
+
+    fn allocate(&self) -> Result<<Args as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
+    where
+        Args: MethodArgsAllocate<R::MethodInArgAllocator>,
+    {
+        todo!("Implement the logic to allocate method arguments using the MethodInArgAllocator");
+    }
+
+    fn invoke_zero_copy<'a>(
+        &'a self,
+        _ptrs: <Args as MethodArgsPtrTuple<R>>::PtrTuple,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a
+    where
+        Args: MethodArgsPtrTuple<R>,
+    {
+        async move {
+            todo!("Implement the logic to call the method with pre-allocated argument pointers")
+        }
+    }
+}
+
+pub struct MockMethodInArgMaybeUninit<T> {
+    pub _phantom: core::marker::PhantomData<T>,
+}
+
+/// Runtime-specific concrete type for a fully-initialised Mock method argument pointer.
+pub struct MockMethodInArgPtr<T> {
+    _phantom: core::marker::PhantomData<T>,
+}
+
+impl<T> MethodInArgPtr<T> for MockMethodInArgPtr<T> {}
+
+impl<T> MethodInArgMaybeUninit<T> for MockMethodInArgMaybeUninit<T> {
+    type Ptr = MockMethodInArgPtr<T>;
+
+    fn write(self, _val: T) -> ZeroCopyArgs<MockMethodInArgPtr<T>> {
+        ZeroCopyArgs(MockMethodInArgPtr {
+            _phantom: core::marker::PhantomData,
+        })
+    }
+
+    unsafe fn assume_init(self) -> ZeroCopyArgs<MockMethodInArgPtr<T>> {
+        ZeroCopyArgs(MockMethodInArgPtr {
+            _phantom: core::marker::PhantomData,
+        })
+    }
+}
+
+pub struct MockMethodInArgAllocator;
+
+impl MethodInArgAllocator for MockMethodInArgAllocator {
+    type MethodInArgPtr<T: CommData> = MockMethodInArgPtr<T>;
+    type MethodInArgMaybeUninit<T: CommData> = MockMethodInArgMaybeUninit<T>;
+    fn allocate<T: CommData>(&self) -> MockMethodInArgMaybeUninit<T> {
+        MockMethodInArgMaybeUninit {
+            _phantom: core::marker::PhantomData,
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use score_com_concept::{Publisher, SampleContainer, SampleMaybeUninit, SampleMut, Subscription};
+    use score_com_concept::{
+        Publisher, SampleContainer, SampleMaybeUninit, SampleMut, Subscription,
+    };
 
     #[test]
     fn receive_stuff() {

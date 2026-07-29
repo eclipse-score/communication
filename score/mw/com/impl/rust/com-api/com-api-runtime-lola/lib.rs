@@ -25,7 +25,13 @@
 //! The crate is structured to facilitate easy integration and usage of the Lola middleware within applications
 //! that utilize the COM API abstractions.
 
+use core::fmt::Debug;
+
 mod consumer;
+// Note: The `method` module is currently a placeholder and
+// will be implemented in the future for the Lola runtime.
+// https://github.com/eclipse-score/communication/issues/782
+mod method;
 mod producer;
 mod runtime;
 
@@ -35,4 +41,7 @@ pub use producer::{
 };
 pub use runtime::{LolaRuntimeImpl, RuntimeBuilderImpl};
 
-use core::fmt::Debug;
+pub use method::{
+    LolaMethodCaller, LolaMethodHandler, LolaMethodInArgAllocator, LolaMethodInArgMaybeUninit,
+    LolaMethodReturnSample,
+};
