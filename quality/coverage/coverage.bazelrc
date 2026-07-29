@@ -88,3 +88,6 @@ coverage:qnx --config=qnx_x86_64
 
 # Disable treat_warnings_as_errors for coverage builds to avoid build failures from instrumentation-related warnings
 coverage --features=-score_communication_treat_warnings_as_errors
+
+# Disable fortify_source for coverage builds to avoid linking failures with LLVM coverage runtime.
+coverage --features=-score_communication_fortify_source

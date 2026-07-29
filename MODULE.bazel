@@ -298,6 +298,7 @@ llvm.toolchain(
     extra_enabled_features = [
         "//quality/compiler_warnings/clang:default_flags",
         "//quality/compiler_warnings/clang:minimal_warnings",
+        "//quality/compiler_warnings:fortify_source",
     ],
     extra_known_features = [
         "@score_cpp_policies//sanitizers/features:debug_symbols",
