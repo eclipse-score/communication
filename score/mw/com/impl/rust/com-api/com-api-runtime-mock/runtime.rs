@@ -519,6 +519,40 @@ impl RuntimeBuilderImpl {
     }
 }
 
+// Mock zero-copy allocator types for method arguments.
+pub struct MockMethodInArgMaybeUninit<T> {
+    _phantom: PhantomData<T>,
+}
+
+pub struct MockMethodInArgPtr<T> {
+    _phantom: PhantomData<T>,
+}
+
+impl<T> MethodInArgPtr<T> for MockMethodInArgPtr<T> {}
+
+impl<T: CommData> MethodInArgMaybeUninit<T> for MockMethodInArgMaybeUninit<T> {
+    type Ptr = MockMethodInArgPtr<T>;
+
+    fn write(self, _val: T) -> ZeroCopyArgs<MockMethodInArgPtr<T>> {
+        todo!()
+    }
+
+    unsafe fn assume_init(self) -> ZeroCopyArgs<MockMethodInArgPtr<T>> {
+        todo!()
+    }
+}
+
+pub struct MockMethodInArgAllocator;
+
+impl MethodInArgAllocator for MockMethodInArgAllocator {
+    type MethodInArgPtr<T: CommData> = MockMethodInArgPtr<T>;
+    type MethodInArgMaybeUninit<T: CommData> = MockMethodInArgMaybeUninit<T>;
+
+    fn allocate<T: CommData>(&self) -> MockMethodInArgMaybeUninit<T> {
+        todo!()
+    }
+}
+
 pub struct MockMethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
     _phantom: core::marker::PhantomData<(Args, Return, R)>,
 }
@@ -774,7 +808,7 @@ impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublis
     where
         Self: 'a;
 
-    fn new(_identifier: &str, _instance_info: MockProviderInfo) -> Result<Self> {
+    fn new(_identifier: &'static str, _instance_info: MockProviderInfo) -> Result<Self> {
         Ok(Self { _data: PhantomData })
     }
 
@@ -789,7 +823,7 @@ impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublis
         todo!()
     }
 
-    fn register_set_handler<'a>(&self, _callback: impl Fn(&T) + Send + 'a) -> Result<()> {
+    fn register_set_handler(&self, _callback: impl Fn(&T) + Send + 'static) -> Result<()> {
         todo!()
     }
 }

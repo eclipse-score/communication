@@ -113,6 +113,7 @@ interface "MethodInArgPtr<T>" as MethodInArgPtr {
   ' Runtime implements on its concrete type:
   '   LolaMethodInArgPtr<T>, MockMethodInArgPtr<T>
   ' Concrete type will hold FFI slot pointer + Drop
+}
 
 class "ZeroCopyArgs<P>" as ZeroCopyArgs {
   + 0: P

@@ -86,7 +86,7 @@ impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>>
     where
         Self: 'a;
 
-    fn new(_identifier: &str, _instance_info: LolaProviderInfo<B>) -> Result<Self> {
+    fn new(_identifier: &'static str, _instance_info: LolaProviderInfo<B>) -> Result<Self> {
         todo!()
     }
     fn allocate(&self) -> Result<Self::SampleMaybeUninit<'_>> {
@@ -95,7 +95,7 @@ impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>>
     fn update(&self, _value: &T) -> Result<()> {
         todo!()
     }
-    fn register_set_handler<'a>(&self, _callback: impl Fn(&T) + Send + 'a) -> Result<()> {
+    fn register_set_handler(&self, _callback: impl Fn(&T) + Send + 'static) -> Result<()> {
         //If waker get the notification form FFI call then
         //Create a task to call the callback with value.
         //Thread pool is a option here to run the callback in a separate thread.

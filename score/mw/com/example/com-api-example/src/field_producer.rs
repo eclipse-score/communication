@@ -54,9 +54,11 @@ where
             // TODO: in working example add that logic to demonstrate the set handler usage.
             // Note: I think producer may be need clone ?
         })
+        .expect("Failed to register set handler for left_tire")
         .register_set_handler_exhaust(|_val: &Exhaust| {
             println!("Received exhaust update");
         })
+        .expect("Failed to register set handler for exhaust")
         .update_left_tire(&initial_tire_value)
         .expect("Failed to update left_tire field")
         .update_exhaust(&initial_exhaust_value)

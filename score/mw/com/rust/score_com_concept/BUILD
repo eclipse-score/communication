@@ -57,7 +57,7 @@ rust_unit_test(
     name = "score_com_concept-macros-unit-tests",
     srcs = ["interface_macros.rs"],
     features = ["link_std_cpp_lib"],
-    # TODO: uncomment this once field or method one PR is merged,
+    # TODO: remove tags = ["manual"] once field or method PR is merged,
     # Unit test failed because macro has field and method both types
     tags = ["manual"],
     deps = ["//score/mw/com/rust:score_com"],

@@ -18,7 +18,7 @@
 //! To raise (or lower) the maximum number of arguments a method may have, edit the
 //! `impl_all_arities!` invocation at the bottom of this file.  Add one
 //! more `(TypeIdent, arg_ident)` pair per additional argument.  Everything else -
-//! `Reloc`, `CommData`, `MethodArgs`, `MethodArgsAllocate`, `MethodCallInput` (zero-copy
+//! `Reloc`, `CommData`, `MethodArgs`, `MethodArgsPtrTuple`, `MethodArgsAllocate`, `MethodCallInput` (zero-copy
 //! path), and `MethodHandlerCall` - is generated using macros.
 //!
 //! Note: `_gen_method_wrapper!` in `interface_macros.rs` self-generates its argument
@@ -29,7 +29,7 @@
 //!
 //! # Arity 0 special case
 //!
-//! Arity 0 (`()`) is handled separately in `com_api_method.rs` because the zero-tuple
+//! Arity 0 (`()`) is handled separately in `method_concept.rs` because the zero-tuple
 //! has no positional variables to destructure.
 //! This macro covers arities 1 through 8 (inclusive) by default, but can be extended to higher arities if needed.
 
@@ -137,8 +137,7 @@ macro_rules! impl_all_arities {
 // Single configuration point
 //
 // To raise the maximum method argument count:
-//   1. Add one more `(TypeIdent, arg_ident)` pair below.
-//   2. That's it - all six trait impls are generated automatically.
+//    Add one more `(TypeIdent, arg_ident)` pair below.
 //
 // `_gen_method_wrapper!` (`interface_macros.rs`) has no fixed arity limit of its own,
 // so raising the limit here is the only change needed.
