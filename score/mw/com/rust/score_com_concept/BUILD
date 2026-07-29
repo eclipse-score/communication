@@ -61,12 +61,6 @@ rust_unit_test(
     name = "score_com_concept-macros-unit-tests",
     srcs = ["interface_macros.rs"],
     features = ["link_std_cpp_lib"],
-<<<<<<< HEAD
     rustc_flags = ["--cfg=standalone_macro_tests"],
-=======
-    # TODO: uncomment this once field or method one PR is merged,
-    # Unit test failed because macro has field and method both types
-    tags = ["manual"],
->>>>>>> 29882265 (Rust::com Example app update with Method APIs usage)
     deps = ["//score/mw/com/rust:score_com"],
 )

@@ -34,7 +34,7 @@ This document describes the design of the **method** APIs and usage of it.
 
 ## Overview
 
-Rust Communication library provide the Method based communication pattern (mostly with alignment of c++ APIs), followings are major points
+Rust Communication library provides the Method based communication pattern (mostly with alignment of c++ APIs), followings are major points
 of the design-
 - Method calls are always async and every generated wrapper returns `impl Future` and must be `.await`ed.
 - Arguments can be passed by value (copy path) or via pre-allocated pointers (zero-copy path) using the same call site and the compiler selects the correct dispatch based on argument type.
@@ -350,7 +350,7 @@ interface!(
 For each method, the macro generates:
 
 **On `VehicleMethodsConsumer<R>`**-a callable wrapper field. The field is a struct that:
-- Implements `AsyncFn`semantics so `consumer.update_tire_pressure(arg).await` works
+- Implements `AsyncFn` semantics so `consumer.update_tire_pressure(arg).await` works
 - Exposes `.allocate()` for the zero-copy path
 - Holds a reference to the runtime's `R::MethodCaller<(Tire,), ()>` instance
 - Calls through `MethodCallInput::invoke()` to dispatch to the correct `MethodCaller` method
