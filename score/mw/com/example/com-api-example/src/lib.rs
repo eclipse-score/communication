@@ -13,6 +13,8 @@
 
 pub mod consumer;
 // Method modules are just for demonstration purpose, as runtime implementation is not available for method APIs.
+mod field_consumer;
+mod field_producer;
 mod method_consumer;
 mod method_producer;
 pub mod producer;

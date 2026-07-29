@@ -49,6 +49,7 @@
 //! - Tuples
 
 use crate::error::*;
+use crate::field_concept::{FieldPublisher, FieldSubscriber};
 use crate::method_concept::{
     MethodArgs, MethodCaller, MethodHandler, MethodInArgAllocator, MethodReturnSample,
 };
@@ -113,6 +114,12 @@ pub trait Runtime {
 
     /// `MethodHandler<Args, Return>` types for handling method calls on the skeleton/producer side
     type MethodHandler<Args: MethodArgs, Return: CommData>: MethodHandler<Args, Return, Self>;
+
+    /// `FieldSubscription<T>` types for Manages subscriptions to field instance
+    type FieldSubscriber<T: CommData + Debug>: FieldSubscriber<T, Self>;
+
+    /// `FieldPublisher<T>` types for Publishes field constructs and update the data
+    type FieldPublisher<T: CommData + Debug>: FieldPublisher<T, Self>;
 
     /// `ProviderInfo` types for Configuration data for service producers instances
     type ProviderInfo: ProviderInfo + Send + Clone;
@@ -352,6 +359,12 @@ pub trait SampleMut<T>: DerefMut<Target = T> + Debug
 where
     T: CommData + Debug,
 {
+}
+
+pub trait EventSampleMut<T>: SampleMut<T>
+where
+    T: CommData + Debug,
+{
     /// Send the sample and consume it.
     ///
     /// # Returns
@@ -496,8 +509,8 @@ pub trait Publisher<T, R: Runtime + ?Sized>
 where
     T: CommData + Debug,
 {
-    /// Associated sample type for uninitialized event data
-    type SampleMaybeUninit<'a>: SampleMaybeUninit<T> + 'a
+    /// Associated sample type for uninitialized event data.
+    type SampleMaybeUninit<'a>: SampleMaybeUninit<T, SampleMut: EventSampleMut<T> + 'a>
     where
         Self: 'a;
     /// Allocate a buffer slot for the event publication.

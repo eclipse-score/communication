@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use score_com::{interface, CommData, ProviderInfo, Publisher, Reloc, Subscriber};
+use score_com::{interface, CommData, FieldPublisher, ProviderInfo, Publisher, Reloc, Subscriber};
 use score_log::ScoreDebug;
 
 #[derive(Debug, Reloc, CommData, ScoreDebug)]
@@ -70,8 +70,21 @@ interface!(
     }
 );
 
+// Field-based interface with compile-time initialization safety.
+// All fields must be explicitly initialized via the Type State pattern before offering.
+// The Type State pattern ensures that you cannot call offer() until all fields have been updated.
+// Just for demonstration of APIs usage we are creating a separate interface for field,
+// we have plan to update the interface macro to support mixed event and field interface in future.
+// https://github.com/eclipse-score/communication/issues/701
+interface!(
+    interface VehicleField {
+        Id = "VehicleFieldInterface",
+        left_tire: Field<Tire>,
+        exhaust: Field<Exhaust>,
+     }
+);
+
 // We can also define mix of event , field and method in one interface.
-// TODO : Remove the comment once field design PR is merged.
 // interface!(
 //     interface VehicleMonitor {
 //         Id = "VehicleMonitorInterface",

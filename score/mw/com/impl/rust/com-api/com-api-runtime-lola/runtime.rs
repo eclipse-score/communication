@@ -16,7 +16,8 @@ use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use crate::{
-    LolaConsumerDiscovery, LolaConsumerInfo, LolaMethodCaller, LolaMethodHandler,
+    LolaConsumerDiscovery, LolaConsumerInfo, LolaFieldPublisher, LolaFieldSubscriber,
+    LolaMethodCaller, LolaMethodHandler,
     LolaMethodInArgAllocator, LolaMethodReturnSample, LolaProducerBuilder, LolaProviderInfo,
     LolaPublisher, LolaSubscribableImpl,
 };
@@ -41,6 +42,8 @@ impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
     type MethodReturnSample<T: CommData> = LolaMethodReturnSample<T>;
     type MethodCaller<Args: MethodArgs, Return: CommData> = LolaMethodCaller<Args, Return, Self>;
     type MethodHandler<Args: MethodArgs, Return: CommData> = LolaMethodHandler<Args, Return, Self>;
+    type FieldPublisher<T: CommData + Debug> = LolaFieldPublisher<T, B>;
+    type FieldSubscriber<T: CommData + Debug> = LolaFieldSubscriber<T, B>;
     type ProviderInfo = LolaProviderInfo<B>;
     type ConsumerInfo = LolaConsumerInfo<B>;
 

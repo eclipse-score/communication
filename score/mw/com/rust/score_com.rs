@@ -142,13 +142,14 @@ pub use com_api_runtime_lola::RuntimeBuilderImpl as LolaRuntimeBuilderImpl;
 
 pub use score_com_concept::{
     interface, interface_common, interface_consumer, interface_producer, Builder, CommData,
-    Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier, HandlerNotSet,
-    HandlerSet, InstanceSpecifier, Interface, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple,
-    MethodCallInput, MethodCaller, MethodHandler, MethodHandlerCall, MethodInArgAllocator,
-    MethodInArgMaybeUninit, MethodInArgPtr, MethodReturnSample, OfferedProducer, PlacementDefault,
-    Producer, ProducerBuilder, ProviderInfo, Publisher, Reloc, Result, Runtime, RuntimeBuilder,
-    SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
-    ZeroCopyArgs,
+    Consumer, ConsumerBuilder, ConsumerDescriptor, Error, EventSampleMut as SampleMut,
+    FieldPublisher, FieldSampleMut, FieldSubscriber, FieldSubscription, FindServiceSpecifier,
+    HandlerNotSet, HandlerSet, Init, InstanceSpecifier, Interface, MethodArgs, MethodArgsAllocate,
+    MethodArgsPtrTuple, MethodCallInput, MethodCaller, MethodHandler, MethodHandlerCall,
+    MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr, MethodReturnSample,
+    OfferedProducer, PlacementDefault, Producer, ProducerBuilder, ProviderInfo, Publisher, Reloc,
+    Result, Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit, ServiceDiscovery,
+    Subscriber, Subscription, Uninit, ZeroCopyArgs,
 };
 
 #[doc(hidden)]
