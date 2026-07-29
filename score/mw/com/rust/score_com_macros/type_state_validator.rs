@@ -270,15 +270,15 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
                     pub fn #register_fn<F>(
                         mut self,
                         handler: F,
-                    ) -> #validator_name<#runtime_param_name, #(#after),*>
+                    ) -> score_com::Result<#validator_name<#runtime_param_name, #(#after),*>>
                     where
                         F: Fn(&#inner_ty) + Send + 'static,
                     {
-                        self.producer.#field_ident.register_set_handler(handler);
-                        #validator_name {
+                        self.producer.#field_ident.register_set_handler(handler)?;
+                        Ok(#validator_name {
                             producer: self.producer,
                             _phantom: core::marker::PhantomData,
-                        }
+                        })
                     }
                 }
             }
@@ -318,7 +318,7 @@ pub fn derive_typestate_validator_impl(input: TokenStream) -> TokenStream {
                     #validator_name<#runtime_param_name, #(#all_params),*>
                 {
                     pub fn #register_fn<F>(
-                        mut self,
+                        self,
                         handler: F,
                     ) -> #validator_name<#runtime_param_name, #(#after),*>
                     where
