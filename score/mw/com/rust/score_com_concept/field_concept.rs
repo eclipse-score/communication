@@ -65,7 +65,7 @@ pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
     fn set(&self, value: &T) -> Result<MethodReturnTypePtr<T>>;
 }
 
-/// FieldSubscriber trait is provides the receiving APIs for the field subscription and
+/// FieldSubscription trait provides the receiving APIs for the field subscription and
 /// it is derived from `concept::Subscription` trait which provides the receiving APIs for the field subscription.
 /// Additional methods which the field subscription provides are added in this trait.
 pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
@@ -80,7 +80,7 @@ pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
     /// This is for checking the capacity of the field subscription and to avoid overflow of the field subscription limit.
     fn get_free_sample_count(&self) -> Result<usize>;
 
-    ///Get the current value of the field.
+    /// Get the current value of the field.
     ///
     /// #returns
     /// Return the `Future<Output = Result<MethodReturnTypePtr<T>>>` which contains the current value of the field.
@@ -105,7 +105,7 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
         Self: 'a;
 
     /// Create a new publisher for the specified event source.
-    fn new(identifier: &str, instance_info: R::ProviderInfo) -> Result<Self>
+    fn new(identifier: &'static str, instance_info: R::ProviderInfo) -> Result<Self>
     where
         Self: Sized;
 
@@ -131,8 +131,7 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
     ///
     /// # Returns
     /// Return the result of `Result<()>` which contains the status of the register operation.
-    // TODO: Do we need to make callback lifetime 'static or we keep same as field publisher lifetime.
-    fn register_set_handler<'a>(&self, callback: impl Fn(&T) + Send + 'a) -> Result<()>;
+    fn register_set_handler(&self, callback: impl Fn(&T) + Send + 'static) -> Result<()>;
 }
 
 /// FieldSampleMut trait is used to update the value of the field sample for zero-copy API.

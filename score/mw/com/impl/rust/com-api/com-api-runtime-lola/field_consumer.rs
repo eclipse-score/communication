@@ -18,6 +18,7 @@
 //! we will create a module which will have common trait for event and field which will be used by both event and field consumer/publisher.
 
 use core::fmt::Debug;
+use core::future::Future;
 use core::marker::PhantomData;
 
 use bridge_ffi_rs::FFIBridge;
