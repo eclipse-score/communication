@@ -22,10 +22,12 @@
 /// boundaries without violating Rust's ownership rules.
 mod concept;
 mod error;
+mod field_concept;
 mod interface_macros;
 mod reloc;
 pub use concept::*;
 pub use error::*;
+pub use field_concept::*;
 #[doc(hidden)]
 pub use paste;
 pub use reloc::Reloc;
