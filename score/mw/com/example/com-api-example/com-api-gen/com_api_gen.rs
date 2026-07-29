@@ -85,7 +85,7 @@ interface!(
 );
 
 // We can also define mix of event , field and method in one interface.
-// TODO : Remove the comment once field design PR is merged.
+// TODO : Remove the comment once method design PR is merged.
 // interface!(
 //     interface VehicleMonitor {
 //         Id = "VehicleMonitorInterface",
