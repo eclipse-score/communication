@@ -51,6 +51,14 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
+// All alignments occurring within the shm-objects are <= alignof(std::max_align_t). The SharedMemoryResource is a
+// monotonic (bump) allocator: the bytes it accounts for a single allocation are the requested size plus the padding
+// needed to bring the current offset to the requested alignment. By rounding every individual allocation up to
+// alignof(std::max_align_t) (via the shared CalculateAlignedSize() utility) we keep the running offset max-aligned and
+// therefore obtain a size that is guaranteed to be sufficient (it is exact whenever the allocated sizes are multiples
+// of the involved alignment, which is the common case).
+constexpr std::size_t kMaxAlign = alignof(std::max_align_t);
+
 ServiceDataControl* GetServiceDataControlSkeletonSide(const memory::shared::ManagedMemoryResource& control)
 {
     // Suppress "AUTOSAR C++14 M5-2-8" rule. The rule declares:
@@ -125,7 +133,7 @@ SkeletonMemoryManager::SkeletonMemoryManager(QualityType quality_type,
       storage_{nullptr},
       control_qm_{nullptr},
       control_asil_b_{nullptr},
-      number_of_service_elements_{0U},
+      number_of_service_elements_{},
       storage_resource_{},
       control_qm_resource_{},
       control_asil_resource_{}
@@ -538,46 +546,31 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
     return ShmResourceStorageSizes{control_data_size, control_qm_size, control_asil_b_size};
 }
 
-namespace
-{
-
-// Rounds size up to the next multiple of alignof(std::max_align_t).
-// The SharedMemoryResource is a monotonic (bump) allocator: the bytes it accounts for a single allocation are the
-// requested size plus the padding needed to bring the current offset to the requested alignment. All alignments
-// occurring within the data shm-object are <= alignof(std::max_align_t). By rounding every individual allocation up to
-// alignof(std::max_align_t) we keep the running offset max-aligned and therefore obtain a size that is guaranteed to be
-// sufficient (it is exact whenever the allocated sizes are multiples of the involved alignment, which is the common
-// case).
-constexpr std::size_t RoundUpToMaxAlign(const std::size_t size) noexcept
-{
-    constexpr std::size_t kMaxAlign = alignof(std::max_align_t);
-    const std::size_t remainder = size % kMaxAlign;
-    return (remainder == 0U) ? size : (size + (kMaxAlign - remainder));
-}
-
-}  // namespace
-
 std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
     SkeletonBinding::SkeletonEventBindings& events,
     SkeletonBinding::SkeletonFieldBindings& fields) const
 {
-    const std::size_t number_of_service_elements = number_of_service_elements_;
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        number_of_service_elements_.has_value(),
+        "number_of_service_elements_ must be set before calculating the data shm resource storage size.");
+    const std::size_t number_of_service_elements = number_of_service_elements_.value();
 
     // (1) The ServiceDataStorage object itself (including the inline bookkeeping of its two LinearSearchMaps).
-    std::size_t total_size = RoundUpToMaxAlign(sizeof(ServiceDataStorage));
+    std::size_t total_size = memory::shared::CalculateAlignedSize(sizeof(ServiceDataStorage), kMaxAlign);
 
     // (2) The two backing arrays of the LinearSearchMaps (allocated once, with capacity == number_of_service_elements).
     // number_of_service_elements_ is the capacity the ServiceDataStorage is actually constructed with (see
     // CalculateShmResourceStorageSizes), hence we use exactly that value here to stay consistent with the real
     // allocation.
-    total_size +=
-        RoundUpToMaxAlign(number_of_service_elements * sizeof(ServiceDataStorage::EventDataStorageMap::value_type));
-    total_size +=
-        RoundUpToMaxAlign(number_of_service_elements * sizeof(ServiceDataStorage::EventMetaInfoMap::value_type));
+    total_size += memory::shared::CalculateAlignedSize(
+        number_of_service_elements * sizeof(ServiceDataStorage::EventDataStorageMap::value_type), kMaxAlign);
+    total_size += memory::shared::CalculateAlignedSize(
+        number_of_service_elements * sizeof(ServiceDataStorage::EventMetaInfoMap::value_type), kMaxAlign);
 
     // The size of the EventDataStorage control structure (a DynamicArray) is independent of the concrete sample-type
     // (it only holds a fancy-pointer, an allocator and two size_t members).
-    const std::size_t event_data_storage_object_size = RoundUpToMaxAlign(sizeof(EventDataStorage<std::max_align_t>));
+    const std::size_t event_data_storage_object_size =
+        memory::shared::CalculateAlignedSize(sizeof(EventDataStorage<std::max_align_t>), kMaxAlign);
 
     // (3) For each event/field: the EventDataStorage object plus its raw slot-array.
     // The slot-array size mirrors exactly what the real construction allocates:
@@ -611,7 +604,7 @@ std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
             }
 
             total_size += event_data_storage_object_size;
-            total_size += RoundUpToMaxAlign(number_of_slots * aligned_sample_size);
+            total_size += memory::shared::CalculateAlignedSize(number_of_slots * aligned_sample_size, kMaxAlign);
         }
     };
     accumulate_service_elements(events, false);
@@ -624,23 +617,28 @@ std::size_t SkeletonMemoryManager::CalculateControlShmResourceStorageSize(
     SkeletonBinding::SkeletonEventBindings& events,
     SkeletonBinding::SkeletonFieldBindings& fields) const
 {
-    const std::size_t number_of_service_elements = number_of_service_elements_;
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        number_of_service_elements_.has_value(),
+        "number_of_service_elements_ must be set before calculating the control shm resource storage size.");
+    const std::size_t number_of_service_elements = number_of_service_elements_.value();
 
     // (1) The ServiceDataControl object itself (including the inline bookkeeping of its event_controls_ LinearSearchMap
     // and of its application_id_pid_mapping_).
-    std::size_t total_size = RoundUpToMaxAlign(sizeof(ServiceDataControl));
+    std::size_t total_size = memory::shared::CalculateAlignedSize(sizeof(ServiceDataControl), kMaxAlign);
 
     // (2) The backing array of the event_controls_ LinearSearchMap (allocated once, with capacity ==
     // number_of_service_elements). number_of_service_elements_ is the capacity the ServiceDataControl is actually
     // constructed with (see InitializeSharedMemoryForControl), hence we use exactly that value here.
-    total_size += RoundUpToMaxAlign(number_of_service_elements *
-                                    sizeof(decltype(ServiceDataControl::event_controls_)::value_type));
+    total_size += memory::shared::CalculateAlignedSize(
+        number_of_service_elements * sizeof(decltype(ServiceDataControl::event_controls_)::value_type), kMaxAlign);
 
     // (3) The backing array of the application_id_pid_mapping_ (a fixed-capacity DynamicArray with a capacity of
     // kMaxApplicationIdPidMappings). It is allocated once during ServiceDataControl construction, independent of the
     // number of service-elements.
-    total_size += RoundUpToMaxAlign(static_cast<std::size_t>(ServiceDataControl::kMaxApplicationIdPidMappings) *
-                                    sizeof(ApplicationIdPidMappingEntry));
+    total_size += memory::shared::CalculateAlignedSize(
+        static_cast<std::size_t>(ServiceDataControl::kMaxApplicationIdPidMappings) *
+            sizeof(ApplicationIdPidMappingEntry),
+        kMaxAlign);
 
     // (4) For each event/field: the (deeply) nested fixed-capacity DynamicArrays contained within its EventControl.
     // The EventControl object itself is stored inline within the event_controls_ backing array (accounted for in (2));
@@ -654,11 +652,13 @@ std::size_t SkeletonMemoryManager::CalculateControlShmResourceStorageSize(
 
             // (4a) EventControl::data_control (EventDataControl): its state_slots_ is a DynamicArray<ControlSlotType>
             // with a capacity of number_of_slots.
-            total_size += RoundUpToMaxAlign(number_of_slots * sizeof(EventDataControl::EventControlSlots::value_type));
+            total_size += memory::shared::CalculateAlignedSize(
+                number_of_slots * sizeof(EventDataControl::EventControlSlots::value_type), kMaxAlign);
 
             // (4b) EventControl::transaction_log_set_ (TransactionLogSet):
             //   - proxy_transaction_logs_: a DynamicArray<TransactionLogNode> with a capacity of max_subscribers.
-            total_size += RoundUpToMaxAlign(max_subscribers * sizeof(TransactionLogSet::TransactionLogNode));
+            total_size += memory::shared::CalculateAlignedSize(
+                max_subscribers * sizeof(TransactionLogSet::TransactionLogNode), kMaxAlign);
 
             //   - each TransactionLogNode holds a TransactionLog whose reference_count_slots_ is a
             //     DynamicArray<TransactionLogSlot> with a capacity of number_of_slots. The following separate
@@ -668,8 +668,8 @@ std::size_t SkeletonMemoryManager::CalculateControlShmResourceStorageSize(
             //         Since the shared-memory resource is strictly monotonic (it never reclaims memory), this
             //         temporary allocation permanently occupies space and must be accounted for.
             //       * one for the inline skeleton_tracing_transaction_log_ member.
-            const std::size_t transaction_log_slots_array_size =
-                RoundUpToMaxAlign(number_of_slots * sizeof(TransactionLog::TransactionLogSlots::value_type));
+            const std::size_t transaction_log_slots_array_size = memory::shared::CalculateAlignedSize(
+                number_of_slots * sizeof(TransactionLog::TransactionLogSlots::value_type), kMaxAlign);
             const std::size_t number_of_transaction_log_slot_arrays = max_subscribers + 2U;
             total_size += number_of_transaction_log_slot_arrays * transaction_log_slots_array_size;
         }
@@ -916,7 +916,10 @@ bool SkeletonMemoryManager::OpenSharedMemoryForControl(const QualityType asil_le
 void SkeletonMemoryManager::InitializeSharedMemoryForData(
     const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory)
 {
-    storage_ = memory->construct<ServiceDataStorage>(number_of_service_elements_, *memory);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        number_of_service_elements_.has_value(),
+        "number_of_service_elements_ must be set before constructing the ServiceDataStorage.");
+    storage_ = memory->construct<ServiceDataStorage>(number_of_service_elements_.value(), *memory);
     storage_resource_ = memory;
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
     // variables being given values that are not subsequently used"
@@ -936,7 +939,10 @@ void SkeletonMemoryManager::InitializeSharedMemoryForControl(
 {
     auto& control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
 
-    control = memory->construct<ServiceDataControl>(number_of_service_elements_, *memory);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        number_of_service_elements_.has_value(),
+        "number_of_service_elements_ must be set before constructing the ServiceDataControl.");
+    control = memory->construct<ServiceDataControl>(number_of_service_elements_.value(), *memory);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control != nullptr);
 }
 

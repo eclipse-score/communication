@@ -37,20 +37,37 @@ class LinearSearchMapFixture : public ::testing::Test
 
 TEST_F(LinearSearchMapFixture, IsEmptyAfterConstruction)
 {
+    // Given a freshly constructed LinearSearchMap with a capacity of 4
+
+    // When constructing the map
     TestMap unit{4U, memory_};
 
+    // Then it is empty, has size 0 and reports the requested capacity
     EXPECT_TRUE(unit.empty());
     EXPECT_EQ(unit.size(), 0U);
     EXPECT_EQ(unit.capacity(), 4U);
+}
+
+TEST_F(LinearSearchMapFixture, BeginAndEndEqualAfterConstruction)
+{
+    // Given a freshly constructed LinearSearchMap
+
+    // When constructing the map
+    TestMap unit{4U, memory_};
+
+    // Then begin and end iterators are equal (no elements to iterate)
     EXPECT_EQ(unit.begin(), unit.end());
 }
 
-TEST_F(LinearSearchMapFixture, EmplaceInsertsElement)
+TEST_F(LinearSearchMapFixture, EmplaceSucceedsAndReturnsCorrectIterator)
 {
+    // Given an empty LinearSearchMap
     TestMap unit{4U, memory_};
 
+    // When emplacing a new key/value pair
     const auto result = unit.emplace(1, 100);
 
+    // Then the insertion succeeds and the element is retrievable via the returned iterator
     EXPECT_TRUE(result.second);
     ASSERT_NE(result.first, unit.end());
     EXPECT_EQ(result.first->first, 1);
@@ -59,12 +76,15 @@ TEST_F(LinearSearchMapFixture, EmplaceInsertsElement)
     EXPECT_FALSE(unit.empty());
 }
 
-TEST_F(LinearSearchMapFixture, EmplaceWithPiecewiseConstructInsertsElement)
+TEST_F(LinearSearchMapFixture, EmplaceWithPiecewiseConstructSucceedsAndReturnsCorrectIterator)
 {
+    // Given an empty LinearSearchMap
     TestMap unit{4U, memory_};
 
+    // When emplacing a new element using the piecewise-construct overload
     const auto result = unit.emplace(std::piecewise_construct, std::forward_as_tuple(7), std::forward_as_tuple(700));
 
+    // Then the insertion succeeds and the element is retrievable via the returned iterator
     EXPECT_TRUE(result.second);
     ASSERT_NE(result.first, unit.end());
     EXPECT_EQ(result.first->first, 7);
@@ -73,56 +93,83 @@ TEST_F(LinearSearchMapFixture, EmplaceWithPiecewiseConstructInsertsElement)
 
 TEST_F(LinearSearchMapFixture, EmplaceWithDuplicateKeyDoesNotInsert)
 {
+    // Given a LinearSearchMap that already contains the key 1
     TestMap unit{4U, memory_};
-
     std::ignore = unit.emplace(1, 100);
+
+    // When emplacing another element with the same key
     const auto result = unit.emplace(1, 999);
 
+    // Then no insertion takes place and the originally inserted value is preserved
     EXPECT_FALSE(result.second);
     EXPECT_EQ(unit.size(), 1U);
-    // The originally inserted value must be preserved.
     EXPECT_EQ(result.first->second, 100);
 }
 
 TEST_F(LinearSearchMapFixture, FindReturnsInsertedElement)
 {
+    // Given a LinearSearchMap containing several elements
     TestMap unit{4U, memory_};
     std::ignore = unit.emplace(1, 100);
     std::ignore = unit.emplace(2, 200);
     std::ignore = unit.emplace(3, 300);
 
+    // When searching for an existing key
     const auto it = unit.find(2);
 
+    // Then the corresponding element is returned
     ASSERT_NE(it, unit.end());
     EXPECT_EQ(it->second, 200);
 }
 
 TEST_F(LinearSearchMapFixture, FindReturnsEndForMissingKey)
 {
+    // Given a LinearSearchMap containing a single element
     TestMap unit{4U, memory_};
     std::ignore = unit.emplace(1, 100);
 
+    // When searching for a key that is not present
+    // Then the end iterator is returned
     EXPECT_EQ(unit.find(99), unit.end());
 }
 
-TEST_F(LinearSearchMapFixture, ConstFindWorks)
+TEST_F(LinearSearchMapFixture, ConstFindReturnsInsertedElement)
 {
+    // Given a const reference to a LinearSearchMap containing one element
     TestMap unit{4U, memory_};
     std::ignore = unit.emplace(5, 500);
-
     const TestMap& const_unit = unit;
+
+    // When searching via the const overload of find
     const auto it = const_unit.find(5);
 
+    // Then an existing key is found and a missing key yields the const end iterator
     ASSERT_NE(it, const_unit.cend());
     EXPECT_EQ(it->second, 500);
-    EXPECT_EQ(const_unit.find(6), const_unit.cend());
+}
+
+TEST_F(LinearSearchMapFixture, ConstFindReturnsEndForMissingKey)
+{
+    // Given a const reference to a LinearSearchMap containing one element
+    TestMap unit{4U, memory_};
+    std::ignore = unit.emplace(5, 500);
+    const TestMap& const_unit = unit;
+
+    // When searching via the const overload of find for a non existent key
+    const auto it = const_unit.find(6);
+
+    // Then it yields the const end iterator
+    EXPECT_EQ(it, const_unit.cend());
 }
 
 TEST_F(LinearSearchMapFixture, AtReturnsMappedValue)
 {
+    // Given a LinearSearchMap containing one element
     TestMap unit{4U, memory_};
     std::ignore = unit.emplace(8, 800);
 
+    // When accessing the mapped value via at
+    // Then the stored value is returned and can be modified through the returned reference
     EXPECT_EQ(unit.at(8), 800);
 
     unit.at(8) = 801;
@@ -131,10 +178,12 @@ TEST_F(LinearSearchMapFixture, AtReturnsMappedValue)
 
 TEST_F(LinearSearchMapFixture, IterationVisitsAllElements)
 {
+    // Given a LinearSearchMap containing two elements
     TestMap unit{4U, memory_};
     std::ignore = unit.emplace(1, 10);
     std::ignore = unit.emplace(2, 20);
 
+    // When iterating over all elements and accumulating keys and values
     std::int32_t sum_keys{0};
     std::int32_t sum_values{0};
     for (const auto& element : unit)
@@ -143,6 +192,7 @@ TEST_F(LinearSearchMapFixture, IterationVisitsAllElements)
         sum_values += element.second;
     }
 
+    // Then every element is visited exactly once
     EXPECT_EQ(sum_keys, 3);
     EXPECT_EQ(sum_values, 30);
 }
@@ -160,22 +210,28 @@ using CustomEqualMap = LinearSearchMap<std::int32_t, std::int32_t, AbsoluteValue
 
 TEST_F(LinearSearchMapFixture, CustomKeyEqualIsUsedForFind)
 {
+    // Given a LinearSearchMap using a custom absolute-value key-equality predicate, containing the key 5
     CustomEqualMap unit{4U, memory_};
     std::ignore = unit.emplace(5, 500);
 
-    // -5 is considered equal to 5 by the custom predicate.
+    // When searching for -5, which the custom predicate considers equal to 5
     const auto it = unit.find(-5);
+
+    // Then the element stored under key 5 is found
     ASSERT_NE(it, unit.end());
     EXPECT_EQ(it->second, 500);
 }
 
 TEST_F(LinearSearchMapFixture, CustomKeyEqualPreventsDuplicateInsertion)
 {
+    // Given a LinearSearchMap using a custom absolute-value key-equality predicate, containing the key 5
     CustomEqualMap unit{4U, memory_};
     std::ignore = unit.emplace(5, 500);
 
-    // Emplacing -5 must be treated as a duplicate of 5 and therefore not insert.
+    // When emplacing -5, which the custom predicate treats as a duplicate of 5
     const auto result = unit.emplace(-5, 999);
+
+    // Then no insertion takes place and the original value is preserved
     EXPECT_FALSE(result.second);
     EXPECT_EQ(unit.size(), 1U);
     EXPECT_EQ(result.first->second, 500);
@@ -183,9 +239,13 @@ TEST_F(LinearSearchMapFixture, CustomKeyEqualPreventsDuplicateInsertion)
 
 TEST_F(LinearSearchMapFixture, KeyEqAccessorReturnsPredicate)
 {
+    // Given a LinearSearchMap using a custom absolute-value key-equality predicate
     CustomEqualMap unit{4U, memory_};
 
+    // When retrieving the predicate via key_eq
     const auto predicate = unit.key_eq();
+
+    // Then the returned predicate exhibits the custom equality semantics
     EXPECT_TRUE(predicate(-7, 7));
     EXPECT_FALSE(predicate(-7, 8));
 }

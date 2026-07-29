@@ -2865,6 +2865,8 @@ TEST_P(ShmSizeCalcMode, ValidShmSizeCalcMode)
 const std::vector<std::tuple<std::string, ShmSizeCalculationMode>> valid_global_shm_size_calc_modes{
     {R"json({"serviceTypes": [], "serviceInstances": [], "global": { "shm-size-calc-mode": "SIMULATION" }})json",
      ShmSizeCalculationMode::kSimulation},
+    {R"json({"serviceTypes": [], "serviceInstances": [], "global": { "shm-size-calc-mode": "ANALYSIS" }})json",
+     ShmSizeCalculationMode::kAnalysis},
     {R"json({"serviceTypes": [], "serviceInstances": [] })json", ShmSizeCalculationMode::kSimulation},
 };
 
