@@ -23,10 +23,10 @@ type VehicleFieldProducer<R> = <VehicleFieldInterface as Interface>::Producer<R>
 type VehicleFieldOfferedProducer<R> =
     <<VehicleFieldInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
 
-// Below function just demonstrate the field APIs usage
-// This build fine but it can not run because we have not implemented the field APIs in Lola runtime yet.
+// Below function demonstrates the field APIs usage.
+// This builds fine, but it cannot run as the field APIs in Lola runtime are not implemented yet.
 
-// Producer creation and intialization of fields with initial values and set handlers for the fields
+// Producer creation and initialization of fields with initial values and set handlers for the fields.
 // It will return the offered producer instance which can be used to update the fields.
 fn create_producer_field<R: Runtime + 'static>(
     runtime: &R,
@@ -47,21 +47,18 @@ where
     // Must register handlers and initialize all fields before offer() is available
     let offered = producer
         .init()
-        .register_set_handler_left_tire(move |val: &Tire| {
+        .register_set_handler_left_tire(move |val: Tire| {
             println!("Received tire pressure update: {:?}", val);
-            // Additional logic to handle the tire pressure update can be added here
-            // For example, we can increment value or conver unit and update the field again.
+            // Additional logic: inspect or act on the accepted value (logging, telemetry, etc.).
             // TODO: in working example add that logic to demonstrate the set handler usage.
-            // Note: I think producer may be need clone ?
         })
-        .expect("Failed to register set handler for left_tire")
-        .register_set_handler_exhaust(|_val: &Exhaust| {
+        .register_set_handler_exhaust(|val: Exhaust| {
+            let _ = val;
             println!("Received exhaust update");
         })
-        .expect("Failed to register set handler for exhaust")
-        .update_left_tire(&initial_tire_value)
+        .update_left_tire(initial_tire_value)
         .expect("Failed to update left_tire field")
-        .update_exhaust(&initial_exhaust_value)
+        .update_exhaust(initial_exhaust_value)
         .expect("Failed to update exhaust field")
         .offer()
         .expect("Failed to offer producer instance");
@@ -76,10 +73,10 @@ fn offered_producer_process<R: Runtime>(offered_producer: VehicleFieldOfferedPro
     let new_exhaust_value = Exhaust {};
     offered_producer
         .left_tire
-        .update(&new_tire_value)
+        .update(new_tire_value)
         .expect("Failed to update left_tire field");
     offered_producer
         .exhaust
-        .update(&new_exhaust_value)
+        .update(new_exhaust_value)
         .expect("Failed to update exhaust field");
 }
