@@ -119,6 +119,18 @@ pub trait Runtime {
     /// `FieldSubscriber<T>` types for Manages subscriptions to field instance
     type FieldSubscriber<T: CommData + Debug>: FieldSubscriber<T, Self>;
 
+    // Note: below GATs are to make runtime implementation simpler for Field Methods,
+    // If at the time of implementation no specific need is found for these GATs,
+    // we can remove them and use MethodCaller<Args, Return> instead of a separate field-specific design.
+    
+    /// `FieldGetCaller<T>` types for the consumer-side async field get operation.
+    /// Distinct from `MethodCaller<(), T>` so runtimes can route to specific `Getter`.
+    type FieldGetCaller<T: CommData + Debug>: MethodCaller<(), T, Self>;
+
+    /// `FieldSetCaller<T>` types for the consumer-side async field set operation.
+    /// Distinct from `MethodCaller<(T,), T>` so runtimes can route to specific `Setter`.
+    type FieldSetCaller<T: CommData + Debug>: MethodCaller<(T,), T, Self>;
+
     /// `FieldPublisher<T>` types for Publishes field constructs and update the data
     type FieldPublisher<T: CommData + Debug>: FieldPublisher<T, Self>;
 

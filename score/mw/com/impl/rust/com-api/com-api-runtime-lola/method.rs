@@ -17,6 +17,7 @@
 
 /// All the struct and trait implementations are placeholders for now,
 /// and will be implemented in future as per the requirements of the Lola runtime.
+use core::fmt::Debug;
 use core::future::Future;
 use core::ops::Deref;
 use score_com_concept::{
@@ -149,3 +150,90 @@ impl MethodInArgAllocator for LolaMethodInArgAllocator {
         todo!("Implement allocation from the Lola shared-memory region via &self context");
     }
 }
+
+/// Placeholder caller for field Get operations
+/// It is distinct from `LolaMethodCaller<(), T>` because we may need to route field specific Method
+/// via specific id file `Getter` to the Lola binding.
+pub struct LolaFieldGetCaller<T: CommData + Debug, R: Runtime> {
+    _phantom: core::marker::PhantomData<(T, R)>,
+}
+
+impl<T: CommData + Debug, R: Runtime> MethodCaller<(), T, R> for LolaFieldGetCaller<T, R> {
+    fn new(_method_name: &str, _instance_info: R::ConsumerInfo) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        Ok(LolaFieldGetCaller {
+            _phantom: core::marker::PhantomData,
+        })
+    }
+
+    fn invoke_with_copy<'a>(
+        &'a self,
+        _args: (),
+    ) -> impl Future<Output = Result<R::MethodReturnSample<T>>> + 'a {
+        async move { todo!("Implement field get via MethodType::kGet") }
+    }
+
+    fn allocate(&self) -> Result<<() as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
+    where
+        (): MethodArgsAllocate<R::MethodInArgAllocator>,
+    {
+        todo!("Implement allocate for LolaFieldGetCaller")
+    }
+
+    fn invoke_zero_copy<'a>(
+        &'a self,
+        _ptrs: <() as MethodArgsPtrTuple<R>>::PtrTuple,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<T>>> + 'a
+    where
+        (): MethodArgsPtrTuple<R>,
+    {
+        async move { todo!("Implement zero-copy invoke for LolaFieldGetCaller if C++ side support is available") }
+    }
+}
+
+/// Placeholder caller for field Set operations
+/// It is distinct from `LolaMethodCaller<(T,), T>` because we may need to route field specific Method
+/// via specific id file `Setter` to the Lola binding.
+pub struct LolaFieldSetCaller<T: CommData + Debug, R: Runtime> {
+    _phantom: core::marker::PhantomData<(T, R)>,
+}
+
+impl<T: CommData + Debug, R: Runtime> MethodCaller<(T,), T, R> for LolaFieldSetCaller<T, R> {
+    fn new(_method_name: &str, _instance_info: R::ConsumerInfo) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        Ok(LolaFieldSetCaller {
+            _phantom: core::marker::PhantomData,
+        })
+    }
+
+    fn invoke_with_copy<'a>(
+        &'a self,
+        _args: (T,),
+    ) -> impl Future<Output = Result<R::MethodReturnSample<T>>> + 'a {
+        async move { todo!("Implement field set via MethodType::kSet") }
+    }
+
+    fn allocate(
+        &self,
+    ) -> Result<<(T,) as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
+    where
+        (T,): MethodArgsAllocate<R::MethodInArgAllocator>,
+    {
+        todo!("Implement allocate for LolaFieldSetCaller if C++ side support is available");
+    }
+
+    fn invoke_zero_copy<'a>(
+        &'a self,
+        _ptrs: <(T,) as MethodArgsPtrTuple<R>>::PtrTuple,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<T>>> + 'a
+    where
+        (T,): MethodArgsPtrTuple<R>,
+    {
+        async move { todo!("Implement zero-copy invoke for LolaFieldSetCaller if C++ side support is available") }
+    }
+}
+

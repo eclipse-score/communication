@@ -34,6 +34,24 @@ pub struct HandlerNotSet;
 #[allow(dead_code)]
 pub struct HandlerSet;
 
+/// Field capability tag: by adding this on interface macro, consumer can call async `get_*()` on this field.
+/// Use in `Field<T, WithGetter>` (or combined: `Field<T, WithGetter + WithSetter + WithNotifier>`).
+/// See [`Uninit`] for why `dead_code` is suppressed.
+#[allow(dead_code)]
+pub struct WithGetter;
+
+/// Field capability tag: by adding this on interface macro, consumer can call async `set_*()` on this field.
+/// Use in `Field<T, WithSetter>` (or combined: `Field<T, WithGetter + WithSetter + WithNotifier>`).
+/// See [`Uninit`] for why `dead_code` is suppressed.
+#[allow(dead_code)]
+pub struct WithSetter;
+
+/// Field capability tag: by adding this on interface macro, consumer can `subscribe()` to field-value-change notifications.
+/// Use in `Field<T, WithNotifier>` (or combined: `Field<T, WithGetter + WithSetter + WithNotifier>`).
+/// See [`Uninit`] for why `dead_code` is suppressed.
+#[allow(dead_code)]
+pub struct WithNotifier;
+
 /// Main interface macro that generates Consumer, Producer, and OfferedProducer types
 /// along with all necessary trait implementations.
 ///
@@ -94,7 +112,7 @@ pub struct HandlerSet;
 ///         interface Vehicle {
 ///             Id = "AbcInterface",
 ///             left_tire: Event<Tire>,
-///             left_tire_field: Field<Tire>,
+///             left_tire_field: Field<Tire, WithGetter + WithSetter + WithNotifier>,
 ///             left_tire_method(Tire) -> Tire,
 ///         }
 ///     );
@@ -174,6 +192,9 @@ macro_rules! interface {
             @id[$id, $uid]
             @ev[]
             @fi[]
+            @fi_n[]
+            @fi_g[]
+            @fi_s[]
             @me[]
             $($members)*
         );
@@ -186,30 +207,163 @@ macro_rules! interface {
             @id[$id, concat!(module_path!(), "::", stringify!($id))]
             @ev[]
             @fi[]
+            @fi_n[]
+            @fi_g[]
+            @fi_s[]
             @me[]
             $($members)*
         );
     };
 }
 
+/// Helper for `_interface_collect_members!`.
+///
+/// Iterates over the tag list of a single field, adding the field to the correct per-tag
+/// accumulator list. When all tags are consumed, calls back to `_interface_collect_members!`
+/// with the updated lists and the remaining interface members.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _field_split_tags {
+    // Base: all tags consumed - call back to _interface_collect_members! with updated lists
+    (
+        @ctx[
+            @id[$id:ident, $uid:expr]
+            @ev[$($ev_name:ident : $ev_type:ty ,)*]
+            @fi[$($fi_name:ident : $fi_type:ty ,)*]
+            @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
+            @rest[$($rest:tt)*]
+        ]
+        @fi_n[$($fin_name:ident : $fin_type:ty ,)*]
+        @fi_g[$($fig_name:ident : $fig_type:ty ,)*]
+        @fi_s[$($fis_name:ident : $fis_type:ty ,)*]
+        @field[$_name:ident : $_t:ty]
+        @tags[]
+    ) => {
+        $crate::_interface_collect_members!(
+            @id[$id, $uid]
+            @ev[$($ev_name : $ev_type ,)*]
+            @fi[$($fi_name : $fi_type ,)*]
+            @fi_n[$($fin_name : $fin_type ,)*]
+            @fi_g[$($fig_name : $fig_type ,)*]
+            @fi_s[$($fis_name : $fis_type ,)*]
+            @me[$($me_name [$($me_arg_ty),*] -> $me_ret ,)*]
+            $($rest)*
+        );
+    };
+
+    // WithNotifier: add field to fi_n list, recurse with remaining tags
+    (
+        @ctx[$($ctx:tt)*]
+        @fi_n[$($fin_name:ident : $fin_type:ty ,)*]
+        @fi_g[$($fi_g:tt)*]
+        @fi_s[$($fi_s:tt)*]
+        @field[$name:ident : $t:ty]
+        @tags[WithNotifier $(, $rest_tag:ident)*]
+    ) => {
+        $crate::_field_split_tags!(
+            @ctx[$($ctx)*]
+            @fi_n[$($fin_name : $fin_type ,)* $name : $t ,]
+            @fi_g[$($fi_g)*]
+            @fi_s[$($fi_s)*]
+            @field[$name : $t]
+            @tags[$($rest_tag),*]
+        );
+    };
+
+    // WithGetter: add field to fi_g list, recurse with remaining tags
+    (
+        @ctx[$($ctx:tt)*]
+        @fi_n[$($fi_n:tt)*]
+        @fi_g[$($fig_name:ident : $fig_type:ty ,)*]
+        @fi_s[$($fi_s:tt)*]
+        @field[$name:ident : $t:ty]
+        @tags[WithGetter $(, $rest_tag:ident)*]
+    ) => {
+        $crate::_field_split_tags!(
+            @ctx[$($ctx)*]
+            @fi_n[$($fi_n)*]
+            @fi_g[$($fig_name : $fig_type ,)* $name : $t ,]
+            @fi_s[$($fi_s)*]
+            @field[$name : $t]
+            @tags[$($rest_tag),*]
+        );
+    };
+
+    // WithSetter: add field to fi_s list, recurse with remaining tags
+    (
+        @ctx[$($ctx:tt)*]
+        @fi_n[$($fi_n:tt)*]
+        @fi_g[$($fi_g:tt)*]
+        @fi_s[$($fis_name:ident : $fis_type:ty ,)*]
+        @field[$name:ident : $t:ty]
+        @tags[WithSetter $(, $rest_tag:ident)*]
+    ) => {
+        $crate::_field_split_tags!(
+            @ctx[$($ctx)*]
+            @fi_n[$($fi_n)*]
+            @fi_g[$($fi_g)*]
+            @fi_s[$($fis_name : $fis_type ,)* $name : $t ,]
+            @field[$name : $t]
+            @tags[$($rest_tag),*]
+        );
+    };
+
+    // Unrecognized tag
+    (
+        @ctx[$($ctx:tt)*]
+        @fi_n[$($fi_n:tt)*]
+        @fi_g[$($fi_g:tt)*]
+        @fi_s[$($fi_s:tt)*]
+        @field[$name:ident : $_t:ty]
+        @tags[$unknown:ident $(, $rest_tag:ident)*]
+    ) => {
+        compile_error!(concat!(
+            "interface!: unrecognized field tag `",
+            stringify!($unknown),
+            "` on field `",
+            stringify!($name),
+            "`. Supported tags: WithGetter, WithSetter, WithNotifier."
+        ));
+    };
+}
+
 /// Internal recursive-macro helper for `interface!`.
 ///
-/// Accumulates members into three typed lists, then calls the mixed generator macros.
+/// Accumulates members into typed lists, then calls the mixed generator macros.
+/// Field members MUST carry at least one capability tag: `Field<T, WithGetter + WithSetter + WithNotifier>`.
+/// `Field<T>` without tags is a compile error.
+/// Tags control which consumer-side infrastructure is generated per field:
+///  - `WithGetter`   - `{name}_get: R::FieldGetCaller<T>` + `get_{name}()` async wrapper
+///  - `WithSetter`   - `{name}_set: R::FieldSetCaller<T>` + `set_{name}(val)` async wrapper
+///  - `WithNotifier` - `{name}: R::FieldSubscriber<T>` (subscribe / notifications)
+/// Any combination and any ordering of tags is supported.
+///
+/// Fields are split into three flat lists during accumulation:
+///  @fi_n  - fields with WithNotifier tag (name:type)
+///  @fi_g  - fields with WithGetter tag (name:type)
+///  @fi_s  - fields with WithSetter tag (name:type)
+/// A field with multiple tags appears in multiple lists.
+/// The plain @fi list (name:type only) is still kept for forwarding to interface_producer_mixed!.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! _interface_collect_members {
-    // Base case: nothing left - emit the mixed consumer and producer
+    // Base case: nothing left - emit the mixed consumer and producer.
     (
         @id[$id:ident, $uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
         @fi[$($fi_name:ident : $fi_type:ty ,)*]
+        @fi_n[$($fin_name:ident : $fin_type:ty ,)*]
+        @fi_g[$($fig_name:ident : $fig_type:ty ,)*]
+        @fi_s[$($fis_name:ident : $fis_type:ty ,)*]
         @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
         $(,)?
     ) => {
         $crate::interface_consumer_mixed!(
             $id,
             events[$($ev_name : $ev_type ,)*],
-            fields[$($fi_name : $fi_type ,)*],
+            fields_notifier[$($fin_name : $fin_type ,)*],
+            fields_getter[$($fig_name : $fig_type ,)*],
+            fields_setter[$($fis_name : $fis_type ,)*],
             methods[$($me_name [$($me_arg_ty),*] -> $me_ret ,)*]
         );
         $crate::interface_producer_mixed!(
@@ -225,6 +379,9 @@ macro_rules! _interface_collect_members {
         @id[$id:ident, $uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
         @fi[$($fi_name:ident : $fi_type:ty ,)*]
+        @fi_n[$($fin_name:ident : $fin_type:ty ,)*]
+        @fi_g[$($fig_name:ident : $fig_type:ty ,)*]
+        @fi_s[$($fis_name:ident : $fis_type:ty ,)*]
         @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
         $name:ident : Event<$t:ty>
         $(, $($rest:tt)*)?
@@ -233,36 +390,80 @@ macro_rules! _interface_collect_members {
             @id[$id, $uid]
             @ev[$($ev_name : $ev_type ,)* $name : $t ,]
             @fi[$($fi_name : $fi_type ,)*]
+            @fi_n[$($fin_name : $fin_type ,)*]
+            @fi_g[$($fig_name : $fig_type ,)*]
+            @fi_s[$($fis_name : $fis_type ,)*]
             @me[$($me_name [$($me_arg_ty),*] -> $me_ret ,)*]
             $($($rest)*)?
         );
     };
 
-    // Field member: `name : Field<T> ,?`
+    // Field member WITH tags: `name : Field<T, Tag1 + Tag2 + ...> ,?`
+    // Delegates to _field_split_tags! to distribute the field into the per-tag flat lists.
     (
         @id[$id:ident, $uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
         @fi[$($fi_name:ident : $fi_type:ty ,)*]
+        @fi_n[$($fin_name:ident : $fin_type:ty ,)*]
+        @fi_g[$($fig_name:ident : $fig_type:ty ,)*]
+        @fi_s[$($fis_name:ident : $fis_type:ty ,)*]
         @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
-        $name:ident : Field<$t:ty>
+        $name:ident : Field<$t:ty, $first_tag:ident $(+ $rest_tag:ident)*>
         $(, $($rest:tt)*)?
     ) => {
-        $crate::_interface_collect_members!(
-            @id[$id, $uid]
-            @ev[$($ev_name : $ev_type ,)*]
-            @fi[$($fi_name : $fi_type ,)* $name : $t ,]
-            @me[$($me_name [$($me_arg_ty),*] -> $me_ret ,)*]
-            $($($rest)*)?
+        $crate::_field_split_tags!(
+            @ctx[
+                @id[$id, $uid]
+                @ev[$($ev_name : $ev_type ,)*]
+                @fi[$($fi_name : $fi_type ,)* $name : $t ,]
+                @me[$($me_name [$($me_arg_ty),*] -> $me_ret ,)*]
+                @rest[$($($rest)*)?]
+            ]
+            @fi_n[$($fin_name : $fin_type ,)*]
+            @fi_g[$($fig_name : $fig_type ,)*]
+            @fi_s[$($fis_name : $fis_type ,)*]
+            @field[$name : $t]
+            @tags[$first_tag $(, $rest_tag)*]
         );
+    };
+
+    // Field member WITHOUT tags: `name : Field<T> ,?` — compile error.
+    (
+        @id[$_id:ident, $_uid:expr]
+        @ev[$($ev_name:ident : $ev_type:ty ,)*]
+        @fi[$($fi_name:ident : $fi_type:ty ,)*]
+        @fi_n[$($fin_name:ident : $fin_type:ty ,)*]
+        @fi_g[$($fig_name:ident : $fig_type:ty ,)*]
+        @fi_s[$($fis_name:ident : $fis_type:ty ,)*]
+        @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
+        $name:ident : Field<$_t:ty>
+        $(, $($rest:tt)*)?
+    ) => {
+        compile_error!(concat!(
+            "interface!: Field member `",
+            stringify!($name),
+            "` requires at least one capability tag.\n",
+            "Supported tags: WithGetter, WithSetter, WithNotifier\n",
+            "Use the `+` syntax to combine tags, e.g.:\n",
+            "  ", stringify!($name), ": Field<T, WithGetter + WithSetter + WithNotifier>\n",
+            "  ", stringify!($name), ": Field<T, WithGetter>\n",
+            "  ", stringify!($name), ": Field<T, WithSetter>\n",
+            "  ", stringify!($name), ": Field<T, WithNotifier>\n",
+            "Tags control which consumer-side infrastructure is generated:\n",
+            "  WithGetter   - get_*()\n",
+            "  WithSetter   - set_*()\n",
+            "  WithNotifier - subscribe()\n",
+        ));
     };
 
     // Method member (fn-like syntax): `name(Arg0, Arg1, ...) -> Ret ,?`
-    // Positional types - no tuple wrapper needed at the user level.
-    // Internally stored as a bracketed list: name [Arg0, Arg1, ...] -> Ret
     (
         @id[$id:ident, $uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
         @fi[$($fi_name:ident : $fi_type:ty ,)*]
+        @fi_n[$($fin_name:ident : $fin_type:ty ,)*]
+        @fi_g[$($fig_name:ident : $fig_type:ty ,)*]
+        @fi_s[$($fis_name:ident : $fis_type:ty ,)*]
         @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
         $name:ident ( $($arg_ty:ty),* ) -> $ret:ty
         $(, $($rest:tt)*)?
@@ -271,6 +472,9 @@ macro_rules! _interface_collect_members {
             @id[$id, $uid]
             @ev[$($ev_name : $ev_type ,)*]
             @fi[$($fi_name : $fi_type ,)*]
+            @fi_n[$($fin_name : $fin_type ,)*]
+            @fi_g[$($fig_name : $fig_type ,)*]
+            @fi_s[$($fis_name : $fis_type ,)*]
             @me[$($me_name [$($me_arg_ty),*] -> $me_ret ,)* $name [$($arg_ty),*] -> $ret ,]
             $($($rest)*)?
         );
@@ -281,6 +485,9 @@ macro_rules! _interface_collect_members {
         @id[$_id:ident, $_uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
         @fi[$($fi_name:ident : $fi_type:ty ,)*]
+        @fi_n[$($fin_name:ident : $fin_type:ty ,)*]
+        @fi_g[$($fig_name:ident : $fig_type:ty ,)*]
+        @fi_s[$($fis_name:ident : $fis_type:ty ,)*]
         @me[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
         $($unknown:tt)+
     ) => {
@@ -289,16 +496,16 @@ macro_rules! _interface_collect_members {
             stringify!($($unknown)+),
             "`.\n",
             "Supported member types:\n",
-            "  name: Event<T>                   - event subscriber / publisher pair\n",
-            "  name: Field<T>                   - field subscriber / publisher pair\n",
-            "  name(Arg0, Arg1, ...) -> Ret     - method caller / handler pair\n",
+            "  name: Event<T>                                           - event subscriber / publisher pair\n",
+            "  name: Field<T, WithGetter + WithSetter + WithNotifier>   - field with capability tags\n",
+            "  name(Arg0, Arg1, ...) -> Ret                             - method caller / handler pair\n",
+            "Note: Field<T> without tags is not allowed. Specify at least one of:\n",
+            "  WithGetter, WithSetter, WithNotifier\n",
             "Example:\n",
             "  interface!(interface MyIface {\n",
             "      my_event: Event<MyData>,\n",
-            "      my_field: Field<MyData>,\n",
+            "      my_field: Field<MyData, WithGetter + WithSetter + WithNotifier>,\n",
             "      my_method(MyData) -> MyData,\n",
-            "      my_void_method(MyData) -> (),\n",
-            "      my_no_arg_method() -> MyData,\n",
             "  });"
         ));
     };
@@ -437,28 +644,188 @@ macro_rules! interface_producer {
     };
 }
 
+/// Per-tag struct field declaration helper for `interface_consumer_mixed!`.
+///
+/// Called once per field member; iterates over the tag list and emits one struct field per tag.
+/// - `WithNotifier` - `pub $name: R::FieldSubscriber<$type>,`
+/// - `WithGetter`   - `pub {name}_get: R::FieldGetCaller<$type>,`
+/// - `WithSetter`   - `pub {name}_set: R::FieldSetCaller<$type>,`
+/// Any ordering of tags is supported; unrecognized tags produce a compile error.
+///
+/// NOTE: Must be called inside a `score_com::paste::paste! { pub struct ... { HERE } }` block
+/// since it uses `[<>]` identifier concatenation.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _field_consumer_decl {
+    // Base: no more tags
+    ($fi_name:ident, $fi_type:ty, []) => {};
+
+    // WithNotifier: emit FieldSubscriber field, recurse
+    ($fi_name:ident, $fi_type:ty, [WithNotifier $(, $rest:ident)*]) => {
+        pub $fi_name: R::FieldSubscriber<$fi_type>,
+        $crate::_field_consumer_decl!($fi_name, $fi_type, [$($rest),*]);
+    };
+
+    // WithGetter: emit FieldGetCaller field
+    ($fi_name:ident, $fi_type:ty, [WithGetter $(, $rest:ident)*]) => {
+        pub [<$fi_name _get>]: R::FieldGetCaller<$fi_type>,
+        $crate::_field_consumer_decl!($fi_name, $fi_type, [$($rest),*]);
+    };
+
+    // WithSetter: emit FieldSetCaller field
+    ($fi_name:ident, $fi_type:ty, [WithSetter $(, $rest:ident)*]) => {
+        pub [<$fi_name _set>]: R::FieldSetCaller<$fi_type>,
+        $crate::_field_consumer_decl!($fi_name, $fi_type, [$($rest),*]);
+    };
+
+    // Unrecognized tag
+    ($fi_name:ident, $fi_type:ty, [$unknown:ident $(, $rest:ident)*]) => {
+        compile_error!(concat!(
+            "interface!: unrecognized field tag `",
+            stringify!($unknown),
+            "`. Supported tags: WithGetter, WithSetter, WithNotifier."
+        ));
+    };
+}
+
+/// Per-tag struct field initializer helper for `interface_consumer_mixed!`.
+///
+/// Emits one initializer expression per tag (used inside the `Consumer::new()` struct literal).
+/// - `WithNotifier` - `$name: R::FieldSubscriber::new(...)`
+/// - `WithGetter`   - `{name}_get: <R::FieldGetCaller<T> as MethodCaller<(), T, R>>::new(...)`
+/// - `WithSetter`   - `{name}_set: <R::FieldSetCaller<T> as MethodCaller<(T,), T, R>>::new(...)`
+///
+/// NOTE: Must be called inside a `score_com::paste::paste! { Struct { HERE } }` block.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _field_consumer_init {
+    // Base: no more tags
+    ($fi_name:ident, $fi_type:ty, [], $instance_info:ident) => {};
+
+    // WithNotifier: emit FieldSubscriber init, recurse
+    ($fi_name:ident, $fi_type:ty, [WithNotifier $(, $rest:ident)*], $instance_info:ident) => {
+        $fi_name: R::FieldSubscriber::new(
+            stringify!($fi_name),
+            $instance_info.clone()
+        ).expect(&format!(
+            "Failed to create field subscriber for {}",
+            stringify!($fi_name)
+        )),
+        $crate::_field_consumer_init!($fi_name, $fi_type, [$($rest),*], $instance_info);
+    };
+
+    // WithGetter: emit FieldGetCaller init
+    ($fi_name:ident, $fi_type:ty, [WithGetter $(, $rest:ident)*], $instance_info:ident) => {
+        [<$fi_name _get>]: <R::FieldGetCaller<$fi_type>
+            as score_com::MethodCaller<(), $fi_type, R>>::new(
+                concat!(stringify!($fi_name), "_get"),
+                $instance_info.clone()
+            ).expect(&format!(
+                "Failed to create field get caller for {}",
+                stringify!($fi_name)
+            )),
+        $crate::_field_consumer_init!($fi_name, $fi_type, [$($rest),*], $instance_info);
+    };
+
+    // WithSetter: emit FieldSetCaller init
+    ($fi_name:ident, $fi_type:ty, [WithSetter $(, $rest:ident)*], $instance_info:ident) => {
+        [<$fi_name _set>]: <R::FieldSetCaller<$fi_type>
+            as score_com::MethodCaller<($fi_type,), $fi_type, R>>::new(
+                concat!(stringify!($fi_name), "_set"),
+                $instance_info.clone()
+            ).expect(&format!(
+                "Failed to create field set caller for {}",
+                stringify!($fi_name)
+            )),
+        $crate::_field_consumer_init!($fi_name, $fi_type, [$($rest),*], $instance_info);
+    };
+
+    // Unrecognized tag (already caught by _field_consumer_decl, but guard here too)
+    ($fi_name:ident, $fi_type:ty, [$unknown:ident $(, $rest:ident)*], $instance_info:ident) => {
+        compile_error!(concat!(
+            "interface!: unrecognized field tag `",
+            stringify!($unknown),
+            "`. Supported tags: WithGetter, WithSetter, WithNotifier."
+        ));
+    };
+}
+
+/// Per-tag wrapper method helper for `interface_consumer_mixed!`.
+///
+/// Emits one wrapper method per tag inside the `impl {Id}Consumer<R>` block.
+/// - `WithNotifier` - no method generated (subscribe is called directly on the struct field)
+/// - `WithGetter`   - `pub fn get_{name}<'a>(&'a self) -> impl Future<Output = Result<...>> + 'a`
+/// - `WithSetter`   - `pub fn set_{name}<'a>(&'a self, value: T) -> impl Future<Output = Result<...>> + 'a`
+///
+/// NOTE: Must be called inside a `score_com::paste::paste! { impl ... { HERE } }` block.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! _field_consumer_methods {
+    // Base: no more tags
+    ($fi_name:ident, $fi_type:ty, []) => {};
+
+    // WithNotifier: no method generated - subscribe is on the struct field directly
+    ($fi_name:ident, $fi_type:ty, [WithNotifier $(, $rest:ident)*]) => {
+        $crate::_field_consumer_methods!($fi_name, $fi_type, [$($rest),*]);
+    };
+
+    // WithGetter: emit get_{name}() async wrapper (uses [<>] - must be inside paste!)
+    ($fi_name:ident, $fi_type:ty, [WithGetter $(, $rest:ident)*]) => {
+        /// Asynchronously get the current value of the field.
+        /// Returns a future that resolves to `Result<R::MethodReturnSample<T>>`.
+        /// Independent of subscription lifecycle - available before and after `subscribe()`.
+        pub fn [<get_ $fi_name>]<'a>(
+            &'a self,
+        ) -> impl core::future::Future<Output = score_com::Result<<R as score_com::Runtime>::MethodReturnSample<$fi_type>>> + 'a {
+            score_com::MethodCaller::invoke_with_copy(&self.[<$fi_name _get>], ())
+        }
+        $crate::_field_consumer_methods!($fi_name, $fi_type, [$($rest),*]);
+    };
+
+    // WithSetter: emit set_{name}(value) async wrapper (uses [<>] - must be inside paste!)
+    ($fi_name:ident, $fi_type:ty, [WithSetter $(, $rest:ident)*]) => {
+        /// Asynchronously set the value of the field.
+        /// Returns a future that resolves to `Result<R::MethodReturnSample<T>>`
+        /// containing the confirmed field value from the producer.
+        /// Independent of subscription lifecycle - available before and after `subscribe()`.
+        pub fn [<set_ $fi_name>]<'a>(
+            &'a self,
+            value: $fi_type,
+        ) -> impl core::future::Future<Output = score_com::Result<<R as score_com::Runtime>::MethodReturnSample<$fi_type>>> + 'a {
+            score_com::MethodCaller::invoke_with_copy(&self.[<$fi_name _set>], (value,))
+        }
+        $crate::_field_consumer_methods!($fi_name, $fi_type, [$($rest),*]);
+    };
+
+    // Unrecognized tag
+    ($fi_name:ident, $fi_type:ty, [$unknown:ident $(, $rest:ident)*]) => {
+        compile_error!(concat!(
+            "interface!: unrecognized field tag `",
+            stringify!($unknown),
+            "`. Supported tags: WithGetter, WithSetter, WithNotifier."
+        ));
+    };
+}
+
 /// Generates the `{id}Consumer<R>` struct and its `Consumer<R>` trait implementation for
 /// interfaces that may contain any combination of events, fields, and methods.
 ///
-/// # Generated struct fields
-/// - `pub $ev_name: R::Subscriber<$ev_type>` - one per event
-/// - `pub $fi_name: R::FieldSubscriber<$fi_type>` - one per field
-/// - `pub $me_name: R::MethodCaller<($me_arg_ty,...), $me_ret>` - one per method
+/// Field members are passed as three separate flat lists (one per tag type):
+/// - `fields_notifier[name:type,...]` - `pub name: R::FieldSubscriber<T>` (subscribe/notifications)
+/// - `fields_getter[name:type,...]`   - `pub name_get: R::FieldGetCaller<T>` + `get_name()` wrapper
+/// - `fields_setter[name:type,...]`   - `pub name_set: R::FieldSetCaller<T>` + `set_name(val)` wrapper
 ///
-/// # method wrappers
-/// For each method member a positional-argument `pub fn $me_name(&self, arg0: A0, ...)` wrapper
-/// is generated (via `_gen_method_wrapper!`).  The wrapper packs the positional args into a tuple
-/// and dispatches through `MethodCallInput`, so both copy and zero-copy paths use the same call site.
-/// The wrapper returns `impl Future<Output = score_com::Result<Return>> + '_`.
-///   copy:       `consumer.method(val).await`          - `val: T` - copy path
-///   zero-copy:  `consumer.method(ptr).await`          - `ptr: MethodInArgPtr<T>` - zero-copy path
+/// A field with multiple tags (e.g. `WithGetter + WithSetter`) appears in multiple lists.
+/// Method members get positional-arg wrapper functions via `_gen_method_wrapper!`.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! interface_consumer_mixed {
     (
         $id:ident,
         events[$($ev_name:ident : $ev_type:ty ,)*],
-        fields[$($fi_name:ident : $fi_type:ty ,)*],
+        fields_notifier[$($fin_name:ident : $fin_type:ty ,)*],
+        fields_getter[$($fig_name:ident : $fig_type:ty ,)*],
+        fields_setter[$($fis_name:ident : $fis_type:ty ,)*],
         methods[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
     ) => {
         score_com::paste::paste! {
@@ -467,12 +834,13 @@ macro_rules! interface_consumer_mixed {
                     pub $ev_name: R::Subscriber<$ev_type>,
                 )*
                 $(
-                    // Notification subscriber (subscribe / try_receive / stream).
-                    pub $fi_name: R::FieldSubscriber<$fi_type>,
-                    // Async get caller – reuses Method infrastructure (invoke_with_copy(())).
-                    pub [<$fi_name _get>]: R::MethodCaller<(), $fi_type>,
-                    // Async set caller – reuses Method infrastructure (invoke_with_copy((val,))).
-                    pub [<$fi_name _set>]: R::MethodCaller<($fi_type,), $fi_type>,
+                    pub $fin_name: R::FieldSubscriber<$fin_type>,
+                )*
+                $(
+                    pub [<$fig_name _get>]: R::FieldGetCaller<$fig_type>,
+                )*
+                $(
+                    pub [<$fis_name _set>]: R::FieldSetCaller<$fis_type>,
                 )*
                 $(
                     pub $me_name: R::MethodCaller<($($me_arg_ty,)*), $me_ret>,
@@ -492,28 +860,32 @@ macro_rules! interface_consumer_mixed {
                             )),
                         )*
                         $(
-                            $fi_name: R::FieldSubscriber::new(
-                                stringify!($fi_name),
+                            $fin_name: R::FieldSubscriber::new(
+                                stringify!($fin_name),
                                 instance_info.clone()
                             ).expect(&format!(
                                 "Failed to create field subscriber for {}",
-                                stringify!($fi_name)
+                                stringify!($fin_name)
                             )),
-                            [<$fi_name _get>]: <R::MethodCaller<(), $fi_type>
-                                as score_com::MethodCaller<(), $fi_type, R>>::new(
-                                    concat!(stringify!($fi_name), "_get"),
+                        )*
+                        $(
+                            [<$fig_name _get>]: <R::FieldGetCaller<$fig_type>
+                                as score_com::MethodCaller<(), $fig_type, R>>::new(
+                                    concat!(stringify!($fig_name), "_get"),
                                     instance_info.clone()
                                 ).expect(&format!(
                                     "Failed to create field get caller for {}",
-                                    stringify!($fi_name)
+                                    stringify!($fig_name)
                                 )),
-                            [<$fi_name _set>]: <R::MethodCaller<($fi_type,), $fi_type>
-                                as score_com::MethodCaller<($fi_type,), $fi_type, R>>::new(
-                                    concat!(stringify!($fi_name), "_set"),
+                        )*
+                        $(
+                            [<$fis_name _set>]: <R::FieldSetCaller<$fis_type>
+                                as score_com::MethodCaller<($fis_type,), $fis_type, R>>::new(
+                                    concat!(stringify!($fis_name), "_set"),
                                     instance_info.clone()
                                 ).expect(&format!(
                                     "Failed to create field set caller for {}",
-                                    stringify!($fi_name)
+                                    stringify!($fis_name)
                                 )),
                         )*
                         $(
@@ -530,39 +902,33 @@ macro_rules! interface_consumer_mixed {
                 }
             }
 
-            // Positional-argument convenience wrappers - one per method member.
-            // The wrapper packs args into a tuple and dispatches via MethodCallInput,
-            // so copy and zero-copy paths share the same call site.
-            //   copy:      consumer.method_name(val).await
-            //   zero-copy: consumer.method_name(ptr).await
-            //
-            // Async field get/set wrappers - one pair per field member.
-            //   consumer.get_field_name().await  - async get via MethodCaller<(), T>
-            //   consumer.set_field_name(val).await - async set via MethodCaller<(T,), T>
-            // These are independent of subscribe() so they work before and after subscription.
+            // Method wrappers: positional-arg convenience functions via MethodCallInput.
+            // Field get/set wrappers: async get/set via FieldGetCaller/FieldSetCaller.
+            // subscribe() is available directly on the struct field for WithNotifier fields.
             impl<R: score_com::Runtime + ?Sized> [<$id Consumer>]<R> {
                 $(
                     $crate::_gen_method_wrapper!($me_name ($($me_arg_ty),*) -> $me_ret);
                 )*
                 $(
-                    /// Asynchronously get the current value of the `$fi_name` field.
-                    /// Returns a future that resolves to `Result<R::MethodReturnSample<$fi_type>>`.
-                    /// Available before and after `subscribe()` - independent of subscription lifecycle.
-                    pub fn [<get_ $fi_name>]<'a>(
+                    /// Asynchronously get the current value of the field.
+                    /// Returns a future that resolves to `Result<R::MethodReturnSample<T>>`.
+                    /// Independent of subscription lifecycle.
+                    pub fn [<get_ $fig_name>]<'a>(
                         &'a self,
-                    ) -> impl core::future::Future<Output = score_com::Result<<R as score_com::Runtime>::MethodReturnSample<$fi_type>>> + 'a {
-                        score_com::MethodCaller::invoke_with_copy(&self.[<$fi_name _get>], ())
+                    ) -> impl core::future::Future<Output = score_com::Result<<R as score_com::Runtime>::MethodReturnSample<$fig_type>>> + 'a {
+                        score_com::MethodCaller::invoke_with_copy(&self.[<$fig_name _get>], ())
                     }
-
-                    /// Asynchronously set the value of the `$fi_name` field.
-                    /// Returns a future that resolves to `Result<R::MethodReturnSample<$fi_type>>`
+                )*
+                $(
+                    /// Asynchronously set the value of the field.
+                    /// Returns a future that resolves to `Result<R::MethodReturnSample<T>>`
                     /// containing the confirmed field value from the producer.
-                    /// Available before and after `subscribe()` - independent of subscription lifecycle.
-                    pub fn [<set_ $fi_name>]<'a>(
+                    /// Independent of subscription lifecycle.
+                    pub fn [<set_ $fis_name>]<'a>(
                         &'a self,
-                        value: $fi_type,
-                    ) -> impl core::future::Future<Output = score_com::Result<<R as score_com::Runtime>::MethodReturnSample<$fi_type>>> + 'a {
-                        score_com::MethodCaller::invoke_with_copy(&self.[<$fi_name _set>], (value,))
+                        value: $fis_type,
+                    ) -> impl core::future::Future<Output = score_com::Result<<R as score_com::Runtime>::MethodReturnSample<$fis_type>>> + 'a {
+                        score_com::MethodCaller::invoke_with_copy(&self.[<$fis_name _set>], (value,))
                     }
                 )*
             }
@@ -751,7 +1117,7 @@ macro_rules! _gen_method_wrapper {
             score_com::MethodCaller::invoke_with_copy(&self.$me_name, ())
         }
     };
-    // 1–N args - delegate to the self-counting recursive macro.
+    // 1-N args - delegate to the self-counting recursive macro.
     ($me_name:ident ($($t:ty),+) -> $me_ret:ty) => {
         $crate::_gen_method_wrapper_collect!(
             $me_name -> $me_ret ;
@@ -936,7 +1302,8 @@ mod tests {
     ///
     /// ```
     /// mod my_module {
-    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher};
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     WithGetter, WithSetter, WithNotifier};
     ///
     ///     #[derive(Debug, Reloc)]
     ///     #[repr(C)]
@@ -949,7 +1316,7 @@ mod tests {
     ///         interface Vehicle {
     ///             Id = "AbcInterface",
     ///             left_tire: Event<Tire>,
-    ///             left_tire_field: Field<Tire>,
+    ///             left_tire_field: Field<Tire, WithGetter + WithSetter + WithNotifier>,
     ///             left_tire_method(Tire) -> Tire,
     ///         }
     ///     );
@@ -958,7 +1325,9 @@ mod tests {
     /// Generates `VehicleInterface`, `VehicleConsumer<R>`, `VehicleProducer<R>`,
     /// and `VehicleOfferedProducer<R>` where:
     /// - `VehicleConsumer<R>` has `left_tire: Subscriber<Tire>`,
-    ///   `left_tire_field: FieldSubscriber<Tire>`,
+    ///   `left_tire_field: FieldSubscriber<Tire>` (from `WithNotifier`),
+    ///   `left_tire_field_get: FieldGetCaller<Tire>` (from `WithGetter`),
+    ///   `left_tire_field_set: FieldSetCaller<Tire>` (from `WithSetter`),
     ///   `left_tire_method: MethodCaller<(Tire,), Tire>`,
     ///   and a convenience `left_tire_method(arg0: Tire)` method.
     /// - `VehicleProducer<R>` derives `TypeStateValidator` and requires the `.init()` chain:
