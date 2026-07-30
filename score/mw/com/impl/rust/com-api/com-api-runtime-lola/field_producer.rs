@@ -92,16 +92,22 @@ impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>>
     fn allocate(&self) -> Result<Self::SampleMaybeUninit<'_>> {
         todo!()
     }
-    fn update(&self, _value: &T) -> Result<()> {
+    fn update(&self, _value: T) -> Result<()> {
         todo!()
     }
-    fn register_set_handler(&self, _callback: impl Fn(&T) + Send + 'static) -> Result<()> {
-        //If waker get the notification form FFI call then
-        //Create a task to call the callback with value.
-        //Thread pool is a option here to run the callback in a separate thread.
-        //But i feel we still need to think about exection order of that callback,
-        //Because separate thread can raise concurrency issue / race condition.
+    fn register_set_handler(&self, _callback: impl Fn(T) + Send + 'static) {
+        // When the middleware receives a set request from a consumer:
+        // - Invoke the callback with a mutable reference to the proposed value so it can
+        //   validate or modify it in-place (matching C++ `void(FieldType&)` semantics).
+        // - Use the (possibly modified) value as the final field value to store and send.
+        // Execution model (thread pool vs. async task pool) to be decided at implementation time.
+        todo!()
+    }
 
+    fn register_get_handler(&self, _callback: impl Fn() -> T + Send + 'static) {
+        // When the middleware receives a get request from a consumer:
+        // - Invoke the callback and return its result to the consumer.
+        // Default behaviour (if not registered): return the last Update()d value.
         todo!()
     }
 }
