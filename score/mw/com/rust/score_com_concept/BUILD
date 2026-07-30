@@ -55,7 +55,7 @@ rust_doc_test(
 
 rust_unit_test(
     name = "score_com_concept-macros-unit-tests",
-    srcs = ["interface_macros.rs"],
+    srcs = ["interface_producer_macros.rs"],
     features = ["link_std_cpp_lib"],
     # TODO: remove tags = ["manual"] once field or method PR is merged,
     # Unit test failed because macro has field and method both types
