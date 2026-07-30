@@ -46,6 +46,6 @@ pub use producer::{
 pub use runtime::{LolaRuntimeImpl, RuntimeBuilderImpl};
 
 pub use method::{
-    LolaMethodCaller, LolaMethodHandler, LolaMethodInArgAllocator, LolaMethodInArgMaybeUninit,
-    LolaMethodReturnSample,
+    LolaFieldGetCaller, LolaFieldSetCaller, LolaMethodCaller, LolaMethodHandler,
+    LolaMethodInArgAllocator, LolaMethodInArgMaybeUninit, LolaMethodReturnSample,
 };
