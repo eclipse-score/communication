@@ -80,10 +80,21 @@ intentional API change.
 The tool tracks:
 - `using` / `typedef` declarations
 - `class` / `struct` declarations (non-forward)
+- Forward-declared / incomplete types (pimpl), as `forward_class`
 - `enum` / `enum class` declarations
-- Free functions at namespace scope
-- Public methods in class bodies
+- Free functions and global variables at namespace scope
+- Public **and protected** methods in class bodies (protected members use a
+  `protected_` kind prefix so public vs protected is distinguishable)
+- Member function templates
+- Ref-qualified overloads (`void f() &;` vs `void f() &&;`)
+- Explicit `extern template` instantiations, as `extern_template`
 - Template variants of all the above
+
+The extracted signature also captures API-relevant qualifiers so that changing
+them is detected: `constexpr`, `extern` / `extern "C"` linkage, and C++ standard
+attributes (`[[nodiscard]]`, `[[deprecated]]`, ...). SFINAE constraints appearing
+in a function's return type (e.g. `std::enable_if_t<...>`) are part of the
+signature as well.
 
 Symbols in `detail`, `internal`, or `impl` namespaces are automatically excluded.
 

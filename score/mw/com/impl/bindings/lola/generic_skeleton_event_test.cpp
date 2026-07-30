@@ -48,7 +48,7 @@ class GenericSkeletonEventFixture : public SkeletonEventFixture
                                     const std::uint8_t max_subscribers,
                                     const bool enforce_max_samples)
     {
-        const SkeletonEventProperties properties{max_samples, max_subscribers, enforce_max_samples};
+        const SkeletonEventProperties properties{max_samples, 0U, 0U, false, max_subscribers, enforce_max_samples};
         generic_skeleton_event_ = std::make_unique<GenericSkeletonEvent>(
             *skeleton_, event_name, properties, element_fq_id, size_info_, impl::tracing::SkeletonEventTracingData{});
     }

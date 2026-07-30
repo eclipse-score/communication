@@ -255,6 +255,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
+        "//score/mw/com/impl:field_tags_store",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:skeleton_base",
         "@score_baselibs//score/language/futurecpp",
@@ -329,6 +330,7 @@ cc_library(
         ":lola_proxy_element_building_blocks",
         ":proxy_event_binding_factory",
         ":proxy_method_binding_factory",
+        "//score/mw/com/impl:field_getter_setter_signatures",
         "//score/mw/com/impl:method_type",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -377,6 +379,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
+        "//score/mw/com/impl:field_tags_store",
         "//score/mw/com/impl:skeleton_base",
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/configuration",
@@ -408,6 +411,7 @@ cc_library(
     deps = [
         ":i_skeleton_field_binding_factory",
         ":skeleton_service_element_binding_factory_impl",
+        "//score/mw/com/impl:field_tags",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -509,6 +513,7 @@ cc_library(
     deps = [
         "skeleton_field_binding_factory_impl",
         ":i_skeleton_field_binding_factory",
+        "//score/mw/com/impl:field_tags",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -615,6 +620,7 @@ cc_library(
     ],
     deps = [
         ":i_skeleton_field_binding_factory",
+        "//score/mw/com/impl:field_tags",
         "@googletest//:gtest",
     ],
 )
@@ -641,7 +647,6 @@ cc_library(
     srcs = ["generic_skeleton_event_binding_factory.cpp"],
     hdrs = [
         "generic_skeleton_event_binding_factory.h",
-        "skeleton_service_element_binding_factory_impl.h",
     ],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
@@ -653,6 +658,7 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":skeleton_service_element_binding_factory_impl",
         "//score/mw/com/impl:i_generic_skeleton_event_binding_factory",
         "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
     ],
@@ -859,6 +865,10 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":skeleton_event_binding_factory",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
     ],
 )
 
@@ -870,6 +880,10 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":skeleton_field_binding_factory",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
     ],
 )
 

@@ -14,6 +14,12 @@
 name: "Test Dependency Version Combinations (Host)"
 
 on:
+  pull_request:
+    branches:
+      - "main"
+    paths:
+      - ".github/workflows/test_dependency_version_combinations.yml"
+      - "quality/dependency_compatibility_checker/**"
   schedule:
     - cron: "0 0 * * *"   # nightly
   workflow_dispatch:

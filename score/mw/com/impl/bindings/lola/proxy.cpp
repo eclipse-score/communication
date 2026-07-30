@@ -26,6 +26,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
@@ -36,6 +37,7 @@
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/find_service_handle.h"
 #include "score/mw/com/impl/handle_type.h"
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -246,61 +248,68 @@ score::Result<void> ExecutePartialRestartLogic(const QualityType quality_type,
     return {};
 }
 
-void AppendEnabledMethodIdsAndQueueSizesImpl(
-    std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& result,
-    const LolaFieldInstanceDeployment& lola_field_instance_deployment,
-    LolaServiceElementId field_id)
-{
-    for (const auto& [use_if_available, method_type] :
-         {std::pair{lola_field_instance_deployment.use_get_if_available_, MethodType::kGet},
-          std::pair{lola_field_instance_deployment.use_set_if_available_, MethodType::kSet}})
-    {
-        if (use_if_available)
-        {
-            result.emplace_back(UniqueMethodIdentifier{field_id, method_type}, kFieldMethodQueueSize);
-        }
-    }
-}
-
-void AppendEnabledMethodIdsAndQueueSizesImpl(
-    std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& result,
-    const LolaMethodInstanceDeployment& lola_method_instance_deployment,
-    LolaServiceElementId method_id)
-{
-    if (lola_method_instance_deployment.enabled_)
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-            lola_method_instance_deployment.queue_size_.has_value(),
-            "Method instance deployment must contain queue_size on proxy side!");
-        result.emplace_back(UniqueMethodIdentifier{method_id, MethodType::kMethod},
-                            lola_method_instance_deployment.queue_size_.value());
-    }
-}
-
-template <ServiceElementType kElementType>
 void AppendEnabledMethodIdsAndQueueSizes(
     std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& result,
     const LolaServiceInstanceDeployment& service_instance_deployment,
-    const LolaServiceTypeDeployment& service_type_deployment)
+    const LolaServiceTypeDeployment& service_type_deployment,
+    const std::unordered_map<score::mw::com::impl::lola::UniqueMethodIdentifier, std::reference_wrapper<ProxyMethod>>&
+        proxy_methods)
 {
-    auto& deployment_map = [&service_instance_deployment]() -> const auto& {
-        if constexpr (kElementType == ServiceElementType::METHOD)
-        {
-            return service_instance_deployment.methods_;
-        }
-        else if constexpr (kElementType == ServiceElementType::FIELD)
-        {
-            return service_instance_deployment.fields_;
-        }
-        else
-        {
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Unsupported service element type");
-        }
-    }();
-    for (const auto& [name, deployment] : deployment_map)
+    const auto& method_deployment_map = service_instance_deployment.methods_;
+    for (const auto& [name, method_deployment] : method_deployment_map)
     {
-        const auto element_id = GetServiceElementId<kElementType>(service_type_deployment, name);
-        AppendEnabledMethodIdsAndQueueSizesImpl(result, deployment, element_id);
+        constexpr auto kMethodType = MethodType::kMethod;
+        const auto element_id = GetServiceElementId<ServiceElementType::METHOD>(service_type_deployment, name);
+        const auto unique_method_identifier = UniqueMethodIdentifier{element_id, kMethodType};
+
+        const bool is_enabled_in_deployment = method_deployment.enabled_;
+        if (!is_enabled_in_deployment)
+        {
+            continue;
+        }
+
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(proxy_methods.count(unique_method_identifier) == 1U,
+                                                          "A ProxyMethod binding should never be created by the "
+                                                          "binding factory if it isn't enabled in the configuration!");
+
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            method_deployment.queue_size_.has_value(),
+            "Method instance deployment must contain queue_size on proxy side!");
+        result.emplace_back(unique_method_identifier, method_deployment.queue_size_.value());
+    }
+}
+
+void AppendEnabledFieldIdsAndQueueSizes(
+    std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& result,
+    const LolaServiceInstanceDeployment& service_instance_deployment,
+    const LolaServiceTypeDeployment& service_type_deployment,
+    const std::unordered_map<score::mw::com::impl::lola::UniqueMethodIdentifier, std::reference_wrapper<ProxyMethod>>&
+        proxy_methods)
+{
+    const auto& field_deployment_map = service_instance_deployment.fields_;
+    for (const auto& [name, method_deployment] : field_deployment_map)
+    {
+        for (const auto method_type : {MethodType::kGet, MethodType::kSet})
+        {
+            const auto element_id = GetServiceElementId<ServiceElementType::FIELD>(service_type_deployment, name);
+            const auto unique_method_identifier = UniqueMethodIdentifier{element_id, method_type};
+
+            // Binding was never registered for this method. This means that getter / setter for the field is not
+            // enabled in the c++ interface.
+            if (proxy_methods.count(unique_method_identifier) == 0U)
+            {
+                continue;
+            }
+            const bool is_enabled_in_deployment = method_type == MethodType::kGet
+                                                      ? method_deployment.use_get_if_available_
+                                                      : method_deployment.use_set_if_available_;
+            if (!is_enabled_in_deployment)
+            {
+                continue;
+            }
+
+            result.emplace_back(unique_method_identifier, kFieldMethodQueueSize);
+        }
     }
 }
 
@@ -792,11 +801,15 @@ Proxy::GetMethodIdAndQueueSizeForEnabledMethods() const
     const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
     const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
 
-    AppendEnabledMethodIdsAndQueueSizes<ServiceElementType::METHOD>(
-        enabled_method_ids_and_queue_sizes, lola_service_instance_deployment, lola_service_type_deployment);
+    AppendEnabledMethodIdsAndQueueSizes(enabled_method_ids_and_queue_sizes,
+                                        lola_service_instance_deployment,
+                                        lola_service_type_deployment,
+                                        proxy_methods_);
 
-    AppendEnabledMethodIdsAndQueueSizes<ServiceElementType::FIELD>(
-        enabled_method_ids_and_queue_sizes, lola_service_instance_deployment, lola_service_type_deployment);
+    AppendEnabledFieldIdsAndQueueSizes(enabled_method_ids_and_queue_sizes,
+                                       lola_service_instance_deployment,
+                                       lola_service_type_deployment,
+                                       proxy_methods_);
 
     return enabled_method_ids_and_queue_sizes;
 }
@@ -804,7 +817,6 @@ Proxy::GetMethodIdAndQueueSizeForEnabledMethods() const
 std::size_t Proxy::CalculateRequiredShmSize(
     std::vector<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_infos)
 {
-
     std::vector<DataTypeSizeInfo> data_type_infos{};
 
     // Size of Method data

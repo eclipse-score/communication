@@ -148,7 +148,7 @@ static const auto kDumbFieldName{"dumbField"};
 static const auto kFooMethodName{"fooMethod"};
 static const auto kDumbMethodName{"barMethod"};
 
-static const SkeletonEventProperties kDefaultEventProperties{10, 5, true};
+static const SkeletonEventProperties kDefaultEventProperties{10U, 0U, 0U, false, 5U, true};
 
 static constexpr std::uint16_t kFooEventId{1U};
 static constexpr std::uint16_t kDumbEventId{2U};

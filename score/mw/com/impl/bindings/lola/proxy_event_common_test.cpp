@@ -74,7 +74,8 @@ class LolaProxyEventCommonFixture : public ProxyMockedMemoryFixture
     {
         EXPECT_CALL(event_handler_, Call()).Times(0);
 
-        InitialiseDummySkeletonEvent(kElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
+        InitialiseDummySkeletonEvent(kElementFqId,
+                                     SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
     }
 
     void InitialiseProxyAndEvent() noexcept

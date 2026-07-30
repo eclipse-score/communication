@@ -117,7 +117,7 @@ class SkeletonBaseFixture : public ::testing::Test
                     Create(instance_identifier, _, kDummyEventName2))
             .WillOnce(Return(ByMove(std::move(skeleton_event_mock_ptr_2))));
         EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                    CreateEventBinding(instance_identifier, _, kDummyFieldName))
+                    CreateEventBinding(instance_identifier, _, kDummyFieldName, _))
             .WillOnce(Return(ByMove(std::move(skeleton_field_mock_ptr))));
 
         EXPECT_CALL(*event_binding_mock_1_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -620,7 +620,7 @@ TEST_F(SkeletonBaseOfferFixture, NoStopOfferOnErrorIdentifier)
                 Create(instance_identifier, _, kDummyEventName2))
         .Times(0);
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(GetInstanceIdentifierWithoutBinding(), _, kDummyFieldName))
+                CreateEventBinding(GetInstanceIdentifierWithoutBinding(), _, kDummyFieldName, _))
         .Times(0);
 
     // Given a constructed Skeleton with a invalid identifier

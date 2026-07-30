@@ -15,11 +15,13 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/data_type_meta_info.h"
+#include "score/mw/com/impl/field_tags_store.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
@@ -30,8 +32,10 @@
 #include <score/overload.hpp>
 
 #include <chrono>
+#include <cstdint>
 #include <exception>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -43,33 +47,68 @@ namespace score::mw::com::impl
 namespace detail
 {
 
-inline lola::SkeletonEventProperties GetSkeletonEventProperties(
-    const LolaEventInstanceDeployment& lola_event_instance_deployment)
+/// \brief Creates a SkeletonEventProperties object from the configuration and field tags (for a field)
+///
+/// For an event, the number of slots and max subscribers comes purely from the configuration. For a field, we also take
+/// into account the field tags when calculating the number of slots that are needed.
+inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
+    const LolaEventInstanceDeployment& lola_event_instance_deployment,
+    const std::optional<FieldTagsStore> field_tags_store)
 {
-    if (!lola_event_instance_deployment.GetNumberOfSampleSlots().has_value())
+    std::size_t max_subscribers{0U};
+
+    if (!lola_event_instance_deployment.GetNumberOfSampleSlotsExcludingTracingSlot().has_value())
     {
-        score::mw::log::LogFatal("lola")
-            << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Number of sample slots "
-               "was not specified in the configuration. Terminating.";
+        score::mw::log::LogFatal("lola") << "Could not create SkeletonEventProperties from "
+                                            "ServiceElementInstanceDeployment. Number of sample slots "
+                                            "was not specified in the configuration. Terminating.";
         std::terminate();
+    }
+    const auto number_of_slots = lola_event_instance_deployment.GetNumberOfSampleSlotsExcludingTracingSlot().value();
+
+    // If we are creating SkeletonEventProperties for an event of for a field with a notifier, then the user must
+    // provide the number of slots and number of subscribers in the configuration.
+    const bool is_event = !field_tags_store.has_value();
+    const bool is_field_with_subscription_semantics = !is_event && field_tags_store->HasNotifier();
+    if (is_field_with_subscription_semantics || is_event)
+    {
+        if (!lola_event_instance_deployment.max_subscribers_.has_value())
+        {
+            score::mw::log::LogFatal("lola") << "Could not create SkeletonEventProperties from "
+                                                "ServiceElementInstanceDeployment. Max subscribers was "
+                                                "not specified in the configuration. Terminating.";
+            std::terminate();
+        }
+
+        max_subscribers = lola_event_instance_deployment.max_subscribers_.value();
+    }
+    else
+    {
+        if (lola_event_instance_deployment.max_subscribers_.has_value())
+        {
+            score::mw::log::LogWarn("lola") << "Field has WithNotifier disabled; configured maxSubscribers is ignored.";
+        }
     }
 
-    if (!lola_event_instance_deployment.max_subscribers_.has_value())
-    {
-        score::mw::log::LogFatal("lola")
-            << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Max subscribers was "
-               "not specified in the configuration. Terminating.";
-        std::terminate();
-    }
-    return lola::SkeletonEventProperties{lola_event_instance_deployment.GetNumberOfSampleSlots().value(),
-                                         lola_event_instance_deployment.max_subscribers_.value(),
+    const bool is_getter_enabled = !is_event && field_tags_store->HasGetter();
+    const auto number_of_field_getter_slots = is_getter_enabled ? lola::kMaxConcurrentFieldGetterSamplePtrs : 0U;
+
+    const bool is_setter_enabled = !is_event && field_tags_store->HasSetter();
+
+    return lola::SkeletonEventProperties{number_of_slots,
+                                         lola_event_instance_deployment.GetNumberOfTracingSlots(),
+                                         number_of_field_getter_slots,
+                                         is_setter_enabled,
+                                         max_subscribers,
                                          lola_event_instance_deployment.enforce_max_samples_};
 }
 
-inline lola::SkeletonEventProperties GetSkeletonEventProperties(
-    const LolaFieldInstanceDeployment& lola_field_instance_deployment)
+inline lola::SkeletonEventProperties CreateSkeletonEventProperties(
+    const LolaFieldInstanceDeployment& lola_field_instance_deployment,
+    const std::optional<FieldTagsStore> field_tags_store)
 {
-    return GetSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_);
+    return CreateSkeletonEventProperties(lola_field_instance_deployment.lola_event_instance_deployment_,
+                                         field_tags_store);
 }
 
 }  // namespace detail
@@ -86,15 +125,29 @@ template <typename SkeletonServiceElementBinding, typename SkeletonServiceElemen
 auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                                 SkeletonBinding& parent_binding,
                                 const std::string_view service_element_name,
-                                bool field_getter_enabled) noexcept -> std::unique_ptr<SkeletonServiceElementBinding>
+                                std::optional<FieldTagsStore> field_tags_store) noexcept
+    -> std::unique_ptr<SkeletonServiceElementBinding>
 {
     static_assert((element_type == ServiceElementType::EVENT) || (element_type == ServiceElementType::FIELD));
+    if constexpr (element_type == ServiceElementType::FIELD)
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(field_tags_store.has_value());
+    }
+    else if constexpr (element_type == ServiceElementType::EVENT)
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!field_tags_store.has_value());
+    }
+
+    if (field_tags_store.has_value())
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(field_tags_store->HasGetter() || field_tags_store->HasNotifier());
+    }
 
     const InstanceIdentifierView identifier_view{identifier};
 
     using ReturnType = std::unique_ptr<SkeletonServiceElementBinding>;
     auto visitor = score::cpp::overload(
-        [identifier_view, &parent_binding, &service_element_name, field_getter_enabled](
+        [identifier_view, &parent_binding, &service_element_name, field_tags_store](
             const LolaServiceTypeDeployment& lola_service_type_deployment) -> ReturnType {
             auto* const lola_parent = dynamic_cast<lola::Skeleton*>(&parent_binding);
             if (lola_parent == nullptr)
@@ -111,8 +164,9 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
             const std::string service_element_name_str{service_element_name};
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_str);
+
             const lola::SkeletonEventProperties skeleton_event_properties =
-                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
+                detail::CreateSkeletonEventProperties(lola_service_element_instance_deployment, field_tags_store);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_str);
@@ -125,8 +179,7 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                             element_fq_id,
                                                             service_element_name,
                                                             skeleton_event_properties,
-                                                            impl::tracing::SkeletonEventTracingData{},
-                                                            field_getter_enabled);
+                                                            impl::tracing::SkeletonEventTracingData{});
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
@@ -166,8 +219,10 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
 
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, std::string{service_element_name});
-            const lola::SkeletonEventProperties skeleton_event_properties =
-                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
+
+            // TODO: Pass in the FieldAbilities when GenericSkeletonFields are implemented.
+            const lola::SkeletonEventProperties skeleton_event_properties = detail::CreateSkeletonEventProperties(
+                lola_service_element_instance_deployment, std::optional<FieldTagsStore>{});
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, std::string{service_element_name});

@@ -1,0 +1,44 @@
+{
+  "target": "//quality/api_surface/tests:forward_declared_lib",
+  "symbols": [
+    {
+      "name": "Widget",
+      "qualified_name": "test::Widget",
+      "kind": "class",
+      "signature": "class Widget"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "WidgetImpl",
+      "qualified_name": "test::WidgetImpl",
+      "kind": "forward_class",
+      "signature": "class WidgetImpl"
+    },
+    {
+      "name": "IncompleteHandle",
+      "qualified_name": "test::IncompleteHandle",
+      "kind": "forward_class",
+      "signature": "struct IncompleteHandle"
+    },
+    {
+      "name": "Widget",
+      "qualified_name": "test::Widget::Widget",
+      "kind": "constructor",
+      "signature": "Widget : void ()"
+    },
+    {
+      "name": "~Widget",
+      "qualified_name": "test::Widget::~Widget",
+      "kind": "destructor",
+      "signature": "~Widget : void ()"
+    },
+    {
+      "name": "render",
+      "qualified_name": "test::Widget::render",
+      "kind": "method",
+      "signature": "render : void ()"
+    }
+  ],
+  "version": "1"
+}

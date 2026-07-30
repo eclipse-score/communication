@@ -134,11 +134,7 @@ auto LolaEventInstanceDeployment::GetNumberOfSampleSlots() const noexcept -> std
 auto LolaEventInstanceDeployment::GetNumberOfSampleSlotsExcludingTracingSlot() const noexcept
     -> std::optional<SampleSlotCountType>
 {
-    if (!number_of_sample_slots_.has_value())
-    {
-        return {};
-    }
-    return *number_of_sample_slots_;
+    return number_of_sample_slots_;
 }
 
 auto LolaEventInstanceDeployment::GetNumberOfTracingSlots() const noexcept -> TracingSlotSizeType

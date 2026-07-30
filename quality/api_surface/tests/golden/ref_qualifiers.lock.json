@@ -1,0 +1,32 @@
+{
+  "target": "//quality/api_surface/tests:ref_qualifiers_lib",
+  "symbols": [
+    {
+      "name": "Buffer",
+      "qualified_name": "test::Buffer",
+      "kind": "struct",
+      "signature": "struct Buffer"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "data",
+      "qualified_name": "test::Buffer::data",
+      "kind": "method",
+      "signature": "data : int *() &"
+    },
+    {
+      "name": "data",
+      "qualified_name": "test::Buffer::data",
+      "kind": "method",
+      "signature": "data : int *() &&"
+    },
+    {
+      "name": "size",
+      "qualified_name": "test::Buffer::size",
+      "kind": "method",
+      "signature": "size : int () const &"
+    }
+  ],
+  "version": "1"
+}

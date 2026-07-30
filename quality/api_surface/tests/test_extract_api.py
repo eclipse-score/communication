@@ -12,9 +12,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Tests for extract_api.py covering scenarios inspired by astgard test suite.
+"""End-to-end tests for extract_api.py.
 
-Test scenarios:
+Unlike test_api_extraction_validation.py (which reads API-surface JSON that Bazel
+has already generated and only asserts on its contents), this module exercises the
+*whole* pipeline end to end for every case: it invokes clang to produce an AST dump
+and then feeds that dump to extract_api.py, asserting on the freshly extracted API
+surface. Running standalone (`python test_extract_api.py`) it uses a system clang++;
+under Bazel (`bazel test //quality/api_surface/tests:extract_api_test`) it uses the
+hermetic LLVM toolchain via the CLANG_PATH environment variable.
+
+Positive scenarios (one class each):
   1. Basic class: public methods extracted, private members excluded
   2. Type alias: follows 'using Foo = impl::Foo' to extract underlying members
   3. Inheritance: inherited public members are part of the public API
@@ -23,6 +31,15 @@ Test scenarios:
   6. Types in signatures: struct members and method signatures captured
   7. Enum and free functions: enum values and free functions extracted
   8. Internal namespace filtering: detail::/internal:: namespaces excluded
+  ... plus multi-inheritance, ref-qualifiers, member templates, globals,
+  protected methods, constexpr members, forward declarations, extern "C",
+  extern templates, C++ attributes and SFINAE.
+
+Negative / stability scenarios (see TestPrivateChangeStability and
+TestNegativeExtraction at the bottom of the file):
+  - Changing only private members must NOT change the public API surface.
+  - A real public API change (e.g. a renamed method) MUST be detected.
+  - All-private classes and internal (detail::) namespaces expose nothing.
 """
 
 import json
@@ -34,10 +51,27 @@ import unittest
 
 
 def get_clang_binary():
-    """Find clang++ binary for testing."""
+    """Find clang++ binary for testing.
+
+    Under Bazel the CLANG_PATH env var is set (via the py_test `env` attribute)
+    to a runfiles-relative path for the hermetic LLVM toolchain driver; resolve
+    it against TEST_SRCDIR. Outside Bazel, fall back to a system clang++.
+    """
+    import shutil
+
+    clang_path = os.environ.get("CLANG_PATH", "")
+    if clang_path:
+        if os.path.isfile(clang_path):
+            return clang_path
+        # Bazel passes a runfiles-relative path; resolve against TEST_SRCDIR.
+        test_srcdir = os.environ.get("TEST_SRCDIR", "")
+        if test_srcdir:
+            resolved = os.path.join(test_srcdir, clang_path)
+            if os.path.isfile(resolved):
+                return resolved
+
     # Check common locations
     for candidate in [
-        os.environ.get("CLANG_PATH", ""),
         "/usr/bin/clang++-19",
         "/usr/bin/clang++-18",
         "/usr/bin/clang++-17",
@@ -48,7 +82,6 @@ def get_clang_binary():
             return candidate
         # Try to find in PATH
         if candidate and not os.path.sep in candidate:
-            import shutil
             found = shutil.which(candidate)
             if found:
                 return found
@@ -474,6 +507,492 @@ class TestCliModes(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("unrecognized arguments", result.stderr)
         self.assertIn("--clang", result.stderr)
+
+
+
+class TestMultiInheritance(unittest.TestCase):
+    """Multi-inheritance + private/protected inheritance."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("multi_inheritance.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_alias_extracted(self):
+        self.assertIn("test::Widget", qualified_names(self.symbols))
+
+    def test_public_base_members_exposed(self):
+        qnames = qualified_names(self.symbols)
+        self.assertIn("test::Widget::draw", qnames)
+        self.assertIn("test::Widget::serialize", qnames)
+
+    def test_own_members_exposed(self):
+        qnames = qualified_names(self.symbols)
+        self.assertIn("test::Widget::Widget", qnames)
+        self.assertIn("test::Widget::update", qnames)
+
+    def test_private_base_excluded(self):
+        self.assertNotIn("log", symbol_names(self.symbols))
+
+    def test_protected_base_excluded(self):
+        self.assertNotIn("track", symbol_names(self.symbols))
+
+
+class TestRefQualifiers(unittest.TestCase):
+    """Ref-qualified (& / &&) member overloads are distinct API symbols."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("ref_qualifiers.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_struct_extracted(self):
+        self.assertIn("test::Buffer", qualified_names(self.symbols))
+
+    def test_both_data_overloads_present(self):
+        sigs = [s["signature"] for s in self.symbols
+                if s["qualified_name"] == "test::Buffer::data"]
+        self.assertEqual(len(sigs), 2)
+        self.assertTrue(any(sig.rstrip().endswith("&&") for sig in sigs))
+        self.assertTrue(any(sig.rstrip().endswith("&") and not sig.rstrip().endswith("&&")
+                            for sig in sigs))
+
+    def test_const_lvalue_qualifier(self):
+        sym = find_symbol(self.symbols, "test::Buffer::size")
+        self.assertIsNotNone(sym)
+        self.assertIn("const &", sym["signature"])
+
+
+class TestMemberFunctionTemplates(unittest.TestCase):
+    """Member function templates are extracted as template_function."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("member_function_templates.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_class_extracted(self):
+        self.assertIn("test::Registry", qualified_names(self.symbols))
+
+    def test_member_templates_extracted(self):
+        add = find_symbol(self.symbols, "test::Registry::add")
+        get = find_symbol(self.symbols, "test::Registry::get")
+        self.assertIsNotNone(add)
+        self.assertIsNotNone(get)
+        self.assertEqual(add["kind"], "template_function")
+        self.assertEqual(get["kind"], "template_function")
+
+    def test_non_template_member_extracted(self):
+        clear = find_symbol(self.symbols, "test::Registry::clear")
+        self.assertIsNotNone(clear)
+        self.assertEqual(clear["kind"], "method")
+
+
+class TestGlobals(unittest.TestCase):
+    """Namespace-scope globals (variables and functions)."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("globals.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_constexpr_global(self):
+        sym = find_symbol(self.symbols, "test::kMaxItems")
+        self.assertIsNotNone(sym)
+        self.assertIn("constexpr", sym["signature"])
+
+    def test_extern_global(self):
+        sym = find_symbol(self.symbols, "test::g_external")
+        self.assertIsNotNone(sym)
+        self.assertIn("extern", sym["signature"])
+
+    def test_plain_global(self):
+        self.assertIsNotNone(find_symbol(self.symbols, "test::g_counter"))
+
+    def test_free_functions(self):
+        qnames = qualified_names(self.symbols)
+        self.assertIn("test::GetVersion", qnames)
+        self.assertIn("test::SetVerbose", qnames)
+
+
+class TestProtectedMethods(unittest.TestCase):
+    """Protected members are part of the API, tagged with a protected_ kind."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("protected_methods.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_public_members(self):
+        pub = find_symbol(self.symbols, "test::Base::publicMethod")
+        self.assertIsNotNone(pub)
+        self.assertEqual(pub["kind"], "method")
+
+    def test_protected_members_tagged(self):
+        on_event = find_symbol(self.symbols, "test::Base::onEvent")
+        compute = find_symbol(self.symbols, "test::Base::computeInternal")
+        self.assertIsNotNone(on_event)
+        self.assertIsNotNone(compute)
+        self.assertEqual(on_event["kind"], "protected_method")
+        self.assertEqual(compute["kind"], "protected_method")
+
+    def test_private_members_excluded(self):
+        names = symbol_names(self.symbols)
+        self.assertNotIn("secret", names)
+        self.assertNotIn("state_", names)
+
+
+class TestConstexprMembers(unittest.TestCase):
+    """constexpr functions and (static) constexpr members are captured."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("constexpr_members.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_constexpr_methods(self):
+        x = find_symbol(self.symbols, "test::Vector2::x")
+        self.assertIsNotNone(x)
+        self.assertIn("constexpr", x["signature"])
+
+    def test_constexpr_constructor(self):
+        ctor = find_symbol(self.symbols, "test::Vector2::Vector2")
+        self.assertIsNotNone(ctor)
+        self.assertIn("constexpr", ctor["signature"])
+
+    def test_static_constexpr_member(self):
+        k = find_symbol(self.symbols, "test::Vector2::kUnit")
+        self.assertIsNotNone(k)
+        self.assertIn("constexpr", k["signature"])
+        self.assertIn("static", k["signature"])
+
+    def test_constexpr_free_function(self):
+        dot = find_symbol(self.symbols, "test::Dot")
+        self.assertIsNotNone(dot)
+        self.assertIn("constexpr", dot["signature"])
+
+
+class TestForwardDeclared(unittest.TestCase):
+    """Forward-declared / incomplete types (pimpl) are tracked."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("forward_declared.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_forward_class_tracked(self):
+        impl = find_symbol(self.symbols, "test::WidgetImpl")
+        self.assertIsNotNone(impl)
+        self.assertEqual(impl["kind"], "forward_class")
+
+    def test_incomplete_struct_tracked(self):
+        handle = find_symbol(self.symbols, "test::IncompleteHandle")
+        self.assertIsNotNone(handle)
+        self.assertEqual(handle["kind"], "forward_class")
+
+    def test_complete_class_extracted(self):
+        w = find_symbol(self.symbols, "test::Widget")
+        self.assertIsNotNone(w)
+        self.assertEqual(w["kind"], "class")
+        self.assertIn("test::Widget::render", qualified_names(self.symbols))
+
+    def test_private_pimpl_pointer_excluded(self):
+        self.assertNotIn("impl_", symbol_names(self.symbols))
+
+
+class TestExternC(unittest.TestCase):
+    """extern \"C\" symbols carry the linkage in their signature."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("extern_c.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_extern_c_block_functions(self):
+        for qn in ("test::c_init", "test::c_process"):
+            sym = find_symbol(self.symbols, qn)
+            self.assertIsNotNone(sym, qn)
+            self.assertIn('extern "C"', sym["signature"])
+
+    def test_standalone_extern_c_function(self):
+        sym = find_symbol(self.symbols, "test::c_shutdown")
+        self.assertIsNotNone(sym)
+        self.assertIn('extern "C"', sym["signature"])
+
+
+class TestExternExplicit(unittest.TestCase):
+    """Explicit extern template instantiations and extern globals."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("extern_explicit.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_extern_template_instantiations(self):
+        i = find_symbol(self.symbols, "test::Array<int>")
+        d = find_symbol(self.symbols, "test::Array<double>")
+        self.assertIsNotNone(i)
+        self.assertIsNotNone(d)
+        self.assertEqual(i["kind"], "extern_template")
+        self.assertEqual(d["kind"], "extern_template")
+
+    def test_template_class_present(self):
+        arr = find_symbol(self.symbols, "test::Array")
+        self.assertIsNotNone(arr)
+        self.assertEqual(arr["kind"], "template_class")
+
+    def test_extern_globals(self):
+        for qn in ("test::g_globalConfig", "test::g_appName"):
+            sym = find_symbol(self.symbols, qn)
+            self.assertIsNotNone(sym, qn)
+            self.assertIn("extern", sym["signature"])
+
+
+class TestCppAttributes(unittest.TestCase):
+    """C++ standard attributes ([[nodiscard]], [[deprecated]]) are captured."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("cpp_attributes.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_nodiscard_function(self):
+        sym = find_symbol(self.symbols, "test::Compute")
+        self.assertIsNotNone(sym)
+        self.assertIn("[[nodiscard]]", sym["signature"])
+
+    def test_deprecated_function(self):
+        sym = find_symbol(self.symbols, "test::OldCompute")
+        self.assertIsNotNone(sym)
+        self.assertIn("[[deprecated]]", sym["signature"])
+
+    def test_combined_attributes(self):
+        sym = find_symbol(self.symbols, "test::LegacyCompute")
+        self.assertIsNotNone(sym)
+        self.assertIn("[[nodiscard]]", sym["signature"])
+        self.assertIn("[[deprecated]]", sym["signature"])
+
+    def test_attributed_methods(self):
+        valid = find_symbol(self.symbols, "test::Handle::valid")
+        reset = find_symbol(self.symbols, "test::Handle::reset")
+        self.assertIsNotNone(valid)
+        self.assertIsNotNone(reset)
+        self.assertIn("[[nodiscard]]", valid["signature"])
+        self.assertIn("[[deprecated]]", reset["signature"])
+
+
+class TestSfinae(unittest.TestCase):
+    """SFINAE constraints in the signature are captured."""
+
+    @classmethod
+    def setUpClass(cls):
+        header = get_test_header("sfinae.h")
+        cls.result = run_extract_api([header], [header])
+        cls.symbols = get_symbols(cls.result)
+
+    def test_return_type_sfinae(self):
+        sym = find_symbol(self.symbols, "test::DoubleValue")
+        self.assertIsNotNone(sym)
+        self.assertEqual(sym["kind"], "template_function")
+        self.assertIn("enable_if", sym["signature"])
+        self.assertIn("is_integral", sym["signature"])
+
+    def test_trailing_return_sfinae(self):
+        sym = find_symbol(self.symbols, "test::Negate")
+        self.assertIsNotNone(sym)
+        self.assertEqual(sym["kind"], "template_function")
+        self.assertIn("enable_if", sym["signature"])
+        self.assertIn("is_signed", sym["signature"])
+
+
+def _public_surface(result: dict) -> dict:
+    """Return a comparable {qualified_name: signature} map of the public API.
+
+    This is what the API-surface checker actually guards against: the set of
+    public symbols and their signatures. Two headers with the same public API
+    must produce the same map regardless of their private implementation.
+    """
+    surface = {}
+    for s in get_symbols(result):
+        surface[s["qualified_name"]] = s.get("signature", "")
+    return surface
+
+
+def _extract_source(source: str) -> dict:
+    """Write `source` to a temporary header and run the extraction pipeline."""
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".h", delete=False, prefix="neg_case_"
+    ) as f:
+        f.write(source)
+        header = f.name
+    try:
+        return run_extract_api([header], [header])
+    finally:
+        os.unlink(header)
+
+
+# Two headers with an identical public API but completely different private
+# implementations. Used to prove private changes do not affect the API surface.
+_STABLE_API_V1 = """
+#pragma once
+#include <string>
+namespace test {
+class Widget {
+  public:
+    Widget();
+    int compute(int input);
+    const std::string& label() const;
+  private:
+    int cache_;
+    std::string label_;
+    void refresh();
+};
+}  // namespace test
+"""
+
+_STABLE_API_V2 = """
+#pragma once
+#include <cstdint>
+#include <map>
+#include <string>
+namespace test {
+class Widget {
+  public:
+    Widget();
+    int compute(int input);
+    const std::string& label() const;
+  private:
+    std::map<std::string, std::int64_t> counters_;
+    std::uint64_t revision_;
+    bool dirty_;
+    void refresh();
+    void invalidate();
+};
+}  // namespace test
+"""
+
+# Same class, but with a genuinely CHANGED public API (renamed method).
+_CHANGED_PUBLIC_API = """
+#pragma once
+#include <string>
+namespace test {
+class Widget {
+  public:
+    Widget();
+    int calculate(int input);   // renamed from compute -> public API change
+    const std::string& label() const;
+  private:
+    int cache_;
+};
+}  // namespace test
+"""
+
+
+class TestPrivateChangeStability(unittest.TestCase):
+    """Negative/stability test: private changes must NOT change the API surface."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.v1 = _public_surface(_extract_source(_STABLE_API_V1))
+        cls.v2 = _public_surface(_extract_source(_STABLE_API_V2))
+        cls.changed = _public_surface(_extract_source(_CHANGED_PUBLIC_API))
+
+    def test_private_change_keeps_surface_identical(self):
+        """Different private members, identical public API => identical surface."""
+        self.assertEqual(
+            self.v1,
+            self.v2,
+            "Private-only changes must not alter the extracted public API surface",
+        )
+
+    def test_public_change_is_detected(self):
+        """Renaming a public method MUST change the surface (checker has teeth)."""
+        self.assertNotEqual(
+            self.v1,
+            self.changed,
+            "A public API change must be reflected in the extracted surface",
+        )
+
+    def test_no_private_members_leak(self):
+        """None of the differing private members appear in either surface."""
+        leaked = {"cache_", "label_", "counters_", "revision_", "dirty_"}
+        for surface in (self.v1, self.v2):
+            for qn in surface:
+                name = qn.rsplit("::", 1)[-1]
+                self.assertNotIn(name, leaked)
+
+
+class TestNegativeExtraction(unittest.TestCase):
+    """Negative cases: things that must NOT appear in the public API surface."""
+
+    def test_all_private_class_exposes_no_members(self):
+        """A class with only private members exposes no member symbols."""
+        result = _extract_source(
+            """
+            #pragma once
+            namespace test {
+            class OnlyPrivate {
+              private:
+                int secret_;
+                void mutate();
+                int compute() const;
+            };
+            }  // namespace test
+            """
+        )
+        names = symbol_names(get_symbols(result))
+        for member in ("secret_", "mutate", "compute"):
+            self.assertNotIn(member, names)
+
+    def test_internal_namespace_is_excluded(self):
+        """Public members inside detail:: are not part of the API surface."""
+        result = _extract_source(
+            """
+            #pragma once
+            namespace test {
+            namespace detail {
+            class Hidden {
+              public:
+                void internalMethod();
+            };
+            void hiddenFreeFunction();
+            }  // namespace detail
+            }  // namespace test
+            """
+        )
+        qnames = qualified_names(get_symbols(result))
+        for qn in qnames:
+            self.assertNotIn("detail", qn)
+        names = symbol_names(get_symbols(result))
+        self.assertNotIn("internalMethod", names)
+        self.assertNotIn("hiddenFreeFunction", names)
+
+    def test_missing_symbol_is_not_found(self):
+        """Querying for a symbol that does not exist returns None."""
+        result = _extract_source(
+            """
+            #pragma once
+            namespace test {
+            class Present {
+              public:
+                void method();
+            };
+            }  // namespace test
+            """
+        )
+        symbols = get_symbols(result)
+        self.assertIsNotNone(find_symbol(symbols, "test::Present"))
+        self.assertIsNone(find_symbol(symbols, "test::DoesNotExist"))
 
 
 if __name__ == "__main__":

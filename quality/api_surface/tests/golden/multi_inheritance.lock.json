@@ -1,0 +1,38 @@
+{
+  "target": "//quality/api_surface/tests:multi_inheritance_lib",
+  "symbols": [
+    {
+      "name": "Widget",
+      "qualified_name": "test::Widget",
+      "kind": "type_alias",
+      "signature": "using Widget = impl::Widget"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "Widget",
+      "qualified_name": "test::Widget::Widget",
+      "kind": "constructor",
+      "signature": "Widget : void ()"
+    },
+    {
+      "name": "draw",
+      "qualified_name": "test::Widget::draw",
+      "kind": "method",
+      "signature": "draw : void () const"
+    },
+    {
+      "name": "serialize",
+      "qualified_name": "test::Widget::serialize",
+      "kind": "method",
+      "signature": "serialize : void () const"
+    },
+    {
+      "name": "update",
+      "qualified_name": "test::Widget::update",
+      "kind": "method",
+      "signature": "update : void ()"
+    }
+  ],
+  "version": "1"
+}

@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_SKELETON_FIELD_H
 #define SCORE_MW_COM_IMPL_SKELETON_FIELD_H
 
+#include "score/mw/com/impl/field_getter_setter_signatures.h"
 #include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
@@ -205,13 +206,6 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     }
 
   private:
-    /// \brief Signatures of the internal Set and Get methods.
-    ///
-    /// Since the setter / getter functions can fail within the middleware code (e.g. when trying to update the field
-    /// value fails), we need to return a result from the setter and getter.
-    using SetMethodSignature = score::Result<FieldType>(FieldType);
-    using GetMethodSignature = FieldType();
-
     [[nodiscard]] bool IsInitialValueSaved() const noexcept override
     {
         return initial_field_value_ != nullptr;
@@ -239,28 +233,31 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     static std::unique_ptr<SkeletonEvent<FieldType>> MakeSkeletonEvent(SkeletonBase& parent,
                                                                        const std::string_view field_name)
     {
-        // No kHasNotifier: the SkeletonEvent is always built because it provides Update/Allocate.
         const SkeletonBaseView skeleton_base_view{parent};
         return std::make_unique<SkeletonEvent<FieldType>>(
             parent,
             field_name,
             SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
-                skeleton_base_view.GetAssociatedInstanceIdentifier(), skeleton_base_view.GetBinding(), field_name),
+                skeleton_base_view.GetAssociatedInstanceIdentifier(),
+                skeleton_base_view.GetBinding(),
+                field_name,
+                FieldTagsStore::Create<Tags...>()),
             typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{});
     }
 
     /// \brief Builds the Get-method dispatch when WithGetter is enabled.
     /// \return A valid SkeletonMethod dispatch when WithGetter is in the tag pack, nullptr otherwise.
-    static std::unique_ptr<SkeletonMethod<GetMethodSignature>> MakeGetMethodIfEnabled(SkeletonBase& parent,
-                                                                                      const std::string_view field_name)
+    static std::unique_ptr<SkeletonMethod<GetMethodSignature<FieldType>>> MakeGetMethodIfEnabled(
+        SkeletonBase& parent,
+        const std::string_view field_name)
     {
         if constexpr (kHasGetter)
         {
-            return std::make_unique<SkeletonMethod<GetMethodSignature>>(
+            return std::make_unique<SkeletonMethod<GetMethodSignature<FieldType>>>(
                 parent,
                 field_name,
                 ::score::mw::com::impl::MethodType::kGet,
-                typename SkeletonMethod<GetMethodSignature>::FieldOnlyConstructorEnabler{});
+                typename SkeletonMethod<GetMethodSignature<FieldType>>::FieldOnlyConstructorEnabler{});
         }
         else
         {
@@ -272,16 +269,17 @@ class SkeletonFieldImpl : public SkeletonFieldBase
 
     /// \brief Builds the Set-method dispatch when WithSetter is enabled.
     /// \return A valid SkeletonMethod dispatch when WithSetter is in the tag pack, nullptr otherwise.
-    static std::unique_ptr<SkeletonMethod<SetMethodSignature>> MakeSetMethodIfEnabled(SkeletonBase& parent,
-                                                                                      const std::string_view field_name)
+    static std::unique_ptr<SkeletonMethod<SetMethodSignature<FieldType>>> MakeSetMethodIfEnabled(
+        SkeletonBase& parent,
+        const std::string_view field_name)
     {
         if constexpr (kHasSetter)
         {
-            return std::make_unique<SkeletonMethod<SetMethodSignature>>(
+            return std::make_unique<SkeletonMethod<SetMethodSignature<FieldType>>>(
                 parent,
                 field_name,
                 ::score::mw::com::impl::MethodType::kSet,
-                typename SkeletonMethod<SetMethodSignature>::FieldOnlyConstructorEnabler{});
+                typename SkeletonMethod<SetMethodSignature<FieldType>>::FieldOnlyConstructorEnabler{});
         }
         else
         {
@@ -296,8 +294,8 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     SkeletonFieldImpl(SkeletonBase& parent,
                       const std::string_view field_name,
                       std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
-                      std::unique_ptr<SkeletonMethod<SetMethodSignature>> skeleton_set_method_dispatch,
-                      std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch);
+                      std::unique_ptr<SkeletonMethod<SetMethodSignature<FieldType>>> skeleton_set_method_dispatch,
+                      std::unique_ptr<SkeletonMethod<GetMethodSignature<FieldType>>> skeleton_get_method_dispatch);
 
     std::unique_ptr<FieldType> initial_field_value_;
     ISkeletonField<FieldType>* skeleton_field_mock_;
@@ -315,8 +313,8 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     /// moveable).
     std::unique_ptr<std::mutex> set_handler_mutex_{};
 
-    std::unique_ptr<SkeletonMethod<SetMethodSignature>> set_method_;
-    std::unique_ptr<SkeletonMethod<GetMethodSignature>> get_method_;
+    std::unique_ptr<SkeletonMethod<SetMethodSignature<FieldType>>> set_method_;
+    std::unique_ptr<SkeletonMethod<GetMethodSignature<FieldType>>> get_method_;
 };
 
 template <typename SampleDataType, typename... Tags>
@@ -324,8 +322,8 @@ SkeletonFieldImpl<SampleDataType, Tags...>::SkeletonFieldImpl(
     SkeletonBase& parent,
     const std::string_view field_name,
     std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
-    std::unique_ptr<SkeletonMethod<SetMethodSignature>> skeleton_set_method_dispatch,
-    std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch)
+    std::unique_ptr<SkeletonMethod<SetMethodSignature<FieldType>>> skeleton_set_method_dispatch,
+    std::unique_ptr<SkeletonMethod<GetMethodSignature<FieldType>>> skeleton_get_method_dispatch)
     : SkeletonFieldBase{field_name, std::move(skeleton_event_dispatch)},
       initial_field_value_{nullptr},
       skeleton_field_mock_{nullptr},

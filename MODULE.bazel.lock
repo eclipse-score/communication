@@ -15927,7 +15927,7 @@
     "@@score_toolchains_rust+//extensions:ferrocene_toolchain_ext.bzl%ferrocene_toolchain_ext": {
       "general": {
         "bzlTransitiveDigest": "9k8SLwP4ec9xXjFivq0Kn0FradTQhcEA+j/WsLxfVPM=",
-        "usagesDigest": "WyB+Pzv/vJHKmPatla/aGL4HfPuTK2OrtJSJL+O1D20=",
+        "usagesDigest": "m8DKpEPkV7AfK9cGQnHaEcjojk4T1HTFtgsbLpPXueE=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -15962,8 +15962,8 @@
                 "@platforms//cpu:x86_64",
                 "@platforms//os:linux"
               ],
-              "coverage_tools_url": "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.0.1/coverage-tools-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
-              "coverage_tools_sha256": "497958e925bc94833ea226d68f6d5ba38bd890f571c73e230141d2923e30dd94",
+              "coverage_tools_url": "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.3.0/coverage-tools-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
+              "coverage_tools_sha256": "f4b1cdcaf644b3dac429dfc50c674cde8f9620e1a563e3dcdfb313a7ce68c888",
               "coverage_tools_strip_prefix": "779fbed05ae9e9fe2a04137929d99cc9b3d516fd/x86_64-unknown-linux-gnu",
               "miri_sysroot_url": "",
               "miri_sysroot_sha256": "",

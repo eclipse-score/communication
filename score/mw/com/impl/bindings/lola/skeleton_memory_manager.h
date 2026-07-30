@@ -295,7 +295,7 @@ EventDataStorage<SampleType>& SkeletonMemoryManager::EmplaceEventDataStorage(
     const SkeletonEventProperties& element_properties)
 {
     auto* typed_event_data_storage_ptr = storage_resource_->construct<EventDataStorage<SampleType>>(
-        element_properties.number_of_slots,
+        element_properties.GetTotalNumberOfSlots(),
         memory::shared::PolymorphicOffsetPtrAllocator<SampleType>(*storage_resource_));
 
     auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,

@@ -178,7 +178,8 @@ void ProxyMockedMemoryFixture::InitialiseDummySkeletonEvent(const ElementFqId el
 
 LolaProxyEventResources::LolaProxyEventResources() : ProxyMockedMemoryFixture{}
 {
-    InitialiseDummySkeletonEvent(element_fq_id_, SkeletonEventProperties{max_num_slots_, max_subscribers_, true});
+    InitialiseDummySkeletonEvent(element_fq_id_,
+                                 SkeletonEventProperties{max_num_slots_, 0U, 0U, false, max_subscribers_, true});
     InitialiseProxyWithConstructor(identifier_);
 }
 

@@ -276,6 +276,7 @@ cc_library(
     ],
     deps = [
         ":error",
+        ":field_getter_setter_signatures",
         ":field_tags",
         ":method_type",
         ":skeleton_event",
@@ -343,6 +344,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":field_getter_setter_signatures",
         ":field_tags",
         ":method_type",
         ":proxy_event",
@@ -773,6 +775,30 @@ cc_library(
 )
 
 cc_library(
+    name = "field_tags_store",
+    srcs = ["field_tags_store.cpp"],
+    hdrs = ["field_tags_store.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        ":field_tags",
+    ],
+)
+
+cc_library(
+    name = "field_getter_setter_signatures",
+    srcs = ["field_getter_setter_signatures.cpp"],
+    hdrs = ["field_getter_setter_signatures.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "field_tags",
     srcs = ["field_tags.cpp"],
     hdrs = ["field_tags.h"],
@@ -786,6 +812,14 @@ cc_unit_test(
     srcs = ["field_tags_test.cpp"],
     deps = [
         ":field_tags",
+    ],
+)
+
+cc_unit_test(
+    name = "field_tags_store_test",
+    srcs = ["field_tags_store_test.cpp"],
+    deps = [
+        ":field_tags_store",
     ],
 )
 

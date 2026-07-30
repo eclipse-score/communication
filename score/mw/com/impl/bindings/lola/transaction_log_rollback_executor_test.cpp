@@ -55,7 +55,7 @@ const SkeletonInstanceIdentifier kSkeletonInstanceIdentifier{kDummyElementFqId.s
 
 constexpr std::size_t kNumberOfSlots{20U};
 constexpr std::size_t kMaxSubscribers{20U};
-const SkeletonEventProperties kDummySkeletonEventProperties{kNumberOfSlots, kMaxSubscribers, true};
+const SkeletonEventProperties kDummySkeletonEventProperties{kNumberOfSlots, 0U, 0U, false, kMaxSubscribers, true};
 
 class TransactionLogRollbackExecutorFixture : public ::testing::Test
 {
@@ -88,7 +88,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         const auto emplace_result = service_data_control_->event_controls_.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(element_fq_id),
-            std::forward_as_tuple(skeleton_event_properties.number_of_slots,
+            std::forward_as_tuple(skeleton_event_properties.GetTotalNumberOfSlots(),
                                   skeleton_event_properties.max_subscribers,
                                   skeleton_event_properties.enforce_max_samples,
                                   memory_resource_mock_));

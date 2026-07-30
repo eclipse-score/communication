@@ -29,8 +29,8 @@ using ::testing::Return;
 using ::testing::ReturnRef;
 
 static constexpr bool kEnforceMaxSamples{true};
-static constexpr bool kFieldGetterDisabled{false};
-static constexpr bool kFieldGetterEnabled{true};
+static constexpr std::size_t kNumberOfSlotsForDisabledFieldGetter{0U};
+static constexpr std::size_t kNumberOfSlotsForEnabledFieldGetter{kMaxConcurrentFieldGetterSamplePtrs};
 
 class SkeletonEventCommonFixture : public SkeletonEventFixture
 {
@@ -62,9 +62,9 @@ class SkeletonEventCommonFixture : public SkeletonEventFixture
             *skeleton_,
             element_fq_id,
             service_element_name,
-            SkeletonEventProperties{max_samples, max_subscribers, enforce_max_samples},
-            skeleton_event_tracing_data,
-            kFieldGetterDisabled);
+            SkeletonEventProperties{
+                max_samples, 0U, kNumberOfSlotsForDisabledFieldGetter, false, max_subscribers, enforce_max_samples},
+            skeleton_event_tracing_data);
 
         // Call PrepareOffer on the skeleton event to trigger Skeleton::Register, which populates
         // the event_controls_ maps in ServiceDataControl for both QM and (if ASIL-B) ASIL-B.
@@ -74,10 +74,10 @@ class SkeletonEventCommonFixture : public SkeletonEventFixture
             std::make_unique<score::mw::com::impl::lola::SkeletonEventCommon<test::TestSampleType>>(
                 *skeleton_,
                 event_name_,
-                SkeletonEventProperties{max_samples, max_subscribers, enforce_max_samples},
+                SkeletonEventProperties{
+                    max_samples, 0U, kNumberOfSlotsForDisabledFieldGetter, false, max_subscribers, enforce_max_samples},
                 element_fq_id,
-                skeleton_event_tracing_data,
-                kFieldGetterDisabled);
+                skeleton_event_tracing_data);
     }
 
   protected:
@@ -175,7 +175,7 @@ TEST_F(SkeletonEventCommonPrepareOfferFixture,
                             max_subscribers_,
                             kEnforceMaxSamples,
                             kDisabledTracingData,
-                            kFieldGetterEnabled,
+                            kNumberOfSlotsForEnabledFieldGetter,
                             kValidAsilBInstanceIdentifier);
 
     // When Skeleton Event is Offered
@@ -196,7 +196,7 @@ TEST_F(SkeletonEventCommonPrepareOfferFixture,
                             max_subscribers_,
                             kEnforceMaxSamples,
                             kDisabledTracingData,
-                            kFieldGetterEnabled,
+                            kNumberOfSlotsForEnabledFieldGetter,
                             kValidQmInstanceIdentifier);
 
     // When Skeleton Event is Offered
@@ -219,7 +219,7 @@ TEST_F(SkeletonEventCommonPrepareOfferFixture, WhenGetterAndTracingDisabledForAs
                             max_subscribers_,
                             kEnforceMaxSamples,
                             kDisabledTracingData,
-                            kFieldGetterDisabled,
+                            kNumberOfSlotsForDisabledFieldGetter,
                             kValidAsilBInstanceIdentifier);
 
     // When Skeleton Event is Offered
@@ -239,7 +239,7 @@ TEST_F(SkeletonEventCommonPrepareOfferFixture, WhenGetterAndTracingDisabledForQm
                             max_subscribers_,
                             kEnforceMaxSamples,
                             kDisabledTracingData,
-                            kFieldGetterDisabled,
+                            kNumberOfSlotsForDisabledFieldGetter,
                             kValidQmInstanceIdentifier);
 
     // When Skeleton Event Offer
@@ -265,7 +265,7 @@ TEST_F(SkeletonEventCommonPrepareStopOfferFixture,
                             max_subscribers_,
                             kEnforceMaxSamples,
                             kDisabledTracingData,
-                            kFieldGetterEnabled,
+                            kNumberOfSlotsForEnabledFieldGetter,
                             kValidAsilBInstanceIdentifier);
 
     // When the Skeleton Event is Offered

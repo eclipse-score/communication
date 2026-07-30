@@ -60,6 +60,26 @@ coverage --test_env=COVERAGE_GCOV_PATH=/usr/bin/true
 coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
 coverage --features=enable_llvm_coverage_for_death_tests
 
+# Rust coverage instrumentation (LLVM pipeline only; reset for QNX below).
+# Requires score_toolchains_rust >= 0.9.2 + ferrocene_toolchain_builder >=
+# 1.3.0 coverage-tools: the extension then declares llvm_cov/llvm_profdata on
+# the rust_toolchain, which makes rules_rust add -Cinstrument-coverage under
+# `bazel coverage`.
+#
+# The list-typed extra_rustc_flags setting is used (not the repeatable
+# extra_rustc_flag) so the QNX section can reset it to empty.
+#   -Cllvm-args=-runtime-counter-relocation: Rust equivalent of the
+#     enable_llvm_coverage_for_death_tests cc_feature — continuous-mode
+#     profiling (%c in LLVM_PROFILE_FILE) requires runtime counter relocation,
+#     otherwise the profile runtime errors out and writes no .profraw.
+#   -Clink-dead-code: keep unlinked functions in the coverage map so
+#     unreferenced code shows as uncovered instead of vanishing.
+#   -Zcoverage-options=branch: branch coverage instrumentation. NOTE: -Z flags
+#     are unstable rustc options; this works because the Ferrocene toolchain
+#     in use is a rolling (nightly-based) build. If a stable-channel Ferrocene
+#     is ever pinned, drop this flag (Rust branch columns revert to "-").
+coverage --@rules_rust//rust/settings:extra_rustc_flags=-Cllvm-args=-runtime-counter-relocation,-Clink-dead-code,-Zcoverage-options=branch
+
 # ============================================================================
 # QNX x86_64 coverage configuration (gcov-based)
 # ============================================================================
@@ -82,9 +102,16 @@ coverage:qnx_x86_64 --coverage_report_generator=@bazel_tools//tools/test:coverag
 coverage:qnx_x86_64 --test_env=GENERATE_LLVM_LCOV
 coverage:qnx_x86_64 --test_env=COVERAGE_GCOV_PATH
 coverage:qnx_x86_64 --test_env=LLVM_PROFILE_CONTINUOUS_MODE
+# Reset the Rust LLVM-coverage rustc flags: the QNX pipeline is gcov-based
+# and must not carry llvm covmap instrumentation options.
+coverage:qnx_x86_64 --@rules_rust//rust/settings:extra_rustc_flags=
 
 # Shorthand: --config=qnx uses qnx_x86_64 (consistent with .bazelrc).
 coverage:qnx --config=qnx_x86_64
 
 # Disable treat_warnings_as_errors for coverage builds to avoid build failures from instrumentation-related warnings
 coverage --features=-score_communication_treat_warnings_as_errors
+
+# Disable fortify_source for coverage builds to avoid linking failures with LLVM coverage runtime.
+coverage --features=-score_communication_fortify_source
+coverage --host_features=-score_communication_fortify_source

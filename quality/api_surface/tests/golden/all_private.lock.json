@@ -1,0 +1,13 @@
+{
+  "target": ":all_private_lib",
+  "symbols": [
+    {
+      "name": "OnlyPrivate",
+      "qualified_name": "test::OnlyPrivate",
+      "kind": "class",
+      "signature": "class OnlyPrivate"
+    }
+  ],
+  "undocumented_symbols": [],
+  "version": "1"
+}

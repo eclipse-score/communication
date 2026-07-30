@@ -55,6 +55,7 @@ Checks: >
   readability-inconsistent-declaration-parameter-name,
   readability-misplaced-array-index,
   readability-redundant-declaration,
+  readability-function-cognitive-complexity,
   # --- autosar-severity-two ---
   bugprone-forwarding-reference-overload,
   bugprone-move-forwarding-reference,

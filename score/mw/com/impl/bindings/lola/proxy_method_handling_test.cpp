@@ -489,7 +489,7 @@ TEST_F(ProxyMethodHandlingFixture, FieldMethodsAreCreatedInShmOnlyForEnabledComb
                                      Pair(UniqueMethodIdentifier{kDummyFieldId2, MethodType::kSet}, _)));
 }
 
-TEST_F(ProxyMethodHandlingFixture, FieldMethodGetEnabledInConfigurationWhichIsNotCreatedInShmTerminates)
+TEST_F(ProxyMethodHandlingFixture, FieldMethodGetEnabledInConfigurationWhichIsNotCreatedInShmReturnsSuccess)
 {
     // Given a field whose Get and Set are enabled in config, but only the Set was registered (Get unregistered
     // showcasing a programming bug).
@@ -505,11 +505,13 @@ TEST_F(ProxyMethodHandlingFixture, FieldMethodGetEnabledInConfigurationWhichIsNo
               MethodType::kSet}});
 
     // When setting up methods.
-    // Then the program terminates.
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(proxy_->SetupMethods());
+    const auto setup_methods_result = proxy_->SetupMethods();
+
+    // Then a valid result is returned
+    EXPECT_TRUE(setup_methods_result.has_value());
 }
 
-TEST_F(ProxyMethodHandlingFixture, FieldMethodSetEnabledInConfigurationWhichIsNotCreatedInShmTerminates)
+TEST_F(ProxyMethodHandlingFixture, FieldMethodSetEnabledInConfigurationWhichIsNotCreatedInShmReturnsSuccess)
 {
     // Given a field whose Get and Set are enabled in config, but only the Get was registered (Set unregistered
     // showcasing a programming bug).
@@ -525,8 +527,10 @@ TEST_F(ProxyMethodHandlingFixture, FieldMethodSetEnabledInConfigurationWhichIsNo
               MethodType::kGet}});
 
     // When setting up methods.
-    // Then the program terminates.
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(proxy_->SetupMethods());
+    const auto setup_methods_result = proxy_->SetupMethods();
+
+    // Then a valid result is returned
+    EXPECT_TRUE(setup_methods_result.has_value());
 }
 
 TEST_F(ProxyMethodHandlingFixture, CreatesSharedMemoryWithUserPermissionsContainingSkeletonApplicationId)

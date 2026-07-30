@@ -210,7 +210,7 @@ void* SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory(
 
     // Calculate the aligned size for a single sample to ensure proper padding between slots
     const auto aligned_sample_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
-    const auto total_data_size_bytes = aligned_sample_size * element_properties.number_of_slots;
+    const auto total_data_size_bytes = aligned_sample_size * element_properties.GetTotalNumberOfSlots();
 
     // Convert total bytes to the number of std::max_align_t elements needed (round up)
     const size_t num_max_align_elements =
@@ -252,7 +252,7 @@ void* SkeletonMemoryManager::RetrieveGenericEventDataFromOpenedSharedMemory(
     const auto aligned_sample_size =
         memory::shared::CalculateAlignedSize(sample_size, static_cast<std::size_t>(sample_alignment));
     const auto total_event_slots_size = safe_math::Multiply<safe_math::ReturnMode::kAbortOnError>(
-        aligned_sample_size, element_properties.number_of_slots);
+        aligned_sample_size, element_properties.GetTotalNumberOfSlots());
 
     void* const event_slots_raw_array = event_meta_info_it->second.event_slots_raw_array_.get(total_event_slots_size);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_slots_raw_array != nullptr,
@@ -732,7 +732,7 @@ EventControl& SkeletonMemoryManager::EmplaceEventControl(const QualityType asil_
     auto control_qm =
         service_data_control->event_controls_.emplace(std::piecewise_construct,
                                                       std::forward_as_tuple(element_fq_id),
-                                                      std::forward_as_tuple(element_properties.number_of_slots,
+                                                      std::forward_as_tuple(element_properties.GetTotalNumberOfSlots(),
                                                                             element_properties.max_subscribers,
                                                                             element_properties.enforce_max_samples,
                                                                             *memory_resource));

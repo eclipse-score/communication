@@ -1,0 +1,44 @@
+{
+  "target": "//quality/api_surface/tests:constexpr_members_lib",
+  "symbols": [
+    {
+      "name": "Vector2",
+      "qualified_name": "test::Vector2",
+      "kind": "class",
+      "signature": "class Vector2"
+    },
+    {
+      "name": "Dot",
+      "qualified_name": "test::Dot",
+      "kind": "function",
+      "signature": "constexpr Dot : double (const Vector2 &, const Vector2 &)"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "Vector2",
+      "qualified_name": "test::Vector2::Vector2",
+      "kind": "constructor",
+      "signature": "constexpr Vector2 : void (double, double)"
+    },
+    {
+      "name": "x",
+      "qualified_name": "test::Vector2::x",
+      "kind": "method",
+      "signature": "constexpr x : double () const"
+    },
+    {
+      "name": "y",
+      "qualified_name": "test::Vector2::y",
+      "kind": "method",
+      "signature": "constexpr y : double () const"
+    },
+    {
+      "name": "kUnit",
+      "qualified_name": "test::Vector2::kUnit",
+      "kind": "variable",
+      "signature": "static constexpr kUnit : const double"
+    }
+  ],
+  "version": "1"
+}

@@ -249,9 +249,8 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         *parent_skeleton_,
         fake_element_fq_id_,
         fake_event_name_,
-        SkeletonEventProperties{MaxSamples, max_subscribers_, enforce_max_samples_},
-        disabled_tracing_data_,
-        field_getter_disabled_};
+        SkeletonEventProperties{MaxSamples, 0U, 0U, false, max_subscribers_, enforce_max_samples_},
+        disabled_tracing_data_};
 };
 
 using SkeletonEventComponentTestFixture = SkeletonEventComponentTestTemplateFixture<5>;

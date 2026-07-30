@@ -13,17 +13,16 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_SKELETON_EVENT_BINDING_FACTORY_IMPL_H
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_EVENT_BINDING_FACTORY_IMPL_H
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_service_element_binding_factory_impl.h"
-#include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 #include <score/assert.hpp>
 
 #include <memory>
+#include <optional>
 #include <string_view>
 
 namespace score::mw::com::impl
@@ -54,9 +53,11 @@ auto SkeletonEventBindingFactoryImpl<SampleType>::Create(const InstanceIdentifie
                                                          const std::string_view event_name) noexcept
     -> std::unique_ptr<SkeletonEventBinding<SampleType>>
 {
+    const std::optional<FieldTagsStore> empty_field_tags_store{};
     return CreateSkeletonEventOrField<SkeletonEventBinding<SampleType>,
                                       lola::SkeletonEvent<SampleType>,
-                                      ServiceElementType::EVENT>(identifier, parent_binding, event_name, false);
+                                      ServiceElementType::EVENT>(
+        identifier, parent_binding, event_name, empty_field_tags_store);
 }
 
 }  // namespace score::mw::com::impl

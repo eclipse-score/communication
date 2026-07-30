@@ -1376,12 +1376,12 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
 
     const auto foo_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size,
                                                              event_foo_meta_info_ptr->data_type_info_.alignment,
-                                                             test::kDefaultEventProperties.number_of_slots);
+                                                             test::kDefaultEventProperties.GetTotalNumberOfSlots());
     ASSERT_EQ(event_foo_meta_info_ptr->event_slots_raw_array_.get(foo_event_slots_size), foo_event_data_storage);
 
     const auto dumb_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size,
                                                               event_foo_meta_info_ptr->data_type_info_.alignment,
-                                                              test::kDefaultEventProperties.number_of_slots);
+                                                              test::kDefaultEventProperties.GetTotalNumberOfSlots());
     ASSERT_EQ(event_dumb_meta_info_ptr->event_slots_raw_array_.get(dumb_event_slots_size), dumb_event_data_storage);
 
     CleanUpSkeleton();

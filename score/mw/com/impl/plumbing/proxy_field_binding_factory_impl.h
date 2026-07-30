@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event.h"
+#include "score/mw/com/impl/field_getter_setter_signatures.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/plumbing/i_proxy_field_binding_factory.h"
 #include "score/mw/com/impl/plumbing/lola_proxy_element_building_blocks.h"
@@ -83,7 +84,7 @@ inline Result<std::unique_ptr<ProxyMethodBinding>> ProxyFieldBindingFactoryImpl<
     ProxyBinding& parent_binding,
     const std::string_view field_name) noexcept
 {
-    return ProxyMethodBindingFactory<SampleType()>::Create(
+    return ProxyMethodBindingFactory<GetMethodSignature<SampleType>>::Create(
         std::move(parent_handle), parent_binding, field_name, MethodType::kGet);
 }
 
@@ -93,7 +94,7 @@ inline Result<std::unique_ptr<ProxyMethodBinding>> ProxyFieldBindingFactoryImpl<
     ProxyBinding& parent_binding,
     const std::string_view field_name) noexcept
 {
-    return ProxyMethodBindingFactory<SampleType(SampleType)>::Create(
+    return ProxyMethodBindingFactory<SetMethodSignature<SampleType>>::Create(
         std::move(parent_handle), parent_binding, field_name, MethodType::kSet);
 }
 

@@ -1,0 +1,38 @@
+{
+  "target": "//quality/api_surface/tests:protected_methods_lib",
+  "symbols": [
+    {
+      "name": "Base",
+      "qualified_name": "test::Base",
+      "kind": "class",
+      "signature": "class Base"
+    }
+  ],
+  "undocumented_symbols": [
+    {
+      "name": "Base",
+      "qualified_name": "test::Base::Base",
+      "kind": "constructor",
+      "signature": "Base : void ()"
+    },
+    {
+      "name": "publicMethod",
+      "qualified_name": "test::Base::publicMethod",
+      "kind": "method",
+      "signature": "publicMethod : void ()"
+    },
+    {
+      "name": "onEvent",
+      "qualified_name": "test::Base::onEvent",
+      "kind": "protected_method",
+      "signature": "onEvent : void ()"
+    },
+    {
+      "name": "computeInternal",
+      "qualified_name": "test::Base::computeInternal",
+      "kind": "protected_method",
+      "signature": "computeInternal : int (int) const"
+    }
+  ],
+  "version": "1"
+}
