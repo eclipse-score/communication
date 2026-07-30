@@ -22,14 +22,16 @@
 /// boundaries without violating Rust's ownership rules.
 mod concept;
 mod error;
-mod interface_macros;
+mod field_concept;
+mod interface_consumer_macros;
+mod interface_producer_macros;
 mod method_arities_macros;
 mod method_concept;
 mod reloc;
 pub use concept::*;
 pub use error::*;
 pub use field_concept::*;
-pub use interface_macros::{HandlerNotSet, HandlerSet, Init, Uninit, WithGetter, WithNotifier, WithSetter};
+pub use interface_consumer_macros::{HandlerNotSet, HandlerSet, Init, Uninit, WithGetter, WithNotifier, WithSetter};
 pub use method_concept::*;
 #[doc(hidden)]
 pub use pastey;
