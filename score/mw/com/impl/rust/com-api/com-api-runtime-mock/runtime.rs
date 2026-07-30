@@ -809,11 +809,15 @@ impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublis
         })
     }
 
-    fn update(&self, _value: &T) -> Result<()> {
+    fn update(&self, _value: T) -> Result<()> {
         todo!()
     }
 
-    fn register_set_handler(&self, _callback: impl Fn(&T) + Send + 'static) -> Result<()> {
+    fn register_set_handler(&self, _callback: impl Fn(T) + Send + 'static) {
+        todo!()
+    }
+
+    fn register_get_handler(&self, _callback: impl Fn() -> T + Send + 'static) {
         todo!()
     }
 }
