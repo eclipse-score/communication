@@ -24,6 +24,8 @@
 #include "score/memory/shared/offset_ptr.h"
 #include "score/os/unistd.h"
 
+#include <score/span.hpp>
+
 #include <cstddef>
 
 namespace score::mw::com::impl::lola
@@ -71,6 +73,31 @@ class ServiceDataStorage
     // coverity[autosar_cpp14_m11_0_1_violation]
     uid_t skeleton_uid_;
 };
+
+/// \brief Per service-element (event/field) information required to analytically size a ServiceDataStorage.
+struct ServiceElementDataStorageSizeInfo
+{
+    /// \brief Number of event-data slots the service-element provides.
+    std::size_t number_of_slots;
+    /// \brief Size (in bytes) of a single event-data slot, already padded to the slot's alignment. For typed events
+    ///        this equals sizeof(SampleType); for generic (type-erased) events it is the sample-size padded to the
+    ///        sample-alignment.
+    std::size_t aligned_slot_size;
+};
+
+/// \brief Analytically calculates the number of bytes a ServiceDataStorage (the data shm-object) occupies.
+/// \details This is used by SkeletonMemoryManager, but located next to ServiceDataStorage so that the layout-dependent
+///          size algorithm stays coupled to the data structure it reasons about. It does NOT allocate any memory nor
+///          construct a ServiceDataStorage; the size is derived purely from the (fixed) container capacities.
+///          The result mirrors exactly what the real construction allocates on the (monotonic) shared-memory resource.
+///          Eventually slightly more as we have to assume, that memory allocation starts from a worst-case aligned
+///          situation.
+/// \param service_elements_size_info per service-element sizing information. Its size equals the number of
+///        service-elements (events + fields), which is the fixed capacity the ServiceDataStorage containers are
+///        constructed with.
+/// \return needed size (in bytes) for the data shm-object.
+std::size_t CalculateServiceDataStorageShmSize(
+    score::cpp::span<const ServiceElementDataStorageSizeInfo> service_elements_size_info);
 
 }  // namespace score::mw::com::impl::lola
 

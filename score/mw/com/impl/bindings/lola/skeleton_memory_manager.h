@@ -185,22 +185,19 @@ class SkeletonMemoryManager final
         SkeletonBinding::SkeletonFieldBindings& fields);
 
     /// \brief Calculates the needed size for the data shm-object (holding the ServiceDataStorage) analytically.
-    /// \details In contrast to the simulation based approach this function does NOT allocate any (heap) memory and does
-    /// not create a ServiceDataStorage. Instead it calculates the exactly needed (worst-case) size based on the
-    /// handed-over event/field bindings and the deployment configuration. This is possible because ServiceDataStorage
-    /// uses fixed-capacity containers (see LinearSearchMap / EventDataStorage) whose sizes are deterministic once the
-    /// number of service-elements and their number of slots / sample-sizes are known.
+    /// \details Does NOT allocate any (heap) memory and does not create a ServiceDataStorage. It collects the per
+    /// service-element sizing information (number of slots, aligned sample-size) from the handed-over event/field
+    /// bindings and the deployment configuration and delegates the actual layout math to
+    /// CalculateServiceDataStorageShmSize (located next to ServiceDataStorage).
     /// \return needed size (in bytes) for the data shm-object.
     std::size_t CalculateDataShmResourceStorageSize(SkeletonBinding::SkeletonEventBindings& events,
                                                     SkeletonBinding::SkeletonFieldBindings& fields) const;
 
     /// \brief Calculates the needed size for a control shm-object (holding ServiceDataControl[s]) analytically.
-    /// \details Like CalculateDataShmResourceStorageSize this function does NOT allocate any (heap) memory and does not
-    /// create a ServiceDataControl. It calculates the exactly needed (worst-case) size based on the handed-over
-    /// event/field bindings and the deployment configuration. This is possible because - after the refactoring -
-    /// ServiceDataControl and all of its (deeply) nested containers use fixed-capacity containers (LinearSearchMap and
-    /// score::containers::DynamicArray) whose sizes are deterministic once the number of service-elements, their number
-    /// of slots and their number of max-subscribers are known.
+    /// \details Does NOT allocate any (heap) memory and does not create a ServiceDataControl. It collects the per
+    /// service-element sizing information (number of slots, max-subscribers) from the handed-over event/field bindings
+    /// and the deployment configuration and delegates the actual layout math to CalculateServiceDataControlShmSize
+    /// (located next to ServiceDataControl).
     /// The same size applies to the QM and (if present) the ASIL-B control shm-object, as both hold a
     /// ServiceDataControl created with the very same configuration.
     /// \return needed size (in bytes) for a single control shm-object.

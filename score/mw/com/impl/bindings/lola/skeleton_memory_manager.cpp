@@ -24,7 +24,6 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
-#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
@@ -45,19 +44,12 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
 namespace
 {
-
-// All alignments occurring within the shm-objects are <= alignof(std::max_align_t). The SharedMemoryResource is a
-// monotonic (bump) allocator: the bytes it accounts for a single allocation are the requested size plus the padding
-// needed to bring the current offset to the requested alignment. By rounding every individual allocation up to
-// alignof(std::max_align_t) (via the shared CalculateAlignedSize() utility) we keep the running offset max-aligned and
-// therefore obtain a size that is guaranteed to be sufficient (it is exact whenever the allocated sizes are multiples
-// of the involved alignment, which is the common case).
-constexpr std::size_t kMaxAlign = alignof(std::max_align_t);
 
 ServiceDataControl* GetServiceDataControlSkeletonSide(const memory::shared::ManagedMemoryResource& control)
 {
@@ -550,134 +542,54 @@ std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
     SkeletonBinding::SkeletonEventBindings& events,
     SkeletonBinding::SkeletonFieldBindings& fields) const
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        number_of_service_elements_.has_value(),
-        "number_of_service_elements_ must be set before calculating the data shm resource storage size.");
-    const std::size_t number_of_service_elements = number_of_service_elements_.value();
-
-    // (1) The ServiceDataStorage object itself (including the inline bookkeeping of its two LinearSearchMaps).
-    std::size_t total_size = memory::shared::CalculateAlignedSize(sizeof(ServiceDataStorage), kMaxAlign);
-
-    // (2) The two backing arrays of the LinearSearchMaps (allocated once, with capacity == number_of_service_elements).
-    // number_of_service_elements_ is the capacity the ServiceDataStorage is actually constructed with (see
-    // CalculateShmResourceStorageSizes), hence we use exactly that value here to stay consistent with the real
-    // allocation.
-    total_size += memory::shared::CalculateAlignedSize(
-        number_of_service_elements * sizeof(ServiceDataStorage::EventDataStorageMap::value_type), kMaxAlign);
-    total_size += memory::shared::CalculateAlignedSize(
-        number_of_service_elements * sizeof(ServiceDataStorage::EventMetaInfoMap::value_type), kMaxAlign);
-
-    // The size of the EventDataStorage control structure (a DynamicArray) is independent of the concrete sample-type
-    // (it only holds a fancy-pointer, an allocator and two size_t members).
-    const std::size_t event_data_storage_object_size =
-        memory::shared::CalculateAlignedSize(sizeof(EventDataStorage<std::max_align_t>), kMaxAlign);
-
-    // (3) For each event/field: the EventDataStorage object plus its raw slot-array.
-    // The slot-array size mirrors exactly what the real construction allocates:
-    //  - For typed events the slots are a contiguous array of SampleType, i.e. number_of_slots * sizeof(SampleType).
-    //    sizeof(SampleType) is always a multiple of alignof(SampleType), hence there is no per-slot padding and the
-    //    array size equals number_of_slots * GetMaxSize().
-    //  - For generic (type-erased) events each slot is padded to the sample-alignment, hence the per-slot size is
-    //    CalculateAlignedSize(sample_size, sample_alignment). The alignment is obtained from the generic binding.
-    // In both cases the resulting allocation is finally rounded up to a multiple of alignof(std::max_align_t) (the real
-    // code allocates it as an array of std::max_align_t elements).
-    const auto accumulate_service_elements = [this, &total_size](SkeletonBinding::SkeletonEventBindings& bindings,
-                                                                 const bool are_fields) {
+    // Collect the per service-element sizing information from the deployment configuration and the (typed/generic)
+    // event bindings. The layout-dependent size algorithm itself lives next to ServiceDataStorage
+    // (CalculateServiceDataStorageShmSize), so that the data-structure and the algorithm reasoning about its memory
+    // footprint stay closely coupled.
+    std::vector<ServiceElementDataStorageSizeInfo> service_elements{};
+    const auto collect_service_elements = [this, &service_elements](SkeletonBinding::SkeletonEventBindings& bindings,
+                                                                    const bool are_fields) {
         for (const auto& binding : bindings)
         {
             const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
             SkeletonEventBindingBase& event_binding = binding.second.get();
-            const std::size_t sample_size = event_binding.GetMaxSize();
 
-            // Determine the per-slot (aligned) size. For generic events the sample-alignment can differ from the
-            // natural alignment of the size, so we replicate the alignment-padding done by the real allocation.
-            std::size_t aligned_sample_size = sample_size;
-            // coverity[autosar_cpp14_a5_2_2_violation]
-            auto* const generic_binding = dynamic_cast<GenericSkeletonEventBinding*>(&event_binding);
-            if (generic_binding != nullptr)
-            {
-                const std::size_t sample_alignment = generic_binding->GetSizeInfo().second;
-                if ((sample_size != 0U) && (sample_alignment != 0U))
-                {
-                    aligned_sample_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
-                }
-            }
+            // GetMaxSize() already returns an aligned per-slot size: for typed events sizeof(SampleType) is a multiple
+            // of alignof(SampleType), and for generic events the internally used memory::DataTypeSizeInfo guarantees
+            // that the size is an integer multiple of its alignment. Hence there is no per-slot padding and the array
+            // size equals number_of_slots * GetMaxSize() for both event kinds.
+            const std::size_t aligned_slot_size = event_binding.GetMaxSize();
 
-            total_size += event_data_storage_object_size;
-            total_size += memory::shared::CalculateAlignedSize(number_of_slots * aligned_sample_size, kMaxAlign);
+            service_elements.push_back(ServiceElementDataStorageSizeInfo{number_of_slots, aligned_slot_size});
         }
     };
-    accumulate_service_elements(events, false);
-    accumulate_service_elements(fields, true);
+    collect_service_elements(events, false);
+    collect_service_elements(fields, true);
 
-    return total_size;
+    return CalculateServiceDataStorageShmSize(service_elements);
 }
 
 std::size_t SkeletonMemoryManager::CalculateControlShmResourceStorageSize(
     SkeletonBinding::SkeletonEventBindings& events,
     SkeletonBinding::SkeletonFieldBindings& fields) const
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        number_of_service_elements_.has_value(),
-        "number_of_service_elements_ must be set before calculating the control shm resource storage size.");
-    const std::size_t number_of_service_elements = number_of_service_elements_.value();
-
-    // (1) The ServiceDataControl object itself (including the inline bookkeeping of its event_controls_ LinearSearchMap
-    // and of its application_id_pid_mapping_).
-    std::size_t total_size = memory::shared::CalculateAlignedSize(sizeof(ServiceDataControl), kMaxAlign);
-
-    // (2) The backing array of the event_controls_ LinearSearchMap (allocated once, with capacity ==
-    // number_of_service_elements). number_of_service_elements_ is the capacity the ServiceDataControl is actually
-    // constructed with (see InitializeSharedMemoryForControl), hence we use exactly that value here.
-    total_size += memory::shared::CalculateAlignedSize(
-        number_of_service_elements * sizeof(decltype(ServiceDataControl::event_controls_)::value_type), kMaxAlign);
-
-    // (3) The backing array of the application_id_pid_mapping_ (a fixed-capacity DynamicArray with a capacity of
-    // kMaxApplicationIdPidMappings). It is allocated once during ServiceDataControl construction, independent of the
-    // number of service-elements.
-    total_size += memory::shared::CalculateAlignedSize(
-        static_cast<std::size_t>(ServiceDataControl::kMaxApplicationIdPidMappings) *
-            sizeof(ApplicationIdPidMappingEntry),
-        kMaxAlign);
-
-    // (4) For each event/field: the (deeply) nested fixed-capacity DynamicArrays contained within its EventControl.
-    // The EventControl object itself is stored inline within the event_controls_ backing array (accounted for in (2));
-    // only the backing arrays of its nested DynamicArrays allocate separately and are accounted for here.
-    const auto accumulate_service_elements = [this, &total_size](SkeletonBinding::SkeletonEventBindings& bindings,
-                                                                 const bool are_fields) {
+    // Collect the per service-element sizing information from the deployment configuration. The layout-dependent size
+    // algorithm itself lives next to ServiceDataControl (CalculateServiceDataControlShmSize), so that the
+    // data-structure and the algorithm reasoning about its memory footprint stay closely coupled.
+    std::vector<ServiceElementControlSizeInfo> service_elements{};
+    const auto collect_service_elements = [this, &service_elements](SkeletonBinding::SkeletonEventBindings& bindings,
+                                                                    const bool are_fields) {
         for (const auto& binding : bindings)
         {
             const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
             const std::size_t max_subscribers = GetMaxSubscribersFromConfig(binding.first, are_fields);
-
-            // (4a) EventControl::data_control (EventDataControl): its state_slots_ is a DynamicArray<ControlSlotType>
-            // with a capacity of number_of_slots.
-            total_size += memory::shared::CalculateAlignedSize(
-                number_of_slots * sizeof(EventDataControl::EventControlSlots::value_type), kMaxAlign);
-
-            // (4b) EventControl::transaction_log_set_ (TransactionLogSet):
-            //   - proxy_transaction_logs_: a DynamicArray<TransactionLogNode> with a capacity of max_subscribers.
-            total_size += memory::shared::CalculateAlignedSize(
-                max_subscribers * sizeof(TransactionLogSet::TransactionLogNode), kMaxAlign);
-
-            //   - each TransactionLogNode holds a TransactionLog whose reference_count_slots_ is a
-            //     DynamicArray<TransactionLogSlot> with a capacity of number_of_slots. The following separate
-            //     allocations of this array are made during construction of the TransactionLogSet:
-            //       * one per TransactionLogNode within proxy_transaction_logs_ (max_subscribers of them),
-            //       * one for the temporary prototype TransactionLogNode used by the DynamicArray fill-constructor.
-            //         Since the shared-memory resource is strictly monotonic (it never reclaims memory), this
-            //         temporary allocation permanently occupies space and must be accounted for.
-            //       * one for the inline skeleton_tracing_transaction_log_ member.
-            const std::size_t transaction_log_slots_array_size = memory::shared::CalculateAlignedSize(
-                number_of_slots * sizeof(TransactionLog::TransactionLogSlots::value_type), kMaxAlign);
-            const std::size_t number_of_transaction_log_slot_arrays = max_subscribers + 2U;
-            total_size += number_of_transaction_log_slot_arrays * transaction_log_slots_array_size;
+            service_elements.push_back(ServiceElementControlSizeInfo{number_of_slots, max_subscribers});
         }
     };
-    accumulate_service_elements(events, false);
-    accumulate_service_elements(fields, true);
+    collect_service_elements(events, false);
+    collect_service_elements(fields, true);
 
-    return total_size;
+    return CalculateServiceDataControlShmSize(service_elements);
 }
 
 std::size_t SkeletonMemoryManager::GetNumberOfSampleSlotsFromConfig(const std::string_view service_element_name,

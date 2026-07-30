@@ -258,8 +258,8 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
     ],
     deps = [
-        "@score_baselibs//score/containers:non_relocatable_vector",
         "//score/memory/shared",
+        "@score_baselibs//score/containers:non_relocatable_vector",
     ],
 )
 
@@ -277,12 +277,14 @@ cc_library(
     ],
     deps = [
         ":element_fq_id",
+        ":event_data_storage",
         ":event_meta_info",
         ":i_runtime",
-        "//score/memory/shared",
         ":linear_search_map",
+        "//score/memory/shared",
         "//score/mw/com/impl:runtime",
         "@score_baselibs//score/containers:non_relocatable_vector",
+        "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/os:unistd",
     ],
 )
@@ -298,10 +300,15 @@ cc_library(
     ],
     deps = [
         ":application_id_pid_mapping",
+        ":application_id_pid_mapping_entry",
         ":element_fq_id",
         ":event_control",
-        "//score/memory/shared",
+        ":event_data_control",
         ":linear_search_map",
+        ":transaction_log",
+        ":transaction_log_set",
+        "//score/memory/shared",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

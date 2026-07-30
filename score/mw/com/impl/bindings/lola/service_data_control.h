@@ -20,6 +20,8 @@
 
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
+#include <score/span.hpp>
+
 #include <cstddef>
 
 namespace score::mw::com::impl::lola
@@ -76,6 +78,31 @@ class ServiceDataControl
     ApplicationIdPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<ApplicationIdPidMappingEntry>>
         application_id_pid_mapping_;
 };
+
+/// \brief Per service-element (event/field) information required to analytically size a ServiceDataControl.
+struct ServiceElementControlSizeInfo
+{
+    /// \brief Number of event-data slots the service-element provides.
+    std::size_t number_of_slots;
+    /// \brief Maximum number of subscribers configured for the service-element.
+    std::size_t max_subscribers;
+};
+
+/// \brief Analytically calculates the number of bytes a (single) ServiceDataControl (a control shm-object) occupies.
+/// \details This is used by SkeletonMemoryManager, but located next to ServiceDataControl so that the layout-dependent
+///          size algorithm stays coupled to the data structure it reasons about.
+///          It does NOT allocate any memory nor construct a ServiceDataControl; the size is
+///          derived purely from the (fixed) container capacities. The result mirrors exactly what the real construction
+///          allocates on the (monotonic) shared-memory resource. Eventually slightly more as we have to assume, that
+///          memory allocation starts from a worst-case aligned situation.
+///          The same size applies to the QM and (if present) the ASIL-B control shm-object, as both hold a
+///          ServiceDataControl created with the very same configuration.
+/// \param service_elements_size_info per service-element sizing information. Its size equals the number of
+///        service-elements (events + fields), which is the fixed capacity the event_controls_ container is constructed
+///        with.
+/// \return needed size (in bytes) for a single control shm-object.
+std::size_t CalculateServiceDataControlShmSize(
+    score::cpp::span<const ServiceElementControlSizeInfo> service_elements_size_info);
 
 }  // namespace score::mw::com::impl::lola
 
