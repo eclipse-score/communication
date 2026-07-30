@@ -410,19 +410,26 @@ machine called the handler, and before it releases the lock, it checks the retur
 #### Tracing of Subscription State Changes
 
 The subscription state machine supports optional tracing of state transitions to provide visibility into the subscription
-lifecycle. When IPC Tracing is enabled for a proxy event, a tracing callback is automatically installed during 
-`Subscribe()` to capture all subsequent state transitions.
+lifecycle. When IPC Tracing is enabled for a proxy event, two separate tracing callbacks are automatically installed 
+during `Subscribe()`:
+- `SetupSubscriptionStateChangeTracing()` - Installed via `SetSubscriptionStateChangeTracingCallback()`
+- `SetupSubscriptionStateChangeHandlerTracing()` - Installed via `SetSubscriptionStateChangeHandlerTracingCallback()`
 
-The tracing infrastructure provides four trace points:
-- **Subscription state changed** - Captures every state transition (fired by state machine at each `TransitionToState()`)
+The tracing infrastructure provides five trace point types:
+- **Subscription state changed** - Captures every state transition (fired by `SetupSubscriptionStateChangeTracing()` callback at each `TransitionToState()`)
 - **Handler registered** - Captures when `SetSubscriptionStateChangeHandler()` is called
 - **Handler deregistered** - Captures when `UnsetSubscriptionStateChangeHandler()` is called
-- **Handler callback** - Reserved for future use; currently not invoked due to callback capacity constraints
+- **Set handler** - Captures when `SetSubscriptionStateChangeHandler()` is called
+- **Unset handler** - Captures when `UnsetSubscriptionStateChangeHandler()` is called
+- **Handler callback** - Captures before the user-provided handler is invoked (fired by `SetupSubscriptionStateChangeHandlerTracing()` callback before user handler execution)
 
-The tracing callback is managed at the binding level via `SetSubscriptionStateChangeTracingCallback()` on the 
-`ProxyEventBindingBase` interface. This callback receives the new subscription state at each transition and dispatches 
-it to the IPC Tracing subsystem. The callback is invoked **before** the user-provided handler to ensure complete 
-visibility into state transitions.
+The tracing callbacks are managed at the binding level via separate interfaces on the `ProxyEventBindingBase`:
+- `SetSubscriptionStateChangeTracingCallback()` - Receives new subscription state at each transition
+- `SetSubscriptionStateChangeHandlerTracingCallback()` - Receives new subscription state before user handler is called
+
+Both callbacks are invoked in the subscription state machine's `TransitionToState()` method to ensure complete 
+visibility into state transitions and handler invocations. The state changed callback is invoked first, followed by 
+the handler tracing callback (if a user handler is set).
 
 The structural model of the subscription state machine with tracing callback support is shown in the 
 [proxy event state machine model](proxy_event_state_machine_model.puml). The interaction flow, 

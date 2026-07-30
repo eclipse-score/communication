@@ -87,7 +87,20 @@ class ProxyEventBindingBase
 
     /// \brief Sets a tracing callback for subscription state changes (used internally for tracing only)
     virtual void SetSubscriptionStateChangeTracingCallback(
-        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept = 0;
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+    {
+        // Default no-op implementation for bindings that don't support tracing
+        (void)callback;  // Suppress unused parameter warning
+    }
+
+    /// \brief Sets a tracing callback for subscription state change handler invocations (used internally for tracing
+    /// only).
+    virtual void SetSubscriptionStateChangeHandlerTracingCallback(
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+    {
+        // Default no-op implementation for bindings that don't support tracing
+        (void)callback;  // Suppress unused parameter warning
+    }
 
     /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
     /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.

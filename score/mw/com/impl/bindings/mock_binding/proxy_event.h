@@ -55,6 +55,10 @@ class ProxyEventBase : public ProxyEventBindingBase
                 SetSubscriptionStateChangeTracingCallback,
                 (SubscriptionStateChangeTracingCallback),
                 (noexcept, override));
+    MOCK_METHOD(void,
+                SetSubscriptionStateChangeHandlerTracingCallback,
+                (SubscriptionStateChangeTracingCallback),
+                (noexcept, override));
 };
 
 /// \brief Mock implementation for proxy event bindings.
@@ -96,6 +100,10 @@ class ProxyEvent : public ProxyEventBinding<SampleType>
     MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));
     MOCK_METHOD(void,
                 SetSubscriptionStateChangeTracingCallback,
+                (SubscriptionStateChangeTracingCallback),
+                (noexcept, override));
+    MOCK_METHOD(void,
+                SetSubscriptionStateChangeHandlerTracingCallback,
                 (SubscriptionStateChangeTracingCallback),
                 (noexcept, override));
 
@@ -204,6 +212,11 @@ class ProxyEventFacade : public ProxyEventBinding<SampleType>
     void SetSubscriptionStateChangeTracingCallback(SubscriptionStateChangeTracingCallback callback) noexcept override
     {
         return proxy_event_.SetSubscriptionStateChangeTracingCallback(std::move(callback));
+    }
+    void SetSubscriptionStateChangeHandlerTracingCallback(
+        SubscriptionStateChangeTracingCallback callback) noexcept override
+    {
+        return proxy_event_.SetSubscriptionStateChangeHandlerTracingCallback(std::move(callback));
     }
 
   private:

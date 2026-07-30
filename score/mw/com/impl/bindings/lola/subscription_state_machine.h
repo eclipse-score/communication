@@ -109,6 +109,8 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     void UnsetSubscriptionStateChangeHandler() noexcept;
     void SetSubscriptionStateChangeTracingCallback(
         score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept;
+    void SetSubscriptionStateChangeHandlerTracingCallback(
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept;
 
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept;
 
@@ -155,6 +157,8 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     std::optional<std::weak_ptr<ScopedEventReceiveHandler>> event_receiver_handler_;
     std::optional<SubscriptionStateChangeHandler> subscription_state_change_handler_;
     std::optional<score::cpp::callback<void(SubscriptionState), 64U>> subscription_state_change_tracing_callback_;
+    std::optional<score::cpp::callback<void(SubscriptionState), 64U>>
+        subscription_state_change_handler_tracing_callback_;
     EventReceiveHandlerManager event_receive_handler_manager_;
     ConsumerEventDataControlLocalView<>& event_data_control_local_;
     EventSubscriptionControl<>& subscription_control_;

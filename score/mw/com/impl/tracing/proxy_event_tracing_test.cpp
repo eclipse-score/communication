@@ -1204,5 +1204,98 @@ TEST_P(ProxyEventSetupSubscriptionStateChangeTracingFixture,
     // Then Trace should have been called 3 times
 }
 
+using ProxyEventSetupSubscriptionStateChangeHandlerTracingFixture = ProxyEventTracingFixture;
+INSTANTIATE_TEST_SUITE_P(ProxyEventSetupSubscriptionStateChangeHandlerTracingFixture,
+                         ProxyEventSetupSubscriptionStateChangeHandlerTracingFixture,
+                         ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+
+TEST_P(ProxyEventSetupSubscriptionStateChangeHandlerTracingFixture,
+       SetupSubscriptionStateChangeHandlerTracingWillInstallCallbackWhenEnabled)
+{
+    // Given a ProxyEventTracingData with call subscription state change handler tracing enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting SetSubscriptionStateChangeHandlerTracingCallback will be called on binding
+    EXPECT_CALL(proxy_event_binding_base_, SetSubscriptionStateChangeHandlerTracingCallback(_)).Times(1);
+
+    // When calling SetupSubscriptionStateChangeHandlerTracing
+    SetupSubscriptionStateChangeHandlerTracing(proxy_event_tracing_data_, proxy_event_binding_base_);
+}
+
+TEST_P(ProxyEventSetupSubscriptionStateChangeHandlerTracingFixture,
+       SetupSubscriptionStateChangeHandlerTracingWillNotInstallCallbackWhenDisabled)
+{
+    // Given a ProxyEventTracingData with call subscription state change handler tracing disabled
+    WithAValidProxyEventTracingData();
+    proxy_event_tracing_data_.enable_call_subscription_state_change_handler = false;
+
+    // Expecting SetSubscriptionStateChangeHandlerTracingCallback will not be called
+    EXPECT_CALL(proxy_event_binding_base_, SetSubscriptionStateChangeHandlerTracingCallback(_)).Times(0);
+
+    // When calling SetupSubscriptionStateChangeHandlerTracing
+    SetupSubscriptionStateChangeHandlerTracing(proxy_event_tracing_data_, proxy_event_binding_base_);
+}
+
+TEST_P(ProxyEventSetupSubscriptionStateChangeHandlerTracingFixture,
+       SetupSubscriptionStateChangeHandlerTracingCallbackWillInvokeTraceFunction)
+{
+    // Given a ProxyEventTracingData with call subscription state change handler tracing enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting SetSubscriptionStateChangeHandlerTracingCallback will be called
+    EXPECT_CALL(proxy_event_binding_base_, SetSubscriptionStateChangeHandlerTracingCallback(_)).Times(1);
+
+    // And expecting Trace will be called when the subscription state machine invokes the callback
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _)).Times(1);
+
+    // Capture and store the callback to invoke it
+    std::optional<score::cpp::callback<void(SubscriptionState), 64U>> captured_callback;
+    ON_CALL(proxy_event_binding_base_, SetSubscriptionStateChangeHandlerTracingCallback(_))
+        .WillByDefault([&captured_callback](score::cpp::callback<void(SubscriptionState), 64U> callback) {
+            captured_callback = std::move(callback);
+        });
+
+    // When calling SetupSubscriptionStateChangeHandlerTracing
+    SetupSubscriptionStateChangeHandlerTracing(proxy_event_tracing_data_, proxy_event_binding_base_);
+
+    // Then verify the callback was captured and can be invoked
+    ASSERT_TRUE(captured_callback.has_value());
+
+    // When the subscription state machine invokes the callback before user handler
+    captured_callback.value()(SubscriptionState::kSubscribed);
+
+    // Then Trace should have been called
+}
+
+TEST_P(ProxyEventSetupSubscriptionStateChangeHandlerTracingFixture,
+       SetupSubscriptionStateChangeHandlerTracingCallbackWillHandleMultipleStates)
+{
+    // Given a ProxyEventTracingData with call subscription state change handler tracing enabled
+    WithAValidProxyEventTracingData().WithAllTracePointsEnabled();
+
+    // Expecting Trace will be called for each handler invocation
+    EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _)).Times(3);
+
+    // Capture and store the callback
+    std::optional<score::cpp::callback<void(SubscriptionState), 64U>> captured_callback;
+    ON_CALL(proxy_event_binding_base_, SetSubscriptionStateChangeHandlerTracingCallback(_))
+        .WillByDefault([&captured_callback](score::cpp::callback<void(SubscriptionState), 64U> callback) {
+            captured_callback = std::move(callback);
+        });
+
+    // When calling SetupSubscriptionStateChangeHandlerTracing
+    SetupSubscriptionStateChangeHandlerTracing(proxy_event_tracing_data_, proxy_event_binding_base_);
+
+    // Then verify the callback was captured
+    ASSERT_TRUE(captured_callback.has_value());
+
+    // When invoking the callback with different subscription states
+    captured_callback.value()(SubscriptionState::kNotSubscribed);
+    captured_callback.value()(SubscriptionState::kSubscriptionPending);
+    captured_callback.value()(SubscriptionState::kSubscribed);
+
+    // Then Trace should have been called 3 times
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::tracing

@@ -210,10 +210,10 @@ Subscription state change tracing is controlled via the trace filter configurati
 
 ```json
 {
-  "enable_subscription_state_changed": true,
-  "enable_trace_subscription_state_change_handler_registered": true,
-  "enable_trace_subscription_state_change_handler_deregistered": true,
-  "enable_call_subscription_state_change_handler": true
+  "trace_subscription_state_changed": true,
+  "trace_subscription_state_change_handler_registered": true,
+  "trace_subscription_state_change_handler_deregistered": true,
+  "trace_subscription_state_change_handler_callback": true
 }
 ```
 

@@ -575,6 +575,21 @@ void SetupSubscriptionStateChangeTracing(ProxyEventTracingData& proxy_event_trac
     }
 }
 
+void SetupSubscriptionStateChangeHandlerTracing(ProxyEventTracingData& proxy_event_tracing_data,
+                                                ProxyEventBindingBase& proxy_event_binding_base) noexcept
+{
+    // Create a callback that will be invoked before the user's subscription state change handler is called
+    if (proxy_event_tracing_data.enable_call_subscription_state_change_handler)
+    {
+        score::cpp::callback<void(SubscriptionState), 64U> handler_tracing_callback =
+            [&proxy_event_tracing_data, &proxy_event_binding_base](SubscriptionState new_state) noexcept {
+                TraceCallSubscriptionStateChangeHandler(proxy_event_tracing_data, proxy_event_binding_base, new_state);
+            };
+        // Set callback on the binding's state machine
+        proxy_event_binding_base.SetSubscriptionStateChangeHandlerTracingCallback(std::move(handler_tracing_callback));
+    }
+}
+
 score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(
     ProxyEventTracingData& proxy_event_tracing_data,
     const ProxyEventBindingBase& proxy_event_binding_base,

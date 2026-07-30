@@ -129,6 +129,13 @@ void SubscriptionStateMachine::SetSubscriptionStateChangeTracingCallback(
     subscription_state_change_tracing_callback_ = std::move(callback);
 }
 
+void SubscriptionStateMachine::SetSubscriptionStateChangeHandlerTracingCallback(
+    score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept
+{
+    std::lock_guard<std::mutex> lock{state_mutex_};
+    subscription_state_change_handler_tracing_callback_ = std::move(callback);
+}
+
 std::optional<std::uint16_t> SubscriptionStateMachine::GetMaxSampleCount() const noexcept
 {
     std::lock_guard<std::mutex> lock{state_mutex_};
@@ -165,6 +172,12 @@ void SubscriptionStateMachine::TransitionToState(const SubscriptionStateMachineS
     if (subscription_state_change_tracing_callback_.has_value())
     {
         subscription_state_change_tracing_callback_.value()(new_subscription_state);
+    }
+
+    // Call handler tracing callback if set (before invoking user handler)
+    if (subscription_state_change_handler_tracing_callback_.has_value())
+    {
+        subscription_state_change_handler_tracing_callback_.value()(new_subscription_state);
     }
 
     if (subscription_state_change_handler_.has_value())
