@@ -55,6 +55,11 @@ pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
 /// In addition to the base subscription APIs, a field subscription exposes:
 /// - `get_num_new_samples_available()` — how many fresh samples are ready to receive.
 /// - `get_free_sample_count()` — remaining capacity in the subscription buffer.
+///
+/// Note: In C++ both `ProxyEvent` and `ProxyField` expose `GetNumNewSamplesAvailable()` and
+/// `GetFreeSampleCount()` (field delegates to the underlying event base). These therefore belong
+/// in the base `concept::Subscription` trait in Rust as well; they are placed here temporarily
+/// until a follow-up PR moves them up to `Subscription`.
 pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
     concept::Subscription<T, R>
 {
@@ -90,18 +95,35 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
     ///
     /// # Returns
     /// Return the result of `Result<()>` which contains the status of the update operation.
-    fn update(&self, value: &T) -> Result<()>;
+    /// Update the value of the field with the provided value.
+    /// The value is taken by value; the FFI layer handles the necessary copy into the shared
+    /// memory slot internally — the same pattern as `Publisher::send(value: T)` for events.
+    /// For zero-copy writes use `allocate()` instead.
+    fn update(&self, value: T) -> Result<()>;
 
-    /// Register a callback function to handle the set operation for the field.
-    /// It will create new task or thread to handle the set operation callback function,
-    /// which will be mostly done using thread pool or async task pool, will be decided at the time of implementation.
+    /// Register a callback invoked by the middleware whenever a consumer calls the field setter.
+    /// The callback receives the proposed new value **by value** as a notification — the FFI
+    /// layer has already committed the value to storage (same as `Publisher::send()` for events).
+    /// The callback is for side effects only (e.g. logging, triggering downstream logic).
+    ///
+    /// This registration is infallible (like `MethodHandler::register_handler`).
     ///
     /// # Parameters
-    /// * `callback` - The callback function to handle the set operation for the field.
+    /// * `callback` - Receives the accepted value; return type is `()`.
+    fn register_set_handler(&self, callback: impl Fn(T) + Send + 'static);
+
+    /// Register a callback invoked by the middleware whenever a consumer calls the field getter.
+    /// The callback returns the value that will be delivered back to the consumer.
     ///
-    /// # Returns
-    /// Return the result of `Result<()>` which contains the status of the register operation.
-    fn register_set_handler(&self, callback: impl Fn(&T) + Send + 'static) -> Result<()>;
+    /// Note: In the C++ implementation the default get handler is registered automatically by the
+    /// framework (it returns the last `Update`d value). Rust exposes this explicitly so producers
+    /// can install custom read logic if needed.
+    ///
+    /// This registration is infallible (like `MethodHandler::register_handler`).
+    ///
+    /// # Parameters
+    /// * `callback` - The callback function; must return the current field value.
+    fn register_get_handler(&self, callback: impl Fn() -> T + Send + 'static);
 }
 
 /// FieldSampleMut trait is used to update the value of the field sample for zero-copy API.
