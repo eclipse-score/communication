@@ -78,6 +78,8 @@ impl Runtime for MockRuntimeImpl {
     type MethodCaller<Args: MethodArgs, Return: CommData> = MockMethodCaller<Args, Return, Self>;
     type MethodHandler<Args: MethodArgs, Return: CommData> = MockMethodHandler<Args, Return, Self>;
     type FieldSubscriber<T: CommData + Debug> = MockFieldSubscriber<T>;
+    type FieldGetCaller<T: CommData + Debug> = MockMethodCaller<(), T, Self>;
+    type FieldSetCaller<T: CommData + Debug> = MockMethodCaller<(T,), T, Self>;
     type FieldPublisher<T: CommData + Debug> = MockFieldPublisher<T>;
     type ProviderInfo = MockProviderInfo;
     type ConsumerInfo = MockConsumerInfo;
