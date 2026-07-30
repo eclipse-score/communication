@@ -79,8 +79,8 @@ interface!(
 interface!(
     interface VehicleField {
         Id = "VehicleFieldInterface",
-        left_tire: Field<Tire>,
-        exhaust: Field<Exhaust>,
+        left_tire: Field<Tire, WithGetter + WithSetter + WithNotifier>,
+        exhaust: Field<Exhaust, WithGetter + WithSetter + WithNotifier>,
      }
 );
 
@@ -90,8 +90,8 @@ interface!(
         Id = "VehicleMonitorInterface",
         left_tire: Event<Tire>,
         exhaust: Event<Exhaust>,
-        left_tire_field: Field<Tire>,
-        exhaust_field: Field<Exhaust>,
+        left_tire_field: Field<Tire, WithGetter + WithSetter + WithNotifier>,
+        exhaust_field: Field<Exhaust, WithGetter + WithSetter + WithNotifier>,
         update_tire_pressure(Tire) -> (),
         update_front_tires_pressure(Tire, Tire) -> (),
         get_tire_pressure() -> Tire,

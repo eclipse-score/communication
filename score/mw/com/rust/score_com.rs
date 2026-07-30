@@ -149,7 +149,7 @@ pub use score_com_concept::{
     MethodInArgMaybeUninit, MethodInArgPtr, MethodReturnSample, OfferedProducer, PlacementDefault,
     Producer, ProducerBuilder, ProviderInfo, Publisher, Reloc, Result, Runtime, RuntimeBuilder,
     SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
-    Uninit, ZeroCopyArgs,
+    Uninit, WithGetter, WithNotifier, WithSetter, ZeroCopyArgs,
 };
 
 #[doc(hidden)]
