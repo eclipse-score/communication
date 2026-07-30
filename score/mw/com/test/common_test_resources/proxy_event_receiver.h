@@ -15,25 +15,24 @@
 
 #include "score/concurrency/notification.h"
 #include "score/mw/com/test/common_test_resources/fail_test.h"
-#include "score/mw/com/types.h"
 
 #include <score/stop_token.hpp>
 
-#include <cstdint>
+#include <functional>
 #include <iostream>
-#include <optional>
+#include <utility>
 
 namespace score::mw::com::test
 {
 
 /// \brief Helper class which registers a receiveHandler on construction and allows waiting for a
 /// certain number of samples to be received. It also checks that the received samples are in the expected order.
-template <typename ProxyEventType, typename GetNewSamplesCallback>
+template <typename ProxyEventType>
 class ProxyEventReceiver
 {
   public:
-    explicit ProxyEventReceiver(ProxyEventType& proxy_event, GetNewSamplesCallback get_new_samples_callback)
-        : proxy_event_{proxy_event}, get_new_samples_callback_{std::move(get_new_samples_callback)}
+    explicit ProxyEventReceiver(ProxyEventType& proxy_event)
+        : received_sample_notification_{}, proxy_event_{proxy_event}
     {
         auto receive_handler = [&received_sample_notification = received_sample_notification_]() {
             std::cout << "ProxyEventReceiver: Received event notification" << std::endl;
@@ -56,15 +55,17 @@ class ProxyEventReceiver
     ///
     /// \return true if the expected number of samples was received, false if the wait was interrupted by the
     /// stop_token.
+    template <typename GetNewSamplesCallback>
     [[nodiscard]] bool WaitForSamples(const score::cpp::stop_token& stop_token,
-                                      const std::size_t num_samples_to_receive)
+                                      const std::size_t num_samples_to_receive,
+                                      GetNewSamplesCallback&& get_new_samples_callback)
     {
         std::size_t received_count{0U};
         while (!stop_token.stop_requested())
         {
             auto get_samples_result = proxy_event_.GetNewSamples(
-                [this](auto sample) {
-                    std::invoke(get_new_samples_callback_, std::move(sample));
+                [&get_new_samples_callback](auto sample) {
+                    std::invoke(get_new_samples_callback, std::move(sample));
                 },
                 num_samples_to_receive);
             if (!get_samples_result.has_value())
@@ -104,10 +105,8 @@ class ProxyEventReceiver
     }
 
   private:
-    score::concurrency::Notification received_sample_notification_{};
-    std::optional<std::uint32_t> latest_value_{};
+    score::concurrency::Notification received_sample_notification_;
     ProxyEventType& proxy_event_;
-    GetNewSamplesCallback get_new_samples_callback_;
 };
 
 }  // namespace score::mw::com::test
