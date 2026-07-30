@@ -11,7 +11,13 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-#![allow(unused)]
+// This file demonstrate the usage of consumer field APIs, which are generated for the VehicleFieldInterface.
+
+// Notes: we are creating consumer instance specific for field here but this is just for demonstration purpose,
+// for same consumer instance method / event/ field can be subscribed as per subscribe interface.
+
+// All the functions and types in this file are just for demonstration purpose,
+// as this are not part of any callable because of that unused warning is suppressed for this file.
 
 use score_com::{
     Builder, FindServiceSpecifier, InstanceSpecifier,
@@ -20,9 +26,11 @@ use score_com::{
 
 use com_api_gen::{Tire, VehicleFieldInterface};
 
+#[allow(dead_code)]
 type VehicleFieldConsumer<R> = <VehicleFieldInterface as Interface>::Consumer<R>;
 
 // create the consumer.
+#[allow(dead_code)]
 fn create_consumer_field<R: Runtime>(
     runtime: &R,
     service_id: InstanceSpecifier,
@@ -54,6 +62,7 @@ fn create_consumer_field<R: Runtime>(
 //
 // Because subscribe() takes `left_tire` by value, extract the callers before subscribing
 // if both are needed in the same async context.
+#[allow(dead_code)]
 async fn consumer_processing_field<R: Runtime>(consumer: VehicleFieldConsumer<R>) {
     // Async get via the generated get_left_tire() wrapper.
     // Uses MethodCaller<(), Tire> under the hood - reuses Method infrastructure.

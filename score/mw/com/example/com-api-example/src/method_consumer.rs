@@ -21,8 +21,6 @@
 
 // All the functions and types in this file are just for demonstration purpose,
 // as this are not part of any callable because of that unused warning is suppressed for this file.
-#![allow(unused)]
-
 use score_com::{
     Builder, FindServiceSpecifier, InstanceSpecifier, Interface, MethodCaller,
     MethodInArgMaybeUninit, Runtime, ServiceDiscovery,
@@ -30,10 +28,12 @@ use score_com::{
 
 use com_api_gen::{Tire, VehicleMethodsInterface};
 
+#[allow(dead_code)]
 type VehicleMethodConsumer<R> = <VehicleMethodsInterface as Interface>::Consumer<R>;
 
 // These functions are just to demonstrate the method APIs, and they can not be used in main of example app,
 // as runtime implementation is not available for method APIs.
+#[allow(dead_code)]
 fn create_consumer_method<R: Runtime>(
     runtime: &R,
     service_id: InstanceSpecifier,
@@ -62,6 +62,7 @@ fn create_consumer_method<R: Runtime>(
 // Copy path: single positional argument.
 // Demonstrates calling a method with a single argument, where the argument is copied into the method call.
 // Zero-copy path: allocate, write, then call the method with allocaed args.
+#[allow(dead_code)]
 async fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
     // Copy path: single positional argument — no tuple needed.
     let tire = Tire { pressure: 30.0 };
@@ -88,6 +89,7 @@ async fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<
 }
 
 // Get Method call which has no argument and return a value, which is also async.
+#[allow(dead_code)]
 async fn method_get_call<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
     // Copy path: zero-argument method — empty parens, no empty-tuple needed.
     // it returns a `Result<R::MethodReturnSample<Tire>>`
@@ -101,6 +103,7 @@ async fn method_get_call<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
 // two arguments method.
 // It demonstrates calling a method with two arguments, where the arguments are copied into the method call.
 // It also demonstrates the zero-copy path, where the arguments are allocated, written, and then passed to the method call.
+#[allow(dead_code)]
 async fn consumer_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
     // Copy path: two arguments method.
     let tire1 = Tire { pressure: 31.0 };
