@@ -467,7 +467,12 @@ macro_rules! interface_consumer_mixed {
                     pub $ev_name: R::Subscriber<$ev_type>,
                 )*
                 $(
+                    // Notification subscriber (subscribe / try_receive / stream).
                     pub $fi_name: R::FieldSubscriber<$fi_type>,
+                    // Async get caller – reuses Method infrastructure (invoke_with_copy(())).
+                    pub [<$fi_name _get>]: R::MethodCaller<(), $fi_type>,
+                    // Async set caller – reuses Method infrastructure (invoke_with_copy((val,))).
+                    pub [<$fi_name _set>]: R::MethodCaller<($fi_type,), $fi_type>,
                 )*
                 $(
                     pub $me_name: R::MethodCaller<($($me_arg_ty,)*), $me_ret>,
@@ -494,6 +499,22 @@ macro_rules! interface_consumer_mixed {
                                 "Failed to create field subscriber for {}",
                                 stringify!($fi_name)
                             )),
+                            [<$fi_name _get>]: <R::MethodCaller<(), $fi_type>
+                                as score_com::MethodCaller<(), $fi_type, R>>::new(
+                                    concat!(stringify!($fi_name), "_get"),
+                                    instance_info.clone()
+                                ).expect(&format!(
+                                    "Failed to create field get caller for {}",
+                                    stringify!($fi_name)
+                                )),
+                            [<$fi_name _set>]: <R::MethodCaller<($fi_type,), $fi_type>
+                                as score_com::MethodCaller<($fi_type,), $fi_type, R>>::new(
+                                    concat!(stringify!($fi_name), "_set"),
+                                    instance_info.clone()
+                                ).expect(&format!(
+                                    "Failed to create field set caller for {}",
+                                    stringify!($fi_name)
+                                )),
                         )*
                         $(
                             $me_name: <R::MethodCaller<($($me_arg_ty,)*), $me_ret>
@@ -514,9 +535,35 @@ macro_rules! interface_consumer_mixed {
             // so copy and zero-copy paths share the same call site.
             //   copy:      consumer.method_name(val).await
             //   zero-copy: consumer.method_name(ptr).await
+            //
+            // Async field get/set wrappers - one pair per field member.
+            //   consumer.get_field_name().await  - async get via MethodCaller<(), T>
+            //   consumer.set_field_name(val).await - async set via MethodCaller<(T,), T>
+            // These are independent of subscribe() so they work before and after subscription.
             impl<R: score_com::Runtime + ?Sized> [<$id Consumer>]<R> {
                 $(
                     $crate::_gen_method_wrapper!($me_name ($($me_arg_ty),*) -> $me_ret);
+                )*
+                $(
+                    /// Asynchronously get the current value of the `$fi_name` field.
+                    /// Returns a future that resolves to `Result<R::MethodReturnSample<$fi_type>>`.
+                    /// Available before and after `subscribe()` - independent of subscription lifecycle.
+                    pub fn [<get_ $fi_name>]<'a>(
+                        &'a self,
+                    ) -> impl core::future::Future<Output = score_com::Result<<R as score_com::Runtime>::MethodReturnSample<$fi_type>>> + 'a {
+                        score_com::MethodCaller::invoke_with_copy(&self.[<$fi_name _get>], ())
+                    }
+
+                    /// Asynchronously set the value of the `$fi_name` field.
+                    /// Returns a future that resolves to `Result<R::MethodReturnSample<$fi_type>>`
+                    /// containing the confirmed field value from the producer.
+                    /// Available before and after `subscribe()` - independent of subscription lifecycle.
+                    pub fn [<set_ $fi_name>]<'a>(
+                        &'a self,
+                        value: $fi_type,
+                    ) -> impl core::future::Future<Output = score_com::Result<<R as score_com::Runtime>::MethodReturnSample<$fi_type>>> + 'a {
+                        score_com::MethodCaller::invoke_with_copy(&self.[<$fi_name _set>], (value,))
+                    }
                 )*
             }
         }
