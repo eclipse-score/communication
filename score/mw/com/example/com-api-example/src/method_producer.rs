@@ -18,12 +18,11 @@
 
 // All the functions and types in this file are just for demonstration purpose,
 // as this are not part of any callable because of that unused warning is suppressed for this file.
-#![allow(unused)]
-
 use score_com::{Builder, InstanceSpecifier, Interface, Producer, Runtime};
 
 use com_api_gen::{Tire, VehicleMethodsInterface};
 
+#[allow(dead_code)]
 type VehicleMethodOfferedProducer<R> =
     <<VehicleMethodsInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
 
@@ -39,6 +38,7 @@ type VehicleMethodOfferedProducer<R> =
 // as the offer method will require all method handlers to be registered before offering the producer instance.
 // Here assumption of use is user must call`init()` and register all method handlers ,
 // direct call to `offer()` API will panic.
+#[allow(dead_code)]
 fn create_producer_method<R: Runtime>(
     runtime: &R,
     service_id: InstanceSpecifier,
@@ -67,6 +67,7 @@ fn create_producer_method<R: Runtime>(
         .expect("Failed to offer producer instance")
 }
 
+#[allow(dead_code)]
 fn process_left_tire(tire: Tire) {
     // do some processing with the tire data
     println!("Processing left tire pressure: {:?}", tire);

@@ -32,7 +32,7 @@
 // with `get_{name}()` / `set_{name}()` async convenience wrappers.
 // On the producer side, FieldPublisher keeps update() + register_set_handler() unchanged.
 
-use crate::*;
+use crate::concept::{self, CommData, Result, Runtime, SampleMaybeUninit};
 use std::fmt::Debug;
 
 /// `FieldSubscriber` is used to subscribe to a field and receive update notifications.
@@ -55,11 +55,6 @@ pub trait FieldSubscriber<T: CommData + Debug, R: Runtime + ?Sized>:
 /// In addition to the base subscription APIs, a field subscription exposes:
 /// - `get_num_new_samples_available()` — how many fresh samples are ready to receive.
 /// - `get_free_sample_count()` — remaining capacity in the subscription buffer.
-///
-/// Note: In C++ both `ProxyEvent` and `ProxyField` expose `GetNumNewSamplesAvailable()` and
-/// `GetFreeSampleCount()` (field delegates to the underlying event base). These therefore belong
-/// in the base `concept::Subscription` trait in Rust as well; they are placed here temporarily
-/// until a follow-up PR moves them up to `Subscription`.
 pub trait FieldSubscription<T: CommData + Debug, R: Runtime + ?Sized>:
     concept::Subscription<T, R>
 {

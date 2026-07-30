@@ -11,15 +11,23 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-#![allow(unused)]
+// This file demonstrate the usage of producer field APIs, which are generated for the VehicleFieldInterface.
+
+// Notes: we are creating producer instance specific for field here but this is just for demonstration purpose,
+// for same producer instance method / event/ field can be offered as per offer interface.
+
+// All the functions and types in this file are just for demonstration purpose,
+// as this are not part of any callable because of that unused warning is suppressed for this file.
 
 use score_com::{Builder, FieldPublisher, InstanceSpecifier, Interface, Producer, Runtime};
 
 use com_api_gen::{Exhaust, Tire, VehicleFieldInterface};
 
 // VehicleFieldProducer is the producer type for the VehicleField interface (before offering)
+#[allow(dead_code)]
 type VehicleFieldProducer<R> = <VehicleFieldInterface as Interface>::Producer<R>;
 // VehicleFieldOfferedProducer is the offered producer type for the VehicleField interface (fields support update/set-handler)
+#[allow(dead_code)]
 type VehicleFieldOfferedProducer<R> =
     <<VehicleFieldInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
 
@@ -28,6 +36,7 @@ type VehicleFieldOfferedProducer<R> =
 
 // Producer creation and initialization of fields with initial values and set handlers for the fields.
 // It will return the offered producer instance which can be used to update the fields.
+#[allow(dead_code)]
 fn create_producer_field<R: Runtime + 'static>(
     runtime: &R,
     service_id: InstanceSpecifier,
@@ -67,6 +76,7 @@ where
 }
 
 // Function to demonstrate the usage of the offered producer to update fields
+#[allow(dead_code)]
 fn offered_producer_process<R: Runtime>(offered_producer: VehicleFieldOfferedProducer<R>) {
     // Use the offered producer to update fields
     let new_tire_value = Tire { pressure: 32.0 };

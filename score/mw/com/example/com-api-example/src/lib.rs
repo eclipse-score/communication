@@ -12,11 +12,12 @@
  ********************************************************************************/
 
 pub mod consumer;
-// Method modules are just for demonstration purpose, as runtime implementation is not available for method APIs.
+// Method/Field/Mixed modules are just for demonstration purpose, as runtime implementation is not available yet.
 mod field_consumer;
 mod field_producer;
 mod method_consumer;
 mod method_producer;
+mod mixed_monitor;
 pub mod producer;
 pub use consumer::VehicleMonitorConsumer;
 pub use producer::VehicleMonitorProducer;
