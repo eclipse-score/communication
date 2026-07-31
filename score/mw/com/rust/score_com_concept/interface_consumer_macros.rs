@@ -11,48 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-/// Type-state marker for uninitialized field value state (compile-time tracking).
-///
-/// These marker types are never constructed as values - they only appear as generic
-/// type parameters inside `PhantomData<(S, H)>` on the generated `{Id}Validator` struct
-/// (see `TypeStateValidator` in `score_com_macros`). The compiler's `dead_code` lint
-/// flags unit structs that are never instantiated, so it is suppressed here deliberately.
-#[allow(dead_code)]
-pub struct Uninit;
-
-/// Type-state marker for initialized field value state (compile-time tracking).
-/// See [`Uninit`] for why `dead_code` is suppressed.
-#[allow(dead_code)]
-pub struct Init;
-
-/// Type-state marker for handler not registered (compile-time tracking).
-/// See [`Uninit`] for why `dead_code` is suppressed.
-#[allow(dead_code)]
-pub struct HandlerNotSet;
-
-/// Type-state marker for handler registered (compile-time tracking).
-/// See [`Uninit`] for why `dead_code` is suppressed.
-#[allow(dead_code)]
-pub struct HandlerSet;
-
-/// Field capability tag: by adding this on interface macro, consumer can call async `get_*()` on this field.
-/// Use in `Field<T, WithGetter>` (or combined: `Field<T, WithGetter + WithSetter + WithNotifier>`).
-/// See [`Uninit`] for why `dead_code` is suppressed.
-#[allow(dead_code)]
-pub struct WithGetter;
-
-/// Field capability tag: by adding this on interface macro, consumer can call async `set_*()` on this field.
-/// Use in `Field<T, WithSetter>` (or combined: `Field<T, WithGetter + WithSetter + WithNotifier>`).
-/// See [`Uninit`] for why `dead_code` is suppressed.
-#[allow(dead_code)]
-pub struct WithSetter;
-
-/// Field capability tag: by adding this on interface macro, consumer can `subscribe()` to field-value-change notifications.
-/// Use in `Field<T, WithNotifier>` (or combined: `Field<T, WithGetter + WithSetter + WithNotifier>`).
-/// See [`Uninit`] for why `dead_code` is suppressed.
-#[allow(dead_code)]
-pub struct WithNotifier;
-
 /// Macro to implement the Consumer trait for a given interface ID and its events.
 ///
 /// Generates the Consumer struct with subscribers for each event.
