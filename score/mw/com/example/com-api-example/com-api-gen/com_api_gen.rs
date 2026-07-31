@@ -73,9 +73,8 @@ interface!(
 // Field-based interface with compile-time initialization safety.
 // All fields must be explicitly initialized via the Type State pattern before offering.
 // The Type State pattern ensures that you cannot call offer() until all fields have been updated.
-// Just for demonstration of APIs usage we are creating a separate interface for field,
-// we have plan to update the interface macro to support mixed event and field interface in future.
-// https://github.com/eclipse-score/communication/issues/701
+// This separate field-only interface is intentionally kept for demonstration purposes.
+// Mixed event and field interfaces are already supported, as shown by VehicleMonitor below.
 interface!(
     interface VehicleField {
         Id = "VehicleFieldInterface",
