@@ -39,6 +39,13 @@ class ProxyContainer
         return *proxy_;
     }
 
+    Proxy&& Extract()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_ != nullptr,
+                                                    "Proxy was not successfully created! Cannot extract it!");
+        return std::move(*proxy_);
+    }
+
   private:
     std::unique_ptr<typename Proxy::HandleType> handle_{nullptr};
     std::mutex proxy_creation_mutex_{};
