@@ -38,7 +38,10 @@ rust_test(
     crate = ":score_com_concept",
     edition = "2024",
     tags = ["manual"],
-    deps = [":score_com_concept"],
+    deps = [
+        ":score_com_concept",
+        "//score/mw/com/rust:score_com",
+    ],
 )
 
 rust_doc_test(
@@ -57,8 +60,5 @@ rust_unit_test(
     name = "score_com_concept-macros-unit-tests",
     srcs = ["interface_producer_macros.rs"],
     features = ["link_std_cpp_lib"],
-    # TODO: remove tags = ["manual"] once field or method PR is merged,
-    # Unit test failed because macro has field and method both types
-    tags = ["manual"],
     deps = ["//score/mw/com/rust:score_com"],
 )

@@ -386,7 +386,7 @@ macro_rules! _interface_collect_members {
         );
     };
 
-    // Field member WITHOUT tags: `name : Field<T> ,?` — compile error.
+    // Field member WITHOUT tags: `name : Field<T> ,?`  compile error.
     (
         @id[$_id:ident, $_uid:expr]
         @ev[$($ev_name:ident : $ev_type:ty ,)*]
@@ -839,7 +839,7 @@ mod tests {
     /// ```
     /// mod my_module {
     ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
-    ///                     WithGetter, WithSetter, WithNotifier};
+    ///                     FieldPublisher, WithGetter, WithSetter, WithNotifier};
     ///
     ///     #[derive(Debug, Reloc)]
     ///     #[repr(C)]
@@ -872,6 +872,241 @@ mod tests {
     ///   `left_tire_field: FieldPublisher<Tire>`, plus the active method handler.
     #[cfg(doctest)]
     fn interface_macro_mixed() {}
+
+    /// Field with `WithNotifier` only  consumer can subscribe to value-change notifications.
+    ///
+    /// ```
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithNotifier};
+    ///
+    ///     #[derive(Debug, Reloc)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire {
+    ///         const ID: &'static str = "Tire";
+    ///     }
+    ///
+    ///     interface!(
+    ///         interface Vehicle {
+    ///             left_tire_field: Field<Tire, WithNotifier>,
+    ///         }
+    ///     );
+    /// }
+    /// ```
+    /// Generates:
+    /// - `VehicleConsumer<R>` has `left_tire_field: FieldSubscriber<Tire>`.
+    /// - `VehicleOfferedProducer<R>` has `left_tire_field: FieldPublisher<Tire>`.
+    /// No `_get` or `_set` callers are generated on the consumer side.
+    #[cfg(doctest)]
+    fn interface_macro_field_with_notifier_only() {}
+
+    /// Field with `WithGetter` only  consumer can call async `get_*()`.
+    ///
+    /// ```
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithGetter};
+    ///
+    ///     #[derive(Debug, Reloc)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire {
+    ///         const ID: &'static str = "Tire";
+    ///     }
+    ///
+    ///     interface!(
+    ///         interface Vehicle {
+    ///             left_tire_field: Field<Tire, WithGetter>,
+    ///         }
+    ///     );
+    /// }
+    /// ```
+    /// Generates:
+    /// - `VehicleConsumer<R>` has `left_tire_field_get: FieldGetCaller<Tire>`.
+    /// - `VehicleOfferedProducer<R>` has `left_tire_field: FieldPublisher<Tire>`.
+    /// No subscriber or `_set` caller is generated on the consumer side.
+    #[cfg(doctest)]
+    fn interface_macro_field_with_getter_only() {}
+
+    /// Field with `WithSetter` only  consumer can call async `set_*()`.
+    ///
+    /// ```
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithSetter};
+    ///
+    ///     #[derive(Debug, Reloc)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire {
+    ///         const ID: &'static str = "Tire";
+    ///     }
+    ///
+    ///     interface!(
+    ///         interface Vehicle {
+    ///             left_tire_field: Field<Tire, WithSetter>,
+    ///         }
+    ///     );
+    /// }
+    /// ```
+    /// Generates:
+    /// - `VehicleConsumer<R>` has `left_tire_field_set: FieldSetCaller<Tire>`.
+    /// - `VehicleOfferedProducer<R>` has `left_tire_field: FieldPublisher<Tire>`.
+    /// No subscriber or `_get` caller is generated on the consumer side.
+    #[cfg(doctest)]
+    fn interface_macro_field_with_setter_only() {}
+
+    /// Field with `WithGetter + WithNotifier`  consumer can both get and subscribe.
+    ///
+    /// ```
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithGetter, WithNotifier};
+    ///
+    ///     #[derive(Debug, Reloc)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire {
+    ///         const ID: &'static str = "Tire";
+    ///     }
+    ///
+    ///     interface!(
+    ///         interface Vehicle {
+    ///             left_tire_field: Field<Tire, WithGetter + WithNotifier>,
+    ///         }
+    ///     );
+    /// }
+    /// ```
+    /// Generates:
+    /// - `VehicleConsumer<R>` has `left_tire_field: FieldSubscriber<Tire>` (from `WithNotifier`)
+    ///   and `left_tire_field_get: FieldGetCaller<Tire>` (from `WithGetter`).
+    /// - `VehicleOfferedProducer<R>` has `left_tire_field: FieldPublisher<Tire>`.
+    /// No `_set` caller is generated.
+    #[cfg(doctest)]
+    fn interface_macro_field_with_getter_and_notifier() {}
+
+    /// Field with `WithSetter + WithNotifier`  consumer can both set and subscribe.
+    ///
+    /// ```
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithSetter, WithNotifier};
+    ///
+    ///     #[derive(Debug, Reloc)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire {
+    ///         const ID: &'static str = "Tire";
+    ///     }
+    ///
+    ///     interface!(
+    ///         interface Vehicle {
+    ///             left_tire_field: Field<Tire, WithSetter + WithNotifier>,
+    ///         }
+    ///     );
+    /// }
+    /// ```
+    /// Generates:
+    /// - `VehicleConsumer<R>` has `left_tire_field: FieldSubscriber<Tire>` (from `WithNotifier`)
+    ///   and `left_tire_field_set: FieldSetCaller<Tire>` (from `WithSetter`).
+    /// - `VehicleOfferedProducer<R>` has `left_tire_field: FieldPublisher<Tire>`.
+    /// No `_get` caller is generated.
+    #[cfg(doctest)]
+    fn interface_macro_field_with_setter_and_notifier() {}
+
+    /// Field with `WithGetter + WithSetter`  consumer can both get and set, without notifications.
+    ///
+    /// ```
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithGetter, WithSetter};
+    ///
+    ///     #[derive(Debug, Reloc)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire {
+    ///         const ID: &'static str = "Tire";
+    ///     }
+    ///
+    ///     interface!(
+    ///         interface Vehicle {
+    ///             left_tire_field: Field<Tire, WithGetter + WithSetter>,
+    ///         }
+    ///     );
+    /// }
+    /// ```
+    /// Generates:
+    /// - `VehicleConsumer<R>` has `left_tire_field_get: FieldGetCaller<Tire>` (from `WithGetter`)
+    ///   and `left_tire_field_set: FieldSetCaller<Tire>` (from `WithSetter`).
+    /// - `VehicleOfferedProducer<R>` has `left_tire_field: FieldPublisher<Tire>`.
+    /// No subscriber is generated (no `WithNotifier`).
+    #[cfg(doctest)]
+    fn interface_macro_field_with_getter_and_setter() {}
+
+    /// Multiple fields with different tag combinations on the same interface.
+    ///
+    /// ```
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
+    ///                     FieldPublisher, WithGetter, WithSetter, WithNotifier};
+    ///
+    ///     #[derive(Debug, Reloc)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire {
+    ///         const ID: &'static str = "Tire";
+    ///     }
+    ///
+    ///     interface!(
+    ///         interface Vehicle {
+    ///             notify_only_field: Field<Tire, WithNotifier>,
+    ///             get_only_field: Field<Tire, WithGetter>,
+    ///             set_only_field: Field<Tire, WithSetter>,
+    ///             get_set_field: Field<Tire, WithGetter + WithSetter>,
+    ///             get_notify_field: Field<Tire, WithGetter + WithNotifier>,
+    ///             set_notify_field: Field<Tire, WithSetter + WithNotifier>,
+    ///             full_field: Field<Tire, WithGetter + WithSetter + WithNotifier>,
+    ///         }
+    ///     );
+    /// }
+    /// ```
+    /// Each field generates only the consumer-side accessors for its declared tags:
+    /// - `notify_only_field`: subscriber only.
+    /// - `get_only_field`: `_get` caller only.
+    /// - `set_only_field`: `_set` caller only.
+    /// - `get_set_field`: `_get` and `_set` callers, no subscriber.
+    /// - `get_notify_field`: `_get` caller and subscriber, no `_set`.
+    /// - `set_notify_field`: `_set` caller and subscriber, no `_get`.
+    /// - `full_field`: subscriber, `_get` caller, and `_set` caller.
+    /// All fields get a `FieldPublisher<Tire>` on the producer side regardless of tags.
+    #[cfg(doctest)]
+    fn interface_macro_field_all_tag_combinations() {}
+
+    /// Using an unrecognized field tag is a compile-time error.
+    ///
+    /// ```compile_fail
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher};
+    ///
+    ///     #[derive(Debug, Reloc)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire {
+    ///         const ID: &'static str = "Tire";
+    ///     }
+    ///
+    ///     interface!(
+    ///         interface Vehicle {
+    ///             left_tire_field: Field<Tire, WithReadOnly>,
+    ///         }
+    ///     );
+    /// }
+    /// ```
+    /// This fails to compile because `WithReadOnly` is not a recognized field tag.
+    /// Supported tags are: `WithGetter`, `WithSetter`, `WithNotifier`.
+    #[cfg(doctest)]
+    fn interface_macro_field_unrecognized_tag() {}
 
     /// ```compile_fail
     /// mod my_module {
@@ -1259,7 +1494,7 @@ mod validation_tests {
                 const ID: &'static str = "Tire";
             }
 
-            crate::interface!(
+            score_com::interface!(
                 interface Vehicle {
                     left_tire: Event<Tire>,
                 }
@@ -1305,7 +1540,7 @@ mod validation_tests {
                 const ID: &'static str = "Exhaust";
             }
 
-            crate::interface!(
+            score_com::interface!(
                 interface Vehicle {
                     left_tire: Event<Tire>,
                     exhaust: Event<Exhaust>,
@@ -1341,7 +1576,7 @@ mod validation_tests {
                 const ID: &'static str = "Tire";
             }
 
-            crate::interface!(
+            score_com::interface!(
                 interface Engine {
                     rpm: Event<Tire>,
                 }
@@ -1372,7 +1607,7 @@ mod validation_tests {
                 const ID: &'static str = "Tire";
             }
 
-            crate::interface!(
+            score_com::interface!(
                 interface Transmission {
                     gear: Event<Tire>,
                 }
@@ -1405,7 +1640,7 @@ mod validation_tests {
                 const ID: &'static str = "Tire";
             }
 
-            crate::interface!(
+            score_com::interface!(
                 interface Battery, {
                     Id = "com.example.Battery",
                     voltage: Event<Tire>,
@@ -1460,7 +1695,7 @@ mod validation_tests {
                 const ID: &'static str = "Event3Data";
             }
 
-            crate::interface!(
+            score_com::interface!(
                 interface MultiEvent {
                     event_one: Event<Event1Data>,
                     event_two: Event<Event2Data>,
@@ -1504,7 +1739,7 @@ mod validation_tests {
                 const ID: &'static str = "Tire";
             }
 
-            crate::interface!(
+            score_com::interface!(
                 interface Suspension {
                     travel: Event<Tire>,
                 }
@@ -1546,7 +1781,7 @@ mod validation_tests {
                 const ID: &'static str = "Data";
             }
 
-            crate::interface!(
+            score_com::interface!(
                 interface ABS {
                     status: Event<Data>,
                 }
