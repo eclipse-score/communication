@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use crate::Debug;
+use core::fmt::Debug;
 use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 

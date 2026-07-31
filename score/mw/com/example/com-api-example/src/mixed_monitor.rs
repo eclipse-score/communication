@@ -51,7 +51,7 @@ use score_com::{
 
 use com_api_gen::{Exhaust, Tire, VehicleMonitorInterface};
 
-//  Type aliases 
+//  Type aliases
 
 #[allow(dead_code)]
 type VehicleMonitorProducer<R> = <VehicleMonitorInterface as Interface>::Producer<R>;
@@ -63,7 +63,7 @@ type VehicleMonitorOfferedProducer<R> =
 #[allow(dead_code)]
 type VehicleMonitorConsumer<R> = <VehicleMonitorInterface as Interface>::Consumer<R>;
 
-//  Producer 
+//  Producer
 
 /// Create and offer a VehicleMonitor producer.
 ///
@@ -92,7 +92,7 @@ where
 
     producer
         .init()
-        //  Field: left_tire_field 
+        //  Field: left_tire_field
         // Register set-handler: called by the middleware when a consumer calls Set on this field.
         // Receives the accepted value by value for inspection / side effects.
         .register_set_handler_left_tire_field(|val: Tire| {
@@ -105,7 +105,7 @@ where
         // Set initial field value (required before offer()).
         .update_left_tire_field(initial_tire)
         .expect("Failed to set initial value for left_tire_field")
-        //  Field: exhaust_field 
+        //  Field: exhaust_field
         .register_set_handler_exhaust_field(|val: Exhaust| {
             let _ = val;
             println!("[Producer] set_handler exhaust_field");
@@ -113,18 +113,18 @@ where
         .register_get_handler_exhaust_field(|| Exhaust {})
         .update_exhaust_field(initial_exhaust)
         .expect("Failed to set initial value for exhaust_field")
-        //  Method: update_tire_pressure(Tire) -> () 
+        //  Method: update_tire_pressure(Tire) -> ()
         .register_update_tire_pressure_handler(|tire: Tire| {
             println!("[Producer] update_tire_pressure called: {:?}", tire);
         })
-        //  Method: update_front_tires_pressure(Tire, Tire) -> () 
+        //  Method: update_front_tires_pressure(Tire, Tire) -> ()
         .register_update_front_tires_pressure_handler(|tire1: Tire, tire2: Tire| {
             println!(
                 "[Producer] update_front_tires_pressure called: {:?}, {:?}",
                 tire1, tire2
             );
         })
-        //  Method: get_tire_pressure() -> Tire 
+        //  Method: get_tire_pressure() -> Tire
         .register_get_tire_pressure_handler(|| {
             println!("[Producer] get_tire_pressure called");
             // Return the current field value; in a real implementation this would
@@ -168,7 +168,7 @@ fn update_fields<R: Runtime>(offered: &VehicleMonitorOfferedProducer<R>) {
         .expect("Failed to update exhaust_field");
 }
 
-//  Consumer 
+//  Consumer
 
 /// Create a VehicleMonitor consumer by discovering the service instance.
 #[allow(dead_code)]
@@ -176,8 +176,8 @@ fn create_monitor_consumer<R: Runtime>(
     runtime: &R,
     service_id: InstanceSpecifier,
 ) -> VehicleMonitorConsumer<R> {
-    let discovery = runtime
-        .find_service::<VehicleMonitorInterface>(FindServiceSpecifier::Specific(service_id));
+    let discovery =
+        runtime.find_service::<VehicleMonitorInterface>(FindServiceSpecifier::Specific(service_id));
 
     let instances = discovery
         .get_available_instances()
@@ -217,8 +217,8 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
     //   fn subscribe(&mut self, max_num_samples: usize) -> Result<Self::Subscription>
     // With &mut self, no field is ever moved out, so consumer remains fully usable in any order.
     // With this change, unsubscribe return also need to change.
-    
-    //  Fields (async get/set) 
+
+    //  Fields (async get/set)
     // Async get  uses MethodCaller<(), Tire> under the hood.
     match consumer.get_left_tire_field().await {
         Ok(result) => println!("[Consumer] left_tire_field get: {:?}", *result),
@@ -232,7 +232,7 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
         Err(e) => eprintln!("[Consumer] left_tire_field set failed: {:?}", e),
     }
 
-    //  Methods 
+    //  Methods
     // Copy path: single argument.
     match consumer.update_tire_pressure(Tire { pressure: 30.0 }).await {
         Ok(_) => println!("[Consumer] update_tire_pressure OK"),
@@ -256,7 +256,10 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
     let tire_ptr = uninit.write(Tire { pressure: 35.0 });
     match consumer.update_tire_pressure(tire_ptr).await {
         Ok(_) => println!("[Consumer] update_tire_pressure (zero-copy) OK"),
-        Err(e) => eprintln!("[Consumer] update_tire_pressure (zero-copy) failed: {:?}", e),
+        Err(e) => eprintln!(
+            "[Consumer] update_tire_pressure (zero-copy) failed: {:?}",
+            e
+        ),
     }
 
     // Zero-argument method returning a value.
@@ -265,7 +268,7 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
         Err(e) => eprintln!("[Consumer] get_tire_pressure failed: {:?}", e),
     }
 
-    //  Events 
+    //  Events
     // subscribe(self) moves consumer.left_tire out of consumer (partial move).
     // Whole-struct &self methods are not allowed after this point, but direct
     // field access to other fields (e.g. consumer.left_tire_field below) still works.
@@ -290,7 +293,7 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
         // event_subscription dropped here (unsubscribed).
     }
 
-    //  Fields (subscribe for notifications) 
+    //  Fields (subscribe for notifications)
     // consumer.left_tire is partially moved above, but consumer.left_tire_field is a
     // distinct field and is still valid  Rust tracks field moves individually.
     {
@@ -312,11 +315,10 @@ async fn consume_monitor<R: Runtime>(consumer: VehicleMonitorConsumer<R>) {
         // field_subscription dropped here (unsubscribed).
     }
 
-    //  TODO: Uncomment when Runtime implementation is ready and 
+    //  TODO: Uncomment when Runtime implementation is ready and
     //  subscribe() is changed to take &mut self (no partial move).
     // match consumer.update_tire_pressure(Tire { pressure: 30.0 }).await {
     //     Ok(_) => println!("[Consumer] update_tire_pressure OK"),
     //     Err(e) => eprintln!("[Consumer] update_tire_pressure failed: {:?}", e),
     // }
-
 }
