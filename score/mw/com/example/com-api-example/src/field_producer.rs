@@ -56,6 +56,7 @@ where
     // Must register handlers and initialize all fields before offer() is available
     let offered = producer
         .init()
+        // Register set-handler callbacks - required before offer() for WithSetter fields
         .register_set_handler_left_tire(move |val: Tire| {
             println!("Received tire pressure update: {:?}", val);
             // Additional logic: inspect or act on the accepted value (logging, telemetry, etc.).
@@ -65,6 +66,9 @@ where
             let _ = val;
             println!("Received exhaust update");
         })
+        // Register get-handler callbacks - required before offer() for WithGetter fields
+        .register_get_handler_left_tire(|| Tire { pressure: 32.0 })
+        .register_get_handler_exhaust(|| Exhaust {})
         .update_left_tire(initial_tire_value)
         .expect("Failed to update left_tire field")
         .update_exhaust(initial_exhaust_value)

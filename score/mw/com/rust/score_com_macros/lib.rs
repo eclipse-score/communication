@@ -388,7 +388,7 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
 /// ```
 // TODO: Document tests need to be added for this macro, including successful and failed compilation cases.
 // Once field or method design merged, other PR can add the tests for this macro.
-#[proc_macro_derive(TypeStateValidator)]
+#[proc_macro_derive(TypeStateValidator, attributes(field_setter_list, field_getter_list))]
 pub fn derive_typestate_validator(input: TokenStream) -> TokenStream {
     type_state_validator::derive_typestate_validator_impl(input)
 }
