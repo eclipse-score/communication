@@ -61,7 +61,6 @@ fn create_producer_method<R: Runtime>(
                 "Received update_front_tires_pressure call with tire1: {:?}, tire2: {:?}",
                 tire1, tire2
             );
-            ()
         })
         .offer()
         .expect("Failed to offer producer instance")
