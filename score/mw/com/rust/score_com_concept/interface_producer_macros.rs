@@ -329,6 +329,8 @@ macro_rules! _interface_collect_members {
             $id,
             events[$($ev_name : $ev_type ,)*],
             fields[$($fi_name : $fi_type ,)*],
+            fields_setter[$($fis_name : $fis_type ,)*],
+            fields_getter[$($fig_name : $fig_type ,)*],
             methods[$($me_name [$($me_arg_ty),*] -> $me_ret ,)*]
         );
     };
@@ -595,6 +597,8 @@ macro_rules! interface_producer_mixed {
         $id:ident,
         events[$($ev_name:ident : $ev_type:ty ,)+],
         fields[],
+        fields_setter[],
+        fields_getter[],
         methods[]
     ) => {
         $crate::interface_producer!($id, $($ev_name, Event<$ev_type>),+);
@@ -605,13 +609,20 @@ macro_rules! interface_producer_mixed {
         $id:ident,
         events[$($ev_name:ident : $ev_type:ty ,)*],
         fields[$($fi_name:ident : $fi_type:ty ,)*],
+        fields_setter[$($fis_name:ident : $fis_type:ty ,)*],
+        fields_getter[$($fig_name:ident : $fig_type:ty ,)*],
         methods[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
     ) => {
         score_com::paste::paste! {
-            // Producer struct - derives TypeStateValidator for compile-time offer() gating.
+            // Producer struct - derives TypeStateValidator for compile-time `offer()`.
             // Fields: FieldPublisher per field + MethodHandler per method.
-            // Event publishers are NOT stored here; they are created during _offer_internal().
+            // Event publishers are NOT stored here they are created during _offer_internal().
+            // #[field_setter_list] and #[field_getter_list] are derive helper attributes introduced
+            // by TypeStateValidator. They tell it which fields have WithSetter / WithGetter tags
+            // so only those fields get the corresponding type-state handler steps.
             #[derive($crate::score_com_macros::TypeStateValidator)]
+            #[field_setter_list($($fis_name,)*)]
+            #[field_getter_list($($fig_name,)*)]
             pub struct [<$id Producer>]<R: score_com::Runtime + ?Sized> {
                 $(
                     $fi_name: R::FieldPublisher<$fi_type>,
@@ -898,6 +909,36 @@ mod tests {
     /// - `VehicleConsumer<R>` has `left_tire_field: FieldSubscriber<Tire>`.
     /// - `VehicleOfferedProducer<R>` has `left_tire_field: FieldPublisher<Tire>`.
     /// No `_get` or `_set` callers are generated on the consumer side.
+    ///
+    /// `WithNotifier`-only fields do not generate a `register_set_handler_*` step:
+    /// ```compile_fail
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, WithNotifier};
+    ///     #[derive(Debug, Reloc, Clone)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
+    ///     score_com::interface!(interface Vehicle { left_tire_field: Field<Tire, WithNotifier>, });
+    ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
+    ///         let _ = p.init().register_set_handler_left_tire_field(|_: Tire| {});
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// `WithNotifier`-only fields do not generate a `register_get_handler_*` step:
+    /// ```compile_fail
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, WithNotifier};
+    ///     #[derive(Debug, Reloc, Clone)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
+    ///     score_com::interface!(interface Vehicle { left_tire_field: Field<Tire, WithNotifier>, });
+    ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
+    ///         let _ = p.init().register_get_handler_left_tire_field(|| Tire { pressure: 0.0 });
+    ///     }
+    /// }
+    /// ```
     #[cfg(doctest)]
     fn interface_macro_field_with_notifier_only() {}
 
@@ -906,7 +947,8 @@ mod tests {
     /// ```
     /// mod my_module {
     ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
-    ///                     FieldPublisher, WithGetter};
+    ///                     FieldPublisher, WithGetter,
+    ///                     LolaRuntimeImpl as LolaRuntime};
     ///
     ///     #[derive(Debug, Reloc)]
     ///     #[repr(C)]
@@ -920,12 +962,33 @@ mod tests {
     ///             left_tire_field: Field<Tire, WithGetter>,
     ///         }
     ///     );
+    ///
+    ///     // Compile-time check `register_get_handler_*` exists for WithGetter fields.
+    ///     #[allow(dead_code)]
+    ///     fn _check_get_handler(p: VehicleProducer<LolaRuntime>) {
+    ///         let _ = p.init().register_get_handler_left_tire_field(|| Tire { pressure: 0.0 });
+    ///     }
     /// }
     /// ```
     /// Generates:
     /// - `VehicleConsumer<R>` has `left_tire_field_get: FieldGetCaller<Tire>`.
     /// - `VehicleOfferedProducer<R>` has `left_tire_field: FieldPublisher<Tire>`.
     /// No subscriber or `_set` caller is generated on the consumer side.
+    ///
+    /// `WithGetter`-only fields do not generate a `register_set_handler_*` step:
+    /// ```compile_fail
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, WithGetter};
+    ///     #[derive(Debug, Reloc, Clone)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
+    ///     score_com::interface!(interface Vehicle { left_tire_field: Field<Tire, WithGetter>, });
+    ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
+    ///         let _ = p.init().register_set_handler_left_tire_field(|_: Tire| {});
+    ///     }
+    /// }
+    /// ```
     #[cfg(doctest)]
     fn interface_macro_field_with_getter_only() {}
 
@@ -934,7 +997,8 @@ mod tests {
     /// ```
     /// mod my_module {
     ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
-    ///                     FieldPublisher, WithSetter};
+    ///                     FieldPublisher, WithSetter,
+    ///                     LolaRuntimeImpl as LolaRuntime};
     ///
     ///     #[derive(Debug, Reloc)]
     ///     #[repr(C)]
@@ -948,12 +1012,33 @@ mod tests {
     ///             left_tire_field: Field<Tire, WithSetter>,
     ///         }
     ///     );
+    ///
+    ///     // Compile-time check `register_set_handler_*` exists for WithSetter fields.
+    ///     #[allow(dead_code)]
+    ///     fn _check_set_handler(p: VehicleProducer<LolaRuntime>) {
+    ///         let _ = p.init().register_set_handler_left_tire_field(|_: Tire| {});
+    ///     }
     /// }
     /// ```
     /// Generates:
     /// - `VehicleConsumer<R>` has `left_tire_field_set: FieldSetCaller<Tire>`.
     /// - `VehicleOfferedProducer<R>` has `left_tire_field: FieldPublisher<Tire>`.
     /// No subscriber or `_get` caller is generated on the consumer side.
+    ///
+    /// `WithSetter`-only fields do not generate a `register_get_handler_*` step:
+    /// ```compile_fail
+    /// mod my_module {
+    ///     use score_com::{interface, CommData, Reloc, WithSetter};
+    ///     #[derive(Debug, Reloc, Clone)]
+    ///     #[repr(C)]
+    ///     pub struct Tire { pub pressure: f32 }
+    ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
+    ///     score_com::interface!(interface Vehicle { left_tire_field: Field<Tire, WithSetter>, });
+    ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
+    ///         let _ = p.init().register_get_handler_left_tire_field(|| Tire { pressure: 0.0 });
+    ///     }
+    /// }
+    /// ```
     #[cfg(doctest)]
     fn interface_macro_field_with_setter_only() {}
 
@@ -1020,7 +1105,8 @@ mod tests {
     /// ```
     /// mod my_module {
     ///     use score_com::{interface, CommData, Reloc, ProviderInfo, Subscriber, Publisher,
-    ///                     FieldPublisher, WithGetter, WithSetter};
+    ///                     FieldPublisher, WithGetter, WithSetter,
+    ///                     LolaRuntimeImpl as LolaRuntime};
     ///
     ///     #[derive(Debug, Reloc)]
     ///     #[repr(C)]
@@ -1034,6 +1120,13 @@ mod tests {
     ///             left_tire_field: Field<Tire, WithGetter + WithSetter>,
     ///         }
     ///     );
+    ///
+    ///     // Compile-time proof: both handler methods exist for WithGetter + WithSetter fields.
+    ///     #[allow(dead_code)]
+    ///     fn _assert_both_handlers(p: VehicleProducer<LolaRuntime>) {
+    ///         let v = p.init().register_set_handler_left_tire_field(|_: Tire| {});
+    ///         let _ = v.register_get_handler_left_tire_field(|| Tire { pressure: 0.0 });
+    ///     }
     /// }
     /// ```
     /// Generates:
