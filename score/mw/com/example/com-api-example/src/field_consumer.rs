@@ -20,8 +20,8 @@
 // as this are not part of any callable because of that unused warning is suppressed for this file.
 
 use score_com::{
-    Builder, FindServiceSpecifier, InstanceSpecifier,
-    Interface, Runtime, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
+    Builder, FindServiceSpecifier, InstanceSpecifier, Interface, Runtime, SampleContainer,
+    ServiceDiscovery, Subscriber, Subscription,
 };
 
 use com_api_gen::{Tire, VehicleFieldInterface};

@@ -24,7 +24,7 @@
 //! Note: `_gen_method_wrapper!` in `interface_macros.rs` self-generates its argument
 //! identifiers via a counting recursive macro, so it has no separate limit to keep in
 //! sync - raising the arity here is the only change needed.
-//! (I don't think this many arguments will support by clippy linting,
+//! (I don't think clippy linting will support this many arguments,
 //!  so we may need to reduce the limit to 4 to 5 in the future based on project clippy linting rules.)
 //!
 //! # Arity 0 special case
