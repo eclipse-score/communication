@@ -60,7 +60,7 @@ pub struct WithNotifier;
 #[macro_export]
 macro_rules! interface_consumer {
     ($id:ident, $($event_name:ident, Event<$event_type:ty>),+$(,)?) => {
-        score_com::paste::paste!  {
+        score_com::pastey::paste!  {
             pub struct [<$id Consumer>]<R: score_com::Runtime + ?Sized> {
                 $(
                     pub $event_name: R::Subscriber<$event_type>,
@@ -107,7 +107,7 @@ macro_rules! interface_consumer_mixed {
         fields_setter[$($fis_name:ident : $fis_type:ty ,)*],
         methods[$($me_name:ident [$($me_arg_ty:ty),*] -> $me_ret:ty ,)*]
     ) => {
-        score_com::paste::paste! {
+        score_com::pastey::paste! {
             pub struct [<$id Consumer>]<R: score_com::Runtime + ?Sized> {
                 $(
                     pub $ev_name: R::Subscriber<$ev_type>,
@@ -276,7 +276,7 @@ macro_rules! _gen_method_wrapper_collect {
         @acc[$($acc:tt),*]
         @types[$t:ty $(, $rest_t:ty)*]
     ) => {
-        score_com::paste::paste! {
+        score_com::pastey::paste! {
             $crate::_gen_method_wrapper_collect!(
                 $me_name -> $me_ret ;
                 @counter[$($n)* n]
