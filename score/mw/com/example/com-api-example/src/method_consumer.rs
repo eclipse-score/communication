@@ -61,7 +61,7 @@ fn create_consumer_method<R: Runtime>(
 
 // Copy path: single positional argument.
 // Demonstrates calling a method with a single argument, where the argument is copied into the method call.
-// Zero-copy path: allocate, write, then call the method with allocaed args.
+// Zero-copy path: allocate, write, then call the method with allocated args.
 #[allow(dead_code)]
 async fn consumer_method_processing<R: Runtime>(consumer: VehicleMethodConsumer<R>) {
     // Copy path: single positional argument — no tuple needed.

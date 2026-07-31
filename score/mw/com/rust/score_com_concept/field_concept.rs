@@ -79,17 +79,9 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
     where
         Self: Sized;
 
-    /// Get the allocate sample ptr for the field publisher.
+    /// Get the allocated sample ptr for the field publisher.
     fn allocate(&self) -> Result<Self::SampleMaybeUninit<'_>>;
 
-    /// Update the value of the field with the provided value.
-    /// This is not zero-copy API.
-    ///
-    /// # Parameters
-    /// * `value` - The value to update for the field.
-    ///
-    /// # Returns
-    /// Return the result of `Result<()>` which contains the status of the update operation.
     /// Update the value of the field with the provided value.
     /// The value is taken by value; the FFI layer handles the necessary copy into the shared
     /// memory slot internally — the same pattern as `Publisher::send(value: T)` for events.

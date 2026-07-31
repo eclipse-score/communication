@@ -122,7 +122,7 @@ pub trait Runtime {
     // Note: below GATs are to make runtime implementation simpler for Field Methods,
     // If at the time of implementation no specific need is found for these GATs,
     // we can remove them and use MethodCaller<Args, Return> instead of a separate field-specific design.
-    
+
     /// `FieldGetCaller<T>` types for the consumer-side async field get operation.
     /// Distinct from `MethodCaller<(), T>` so runtimes can route to specific `Getter`.
     type FieldGetCaller<T: CommData + Debug>: MethodCaller<(), T, Self>;

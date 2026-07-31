@@ -189,7 +189,9 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(), T, R> for LolaFieldGetCal
     where
         (): MethodArgsPtrTuple<R>,
     {
-        async move { todo!("Implement zero-copy invoke for LolaFieldGetCaller if C++ side support is available") }
+        async move {
+            todo!("Implement zero-copy invoke for LolaFieldGetCaller if C++ side support is available")
+        }
     }
 }
 
@@ -217,9 +219,7 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(T,), T, R> for LolaFieldSetC
         async move { todo!("Implement field set via MethodType::kSet") }
     }
 
-    fn allocate(
-        &self,
-    ) -> Result<<(T,) as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
+    fn allocate(&self) -> Result<<(T,) as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
     where
         (T,): MethodArgsAllocate<R::MethodInArgAllocator>,
     {
@@ -233,7 +233,8 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(T,), T, R> for LolaFieldSetC
     where
         (T,): MethodArgsPtrTuple<R>,
     {
-        async move { todo!("Implement zero-copy invoke for LolaFieldSetCaller if C++ side support is available") }
+        async move {
+            todo!("Implement zero-copy invoke for LolaFieldSetCaller if C++ side support is available")
+        }
     }
 }
-
