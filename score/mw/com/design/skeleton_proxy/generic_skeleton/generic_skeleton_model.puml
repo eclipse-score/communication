@@ -116,7 +116,6 @@ class "ServiceElementMapView<ElementType>" {
 abstract class "score::mw::com::impl::SkeletonFieldBase" {
   #skeleton_event_dispatch_ : std::unique_ptr<impl::SkeletonEventBase>
   +PrepareOffer(): Result<void>
-  +UpdateSkeletonReference(skeleton_base: SkeletonBase&): void
   -{abstract} IsInitialValueSaved(): bool
   -{abstract} DoDeferredUpdate(): Result<void>
   -{abstract} IsSetHandlerMissing(): bool
@@ -133,17 +132,14 @@ class "mw::com::impl::GenericSkeletonField" #LightGreen {
   +Update(raw_value: span<const uint8_t>): Result<void>
   +Update(SampleAllocateePtr<void> sample): Result<void>
   +Allocate(): Result<SampleAllocateePtr<void>>
-  +UpdateSkeletonReference(skeleton_base: SkeletonBase&): void
   .. Method Handlers (Stubs) ..
-  +RegisterGetHandler(std::function<std::vector<uint8_t>()> handler): Result<void>
-  +RegisterSetHandler(std::function<std::vector<uint8_t>(span<const uint8_t>)> handler): Result<void>
+  +RegisterSetHandler(std::function<void(span<uint8_t>)> handler): Result<void>
 }
 
 abstract class "mw::com::impl::SkeletonEventBase" #yellow {
-  +SkeletonEventBase(SkeletonBase&, const std::string_view, std::unique_ptr<SkeletonEventBindingBase>)
+  +SkeletonEventBase(const std::string_view, std::unique_ptr<SkeletonEventBindingBase>)
   +OfferService(): Result<void>
   +StopOfferService(): void
-  +UpdateSkeletonReference(skeleton_base: SkeletonBase&): void
 }
 
 class "mw::com::impl::GenericSkeletonEvent" #yellow {
