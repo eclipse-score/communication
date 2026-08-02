@@ -80,10 +80,12 @@ class GenericSkeletonField : public SkeletonFieldBase
     Result<SampleAllocateePtr<void>> Allocate() noexcept;
 
     /// @brief Registers a handler for answering Set requests from proxies.
-    /// @param set_handler The user-provided handler callback accepting raw bytes and returning
-    ///        the accepted/modified field value as raw bytes.
-    /// @return A result indicating success or an error code.
-    Result<void> RegisterSetHandler(std::function<std::vector<uint8_t>(score::cpp::span<const uint8_t>)> set_handler);
+    /// @param set_handler The user-provided handler callback accepting a mutable span of raw bytes,
+    ///        allowing the provider to read the proposed value and optionally write directly to it
+    ///        to correct/clamp the value in-place.
+    /// @return A result indicating success, or ComErrc::kCouldNotExecute if the field was not configured
+    ///         with a setter (i.e. has_setter in the constructor was false).
+    Result<void> RegisterSetHandler(std::function<void(score::cpp::span<uint8_t>)> set_handler);
 
   private:
     /// @brief Checks if a valid initial value was cached prior to offering the service.

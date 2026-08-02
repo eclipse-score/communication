@@ -161,8 +161,8 @@ TEST_F(GenericSkeletonFieldTest, GettersAndSettersReturnError)
     auto& skeleton = skeleton_result.value();
     auto* field = const_cast<GenericSkeletonField*>(&skeleton.GetFields().find(field_name)->second);
 
-    auto set_result = field->RegisterSetHandler([](auto) {
-        return std::vector<uint8_t>{};
+    auto set_result = field->RegisterSetHandler([](score::cpp::span<uint8_t>) {
+        // Return void
     });
     EXPECT_FALSE(set_result.has_value());
     EXPECT_EQ(set_result.error(), ComErrc::kCouldNotExecute);
