@@ -47,7 +47,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
                                            const std::string_view event_name,
                                            std::unique_ptr<GenericSkeletonEventBinding> binding,
                                            FieldOnlyConstructorEnabler /*tag*/)
-    : SkeletonEventBase(skeleton_base, event_name, std::move(binding))
+    : SkeletonEventBase(event_name, std::move(binding))
 {
     // Intentionally omitting SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, *this);
 
