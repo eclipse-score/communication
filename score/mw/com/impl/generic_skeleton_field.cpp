@@ -81,7 +81,7 @@ Result<SampleAllocateePtr<void>> GenericSkeletonField::Allocate() noexcept
 }
 
 Result<void> GenericSkeletonField::RegisterSetHandler(
-    std::function<std::vector<uint8_t>(score::cpp::span<const uint8_t>)> /*set_handler*/)
+    std::function<void(score::cpp::span<uint8_t>)> /*set_handler*/)
 {
     if (!has_setter_)
     {
