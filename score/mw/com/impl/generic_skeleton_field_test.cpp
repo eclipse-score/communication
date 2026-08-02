@@ -140,34 +140,6 @@ TEST_F(GenericSkeletonFieldTest, AllocateBeforeOfferReturnsError)
     EXPECT_EQ(alloc_result.error(), ComErrc::kBindingFailure);
 }
 
-TEST_F(GenericSkeletonFieldTest, AllocateFailsWithoutNotifier)
-{
-    RecordProperty("Description", "Checks that calling Allocate() without a notifier configured returns an error.");
-    RecordProperty("TestType", "Requirements-based test");
-
-    const std::string field_name = GetConfiguredFieldName();
-    std::vector<uint8_t> init_val{0};
-    // has_notifier set to false
-    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, false, init_val}};
-    GenericSkeletonServiceElementInfo create_params;
-    create_params.fields = field_storage;
-
-    EXPECT_CALL(generic_event_binding_factory_mock_, Create(_, field_name, _))
-        .WillOnce(Return(ByMove(std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>())));
-
-    auto skeleton_result = GenericSkeleton::Create(
-        dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(), create_params);
-    ASSERT_TRUE(skeleton_result.has_value());
-
-    auto& skeleton = skeleton_result.value();
-    auto* field = const_cast<GenericSkeletonField*>(&skeleton.GetFields().find(field_name)->second);
-
-    auto alloc_result = field->Allocate();
-
-    ASSERT_FALSE(alloc_result.has_value());
-    EXPECT_EQ(alloc_result.error(), ComErrc::kBindingFailure);
-}
-
 TEST_F(GenericSkeletonFieldTest, GettersAndSettersReturnError)
 {
     RecordProperty("Description", "Checks that Get/Set handlers are currently WIP and correctly return an error.");
@@ -188,12 +160,6 @@ TEST_F(GenericSkeletonFieldTest, GettersAndSettersReturnError)
 
     auto& skeleton = skeleton_result.value();
     auto* field = const_cast<GenericSkeletonField*>(&skeleton.GetFields().find(field_name)->second);
-
-    auto get_result = field->RegisterGetHandler([]() {
-        return std::vector<uint8_t>{};
-    });
-    EXPECT_FALSE(get_result.has_value());
-    EXPECT_EQ(get_result.error(), ComErrc::kCouldNotExecute);
 
     auto set_result = field->RegisterSetHandler([](auto) {
         return std::vector<uint8_t>{};
@@ -331,11 +297,11 @@ TEST_F(GenericSkeletonFieldTest, UpdateAfterOfferAllocatesAndSends)
     EXPECT_TRUE(update_res.has_value());
 }
 
-TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierReturnsSuccessAndDoesNotSend)
+TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierSendsToBinding)
 {
     RecordProperty(
         "Description",
-        "Checks that updating a field without a notifier returns success immediately without allocating or sending.");
+        "Checks that updating a field without a notifier successfully forwards the value to the binding.");
     RecordProperty("TestType", "Requirements-based test");
 
     const std::string field_name = GetConfiguredFieldName();
@@ -351,6 +317,13 @@ TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierReturnsSuccessAndDoesNotSe
     EXPECT_CALL(generic_event_binding_factory_mock_, Create(_, field_name, _))
         .WillOnce(Return(ByMove(std::move(mock_event))));
 
+    // Expect allocation and send even though has_notifier_ is false
+    std::vector<uint8_t> dummy_memory(16, 0);
+    mock_binding::SampleAllocateePtr<void> dummy_alloc{dummy_memory.data(), [](void*) {}};
+
+    EXPECT_CALL(*mock_event_ptr, Allocate()).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
+    EXPECT_CALL(*mock_event_ptr, Send(_)).WillOnce(Return(score::Result<void>{}));
+
     auto skeleton_result = GenericSkeleton::Create(
         dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(), create_params);
     ASSERT_TRUE(skeleton_result.has_value());
@@ -359,10 +332,6 @@ TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierReturnsSuccessAndDoesNotSe
     EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_event_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton_result.value().OfferService().has_value());
-
-    // When calling Update, expect NO Allocate and NO Send since has_notifier_ is false
-    EXPECT_CALL(*mock_event_ptr, Allocate()).Times(0);
-    EXPECT_CALL(*mock_event_ptr, Send(_)).Times(0);
 
     auto& skeleton = skeleton_result.value();
     auto* field = const_cast<GenericSkeletonField*>(&skeleton.GetFields().find(field_name)->second);

@@ -56,27 +56,28 @@ class GenericSkeletonField : public SkeletonFieldBase
     GenericSkeletonField(GenericSkeletonField&& other) noexcept = default;
     GenericSkeletonField& operator=(GenericSkeletonField&& other) & noexcept = default;
 
-    /// @brief Updates the field value using a raw byte payload and notifies subscribers.
-    /// @details If `OfferService()` has not been called yet, the payload is cached as
+    /// @brief Updates the field value using a raw byte payload.
+    /// @details If the field is configured with a getter, this updates the binding's
+    ///          shared memory so the value is visible to subsequent Get requests.
+    ///          If configured with a notifier, it also notifies subscribers.
+    ///          If `OfferService()` has not been called yet, the payload is cached as
     ///          the initial value and deferred until the service is offered.
     /// @param raw_value The type-erased payload representing the new field value.
     /// @return A result indicating success or an error code on failure.
     Result<void> Update(score::cpp::span<const uint8_t> raw_value) noexcept;
 
-    /// @brief Updates the field value using a pre-allocated sample and notifies subscribers.
+    /// @brief Updates the field value using a pre-allocated sample.
+    /// @details If the field is configured with a getter, this updates the binding's
+    ///          shared memory so the value is visible to subsequent Get requests.
+    ///          If configured with a notifier, it also notifies subscribers.
     /// @param sample A sample previously allocated via `Allocate()`.
     /// @return A result indicating success or an error code on failure.
     Result<void> Update(SampleAllocateePtr<void> sample) noexcept;
 
     /// @brief Allocates a zero-copy sample buffer for this field.
     /// @return The allocated sample pointer, or an error if allocation fails or
-    ///         if the field does not support notifications.
+    ///         if OfferService() has not been called yet.
     Result<SampleAllocateePtr<void>> Allocate() noexcept;
-
-    /// @brief Registers a handler for answering Get requests from proxies.
-    /// @param get_handler The user-provided handler callback returning the field value as raw bytes.
-    /// @return A result indicating success or an error code.
-    Result<void> RegisterGetHandler(std::function<std::vector<uint8_t>()> get_handler);
 
     /// @brief Registers a handler for answering Set requests from proxies.
     /// @param set_handler The user-provided handler callback accepting raw bytes and returning

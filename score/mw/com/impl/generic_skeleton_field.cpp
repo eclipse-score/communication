@@ -37,26 +37,16 @@ GenericSkeletonField::GenericSkeletonField(SkeletonBase& skeleton_base,
 
 Result<void> GenericSkeletonField::Update(SampleAllocateePtr<void> sample) noexcept
 {
-    // If the field is not configured with a notifier, pushing updates is a no-op.
-    if (!has_notifier_)
-    {
-        return Result<void>{};
-    }
     return GetGenericEvent()->Send(std::move(sample));
 }
 
 Result<void> GenericSkeletonField::Update(score::cpp::span<const uint8_t> raw_value) noexcept
 {
-    // Cache the initial value if we are updating from a new raw_value payload
-    if (raw_value.data() != initial_field_value_.data())
+    // If OfferService() has not been called yet, we cache the value as the initial value.
+    if (!was_prepare_offer_called_)
     {
         initial_field_value_.assign(raw_value.begin(), raw_value.end());
         has_initial_value_ = true;
-    }
-
-    // If we haven't offered the service yet, just cache it for DoDeferredUpdate()
-    if (!was_prepare_offer_called_ || !has_notifier_)
-    {
         return Result<void>{};
     }
 
@@ -80,12 +70,6 @@ Result<void> GenericSkeletonField::Update(score::cpp::span<const uint8_t> raw_va
 
 Result<SampleAllocateePtr<void>> GenericSkeletonField::Allocate() noexcept
 {
-    if (!has_notifier_)
-    {
-        score::mw::log::LogWarn("GenericSkeletonField") << "Cannot allocate memory for a field without a notifier.";
-        return MakeUnexpected(ComErrc::kBindingFailure);
-    }
-
     if (!was_prepare_offer_called_)
     {
         // Shared memory backing the sample allocator isn't active until OfferService is called.
@@ -94,16 +78,6 @@ Result<SampleAllocateePtr<void>> GenericSkeletonField::Allocate() noexcept
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
     return GetGenericEvent()->Allocate();
-}
-
-Result<void> GenericSkeletonField::RegisterGetHandler(std::function<std::vector<uint8_t>()> /*get_handler*/)
-{
-    if (!has_getter_)
-    {
-        return MakeUnexpected(ComErrc::kCouldNotExecute);
-    }
-    score::mw::log::LogWarn("GenericSkeletonField") << "Getters are currently WIP and cannot be registered.";
-    return MakeUnexpected(ComErrc::kCouldNotExecute);
 }
 
 Result<void> GenericSkeletonField::RegisterSetHandler(
@@ -125,11 +99,6 @@ bool GenericSkeletonField::IsInitialValueSaved() const noexcept
 Result<void> GenericSkeletonField::DoDeferredUpdate() noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(has_initial_value_, "Deferred update requires initial value.");
-
-    if (!has_notifier_)
-    {
-        return Result<void>{};
-    }
 
     auto alloc_res = GetGenericEvent()->Allocate();
     if (!alloc_res.has_value())
