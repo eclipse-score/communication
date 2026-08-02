@@ -53,7 +53,7 @@ using ::testing::ReturnRef;
 class IBindingRuntimeMock : public IBindingRuntime
 {
   public:
-    MOCK_METHOD(IServiceDiscoveryClient&, GetServiceDiscoveryClient, (), (noexcept, override));
+    MOCK_METHOD(IServiceDiscoveryClient&, GetServiceDiscoveryClient, (), (noexcept, override, ref(&)));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(tracing::IBindingTracingRuntime*, GetTracingRuntime, (), (noexcept, override));
 };
@@ -183,7 +183,7 @@ TEST_F(GenericSkeletonFieldTest, UpdateBeforeOfferCachesValue)
     auto mock_event = std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
 
     // Expect NO Send or Allocate to be called since the service is not offered yet.
-    EXPECT_CALL(*mock_event, Allocate()).Times(0);
+    EXPECT_CALL(*mock_event, Allocate(_)).Times(0);
     EXPECT_CALL(*mock_event, Send(_)).Times(0);
 
     EXPECT_CALL(generic_event_binding_factory_mock_, Create(_, field_name, _))
@@ -230,7 +230,7 @@ TEST_F(GenericSkeletonFieldTest, DoDeferredUpdatePushesCachedValueOnOffer)
 
     std::vector<uint8_t> dummy_memory(16, 0);
     mock_binding::SampleAllocateePtr<void> dummy_alloc{dummy_memory.data(), [](void*) {}};
-    EXPECT_CALL(*mock_event_ptr, Allocate()).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
+    EXPECT_CALL(*mock_event_ptr, Allocate(_)).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
     EXPECT_CALL(*mock_event_ptr, Send(_)).WillOnce(Return(score::Result<void>{}));
 
     auto skeleton_result = GenericSkeleton::Create(
@@ -238,7 +238,7 @@ TEST_F(GenericSkeletonFieldTest, DoDeferredUpdatePushesCachedValueOnOffer)
     ASSERT_TRUE(skeleton_result.has_value());
 
     // skeleton_binding_mock_ is initialized inside Create(), so its expectations must come after
-    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
 
     // When offering service, DoDeferredUpdate is executed
     auto offer_res = skeleton_result.value().OfferService();
@@ -269,14 +269,14 @@ TEST_F(GenericSkeletonFieldTest, UpdateAfterOfferAllocatesAndSends)
 
     std::vector<uint8_t> dummy_memory1(16, 0);
     mock_binding::SampleAllocateePtr<void> dummy_alloc1{dummy_memory1.data(), [](void*) {}};
-    EXPECT_CALL(*mock_event_ptr, Allocate()).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc1)))));
+    EXPECT_CALL(*mock_event_ptr, Allocate(_)).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc1)))));
     EXPECT_CALL(*mock_event_ptr, Send(_)).WillOnce(Return(score::Result<void>{}));
 
     auto skeleton_result = GenericSkeleton::Create(
         dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(), create_params);
     ASSERT_TRUE(skeleton_result.has_value());
 
-    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
 
     // Offer the service (Handle initial value allocation/send)
     ASSERT_TRUE(skeleton_result.value().OfferService().has_value());
@@ -287,7 +287,7 @@ TEST_F(GenericSkeletonFieldTest, UpdateAfterOfferAllocatesAndSends)
     mock_binding::SampleAllocateePtr<void> dummy_alloc2{dummy_memory2.data(), [](void*) {}};
 
     // Expect a NEW allocation and send
-    EXPECT_CALL(*mock_event_ptr, Allocate()).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc2)))));
+    EXPECT_CALL(*mock_event_ptr, Allocate(_)).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc2)))));
     EXPECT_CALL(*mock_event_ptr, Send(_)).WillOnce(Return(score::Result<void>{}));
 
     auto& skeleton = skeleton_result.value();
@@ -299,9 +299,8 @@ TEST_F(GenericSkeletonFieldTest, UpdateAfterOfferAllocatesAndSends)
 
 TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierSendsToBinding)
 {
-    RecordProperty(
-        "Description",
-        "Checks that updating a field without a notifier successfully forwards the value to the binding.");
+    RecordProperty("Description",
+                   "Checks that updating a field without a notifier successfully forwards the value to the binding.");
     RecordProperty("TestType", "Requirements-based test");
 
     const std::string field_name = GetConfiguredFieldName();
@@ -321,7 +320,7 @@ TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierSendsToBinding)
     std::vector<uint8_t> dummy_memory(16, 0);
     mock_binding::SampleAllocateePtr<void> dummy_alloc{dummy_memory.data(), [](void*) {}};
 
-    EXPECT_CALL(*mock_event_ptr, Allocate()).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
+    EXPECT_CALL(*mock_event_ptr, Allocate(_)).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
     EXPECT_CALL(*mock_event_ptr, Send(_)).WillOnce(Return(score::Result<void>{}));
 
     auto skeleton_result = GenericSkeleton::Create(
@@ -329,7 +328,7 @@ TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierSendsToBinding)
     ASSERT_TRUE(skeleton_result.has_value());
 
     // Offer the service
-    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_event_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton_result.value().OfferService().has_value());
 
