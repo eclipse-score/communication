@@ -25,56 +25,14 @@ GenericSkeletonField::GenericSkeletonField(SkeletonBase& skeleton_base,
                                            bool has_getter,
                                            bool has_setter,
                                            bool has_notifier)
-    : SkeletonFieldBase{skeleton_base, field_name, std::move(generic_event)},
+    : SkeletonFieldBase{field_name, std::move(generic_event)},
       has_getter_{has_getter},
       has_setter_{has_setter},
       has_notifier_{has_notifier}
 {
     // Register this field instance with the parent skeleton's element map
     SkeletonBaseView skeleton_base_view{skeleton_base};
-    skeleton_base_view.RegisterField(field_name, *this);
-}
-
-GenericSkeletonField::GenericSkeletonField(GenericSkeletonField&& other) noexcept
-    : SkeletonFieldBase(static_cast<SkeletonFieldBase&&>(other)),
-      initial_field_value_{std::move(other.initial_field_value_)},
-      has_initial_value_{std::exchange(other.has_initial_value_, false)},
-      has_getter_{other.has_getter_},
-      has_setter_{other.has_setter_},
-      has_notifier_{other.has_notifier_},
-      is_set_handler_registered_{std::exchange(other.is_set_handler_registered_, false)}
-{
-    // Update the parent skeleton's reference to point to this newly moved instance
-    SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
-    skeleton_base_view.UpdateField(field_name_, *this);
-}
-
-GenericSkeletonField& GenericSkeletonField::operator=(GenericSkeletonField&& other) & noexcept
-{
-    if (this != &other)
-    {
-        SkeletonFieldBase::operator=(std::move(other));
-        initial_field_value_ = std::move(other.initial_field_value_);
-        has_initial_value_ = std::exchange(other.has_initial_value_, false);
-        has_getter_ = other.has_getter_;
-        has_setter_ = other.has_setter_;
-        has_notifier_ = other.has_notifier_;
-        is_set_handler_registered_ = std::exchange(other.is_set_handler_registered_, false);
-
-        // Update the parent skeleton's reference to point to this newly moved instance
-        SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
-        skeleton_base_view.UpdateField(field_name_, *this);
-    }
-    return *this;
-}
-
-void GenericSkeletonField::UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept
-{
-    skeleton_base_ = skeleton_base;
-    if (skeleton_event_dispatch_ != nullptr)
-    {
-        skeleton_event_dispatch_->UpdateSkeletonReference(skeleton_base);
-    }
+    skeleton_base_view.RegisterField(field_name, GetReferenceToMoveable());
 }
 
 Result<void> GenericSkeletonField::Update(SampleAllocateePtr<void> sample) noexcept

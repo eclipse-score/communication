@@ -53,11 +53,8 @@ class GenericSkeletonField : public SkeletonFieldBase
     GenericSkeletonField(const GenericSkeletonField&) = delete;
     GenericSkeletonField& operator=(const GenericSkeletonField&) & = delete;
 
-    GenericSkeletonField(GenericSkeletonField&& other) noexcept;
-    GenericSkeletonField& operator=(GenericSkeletonField&& other) & noexcept;
-
-    /// @brief Updates the reference to the parent skeleton when the skeleton is moved.
-    void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept override;
+    GenericSkeletonField(GenericSkeletonField&& other) noexcept = default;
+    GenericSkeletonField& operator=(GenericSkeletonField&& other) & noexcept = default;
 
     /// @brief Updates the field value using a raw byte payload and notifies subscribers.
     /// @details If `OfferService()` has not been called yet, the payload is cached as
