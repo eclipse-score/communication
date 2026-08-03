@@ -99,9 +99,9 @@ class GenericSkeletonField : public SkeletonFieldBase
     std::vector<uint8_t> initial_field_value_;
     bool has_initial_value_{false};
 
-    bool has_getter_{false};
+    [[maybe_unused]] bool has_getter_{false};
     bool has_setter_{false};
-    bool has_notifier_{false};
+    [[maybe_unused]] bool has_notifier_{false};
     bool is_set_handler_registered_{false};
 };
 
