@@ -11,4 +11,4 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/fields/set_and_notifier/datatypes/getter_only_enabled_field.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/datatypes/get_and_notifier_enabled_field.h"

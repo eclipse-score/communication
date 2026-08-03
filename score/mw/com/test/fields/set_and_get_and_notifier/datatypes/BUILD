@@ -33,7 +33,7 @@ cc_library(
         "set_and_notifier_enabled_field.h",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/mw/com/test/fields/set_and_notifier:__pkg__"],
+    visibility = ["//score/mw/com/test/fields/set_and_get_and_notifier:__pkg__"],
     deps = [
         "//score/mw/com",
     ],

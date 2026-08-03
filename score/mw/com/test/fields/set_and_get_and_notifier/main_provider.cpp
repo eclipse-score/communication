@@ -13,7 +13,8 @@
 
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
-#include "score/mw/com/test/fields/set_and_notifier/provider.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/common_resources.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/provider.h"
 
 #include <cstdlib>
 #include <iostream>

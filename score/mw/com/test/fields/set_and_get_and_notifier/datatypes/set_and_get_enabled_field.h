@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#ifndef SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_GET_AND_NOTIFIER_ENABLED_FIELD_H
-#define SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_GET_AND_NOTIFIER_ENABLED_FIELD_H
+#ifndef SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_SET_AND_GET_ENABLED_FIELD_H
+#define SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_SET_AND_GET_ENABLED_FIELD_H
 
 #include "score/mw/com/types.h"
 #include <cstdint>
@@ -21,19 +21,19 @@ namespace score::mw::com::test
 {
 
 template <typename T>
-class GetAndNotifierEnabledInterface : public T::Base
+class SetAndGetEnabledInterface : public T::Base
 {
   public:
     using T::Base::Base;
 
-    typename T::template Field<std::int32_t, WithGetter, WithNotifier> get_and_notifier_enabled_field{
+    typename T::template Field<std::int32_t, WithSetter, WithGetter> set_and_get_enabled_field{
         *this,
-        "get_and_notifier_enabled_field"};
+        "set_and_get_enabled_field"};
 };
 
-using GetAndNotifierEnabledProxy = score::mw::com::AsProxy<GetAndNotifierEnabledInterface>;
-using GetAndNotifierEnabledSkeleton = score::mw::com::AsSkeleton<GetAndNotifierEnabledInterface>;
+using SetAndGetEnabledProxy = score::mw::com::AsProxy<SetAndGetEnabledInterface>;
+using SetAndGetEnabledSkeleton = score::mw::com::AsSkeleton<SetAndGetEnabledInterface>;
 
 }  // namespace score::mw::com::test
 
-#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_GET_AND_NOTIFIER_ENABLED_FIELD_H
+#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_SET_AND_GET_ENABLED_FIELD_H

@@ -13,11 +13,10 @@
 
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
-#include "score/mw/com/test/fields/set_and_notifier/consumer.h"
-#include "score/mw/com/test/fields/set_and_notifier/provider.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/common_resources.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/consumer.h"
 
 #include <cstdlib>
-#include <future>
 #include <iostream>
 
 int main(int argc, const char** argv)
@@ -33,12 +32,6 @@ int main(int argc, const char** argv)
         std::cerr << "Unable to set signal handler for SIGINT and/or SIGTERM, cautiously continuing\n";
     }
 
-    auto provider_future = std::async(score::mw::com::test::run_provider, stop_source.get_token(), config.mode);
-    auto consumer_future = std::async(score::mw::com::test::run_consumer, stop_source.get_token(), config.mode);
-
-    provider_future.get();
-    consumer_future.get();
-
-    std::cout << "Provider and Consumer completed successfully" << std::endl;
+    score::mw::com::test::run_consumer(stop_source.get_token(), config.mode);
     return EXIT_SUCCESS;
 }
