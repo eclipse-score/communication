@@ -17,7 +17,23 @@
             },
             {
               "fieldName": "set_and_notifier_enabled_field",
+              "fieldId": 2
+            },
+            {
+              "fieldName": "get_only_enabled_field",
               "fieldId": 3
+            },
+            {
+              "fieldName": "get_and_notifier_enabled_field",
+              "fieldId": 4
+            },
+            {
+              "fieldName": "set_and_get_enabled_field",
+              "fieldId": 5
+            },
+            {
+              "fieldName": "set_and_get_and_notifier_enabled_field",
+              "fieldId": 6
             }
           ]
         }
@@ -45,6 +61,26 @@
             },
             {
               "fieldName": "set_and_notifier_enabled_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 4
+            },
+            {
+              "fieldName": "get_only_enabled_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 4
+            },
+            {
+              "fieldName": "get_and_notifier_enabled_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 4
+            },
+            {
+              "fieldName": "set_and_get_enabled_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 4
+            },
+            {
+              "fieldName": "set_and_get_and_notifier_enabled_field",
               "maxSubscribers": 1,
               "numberOfSampleSlots": 4
             }

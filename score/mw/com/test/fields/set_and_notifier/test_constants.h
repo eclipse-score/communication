@@ -26,6 +26,7 @@ namespace score::mw::com::test
 constexpr const char* const kInstanceSpecifierString = "/score/mw/com/test/fields/set_and_get_and_notifier_instance";
 const std::string kConsumerDoneShmPath{"/fields_notifier_consumer_done"};
 const std::string kSetDoneShmPath{"/fields_notifier_set_done"};
+const std::string kConsumerGotValueShmPath = "/score_mw_com_test_get_consumer_got_value";
 const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{kInstanceSpecifierString}).value();
 
 constexpr std::int32_t kInitialValue = 18;
