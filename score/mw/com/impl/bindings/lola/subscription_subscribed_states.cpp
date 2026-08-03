@@ -39,7 +39,7 @@ Result<void> SubscribedState::SubscribeEvent(const std::size_t max_sample_count)
         ::score::mw::log::LogWarn("lola")
             << CreateLoggingString("Calling SubscribeEvent() while already subscribed has no effect.",
                                    state_machine_.GetElementFqId(),
-                                   state_machine_.GetCurrentStateNoLock());
+                                   state_machine_.GetCurrentState());
         return {};
     }
     else
@@ -47,7 +47,7 @@ Result<void> SubscribedState::SubscribeEvent(const std::size_t max_sample_count)
         ::score::mw::log::LogError("lola") << CreateLoggingString(
             "Calling SubscribeEvent() while already subscribed with a different max_sample_count is illegal.",
             state_machine_.GetElementFqId(),
-            state_machine_.GetCurrentStateNoLock());
+            state_machine_.GetCurrentState());
         return MakeUnexpected(ComErrc::kMaxSampleCountNotRealizable);
     }
 }
@@ -70,7 +70,7 @@ void SubscribedState::ReOfferEvent(const pid_t) noexcept
 {
     ::score::mw::log::LogWarn("lola") << CreateLoggingString("Service cannot be re-offered while already subscribed.",
                                                              state_machine_.GetElementFqId(),
-                                                             state_machine_.GetCurrentStateNoLock());
+                                                             state_machine_.GetCurrentState());
 }
 
 void SubscribedState::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept

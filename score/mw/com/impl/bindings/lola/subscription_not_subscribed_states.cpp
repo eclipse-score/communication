@@ -45,7 +45,7 @@ Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_cou
         ss << "Subscribe was rejected by skeleton. Could not Register TransactionLog due to "
            << transaction_log_registration_guard_result.error();
         ::score::mw::log::LogError("lola")
-            << CreateLoggingString(ss.str(), state_machine_.GetElementFqId(), state_machine_.GetCurrentStateNoLock());
+            << CreateLoggingString(ss.str(), state_machine_.GetElementFqId(), state_machine_.GetCurrentState());
         return MakeUnexpected(ComErrc::kMaxSubscribersExceeded);
     }
     score::cpp::ignore = state_machine_.transaction_log_registration_guard_.emplace(
@@ -79,7 +79,7 @@ Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_cou
         ss << "Subscribe was rejected by skeleton. Cannot complete SubscribeEvent() call due to "
            << ToString(subscription_result);
         ::score::mw::log::LogError("lola")
-            << CreateLoggingString(ss.str(), state_machine_.GetElementFqId(), state_machine_.GetCurrentStateNoLock());
+            << CreateLoggingString(ss.str(), state_machine_.GetElementFqId(), state_machine_.GetCurrentState());
         state_machine_.transaction_log_registration_guard_.reset();
         return MakeUnexpected(ComErrc::kMaxSampleCountNotRealizable);
     }

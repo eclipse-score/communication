@@ -47,8 +47,23 @@ void TraceSetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
                             const ProxyEventBindingBase& proxy_event_binding_base) noexcept;
 void TraceUnsetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
                               const ProxyEventBindingBase& proxy_event_binding_base) noexcept;
-void TraceGetNewSamples(ProxyEventTracingData& proxy_event_tracing_data,
-                        const ProxyEventBindingBase& proxy_event_binding_base) noexcept;
+
+/// \brief Emits the GET_NEW_SAMPLES trace point. Out-of-line, only called from the inline TraceGetNewSamples() stub
+///        when tracing for this trace point is actually enabled.
+void TraceGetNewSamplesTracePoint(ProxyEventTracingData& proxy_event_tracing_data,
+                                  const ProxyEventBindingBase& proxy_event_binding_base) noexcept;
+
+/// \brief Hot-path optimization: small inlineable stub that checks whether GET_NEW_SAMPLES tracing is enabled and only
+///        then dispatches to the (non-inlineable) TraceGetNewSamplesTracePoint(). GetNewSamples() calls this on every
+///        invocation; in the common case (tracing disabled) this collapses to a single bool check with no call.
+inline void TraceGetNewSamples(ProxyEventTracingData& proxy_event_tracing_data,
+                               const ProxyEventBindingBase& proxy_event_binding_base) noexcept
+{
+    if (proxy_event_tracing_data.enable_get_new_samples)
+    {
+        TraceGetNewSamplesTracePoint(proxy_event_tracing_data, proxy_event_binding_base);
+    }
+}
 void TraceCallGetNewSamplesCallback(ProxyEventTracingData& proxy_event_tracing_data,
                                     const ProxyEventBindingBase& proxy_event_binding_base,
                                     ITracingRuntime::TracePointDataId trace_point_data_id) noexcept;

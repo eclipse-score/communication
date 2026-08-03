@@ -19,9 +19,12 @@
 
 #include "score/concurrency/atomic_indirector.h"
 
+#include <score/assert.hpp>
 #include <score/span.hpp>
 
 #include <atomic>
+#include <cstdint>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -125,6 +128,79 @@ class ProviderEventDataControlLocalView final
     static inline std::atomic_uint_fast64_t num_alloc_misses{0U};
     static inline std::atomic_uint_fast64_t num_alloc_retries{0U};
 };
+
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
+// called implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a
+// segmentation fault in case the index goes outside the range. As we already do an index check before
+// accessing, so no way for segmentation fault which leds to calling std::terminate().
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+template <template <class> class AtomicIndirectorType>
+inline auto ProviderEventDataControlLocalView<AtomicIndirectorType>::TryAllocateSlot(const SlotInfo slot_info) noexcept
+    -> std::optional<EventSlotStatus::value_type>
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_info.slot_index) < state_slots_.size());
+
+    EventSlotStatus in_writing{};
+    in_writing.MarkInWriting();
+    const auto in_writing_value = static_cast<EventSlotStatus::value_type>(in_writing);
+
+    auto old_slot_value = slot_info.slot_value;
+    const auto was_slot_allocated = AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_strong(
+        state_slots_[slot_info.slot_index], old_slot_value, in_writing_value, std::memory_order_acq_rel);
+    if (!was_slot_allocated)
+    {
+        return {};
+    }
+    return old_slot_value;
+}
+
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly". std::terminate() is implicitly called from 'selected_index.value()' in case the selected_index doesn't
+// have a value but as we check before with 'has_value()' so no way for throwing std::bad_optional_access which leds
+// to std::terminate().
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+template <template <class> class AtomicIndirectorType>
+inline auto ProviderEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot() noexcept
+    -> std::optional<SlotIndexType>
+{
+    constexpr std::uint64_t max_allocate_retries{100U};
+
+    for (std::uint64_t retry_counter{0U}; retry_counter <= max_allocate_retries; ++retry_counter)
+    {
+        auto oldest_unused_slot_info_result = FindOldestUnusedSlot();
+        if (!oldest_unused_slot_info_result.has_value())
+        {
+            continue;
+        }
+
+        if (TryAllocateSlot(oldest_unused_slot_info_result.value()).has_value())
+        {
+            // ToDo: Don't call non-inlined "optional" func on the hot path! Make it conditional/configurable.
+            // LogPerformanceMetrics(retry_counter);
+            return oldest_unused_slot_info_result.value().slot_index;
+        }
+    }
+    // ToDo: Don't call non-inlined "optional" func on the hot path! Make it conditional/configurable.
+    // LogPerformanceMetrics(retry_counter);
+    return {};
+}
+
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
+// called implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a
+// segmentation fault in case the index goes outside the range. As we already do an index check before
+// accessing, so no way for segmentation fault which leds to calling std::terminate().
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+template <template <class> class AtomicIndirectorType>
+inline auto ProviderEventDataControlLocalView<AtomicIndirectorType>::EventReady(
+    const SlotIndexType slot_index,
+    const EventSlotStatus::EventTimeStamp time_stamp) noexcept -> void
+{
+    const EventSlotStatus initial{time_stamp, 0U};
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
+    state_slots_[slot_index].store(
+        static_cast<EventSlotStatus::value_type>(initial));  // no race-condition can happen, since event sender has
+                                                             // to be single-threaded/non-concurrent per AoU
+}
 
 }  // namespace score::mw::com::impl::lola
 

@@ -253,21 +253,37 @@ auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_
     return tracing_handler;
 }
 
+/// \brief Out-of-line helper that unconditionally creates the SEND_WITH_ALLOCATE tracing callback. Only called from the
+///        inline CreateTracingSendWithAllocateCallback() stub when tracing for this trace point is actually enabled.
 template <typename SampleType>
-auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
-                                           const SkeletonEventBindingBase& skeleton_event_binding_base) noexcept
+auto CreateSendWithAllocateTraceCallbackHandler(SkeletonEventTracingData& skeleton_event_tracing_data,
+                                                const SkeletonEventBindingBase& skeleton_event_binding_base) noexcept
     -> std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
 {
-    std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> tracing_handler{};
-    if (skeleton_event_tracing_data.enable_send_with_allocate)
-    {
-        tracing_handler = [&skeleton_event_tracing_data, &skeleton_event_binding_base](
-                              impl::SampleAllocateePtr<SampleType>& sample_data_ptr) mutable noexcept {
+    std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> tracing_handler{
+        [&skeleton_event_tracing_data,
+         &skeleton_event_binding_base](impl::SampleAllocateePtr<SampleType>& sample_data_ptr) mutable noexcept {
             TraceSendWithAllocate<SampleType>(
                 skeleton_event_tracing_data, skeleton_event_binding_base, sample_data_ptr);
-        };
-    }
+        }};
     return tracing_handler;
+}
+
+/// \brief Hot-path optimization: small inlineable stub that checks whether SEND_WITH_ALLOCATE tracing is enabled and
+///        only then dispatches to the (out-of-line) CreateSendWithAllocateTraceCallbackHandler(). Send() calls this on
+///        every invocation; in the common case (tracing disabled) this collapses to a single bool check returning an
+///        empty optional, with no callback construction.
+template <typename SampleType>
+inline auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
+                                                  const SkeletonEventBindingBase& skeleton_event_binding_base) noexcept
+    -> std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
+{
+    if (skeleton_event_tracing_data.enable_send_with_allocate)
+    {
+        return CreateSendWithAllocateTraceCallbackHandler<SampleType>(skeleton_event_tracing_data,
+                                                                      skeleton_event_binding_base);
+    }
+    return {};
 }
 
 }  // namespace score::mw::com::impl::tracing

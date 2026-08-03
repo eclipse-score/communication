@@ -56,12 +56,6 @@ void ProxyEventCommon::Unsubscribe()
     subscription_event_state_machine_.UnsubscribeEvent();
 }
 
-SubscriptionState ProxyEventCommon::GetSubscriptionState() const noexcept
-{
-    const auto current_state = subscription_event_state_machine_.GetCurrentState();
-    return SubscriptionStateMachineStateToSubscriptionState(current_state);
-}
-
 Result<std::size_t> ProxyEventCommon::GetNumNewSamplesAvailable() const noexcept
 {
     const auto& slot_collector = test_slot_collector_.has_value()
@@ -71,17 +65,6 @@ Result<std::size_t> ProxyEventCommon::GetNumNewSamplesAvailable() const noexcept
         slot_collector.has_value(),
         "GetNumNewSamplesAvailable must be called after the slot collector is instantiated by calling Subscribe().");
     return slot_collector.value().GetNumNewSamplesAvailable();
-}
-
-SlotCollector::SlotIndices ProxyEventCommon::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
-{
-    auto& slot_collector = test_slot_collector_.has_value()
-                               ? test_slot_collector_
-                               : subscription_event_state_machine_.GetSlotCollectorLockFree();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        slot_collector.has_value(),
-        "GetNewSamplesSlotIndices must be called after the slot collector is instantiated by calling Subscribe().");
-    return slot_collector.value().GetNewSamplesSlotIndices(max_count);
 }
 
 Result<void> ProxyEventCommon::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler)

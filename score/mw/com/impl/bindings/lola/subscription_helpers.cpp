@@ -58,30 +58,6 @@ void EventReceiveHandlerManager::Unregister() noexcept
     }
 }
 
-SubscriptionState SubscriptionStateMachineStateToSubscriptionState(SubscriptionStateMachineState state) noexcept
-{
-    // Suppress "AUTOSAR C++14 M6-4-5" and "AUTOSAR C++14 M6-4-3", The rule states: "An unconditional throw or break
-    // statement shall terminate every nonempty switch-clause." and "A switch statement shall be a well-formed
-    // switch statement." respectively. There is return for every switch case, adding a break would be dead code.
-    // coverity[autosar_cpp14_m6_4_3_violation]
-    switch (state)
-    {
-        // coverity[autosar_cpp14_m6_4_5_violation]
-        case SubscriptionStateMachineState::NOT_SUBSCRIBED_STATE:
-            return SubscriptionState::kNotSubscribed;
-        // coverity[autosar_cpp14_m6_4_5_violation]
-        case SubscriptionStateMachineState::SUBSCRIBED_STATE:
-            return SubscriptionState::kSubscribed;
-        // coverity[autosar_cpp14_m6_4_5_violation]
-        case SubscriptionStateMachineState::SUBSCRIPTION_PENDING_STATE:
-            return SubscriptionState::kSubscriptionPending;
-        // coverity[autosar_cpp14_m6_4_5_violation]
-        case SubscriptionStateMachineState::STATE_COUNT:
-        default:
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Invalid subscription state");
-    }
-}
-
 std::string CreateLoggingString(std::string&& string,
                                 const ElementFqId& element_fq_id,
                                 const SubscriptionStateMachineState current_state)

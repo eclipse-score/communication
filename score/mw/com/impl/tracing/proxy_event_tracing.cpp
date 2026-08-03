@@ -305,8 +305,8 @@ void TraceUnsetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
     }
 }
 
-void TraceGetNewSamples(ProxyEventTracingData& proxy_event_tracing_data,
-                        const ProxyEventBindingBase& proxy_event_binding_base) noexcept
+void TraceGetNewSamplesTracePoint(ProxyEventTracingData& proxy_event_tracing_data,
+                                  const ProxyEventBindingBase& proxy_event_binding_base) noexcept
 {
     if (proxy_event_tracing_data.enable_get_new_samples)
     {

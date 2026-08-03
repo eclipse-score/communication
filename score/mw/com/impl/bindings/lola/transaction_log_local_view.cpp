@@ -26,26 +26,6 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-// Handles race condition between concurrent SamplePtr destruction and creation for the same slot.
-// Thread A may be suspended between decrementing refcount and clearing the transaction-END bit.
-// This allows Thread A to complete its dereference transaction before proceeding.
-void WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept
-{
-    constexpr std::uint8_t kRetryCount = 10U;
-    constexpr std::chrono::milliseconds kRetryInterval(10);
-    for (std::uint8_t retry = 0U; retry < kRetryCount; ++retry)
-    {
-        if (!slot.GetTransactionEnd())
-        {
-            return;
-        }
-        std::this_thread::sleep_for(kRetryInterval);
-    }
-    score::mw::log::LogFatal("lola") << "ReferenceTransactionBegin: Transaction-END bit remains TRUE after "
-                                     << kRetryCount * kRetryInterval.count() << "ms; terminating";
-    std::terminate();
-}
-
 bool DoesLogContainIncrementOrDecrementTransactions(
     const TransactionLogLocalView::TransactionLogSlotsLocalView& reference_count_slots) noexcept
 {
@@ -107,46 +87,26 @@ void TransactionLogLocalView::UnsubscribeTransactionCommit() noexcept
     subscribe_transactions_.get().SetTransactionEnd(false);
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from 'reference_count_slots_local_.at()' which might throw
-// std::out_of_range As we already do an index check before accessing, so no way for throwing std::out_of_rang which
-// leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void TransactionLogLocalView::ReferenceTransactionBegin(SlotIndexType slot_index) noexcept
+// Handles race condition between concurrent SamplePtr destruction and creation for the same slot.
+// Thread A may be suspended between decrementing refcount and clearing the transaction-END bit.
+// This allows Thread A to complete its dereference transaction before proceeding.
+// Hot-path optimization: this is the out-of-line slow path. The common (uncontended) case is handled inline by the
+// Reference* transaction functions in the header, which only call this helper when the Transaction-END bit is set.
+void TransactionLogLocalView::WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot_index < reference_count_slots_local_.size());
-    TransactionLogSlot& slot = reference_count_slots_local_[static_cast<std::size_t>(slot_index)];
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionBegin());
-    WaitForTransactionEndToBecomeFalse(slot);
-    slot.SetTransactionBegin(true);
-}
-
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from 'reference_count_slots_local_.at()' which might throw
-// std::out_of_range As we already do an index check before accessing, so no way for throwing std::out_of_rang which
-// leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void TransactionLogLocalView::ReferenceTransactionCommit(SlotIndexType slot_index) noexcept
-{
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot_index < reference_count_slots_local_.size());
-    TransactionLogSlot& slot = reference_count_slots_local_[static_cast<std::size_t>(slot_index)];
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionBegin());
-    WaitForTransactionEndToBecomeFalse(slot);
-    slot.SetTransactionEnd(true);
-}
-
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from 'reference_count_slots_local_.at()' which might throw
-// std::out_of_range As we already do an index check before accessing, so no way for throwing std::out_of_rang which
-// leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void TransactionLogLocalView::ReferenceTransactionAbort(SlotIndexType slot_index) noexcept
-{
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot_index < reference_count_slots_local_.size());
-    TransactionLogSlot& slot = reference_count_slots_local_[static_cast<std::size_t>(slot_index)];
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionBegin());
-    WaitForTransactionEndToBecomeFalse(slot);
-    slot.SetTransactionBegin(false);
+    constexpr std::uint8_t kRetryCount = 10U;
+    constexpr std::chrono::milliseconds kRetryInterval(10);
+    for (std::uint8_t retry = 0U; retry < kRetryCount; ++retry)
+    {
+        if (!slot.GetTransactionEnd())
+        {
+            return;
+        }
+        std::this_thread::sleep_for(kRetryInterval);
+    }
+    score::mw::log::LogFatal("lola") << "ReferenceTransactionBegin: Transaction-END bit remains TRUE after "
+                                     << kRetryCount * kRetryInterval.count() << "ms; terminating";
+    std::terminate();
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called

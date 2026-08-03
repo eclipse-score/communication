@@ -21,9 +21,11 @@
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 #include "score/result/result.h"
 
+#include <score/assert.hpp>
 #include <score/callback.hpp>
 #include <score/span.hpp>
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 
@@ -65,9 +67,44 @@ class TransactionLogLocalView
     void UnsubscribeTransactionBegin() noexcept;
     void UnsubscribeTransactionCommit() noexcept;
 
-    void ReferenceTransactionBegin(SlotIndexType slot_index) noexcept;
-    void ReferenceTransactionCommit(SlotIndexType slot_index) noexcept;
-    void ReferenceTransactionAbort(SlotIndexType slot_index) noexcept;
+    // Hot-path optimization: ReferenceTransaction{Begin,Commit,Abort} are on the GetNewSamples() call chain (invoked
+    // from ConsumerEventDataControlLocalView::ReferenceNextEvent() for every candidate slot). They are defined inline
+    // here so the trivial fast path (Transaction-END bit not set) requires no function call. The rare, slow
+    // contention-handling path (END bit set) is delegated to the out-of-line WaitForTransactionEndToBecomeFalse()
+    // helper, keeping the inlined body small.
+    void ReferenceTransactionBegin(SlotIndexType slot_index) noexcept
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot_index < reference_count_slots_local_.size());
+        TransactionLogSlot& slot = reference_count_slots_local_[static_cast<std::size_t>(slot_index)];
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionBegin());
+        if (slot.GetTransactionEnd())
+        {
+            WaitForTransactionEndToBecomeFalse(slot);
+        }
+        slot.SetTransactionBegin(true);
+    }
+    void ReferenceTransactionCommit(SlotIndexType slot_index) noexcept
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot_index < reference_count_slots_local_.size());
+        TransactionLogSlot& slot = reference_count_slots_local_[static_cast<std::size_t>(slot_index)];
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionBegin());
+        if (slot.GetTransactionEnd())
+        {
+            WaitForTransactionEndToBecomeFalse(slot);
+        }
+        slot.SetTransactionEnd(true);
+    }
+    void ReferenceTransactionAbort(SlotIndexType slot_index) noexcept
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot_index < reference_count_slots_local_.size());
+        TransactionLogSlot& slot = reference_count_slots_local_[static_cast<std::size_t>(slot_index)];
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionBegin());
+        if (slot.GetTransactionEnd())
+        {
+            WaitForTransactionEndToBecomeFalse(slot);
+        }
+        slot.SetTransactionBegin(false);
+    }
 
     void DereferenceTransactionBegin(SlotIndexType slot_index) noexcept;
     void DereferenceTransactionCommit(SlotIndexType slot_index) noexcept;
@@ -99,6 +136,11 @@ class TransactionLogLocalView
     bool ContainsTransactions() const noexcept;
 
   private:
+    /// \brief Slow contention-handling path for the Reference* transactions: waits for the Transaction-END bit of the
+    /// given slot to become false (retrying with backoff, terminating if it never clears). Kept out-of-line so the
+    /// inlined Reference* fast paths stay small.
+    static void WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept;
+
     Result<void> RollbackIncrementTransactions(const DereferenceSlotCallback& dereference_slot_callback) noexcept;
     Result<void> RollbackSubscribeTransactions(const UnsubscribeCallback& unsubscribe_callback) noexcept;
 

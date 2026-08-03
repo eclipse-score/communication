@@ -41,7 +41,7 @@ Result<void> SubscriptionPendingState::SubscribeEvent(const std::size_t max_samp
         ::score::mw::log::LogWarn("lola")
             << CreateLoggingString("Calling SubscribeEvent() while subscription is pending has no effect.",
                                    state_machine_.GetElementFqId(),
-                                   state_machine_.GetCurrentStateNoLock());
+                                   state_machine_.GetCurrentState());
         return {};
     }
     else
@@ -49,7 +49,7 @@ Result<void> SubscriptionPendingState::SubscribeEvent(const std::size_t max_samp
         ::score::mw::log::LogError("lola") << CreateLoggingString(
             "Calling SubscribeEvent() with a different max_sample_count while subscription is pending is illegal.",
             state_machine_.GetElementFqId(),
-            state_machine_.GetCurrentStateNoLock());
+            state_machine_.GetCurrentState());
         return MakeUnexpected(ComErrc::kMaxSampleCountNotRealizable);
     }
 }
@@ -67,7 +67,7 @@ void SubscriptionPendingState::StopOfferEvent() noexcept
     ::score::mw::log::LogFatal("lola") << CreateLoggingString(
         "Service cannot be stop-offered while in subscription pending. Terminating",
         state_machine_.GetElementFqId(),
-        state_machine_.GetCurrentStateNoLock());
+        state_machine_.GetCurrentState());
     std::terminate();
 }
 
