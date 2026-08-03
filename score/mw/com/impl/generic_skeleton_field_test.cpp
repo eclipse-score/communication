@@ -316,11 +316,13 @@ TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierSendsToBinding)
     EXPECT_CALL(generic_event_binding_factory_mock_, Create(_, field_name, _))
         .WillOnce(Return(ByMove(std::move(mock_event))));
 
-    // Expect allocation and send even though has_notifier_ is false
-    std::vector<uint8_t> dummy_memory(16, 0);
-    mock_binding::SampleAllocateePtr<void> dummy_alloc{dummy_memory.data(), [](void*) {}};
+    EXPECT_CALL(*mock_event_ptr, GetSizeInfo()).WillRepeatedly(Return(std::make_pair<size_t, size_t>(16, 8)));
 
-    EXPECT_CALL(*mock_event_ptr, Allocate(_)).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
+    // 1. Expect allocation and send of the INITIAL VALUE during OfferService()
+    std::vector<uint8_t> dummy_memory1(16, 0);
+    mock_binding::SampleAllocateePtr<void> dummy_alloc1{dummy_memory1.data(), [](void*) {}};
+
+    EXPECT_CALL(*mock_event_ptr, Allocate(_)).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc1)))));
     EXPECT_CALL(*mock_event_ptr, Send(_)).WillOnce(Return(score::Result<void>{}));
 
     auto skeleton_result = GenericSkeleton::Create(
@@ -331,6 +333,13 @@ TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierSendsToBinding)
     EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_event_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
     ASSERT_TRUE(skeleton_result.value().OfferService().has_value());
+
+    // 2. Expect a NEW allocation and send during explicit Update()
+    std::vector<uint8_t> dummy_memory2(16, 0);
+    mock_binding::SampleAllocateePtr<void> dummy_alloc2{dummy_memory2.data(), [](void*) {}};
+
+    EXPECT_CALL(*mock_event_ptr, Allocate(_)).WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc2)))));
+    EXPECT_CALL(*mock_event_ptr, Send(_)).WillOnce(Return(score::Result<void>{}));
 
     auto& skeleton = skeleton_result.value();
     auto* field = const_cast<GenericSkeletonField*>(&skeleton.GetFields().find(field_name)->second);
