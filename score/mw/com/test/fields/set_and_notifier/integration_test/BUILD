@@ -30,7 +30,7 @@ pkg_filegroup(
 )
 
 integration_test(
-    name = "test_notifier",
+    name = "test_notifier_different_process",
     timeout = "moderate",
     srcs = [
         "test_fixture.py",
@@ -40,7 +40,7 @@ integration_test(
 )
 
 integration_test(
-    name = "test_set_and_notifier",
+    name = "test_set_and_notifier_different_process",
     timeout = "moderate",
     srcs = [
         "test_fixture.py",
@@ -65,6 +65,86 @@ integration_test(
     srcs = [
         "test_fixture.py",
         "test_set_and_notifier_same_process.py",
+    ],
+    filesystem = ":same_process_filesystem",
+)
+
+integration_test(
+    name = "test_get_different_process",
+    timeout = "moderate",
+    srcs = [
+        "test_fixture.py",
+        "test_get_different_process.py",
+    ],
+    filesystem = ":filesystem",
+)
+
+integration_test(
+    name = "test_get_same_process",
+    timeout = "moderate",
+    srcs = [
+        "test_fixture.py",
+        "test_get_same_process.py",
+    ],
+    filesystem = ":same_process_filesystem",
+)
+
+integration_test(
+    name = "test_get_and_notifier_different_process",
+    timeout = "moderate",
+    srcs = [
+        "test_fixture.py",
+        "test_get_and_notifier_different_process.py",
+    ],
+    filesystem = ":filesystem",
+)
+
+integration_test(
+    name = "test_get_and_notifier_same_process",
+    timeout = "moderate",
+    srcs = [
+        "test_fixture.py",
+        "test_get_and_notifier_same_process.py",
+    ],
+    filesystem = ":same_process_filesystem",
+)
+
+integration_test(
+    name = "test_set_and_get_different_process",
+    timeout = "moderate",
+    srcs = [
+        "test_fixture.py",
+        "test_set_and_get_different_process.py",
+    ],
+    filesystem = ":filesystem",
+)
+
+integration_test(
+    name = "test_set_and_get_same_process",
+    timeout = "moderate",
+    srcs = [
+        "test_fixture.py",
+        "test_set_and_get_same_process.py",
+    ],
+    filesystem = ":same_process_filesystem",
+)
+
+integration_test(
+    name = "test_set_get_and_notifier_different_process",
+    timeout = "moderate",
+    srcs = [
+        "test_fixture.py",
+        "test_set_get_and_notifier_different_process.py",
+    ],
+    filesystem = ":filesystem",
+)
+
+integration_test(
+    name = "test_set_get_and_notifier_same_process",
+    timeout = "moderate",
+    srcs = [
+        "test_fixture.py",
+        "test_set_get_and_notifier_same_process.py",
     ],
     filesystem = ":same_process_filesystem",
 )

@@ -16,6 +16,10 @@ from enum import Enum
 class FieldScenario(str, Enum):
     NOTIFIER = "notifier"
     SET_AND_NOTIFIER = "set_and_notifier"
+    GET = "get"
+    GET_AND_NOTIFIER = "get_and_notifier"
+    SET_AND_GET = "set_and_get"
+    SET_GET_AND_NOTIFIER = "set_get_and_notifier"
 
 
 def consumer(target, scenario, config, **kwargs):

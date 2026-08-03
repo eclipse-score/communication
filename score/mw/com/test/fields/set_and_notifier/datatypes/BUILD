@@ -17,11 +17,19 @@ load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER
 cc_library(
     name = "field_datatypes",
     srcs = [
+        "get_and_notifier_enabled_field.cpp",
+        "getter_only_enabled_field.cpp",
         "notifier_only_enabled_field.cpp",
+        "set_and_get_and_notifier_enabled_field.cpp",
+        "set_and_get_enabled_field.cpp",
         "set_and_notifier_enabled_field.cpp",
     ],
     hdrs = [
+        "get_and_notifier_enabled_field.h",
+        "getter_only_enabled_field.h",
         "notifier_only_enabled_field.h",
+        "set_and_get_and_notifier_enabled_field.h",
+        "set_and_get_enabled_field.h",
         "set_and_notifier_enabled_field.h",
     ],
     features = COMPILER_WARNING_FEATURES,

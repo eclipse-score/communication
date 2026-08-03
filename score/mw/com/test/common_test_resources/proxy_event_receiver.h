@@ -125,6 +125,7 @@ class ProxyEventReceiver
                          ". Received: ",
                          received_value);
             }
+            std::cout << "ProxyEventReceiver: Received expected value: " << received_value << std::endl;
             ++sample_idx;
         };
         return WaitForSamples(stop_token, number_of_expected_samples, std::move(get_new_samples_callback));

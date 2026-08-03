@@ -29,6 +29,22 @@ TestMode ParseTestMode(std::string_view mode)
     {
         return TestMode::kSetAndNotifier;
     }
+    if (mode == "get")
+    {
+        return TestMode::kGet;
+    }
+    if (mode == "get_and_notifier")
+    {
+        return TestMode::kGetAndNotifier;
+    }
+    if (mode == "set_and_get")
+    {
+        return TestMode::kSetAndGet;
+    }
+    if (mode == "set_get_and_notifier")
+    {
+        return TestMode::kSetAndGetAndNotifier;
+    }
     FailTest("Unsupported --mode value: ", mode);
 
     // Unreachable, but required to avoid compiler warning: "error: non-void function
@@ -44,7 +60,7 @@ TestConfig ParseConfig(int argc, const char** argv)
     constexpr auto kServiceInstanceManifestArg = "service-instance-manifest";
 
     const std::vector<std::pair<std::string, std::string>> parameter_description_pairs{
-        {kModeArg, "Test mode: notifier or set_and_set"},
+        {kModeArg, "Test mode: notifier, set_and_set, get, get_and_notifier, set_and_get, set_get_and_notifier"},
         {kServiceInstanceManifestArg, "Path to the service instance manifest"},
     };
 

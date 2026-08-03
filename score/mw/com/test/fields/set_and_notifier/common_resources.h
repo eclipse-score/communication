@@ -23,6 +23,10 @@ enum class TestMode
 {
     kNotifier,
     kSetAndNotifier,
+    kGet,
+    kGetAndNotifier,
+    kSetAndGet,
+    kSetAndGetAndNotifier,
 };
 
 struct TestConfig
