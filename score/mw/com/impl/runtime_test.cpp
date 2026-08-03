@@ -49,7 +49,7 @@ using testing::Return;
 TEST(RuntimeTest, CanRetrieveServiceDiscovery)
 {
     Configuration dummy_configuration{Configuration::ServiceTypeDeployments{},
-                                      Configuration::ServiceInstanceDeployments{},
+                                      ServiceInstancesContainer{Configuration::ServiceInstanceDeployments{}},
                                       GlobalConfiguration{},
                                       TracingConfiguration{}};
     std::optional<tracing::TracingFilterConfig> empty_filter_configuration{};
@@ -74,19 +74,21 @@ class RuntimeFixture : public ::testing::Test
 
     RuntimeFixture& WithAnEmptyConfiguration() noexcept
     {
-        configuration_ = std::make_unique<Configuration>(Configuration::ServiceTypeDeployments{},
-                                                         Configuration::ServiceInstanceDeployments{},
-                                                         GlobalConfiguration{},
-                                                         TracingConfiguration{});
+        configuration_ =
+            std::make_unique<Configuration>(Configuration::ServiceTypeDeployments{},
+                                            ServiceInstancesContainer{Configuration::ServiceInstanceDeployments{}},
+                                            GlobalConfiguration{},
+                                            TracingConfiguration{});
         return *this;
     }
 
     RuntimeFixture& WithAConfigurationContaining(TracingConfiguration tracing_configuration) noexcept
     {
-        configuration_ = std::make_unique<Configuration>(Configuration::ServiceTypeDeployments{},
-                                                         Configuration::ServiceInstanceDeployments{},
-                                                         GlobalConfiguration{},
-                                                         std::move(tracing_configuration));
+        configuration_ =
+            std::make_unique<Configuration>(Configuration::ServiceTypeDeployments{},
+                                            ServiceInstancesContainer{Configuration::ServiceInstanceDeployments{}},
+                                            GlobalConfiguration{},
+                                            std::move(tracing_configuration));
         return *this;
     }
 

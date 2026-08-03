@@ -258,7 +258,6 @@ void TracingRuntime::ClearCachedFileDescriptorForReregisteringShmObject(
 analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServiceInstanceElement(
     const impl::tracing::ServiceElementInstanceIdentifierView service_element_instance_identifier_view) const noexcept
 {
-    const auto& service_instance_deployments = configuration_.GetServiceInstances();
     const auto& service_type_deployments = configuration_.GetServiceTypes();
 
     // @todo: Replace the configuration unordered_maps with maps and use CompareId?
@@ -269,7 +268,7 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
     // The instance specifier is loaded into the configuration during the initialization, so the container
     // will always have an element with the specified key.
     // coverity[autosar_cpp14_a15_4_2_violation]
-    const auto& service_instance_deployment = service_instance_deployments.at(instance_specifier);
+    const auto& service_instance_deployment = configuration_.GetServiceInstances().at(instance_specifier);
     auto* lola_service_instance_deployment =
         std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(lola_service_instance_deployment != nullptr);

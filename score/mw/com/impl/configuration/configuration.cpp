@@ -22,7 +22,7 @@ namespace score::mw::com::impl
 {
 
 Configuration::Configuration(ServiceTypeDeployments service_types,
-                             ServiceInstanceDeployments service_instances,
+                             ServiceInstancesContainer service_instances,
                              GlobalConfiguration global_configuration,
                              TracingConfiguration tracing_configuration) noexcept
     : service_types_{std::move(service_types)},
@@ -76,17 +76,6 @@ Result<void> Configuration::MergeServiceEntries(const Configuration& additional_
         std::ignore = service_types_.emplace(std::move(service_type.first), std::move(service_type.second));
     }
 
-    for (auto& service_instance : additional_configuration.service_instances_)
-    {
-        for (const auto& existing_service_instance : service_instances_)
-        {
-            if (existing_service_instance.first.ToString() == service_instance.first.ToString())
-            {
-                return Unexpected(MakeError(configuration_errc::configuration_merge_duplicate_service_instance));
-            }
-        }
-        std::ignore = service_instances_.emplace(std::move(service_instance.first), std::move(service_instance.second));
-    }
-    return {};
+    return service_instances_.MergeServiceEntries(additional_configuration.service_instances_);
 }
 }  // namespace score::mw::com::impl

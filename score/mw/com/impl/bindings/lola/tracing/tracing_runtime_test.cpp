@@ -64,7 +64,7 @@ using testing::Return;
 using testing::WithArg;
 
 const Configuration kEmptyConfiguration{Configuration::ServiceTypeDeployments{},
-                                        Configuration::ServiceInstanceDeployments{},
+                                        ServiceInstancesContainer{Configuration::ServiceInstanceDeployments{}},
                                         GlobalConfiguration{},
                                         TracingConfiguration{}};
 
@@ -751,7 +751,7 @@ class RegisterWithGenericTraceApiFixture : public testing::Test
         TracingConfiguration dummy_tracing_configuration{};
         dummy_tracing_configuration.SetApplicationInstanceID(application_instance_id_);
         return std::make_unique<Configuration>(Configuration::ServiceTypeDeployments{},
-                                               Configuration::ServiceInstanceDeployments{},
+                                               ServiceInstancesContainer{Configuration::ServiceInstanceDeployments{}},
                                                GlobalConfiguration{},
                                                std::move(dummy_tracing_configuration));
     }
@@ -1032,13 +1032,14 @@ TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementFixture,
     const auto lola_service_type_deployment =
         CreateTypeDeployment(service_id_, {{event_name_, event_id_}}, {{field_name_, field_id_}});
 
-    Configuration configuration{
-        {{service_identifier_type, ServiceTypeDeployment{lola_service_type_deployment}}},
-        {{instance_specifier_,
-          ServiceInstanceDeployment{
-              service_identifier_type, lola_service_instance_deployment, QualityType::kInvalid, instance_specifier_}}},
-        GlobalConfiguration{},
-        TracingConfiguration{}};
+    Configuration configuration{{{service_identifier_type, ServiceTypeDeployment{lola_service_type_deployment}}},
+                                ServiceInstancesContainer{{{instance_specifier_,
+                                                            ServiceInstanceDeployment{service_identifier_type,
+                                                                                      lola_service_instance_deployment,
+                                                                                      QualityType::kInvalid,
+                                                                                      instance_specifier_}}}},
+                                GlobalConfiguration{},
+                                TracingConfiguration{}};
 
     const ServiceInstanceElement expected_service_instance_element_event{
         static_cast<ServiceInstanceElement::ServiceIdType>(service_id_),
@@ -1084,14 +1085,15 @@ TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementDeathTest,
     const auto lola_service_type_deployment =
         CreateTypeDeployment(service_id_, {{event_name_, event_id_}}, {{field_name_, field_id_}});
 
-    Configuration configuration{{{service_identifier_type, ServiceTypeDeployment{lola_service_type_deployment}}},
-                                {{instance_specifier_,
-                                  ServiceInstanceDeployment{service_identifier_type,
-                                                            lola_service_instance_deployment_without_instance_id,
-                                                            QualityType::kInvalid,
-                                                            instance_specifier_}}},
-                                GlobalConfiguration{},
-                                TracingConfiguration{}};
+    Configuration configuration{
+        {{service_identifier_type, ServiceTypeDeployment{lola_service_type_deployment}}},
+        ServiceInstancesContainer{{{instance_specifier_,
+                                    ServiceInstanceDeployment{service_identifier_type,
+                                                              lola_service_instance_deployment_without_instance_id,
+                                                              QualityType::kInvalid,
+                                                              instance_specifier_}}}},
+        GlobalConfiguration{},
+        TracingConfiguration{}};
 
     // Given a TracingRuntimeObject with a provided configuration object which does not contain an instance id
     TracingRuntime tracing_runtime{kNumberOfTotalConfiguredTracingSlots, configuration};
@@ -1114,13 +1116,14 @@ TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementDeathTest,
     const auto lola_service_type_deployment =
         CreateTypeDeployment(service_id_, {{event_name_, event_id_}}, {{field_name_, field_id_}});
 
-    Configuration configuration{
-        {{service_identifier_type, ServiceTypeDeployment{lola_service_type_deployment}}},
-        {{instance_specifier_,
-          ServiceInstanceDeployment{
-              service_identifier_type, lola_service_instance_deployment, QualityType::kInvalid, instance_specifier_}}},
-        GlobalConfiguration{},
-        TracingConfiguration{}};
+    Configuration configuration{{{service_identifier_type, ServiceTypeDeployment{lola_service_type_deployment}}},
+                                ServiceInstancesContainer{{{instance_specifier_,
+                                                            ServiceInstanceDeployment{service_identifier_type,
+                                                                                      lola_service_instance_deployment,
+                                                                                      QualityType::kInvalid,
+                                                                                      instance_specifier_}}}},
+                                GlobalConfiguration{},
+                                TracingConfiguration{}};
 
     // Given a TracingRuntimeObject with a provided configuration object
     TracingRuntime tracing_runtime{kNumberOfTotalConfiguredTracingSlots, configuration};

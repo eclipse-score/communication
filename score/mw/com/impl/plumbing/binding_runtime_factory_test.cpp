@@ -59,10 +59,11 @@ class BindingRuntimeFactoryFixture : public ::testing::Test
         Configuration::ServiceInstanceDeployments service_instance_deployments{
             {kConfigStoreQm1.instance_specifier_, *kConfigStoreQm1.service_instance_deployment_},
         };
-        configuration_ = std::make_unique<Configuration>(std::move(service_type_deployments),
-                                                         std::move(service_instance_deployments),
-                                                         GlobalConfiguration{},
-                                                         TracingConfiguration{});
+        configuration_ =
+            std::make_unique<Configuration>(std::move(service_type_deployments),
+                                            ServiceInstancesContainer{std::move(service_instance_deployments)},
+                                            GlobalConfiguration{},
+                                            TracingConfiguration{});
         return *this;
     }
 
@@ -76,10 +77,11 @@ class BindingRuntimeFactoryFixture : public ::testing::Test
             {kConfigStoreQm1.instance_specifier_, *kConfigStoreQm1.service_instance_deployment_},
             {kConfigStoreQm2.instance_specifier_, *kConfigStoreQm2.service_instance_deployment_},
         };
-        configuration_ = std::make_unique<Configuration>(std::move(service_type_deployments),
-                                                         std::move(service_instance_deployments),
-                                                         GlobalConfiguration{},
-                                                         TracingConfiguration{});
+        configuration_ =
+            std::make_unique<Configuration>(std::move(service_type_deployments),
+                                            ServiceInstancesContainer{std::move(service_instance_deployments)},
+                                            GlobalConfiguration{},
+                                            TracingConfiguration{});
         return *this;
     }
 
@@ -94,10 +96,11 @@ class BindingRuntimeFactoryFixture : public ::testing::Test
             {kConfigStoreQm1.instance_specifier_,
              InstanceIdentifierView{instance_identifier}.GetServiceInstanceDeployment()},
         };
-        configuration_ = std::make_unique<Configuration>(std::move(service_type_deployments),
-                                                         std::move(service_instance_deployments),
-                                                         GlobalConfiguration{},
-                                                         TracingConfiguration{});
+        configuration_ =
+            std::make_unique<Configuration>(std::move(service_type_deployments),
+                                            ServiceInstancesContainer{std::move(service_instance_deployments)},
+                                            GlobalConfiguration{},
+                                            TracingConfiguration{});
         return *this;
     }
 

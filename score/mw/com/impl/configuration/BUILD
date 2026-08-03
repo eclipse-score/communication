@@ -134,6 +134,7 @@ cc_library(
         ":global_configuration",
         ":service_identifier_type",
         ":service_instance_deployment",
+        ":service_instances_container",
         ":service_type_deployment",
         ":tracing_configuration",
         "//score/mw/com/impl:instance_specifier",
@@ -440,6 +441,20 @@ cc_library(
 )
 
 cc_library(
+    name = "service_instances_container",
+    srcs = ["service_instances_container.cpp"],
+    hdrs = ["service_instances_container.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    deps = [
+        ":configuration_error",
+        ":service_identifier_type",
+        ":service_instance_deployment",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "configuration",
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
@@ -457,6 +472,7 @@ cc_library(
         ":service_identifier_type",
         ":service_instance_deployment",
         ":service_instance_id",
+        ":service_instances_container",
         ":service_type_deployment",
         ":service_version_type",
         ":shm_size_calc_mode",

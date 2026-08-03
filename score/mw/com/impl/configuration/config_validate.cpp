@@ -73,6 +73,18 @@ InstanceSpecifier CreateValidInstanceSpecifier(std::string instance_specifier_na
 
 void CrosscheckAsilLevels(const Configuration& config)
 {
+
+    // config.GetServiceInstances().for_each([&config](const auto& instance_specifier, const auto& instance_deployment)
+    // {
+    //     if ((instance_deployment.asilLevel_ == QualityType::kASIL_B) &&
+    //         (config.GetGlobalConfiguration().GetProcessAsilLevel() != QualityType::kASIL_B))
+    //     {
+    //         ::score::mw::log::LogFatal("lola")
+    //             << "Service instance has a higher ASIL than the process. This is invalid, terminating";
+    //         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    //     }
+    // });
+
     for (const auto& service_instance : config.GetServiceInstances())
     {
         if ((service_instance.second.asilLevel_ == QualityType::kASIL_B) &&

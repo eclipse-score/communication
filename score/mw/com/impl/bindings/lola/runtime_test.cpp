@@ -62,8 +62,10 @@ class RuntimeFixture : public ::testing::Test
     {
         unit_.reset(nullptr);
         config_.reset(nullptr);
-        config_ = std::make_unique<Configuration>(
-            service_types, service_instances, std::move(global_configuration), std::move(tracing_configuration));
+        config_ = std::make_unique<Configuration>(service_types,
+                                                  ServiceInstancesContainer{service_instances},
+                                                  std::move(global_configuration),
+                                                  std::move(tracing_configuration));
 
         tracing_runtime_ = std::make_unique<tracing::TracingRuntime>(0, *config_);
 
@@ -166,7 +168,7 @@ TEST_F(RuntimeFixture, GetMessagePassingCfgWithPredefinedTwoLolaServiceConfig)
     global_configuration.SetProcessAsilLevel(QualityType::kASIL_B);
 
     Configuration configuration{Configuration::ServiceTypeDeployments{},
-                                instanceDeployments,
+                                ServiceInstancesContainer{instanceDeployments},
                                 std::move(global_configuration),
                                 TracingConfiguration{}};
 
@@ -238,7 +240,7 @@ TEST_F(RuntimeFixture, GetMessagePassingCfgOneEmptyQMProvider)
     global_configuration.SetProcessAsilLevel(QualityType::kASIL_B);
 
     Configuration configuration{Configuration::ServiceTypeDeployments{},
-                                instanceDeployments,
+                                ServiceInstancesContainer{instanceDeployments},
                                 std::move(global_configuration),
                                 TracingConfiguration{}};
 
@@ -308,7 +310,7 @@ TEST_F(RuntimeFixture, GetMessagePassingCfgOneEmptyQMConsumer)
     global_configuration.SetProcessAsilLevel(QualityType::kASIL_B);
 
     Configuration configuration{Configuration::ServiceTypeDeployments{},
-                                instanceDeployments,
+                                ServiceInstancesContainer{instanceDeployments},
                                 std::move(global_configuration),
                                 TracingConfiguration{}};
 
@@ -345,7 +347,7 @@ TEST_F(RuntimeFixture, GetMessagePassingCfgWithNoServiceInstances)
     global_configuration.SetReceiverMessageQueueSize(QualityType::kASIL_QM, kExpectedQmQueueSize);
 
     Configuration configuration{Configuration::ServiceTypeDeployments{},
-                                Configuration::ServiceInstanceDeployments{},
+                                ServiceInstancesContainer{Configuration::ServiceInstanceDeployments{}},
                                 std::move(global_configuration),
                                 TracingConfiguration{}};
 
@@ -377,7 +379,7 @@ TEST_F(RuntimeFixture, GetMessagePassingCfgMissingConsumer)
     GlobalConfiguration global_configuration{};
 
     Configuration configuration{Configuration::ServiceTypeDeployments{},
-                                instanceDeployments,
+                                ServiceInstancesContainer{instanceDeployments},
                                 std::move(global_configuration),
                                 TracingConfiguration{}};
 
@@ -407,7 +409,7 @@ TEST_F(RuntimeDeathTest, GettingAsilBConfigInQmProcessTerminates)
     global_configuration.SetProcessAsilLevel(QualityType::kASIL_QM);
 
     Configuration configuration{Configuration::ServiceTypeDeployments{},
-                                instanceDeployments,
+                                ServiceInstancesContainer{instanceDeployments},
                                 std::move(global_configuration),
                                 TracingConfiguration{}};
 

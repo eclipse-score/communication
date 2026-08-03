@@ -1231,7 +1231,8 @@ Configuration ConfigurationJsonParsingStrategy::Parse(score::json::Any json) con
 
     auto tracing_configuration = ParseTracingProperties(json_map);
     auto service_type_deployments = ParseServiceTypes(json_map);
-    auto service_instance_deployments = ParseServiceInstances(json_map, tracing_configuration);
+    auto service_instance_deployments =
+        ServiceInstancesContainer{ParseServiceInstances(json_map, tracing_configuration)};
     auto global_configuration = ParseGlobalProperties(json_map);
 
     Configuration configuration{std::move(service_type_deployments),

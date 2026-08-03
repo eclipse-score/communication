@@ -632,7 +632,7 @@ class ConfigurationFixture : public ::testing::Test
         instance_deployments.emplace(port_name, service_instance_deployment);
 
         configuration_.emplace(std::move(type_deployments),
-                               std::move(instance_deployments),
+                               ServiceInstancesContainer{std::move(instance_deployments)},
                                GlobalConfiguration{},
                                TracingConfiguration{});
     }
@@ -681,7 +681,7 @@ class ConfigurationFixture : public ::testing::Test
         instance_deployments.emplace(port_name, service_instance_deployment);
 
         configuration_.emplace(std::move(type_deployments),
-                               std::move(instance_deployments),
+                               ServiceInstancesContainer{std::move(instance_deployments)},
                                GlobalConfiguration{},
                                TracingConfiguration{});
     }

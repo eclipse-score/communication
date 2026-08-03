@@ -2544,11 +2544,10 @@ TEST(ConfigurationJsonParsingStrategy, StrictPermissionIsSet)
     // When parsing the JSON
     const auto configuration =
         score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
-    const auto instances = configuration.GetServiceInstances();
-    ASSERT_FALSE(instances.empty());
+    ASSERT_FALSE(configuration.GetServiceInstances().empty());
 
     // That LolaServiceInstanceDeployment instance is obtained
-    const auto deployment = instances.begin()->second;
+    const auto deployment = configuration.GetServiceInstances().begin()->second;
     const auto* const lola_service_instance = std::get_if<LolaServiceInstanceDeployment>(&deployment.bindingInfo_);
     ASSERT_NE(lola_service_instance, nullptr);
     // And "permission-checks" attribute is set to "strict"
@@ -2610,11 +2609,10 @@ TEST(ConfigurationJsonParsingStrategy, GetNoneStrictIfNoPermissionFlagAttr)
     // When parsing the JSON
     const auto configuration =
         score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(j2));
-    const auto instances = configuration.GetServiceInstances();
-    ASSERT_FALSE(instances.empty());
+    ASSERT_FALSE(configuration.GetServiceInstances().empty());
 
     // That LolaServiceInstanceDeployment instance is obtained
-    const auto deployment = instances.begin()->second;
+    const auto deployment = configuration.GetServiceInstances().begin()->second;
     const auto* const lola_service_instance = std::get_if<LolaServiceInstanceDeployment>(&deployment.bindingInfo_);
     ASSERT_NE(lola_service_instance, nullptr);
     // And "permission-checks" attribute is set to none-"strict"
@@ -3656,9 +3654,8 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, CorrectlyParseAJsonContainingN
     // When json is parsed into the configuration
     auto config = score::mw::com::impl::configuration::ConfigurationJsonParsingStrategy{}.Parse(std::move(config_json));
 
-    auto serv_inst_depls = config.GetServiceInstances();
     const auto instance_specifier = InstanceSpecifier::Create(std::string{instance_specifier_str}).value();
-    const auto serv_inst_depl_it = serv_inst_depls.at(instance_specifier);
+    const auto serv_inst_depl_it = config.GetServiceInstances().at(instance_specifier);
     const auto lola_service_instance_depl = std::get<0>(serv_inst_depl_it.bindingInfo_);
     const auto& field = lola_service_instance_depl.fields_.at(field_name_str);
 

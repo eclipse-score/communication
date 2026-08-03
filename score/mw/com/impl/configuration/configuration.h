@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/configuration/global_configuration.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/service_instances_container.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
@@ -49,7 +50,7 @@ class Configuration final
     using ServiceInstanceDeployments = std::unordered_map<InstanceSpecifier, ServiceInstanceDeployment>;
 
     Configuration(ServiceTypeDeployments service_types,
-                  ServiceInstanceDeployments service_instances,
+                  ServiceInstancesContainer service_instances,
                   GlobalConfiguration global_configuration,
                   TracingConfiguration tracing_configuration) noexcept;
     ~Configuration() noexcept = default;
@@ -78,7 +79,7 @@ class Configuration final
     {
         return service_types_;
     }
-    const ServiceInstanceDeployments& GetServiceInstances() const& noexcept
+    const ServiceInstancesContainer& GetServiceInstances() const& noexcept
     {
         return service_instances_;
     }
@@ -99,7 +100,7 @@ class Configuration final
      * Value is the ServiceIdentifierType, the port is typed with.
      */
     ServiceTypeDeployments service_types_;
-    ServiceInstanceDeployments service_instances_;
+    ServiceInstancesContainer service_instances_;
     GlobalConfiguration global_configuration_;
     TracingConfiguration tracing_configuration_;
 };

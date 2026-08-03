@@ -207,10 +207,10 @@ std::size_t FindNumberOfTracingSlots(
                 std::terminate();
             }
 
-            const auto& service = configuration.GetServiceInstances();
+            const auto& service_instance = configuration.GetServiceInstances().find(instance_specifier_result.value());
 
-            const auto service_instance_it = service.find(instance_specifier_result.value());
-            if (service_instance_it == service.end())
+            // const auto service_instance_it = service.find(instance_specifier_result.value());
+            if (!service_instance.has_value())
             {
                 score::mw::log::LogFatal()
                     << "Lola: provided service instance with name:" << instance_specifier_result.value()
@@ -219,7 +219,7 @@ std::size_t FindNumberOfTracingSlots(
             }
 
             const auto* lola_service_instance_deployment =
-                std::get_if<LolaServiceInstanceDeployment>(&service_instance_it->second.bindingInfo_);
+                std::get_if<LolaServiceInstanceDeployment>(&service_instance.value().get().bindingInfo_);
             if (lola_service_instance_deployment == nullptr)
             {
                 score::mw::log::LogFatal("lola")

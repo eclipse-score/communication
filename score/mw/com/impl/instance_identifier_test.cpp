@@ -53,7 +53,7 @@ class ConfigurationGuard
 
   private:
     Configuration configuration{Configuration::ServiceTypeDeployments{},
-                                Configuration::ServiceInstanceDeployments{},
+                                ServiceInstancesContainer{Configuration::ServiceInstanceDeployments{}},
                                 GlobalConfiguration{},
                                 TracingConfiguration{}};
 };
@@ -322,7 +322,7 @@ TEST_F(InstanceIdentifierFixture, CreateStoresDeploymentsIntoConfiguredConfigura
 
     // Given an empty Configuration registered as the InstanceIdentifier configuration
     Configuration configuration{Configuration::ServiceTypeDeployments{},
-                                Configuration::ServiceInstanceDeployments{},
+                                ServiceInstancesContainer{Configuration::ServiceInstanceDeployments{}},
                                 GlobalConfiguration{},
                                 TracingConfiguration{}};
     InstanceIdentifierAttorney::SetConfiguration(&configuration);
@@ -351,9 +351,9 @@ TEST_F(InstanceIdentifierFixture, CreateStoresDeploymentsIntoConfiguredConfigura
 
     const auto& service_instances = configuration.GetServiceInstances();
     ASSERT_EQ(service_instances.size(), 1);
-    const auto instance_it = service_instances.find(kInstanceSpecifier1);
-    ASSERT_NE(instance_it, service_instances.cend());
-    ExpectServiceInstanceDeploymentObjectsEqual(instance_it->second, service_instance_deployment);
+    const auto instance = service_instances.find(kInstanceSpecifier1);
+    ASSERT_TRUE(instance.has_value());
+    ExpectServiceInstanceDeploymentObjectsEqual(instance.value().get(), service_instance_deployment);
 
     InstanceIdentifierAttorney::SetConfiguration(nullptr);
 }
