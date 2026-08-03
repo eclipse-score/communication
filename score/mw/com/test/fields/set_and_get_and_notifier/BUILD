@@ -47,7 +47,7 @@ cc_library(
         "//score/mw/com/test/common_test_resources:proxy_container",
         "//score/mw/com/test/common_test_resources:proxy_event_receiver",
         "//score/mw/com/test/common_test_resources:proxy_event_state_change_notifier",
-        "//score/mw/com/test/fields/set_and_notifier/datatypes:field_datatypes",
+        "//score/mw/com/test/fields/set_and_get_and_notifier/datatypes:field_datatypes",
     ],
 )
 
@@ -63,7 +63,7 @@ cc_library(
         "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:skeleton_container",
-        "//score/mw/com/test/fields/set_and_notifier/datatypes:field_datatypes",
+        "//score/mw/com/test/fields/set_and_get_and_notifier/datatypes:field_datatypes",
     ],
 )
 
@@ -148,7 +148,7 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/fields/set_and_notifier:__subpackages__",
+        "//score/mw/com/test/fields/set_and_get_and_notifier:__subpackages__",
     ],
 )
 
@@ -162,7 +162,7 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/fields/set_and_notifier:__subpackages__",
+        "//score/mw/com/test/fields/set_and_get_and_notifier:__subpackages__",
     ],
 )
 
@@ -176,6 +176,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/fields/set_and_notifier:__subpackages__",
+        "//score/mw/com/test/fields/set_and_get_and_notifier:__subpackages__",
     ],
 )

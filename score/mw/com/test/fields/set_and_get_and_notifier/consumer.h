@@ -11,4 +11,18 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/fields/set_and_notifier/test_constants.h"
+#ifndef SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_CONSUMER_H
+#define SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_CONSUMER_H
+
+#include "score/mw/com/test/fields/set_and_get_and_notifier/common_resources.h"
+
+#include <score/stop_token.hpp>
+
+namespace score::mw::com::test
+{
+
+void run_consumer(const score::cpp::stop_token& stop_token, TestMode mode);
+
+}  // namespace score::mw::com::test
+
+#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_CONSUMER_H

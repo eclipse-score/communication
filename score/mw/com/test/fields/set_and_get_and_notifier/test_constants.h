@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#ifndef SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_TEST_CONSTANTS_H
-#define SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_TEST_CONSTANTS_H
+#ifndef SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_TEST_CONSTANTS_H
+#define SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_TEST_CONSTANTS_H
 
 #include "score/mw/com/types.h"
 
@@ -37,4 +37,4 @@ constexpr std::size_t kTotalNumValuesToSend = 4U;
 
 }  // namespace score::mw::com::test
 
-#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_TEST_CONSTANTS_H
+#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_TEST_CONSTANTS_H

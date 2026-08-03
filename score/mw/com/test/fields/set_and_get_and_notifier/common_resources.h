@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_COMMON_RESOURCES_H
-#define SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_COMMON_RESOURCES_H
+#ifndef SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_COMMON_RESOURCES_H
+#define SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_COMMON_RESOURCES_H
 
 #include <string>
 
@@ -44,4 +44,4 @@ TestConfig ParseConfig(int argc, const char** argv);
 
 }  // namespace score::mw::com::test
 
-#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_NOTIFIER_COMMON_RESOURCES_H
+#endif  // SCORE_MW_COM_TEST_FIELDS_SET_AND_GET_AND_NOTIFIER_COMMON_RESOURCES_H

@@ -17,15 +17,15 @@ load("//quality/integration_testing:integration_testing.bzl", "integration_test"
 pkg_filegroup(
     name = "filesystem",
     srcs = [
-        "//score/mw/com/test/fields/set_and_notifier:consumer-pkg",
-        "//score/mw/com/test/fields/set_and_notifier:provider-pkg",
+        "//score/mw/com/test/fields/set_and_get_and_notifier:consumer-pkg",
+        "//score/mw/com/test/fields/set_and_get_and_notifier:provider-pkg",
     ],
 )
 
 pkg_filegroup(
     name = "same_process_filesystem",
     srcs = [
-        "//score/mw/com/test/fields/set_and_notifier:consumer_and_provider-pkg",
+        "//score/mw/com/test/fields/set_and_get_and_notifier:consumer_and_provider-pkg",
     ],
 )
 

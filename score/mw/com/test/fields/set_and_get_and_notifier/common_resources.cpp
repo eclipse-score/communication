@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/fields/set_and_notifier/common_resources.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/common_resources.h"
 
 #include "score/mw/com/test/common_test_resources/command_line_parser.h"
 

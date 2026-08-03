@@ -11,18 +11,18 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/fields/set_and_notifier/provider.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/provider.h"
 
 #include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/skeleton_container.h"
-#include "score/mw/com/test/fields/set_and_notifier/datatypes/get_and_notifier_enabled_field.h"
-#include "score/mw/com/test/fields/set_and_notifier/datatypes/getter_only_enabled_field.h"
-#include "score/mw/com/test/fields/set_and_notifier/datatypes/notifier_only_enabled_field.h"
-#include "score/mw/com/test/fields/set_and_notifier/datatypes/set_and_get_and_notifier_enabled_field.h"
-#include "score/mw/com/test/fields/set_and_notifier/datatypes/set_and_get_enabled_field.h"
-#include "score/mw/com/test/fields/set_and_notifier/datatypes/set_and_notifier_enabled_field.h"
-#include "score/mw/com/test/fields/set_and_notifier/test_constants.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/datatypes/get_and_notifier_enabled_field.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/datatypes/getter_only_enabled_field.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/datatypes/notifier_only_enabled_field.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/datatypes/set_and_get_and_notifier_enabled_field.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/datatypes/set_and_get_enabled_field.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/datatypes/set_and_notifier_enabled_field.h"
+#include "score/mw/com/test/fields/set_and_get_and_notifier/test_constants.h"
 
 #include <iostream>
 
