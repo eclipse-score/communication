@@ -1,0 +1,111 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/fields/mixed_criticality/FieldSignature",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 2010,
+          "fields": [
+            {
+              "fieldName": "notifier_only_field",
+              "fieldId": 1
+            },
+            {
+              "fieldName": "setter_and_notifier_field",
+              "fieldId": 2
+            },
+            {
+              "fieldName": "getter_only_field",
+              "fieldId": 3
+            },
+            {
+              "fieldName": "getter_and_notifier_field",
+              "fieldId": 4
+            },
+            {
+              "fieldName": "setter_and_getter_field",
+              "fieldId": 5
+            },
+            {
+              "fieldName": "setter_getter_notifier_field",
+              "fieldId": 6
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/fields/mixed_criticality/FieldSignature",
+      "serviceTypeName": "/test/fields/mixed_criticality/FieldSignature",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "B",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "notifier_only_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 5
+            },
+            {
+              "fieldName": "setter_and_notifier_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 5
+            },
+            {
+              "fieldName": "getter_only_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 5
+            },
+            {
+              "fieldName": "getter_and_notifier_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 5
+            },
+            {
+              "fieldName": "setter_and_getter_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 5
+            },
+            {
+              "fieldName": "setter_getter_notifier_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 5
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "B"
+  }
+}
