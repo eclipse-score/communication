@@ -48,6 +48,7 @@ cc_library(
         "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:proxy_container",
+        "//score/mw/com/test/fields/test_resources:getter_and_setter_checkers",
     ],
 )
 

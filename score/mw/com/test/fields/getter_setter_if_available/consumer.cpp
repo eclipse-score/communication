@@ -22,6 +22,7 @@
 #include "score/mw/com/test/fields/getter_setter_if_available/datatypes/notifier_only_enabled_field.h"
 #include "score/mw/com/test/fields/getter_setter_if_available/datatypes/setter_and_getter_enabled_field.h"
 #include "score/mw/com/test/fields/getter_setter_if_available/datatypes/setter_only_enabled_field.h"
+#include "score/mw/com/test/fields/test_resources/getter_and_setter_checkers.h"
 
 #include <score/stop_token.hpp>
 
@@ -53,20 +54,6 @@ const auto kInstanceSpecifierUseGetAndSetDisabled =
         .value();
 
 template <typename ProxyFieldType>
-void ExpectGetSucceeds(ProxyFieldType& proxy_field, const std::int32_t expected_value)
-{
-    const auto get_result = proxy_field.Get();
-    if (!get_result.has_value())
-    {
-        FailTest("Consumer: Get() failed unexpectedly: ", get_result.error());
-    }
-    if (*(get_result.value()) != expected_value)
-    {
-        FailTest("Consumer: Get() returned ", *(get_result.value()), " but expected ", expected_value);
-    }
-}
-
-template <typename ProxyFieldType>
 void ExpectGetDisabled(ProxyFieldType& proxy_field)
 {
     const auto get_result = proxy_field.Get();
@@ -77,22 +64,6 @@ void ExpectGetDisabled(ProxyFieldType& proxy_field)
     if (get_result.error() != ComErrc::kMethodBindingDisabled)
     {
         FailTest("Consumer: Get() failed with unexpected error: ", get_result.error());
-    }
-}
-
-template <typename ProxyFieldType>
-void ExpectSetSucceeds(ProxyFieldType& proxy_field,
-                       const std::int32_t requested_value,
-                       const std::int32_t expected_accepted_value)
-{
-    const auto set_result = proxy_field.Set(requested_value);
-    if (!set_result.has_value())
-    {
-        FailTest("Consumer: Set() failed unexpectedly: ", set_result.error());
-    }
-    if (*(set_result.value()) != expected_accepted_value)
-    {
-        FailTest("Consumer: Set() returned ", *(set_result.value()), " but expected ", expected_accepted_value);
     }
 }
 
@@ -149,8 +120,8 @@ void RunConsumerScenario()
     {
         // Step 3. Verify getter behavior for enabled and disabled useGetIfAvailable combinations
         std::cout << "\nConsumer: Step 3 - Verify getter behavior" << std::endl;
-        ExpectGetSucceeds(proxy_field_use_get_and_set_enabled, kInitialValue);
-        ExpectGetSucceeds(proxy_field_use_get_enabled_only, kInitialValue);
+        CallGetAndCheckValue(proxy_field_use_get_and_set_enabled, kInitialValue);
+        CallGetAndCheckValue(proxy_field_use_get_enabled_only, kInitialValue);
         ExpectGetDisabled(proxy_field_use_set_enabled_only);
         ExpectGetDisabled(proxy_field_use_get_and_set_disabled);
     }
@@ -160,9 +131,9 @@ void RunConsumerScenario()
         // Step 3/4. Verify setter behavior for enabled and disabled useSetIfAvailable combinations
         const auto step_idx = HasGetter<mode>() ? 4 : 3;
         std::cout << "\nConsumer: Step " << step_idx << " - Verify setter behavior" << std::endl;
-        ExpectSetSucceeds(proxy_field_use_get_and_set_enabled, kSetRequestValue, kAcceptedSetValue);
+        CallSetAndCheckReturnValue(proxy_field_use_get_and_set_enabled, kSetRequestValue, kAcceptedSetValue);
         ExpectSetDisabled(proxy_field_use_get_enabled_only, kSetRequestValue);
-        ExpectSetSucceeds(proxy_field_use_set_enabled_only, kSetRequestValue, kAcceptedSetValue);
+        CallSetAndCheckReturnValue(proxy_field_use_set_enabled_only, kSetRequestValue, kAcceptedSetValue);
         ExpectSetDisabled(proxy_field_use_get_and_set_disabled, kSetRequestValue);
     }
 }

@@ -25,6 +25,7 @@
 #include "score/mw/com/test/fields/set_and_get_and_notifier/datatypes/set_and_get_enabled_field.h"
 #include "score/mw/com/test/fields/set_and_get_and_notifier/datatypes/set_and_notifier_enabled_field.h"
 #include "score/mw/com/test/fields/set_and_get_and_notifier/test_constants.h"
+#include "score/mw/com/test/fields/test_resources/getter_and_setter_checkers.h"
 #include "score/mw/com/types.h"
 
 #include <score/stop_token.hpp>
@@ -38,39 +39,6 @@ namespace score::mw::com::test
 {
 namespace
 {
-
-template <typename ProxyFieldType>
-void CallGetAndCheckValue(ProxyFieldType& proxy_field, const std::int32_t expected_value)
-{
-    const auto get_result = proxy_field.Get();
-    if (!get_result.has_value())
-    {
-        FailTest("Consumer: Get() failed: ", get_result.error());
-    }
-    if (*(get_result.value()) != expected_value)
-    {
-        FailTest("Consumer: Get() returned ", *(get_result.value()), " but expected ", expected_value);
-    }
-    std::cout << "\nConsumer: Get() returned expected value " << expected_value << std::endl;
-}
-
-template <typename ProxyFieldType>
-void CallSetAndCheckReturnValue(ProxyFieldType& proxy_field,
-                                const std::int32_t set_request_value,
-                                const std::int32_t expected_accepted_value)
-{
-    const auto set_result = proxy_field.Set(set_request_value);
-    if (!set_result.has_value())
-    {
-        FailTest("Consumer: Set() failed: ", set_result.error());
-    }
-    const std::int32_t accepted_value = *(set_result.value());
-    if (accepted_value != expected_accepted_value)
-    {
-        FailTest("Consumer: Set() returned accepted value ", accepted_value, " but expected ", expected_accepted_value);
-    }
-    std::cout << "\nConsumer: Set() returned expected accepted value " << accepted_value << std::endl;
-}
 
 void run_notifier_consumer(const score::cpp::stop_token& stop_token)
 {
@@ -217,19 +185,7 @@ void run_get_consumer(const score::cpp::stop_token& stop_token)
 
     // Step 4. Keep getting the latest value until the received value is the updated value sent by the provider
     std::cout << "\nConsumer: Step 4 - Keep calling Get() until the updated value is received" << std::endl;
-    while (!stop_token.stop_requested())
-    {
-        const auto get_result = proxy.getter_only_enabled_field.Get();
-        if (!get_result.has_value())
-        {
-            FailTest("Consumer: Get() failed: ", get_result.error());
-        }
-        if (*(get_result.value()) == kUpdatedValue)
-        {
-            std::cout << "\nConsumer: Get() returned expected updated value " << kUpdatedValue << std::endl;
-            break;
-        }
-    }
+    CallGetUntilExpectedValueReceived(proxy.getter_only_enabled_field, kUpdatedValue, stop_token);
 }
 
 void run_get_and_notifier_consumer(const score::cpp::stop_token& stop_token)
@@ -293,20 +249,8 @@ void run_get_and_notifier_consumer(const score::cpp::stop_token& stop_token)
     // Step 7. Keep getting the latest value until the received value is the updated value sent by the provider
     std::cout << "\nConsumer: Step 7 - Keep calling Get() until the updated value is received" << std::endl;
     const std::vector<std::int32_t> second_values_to_receive = {10, 100};
-    while (!stop_token.stop_requested())
-    {
-        const auto get_result = proxy.get_and_notifier_enabled_field.Get();
-        if (!get_result.has_value())
-        {
-            FailTest("Consumer: Get() failed: ", get_result.error());
-        }
-        if (*(get_result.value()) == second_values_to_receive.back())
-        {
-            std::cout << "\nConsumer: Get() returned expected updated value " << second_values_to_receive.back()
-                      << std::endl;
-            break;
-        }
-    }
+    CallGetUntilExpectedValueReceived(
+        proxy.get_and_notifier_enabled_field, second_values_to_receive.back(), stop_token);
 
     // Step 8. Wait for all follow-up samples sent after the provider receives the consumer signal (we should still get
     // the sample that was read by Get())

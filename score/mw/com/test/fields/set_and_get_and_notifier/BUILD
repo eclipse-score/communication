@@ -48,6 +48,7 @@ cc_library(
         "//score/mw/com/test/common_test_resources:proxy_event_receiver",
         "//score/mw/com/test/common_test_resources:proxy_event_state_change_notifier",
         "//score/mw/com/test/fields/set_and_get_and_notifier/datatypes:field_datatypes",
+        "//score/mw/com/test/fields/test_resources:getter_and_setter_checkers",
     ],
 )
 
