@@ -1,0 +1,70 @@
+' *******************************************************************************
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+participant Server_callbacks
+participant Server_connector
+participant Client_connector
+
+' Method_call_callback on_method_call;
+' Event_subscription_change_callback on_event_subscription_change;
+' Event_request_update_callback on_event_update_request;
+
+== Deadlock by on_method_call ==
+
+Client_connector --> Server_connector: call_method()
+activate Server_connector
+
+Server_connector --> Server_callbacks: on_method_call()
+activate Server_callbacks
+
+Server_callbacks --> Server_connector: ~Server_connector()
+destroy Server_connector
+deactivate Server_callbacks
+
+rnote over Server_connector
+ Deadlock happens here because destructor waits for callback to finish.
+endrnote
+
+== Deadlock by on_event_subscription_change ==
+
+Client_connector --> Server_connector: subscribe_event()
+activate Server_connector
+
+Server_connector --> Server_callbacks: on_event_subscription_change()
+activate Server_callbacks
+
+Server_callbacks --> Server_connector: ~Server_connector()
+destroy Server_connector
+deactivate Server_callbacks
+
+rnote over Server_connector
+ Deadlock happens here because destructor waits for callback to finish.
+endrnote
+
+== Deadlock by on_event_update_request ==
+
+Client_connector --> Server_connector: request_event_update()
+activate Server_connector
+
+Server_connector --> Server_callbacks: on_event_update_request()
+activate Server_callbacks
+
+Server_callbacks --> Server_connector: ~Server_connector()
+destroy Server_connector
+deactivate Server_callbacks
+
+rnote over Server_connector
+ Deadlock happens here because destructor waits for callback to finish.
+endrnote
+@enduml

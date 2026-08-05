@@ -1,0 +1,36 @@
+// *******************************************************************************
+// Copyright (c) 2025 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// SPDX-License-Identifier: Apache-2.0
+// *******************************************************************************
+
+= Service Oriented Communication (SOCom)
+:description: SOCom
+:docinfo: shared
+:diagramdir: models
+:imagesdir: images
+:toc: left
+:iconsdir: images
+:icons: font
+:sectnums:
+:sectnumlevels: 5
+
+The bundle service oriented communication (SOCom) implements components for client/server pattern based communication for the following communication paradigms:
+
+* remote procedure call;
+* publish/subscribe (event communication).
+
+SOCom provides interfaces which enable the implementation of service gateways (bridges).
+This allows users to independently implement service bridges for different communication protocols (e.g. IPC, SOME/IP, …).
+SOCom provides intra-process client/server communication only.
+
+== Design
+
+See <<doc/design/README.adoc#,design/>> for a high level design.

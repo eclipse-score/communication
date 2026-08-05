@@ -1,0 +1,122 @@
+' *******************************************************************************
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+participant Client_callbacks
+participant Client_connector
+participant Server_connector
+
+== Deadlock by on_service_state_change ==
+
+Server_connector --> Client_connector: state_changed()
+activate Client_connector
+
+Client_connector --> Client_callbacks: on_service_state_change()
+activate Client_callbacks
+
+Client_callbacks --> Client_connector: ~Client_connector()
+destroy Client_connector
+deactivate Client_callbacks
+
+rnote over Client_connector
+ Deadlock happens here because destructor waits for callback to finish.
+endrnote
+
+== Deadlock by on_event_update ==
+
+Server_connector --> Client_connector: update_event()
+activate Client_connector
+
+Client_connector --> Client_callbacks: on_event_update()
+activate Client_callbacks
+
+Client_callbacks --> Client_connector: ~Client_connector()
+destroy Client_connector
+deactivate Client_callbacks
+
+rnote over Client_connector
+ Deadlock happens here because destructor waits for callback to finish.
+endrnote
+
+== Deadlock by on_event_requested_update ==
+
+Server_connector --> Client_connector: update_requested_event()
+activate Client_connector
+
+Client_connector --> Client_callbacks: on_event_requested_update()
+activate Client_callbacks
+
+Client_callbacks --> Client_connector: ~Client_connector()
+destroy Client_connector
+deactivate Client_callbacks
+
+rnote over Client_connector
+ Deadlock happens here because destructor waits for callback to finish.
+endrnote
+
+== Deadlock by on_event_subscription_status_change ==
+
+Server_connector --> Client_connector: set_event_subscription_state()
+activate Client_connector
+
+Client_connector --> Client_callbacks: on_event_subscription_status_change ()
+activate Client_callbacks
+
+Client_callbacks --> Client_connector: ~Client_connector()
+destroy Client_connector
+deactivate Client_callbacks
+
+rnote over Client_connector
+ Deadlock happens here because destructor waits for callback to finish.
+endrnote
+
+== Deadlock by on_method_reply at client ==
+
+Client_connector --> Server_connector: call_method()
+activate Client_connector
+activate Server_connector
+
+Server_connector --> Client_connector: method_reply()
+
+Client_connector --> Client_callbacks: on_method_reply()
+activate Client_callbacks
+
+Client_callbacks --> Client_connector: ~Client_connector()
+destroy Client_connector
+deactivate Client_callbacks
+deactivate Server_connector
+
+rnote over Client_connector
+ Deadlock happens here because destructor waits for callback to finish.
+endrnote
+
+== Deadlock by on_method_reply at server ==
+
+Client_connector --> Server_connector: call_method()
+activate Client_connector
+activate Server_connector
+
+Server_connector --> Client_connector: method_reply()
+
+Client_connector --> Client_callbacks: on_method_reply()
+activate Client_callbacks
+
+Client_callbacks --> Server_connector: ~Server_connector()
+deactivate Client_connector
+deactivate Client_callbacks
+destroy Server_connector
+
+rnote over Client_connector
+ Deadlock happens here because destructor waits for callback to finish.
+endrnote
+@enduml

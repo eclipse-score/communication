@@ -1,0 +1,30 @@
+' *******************************************************************************
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+hide empty description
+
+state Not_available
+state Available
+state Event_subscribed
+
+[*] --> Not_available
+Not_available --> Available: Client_connector::Callbacks::\non_service_state_change\n(Service_state::available)
+
+Available --> Not_available: Client_connector::Callbacks::\non_service_state_change\n(!Service_state::available)
+Available --> Event_subscribed: Client_connector::\nsubscribe_event()
+
+Event_subscribed --> Available: Client_connector::\nunsubscribe_event()
+Event_subscribed --> Not_available: Client_connector::Callbacks::\non_service_state_change\n(!Service_state::available)
+
+@enduml
