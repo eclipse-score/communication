@@ -115,19 +115,28 @@ class ProxyEventReceiver
     {
         const auto number_of_expected_samples = expected_samples.size();
         std::size_t sample_idx{0U};
-        auto get_new_samples_callback = [&expected_samples, &sample_idx](const auto& sample_ptr) {
-            const auto& received_value = *sample_ptr;
-            const auto expected_value = expected_samples[sample_idx];
-            if (received_value != expected_value)
-            {
-                FailTest("ProxyEventReceiver: Received unexpected value. Expected: ",
-                         expected_value,
-                         ". Received: ",
-                         received_value);
-            }
-            std::cout << "ProxyEventReceiver: Received expected value: " << received_value << std::endl;
-            ++sample_idx;
-        };
+        auto get_new_samples_callback =
+            [&expected_samples, &sample_idx, number_of_expected_samples](const auto& sample_ptr) {
+                const auto& received_value = *sample_ptr;
+                if (sample_idx >= expected_samples.size())
+                {
+                    FailTest("ProxyEventReceiver: Received more samples than expected. Expected: ",
+                             number_of_expected_samples,
+                             ". Received: ",
+                             sample_idx + 1);
+                }
+
+                const auto expected_value = expected_samples[sample_idx];
+                if (received_value != expected_value)
+                {
+                    FailTest("ProxyEventReceiver: Received unexpected value. Expected: ",
+                             expected_value,
+                             ". Received: ",
+                             received_value);
+                }
+                std::cout << "ProxyEventReceiver: Received expected value: " << received_value << std::endl;
+                ++sample_idx;
+            };
         return WaitForSamples(stop_token, number_of_expected_samples, std::move(get_new_samples_callback));
     }
 
