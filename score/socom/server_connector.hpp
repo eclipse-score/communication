@@ -191,7 +191,7 @@ class Enabled_server_connector : public Configuration_getter {
     /// \param server_id ID of the event.
     /// \param payload Event data.
     /// \return Void in case of successful operation, otherwise an error.
-    virtual Result<Blank> update_event(Event_id server_id, Payload payload) noexcept = 0;
+    virtual Result<void> update_event(Event_id server_id, Payload payload) noexcept = 0;
 
     /// \brief Distributes new event data to all event update requesting Client_connectors.
     /// \details Clears the list of event update requesters for the event server_id.
@@ -201,7 +201,7 @@ class Enabled_server_connector : public Configuration_getter {
     /// \param server_id ID of the event.
     /// \param payload Event data.
     /// \return Void in case of successful operation, otherwise an error.
-    virtual Result<Blank> update_requested_event(Event_id server_id, Payload payload) noexcept = 0;
+    virtual Result<void> update_requested_event(Event_id server_id, Payload payload) noexcept = 0;
 
     /// \brief Retrieves the mode of the event server_id.
     /// \details Returns the combined event subscription mode for event server_id, see

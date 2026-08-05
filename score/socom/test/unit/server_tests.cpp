@@ -40,7 +40,7 @@ class ServerConnectorTest : public SingleConnectionTest {
    protected:
     Server_connector_callbacks_mock callbacks;
 
-    score::Result<Blank> ok;
+    score::Result<void> ok;
     score::Result<Disabled_server_connector::Uptr> const callback_missing =
         score::MakeUnexpected(Construction_error::callback_missing);
 
@@ -297,7 +297,7 @@ class ServerConnectorOutOfBoundsTest : public SingleConnectionTest {
     Server_connector_callbacks_mock callbacks;
     Enabled_server_connector::Uptr server = connector_factory.create_and_enable(callbacks);
 
-    score::Result<Blank> out_of_range =
+    score::Result<void> out_of_range =
         score::MakeUnexpected(Server_connector_error::logic_error_id_out_of_range);
 };
 

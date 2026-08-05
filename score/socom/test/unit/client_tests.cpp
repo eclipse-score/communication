@@ -242,7 +242,7 @@ class UnconnectedClientConnectorTest : public ::testing::TestWithParam<test_valu
     Client_connector::Uptr cc{connector_factory.create_client_connector(
         GetParam().service_interface_configuration, test_values::service_instance, callbacks)};
 
-    score::Result<Blank> const service_not_available =
+    score::Result<void> const service_not_available =
         score::MakeUnexpected(Error::runtime_error_service_not_available);
 };
 
@@ -323,7 +323,7 @@ class UnavailableServerConnectorClientConnectorTest
     Client_connector::Uptr cc{connector_factory.create_client_connector(
         GetParam().service_interface_configuration, test_values::service_instance, callbacks)};
 
-    score::Result<Blank> const service_not_available =
+    score::Result<void> const service_not_available =
         score::MakeUnexpected(Error::runtime_error_service_not_available);
 
     Event_state const subscribed{Event_state::subscribed};
@@ -557,7 +557,7 @@ INSTANTIATE_TEST_SUITE_P(ConnectedClientConnectorTestInstance, ConnectedClientCo
 
 class ClientConnectorTest : public SingleConnectionTest {
    protected:
-    score::Result<Blank> const not_available =
+    score::Result<void> const not_available =
         score::MakeUnexpected(Error::runtime_error_service_not_available);
 };
 
@@ -853,7 +853,7 @@ TEST_F(ClientConnectorDeathTest, ClientDeletionByOnMethodReplyResultsInLoggingAn
 
 class ClientConnectorOutOfBoundsTest : public SingleConnectionTest {
    protected:
-    score::Result<Blank> const out_of_range =
+    score::Result<void> const out_of_range =
         score::MakeUnexpected(Error::logic_error_id_out_of_range);
 };
 
@@ -907,7 +907,7 @@ TEST_F(ClientConnectorOutOfBoundsTest, ResultCompareOperator) {
 
 TEST_F(ClientConnectorOutOfBoundsTest, ResultCompareOperatorWithVoid) {
     auto const result_error_void = score::MakeUnexpected(Error::logic_error_id_out_of_range);
-    auto const result_value_void = score::Result<Blank>();
+    auto const result_value_void = score::Result<void>();
 
     EXPECT_TRUE(result_value_void == result_value_void);
     EXPECT_TRUE(result_error_void == result_error_void);
