@@ -132,9 +132,9 @@ bool GenericSkeletonField::IsSetHandlerMissing() const noexcept
 
 GenericSkeletonEvent* GenericSkeletonField::GetGenericEvent() const noexcept
 {
-    auto* const typed_event = dynamic_cast<GenericSkeletonEvent*>(skeleton_event_dispatch_.get());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event != nullptr, "Downcast to GenericSkeletonEvent failed!");
-    return typed_event;
+    auto* const generic_event = dynamic_cast<GenericSkeletonEvent*>(skeleton_event_dispatch_.get());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(generic_event != nullptr, "Downcast to GenericSkeletonEvent failed!");
+    return generic_event;
 }
 
 }  // namespace score::mw::com::impl
