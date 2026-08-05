@@ -12,6 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("//score/socom:feature_compatibility.bzl", "SOCOM_FEATURE_COMPATIBILITY")
 
 cc_test(
     name = "socom_stress_test",
@@ -21,6 +22,7 @@ cc_test(
     env = {
         "TSAN_OPTIONS": "suppressions=$(location tsan.supp)",
     },
+    target_compatible_with = SOCOM_FEATURE_COMPATIBILITY,
     deps = [
         "//score/socom/test/framework:socom_test_framework",
         "@googletest//:gtest",
