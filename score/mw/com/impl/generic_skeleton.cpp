@@ -199,13 +199,6 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             score::mw::log::LogError("GenericSkeleton") << "Failed to emplace field in map: " << info.name;
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
-
-        auto update_result = emplace_result.first->second.Update(info.initial_value);
-        if (!update_result.has_value())
-        {
-            score::mw::log::LogError("GenericSkeleton") << "Failed to set initial value for field: " << info.name;
-            return score::Unexpected(update_result.error());
-        }
     }
 
     return skeleton;
