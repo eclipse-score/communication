@@ -1,0 +1,36 @@
+' *******************************************************************************
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+left to right direction
+package SOCom {
+    Component Client_connector
+    Component Server_connector
+    Component Runtime
+    Component Service_interface_definition
+}
+
+() "Client_connector" as Client_connector_if
+() "Disabled_server_connector" as Disabled_server_connector_if
+() "Enabled_server_connector" as Enabled_server_connector_if
+() "Runtime" as Runtime_if
+
+Client_connector_if -- Client_connector
+Disabled_server_connector_if -- Server_connector
+Enabled_server_connector_if -- Server_connector
+Runtime_if -- Runtime
+
+Client_connector --> Service_interface_definition : depends
+Server_connector --> Service_interface_definition : depends
+Runtime --> Service_interface_definition : depends
+@enduml
