@@ -13,9 +13,21 @@
 
 #include "score/socom/connector_factory.hpp"
 
+#include "gmock/gmock.h"
+#include <atomic>
+#include <cstddef>
 #include <optional>
 
 #include "gtest/gtest.h"
+#include "score/socom/service_interface_definition.hpp"
+#include "score/socom/service_interface_identifier.hpp"
+#include "score/socom/runtime.hpp"
+#include <utility>
+#include "score/result/result.h"
+#include "score/socom/server_connector.hpp"
+#include <score/socom/socom_mocks.hpp>
+#include "score/socom/posix_credentials.hpp"
+#include "score/socom/client_connector.hpp"
 #include "score/socom/utilities.hpp"
 
 using ::testing::_;
@@ -50,7 +62,7 @@ score::Result<Service_bridge_registration> Connector_factory::register_service_b
 
 Disabled_server_connector::Uptr Connector_factory::create_server_connector(
     Optional_reference<Server_connector_callbacks_mock> sc_callbacks) {
-    return create_server_connector(m_configuration, m_instance, std::move(sc_callbacks));
+    return create_server_connector(m_configuration, m_instance, sc_callbacks);
 }
 
 Disabled_server_connector::Uptr Connector_factory::create_server_connector(
@@ -101,14 +113,14 @@ Disabled_server_connector::Uptr Connector_factory::create_server_connector(
 
 Enabled_server_connector::Uptr Connector_factory::create_and_enable(
     Optional_reference<Server_connector_callbacks_mock> sc_callbacks) {
-    return create_and_enable(m_configuration, m_instance, std::move(sc_callbacks));
+    return create_and_enable(m_configuration, m_instance, sc_callbacks);
 }
 
 Enabled_server_connector::Uptr Connector_factory::create_and_enable(
     Server_service_interface_definition const& configuration, Service_instance const& instance,
     Optional_reference<Server_connector_callbacks_mock> sc_callbacks) {
     return Disabled_server_connector::enable(
-        create_server_connector(configuration, instance, std::move(sc_callbacks)));
+        create_server_connector(configuration, instance, sc_callbacks));
 }
 
 Enabled_server_connector::Uptr Connector_factory::create_and_enable(
@@ -116,12 +128,12 @@ Enabled_server_connector::Uptr Connector_factory::create_and_enable(
     Optional_reference<Server_connector_credentials_callbacks_mock> sc_callbacks,
     Posix_credentials const& credentials) {
     return Disabled_server_connector::enable(
-        create_server_connector(configuration, instance, std::move(sc_callbacks), credentials));
+        create_server_connector(configuration, instance, sc_callbacks, credentials));
 }
 
 Client_connector::Uptr Connector_factory::create_client_connector(
     Optional_reference<Client_connector_callbacks_mock> cc_callbacks) {
-    auto cc = create_client_connector(m_configuration, m_instance, std::move(cc_callbacks));
+    auto cc = create_client_connector(m_configuration, m_instance, cc_callbacks);
     return cc;
 }
 
@@ -137,7 +149,7 @@ Client_connector::Uptr Connector_factory::create_client_connector(
     Service_interface_definition const& configuration, Service_instance const& instance,
     Optional_reference<Client_connector_callbacks_mock> cc_callbacks) {
     auto cc =
-        create_client_connector_with_result(configuration, instance, std::move(cc_callbacks), {});
+        create_client_connector_with_result(configuration, instance, cc_callbacks, {});
     EXPECT_TRUE(cc);
     return std::move(cc).value();
 }
@@ -146,7 +158,7 @@ Client_connector::Uptr Connector_factory::create_client_connector(
     Service_interface_definition const& configuration, Service_instance const& instance,
     Optional_reference<Client_connector_callbacks_mock> cc_callbacks,
     Posix_credentials const& credentials) {
-    auto cc = create_client_connector_with_result(configuration, instance, std::move(cc_callbacks),
+    auto cc = create_client_connector_with_result(configuration, instance, cc_callbacks,
                                                   credentials);
     EXPECT_TRUE(cc);
     return std::move(cc).value();
@@ -190,7 +202,7 @@ score::Result<Client_connector::Uptr> Connector_factory::create_client_connector
 
 Client_connector::Uptr Connector_factory::create_and_connect(
     Optional_reference<Client_connector_callbacks_mock> cc_callbacks) {
-    return create_and_connect(m_configuration, m_instance, std::move(cc_callbacks),
+    return create_and_connect(m_configuration, m_instance, cc_callbacks,
                               std::optional<Posix_credentials>{});
 }
 

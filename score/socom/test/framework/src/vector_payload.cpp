@@ -12,9 +12,14 @@
  ********************************************************************************/
 
 #include "score/socom/vector_payload.hpp"
+#include "score/socom/payload.hpp"
 
+#include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <memory>
+#include <utility>
+#include <vector>
 
 namespace score::socom {
 

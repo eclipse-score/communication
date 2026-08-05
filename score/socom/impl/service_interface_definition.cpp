@@ -12,8 +12,11 @@
  ********************************************************************************/
 
 #include "score/socom/service_interface_definition.hpp"
+#include "score/socom/service_interface_identifier.hpp"
 
 #include <cassert>
+#include <cstdint>
+#include <utility>
 
 namespace score::socom {
 

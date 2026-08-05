@@ -13,7 +13,12 @@
 
 #include "score/socom/temporary_event_subscription.hpp"
 
+#include "score/socom/client_connector.hpp"
+#include "score/socom/event.hpp"
 #include "score/socom/utilities.hpp"
+#include "gmock/gmock.h"
+#include <score/socom/socom_mocks.hpp>
+#include <atomic>
 
 using ::testing::_;
 using ::testing::Assign;

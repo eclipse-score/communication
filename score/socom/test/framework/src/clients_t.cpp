@@ -16,12 +16,25 @@
 #include <atomic>
 #include <cstddef>
 #include <future>
+#include <gtest/gtest.h>
 #include <memory>
 
 #include "gmock/gmock.h"
+#include <score/socom/socom_mocks.hpp>
+#include <utility>
+#include <score/socom/connector_factory.hpp>
+#include <type_traits>
+#include <optional>
+#include <score/socom/temporary_event_subscription.hpp>
+#include <score/socom/server_t.hpp>
+#include "score/result/result.h"
 #include "score/socom/client_connector.hpp"
 #include "score/socom/event.hpp"
 #include "score/socom/method.hpp"
+#include "score/socom/service_interface_definition.hpp"
+#include "score/socom/service_interface_identifier.hpp"
+#include "score/socom/posix_credentials.hpp"
+#include "score/socom/payload.hpp"
 #include "score/socom/utilities.hpp"
 #include "score/socom/vector_payload.hpp"
 
@@ -370,7 +383,7 @@ Callbacks_called_t Client_data::expect_and_call_method(Vector& clients, Method_i
 Subscriptions Client_data::subscribe(Client_data::Vector const& clients, Event_id const& event_id) {
     auto result = Subscriptions{};
     result.reserve(clients.size());
-    for (auto& item : clients) {
+    for (const auto& item : clients) {
         result.emplace_back(item->create_event_subscription(event_id));
     }
     return result;

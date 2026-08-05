@@ -13,13 +13,24 @@
 
 #include "score/socom/server_t.hpp"
 
+#include "gmock/gmock.h"
 #include <atomic>
+#include <cstddef>
 #include <future>
+#include <gtest/gtest.h>
 #include <memory>
+#include <type_traits>
+#include <score/socom/connector_factory.hpp>
+#include <utility>
 
+#include "score/socom/event.hpp"
+#include "score/result/result.h"
 #include "score/socom/method.hpp"
 #include "score/socom/payload.hpp"
+#include "score/socom/posix_credentials.hpp"
 #include "score/socom/server_connector.hpp"
+#include "score/socom/service_interface_definition.hpp"
+#include "score/socom/service_interface_identifier.hpp"
 #include "score/socom/socom_mocks.hpp"
 #include "score/socom/utilities.hpp"
 #include "score/socom/vector_payload.hpp"

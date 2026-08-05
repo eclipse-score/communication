@@ -12,6 +12,10 @@
  ********************************************************************************/
 
 #include "score/socom/socom_mocks.hpp"
+#include "score/socom/server_connector.hpp"
+#include "score/socom/method.hpp"
+#include <utility>
+#include "score/socom/client_connector.hpp"
 
 namespace score::socom {
 

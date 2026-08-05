@@ -12,6 +12,10 @@
  ********************************************************************************/
 
 #include "score/socom/single_connection_test_fixture.hpp"
+#include "score/socom/payload.hpp"
+#include <score/socom/vector_payload.hpp>
+#include "score/socom/method.hpp"
+#include "score/socom/event.hpp"
 
 namespace score::socom {
 

@@ -15,11 +15,23 @@
 
 #include <cassert>
 #include <iostream>
+#include <utility>
+#include <memory>
+#include <mutex>
 
 #include "messages.hpp"
+#include "score/result/result.h"
 #include "score/socom/client_connector.hpp"
 #include "score/socom/event.hpp"
 #include "score/socom/final_action.hpp"
+#include "score/socom/service_interface_definition.hpp"
+#include "score/socom/service_interface_identifier.hpp"
+#include "score/socom/posix_credentials.hpp"
+#include "score/socom/method.hpp"
+#include "score/socom/payload.hpp"
+#include "score/socom/impl/temporary_thread_id_add.hpp"
+#include "score/socom/impl/endpoint.hpp"
+#include "score/socom/reference_token.hpp"
 #include "server_connector_impl.hpp"
 
 namespace score::socom::client_connector {
@@ -27,7 +39,7 @@ namespace score::socom::client_connector {
 Impl::Impl(Service_interface_definition configuration, Service_instance instance,
            Client_connector::Callbacks callbacks, Posix_credentials const& credentials)
     : m_configuration{std::move(configuration)},
-      m_instance{std::move(instance)},
+      m_instance{instance},
       m_callbacks{std::move(callbacks)},
       m_stop_block_token{
           std::make_shared<Final_action>([this]() { m_stop_complete_promise.set_value(); })},
