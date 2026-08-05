@@ -57,9 +57,6 @@ void ValidateSingleDeployment(const Container& deployments, const ServiceIdentif
     }
 }
 
-void CrosscheckAsilLevels(const Configuration& config);
-void CrosscheckServiceInstancesToTypes(const Configuration& config);
-
 }  // namespace score::mw::com::impl::configuration
 
 #endif  // SCORE_MW_COM_IMPL_CONFIGURATION_CONFIG_VALIDATE_H

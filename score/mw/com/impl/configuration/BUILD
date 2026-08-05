@@ -130,6 +130,7 @@ cc_library(
         "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
+        ":configuration_error",
         ":global_configuration",
         ":service_identifier_type",
         ":service_instance_deployment",

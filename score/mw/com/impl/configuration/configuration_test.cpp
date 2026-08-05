@@ -12,8 +12,11 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/configuration.h"
 #include "score/mw/com/impl/configuration/config_parser.h"
+#include "score/mw/com/impl/configuration/configuration_error.h"
+#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 
 #include "score/json/internal/model/any.h"
@@ -275,6 +278,164 @@ TEST_F(ConfigurationFixture,
 
     // Then the returned ServiceInstanceDeployment should be the same as the provided one
     EXPECT_EQ(*service_instance_deployment_ptr, *kConfigStoreQm.service_instance_deployment_);
+}
+
+// ---------------------------------------------------------------------------
+// Configuration::Validate()
+// ---------------------------------------------------------------------------
+namespace validate_test
+{
+
+constexpr auto kValidInstanceSpecifier = "abc/abc/TirePressurePort";
+
+ServiceIdentifierType MakeServiceIdentifier(const std::string& name = "/score/ncar/services/TirePressureService")
+{
+    return make_ServiceIdentifierType(name, 12U, 34U);
+}
+
+LolaEventInstanceDeployment MakeEventInstanceDeployment()
+{
+    return LolaEventInstanceDeployment{std::nullopt, std::nullopt, std::nullopt, false, 0U};
+}
+
+Configuration MakeConfigurationWithAsilLevel(const QualityType process_asil_level)
+{
+    GlobalConfiguration global_configuration{};
+    global_configuration.SetProcessAsilLevel(process_asil_level);
+    return Configuration{{}, {}, std::move(global_configuration), TracingConfiguration{}};
+}
+
+}  // namespace validate_test
+
+TEST(ConfigurationCrossCheckAsilLevels, InstanceAsilNotHigherThanProcessPasses)
+{
+    using namespace validate_test;
+
+    // Given a Configuration whose process ASIL level matches the ASIL level of its only service instance, and whose
+    // service instance correctly references its service type
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_B);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+    config.AddServiceTypeDeployment(service_identifier,
+                                    ServiceTypeDeployment{LolaServiceTypeDeployment{LolaServiceId{1234U}, {}, {}, {}}});
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier,
+                                  LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                                  QualityType::kASIL_B,
+                                  instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation succeeds
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST(ConfigurationCrossCheckAsilLevels, InstanceAsilHigherThanProcessReturnsError)
+{
+    using namespace validate_test;
+
+    // Given a Configuration whose process ASIL level is lower than the ASIL level of its only service instance
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier,
+                                  LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                                  QualityType::kASIL_B,
+                                  instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation fails with the expected error code
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(*result.error(), static_cast<int>(configuration_errc::configuration_invalid_asil_configuration));
+}
+
+// ---------------------------------------------------------------------------
+// Configuration::Validate() - CrosscheckServiceInstancesToTypes
+// ---------------------------------------------------------------------------
+TEST(ConfigurationValidateCrosscheckServiceInstancesToTypes, MatchingInstanceAndTypeWithMatchingEventPasses)
+{
+    using namespace validate_test;
+
+    // Given a Configuration where the service instance's event refers to an existing event of its service type
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+
+    config.AddServiceTypeDeployment(
+        service_identifier,
+        ServiceTypeDeployment{LolaServiceTypeDeployment{LolaServiceId{1234U}, {{"event_a", 1U}}, {}, {}}});
+
+    LolaServiceInstanceDeployment lola_instance{LolaServiceInstanceId{1U}};
+    lola_instance.events_.emplace("event_a", MakeEventInstanceDeployment());
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier, lola_instance, QualityType::kASIL_QM, instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation succeeds
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST(ConfigurationValidateCrosscheckServiceInstancesToTypes, InstanceReferencingUnknownServiceTypeReturnsError)
+{
+    using namespace validate_test;
+
+    // Given a Configuration with a service instance which refers to a service type that isn't configured
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+
+    // No matching ServiceTypeDeployment is added for service_identifier.
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier,
+                                  LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                                  QualityType::kASIL_QM,
+                                  instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation fails with the expected error code
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(*result.error(),
+              static_cast<int>(configuration_errc::configuration_invalid_type_reference_from_instance));
+}
+
+TEST(ConfigurationValidateCrosscheckServiceInstancesToTypes, InstanceEventNotInServiceTypeReturnsError)
+{
+    using namespace validate_test;
+
+    // Given a Configuration where the service instance's event doesn't exist in the referenced service type
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+
+    // Service type deployment does not contain "event_a".
+    config.AddServiceTypeDeployment(service_identifier,
+                                    ServiceTypeDeployment{LolaServiceTypeDeployment{LolaServiceId{1234U}, {}, {}, {}}});
+
+    LolaServiceInstanceDeployment lola_instance{LolaServiceInstanceId{1U}};
+    lola_instance.events_.emplace("event_a", MakeEventInstanceDeployment());
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier, lola_instance, QualityType::kASIL_QM, instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation fails with the expected error code
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(*result.error(),
+              static_cast<int>(configuration_errc::configuration_invalid_event_reference_from_instance));
 }
 
 using ConfigurationDeathTest = ConfigurationFixture;

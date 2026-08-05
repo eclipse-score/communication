@@ -20,6 +20,8 @@
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
+#include "score/result/result.h"
+
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -84,7 +86,15 @@ class Configuration final
         return tracing_configuration_;
     }
 
+    /// \brief Public interface to trigger a validation of this configuration.
+    score::Result<void> Validate() const noexcept;
+
   private:
+    /// \brief Validate if service ASIL levels match the application's assigned ASIL level.
+    score::Result<void> CrossCheckAsilLevels() const noexcept;
+    /// \brief Validate if service type definitions and service instance definitions fit together.
+    score::Result<void> CrossCheckServiceInstancesToTypes() const noexcept;
+
     /**
      * @brief map containing all the configured ports/InstanceSpecifiers for an executable.
      *
