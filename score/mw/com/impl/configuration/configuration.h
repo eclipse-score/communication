@@ -22,6 +22,8 @@
 
 #include "score/result/result.h"
 
+#include <score/overload.hpp>
+
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -88,6 +90,9 @@ class Configuration final
 
     /// \brief Public interface to trigger a validation of this configuration.
     score::Result<void> Validate() const noexcept;
+
+    /// \brief Determine if any service with a LoLa binding is defined in this configuration
+    score::Result<bool> HasLolaServiceDeployment() const noexcept;
 
   private:
     /// \brief Validate if service ASIL levels match the application's assigned ASIL level.

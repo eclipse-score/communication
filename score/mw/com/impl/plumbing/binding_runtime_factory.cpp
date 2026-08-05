@@ -31,46 +31,25 @@ score::mw::com::impl::BindingRuntimeFactory::CreateBindingRuntimes(
 {
     std::unordered_map<BindingType, std::unique_ptr<IBindingRuntime>> result{};
 
-    // Iterate through all the service types we have to find out, which technical bindings are used.
-    for (auto it = configuration.GetServiceTypes().cbegin(); it != configuration.GetServiceTypes().cend(); ++it)
+    // At the moment we are only interested in LoLa bindings and therefore only create a LoLa runtime.
+    // If other bindings will be relevant, the Configuration class needs to be extended to enable checking
+    // for services of this type and the related runtime needs to be created here.
+    const auto configuration_has_lola_services = configuration.HasLolaServiceDeployment();
+
+    if (configuration_has_lola_services.has_value() && configuration_has_lola_services.value())
     {
-        auto service_type = *it;
-
-        auto deployment_info_visitor = score::cpp::overload(
-            [&result, &configuration, &long_running_threads, &tracing_filter_config](const LolaServiceTypeDeployment&) {
-                std::unique_ptr<lola::tracing::TracingRuntime> lola_tracing_runtime{nullptr};
-                if (configuration.GetTracingConfiguration().IsTracingEnabled() && tracing_filter_config.has_value())
-                {
-                    const auto number_of_needed_tracing_slots =
-                        tracing_filter_config->GetNumberOfTracingSlots(configuration);
-                    lola_tracing_runtime =
-                        std::make_unique<lola::tracing::TracingRuntime>(number_of_needed_tracing_slots, configuration);
-                }
-
-                auto lola_runtime = std::make_unique<score::mw::com::impl::lola::Runtime>(
-                    configuration, long_running_threads, std::move(lola_tracing_runtime));
-                const auto pair = result.emplace(std::make_pair(BindingType::kLoLa, std::move(lola_runtime)));
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(pair.second, "Failed to emplace lola runtime binding");
-                return true;
-            },
-            // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
-            // expression statement and identifier declaration shall be placed on a
-            // separate line.". Following line statement is fine, this happens due to
-            // clang formatting.
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const score::cpp::blank&) noexcept {
-                return false;
-            });
-        const bool runtime_created = std::visit(deployment_info_visitor, service_type.second.binding_info_);
-
-        // LCOV_EXCL_BR_START: Since we currently only support a single binding, we immediately stop further runtime
-        // creation after the first is created. score::cpp::blank{} is not used in production code and the overload for
-        // LolaServiceTypeDeployment cannot return false.
-        if (runtime_created)
+        std::unique_ptr<lola::tracing::TracingRuntime> lola_tracing_runtime{nullptr};
+        if (configuration.GetTracingConfiguration().IsTracingEnabled() && tracing_filter_config.has_value())
         {
-            break;
+            const auto number_of_needed_tracing_slots = tracing_filter_config->GetNumberOfTracingSlots(configuration);
+            lola_tracing_runtime =
+                std::make_unique<lola::tracing::TracingRuntime>(number_of_needed_tracing_slots, configuration);
         }
-        // LCOV_EXCL_BR_STOP
+
+        auto lola_runtime = std::make_unique<score::mw::com::impl::lola::Runtime>(
+            configuration, long_running_threads, std::move(lola_tracing_runtime));
+        const auto pair = result.emplace(BindingType::kLoLa, std::move(lola_runtime));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(pair.second, "Failed to emplace lola runtime binding");
     }
     return result;
 }

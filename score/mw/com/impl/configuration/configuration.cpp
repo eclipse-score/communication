@@ -142,4 +142,24 @@ score::Result<void> Configuration::CrossCheckServiceInstancesToTypes() const noe
     }
     return {};
 }
+score::Result<bool> Configuration::HasLolaServiceDeployment() const noexcept
+{
+    auto deployment_info_visitor = score::cpp::overload(
+        [](const LolaServiceTypeDeployment&) {
+            return true;
+        },
+        [](const score::cpp::blank&) noexcept {
+            return false;
+        });
+
+    for (const auto& service_type : service_types_)
+    {
+        if (std::visit(deployment_info_visitor, service_type.second.binding_info_))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 }  // namespace score::mw::com::impl

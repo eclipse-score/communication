@@ -438,6 +438,32 @@ TEST(ConfigurationValidateCrosscheckServiceInstancesToTypes, InstanceEventNotInS
               static_cast<int>(configuration_errc::configuration_invalid_event_reference_from_instance));
 }
 
+TEST_F(ConfigurationFixture, HasLolaServiceDeploymentReturnsTrueIfLolaServiceTypeDeploymentExists)
+{
+    // Given a configuration containing a LolaServiceTypeDeployment
+    WithMinimalConfiguration();
+
+    // When checking if the configuration has a Lola service deployment
+    const auto result = unit_.value().HasLolaServiceDeployment();
+
+    // Then the result should be true
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value());
+}
+
+TEST_F(ConfigurationFixture, HasLolaServiceDeploymentReturnsFalseIfNoLolaServiceTypeDeploymentExists)
+{
+    // Given a configuration without any LolaServiceTypeDeployment
+    WithEmptyConfiguration();
+
+    // When checking if the configuration has a Lola service deployment
+    const auto result = unit_.value().HasLolaServiceDeployment();
+
+    // Then the result should be false
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(result.value());
+}
+
 using ConfigurationDeathTest = ConfigurationFixture;
 TEST_F(ConfigurationDeathTest, AddingAServiceTypeDeploymentWithDuplicateServiceIdentifierTypeTerminates)
 {
