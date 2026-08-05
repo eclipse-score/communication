@@ -102,8 +102,6 @@ class Payload_impl final {
 
     bool operator==(Payload_impl const& other) const noexcept;
 
-    bool operator!=(Payload_impl const& other) const noexcept { return !(*this == other); }
-
    private:
     void call_payload_destroyed() noexcept {
         if (!m_payload_destroyed.empty()) {
