@@ -14,7 +14,7 @@
 #include "temporary_thread_id_add.hpp"
 
 #include <algorithm>
-#include <cassert>
+#include <score/assert.hpp>
 #include <cstdlib>
 #include <mutex>
 #include <vector>
@@ -33,7 +33,7 @@ Temporary_thread_id_add::Temporary_thread_id_add(std::mutex& mutex,
 Temporary_thread_id_add::~Temporary_thread_id_add() noexcept {
     std::lock_guard<std::mutex> const lock{m_mutex};
     auto const id = std::find(std::begin(m_thread_ids), std::end(m_thread_ids), m_id);
-    assert(std::end(m_thread_ids) != id);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(std::end(m_thread_ids) != id);
     m_thread_ids.erase(id);
 }
 

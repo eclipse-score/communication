@@ -16,7 +16,7 @@
 #include <atomic>
 #include <chrono>
 #include <algorithm>
-#include <cassert>
+#include <score/assert.hpp>
 #include <cstddef>
 #include <iostream>
 #include <limits>
@@ -127,7 +127,7 @@ std::vector<Service_instance> create_instances(size_t const num) {
 }
 
 int to_int(std::size_t count) {
-    assert(count <= static_cast<std::size_t>(std::numeric_limits<int>::max()));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(count <= static_cast<std::size_t>(std::numeric_limits<int>::max()));
     return static_cast<int>(count);
 }
 

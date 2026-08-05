@@ -201,13 +201,13 @@ INSTANTIATE_TEST_SUITE_P(Offset, VectorPayloadDeathTest, Values(10, 100, 1000));
 TEST_P(VectorPayloadDeathTest, MakeVectorPayloadWithHeaderSizeBiggerThanBufferAsserts) {
     EXPECT_NO_FATAL_FAILURE(make_vector_payload(m_size, Vector_buffer{m_data}));
 
-    EXPECT_DEATH(make_vector_payload(m_size + 1, Vector_buffer{m_data}), "[Aa]ssertion .*failed");
+    EXPECT_DEATH(make_vector_payload(m_size + 1, Vector_buffer{m_data}), "");
 }
 
 TEST_P(VectorPayloadDeathTest, MakeVectorPayloadWithLeadOffsetBiggerThanBufferAsserts) {
     EXPECT_NO_FATAL_FAILURE(make_vector_payload(0UL, m_size, Vector_buffer{m_data}));
 
-    EXPECT_DEATH(make_vector_payload(1UL, m_size, Vector_buffer{m_data}), "[Aa]ssertion .*failed");
+    EXPECT_DEATH(make_vector_payload(1UL, m_size, Vector_buffer{m_data}), "");
 }
 
 TEST(Payload, OperatorEqual) {
