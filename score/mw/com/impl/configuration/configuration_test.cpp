@@ -464,6 +464,36 @@ TEST_F(ConfigurationFixture, HasLolaServiceDeploymentReturnsFalseIfNoLolaService
     EXPECT_FALSE(result.value());
 }
 
+TEST_F(ConfigurationFixture, GetListOfNamesOfConfiguredServicesReturnsCorrectServiceNames)
+{
+    // Given a configuration containing 2 ServiceTypeDeployments
+    WithMinimalConfiguration();
+    const auto additional_service_identifier = make_ServiceIdentifierType("/bla/blub/two", 3U, 4U);
+    unit_.value().AddServiceTypeDeployment(
+        additional_service_identifier,
+        ServiceTypeDeployment{LolaServiceTypeDeployment{LolaServiceId{5678U}, {}, {}, {}}});
+
+    // When calling GetListOfNamesOfConfiguredServices
+    const auto service_names = unit_.value().GetListOfNamesOfConfiguredServices();
+
+    // Then the result should contain the correct service names
+    EXPECT_EQ(service_names.size(), 2);
+    EXPECT_TRUE(service_names.find("/bla/blub/one") != service_names.end());
+    EXPECT_TRUE(service_names.find("/bla/blub/two") != service_names.end());
+}
+
+TEST_F(ConfigurationFixture, GetListOfNamesOfConfiguredServicesReturnsEmptySetIfNoServiceTypes)
+{
+    // Given a configuration without any ServiceTypeDeployments
+    WithEmptyConfiguration();
+
+    // When calling GetListOfNamesOfConfiguredServices
+    const auto service_names = unit_.value().GetListOfNamesOfConfiguredServices();
+
+    // Then the result should be an empty set
+    EXPECT_TRUE(service_names.empty());
+}
+
 using ConfigurationDeathTest = ConfigurationFixture;
 TEST_F(ConfigurationDeathTest, AddingAServiceTypeDeploymentWithDuplicateServiceIdentifierTypeTerminates)
 {

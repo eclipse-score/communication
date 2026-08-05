@@ -25,6 +25,7 @@
 #include <score/overload.hpp>
 
 #include <cstdint>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -93,6 +94,9 @@ class Configuration final
 
     /// \brief Determine if any service with a LoLa binding is defined in this configuration
     score::Result<bool> HasLolaServiceDeployment() const noexcept;
+
+    /// \brief Returns the list of names (ToString()) of all configured ServiceIdentifierTypes
+    std::set<std::string_view> GetListOfNamesOfConfiguredServices() const noexcept;
 
   private:
     /// \brief Validate if service ASIL levels match the application's assigned ASIL level.

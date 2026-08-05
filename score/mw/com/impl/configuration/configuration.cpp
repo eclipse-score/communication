@@ -162,4 +162,15 @@ score::Result<bool> Configuration::HasLolaServiceDeployment() const noexcept
     return false;
 }
 
+std::set<std::string_view> Configuration::GetListOfNamesOfConfiguredServices() const noexcept
+{
+    std::set<std::string_view> configured_service_types{};
+    for (const auto& map_entry : service_types_)
+    {
+        const auto service_type_string_view = map_entry.first.ToString();
+        score::cpp::ignore = configured_service_types.insert(service_type_string_view);
+    }
+    return configured_service_types;
+}
+
 }  // namespace score::mw::com::impl

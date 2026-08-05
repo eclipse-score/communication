@@ -688,12 +688,7 @@ score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json,
     }
 
     // which service types are configured locally in mw::com/LoLa?
-    std::set<std::string_view> configured_service_types{};
-    for (const auto& map_entry : configuration.GetServiceTypes())
-    {
-        const auto service_type_string_view = map_entry.first.ToString();
-        score::cpp::ignore = configured_service_types.insert(service_type_string_view);
-    }
+    const auto configured_service_types = configuration.GetListOfNamesOfConfiguredServices();
 
     auto services_list = services->second.As<score::json::List>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(services_list.has_value(),
