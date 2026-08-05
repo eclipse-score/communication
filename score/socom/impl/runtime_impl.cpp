@@ -147,7 +147,6 @@ bool is_minor_version_compatible(Service_interface_identifier const& server,
     return client.version.minor <= server.version.minor;
 }
 
-#ifndef NDEBUG
 bool is_interface_compatible(Service_interface_identifier const& server,
                              Service_interface_identifier const& client) {
     // Defensive programming. This function is called in the two register_connector functions.
@@ -157,7 +156,6 @@ bool is_interface_compatible(Service_interface_identifier const& server,
     return (server.id == client.id) && (server.version.major == client.version.major) &&
            is_minor_version_compatible(server, client);
 }
-#endif
 
 bool is_valid(Client_connector::Callbacks const& callbacks) {
     return !callbacks.on_service_state_change.empty() && !callbacks.on_event_update.empty() &&
