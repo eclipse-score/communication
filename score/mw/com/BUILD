@@ -67,6 +67,7 @@ cc_library(
         ":types",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/mocking:i_runtime",
+        "@score_baselibs//score/language/safecpp/string_view:zstring_view",
     ],
 )
 

@@ -60,7 +60,13 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
         std::cerr
             << "Consumer: Initializing LoLa/mw::com runtime from cmd-line args handed over by parent/controller ..."
             << std::endl;
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        std::vector<score::safecpp::zstring_view> arguments{};
+        for (int i = 0; i < argc; ++i)
+        {
+            arguments.emplace_back(argv[i], std::strlen(argv[i]));
+        }
+
+        score::mw::com::runtime::InitializeRuntime(arguments);
         std::cerr << "Consumer: Initializing LoLa/mw::com runtime done." << std::endl;
     }
 

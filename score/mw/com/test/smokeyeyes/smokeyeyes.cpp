@@ -456,7 +456,13 @@ int main(int argc, const char** argv)
     // Has to be done after forking as messaging permanently stores the pid as the node identifier
     if (args.count("service_instance_manifest") > 0U)
     {
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        std::vector<score::safecpp::zstring_view> arguments{};
+        for (int i = 0; i < argc; ++i)
+        {
+            arguments.emplace_back(argv[i], std::strlen(argv[i]));
+        }
+
+        score::mw::com::runtime::InitializeRuntime(arguments);
     }
 
     int result{};

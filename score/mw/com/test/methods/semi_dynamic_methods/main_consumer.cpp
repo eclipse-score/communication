@@ -17,7 +17,13 @@
 int main(int argc, const char** argv)
 {
     score::mw::com::test::SetupAssertHandler();
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    std::vector<score::safecpp::zstring_view> arguments{};
+    for (int i = 0; i < argc; ++i)
+    {
+        arguments.emplace_back(argv[i], std::strlen(argv[i]));
+    }
+
+    score::mw::com::runtime::InitializeRuntime(arguments);
     score::mw::com::test::run_consumer();
     return EXIT_SUCCESS;
 }

@@ -199,7 +199,13 @@ int main(int argc, const char** argv)
     }
 
     // This allows us more flexibility as we can hand over "-service_instance_manifest /path/to/mw_com_config.json
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    std::vector<score::safecpp::zstring_view> arguments{};
+    for (int i = 0; i < argc; ++i)
+    {
+        arguments.emplace_back(argv[i], std::strlen(argv[i]));
+    }
+
+    score::mw::com::runtime::InitializeRuntime(arguments);
 
     const auto instance_specifier_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"score/cp60/MapApiLanesStamped"});

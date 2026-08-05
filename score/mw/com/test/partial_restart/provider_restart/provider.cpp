@@ -137,7 +137,13 @@ void DoProviderActions(CheckPointControl& check_point_control,
         std::cerr
             << "Provider: Initializing LoLa/mw::com runtime from cmd-line args handed over by parent/controller ..."
             << std::endl;
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        std::vector<score::safecpp::zstring_view> arguments{};
+        for (int i = 0; i < argc; ++i)
+        {
+            arguments.emplace_back(argv[i], std::strlen(argv[i]));
+        }
+
+        score::mw::com::runtime::InitializeRuntime(arguments);
         std::cerr << "Provider: Initializing LoLa/mw::com runtime done." << std::endl;
     }
 

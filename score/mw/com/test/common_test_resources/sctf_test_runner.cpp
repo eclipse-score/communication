@@ -226,7 +226,13 @@ SctfTestRunner::SctfTestRunner(int argc, const char** argv, const std::vector<Pa
             std::cerr << "setuid failed: " << strerror(errno) << std::endl;
         }
     }
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    std::vector<score::safecpp::zstring_view> arguments{};
+    for (int i = 0; i < argc; ++i)
+    {
+        arguments.emplace_back(argv[i], std::strlen(argv[i]));
+    }
+
+    score::mw::com::runtime::InitializeRuntime(arguments);
 }
 
 void SctfTestRunner::SetupSigTermHandler()

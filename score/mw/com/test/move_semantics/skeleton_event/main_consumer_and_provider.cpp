@@ -23,7 +23,13 @@ int main(int argc, const char** argv)
     auto test_configuration{score::mw::com::test::ReadCommandLineArguments(argc, argv)};
 
     score::mw::com::test::SetupAssertHandler();
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    std::vector<score::safecpp::zstring_view> arguments{};
+    for (int i = 0; i < argc; ++i)
+    {
+        arguments.emplace_back(argv[i], std::strlen(argv[i]));
+    }
+
+    score::mw::com::runtime::InitializeRuntime(arguments);
 
     score::cpp::stop_source stop_source{};
     const bool sig_term_handler_setup_success = score::mw::com::SetupStopTokenSigTermHandler(stop_source);
