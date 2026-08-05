@@ -26,8 +26,7 @@
 #include "score/socom/service_interface_identifier.hpp"
 #include "temporary_thread_id_add.hpp"
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 class Runtime_impl;
 
@@ -121,7 +120,6 @@ typename MessageType::Return_type Impl::send(MessageType message) const {
 }
 
 }  // namespace client_connector
-}  // namespace socom
-}  // namespace score
+}  // namespace score::socom
 
 #endif  // SCORE_SOCOM_CLIENT_CONNECTOR_IMPL_HPP

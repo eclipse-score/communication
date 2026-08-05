@@ -28,8 +28,7 @@
 #include "score/socom/service_interface_identifier.hpp"
 #include "temporary_thread_id_add.hpp"
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 class Runtime_impl;
 
@@ -205,7 +204,6 @@ typename MessageType::Return_type Client_connection::receive(MessageType message
 inline Client_connector_endpoint Client_connection::get_client_endpoint() const { return m_client; }
 
 }  // namespace server_connector
-}  // namespace socom
-}  // namespace score
+}  // namespace score::socom
 
 #endif  // SRC_SOCOM_SRC_SERVER_CONNECTOR_IMPL

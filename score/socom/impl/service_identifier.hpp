@@ -16,8 +16,7 @@
 
 #include "score/socom/service_interface_identifier.hpp"
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 /// Service instance identification information
 ///
@@ -32,7 +31,6 @@ struct Service_instance_identifier final {
 bool operator<(Service_instance_identifier const& lhs, Service_instance_identifier const& rhs);
 /// \endcond
 
-}  // namespace socom
-}  // namespace score
+}  // namespace score::socom
 
 #endif  // SRC_SOCOM_SRC_SERVICE_IDENTIFIER

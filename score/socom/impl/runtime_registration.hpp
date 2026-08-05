@@ -16,8 +16,7 @@
 
 #include <memory>
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 class IRegistration {
    public:
@@ -32,7 +31,6 @@ class IRegistration {
 };
 using Registration = std::unique_ptr<IRegistration>;
 
-}  // namespace socom
-}  // namespace score
+}  // namespace score::socom
 
 #endif  // SCORE_SOCOM_RUNTIME_REGISTRATION_HPP

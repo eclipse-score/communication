@@ -110,8 +110,8 @@ std::vector<Service_instance> create_instances(size_t const num) {
 
 }  // namespace score::socom
 
-namespace score {
-namespace socom {
+
+namespace score::socom {
 
 std::ostream& operator<<(std::ostream& out, Method_result const& /*method_result*/) { return out; }
 
@@ -146,15 +146,9 @@ bool operator==(Disabled_server_connector const& /*lhs*/,
     return false;
 }
 
-}  // namespace socom
-}  // namespace score
-
-namespace score {
-namespace socom {
-
 bool operator==(Posix_credentials const& lhs, Posix_credentials const& rhs) {
     return (lhs.uid == rhs.uid) && (lhs.gid == rhs.gid);
 }
 
-}  // namespace socom
-}  // namespace score
+} // namespace score::socom
+

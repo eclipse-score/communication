@@ -206,8 +206,7 @@ inline auto create_check_update_count(std::atomic<std::uint32_t>& num_callback_c
 
 }  // namespace score::socom
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 // the following streaming operators are needed for fixing valgrind.
 // When no operator<< is defined it reads the parameter byte by byte and if there is uninitialized
@@ -229,15 +228,8 @@ std::ostream& operator<<(std::ostream& out, Construction_error const& error);
 
 bool operator==(Disabled_server_connector const& /*lhs*/, Disabled_server_connector const& /*rhs*/);
 
-}  // namespace socom
-}  // namespace score
-
-namespace score {
-namespace socom {
-
 bool operator==(Posix_credentials const& lhs, Posix_credentials const& rhs);
 
-}  // namespace socom
-}  // namespace score
+}  // namespace score::socom
 
 #endif
