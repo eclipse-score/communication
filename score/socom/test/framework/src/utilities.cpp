@@ -13,19 +13,40 @@
 
 #include "score/socom/utilities.hpp"
 
+#include <atomic>
+#include <chrono>
+#include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <iostream>
+#include <limits>
+#include <iterator>
+#include <map>
 #include <random>
+#include <string>
+#include <score/socom/vector_payload.hpp>
 #include <type_traits>
 
 #include "gtest/gtest.h"
+#include <vector>
+#include <utility>
 #include "score/socom/client_connector.hpp"
 #include "score/socom/error.hpp"
 #include "score/socom/method.hpp"
 #include "score/socom/payload.hpp"
+#include "score/socom/service_interface_identifier.hpp"
+#include "score/socom/service_interface_definition.hpp"
+#include "score/socom/server_connector.hpp"
+#include "score/socom/posix_credentials.hpp"
 
 namespace score::socom {
+namespace {
+
+Service_interface_identifier create_service_interface(size_t const interface_id) {
+    return Service_interface_identifier{std::string{"interface_" + std::to_string(interface_id)},
+                                        {4, 2}};
+}
+
+}  // namespace
 
 void wait_for_atomics_cont(std::vector<std::atomic<bool>> const& stati) {
     for (auto const& status : stati) {
@@ -74,11 +95,6 @@ void increase_and_fill(Vector_buffer& data, std::size_t const new_size) {
     std::advance(start, old_size);
 
     std::generate(start, std::end(data), [&gen, &distrib]() { return std::byte(distrib(gen)); });
-}
-
-Service_interface_identifier create_service_interface(size_t const interface_id) {
-    return Service_interface_identifier{std::string{"interface_" + std::to_string(interface_id)},
-                                        {4, 2}};
 }
 
 Server_service_interface_definition create_service_interface_configuration(

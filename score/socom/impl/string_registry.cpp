@@ -12,8 +12,13 @@
  ********************************************************************************/
 
 #include "score/socom/string_registry.hpp"
+#include "score/socom/registry_string_view.hpp"
 
 #include <algorithm>
+#include <utility>
+#include <string_view>
+#include <mutex>
+#include <string>
 
 namespace score::socom {
 

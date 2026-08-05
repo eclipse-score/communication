@@ -12,6 +12,10 @@
  ********************************************************************************/
 
 #include "score/socom/error.hpp"
+#include "score/result/error_domain.h"
+#include <string_view>
+#include "score/result/error_code.h"
+#include "score/result/error.h"
 
 namespace score::socom {
 namespace {

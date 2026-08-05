@@ -13,8 +13,15 @@
 
 #include "score/socom/multi_threaded_test_template.hpp"
 
+#include <functional>
+#include <atomic>
+#include <chrono>
+#include <cstddef>
+#include <bits/chrono.h>
 #include <future>
+#include <iterator>
 #include <thread>
+#include <vector>
 
 #include "score/socom/utilities.hpp"
 
@@ -24,6 +31,8 @@ namespace score::socom {
 
 using Thread_function_t =
     std::function<void(Stop_condition, std::atomic<bool>&, std::atomic<bool> const&)>;
+
+namespace {
 
 Thread_function_t create_thread_function(Loop_function_t const& fun) {
     auto const thread_fun = [&fun](Stop_condition const& stop_condition,
@@ -39,6 +48,8 @@ Thread_function_t create_thread_function(Loop_function_t const& fun) {
     };
     return thread_fun;
 }
+
+}  // namespace
 
 bool Num_iterations::operator()() { return current++ >= max; }
 

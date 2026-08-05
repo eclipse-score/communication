@@ -14,13 +14,22 @@
 #include "server_connector_impl.hpp"
 
 #include <cassert>
+#include <cstddef>
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <utility>
 
 #include "messages.hpp"
 #include "runtime_impl.hpp"
+#include "score/socom/client_connector.hpp"
+#include "score/result/result.h"
+#include "score/socom/error.hpp"
 #include "score/socom/event.hpp"
+#include "score/socom/impl/endpoint.hpp"
+#include "score/socom/final_action.hpp"
+#include "score/socom/posix_credentials.hpp"
+#include "score/socom/payload.hpp"
 #include "score/socom/server_connector.hpp"
 #include "score/socom/service_interface_definition.hpp"
 #include "score/socom/service_interface_identifier.hpp"
@@ -38,7 +47,7 @@ Impl::Impl(Runtime_impl& runtime, Server_service_interface_definition configurat
            Final_action final_action, Posix_credentials const& credentials)
     : m_runtime{runtime},
       m_configuration{std::move(configuration)},
-      m_instance{std::move(instance)},
+      m_instance{instance},
       m_callbacks{std::move(callbacks)},
       m_subscriber(m_configuration.get_num_events()),
       m_update_requester(m_configuration.get_num_events()),

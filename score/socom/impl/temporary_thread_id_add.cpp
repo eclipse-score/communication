@@ -16,6 +16,10 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <mutex>
+#include <vector>
+#include <thread>
+#include <iterator>
 
 namespace score::socom {
 

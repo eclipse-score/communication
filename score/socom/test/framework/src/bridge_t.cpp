@@ -13,7 +13,20 @@
 
 #include "score/socom/bridge_t.hpp"
 
+#include "score/result/result.h"
+#include "score/socom/error.hpp"
 #include "score/socom/runtime.hpp"
+#include <atomic>
+#include <score/socom/connector_factory.hpp>
+#include "score/socom/service_interface_definition.hpp"
+#include "score/socom/service_interface_identifier.hpp"
+#include <functional>
+#include "gmock/gmock.h"
+#include <utility>
+#include <memory>
+#include <gtest/gtest.h>
+#include <score/socom/utilities.hpp>
+#include <optional>
 
 using ::testing::Assign;
 using ::testing::ByMove;

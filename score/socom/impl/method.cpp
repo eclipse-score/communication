@@ -14,7 +14,10 @@
 #include "score/socom/method.hpp"
 
 #include <cassert>
+#include <optional>
+#include <utility>
 
+#include "score/socom/payload.hpp"
 #include "temporary_thread_id_add.hpp"
 
 namespace score::socom {
