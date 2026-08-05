@@ -1,0 +1,186 @@
+@startuml safety_sentinel_mwcom_design
+title "mw_com_static_architecture"
+
+'left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam roundCorner 10
+hide stereotype
+skinparam package {
+  BorderColor #666666
+}
+skinparam component {
+  BorderColor #666666
+  BackgroundColor white
+}
+skinparam rectangle {
+  BorderColor #666666
+  BackgroundColor white
+  RoundCorner 8
+}
+
+package "mw_com" as mw_com <<SEooC>>  {
+  ' package "configuration" as configuration <<component>>  {
+  '   component "json" as json <<unit>> 
+  '   component "flatbuffers" as flatbuffers <<unit>> 
+  '   component "deployment_parser" as deployment_parser <<unit>> 
+  ' }
+
+  package "binding_independent" as binding_independent <<component>>  #F9E7A8 {
+    component "service_discovery" as service_discovery <<unit>> 
+    component "mocks" as mocks <<unit>> 
+
+    package "Runtime" as runtime_pkg <<component>>  {
+      component "impl::Runtime" as runtime <<unit>> 
+
+    }
+
+    package "impl::Skeleton" as skeleton <<component>>  {
+      component "impl::Skeleton" as skeleton <<unit>> 
+      component "impl::skeleton_event" as skeleton_event <<unit>> 
+      component "impl::skeleton_method" as skeleton_method <<unit>> 
+      component "impl::skeleton_field" as skeleton_field <<unit>> 
+    }
+    
+    component "proxy" as proxy <<unit>> 
+    component "generic_skeleton" as generic_skeleton <<unit>> 
+    component "generic_proxy" as generic_proxy <<unit>> 
+    component "generic_skeleton_event" as generic_skeleton_event <<unit>> 
+    component "generic_skeleton_method" as generic_skeleton_method <<unit>> 
+    component "generic_skeleton_field" as generic_skeleton_field <<unit>> 
+    component "proxy_event" as proxy_event <<unit>> 
+    component "proxy_method" as proxy_method <<unit>> 
+    component "proxy_field" as proxy_field <<unit>> 
+    component "generic_proxy_event" as generic_proxy_event <<unit>> 
+    component "generic_proxy_method" as generic_proxy_method <<unit>> 
+    component "generic_proxy_field" as generic_proxy_field <<unit>> 
+  }
+
+'   package "lola_binding" as lola_binding <<component>>  #DDECD2 {
+'     component "lola_runtime" as lola_runtime <<unit>> 
+'     component "lola_service_discovery" as lola_service_discovery <<unit>> 
+'     component "lola_skeleton" as lola_skeleton <<unit>> 
+'     component "lola_generic_skeleton" as lola_generic_skeleton <<unit>> 
+'     component "lola_proxy" as lola_proxy <<unit>> 
+'     component "lola_generic_proxy" as lola_generic_proxy <<unit>> 
+'     component "lola_skeleton_event" as lola_skeleton_event <<unit>> 
+'     component "lola_skeleton_method" as lola_skeleton_method <<unit>> 
+'     component "lola_proxy_event" as lola_proxy_event <<unit>> 
+'     component "lola_proxy_method" as lola_proxy_method <<unit>> 
+'     component "lola_generic_skeleton_event" as lola_generic_skeleton_event <<unit>> 
+'     component "lola_generic_skeleton_method" as lola_generic_skeleton_method <<unit>> 
+'     component "lola_generic_proxy_event" as lola_generic_proxy_event <<unit>> 
+'     component "lola_generic_proxy_method" as lola_generic_proxy_method <<unit>> 
+'   }
+
+'   package "someip_binding" as someip_binding <<component>>  #D9E6F7 {
+'     component "someip_runtime" as someip_runtime <<unit>> 
+'     component "someip_service_discovery" as someip_service_discovery <<unit>> 
+'     component "someip_daemon" as someip_daemon <<unit>> 
+'     component "someip_skeleton" as someip_skeleton <<unit>> 
+'     component "someip_generic_skeleton" as someip_generic_skeleton <<unit>> 
+'     component "someip_proxy" as someip_proxy <<unit>> 
+'     component "someip_generic_proxy" as someip_generic_proxy <<unit>> 
+'   }
+
+'   package "mock_binding" as mock_binding <<component>>  #F4D6D6 {
+'     component "mock_runtime" as mock_runtime <<unit>> 
+'     component "mock_skeleton" as mock_skeleton <<unit>> 
+'     component "mock_generic_skeleton" as mock_generic_skeleton <<unit>> 
+'     component "mock_proxy" as mock_proxy <<unit>> 
+'     component "mock_generic_proxy" as mock_generic_proxy <<unit>> 
+'     component "mock_skeleton_event" as mock_skeleton_event <<unit>> 
+'     component "mock_skeleton_method" as mock_skeleton_method <<unit>> 
+'     component "mock_generic_skeleton_event" as mock_generic_skeleton_event <<unit>> 
+'     component "mock_generic_skeleton_method" as mock_generic_skeleton_method <<unit>> 
+'     component "mock_proxy_event" as mock_proxy_event <<unit>> 
+'     component "mock_proxy_method" as mock_proxy_method <<unit>> 
+'     component "mock_generic_proxy_event" as mock_generic_proxy_event <<unit>> 
+'     component "mock_generic_proxy_method" as mock_generic_proxy_method <<unit>> 
+'   }
+
+'   package "shared_resources" as shared_resources <<component>>  {
+'     component "method_data_control" as method_data_control <<unit>> 
+'     component "event_data_control" as event_data_control <<unit>> 
+'     component "shared_memory" as shared_memory <<unit>> 
+'     component "transaction_log_set" as transaction_log_set <<unit>> 
+'   }
+
+'   package "tracing" as tracing_pkg <<component>>  {
+'     component "tracing" as tracing <<unit>> 
+'     component "tracing_daemon" as tracing_daemon <<unit>> 
+'   }
+' }
+
+' json --> deployment_parser
+' flatbuffers --> deployment_parser
+' deployment_parser --> runtime
+' deployment_parser --> lola_runtime
+' deployment_parser --> someip_runtime
+
+' runtime --> service_discovery
+' runtime --> lola_runtime
+' runtime --> someip_runtime
+' runtime --> mock_runtime
+' mocks --> mock_binding
+' service_discovery --> lola_service_discovery
+' service_discovery --> someip_service_discovery
+
+' skeleton --> lola_skeleton
+' skeleton --> someip_skeleton
+' skeleton --> mock_skeleton
+' generic_skeleton --> lola_generic_skeleton
+' generic_skeleton --> someip_generic_skeleton
+' generic_skeleton --> mock_generic_skeleton
+' proxy --> lola_proxy
+' proxy --> someip_proxy
+' proxy --> mock_proxy
+' generic_proxy --> lola_generic_proxy
+' generic_proxy --> someip_generic_proxy
+' generic_proxy --> mock_generic_proxy
+
+' skeleton_event --> lola_skeleton_event
+' skeleton_event --> mock_skeleton_event
+' skeleton_method --> lola_skeleton_method
+' skeleton_method --> mock_skeleton_method
+' generic_skeleton_event --> lola_generic_skeleton_event
+' generic_skeleton_method --> lola_generic_skeleton_method
+' generic_skeleton_event --> mock_generic_skeleton_event
+' generic_skeleton_method --> mock_generic_skeleton_method
+' proxy_event --> lola_proxy_event
+' proxy_event --> mock_proxy_event
+' proxy_method --> lola_proxy_method
+' proxy_method --> mock_proxy_method
+' generic_proxy_event --> lola_generic_proxy_event
+' generic_proxy_method --> lola_generic_proxy_method
+' generic_proxy_event --> mock_generic_proxy_event
+' generic_proxy_method --> mock_generic_proxy_method
+
+' tracing_daemon --> tracing
+' tracing --> runtime
+' tracing --> lola_runtime
+' tracing --> someip_runtime
+' tracing --> mock_runtime
+
+' transaction_log_set --> lola_proxy
+' transaction_log_set --> lola_skeleton
+' lola_skeleton --> method_data_control
+' lola_skeleton --> event_data_control
+' lola_proxy --> method_data_control
+' lola_proxy --> event_data_control
+' lola_generic_skeleton --> event_data_control
+' lola_generic_proxy --> event_data_control
+' event_data_control --> shared_memory
+' someip_runtime --> someip_daemon
+
+' configuration -[hidden]down- binding_independent
+' binding_independent -[hidden]right- tracing_pkg
+' binding_independent -[hidden]down- lola_binding
+' lola_binding -[hidden]right- someip_binding
+' someip_binding -[hidden]right- mock_binding
+' lola_binding -[hidden]down- shared_resources
+
+@enduml
