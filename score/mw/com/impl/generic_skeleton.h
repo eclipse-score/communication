@@ -43,7 +43,6 @@ struct FieldInfo
     bool has_getter{false};
     bool has_setter{false};
     bool has_notifier{false};
-    score::cpp::span<const uint8_t> initial_value{};
 };
 
 struct GenericSkeletonServiceElementInfo
@@ -68,8 +67,6 @@ class GenericSkeleton : public SkeletonBase
     /// - Empty spans are allowed for `in.events` and/or `in.fields`
     /// - Each provided name must exist in the binding deployment for this instance (events/fields respectively).
     /// - All element names must be unique across all element kinds within this skeleton.
-    /// - For each field, `initial_value_bytes` must be non-empty and
-    ///   `initial_value_bytes.size()` must be <= `size_info.size`.
     /// - On error, no partially-created elements are left behind.
     [[nodiscard]] static Result<GenericSkeleton> Create(const InstanceIdentifier& identifier,
                                                         const GenericSkeletonServiceElementInfo& in);

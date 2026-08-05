@@ -120,7 +120,7 @@ TEST_F(GenericSkeletonFieldTest, AllocateBeforeOfferReturnsError)
 
     const std::string field_name = GetConfiguredFieldName();
     std::vector<uint8_t> init_val{0};
-    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, true, init_val}};
+    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, true}};
     GenericSkeletonServiceElementInfo create_params;
     create_params.fields = field_storage;
 
@@ -133,6 +133,9 @@ TEST_F(GenericSkeletonFieldTest, AllocateBeforeOfferReturnsError)
 
     auto& skeleton = skeleton_result.value();
     auto* field = const_cast<GenericSkeletonField*>(&skeleton.GetFields().find(field_name)->second);
+
+    // Set initial value manually after creation
+    static_cast<void>(field->Update(init_val));
 
     auto alloc_result = field->Allocate();
 
@@ -147,7 +150,7 @@ TEST_F(GenericSkeletonFieldTest, GettersAndSettersReturnError)
 
     const std::string field_name = GetConfiguredFieldName();
     std::vector<uint8_t> init_val{0};
-    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, true, true, false, init_val}};
+    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, true, true, false}};
     GenericSkeletonServiceElementInfo create_params;
     create_params.fields = field_storage;
 
@@ -160,6 +163,9 @@ TEST_F(GenericSkeletonFieldTest, GettersAndSettersReturnError)
 
     auto& skeleton = skeleton_result.value();
     auto* field = const_cast<GenericSkeletonField*>(&skeleton.GetFields().find(field_name)->second);
+
+    // Set initial value manually after creation
+    static_cast<void>(field->Update(init_val));
 
     auto set_result = field->RegisterSetHandler([](score::cpp::span<uint8_t>) {
         // Return void
@@ -176,7 +182,7 @@ TEST_F(GenericSkeletonFieldTest, UpdateBeforeOfferCachesValue)
 
     const std::string field_name = GetConfiguredFieldName();
     std::vector<uint8_t> init_val{0xAA, 0xBB};
-    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, true, init_val}};
+    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, true}};
     GenericSkeletonServiceElementInfo create_params;
     create_params.fields = field_storage;
 
@@ -214,7 +220,7 @@ TEST_F(GenericSkeletonFieldTest, DoDeferredUpdatePushesCachedValueOnOffer)
 
     const std::string field_name = GetConfiguredFieldName();
     std::vector<uint8_t> init_val{0xAA, 0xBB};
-    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, true, init_val}};
+    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, true}};
     GenericSkeletonServiceElementInfo create_params;
     create_params.fields = field_storage;
 
@@ -237,6 +243,12 @@ TEST_F(GenericSkeletonFieldTest, DoDeferredUpdatePushesCachedValueOnOffer)
         dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(), create_params);
     ASSERT_TRUE(skeleton_result.has_value());
 
+    auto& skeleton = skeleton_result.value();
+    auto* field = const_cast<GenericSkeletonField*>(&skeleton.GetFields().find(field_name)->second);
+
+    // Set initial value manually after creation
+    static_cast<void>(field->Update(init_val));
+
     // skeleton_binding_mock_ is initialized inside Create(), so its expectations must come after
     EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
 
@@ -253,7 +265,7 @@ TEST_F(GenericSkeletonFieldTest, UpdateAfterOfferAllocatesAndSends)
 
     const std::string field_name = GetConfiguredFieldName();
     std::vector<uint8_t> init_val{0xAA, 0xBB};
-    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, true, init_val}};
+    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, true}};
     GenericSkeletonServiceElementInfo create_params;
     create_params.fields = field_storage;
 
@@ -275,6 +287,12 @@ TEST_F(GenericSkeletonFieldTest, UpdateAfterOfferAllocatesAndSends)
     auto skeleton_result = GenericSkeleton::Create(
         dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(), create_params);
     ASSERT_TRUE(skeleton_result.has_value());
+
+    auto& skeleton = skeleton_result.value();
+    auto* field = const_cast<GenericSkeletonField*>(&skeleton.GetFields().find(field_name)->second);
+
+    // Set initial value manually after creation
+    static_cast<void>(field->Update(init_val));
 
     EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
 
@@ -306,7 +324,7 @@ TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierSendsToBinding)
     const std::string field_name = GetConfiguredFieldName();
     std::vector<uint8_t> init_val{0xAA, 0xBB};
     // has_notifier = false
-    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, false, init_val}};
+    std::vector<FieldInfo> field_storage{{field_name, {16, 8}, false, false, false}};
     GenericSkeletonServiceElementInfo create_params;
     create_params.fields = field_storage;
 
@@ -328,6 +346,12 @@ TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierSendsToBinding)
     auto skeleton_result = GenericSkeleton::Create(
         dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(), create_params);
     ASSERT_TRUE(skeleton_result.has_value());
+
+    auto& skeleton = skeleton_result.value();
+    auto* field = const_cast<GenericSkeletonField*>(&skeleton.GetFields().find(field_name)->second);
+
+    // Set initial value manually after creation
+    static_cast<void>(field->Update(init_val));
 
     // Offer the service
     EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
