@@ -45,8 +45,6 @@ class ServiceInterfaceIdentifierTest : public Test {
 
 using ServiceInterfaceConfigurationDeathTest = ServiceInterfaceIdentifierTest;
 
-constexpr std::string_view ServiceInterfaceIdentifierTest::service_interface_id;
-constexpr std::string_view ServiceInterfaceIdentifierTest::service_interface_id_2;
 
 TEST_F(ServiceInterfaceIdentifierTest, ConfigurationEqual) {
     ASSERT_TRUE(interface_config_1 == interface_config_1);
