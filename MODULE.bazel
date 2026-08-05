@@ -307,6 +307,7 @@ llvm.toolchain(
         "@score_cpp_policies//sanitizers/features:ubsan",
         "@score_cpp_policies//sanitizers/features:lsan",
         "@score_cpp_policies//sanitizers/features:tsan",
+        "//score/socom/flags:someip_gateway_feature",
         "//quality/compiler_warnings:minimal_warnings",
         "//quality/compiler_warnings:strict_warnings",
         "//quality/compiler_warnings:treat_warnings_as_errors",

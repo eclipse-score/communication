@@ -12,6 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//score/socom:feature_compatibility.bzl", "SOCOM_FEATURE_COMPATIBILITY")
 
 cc_library(
     name = "socom_test_framework",
@@ -21,6 +22,7 @@ cc_library(
         "inc",
         "score/socom/test/framework/inc",
     ],
+    target_compatible_with = SOCOM_FEATURE_COMPATIBILITY,
     visibility = [
         "//score/socom:__subpackages__",
     ],
