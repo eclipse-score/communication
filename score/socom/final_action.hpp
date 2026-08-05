@@ -19,6 +19,8 @@
 
 namespace score::socom {
 
+constexpr std::size_t kFinalActionInlineBufferSize = 128U;
+
 ///
 /// \class Final_action
 ///
@@ -26,7 +28,7 @@ namespace score::socom {
 ///
 class Final_action {
    public:
-    using F = score::cpp::move_only_function<void(), 128U>;
+    using F = score::cpp::move_only_function<void(), kFinalActionInlineBufferSize>;
 
     ///
     /// \brief Constructor

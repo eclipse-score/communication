@@ -204,9 +204,10 @@ inline auto create_check_update_count(std::atomic<std::uint32_t>& num_callback_c
         });
 }
 
-}  // namespace score::socom
-
-namespace score::socom {
+/// \brief Converts a std::size_t to int and checks that the value is in range of int
+/// \param[in] count the value to convert
+/// \return the converted value
+int to_int(std::size_t count);
 
 // the following streaming operators are needed for fixing valgrind.
 // When no operator<< is defined it reads the parameter byte by byte and if there is uninitialized

@@ -184,7 +184,8 @@ struct std::hash<score::socom::Service_interface_identifier> {
         std::size_t const h1 = std::hash<score::socom::Registry_string_view>{}(s.id);
         std::size_t const h2 = std::hash<std::uint16_t>{}(s.version.major);
         std::size_t const h3 = std::hash<std::uint16_t>{}(s.version.minor);
-        auto const hash = h1 ^ (h2 << 1) ^ (h3 << 2);
+        auto const hash = h1 ^ (h2 << static_cast<std::size_t>(1U)) ^
+                          (h3 << static_cast<std::size_t>(2U));
         return hash;
     }
 };

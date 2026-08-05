@@ -282,6 +282,9 @@ std::shared_ptr<ReturnValue> get_bridge_requests(
 
     auto& subscriber_identity_record = std::get<1>(active_requests[key]);
 
+    // Copy is intentional: callbacks are invoked without holding bridge_lock and the
+    // original container may change concurrently.
+    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
     auto const bridge_to_callback_copy = bridge_to_callback;
     ReturnValue tmp_result;
 

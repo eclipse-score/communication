@@ -19,8 +19,7 @@
 #include "score/socom/event.hpp"
 #include "score/socom/posix_credentials.hpp"
 
-namespace score::socom {
-namespace message {
+namespace score::socom::message {
 
 struct Request_disconnect {
     using Return_type = void;
@@ -93,7 +92,6 @@ struct Allocate_method_call_payload {
     Method_id const id;
 };
 
-}  // namespace message
-}  // namespace score::socom
+}  // namespace score::socom::message
 
 #endif  // SCORE_SOCOM_MESSAGES_HPP

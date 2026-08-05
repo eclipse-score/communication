@@ -38,7 +38,9 @@ class Payload_impl final {
 
     /// \brief Called when Payload_impl and memory is released. Can own the memory if it is heap
     /// allocated.
-    using Payload_destroyed = score::cpp::move_only_function<void(), 48>;
+    static constexpr std::size_t kPayloadDestroyedInlineBufferSize = 48U;
+    using Payload_destroyed =
+        score::cpp::move_only_function<void(), kPayloadDestroyedInlineBufferSize>;
 
     Payload_impl() = default;
 
@@ -56,10 +58,10 @@ class Payload_impl final {
     Payload_impl(Payload_impl const&) = delete;
     Payload_impl(Payload_impl&&) = default;
     Payload_impl& operator=(Payload_impl const&) = delete;
-    Payload_impl& operator=(Payload_impl&& other) {
+    Payload_impl& operator=(Payload_impl&& other) noexcept {
         if (this != &other) {
             call_payload_destroyed();
-            m_data = std::move(other.m_data);
+            m_data = other.m_data;
             m_lead_offset = other.m_lead_offset;
             m_header_size = other.m_header_size;
             m_slot_handle = other.m_slot_handle;
@@ -110,9 +112,9 @@ class Payload_impl final {
     }
 
     Writable_span m_data;
-    std::size_t m_lead_offset;
-    std::size_t m_header_size;
-    std::size_t m_slot_handle;
+    std::size_t m_lead_offset = 0U;
+    std::size_t m_header_size = 0U;
+    std::size_t m_slot_handle = kNoSlotHandle;
     Payload_destroyed m_payload_destroyed;
 };
 }  // namespace detail

@@ -195,11 +195,11 @@ std::atomic<bool> const& Client_data::expect_service_state_change(
     atomi = false;
     if (conf) {
         EXPECT_CALL(m_callbacks, on_service_state_change(_, state, *conf))
-            .Times(count)
+            .Times(to_int(count))
             .WillRepeatedly(Assign(&atomi, true));
     } else {
         EXPECT_CALL(m_callbacks, on_service_state_change(_, state, _))
-            .Times(count)
+            .Times(to_int(count))
             .WillRepeatedly(Assign(&atomi, true));
     }
     return atomi;
@@ -235,7 +235,7 @@ std::atomic<bool> const& Client_data::expect_event_updates(size_t const& count,
     m_event_callback_called = false;
     m_num_event_callback_called = 0;
     EXPECT_CALL(m_callbacks, on_event_update(_, event_id, payload_eq(payload)))
-        .Times(count)
+        .Times(to_int(count))
         .WillRepeatedly(check_update_count);
     return m_event_callback_called;
 }
@@ -308,7 +308,7 @@ std::atomic<bool> const& Client_data::expect_and_call_methods(size_t const& coun
     EXPECT_CALL(
         m_method_callback,
         Call(Truly([&method_result](auto const& result) { return result == method_result; })))
-        .Times(count)
+        .Times(to_int(count))
         .WillRepeatedly(check_update_count);
     for (auto i = size_t{0}; i < count; i++) {
         call_method(method_id, payload);

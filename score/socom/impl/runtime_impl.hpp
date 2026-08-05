@@ -123,7 +123,7 @@ class Service_database {
         std::size_t operator()(Service_interface_identifier const& sii) const noexcept {
             auto const id_hash = std::hash<Registry_string_view>{}(sii.id);
             auto const major_hash = std::hash<std::uint16_t>{}(sii.version.major);
-            return id_hash ^ (major_hash << 1);
+            return id_hash ^ (major_hash << static_cast<std::size_t>(1U));
         }
     };
 

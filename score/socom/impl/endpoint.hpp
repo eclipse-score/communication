@@ -25,7 +25,7 @@ class Endpoint {
         : m_connector{&connector}, m_reference_token{std::move(reference_token)} {}
 
     template <typename MessageType>
-    inline typename MessageType::Return_type send(MessageType message) const {
+    typename MessageType::Return_type send(MessageType message) const {
         return m_connector->receive(std::move(message));
     }
 

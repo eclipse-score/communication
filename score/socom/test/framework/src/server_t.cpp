@@ -188,7 +188,7 @@ std::atomic<bool> const& Server_data::expect_and_respond_method_calls(size_t con
     };
 
     EXPECT_CALL(m_callbacks, on_method_call(_, method_id, payload_eq(payload), _))
-        .Times(counter)
+        .Times(to_int(counter))
         .WillRepeatedly(reply);
     return m_method_callback_called;
 }

@@ -16,19 +16,18 @@
 #include <cassert>
 #include <score/span.hpp>
 
-namespace score::cpp {
-
+namespace  {
 template <typename T>
-static bool operator==(span<T> const& lhs, span<T> const& rhs) {
+bool is_equal(score::cpp::span<T> const& lhs, score::cpp::span<T> const& rhs) {
     return std::equal(std::begin(lhs), std::end(lhs), std::begin(rhs), std::end(rhs));
 }
-}  // namespace score::cpp
+}  // namespace
 
 namespace score::socom {
 
 namespace detail {
 bool Payload_impl::operator==(Payload_impl const& other) const noexcept {
-    return header() == other.header() && data() == other.data();
+    return is_equal(header(), other.header()) && is_equal(data(), other.data());
 }
 }  // namespace detail
 

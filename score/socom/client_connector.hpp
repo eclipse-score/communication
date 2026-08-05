@@ -230,7 +230,23 @@ class Client_connector {
     /// an error.
     [[nodiscard]] virtual Result<Method_invocation::Uptr> call_method(
         Method_id client_id, Payload payload,
-        Method_call_reply_data_opt reply_data = std::nullopt) const noexcept = 0;
+        Method_call_reply_data_opt reply_data) const noexcept = 0;
+
+    /// \brief Calls a method at the Server_connector side.
+    /// The Server application (of the
+    /// Enabled_server_connector instance) and the Method_invocation object returned do not allocate
+    /// any resources for this method call and callback on_method_reply() will not be called.
+    ///
+    /// If the service state is Service_state::available, then the available Server_connector
+    /// instance calls the callback on_method_call(server_id, payload, nullopt).
+    /// \param client_id ID of the method.
+    /// \param payload Payload to be called with.
+    /// \return A pointer to a Method_invocation object in case of successful invocation, otherwise
+    /// an error.
+    [[nodiscard]] virtual Result<Method_invocation::Uptr> call_method(
+        Method_id client_id, Payload payload) const noexcept {
+        return call_method(client_id, std::move(payload), std::nullopt);
+    }
 
     /// \brief Retrieves the peer posix credentials from the server.
     /// \details If the client connector is not connected, then an error is returned.

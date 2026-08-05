@@ -98,7 +98,7 @@ class Server_service_interface_definition final {
     /// \brief Retrieves the configuration by implicitly converting an instance to
     /// Service_interface_definition.
     /// \return The stored configuration.
-    operator Service_interface_definition() const;
+    operator Service_interface_definition() const;  // NOLINT(google-explicit-constructor)
 
     std::uint16_t get_num_methods() const noexcept;
     std::uint16_t get_num_events() const noexcept;

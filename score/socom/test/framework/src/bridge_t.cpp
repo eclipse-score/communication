@@ -40,8 +40,6 @@ bool enable_request_find_service(Bridge_data::Expect const& expect) {
     return (Bridge_data::Expect::request_service_function == expect);
 }
 
-}  // namespace
-
 class Handle_mock final : public Service_request_handle {
     std::atomic<bool>& m_destroyed;
 
@@ -53,6 +51,8 @@ class Handle_mock final : public Service_request_handle {
     Handle_mock& operator=(Handle_mock const&) = delete;
     Handle_mock& operator=(Handle_mock&&) = delete;
 };
+
+}  // namespace
 
 score::Result<Service_bridge_registration> Bridge_data::register_at_runtime(
     Connector_factory& connector_factory) {
