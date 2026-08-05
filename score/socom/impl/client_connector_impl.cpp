@@ -32,7 +32,7 @@
 #include "score/socom/impl/temporary_thread_id_add.hpp"
 #include "score/socom/impl/endpoint.hpp"
 #include "score/socom/reference_token.hpp"
-#include "server_connector_impl.hpp"
+#include "server_connector_impl.hpp"  // NOLINT(misc-include-cleaner)
 
 namespace score::socom::client_connector {
 

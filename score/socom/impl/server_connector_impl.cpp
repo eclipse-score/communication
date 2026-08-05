@@ -267,9 +267,8 @@ message::Call_method::Return_type Impl::receive(Client_connection const& /*clien
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
     Temporary_thread_id_add const tmptia{m_deadlock_detector.enter_callback()};
 #endif
-    return message::Call_method::Return_type(
-        m_callbacks.on_method_call(*this, message.id, std::move(message.payload),
-                                   std::move(message.reply_data), message.credentials));
+    return {m_callbacks.on_method_call(*this, message.id, std::move(message.payload),
+                                       std::move(message.reply_data), message.credentials)};
 }
 
 message::Allocate_method_call_payload::Return_type Impl::receive(
@@ -288,7 +287,7 @@ message::Allocate_method_call_payload::Return_type Impl::receive(
 
 message::Posix_credentials::Return_type Impl::receive(
     Client_connection const& /*client*/, message::Posix_credentials const& /* message */) {
-    return message::Posix_credentials::Return_type(m_credentials);
+    return {m_credentials};
 }
 
 message::Subscribe_event::Return_type Impl::receive(Client_connection const& client,

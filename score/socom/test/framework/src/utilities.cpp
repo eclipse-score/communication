@@ -16,10 +16,12 @@
 #include <atomic>
 #include <chrono>
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <iostream>
 #include <limits>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <random>
 #include <string>
@@ -124,10 +126,10 @@ std::vector<Service_instance> create_instances(size_t const num) {
     return instances;
 }
 
-}  // namespace score::socom
-
-
-namespace score::socom {
+int to_int(std::size_t count) {
+    assert(count <= static_cast<std::size_t>(std::numeric_limits<int>::max()));
+    return static_cast<int>(count);
+}
 
 std::ostream& operator<<(std::ostream& out, Method_result const& /*method_result*/) { return out; }
 

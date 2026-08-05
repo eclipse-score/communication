@@ -118,7 +118,7 @@ class Registry_string_view final {
     std::string_view m_string_view;
 
     explicit constexpr Registry_string_view(std::string_view view)
-        : m_string_view{std::move(view)} {}
+        : m_string_view{view} {}
 };
 
 ///
