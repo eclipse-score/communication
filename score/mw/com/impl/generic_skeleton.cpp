@@ -173,10 +173,19 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        auto field_binding_result =
-            GenericSkeletonEventBindingFactory::Create(skeleton, info.name, info.data_type_meta_info);
+        // Validate & convert the public DataTypeMetaInfo into the internal DataTypeSizeInfo.
+        auto data_type_size_info_result = MakeDataTypeSizeInfo(info.data_type_meta_info);
+        if (!data_type_size_info_result.has_value())
+        {
+            score::mw::log::LogError("GenericSkeleton")
+                << "Invalid data type meta-info provided for field: " << info.name;
+            return MakeUnexpected(ComErrc::kInvalidConfiguration);
+        }
 
-        if (!field_binding_result.has_value())
+        auto event_binding_result =
+            GenericSkeletonEventBindingFactory::Create(skeleton, info.name, data_type_size_info_result.value());
+
+        if (!event_binding_result.has_value())
         {
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
@@ -185,7 +194,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
         auto generic_event =
             std::make_unique<GenericSkeletonEvent>(skeleton,
                                                    stable_name,
-                                                   std::move(field_binding_result).value(),
+                                                   std::move(event_binding_result).value(),
                                                    GenericSkeletonEvent::FieldOnlyConstructorEnabler{});
 
         const auto emplace_result = skeleton.fields_->emplace(
