@@ -19,7 +19,7 @@ Disabled_server_connector::Callbacks create_server_callbacks(
     Server_connector_callbacks_mock& mock) {
     return Disabled_server_connector::Callbacks{
         [&mock](auto& connector, auto mid, auto payload, Method_call_reply_data_opt reply_callback,
-                auto cred) {
+                auto  /*cred*/) {
             return mock.on_method_call(connector, mid, std::move(payload),
                                        std::move(reply_callback));
         },

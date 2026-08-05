@@ -17,8 +17,7 @@
 
 #include "temporary_thread_id_add.hpp"
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 Method_call_reply_data::Method_call_reply_data(Method_reply_callback reply_callback,
                                                std::optional<Writable_payload> reply_payload)
@@ -49,5 +48,5 @@ void Method_call_reply_data::set_block_token(Weak_reference_token weak_stop_bloc
 #endif
 }
 
-}  // namespace socom
-}  // namespace score
+} // namespace score::socom
+

@@ -30,8 +30,7 @@
 #include "score/socom/service_interface_identifier.hpp"
 #include "server_connector_impl.hpp"
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 namespace {
 
@@ -610,5 +609,5 @@ Interfaces_instances Runtime_impl::get_bridge_reported_instances(
     return {{interface, result}};
 }
 
-}  // namespace socom
-}  // namespace score
+} // namespace score::socom
+

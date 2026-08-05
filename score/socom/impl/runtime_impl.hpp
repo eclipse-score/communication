@@ -29,8 +29,7 @@
 #include "server_connector_impl.hpp"
 #include "service_identifier.hpp"
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 using CC_impl = client_connector::Impl;
 using SC_impl = server_connector::Impl;
@@ -229,7 +228,6 @@ class Runtime_impl final : public Runtime, public Stop_subscription {
         std::make_shared<Service_identifiers>()};
 };
 
-}  // namespace socom
-}  // namespace score
+}  // namespace score::socom
 
 #endif  // SCORE_SOCOM_RUNTIME_IMPL_HPP

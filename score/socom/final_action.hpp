@@ -17,8 +17,7 @@
 #include <algorithm>
 #include <score/move_only_function.hpp>
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 ///
 /// \class Final_action
@@ -70,7 +69,6 @@ class Final_action {
     F m_f;
 };
 
-}  // namespace socom
-}  // namespace score
+}  // namespace score::socom
 
 #endif  // SCORE_SOCOM_FINAL_ACTION_HPP

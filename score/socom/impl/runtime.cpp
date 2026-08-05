@@ -17,10 +17,9 @@
 
 #include "runtime_impl.hpp"
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 Runtime::Uptr create_runtime() { return std::make_unique<Runtime_impl>(); }
 
-}  // namespace socom
-}  // namespace score
+} // namespace score::socom
+

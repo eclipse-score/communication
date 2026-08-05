@@ -19,8 +19,7 @@
 #include <thread>
 #include <vector>
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 /// Temporary_thread_id_add adds the current thread::id to the list upon construction and removes it
 /// at destruction.
@@ -84,7 +83,6 @@ class Deadlock_detector {
     void check_deadlock(On_deadlock_detected_callback const& on_deadlock_detected) noexcept;
 };
 
-}  // namespace socom
-}  // namespace score
+}  // namespace score::socom
 
 #endif  // SCORE_SOCOM_TEMPORARY_THREAD_ID_ADD_HPP

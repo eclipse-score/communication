@@ -16,8 +16,7 @@
 
 #include "score/socom/reference_token.hpp"
 
-namespace score {
-namespace socom {
+namespace score::socom {
 
 template <typename T>
 class Endpoint {
@@ -49,7 +48,6 @@ using Client_connector_endpoint = Endpoint<::score::socom::client_connector::Imp
 
 using Server_connector_listen_endpoint = Endpoint<::score::socom::server_connector::Impl>;
 
-}  // namespace socom
-}  // namespace score
+}  // namespace score::socom
 
 #endif  // SCORE_SOCOM_ENDPOINT_HPP
