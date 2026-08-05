@@ -150,3 +150,6 @@ try-import %workspace%/.bazelrc.ai_checker
 
 # Enable user-defined configs
 try-import %workspace%/user.bazelrc
+
+# Remove before merge. Only for getting CI results
+common --features=someip-gateway
