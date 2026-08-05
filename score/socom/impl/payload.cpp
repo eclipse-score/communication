@@ -13,7 +13,6 @@
 
 #include "score/socom/payload.hpp"
 
-#include <cassert>
 #include <score/span.hpp>
 
 namespace  {

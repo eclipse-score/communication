@@ -13,6 +13,7 @@
 
 #include "runtime_impl.hpp"
 
+#include <score/assert.hpp>
 #include <optional>
 #include <map>
 #include <mutex>
@@ -20,7 +21,6 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <cassert>
 #include <iterator>
 #include <memory>
 #include <tuple>
@@ -181,7 +181,7 @@ void register_bridge(Bridge_registration_id const& bridge_id,
     using Key_t = typename Abr::key_type;
     using Value_t =
         typename std::tuple_element<0, typename Abr::mapped_type>::type::element_type::mapped_type;
-    assert(bridge_lock.owns_lock());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(bridge_lock.owns_lock());
 
     /// THE algorithm:
     // copy bridge_requests
@@ -236,7 +236,7 @@ void register_bridge(Bridge_registration_id const& bridge_id,
     }
 
     // leave function locked
-    assert(bridge_lock.owns_lock());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(bridge_lock.owns_lock());
 }
 
 bool is_forward_subscription(
@@ -269,7 +269,7 @@ std::shared_ptr<ReturnValue> get_bridge_requests(
     Active_bridge_requests<Instance1, Handle>& active_requests,
     Runtime_impl::Bridge_registration_to_callbacks const& bridge_to_callback,
     CreateValue const& create_value) {
-    assert(bridge_lock.owns_lock());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(bridge_lock.owns_lock());
     auto const key = std::make_tuple(configuration, instance);
     auto const find_services = active_requests.find(key);
     std::shared_ptr<ReturnValue> result = (std::end(active_requests) == find_services)
@@ -381,7 +381,7 @@ Service_record::Service_record(std::mutex& runtime_mutex) : m_runtime_mutex{runt
 Service_record::Server_registration Service_record::register_server_connector(
     Service_interface_identifier const& interface, SC_impl::Listen_endpoint connector) {
     // Duplicate server connectors are not allowed.
-    assert(!m_server);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(!m_server);
 
     m_server.emplace(Interfaced_server{interface, std::move(connector)});
     auto final_action = [this]() {
@@ -520,8 +520,8 @@ Result<Registration> Runtime_impl::register_connector(
     if (result->current_server) {
         if (is_minor_version_compatible(result->current_server->interface,
                                         configuration.interface)) {
-            assert(is_interface_compatible(result->current_server->interface,
-                                           configuration.interface));
+            SCORE_LANGUAGE_FUTURECPP_ASSERT(is_interface_compatible(
+                result->current_server->interface, configuration.interface));
             on_server_update(result->current_server->endpoint);
         } else {
             score::mw::log::LogError()
@@ -548,7 +548,7 @@ Registration Runtime_impl::register_connector(Service_interface_identifier const
 
     auto const connect_client = [&endpoint, &interface, &instance](auto const& client) {
         if (is_minor_version_compatible(interface, client.interface)) {
-            assert(is_interface_compatible(interface, client.interface));
+            SCORE_LANGUAGE_FUTURECPP_ASSERT(is_interface_compatible(interface, client.interface));
             client.indication(endpoint);
         } else {
             score::mw::log::LogError()

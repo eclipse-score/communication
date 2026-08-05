@@ -13,7 +13,7 @@
 
 #include "server_connector_impl.hpp"
 
-#include <cassert>
+#include <score/assert.hpp>
 #include <cstddef>
 #include <iostream>
 #include <memory>
@@ -54,9 +54,9 @@ Impl::Impl(Runtime_impl& runtime, Server_service_interface_definition configurat
       m_event_infos(m_configuration.get_num_events()),
       m_final_action{std::move(final_action)},
       m_credentials{credentials} {
-    assert(m_subscriber.size() == m_configuration.get_num_events());
-    assert(m_update_requester.size() == m_configuration.get_num_events());
-    assert(m_event_infos.size() == m_configuration.get_num_events());
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(m_subscriber.size() == m_configuration.get_num_events());
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(m_update_requester.size() == m_configuration.get_num_events());
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(m_event_infos.size() == m_configuration.get_num_events());
 }
 
 Impl::~Impl() noexcept { disable(); }
@@ -81,7 +81,7 @@ Impl* Impl::enable() {
     m_registration = m_runtime.register_connector(m_configuration.get_interface(), m_instance,
                                                   Listen_endpoint{*this, m_stop_block_token});
 
-    assert(m_registration != nullptr);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(m_registration != nullptr);
 
     return this;
 }
@@ -118,7 +118,7 @@ Impl* Impl::disable() noexcept {
         send_all(message::Service_state_change{Service_state::not_available, m_configuration});
         m_all_clients_disconnected_promise.get_future().wait();
     }
-    assert(m_registration == nullptr);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(m_registration == nullptr);
     return this;
 }
 
@@ -127,7 +127,7 @@ Result<Writable_payload> Impl::allocate_event_payload(Event_id event_id) noexcep
         return MakeUnexpected(Server_connector_error::logic_error_id_out_of_range);
     }
 
-    assert(event_id < m_subscriber.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_id < m_subscriber.size());
 
     std::unique_lock<std::mutex> lock{m_mutex};
     // May throw std::bad_alloc: left unhandled as a design decision
@@ -150,7 +150,7 @@ Result<void> Impl::update_event(Event_id server_id, Payload payload) noexcept {
         return MakeUnexpected(Server_connector_error::logic_error_id_out_of_range);
     }
 
-    assert(server_id < m_subscriber.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(server_id < m_subscriber.size());
 
     std::unique_lock<std::mutex> lock{m_mutex};
     // May throw std::bad_alloc: left unhandled as a design decision
@@ -167,7 +167,7 @@ Result<void> Impl::update_requested_event(Event_id server_id, Payload payload) n
         return MakeUnexpected(Server_connector_error::logic_error_id_out_of_range);
     }
 
-    assert(server_id < m_update_requester.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(server_id < m_update_requester.size());
 
     std::unique_lock<std::mutex> lock{m_mutex};
     // May throw std::bad_alloc: left unhandled as a design decision
@@ -185,7 +185,7 @@ Result<Event_mode> Impl::get_event_mode(Event_id server_id) const noexcept {
         return MakeUnexpected(Server_connector_error::logic_error_id_out_of_range);
     }
 
-    assert(server_id < m_event_infos.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(server_id < m_event_infos.size());
 
     std::lock_guard<std::mutex> const lock{m_mutex};
     return m_event_infos[server_id].mode;
@@ -205,9 +205,9 @@ void Impl::unsubscribe_event(Client_connection const& client) {
 }
 
 void Impl::unsubscribe_event(Client_connection const& /* client */, Event_id id) {
-    assert(id < m_subscriber.size());
-    assert(id < m_update_requester.size());
-    assert(id < m_event_infos.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(id < m_subscriber.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(id < m_update_requester.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(id < m_event_infos.size());
 
     std::unique_lock<std::mutex> lock{m_mutex};
     auto const was_subscribed = m_subscriber[id].clear();
@@ -240,7 +240,7 @@ message::Connect::Return_type Impl::receive(message::Connect message) {
     }
 
     // should have been checked already in Runtime
-    assert(!m_client.has_value());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(!m_client.has_value());
 
     m_client.emplace(*this, message.endpoint);
     auto stop_block_token_copy = m_all_clients_disconnected_block_token;
@@ -262,7 +262,7 @@ message::Call_method::Return_type Impl::receive(Client_connection const& /*clien
         return MakeUnexpected(Error::logic_error_id_out_of_range);
     }
 
-    assert(message.id < m_configuration.get_num_methods());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(message.id < m_configuration.get_num_methods());
 
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
     Temporary_thread_id_add const tmptia{m_deadlock_detector.enter_callback()};
@@ -277,7 +277,7 @@ message::Allocate_method_call_payload::Return_type Impl::receive(
         return MakeUnexpected(Error::logic_error_id_out_of_range);
     }
 
-    assert(message.id < m_configuration.get_num_methods());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(message.id < m_configuration.get_num_methods());
 
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
     Temporary_thread_id_add const tmptia{m_deadlock_detector.enter_callback()};
@@ -296,9 +296,9 @@ message::Subscribe_event::Return_type Impl::receive(Client_connection const& cli
         return MakeUnexpected(Error::logic_error_id_out_of_range);
     }
 
-    assert(message.id < m_event_infos.size());
-    assert(message.id < m_subscriber.size());
-    assert(message.id < m_update_requester.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(message.id < m_event_infos.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(message.id < m_subscriber.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(message.id < m_update_requester.size());
 
     std::unique_lock<std::mutex> lock{m_mutex};
 
@@ -347,7 +347,7 @@ message::Request_event_update::Return_type Impl::receive(Client_connection const
         return MakeUnexpected(Error::logic_error_id_out_of_range);
     }
 
-    assert(message.id < m_update_requester.size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(message.id < m_update_requester.size());
 
     std::unique_lock<std::mutex> lock{m_mutex};
 
@@ -374,7 +374,7 @@ std::unique_ptr<Enabled_server_connector> Disabled_server_connector::enable(
     std::unique_ptr<Disabled_server_connector> connector) {
     std::unique_ptr<Enabled_server_connector> result;
     auto* enabled_server_connector = connector->enable();
-    assert(enabled_server_connector != nullptr);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(enabled_server_connector != nullptr);
     // clang-format off
     // NOLINTNEXTLINE(bugprone-unused-return-value): pointer is already stored in enabled_server_connector
     connector.release();
@@ -387,7 +387,7 @@ std::unique_ptr<Disabled_server_connector> Enabled_server_connector::disable(
     std::unique_ptr<Enabled_server_connector> connector) noexcept {
     std::unique_ptr<Disabled_server_connector> result;
     auto* disabled_server_connector = connector->disable();
-    assert(disabled_server_connector != nullptr);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(disabled_server_connector != nullptr);
     // clang-format off
     // NOLINTNEXTLINE(bugprone-unused-return-value): pointer is already stored in disabled_server_connector
     connector.release();
