@@ -89,8 +89,8 @@ class Impl final : virtual public Disabled_server_connector,
     ~Impl() noexcept override;
 
     // interface ::score::socom::Enabled_server_connector
-    Result<Blank> update_event(Event_id server_id, Payload payload) noexcept override;
-    Result<Blank> update_requested_event(Event_id server_id, Payload payload) noexcept override;
+    Result<void> update_event(Event_id server_id, Payload payload) noexcept override;
+    Result<void> update_requested_event(Event_id server_id, Payload payload) noexcept override;
     Result<Event_mode> get_event_mode(Event_id server_id) const noexcept override;
     Impl* enable() override;
     Impl* disable() noexcept override;

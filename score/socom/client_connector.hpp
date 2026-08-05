@@ -186,7 +186,7 @@ class Client_connector {
     /// \param client_id ID of the event.
     /// \param mode Mode of the event.
     /// \return Void in case of successful operation, otherwise an error.
-    virtual Result<Blank> subscribe_event(Event_id client_id, Event_mode mode) const noexcept = 0;
+    virtual Result<void> subscribe_event(Event_id client_id, Event_mode mode) const noexcept = 0;
 
     /// \brief Unsubscribes from an event to stop receiving event updates.
     /// \details If the service state is Service_state::available, then the available
@@ -199,7 +199,7 @@ class Client_connector {
     /// callback on_event_subscription_change(server_id, Event_state::not_subscribed).
     /// \param client_id ID of the event.
     /// \return Void in case of successful operation, otherwise an error.
-    virtual Result<Blank> unsubscribe_event(Event_id client_id) const noexcept = 0;
+    virtual Result<void> unsubscribe_event(Event_id client_id) const noexcept = 0;
 
     /// \brief Requests an event update.
     /// \details If the service state is Service_state::available, then the available
@@ -208,7 +208,7 @@ class Client_connector {
     /// is the first update_request for the event.
     /// \param client_id ID of the event.
     /// \return Void in case of successful operation, otherwise an error.
-    virtual Result<Blank> request_event_update(Event_id client_id) const noexcept = 0;
+    virtual Result<void> request_event_update(Event_id client_id) const noexcept = 0;
 
     /// \brief Calls a method at the Server_connector side.
     /// \details If reply_data is nullopt, then the Server application (of the

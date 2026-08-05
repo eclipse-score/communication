@@ -137,7 +137,7 @@ Server_service_interface_definition const& Impl::get_configuration() const noexc
 
 Service_instance const& Impl::get_service_instance() const noexcept { return m_instance; }
 
-Result<Blank> Impl::update_event(Event_id server_id, Payload payload) noexcept {
+Result<void> Impl::update_event(Event_id server_id, Payload payload) noexcept {
     if (server_id >= m_configuration.get_num_events()) {
         return MakeUnexpected(Server_connector_error::logic_error_id_out_of_range);
     }
@@ -151,10 +151,10 @@ Result<Blank> Impl::update_event(Event_id server_id, Payload payload) noexcept {
 
     // May throw std::bad_alloc: left unhandled as a design decision
     send(clients, message::Update_event{server_id, std::move(payload)});
-    return Result<Blank>{};
+    return Result<void>{};
 }
 
-Result<Blank> Impl::update_requested_event(Event_id server_id, Payload payload) noexcept {
+Result<void> Impl::update_requested_event(Event_id server_id, Payload payload) noexcept {
     if (server_id >= m_configuration.get_num_events()) {
         return MakeUnexpected(Server_connector_error::logic_error_id_out_of_range);
     }
@@ -169,7 +169,7 @@ Result<Blank> Impl::update_requested_event(Event_id server_id, Payload payload) 
 
     // May throw std::bad_alloc: left unhandled as a design decision
     send(clients, message::Update_requested_event{server_id, std::move(payload)});
-    return Result<Blank>{};
+    return Result<void>{};
 }
 
 Result<Event_mode> Impl::get_event_mode(Event_id server_id) const noexcept {
