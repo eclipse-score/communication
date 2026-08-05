@@ -87,7 +87,12 @@ class GenericSkeletonField : public SkeletonFieldBase
     ///         with a setter (i.e. has_setter in the constructor was false).
     Result<void> RegisterSetHandler(std::function<void(score::cpp::span<uint8_t>)> set_handler);
 
-  private:
+    /// @brief Internal hook to register the get handler with the binding.
+    /// @details This is called by SkeletonFieldBase::PrepareOffer().
+    /// @return A result indicating success or an error code.
+    [[nodiscard]] Result<void> RegisterGetHandler() override;
+
+    private:
     /// @brief Checks if a valid initial value was cached prior to offering the service.
     bool IsInitialValueSaved() const noexcept override;
     /// @brief Allocates and sends the cached initial value after the service is successfully offered.
