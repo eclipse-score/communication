@@ -130,6 +130,19 @@ bool GenericSkeletonField::IsSetHandlerMissing() const noexcept
     return false;  // If no setter is required by config, it's not "missing" (OfferService passes)
 }
 
+Result<void> GenericSkeletonField::RegisterGetHandler()
+{
+    // If this field is not configured with a Getter, we don't need to do any wiring.
+    if (!has_getter_)
+    {
+        return {};
+    }
+
+    // TODO: Implement generic Getter wiring once GenericSkeletonMethod is available.
+    // For now, return an error because generic getters are WIP.
+    return MakeUnexpected(ComErrc::kCouldNotExecute);
+}
+
 GenericSkeletonEvent* GenericSkeletonField::GetGenericEvent() const noexcept
 {
     auto* const generic_event = dynamic_cast<GenericSkeletonEvent*>(skeleton_event_dispatch_.get());
