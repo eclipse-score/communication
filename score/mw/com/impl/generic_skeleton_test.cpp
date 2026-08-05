@@ -373,5 +373,166 @@ TEST_F(GenericSkeletonTest, OfferServiceReturnsErrorIfBindingFails)
     EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
 }
 
+TEST_F(GenericSkeletonTest, CreateWithFieldsInitializesFieldBindings)
+{
+    RecordProperty("Description", "Checks that GenericSkeleton creates bindings for configured fields.");
+    RecordProperty("TestType", "Requirements-based test");
+
+    // Given configuration for one field
+    auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField();
+    const std::string field_name = "test_field";
+    const DataTypeMetaInfo meta_info{16, 8};
+
+    std::vector<FieldInfo> field_storage;
+    field_storage.push_back({field_name, meta_info, false, false, true});
+
+    GenericSkeletonServiceElementInfo params;
+    params.fields = field_storage;
+
+    // Expect the Event Factory to be called (since Fields use Event bindings for notifiers)
+    auto MetaMatcher = AllOf(Property(&score::memory::DataTypeSizeInfo::Size, meta_info.size),
+                             Property(&score::memory::DataTypeSizeInfo::Alignment, meta_info.alignment));
+
+    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, field_name, MetaMatcher))
+        .WillOnce(Return(ByMove(std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>())));
+
+    // When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then the skeleton contains the field
+    ASSERT_TRUE(result.has_value());
+    const auto& fields = result.value().GetFields();
+    ASSERT_EQ(fields.size(), 1);
+
+    EXPECT_NE(fields.find(field_name), fields.cend());
+}
+
+TEST_F(GenericSkeletonTest, CreateWithDuplicateFieldNamesFails)
+{
+    RecordProperty("Description", "Checks that creating a skeleton with duplicate field names returns an error.");
+    RecordProperty("TestType", "Requirements-based test");
+
+    // Given an identifier and configuration with duplicate field names
+    auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField();
+    const std::string field_name = "test_field";
+
+    std::vector<FieldInfo> field_storage;
+    field_storage.push_back({field_name, {1, 1}, false, false, true});
+    field_storage.push_back({field_name, {2, 2}, false, false, true});  // Duplicate
+
+    GenericSkeletonServiceElementInfo params;
+    params.fields = field_storage;
+
+    // Expecting at least one attempt to create an event binding
+    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, field_name, _))
+        .WillRepeatedly(Return(ByMove(std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>())));
+
+    // When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then creation fails with kServiceElementAlreadyExists
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kServiceElementAlreadyExists);
+}
+
+TEST_F(GenericSkeletonTest, CreateFailsIfFieldBindingCannotBeCreated)
+{
+    RecordProperty(
+        "Description",
+        "Checks that creation fails if the GenericSkeletonEventBindingFactory returns an error for any field.");
+    RecordProperty("TestType", "Requirements-based test");
+
+    // Given an identifier and configuration with one valid field
+    auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField();
+    const std::string field_name = "test_field";
+
+    std::vector<FieldInfo> field_storage;
+    field_storage.push_back({field_name, {16, 8}, false, false, true});
+
+    GenericSkeletonServiceElementInfo params;
+    params.fields = field_storage;
+
+    // Expect the Event Binding Factory to be called, but force it to FAIL
+    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, field_name, _))
+        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+
+    // When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then creation fails and correctly propagates the kBindingFailure error
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(GenericSkeletonTest, GetFieldsReturnsCorrectMapOfServiceElements)
+{
+    RecordProperty("Description", "Checks that GetFields provides access to all configured fields by name.");
+    RecordProperty("TestType", "Requirements-based test");
+
+    // 1. Prepare a deployment configuration containing three specific field names
+    LolaServiceInstanceDeployment::FieldInstanceMapping field_mapping;
+    field_mapping["temperature"] = {LolaEventInstanceDeployment{1, 1, 1, true, 0}, false, false};
+    field_mapping["pressure"] = {LolaEventInstanceDeployment{2, 1, 1, true, 0}, false, false};
+    field_mapping["status"] = {LolaEventInstanceDeployment{3, 1, 1, true, 0}, false, false};
+
+    auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(field_mapping);
+
+    // 2. Setup configuration for the three requested fields
+    std::vector<FieldInfo> field_storage;
+    field_storage.push_back({"temperature", {4, 4}, true, false, true});
+    field_storage.push_back({"pressure", {4, 4}, false, true, false});
+    field_storage.push_back({"status", {1, 1}, true, true, true});
+
+    GenericSkeletonServiceElementInfo params;
+    params.fields = field_storage;
+
+    // 3. Expect the binding factory to be called for each field
+    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, _, _))
+        .Times(3)
+        .WillRepeatedly(Invoke([](auto&, auto&, auto&) {
+            return std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
+        }));
+
+    // 4. When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+    ASSERT_TRUE(result.has_value());
+    auto& skeleton = result.value();
+
+    // 5. Then GetFields returns all of them correctly
+    const auto& fields = skeleton.GetFields();
+    EXPECT_EQ(fields.size(), 3);
+    EXPECT_NE(fields.find("temperature"), fields.cend());
+    EXPECT_NE(fields.find("pressure"), fields.cend());
+    EXPECT_NE(fields.find("status"), fields.cend());
+}
+
+TEST_F(GenericSkeletonTest, CreateFailsIfFieldNameNotFoundInConfiguration)
+{
+    RecordProperty("Description",
+                   "Checks that creation fails if a field name is not found in the deployment configuration.");
+    RecordProperty("TestType", "Requirements-based test");
+
+    // Given an identifier with a default deployment (usually contains "test_field")
+    auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField();
+    const std::string unknown_field_name = "unknown_field";
+
+    // When requesting a field that is NOT in that deployment
+    std::vector<FieldInfo> field_storage;
+    field_storage.push_back({unknown_field_name, {1, 1}, false, false, true});
+
+    GenericSkeletonServiceElementInfo params;
+    params.fields = field_storage;
+
+    // The factory should not be called because name resolution fails first
+    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, _, _)).Times(0);
+
+    // When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then creation fails with kBindingFailure
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl
