@@ -51,6 +51,7 @@ class Configuration final
   public:
     using ServiceTypeDeployments = std::unordered_map<ServiceIdentifierType, ServiceTypeDeployment>;
     using ServiceInstanceDeployments = std::unordered_map<InstanceSpecifier, ServiceInstanceDeployment>;
+    using BindingInformation = std::variant<LolaServiceTypeDeployment, score::cpp::blank>;
 
     Configuration(ServiceTypeDeployments service_types,
                   ServiceInstanceDeployments service_instances,
@@ -97,6 +98,15 @@ class Configuration final
 
     /// \brief Returns the list of names (ToString()) of all configured ServiceIdentifierTypes
     std::set<std::string_view> GetListOfNamesOfConfiguredServices() const noexcept;
+
+    /// \brief Returns a set of element names, used within the given service_type. The names in the set are string_views
+    ///        pointing to strings owned by members of this Configuration. So the life-time of those string-views is bound to
+    ///        the life-time of this Configuration.
+    /// \param service_type service type from which to get element names
+    /// \param element_type element type of which to get names
+    /// \return a set of string_views denoting the service element names.
+    std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view service_type,
+                                                            ServiceElementType element_type) const noexcept;
 
   private:
     /// \brief Validate if service ASIL levels match the application's assigned ASIL level.

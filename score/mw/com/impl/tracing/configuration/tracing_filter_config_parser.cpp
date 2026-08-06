@@ -174,81 +174,6 @@ std::set<std::string_view> GetInstancesOfServiceType(const Configuration& config
     return result;
 }
 
-/// \brief Returns a set of element names, used within the given service_type. The names in the set are string_views
-///        pointing to strings owned by members of Configuration. So the life-time of those string-views is bound to
-///        the life-time of our single/global Configuration object held within the Runtime.
-/// \param service_type service type from which to get element names
-/// \param element_type element type of which to get names
-/// \param configuration configuration object to get consulted for the search/lookup
-/// \return a set of string_views denoting the service element names.
-std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view service_type,
-                                                        ServiceElementType element_type,
-                                                        const Configuration& configuration)
-{
-    std::set<std::string_view> result{};
-    auto service_type_deployment_visitor = score::cpp::overload(
-        [&result, element_type](const LolaServiceTypeDeployment& lola_service_deployment) {
-            if (element_type == ServiceElementType::EVENT)
-            {
-                // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed"
-                // despite all lines within the loop being covered. We also have a test for the case where
-                // lola_service_deployment.events_ is empty. Suppression can be removed when the tooling bug is fixed.)
-                for (const auto& event : lola_service_deployment.events_)
-                // LCOV_EXCL_BR_STOP
-                {
-                    score::cpp::ignore = result.insert(event.first);
-                }
-            }
-            // LCOV_EXCL_BR_START (Defensive programming: GetElementNamesOfServiceType is always called with either
-            // ServiceElementType::EVENT or ServiceElementType::FIELD. Entering the false branch of this check is
-            // therefore unreachable.
-            else if (element_type == ServiceElementType::FIELD)
-            // LCOV_EXCL_BR_STOP
-            {
-                // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed"
-                // despite all lines within the loop being covered. We also have a test for the case where
-                // lola_service_deployment.fields_ is empty. Suppression can be removed when the tooling bug is fixed.)
-                for (const auto& field : lola_service_deployment.fields_)
-                // LCOV_EXCL_BR_STOP
-                {
-                    score::cpp::ignore = result.insert(field.first);
-                }
-            }
-            // LCOV_EXCL_START (Defensive programming: See comment directly above. This branch is only included to
-            // protect us from future programming mistakes)
-            else
-            {
-                score::mw::log::LogFatal("lola")
-                    << "GetElementNamesOfServiceType called with unsupported ServiceElementType: " << element_type;
-                std::terminate();
-            }
-            // LCOV_EXCL_STOP
-        },
-        // LCOV_EXCL_START (Unreachable Code: GetElementNamesOfServiceType can only be called on an existing service
-        // type. I.e. The ServiceTypeDeployment must be LolaServiceTypeDeployment and can never be score::cpp::blank.
-        // This code is there because std::visitor must handle all std::variant types.
-        [](const score::cpp::blank&) noexcept {
-            return;
-        }
-        // LCOV_EXCL_STOP
-    );
-
-    // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed". The false
-    // case (empty GetServiceTypes()) is structurally unreachable: GetElementNamesOfServiceType is only called from
-    // ParseEvents/ParseFields which are reached only after the service type was found in GetServiceTypes().
-    // Suppression can be removed when the tooling bug is fixed.)
-    for (const auto& service_type_deployment : configuration.GetServiceTypes())
-    // LCOV_EXCL_BR_STOP
-    {
-        const ServiceIdentifierTypeView current_service_type_view{service_type_deployment.first};
-        if (current_service_type_view.getInternalTypeName() == service_type)
-        {
-            std::visit(service_type_deployment_visitor, service_type_deployment.second.binding_info_);
-        }
-    }
-    return result;
-}
-
 ///
 /// \tparam TP Trace Point Type, one of ProxyEventTracePointType/ProxyFieldTracePointType or
 ///            SkeletonEventTracePointType/SkeletonFieldTracePointType
@@ -379,7 +304,7 @@ void ParseEvents(const score::json::Any& json,
     else
     {
         const std::set<std::string_view>& event_names =
-            GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::EVENT, configuration);
+            configuration.GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::EVENT);
 
         auto events_list = events->second.As<score::json::List>();
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(events_list.has_value(),
@@ -581,7 +506,7 @@ void ParseFields(const score::json::Any& json,
     else
     {
         const std::set<std::string_view>& field_names =
-            GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::FIELD, configuration);
+            configuration.GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::FIELD);
 
         auto fields_list = fields->second.As<score::json::List>();
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(fields_list.has_value(),

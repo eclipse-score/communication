@@ -494,6 +494,44 @@ TEST_F(ConfigurationFixture, GetListOfNamesOfConfiguredServicesReturnsEmptySetIf
     EXPECT_TRUE(service_names.empty());
 }
 
+TEST_F(ConfigurationFixture, GetElementNamesOfServiceTypeReturnsCorrectEventNames)
+{
+    // Given a configuration containing a ServiceTypeDeployment with events and fields
+    WithEmptyConfiguration();
+    const auto additional_service_identifier = make_ServiceIdentifierType("/bla/blub/two", 3U, 4U);
+    unit_.value().AddServiceTypeDeployment(
+        additional_service_identifier,
+        ServiceTypeDeployment{LolaServiceTypeDeployment{
+            LolaServiceId{5678U}, {{"event1", 1}, {"event2", 2}}, {{"field1", 1}, {"field2", 2}}, {}}});
+
+    // When calling GetElementNamesOfServiceType for events
+    const auto event_names = unit_.value().GetElementNamesOfServiceType("/bla/blub/two", ServiceElementType::EVENT);
+
+    // Then the result should contain the correct event names ...
+    EXPECT_EQ(event_names.size(), 2);
+    EXPECT_TRUE(event_names.find("event1") != event_names.end());
+    EXPECT_TRUE(event_names.find("event2") != event_names.end());
+}
+
+TEST_F(ConfigurationFixture, GetElementNamesOfServiceTypeReturnsCorrectFieldNames)
+{
+    // Given a configuration containing a ServiceTypeDeployment with events and fields
+    WithEmptyConfiguration();
+    const auto additional_service_identifier = make_ServiceIdentifierType("/bla/blub/two", 3U, 4U);
+    unit_.value().AddServiceTypeDeployment(
+        additional_service_identifier,
+        ServiceTypeDeployment{LolaServiceTypeDeployment{
+            LolaServiceId{5678U}, {{"event1", 1}, {"event2", 2}}, {{"field1", 1}, {"field2", 2}}, {}}});
+
+    // When calling GetElementNamesOfServiceType for events
+    const auto field_names = unit_.value().GetElementNamesOfServiceType("/bla/blub/two", ServiceElementType::FIELD);
+
+    // Then the result should contain the correct field names
+    EXPECT_EQ(field_names.size(), 2);
+    EXPECT_TRUE(field_names.find("field1") != field_names.end());
+    EXPECT_TRUE(field_names.find("field2") != field_names.end());
+}
+
 using ConfigurationDeathTest = ConfigurationFixture;
 TEST_F(ConfigurationDeathTest, AddingAServiceTypeDeploymentWithDuplicateServiceIdentifierTypeTerminates)
 {
