@@ -614,6 +614,41 @@ TEST_F(ConfigurationFixture, GetAggregatedAllowedUsersReturnsEmptySetIfNoAllowed
     EXPECT_TRUE(allowed_users_asil_b.empty());
 }
 
+TEST_F(ConfigurationFixture, GetInstancesOfServiceTypeReturnsCorrectInstanceSpecifiers)
+{
+    // Given a configuration with 2 LoLa service instance deployments for the same service type "foo"
+    WithEmptyConfiguration();
+
+    const auto kInstanceSpecifier1 = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort1"}).value();
+    const auto kInstanceSpecifier2 = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort2"}).value();
+    const auto kInstanceSpecifier3 = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort3"}).value();
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment1;
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment2;
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment3;
+
+    ServiceInstanceDeployment::BindingInformation binding1(lolaServiceInstanceDeployment1);
+    ServiceInstanceDeployment::BindingInformation binding2(lolaServiceInstanceDeployment2);
+    ServiceInstanceDeployment::BindingInformation binding3(lolaServiceInstanceDeployment3);
+
+    ServiceIdentifierType si1 = make_ServiceIdentifierType("foo", 1U, 1U);
+    ServiceIdentifierType si2 = make_ServiceIdentifierType("bar", 1U, 1U);
+    ServiceIdentifierType si3 = make_ServiceIdentifierType("foo", 1U, 2U);
+    ServiceInstanceDeployment deployment1(si1, binding1, QualityType::kASIL_B, kInstanceSpecifier1);
+    ServiceInstanceDeployment deployment2(si2, binding2, QualityType::kASIL_QM, kInstanceSpecifier2);
+    ServiceInstanceDeployment deployment3(si3, binding3, QualityType::kASIL_B, kInstanceSpecifier3);
+
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier1, deployment1);
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier2, deployment2);
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier3, deployment3);
+
+    // When calling GetInstanceOfServiceType with identifier "foo"
+    const auto result = unit_.value().GetInstancesOfServiceType("foo");
+
+    // Then we should find 2 entries with the respective instance specifiers
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_TRUE(result.find("abc/abc/TirePressurePort1") != result.end());
+    EXPECT_TRUE(result.find("abc/abc/TirePressurePort3") != result.end());
+}
 using ConfigurationDeathTest = ConfigurationFixture;
 TEST_F(ConfigurationDeathTest, AddingAServiceTypeDeploymentWithDuplicateServiceIdentifierTypeTerminates)
 {

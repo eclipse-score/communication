@@ -115,6 +115,12 @@ class Configuration final
     /// \return a set of uid_t of all allowed providers and consumers
     std::set<uid_t> GetAggregatedAllowedUsers(const QualityType asil_level) const noexcept;
 
+    /// \brief Returns the configured instances of the given service type
+    /// \param service_type identification of the service type (which is an AUTOSAR short-name-path representation)
+    /// \return set of string_views reflecting an InstanceSpecifier. Those string_views reference into strings held by
+    ///         this configuration. Their lifetime is the same as the LoLa runtime!
+    std::set<std::string_view> GetInstancesOfServiceType(std::string_view service_type) const noexcept;
+
   private:
     /// \brief Validate if service ASIL levels match the application's assigned ASIL level.
     score::Result<void> CrossCheckAsilLevels() const noexcept;

@@ -287,4 +287,22 @@ bool Configuration::AggregateAllowedUsers(std::set<uid_t>& aggregated_allowed_us
     return false;
 }
 
+std::set<std::string_view> Configuration::GetInstancesOfServiceType(std::string_view service_type) const noexcept
+{
+    std::set<std::string_view> result{};
+    // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed" despite all
+    // lines within the loop being covered. We also have a test for the case where GetServiceInstances() is empty.
+    // Suppression can be removed when the tooling bug is fixed.)
+    for (const auto& service_instance_element : service_instances_)
+    // LCOV_EXCL_BR_STOP
+    {
+        if (service_instance_element.second.service_.ToString() == service_type)
+        {
+            const auto element_string_view = service_instance_element.first.ToString();
+            score::cpp::ignore = result.insert(element_string_view);
+        }
+    }
+    return result;
+}
+
 }  // namespace score::mw::com::impl

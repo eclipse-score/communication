@@ -151,29 +151,6 @@ bool IsOptionalBoolPropertyEnabled(const score::json::Object& json, const std::s
     return false;
 }
 
-/// \brief Returns the configured instances (within our mw_com_config.json) of the given service type
-/// \param configuration configuration, where to do the lookup
-/// \param service_type identification of the service type (which is an AUTOSAR short-name-path representation)
-/// \return set of string_views reflecting an InstanceSpecifier. Those string_views reference into strings held by
-///         our single/global Configuration object. Their lifetime is the same as the LoLa runtime!
-std::set<std::string_view> GetInstancesOfServiceType(const Configuration& configuration, std::string_view service_type)
-{
-    std::set<std::string_view> result{};
-    // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed" despite all
-    // lines within the loop being covered. We also have a test for the case where GetServiceInstances() is empty.
-    // Suppression can be removed when the tooling bug is fixed.)
-    for (const auto& service_instance_element : configuration.GetServiceInstances())
-    // LCOV_EXCL_BR_STOP
-    {
-        if (service_instance_element.second.service_.ToString() == service_type)
-        {
-            const auto element_string_view = service_instance_element.first.ToString();
-            score::cpp::ignore = result.insert(element_string_view);
-        }
-    }
-    return result;
-}
-
 ///
 /// \tparam TP Trace Point Type, one of ProxyEventTracePointType/ProxyFieldTracePointType or
 ///            SkeletonEventTracePointType/SkeletonFieldTracePointType
@@ -582,7 +559,7 @@ void ParseService(const score::json::Any& json,
     if (configured_service_types.count(shortname_path_string) > 0U)
     {
         // determine the configured service-instances of the given service-type
-        const auto instance_specifiers = GetInstancesOfServiceType(configuration, shortname_path_string);
+        const auto instance_specifiers = configuration.GetInstancesOfServiceType(shortname_path_string);
 
         ParseEvents(json, shortname_path_string, configuration, instance_specifiers, filter_config);
         ParseFields(json, shortname_path_string, configuration, instance_specifiers, filter_config);
