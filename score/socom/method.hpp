@@ -14,9 +14,9 @@
 #ifndef SCORE_SOCOM_METHOD_HPP
 #define SCORE_SOCOM_METHOD_HPP
 
+#include <score/move_only_function.hpp>
 #include <cstdint>
 #include <optional>
-#include <score/move_only_function.hpp>
 #include <utility>
 #include <variant>
 
@@ -24,7 +24,8 @@
 #include "score/socom/payload.hpp"
 #include "score/socom/reference_token.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 /// \brief Alias for a method ID.
 using Method_id = std::uint16_t;
 
@@ -34,7 +35,8 @@ using Method_id = std::uint16_t;
 /// without modifying their definitions.
 /// \tparam Ts Types to be combined into the Visitor.
 template <class... Ts>
-struct Visitor : Ts... {
+struct Visitor : Ts...
+{
     using Ts::operator()...;
 };
 
@@ -45,23 +47,25 @@ template <class... Ts>
 Visitor(Ts...) -> Visitor<Ts...>;
 
 /// \brief Interface class for method call RAII type (see Client_connector::call_method).
-class Method_invocation {
-   public:
+class Method_invocation
+{
+  public:
     /// \brief Alias for an unique pointer to this interface.
     using Uptr = std::unique_ptr<Method_invocation>;
 
     Method_invocation() = default;
     virtual ~Method_invocation() = default;
 
-    Method_invocation(Method_invocation const&) = delete;
+    Method_invocation(const Method_invocation&) = delete;
     Method_invocation(Method_invocation&&) = delete;
 
-    Method_invocation& operator=(Method_invocation const&) = delete;
+    Method_invocation& operator=(const Method_invocation&) = delete;
     Method_invocation& operator=(Method_invocation&&) = delete;
 };
 
 /// \brief Result of successful method call.
-struct Application_return {
+struct Application_return
+{
     /// \brief Constructor.
     /// \param p Payload data.
     explicit Application_return(Payload p = empty_payload()) : payload{std::move(p)} {}
@@ -71,7 +75,8 @@ struct Application_return {
 };
 
 /// \brief Result of failed method call.
-struct Application_error {
+struct Application_error
+{
     /// \brief Alias for an error code.
     using Code = std::int32_t;
 
@@ -82,8 +87,7 @@ struct Application_error {
     /// \brief Constructor.
     /// \param c Error code.
     /// \param p Payload data.
-    explicit Application_error(Code c, Payload p = empty_payload())
-        : code{c}, payload{std::move(p)} {}
+    explicit Application_error(Code c, Payload p = empty_payload()) : code{c}, payload{std::move(p)} {}
 
     /// \brief Error code.
     Code code{};
@@ -99,7 +103,8 @@ using Method_result = std::variant<Application_return, Application_error, Error>
 /// \param lhs Left-hand side of operator.
 /// \param rhs Right-hand side of operator.
 /// \return True in case of equality, otherwise false.
-inline bool operator==(Application_return const& lhs, Application_return const& rhs) {
+inline bool operator==(const Application_return& lhs, const Application_return& rhs)
+{
     return lhs.payload == rhs.payload;
 }
 
@@ -107,7 +112,8 @@ inline bool operator==(Application_return const& lhs, Application_return const& 
 /// \param lhs Left-hand side of operator.
 /// \param rhs Right-hand side of operator.
 /// \return True in case of inequality, otherwise false.
-inline bool operator!=(Application_return const& lhs, Application_return const& rhs) {
+inline bool operator!=(const Application_return& lhs, const Application_return& rhs)
+{
     return !(lhs == rhs);
 }
 
@@ -115,7 +121,8 @@ inline bool operator!=(Application_return const& lhs, Application_return const& 
 /// \param lhs Left-hand side of operator.
 /// \param rhs Right-hand side of operator.
 /// \return True in case of equality, otherwise false.
-inline bool operator==(Application_error const& lhs, Application_error const& rhs) {
+inline bool operator==(const Application_error& lhs, const Application_error& rhs)
+{
     return (lhs.code == rhs.code) && (lhs.payload == rhs.payload);
 }
 
@@ -123,19 +130,22 @@ inline bool operator==(Application_error const& lhs, Application_error const& rh
 /// \param lhs Left-hand side of operator.
 /// \param rhs Right-hand side of operator.
 /// \return True in case of inequality, otherwise false.
-inline bool operator!=(Application_error const& lhs, Application_error const& rhs) {
+inline bool operator!=(const Application_error& lhs, const Application_error& rhs)
+{
     return !(lhs == rhs);
 }
 
 /// \brief Alias for the callback function of a method, in case a reply is requested.
-using Method_reply_callback = score::cpp::move_only_function<void(Method_result const&)>;
+using Method_reply_callback = score::cpp::move_only_function<void(const Method_result&)>;
 
-namespace client_connector {
+namespace client_connector
+{
 class Impl;
 }
 
 /// \brief Callback and payload buffer for method call replies.
-class Method_call_reply_data {
+class Method_call_reply_data
+{
     Method_reply_callback reply_callback;
     std::optional<Writable_payload> reply_payload;
     Weak_reference_token weak_stop_block_token;
@@ -143,24 +153,26 @@ class Method_call_reply_data {
     Deadlock_detector* deadlock_detector{nullptr};
 #endif
 
-   public:
+  public:
     /// \brief Constructor.
     /// \param reply_callback Callback function to be called with the method result when a reply is
     /// requested.
     /// \param reply_payload Optional payload buffer for the method reply.
-    Method_call_reply_data(Method_reply_callback reply_callback,
-                           std::optional<Writable_payload> reply_payload);
+    Method_call_reply_data(Method_reply_callback reply_callback, std::optional<Writable_payload> reply_payload);
 
     /// \brief Get the payload buffer for the method reply.
     /// \return Reference to the optional writable payload buffer for the method reply.
-    std::optional<Writable_payload>& get_reply_payload() { return reply_payload; }
+    std::optional<Writable_payload>& get_reply_payload()
+    {
+        return reply_payload;
+    }
 
     /// \brief Call the reply callback with the given method result, if the block token is not
     /// expired.
     /// \param method_reply Method result to be passed to the reply callback.
-    void reply(Method_result const& method_reply) const;
+    void reply(const Method_result& method_reply) const;
 
-   private:
+  private:
     friend class client_connector::Impl;
 
     /// \brief Set a block token to prevent calling the reply callback after the client is already

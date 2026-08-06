@@ -27,10 +27,11 @@
 #include "score/socom/socom_mocks.hpp"
 #include "score/socom/vector_payload.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Vector referencing atomic<bool> objects
-using Callbacks_called_t = std::vector<std::reference_wrapper<std::atomic<bool> const>>;
+using Callbacks_called_t = std::vector<std::reference_wrapper<const std::atomic<bool>>>;
 
 /// \brief Blocks until status becomes true
 ///
@@ -38,9 +39,11 @@ using Callbacks_called_t = std::vector<std::reference_wrapper<std::atomic<bool> 
 ///
 /// \param[in] status block until !status returns true
 template <typename T>
-void wait_for_atomics(T const& status) {
+void wait_for_atomics(const T& status)
+{
     using namespace std::chrono_literals;
-    while (!status) {
+    while (!status)
+    {
         std::this_thread::sleep_for(1ms);
     }
 }
@@ -52,7 +55,8 @@ void wait_for_atomics(T const& status) {
 /// \param[in] status block until !status returns true
 /// \param[in] stati block until all have the value true
 template <typename T, typename... Ts>
-void wait_for_atomics(T const& status, Ts&&... stati) {
+void wait_for_atomics(const T& status, Ts&&... stati)
+{
     wait_for_atomics(status);
     wait_for_atomics(stati...);
 }
@@ -62,21 +66,22 @@ void wait_for_atomics(T const& status, Ts&&... stati) {
 /// Blocks using a loop in which for a short time is slept.
 ///
 /// \param[in] stati block until all have the value true
-void wait_for_atomics_cont(std::vector<std::atomic<bool>> const& stati);
+void wait_for_atomics_cont(const std::vector<std::atomic<bool>>& stati);
 
 /// \brief Blocks until all references bools in stati become true
 ///
 /// Blocks using a loop in which for a short time is slept.
 ///
 /// \param[in] stati block until all have the value true
-void wait_for_atomics_cont(Callbacks_called_t const& stati);
+void wait_for_atomics_cont(const Callbacks_called_t& stati);
 
 /// \brief Block wait_for_atomics() until counter reached target value
-struct Until_equals_value {
+struct Until_equals_value
+{
     /// \brief Counting variable which is increased by another function
-    std::atomic<std::size_t> const& m_counter;
+    const std::atomic<std::size_t>& m_counter;
     /// \brief Value to be reached by m_counter
-    std::size_t const m_target;
+    const std::size_t m_target;
     /// \brief Return true as long m_counter < m_target
     bool operator!() const;
 };
@@ -85,36 +90,38 @@ struct Until_equals_value {
 ///
 /// \param[in] start starting time point of the duration
 /// \return the duration as seconds with floating pointer number
-std::string diff_s(std::chrono::steady_clock::time_point const& start);
+std::string diff_s(const std::chrono::steady_clock::time_point& start);
 
 /// \brief At destruction print a message to console prefixed with time passed
-class Destructor_printor {
-    std::chrono::steady_clock::time_point const m_start;
-    std::string const m_message;
+class Destructor_printor
+{
+    const std::chrono::steady_clock::time_point m_start;
+    const std::string m_message;
 
-   public:
+  public:
     /// \brief Creates objects
     ///
     /// \param[in] start time point which shall be used as start point to calculated passed time
     /// \param[in] message text to be printed
     Destructor_printor(std::chrono::steady_clock::time_point start, std::string message);
 
-    Destructor_printor(Destructor_printor const&) = default;
+    Destructor_printor(const Destructor_printor&) = default;
     Destructor_printor(Destructor_printor&&) = default;
 
     /// \brief Print passed time and message to console
     ~Destructor_printor();
 
-    Destructor_printor& operator=(Destructor_printor const&) = delete;
+    Destructor_printor& operator=(const Destructor_printor&) = delete;
     Destructor_printor& operator=(Destructor_printor&&) = delete;
 };
 
 /// \brief Holds optional references and has an implicit constructor
 template <typename T>
-class Optional_reference {
+class Optional_reference
+{
     std::optional<std::reference_wrapper<T>> m_data;
 
-   public:
+  public:
     /// \brief Creates an object without holding a reference
     Optional_reference() = default;
 
@@ -125,13 +132,22 @@ class Optional_reference {
     Optional_reference(T& value) : m_data{value} {}
 
     /// \return true if a reference is hold, false otherwise
-    explicit operator bool() const { return static_cast<bool>(m_data); };
+    explicit operator bool() const
+    {
+        return static_cast<bool>(m_data);
+    };
 
     /// \return the referenced object
-    T& operator*() { return m_data->get(); }
+    T& operator*()
+    {
+        return m_data->get();
+    }
 
     /// \return the referenced object
-    const T& operator*() const { return m_data->get(); }
+    const T& operator*() const
+    {
+        return m_data->get();
+    }
 };
 
 /// \brief Appends src to dst by moving data
@@ -139,9 +155,9 @@ class Optional_reference {
 /// \param[in] dst target to which src gets appended onto
 /// \param[in] src source of to be appended data
 template <typename T>
-void append(std::vector<T>& dst, std::vector<T>&& src) {
-    dst.insert(std::end(dst), std::make_move_iterator(std::begin(src)),
-               std::make_move_iterator(std::end(src)));
+void append(std::vector<T>& dst, std::vector<T>&& src)
+{
+    dst.insert(std::end(dst), std::make_move_iterator(std::begin(src)), std::make_move_iterator(std::end(src)));
 }
 
 /// \brief Increase the size of data and will with random bytes if new_size is bigger
@@ -180,9 +196,12 @@ Service_instance create_service_instance(size_t instance_id);
 ///
 /// \param[in] expected the payload to compare against
 /// \return a gmock matcher for Payload const&
-inline auto payload_eq(Payload const& expected) {
+inline auto payload_eq(const Payload& expected)
+{
     auto cloned = std::make_shared<Payload>(clone_payload(expected));
-    return ::testing::Truly([cloned](Payload const& p) { return p == *cloned; });
+    return ::testing::Truly([cloned](const Payload& p) {
+        return p == *cloned;
+    });
 }
 
 /// Set promise after count calls of callback.
@@ -192,13 +211,17 @@ inline auto payload_eq(Payload const& expected) {
 /// \param[in] event_received promise to fulfill after count calls
 /// \return lambda which sets event_received after count calls
 inline auto create_check_update_count(std::atomic<std::uint32_t>& num_callback_called,
-                                      std::size_t const& count, std::promise<void> event_received) {
+                                      const std::size_t& count,
+                                      std::promise<void> event_received)
+{
     num_callback_called = 0;
     return ::testing::InvokeWithoutArgs(
-        [&num_callback_called, count,
+        [&num_callback_called,
+         count,
          event_received = std::make_shared<std::promise<void>>(std::move(event_received))]() {
             num_callback_called++;
-            if (count == num_callback_called) {
+            if (count == num_callback_called)
+            {
                 event_received->set_value();
             }
         });
@@ -213,23 +236,24 @@ int to_int(std::size_t count);
 // When no operator<< is defined it reads the parameter byte by byte and if there is uninitialized
 // data due to alignment valgrind reports an error
 template <typename RET, typename... ARGS>
-std::ostream& operator<<(std::ostream& out, std::function<RET(ARGS...)> const& /*function*/) {
+std::ostream& operator<<(std::ostream& out, const std::function<RET(ARGS...)>& /*function*/)
+{
     return out;
 }
 
-std::ostream& operator<<(std::ostream& out, Method_result const& /*unused*/);
+std::ostream& operator<<(std::ostream& out, const Method_result& /*unused*/);
 
-std::ostream& operator<<(std::ostream& out, Service_interface_definition const& /*unused*/);
+std::ostream& operator<<(std::ostream& out, const Service_interface_definition& /*unused*/);
 
-std::ostream& operator<<(std::ostream& out, Server_service_interface_definition const& conf);
+std::ostream& operator<<(std::ostream& out, const Server_service_interface_definition& conf);
 
-std::ostream& operator<<(std::ostream& out, Service_state const& state);
+std::ostream& operator<<(std::ostream& out, const Service_state& state);
 
-std::ostream& operator<<(std::ostream& out, Construction_error const& error);
+std::ostream& operator<<(std::ostream& out, const Construction_error& error);
 
-bool operator==(Disabled_server_connector const& /*lhs*/, Disabled_server_connector const& /*rhs*/);
+bool operator==(const Disabled_server_connector& /*lhs*/, const Disabled_server_connector& /*rhs*/);
 
-bool operator==(Posix_credentials const& lhs, Posix_credentials const& rhs);
+bool operator==(const Posix_credentials& lhs, const Posix_credentials& rhs);
 
 }  // namespace score::socom
 

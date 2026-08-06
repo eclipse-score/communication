@@ -14,8 +14,8 @@
 #ifndef SCORE_SOCOM_SERVER_CONNECTOR_HPP
 #define SCORE_SOCOM_SERVER_CONNECTOR_HPP
 
-#include <memory>
 #include <score/move_only_function.hpp>
+#include <memory>
 
 #include "score/socom/error.hpp"
 #include "score/socom/event.hpp"
@@ -24,7 +24,8 @@
 #include "score/socom/posix_credentials.hpp"
 #include "score/socom/service_interface_definition.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 class Disabled_server_connector;
 class Enabled_server_connector;
@@ -34,45 +35,45 @@ using Event_subscription_change_callback =
     score::cpp::move_only_function<void(Enabled_server_connector&, Event_id, Event_state)>;
 
 /// \brief Function type for indicating an event update request to the service provider.
-using Event_request_update_callback =
-    score::cpp::move_only_function<void(Enabled_server_connector&, Event_id)>;
+using Event_request_update_callback = score::cpp::move_only_function<void(Enabled_server_connector&, Event_id)>;
 
 /// \brief Function type for processing any client side method invocation.
-using Method_call_credentials_callback = score::cpp::move_only_function<Method_invocation::Uptr(
-    Enabled_server_connector&, Method_id, Payload, Method_call_reply_data_opt,
-    Posix_credentials const&)>;
+using Method_call_credentials_callback = score::cpp::move_only_function<
+    Method_invocation::
+        Uptr(Enabled_server_connector&, Method_id, Payload, Method_call_reply_data_opt, const Posix_credentials&)>;
 
 /// \brief Function type for indicating a method call payload request to the service provider.
 using Method_call_payload_allocate_callback =
-    score::cpp::move_only_function<score::Result<Writable_payload>(Enabled_server_connector&,
-                                                                   Method_id)>;
+    score::cpp::move_only_function<score::Result<Writable_payload>(Enabled_server_connector&, Method_id)>;
 
-class Configuration_getter {
-   public:
+class Configuration_getter
+{
+  public:
     virtual ~Configuration_getter() = default;
 
     [[nodiscard]]
-    virtual Server_service_interface_definition const& get_configuration() const noexcept = 0;
+    virtual const Server_service_interface_definition& get_configuration() const noexcept = 0;
     [[nodiscard]]
-    virtual Service_instance const& get_service_instance() const noexcept = 0;
+    virtual const Service_instance& get_service_instance() const noexcept = 0;
 };
 
 /// \brief Interface for applications to use a service (server-role).
 /// \details This interface represents a Server_connector not visible to any Client_connector(s).
 /// After destruction no registered callbacks are called anymore.
 /// All user callbacks must not block and shall return quickly (simple algorithms only).
-class Disabled_server_connector : public Configuration_getter {
-   public:
+class Disabled_server_connector : public Configuration_getter
+{
+  public:
     /// \brief Alias for an unique pointer to this interface.
     using Uptr = std::unique_ptr<Disabled_server_connector>;
 
     Disabled_server_connector() = default;
     virtual ~Disabled_server_connector() noexcept = default;
 
-    Disabled_server_connector(Disabled_server_connector const&) = delete;
+    Disabled_server_connector(const Disabled_server_connector&) = delete;
     Disabled_server_connector(Disabled_server_connector&&) = delete;
 
-    Disabled_server_connector& operator=(Disabled_server_connector const&) = delete;
+    Disabled_server_connector& operator=(const Disabled_server_connector&) = delete;
     Disabled_server_connector& operator=(Disabled_server_connector&&) = delete;
 
     /// \brief Server_Connector callback interface needed at Server_connector construction, see
@@ -82,7 +83,8 @@ class Disabled_server_connector : public Configuration_getter {
     /// only). No callback is allowed to destroy the Server_connector, otherwise it will result in a
     /// deadlock. If a deadlock situation is detected, a warning will be logged and the application
     /// terminated.
-    struct Callbacks {
+    struct Callbacks
+    {
         /// \brief Callback is called on any client side method invocation.
         Method_call_credentials_callback on_method_call;
 
@@ -114,10 +116,9 @@ class Disabled_server_connector : public Configuration_getter {
     /// \param connector Disabled server connector.
     /// \return An enabled server connector.
     [[nodiscard]]
-    static std::unique_ptr<Enabled_server_connector> enable(
-        std::unique_ptr<Disabled_server_connector> connector);
+    static std::unique_ptr<Enabled_server_connector> enable(std::unique_ptr<Disabled_server_connector> connector);
 
-   protected:
+  protected:
     /// \cond INTERNAL
     virtual Enabled_server_connector* enable() = 0;
     /// \endcond
@@ -138,8 +139,9 @@ class Disabled_server_connector : public Configuration_getter {
 /// If the passed parameter server_id  is not valid (not contained in
 /// Server_service_interface_definition), service API calls have no effect and return
 /// Server_connector_error::logic_error_id_out_of_range.
-class Enabled_server_connector : public Configuration_getter {
-   public:
+class Enabled_server_connector : public Configuration_getter
+{
+  public:
     /// \brief Alias for an unique pointer to this interface.
     using Uptr = std::unique_ptr<Enabled_server_connector>;
 
@@ -157,10 +159,10 @@ class Enabled_server_connector : public Configuration_getter {
     /// terminate the application.
     virtual ~Enabled_server_connector() noexcept = default;
 
-    Enabled_server_connector(Enabled_server_connector const&) = delete;
+    Enabled_server_connector(const Enabled_server_connector&) = delete;
     Enabled_server_connector(Enabled_server_connector&&) = delete;
 
-    Enabled_server_connector& operator=(Enabled_server_connector const&) = delete;
+    Enabled_server_connector& operator=(const Enabled_server_connector&) = delete;
     Enabled_server_connector& operator=(Enabled_server_connector&&) = delete;
 
     /// \brief Removes the connection to the clients.
@@ -215,7 +217,7 @@ class Enabled_server_connector : public Configuration_getter {
     /// \return An event mode in case of successful operation, otherwise an error.
     [[nodiscard]] virtual Result<Event_mode> get_event_mode(Event_id server_id) const noexcept = 0;
 
-   protected:
+  protected:
     /// \cond INTERNAL
     virtual Disabled_server_connector* disable() noexcept = 0;
     /// \endcond

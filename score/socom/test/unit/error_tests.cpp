@@ -15,8 +15,10 @@
 
 #include <gtest/gtest.h>
 
-namespace score::socom {
-namespace {
+namespace score::socom
+{
+namespace
+{
 
 TEST(Error, MakeErrorMapsServiceNotAvailable)
 {

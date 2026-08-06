@@ -15,40 +15,47 @@
 
 #include <score/assert.hpp>
 #include <iostream>
-#include <utility>
 #include <memory>
 #include <mutex>
+#include <utility>
 
 #include "messages.hpp"
 #include "score/result/result.h"
 #include "score/socom/client_connector.hpp"
 #include "score/socom/event.hpp"
 #include "score/socom/final_action.hpp"
-#include "score/socom/service_interface_definition.hpp"
-#include "score/socom/service_interface_identifier.hpp"
-#include "score/socom/posix_credentials.hpp"
+#include "score/socom/impl/endpoint.hpp"
+#include "score/socom/impl/temporary_thread_id_add.hpp"
 #include "score/socom/method.hpp"
 #include "score/socom/payload.hpp"
-#include "score/socom/impl/temporary_thread_id_add.hpp"
-#include "score/socom/impl/endpoint.hpp"
+#include "score/socom/posix_credentials.hpp"
 #include "score/socom/reference_token.hpp"
+#include "score/socom/service_interface_definition.hpp"
+#include "score/socom/service_interface_identifier.hpp"
 #include "server_connector_impl.hpp"  // NOLINT(misc-include-cleaner)
 
-namespace score::socom::client_connector {
+namespace score::socom::client_connector
+{
 
-Impl::Impl(Service_interface_definition configuration, Service_instance instance,
-           Client_connector::Callbacks callbacks, Posix_credentials const& credentials)
+Impl::Impl(Service_interface_definition configuration,
+           Service_instance instance,
+           Client_connector::Callbacks callbacks,
+           const Posix_credentials& credentials)
     : m_configuration{std::move(configuration)},
       m_instance{instance},
       m_callbacks{std::move(callbacks)},
-      m_stop_block_token{
-          std::make_shared<Final_action>([this]() { m_stop_complete_promise.set_value(); })},
-      m_credentials{credentials} {}
+      m_stop_block_token{std::make_shared<Final_action>([this]() {
+          m_stop_complete_promise.set_value();
+      })},
+      m_credentials{credentials}
+{
+}
 
-Impl::~Impl() noexcept {
+Impl::~Impl() noexcept
+{
     {
         {
-            std::lock_guard<std::mutex> const lock{m_mutex};
+            const std::lock_guard<std::mutex> lock{m_mutex};
             m_stop_block_token.reset();
             m_server.reset();
         }
@@ -59,7 +66,7 @@ Impl::~Impl() noexcept {
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
 
     // death tests cannot contribute to code coverage
-    auto const log_on_deadlock = [this]() {
+    const auto log_on_deadlock = [this]() {
         // destruction from within callback detected
         std::cerr << "SOCom error: A callback causes the Client_connector instance to be destroyed "
                      "by which the callback is called. This leads to a deadlock because the "
@@ -69,27 +76,33 @@ Impl::~Impl() noexcept {
 
     m_deadlock_detector.check_deadlock(log_on_deadlock);
 #endif
-    auto const wait_for_stop_complete = [this]() { m_stop_complete_promise.get_future().wait(); };
-    Final_action const catch_promise_exceptions{wait_for_stop_complete};
+    auto const wait_for_stop_complete = [this]() {
+        m_stop_complete_promise.get_future().wait();
+    };
+    const Final_action catch_promise_exceptions{wait_for_stop_complete};
 }
 
-message::Subscribe_event::Return_type Impl::subscribe_event(Event_id client_id,
-                                                            Event_mode mode) const noexcept {
+message::Subscribe_event::Return_type Impl::subscribe_event(Event_id client_id, Event_mode mode) const noexcept
+{
     return send(message::Subscribe_event{client_id, mode});
 }
 
-message::Unsubscribe_event::Return_type Impl::unsubscribe_event(Event_id client_id) const noexcept {
+message::Unsubscribe_event::Return_type Impl::unsubscribe_event(Event_id client_id) const noexcept
+{
     return send(message::Unsubscribe_event{client_id});
 }
 
-message::Request_event_update::Return_type Impl::request_event_update(
-    Event_id client_id) const noexcept {
+message::Request_event_update::Return_type Impl::request_event_update(Event_id client_id) const noexcept
+{
     return send(message::Request_event_update{client_id});
 }
 
-message::Call_method::Return_type Impl::call_method(
-    Method_id client_id, Payload payload, Method_call_reply_data_opt reply_data) const noexcept {
-    if (reply_data) {
+message::Call_method::Return_type Impl::call_method(Method_id client_id,
+                                                    Payload payload,
+                                                    Method_call_reply_data_opt reply_data) const noexcept
+{
+    if (reply_data)
+    {
         reply_data->set_block_token(create_weak_block_token()
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
                                         ,
@@ -98,29 +111,39 @@ message::Call_method::Return_type Impl::call_method(
         );
     }
 
-    return send(
-        message::Call_method{client_id, std::move(payload), std::move(reply_data), m_credentials});
+    return send(message::Call_method{client_id, std::move(payload), std::move(reply_data), m_credentials});
 }
 
-Result<Writable_payload> Impl::allocate_method_call_payload(Method_id method_id) noexcept {
+Result<Writable_payload> Impl::allocate_method_call_payload(Method_id method_id) noexcept
+{
     return send(message::Allocate_method_call_payload{method_id});
 }
 
-Result<Posix_credentials> Impl::get_peer_credentials() const noexcept {
+Result<Posix_credentials> Impl::get_peer_credentials() const noexcept
+{
     return send(message::Posix_credentials{});
 }
 
-Service_interface_definition const& Impl::get_configuration() const noexcept {
+const Service_interface_definition& Impl::get_configuration() const noexcept
+{
     return m_configuration;
 }
 
-Service_instance const& Impl::get_service_instance() const noexcept { return m_instance; }
+const Service_instance& Impl::get_service_instance() const noexcept
+{
+    return m_instance;
+}
 
-bool Impl::is_service_available() const noexcept { return m_server.has_value(); }
+bool Impl::is_service_available() const noexcept
+{
+    return m_server.has_value();
+}
 
-message::Service_state_change::Return_type Impl::receive(message::Service_state_change message) {
-    if (message.state == Service_state::not_available) {
-        std::lock_guard<std::mutex> const lock{m_mutex};
+message::Service_state_change::Return_type Impl::receive(message::Service_state_change message)
+{
+    if (message.state == Service_state::not_available)
+    {
+        const std::lock_guard<std::mutex> lock{m_mutex};
         m_server.reset();
     }
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
@@ -129,65 +152,72 @@ message::Service_state_change::Return_type Impl::receive(message::Service_state_
     m_callbacks.on_service_state_change(*this, message.state, message.configuration);
 }
 
-message::Update_event::Return_type Impl::receive(message::Update_event message) {
+message::Update_event::Return_type Impl::receive(message::Update_event message)
+{
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
     Temporary_thread_id_add const tmptia{m_deadlock_detector.enter_callback()};
 #endif
     m_callbacks.on_event_update(*this, message.id, std::move(message.payload));
 }
 
-message::Update_requested_event::Return_type Impl::receive(
-    message::Update_requested_event message) {
+message::Update_requested_event::Return_type Impl::receive(message::Update_requested_event message)
+{
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
     Temporary_thread_id_add const tmptia{m_deadlock_detector.enter_callback()};
 #endif
     m_callbacks.on_event_requested_update(*this, message.id, std::move(message.payload));
 }
 
-message::Allocate_event_payload::Return_type Impl::receive(
-    message::Allocate_event_payload message) {
+message::Allocate_event_payload::Return_type Impl::receive(message::Allocate_event_payload message)
+{
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
     Temporary_thread_id_add const tmptia{m_deadlock_detector.enter_callback()};
 #endif
     return m_callbacks.on_event_payload_allocate(*this, message.id);
 }
 
-Impl::Server_indication Impl::make_on_server_update_callback() {
-    return [this, weak_stop_token = create_weak_block_token()](
-               Server_connector_listen_endpoint const& listen_endpoint) {
-        auto const locked_token = weak_stop_token.lock();
-        // Destroying client-connector before this callback runs is not possible with
-        // deterministic results.
+Impl::Server_indication Impl::make_on_server_update_callback()
+{
+    return
+        [this, weak_stop_token = create_weak_block_token()](const Server_connector_listen_endpoint& listen_endpoint) {
+            const auto locked_token = weak_stop_token.lock();
+            // Destroying client-connector before this callback runs is not possible with
+            // deterministic results.
 
-        if (nullptr == locked_token) {
-            // Client_connector destruction detected
-            return;
-        }
+            if (nullptr == locked_token)
+            {
+                // Client_connector destruction detected
+                return;
+            }
 
-        auto endpoint = Client_connector_endpoint(*this, locked_token);
-        auto const connect_return = listen_endpoint.send(message::Connect{endpoint});
-        // Endpoint not accessible for testing to inject determinstic error-condition
+            auto endpoint = Client_connector_endpoint(*this, locked_token);
+            const auto connect_return = listen_endpoint.send(message::Connect{endpoint});
+            // Endpoint not accessible for testing to inject determinstic error-condition
 
-        if (!connect_return) {
-            return;
-        }
+            if (!connect_return)
+            {
+                return;
+            }
 
-        // As the false condition happens on the non deterministic behavior of thread scheduling
-        // it cannot be tested reliably in unit tests and is therefore excluded in the coverage.
+            // As the false condition happens on the non deterministic behavior of thread scheduling
+            // it cannot be tested reliably in unit tests and is therefore excluded in the coverage.
 
-        if (set_id_mappings_and_server(*connect_return)) {
-            receive(connect_return->service_state);
-        }
-    };
+            if (set_id_mappings_and_server(*connect_return))
+            {
+                receive(connect_return->service_state);
+            }
+        };
 }
 
-void Impl::set_registration(Registration registration) {
+void Impl::set_registration(Registration registration)
+{
     m_registration = std::move(registration);
     SCORE_LANGUAGE_FUTURECPP_ASSERT(m_registration);
 }
 
-bool Impl::set_id_mappings_and_server(message::Connect_return const& connect_return) {
-    std::lock_guard<std::mutex> const lock{m_mutex};
+bool Impl::set_id_mappings_and_server(const message::Connect_return& connect_return)
+{
+    const std::lock_guard<std::mutex> lock{m_mutex};
     // The dtor could have been started by another thread while this callback is active.
     // If the dtor is active setting m_server will lead to a deadlock. Thus check if the
     // dtor is running by checking m_stop_block_token for nullptr.
@@ -196,7 +226,8 @@ bool Impl::set_id_mappings_and_server(message::Connect_return const& connect_ret
     // Only Bullseye is excluded as it may happen that the following condition is never
     // false.
 
-    if (nullptr == m_stop_block_token) {
+    if (nullptr == m_stop_block_token)
+    {
         return false;
     }
 
@@ -204,12 +235,10 @@ bool Impl::set_id_mappings_and_server(message::Connect_return const& connect_ret
     return true;
 }
 
-Weak_reference_token Impl::create_weak_block_token() const {
-    std::lock_guard<std::mutex> const lock{m_mutex};
+Weak_reference_token Impl::create_weak_block_token() const
+{
+    const std::lock_guard<std::mutex> lock{m_mutex};
     return Weak_reference_token{m_stop_block_token};
 }
 
-} // namespace score::socom::client_connector
-
-
-
+}  // namespace score::socom::client_connector

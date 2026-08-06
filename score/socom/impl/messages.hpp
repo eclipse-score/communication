@@ -19,77 +19,91 @@
 #include "score/socom/event.hpp"
 #include "score/socom/posix_credentials.hpp"
 
-namespace score::socom::message {
+namespace score::socom::message
+{
 
-struct Request_disconnect {
+struct Request_disconnect
+{
     using Return_type = void;
 };
 
-struct Service_state_change {
+struct Service_state_change
+{
     using Return_type = void;
-    Service_state const state;
-    Server_service_interface_definition const& configuration;
+    const Service_state state;
+    const Server_service_interface_definition& configuration;
 };
 
-struct Connect_return {
+struct Connect_return
+{
     using Return_type = void;
-    Server_connector_endpoint const endpoint;
-    Service_state_change const service_state;
+    const Server_connector_endpoint endpoint;
+    const Service_state_change service_state;
 };
 
-struct Connect {
+struct Connect
+{
     using Return_type = score::Result<message::Connect_return>;
     Client_connector_endpoint& endpoint;
 };
 
-struct Call_method {
+struct Call_method
+{
     using Return_type = score::Result<Method_invocation::Uptr>;
-    Method_id const id;
+    const Method_id id;
     Payload payload;
     Method_call_reply_data_opt reply_data;
-    Posix_credentials const& credentials;
+    const Posix_credentials& credentials;
 };
 
-struct Posix_credentials {
+struct Posix_credentials
+{
     using Return_type = score::Result<::score::socom::Posix_credentials>;
 };
 
-struct Subscribe_event {
+struct Subscribe_event
+{
     using Return_type = score::Result<void>;
-    Event_id const id;
-    Event_mode const mode;
+    const Event_id id;
+    const Event_mode mode;
 };
 
-struct Unsubscribe_event {
+struct Unsubscribe_event
+{
     using Return_type = score::Result<void>;
-    Event_id const id;
+    const Event_id id;
 };
 
-struct Request_event_update {
+struct Request_event_update
+{
     using Return_type = score::Result<void>;
-    Event_id const id;
+    const Event_id id;
 };
 
-struct Update_event {
+struct Update_event
+{
     using Return_type = void;
-    Event_id const id;
+    const Event_id id;
     Payload payload;
 };
 
-struct Update_requested_event {
+struct Update_requested_event
+{
     using Return_type = void;
-    Event_id const id;
+    const Event_id id;
     Payload payload;
 };
 
-struct Allocate_event_payload {
+struct Allocate_event_payload
+{
     using Return_type = score::Result<Writable_payload>;
-    Event_id const id;
+    const Event_id id;
 };
 
-struct Allocate_method_call_payload {
+struct Allocate_method_call_payload
+{
     using Return_type = score::Result<Writable_payload>;
-    Method_id const id;
+    const Method_id id;
 };
 
 }  // namespace score::socom::message

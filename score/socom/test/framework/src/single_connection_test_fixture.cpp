@@ -12,24 +12,27 @@
  ********************************************************************************/
 
 #include "score/socom/single_connection_test_fixture.hpp"
+#include "score/socom/event.hpp"
+#include "score/socom/method.hpp"
 #include "score/socom/payload.hpp"
 #include <score/socom/vector_payload.hpp>
-#include "score/socom/method.hpp"
-#include "score/socom/event.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
-Payload const& input_data() {
-    static Payload const data = make_vector_payload(make_vector_buffer(9U, 0U, 0U, 1U));
+const Payload& input_data()
+{
+    static const Payload data = make_vector_payload(make_vector_buffer(9U, 0U, 0U, 1U));
     return data;
 }
 
-Payload const& error_data() {
-    static Payload const data = make_vector_payload(make_vector_buffer(1U, 0U, 0U, 6U));
+const Payload& error_data()
+{
+    static const Payload data = make_vector_payload(make_vector_buffer(1U, 0U, 0U, 6U));
     return data;
 }
 
-Method_id const SingleConnectionTest::method_id;
-Event_id const SingleConnectionTest::event_id;
+const Method_id SingleConnectionTest::method_id;
+const Event_id SingleConnectionTest::event_id;
 
 }  // namespace score::socom

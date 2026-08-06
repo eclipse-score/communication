@@ -16,29 +16,36 @@
 
 using namespace ::testing;
 
-namespace score::socom {
+namespace score::socom
+{
 
-struct Some_type {};
+struct Some_type
+{
+};
 
-TEST(IdentityPlain, Construct) {
+TEST(IdentityPlain, Construct)
+{
     Some_type instance{};
     EXPECT_NO_FATAL_FAILURE(Bridge_identity::make(instance));
 }
 
-class IdentityTest : public Test {
-   protected:
+class IdentityTest : public Test
+{
+  protected:
     Some_type instance_1{};
     Some_type instance_2{};
     Bridge_identity identity_1{Bridge_identity::make(instance_1)};
     Bridge_identity identity_2{Bridge_identity::make(instance_2)};
 };
 
-TEST_F(IdentityTest, CompareEqual) {
+TEST_F(IdentityTest, CompareEqual)
+{
     EXPECT_TRUE(identity_1 == identity_1);
     EXPECT_FALSE(identity_1 == identity_2);
 }
 
-TEST_F(IdentityTest, CompareNotEqual) {
+TEST_F(IdentityTest, CompareNotEqual)
+{
     EXPECT_FALSE(identity_1 != identity_1);
     EXPECT_TRUE(identity_1 != identity_2);
 }

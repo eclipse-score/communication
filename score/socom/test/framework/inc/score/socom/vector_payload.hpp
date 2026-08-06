@@ -19,7 +19,8 @@
 
 #include "score/socom/payload.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Alias for payload data.
 using Vector_buffer = std::vector<Payload::Byte>;
@@ -28,9 +29,9 @@ using Vector_buffer = std::vector<Payload::Byte>;
 /// \param args List of unsigned integral type elements to be included in the Vector_buffer.
 /// \return A Vector_buffer containing the provided elements.
 template <typename... Ts>
-Vector_buffer make_vector_buffer(Ts... args) noexcept {
-    static_assert((std::is_unsigned_v<Ts> && ...),
-                  "All arguments must be unsigned integral types.");
+Vector_buffer make_vector_buffer(Ts... args) noexcept
+{
+    static_assert((std::is_unsigned_v<Ts> && ...), "All arguments must be unsigned integral types.");
     // TODO check that the types are not larger than Payload::Byte
     return {static_cast<Payload::Byte>(args)...};
 }
@@ -53,7 +54,8 @@ Payload make_vector_payload(std::size_t lead_offset, std::size_t header_size, Ve
 /// \tparam C Container type.
 /// \return A Payload object.
 template <typename C>
-inline Payload make_vector_payload(C const& container) {
+inline Payload make_vector_payload(const C& container)
+{
     return make_vector_payload(Vector_buffer{std::begin(container), std::end(container)});
 }
 
@@ -67,11 +69,10 @@ Writable_payload make_writable_vector_payload(std::size_t size);
 /// \param header_size Size of the header in bytes.
 /// \param buffer Payload data.
 /// \return A Writable_payload object.
-Writable_payload make_writable_vector_payload(std::size_t lead_offset, std::size_t header_size,
-                                              Vector_buffer buffer);
+Writable_payload make_writable_vector_payload(std::size_t lead_offset, std::size_t header_size, Vector_buffer buffer);
 
 /// \brief Creates a copy of a payload's data as a new vector payload (test utility).
-Payload clone_payload(Payload const& p);
+Payload clone_payload(const Payload& p);
 
 }  // namespace score::socom
 

@@ -17,17 +17,20 @@
 #include "score/socom/client_connector.hpp"
 #include "score/socom/socom_mocks.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Temporary_event_subscriptions keeps a client to an event subscribed
 ///         until destruction
-class Temporary_event_subscription {
+class Temporary_event_subscription
+{
     Event_id m_event_id;
     Client_connector& m_cc;
 
-   public:
+  public:
     /// \brief Behave in ways not expected by the middleware
-    enum class Brokenness {
+    enum class Brokenness
+    {
         /// \brief the server does not answer update event request, when
         /// Event_mode::update_and_initial is used
         no_server_reponse,
@@ -45,21 +48,22 @@ class Temporary_event_subscription {
     /// \param[in] brokeness behave in ways not expected by the middleware
     Temporary_event_subscription(Client_connector& cc,
                                  Server_connector_callbacks_mock& sc_callbacks,
-                                 Event_id const& event_id, Brokenness const& brokenness);
+                                 const Event_id& event_id,
+                                 const Brokenness& brokenness);
 
     /// \brief Subscribe with Event_mode::update
     ///
     /// \param[in] cc client connector which subscribes to an event
     /// \param[in] event_id the event to which shall be subscribed
-    Temporary_event_subscription(Client_connector& cc, Event_id const& event_id);
+    Temporary_event_subscription(Client_connector& cc, const Event_id& event_id);
 
-    Temporary_event_subscription(Temporary_event_subscription const&) = delete;
+    Temporary_event_subscription(const Temporary_event_subscription&) = delete;
     Temporary_event_subscription(Temporary_event_subscription&&) = delete;
 
     /// \brief Unsubscribe from the event
     ~Temporary_event_subscription();
 
-    Temporary_event_subscription& operator=(Temporary_event_subscription const&) = delete;
+    Temporary_event_subscription& operator=(const Temporary_event_subscription&) = delete;
     Temporary_event_subscription& operator=(Temporary_event_subscription&&) = delete;
 };
 

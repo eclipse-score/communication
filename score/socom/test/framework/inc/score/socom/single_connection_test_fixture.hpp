@@ -22,32 +22,36 @@
 #include "score/socom/socom_mocks.hpp"
 #include "score/socom/vector_payload.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Small payload
-Payload const& input_data();
+const Payload& input_data();
 
 /// \brief Small payload
-Payload const& error_data();
+const Payload& error_data();
 
 /// \brief SingleConnectionTest provides some constants which are almost always
 ///        in each test
-class SingleConnectionTest : public ::testing::Test {
-   public:
-    Service_interface_identifier const service_interface{Service_interface_identifier{
-        "TestInterface1", Literal_tag{}, Service_interface_identifier::Version{1U, 2U}}};
-    Service_instance const service_instance{"TestInterface1", Literal_tag{}};
+class SingleConnectionTest : public ::testing::Test
+{
+  public:
+    const Service_interface_identifier service_interface{
+        Service_interface_identifier{"TestInterface1", Literal_tag{}, Service_interface_identifier::Version{1U, 2U}}};
+    const Service_instance service_instance{"TestInterface1", Literal_tag{}};
     std::size_t num_methods{2U};
     std::size_t num_events{3U};
-    Connector_factory connector_factory{service_interface, to_num_of_methods(num_methods),
-                                        to_num_of_events(num_events), service_instance};
-    static Method_id const method_id{0x01};
-    Method_id const min_method_id{0};
-    Method_id const max_method_id{static_cast<Method_id>(connector_factory.get_num_methods() - 1)};
-    static Event_id const event_id{0x02};
-    Event_id const min_event_id{0};
-    Event_id const max_event_id{static_cast<Event_id>(connector_factory.get_num_events() - 1)};
-    Payload const real_payload = make_vector_payload(make_vector_buffer(1U, 2U, 3U, 4U));
+    Connector_factory connector_factory{service_interface,
+                                        to_num_of_methods(num_methods),
+                                        to_num_of_events(num_events),
+                                        service_instance};
+    static const Method_id method_id{0x01};
+    const Method_id min_method_id{0};
+    const Method_id max_method_id{static_cast<Method_id>(connector_factory.get_num_methods() - 1)};
+    static const Event_id event_id{0x02};
+    const Event_id min_event_id{0};
+    const Event_id max_event_id{static_cast<Event_id>(connector_factory.get_num_events() - 1)};
+    const Payload real_payload = make_vector_payload(make_vector_buffer(1U, 2U, 3U, 4U));
 };
 
 }  // namespace score::socom

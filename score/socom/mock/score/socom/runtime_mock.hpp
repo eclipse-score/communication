@@ -18,34 +18,43 @@
 
 #include "score/socom/runtime.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
-class Service_bridge_registration_handle_mock : public Service_bridge_registration_handle {
-   public:
+class Service_bridge_registration_handle_mock : public Service_bridge_registration_handle
+{
+  public:
     // mock interface
     MOCK_METHOD(Bridge_identity, get_identity, (), (const, override));
 };
 
-class Runtime_mock : public Runtime {
-   public:
+class Runtime_mock : public Runtime
+{
+  public:
     // mock interface
-    MOCK_METHOD(Result<Client_connector::Uptr>, make_client_connector,
+    MOCK_METHOD(Result<Client_connector::Uptr>,
+                make_client_connector,
                 (Service_interface_definition, Service_instance, Client_connector::Callbacks),
                 (noexcept, override));
-    MOCK_METHOD(Result<Client_connector::Uptr>, make_client_connector,
-                (Service_interface_definition, Service_instance, Client_connector::Callbacks,
-                 Posix_credentials const&),
+    MOCK_METHOD(Result<Client_connector::Uptr>,
+                make_client_connector,
+                (Service_interface_definition, Service_instance, Client_connector::Callbacks, const Posix_credentials&),
                 (noexcept, override));
-    MOCK_METHOD((Result<Disabled_server_connector::Uptr>), make_server_connector,
-                (Server_service_interface_definition, Service_instance,
-                 Disabled_server_connector::Callbacks),
+    MOCK_METHOD((Result<Disabled_server_connector::Uptr>),
+                make_server_connector,
+                (Server_service_interface_definition, Service_instance, Disabled_server_connector::Callbacks),
                 (noexcept, override));
-    MOCK_METHOD((Result<Disabled_server_connector::Uptr>), make_server_connector,
-                (Server_service_interface_definition, Service_instance,
-                 Disabled_server_connector::Callbacks, Posix_credentials const&),
+    MOCK_METHOD((Result<Disabled_server_connector::Uptr>),
+                make_server_connector,
+                (Server_service_interface_definition,
+                 Service_instance,
+                 Disabled_server_connector::Callbacks,
+                 const Posix_credentials&),
                 (noexcept, override));
-    MOCK_METHOD(Result<Service_bridge_registration>, register_service_bridge,
-                (Bridge_identity, Request_service_function), (noexcept, override));
+    MOCK_METHOD(Result<Service_bridge_registration>,
+                register_service_bridge,
+                (Bridge_identity, Request_service_function),
+                (noexcept, override));
 };
 
 }  // namespace score::socom

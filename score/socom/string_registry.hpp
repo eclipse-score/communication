@@ -24,18 +24,22 @@
 
 #include "score/socom/registry_string_view.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Tag to select StringView literal version
-struct Literal_tag {};
+struct Literal_tag
+{
+};
 
 ///
 /// \class String_registry
 ///
 /// \brief A central registry for strings to avoid copying and to facilitate cheap comparison.
 ///
-class String_registry final {
-   public:
+class String_registry final
+{
+  public:
     ///
     /// \brief Insert a new StringView literal into the string registry.
     ///
@@ -71,7 +75,7 @@ class String_registry final {
     ///
     std::pair<Registry_string_view, bool> insert(std::string&& new_string) noexcept;
 
-   private:
+  private:
     std::unordered_set<std::string_view> m_registered_strings;
     std::forward_list<std::string> m_dynamic_allocated;
     std::mutex m_mutex;

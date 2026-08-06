@@ -13,40 +13,44 @@
 
 #include "score/socom/temporary_event_subscription.hpp"
 
+#include "gmock/gmock.h"
 #include "score/socom/client_connector.hpp"
 #include "score/socom/event.hpp"
 #include "score/socom/utilities.hpp"
-#include "gmock/gmock.h"
 #include <score/socom/socom_mocks.hpp>
 #include <atomic>
 
 using ::testing::_;
 using ::testing::Assign;
 
-namespace score::socom {
+namespace score::socom
+{
 
-Temporary_event_subscription::Temporary_event_subscription(
-    Client_connector& cc, Server_connector_callbacks_mock& sc_callbacks, Event_id const& event_id,
-    Brokenness const& brokenness)
-    : m_event_id{event_id}, m_cc{cc} {
+Temporary_event_subscription::Temporary_event_subscription(Client_connector& cc,
+                                                           Server_connector_callbacks_mock& sc_callbacks,
+                                                           const Event_id& event_id,
+                                                           const Brokenness& brokenness)
+    : m_event_id{event_id}, m_cc{cc}
+{
     std::atomic<bool> callback_called{true};
-    if (brokenness != Brokenness::no_server_reponse_second_requester) {
+    if (brokenness != Brokenness::no_server_reponse_second_requester)
+    {
         callback_called = false;
-        EXPECT_CALL(sc_callbacks, on_event_update_request(_, event_id))
-            .WillOnce(Assign(&callback_called, true));
+        EXPECT_CALL(sc_callbacks, on_event_update_request(_, event_id)).WillOnce(Assign(&callback_called, true));
     }
 
     this->m_cc.subscribe_event(event_id, Event_mode::update_and_initial_value);
     wait_for_atomics(callback_called);
 }
 
-Temporary_event_subscription::Temporary_event_subscription(Client_connector& cc,
-                                                           Event_id const& event_id)
-    : m_event_id{event_id}, m_cc{cc} {
+Temporary_event_subscription::Temporary_event_subscription(Client_connector& cc, const Event_id& event_id)
+    : m_event_id{event_id}, m_cc{cc}
+{
     this->m_cc.subscribe_event(event_id, Event_mode::update);
 }
 
-Temporary_event_subscription::~Temporary_event_subscription() {
+Temporary_event_subscription::~Temporary_event_subscription()
+{
     m_cc.unsubscribe_event(m_event_id);
 }
 

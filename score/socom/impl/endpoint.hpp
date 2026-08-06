@@ -16,29 +16,36 @@
 
 #include "score/socom/reference_token.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 template <typename T>
-class Endpoint {
-   public:
+class Endpoint
+{
+  public:
     explicit Endpoint(T& connector, Reference_token reference_token)
-        : m_connector{&connector}, m_reference_token{std::move(reference_token)} {}
+        : m_connector{&connector}, m_reference_token{std::move(reference_token)}
+    {
+    }
 
     template <typename MessageType>
-    typename MessageType::Return_type send(MessageType message) const {
+    typename MessageType::Return_type send(MessageType message) const
+    {
         return m_connector->receive(std::move(message));
     }
 
-   private:
+  private:
     T* m_connector;
     Reference_token m_reference_token;
 };
 
-namespace client_connector {
+namespace client_connector
+{
 class Impl;
 }  // namespace client_connector
 
-namespace server_connector {
+namespace server_connector
+{
 class Impl;
 class Client_connection;
 }  // namespace server_connector

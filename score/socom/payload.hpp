@@ -14,24 +14,27 @@
 #ifndef SCORE_SOCOM_PAYLOAD_HPP
 #define SCORE_SOCOM_PAYLOAD_HPP
 
-#include <cstddef>
-#include <limits>
 #include <score/move_only_function.hpp>
 #include <score/span.hpp>
+#include <cstddef>
+#include <limits>
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Sentinel value indicating that a payload is not associated with a shared memory slot.
 constexpr std::size_t kNoSlotHandle = std::numeric_limits<std::size_t>::max();
 
-namespace detail {
-class Payload_impl final {
-   public:
+namespace detail
+{
+class Payload_impl final
+{
+  public:
     /// \brief Alias for a data byte.
     using Byte = std::byte;
 
     /// \brief Alias for payload data.
-    using Span = score::cpp::span<Byte const>;
+    using Span = score::cpp::span<const Byte>;
 
     /// \brief Alias for writable payload data.
     using Writable_span = score::cpp::span<Byte>;
@@ -39,27 +42,36 @@ class Payload_impl final {
     /// \brief Called when Payload_impl and memory is released. Can own the memory if it is heap
     /// allocated.
     static constexpr std::size_t kPayloadDestroyedInlineBufferSize = 48U;
-    using Payload_destroyed =
-        score::cpp::move_only_function<void(), kPayloadDestroyedInlineBufferSize>;
+    using Payload_destroyed = score::cpp::move_only_function<void(), kPayloadDestroyedInlineBufferSize>;
 
     Payload_impl() = default;
 
     /// \brief Construct new instance.
-    Payload_impl(Writable_span data, std::size_t slot_handle, Payload_destroyed payload_destroyed,
-                 std::size_t header_size = 0U, std::size_t lead_offset = 0U) noexcept
+    Payload_impl(Writable_span data,
+                 std::size_t slot_handle,
+                 Payload_destroyed payload_destroyed,
+                 std::size_t header_size = 0U,
+                 std::size_t lead_offset = 0U) noexcept
         : m_data(data),
           m_lead_offset(lead_offset),
           m_header_size(header_size),
           m_slot_handle(slot_handle),
-          m_payload_destroyed(std::move(payload_destroyed)) {}
+          m_payload_destroyed(std::move(payload_destroyed))
+    {
+    }
 
-    ~Payload_impl() { call_payload_destroyed(); }
+    ~Payload_impl()
+    {
+        call_payload_destroyed();
+    }
 
-    Payload_impl(Payload_impl const&) = delete;
+    Payload_impl(const Payload_impl&) = delete;
     Payload_impl(Payload_impl&&) = default;
-    Payload_impl& operator=(Payload_impl const&) = delete;
-    Payload_impl& operator=(Payload_impl&& other) noexcept {
-        if (this != &other) {
+    Payload_impl& operator=(const Payload_impl&) = delete;
+    Payload_impl& operator=(Payload_impl&& other) noexcept
+    {
+        if (this != &other)
+        {
             call_payload_destroyed();
             m_data = other.m_data;
             m_lead_offset = other.m_lead_offset;
@@ -72,26 +84,33 @@ class Payload_impl final {
 
     /// \brief Retrieves the payload data.
     /// \return Span of payload data.
-    [[nodiscard]] Writable_span data() const noexcept {
+    [[nodiscard]] Writable_span data() const noexcept
+    {
         return m_data.subspan(m_lead_offset + m_header_size);
     }
 
     /// \brief Retrieves the header data.
     /// \return Writable span of header data.
-    [[nodiscard]] Writable_span header() const noexcept {
+    [[nodiscard]] Writable_span header() const noexcept
+    {
         return m_data.subspan(m_lead_offset, m_header_size);
     }
 
     /// \brief Retrieves the slot handle associated with this payload.
     /// \return The slot handle, or kNoSlotHandle if not associated with a slot.
-    [[nodiscard]] std::size_t get_slot_handle() const noexcept { return m_slot_handle; }
+    [[nodiscard]] std::size_t get_slot_handle() const noexcept
+    {
+        return m_slot_handle;
+    }
 
     /// \brief Reduces the data size.
     /// \param size The new data size. Must not exceed the current data size.
     /// \return True if successful, false if the new size exceeds the current size.
-    bool shrink(std::size_t const size) noexcept {
-        auto const data_size = data().size();
-        if (size > data_size) {
+    bool shrink(const std::size_t size) noexcept
+    {
+        const auto data_size = data().size();
+        if (size > data_size)
+        {
             return false;
         }
 
@@ -100,11 +119,13 @@ class Payload_impl final {
         return true;
     }
 
-    bool operator==(Payload_impl const& other) const noexcept;
+    bool operator==(const Payload_impl& other) const noexcept;
 
-   private:
-    void call_payload_destroyed() noexcept {
-        if (!m_payload_destroyed.empty()) {
+  private:
+    void call_payload_destroyed() noexcept
+    {
+        if (!m_payload_destroyed.empty())
+        {
             m_payload_destroyed();
         }
     }
@@ -133,8 +154,9 @@ class Payload_impl final {
 /// This is needed for algorithms like the one for E2E, which require all data
 /// to be in contiguous memory and require an additional header for processing.
 /// \note When sending data over the wire, only data returned by data() shall be sent.
-class Payload {
-   public:
+class Payload
+{
+  public:
     /// \brief Alias for a data byte.
     using Byte = detail::Payload_impl::Byte;
 
@@ -151,38 +173,56 @@ class Payload {
     Payload() = default;
 
     /// \brief Construct new instance.
-    Payload(Writable_span data, std::size_t slot_handle, Payload_destroyed payload_destroyed,
-            std::size_t header_size = 0U, std::size_t lead_offset = 0U) noexcept
-        : m_impl(data, slot_handle, std::move(payload_destroyed), header_size, lead_offset) {}
+    Payload(Writable_span data,
+            std::size_t slot_handle,
+            Payload_destroyed payload_destroyed,
+            std::size_t header_size = 0U,
+            std::size_t lead_offset = 0U) noexcept
+        : m_impl(data, slot_handle, std::move(payload_destroyed), header_size, lead_offset)
+    {
+    }
 
     ~Payload() = default;
-    Payload(Payload const&) = delete;
+    Payload(const Payload&) = delete;
     Payload(Payload&&) = default;
-    Payload& operator=(Payload const&) = delete;
+    Payload& operator=(const Payload&) = delete;
     Payload& operator=(Payload&&) = default;
 
     /// \brief Retrieves the payload data.
     /// \return Span of payload data.
-    [[nodiscard]] Span data() const noexcept { return m_impl.data(); }
+    [[nodiscard]] Span data() const noexcept
+    {
+        return m_impl.data();
+    }
 
     /// \brief Retrieves the header data.
     /// \return Span of header data.
-    [[nodiscard]] Span header() const noexcept { return m_impl.header(); }
+    [[nodiscard]] Span header() const noexcept
+    {
+        return m_impl.header();
+    }
 
     /// \brief Retrieves the header data.
     /// \return Writable span of header data.
-    [[nodiscard]] Writable_span header() noexcept { return m_impl.header(); }
+    [[nodiscard]] Writable_span header() noexcept
+    {
+        return m_impl.header();
+    }
 
     /// \brief Retrieves the slot handle associated with this payload.
     /// \return The slot handle, or kNoSlotHandle if not associated with a slot.
-    [[nodiscard]] std::size_t get_slot_handle() const noexcept { return m_impl.get_slot_handle(); }
+    [[nodiscard]] std::size_t get_slot_handle() const noexcept
+    {
+        return m_impl.get_slot_handle();
+    }
 
     /// \brief Operator == for Payload.
     /// \param lhs Left-hand side of operator.
     /// \param rhs Right-hand side of operator.
     /// \return True in case of equality, otherwise false.
     [[nodiscard]]
-    bool operator==(Payload const& other) const noexcept {
+    bool operator==(const Payload& other) const noexcept
+    {
         return m_impl == other.m_impl;
     }
 
@@ -191,11 +231,12 @@ class Payload {
     /// \param rhs Right-hand side of operator.
     /// \return True in case of inequality, otherwise false.
     [[nodiscard]]
-    bool operator!=(Payload const& other) const noexcept {
+    bool operator!=(const Payload& other) const noexcept
+    {
         return !(*this == other);
     }
 
-   protected:
+  protected:
     detail::Payload_impl m_impl;
 };
 
@@ -219,24 +260,35 @@ class Payload {
 /// This is needed for algorithms like the one for E2E, which require all data
 /// to be in contiguous memory and require an additional header for processing.
 /// \note When sending data over the wire, only data returned by data() shall be sent.
-class Writable_payload : public Payload {
-   public:
+class Writable_payload : public Payload
+{
+  public:
     /// \brief Construct new instance.
-    Writable_payload(Writable_span data, std::size_t slot_handle,
-                     Payload_destroyed payload_destroyed, std::size_t header_size = 0U,
+    Writable_payload(Writable_span data,
+                     std::size_t slot_handle,
+                     Payload_destroyed payload_destroyed,
+                     std::size_t header_size = 0U,
                      std::size_t lead_offset = 0U) noexcept
-        : Payload(data, slot_handle, std::move(payload_destroyed), header_size, lead_offset) {}
+        : Payload(data, slot_handle, std::move(payload_destroyed), header_size, lead_offset)
+    {
+    }
 
     /// \brief Retrieves the writable payload data.
     /// \return Span of payload data.
-    [[nodiscard]] Writable_span wdata() noexcept { return m_impl.data(); }
+    [[nodiscard]] Writable_span wdata() noexcept
+    {
+        return m_impl.data();
+    }
 
     /// \brief Reduces the size of the payload data.
     /// \details Allows the payload to report a smaller size than its allocated capacity.
     /// This is useful for zero-copy scenarios where a pre-allocated buffer is partially filled.
     /// \param size The new data size. Must not exceed the current data size.
     /// \return True if successful, false if the new size exceeds the current size.
-    bool shrink(std::size_t size) noexcept { return m_impl.shrink(size); }
+    bool shrink(std::size_t size) noexcept
+    {
+        return m_impl.shrink(size);
+    }
 };
 
 /// \brief An empty payload instance, which may be used as default value for the payload parameter.

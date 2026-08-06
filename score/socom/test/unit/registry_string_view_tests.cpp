@@ -20,11 +20,13 @@
 #include "score/socom/registry_string_view.hpp"
 #include "score/socom/string_registry.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
-TEST(RegistryStringViewTest, Iterator) {
+TEST(RegistryStringViewTest, Iterator)
+{
     String_registry registry;
-    char const* data = "test_string";
+    const char* data = "test_string";
     Registry_string_view string_view = registry.insert(std::string(data)).first;
 
     /// Verify the existence of the type cara::core::util::Registry_string_view interface.
@@ -32,19 +34,22 @@ TEST(RegistryStringViewTest, Iterator) {
     /// Iterators to the beginning provide correct results.
     /// Iterators to the the end provide correct results.
     auto i = 0;
-    for (auto it = string_view.begin(); it != string_view.end(); ++it, ++i) {
+    for (auto it = string_view.begin(); it != string_view.end(); ++it, ++i)
+    {
         EXPECT_EQ(*it, data[i]);
     }
 
     /// Const iterators to the beginning provide correct results.
     /// Const iterators to the end provide correct results.
     i = 0;
-    for (auto it = string_view.cbegin(); it != string_view.cend(); ++it, ++i) {
+    for (auto it = string_view.cbegin(); it != string_view.cend(); ++it, ++i)
+    {
         EXPECT_EQ(*it, data[i]);
     }
 }
 
-TEST(RegistryStringViewTest, ConsistentHash) {
+TEST(RegistryStringViewTest, ConsistentHash)
+{
     String_registry registry;
     Registry_string_view string_view = registry.insert(std::string("test_string")).first;
     auto hash_fn = std::hash<Registry_string_view>{};
@@ -57,7 +62,8 @@ TEST(RegistryStringViewTest, ConsistentHash) {
 }
 
 /// same string value.
-TEST(RegistryStringViewTest, DifferentRegistryStringViewDifferentHashes) {
+TEST(RegistryStringViewTest, DifferentRegistryStringViewDifferentHashes)
+{
     String_registry registry1;
     Registry_string_view string_view1 = registry1.insert(std::string("test_string")).first;
     String_registry registry2;
@@ -72,7 +78,8 @@ TEST(RegistryStringViewTest, DifferentRegistryStringViewDifferentHashes) {
     EXPECT_NE(hash1, hash2);
 }
 
-TEST(RegistryStringViewTest, StreamOutput) {
+TEST(RegistryStringViewTest, StreamOutput)
+{
     String_registry registry;
     Registry_string_view string_view = registry.insert(std::string("test_string")).first;
     std::ostringstream oss;
@@ -85,7 +92,8 @@ TEST(RegistryStringViewTest, StreamOutput) {
     EXPECT_EQ(oss.str(), "test_string");
 }
 
-TEST(RegistryStringViewTest, GlobalCompareOperator) {
+TEST(RegistryStringViewTest, GlobalCompareOperator)
+{
     String_registry registry;
     Registry_string_view string_view1 = registry.insert(std::string("test_string")).first;
     Registry_string_view string_view2 = registry.insert(std::string("test_string2")).first;
@@ -119,7 +127,8 @@ TEST(RegistryStringViewTest, GlobalCompareOperator) {
     EXPECT_FALSE(string_view1 >= string_view2);
 }
 
-TEST(RegistryStringViewTest, StringLength) {
+TEST(RegistryStringViewTest, StringLength)
+{
     String_registry registry;
     Registry_string_view string_view = registry.insert(std::string("test_string")).first;
     auto length = std::string("test_string").length();
@@ -130,11 +139,11 @@ TEST(RegistryStringViewTest, StringLength) {
     EXPECT_EQ(string_view.size(), length);
 }
 
-TEST(RegistryStringViewTest, StringEmpty) {
+TEST(RegistryStringViewTest, StringEmpty)
+{
     String_registry registry;
     Registry_string_view empty_string_view = registry.insert(std::string("")).first;
-    Registry_string_view non_empty_string_view =
-        registry.insert(std::string("non-empty string")).first;
+    Registry_string_view non_empty_string_view = registry.insert(std::string("non-empty string")).first;
 
     /// empty() returns true for an empty string added to the registry and false for a non-empty
     /// one.
@@ -142,22 +151,22 @@ TEST(RegistryStringViewTest, StringEmpty) {
     EXPECT_FALSE(non_empty_string_view.empty());
 }
 
-TEST(RegistryStringViewTest, Data) {
+TEST(RegistryStringViewTest, Data)
+{
     String_registry registry;
     Registry_string_view string_view = registry.insert(std::string("test_string")).first;
 
     /// data() returns the const pointer to the string data.
-    EXPECT_TRUE((
-        std::is_same<std::remove_cv_t<std::remove_reference_t<decltype(string_view.string_view())>>,
-                     std::string_view>::value));
+    EXPECT_TRUE((std::is_same<std::remove_cv_t<std::remove_reference_t<decltype(string_view.string_view())>>,
+                              std::string_view>::value));
     EXPECT_EQ(string_view.data(), string_view.string_view().data());
 }
 
-TEST(RegistryStringViewTest, MoveConstructor) {
+TEST(RegistryStringViewTest, MoveConstructor)
+{
     String_registry registry;
     {
-        Registry_string_view original_string_view =
-            registry.insert(std::string("test_string")).first;
+        Registry_string_view original_string_view = registry.insert(std::string("test_string")).first;
 
         /// Move construct a new Registry_string_view.
         Registry_string_view moved_string_view(std::move(original_string_view));
@@ -170,7 +179,8 @@ TEST(RegistryStringViewTest, MoveConstructor) {
     /// Registry_string_view instances runs out-of-scope so the destructor is called.
 }
 
-TEST(RegistryStringViewTest, MoveAssignmentOperator) {
+TEST(RegistryStringViewTest, MoveAssignmentOperator)
+{
     String_registry registry;
     Registry_string_view original_string_view = registry.insert(std::string("test_string")).first;
     Registry_string_view another_string_view = registry.insert(std::string("another_string")).first;
@@ -182,7 +192,8 @@ TEST(RegistryStringViewTest, MoveAssignmentOperator) {
     EXPECT_EQ(another_string_view.string_view(), std::string_view("test_string"));
 }
 
-TEST(RegistryStringViewTest, CopyConstructor) {
+TEST(RegistryStringViewTest, CopyConstructor)
+{
     String_registry registry;
     Registry_string_view original_string_view = registry.insert(std::string("test_string")).first;
 
@@ -193,7 +204,8 @@ TEST(RegistryStringViewTest, CopyConstructor) {
     EXPECT_EQ(copied_string_view.string_view(), std::string_view("test_string"));
 }
 
-TEST(RegistryStringViewTest, CopyAssignmentOperator) {
+TEST(RegistryStringViewTest, CopyAssignmentOperator)
+{
     String_registry registry;
     Registry_string_view original_string_view = registry.insert(std::string("test_string")).first;
     Registry_string_view another_string_view = registry.insert(std::string("another_string")).first;

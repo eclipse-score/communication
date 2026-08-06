@@ -14,9 +14,9 @@
 #ifndef SRC_SOCOM_INCLUDE_SCORE_SOCOM_CLIENT_CONNECTOR
 #define SRC_SOCOM_INCLUDE_SCORE_SOCOM_CLIENT_CONNECTOR
 
+#include <score/move_only_function.hpp>
 #include <memory>
 #include <optional>
-#include <score/move_only_function.hpp>
 
 #include "score/socom/error.hpp"
 #include "score/socom/event.hpp"
@@ -25,12 +25,14 @@
 #include "score/socom/posix_credentials.hpp"
 #include "score/socom/service_interface_definition.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 class Client_connector;
 
 /// \brief Service states from the service user viewpoint.
-enum class Service_state : std::uint8_t {
+enum class Service_state : std::uint8_t
+{
     /// Service is not available.
     not_available = 0,
     /// Service is available.
@@ -38,16 +40,15 @@ enum class Service_state : std::uint8_t {
 };
 
 /// \brief Function type for indicating service state changes to the service user.
-using Service_state_change_callback = score::cpp::move_only_function<void(
-    Client_connector const&, Service_state, Server_service_interface_definition const&)>;
+using Service_state_change_callback = score::cpp::move_only_function<
+    void(const Client_connector&, Service_state, const Server_service_interface_definition&)>;
 
 /// \brief Function type for indicating event updates to the service user.
-using Event_update_callback =
-    score::cpp::move_only_function<void(Client_connector const&, Event_id, Payload)>;
+using Event_update_callback = score::cpp::move_only_function<void(const Client_connector&, Event_id, Payload)>;
 
 /// \brief Function type for allocating event payloads.
 using Event_payload_allocate_callback =
-    score::cpp::move_only_function<Result<Writable_payload>(Client_connector const&, Event_id)>;
+    score::cpp::move_only_function<Result<Writable_payload>(const Client_connector&, Event_id)>;
 
 /// \brief Interface for applications to use a service (client-role).
 /// \details Changes of service instance state are indicated by callback on_service_state_change.
@@ -76,8 +77,9 @@ using Event_payload_allocate_callback =
 /// The Client_connector callback on_event_requested_update is called if an available
 /// Enabled_server_connector instance calls update_requested_event() and the
 /// Client_connector instance previously requested an event update with request_event_update().
-class Client_connector {
-   public:
+class Client_connector
+{
+  public:
     /// \brief Alias for an unique pointer to this interface.
     using Uptr = std::unique_ptr<Client_connector>;
 
@@ -88,7 +90,8 @@ class Client_connector {
     /// only). No callback is allowed to destroy the Client_connector, otherwise it will result in a
     /// deadlock. If a deadlock situation is detected, a warning will be logged and the application
     /// terminated.
-    struct Callbacks {
+    struct Callbacks
+    {
         /// \brief Callback is called on any service state change.
         Service_state_change_callback on_service_state_change;
         /// \brief Callback is called on a server triggered event update.
@@ -138,10 +141,10 @@ class Client_connector {
     /// terminates the application.
     virtual ~Client_connector() noexcept = default;
 
-    Client_connector(Client_connector const&) = delete;
+    Client_connector(const Client_connector&) = delete;
     Client_connector(Client_connector&&) = delete;
 
-    Client_connector& operator=(Client_connector const&) = delete;
+    Client_connector& operator=(const Client_connector&) = delete;
     Client_connector& operator=(Client_connector&&) = delete;
 
     /// \brief Allocate a payload for the given method ID.
@@ -228,9 +231,8 @@ class Client_connector {
     /// \param reply_data Callback and payload buffer in case a reply is requested.
     /// \return A pointer to a Method_invocation object in case of successful invocation, otherwise
     /// an error.
-    [[nodiscard]] virtual Result<Method_invocation::Uptr> call_method(
-        Method_id client_id, Payload payload,
-        Method_call_reply_data_opt reply_data) const noexcept = 0;
+    [[nodiscard]] virtual Result<Method_invocation::Uptr>
+    call_method(Method_id client_id, Payload payload, Method_call_reply_data_opt reply_data) const noexcept = 0;
 
     /// \brief Calls a method at the Server_connector side.
     /// The Server application (of the
@@ -243,8 +245,9 @@ class Client_connector {
     /// \param payload Payload to be called with.
     /// \return A pointer to a Method_invocation object in case of successful invocation, otherwise
     /// an error.
-    [[nodiscard]] virtual Result<Method_invocation::Uptr> call_method(
-        Method_id client_id, Payload payload) const noexcept {
+    [[nodiscard]] virtual Result<Method_invocation::Uptr> call_method(Method_id client_id,
+                                                                      Payload payload) const noexcept
+    {
         return call_method(client_id, std::move(payload), std::nullopt);
     }
 
@@ -253,9 +256,8 @@ class Client_connector {
     /// \return Posix credentials in case of successful operation, otherwise an error.
     [[nodiscard]] virtual Result<Posix_credentials> get_peer_credentials() const noexcept = 0;
 
-    [[nodiscard]] virtual Service_interface_definition const& get_configuration()
-        const noexcept = 0;
-    [[nodiscard]] virtual Service_instance const& get_service_instance() const noexcept = 0;
+    [[nodiscard]] virtual const Service_interface_definition& get_configuration() const noexcept = 0;
+    [[nodiscard]] virtual const Service_instance& get_service_instance() const noexcept = 0;
     [[nodiscard]] virtual bool is_service_available() const noexcept = 0;
 };
 

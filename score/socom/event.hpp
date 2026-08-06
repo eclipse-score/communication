@@ -16,19 +16,22 @@
 
 #include <cstdint>
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Alias for an event ID.
 using Event_id = std::uint16_t;
 
 /// \brief Mode of an event.
-enum class Event_mode : std::uint8_t {
+enum class Event_mode : std::uint8_t
+{
     update = 0U,              ///< Without initial value request.
     update_and_initial_value  ///< With initial value request.
 };
 
 /// \brief State of an event subscription.
-enum class Event_state : std::uint8_t {
+enum class Event_state : std::uint8_t
+{
     /// Enabled_server_connector: There is no Client_connector subscribed to the event.
     /// Client_connector: The Enabled_server_connector did not acknowledge or reject the
     /// subscription.

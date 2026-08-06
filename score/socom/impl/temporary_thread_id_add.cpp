@@ -13,41 +13,44 @@
 
 #include "temporary_thread_id_add.hpp"
 
-#include <algorithm>
 #include <score/assert.hpp>
+#include <algorithm>
 #include <cstdlib>
-#include <mutex>
-#include <vector>
-#include <thread>
 #include <iterator>
+#include <mutex>
+#include <thread>
+#include <vector>
 
-namespace score::socom {
+namespace score::socom
+{
 
-Temporary_thread_id_add::Temporary_thread_id_add(std::mutex& mutex,
-                                                 std::vector<std::thread::id>& thread_ids)
-    : m_mutex{mutex}, m_thread_ids{thread_ids}, m_id{std::this_thread::get_id()} {
-    std::lock_guard<std::mutex> const lock{m_mutex};
+Temporary_thread_id_add::Temporary_thread_id_add(std::mutex& mutex, std::vector<std::thread::id>& thread_ids)
+    : m_mutex{mutex}, m_thread_ids{thread_ids}, m_id{std::this_thread::get_id()}
+{
+    const std::lock_guard<std::mutex> lock{m_mutex};
     m_thread_ids.emplace_back(m_id);
 }
 
-Temporary_thread_id_add::~Temporary_thread_id_add() noexcept {
-    std::lock_guard<std::mutex> const lock{m_mutex};
-    auto const id = std::find(std::begin(m_thread_ids), std::end(m_thread_ids), m_id);
+Temporary_thread_id_add::~Temporary_thread_id_add() noexcept
+{
+    const std::lock_guard<std::mutex> lock{m_mutex};
+    const auto id = std::find(std::begin(m_thread_ids), std::end(m_thread_ids), m_id);
     SCORE_LANGUAGE_FUTURECPP_ASSERT(std::end(m_thread_ids) != id);
     m_thread_ids.erase(id);
 }
 
-Temporary_thread_id_add Deadlock_detector::enter_callback() {
+Temporary_thread_id_add Deadlock_detector::enter_callback()
+{
     return Temporary_thread_id_add{m_mutex, m_thread_ids};
 }
 
 // Destructors that could cause exceptions are never called because of process termination.
-void Deadlock_detector::check_deadlock(
-    On_deadlock_detected_callback const& on_deadlock_detected) noexcept {
-    std::lock_guard<std::mutex> const lock{m_mutex};
-    auto const thread_id =
-        std::find(std::begin(m_thread_ids), std::end(m_thread_ids), std::this_thread::get_id());
-    if (std::end(m_thread_ids) != thread_id) {
+void Deadlock_detector::check_deadlock(const On_deadlock_detected_callback& on_deadlock_detected) noexcept
+{
+    const std::lock_guard<std::mutex> lock{m_mutex};
+    const auto thread_id = std::find(std::begin(m_thread_ids), std::end(m_thread_ids), std::this_thread::get_id());
+    if (std::end(m_thread_ids) != thread_id)
+    {
         // destruction from within callback detected
         // death tests cannot contribute to code coverage
         on_deadlock_detected();
@@ -61,5 +64,4 @@ void Deadlock_detector::check_deadlock(
     }
 }
 
-} // namespace score::socom
-
+}  // namespace score::socom
