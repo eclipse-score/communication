@@ -492,11 +492,13 @@ TEST_F(GenericSkeletonTest, GetFieldsReturnsCorrectMapOfServiceElements)
     GenericSkeletonServiceElementInfo params;
     params.fields = field_storage;
 
-    // 3. Expect the binding factory to be called for each field
+    // Expect the binding factory to be called for each field
     EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, _, _))
         .Times(3)
         .WillRepeatedly(Invoke([](auto&, auto&, auto&) {
-            return std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
+            std::unique_ptr<GenericSkeletonEventBinding> binding =
+                std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
+            return Result<std::unique_ptr<GenericSkeletonEventBinding>>{std::move(binding)};
         }));
 
     // 4. When creating the skeleton
