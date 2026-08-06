@@ -16,11 +16,21 @@ load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 cc_feature(
     name = "someip_gateway_feature",
     feature_name = "someip-gateway",
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//:__pkg__",
+        "//:__subpackages__",
+        "@@score_someip_gateway+//:__pkg__",
+        "@@score_someip_gateway+//:__subpackages__",
+    ],
 )
 
 config_setting(
     name = "someip_gateway_enabled",
     values = {"features": "someip-gateway"},
-    visibility = ["//score/socom:__subpackages__"],
+    visibility = [
+        "//:__pkg__",
+        "//:__subpackages__",
+        "@@score_someip_gateway+//:__pkg__",
+        "@@score_someip_gateway+//:__subpackages__",
+    ],
 )
