@@ -51,7 +51,7 @@ struct GenericSkeletonServiceElementInfo
     score::cpp::span<const FieldInfo> fields{};
 };
 
-/// @brief Represents a type-erased, runtime-configurable skeleton for a service instance.
+/// \brief Represents a type-erased, runtime-configurable skeleton for a service instance.
 ///
 /// A `GenericSkeleton` is created at runtime based on configuration data. It manages
 /// a collection of `GenericSkeletonEvent` and `GenericSkeletonField` instances.
@@ -61,7 +61,7 @@ class GenericSkeleton : public SkeletonBase
   public:
     using EventMapView = ServiceElementMapView<GenericSkeletonEvent>;
     using FieldMapView = ServiceElementMapView<GenericSkeletonField>;
-    /// @brief Creates a GenericSkeleton and all its service elements (events + fields) atomically.
+    /// \brief Creates a GenericSkeleton and all its service elements (events + fields) atomically.
     ///
     /// \contract
     /// - Empty spans are allowed for `in.events` and/or `in.fields`
@@ -82,12 +82,12 @@ class GenericSkeleton : public SkeletonBase
     /// \note The returned view is valid as long as the GenericSkeleton lives.
     [[nodiscard]] EventMapView GetEvents() const noexcept;
 
-    /// @brief Returns a read-only view to the name-keyed map of fields.
-    /// @note The returned view is valid as long as the GenericSkeleton lives.
+    /// \brief Returns a read-only view to the name-keyed map of fields.
+    /// \note The returned view is valid as long as the GenericSkeleton lives.
     [[nodiscard]] FieldMapView GetFields() const noexcept;
 
-    /// @brief Offers the service instance.
-    /// @return A blank result, or an error if offering fails.
+    /// \brief Offers the service instance.
+    /// \return A blank result, or an error if offering fails.
     [[nodiscard]] Result<void> OfferService() noexcept;
 
     /// \brief Stops offering the service instance.
@@ -102,7 +102,7 @@ class GenericSkeleton : public SkeletonBase
     /// GenericSkeleton. This is required as we hand out views to this map (see GetEvents()), which need to be valid
     /// even after the GenericSkeleton instance has been moved.
     std::unique_ptr<ServiceElementMapViewFactory<GenericSkeletonEvent>::map_type> events_;
-    /// @brief This map owns all GenericSkeletonField instances.
+    /// \brief This map owns all GenericSkeletonField instances.
     std::unique_ptr<ServiceElementMapViewFactory<GenericSkeletonField>::map_type> fields_;
 };
 }  // namespace score::mw::com::impl

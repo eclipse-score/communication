@@ -125,7 +125,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
         // Validate & convert the public DataTypeMetaInfo into the internal DataTypeSizeInfo. Invalid meta-info (e.g.
         // alignment not a power of two, or size not a multiple of alignment) results in an error instead of a later
         // contract violation. Unfortunately our public interface DataTypeMetaInfo does not enforce these invariants,
-        // so we have to check them here. @ToDo: At some point we should already enforce this on DataTypeMetaInfo,
+        // so we have to check them here. \todo: At some point we should already enforce this on DataTypeMetaInfo,
         // but this would require a break in the public API!
         auto data_type_size_info_result = MakeDataTypeSizeInfo(info.data_type_meta_info);
         if (!data_type_size_info_result.has_value())
