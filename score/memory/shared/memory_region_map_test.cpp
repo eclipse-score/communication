@@ -18,8 +18,11 @@
 
 #include "gtest/gtest.h"
 
+#include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
+#include <mutex>
 #include <random>
 #include <thread>
 #include <vector>
@@ -326,92 +329,153 @@ TEST_F(MemoryRegionMapTest, Clear)
 }
 
 /// \brief multi-threaded test case with a writer changing the known_regions and N readers doing bounds-lookups.
-/// \details We have 100 test regions, which are step-by-step inserted into the region map and then step-by-step
-///          removed again by the writer, which sleeps between each region map change. After the writer has done
-///          an insert or remove, he notes down the current state of this region (inserted = true/false).
-///          The readers all do 100 times randomly take one out of the test regions and do a bounds-lookup of this
-///          test regions start-address. They then either get a positive result (region found) or a negative/nullptr
-///          (region not found). In both cases the readers do a plausibility check:
-///          If the region was found - either directly before or after the bounds-check the inserted flag noted by the
-///          writer needed to be true (runtime of the writer and sleep times of the readers are such, that it is almost
-///          impossible, that the flag is false at both times, but the reader still gets a positive bounds-check!)
-///          If the region was NOT found - either directly before or after the bounds-check the inserted flag noted by
-///          the writer needed to be false (runtime of the writer and sleep times of the readers are such, that it is
-///          almost impossible, that the flag is true at both times, but the reader still gets a negative bounds-check!)
+/// \details The test is split into two clearly separated phases, joined by a barrier: an insertion phase (the writer
+///          inserts all 100 regions, one at a time, in index order) and a removal phase (the writer removes them all,
+///          one at a time, in the same order). For each phase the writer publishes its progress through a pair of
+///          atomic counters - "started index" (stored with release, right before touching the map) and "finished
+///          index" (stored with release, right after). Readers take acquire loads of these counters immediately
+///          before/after their own GetBoundsFromAddress() call - which remains completely unsynchronized/lock-free
+///          and use the resulting release/acquire happens-before relationship (not a timing assumption) to determine
+///          whether a lookup has a provably definite expected answer:
+///          - if a region's insertion/removal was already finished before the lookup even started, the outcome is
+///            asserted.
+///          - if it hadn't even started yet, even after the lookup finished, the outcome is asserted too.
+///          - otherwise the writer genuinely overlapped with the lookup, so no plausibility assertion is made
+///            (though a region that IS found must always resolve to the correct bounds).
 TEST_F(MemoryRegionMapTest, ConcurrentAccess)
 {
-    struct RegionWithFlag
-    {
-        RegionWithFlag(MemoryRegionBounds region, bool insertedFlag) noexcept
-            : region_(region), inserted_(insertedFlag) {};
-
-        RegionWithFlag(RegionWithFlag&& other) noexcept
-        {
-            std::swap(region_, other.region_);
-            inserted_.store(other.inserted_);
-        };
-        MemoryRegionBounds region_;
-        std::atomic_bool inserted_;
-    };
     using namespace std::chrono_literals;
 
-    // given 100 memory regions
-    std::vector<RegionWithFlag> memory_regions;
-    memory_regions.reserve(100);
+    constexpr std::size_t kNumRegions{100U};
+    constexpr std::size_t kNumReaderThreads{4U};
     // each with a size of 50 bytes
-    constexpr std::uint8_t MEM_REGION_SIZE{50};
+    constexpr std::uint8_t MEM_REGION_SIZE{50U};
 
-    for (unsigned int i = 0; i < 100; i++)
+    // given 100 memory regions
+    std::vector<MemoryRegionBounds> memory_regions;
+    memory_regions.reserve(kNumRegions);
+    for (unsigned int i = 0U; i < kNumRegions; i++)
     {
-        memory_regions.emplace_back(
-            MemoryRegionBounds{static_cast<uintptr_t>(i * 100 + 1U), static_cast<uintptr_t>(i * 100 + MEM_REGION_SIZE)},
-            false);
+        memory_regions.emplace_back(static_cast<uintptr_t>(i * 100U + 1U),
+                                    static_cast<uintptr_t>(i * 100U + MEM_REGION_SIZE));
     }
 
-    // and one writer thread, which first inserts and afterwards removes these memory regions
-    auto writer_activity = [&memory_regions, this]() {
-        for (auto& reg : memory_regions)
+    std::atomic<std::size_t> insert_started{0U};
+    std::atomic<std::size_t> insert_finished{0U};
+    std::atomic<std::size_t> remove_started{0U};
+    std::atomic<std::size_t> remove_finished{0U};
+
+    // Single-use rendezvous point between the insertion and removal phases: nobody (writer or readers) starts acting
+    // on/asserting about removals until everybody has finished acting on/asserting about insertions.
+    std::mutex barrier_mutex;
+    std::condition_variable barrier_cv;
+    std::size_t threads_at_barrier{0U};
+    constexpr std::size_t kNumParticipants{kNumReaderThreads + 1U};
+    auto arrive_and_wait = [&]() {
+        std::unique_lock<std::mutex> lock{barrier_mutex};
+        ++threads_at_barrier;
+        if (threads_at_barrier == kNumParticipants)
         {
-            EXPECT_TRUE(unit_.UpdateKnownRegion(reg.region_.GetStartAddress(), reg.region_.GetEndAddress()));
-            reg.inserted_.store(true, std::memory_order_seq_cst);
+            barrier_cv.notify_all();
+        }
+        else
+        {
+            barrier_cv.wait(lock, [&threads_at_barrier, kNumParticipants] {
+                return threads_at_barrier == kNumParticipants;
+            });
+        }
+    };
+
+    // and one writer thread, which first inserts and afterwards removes these memory regions
+    auto writer_activity = [&]() {
+        for (std::size_t index = 0U; index < memory_regions.size(); ++index)
+        {
+            const auto& reg = memory_regions[index];
+            insert_started.store(index + 1U, std::memory_order_release);
+            EXPECT_TRUE(unit_.UpdateKnownRegion(reg.GetStartAddress(), reg.GetEndAddress()));
+            insert_finished.store(index + 1U, std::memory_order_release);
             std::this_thread::sleep_for(2ms);
         }
 
-        for (auto& reg : memory_regions)
+        arrive_and_wait();
+
+        for (std::size_t index = 0U; index < memory_regions.size(); ++index)
         {
-            // we have inserted it in the 1st run ... let's be hyper-cautious
-            ASSERT_TRUE(reg.inserted_);
-            unit_.RemoveKnownRegion(reg.region_.GetStartAddress());
-            reg.inserted_.store(false, std::memory_order_seq_cst);
+            const auto& reg = memory_regions[index];
+            remove_started.store(index + 1U, std::memory_order_release);
+            unit_.RemoveKnownRegion(reg.GetStartAddress());
+            remove_finished.store(index + 1U, std::memory_order_release);
             std::this_thread::sleep_for(2ms);
         }
     };
 
-    auto reader_activity = [&memory_regions, this]() {
+    auto reader_activity = [&]() {
         std::random_device rd;   // Will be used to obtain a seed for the random number engine
         std::mt19937 gen(rd());  // Standard mersenne_twister_engine seeded with rd()
-        std::uniform_int_distribution<> distrib(0, 99);
+        std::uniform_int_distribution<std::size_t> distrib(0U, memory_regions.size() - 1U);
 
-        for (std::uint8_t i = 0; i < 100; i++)
+        // Phase 1: regions are being inserted in index order - check lookups against insertion progress.
+        for (std::uint8_t i = 0U; i < 100U; i++)
         {
-            const auto random_index = distrib(gen);
-            const auto& region = memory_regions[static_cast<std::size_t>(random_index)];
-            const bool inserted_before = region.inserted_.load(std::memory_order_seq_cst);
-            const auto bounds = unit_.GetBoundsFromAddress(region.region_.GetStartAddress());
-            const bool inserted_after = region.inserted_.load(std::memory_order_seq_cst);
+            const auto index = distrib(gen);
+            const auto& region = memory_regions[index];
 
-            if (bounds.has_value())
+            const auto finished_before = insert_finished.load(std::memory_order_acquire);
+            const auto bounds = unit_.GetBoundsFromAddress(region.GetStartAddress());
+            const auto started_after = insert_started.load(std::memory_order_acquire);
+
+            if (index < finished_before)
             {
-                // if map contains region ...
-                // expect that inserted flag directly before or after the lookup was true
-                EXPECT_TRUE(inserted_before || inserted_after);
-                EXPECT_EQ(*bounds, region.region_);
+                // insertion was already complete before we even looked - must be found
+                EXPECT_TRUE(bounds.has_value());
+                if (bounds.has_value())
+                {
+                    EXPECT_EQ(*bounds, region);
+                }
             }
-            else
+            else if (index >= started_after)
             {
-                // if map doesn't contain region ...
-                // expect that inserted flag wasn't true before and after the lookup
-                EXPECT_FALSE(inserted_before && inserted_after);
+                // insertion hadn't even started, even after we looked - must not be found
+                EXPECT_FALSE(bounds.has_value());
+            }
+            else if (bounds.has_value())
+            {
+                // insertion overlapped with our lookup - no expectation, but if found it must be correct
+                EXPECT_EQ(*bounds, region);
+            }
+            std::this_thread::sleep_for(4ms);
+        }
+
+        arrive_and_wait();
+
+        // Phase 2: regions are being removed in index order - check lookups against removal progress.
+        for (std::uint8_t i = 0U; i < 100U; i++)
+        {
+            const auto index = distrib(gen);
+            const auto& region = memory_regions[index];
+
+            const auto finished_before = remove_finished.load(std::memory_order_acquire);
+            const auto bounds = unit_.GetBoundsFromAddress(region.GetStartAddress());
+            const auto started_after = remove_started.load(std::memory_order_acquire);
+
+            if (index < finished_before)
+            {
+                // removal was already complete before we even looked - must not be found
+                EXPECT_FALSE(bounds.has_value());
+            }
+            else if (index >= started_after)
+            {
+                // removal hadn't even started, even after we looked - must still be found
+                EXPECT_TRUE(bounds.has_value());
+                if (bounds.has_value())
+                {
+                    EXPECT_EQ(*bounds, region);
+                }
+            }
+            else if (bounds.has_value())
+            {
+                // removal overlapped with our lookup - no expectation, but if found it must be correct
+                EXPECT_EQ(*bounds, region);
             }
             std::this_thread::sleep_for(4ms);
         }
