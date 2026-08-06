@@ -15,20 +15,22 @@
 #include "score/socom/registry_string_view.hpp"
 
 #include <algorithm>
-#include <utility>
-#include <string_view>
 #include <mutex>
 #include <string>
+#include <string_view>
+#include <utility>
 
-namespace score::socom {
+namespace score::socom
+{
 
 // This insert should be used for inserting compile time string literals into the registry.
-std::pair<Registry_string_view, bool> String_registry::insert(
-    std::string_view const new_string, Literal_tag /*is_static_string_literal*/) noexcept {
-    std::lock_guard<std::mutex> const locked{m_mutex};
+std::pair<Registry_string_view, bool> String_registry::insert(const std::string_view new_string,
+                                                              Literal_tag /*is_static_string_literal*/) noexcept
+{
+    const std::lock_guard<std::mutex> locked{m_mutex};
 
     // emplace will already search for previously existing entry
-    auto const registered_string = m_registered_strings.emplace(new_string);
+    const auto registered_string = m_registered_strings.emplace(new_string);
     return std::pair<Registry_string_view, bool>{Registry_string_view{*registered_string.first},
                                                  registered_string.second};
 }
@@ -36,13 +38,15 @@ std::pair<Registry_string_view, bool> String_registry::insert(
 std::pair<Registry_string_view, bool>
 // NOLINTNEXTLINE(bugprone-exception-escape): All exceptions are either handled or left unhandled as
 // a design decision.
-String_registry::insert(std::string_view const new_string) noexcept {
-    std::lock_guard<std::mutex> const locked{m_mutex};
+String_registry::insert(const std::string_view new_string) noexcept
+{
+    const std::lock_guard<std::mutex> locked{m_mutex};
 
-    auto const iter = m_registered_strings.find(new_string);
-    if (iter == m_registered_strings.end()) {
+    const auto iter = m_registered_strings.find(new_string);
+    if (iter == m_registered_strings.end())
+    {
         auto& inserted_string = m_dynamic_allocated.emplace_front(new_string);
-        auto const registered_string = m_registered_strings.insert(inserted_string);
+        const auto registered_string = m_registered_strings.insert(inserted_string);
         return std::pair<Registry_string_view, bool>{Registry_string_view{*registered_string.first},
                                                      registered_string.second};
     }
@@ -50,16 +54,19 @@ String_registry::insert(std::string_view const new_string) noexcept {
     return std::pair<Registry_string_view, bool>{Registry_string_view{*iter}, false};
 }
 
-std::pair<Registry_string_view, bool> String_registry::insert(std::string&& new_string) noexcept {
-    std::lock_guard<std::mutex> const locked{m_mutex};
+std::pair<Registry_string_view, bool> String_registry::insert(std::string&& new_string) noexcept
+{
+    const std::lock_guard<std::mutex> locked{m_mutex};
 
-    auto const iter =
-        std::find_if(m_registered_strings.begin(), m_registered_strings.end(),
-                     [&new_string](auto const& entry) { return entry.data() == new_string; });
+    const auto iter =
+        std::find_if(m_registered_strings.begin(), m_registered_strings.end(), [&new_string](const auto& entry) {
+            return entry.data() == new_string;
+        });
 
-    if (iter == m_registered_strings.end()) {
+    if (iter == m_registered_strings.end())
+    {
         auto& inserted_string = m_dynamic_allocated.emplace_front(std::move(new_string));
-        auto const registered_string = m_registered_strings.insert(inserted_string);
+        const auto registered_string = m_registered_strings.insert(inserted_string);
         return std::pair<Registry_string_view, bool>{Registry_string_view{*registered_string.first},
                                                      registered_string.second};
     }
@@ -67,12 +74,14 @@ std::pair<Registry_string_view, bool> String_registry::insert(std::string&& new_
     return std::pair<Registry_string_view, bool>{Registry_string_view{*iter}, false};
 }
 
-String_registry& service_id_registry() noexcept {
+String_registry& service_id_registry() noexcept
+{
     static String_registry registry;
     return registry;
 }
 
-String_registry& instance_id_registry() noexcept {
+String_registry& instance_id_registry() noexcept
+{
     static String_registry registry;
     return registry;
 }

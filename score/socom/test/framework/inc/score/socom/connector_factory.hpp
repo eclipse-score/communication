@@ -22,17 +22,19 @@
 #include "score/socom/socom_mocks.hpp"
 #include "score/socom/utilities.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Creates client and server connectors with default values
-class Connector_factory {
+class Connector_factory
+{
     Runtime::Uptr m_runtime;
     Server_service_interface_definition m_configuration;
     Service_instance m_instance;
 
     Runtime& get_runtime();
 
-   public:
+  public:
     /// \brief Creates a Connector_factory with default configuration
     ///
     /// \param[in] configuration default configuration for created server and clients
@@ -46,19 +48,21 @@ class Connector_factory {
     /// \param[in] methods Number of Methods
     /// \param[in] events Number of Events
     /// \param[in] instance default intance for created server and clients
-    Connector_factory(Service_interface_identifier const& sif, Num_of_methods num_methods,
-                      Num_of_events num_events, Service_instance instance);
+    Connector_factory(const Service_interface_identifier& sif,
+                      Num_of_methods num_methods,
+                      Num_of_events num_events,
+                      Service_instance instance);
 
     /// \brief Copy constructor which copies the configuraton of con_fac
     ///
     /// \param[in] con_fac objects whichs configuration is copied
-    Connector_factory(Connector_factory const& con_fac);
+    Connector_factory(const Connector_factory& con_fac);
 
     Connector_factory(Connector_factory&&) = default;
 
     ~Connector_factory() = default;
 
-    Connector_factory& operator=(Connector_factory const&) = delete;
+    Connector_factory& operator=(const Connector_factory&) = delete;
     Connector_factory& operator=(Connector_factory&&) = delete;
 
     /// \brief Registers bridge callbacks at the runtime until registration is destroyed
@@ -69,8 +73,8 @@ class Connector_factory {
     /// \param[in] identity identity of the bridge to register, used for later identification
     /// \param[in] request_service
     /// \return RAII object which keeps the registration alive until it is destroyed
-    ::score::Result<Service_bridge_registration> register_service_bridge(
-        Bridge_identity identity, Request_service_function request_service);
+    ::score::Result<Service_bridge_registration> register_service_bridge(Bridge_identity identity,
+                                                                         Request_service_function request_service);
 
     /// \brief Create server connector with default configuration
     ///
@@ -83,8 +87,7 @@ class Connector_factory {
     ///
     /// \param[in] sc_callbacks callbacks for the server connector
     /// \return server connector factory result
-    Disabled_server_connector::Uptr create_server_connector(
-        Disabled_server_connector::Callbacks sc_callbacks);
+    Disabled_server_connector::Uptr create_server_connector(Disabled_server_connector::Callbacks sc_callbacks);
 
     /// \brief Create server connector with default configuration
     ///
@@ -107,7 +110,8 @@ class Connector_factory {
     /// \param[in] sc_callbacks callbacks for the server connector
     /// \return server connector
     Disabled_server_connector::Uptr create_server_connector(
-        Server_service_interface_definition const& configuration, Service_instance const& instance,
+        const Server_service_interface_definition& configuration,
+        const Service_instance& instance,
         Optional_reference<Server_connector_callbacks_mock> sc_callbacks);
 
     /// \brief Create server connector with custom configuration and POSIX credentials
@@ -118,16 +122,16 @@ class Connector_factory {
     /// \param[in] credentials POSIX credentials
     /// \return server connector
     Disabled_server_connector::Uptr create_server_connector(
-        Server_service_interface_definition const& configuration, Service_instance const& instance,
+        const Server_service_interface_definition& configuration,
+        const Service_instance& instance,
         Optional_reference<Server_connector_credentials_callbacks_mock> sc_callbacks,
-        Posix_credentials const& credentials);
+        const Posix_credentials& credentials);
 
     /// \brief Create and enable server connector with default configuration
     ///
     /// \param[in] sc_callbacks callbacks for the server connector
     /// \return enabled server connector
-    Enabled_server_connector::Uptr create_and_enable(
-        Optional_reference<Server_connector_callbacks_mock> sc_callbacks);
+    Enabled_server_connector::Uptr create_and_enable(Optional_reference<Server_connector_callbacks_mock> sc_callbacks);
 
     /// \brief Create and enable server connector with custom configuration
     ///
@@ -135,9 +139,9 @@ class Connector_factory {
     /// \param[in] instance other instance
     /// \param[in] sc_callbacks callbacks for the server connector
     /// \return enabled server connector
-    Enabled_server_connector::Uptr create_and_enable(
-        Server_service_interface_definition const& configuration, Service_instance const& instance,
-        Optional_reference<Server_connector_callbacks_mock> sc_callbacks);
+    Enabled_server_connector::Uptr create_and_enable(const Server_service_interface_definition& configuration,
+                                                     const Service_instance& instance,
+                                                     Optional_reference<Server_connector_callbacks_mock> sc_callbacks);
 
     /// \brief Create and enable server connector with custom configuration and POSIX credentials
     ///
@@ -147,16 +151,16 @@ class Connector_factory {
     /// \param[in] credentials POSIX credentials
     /// \return enabled server connector
     Enabled_server_connector::Uptr create_and_enable(
-        Server_service_interface_definition const& configuration, Service_instance const& instance,
+        const Server_service_interface_definition& configuration,
+        const Service_instance& instance,
         Optional_reference<Server_connector_credentials_callbacks_mock> sc_callbacks,
-        Posix_credentials const& credentials);
+        const Posix_credentials& credentials);
 
     /// \brief Create client connector with default configuration
     ///
     /// \param[in] cc_callbacks callbacks for the client connector
     /// \return client connector
-    Client_connector::Uptr create_client_connector(
-        Optional_reference<Client_connector_callbacks_mock> cc_callbacks);
+    Client_connector::Uptr create_client_connector(Optional_reference<Client_connector_callbacks_mock> cc_callbacks);
 
     /// \brief Create client connector with default configuration
     ///
@@ -170,9 +174,9 @@ class Connector_factory {
     /// \param[in] instance other instance
     /// \param[in] cc_callbacks callbacks for the client connector
     /// \return client connector
-    Client_connector::Uptr create_client_connector(
-        Service_interface_definition const& configuration, Service_instance const& instance,
-        Optional_reference<Client_connector_callbacks_mock> cc_callbacks);
+    Client_connector::Uptr create_client_connector(const Service_interface_definition& configuration,
+                                                   const Service_instance& instance,
+                                                   Optional_reference<Client_connector_callbacks_mock> cc_callbacks);
 
     /// \brief Create client connector with custom configuration and POSIX credentials
     ///
@@ -181,10 +185,10 @@ class Connector_factory {
     /// \param[in] cc_callbacks callbacks for the client connector
     /// \param[in] credentials POSIX credentials
     /// \return client connector
-    Client_connector::Uptr create_client_connector(
-        Service_interface_definition const& configuration, Service_instance const& instance,
-        Optional_reference<Client_connector_callbacks_mock> cc_callbacks,
-        Posix_credentials const& credentials);
+    Client_connector::Uptr create_client_connector(const Service_interface_definition& configuration,
+                                                   const Service_instance& instance,
+                                                   Optional_reference<Client_connector_callbacks_mock> cc_callbacks,
+                                                   const Posix_credentials& credentials);
 
     /// \brief Create client connector with custom configuration and POSIX credentials
     ///
@@ -194,9 +198,10 @@ class Connector_factory {
     /// \param[in] credentials POSIX credentials
     /// \return client connector
     ::score::Result<Client_connector::Uptr> create_client_connector_with_result(
-        Service_interface_definition const& configuration, Service_instance const& instance,
+        const Service_interface_definition& configuration,
+        const Service_instance& instance,
         Optional_reference<Client_connector_callbacks_mock> cc_callbacks,
-        std::optional<Posix_credentials> const& credentials);
+        const std::optional<Posix_credentials>& credentials);
 
     /// \brief Create client connector with custom configuration
     ///
@@ -205,7 +210,8 @@ class Connector_factory {
     /// \param[in] cc_callbacks callbacks for the client connector
     /// \return client connector
     ::score::Result<Client_connector::Uptr> create_client_connector_with_result(
-        Service_interface_definition const& configuration, Service_instance const& instance,
+        const Service_interface_definition& configuration,
+        const Service_instance& instance,
         Client_connector::Callbacks cc_callbacks);
 
     /// \brief Create client connector with custom configuration and POSIX credentials
@@ -216,15 +222,16 @@ class Connector_factory {
     /// \param[in] credentials POSIX credentials
     /// \return client connector
     ::score::Result<Client_connector::Uptr> create_client_connector_with_result(
-        Service_interface_definition const& configuration, Service_instance const& instance,
-        Client_connector::Callbacks cc_callbacks, Posix_credentials const& credentials);
+        const Service_interface_definition& configuration,
+        const Service_instance& instance,
+        Client_connector::Callbacks cc_callbacks,
+        const Posix_credentials& credentials);
 
     /// \brief Create and connect client connector with default configuration
     ///
     /// \param[in] cc_callbacks callbacks for the client connector
     /// \return connected client connector
-    Client_connector::Uptr create_and_connect(
-        Optional_reference<Client_connector_callbacks_mock> cc_callbacks);
+    Client_connector::Uptr create_and_connect(Optional_reference<Client_connector_callbacks_mock> cc_callbacks);
 
     /// \brief Create and connect client connector with custom configuration
     ///
@@ -233,16 +240,16 @@ class Connector_factory {
     /// \param[in] cc_callbacks callbacks for the client connector
     /// \param[in] credentials optional POSIX credentials
     /// \return connected client connector
-    Client_connector::Uptr create_and_connect(
-        Service_interface_definition const& configuration, Service_instance const& instance,
-        Optional_reference<Client_connector_callbacks_mock> cc_callbacks,
-        std::optional<Posix_credentials> const& credentials);
+    Client_connector::Uptr create_and_connect(const Service_interface_definition& configuration,
+                                              const Service_instance& instance,
+                                              Optional_reference<Client_connector_callbacks_mock> cc_callbacks,
+                                              const std::optional<Posix_credentials>& credentials);
 
     /// \return default configuration for server and client connector
-    Server_service_interface_definition const& get_configuration() const;
+    const Server_service_interface_definition& get_configuration() const;
 
     /// \return default instance for server and client connector
-    Service_instance const& get_instance() const;
+    const Service_instance& get_instance() const;
 
     /// \return method names in same order as used by server and client
     std::size_t get_num_methods() const noexcept;

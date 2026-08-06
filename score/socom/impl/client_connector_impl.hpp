@@ -26,42 +26,43 @@
 #include "score/socom/service_interface_identifier.hpp"
 #include "temporary_thread_id_add.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 class Runtime_impl;
 
-namespace client_connector {
+namespace client_connector
+{
 // deadlock detection.
-class Impl final : public Client_connector {
-   public:
+class Impl final : public Client_connector
+{
+  public:
     using Endpoint = Client_connector_endpoint;
 
-    using Server_indication =
-        std::function<void(::score::socom::Server_connector_listen_endpoint const&)>;
+    using Server_indication = std::function<void(const ::score::socom::Server_connector_listen_endpoint&)>;
 
-    Impl(Service_interface_definition configuration, Service_instance instance,
-         Client_connector::Callbacks callbacks, Posix_credentials const& credentials);
-    Impl(Impl const&) = delete;
+    Impl(Service_interface_definition configuration,
+         Service_instance instance,
+         Client_connector::Callbacks callbacks,
+         const Posix_credentials& credentials);
+    Impl(const Impl&) = delete;
     Impl(Impl&&) = delete;
-    Impl& operator=(Impl const&) = delete;
+    Impl& operator=(const Impl&) = delete;
     Impl& operator=(Impl&&) = delete;
 
     ~Impl() noexcept override;
 
     // interface ::score::socom::Client_connector
     Result<Writable_payload> allocate_method_call_payload(Method_id method_id) noexcept override;
-    message::Subscribe_event::Return_type subscribe_event(Event_id client_id,
-                                                          Event_mode mode) const noexcept override;
-    message::Unsubscribe_event::Return_type unsubscribe_event(
-        Event_id client_id) const noexcept override;
-    message::Request_event_update::Return_type request_event_update(
-        Event_id client_id) const noexcept override;
-    message::Call_method::Return_type call_method(
-        Method_id client_id, Payload payload,
-        Method_call_reply_data_opt reply_data) const noexcept override;
+    message::Subscribe_event::Return_type subscribe_event(Event_id client_id, Event_mode mode) const noexcept override;
+    message::Unsubscribe_event::Return_type unsubscribe_event(Event_id client_id) const noexcept override;
+    message::Request_event_update::Return_type request_event_update(Event_id client_id) const noexcept override;
+    message::Call_method::Return_type call_method(Method_id client_id,
+                                                  Payload payload,
+                                                  Method_call_reply_data_opt reply_data) const noexcept override;
     Result<Posix_credentials> get_peer_credentials() const noexcept override;
-    Service_interface_definition const& get_configuration() const noexcept override;
-    Service_instance const& get_service_instance() const noexcept override;
+    const Service_interface_definition& get_configuration() const noexcept override;
+    const Service_instance& get_service_instance() const noexcept override;
     bool is_service_available() const noexcept override;
 
     // Endpoint API
@@ -73,11 +74,11 @@ class Impl final : public Client_connector {
     Server_indication make_on_server_update_callback();
     void set_registration(Registration registration);
 
-   private:
+  private:
     template <typename ReturnType, typename F>
-    ReturnType lock_server(F const& on_server_locked) const;
+    ReturnType lock_server(const F& on_server_locked) const;
 
-    bool set_id_mappings_and_server(message::Connect_return const& connect_return);
+    bool set_id_mappings_and_server(const message::Connect_return& connect_return);
 
     Weak_reference_token create_weak_block_token() const;
 
@@ -85,9 +86,9 @@ class Impl final : public Client_connector {
     template <typename MessageType>
     typename MessageType::Return_type send(MessageType message) const;
 
-    Service_interface_definition const m_configuration;
-    Service_instance const m_instance;
-    Client_connector::Callbacks const m_callbacks;
+    const Service_interface_definition m_configuration;
+    const Service_instance m_instance;
+    const Client_connector::Callbacks m_callbacks;
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
     mutable Deadlock_detector m_deadlock_detector;
 #endif
@@ -100,23 +101,25 @@ class Impl final : public Client_connector {
 };
 
 template <typename ReturnType, typename F>
-ReturnType Impl::lock_server(F const& on_server_locked) const {
+ReturnType Impl::lock_server(const F& on_server_locked) const
+{
     std::unique_lock<std::mutex> lock{m_mutex};
-    auto const locked_server = m_server;
+    const auto locked_server = m_server;
     lock.unlock();
 
-    if (locked_server) {
+    if (locked_server)
+    {
         return on_server_locked(*locked_server);
     }
     return MakeUnexpected(Error::runtime_error_service_not_available);
 }
 
 template <typename MessageType>
-typename MessageType::Return_type Impl::send(MessageType message) const {
-    return lock_server<typename MessageType::Return_type>(
-        [&message](Server_connector_endpoint const& server) {
-            return server.send(std::move(message));
-        });
+typename MessageType::Return_type Impl::send(MessageType message) const
+{
+    return lock_server<typename MessageType::Return_type>([&message](const Server_connector_endpoint& server) {
+        return server.send(std::move(message));
+    });
 }
 
 }  // namespace client_connector

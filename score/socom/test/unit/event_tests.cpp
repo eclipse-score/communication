@@ -23,11 +23,13 @@
 
 using ::testing::_;
 
-namespace score::socom {
+namespace score::socom
+{
 
 using EventTest = SingleConnectionTest;
 
-TEST(Event_test, data_types) {
+TEST(Event_test, data_types)
+{
     EXPECT_TRUE((std::is_same_v<Event_id, std::uint16_t>));
 
     EXPECT_EQ(std::is_enum_v<Event_mode>, true);
@@ -39,18 +41,17 @@ TEST(Event_test, data_types) {
     EXPECT_EQ(static_cast<uint8_t>(Event_state::subscribed), 0x01U);
 }
 
-TEST_F(EventTest, FirstEventSubscriptionCallsOnEventSubscriptionChange) {
+TEST_F(EventTest, FirstEventSubscriptionCallsOnEventSubscriptionChange)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
-    auto const& unsubscribed =
-        server.expect_on_event_subscription_change(event_id, Event_state::unsubscribed);
+    const auto& unsubscribed = server.expect_on_event_subscription_change(event_id, Event_state::unsubscribed);
 
     {
-        auto const& subscribed =
-            server.expect_on_event_subscription_change(event_id, Event_state::subscribed);
+        const auto& subscribed = server.expect_on_event_subscription_change(event_id, Event_state::subscribed);
 
-        auto const sub = client0.create_event_subscription(event_id);
+        const auto sub = client0.create_event_subscription(event_id);
 
         wait_for_atomics(subscribed);
 
@@ -59,17 +60,19 @@ TEST_F(EventTest, FirstEventSubscriptionCallsOnEventSubscriptionChange) {
     wait_for_atomics(unsubscribed);
 }
 
-TEST_F(EventTest, ServerSendsEventWhichIsReceivedBySubscribedClient) {
+TEST_F(EventTest, ServerSendsEventWhichIsReceivedBySubscribedClient)
+{
     std::vector<Payload> payloads{};
     payloads.emplace_back(empty_payload());
     payloads.emplace_back(clone_payload(real_payload));
 
-    for (auto const& payload : payloads) {
+    for (const auto& payload : payloads)
+    {
         Server_data server{connector_factory};
         Client_data client0{connector_factory};
 
         server.expect_event_subscription(event_id);
-        auto const sub = client0.create_event_subscription(event_id);
+        const auto sub = client0.create_event_subscription(event_id);
 
         client0.expect_event_update(event_id, payload);
 
@@ -77,39 +80,42 @@ TEST_F(EventTest, ServerSendsEventWhichIsReceivedBySubscribedClient) {
     }
 }
 
-TEST_F(EventTest, ClientRequestsEventUpdateAndReceivesEventUpdate) {
+TEST_F(EventTest, ClientRequestsEventUpdateAndReceivesEventUpdate)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
     server.expect_event_subscription(event_id);
-    auto const sub = client0.create_event_subscription(event_id);
+    const auto sub = client0.create_event_subscription(event_id);
 
     server.expect_and_respond_update_event_request(event_id, empty_payload());
 
     wait_for_atomics(client0.expect_and_request_event_update(event_id, empty_payload()));
 }
 
-TEST_F(EventTest, ClientRequestsEventUpdateAndServerRespondsWithUpdateRequestedEvent) {
+TEST_F(EventTest, ClientRequestsEventUpdateAndServerRespondsWithUpdateRequestedEvent)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
     server.expect_event_subscription(event_id);
-    auto const sub = client0.create_event_subscription(event_id);
+    const auto sub = client0.create_event_subscription(event_id);
 
-    auto const& update_requested = server.expect_update_event_request(event_id);
+    const auto& update_requested = server.expect_update_event_request(event_id);
 
     client0.request_event_update(event_id);
-    auto const& update_received = client0.expect_requested_event_update(event_id, real_payload);
+    const auto& update_received = client0.expect_requested_event_update(event_id, real_payload);
     wait_for_atomics(update_requested);
     server.update_requested_event(event_id, real_payload);
     wait_for_atomics(update_received);
 
-    auto const& update_requested1 = server.expect_update_event_request(event_id);
+    const auto& update_requested1 = server.expect_update_event_request(event_id);
     client0.request_event_update(event_id);
     wait_for_atomics(update_requested1);
 }
 
-TEST_F(EventTest, ClientRequestsEventUpdateAndServerConnectorRespondsWithUpdateEvent) {
+TEST_F(EventTest, ClientRequestsEventUpdateAndServerConnectorRespondsWithUpdateEvent)
+{
     Server_connector_callbacks_mock callbacks;
     Enabled_server_connector::Uptr server = connector_factory.create_and_enable(callbacks);
     Client_data client{connector_factory};
@@ -120,40 +126,40 @@ TEST_F(EventTest, ClientRequestsEventUpdateAndServerConnectorRespondsWithUpdateE
     client.subscribe_event(event_id);
 
     EXPECT_CALL(callbacks, on_event_update_request(_, event_id))
-        .WillOnce([this](Enabled_server_connector& connector, Event_id const& eid) {
-            auto const event_mode = connector.get_event_mode(eid);
-            auto const expected_mode = score::Result<Event_mode>{Event_mode::update};
+        .WillOnce([this](Enabled_server_connector& connector, const Event_id& eid) {
+            const auto event_mode = connector.get_event_mode(eid);
+            const auto expected_mode = score::Result<Event_mode>{Event_mode::update};
             EXPECT_EQ(expected_mode, event_mode);
 
             connector.update_event(eid, clone_payload(real_payload));
         });
 
-    auto const& expect_event_update = client.expect_event_update(event_id, real_payload);
+    const auto& expect_event_update = client.expect_event_update(event_id, real_payload);
     client.request_event_update(event_id);
     wait_for_atomics(expect_event_update);
 }
 
-TEST_F(EventTest, ClientRequestsEventUpdateWithDataAndReceivesEventUpdate) {
+TEST_F(EventTest, ClientRequestsEventUpdateWithDataAndReceivesEventUpdate)
+{
     Server_data server{connector_factory};
     server.expect_event_subscription(event_id);
     Client_data client0{connector_factory};
 
-    auto const sub = client0.create_event_subscription(event_id);
+    const auto sub = client0.create_event_subscription(event_id);
 
     server.expect_and_respond_update_event_request(event_id, real_payload);
     wait_for_atomics(client0.expect_and_request_event_update(event_id, real_payload));
 }
 
-TEST_F(EventTest, ServerUpdatesRequestedEventWithoutRequestAndClientReceivesNoUpdate) {
+TEST_F(EventTest, ServerUpdatesRequestedEventWithoutRequestAndClientReceivesNoUpdate)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
-    auto const& subscribed =
-        server.expect_on_event_subscription_change(event_id, Event_state::subscribed);
-    auto const& unsubscribed =
-        server.expect_on_event_subscription_change(event_id, Event_state::unsubscribed);
+    const auto& subscribed = server.expect_on_event_subscription_change(event_id, Event_state::subscribed);
+    const auto& unsubscribed = server.expect_on_event_subscription_change(event_id, Event_state::unsubscribed);
     {
-        auto const sub0 = client0.create_event_subscription(event_id);
+        const auto sub0 = client0.create_event_subscription(event_id);
         wait_for_atomics(subscribed);
 
         server.update_requested_event(event_id, empty_payload());
@@ -161,39 +167,39 @@ TEST_F(EventTest, ServerUpdatesRequestedEventWithoutRequestAndClientReceivesNoUp
     wait_for_atomics(unsubscribed);
 }
 
-TEST_F(EventTest, ClientRequestsManyEventUpdatesAndReceivesEventUpdates) {
+TEST_F(EventTest, ClientRequestsManyEventUpdatesAndReceivesEventUpdates)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
-    auto const& subscribed =
-        server.expect_on_event_subscription_change(event_id, Event_state::subscribed);
+    const auto& subscribed = server.expect_on_event_subscription_change(event_id, Event_state::subscribed);
     server.expect_on_event_subscription_change_nosync(event_id, Event_state::unsubscribed);
-    auto const sub0 = client0.create_event_subscription(event_id);
+    const auto sub0 = client0.create_event_subscription(event_id);
     wait_for_atomics(subscribed);
 
-    for (auto i = size_t{0}; i < 100; i++) {
+    for (auto i = size_t{0}; i < 100; i++)
+    {
         server.expect_and_respond_update_event_request(event_id, empty_payload());
-        auto const& event_received =
-            client0.expect_and_request_event_update(event_id, empty_payload());
+        const auto& event_received = client0.expect_and_request_event_update(event_id, empty_payload());
         wait_for_atomics(event_received);
     }
 }
 
-TEST_F(EventTest,
-       ClientRequestsManyEventUpdatesWhichAreCachedByTheMiddlewareAndClientReceivesOneEventUpdate) {
+TEST_F(EventTest, ClientRequestsManyEventUpdatesWhichAreCachedByTheMiddlewareAndClientReceivesOneEventUpdate)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
-    auto const& subscribed =
-        server.expect_on_event_subscription_change(event_id, Event_state::subscribed);
+    const auto& subscribed = server.expect_on_event_subscription_change(event_id, Event_state::subscribed);
     server.expect_on_event_subscription_change_nosync(event_id, Event_state::unsubscribed);
-    auto const sub0 = client0.create_event_subscription(event_id);
+    const auto sub0 = client0.create_event_subscription(event_id);
     wait_for_atomics(subscribed);
 
-    auto const& event_reveived = client0.expect_requested_event_update(event_id, empty_payload());
+    const auto& event_reveived = client0.expect_requested_event_update(event_id, empty_payload());
 
-    auto const& server_received_request = server.expect_update_event_request(event_id);
-    for (auto i = size_t{0}; i < size_t{100}; i++) {
+    const auto& server_received_request = server.expect_update_event_request(event_id);
+    for (auto i = size_t{0}; i < size_t{100}; i++)
+    {
         client0.request_event_update(event_id);
     }
     wait_for_atomics(server_received_request);
@@ -202,44 +208,48 @@ TEST_F(EventTest,
     wait_for_atomics(event_reveived);
 }
 
-TEST_F(EventTest, ClientSubscribesEventWithUpdateAndInitialValue) {
+TEST_F(EventTest, ClientSubscribesEventWithUpdateAndInitialValue)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
     server.expect_event_subscription(event_id);
-    auto const sub = client0.create_event_subscription(
+    const auto sub = client0.create_event_subscription(
         server, event_id, Temporary_event_subscription::Brokenness::no_server_reponse);
 }
 
-TEST_F(EventTest, ClientSubscribesEventWithUpdateAndInitialValueFollowedByRequestEventUpdate) {
+TEST_F(EventTest, ClientSubscribesEventWithUpdateAndInitialValueFollowedByRequestEventUpdate)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
     server.expect_event_subscription(event_id);
-    auto const sub = client0.create_event_subscription(
+    const auto sub = client0.create_event_subscription(
         server, event_id, Temporary_event_subscription::Brokenness::no_server_reponse);
 
     client0.request_event_update(event_id);
 }
 
-TEST_F(EventTest, MiddlewareCachesEventUpdateRequestsUntilServerAnswers) {
+TEST_F(EventTest, MiddlewareCachesEventUpdateRequestsUntilServerAnswers)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
     server.expect_event_subscription(event_id);
-    auto const sub = client0.create_event_subscription(
+    const auto sub = client0.create_event_subscription(
         server, event_id, Temporary_event_subscription::Brokenness::no_server_reponse);
 
-    auto const& callback_called = client0.expect_requested_event_update(event_id, empty_payload());
+    const auto& callback_called = client0.expect_requested_event_update(event_id, empty_payload());
     server.update_requested_event(event_id, empty_payload());
     wait_for_atomics(callback_called);
 
-    auto const& event_requested = server.expect_update_event_request(event_id);
+    const auto& event_requested = server.expect_update_event_request(event_id);
     client0.request_event_update(event_id);
     wait_for_atomics(event_requested);
 }
 
-TEST_F(EventTest, AllocateEventPayloadWithOutOfBoundsEventIdReturnsLogicErrorIdOutOfRange) {
+TEST_F(EventTest, AllocateEventPayloadWithOutOfBoundsEventIdReturnsLogicErrorIdOutOfRange)
+{
     Server_data server{connector_factory};
 
     auto payload = server.get_connector().allocate_event_payload(event_id + 1);
@@ -247,28 +257,28 @@ TEST_F(EventTest, AllocateEventPayloadWithOutOfBoundsEventIdReturnsLogicErrorIdO
     EXPECT_EQ(payload.error(), Server_connector_error::logic_error_id_out_of_range);
 }
 
-TEST_F(EventTest,
-       AllocateEventPayloadWithoutSubscribedClientReturnsNoClientSubscribedForEventError) {
+TEST_F(EventTest, AllocateEventPayloadWithoutSubscribedClientReturnsNoClientSubscribedForEventError)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
     auto payload = server.get_connector().allocate_event_payload(event_id);
     EXPECT_FALSE(payload);
-    EXPECT_EQ(payload.error(),
-              Server_connector_error::runtime_error_no_client_subscribed_for_event);
+    EXPECT_EQ(payload.error(), Server_connector_error::runtime_error_no_client_subscribed_for_event);
 }
 
-TEST_F(EventTest, AllocateEventPayloadWithSubscribedClientReturnsPayload) {
+TEST_F(EventTest, AllocateEventPayloadWithSubscribedClientReturnsPayload)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
     server.expect_event_subscription(event_id);
-    auto const sub = client0.create_event_subscription(event_id);
+    const auto sub = client0.create_event_subscription(event_id);
 
     score::Result<Writable_payload> wpayload{make_writable_vector_payload(64)};
-    auto const* const ptr = wpayload->data().data();
+    const auto* const ptr = wpayload->data().data();
 
-    auto const& expect_event_payload_allocation =
+    const auto& expect_event_payload_allocation =
         client0.expect_event_payload_allocation(event_id, std::move(wpayload));
 
     auto payload = server.get_connector().allocate_event_payload(event_id);

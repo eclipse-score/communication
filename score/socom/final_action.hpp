@@ -14,10 +14,11 @@
 #ifndef SCORE_SOCOM_FINAL_ACTION_HPP
 #define SCORE_SOCOM_FINAL_ACTION_HPP
 
-#include <algorithm>
 #include <score/move_only_function.hpp>
+#include <algorithm>
 
-namespace score::socom {
+namespace score::socom
+{
 
 constexpr std::size_t kFinalActionInlineBufferSize = 128U;
 
@@ -26,8 +27,9 @@ constexpr std::size_t kFinalActionInlineBufferSize = 128U;
 ///
 /// \brief Wraps a functor that shall be executed only when an instance of this class gets destroyed
 ///
-class Final_action {
-   public:
+class Final_action
+{
+  public:
     using F = score::cpp::move_only_function<void(), kFinalActionInlineBufferSize>;
 
     ///
@@ -39,35 +41,44 @@ class Final_action {
     ///
     /// \brief Move constructor
     ///
-    Final_action(Final_action&& other) noexcept : m_f{std::move(other.m_f)} {
+    Final_action(Final_action&& other) noexcept : m_f{std::move(other.m_f)}
+    {
         // Reset it always to get consistent behavior.
         other.m_f = nullptr;
     }
 
-    Final_action(Final_action const&) = delete;
-    Final_action& operator=(Final_action const&) = delete;
+    Final_action(const Final_action&) = delete;
+    Final_action& operator=(const Final_action&) = delete;
     Final_action& operator=(Final_action&&) = delete;
 
     ///
     /// \brief Destructor
     ///
-    ~Final_action() noexcept { execute(); }
+    ~Final_action() noexcept
+    {
+        execute();
+    }
 
     ///
     /// \brief Runs the functor and disarms the Final_action. It will destroy the stored functor.
     ///
-    void execute() noexcept {
+    void execute() noexcept
+    {
         F tmp_f = nullptr;
         std::swap(tmp_f, m_f);
-        try {
-            if (!tmp_f.empty()) {
+        try
+        {
+            if (!tmp_f.empty())
+            {
                 tmp_f();
             }
-        } catch (...) {
+        }
+        catch (...)
+        {
         }
     }
 
-   private:
+  private:
     F m_f;
 };
 

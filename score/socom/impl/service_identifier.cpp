@@ -15,11 +15,12 @@
 
 #include <tuple>
 
-namespace score::socom {
+namespace score::socom
+{
 
-bool operator<(Service_instance_identifier const& lhs, Service_instance_identifier const& rhs) {
+bool operator<(const Service_instance_identifier& lhs, const Service_instance_identifier& rhs)
+{
     return std::tie(lhs.instance, lhs.interface) < std::tie(rhs.instance, rhs.interface);
 }
 
-} // namespace score::socom
-
+}  // namespace score::socom

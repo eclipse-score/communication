@@ -16,17 +16,19 @@
 
 #include <memory>
 
-namespace score::socom {
+namespace score::socom
+{
 
-class IRegistration {
-   public:
+class IRegistration
+{
+  public:
     IRegistration() = default;
     virtual ~IRegistration() noexcept = default;
 
-    IRegistration(IRegistration const&) = delete;
+    IRegistration(const IRegistration&) = delete;
     IRegistration(IRegistration&&) = delete;
 
-    IRegistration& operator=(IRegistration const&) = delete;
+    IRegistration& operator=(const IRegistration&) = delete;
     IRegistration& operator=(IRegistration&&) = delete;
 };
 using Registration = std::unique_ptr<IRegistration>;

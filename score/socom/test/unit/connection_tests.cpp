@@ -23,18 +23,21 @@
 
 using ::testing::_;
 
-namespace score::socom {
+namespace score::socom
+{
 
-TEST_F(SingleConnectionTest, SCOffered) {
+TEST_F(SingleConnectionTest, SCOffered)
+{
     Server_data server{connector_factory};
 
     Client_data client0{connector_factory};
 }
 
-TEST_F(SingleConnectionTest, OfferSC) {
+TEST_F(SingleConnectionTest, OfferSC)
+{
     Client_data client0{connector_factory, Client_data::no_connect};
 
-    auto const& available = client0.expect_service_state_change(Service_state::available);
+    const auto& available = client0.expect_service_state_change(Service_state::available);
 
     Server_data server{connector_factory};
 
@@ -43,39 +46,43 @@ TEST_F(SingleConnectionTest, OfferSC) {
     client0.expect_service_state_change(Service_state::not_available);
 }
 
-TEST_F(SingleConnectionTest, StopOfferSC) {
+TEST_F(SingleConnectionTest, StopOfferSC)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
-    auto const& not_available = client0.expect_service_state_change(Service_state::not_available);
+    const auto& not_available = client0.expect_service_state_change(Service_state::not_available);
 
     auto scd = server.disable();
 
     wait_for_atomics(not_available);
 }
 
-TEST_F(SingleConnectionTest, ReOfferSC) {
+TEST_F(SingleConnectionTest, ReOfferSC)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
-    auto const& not_available = client0.expect_service_state_change(Service_state::not_available);
+    const auto& not_available = client0.expect_service_state_change(Service_state::not_available);
     auto scd = server.disable();
     wait_for_atomics(not_available);
 
-    auto const& available = client0.expect_service_state_change(Service_state::available);
+    const auto& available = client0.expect_service_state_change(Service_state::available);
 
     server.enable(std::move(scd));
     wait_for_atomics(available);
 }
 
-TEST_F(SingleConnectionTest, DestroyingConnectedClientConnectorWorks) {
+TEST_F(SingleConnectionTest, DestroyingConnectedClientConnectorWorks)
+{
     Server_data server{connector_factory};
     auto client0 = std::make_unique<Client_data>(connector_factory);
 
     client0 = nullptr;
 }
 
-TEST_F(SingleConnectionTest, ServerIsDestroyedBeforeClient) {
+TEST_F(SingleConnectionTest, ServerIsDestroyedBeforeClient)
+{
     auto server = std::make_unique<Server_data>(connector_factory);
     Client_data client0{connector_factory};
 
@@ -84,13 +91,13 @@ TEST_F(SingleConnectionTest, ServerIsDestroyedBeforeClient) {
     server = nullptr;
 }
 
-TEST_F(SingleConnectionTest, ServerIsDestroyedBeforeClientAndEventSubsciption) {
+TEST_F(SingleConnectionTest, ServerIsDestroyedBeforeClientAndEventSubsciption)
+{
     auto server = std::make_unique<Server_data>(connector_factory);
     Client_data client0{connector_factory};
 
-    auto const& wait_subscribed =
-        server->expect_on_event_subscription_change(event_id, Event_state::subscribed);
-    auto const sub0 = client0.create_event_subscription(event_id);
+    const auto& wait_subscribed = server->expect_on_event_subscription_change(event_id, Event_state::subscribed);
+    const auto sub0 = client0.create_event_subscription(event_id);
     wait_for_atomics(wait_subscribed);
 
     client0.expect_service_state_change(Service_state::not_available);
@@ -98,17 +105,17 @@ TEST_F(SingleConnectionTest, ServerIsDestroyedBeforeClientAndEventSubsciption) {
     server = nullptr;
 }
 
-TEST_F(SingleConnectionTest, DisablingServerMakesClientLoseEventSubscription) {
+TEST_F(SingleConnectionTest, DisablingServerMakesClientLoseEventSubscription)
+{
     Server_data server{connector_factory};
     Client_data client0{connector_factory};
 
-    auto const& wait_subscribed =
-        server.expect_on_event_subscription_change(event_id, Event_state::subscribed);
-    auto const sub0 = client0.create_event_subscription(event_id);
+    const auto& wait_subscribed = server.expect_on_event_subscription_change(event_id, Event_state::subscribed);
+    const auto sub0 = client0.create_event_subscription(event_id);
     wait_for_atomics(wait_subscribed);
 
     // check event transmission
-    auto const& event_received = client0.expect_event_update(event_id, real_payload);
+    const auto& event_received = client0.expect_event_update(event_id, real_payload);
     server.update_event(event_id, real_payload);
     wait_for_atomics(event_received);
 
@@ -121,12 +128,13 @@ TEST_F(SingleConnectionTest, DisablingServerMakesClientLoseEventSubscription) {
     server.update_event(event_id, real_payload);
 }
 
-TEST_F(SingleConnectionTest, ClientRetrievesCustomCredentialsFromServer) {
+TEST_F(SingleConnectionTest, ClientRetrievesCustomCredentialsFromServer)
+{
     auto uid = ::getuid() + 1;
     auto gid = ::getgid() + 1;
     Posix_credentials valid_credentials{uid, gid};
-    Server_data server{connector_factory, connector_factory.get_configuration(),
-                       connector_factory.get_instance(), valid_credentials};
+    Server_data server{
+        connector_factory, connector_factory.get_configuration(), connector_factory.get_instance(), valid_credentials};
     Client_data client{connector_factory};
 
     auto result = client.get_peer_credentials();
@@ -137,9 +145,9 @@ TEST_F(SingleConnectionTest, ClientRetrievesCustomCredentialsFromServer) {
     EXPECT_EQ(credentials.gid, gid);
 }
 
-TEST_F(SingleConnectionTest, ClientRetrievesDefaultCredentialsFromServer) {
-    Server_data server{connector_factory, connector_factory.get_configuration(),
-                       connector_factory.get_instance()};
+TEST_F(SingleConnectionTest, ClientRetrievesDefaultCredentialsFromServer)
+{
+    Server_data server{connector_factory, connector_factory.get_configuration(), connector_factory.get_instance()};
     Client_data client{connector_factory};
 
     auto result = client.get_peer_credentials();

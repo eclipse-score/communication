@@ -19,7 +19,8 @@
 #include <functional>
 #include <vector>
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Function is called in a tight loop
 using Loop_function_t = std::function<void()>;
@@ -27,27 +28,31 @@ using Loop_function_t = std::function<void()>;
 using Stop_condition = std::function<bool()>;
 
 /// \brief Stop thread execution after maximum number of checks is reached
-struct Num_iterations {
+struct Num_iterations
+{
     size_t max{0};
     size_t current{0};
     bool operator()();
 };
 
 /// \brief Stop thread execution after timeout
-struct Timeout {
+struct Timeout
+{
     std::chrono::steady_clock::time_point deadline;
     bool operator()() const;
 };
 
 /// \brief Stop thread execution when both stop conditions are met
-struct And_stop {
+struct And_stop
+{
     Stop_condition left;
     Stop_condition right;
     bool operator()() const;
 };
 
 /// \brief Stop thread execution when one stop conditions is met
-struct Or_stop {
+struct Or_stop
+{
     Stop_condition left;
     Stop_condition right;
     bool operator()() const;
@@ -61,8 +66,8 @@ struct Or_stop {
 ///
 /// \param[in] thread_functions each function is executed endlessly in a separate thread
 /// \param[in] caller_stop_condition when true threads are stopped
-void multi_threaded_test_template(std::vector<Loop_function_t> const& thread_functions,
-                                  Stop_condition const& caller_stop_condition);
+void multi_threaded_test_template(const std::vector<Loop_function_t>& thread_functions,
+                                  const Stop_condition& caller_stop_condition);
 
 }  // namespace score::socom
 

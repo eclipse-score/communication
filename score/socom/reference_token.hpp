@@ -16,7 +16,8 @@
 
 #include <memory>
 
-namespace score::socom {
+namespace score::socom
+{
 
 class Final_action;
 class Deadlock_detector;

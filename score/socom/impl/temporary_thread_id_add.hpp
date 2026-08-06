@@ -14,12 +14,13 @@
 #ifndef SCORE_SOCOM_TEMPORARY_THREAD_ID_ADD_HPP
 #define SCORE_SOCOM_TEMPORARY_THREAD_ID_ADD_HPP
 
-#include <mutex>
 #include <score/move_only_function.hpp>
+#include <mutex>
 #include <thread>
 #include <vector>
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// Temporary_thread_id_add adds the current thread::id to the list upon construction and removes it
 /// at destruction.
@@ -28,19 +29,20 @@ namespace score::socom {
 /// this class has to be created. When the callback has returned the instance has to be destroyed.
 /// This helps to detect deadlocks in the destructor, which would wait until all callbacks have
 /// returned. But when the destructor is triggered from within a callback they wait for each other.
-class Temporary_thread_id_add {
+class Temporary_thread_id_add
+{
     std::mutex& m_mutex;
     std::vector<std::thread::id>& m_thread_ids;
     std::thread::id m_id;
 
-   public:
+  public:
     /// Add the current thread::id to thread_ids.
     ///
     /// \param[in] mutex thread_ids associated mutex to sync reads and writes
     /// \param[in] thread_ids the thread::id vector of a connector
     Temporary_thread_id_add(std::mutex& mutex, std::vector<std::thread::id>& thread_ids);
 
-    Temporary_thread_id_add(Temporary_thread_id_add const& /*rhs*/) = delete;
+    Temporary_thread_id_add(const Temporary_thread_id_add& /*rhs*/) = delete;
 
     // Move constructor is only declared, but not defined.
     // Without a declared move constructor Temporary_thread_id_add cannot be returned by a function.
@@ -52,7 +54,7 @@ class Temporary_thread_id_add {
     /// Remove the current thread::id from thread_ids.
     ~Temporary_thread_id_add() noexcept;
 
-    Temporary_thread_id_add& operator=(Temporary_thread_id_add const& /*rhs*/) = delete;
+    Temporary_thread_id_add& operator=(const Temporary_thread_id_add& /*rhs*/) = delete;
     Temporary_thread_id_add& operator=(Temporary_thread_id_add&& /*rhs*/) = delete;
 };
 
@@ -64,11 +66,12 @@ class Temporary_thread_id_add {
 /// called by the destructor. check_deadlock() checks if any callback is still alive in the
 /// callback, which would result in a deadlock, when the destructor waits for the callback to
 /// return.
-class Deadlock_detector {
+class Deadlock_detector
+{
     std::mutex m_mutex;
     std::vector<std::thread::id> m_thread_ids;
 
-   public:
+  public:
     using On_deadlock_detected_callback = cpp::move_only_function<void()>;
 
     /// Save current thread id until the returned object is destroyed.
@@ -80,7 +83,7 @@ class Deadlock_detector {
     ///
     /// \param[in] on_deadlock_detected function to call before terminating the process in presence
     /// of a deadlock
-    void check_deadlock(On_deadlock_detected_callback const& on_deadlock_detected) noexcept;
+    void check_deadlock(const On_deadlock_detected_callback& on_deadlock_detected) noexcept;
 };
 
 }  // namespace score::socom

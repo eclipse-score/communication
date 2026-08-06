@@ -28,16 +28,19 @@
 #include "score/socom/service_interface_identifier.hpp"
 #include "temporary_thread_id_add.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 class Runtime_impl;
 
-namespace server_connector {
+namespace server_connector
+{
 
 class Impl;
 
-class Client_connection {
-   public:
+class Client_connection
+{
+  public:
     explicit Client_connection(Impl& impl, Client_connector_endpoint client);
 
     template <typename MessageType>
@@ -45,44 +48,54 @@ class Client_connection {
 
     Client_connector_endpoint get_client_endpoint() const;
 
-   private:
+  private:
     Impl& m_impl;
     Client_connector_endpoint m_client;
 };
 
-class Event {
-   public:
-    void set_client(Client_connection const& client) { m_client = &client; }
+class Event
+{
+  public:
+    void set_client(const Client_connection& client)
+    {
+        m_client = &client;
+    }
 
-    bool clear() {
-        auto const had_client = (nullptr != m_client);
+    bool clear()
+    {
+        const auto had_client = (nullptr != m_client);
         m_client = nullptr;
         return had_client;
     }
 
-    std::optional<Client_connector_endpoint> get_client() const {
-        if (nullptr == m_client) {
+    std::optional<Client_connector_endpoint> get_client() const
+    {
+        if (nullptr == m_client)
+        {
             return std::nullopt;
         }
         return m_client->get_client_endpoint();
     }
 
-   private:
-    Client_connection const* m_client = nullptr;
+  private:
+    const Client_connection* m_client = nullptr;
 };
 
-class Impl final : virtual public Disabled_server_connector,
-                   virtual public Enabled_server_connector {
-   public:
+class Impl final : virtual public Disabled_server_connector, virtual public Enabled_server_connector
+{
+  public:
     using Listen_endpoint = Server_connector_listen_endpoint;
     using Endpoint = Server_connector_endpoint;
 
-    Impl(Runtime_impl& runtime, Server_service_interface_definition configuration,
-         Service_instance instance, Disabled_server_connector::Callbacks callbacks,
-         Final_action final_action, Posix_credentials const& credentials);
-    Impl(Impl const&) = delete;
+    Impl(Runtime_impl& runtime,
+         Server_service_interface_definition configuration,
+         Service_instance instance,
+         Disabled_server_connector::Callbacks callbacks,
+         Final_action final_action,
+         const Posix_credentials& credentials);
+    Impl(const Impl&) = delete;
     Impl(Impl&&) = delete;
-    Impl& operator=(Impl const&) = delete;
+    Impl& operator=(const Impl&) = delete;
     Impl& operator=(Impl&&) = delete;
 
     ~Impl() noexcept override;
@@ -94,29 +107,28 @@ class Impl final : virtual public Disabled_server_connector,
     Impl* enable() override;
     Impl* disable() noexcept override;
     Result<Writable_payload> allocate_event_payload(Event_id event_id) noexcept override;
-    Server_service_interface_definition const& get_configuration() const noexcept override;
-    Service_instance const& get_service_instance() const noexcept override;
+    const Server_service_interface_definition& get_configuration() const noexcept override;
+    const Service_instance& get_service_instance() const noexcept override;
 
     // Endpoint APIs
     // Listen endpoint
     message::Connect::Return_type receive(message::Connect message);
 
     // Connection endpoint
-    message::Call_method::Return_type receive(Client_connection const& client,
-                                              message::Call_method message);
-    message::Posix_credentials::Return_type receive(Client_connection const& client,
-                                                    message::Posix_credentials const& message);
-    message::Subscribe_event::Return_type receive(Client_connection const& client,
-                                                  message::Subscribe_event message);
-    message::Unsubscribe_event::Return_type receive(Client_connection const& client,
+    message::Call_method::Return_type receive(const Client_connection& client, message::Call_method message);
+    message::Posix_credentials::Return_type receive(const Client_connection& client,
+                                                    const message::Posix_credentials& message);
+    message::Subscribe_event::Return_type receive(const Client_connection& client, message::Subscribe_event message);
+    message::Unsubscribe_event::Return_type receive(const Client_connection& client,
                                                     message::Unsubscribe_event message);
-    message::Request_event_update::Return_type receive(Client_connection const& client,
+    message::Request_event_update::Return_type receive(const Client_connection& client,
                                                        message::Request_event_update message);
-    message::Allocate_method_call_payload::Return_type receive(
-        Client_connection const& client, message::Allocate_method_call_payload message);
+    message::Allocate_method_call_payload::Return_type receive(const Client_connection& client,
+                                                               message::Allocate_method_call_payload message);
 
-   private:
-    struct Event_info {
+  private:
+    struct Event_info
+    {
         Event_mode mode;
     };
 
@@ -124,28 +136,28 @@ class Impl final : virtual public Disabled_server_connector,
     using Event_infos = std::vector<Event_info>;
 
     void unsubscribe_event();
-    void unsubscribe_event(Client_connection const& client);
-    void unsubscribe_event(Client_connection const& client, Event_id id);
+    void unsubscribe_event(const Client_connection& client);
+    void unsubscribe_event(const Client_connection& client, Event_id id);
     void remove_client();
 
     template <typename MessageType>
     void send_all(MessageType message) const;
 
     template <typename MessageType>
-    static void send(Client_connector_endpoint const& client, MessageType message);
+    static void send(const Client_connector_endpoint& client, MessageType message);
 
     template <typename MessageType>
-    static void send(std::optional<Client_connector_endpoint> const& client, MessageType message);
+    static void send(const std::optional<Client_connector_endpoint>& client, MessageType message);
 
     template <typename MessageType>
-    static typename MessageType::Return_type send(
-        std::optional<Client_connector_endpoint> const& client, MessageType message,
-        typename MessageType::Return_type default_return_value = {});
+    static typename MessageType::Return_type send(const std::optional<Client_connector_endpoint>& client,
+                                                  MessageType message,
+                                                  typename MessageType::Return_type default_return_value = {});
 
     Runtime_impl& m_runtime;
-    Server_service_interface_definition const m_configuration;
-    Service_instance const m_instance;
-    Disabled_server_connector::Callbacks const m_callbacks;
+    const Server_service_interface_definition m_configuration;
+    const Service_instance m_instance;
+    const Disabled_server_connector::Callbacks m_callbacks;
 #ifdef WITH_SOCOM_DEADLOCK_DETECTION
     Deadlock_detector m_deadlock_detector;
 #endif
@@ -164,44 +176,55 @@ class Impl final : virtual public Disabled_server_connector,
 };
 
 template <typename MessageType>
-void Impl::send_all(MessageType message) const {
+void Impl::send_all(MessageType message) const
+{
     std::unique_lock<std::mutex> lock{m_mutex};
     auto locked_client = m_client;
     lock.unlock();
 
-    if (locked_client) {
+    if (locked_client)
+    {
         locked_client->get_client_endpoint().send(std::move(message));
     }
 }
 
 template <typename MessageType>
-void Impl::send(Client_connector_endpoint const& client, MessageType message) {
+void Impl::send(const Client_connector_endpoint& client, MessageType message)
+{
     client.send(std::move(message));
 }
 
 template <typename MessageType>
-void Impl::send(std::optional<Client_connector_endpoint> const& client, MessageType message) {
-    if (client) {
+void Impl::send(const std::optional<Client_connector_endpoint>& client, MessageType message)
+{
+    if (client)
+    {
         client->send(std::move(message));
     }
 }
 
 template <typename MessageType>
-typename MessageType::Return_type Impl::send(
-    std::optional<Client_connector_endpoint> const& client, MessageType message,
-    typename MessageType::Return_type default_return_value) {
-    if (client) {
+typename MessageType::Return_type Impl::send(const std::optional<Client_connector_endpoint>& client,
+                                             MessageType message,
+                                             typename MessageType::Return_type default_return_value)
+{
+    if (client)
+    {
         return client->send(std::move(message));
     }
     return default_return_value;
 }
 
 template <typename MessageType>
-typename MessageType::Return_type Client_connection::receive(MessageType message) const {
+typename MessageType::Return_type Client_connection::receive(MessageType message) const
+{
     return m_impl.receive(*this, std::move(message));
 }
 
-inline Client_connector_endpoint Client_connection::get_client_endpoint() const { return m_client; }
+inline Client_connector_endpoint Client_connection::get_client_endpoint() const
+{
+    return m_client;
+}
 
 }  // namespace server_connector
 }  // namespace score::socom

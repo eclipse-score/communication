@@ -15,10 +15,12 @@
 #define SCORE_SOCOM_POSIX_CREDENTIALS_HPP
 
 #include <sys/types.h>
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Posix_credentials.
-struct Posix_credentials final {
+struct Posix_credentials final
+{
     /// \brief user ID
     ::uid_t uid;
     /// \brief group ID

@@ -15,22 +15,28 @@
 
 #include <score/span.hpp>
 
-namespace  {
+namespace
+{
 template <typename T>
-bool is_equal(score::cpp::span<T> const& lhs, score::cpp::span<T> const& rhs) {
+bool is_equal(const score::cpp::span<T>& lhs, const score::cpp::span<T>& rhs)
+{
     return std::equal(std::begin(lhs), std::end(lhs), std::begin(rhs), std::end(rhs));
 }
 }  // namespace
 
-namespace score::socom {
+namespace score::socom
+{
 
-namespace detail {
-bool Payload_impl::operator==(Payload_impl const& other) const noexcept {
+namespace detail
+{
+bool Payload_impl::operator==(const Payload_impl& other) const noexcept
+{
     return is_equal(header(), other.header()) && is_equal(data(), other.data());
 }
 }  // namespace detail
 
-Payload empty_payload() {
+Payload empty_payload()
+{
     return Payload{Payload::Writable_span{}, kNoSlotHandle, []() {}};
 }
 

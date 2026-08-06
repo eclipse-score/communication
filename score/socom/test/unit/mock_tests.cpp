@@ -18,12 +18,22 @@
 #include "score/socom/runtime_mock.hpp"
 #include "score/socom/server_connector_mock.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
-TEST(mock_test, runtime_mock) { Runtime_mock runtime; }
+TEST(mock_test, runtime_mock)
+{
+    Runtime_mock runtime;
+}
 
-TEST(mock_test, client_connector_mock) { Client_connector_mock client_connector; }
+TEST(mock_test, client_connector_mock)
+{
+    Client_connector_mock client_connector;
+}
 
-TEST(mock_test, server_connector_mock) { Server_connector_mock server_connector; }
+TEST(mock_test, server_connector_mock)
+{
+    Server_connector_mock server_connector;
+}
 
 }  // namespace score::socom

@@ -16,19 +16,21 @@
 
 #include "score/socom/service_interface_identifier.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// Service instance identification information
 ///
 /// This is only used to check if any (Disabled, Enabled) Server_connector for the given interface
 /// and instance already exists.
-struct Service_instance_identifier final {
+struct Service_instance_identifier final
+{
     Service_interface_identifier interface;
     Service_instance instance;
 };
 
 /// \cond
-bool operator<(Service_instance_identifier const& lhs, Service_instance_identifier const& rhs);
+bool operator<(const Service_instance_identifier& lhs, const Service_instance_identifier& rhs);
 /// \endcond
 
 }  // namespace score::socom

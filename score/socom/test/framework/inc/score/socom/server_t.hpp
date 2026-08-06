@@ -24,15 +24,17 @@
 #include "score/socom/server_connector.hpp"
 #include "score/socom/socom_mocks.hpp"
 
-namespace score::socom {
+namespace score::socom
+{
 
 /// \brief Facade for the server connector and callback mocks.
 ///
 /// It allows easy configuration of mocks and blocks its destruction until all
 /// expectations have been fulfilled. The stored server connector is always
 /// enabled and ready for communication after construction.
-struct Server_data {
-   private:
+struct Server_data
+{
+  private:
     std::atomic<bool> m_callback_called{true};
     std::atomic<bool> m_method_callback_called{true};
     std::atomic<bool> m_subscribed{true};
@@ -43,7 +45,7 @@ struct Server_data {
     Server_connector_credentials_callbacks_mock m_credential_callbacks;
     Enabled_server_connector::Uptr m_connector;
 
-   public:
+  public:
     /// \brief Create a new instance with the configuration stored in factory
     ///
     /// \param[in] factory factory to create server connector with
@@ -54,7 +56,7 @@ struct Server_data {
     /// \param[in] factory factory to create server connector with
     /// \param[in] method_id method which is expected
     /// \param[in] payload input of the method
-    Server_data(Connector_factory& factory, Method_id method_id, Payload const& expected_payload);
+    Server_data(Connector_factory& factory, Method_id method_id, const Payload& expected_payload);
 
     /// \brief Create a new instance with the configuration stored in factory
     ///
@@ -62,8 +64,8 @@ struct Server_data {
     /// \param[in] configuration use this instead of the one stored in factory
     /// \param[in] instance use this instead of the one stored in factory
     Server_data(Connector_factory& factory,
-                Server_service_interface_definition const& configuration,
-                Service_instance const& instance);
+                const Server_service_interface_definition& configuration,
+                const Service_instance& instance);
 
     /// \brief Create a new instance with the configuration stored in factory and POSIX credentials
     ///
@@ -72,16 +74,17 @@ struct Server_data {
     /// \param[in] instance use this instead of the one stored in factory
     /// \param[in] credentials use POSIX credentials
     Server_data(Connector_factory& factory,
-                Server_service_interface_definition const& configuration,
-                Service_instance const& instance, Posix_credentials const& credentials);
+                const Server_service_interface_definition& configuration,
+                const Service_instance& instance,
+                const Posix_credentials& credentials);
 
-    Server_data(Server_data const&) = delete;
+    Server_data(const Server_data&) = delete;
     Server_data(Server_data&&) = delete;
 
     /// \brief Block until all expectations have been fulfilled
     ~Server_data();
 
-    Server_data& operator=(Server_data const&) = delete;
+    Server_data& operator=(const Server_data&) = delete;
     Server_data& operator=(Server_data&&) = delete;
 
     /// \brief Return callback mocks object
@@ -120,13 +123,13 @@ struct Server_data {
     ///
     /// \param[in] event_id the event update
     /// \param[in] payload the data to send
-    void update_event(Event_id const& event_id, Payload const& payload);
+    void update_event(const Event_id& event_id, const Payload& payload);
 
     /// \brief Send requested event update to subscribed and requesting clients
     ///
     /// \param[in] event_id the event update
     /// \param[in] payload the data to send
-    void update_requested_event(Event_id const& event_id, Payload const& payload);
+    void update_requested_event(const Event_id& event_id, const Payload& payload);
 
     /// \brief Expect a call to the on_event_subscription_change callback
     ///
@@ -135,23 +138,23 @@ struct Server_data {
     /// \param[in] subscription_change_callback callback will be called when the expectation is
     /// fulfilled
     /// \return boolean reference which becomes true when the callback is called
-    std::atomic<bool> const& expect_on_event_subscription_change(
-        Event_id const& event_id, Event_state const& state,
+    const std::atomic<bool>& expect_on_event_subscription_change(
+        const Event_id& event_id,
+        const Event_state& state,
         Event_subscription_change_callback subscription_change_callback = {});
 
     /// \brief Expect (nonblocking) the subscription/unsubscription of an event
-    void expect_event_subscription(Event_id const& event_id);
+    void expect_event_subscription(const Event_id& event_id);
 
     /// \brief Expect a call to the on_event_subscription_change callback - without synchronization
     /// return
-    void expect_on_event_subscription_change_nosync(Event_id const& event_id,
-                                                    Event_state const& state);
+    void expect_on_event_subscription_change_nosync(const Event_id& event_id, const Event_state& state);
 
     /// \brief Expect but not respond to an update event request
     ///
     /// \param[in] event_id event for which a update is requested
     /// \return boolean reference which becomes true when the callback is called
-    std::atomic<bool> const& expect_update_event_request(Event_id const& event_id);
+    const std::atomic<bool>& expect_update_event_request(const Event_id& event_id);
 
     /// Expect but not respond to an update event request
     ///
@@ -160,20 +163,20 @@ struct Server_data {
     ///
     /// \param[in] event_id event for which a update is requested
     /// \return boolean reference which becomes true when the callback is called
-    std::atomic<bool> const& expect_update_event_requests(Event_id const& event_id);
+    const std::atomic<bool>& expect_update_event_requests(const Event_id& event_id);
 
     /// \brief Expect and respond to an update event request
     ///
     /// \param[in] event_id event for which a update is requested
     /// \param[in] payload the data to send
-    void expect_and_respond_update_event_request(Event_id const& event_id, Payload const& payload);
+    void expect_and_respond_update_event_request(const Event_id& event_id, const Payload& payload);
 
     /// \brief Expect and respond to method calls
     ///
     /// \param[in] method_id method which is expected
     /// \param[in] result allocated payload
     /// \return boolean reference which becomes true when the callback is called
-    std::atomic<bool> const& expect_method_allocate_payload(Method_id const& method_id,
+    const std::atomic<bool>& expect_method_allocate_payload(const Method_id& method_id,
                                                             score::Result<Writable_payload> result);
 
     /// \brief Expect and respond to method calls
@@ -183,10 +186,10 @@ struct Server_data {
     /// \param[in] payload input of the method
     /// \param[in] result return of the method
     /// \return boolean reference which becomes true when the callback is called
-    std::atomic<bool> const& expect_and_respond_method_calls(size_t counter,
-                                                             Method_id const& method_id,
-                                                             Payload const& payload,
-                                                             Method_result const& result);
+    const std::atomic<bool>& expect_and_respond_method_calls(size_t counter,
+                                                             const Method_id& method_id,
+                                                             const Payload& payload,
+                                                             const Method_result& result);
 
     /// \brief Expect and respond to a method call
     ///
@@ -194,25 +197,26 @@ struct Server_data {
     /// \param[in] payload input of the method
     /// \param[in] result return of the method
     /// \return boolean reference which becomes true when the callback is called
-    std::atomic<bool> const& expect_and_respond_method_call(Method_id const& method_id,
-                                                            Payload const& payload,
-                                                            Method_result const& result);
+    const std::atomic<bool>& expect_and_respond_method_call(const Method_id& method_id,
+                                                            const Payload& payload,
+                                                            const Method_result& result);
 
     /// \brief Expect method call and return received client callback
     ///
     /// \param[in] method_id method which is expected
     /// \param[in] payload input of the method
     /// \return Future which will return the client callback once the method is called
-    std::future<Method_call_reply_data_opt> expect_and_return_method_call(
-        Method_id const& method_id, Payload const& payload);
+    std::future<Method_call_reply_data_opt> expect_and_return_method_call(const Method_id& method_id,
+                                                                          const Payload& payload);
 
     /// Expect minimum number of method call and return received client callback
     ///
     /// \param[in] method_id method which is expected
     /// \param[in] payload input of the method
     /// \return Future which will return the client callback once the method is called
-    std::future<void> expect_method_calls(std::size_t const& min_num, Method_id const& method_id,
-                                          Payload const& payload);
+    std::future<void> expect_method_calls(const std::size_t& min_num,
+                                          const Method_id& method_id,
+                                          const Payload& payload);
 
     /// \brief Return event mode
     ///

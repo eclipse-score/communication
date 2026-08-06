@@ -12,18 +12,23 @@
  ********************************************************************************/
 
 #include "score/socom/error.hpp"
+#include "score/result/error.h"
+#include "score/result/error_code.h"
 #include "score/result/error_domain.h"
 #include <string_view>
-#include "score/result/error_code.h"
-#include "score/result/error.h"
 
-namespace score::socom {
-namespace {
+namespace score::socom
+{
+namespace
+{
 
-class Error_error_domain final : public score::result::ErrorDomain {
-   public:
-    std::string_view MessageFor(score::result::ErrorCode const& code) const noexcept override {
-        switch (static_cast<Error>(code)) {
+class Error_error_domain final : public score::result::ErrorDomain
+{
+  public:
+    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept override
+    {
+        switch (static_cast<Error>(code))
+        {
             case Error::runtime_error_service_not_available:
                 return "Service not available";
             case Error::runtime_error_request_rejected:
@@ -40,10 +45,13 @@ class Error_error_domain final : public score::result::ErrorDomain {
     }
 };
 
-class Server_connector_error_domain final : public score::result::ErrorDomain {
-   public:
-    std::string_view MessageFor(score::result::ErrorCode const& code) const noexcept override {
-        switch (static_cast<Server_connector_error>(code)) {
+class Server_connector_error_domain final : public score::result::ErrorDomain
+{
+  public:
+    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept override
+    {
+        switch (static_cast<Server_connector_error>(code))
+        {
             case Server_connector_error::logic_error_id_out_of_range:
                 return "ID out of range";
             case Server_connector_error::runtime_error_no_client_subscribed_for_event:
@@ -54,10 +62,13 @@ class Server_connector_error_domain final : public score::result::ErrorDomain {
     }
 };
 
-class Construction_error_domain final : public score::result::ErrorDomain {
-   public:
-    std::string_view MessageFor(score::result::ErrorCode const& code) const noexcept override {
-        switch (static_cast<Construction_error>(code)) {
+class Construction_error_domain final : public score::result::ErrorDomain
+{
+  public:
+    std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept override
+    {
+        switch (static_cast<Construction_error>(code))
+        {
             case Construction_error::duplicate_service:
                 return "Duplicate service";
             case Construction_error::duplicate_client:
@@ -72,18 +83,20 @@ class Construction_error_domain final : public score::result::ErrorDomain {
 
 }  // namespace
 
-score::result::Error MakeError(Error code, std::string_view user_message) noexcept {
+score::result::Error MakeError(Error code, std::string_view user_message) noexcept
+{
     static constexpr Error_error_domain error_domain;
     return {static_cast<score::result::ErrorCode>(code), error_domain, user_message};
 }
 
-score::result::Error MakeError(Server_connector_error code,
-                               std::string_view user_message) noexcept {
+score::result::Error MakeError(Server_connector_error code, std::string_view user_message) noexcept
+{
     static constexpr Server_connector_error_domain error_domain;
     return {static_cast<score::result::ErrorCode>(code), error_domain, user_message};
 }
 
-score::result::Error MakeError(Construction_error code, std::string_view user_message) noexcept {
+score::result::Error MakeError(Construction_error code, std::string_view user_message) noexcept
+{
     static constexpr Construction_error_domain error_domain;
     return {static_cast<score::result::ErrorCode>(code), error_domain, user_message};
 }
