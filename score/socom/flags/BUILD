@@ -21,6 +21,7 @@ cc_feature(
         "//:__subpackages__",
         "@@score_someip_gateway+//:__pkg__",
         "@@score_someip_gateway+//:__subpackages__",
+        "@@toolchains_llvm++llvm+llvm_toolchain//:__pkg__",
     ],
 )
 
