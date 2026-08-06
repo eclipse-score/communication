@@ -11,6 +11,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+visibility([
+    "//:__pkg__",
+    "//:__subpackages__",
+    "@@score_someip_gateway+//:__pkg__",
+    "@@score_someip_gateway+//:__subpackages__",
+])
+
 SOCOM_FEATURE_COMPATIBILITY = select({
     "//score/socom/flags:someip_gateway_enabled": [],
     "//conditions:default": ["@platforms//:incompatible"],

@@ -34,7 +34,12 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     target_compatible_with = SOCOM_FEATURE_COMPATIBILITY,
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//:__pkg__",
+        "//:__subpackages__",
+        "@@score_someip_gateway+//:__pkg__",
+        "@@score_someip_gateway+//:__subpackages__",
+    ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
@@ -52,7 +57,12 @@ cc_library(
     hdrs = [":mock_headers"],
     includes = ["mock"],
     target_compatible_with = SOCOM_FEATURE_COMPATIBILITY,
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//:__pkg__",
+        "//:__subpackages__",
+        "@@score_someip_gateway+//:__pkg__",
+        "@@score_someip_gateway+//:__subpackages__",
+    ],
     deps = [
         ":socom",
         "@googletest//:gtest_for_library",
