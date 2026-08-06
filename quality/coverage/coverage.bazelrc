@@ -112,6 +112,11 @@ coverage:qnx --config=qnx_x86_64
 # Disable treat_warnings_as_errors for coverage builds to avoid build failures from instrumentation-related warnings
 coverage --features=-score_communication_treat_warnings_as_errors
 
+# The coverage report generator is analyzed in host config and depends on
+# quality/coverage:coverage_scope. Keep feature-gated SOCom targets compatible
+# in that host-config analysis path as well.
+coverage --host_features=someip-gateway
+
 # Disable fortify_source for coverage builds to avoid linking failures with LLVM coverage runtime.
 coverage --features=-score_communication_fortify_source
 coverage --host_features=-score_communication_fortify_source
