@@ -15,6 +15,8 @@
 
 #include "score/mw/log/logging.h"
 
+#include <score/overload.hpp>
+
 #include <exception>
 #include <utility>
 
@@ -32,9 +34,18 @@ Configuration::Configuration(ServiceTypeDeployments service_types,
 {
 }
 
+Configuration::Configuration(Configuration&& other) noexcept
+    : service_types_{std::move(other.service_types_)},
+      service_instances_{std::move(other.service_instances_)},
+      global_configuration_{std::move(other.global_configuration_)},
+      tracing_configuration_{std::move(other.tracing_configuration_)}
+{
+}
+
 ServiceTypeDeployment* Configuration::AddServiceTypeDeployment(ServiceIdentifierType service_identifier_type,
                                                                ServiceTypeDeployment service_type_deployment) noexcept
 {
+    std::lock_guard lock_types{service_types_mutex_};
     const auto emplace_result =
         service_types_.emplace(std::move(service_identifier_type), std::move(service_type_deployment));
     if (!emplace_result.second)
@@ -50,6 +61,7 @@ ServiceInstanceDeployment* Configuration::AddServiceInstanceDeployments(
     InstanceSpecifier instance_specifier,
     ServiceInstanceDeployment service_instance_deployment) noexcept
 {
+    std::lock_guard lock_instances{service_instances_mutex_};
     const auto emplace_result =
         service_instances_.emplace(std::move(instance_specifier), std::move(service_instance_deployment));
     if (!emplace_result.second)
@@ -76,6 +88,7 @@ score::Result<void> Configuration::Validate() const noexcept
 
 score::Result<void> Configuration::CrossCheckAsilLevels() const noexcept
 {
+    std::lock_guard lock_instances{service_instances_mutex_};
     for (const auto& service_instance : service_instances_)
     {
         if ((service_instance.second.asilLevel_ == QualityType::kASIL_B) &&
@@ -90,8 +103,10 @@ score::Result<void> Configuration::CrossCheckAsilLevels() const noexcept
 
 score::Result<void> Configuration::CrossCheckServiceInstancesToTypes() const noexcept
 {
+    std::lock_guard lock_instances{service_instances_mutex_};
     for (const auto& service_instance : service_instances_)
     {
+        std::lock_guard lock_types{service_types_mutex_};
         const auto foundServiceType = service_types_.find(service_instance.second.service_);
         if (foundServiceType == service_types_.cend())
         {
@@ -165,6 +180,8 @@ score::Result<bool> Configuration::HasLolaServiceDeployment() const noexcept
 std::set<std::string_view> Configuration::GetListOfNamesOfConfiguredServices() const noexcept
 {
     std::set<std::string_view> configured_service_types{};
+
+    std::lock_guard lock_types{service_types_mutex_};
     for (const auto& map_entry : service_types_)
     {
         const auto service_type_string_view = map_entry.first.ToString();
@@ -224,6 +241,7 @@ std::set<std::string_view> Configuration::GetElementNamesOfServiceType(const std
         // LCOV_EXCL_STOP
     );
 
+    std::lock_guard lock_types{service_types_mutex_};
     // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed". The false
     // case (empty GetServiceTypes()) is structurally unreachable: GetElementNamesOfServiceType is only called from
     // ParseEvents/ParseFields which are reached only after the service type was found in GetServiceTypes().
@@ -243,6 +261,8 @@ std::set<std::string_view> Configuration::GetElementNamesOfServiceType(const std
 std::set<uid_t> Configuration::GetAggregatedAllowedUsers(const QualityType asil_level) const noexcept
 {
     std::set<uid_t> aggregated_allowed_users{};
+
+    std::lock_guard lock_instances{service_instances_mutex_};
     for (const auto& instanceDeplElement : service_instances_)
     {
         const auto* const instance_deployment =
@@ -290,6 +310,8 @@ bool Configuration::AggregateAllowedUsers(std::set<uid_t>& aggregated_allowed_us
 std::set<std::string_view> Configuration::GetInstancesOfServiceType(std::string_view service_type) const noexcept
 {
     std::set<std::string_view> result{};
+
+    std::lock_guard lock_instances{service_instances_mutex_};
     // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed" despite all
     // lines within the loop being covered. We also have a test for the case where GetServiceInstances() is empty.
     // Suppression can be removed when the tooling bug is fixed.)

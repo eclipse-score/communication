@@ -22,11 +22,8 @@
 
 #include "score/result/result.h"
 
-#include <score/overload.hpp>
-
-#include <cstdint>
+#include <mutex>
 #include <set>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -63,7 +60,8 @@ class Configuration final
      * \brief Class is moveable but not copyable
      */
     Configuration(const Configuration& other) = delete;
-    Configuration(Configuration&& other) noexcept = default;
+
+    Configuration(Configuration&& other) noexcept;
     Configuration& operator=(const Configuration& other) & = delete;
     Configuration& operator=(Configuration&& other) & = delete;
 
@@ -84,17 +82,20 @@ class Configuration final
 
     ServiceTypeDeployment GetServiceTypeDeployment(const ServiceIdentifierType& service_identifier_type) const noexcept
     {
+        std::lock_guard lock_instances{service_types_mutex_};
         return service_types_.at(service_identifier_type);
     }
 
     ServiceInstanceDeployment GetServiceInstanceDeployment(const InstanceSpecifier& instance_specifier) const noexcept
     {
+        std::lock_guard lock_instances{service_instances_mutex_};
         return service_instances_.at(instance_specifier);
     }
 
     std::optional<std::reference_wrapper<const ServiceTypeDeployment>> FindServiceTypeDeployment(
         const ServiceIdentifierType& service_identifier_type) const noexcept
     {
+        std::lock_guard lock_instances{service_types_mutex_};
         const auto it = service_types_.find(service_identifier_type);
         if (it == service_types_.end())
         {
@@ -106,6 +107,7 @@ class Configuration final
     std::optional<std::reference_wrapper<const ServiceInstanceDeployment>> FindServiceInstanceDeployment(
         const InstanceSpecifier& specifier) const noexcept
     {
+        std::lock_guard lock_instances{service_instances_mutex_};
         const auto it = service_instances_.find(specifier);
         if (it == service_instances_.end())
         {
@@ -116,21 +118,25 @@ class Configuration final
 
     size_t GetSizeOfServiceTypes() const noexcept
     {
+        std::lock_guard lock_instances{service_types_mutex_};
         return service_types_.size();
     }
 
     bool IsServiceTypesEmpty() const noexcept
     {
+        std::lock_guard lock_instances{service_types_mutex_};
         return service_types_.empty();
     }
 
     size_t GetSizeOfServiceInstances() const noexcept
     {
+        std::lock_guard lock_instances{service_instances_mutex_};
         return service_instances_.size();
     }
 
     bool IsServiceInstancesEmpty() const noexcept
     {
+        std::lock_guard lock_instances{service_instances_mutex_};
         return service_instances_.empty();
     }
 
@@ -191,6 +197,9 @@ class Configuration final
     ServiceInstanceDeployments service_instances_;
     GlobalConfiguration global_configuration_;
     TracingConfiguration tracing_configuration_;
+
+    mutable std::mutex service_instances_mutex_;
+    mutable std::mutex service_types_mutex_;
 };
 
 }  // namespace score::mw::com::impl
