@@ -471,9 +471,15 @@ TEST_F(GenericSkeletonTest, GetFieldsReturnsCorrectMapOfServiceElements)
 
     // 1. Prepare a deployment configuration containing three specific field names
     LolaServiceInstanceDeployment::FieldInstanceMapping field_mapping;
-    field_mapping["temperature"] = {LolaEventInstanceDeployment{1, 1, 1, true, 0}, false, false};
-    field_mapping["pressure"] = {LolaEventInstanceDeployment{2, 1, 1, true, 0}, false, false};
-    field_mapping["status"] = {LolaEventInstanceDeployment{3, 1, 1, true, 0}, false, false};
+    field_mapping.emplace(
+        "temperature",
+        LolaFieldInstanceDeployment{LolaEventInstanceDeployment{1, 1, 1, true, 0}, false, false});
+    field_mapping.emplace(
+        "pressure",
+        LolaFieldInstanceDeployment{LolaEventInstanceDeployment{2, 1, 1, true, 0}, false, false});
+    field_mapping.emplace(
+        "status",
+        LolaFieldInstanceDeployment{LolaEventInstanceDeployment{3, 1, 1, true, 0}, false, false});
 
     auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(field_mapping);
 

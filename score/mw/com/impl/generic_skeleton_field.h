@@ -27,7 +27,7 @@
 namespace score::mw::com::impl
 {
 
-/// @brief Represents a generic, type-erased skeleton field.
+/// \brief Represents a generic, type-erased skeleton field.
 ///
 /// This class provides runtime-configurable field support for `GenericSkeleton`.
 /// It manages notifications via an underlying `GenericSkeletonEvent` and serves
@@ -35,13 +35,13 @@ namespace score::mw::com::impl
 class GenericSkeletonField : public SkeletonFieldBase
 {
   public:
-    /// @brief Constructs a new GenericSkeletonField.
-    /// @param skeleton_base The parent skeleton instance.
-    /// @param field_name The logical name of the field.
-    /// @param generic_event The underlying type-erased event used for field notifications.
-    /// @param has_getter Indicates whether this field is configured to have a Get handler.
-    /// @param has_setter Indicates whether this field is configured to have a Set handler.
-    /// @param has_notifier Indicates whether this field is configured to support notifications.
+    /// \brief Constructs a new GenericSkeletonField.
+    /// \param skeleton_base The parent skeleton instance.
+    /// \param field_name The logical name of the field.
+    /// \param generic_event The underlying type-erased event used for field notifications.
+    /// \param has_getter Indicates whether this field is configured to have a Get handler.
+    /// \param has_setter Indicates whether this field is configured to have a Set handler.
+    /// \param has_notifier Indicates whether this field is configured to support notifications.
     GenericSkeletonField(SkeletonBase& skeleton_base,
                          const std::string_view field_name,
                          std::unique_ptr<GenericSkeletonEvent> generic_event,
@@ -56,46 +56,46 @@ class GenericSkeletonField : public SkeletonFieldBase
     GenericSkeletonField(GenericSkeletonField&& other) noexcept = default;
     GenericSkeletonField& operator=(GenericSkeletonField&& other) & noexcept = default;
 
-    /// @brief Updates the field value using a raw byte payload.
-    /// @details If the field is configured with a getter, this updates the binding's
+    /// \brief Updates the field value using a raw byte payload.
+    /// \details If the field is configured with a getter, this updates the binding's
     ///          shared memory so the value is visible to subsequent Get requests.
     ///          If configured with a notifier, it also notifies subscribers.
     ///          If `OfferService()` has not been called yet, the payload is cached as
     ///          the initial value and deferred until the service is offered.
-    /// @param raw_value The type-erased payload representing the new field value.
-    /// @return A result indicating success or an error code on failure.
+    /// \param raw_value The type-erased payload representing the new field value.
+    /// \return A result indicating success or an error code on failure.
     Result<void> Update(score::cpp::span<const uint8_t> raw_value) noexcept;
 
-    /// @brief Updates the field value using a pre-allocated sample.
-    /// @details If the field is configured with a getter, this updates the binding's
+    /// \brief Updates the field value using a pre-allocated sample.
+    /// \details If the field is configured with a getter, this updates the binding's
     ///          shared memory so the value is visible to subsequent Get requests.
     ///          If configured with a notifier, it also notifies subscribers.
-    /// @param sample A sample previously allocated via `Allocate()`.
-    /// @return A result indicating success or an error code on failure.
+    /// \param sample A sample previously allocated via `Allocate()`.
+    /// \return A result indicating success or an error code on failure.
     Result<void> Update(SampleAllocateePtr<void> sample) noexcept;
 
-    /// @brief Allocates a zero-copy sample buffer for this field.
-    /// @return The allocated sample pointer, or an error if allocation fails or
+    /// \brief Allocates a zero-copy sample buffer for this field.
+    /// \return The allocated sample pointer, or an error if allocation fails or
     ///         if OfferService() has not been called yet.
     Result<SampleAllocateePtr<void>> Allocate() noexcept;
 
-    /// @brief Registers a handler for answering Set requests from proxies.
-    /// @param set_handler The user-provided handler callback accepting a mutable span of raw bytes,
+    /// \brief Registers a handler for answering Set requests from proxies.
+    /// \param set_handler The user-provided handler callback accepting a mutable span of raw bytes,
     ///        allowing the provider to read the proposed value and optionally write directly to it
     ///        to correct/clamp the value in-place.
-    /// @return A result indicating success, or ComErrc::kCouldNotExecute if the field was not configured
+    /// \return A result indicating success, or ComErrc::kCouldNotExecute if the field was not configured
     ///         with a setter (i.e. has_setter in the constructor was false).
     Result<void> RegisterSetHandler(std::function<void(score::cpp::span<uint8_t>)> set_handler);
 
-    /// @brief Internal hook to register the get handler with the binding.
-    /// @details This is called by SkeletonFieldBase::PrepareOffer().
-    /// @return A result indicating success or an error code.
+    /// \brief Internal hook to register the get handler with the binding.
+    /// \details This is called by SkeletonFieldBase::PrepareOffer().
+    /// \return A result indicating success or an error code.
     [[nodiscard]] Result<void> RegisterGetHandler() override;
 
     private:
-    /// @brief Checks if a valid initial value was cached prior to offering the service.
+    /// \brief Checks if a valid initial value was cached prior to offering the service.
     bool IsInitialValueSaved() const noexcept override;
-    /// @brief Allocates and sends the cached initial value after the service is successfully offered.
+    /// \brief Allocates and sends the cached initial value after the service is successfully offered.
     Result<void> DoDeferredUpdate() noexcept override;
     [[nodiscard]] bool IsSetHandlerMissing() const noexcept override;
 
