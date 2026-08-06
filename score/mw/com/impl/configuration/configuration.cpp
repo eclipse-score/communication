@@ -76,7 +76,7 @@ score::Result<void> Configuration::Validate() const noexcept
 
 score::Result<void> Configuration::CrossCheckAsilLevels() const noexcept
 {
-    for (const auto& service_instance : GetServiceInstances())
+    for (const auto& service_instance : service_instances_)
     {
         if ((service_instance.second.asilLevel_ == QualityType::kASIL_B) &&
             (GetGlobalConfiguration().GetProcessAsilLevel() != QualityType::kASIL_B))
@@ -90,10 +90,10 @@ score::Result<void> Configuration::CrossCheckAsilLevels() const noexcept
 
 score::Result<void> Configuration::CrossCheckServiceInstancesToTypes() const noexcept
 {
-    for (const auto& service_instance : GetServiceInstances())
+    for (const auto& service_instance : service_instances_)
     {
-        const auto foundServiceType = GetServiceTypes().find(service_instance.second.service_);
-        if (foundServiceType == GetServiceTypes().cend())
+        const auto foundServiceType = service_types_.find(service_instance.second.service_);
+        if (foundServiceType == service_types_.cend())
         {
             return MakeUnexpected(
                 configuration_errc::configuration_invalid_type_reference_from_instance,

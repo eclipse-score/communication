@@ -110,9 +110,9 @@ TEST_F(ConfigurationFixture, construct)
     Configuration unit2(std::move(unit_.value()));
 
     // verify that unit2 really contains still valid copies
-    EXPECT_EQ(unit2.GetServiceTypes().size(), 1);
-    EXPECT_EQ(unit2.GetServiceInstances().size(), 1);
-    EXPECT_NE(unit2.GetServiceInstances().find(kConfigStoreQm.instance_specifier_), unit2.GetServiceInstances().end());
+    EXPECT_EQ(unit2.GetSizeOfServiceTypes(), 1);
+    EXPECT_EQ(unit2.GetSizeOfServiceInstances(), 1);
+    EXPECT_TRUE(unit2.FindServiceInstanceDeployment(kConfigStoreQm.instance_specifier_).has_value());
 
     // verify default values of global section
     EXPECT_EQ(unit2.GetGlobalConfiguration().GetProcessAsilLevel(), QualityType::kASIL_QM);
@@ -152,8 +152,9 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
     const LolaServiceTypeDeployment manual_lola_service_type(service_id, service_events, service_fields);
 
     // Match ServiceTypes generated from json
+    const auto generated_service_type = config.GetServiceTypeDeployment(service_identifier_type);
     const auto* generated_lola_service_type =
-        std::get_if<LolaServiceTypeDeployment>(&config.GetServiceTypes().at(service_identifier_type).binding_info_);
+        std::get_if<LolaServiceTypeDeployment>(&generated_service_type.binding_info_);
     ASSERT_NE(generated_lola_service_type, nullptr);
     EXPECT_EQ(manual_lola_service_type.service_id_, generated_lola_service_type->service_id_);
     const auto& manual_service_events = manual_lola_service_type.events_;
@@ -217,7 +218,7 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
 
     // Match ServiceInstances generated from json
     const ServiceInstanceDeployment& generated_service_instance =
-        config.GetServiceInstances().at(instance_specifier_result.value());
+        config.GetServiceInstanceDeployment(instance_specifier_result.value());
 
     auto serialized_manual_service_instance = manual_service_instance.Serialize();
     auto serialized_manual_service_instance_string = GetStringFromJson(manual_service_instance.Serialize());

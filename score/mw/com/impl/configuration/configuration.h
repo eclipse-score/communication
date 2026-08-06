@@ -73,14 +73,6 @@ class Configuration final
         InstanceSpecifier instance_specifier,
         ServiceInstanceDeployment service_instance_deployment) noexcept;
 
-    const ServiceTypeDeployments& GetServiceTypes() const& noexcept
-    {
-        return service_types_;
-    }
-    const ServiceInstanceDeployments& GetServiceInstances() const& noexcept
-    {
-        return service_instances_;
-    }
     const GlobalConfiguration& GetGlobalConfiguration() const& noexcept
     {
         return global_configuration_;
@@ -88,6 +80,58 @@ class Configuration final
     const TracingConfiguration& GetTracingConfiguration() const& noexcept
     {
         return tracing_configuration_;
+    }
+
+    ServiceTypeDeployment GetServiceTypeDeployment(const ServiceIdentifierType& service_identifier_type) const noexcept
+    {
+        return service_types_.at(service_identifier_type);
+    }
+
+    ServiceInstanceDeployment GetServiceInstanceDeployment(const InstanceSpecifier& instance_specifier) const noexcept
+    {
+        return service_instances_.at(instance_specifier);
+    }
+
+    std::optional<std::reference_wrapper<const ServiceTypeDeployment>> FindServiceTypeDeployment(
+        const ServiceIdentifierType& service_identifier_type) const noexcept
+    {
+        const auto it = service_types_.find(service_identifier_type);
+        if (it == service_types_.end())
+        {
+            return std::nullopt;
+        }
+        return std::cref(it->second);
+    }
+
+    std::optional<std::reference_wrapper<const ServiceInstanceDeployment>> FindServiceInstanceDeployment(
+        const InstanceSpecifier& specifier) const noexcept
+    {
+        const auto it = service_instances_.find(specifier);
+        if (it == service_instances_.end())
+        {
+            return std::nullopt;
+        }
+        return std::cref(it->second);
+    }
+
+    size_t GetSizeOfServiceTypes() const noexcept
+    {
+        return service_types_.size();
+    }
+
+    bool IsServiceTypesEmpty() const noexcept
+    {
+        return service_types_.empty();
+    }
+
+    size_t GetSizeOfServiceInstances() const noexcept
+    {
+        return service_instances_.size();
+    }
+
+    bool IsServiceInstancesEmpty() const noexcept
+    {
+        return service_instances_.empty();
     }
 
     /// \brief Public interface to trigger a validation of this configuration.
