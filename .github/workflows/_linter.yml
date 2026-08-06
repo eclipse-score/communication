@@ -151,7 +151,13 @@ jobs:
           # Merge all per-file SARIF reports (one per linted source file) into a
           # single SARIF document with one combined "runs[0].results" array,
           # since they all share the same tool driver for a given linter.
-          echo "${REPORTS}" | xargs jq -s '{
+          #
+          # Use one jq process fed from stdin instead of `xargs jq ...`, because
+          # xargs may split into multiple jq invocations once argv limits are hit,
+          # which would append multiple JSON documents to the output file.
+          while IFS= read -r report; do
+            cat "${report}"
+          done <<< "${REPORTS}" | jq -s '{
             "$schema": .[0]["$schema"],
             version: .[0].version,
             runs: [ (.[0].runs[0] * { results: (map(.runs[0].results) | add) }) ]

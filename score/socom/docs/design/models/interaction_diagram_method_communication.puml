@@ -1,0 +1,70 @@
+' *******************************************************************************
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+participant Client_1 <<component user>>
+participant SOCom
+participant Server <<component user>>
+autonumber
+activate Server
+activate Client_1
+
+== Reply requested ==
+
+Client_1 -> SOCom : allocate_method_call_payload(x)
+activate SOCom
+SOCom -> Server : on_method_call_payload_allocate(x)
+activate Server
+return writable_payload
+return writable_payload
+
+Client_1 -> SOCom : call_method(x, call_payload, reply_data)
+
+activate SOCom
+SOCom -> Server : on_method_call(x, call_payload, reply_data)
+activate Server
+Server -> Server : process method x
+return
+return
+
+note right of Server
+    Server might write data into reply_data.reply_payload
+end note
+
+Server -> SOCom : reply_data.reply_callback(reply_data.reply_payload)
+activate SOCom
+SOCom -> Client_1 : on_method_reply(x, reply_payload)
+activate Client_1
+return
+SOCom --> Server
+
+deactivate SOCom
+== Fire and forget (no reply) ==
+
+Client_1 -> SOCom : allocate_method_call_payload(x)
+activate SOCom
+SOCom -> Server : on_method_call_payload_allocate(x)
+activate Server
+return writable_payload
+return writable_payload
+
+Client_1 -> SOCom : call_method(x, call_payload, nullopt)
+activate SOCom
+
+SOCom -> Server : on_method_call(x, call_payload, nullopt)
+activate Server
+
+Server -> Server : process method x
+return
+return
+@enduml

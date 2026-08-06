@@ -1,0 +1,87 @@
+' *******************************************************************************
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+participant app as "Application" <<component user>>
+participant socom as "SOCom"
+participant bridge as "Generic service bridge" <<component user>>
+autonumber
+
+== Initialization ==
+
+activate app
+app  -> socom ** : create_runtime()
+activate socom
+app  -> bridge ** : create_bridge_component()
+activate bridge
+
+bridge -> socom :  register_service_bridge(bridge_request_service)
+activate socom
+return
+
+note right
+To get information about services the
+bridge needs to create a client connector.
+end note
+
+== service instance remote usage ==
+
+group Implementation detail
+bridge -> bridge
+note right
+A remote counterpart is interested
+in a service and informed the
+service bridge about.
+end note
+end
+
+bridge -> socom : make_client_connector(interface_A, instance_1)
+activate socom
+return
+
+group !!! Important: break circle !!!
+socom X--> bridge : bridge_request_service(interface_A, instance_1)
+note right #FFAAAA
+SOCom shall call bridge_request_service()
+only if service instance is locally not available.
+end note
+end
+
+== Application creates a service instance ==
+
+app -> socom : make_server_connector(interface_A, instance_1)
+activate socom
+socom -> socom
+note right
+SOCom connects client_connector to server_connector.
+end note
+
+socom -> bridge : Client_connector::Service_state_change_callback(Service_state::available)
+activate bridge
+
+group Implementation detail
+bridge -> bridge
+note right
+The generic service bridge
+informs its remote counterparts
+about the availability
+of a new service instance
+interface_A, instance_1
+at the local endpoint.
+end note
+end
+return
+
+return
+
+@enduml
