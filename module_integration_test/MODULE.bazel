@@ -30,6 +30,17 @@ git_override(
     remote = "https://github.com/bmw-software-engineering/lobster.git",
 )
 
+# score_tooling (transitive, via score_communication) uses the apt.sources_list/
+# apt.sysroot API, only available on this fork -- mirrors the same override in
+# the root MODULE.bazel (this module has its own bzlmod graph, so that one
+# doesn't propagate here).
+bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
+git_override(
+    module_name = "rules_distroless",
+    commit = "e1df344fde5adaef7397c34076b56f27771d08b8",
+    remote = "https://github.com/LittleHuba/rules_distroless.git",
+)
+
 # Only required to build the example, shall be replaceable with nearly every other C++ Toolchain setup
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2", dev_dependency = True)
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.4", dev_dependency = True)
