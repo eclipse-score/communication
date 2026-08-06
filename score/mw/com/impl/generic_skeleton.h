@@ -88,11 +88,7 @@ class GenericSkeleton : public SkeletonBase
 
     /// \brief Offers the service instance.
     /// \return A blank result, or an error if offering fails.
-<<<<<<< HEAD
     [[nodiscard]] Result<void> OfferService();
-=======
-    [[nodiscard]] Result<void> OfferService() noexcept;
->>>>>>> 217eb836 (Docs: refactor doxygen tag prefix)
 
     /// \brief Stops offering the service instance.
     void StopOfferService();
