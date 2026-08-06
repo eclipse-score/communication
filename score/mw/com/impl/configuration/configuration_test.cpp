@@ -532,6 +532,88 @@ TEST_F(ConfigurationFixture, GetElementNamesOfServiceTypeReturnsCorrectFieldName
     EXPECT_TRUE(field_names.find("field2") != field_names.end());
 }
 
+TEST_F(ConfigurationFixture, GetAggregatedAllowedUsersReturnsCorrectUserIds)
+{
+    // Given a configuration with 2 LoLa service instance deployments each with a certain set of
+    // allowed consumers and producers for ASIL_QM and ASIL_B
+    WithEmptyConfiguration();
+
+    const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
+    const auto kInstanceSpecifier2 = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort2"}).value();
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment1;
+
+    lolaServiceInstanceDeployment1.allowed_consumer_.insert({QualityType::kASIL_QM, {42, 43}});
+    lolaServiceInstanceDeployment1.allowed_consumer_.insert({QualityType::kASIL_B, {54, 55}});
+    lolaServiceInstanceDeployment1.allowed_provider_.insert({QualityType::kASIL_QM, {15}});
+    lolaServiceInstanceDeployment1.allowed_provider_.insert({QualityType::kASIL_B, {15}});
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment2;
+    lolaServiceInstanceDeployment2.allowed_consumer_.insert({QualityType::kASIL_QM, {42, 60}});
+    lolaServiceInstanceDeployment2.allowed_consumer_.insert({QualityType::kASIL_B, {42, 60}});
+    lolaServiceInstanceDeployment2.allowed_provider_.insert({QualityType::kASIL_QM, {55}});
+    lolaServiceInstanceDeployment2.allowed_provider_.insert({QualityType::kASIL_B, {56}});
+    ServiceInstanceDeployment::BindingInformation binding1(lolaServiceInstanceDeployment1);
+    ServiceInstanceDeployment::BindingInformation binding2(lolaServiceInstanceDeployment2);
+
+    ServiceIdentifierType si1 = make_ServiceIdentifierType("foo", 1U, 1U);
+    ServiceIdentifierType si2 = make_ServiceIdentifierType("bar", 1U, 1U);
+    ServiceInstanceDeployment deployment1(si1, binding1, QualityType::kASIL_B, kInstanceSpecifier);
+    ServiceInstanceDeployment deployment2(si2, binding2, QualityType::kASIL_QM, kInstanceSpecifier2);
+
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier, deployment1);
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier2, deployment2);
+
+    // When calling GetAggregatedAllowedUsers for ASIL_QM and ASIL_B
+    const auto allowed_users_qm = unit_.value().GetAggregatedAllowedUsers(QualityType::kASIL_QM);
+    const auto allowed_users_asil_b = unit_.value().GetAggregatedAllowedUsers(QualityType::kASIL_B);
+
+    // Then the result should contain the correct user IDs
+    EXPECT_EQ(allowed_users_qm.size(), 5);
+    EXPECT_TRUE(allowed_users_qm.find(15) != allowed_users_qm.end());
+    EXPECT_TRUE(allowed_users_qm.find(42) != allowed_users_qm.end());
+    EXPECT_TRUE(allowed_users_qm.find(43) != allowed_users_qm.end());
+    EXPECT_TRUE(allowed_users_qm.find(55) != allowed_users_qm.end());
+    EXPECT_TRUE(allowed_users_qm.find(60) != allowed_users_qm.end());
+
+    EXPECT_EQ(allowed_users_asil_b.size(), 6);
+    EXPECT_TRUE(allowed_users_asil_b.find(15) != allowed_users_asil_b.end());
+    EXPECT_TRUE(allowed_users_asil_b.find(42) != allowed_users_asil_b.end());
+    EXPECT_TRUE(allowed_users_asil_b.find(54) != allowed_users_asil_b.end());
+    EXPECT_TRUE(allowed_users_asil_b.find(55) != allowed_users_asil_b.end());
+    EXPECT_TRUE(allowed_users_asil_b.find(56) != allowed_users_asil_b.end());
+    EXPECT_TRUE(allowed_users_asil_b.find(60) != allowed_users_asil_b.end());
+}
+
+TEST_F(ConfigurationFixture, GetAggregatedAllowedUsersReturnsEmptySetIfNoAllowedAppsAreConfigured)
+{
+    // Given a configuration with 2 LoLa service instance deployments for which no allowed consumer or provider
+    // apps are configured
+    WithEmptyConfiguration();
+
+    const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
+    const auto kInstanceSpecifier2 = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort2"}).value();
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment1;
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment2;
+
+    ServiceInstanceDeployment::BindingInformation binding1(lolaServiceInstanceDeployment1);
+    ServiceInstanceDeployment::BindingInformation binding2(lolaServiceInstanceDeployment2);
+
+    ServiceIdentifierType si1 = make_ServiceIdentifierType("foo", 1U, 1U);
+    ServiceIdentifierType si2 = make_ServiceIdentifierType("bar", 1U, 1U);
+    ServiceInstanceDeployment deployment1(si1, binding1, QualityType::kASIL_B, kInstanceSpecifier);
+    ServiceInstanceDeployment deployment2(si2, binding2, QualityType::kASIL_QM, kInstanceSpecifier2);
+
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier, deployment1);
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier2, deployment2);
+
+    // When calling GetAggregatedAllowedUsers for ASIL_QM and ASIL_B
+    const auto allowed_users_qm = unit_.value().GetAggregatedAllowedUsers(QualityType::kASIL_QM);
+    const auto allowed_users_asil_b = unit_.value().GetAggregatedAllowedUsers(QualityType::kASIL_B);
+
+    // Then the resulting lists should be empty for both ASIL levels
+    EXPECT_TRUE(allowed_users_qm.empty());
+    EXPECT_TRUE(allowed_users_asil_b.empty());
+}
+
 using ConfigurationDeathTest = ConfigurationFixture;
 TEST_F(ConfigurationDeathTest, AddingAServiceTypeDeploymentWithDuplicateServiceIdentifierTypeTerminates)
 {

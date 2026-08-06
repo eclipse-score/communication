@@ -93,15 +93,6 @@ class Runtime final : public IRuntime
     std::unique_ptr<lola::tracing::TracingRuntime> tracing_runtime_;
     RollbackSynchronization rollback_data_;
 
-    /// \brief Helper func aggregates allowed_user_ids of the given quality type into aggregated_allowed_users. If
-    ///        allowed_user_ids is empty (no access restriction!), then aggregated_allowed_users is cleared!
-    /// \param aggregated_allowed_users aggregated user ids (for access control) for the given asil_level
-    /// \param allowed_user_ids user ids to be aggregated/added into aggregated_allowed_users
-    /// \param asil_level asil level
-    /// \return true, in case aggregated_allowed_users has been cleared
-    static bool AggregateAllowedUsers(std::set<uid_t>& aggregated_allowed_users,
-                                      const std::unordered_map<QualityType, std::vector<uid_t>>& allowed_user_ids,
-                                      const QualityType asil_level);
     pid_t pid_;
     std::uint32_t application_id_;
 

@@ -100,19 +100,36 @@ class Configuration final
     std::set<std::string_view> GetListOfNamesOfConfiguredServices() const noexcept;
 
     /// \brief Returns a set of element names, used within the given service_type. The names in the set are string_views
-    ///        pointing to strings owned by members of this Configuration. So the life-time of those string-views is bound to
-    ///        the life-time of this Configuration.
+    ///        pointing to strings owned by members of this Configuration. So the life-time of those string-views is
+    ///        bound to the life-time of this Configuration.
     /// \param service_type service type from which to get element names
     /// \param element_type element type of which to get names
     /// \return a set of string_views denoting the service element names.
     std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view service_type,
                                                             ServiceElementType element_type) const noexcept;
 
+    /// \brief Returns a set of UIDs of all allowed users of all service instances defined in this configuration for the
+    /// given
+    ///         ASIL level.
+    /// \param asil_level ASIL level of interest for which to get allowed users
+    /// \return a set of uid_t of all allowed providers and consumers
+    std::set<uid_t> GetAggregatedAllowedUsers(const QualityType asil_level) const noexcept;
+
   private:
     /// \brief Validate if service ASIL levels match the application's assigned ASIL level.
     score::Result<void> CrossCheckAsilLevels() const noexcept;
     /// \brief Validate if service type definitions and service instance definitions fit together.
     score::Result<void> CrossCheckServiceInstancesToTypes() const noexcept;
+
+    /// \brief Helper func aggregates allowed_user_ids of the given quality type into aggregated_allowed_users. If
+    ///        allowed_user_ids is empty (no access restriction!), then aggregated_allowed_users is cleared!
+    /// \param aggregated_allowed_users aggregated user ids (for access control) for the given asil_level
+    /// \param allowed_user_ids user ids to be aggregated/added into aggregated_allowed_users
+    /// \param asil_level asil level
+    /// \return true, in case aggregated_allowed_users has been cleared
+    static bool AggregateAllowedUsers(std::set<uid_t>& aggregated_allowed_users,
+                                      const std::unordered_map<QualityType, std::vector<uid_t>>& allowed_user_ids,
+                                      const QualityType asil_level) noexcept;
 
     /**
      * @brief map containing all the configured ports/InstanceSpecifiers for an executable.

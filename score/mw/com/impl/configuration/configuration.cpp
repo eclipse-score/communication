@@ -240,4 +240,51 @@ std::set<std::string_view> Configuration::GetElementNamesOfServiceType(const std
     return result;
 }
 
+std::set<uid_t> Configuration::GetAggregatedAllowedUsers(const QualityType asil_level) const noexcept
+{
+    std::set<uid_t> aggregated_allowed_users{};
+    for (const auto& instanceDeplElement : service_instances_)
+    {
+        const auto* const instance_deployment =
+            std::get_if<LolaServiceInstanceDeployment>(&instanceDeplElement.second.bindingInfo_);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            instance_deployment != nullptr,
+            "Instance deployment must contain Lola binding in order to create a lola runtime!");
+        if (AggregateAllowedUsers(aggregated_allowed_users, instance_deployment->allowed_consumer_, asil_level))
+        {
+            break;
+        }
+        if (AggregateAllowedUsers(aggregated_allowed_users, instance_deployment->allowed_provider_, asil_level))
+        {
+            break;
+        }
+    }
+    return aggregated_allowed_users;
+}
+
+bool Configuration::AggregateAllowedUsers(std::set<uid_t>& aggregated_allowed_users,
+                                          const std::unordered_map<QualityType, std::vector<uid_t>>& allowed_user_ids,
+                                          const QualityType asil_level) noexcept
+{
+    const auto user_ids = allowed_user_ids.find(asil_level);
+    if (user_ids != allowed_user_ids.cend())
+    {
+        if (user_ids->second.empty())
+        {
+            aggregated_allowed_users.clear();
+            return true;
+        }
+        // LCOV_EXCL_BR_START (Defensive programming: This for-loop's false/never-enters branch is unreachable.
+        // The empty-vector case is already handled above by the user_ids->second.empty() check which returns early.)
+        for (const auto& user_identifier : user_ids->second)
+        // LCOV_EXCL_BR_STOP
+        {
+            // result of insert can be ignored, because at the end the element is in
+            // the set and we have no expectation, if it already was in the set before or not.
+            score::cpp::ignore = aggregated_allowed_users.insert(user_identifier);
+        }
+    }
+    return false;
+}
+
 }  // namespace score::mw::com::impl
