@@ -108,8 +108,7 @@ class GenericSkeletonFieldTest : public ::testing::Test
         create_params.fields = field_storage;
 
         auto skeleton_result = GenericSkeleton::Create(
-            dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(),
-            create_params);
+            dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(), create_params);
         EXPECT_TRUE(skeleton_result.has_value());
 
         skeleton_ = std::make_unique<GenericSkeleton>(std::move(skeleton_result.value()));
@@ -235,18 +234,18 @@ TEST_F(GenericSkeletonFieldTest, UpdateAfterOfferAllocatesAndSends)
 
     // GIVEN: An offered skeleton service
     GivenAGenericSkeletonWithOneField();
-    
+
     // Set initial value manually before offering
     std::vector<uint8_t> init_val{0xAA, 0xBB};
     static_cast<void>(field_->Update(init_val));
-    
+
     // EXPECT: Initial value allocation and send to the binding during OfferService
     std::vector<uint8_t> dummy_memory1(16, 0);
     mock_binding::SampleAllocateePtr<void> dummy_alloc1{dummy_memory1.data(), [](void*) {}};
     EXPECT_CALL(*mock_event_binding_ptr_, Allocate(_))
         .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc1)))));
     EXPECT_CALL(*mock_event_binding_ptr_, Send(_)).WillOnce(Return(score::Result<void>{}));
-    
+
     OfferSkeletonService();
 
     // WHEN: Calling Update after OfferService
@@ -273,18 +272,18 @@ TEST_F(GenericSkeletonFieldTest, UpdateWithoutNotifierSendsToBinding)
 
     // GIVEN: An offered skeleton service for a field with no notifier
     GivenAGenericSkeletonWithOneField("test_field", {16, 8}, false, false, false);
-    
+
     // Set initial value manually before offering
     std::vector<uint8_t> init_val{0xAA, 0xBB};
     static_cast<void>(field_->Update(init_val));
-    
+
     // EXPECT: Initial value allocation and send to the binding during OfferService
     std::vector<uint8_t> dummy_memory1(16, 0);
     mock_binding::SampleAllocateePtr<void> dummy_alloc1{dummy_memory1.data(), [](void*) {}};
     EXPECT_CALL(*mock_event_binding_ptr_, Allocate(_))
         .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc1)))));
     EXPECT_CALL(*mock_event_binding_ptr_, Send(_)).WillOnce(Return(score::Result<void>{}));
-    
+
     OfferSkeletonService();
 
     // WHEN: Calling Update
