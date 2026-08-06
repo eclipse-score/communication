@@ -107,7 +107,8 @@ class GenericSkeletonFieldTest : public ::testing::Test
         create_params.fields = {{field_name, size_info, has_getter, has_setter, has_notifier}};
 
         auto skeleton_result = GenericSkeleton::Create(
-            dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(), create_params);
+            dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithField(),
+            create_params);
         EXPECT_TRUE(skeleton_result.has_value());
 
         skeleton_ = std::make_unique<GenericSkeleton>(std::move(skeleton_result.value()));
@@ -123,7 +124,8 @@ class GenericSkeletonFieldTest : public ::testing::Test
     {
         EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
         EXPECT_CALL(*mock_event_binding_ptr_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
-        EXPECT_CALL(*mock_event_binding_ptr_, GetSizeInfo()).WillRepeatedly(Return(std::make_pair<size_t, size_t>(16, 8)));
+        EXPECT_CALL(*mock_event_binding_ptr_, GetSizeInfo())
+            .WillRepeatedly(Return(std::make_pair<size_t, size_t>(16, 8)));
 
         const auto offer_result = skeleton_->OfferService();
         EXPECT_TRUE(offer_result.has_value());
