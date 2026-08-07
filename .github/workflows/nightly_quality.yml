@@ -73,12 +73,17 @@ jobs:
   # --------------------------------------------------------------------
   run-codeql:
     uses: ./.github/workflows/_codeql.yml
+    with:
+      run-qnx: "true"
     permissions:
       contents: read
       actions: write
       security-events: write
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+      SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
+      SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+      SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
 
   # --------------------------------------------------------------------
   # Collect results, build the dashboard, upload artifact for docs.yml

@@ -254,7 +254,8 @@ class GenerateDashboardTest(unittest.TestCase):
                 encoding="utf-8",
             )
             codeql_path.write_text(
-                "severity,name,message,path,start:line\nwarning,Rule,Example finding,src/demo.cc,9\n",
+                "Tool,Severity,Code,Description,Location,Line\n"
+                "CodeQL,warning,Rule,Example finding,src/demo.cc,9\n",
                 encoding="utf-8",
             )
 

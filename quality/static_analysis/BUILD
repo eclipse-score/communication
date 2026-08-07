@@ -35,3 +35,10 @@ filegroup(
     name = "config",
     srcs = ["config.yaml"],
 )
+
+py_binary(
+    name = "merge_codeql_findings",
+    srcs = ["merge_codeql_findings.py"],
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = ["@score_communication_pip//sarif_tools"],
+)
