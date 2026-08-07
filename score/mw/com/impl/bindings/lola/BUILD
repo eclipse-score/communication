@@ -1349,14 +1349,32 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":element_fq_id",
+        ":event_data_storage",
         ":event_meta_info",
         ":runtime_mock",
         ":service_data_storage",
         "//score/memory/shared:new_delete_delegate_resource",
         "//score/mw/com/impl:binding_type",
+        "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/test:runtime_mock_guard",
+        "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/os:object_seam",
         "@score_baselibs//score/os/mocklib:unistd_mock",
+    ],
+)
+
+cc_unit_test(
+    name = "service_data_control_test",
+    srcs = [
+        "service_data_control_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":element_fq_id",
+        ":event_control",
+        ":service_data_control",
+        "//score/memory/shared:new_delete_delegate_resource",
+        "//score/mw/com/impl:service_element_type",
     ],
 )
 
