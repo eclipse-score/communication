@@ -29,6 +29,9 @@
 namespace score::mw::com::impl::mock_binding
 {
 
+// Typedef for complex callback type used by gmock
+using SubscriptionStateChangeTracingCallback = score::cpp::callback<void(SubscriptionState), 64U>;
+
 class ProxyEventBase : public ProxyEventBindingBase
 {
   public:
@@ -48,6 +51,14 @@ class ProxyEventBase : public ProxyEventBindingBase
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));
+    MOCK_METHOD(void,
+                SetSubscriptionStateChangeTracingCallback,
+                (SubscriptionStateChangeTracingCallback),
+                (noexcept, override));
+    MOCK_METHOD(void,
+                SetSubscriptionStateChangeHandlerTracingCallback,
+                (SubscriptionStateChangeTracingCallback),
+                (noexcept, override));
 };
 
 /// \brief Mock implementation for proxy event bindings.
@@ -87,6 +98,14 @@ class ProxyEvent : public ProxyEventBinding<SampleType>
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));
+    MOCK_METHOD(void,
+                SetSubscriptionStateChangeTracingCallback,
+                (SubscriptionStateChangeTracingCallback),
+                (noexcept, override));
+    MOCK_METHOD(void,
+                SetSubscriptionStateChangeHandlerTracingCallback,
+                (SubscriptionStateChangeTracingCallback),
+                (noexcept, override));
 
     /// \brief Add a sample to the internal queue of fake events.
     ///
@@ -189,6 +208,15 @@ class ProxyEventFacade : public ProxyEventBinding<SampleType>
     void NotifyServiceInstanceChangedAvailability(bool b, pid_t pid) noexcept override
     {
         return proxy_event_.NotifyServiceInstanceChangedAvailability(b, pid);
+    }
+    void SetSubscriptionStateChangeTracingCallback(SubscriptionStateChangeTracingCallback callback) noexcept override
+    {
+        return proxy_event_.SetSubscriptionStateChangeTracingCallback(std::move(callback));
+    }
+    void SetSubscriptionStateChangeHandlerTracingCallback(
+        SubscriptionStateChangeTracingCallback callback) noexcept override
+    {
+        return proxy_event_.SetSubscriptionStateChangeHandlerTracingCallback(std::move(callback));
     }
 
   private:
