@@ -11,17 +11,19 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use crate::Debug;
+use core::fmt::Debug;
 use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use crate::{
-    LolaConsumerDiscovery, LolaConsumerInfo, LolaProducerBuilder, LolaProviderInfo, LolaPublisher,
-    LolaSubscribableImpl,
+    LolaConsumerDiscovery, LolaConsumerInfo, LolaFieldGetCaller, LolaFieldPublisher,
+    LolaFieldSetCaller, LolaFieldSubscriber, LolaMethodCaller, LolaMethodHandler,
+    LolaMethodInArgAllocator, LolaMethodReturnSample, LolaProducerBuilder, LolaProviderInfo,
+    LolaPublisher, LolaSubscribableImpl,
 };
 use score_com_concept::{
-    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime,
-    RuntimeBuilder,
+    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, MethodArgs, Result,
+    Runtime, RuntimeBuilder,
 };
 
 use bridge_ffi_lola::LolaFFIBridge;
@@ -36,6 +38,14 @@ impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
     type Subscriber<T: CommData + Debug> = LolaSubscribableImpl<T, B>;
     type ProducerBuilder<I: Interface> = LolaProducerBuilder<I, B>;
     type Publisher<T: CommData + Debug> = LolaPublisher<T, B>;
+    type MethodInArgAllocator = LolaMethodInArgAllocator;
+    type MethodReturnSample<T: CommData> = LolaMethodReturnSample<T>;
+    type MethodCaller<Args: MethodArgs, Return: CommData> = LolaMethodCaller<Args, Return, Self>;
+    type MethodHandler<Args: MethodArgs, Return: CommData> = LolaMethodHandler<Args, Return, Self>;
+    type FieldPublisher<T: CommData + Debug> = LolaFieldPublisher<T, B>;
+    type FieldSubscriber<T: CommData + Debug> = LolaFieldSubscriber<T, B>;
+    type FieldGetCaller<T: CommData + Debug> = LolaFieldGetCaller<T, Self>;
+    type FieldSetCaller<T: CommData + Debug> = LolaFieldSetCaller<T, Self>;
     type ProviderInfo = LolaProviderInfo<B>;
     type ConsumerInfo = LolaConsumerInfo<B>;
 

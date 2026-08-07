@@ -29,8 +29,8 @@
 //TODO: revist this once com-api is stable - Ticket-234827
 #![allow(clippy::needless_lifetimes)]
 
-use crate::Debug;
 use core::clone::Clone;
+use core::fmt::Debug;
 use core::future::Future;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;

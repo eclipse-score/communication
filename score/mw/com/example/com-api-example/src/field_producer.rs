@@ -1,0 +1,96 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+
+// This file demonstrate the usage of producer field APIs, which are generated for the VehicleFieldInterface.
+
+// Notes: we are creating producer instance specific for field here but this is just for demonstration purpose,
+// for same producer instance method / event/ field can be offered as per offer interface.
+
+// All the functions and types in this file are just for demonstration purpose,
+// as this are not part of any callable because of that unused warning is suppressed for this file.
+
+use score_com::{Builder, FieldPublisher, InstanceSpecifier, Interface, Producer, Runtime};
+
+use com_api_gen::{Exhaust, Tire, VehicleFieldInterface};
+
+// VehicleFieldProducer is the producer type for the VehicleField interface (before offering)
+#[allow(dead_code)]
+type VehicleFieldProducer<R> = <VehicleFieldInterface as Interface>::Producer<R>;
+// VehicleFieldOfferedProducer is the offered producer type for the VehicleField interface (fields support update/set-handler)
+#[allow(dead_code)]
+type VehicleFieldOfferedProducer<R> =
+    <<VehicleFieldInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
+
+// Below function demonstrates the field APIs usage.
+// This builds fine, but it cannot run as the field APIs in Lola runtime are not implemented yet.
+
+// Producer creation and initialization of fields with initial values and set handlers for the fields.
+// It will return the offered producer instance which can be used to update the fields.
+#[allow(dead_code)]
+fn create_producer_field<R: Runtime + 'static>(
+    runtime: &R,
+    service_id: InstanceSpecifier,
+    initial_tire_value: Tire,
+    initial_exhaust_value: Exhaust,
+) -> VehicleFieldOfferedProducer<R>
+where
+    <R as Runtime>::FieldPublisher<Tire>: Send + Sync,
+    <R as Runtime>::FieldPublisher<Exhaust>: Send,
+{
+    let producer_builder = runtime.producer_builder::<VehicleFieldInterface>(service_id);
+    let producer = producer_builder
+        .build()
+        .expect("Failed to build producer instance");
+
+    // Use validator pattern with compile-time type-state validation
+    // Must register handlers and initialize all fields before offer() is available
+    let offered = producer
+        .init()
+        // Register set-handler callbacks - required before offer() for WithSetter fields
+        .register_set_handler_left_tire(move |val: Tire| {
+            println!("Received tire pressure update: {:?}", val);
+            // Additional logic: inspect or act on the accepted value (logging, telemetry, etc.).
+            // TODO: in working example add that logic to demonstrate the set handler usage.
+        })
+        .register_set_handler_exhaust(|val: Exhaust| {
+            let _ = val;
+            println!("Received exhaust update");
+        })
+        // Register get-handler callbacks - required before offer() for WithGetter fields
+        .register_get_handler_left_tire(|| Tire { pressure: 32.0 })
+        .register_get_handler_exhaust(|| Exhaust {})
+        .update_left_tire(initial_tire_value)
+        .expect("Failed to update left_tire field")
+        .update_exhaust(initial_exhaust_value)
+        .expect("Failed to update exhaust field")
+        .offer()
+        .expect("Failed to offer producer instance");
+
+    offered
+}
+
+// Function to demonstrate the usage of the offered producer to update fields
+#[allow(dead_code)]
+fn offered_producer_process<R: Runtime>(offered_producer: VehicleFieldOfferedProducer<R>) {
+    // Use the offered producer to update fields
+    let new_tire_value = Tire { pressure: 32.0 };
+    let new_exhaust_value = Exhaust {};
+    offered_producer
+        .left_tire
+        .update(new_tire_value)
+        .expect("Failed to update left_tire field");
+    offered_producer
+        .exhaust
+        .update(new_exhaust_value)
+        .expect("Failed to update exhaust field");
+}
