@@ -11,10 +11,15 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
+#include "score/mw/com/impl/bindings/lola/application_id_pid_mapping_entry.h"
+#include "score/mw/com/impl/bindings/lola/event_control.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
@@ -25,6 +30,7 @@
 #include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/new_delete_delegate_resource.h"
+#include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/memory/shared/shared_memory_factory.h"
 #include "score/mw/log/logging.h"
 #include "score/os/acl.h"
@@ -38,6 +44,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -118,6 +125,7 @@ SkeletonMemoryManager::SkeletonMemoryManager(QualityType quality_type,
       storage_{nullptr},
       control_qm_{nullptr},
       control_asil_b_{nullptr},
+      number_of_service_elements_{},
       storage_resource_{},
       control_qm_resource_{},
       control_asil_resource_{}
@@ -129,6 +137,12 @@ auto SkeletonMemoryManager::CreateSharedMemory(
     SkeletonBinding::SkeletonFieldBindings& fields,
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> Result<void>
 {
+    // The number of service-elements determines the (fixed) capacity of the containers within ServiceDataStorage and
+    // ServiceDataControl. It has to be known before either of them is constructed (in CreateSharedMemoryForData /
+    // CreateSharedMemoryForControl below), independent of how the shm-object sizes are determined (simulation,
+    // analytic estimation, or manually specified sizes).
+    number_of_service_elements_ = events.size() + fields.size();
+
     const auto storage_size_calc_result = CalculateShmResourceStorageSizes(events, fields);
 
     if (!CreateSharedMemoryForControl(
@@ -367,10 +381,12 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
     SkeletonBinding::SkeletonEventBindings& events,
     SkeletonBinding::SkeletonFieldBindings& fields)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetShmSizeCalculationMode() ==
-            ShmSizeCalculationMode::kSimulation,
-        "No other shm size calculation mode is currently suppored");
+    const auto shm_size_calculation_mode =
+        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetShmSizeCalculationMode();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE((shm_size_calculation_mode == ShmSizeCalculationMode::kSimulation) ||
+                                                    (shm_size_calculation_mode == ShmSizeCalculationMode::kAnalysis),
+                                                "No other shm size calculation mode is currently supported");
+
     if ((lola_service_instance_deployment_.shared_memory_size_.has_value()) &&
         (lola_service_instance_deployment_.control_asil_b_memory_size_.has_value()) &&
         (lola_service_instance_deployment_.control_qm_memory_size_.has_value()))
@@ -389,7 +405,25 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
                 lola_service_instance_deployment_.control_asil_b_memory_size_.value()};
     }
 
-    auto required_shm_storage_size = CalculateShmResourceStorageSizesBySimulation(events, fields);
+    // Depending on the configured ShmSizeCalculationMode the required sizes of the shm-objects are determined either:
+    //  - analytically (kAnalysis): possible because ServiceDataStorage (data shm-object) and ServiceDataControl
+    //    (control shm-object) exclusively use fixed-capacity containers, or
+    //  - by a simulation dry-run (kSimulation): the shm-objects are constructed on a monitoring heap-memory-resource
+    //    and the resulting number of allocated bytes is read out.
+    ShmResourceStorageSizes required_shm_storage_size{};
+    if (shm_size_calculation_mode == ShmSizeCalculationMode::kAnalysis)
+    {
+        const std::size_t data_size = CalculateDataShmResourceStorageSize(events, fields);
+        const std::size_t control_size = CalculateControlShmResourceStorageSize(events, fields);
+        const auto control_asil_b_size = (quality_type_ == QualityType::kASIL_B)
+                                             ? std::optional<std::size_t>{control_size}
+                                             : std::optional<std::size_t>{};
+        required_shm_storage_size = ShmResourceStorageSizes{data_size, control_size, control_asil_b_size};
+    }
+    else
+    {
+        required_shm_storage_size = CalculateShmResourceStorageSizesBySimulation(events, fields);
+    }
 
     const std::size_t control_asil_b_size_result = required_shm_storage_size.control_asil_b_size.has_value()
                                                        ? required_shm_storage_size.control_asil_b_size.value()
@@ -502,6 +536,102 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
                                          : std::optional<std::size_t>{};
 
     return ShmResourceStorageSizes{control_data_size, control_qm_size, control_asil_b_size};
+}
+
+std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
+    SkeletonBinding::SkeletonEventBindings& events,
+    SkeletonBinding::SkeletonFieldBindings& fields) const
+{
+    // Collect the per service-element sizing information from the deployment configuration and the (typed/generic)
+    // event bindings. The layout-dependent size algorithm itself lives next to ServiceDataStorage
+    // (CalculateServiceDataStorageShmSize), so that the data-structure and the algorithm reasoning about its memory
+    // footprint stay closely coupled.
+    std::vector<ServiceElementDataStorageSizeInfo> service_elements{};
+    const auto collect_service_elements = [this, &service_elements](SkeletonBinding::SkeletonEventBindings& bindings,
+                                                                    const bool are_fields) {
+        for (const auto& binding : bindings)
+        {
+            const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
+            SkeletonEventBindingBase& event_binding = binding.second.get();
+
+            // GetMaxSize() already returns an aligned per-slot size: for typed events sizeof(SampleType) is a multiple
+            // of alignof(SampleType), and for generic events the internally used memory::DataTypeSizeInfo guarantees
+            // that the size is an integer multiple of its alignment. Hence there is no per-slot padding and the array
+            // size equals number_of_slots * GetMaxSize() for both event kinds.
+            const std::size_t aligned_slot_size = event_binding.GetMaxSize();
+
+            service_elements.push_back(ServiceElementDataStorageSizeInfo{number_of_slots, aligned_slot_size});
+        }
+    };
+    collect_service_elements(events, false);
+    collect_service_elements(fields, true);
+
+    return CalculateServiceDataStorageShmSize(service_elements);
+}
+
+std::size_t SkeletonMemoryManager::CalculateControlShmResourceStorageSize(
+    SkeletonBinding::SkeletonEventBindings& events,
+    SkeletonBinding::SkeletonFieldBindings& fields) const
+{
+    // Collect the per service-element sizing information from the deployment configuration. The layout-dependent size
+    // algorithm itself lives next to ServiceDataControl (CalculateServiceDataControlShmSize), so that the
+    // data-structure and the algorithm reasoning about its memory footprint stay closely coupled.
+    std::vector<ServiceElementControlSizeInfo> service_elements{};
+    const auto collect_service_elements = [this, &service_elements](SkeletonBinding::SkeletonEventBindings& bindings,
+                                                                    const bool are_fields) {
+        for (const auto& binding : bindings)
+        {
+            const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
+            const std::size_t max_subscribers = GetMaxSubscribersFromConfig(binding.first, are_fields);
+            service_elements.push_back(ServiceElementControlSizeInfo{number_of_slots, max_subscribers});
+        }
+    };
+    collect_service_elements(events, false);
+    collect_service_elements(fields, true);
+
+    return CalculateServiceDataControlShmSize(service_elements);
+}
+
+std::size_t SkeletonMemoryManager::GetNumberOfSampleSlotsFromConfig(const std::string_view service_element_name,
+                                                                    const bool is_field) const
+{
+    const std::string name{service_element_name};
+    if (is_field)
+    {
+        const auto deployment =
+            GetServiceElementInstanceDeployment<ServiceElementType::FIELD>(lola_service_instance_deployment_, name);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            deployment.lola_event_instance_deployment_.GetNumberOfSampleSlots().has_value(),
+            "Number of sample slots need to be specified for field on provider side!");
+        return deployment.lola_event_instance_deployment_.GetNumberOfSampleSlots().value();
+    }
+
+    const auto deployment =
+        GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(lola_service_instance_deployment_, name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        deployment.GetNumberOfSampleSlots().has_value(),
+        "Number of sample slots need to be specified for event on provider side!");
+    return deployment.GetNumberOfSampleSlots().value();
+}
+
+std::size_t SkeletonMemoryManager::GetMaxSubscribersFromConfig(const std::string_view service_element_name,
+                                                               const bool is_field) const
+{
+    const std::string name{service_element_name};
+    if (is_field)
+    {
+        const auto deployment =
+            GetServiceElementInstanceDeployment<ServiceElementType::FIELD>(lola_service_instance_deployment_, name);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            deployment.lola_event_instance_deployment_.max_subscribers_.has_value(),
+            "Number of sample slots need to be specified for event on provider side!");
+        return deployment.lola_event_instance_deployment_.max_subscribers_.value();
+    }
+    const auto deployment =
+        GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(lola_service_instance_deployment_, name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(deployment.max_subscribers_.has_value(),
+                                                "Max subscribers need to be specified for event on provider side!");
+    return deployment.max_subscribers_.value();
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3":
@@ -694,7 +824,10 @@ bool SkeletonMemoryManager::OpenSharedMemoryForControl(const QualityType asil_le
 void SkeletonMemoryManager::InitializeSharedMemoryForData(
     const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory)
 {
-    storage_ = memory->construct<ServiceDataStorage>(*memory);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        number_of_service_elements_.has_value(),
+        "number_of_service_elements_ must be set before constructing the ServiceDataStorage.");
+    storage_ = memory->construct<ServiceDataStorage>(number_of_service_elements_.value(), *memory);
     storage_resource_ = memory;
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
     // variables being given values that are not subsequently used"
@@ -714,7 +847,10 @@ void SkeletonMemoryManager::InitializeSharedMemoryForControl(
 {
     auto& control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
 
-    control = memory->construct<ServiceDataControl>(*memory);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        number_of_service_elements_.has_value(),
+        "number_of_service_elements_ must be set before constructing the ServiceDataControl.");
+    control = memory->construct<ServiceDataControl>(number_of_service_elements_.value(), *memory);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control != nullptr);
 }
 

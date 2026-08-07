@@ -247,20 +247,45 @@ cc_library(
 )
 
 cc_library(
-    name = "service_data_storage",
-    srcs = ["service_data_storage.cpp"],
-    hdrs = ["service_data_storage.h"],
+    name = "linear_search_map",
+    srcs = ["linear_search_map.cpp"],
+    hdrs = [
+        "linear_search_map.h",
+    ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
+        "//score/mw/com/impl/bindings/lola:__pkg__",
+        "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
+    ],
+    deps = [
+        "//score/memory/shared",
+        "@score_baselibs//score/containers:non_relocatable_vector",
+    ],
+)
+
+cc_library(
+    name = "service_data_storage",
+    srcs = ["service_data_storage.cpp"],
+    hdrs = [
+        "service_data_storage.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
     ],
     deps = [
         ":element_fq_id",
+        ":event_data_storage",
         ":event_meta_info",
         ":i_runtime",
+        ":linear_search_map",
         "//score/memory/shared",
         "//score/mw/com/impl:runtime",
+        "@score_baselibs//score/containers:non_relocatable_vector",
+        "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/os:unistd",
     ],
 )
@@ -276,9 +301,15 @@ cc_library(
     ],
     deps = [
         ":application_id_pid_mapping",
+        ":application_id_pid_mapping_entry",
         ":element_fq_id",
         ":event_control",
+        ":event_data_control",
+        ":linear_search_map",
+        ":transaction_log",
+        ":transaction_log_set",
         "//score/memory/shared",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -1319,15 +1350,45 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":element_fq_id",
+        ":event_data_storage",
         ":event_meta_info",
         ":runtime_mock",
         ":service_data_storage",
-        "//score/memory/shared:map",
         "//score/memory/shared:new_delete_delegate_resource",
         "//score/mw/com/impl:binding_type",
+        "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/test:runtime_mock_guard",
+        "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/os:object_seam",
         "@score_baselibs//score/os/mocklib:unistd_mock",
+    ],
+)
+
+cc_unit_test(
+    name = "service_data_control_test",
+    srcs = [
+        "service_data_control_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":element_fq_id",
+        ":event_control",
+        ":service_data_control",
+        "//score/memory/shared:new_delete_delegate_resource",
+        "//score/mw/com/impl:service_element_type",
+    ],
+)
+
+cc_unit_test(
+    name = "linear_search_map_test",
+    srcs = [
+        "linear_search_map_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":linear_search_map",
+        "//score/memory/shared:new_delete_delegate_resource",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

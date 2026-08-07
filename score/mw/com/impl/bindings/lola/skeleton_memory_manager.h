@@ -33,6 +33,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 
@@ -171,7 +172,7 @@ class SkeletonMemoryManager final
         std::optional<std::size_t> control_asil_b_size;
     };
 
-    /// \brief Calculates needed sizes for shm-objects for data and ctrl either via simulation or a rough estimation
+    /// \brief Calculates needed sizes for shm-objects for data and ctrl either via simulation or an analytic estimation
     /// depending on config.
     /// \return storage sizes for the different shm-objects
     ShmResourceStorageSizes CalculateShmResourceStorageSizes(SkeletonBinding::SkeletonEventBindings& events,
@@ -182,6 +183,35 @@ class SkeletonMemoryManager final
     ShmResourceStorageSizes CalculateShmResourceStorageSizesBySimulation(
         SkeletonBinding::SkeletonEventBindings& events,
         SkeletonBinding::SkeletonFieldBindings& fields);
+
+    /// \brief Calculates the needed size for the data shm-object (holding the ServiceDataStorage) analytically.
+    /// \details Does NOT allocate any (heap) memory and does not create a ServiceDataStorage. It collects the per
+    /// service-element sizing information (number of slots, aligned sample-size) from the handed-over event/field
+    /// bindings and the deployment configuration and delegates the actual layout math to
+    /// CalculateServiceDataStorageShmSize (located next to ServiceDataStorage).
+    /// \return needed size (in bytes) for the data shm-object.
+    std::size_t CalculateDataShmResourceStorageSize(SkeletonBinding::SkeletonEventBindings& events,
+                                                    SkeletonBinding::SkeletonFieldBindings& fields) const;
+
+    /// \brief Calculates the needed size for a control shm-object (holding a ServiceDataControl) analytically.
+    /// \details Does NOT allocate any (heap) memory and does not create a ServiceDataControl. It collects the per
+    /// service-element sizing information (number of slots, max-subscribers) from the handed-over event/field bindings
+    /// and the deployment configuration and delegates the actual layout math to CalculateServiceDataControlShmSize
+    /// (located next to ServiceDataControl).
+    /// The same size applies to the QM and (if present) the ASIL-B control shm-object, as both hold a
+    /// ServiceDataControl created with the very same configuration.
+    /// \return needed size (in bytes) for a single control shm-object.
+    std::size_t CalculateControlShmResourceStorageSize(SkeletonBinding::SkeletonEventBindings& events,
+                                                       SkeletonBinding::SkeletonFieldBindings& fields) const;
+
+    /// \brief Looks up the configured number of sample-slots for the given service-element.
+    /// \param service_element_name name of the event/field.
+    std::size_t GetNumberOfSampleSlotsFromConfig(const std::string_view service_element_name,
+                                                 const bool is_field) const;
+
+    /// \brief Looks up the configured maximum number of subscribers for the given service-element.
+    /// \param service_element_name name of the event/field.
+    std::size_t GetMaxSubscribersFromConfig(const std::string_view service_element_name, const bool is_field) const;
 
     /// Functions for creating / opening / initializing shared memory within PrepareOffer.
     bool CreateSharedMemoryForData(
@@ -224,6 +254,13 @@ class SkeletonMemoryManager final
     ServiceDataStorage* storage_;
     ServiceDataControl* control_qm_;
     ServiceDataControl* control_asil_b_;
+
+    /// \brief Number of service-elements (events + fields) of the service-instance.
+    /// \details Determines the fixed capacity of the containers within ServiceDataStorage and ServiceDataControl.
+    /// Empty until it is set in CreateSharedMemory (before the ServiceDataStorage / ServiceDataControl are
+    /// constructed). Every read site asserts that the value has been set, so an accidental use before initialization is
+    /// caught deterministically instead of silently defaulting to a (potentially valid) capacity of 0.
+    std::optional<std::size_t> number_of_service_elements_;
 
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> storage_resource_;
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> control_qm_resource_;

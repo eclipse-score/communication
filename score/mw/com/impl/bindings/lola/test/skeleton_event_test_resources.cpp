@@ -47,6 +47,10 @@ void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_
 
     SkeletonBinding::SkeletonEventBindings events{};
     SkeletonBinding::SkeletonFieldBindings fields{};
+    // Offer the single service-element that will be registered below (via the SkeletonEvent's own PrepareOffer). This
+    // sizes the fixed-capacity containers within ServiceDataStorage. The mock binding itself is only counted; no
+    // expectations on it are required for the offer/sizing path.
+    events.emplace(service_element_name, mock_event_binding_);
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback{};
     std::ignore = skeleton_->PrepareOffer(events, fields, std::move(register_shm_object_trace_callback));
 
