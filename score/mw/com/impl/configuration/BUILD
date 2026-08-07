@@ -11,10 +11,69 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@flatbuffers//:build_defs.bzl", "flatbuffer_cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+load(":flatbuffers_flags.bzl", "flatbuffers_flags")
+
+# FlatBuffers feature flag + config_setting (enable via --config=flatbuffers).
+flatbuffers_flags()
+
+exports_files(
+    [
+        "mw_com_config.fbs",
+        "mw_com_config_schema.json",
+    ],
+    visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
+)
+
+# mw_com_config.fbs is the single source of truth for the configuration schema.
+# The rich JSON schema (mw_com_config_schema.json) is generated from it; schema_drift_test
+# guards that they never diverge.
+flatbuffer_cc_library(
+    name = "mw_com_config_fbs",
+    srcs = ["mw_com_config.fbs"],
+    target_compatible_with = select({
+        ":flatbuffers_enabled": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
+)
+
+# Regenerates mw_com_config_schema.json from mw_com_config.fbs.
+#   bazel run //score/mw/com/impl/configuration:generate_schema
+py_binary(
+    name = "generate_schema",
+    srcs = ["generate_schema.py"],
+    data = [
+        "mw_com_config.fbs",
+        "@flatbuffers//:flatc",
+    ],
+    env = {"FLATC_PATH": "$(location @flatbuffers//:flatc)"},
+    main = "generate_schema.py",
+)
+
+# Drift guard (schema == generator output) + example config round-trip through flatc.
+py_test(
+    name = "schema_drift_test",
+    srcs = [
+        "generate_schema.py",
+        "schema_drift_test.py",
+        "//score/mw/com/impl/configuration/converter:json_to_flatbuffer.py",
+    ],
+    data = [
+        "example/mw_com_config.json",
+        "mw_com_config.fbs",
+        "mw_com_config_schema.json",
+        "@flatbuffers//:flatc",
+    ],
+    env = {"FLATC_PATH": "$(location @flatbuffers//:flatc)"},
+    main = "schema_drift_test.py",
+    target_compatible_with = ["@platforms//os:linux"],
+)
 
 validate_json_schema_test(
     name = "validate_mw_com_config_schema",
