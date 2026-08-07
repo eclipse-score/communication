@@ -84,10 +84,10 @@ score::Result<std::size_t> DetermineNextAvailableQueueSlot(
     // Find an index, where both are_in_arg_ptrs_active_ and is_return_type_ptr_active_ are inactive
     for (std::size_t i = 0U; i < in_arg_ptr_flags.size(); ++i)
     {
-        bool all_inactive = std::none_of(in_arg_ptr_flags[i].begin(), in_arg_ptr_flags[i].end(), [](bool active) {
+        bool all_inactive_ = std::none_of(in_arg_ptr_flags[i].begin(), in_arg_ptr_flags[i].end(), [](bool active) {
             return active;
         });
-        if (all_inactive && (!return_type_ptr_flags[i]))
+        if (all_inactive_ && (!return_type_ptr_flags[i]))
         {
             // Found an available slot
             return i;
