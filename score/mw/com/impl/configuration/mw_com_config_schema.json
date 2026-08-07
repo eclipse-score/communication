@@ -47,12 +47,12 @@
                             "additionalProperties": false,
                             "properties": {
                                 "binding": {
-                                    "title": "Type of binding",
                                     "type": "string",
+                                    "title": "Type of binding",
+                                    "description": "Binding technology",
                                     "enum": [
                                         "SHM"
-                                    ],
-                                    "description": "Binding technology"
+                                    ]
                                 },
                                 "serviceId": {
                                     "type": "integer",
@@ -204,20 +204,20 @@
                                 },
                                 "asil-level": {
                                     "type": "string",
+                                    "title": "ASIL Level",
+                                    "description": "ASIL level: On provider side B means, service instance provides ASIL-B quality and can therefore serve QM and ASIL-B consumers. B on consumer side means: Needs ASIL-B qualified provider. If this value is set to B, then the global asil level needs to be explicitly set to B as well, via the {\"global\": {\"asil-level\": B} key.",
                                     "enum": [
                                         "QM",
                                         "B"
-                                    ],
-                                    "title": "ASIL Level",
-                                    "description": "ASIL level: On provider side B means, service instance provides ASIL-B quality and can therefore serve QM and ASIL-B consumers. B on consumer side means: Needs ASIL-B qualified provider. If this value is set to B, then the global asil level needs to be explicitly set to B as well, via the {\"global\": {\"asil-level\": B} key."
+                                    ]
                                 },
                                 "binding": {
                                     "type": "string",
+                                    "title": "Binding",
+                                    "description": "Binding technology",
                                     "enum": [
                                         "SHM"
-                                    ],
-                                    "title": "Binding",
-                                    "description": "Binding technology"
+                                    ]
                                 },
                                 "shm-size": {
                                     "type": "integer",
@@ -236,13 +236,13 @@
                                 },
                                 "permission-checks": {
                                     "type": "string",
+                                    "title": "Strategy for empty user-ids",
+                                    "description": "This property controls, how empty lists (no user ids given) in allowedProviders/allowedConsumers are interpreted. In case of file-permissions-on-empty an empty list will fall back to access-check based on basic ugo file-system-rights. In case of strict an empty list of user ids really means no-one can access (allowedConsumers) or no provider is accepted (allowedProviders)",
                                     "enum": [
                                         "file-permissions-on-empty",
                                         "strict"
                                     ],
-                                    "default": "file-permissions-on-empty",
-                                    "title": "Strategy for empty user-ids",
-                                    "description": "This property controls, how empty lists (no user ids given) in allowedProviders/allowedConsumers are interpreted. In case of file-permissions-on-empty an empty list will fall back to access-check based on basic ugo file-system-rights. In case of strict an empty list of user ids really means no-one can access (allowedConsumers) or no provider is accepted (allowedProviders)"
+                                    "default": "file-permissions-on-empty"
                                 },
                                 "allowedConsumer": {
                                     "type": "object",
@@ -313,8 +313,8 @@
                                             "maxSamples": {
                                                 "type": "integer",
                                                 "title": "Maximum samples",
-                                                "deprecated": true,
-                                                "description": "DEPRECATED! Use <numberOfSampleSlots> instead. Mandatory LoLa specific provider/skeleton side setting, how many sample slots shall be allocated. Value needs to be between 1 and 65535!"
+                                                "description": "DEPRECATED! Use <numberOfSampleSlots> instead. Mandatory LoLa specific provider/skeleton side setting, how many sample slots shall be allocated. Value needs to be between 1 and 65535!",
+                                                "deprecated": true
                                             },
                                             "numberOfSampleSlots": {
                                                 "type": "integer",
@@ -378,7 +378,7 @@
                                             "enforceMaxSamples": {
                                                 "type": "boolean",
                                                 "title": "Enforce maximum samples",
-                                                "description": "Optional flag, which describes, whether the value configured in <numberOfSampleSlots> (or deprecated <maxSamples>) is enforced by the implementation during field-subscribe calls. Default value is TRUE. I.e. <numberOfSampleSlots> is enforced, so that any subscribe call with its given maxSampleCount, which would overflow <numberOfSampleSlots>, will be rejected. "
+                                                "description": "Optional flag, which describes, whether the value configured in <numberOfSampleSlots> (or deprecated <maxSamples>) is enforced by the implementation during field-subscribe calls. Default value is TRUE. I.e. <numberOfSampleSlots> is enforced, so that any subscribe call with its given maxSampleCount, which would overflow <numberOfSampleSlots>, will be rejected."
                                             },
                                             "numberOfIpcTracingSlots": {
                                                 "type": "integer",
@@ -480,26 +480,27 @@
                     "additionalProperties": false,
                     "properties": {
                         "QM-receiver": {
+                            "type": "integer",
                             "title": "Queue size for QM clients",
                             "description": "Defines the queue size for reception incoming messages from QM clients",
-                            "type": "integer",
                             "default": 10
                         },
                         "B-receiver": {
+                            "type": "integer",
                             "title": "Incoming queue size for ASIL-B",
                             "description": "Defines the queue size for reception incoming messages from B clients. Only relevant/processed in case the global property asil-level is set to <B>, otherwise it gets ignored.",
-                            "type": "integer",
                             "default": 10
                         },
                         "B-sender": {
+                            "type": "integer",
                             "title": "Outgoing queue size for ASIL-B",
                             "description": "Defines the queue size for sending outgoing messages to QM clients. Max value = 100. Only relevant/processed in case the global property asil-level is set to <B>, otherwise it gets ignored. Note: A specific send-queue is used only in case an ASIL-B LoLa app sends to ASIL-QM LoLa apps, to decouple the sending app completely from misbehaving receiving QM LoLa apps.",
-                            "type": "integer",
                             "default": 20
                         }
                     }
                 },
                 "shm-size-calc-mode": {
+                    "type": "string",
                     "title": "Calculation mode for shared memory size",
                     "description": "How shall the sizes of the shm-objects get calculated (Currently we only support SIMULATION): Via an initial simulation run against a heap-memory resource. It has the advantage of perfect accuracy, but adds a minimal runtime overhead at startup plus some initial temporary heap allocation.",
                     "enum": [
