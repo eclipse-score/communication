@@ -55,5 +55,5 @@ integration_test(
     # To be enabled on qnx once the bug is fixed or
     # service discovery is reimplemented to not rely on
     # inotify events (SWP-214271).
-    target_compatible_with = ["@platforms//os:linux"],
+    # target_compatible_with = ["@platforms//os:linux"],
 )
