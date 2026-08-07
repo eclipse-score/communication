@@ -145,9 +145,15 @@ auto SerializeToMessage(const std::uint8_t message_id, const T& t) noexcept -> s
 
     std::array<std::uint8_t, sizeof(T) + 1> out{};
     out[0] = message_id;
-    // NOLINTBEGIN(score-banned-function) serialization of trivially copyable
-    score::cpp::ignore = std::memcpy(&out[1], &t, sizeof(T));
-    // NOLINTEND(score-banned-function) deserialization of trivially copyable
+    // Use an explicit byte-range copy instead of memcpy(&out[1], &t, sizeof(T)). CodeQL's
+    // cpp/misra/pointer-argument-to-cstring-function-is-invalid check reasons about the size of memcpy's read
+    // buffer per call site, but for a templated memcpy call it can conflate the buffer size of one instantiation
+    // of T with the size argument of another instantiation, producing a false-positive size mismatch. Deriving the
+    // source range directly from the same pointer (source_begin / source_end) that is copied keeps the range
+    // trivially self-consistent for every instantiation of T.
+    const auto* const source_begin = reinterpret_cast<const std::uint8_t*>(&t);
+    const auto* const source_end = source_begin + sizeof(T);
+    std::copy(source_begin, source_end, std::next(out.begin()));
     return out;
 }
 
