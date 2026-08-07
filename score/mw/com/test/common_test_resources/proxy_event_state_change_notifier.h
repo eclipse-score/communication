@@ -20,6 +20,7 @@
 #include <score/stop_token.hpp>
 
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <mutex>
 #include <optional>
@@ -43,7 +44,7 @@ class ProxyEventStateChangeNotifier
             condition_variable_.notify_all();
             return true;
         };
-        const auto registration_result = proxy_event_.SetSubscriptionStateChangeHandler(state_change_handler);
+        const auto registration_result = proxy_event_.get().SetSubscriptionStateChangeHandler(state_change_handler);
         if (!registration_result.has_value())
         {
             FailTest("ProxyEventStateChangeNotifier: Failed to register state change handler: ",
@@ -53,7 +54,17 @@ class ProxyEventStateChangeNotifier
 
     ~ProxyEventStateChangeNotifier()
     {
-        proxy_event_.UnsetSubscriptionStateChangeHandler();
+        proxy_event_.get().UnsetSubscriptionStateChangeHandler();
+    }
+
+    /// \brief Rebind this notifier to a different event after a proxy move.
+    ///
+    /// Does NOT re-register the subscription state change handler — the handler was already transferred to the
+    /// new event by the proxy move. Only updates the internal reference so that subsequent GetSubscriptionState
+    /// calls target the correct event.
+    void Reattach(ProxyEventType& new_event) noexcept
+    {
+        proxy_event_ = std::ref(new_event);
     }
 
     ProxyEventStateChangeNotifier(const ProxyEventStateChangeNotifier&) = delete;
@@ -69,7 +80,7 @@ class ProxyEventStateChangeNotifier
     [[nodiscard]] bool WaitForStateChange(const score::cpp::stop_token& stop_token, SubscriptionState desired_state)
     {
         std::unique_lock lock(mutex_);
-        const auto current_state = proxy_event_.GetSubscriptionState();
+        const auto current_state = proxy_event_.get().GetSubscriptionState();
         if (current_state == desired_state)
         {
             return true;
@@ -90,7 +101,7 @@ class ProxyEventStateChangeNotifier
     std::mutex mutex_{};
     concurrency::InterruptibleConditionalVariable condition_variable_{};
     std::optional<SubscriptionState> last_seen_state_{};
-    ProxyEventType& proxy_event_;
+    std::reference_wrapper<ProxyEventType> proxy_event_;
 };
 
 }  // namespace score::mw::com::test
