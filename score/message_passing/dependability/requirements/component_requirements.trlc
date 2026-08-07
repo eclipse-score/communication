@@ -14,44 +14,6 @@ package MessagePassing
 
 import ScoreReq
 
-///////////////////////////////
-// Component Requirements
-// Server Unit and Client Unit requirements
-///////////////////////////////
-
-section "System Requirements" {
-
-ScoreReq.CompReq SafetyCertifiedTransportMechanismUnderQNX {
-    description = "On the QNX operating system, the message passing component shall use the QNX-message-passing as the underlying IPC mechanism."
-    safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SafetyCertifiedTransportMechanism@1, MessagePassing.OSIndependentAPI@1]
-    version = 1
-}
-
-ScoreReq.CompReq TransportMechanismOnLinux {
-    description = "On the Linux operating system, the message passing component shall use unix domain-sockets as the underlying IPC mechanism."
-    safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.SafetyCertifiedTransportMechanism@1, MessagePassing.OSIndependentAPI@1]
-    version = 1
-}
-
-
-ScoreReq.CompReq OSProvidedSenderIdentity {
-    description = "The message passing server shall be able to identify the sender of each received message by the sender's OS-provided user ID (UID)."
-    safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.ServerInterface@1]
-    version = 1
-}
-
-ScoreReq.CompReq UnforgableSenderIdentity {
-    description = "The transport mechanism shall ensure that the UID used to identify a message, cannot be forged by the client."
-    safety = ScoreReq.Asil.B
-    derived_from = [MessagePassing.ServerInterface@1]
-    version = 1
-}
-
-}
-
 section "Behaviour Requirements" {
 
 ScoreReq.CompReq ServerCallbacksAreSequential {
