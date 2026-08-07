@@ -50,6 +50,8 @@ namespace score::mw::com::impl::lola
 /// elements grows, we could sort the underlying vector and then use std::binary_search for O(log n) lookup.
 /// This should be done if necessary.
 ///
+/// \attention Adding more elements to it as defined in the ctor via max_number_of_elements will lead to termination.
+///
 /// \tparam Key key type used to identify an element. Must be copy-constructible and comparable via KeyEqual.
 /// \tparam MappedType mapped value type.
 /// \tparam KeyEqual binary predicate used to compare two keys for equality. Defaults to std::equal_to<Key> (i.e.
@@ -110,6 +112,7 @@ class LinearSearchMap
 
     /// \brief Inserts a new element constructed in-place from the given piecewise tuples (std::map-like).
     /// \details If an element with the same key already exists, no insertion takes place.
+    /// \attention emplacing more elements as specified in ctor max_number_of_elements will lead to termination.
     /// \return pair of an iterator to the (existing or newly inserted) element and a bool that is true if an insertion
     ///         took place.
     template <typename... KeyArgs, typename... MappedArgs>
@@ -119,6 +122,7 @@ class LinearSearchMap
 
     /// \brief Inserts a new element with the given key and mapped value (std::map-like).
     /// \details If an element with the same key already exists, no insertion takes place.
+    /// \attention emplacing more elements as specified in ctor max_number_of_elements will lead to termination.
     template <typename MappedArg>
     std::pair<iterator, bool> emplace(const Key& key, MappedArg&& mapped_value);
 

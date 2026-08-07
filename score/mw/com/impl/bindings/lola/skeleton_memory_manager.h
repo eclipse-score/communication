@@ -193,7 +193,7 @@ class SkeletonMemoryManager final
     std::size_t CalculateDataShmResourceStorageSize(SkeletonBinding::SkeletonEventBindings& events,
                                                     SkeletonBinding::SkeletonFieldBindings& fields) const;
 
-    /// \brief Calculates the needed size for a control shm-object (holding ServiceDataControl[s]) analytically.
+    /// \brief Calculates the needed size for a control shm-object (holding a ServiceDataControl) analytically.
     /// \details Does NOT allocate any (heap) memory and does not create a ServiceDataControl. It collects the per
     /// service-element sizing information (number of slots, max-subscribers) from the handed-over event/field bindings
     /// and the deployment configuration and delegates the actual layout math to CalculateServiceDataControlShmSize

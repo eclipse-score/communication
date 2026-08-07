@@ -40,8 +40,7 @@ class ServiceDataControl
     /// \param number_of_service_elements the (fixed) number of service-elements (events + fields) this service-instance
     ///        provides. It is used as the fixed capacity of the event_controls_ container. Since event_controls_ uses a
     ///        fixed-capacity container (LinearSearchMap), its capacity must be known at construction time.
-    /// \param resource ManagedMemoryResource pointing to the memory-resource to be used for allocating underlying
-    ///        storage
+    /// \param resource ManagedMemoryResource used for allocating underlying storage
 
     explicit ServiceDataControl(const std::size_t number_of_service_elements,
                                 score::memory::shared::ManagedMemoryResource& resource)

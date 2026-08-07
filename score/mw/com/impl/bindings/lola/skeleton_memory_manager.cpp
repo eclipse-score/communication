@@ -598,21 +598,20 @@ std::size_t SkeletonMemoryManager::GetNumberOfSampleSlotsFromConfig(const std::s
     const std::string name{service_element_name};
     if (is_field)
     {
-        const auto field_it = lola_service_instance_deployment_.fields_.find(name);
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(field_it != lola_service_instance_deployment_.fields_.cend(),
-                                                    "Could not find field in deployment configuration.");
-        const auto number_of_slots = field_it->second.lola_event_instance_deployment_.GetNumberOfSampleSlots();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_slots.has_value(),
-                                                    "Number of sample slots not specified for field.");
-        return number_of_slots.value();
+        const auto deployment =
+            GetServiceElementInstanceDeployment<ServiceElementType::FIELD>(lola_service_instance_deployment_, name);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            deployment.lola_event_instance_deployment_.GetNumberOfSampleSlots().has_value(),
+            "Number of sample slots need to be specified for field on provider side!");
+        return deployment.lola_event_instance_deployment_.GetNumberOfSampleSlots().value();
     }
-    const auto event_it = lola_service_instance_deployment_.events_.find(name);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_it != lola_service_instance_deployment_.events_.cend(),
-                                                "Could not find event in deployment configuration.");
-    const auto number_of_slots = event_it->second.GetNumberOfSampleSlots();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_slots.has_value(),
-                                                "Number of sample slots not specified for event.");
-    return number_of_slots.value();
+
+    const auto deployment =
+        GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(lola_service_instance_deployment_, name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        deployment.GetNumberOfSampleSlots().has_value(),
+        "Number of sample slots need to be specified for event on provider side!");
+    return deployment.GetNumberOfSampleSlots().value();
 }
 
 std::size_t SkeletonMemoryManager::GetMaxSubscribersFromConfig(const std::string_view service_element_name,
@@ -621,21 +620,18 @@ std::size_t SkeletonMemoryManager::GetMaxSubscribersFromConfig(const std::string
     const std::string name{service_element_name};
     if (is_field)
     {
-        const auto field_it = lola_service_instance_deployment_.fields_.find(name);
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(field_it != lola_service_instance_deployment_.fields_.cend(),
-                                                    "Could not find field in deployment configuration.");
-        const auto max_subscribers = field_it->second.lola_event_instance_deployment_.max_subscribers_;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_subscribers.has_value(),
-                                                    "Max subscribers not specified for field.");
-        return max_subscribers.value();
+        const auto deployment =
+            GetServiceElementInstanceDeployment<ServiceElementType::FIELD>(lola_service_instance_deployment_, name);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            deployment.lola_event_instance_deployment_.max_subscribers_.has_value(),
+            "Number of sample slots need to be specified for event on provider side!");
+        return deployment.lola_event_instance_deployment_.max_subscribers_.value();
     }
-    const auto event_it = lola_service_instance_deployment_.events_.find(name);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_it != lola_service_instance_deployment_.events_.cend(),
-                                                "Could not find event in deployment configuration.");
-    const auto max_subscribers = event_it->second.max_subscribers_;
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_subscribers.has_value(),
-                                                "Max subscribers not specified for event.");
-    return max_subscribers.value();
+    const auto deployment =
+        GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(lola_service_instance_deployment_, name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(deployment.max_subscribers_.has_value(),
+                                                "Max subscribers need to be specified for event on provider side!");
+    return deployment.max_subscribers_.value();
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3":
