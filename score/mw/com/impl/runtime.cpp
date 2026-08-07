@@ -219,18 +219,19 @@ Runtime::~Runtime() noexcept
 std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specifier) const
 {
     std::vector<InstanceIdentifier> result;
-    const auto instanceSearch = configuration_.GetServiceInstances().find(specifier);
-    if (instanceSearch != configuration_.GetServiceInstances().end())
+    const auto instance_deployment = configuration_.FindServiceInstanceDeployment(specifier);
+    if (instance_deployment.has_value())
     {
         // @todo: Right now we don't support multi-binding, if we do, we need to have some kind of loop
-        const auto type_deployment = configuration_.GetServiceTypes().find(instanceSearch->second.service_);
+        const auto type_deployment =
+            configuration_.FindServiceTypeDeployment(instance_deployment.value().get().service_);
         // LCOV_EXCL_BR_START defensive programming: The configuration parser ensures that if a matching service
         // instance is available, there is also a matching service type available. Because parsing of the configuration
         // is automatically done before instantiating the runtime, this condition is always positive. To increase the
         // robustness of the code, we still check for this condition.
-        if (type_deployment != configuration_.GetServiceTypes().cend())
+        if (type_deployment.has_value())
         {
-            result.push_back(make_InstanceIdentifier(instanceSearch->second, type_deployment->second));
+            result.push_back(make_InstanceIdentifier(instance_deployment.value().get(), type_deployment.value().get()));
         }
         else
         {

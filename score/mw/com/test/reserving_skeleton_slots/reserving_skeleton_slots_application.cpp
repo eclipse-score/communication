@@ -33,7 +33,7 @@ std::uint16_t GetNumSkeletonSlotsFromConfig(const std::string& service_instance_
 {
     const auto configuration = score::mw::com::impl::configuration::Parse(service_instance_manifest_path);
 
-    const auto deployment = configuration.GetServiceInstances().at(instance_specifier);
+    const auto deployment = configuration.GetServiceInstanceDeployment(instance_specifier);
     const auto lola_binding = std::get<score::mw::com::impl::LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
     std::string event_name{"map_api_lanes_stamped"};

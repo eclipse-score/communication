@@ -68,9 +68,9 @@ class ConfigParser
             score::mw::com::impl::make_ServiceIdentifierType(
                 std::string{service_type_name_}, major_version_number_, minor_version_number_);
 
-        type_deployment_ = configuration.GetServiceTypes().at(service_identifier_type);
+        type_deployment_ = configuration.GetServiceTypeDeployment(service_identifier_type);
 
-        const auto deployment = configuration.GetServiceInstances().at(instance_specifier);
+        const auto deployment = configuration.GetServiceInstanceDeployment(instance_specifier);
         lola_instance_binding_ = std::get<score::mw::com::impl::LolaServiceInstanceDeployment>(deployment.bindingInfo_);
     }
 

@@ -66,9 +66,8 @@ TEST_F(ConfigParserFixture, ParseFromPathDelegatesToStrategy)
     const auto config_from_free_function = configuration::Parse(path);
     const auto config_from_strategy = configuration::ConfigurationJsonParsingStrategy{}.Parse(path);
 
-    EXPECT_EQ(config_from_free_function.GetServiceInstances().size(),
-              config_from_strategy.GetServiceInstances().size());
-    EXPECT_EQ(config_from_free_function.GetServiceTypes().size(), config_from_strategy.GetServiceTypes().size());
+    EXPECT_EQ(config_from_free_function.GetSizeOfServiceInstances(), config_from_strategy.GetSizeOfServiceInstances());
+    EXPECT_EQ(config_from_free_function.GetSizeOfServiceTypes(), config_from_strategy.GetSizeOfServiceTypes());
 }
 
 TEST_F(ConfigParserFixture, ParseFromJsonDelegatesToStrategy)
@@ -86,8 +85,8 @@ TEST_F(ConfigParserFixture, ParseFromJsonDelegatesToStrategy)
 
     const auto config = configuration::Parse(std::move(json));
 
-    EXPECT_TRUE(config.GetServiceInstances().empty());
-    EXPECT_TRUE(config.GetServiceTypes().empty());
+    EXPECT_TRUE(config.IsServiceInstancesEmpty());
+    EXPECT_TRUE(config.IsServiceTypesEmpty());
 }
 
 }  // namespace
