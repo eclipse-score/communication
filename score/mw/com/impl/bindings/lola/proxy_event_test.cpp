@@ -604,30 +604,6 @@ TYPED_TEST(LolaProxyEventFixture, GetBindingType)
     EXPECT_EQ(this->test_proxy_event_->GetBindingType(), BindingType::kLoLa);
 }
 
-TYPED_TEST(LolaProxyEventFixture, GetEventSourcePidReturnsPidFromSkeleton)
-{
-    // Given a mocked Proxy, Skeleton and proxy event
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-
-    // When calling GetEventSourcePid
-    const auto actual_event_source_pid = this->test_proxy_event_->GetEventSourcePid();
-
-    // Then the pid should be that stored by the skeleton in shared memory
-    EXPECT_EQ(actual_event_source_pid, ProxyMockedMemoryFixture::kDummyPid);
-}
-
-TYPED_TEST(LolaProxyEventFixture, GetElementFqIdReturnsElementFqIdUsedToCreateProxyEvent)
-{
-    // Given a mocked Proxy, Skeleton and proxy event
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-
-    // When calling GetElementFQId
-    const auto actual_element_fq_id = this->test_proxy_event_->GetElementFQId();
-
-    // Then the pid should be that stored by the skeleton in shared memory
-    EXPECT_EQ(actual_element_fq_id, this->element_fq_id_);
-}
-
 TYPED_TEST(LolaProxyEventFixture, GetMaxSampleCountReturnsEmptyOptionalWhenNotSubscribed)
 {
     // Given a mocked Proxy, Skeleton and proxy event which is not currently subscribed

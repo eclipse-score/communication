@@ -128,15 +128,6 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
         proxy_event_common_.NotifyServiceInstanceChangedAvailability(is_available, new_event_source_pid);
     }
 
-    pid_t GetEventSourcePid() const noexcept
-    {
-        return proxy_event_common_.GetEventSourcePid();
-    }
-    ElementFqId GetElementFQId() const noexcept
-    {
-        return proxy_event_common_.GetElementFQId();
-    };
-
   private:
     const std::uint8_t* InitialiseEventSlotsRawArray();
 

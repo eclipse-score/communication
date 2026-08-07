@@ -87,7 +87,6 @@ class ProxyEventCommon final
     Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept;
     Result<void> UnsetSubscriptionStateChangeHandler() noexcept;
 
-    pid_t GetEventSourcePid() const noexcept;
     ElementFqId GetElementFQId() const noexcept
     {
         return event_fq_id_;
@@ -109,6 +108,7 @@ class ProxyEventCommon final
     {
         score::cpp::ignore = test_slot_collector_.emplace(std::move(slot_collector));
     };
+
     std::optional<SlotCollector> test_slot_collector_;
 
     Proxy& parent_;

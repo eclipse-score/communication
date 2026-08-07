@@ -108,7 +108,6 @@ class lola::ProxyEventCommon {
   +GetSubscriptionState(): SubscriptionState
   +SetReceiveHandler(EventReceiveHandler handler): void
   +UnsetReceiveHandler(EventReceiveHandler handler): void
-  +GetEventSourcePid(): pid_t
   +GetElementFQId(): ElementFqId
   +GetNumNewSamplesAvailable(): Result<std::size_t>
   +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>

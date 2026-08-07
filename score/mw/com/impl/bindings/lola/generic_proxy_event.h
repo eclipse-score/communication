@@ -71,7 +71,6 @@ class GenericProxyEvent final : public GenericProxyEventBinding
     Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override;
     Result<void> UnsetSubscriptionStateChangeHandler() noexcept override;
 
-    pid_t GetEventSourcePid() const noexcept;
     ElementFqId GetElementFQId() const noexcept;
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
     BindingType GetBindingType() const noexcept override

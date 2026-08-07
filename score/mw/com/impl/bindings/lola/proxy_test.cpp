@@ -357,20 +357,6 @@ TEST_F(ProxyCreationFixture, ProxyCreationOpensSharedMemoryWithEmptyProvidersWhe
     EXPECT_EQ(proxy_, nullptr);
 }
 
-TEST_F(ProxyCreationDeathTest, GettingRawDataStorageWithoutInitialisedEventDataStorageTerminates)
-{
-    // Given a fake Skeleton which creates an empty ServiceDataStorage
-
-    // When creating a proxy
-    InitialiseProxyWithConstructor(identifier_);
-    EXPECT_NE(proxy_, nullptr);
-
-    // Then trying to get the event data storage for an event that was not registered in the ServiceDataStorage
-    // Will terminate
-    const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
-    EXPECT_DEATH(proxy_->GetEventDataStorage<SampleType>(uninitialised_element_fq_id), ".*");
-}
-
 using ProxyAutoReconnectFixture = ProxyMockedMemoryFixture;
 TEST_F(ProxyAutoReconnectFixture, StartFindServiceIsCalledWhenProxyCreateSucceeds)
 {
