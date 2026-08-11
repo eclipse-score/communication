@@ -36,10 +36,9 @@ import unittest
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
-sys.path.insert(0, os.path.join(_HERE, "converter"))
 
 import generate_schema  # noqa: E402
-import json_to_flatbuffer  # noqa: E402
+from score.mw.com.impl.configuration.converter import json_to_flatbuffer  # noqa: E402
 
 _FBS = os.path.join(_HERE, "mw_com_config.fbs")
 _SCHEMA = os.path.join(_HERE, "mw_com_config_schema.json")
@@ -67,22 +66,57 @@ class SchemaDriftTest(unittest.TestCase):
 
 class RoundTripTest(unittest.TestCase):
     def test_example_config_round_trips(self):
-        """Preprocess + flatc --binary + flatc --json preserves every example value."""
+        """Preprocess + flatc --binary + flatc --json preserves every example value.
+
+        Reproduces the build rule's split in-process: (1) flatc --jsonschema for the enum
+        symbols, (2) pure-Python normalization, (3) flatc --binary; then the reverse
+        flatc --json for comparison.
+        """
         flatc = _flatc()
         with open(_EXAMPLE, encoding="utf-8") as handle:
             original = json.load(handle)
-        normalized = json_to_flatbuffer._normalize(
-            original, json_to_flatbuffer._enum_symbols(flatc, _FBS)
-        )
 
         with tempfile.TemporaryDirectory() as work_dir:
-            binary = os.path.join(work_dir, "config.bin")
-            json_to_flatbuffer.convert(_FBS, _EXAMPLE, binary, flatc)
-            # --defaults-json so default-valued fields (which flatc elides from the binary)
-            # reappear, giving a complete tree to compare against the normalized input.
+            # 1. flatc --jsonschema -> schema file (the source of enum symbols).
+            schema_dir = os.path.join(work_dir, "schema")
+            os.makedirs(schema_dir)
+            result = subprocess.run(
+                [flatc, "-o", schema_dir, "--jsonschema", _FBS],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            stem = os.path.splitext(os.path.basename(_FBS))[0]
+            schema_path = os.path.join(schema_dir, stem + ".schema.json")
+
+            # 2. normalize (pure Python, reads the schema for enum symbols).
+            symbols = json_to_flatbuffer._enum_symbols_from_schema(schema_path)
+            normalized = json_to_flatbuffer._normalize(original, symbols)
+            normalized_path = os.path.join(work_dir, "config.json")
+            with open(normalized_path, "w", encoding="utf-8") as handle:
+                json.dump(normalized, handle)
+
+            # 3. flatc --binary -> config.bin.
+            bin_dir = os.path.join(work_dir, "bin")
+            os.makedirs(bin_dir)
+            result = subprocess.run(
+                [flatc, "-o", bin_dir, "--binary", _FBS, normalized_path],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            binary = os.path.join(bin_dir, "config.bin")
+
+            # 4. reverse: flatc --json. --defaults-json so default-valued fields (which
+            # flatc elides from the binary) reappear, giving a complete tree to compare
+            # against the normalized input.
+            out_dir = os.path.join(work_dir, "out")
+            os.makedirs(out_dir)
             result = subprocess.run(
                 [
-                    flatc, "-o", work_dir, "--json", "--strict-json",
+                    flatc, "-o", out_dir, "--json", "--strict-json",
                     "--defaults-json", "--raw-binary", _FBS, "--", binary,
                 ],
                 capture_output=True,
@@ -90,7 +124,7 @@ class RoundTripTest(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            with open(os.path.join(work_dir, "config.json"), encoding="utf-8") as handle:
+            with open(os.path.join(out_dir, "config.json"), encoding="utf-8") as handle:
                 round_tripped = json.load(handle)
 
         self._assert_subset(normalized, round_tripped, "")

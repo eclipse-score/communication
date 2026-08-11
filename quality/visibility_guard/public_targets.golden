@@ -55,7 +55,6 @@
 //score/mw/com/dependability:mw_com_index
 //score/mw/com/dependability:mw_com_rst
 //score/mw/com/impl/configuration/converter:json_to_flatbuffer_rule.bzl
-//score/mw/com/impl/configuration:flatbuffers_flags.bzl
 //score/mw/com/performance_benchmarks/macro_benchmark/config_generator:config_generator_rule.bzl
 //score/mw/com/performance_benchmarks/macro_benchmark:logging.json
 //score/mw/com/performance_benchmarks/macro_benchmark:lola_benchmarking_client
