@@ -19,6 +19,8 @@ flag is set. Enable with ``--config=flatbuffers`` (see .bazelrc).
 
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
+visibility("//score/mw/com/impl/configuration/...")
+
 def flatbuffers_flags(name = "flatbuffers_flags"):
     """Declares the FlatBuffers feature flag and its matching config_setting.
 
