@@ -11,11 +11,16 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 load(":json_to_flatbuffer_rule.bzl", "json_to_flatbuffer")
 
-# Exported so the configuration package's schema_drift_test can import the preprocessor.
-exports_files(["json_to_flatbuffer.py"])
+# The pure normalization preprocessor, importable (e.g. by the configuration package's
+# schema_drift_test) via its full workspace path.
+py_library(
+    name = "json_to_flatbuffer_lib",
+    srcs = ["json_to_flatbuffer.py"],
+    visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
+)
 
 py_binary(
     name = "json_to_flatbuffer",
