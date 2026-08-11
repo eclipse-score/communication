@@ -62,7 +62,6 @@ py_test(
     srcs = [
         "generate_schema.py",
         "schema_drift_test.py",
-        "//score/mw/com/impl/configuration/converter:json_to_flatbuffer.py",
     ],
     data = [
         "example/mw_com_config.json",
@@ -73,6 +72,7 @@ py_test(
     env = {"FLATC_PATH": "$(location @flatbuffers//:flatc)"},
     main = "schema_drift_test.py",
     target_compatible_with = ["@platforms//os:linux"],
+    deps = ["//score/mw/com/impl/configuration/converter:json_to_flatbuffer_lib"],
 )
 
 validate_json_schema_test(

@@ -25,7 +25,8 @@ Pipeline:
        * split ``@title:`` / ``@default:`` / ``@min:`` / ``@max:`` / ``@required`` token lines
          out of each ``description`` into proper JSON-schema attributes;
        * strip flatc's type-based ``minimum`` / ``maximum``, re-adding only from ``@min`` / ``@max``;
-       * inline every ``$ref`` except the shared ``ServiceVersion`` (kept as ``$defs/serviceVersion``);
+       * inline every ``$ref`` except tables marked ``@shared: <name>`` in the .fbs, which
+         are lifted into ``$defs/<name>`` and referenced (used for tables shared by 2+ parents);
        * restore ``_`` -> ``-`` in object keys and enum values (fbs identifiers can't contain ``-``).
 
 The result is deterministic (fixed key ordering, ``json.dumps(indent=4)``), so the checked-in
@@ -40,12 +41,7 @@ import subprocess
 import sys
 import tempfile
 
-# Table whose def is emitted as ``$defs/serviceVersion`` and referenced (not inlined),
-# because it is shared by both service types and service instances.
-_SHARED_DEF_SUFFIX = "_ServiceVersion"
-_SHARED_DEF_NAME = "serviceVersion"
-
-_TOKEN_RE = re.compile(r"^@(title|default|min|max|required)\b\s*:?\s*(.*)$")
+_TOKEN_RE = re.compile(r"^@(title|default|min|max|required|shared)\b\s*:?\s*(.*)$")
 
 _DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema"
 
@@ -77,7 +73,14 @@ def _parse_description(text):
     ``@token`` lines are extracted into a dict; the remaining lines form the human-readable
     description (joined with ``\\n``, preserving the original multi-line layout).
     """
-    meta = {"title": None, "default": None, "min": None, "max": None, "required": False}
+    meta = {
+        "title": None,
+        "default": None,
+        "min": None,
+        "max": None,
+        "required": False,
+        "shared": None,
+    }
     desc_lines = []
     for line in text.split("\n"):
         match = _TOKEN_RE.match(line)
@@ -91,14 +94,18 @@ def _parse_description(text):
             meta[key] = int(value)
         elif key == "default":
             meta["default"] = _parse_default(value)
+        elif key == "shared":
+            meta["shared"] = value
         else:  # title
             meta["title"] = value
     return meta, "\n".join(desc_lines)
 
 
 class _Enricher:
-    def __init__(self, definitions):
+    def __init__(self, definitions, shared_defs):
         self._defs = definitions
+        # Maps a full (namespaced) def name -> the ``$defs`` key it is lifted into.
+        self._shared_defs = shared_defs
 
     def _ref_name(self, node):
         return node["$ref"].split("/")[-1]
@@ -113,9 +120,9 @@ class _Enricher:
         """Build an enriched schema node for a property. Returns (schema_node, required)."""
         if "$ref" in node:
             ref = self._ref_name(node)
-            if ref.endswith(_SHARED_DEF_SUFFIX):
+            if ref in self._shared_defs:
                 meta, _ = _parse_description(node.get("description", ""))
-                return {"$ref": "#/$defs/%s" % _SHARED_DEF_NAME}, meta["required"]
+                return {"$ref": "#/$defs/%s" % self._shared_defs[ref]}, meta["required"]
             if self._is_enum(ref):
                 meta, desc = _parse_description(node.get("description", ""))
                 out = {"type": "string"}
@@ -164,8 +171,8 @@ class _Enricher:
     def _build_items(self, items):
         if "$ref" in items:
             ref = self._ref_name(items)
-            if ref.endswith(_SHARED_DEF_SUFFIX):
-                return {"$ref": "#/$defs/%s" % _SHARED_DEF_NAME}
+            if ref in self._shared_defs:
+                return {"$ref": "#/$defs/%s" % self._shared_defs[ref]}
             if self._is_enum(ref):
                 return {"type": "string", "enum": self._enum_values(ref)}
             return self.build_object(self._defs[ref])
@@ -194,13 +201,21 @@ class _Enricher:
         return out
 
 
-def _find_shared_def(definitions):
-    matches = [name for name in definitions if name.endswith(_SHARED_DEF_SUFFIX)]
-    if len(matches) != 1:
-        raise GenerationError(
-            "expected exactly one %s table, found: %s" % (_SHARED_DEF_SUFFIX, matches)
-        )
-    return matches[0]
+def _collect_shared_defs(definitions):
+    """Map full def name -> ``$defs`` key for every table marked ``@shared: <name>``.
+
+    Iteration follows ``definitions`` order (i.e. .fbs order), keeping ``$defs`` deterministic.
+    """
+    shared = {}
+    for full_name, def_node in definitions.items():
+        meta, _ = _parse_description(def_node.get("description", ""))
+        name = meta["shared"]
+        if name is None:
+            continue
+        if name in shared.values():
+            raise GenerationError("duplicate @shared name: %s" % name)
+        shared[full_name] = name
+    return shared
 
 
 def _run_flatc_jsonschema(flatc, fbs_path):
@@ -225,13 +240,11 @@ def generate(fbs_path, flatc="flatc"):
     """Return the rich JSON schema (as a string) generated from ``fbs_path``."""
     raw = _run_flatc_jsonschema(flatc, fbs_path)
     definitions = raw["definitions"]
-    enricher = _Enricher(definitions)
+    shared_defs = _collect_shared_defs(definitions)
+    enricher = _Enricher(definitions, shared_defs)
 
     root_name = raw["$ref"].split("/")[-1]
     root_obj = enricher.build_object(definitions[root_name])
-
-    shared_name = _find_shared_def(definitions)
-    shared_obj = enricher.build_object(definitions[shared_name])
 
     schema = {"$schema": _DRAFT_2020_12}
     if "title" in root_obj:
@@ -243,7 +256,10 @@ def generate(fbs_path, flatc="flatc"):
         schema["required"] = root_obj["required"]
     schema["additionalProperties"] = root_obj["additionalProperties"]
     schema["properties"] = root_obj["properties"]
-    schema["$defs"] = {_SHARED_DEF_NAME: shared_obj}
+    schema["$defs"] = {
+        name: enricher.build_object(definitions[full])
+        for full, name in shared_defs.items()
+    }
 
     return json.dumps(schema, indent=4, ensure_ascii=False) + "\n"
 
