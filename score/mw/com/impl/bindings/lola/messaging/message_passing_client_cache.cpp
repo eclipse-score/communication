@@ -168,6 +168,7 @@ void MessagePassingClientCache::RemoveMessagePassingClient(const pid_t target_no
             {
                 score::mw::log::LogFatal("lola") << "MessagePassingClientCache: Cannot close connection to target "
                                                  << target_node_id << " in reasonable time";
+                // no precondition but a runtime error in QNX message passing service --> keep std::terminate()
                 std::terminate();
             }
             std::this_thread::sleep_for(kStateRetryDelay);

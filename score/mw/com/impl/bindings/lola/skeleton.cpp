@@ -60,12 +60,9 @@ const LolaServiceTypeDeployment& GetLolaServiceTypeDeployment(const InstanceIden
     const auto& service_type_depl_info = InstanceIdentifierView{identifier}.GetServiceTypeDeployment();
     const auto* lola_service_type_deployment_ptr =
         std::get_if<LolaServiceTypeDeployment>(&service_type_depl_info.binding_info_);
-    if (lola_service_type_deployment_ptr == nullptr)
-    {
-        score::mw::log::LogError("lola") << "GetLolaServiceTypeDeployment: Wrong Binding! ServiceTypeDeployment "
-                                            "doesn't contain a LoLa deployment!";
-        std::terminate();
-    }
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        lola_service_type_deployment_ptr != nullptr,
+        "GetLolaServiceTypeDeployment: Wrong Binding! ServiceTypeDeployment doesn't contain a LoLa deployment!");
     return *lola_service_type_deployment_ptr;
 }
 
