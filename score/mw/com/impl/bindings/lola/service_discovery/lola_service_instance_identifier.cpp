@@ -26,7 +26,7 @@ LolaServiceInstanceIdentifier::LolaServiceInstanceIdentifier(LolaServiceId servi
 // This is false positive, all data members are initialized using member initializers in the delegation constructor.
 // coverity[autosar_cpp14_a12_6_1_violation]
 LolaServiceInstanceIdentifier::LolaServiceInstanceIdentifier(
-    const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+    const EnrichedInstanceIdentifier& enriched_instance_identifier)
     : LolaServiceInstanceIdentifier{
           enriched_instance_identifier.GetBindingSpecificServiceId<LolaServiceTypeDeployment>().value()}
 {
@@ -61,7 +61,7 @@ bool operator==(const LolaServiceInstanceIdentifier& lhs, const LolaServiceInsta
 // doesn't have value but as we check before with 'has_value()' so no way for calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation]
 std::size_t std::hash<score::mw::com::impl::lola::LolaServiceInstanceIdentifier>::operator()(
-    const score::mw::com::impl::lola::LolaServiceInstanceIdentifier& identifier) const noexcept
+    const score::mw::com::impl::lola::LolaServiceInstanceIdentifier& identifier) const
 {
     static_assert(sizeof(score::mw::com::impl::LolaServiceId) <= 4U);
     static_assert(sizeof(score::mw::com::impl::LolaServiceInstanceId::InstanceId) <= 2U);

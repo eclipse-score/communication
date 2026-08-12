@@ -40,7 +40,7 @@ constexpr auto kServiceKey = "service";
 // False positive, we first check if json_result has value before we call value() on it. I.e. no throw through
 // bad_variant_access can occur.
 // coverity[autosar_cpp14_a15_5_3_violation]
-QualityType GetQualityTypeFromJson(const score::json::Object& json_object, std::string_view key) noexcept
+QualityType GetQualityTypeFromJson(const score::json::Object& json_object, std::string_view key)
 {
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(it != json_object.end());
@@ -55,7 +55,7 @@ QualityType GetQualityTypeFromJson(const score::json::Object& json_object, std::
 }
 
 // coverity[autosar_cpp14_a2_10_4_violation] False positive, function is in anonymous namespace
-ServiceInstanceDeployment::BindingInformation GetBindingInfoFromJson(const score::json::Object& json_object) noexcept
+ServiceInstanceDeployment::BindingInformation GetBindingInfoFromJson(const score::json::Object& json_object)
 {
     const auto variant_index = GetValueFromJson<std::ptrdiff_t>(json_object, kBindingInfoIndexKey);
 
@@ -67,12 +67,12 @@ ServiceInstanceDeployment::BindingInformation GetBindingInfoFromJson(const score
 
 }  // namespace
 
-auto operator==(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) noexcept -> bool
+auto operator==(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) -> bool
 {
     return (((lhs.asilLevel_ == rhs.asilLevel_) && (lhs.bindingInfo_ == rhs.bindingInfo_)));
 }
 
-auto operator<(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) noexcept -> bool
+auto operator<(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) -> bool
 {
     if (lhs.bindingInfo_ == rhs.bindingInfo_)
     {
@@ -94,7 +94,7 @@ auto areCompatible(const ServiceInstanceDeployment& lhs, const ServiceInstanceDe
 }
 
 // coverity[autosar_cpp14_a15_5_3_violation] False positive, none of the fucntions throw.
-ServiceInstanceDeployment::ServiceInstanceDeployment(const score::json::Object& json_object) noexcept
+ServiceInstanceDeployment::ServiceInstanceDeployment(const score::json::Object& json_object)
     : ServiceInstanceDeployment(
           ServiceIdentifierType{GetValueFromJson<json::Object>(json_object, kServiceKey)},
           GetBindingInfoFromJson(json_object),
@@ -120,7 +120,7 @@ ServiceInstanceDeployment::ServiceInstanceDeployment(const score::json::Object& 
 // exceptions, a variant can never be in this state, i.e. std::visit can never throw std::bad_variant_access.
 //
 // coverity[autosar_cpp14_a15_5_3_violation] Note 1
-score::json::Object ServiceInstanceDeployment::Serialize() const noexcept
+score::json::Object ServiceInstanceDeployment::Serialize() const
 {
     score::json::Object json_object{};
     json_object[kBindingInfoIndexKey] = score::json::Any{bindingInfo_.index()};
@@ -144,7 +144,7 @@ score::json::Object ServiceInstanceDeployment::Serialize() const noexcept
 }
 
 // coverity[autosar_cpp14_a15_5_3_violation] see Note 1
-BindingType ServiceInstanceDeployment::GetBindingType() const noexcept
+BindingType ServiceInstanceDeployment::GetBindingType() const
 {
     // FP: only one statement in this line
     // coverity[autosar_cpp14_a7_1_7_violation]

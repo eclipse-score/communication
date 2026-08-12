@@ -20,9 +20,7 @@
 
 #include <cstdint>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 class IServerFactory
@@ -52,7 +50,6 @@ class IServerFactory
     IServerFactory& operator=(IServerFactory&&) = delete;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_SERVER_FACTORY_H

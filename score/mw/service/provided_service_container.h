@@ -21,11 +21,7 @@
 #include <string>
 #include <string_view>
 
-namespace score
-{
-namespace mw
-{
-namespace service
+namespace score::mw::service
 {
 
 class ProvidedServicesBase
@@ -67,47 +63,45 @@ class ProvidedServices final : public ProvidedServicesBase
     constexpr ProvidedServices(const ProvidedServices&) = delete;
 
     template <typename ServiceType, typename... Args>
-    ProvidedServices& Add(Args&&... args) &
+    ProvidedServices& Add(Args&&...) &
     {
         ++count_;
         return *this;
     }
 
     template <typename ServiceType, typename... Args>
-    ProvidedServices&& Add(Args&&... args) &&
+    ProvidedServices&& Add(Args&&...) &&
     {
         ++count_;
         return std::move(*this);
     }
 
     template <typename ServiceType, typename... Args>
-    ProvidedServices& AddViaInstanceSpecifier(InstanceSpecifierView instance_specifier, Args&&... args) &
+    ProvidedServices& AddViaInstanceSpecifier(InstanceSpecifierView, Args&&...) &
     {
         return *this;
     }
 
     template <typename ServiceType, typename... Args>
-    ProvidedServices&& AddViaInstanceSpecifier(InstanceSpecifierView instance_specifier, Args&&... args) &&
+    ProvidedServices&& AddViaInstanceSpecifier(InstanceSpecifierView, Args&&...) &&
     {
         return std::move(*this);
     }
 
     template <typename ServiceBaseType, typename ServiceImplType, typename... Args>
-    ProvidedServices& EmplaceServiceInstance(std::in_place_type_t<ServiceImplType>, Args&&... args) &
+    ProvidedServices& EmplaceServiceInstance(std::in_place_type_t<ServiceImplType>, Args&&...) &
     {
         return *this;
     }
 
     template <typename ServiceBaseType, typename ServiceImplType, typename... Args>
-    ProvidedServices&& EmplaceServiceInstance(std::in_place_type_t<ServiceImplType>, Args&&... args) &&
+    ProvidedServices&& EmplaceServiceInstance(std::in_place_type_t<ServiceImplType>, Args&&...) &&
     {
         return std::move(*this);
     }
 
     template <typename ServiceBaseType, typename ServiceImplType, typename... Args>
-    ProvidedServices& EmplaceServiceInstance(InstanceSpecifierView instance_specifier,
-                                             std::in_place_type_t<ServiceImplType>,
-                                             Args&&... args)
+    ProvidedServices& EmplaceServiceInstance(InstanceSpecifierView, std::in_place_type_t<ServiceImplType>, Args&&...)
     {
         return *this;
     }
@@ -123,7 +117,7 @@ class ProvidedServices final : public ProvidedServicesBase
     /// @param instance_specifier unique identifier for the service instance
     /// @return a valid smartpointer in case the dynamic_cast to `ServiceType` succeeds, nullptr otherwise
     template <typename ServiceType>
-    auto Extract(InstanceSpecifierView instance_specifier) noexcept
+    auto Extract(InstanceSpecifierView) noexcept
     {
         return nullptr;
     }
@@ -140,13 +134,13 @@ class ProvidedServices final : public ProvidedServicesBase
     }
 
     template <typename ServiceType>
-    const ServiceType* Get(InstanceSpecifierView instance_specifier) const noexcept
+    const ServiceType* Get(InstanceSpecifierView) const noexcept
     {
         return nullptr;
     }
 
     template <typename ServiceType>
-    ServiceType* Get(InstanceSpecifierView instance_specifier) noexcept
+    ServiceType* Get(InstanceSpecifierView) noexcept
     {
         return nullptr;
     }
@@ -157,13 +151,13 @@ class ProvidedServices final : public ProvidedServicesBase
         return false;
     }
 
-    bool Has(InstanceSpecifierView instance_specifier) const noexcept
+    bool Has(InstanceSpecifierView) const noexcept
     {
         return false;
     }
 
     template <typename ServiceType>
-    bool Has(InstanceSpecifierView instance_specifier) const noexcept
+    bool Has(InstanceSpecifierView) const noexcept
     {
         return false;
     }
@@ -245,8 +239,6 @@ class ProvidedServiceContainer
     std::unique_ptr<ProvidedServicesBase> services_;
 };
 
-}  // namespace service
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::service
 
 #endif  // SCORE_MW_SERVICE_PROVIDED_SERVICE_CONTAINER_H

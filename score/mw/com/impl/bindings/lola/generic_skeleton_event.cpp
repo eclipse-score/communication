@@ -11,13 +11,13 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/generic_skeleton_event.h"
-#include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/sample_allocatee_guard.h"
-#include "score/mw/com/impl/skeleton_event_binding.h"
+
+#include "score/memory/shared/pointer_arithmetic_util.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -25,7 +25,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            const std::string_view event_name,
                                            const SkeletonEventProperties& event_properties,
                                            const ElementFqId& element_fq_id,
-                                           const DataTypeMetaInfo& size_info,
+                                           const memory::DataTypeSizeInfo& size_info,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_{size_info},
       event_data_storage_{nullptr},
@@ -38,8 +38,8 @@ Result<void> GenericSkeletonEvent::PrepareOffer() noexcept
     const auto registration_result =
         skeleton_event_common_.GetParent().RegisterGeneric(skeleton_event_common_.GetElementFQId(),
                                                            skeleton_event_common_.GetEventProperties(),
-                                                           size_info_.size,
-                                                           size_info_.alignment);
+                                                           size_info_.Size(),
+                                                           size_info_.Alignment());
 
     event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
 
@@ -66,14 +66,14 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
     const auto slot_index = allocated_slot_result.value();
 
     // Calculate the exact slot spacing based on alignment padding
-    const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.size, size_info_.alignment);
+    const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.Size(), size_info_.Alignment());
     std::size_t offset = static_cast<std::size_t>(slot_index) * aligned_size;
     void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(event_data_storage_, offset));
 
     // The ConsumerEventDataControlLocalView stored inside SampleAllocateePtr is only used by the send-tracing path.
-    //  Tracing is a diagnostic/monitoring feature with no safety requirement, so QM is sufficient.
-    //  GetConsumerEventDataControlLocalView(kASIL_B) is a separate code path introduced specifically for
-    //  GetLatestSample().
+    // Tracing is a diagnostic/monitoring feature with no safety requirement, so QM is sufficient.
+    // GetConsumerEventDataControlLocalView(kASIL_B) is a separate code path introduced specifically for
+    // GetLatestSample().
     auto lola_ptr = lola::SampleAllocateePtr<void>(
         data_ptr,
         skeleton_event_common_.GetEventDataControlComposite(),
@@ -89,7 +89,7 @@ Result<void> GenericSkeletonEvent::Notify() noexcept
 
 std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
 {
-    return {size_info_.size, size_info_.alignment};
+    return {size_info_.Size(), size_info_.Alignment()};
 }
 
 void GenericSkeletonEvent::PrepareStopOffer() noexcept

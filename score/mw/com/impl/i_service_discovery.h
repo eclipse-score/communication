@@ -37,20 +37,18 @@ class IServiceDiscovery
     virtual ~IServiceDiscovery() = default;
     IServiceDiscovery() = default;
 
-    [[nodiscard]] virtual Result<void> OfferService(InstanceIdentifier) noexcept = 0;
-    [[nodiscard]] virtual Result<void> StopOfferService(InstanceIdentifier) noexcept = 0;
-    [[nodiscard]] virtual Result<void> StopOfferService(InstanceIdentifier,
-                                                        QualityTypeSelector quality_type) noexcept = 0;
+    [[nodiscard]] virtual Result<void> OfferService(InstanceIdentifier) = 0;
+    [[nodiscard]] virtual Result<void> StopOfferService(InstanceIdentifier) = 0;
+    [[nodiscard]] virtual Result<void> StopOfferService(InstanceIdentifier, QualityTypeSelector quality_type) = 0;
+    virtual Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>, const InstanceSpecifier) = 0;
+    virtual Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>, InstanceIdentifier) = 0;
     virtual Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>,
-                                                       const InstanceSpecifier) noexcept = 0;
-    virtual Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>, InstanceIdentifier) noexcept = 0;
-    virtual Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>,
-                                                       const EnrichedInstanceIdentifier) noexcept = 0;
-    [[nodiscard]] virtual Result<void> StopFindService(const FindServiceHandle) noexcept = 0;
+                                                       const EnrichedInstanceIdentifier) = 0;
+    [[nodiscard]] virtual Result<void> StopFindService(const FindServiceHandle) = 0;
     [[nodiscard]] virtual Result<ServiceHandleContainer<HandleType>> FindService(
-        InstanceIdentifier instance_identifier) noexcept = 0;
+        InstanceIdentifier instance_identifier) = 0;
     [[nodiscard]] virtual Result<ServiceHandleContainer<HandleType>> FindService(
-        InstanceSpecifier instance_specifier) noexcept = 0;
+        InstanceSpecifier instance_specifier) = 0;
 
   protected:
     IServiceDiscovery(const IServiceDiscovery&) = default;

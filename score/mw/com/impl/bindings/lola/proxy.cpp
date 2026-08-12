@@ -300,7 +300,7 @@ void AppendEnabledFieldIdsAndQueueSizes(
             {
                 continue;
             }
-            const bool is_enabled_in_deployment = method_type == MethodType::kGet
+            const bool is_enabled_in_deployment = (method_type == MethodType::kGet)
                                                       ? method_deployment.use_get_if_available_
                                                       : method_deployment.use_set_if_available_;
             if (!is_enabled_in_deployment)
@@ -350,7 +350,7 @@ ElementFqId Proxy::EventNameToElementFqIdConverter::Convert(const std::string_vi
 // in case 'service_instance_usage_marker_file' doesn't have value but as we check before with 'has_value()'
 // so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-std::unique_ptr<Proxy> Proxy::Create(const HandleType handle) noexcept
+std::unique_ptr<Proxy> Proxy::Create(const HandleType handle)
 {
     const auto& instance_deployment = GetLoLaInstanceDeployment(handle);
     const auto& lola_service_deployment = GetLoLaServiceTypeDeployment(handle);
@@ -435,7 +435,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
              std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
                  service_instance_usage_flock_mutex_and_lock,
              score::filesystem::Filesystem filesystem,
-             ProxyInstanceIdentifier::ProxyInstanceCounter proxy_instance_counter) noexcept
+             ProxyInstanceIdentifier::ProxyInstanceCounter proxy_instance_counter)
     : ProxyBinding{},
       control_{std::move(control)},
       data_{std::move(data)},
@@ -559,8 +559,7 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
 // exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ConsumerEventDataControlLocalView<> Proxy::GetConsumerEventDataControlLocalView(
-    const ElementFqId element_fq_id) noexcept
+ConsumerEventDataControlLocalView<> Proxy::GetConsumerEventDataControlLocalView(const ElementFqId element_fq_id)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
@@ -590,7 +589,7 @@ ConsumerEventDataControlLocalView<> Proxy::GetConsumerEventDataControlLocalView(
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
 // exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-EventSubscriptionControl<>& Proxy::GetEventSubscriptionControl(const ElementFqId element_fq_id) noexcept
+EventSubscriptionControl<>& Proxy::GetEventSubscriptionControl(const ElementFqId element_fq_id)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
@@ -610,7 +609,7 @@ EventSubscriptionControl<>& Proxy::GetEventSubscriptionControl(const ElementFqId
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
 // exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-TransactionLogSet& Proxy::GetTransactionLogSet(const ElementFqId element_fq_id) noexcept
+TransactionLogSet& Proxy::GetTransactionLogSet(const ElementFqId element_fq_id)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
@@ -630,7 +629,7 @@ TransactionLogSet& Proxy::GetTransactionLogSet(const ElementFqId element_fq_id) 
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
 // exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-const EventMetaInfo& Proxy::GetEventMetaInfo(const ElementFqId element_fq_id) const noexcept
+const EventMetaInfo& Proxy::GetEventMetaInfo(const ElementFqId element_fq_id) const
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr,
                                                       "Proxy::GetEventMetaInfo: Managed memory data pointer is Null");
@@ -658,7 +657,7 @@ const EventMetaInfo& Proxy::GetEventMetaInfo(const ElementFqId element_fq_id) co
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
 // exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-bool Proxy::IsEventProvided(const std::string_view event_name) const noexcept
+bool Proxy::IsEventProvided(const std::string_view event_name) const
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "IsEventProvided: Managed memory control pointer is Null");
@@ -745,7 +744,7 @@ score::Result<void> Proxy::SetupMethods(const std::size_t additional_shm_size_by
     return subscription_result;
 }
 
-void Proxy::CleanupMethods() noexcept
+void Proxy::CleanupMethods()
 {
     // Skip teardown if method SHM was never created (method_shm_resource_ is null, nothing to clean up).
     if (!are_proxy_methods_setup_.load())

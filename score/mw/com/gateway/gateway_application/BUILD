@@ -48,6 +48,7 @@ cc_library(
 
 cc_library(
     name = "gateway_core",
+    srcs = ["gateway_core.cpp"],
     hdrs = ["gateway_core.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
@@ -112,12 +113,14 @@ cc_unit_test(
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@googletest//:gtest",
+        "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/result",
     ],
 )
 
 cc_library(
     name = "gateway_core_mock",
+    srcs = ["gateway_core_mock.cpp"],
     hdrs = ["gateway_core_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [

@@ -16,9 +16,7 @@
 
 #include "score/message_passing/resource_manager_fixture_base.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 namespace
 {
@@ -92,5 +90,4 @@ TEST_F(QnxDispatchMockedServerFixture, ServerOpenConnectOcbAttachFailure)
 }
 
 }  // namespace
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing

@@ -54,20 +54,19 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
 
     ~ServiceDiscoveryClient() noexcept override;
 
-    [[nodiscard]] Result<void> OfferService(const InstanceIdentifier instance_identifier) noexcept override;
+    [[nodiscard]] Result<void> OfferService(const InstanceIdentifier instance_identifier) override;
 
     [[nodiscard]] Result<void> StopOfferService(
         const InstanceIdentifier instance_identifier,
-        const IServiceDiscovery::QualityTypeSelector quality_type_selector) noexcept override;
+        const IServiceDiscovery::QualityTypeSelector quality_type_selector) override;
 
-    [[nodiscard]] Result<void> StartFindService(
-        const FindServiceHandle find_service_handle,
-        FindServiceHandler<HandleType> handler,
-        const EnrichedInstanceIdentifier enriched_instance_identifier) noexcept override;
+    [[nodiscard]] Result<void> StartFindService(const FindServiceHandle find_service_handle,
+                                                FindServiceHandler<HandleType> handler,
+                                                const EnrichedInstanceIdentifier enriched_instance_identifier) override;
 
-    [[nodiscard]] Result<void> StopFindService(const FindServiceHandle find_service_handle) noexcept override;
+    [[nodiscard]] Result<void> StopFindService(const FindServiceHandle find_service_handle) override;
     [[nodiscard]] Result<ServiceHandleContainer<HandleType>> FindService(
-        const EnrichedInstanceIdentifier enriched_instance_identifier) noexcept override;
+        const EnrichedInstanceIdentifier enriched_instance_identifier) override;
 
   private:
     class SearchRequest
@@ -134,12 +133,12 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
     using WatchesContainer = std::unordered_map<os::InotifyWatchDescriptor, Watch>;
     using Disambiguator = std::uint64_t;
 
-    void CallHandlers(const std::unordered_set<FindServiceHandle>& search_keys) noexcept;
+    void CallHandlers(const std::unordered_set<FindServiceHandle>& search_keys);
 
     WatchesContainer::iterator StoreWatch(const os::InotifyWatchDescriptor& watch_descriptor,
-                                          const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept;
+                                          const EnrichedInstanceIdentifier& enriched_instance_identifier);
 
-    void EraseWatch(const WatchesContainer::iterator& watch_iterator) noexcept;
+    void EraseWatch(const WatchesContainer::iterator& watch_iterator);
 
     void LinkWatchWithSearchRequest(const WatchesContainer::iterator& watch_iterator,
                                     const SearchRequestsContainer::iterator& search_iterator) noexcept;
@@ -147,24 +146,23 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
     void UnlinkWatchWithSearchRequest(const WatchesContainer::iterator& watch_iterator,
                                       const SearchRequestsContainer::iterator& search_iterator) noexcept;
 
-    void OnInstanceDirectoryCreated(const WatchesContainer::iterator& watch_iterator, std::string_view name) noexcept;
+    void OnInstanceDirectoryCreated(const WatchesContainer::iterator& watch_iterator, std::string_view name);
 
-    void OnInstanceFlagFileCreated(const WatchesContainer::iterator& watch_iterator,
-                                   const std::string_view name) noexcept;
-    void OnInstanceFlagFileRemoved(const WatchesContainer::iterator& watch_iterator, std::string_view name) noexcept;
+    void OnInstanceFlagFileCreated(const WatchesContainer::iterator& watch_iterator, const std::string_view name);
+    void OnInstanceFlagFileRemoved(const WatchesContainer::iterator& watch_iterator, std::string_view name);
 
     void TransferSearchRequests() noexcept;
-    SearchRequestsContainer::value_type& TransferNewSearchRequest(NewSearchRequest search_request) noexcept;
-    void TransferObsoleteSearchRequests() noexcept;
+    SearchRequestsContainer::value_type& TransferNewSearchRequest(NewSearchRequest search_request);
+    void TransferObsoleteSearchRequests();
 
-    void TransferObsoleteSearchRequest(const FindServiceHandle& find_service_handle) noexcept;
+    void TransferObsoleteSearchRequest(const FindServiceHandle& find_service_handle);
 
     void HandleEvents(
         const score::cpp::expected<score::cpp::static_vector<os::InotifyEvent, os::InotifyInstance::max_events>,
-                                   os::Error>& expected_events) noexcept;
+                                   os::Error>& expected_events);
 
-    void HandleDeletionEvents(const std::vector<os::InotifyEvent>& events) noexcept;
-    void HandleCreationEvents(const std::vector<os::InotifyEvent>& events) noexcept;
+    void HandleDeletionEvents(const std::vector<os::InotifyEvent>& events);
+    void HandleCreationEvents(const std::vector<os::InotifyEvent>& events);
 
     std::atomic<Disambiguator> offer_disambiguator_;
 

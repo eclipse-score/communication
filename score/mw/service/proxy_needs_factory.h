@@ -19,11 +19,7 @@
 #include <memory>
 #include <utility>
 
-namespace score
-{
-namespace mw
-{
-namespace service
+namespace score::mw::service
 {
 
 /// @brief Stub factory for creating ProxyNeeds instances
@@ -67,8 +63,6 @@ class ProxyNeedsFactory
     }
 };
 
-}  // namespace service
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::service
 
 #endif  // SCORE_MW_SERVICE_PROXY_NEEDS_FACTORY_H

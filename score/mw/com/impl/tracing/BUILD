@@ -43,10 +43,10 @@ cc_library(
     deps = [
         ":service_element_tracing_data",
         ":type_erased_sample_ptr",
+        "//score/memory/shared",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
         "@score_baselibs//score/analysis/tracing/generic_trace_library:api",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared",
     ],
 )
 
@@ -198,6 +198,7 @@ cc_library(
         ":i_binding_tracing_runtime",
         ":service_element_tracing_data",
         ":type_erased_sample_ptr",
+        "//score/memory/shared:i_shared_memory_resource",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl/tracing/configuration:proxy_event_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:proxy_field_trace_point_type",
@@ -206,7 +207,6 @@ cc_library(
         "//score/mw/com/impl/tracing/configuration:skeleton_field_trace_point_type",
         "@score_baselibs//score/analysis/tracing/generic_trace_library:api",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
     ],
 )
 
@@ -230,9 +230,9 @@ cc_library(
     hdrs = ["tracing_runtime.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
+        "//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/analysis/tracing/generic_trace_library:implementation",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],

@@ -15,7 +15,7 @@
 namespace score::mw::com::impl
 {
 
-bool operator==(const EnrichedInstanceIdentifier& lhs, const EnrichedInstanceIdentifier& rhs) noexcept
+bool operator==(const EnrichedInstanceIdentifier& lhs, const EnrichedInstanceIdentifier& rhs)
 {
     return (((lhs.GetInstanceIdentifier() == rhs.GetInstanceIdentifier()) &&
              ((lhs.GetInstanceId() == rhs.GetInstanceId()))) &&

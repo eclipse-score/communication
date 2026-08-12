@@ -11,3 +11,4 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/methods/callable_traits.h"
+#include "score/mw/com/impl/methods/callable_traits_impl.h"

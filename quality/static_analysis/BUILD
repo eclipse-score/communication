@@ -10,6 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
+
 py_binary(
     name = "codeql_lint",
     srcs = ["codeql_lint.py"],
@@ -17,11 +19,13 @@ py_binary(
         "--codeql_path=$(location @codeql_bundle//:codeql_cli)",
         "--config_path=$(location :config)",
         "--analysis_report_path=$(location @codeql_coding_standards//:analysis_report)",
+        "--guideline_recategorize_path=$(location @codeql_coding_standards//:guideline_recategorize)",
     ],
     data = [
         ":config",
         "@codeql_bundle//:codeql_cli",
         "@codeql_coding_standards//:analysis_report",
+        "@codeql_coding_standards//:guideline_recategorize",
         "@codeql_coding_standards//:process_coding_standards_config",
         "@codeql_coding_standards_compiled//:pack",
     ],
@@ -34,4 +38,16 @@ py_binary(
 filegroup(
     name = "config",
     srcs = ["config.yaml"],
+)
+
+# The `sarif` CLI from the sarif-tools PyPI package
+# (https://github.com/microsoft/sarif-tools), invoked directly (no custom
+# wrapper script) to derive the CSV report from the merged/deduplicated SARIF
+# produced by @sarif_multitool (see _codeql.yml), e.g.:
+#   bazel run //quality/static_analysis:sarif_cli -- csv <in>.sarif --output <out>.csv
+py_console_script_binary(
+    name = "sarif_cli",
+    pkg = "@score_communication_pip//sarif_tools",
+    script = "sarif",
+    target_compatible_with = ["@platforms//os:linux"],
 )

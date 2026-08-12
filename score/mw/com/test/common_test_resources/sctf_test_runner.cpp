@@ -16,6 +16,7 @@
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/command_line_parser.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <boost/program_options.hpp>
 #include <chrono>
@@ -226,7 +227,7 @@ SctfTestRunner::SctfTestRunner(int argc, const char** argv, const std::vector<Pa
             std::cerr << "setuid failed: " << strerror(errno) << std::endl;
         }
     }
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
 }
 
 void SctfTestRunner::SetupSigTermHandler()

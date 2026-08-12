@@ -115,7 +115,7 @@ class Proxy : public ProxyBinding
     // coverity[autosar_cpp14_m3_2_4_violation]
     ~Proxy() override;
 
-    static std::unique_ptr<Proxy> Create(const HandleType handle) noexcept;
+    static std::unique_ptr<Proxy> Create(const HandleType handle);
 
     Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
           std::shared_ptr<memory::shared::ManagedMemoryResource> data,
@@ -126,30 +126,22 @@ class Proxy : public ProxyBinding
           std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
               service_instance_usage_flock_mutex_and_lock,
           score::filesystem::Filesystem filesystem,
-          ProxyInstanceIdentifier::ProxyInstanceCounter proxy_instance_counter) noexcept;
+          ProxyInstanceIdentifier::ProxyInstanceCounter proxy_instance_counter);
 
     /// Returns the address of the control structure, for the given event ID.
     ///
     /// Terminates if the event control structure cannot be found.
-    ConsumerEventDataControlLocalView<> GetConsumerEventDataControlLocalView(const ElementFqId element_fq_id) noexcept;
+    ConsumerEventDataControlLocalView<> GetConsumerEventDataControlLocalView(const ElementFqId element_fq_id);
 
     /// Returns the EventSubscriptionControl for the given event ID.
     ///
     /// Terminates if the event control structure cannot be found.
-    EventSubscriptionControl<>& GetEventSubscriptionControl(const ElementFqId element_fq_id) noexcept;
+    EventSubscriptionControl<>& GetEventSubscriptionControl(const ElementFqId element_fq_id);
 
     /// Returns the TransactionLogSet for the given event ID.
     ///
     /// Terminates if the event control structure cannot be found.
-    TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id) noexcept;
-
-    /// Retrieves a reference to the event data storage area for a given ElementFqId.
-    ///
-    /// \param element_fq_id The Event ID.
-    /// \return A reference to the EventDataStorage.
-    template <typename EventSampleType>
-    auto GetEventDataStorage(const ElementFqId element_fq_id) const noexcept
-        -> const EventDataStorage<EventSampleType>&;
+    TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id);
 
     /// Retrieves an event data meta info.
     ///
@@ -158,14 +150,14 @@ class Proxy : public ProxyBinding
     ///
     /// \param element_fq_id The Event ID.
     /// \return An event data meta info.
-    const EventMetaInfo& GetEventMetaInfo(const ElementFqId element_fq_id) const noexcept;
+    const EventMetaInfo& GetEventMetaInfo(const ElementFqId element_fq_id) const;
 
     /// Checks whether the event corresponding to event_name is provided
     ///
     /// It does this by checking whether the event corresponding to event_name exists in shared memory.
     /// \param event_name The event name to check.
     /// \return True if the event name exists, otherwise, false
-    bool IsEventProvided(const std::string_view event_name) const noexcept override;
+    bool IsEventProvided(const std::string_view event_name) const override;
 
     /// \brief Sets up the shared memory for all the methods of the proxy, notifies the skeleton to open the shared
     /// memory and perform any setup on skeleton side.
@@ -216,7 +208,7 @@ class Proxy : public ProxyBinding
     void StopProxyAutoReconnect();
 
     void ServiceAvailabilityChangeHandler(const bool is_service_available);
-    void CleanupMethods() noexcept;
+    void CleanupMethods();
     void InitializeSharedMemoryForMethods(
         memory::shared::ManagedMemoryResource& memory_resource,
         const std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& method_data,
@@ -287,36 +279,6 @@ class Proxy : public ProxyBinding
     bool prepare_deinitialize_called_;
     bool finalize_deinitialize_called_;
 };
-
-template <typename EventSampleType>
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the
-// key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw
-// an exception.
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto Proxy::GetEventDataStorage(const ElementFqId element_fq_id) const noexcept
-    -> const EventDataStorage<EventSampleType>&
-{
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        data_ != nullptr, "Proxy::GetEventDataStorage: Managed memory data pointer is Null");
-    auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
-    const auto event_entry = service_data_storage.events_.find(element_fq_id);
-    if (event_entry == service_data_storage.events_.end())
-    {
-        score::mw::log::LogFatal("lola") << __func__ << __LINE__
-                                         << "Unable to find data storage for given event instance. Terminating.";
-        std::terminate();
-    }
-    // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
-    // The "event_entry" variable is an iterator of interprocess map returned by the "find" method.
-    // A check is made that the iterator is not equal to map.end(). Therefore, the call to "event_entry->"
-    // does not return nullptr.
-    // coverity[autosar_cpp14_a5_3_2_violation]
-    const auto* event_data_storage_ptr = event_entry->second.template get<EventDataStorage<EventSampleType>>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_storage_ptr != nullptr,
-                                                "Could not get EventDataStorage from OffsetPtr");
-    return *event_data_storage_ptr;
-}
 
 }  // namespace score::mw::com::impl::lola
 

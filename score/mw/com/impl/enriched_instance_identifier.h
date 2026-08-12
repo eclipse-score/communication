@@ -38,7 +38,7 @@ namespace score::mw::com::impl
 class EnrichedInstanceIdentifier final
 {
   public:
-    explicit EnrichedInstanceIdentifier(InstanceIdentifier instance_identifier) noexcept
+    explicit EnrichedInstanceIdentifier(InstanceIdentifier instance_identifier)
         : EnrichedInstanceIdentifier(
               InstanceIdentifierView{instance_identifier}.GetServiceInstanceId(),
               InstanceIdentifierView{instance_identifier}.GetServiceInstanceDeployment().asilLevel_,
@@ -50,7 +50,7 @@ class EnrichedInstanceIdentifier final
     // initialized by the constructor shall be initialized using member initializers".
     // This is false positive, all data members are initialized using member initializers in the delegated constructor.
     // coverity[autosar_cpp14_a12_6_1_violation]
-    EnrichedInstanceIdentifier(InstanceIdentifier instance_identifier, const ServiceInstanceId instance_id) noexcept
+    EnrichedInstanceIdentifier(InstanceIdentifier instance_identifier, const ServiceInstanceId instance_id)
         : EnrichedInstanceIdentifier(
               std::optional<ServiceInstanceId>{instance_id},
               InstanceIdentifierView{instance_identifier}.GetServiceInstanceDeployment().asilLevel_,
@@ -145,7 +145,7 @@ class EnrichedInstanceIdentifier final
     QualityType quality_type_;
 };
 
-bool operator==(const EnrichedInstanceIdentifier& lhs, const EnrichedInstanceIdentifier& rhs) noexcept;
+bool operator==(const EnrichedInstanceIdentifier& lhs, const EnrichedInstanceIdentifier& rhs);
 
 }  // namespace score::mw::com::impl
 

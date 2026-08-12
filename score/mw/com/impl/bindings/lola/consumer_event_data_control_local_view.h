@@ -54,7 +54,7 @@ class ConsumerEventDataControlLocalView final
   public:
     using LocalEventControlSlots = score::cpp::span<ControlSlotType>;
 
-    ConsumerEventDataControlLocalView(EventDataControl& event_data_control_shared) noexcept;
+    ConsumerEventDataControlLocalView(EventDataControl& event_data_control_shared);
 
     /// Test-only constructor which allows to directly set the TransactionLogLocalView. This avoids having to
     /// inject the TransactionLogLocalView via the production code path which would require creating a
@@ -63,7 +63,7 @@ class ConsumerEventDataControlLocalView final
     /// In production, this cannot be used since the ConsumerEventDataControlLocalView is created before the
     /// TransactionLog is created, so it must be injected later.
     ConsumerEventDataControlLocalView(EventDataControl& event_data_control_shared,
-                                      TransactionLogLocalView transaction_log_local_view) noexcept;
+                                      TransactionLogLocalView transaction_log_local_view);
 
     ~ConsumerEventDataControlLocalView() noexcept = default;
 
@@ -85,7 +85,7 @@ class ConsumerEventDataControlLocalView final
     /// \post DereferenceEvent() is invoked to withdraw read-ownership
     std::optional<SlotIndexType> ReferenceNextEvent(
         const EventSlotStatus::EventTimeStamp last_search_time,
-        const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTAMP_MAX) noexcept;
+        const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTAMP_MAX);
 
     /// \brief Increments refcount of given slot by one (given it is in the correct state i.e. being accessible/
     ///        readable)

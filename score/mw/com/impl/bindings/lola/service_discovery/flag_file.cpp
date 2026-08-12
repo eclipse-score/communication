@@ -49,7 +49,7 @@ constexpr os::Stat::Mode ALL_PERMISSIONS{os::Stat::Mode::kReadWriteExecUser | os
 
 auto GetFlagFilePath(const EnrichedInstanceIdentifier& enriched_instance_identifier,
                      const FlagFile::Disambiguator disambiguator,
-                     const os::Unistd& unistd = os::internal::UnistdImpl{}) noexcept -> filesystem::Path
+                     const os::Unistd& unistd = os::internal::UnistdImpl{}) -> filesystem::Path
 {
     const auto pid = unistd.getpid();
 
@@ -60,7 +60,7 @@ auto GetFlagFilePath(const EnrichedInstanceIdentifier& enriched_instance_identif
     return GetSearchPathForIdentifier(enriched_instance_identifier) / file_name;
 }
 
-auto GetMatchingFlagFilePaths(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+auto GetMatchingFlagFilePaths(const EnrichedInstanceIdentifier& enriched_instance_identifier)
     -> std::vector<filesystem::Path>
 {
     const auto search_path = GetSearchPathForIdentifier(enriched_instance_identifier);
@@ -75,7 +75,7 @@ auto GetMatchingFlagFilePaths(const EnrichedInstanceIdentifier& enriched_instanc
                       // anonymous namespace, or static function with internal linkage, or private member function shall
                       // be used.". Rationale: False-positive, this lambda function is used by std::for_each.
                       // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
-                      [&flag_file_paths, quality_type](const filesystem::DirectoryEntry& entry) noexcept {
+                      [&flag_file_paths, quality_type](const filesystem::DirectoryEntry& entry) {
                           const auto file_status = entry.Status();
                           const auto substring_iterator = entry.GetPath().Native().find(quality_type);
                           const bool is_regular_file =
@@ -94,7 +94,7 @@ auto GetMatchingFlagFilePaths(const EnrichedInstanceIdentifier& enriched_instanc
 
 auto RemoveMatchingFlagFiles(const EnrichedInstanceIdentifier& enriched_instance_identifier,
                              const FlagFile::Disambiguator offer_disambiguator,
-                             filesystem::Filesystem& filesystem) noexcept -> score::Result<void>
+                             filesystem::Filesystem& filesystem) -> score::Result<void>
 {
     const auto matching_file_paths = GetMatchingFlagFilePaths(enriched_instance_identifier);
 
@@ -147,8 +147,7 @@ auto GetQualityTypeString(QualityType quality_type) noexcept -> std::string_view
     return result;
 }
 
-auto GetSearchPathForIdentifier(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
-    -> filesystem::Path
+auto GetSearchPathForIdentifier(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> filesystem::Path
 {
     const auto service_id =
         enriched_instance_identifier.GetBindingSpecificServiceId<LolaServiceTypeDeployment>().value();
@@ -164,7 +163,7 @@ auto GetSearchPathForIdentifier(const EnrichedInstanceIdentifier& enriched_insta
     return search_path;
 }
 
-FlagFile::~FlagFile()
+FlagFile::~FlagFile() noexcept(false)
 {
     if (is_offered_)
     {
@@ -182,7 +181,7 @@ FlagFile::~FlagFile()
 
 auto FlagFile::Make(EnrichedInstanceIdentifier enriched_instance_identifier,
                     Disambiguator offer_disambiguator,
-                    filesystem::Filesystem filesystem) noexcept -> score::Result<FlagFile>
+                    filesystem::Filesystem filesystem) -> score::Result<FlagFile>
 {
     const auto clearing_result = RemoveMatchingFlagFiles(enriched_instance_identifier, offer_disambiguator, filesystem);
     if (!clearing_result.has_value())
@@ -231,7 +230,7 @@ FlagFile::FlagFile(FlagFile&& other) noexcept
     other.is_offered_ = false;
 }
 
-auto FlagFile::Exists(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept -> bool
+auto FlagFile::Exists(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> bool
 {
     return !GetMatchingFlagFilePaths(enriched_instance_identifier).empty();
 }
@@ -243,7 +242,7 @@ auto FlagFile::Exists(const EnrichedInstanceIdentifier& enriched_instance_identi
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto FlagFile::CreateSearchPath(const EnrichedInstanceIdentifier& enriched_instance_identifier,
-                                const filesystem::Filesystem& filesystem) noexcept -> Result<filesystem::Path>
+                                const filesystem::Filesystem& filesystem) -> Result<filesystem::Path>
 {
     auto path = GetSearchPathForIdentifier(enriched_instance_identifier);
 

@@ -40,6 +40,12 @@ inputs:
       and keeps the original URL as fallback.
     required: false
     default: ""
+  repository-cache:
+    description: >
+      Whether to enable Bazel repository cache in setup-bazel.
+      Values: "true" or "false".
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -73,7 +79,7 @@ runs:
       with:
         bazelisk-cache: true
         disk-cache: false
-        repository-cache: false
+        repository-cache: ${{ fromJSON(inputs.repository-cache) }}
         cache-save: ${{ env.CACHE_MODE != 'read-only' && env.CACHE_MODE != 'disabled' }}
 
     - name: Register post cache save hook and restore caches

@@ -37,14 +37,14 @@ class SubscriptionPendingState final : public SubscriptionStateBase
 
     ~SubscriptionPendingState() noexcept override = default;
 
-    Result<void> SubscribeEvent(const std::size_t max_sample_count) noexcept override;
-    void UnsubscribeEvent() noexcept override;
+    Result<void> SubscribeEvent(const std::size_t max_sample_count) override;
+    void UnsubscribeEvent() override;
     void StopOfferEvent() noexcept override;
-    void ReOfferEvent(const pid_t new_event_source_pid) noexcept override;
+    void ReOfferEvent(const pid_t new_event_source_pid) override;
 
     void SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override;
-    void UnsetReceiveHandler() noexcept override;
-    std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
+    void UnsetReceiveHandler() override;
+    std::optional<std::uint16_t> GetMaxSampleCount() const override;
     std::optional<SlotCollector>& GetSlotCollector() & noexcept override;
     const std::optional<SlotCollector>& GetSlotCollector() const& noexcept override;
 };

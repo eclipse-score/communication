@@ -1,0 +1,182 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Nightly Flaky Detection Runner"
+
+on:
+  workflow_call:
+    inputs:
+      config-name:
+        description: "Logical config name used in artifacts and reports."
+        type: string
+        required: true
+      bazel-config:
+        description: "Bazel --config value (empty for default host config)."
+        type: string
+        default: ""
+      target-pattern:
+        description: "Bazel target pattern to test."
+        type: string
+        required: true
+      test-tag-filters:
+        description: >
+          Test type selection via Bazel tags (e.g. "unit" or "integration-test").
+          Combined with the always-applied "-no-flaky-test-detection" exclusion.
+          Leave empty to run all (non-excluded) tests.
+        type: string
+        default: ""
+      runs-per-test:
+        description: "Number of repeated executions per test target."
+        type: number
+        default: 100
+      use-qnx-environment:
+        description: "Whether to setup QNX-specific CI requirements."
+        type: boolean
+        default: false
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL:
+        required: false
+      SCORE_QNX_LICENSE:
+        required: false
+      SCORE_QNX_USER:
+        required: false
+      SCORE_QNX_PASSWORD:
+        required: false
+    outputs:
+      flaky_count:
+        description: "Number of flaky targets detected."
+        value: ${{ jobs.run-flaky.outputs.flaky_count }}
+      failed_count:
+        description: "Number of failed non-flaky targets."
+        value: ${{ jobs.run-flaky.outputs.failed_count }}
+      test_exit_code:
+        description: "Exit code from bazel test command."
+        value: ${{ jobs.run-flaky.outputs.test_exit_code }}
+
+jobs:
+  run-flaky:
+    name: ${{ inputs.config-name }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    outputs:
+      flaky_count: ${{ steps.summary.outputs.flaky_count }}
+      failed_count: ${{ steps.summary.outputs.failed_count }}
+      test_exit_code: ${{ steps.run-tests.outputs.test_exit_code }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: Redirect Bazel root to large /mnt disk
+        run: |
+          # runs_per_test writes one test.log per run into bazel-testlogs (under
+          # the Bazel output base), which can exhaust the small root filesystem
+          # on GitHub-hosted runners. Redirect the DEFAULT Bazel root
+          # ($HOME/.cache/bazel) onto the larger /mnt ephemeral disk BEFORE the
+          # Bazel setup runs. Because the default path is unchanged, caches are
+          # restored/reused normally and Bazel still selects linux-sandbox -
+          # only the physical bytes move to /mnt.
+          #
+          # Use a bind mount rather than a symlink: the AppArmor profile that
+          # unblocks unprivileged user namespaces for linux-sandbox is attached
+          # by the binary's REAL resolved path. A symlink would resolve to
+          # /mnt/bazel-root/.../linux-sandbox, so the profile (registered under
+          # the $HOME/.cache/bazel/... path via `bazel info install_base`) would
+          # not match and the sandbox would fail with "mount: Permission denied".
+          # A bind mount keeps the logical $HOME/.cache/bazel path as the real
+          # path AppArmor sees while still storing the bytes on /mnt.
+          BAZEL_ROOT_TARGET="/mnt/bazel-root"
+          sudo mkdir -p "${BAZEL_ROOT_TARGET}"
+          sudo chown "$(id -u):$(id -g)" "${BAZEL_ROOT_TARGET}"
+          mkdir -p "${HOME}/.cache/bazel"
+          sudo mount --bind "${BAZEL_ROOT_TARGET}" "${HOME}/.cache/bazel"
+
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: ""
+          cache-mode: disabled
+          repository-cache: "true"
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+      - name: Setup QNX and QEMU environment
+        if: inputs.use-qnx-environment
+        uses: ./.github/actions/00_infrastructure/setup_qnx_environment
+        with:
+          qnx-license: ${{ secrets.SCORE_QNX_LICENSE }}
+
+      - name: Run repeated Bazel tests for flaky detection
+        id: run-tests
+        continue-on-error: true
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: |
+          set -o pipefail
+
+          RAW_LOG="${RUNNER_TEMP}/bazel_${{ inputs.config-name }}.log"
+          BEP_FILE="${RUNNER_TEMP}/bep_${{ inputs.config-name }}.json"
+          ARGS=(test)
+
+          if [[ -n "${{ inputs.bazel-config }}" ]]; then
+            ARGS+=("--config=${{ inputs.bazel-config }}")
+          fi
+
+          TAG_FILTERS="-no-flaky-test-detection"
+          if [[ -n "${{ inputs.test-tag-filters }}" ]]; then
+            TAG_FILTERS="${{ inputs.test-tag-filters }},-no-flaky-test-detection"
+          fi
+
+          ARGS+=(
+            "--build_tests_only"
+            "--keep_going"
+            "--runs_per_test=${{ inputs.runs-per-test }}"
+            "--runs_per_test_detects_flakes"
+            "--flaky_test_attempts=1"
+            "--test_tag_filters=${TAG_FILTERS}"
+            "--test_output=errors"
+            "--build_event_json_file=${BEP_FILE}"
+            "${{ inputs.target-pattern }}"
+          )
+
+          set +e
+          bazel "${ARGS[@]}" 2>&1 | tee "${RAW_LOG}"
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+          echo "test_exit_code=${EXIT_CODE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Collect flaky summary
+        id: summary
+        if: always()
+        run: |
+          REPORT_DIR="${RUNNER_TEMP}/nightly-flaky/${{ inputs.config-name }}"
+          bazel run //quality/scripts:collect_flaky_tests -- \
+            --config-name "${{ inputs.config-name }}" \
+            --bep-json "${RUNNER_TEMP}/bep_${{ inputs.config-name }}.json" \
+            --raw-log "${RUNNER_TEMP}/bazel_${{ inputs.config-name }}.log" \
+            --output-dir "${REPORT_DIR}" \
+            --runs-per-test "${{ inputs.runs-per-test }}" \
+            --test-exit-code "${{ steps.run-tests.outputs.test_exit_code || 99 }}" \
+            --github-output "${GITHUB_OUTPUT}"
+
+      - name: Upload per-config flaky report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-flaky-${{ inputs.config-name }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/nightly-flaky/${{ inputs.config-name }}/summary.json
+            ${{ runner.temp }}/nightly-flaky/${{ inputs.config-name }}/summary.md
+            ${{ runner.temp }}/bazel_${{ inputs.config-name }}.log
+            ${{ runner.temp }}/bep_${{ inputs.config-name }}.json
+          if-no-files-found: ignore
+          retention-days: 14

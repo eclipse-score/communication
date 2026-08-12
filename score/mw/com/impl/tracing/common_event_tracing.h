@@ -38,7 +38,7 @@ Result<void> TraceData(const ServiceElementInstanceIdentifierView service_elemen
                        const TracingRuntime::TracePointType trace_point,
                        const BindingType binding_type,
                        const std::pair<const void*, std::size_t>& local_data_chunk = {nullptr, 0U},
-                       const std::optional<TracingRuntime::TracePointDataId> trace_point_data_id = {}) noexcept;
+                       const std::optional<TracingRuntime::TracePointDataId> trace_point_data_id = {});
 
 Result<void> TraceShmData(const BindingType binding_type,
                           const ServiceElementTracingData service_element_tracing_data,
@@ -46,12 +46,12 @@ Result<void> TraceShmData(const BindingType binding_type,
                           const TracingRuntime::TracePointType trace_point,
                           TracingRuntime::TracePointDataId trace_point_data_id,
                           TypeErasedSamplePtr sample_ptr,
-                          const std::pair<const void*, std::size_t>& data_chunk) noexcept;
+                          const std::pair<const void*, std::size_t>& data_chunk);
 
 ServiceElementInstanceIdentifierView GetServiceElementInstanceIdentifierView(
     const InstanceIdentifier& instance_identifier,
     const std::string_view service_element_name,
-    const ServiceElementType service_element_type) noexcept;
+    const ServiceElementType service_element_type);
 
 }  // namespace score::mw::com::impl::tracing
 

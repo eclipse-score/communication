@@ -164,6 +164,7 @@ cc_library(
         "//score/mw/com/impl/plumbing",
         "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory:data_type_size_info",
     ],
     tags = ["FFI"],
     visibility = [
@@ -210,6 +211,7 @@ cc_library(
 
 cc_library(
     name = "generic_skeleton_event_binding",
+    srcs = ["generic_skeleton_event_binding.cpp"],
     hdrs = [
         "generic_skeleton_event_binding.h",
     ],
@@ -236,6 +238,11 @@ cc_library(
     visibility = [
         "//score/mw/com:__pkg__",
         "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":error",
+        "@score_baselibs//score/memory:data_type_size_info",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -276,6 +283,7 @@ cc_library(
     ],
     deps = [
         ":error",
+        ":field_getter_setter_signatures",
         ":field_tags",
         ":method_type",
         ":skeleton_event",
@@ -343,6 +351,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":field_getter_setter_signatures",
         ":field_tags",
         ":method_type",
         ":proxy_event",
@@ -543,9 +552,9 @@ cc_library(
         ":binding_type",
         ":data_type_meta_info",
         ":generic_skeleton_event_binding",
+        "//score/memory/shared:i_shared_memory_resource",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
         "@score_baselibs//score/result",
     ],
 )
@@ -785,6 +794,18 @@ cc_library(
 )
 
 cc_library(
+    name = "field_getter_setter_signatures",
+    srcs = ["field_getter_setter_signatures.cpp"],
+    hdrs = ["field_getter_setter_signatures.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "field_tags",
     srcs = ["field_tags.cpp"],
     hdrs = ["field_tags.h"],
@@ -880,6 +901,7 @@ cc_library(
 cc_library(
     name = "runtime_mock",
     testonly = True,
+    srcs = ["runtime_mock.cpp"],
     hdrs = ["runtime_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
@@ -888,20 +910,6 @@ cc_library(
     deps = [
         ":runtime_interfaces",
         "@googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "i_generic_skeleton_event_binding_factory",
-    hdrs = ["i_generic_skeleton_event_binding_factory.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-    ],
-    deps = [
-        ":generic_skeleton_event_binding",
-        ":skeleton_base",
     ],
 )
 
@@ -1025,9 +1033,9 @@ cc_library(
     hdrs = ["runtime.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
+        "//score/memory/shared:types",
         "//score/mw/com/impl/tracing:tracing_runtime",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_parser",
-        "@score_baselibs//score/memory/shared:types",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/utils/meyer_singleton",
     ],
@@ -1223,6 +1231,23 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "method_type_test",
+    srcs = ["method_type_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [":method_type"],
+)
+
+cc_unit_test(
+    name = "data_type_meta_info_test",
+    srcs = ["data_type_meta_info_test.cpp"],
+    deps = [
+        ":data_type_meta_info",
+        ":error",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_unit_test(
     name = "sample_reference_tracker_test",
     srcs = ["sample_reference_tracker_test.cpp"],
     deps = [
@@ -1301,11 +1326,10 @@ cc_unit_test(
     name = "proxy_field_test",
     srcs = ["proxy_field_test.cpp"],
     deps = [
+        ":error",
         ":impl",
-        ":runtime_mock",
-        "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
-        "//score/mw/com/impl/test:binding_factory_resources",
-        "//score/mw/com/impl/test:proxy_resources",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/test:runtime_mock_guard",
     ],
 )
 

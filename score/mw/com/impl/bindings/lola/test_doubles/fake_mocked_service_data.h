@@ -77,7 +77,7 @@ inline std::tuple<EventControl*, EventDataStorage<SampleType>*> FakeMockedServic
     const memory::shared::OffsetPtr<void> rel_event_data_buffer{static_cast<void*>(event_data_slots)};
     data_storage->events_.emplace(id, rel_event_data_buffer);
 
-    const DataTypeMetaInfo sample_meta_info{sizeof(SampleType), alignof(SampleType)};
+    const score::memory::DataTypeSizeInfo sample_meta_info{sizeof(SampleType), alignof(SampleType)};
     auto* event_data_raw_array = event_data_slots->data();
     const auto inserted_meta_info =
         data_storage->events_metainfo_.emplace(std::piecewise_construct,

@@ -151,104 +151,6 @@ bool IsOptionalBoolPropertyEnabled(const score::json::Object& json, const std::s
     return false;
 }
 
-/// \brief Returns the configured instances (within our mw_com_config.json) of the given service type
-/// \param configuration configuration, where to do the lookup
-/// \param service_type identification of the service type (which is an AUTOSAR short-name-path representation)
-/// \return set of string_views reflecting an InstanceSpecifier. Those string_views reference into strings held by
-///         our single/global Configuration object. Their lifetime is the same as the LoLa runtime!
-std::set<std::string_view> GetInstancesOfServiceType(const Configuration& configuration, std::string_view service_type)
-{
-    std::set<std::string_view> result{};
-    // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed" despite all
-    // lines within the loop being covered. We also have a test for the case where GetServiceInstances() is empty.
-    // Suppression can be removed when the tooling bug is fixed.)
-    for (const auto& service_instance_element : configuration.GetServiceInstances())
-    // LCOV_EXCL_BR_STOP
-    {
-        if (service_instance_element.second.service_.ToString() == service_type)
-        {
-            const auto element_string_view = service_instance_element.first.ToString();
-            score::cpp::ignore = result.insert(element_string_view);
-        }
-    }
-    return result;
-}
-
-/// \brief Returns a set of element names, used within the given service_type. The names in the set are string_views
-///        pointing to strings owned by members of Configuration. So the life-time of those string-views is bound to
-///        the life-time of our single/global Configuration object held within the Runtime.
-/// \param service_type service type from which to get element names
-/// \param element_type element type of which to get names
-/// \param configuration configuration object to get consulted for the search/lookup
-/// \return a set of string_views denoting the service element names.
-std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view service_type,
-                                                        ServiceElementType element_type,
-                                                        const Configuration& configuration)
-{
-    std::set<std::string_view> result{};
-    auto service_type_deployment_visitor = score::cpp::overload(
-        [&result, element_type](const LolaServiceTypeDeployment& lola_service_deployment) {
-            if (element_type == ServiceElementType::EVENT)
-            {
-                // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed"
-                // despite all lines within the loop being covered. We also have a test for the case where
-                // lola_service_deployment.events_ is empty. Suppression can be removed when the tooling bug is fixed.)
-                for (const auto& event : lola_service_deployment.events_)
-                // LCOV_EXCL_BR_STOP
-                {
-                    score::cpp::ignore = result.insert(event.first);
-                }
-            }
-            // LCOV_EXCL_BR_START (Defensive programming: GetElementNamesOfServiceType is always called with either
-            // ServiceElementType::EVENT or ServiceElementType::FIELD. Entering the false branch of this check is
-            // therefore unreachable.
-            else if (element_type == ServiceElementType::FIELD)
-            // LCOV_EXCL_BR_STOP
-            {
-                // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed"
-                // despite all lines within the loop being covered. We also have a test for the case where
-                // lola_service_deployment.fields_ is empty. Suppression can be removed when the tooling bug is fixed.)
-                for (const auto& field : lola_service_deployment.fields_)
-                // LCOV_EXCL_BR_STOP
-                {
-                    score::cpp::ignore = result.insert(field.first);
-                }
-            }
-            // LCOV_EXCL_START (Defensive programming: See comment directly above. This branch is only included to
-            // protect us from future programming mistakes)
-            else
-            {
-                score::mw::log::LogFatal("lola")
-                    << "GetElementNamesOfServiceType called with unsupported ServiceElementType: " << element_type;
-                std::terminate();
-            }
-            // LCOV_EXCL_STOP
-        },
-        // LCOV_EXCL_START (Unreachable Code: GetElementNamesOfServiceType can only be called on an existing service
-        // type. I.e. The ServiceTypeDeployment must be LolaServiceTypeDeployment and can never be score::cpp::blank.
-        // This code is there because std::visitor must handle all std::variant types.
-        [](const score::cpp::blank&) noexcept {
-            return;
-        }
-        // LCOV_EXCL_STOP
-    );
-
-    // LCOV_EXCL_BR_START (Tool incorrectly marks the range-for loop as "Decision couldn't be analyzed". The false
-    // case (empty GetServiceTypes()) is structurally unreachable: GetElementNamesOfServiceType is only called from
-    // ParseEvents/ParseFields which are reached only after the service type was found in GetServiceTypes().
-    // Suppression can be removed when the tooling bug is fixed.)
-    for (const auto& service_type_deployment : configuration.GetServiceTypes())
-    // LCOV_EXCL_BR_STOP
-    {
-        const ServiceIdentifierTypeView current_service_type_view{service_type_deployment.first};
-        if (current_service_type_view.getInternalTypeName() == service_type)
-        {
-            std::visit(service_type_deployment_visitor, service_type_deployment.second.binding_info_);
-        }
-    }
-    return result;
-}
-
 ///
 /// \tparam TP Trace Point Type, one of ProxyEventTracePointType/ProxyFieldTracePointType or
 ///            SkeletonEventTracePointType/SkeletonFieldTracePointType
@@ -379,7 +281,7 @@ void ParseEvents(const score::json::Any& json,
     else
     {
         const std::set<std::string_view>& event_names =
-            GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::EVENT, configuration);
+            configuration.GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::EVENT);
 
         auto events_list = events->second.As<score::json::List>();
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(events_list.has_value(),
@@ -581,7 +483,7 @@ void ParseFields(const score::json::Any& json,
     else
     {
         const std::set<std::string_view>& field_names =
-            GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::FIELD, configuration);
+            configuration.GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::FIELD);
 
         auto fields_list = fields->second.As<score::json::List>();
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(fields_list.has_value(),
@@ -657,7 +559,7 @@ void ParseService(const score::json::Any& json,
     if (configured_service_types.count(shortname_path_string) > 0U)
     {
         // determine the configured service-instances of the given service-type
-        const auto instance_specifiers = GetInstancesOfServiceType(configuration, shortname_path_string);
+        const auto instance_specifiers = configuration.GetInstancesOfServiceType(shortname_path_string);
 
         ParseEvents(json, shortname_path_string, configuration, instance_specifiers, filter_config);
         ParseFields(json, shortname_path_string, configuration, instance_specifiers, filter_config);
@@ -688,12 +590,7 @@ score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json,
     }
 
     // which service types are configured locally in mw::com/LoLa?
-    std::set<std::string_view> configured_service_types{};
-    for (const auto& map_entry : configuration.GetServiceTypes())
-    {
-        const auto service_type_string_view = map_entry.first.ToString();
-        score::cpp::ignore = configured_service_types.insert(service_type_string_view);
-    }
+    const auto configured_service_types = configuration.GetServiceTypeNames();
 
     auto services_list = services->second.As<score::json::List>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(services_list.has_value(),

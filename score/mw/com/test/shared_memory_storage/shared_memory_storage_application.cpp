@@ -13,19 +13,11 @@
 
 #include "score/mw/com/test/shared_memory_storage/shared_memory_storage_application.h"
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/proxy.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event.h"
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
-#include "score/mw/com/impl/handle_type.h"
-#include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/proxy_base.h"
-#include "score/mw/com/impl/proxy_event.h"
 #include "score/mw/com/test/common_test_resources/big_datatype.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 #include "score/mw/com/test/common_test_resources/shared_memory_object_guard.h"
 #include "score/mw/com/test/shared_memory_storage/test_resources.h"
+#include "score/mw/com/types.h"
 
 #include "score/os/utils/interprocess/interprocess_notification.h"
 

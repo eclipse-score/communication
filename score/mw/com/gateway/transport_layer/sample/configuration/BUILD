@@ -34,6 +34,7 @@ filegroup(
 
 cc_library(
     name = "hypervisor_socket_configuration",
+    srcs = ["hypervisor_socket_configuration.cpp"],
     hdrs = ["hypervisor_socket_configuration.h"],
     features = COMPILER_WARNING_FEATURES,
     deps = ["@score_baselibs//score/network:ipv4_address"],

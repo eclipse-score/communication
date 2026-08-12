@@ -18,6 +18,7 @@
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/test/service_discovery_during_provider_crash/consumer.h"
 #include "score/mw/com/test/service_discovery_during_provider_crash/provider.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <score/stop_token.hpp>
 

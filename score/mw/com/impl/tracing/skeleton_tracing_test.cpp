@@ -79,6 +79,11 @@ class MyDummyField : public SkeletonFieldBase
     {
         return false;
     }
+
+    Result<void> RegisterGetHandler() override
+    {
+        return {};
+    }
 };
 
 class SkeletonTracingFixture : public ::testing::Test

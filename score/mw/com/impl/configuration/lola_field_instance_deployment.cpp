@@ -38,12 +38,12 @@ LolaFieldInstanceDeployment::LolaFieldInstanceDeployment(LolaEventInstanceDeploy
 {
 }
 
-LolaFieldInstanceDeployment::LolaFieldInstanceDeployment(const score::json::Object& json_object) noexcept
+LolaFieldInstanceDeployment::LolaFieldInstanceDeployment(const score::json::Object& json_object)
     : LolaFieldInstanceDeployment(LolaFieldInstanceDeployment::CreateFromJson(json_object))
 {
 }
 
-LolaFieldInstanceDeployment LolaFieldInstanceDeployment::CreateFromJson(const score::json::Object& json_object) noexcept
+LolaFieldInstanceDeployment LolaFieldInstanceDeployment::CreateFromJson(const score::json::Object& json_object)
 {
     // Delegate event-specific parsing to LolaEventInstanceDeployment (which also checks serialization version).
     auto event_deployment = LolaEventInstanceDeployment::CreateFromJson(json_object);
@@ -54,7 +54,7 @@ LolaFieldInstanceDeployment LolaFieldInstanceDeployment::CreateFromJson(const sc
     return LolaFieldInstanceDeployment(std::move(event_deployment), use_get_if_available, use_set_if_available);
 }
 
-score::json::Object LolaFieldInstanceDeployment::Serialize() const noexcept
+score::json::Object LolaFieldInstanceDeployment::Serialize() const
 {
     auto json_object = lola_event_instance_deployment_.Serialize();
 

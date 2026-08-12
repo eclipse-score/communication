@@ -8,7 +8,7 @@ bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "score_baselibs", version = "0.2.9")
 git_override(
     module_name = "score_baselibs",
-    commit = "82f9402474d6dd210fb0cfe5d1867f0d757318c4",
+    commit = "54d67260077a0e7cdf37faf4366ca3a72f35739f",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
@@ -23,15 +23,15 @@ git_override(
     remote = "https://github.com/eclipse-score/score-crates.git",
 )
 
-bazel_dep(name = "lobster", version = "1.0.3")
+bazel_dep(name = "lobster", version = "1.0.6")
 git_override(
     module_name = "lobster",
-    commit = "07382c33f95e22992e0f8788c0537ec06877e51f",
+    commit = "0069786d1261d59817fc97cb6e7b359b522e14d5",
     remote = "https://github.com/bmw-software-engineering/lobster.git",
 )
 
 # Only required to build the example, shall be replaceable with nearly every other C++ Toolchain setup
-bazel_dep(name = "score_bazel_platforms", version = "0.1.2", dev_dependency = True)
+bazel_dep(name = "score_bazel_platforms", version = "1.0.0", dev_dependency = True)
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.5.4", dev_dependency = True)
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)

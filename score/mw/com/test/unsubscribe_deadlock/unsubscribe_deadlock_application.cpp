@@ -14,11 +14,13 @@
 #include "score/mw/com/test/unsubscribe_deadlock/unsubscribe_deadlock_application.h"
 
 #include "score/concurrency/notification.h"
+#include "score/mw/com/com_error_domain.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
 #include "score/mw/com/test/common_test_resources/big_datatype.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/types.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <score/jthread.hpp>
 #include <score/stop_token.hpp>
@@ -78,7 +80,7 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
         std::cerr << "NO instance found for instance specifier" << instance_specifier.ToString()
                   << " although service instance has been successfully offered! Terminating!" << std::endl;
         return score::MakeUnexpected<score::mw::com::test::BigDataProxy>(
-            score::mw::com::impl::MakeError(score::mw::com::impl::ComErrc::kServiceNotAvailable));
+            score::mw::com::impl::MakeError(score::mw::com::ComErrc::kServiceNotAvailable));
     }
 
     return score::mw::com::test::BigDataProxy::Create(handles.front());
@@ -113,7 +115,7 @@ int main(int argc, const char** argv)
         return EXIT_FAILURE;
     }
 
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
 
     const auto instance_specifier_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"score/cp60/MapApiLanesStamped"});

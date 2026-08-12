@@ -61,8 +61,8 @@ class GenericProxyEvent final : public GenericProxyEventBinding
     void Unsubscribe() noexcept override;
 
     SubscriptionState GetSubscriptionState() const noexcept override;
-    Result<std::size_t> GetNumNewSamplesAvailable() const noexcept override;
-    Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept override;
+    Result<std::size_t> GetNumNewSamplesAvailable() const override;
+    Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) override;
     std::size_t GetSampleSize() const noexcept override;
     bool HasSerializedFormat() const noexcept override;
 
@@ -71,7 +71,6 @@ class GenericProxyEvent final : public GenericProxyEventBinding
     Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override;
     Result<void> UnsetSubscriptionStateChangeHandler() noexcept override;
 
-    pid_t GetEventSourcePid() const noexcept;
     ElementFqId GetElementFQId() const noexcept;
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
     BindingType GetBindingType() const noexcept override
@@ -81,8 +80,8 @@ class GenericProxyEvent final : public GenericProxyEventBinding
     void NotifyServiceInstanceChangedAvailability(bool is_available, pid_t new_event_source_pid) noexcept override;
 
   private:
-    Result<std::size_t> GetNewSamplesImpl(Callback&& receiver, TrackerGuardFactory& tracker) noexcept;
-    Result<std::size_t> GetNumNewSamplesAvailableImpl() const noexcept;
+    Result<std::size_t> GetNewSamplesImpl(Callback&& receiver, TrackerGuardFactory& tracker);
+    Result<std::size_t> GetNumNewSamplesAvailableImpl() const;
 
     ProxyEventCommon proxy_event_common_;
     const EventMetaInfo& meta_info_;

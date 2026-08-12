@@ -17,11 +17,7 @@
 
 #include <mutex>
 
-namespace score
-{
-namespace message_passing
-{
-namespace detail
+namespace score::message_passing::detail
 {
 
 /// \brief Intrusive list based priority queue ordered by a time point
@@ -83,8 +79,6 @@ class TimedCommandQueue
     score::containers::intrusive_list<Entry, TimedCommandQueue> queue_;
 };
 
-}  // namespace detail
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing::detail
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_TIMED_COMMAND_QUEUE_H

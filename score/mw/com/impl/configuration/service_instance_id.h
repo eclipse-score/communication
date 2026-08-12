@@ -32,10 +32,10 @@ class ServiceInstanceId
   public:
     using BindingInformation = std::variant<LolaServiceInstanceId, score::cpp::blank>;
 
-    explicit ServiceInstanceId(const score::json::Object& json_object) noexcept;
-    explicit ServiceInstanceId(BindingInformation binding_info) noexcept;
+    explicit ServiceInstanceId(const score::json::Object& json_object);
+    explicit ServiceInstanceId(BindingInformation binding_info);
 
-    score::json::Object Serialize() const noexcept;
+    score::json::Object Serialize() const;
     std::string_view ToHashString() const noexcept;
 
     // This variable has no invariance that needs to be conserved and is needed to be both accessed and set by the user
@@ -64,8 +64,8 @@ class ServiceInstanceId
     std::string hash_string_;
 };
 
-bool operator==(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs) noexcept;
-bool operator<(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs) noexcept;
+bool operator==(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs);
+bool operator<(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs);
 
 template <typename ServiceInstanceIdBinding>
 const ServiceInstanceIdBinding& GetServiceInstanceIdBinding(const ServiceInstanceId& service_instance_id)

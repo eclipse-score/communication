@@ -18,6 +18,7 @@
 
 #include <functional>
 #include <tuple>
+#include <type_traits>
 
 namespace score::mw::com::impl
 {
@@ -41,7 +42,49 @@ class MethodSignatureCreator<ReturnTypeIn(ArgTypesIn...)>
     using ArgTypes = std::tuple<ArgTypesIn...>;
 };
 
-TEST(MethodTraitsCheckerReturnAndInArgsCompileTimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
+using MethodTraitsCheckerWithQualityTypes = ::testing::Types<std::integral_constant<WithQuality, WithQuality::kYes>,
+                                                             std::integral_constant<WithQuality, WithQuality::kNo>>;
+
+template <typename T>
+class MethodTraitsCheckerWithQualityFixture : public ::testing::Test
+{
+  public:
+    static constexpr WithQuality kWithQualityType = T::value;
+};
+
+template <typename T>
+using MethodTraitsCheckerReturnAndInArgsCompileTimeTest = MethodTraitsCheckerWithQualityFixture<T>;
+TYPED_TEST_SUITE(MethodTraitsCheckerReturnAndInArgsCompileTimeTest, MethodTraitsCheckerWithQualityTypes, );
+
+template <typename T>
+using MethodTraitsCheckerReturnOnlyCompileTimeTest = MethodTraitsCheckerWithQualityFixture<T>;
+TYPED_TEST_SUITE(MethodTraitsCheckerReturnOnlyCompileTimeTest, MethodTraitsCheckerWithQualityTypes, );
+
+template <typename T>
+using MethodTraitsCheckerInArgsOnlyCompileTimeTest = MethodTraitsCheckerWithQualityFixture<T>;
+TYPED_TEST_SUITE(MethodTraitsCheckerInArgsOnlyCompileTimeTest, MethodTraitsCheckerWithQualityTypes, );
+
+template <typename T>
+using MethodTraitsCheckerNoReturnAndNoInArgsCompileTimeTest = MethodTraitsCheckerWithQualityFixture<T>;
+TYPED_TEST_SUITE(MethodTraitsCheckerNoReturnAndNoInArgsCompileTimeTest, MethodTraitsCheckerWithQualityTypes, );
+
+template <typename T>
+using MethodTraitsCheckerReturnAndInArgsRuntimeTest = MethodTraitsCheckerWithQualityFixture<T>;
+TYPED_TEST_SUITE(MethodTraitsCheckerReturnAndInArgsRuntimeTest, MethodTraitsCheckerWithQualityTypes, );
+
+template <typename T>
+using MethodTraitsCheckerReturnOnlyRuntimeTest = MethodTraitsCheckerWithQualityFixture<T>;
+TYPED_TEST_SUITE(MethodTraitsCheckerReturnOnlyRuntimeTest, MethodTraitsCheckerWithQualityTypes, );
+
+template <typename T>
+using MethodTraitsCheckerInArgsOnlyRuntimeTest = MethodTraitsCheckerWithQualityFixture<T>;
+TYPED_TEST_SUITE(MethodTraitsCheckerInArgsOnlyRuntimeTest, MethodTraitsCheckerWithQualityTypes, );
+
+template <typename T>
+using MethodTraitsCheckerNoReturnAndNoInArgsRuntimeTest = MethodTraitsCheckerWithQualityFixture<T>;
+TYPED_TEST_SUITE(MethodTraitsCheckerNoReturnAndNoInArgsRuntimeTest, MethodTraitsCheckerWithQualityTypes, );
+
+TYPED_TEST(MethodTraitsCheckerReturnAndInArgsCompileTimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
 {
     // Given a method with a return type and InArgs.
     using MethodReturnType = int;
@@ -49,31 +92,40 @@ TEST(MethodTraitsCheckerReturnAndInArgsCompileTimeTest, CallingAssertCallableWit
     using SecondInArgType = double;
 
     // and given a callable that accepts the return and InArgs.
-    using Callable = std::function<void(MethodReturnType&, const FirstInArgType&, const SecondInArgType&)>;
+    using Callable = std::conditional_t<
+        TestFixture::kWithQualityType == WithQuality::kYes,
+        std::function<void(QualityType, MethodReturnType&, const FirstInArgType&, const SecondInArgType&)>,
+        std::function<void(MethodReturnType&, const FirstInArgType&, const SecondInArgType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the call does not terminate
-    AssertMethodHandlerSupportsMethodSignature<FailureMode::COMPILE_TIME,
+    AssertMethodHandlerSupportsMethodSignature<FailureMode::kCompileTime,
+                                               TestFixture::kWithQualityType,
                                                Callable,
                                                MethodReturnType,
                                                FirstInArgType,
                                                SecondInArgType>();
 }
 
-TEST(MethodTraitsCheckerReturnOnlyCompileTimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
+TYPED_TEST(MethodTraitsCheckerReturnOnlyCompileTimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
 {
     // Given a method with a return type and no InArgs.
     using MethodReturnType = int;
 
     // and given a callable that accepts the return and no InArgs.
-    using Callable = std::function<void(MethodReturnType&)>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType, MethodReturnType&)>,
+                                        std::function<void(MethodReturnType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the call does not terminate
-    AssertMethodHandlerSupportsMethodSignature<FailureMode::COMPILE_TIME, Callable, MethodReturnType>();
+    AssertMethodHandlerSupportsMethodSignature<FailureMode::kCompileTime,
+                                               TestFixture::kWithQualityType,
+                                               Callable,
+                                               MethodReturnType>();
 }
 
-TEST(MethodTraitsCheckerInArgsOnlyCompileTimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
+TYPED_TEST(MethodTraitsCheckerInArgsOnlyCompileTimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
 {
     // Given a method with no return type and InArgs.
     using MethodReturnType = void;
@@ -81,28 +133,36 @@ TEST(MethodTraitsCheckerInArgsOnlyCompileTimeTest, CallingAssertCallableWithCall
     using SecondInArgType = double;
 
     // and given a callable that accepts no return and InArgs.
-    using Callable = std::function<void(const FirstInArgType&, const SecondInArgType&)>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType, const FirstInArgType&, const SecondInArgType&)>,
+                                        std::function<void(const FirstInArgType&, const SecondInArgType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the call does not terminate
-    AssertMethodHandlerSupportsMethodSignature<FailureMode::COMPILE_TIME,
+    AssertMethodHandlerSupportsMethodSignature<FailureMode::kCompileTime,
+                                               TestFixture::kWithQualityType,
                                                Callable,
                                                MethodReturnType,
                                                FirstInArgType,
                                                SecondInArgType>();
 }
 
-TEST(MethodTraitsCheckerNoReturnAndNoInArgsCompileTimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
+TYPED_TEST(MethodTraitsCheckerNoReturnAndNoInArgsCompileTimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
 {
     // Given a method with no return type and no InArgs.
     using MethodReturnType = void;
 
     // and given a callable that accepts no return and no InArgs.
-    using Callable = std::function<void()>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType)>,
+                                        std::function<void()>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the call does not terminate
-    AssertMethodHandlerSupportsMethodSignature<FailureMode::COMPILE_TIME, Callable, MethodReturnType>();
+    AssertMethodHandlerSupportsMethodSignature<FailureMode::kCompileTime,
+                                               TestFixture::kWithQualityType,
+                                               Callable,
+                                               MethodReturnType>();
 }
 
 TEST(MethodTraitsCheckerGetMethodReturnType, CallingWithTupleContainingOneElementReturnsFirstElement)
@@ -197,7 +257,7 @@ TEST(MethodTraitsCheckerGetMethodInArgType, CallingWithCallableFailsToCompile)
 // TODO: We currently use FailureMode as a workaround to allow testing AssertMethodHandlerSupportsMethodSignature at
 // runtime since we don't currently have infrastructure for compile time testing. When compile time testing is enabled
 // in SWP-46885, we can remove FailureMode and the runtime tests and replace them with compile time tests.
-TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
+TYPED_TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
 {
     // Given a method with a return type and InArgs.
     using MethodReturnType = int;
@@ -205,18 +265,22 @@ TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCal
     using SecondInArgType = double;
 
     // and given a callable that accepts the return and InArgs.
-    using Callable = std::function<void(MethodReturnType&, const FirstInArgType&, const SecondInArgType&)>;
+    using Callable = std::conditional_t<
+        TestFixture::kWithQualityType == WithQuality::kYes,
+        std::function<void(QualityType, MethodReturnType&, const FirstInArgType&, const SecondInArgType&)>,
+        std::function<void(MethodReturnType&, const FirstInArgType&, const SecondInArgType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the call does not terminate
-    AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME,
+    AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                               TestFixture::kWithQualityType,
                                                Callable,
                                                MethodReturnType,
                                                FirstInArgType,
                                                SecondInArgType>();
 }
 
-TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCallableWithMissingReturnTerminates)
+TYPED_TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCallableWithMissingReturnTerminates)
 {
     // Given a method with a return type and InArgs.
     using MethodReturnType = int;
@@ -224,18 +288,22 @@ TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCal
     using SecondInArgType = double;
 
     // and given a callable that accepts only the InArgs.
-    using Callable = std::function<void(const FirstInArgType&, const SecondInArgType&)>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType, const FirstInArgType&, const SecondInArgType&)>,
+                                        std::function<void(const FirstInArgType&, const SecondInArgType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the function terminates with a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED((AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME,
-                                                                                                  Callable,
-                                                                                                  MethodReturnType,
-                                                                                                  FirstInArgType,
-                                                                                                  SecondInArgType>()));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        (AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                                    TestFixture::kWithQualityType,
+                                                    Callable,
+                                                    MethodReturnType,
+                                                    FirstInArgType,
+                                                    SecondInArgType>()));
 }
 
-TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCallableWithMissingInArgTerminates)
+TYPED_TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCallableWithMissingInArgTerminates)
 {
     // Given a method with a return type and InArgs.
     using MethodReturnType = int;
@@ -243,18 +311,23 @@ TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCal
     using SecondInArgType = double;
 
     // and given a callable that accepts only the return and only one of the InArgs.
-    using Callable = std::function<void(MethodReturnType&, const SecondInArgType&)>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType, MethodReturnType&, const SecondInArgType&)>,
+                                        std::function<void(MethodReturnType&, const SecondInArgType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the function terminates with a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED((AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME,
-                                                                                                  Callable,
-                                                                                                  MethodReturnType,
-                                                                                                  FirstInArgType,
-                                                                                                  SecondInArgType>()));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        (AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                                    TestFixture::kWithQualityType,
+                                                    Callable,
+                                                    MethodReturnType,
+                                                    FirstInArgType,
+                                                    SecondInArgType>()));
 }
 
-TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCallableWithConstReturnTypeRefTerminates)
+TYPED_TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest,
+           CallingAssertCallableWithCallableWithConstReturnTypeRefTerminates)
 {
     // Given a method with a return type and InArgs.
     using MethodReturnType = int;
@@ -263,18 +336,24 @@ TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCal
 
     // and given a callable that accepts the correct arguments but the return type is a const reference instead of
     // non-const reference.
-    using Callable = std::function<void(const MethodReturnType&, const FirstInArgType&, const SecondInArgType&)>;
+    using Callable = std::conditional_t<
+        TestFixture::kWithQualityType == WithQuality::kYes,
+        std::function<void(QualityType, const MethodReturnType&, const FirstInArgType&, const SecondInArgType&)>,
+        std::function<void(const MethodReturnType&, const FirstInArgType&, const SecondInArgType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the function terminates with a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED((AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME,
-                                                                                                  Callable,
-                                                                                                  MethodReturnType,
-                                                                                                  FirstInArgType,
-                                                                                                  SecondInArgType>()));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        (AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                                    TestFixture::kWithQualityType,
+                                                    Callable,
+                                                    MethodReturnType,
+                                                    FirstInArgType,
+                                                    SecondInArgType>()));
 }
 
-TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCallableWithNonConstInArgRefTerminates)
+TYPED_TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest,
+           CallingAssertCallableWithCallableWithNonConstInArgRefTerminates)
 {
     // Given a method with a return type and InArgs.
     using MethodReturnType = int;
@@ -283,59 +362,79 @@ TEST(MethodTraitsCheckerReturnAndInArgsRuntimeTest, CallingAssertCallableWithCal
 
     // and given a callable that accepts the correct arguments but one of the InArgs is a non-const reference instead of
     // a const reference.
-    using Callable = std::function<void(const MethodReturnType&, FirstInArgType&, const SecondInArgType&)>;
+    using Callable = std::conditional_t<
+        TestFixture::kWithQualityType == WithQuality::kYes,
+        std::function<void(QualityType, const MethodReturnType&, FirstInArgType&, const SecondInArgType&)>,
+        std::function<void(const MethodReturnType&, FirstInArgType&, const SecondInArgType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the function terminates with a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED((AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME,
-                                                                                                  Callable,
-                                                                                                  MethodReturnType,
-                                                                                                  FirstInArgType,
-                                                                                                  SecondInArgType>()));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        (AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                                    TestFixture::kWithQualityType,
+                                                    Callable,
+                                                    MethodReturnType,
+                                                    FirstInArgType,
+                                                    SecondInArgType>()));
 }
 
-TEST(MethodTraitsCheckerReturnOnlyRuntimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
+TYPED_TEST(MethodTraitsCheckerReturnOnlyRuntimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
 {
     // Given a method with a return type and no InArgs.
     using MethodReturnType = int;
 
     // and given a callable that accepts the return and no InArgs.
-    using Callable = std::function<void(MethodReturnType&)>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType, MethodReturnType&)>,
+                                        std::function<void(MethodReturnType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the call does not terminate
-    AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME, Callable, MethodReturnType>();
+    AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                               TestFixture::kWithQualityType,
+                                               Callable,
+                                               MethodReturnType>();
 }
 
-TEST(MethodTraitsCheckerReturnOnlyRuntimeTest, CallingAssertCallableWithCallableWithMissingReturnTerminates)
+TYPED_TEST(MethodTraitsCheckerReturnOnlyRuntimeTest, CallingAssertCallableWithCallableWithMissingReturnTerminates)
 {
     // Given a method with a return type and no InArgs.
     using MethodReturnType = int;
 
     // and given a callable that accepts no return and no InArgs.
-    using Callable = std::function<void()>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType)>,
+                                        std::function<void()>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the function terminates with a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        (AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME, Callable, MethodReturnType>()));
+        (AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                                    TestFixture::kWithQualityType,
+                                                    Callable,
+                                                    MethodReturnType>()));
 }
 
-TEST(MethodTraitsCheckerReturnOnlyRuntimeTest, CallingAssertCallableWithCallableWithConstReturnTypeRefTerminates)
+TYPED_TEST(MethodTraitsCheckerReturnOnlyRuntimeTest, CallingAssertCallableWithCallableWithConstReturnTypeRefTerminates)
 {
     // Given a method with a return type and no InArgs.
     using MethodReturnType = int;
 
     // and given a callable that accepts the return type as const reference instead of non-const reference.
-    using Callable = std::function<void(const MethodReturnType&)>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType, const MethodReturnType&)>,
+                                        std::function<void(const MethodReturnType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the function terminates with a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        (AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME, Callable, MethodReturnType>()));
+        (AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                                    TestFixture::kWithQualityType,
+                                                    Callable,
+                                                    MethodReturnType>()));
 }
 
-TEST(MethodTraitsCheckerInArgsOnlyRuntimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
+TYPED_TEST(MethodTraitsCheckerInArgsOnlyRuntimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
 {
     // Given a method with no return type and InArgs.
     using MethodReturnType = void;
@@ -343,18 +442,21 @@ TEST(MethodTraitsCheckerInArgsOnlyRuntimeTest, CallingAssertCallableWithCallable
     using SecondInArgType = double;
 
     // and given a callable that accepts no return and InArgs.
-    using Callable = std::function<void(const FirstInArgType&, const SecondInArgType&)>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType, const FirstInArgType&, const SecondInArgType&)>,
+                                        std::function<void(const FirstInArgType&, const SecondInArgType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the call does not terminate
-    AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME,
+    AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                               TestFixture::kWithQualityType,
                                                Callable,
                                                MethodReturnType,
                                                FirstInArgType,
                                                SecondInArgType>();
 }
 
-TEST(MethodTraitsCheckerInArgsOnlyRuntimeTest, CallingAssertCallableWithCallableWithMissingInArgTerminates)
+TYPED_TEST(MethodTraitsCheckerInArgsOnlyRuntimeTest, CallingAssertCallableWithCallableWithMissingInArgTerminates)
 {
     // Given a method with no return type and InArgs.
     using MethodReturnType = void;
@@ -362,18 +464,22 @@ TEST(MethodTraitsCheckerInArgsOnlyRuntimeTest, CallingAssertCallableWithCallable
     using SecondInArgType = double;
 
     // and given a callable that accepts only one InArg.
-    using Callable = std::function<void(const FirstInArgType&)>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType, const FirstInArgType&)>,
+                                        std::function<void(const FirstInArgType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the function terminates with a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED((AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME,
-                                                                                                  Callable,
-                                                                                                  MethodReturnType,
-                                                                                                  FirstInArgType,
-                                                                                                  SecondInArgType>()));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        (AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                                    TestFixture::kWithQualityType,
+                                                    Callable,
+                                                    MethodReturnType,
+                                                    FirstInArgType,
+                                                    SecondInArgType>()));
 }
 
-TEST(MethodTraitsCheckerInArgsOnlyRuntimeTest, CallingAssertCallableWithCallableWithNonConstInArgRefTerminates)
+TYPED_TEST(MethodTraitsCheckerInArgsOnlyRuntimeTest, CallingAssertCallableWithCallableWithNonConstInArgRefTerminates)
 {
     // Given a method with no return type and InArgs.
     using MethodReturnType = void;
@@ -381,56 +487,75 @@ TEST(MethodTraitsCheckerInArgsOnlyRuntimeTest, CallingAssertCallableWithCallable
     using SecondInArgType = double;
 
     // and given a callable that accepts one of the InArgs as non-const reference instead of const reference.
-    using Callable = std::function<void(const FirstInArgType&, SecondInArgType&)>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType, const FirstInArgType&, SecondInArgType&)>,
+                                        std::function<void(const FirstInArgType&, SecondInArgType&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the function terminates with a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED((AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME,
-                                                                                                  Callable,
-                                                                                                  MethodReturnType,
-                                                                                                  FirstInArgType,
-                                                                                                  SecondInArgType>()));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        (AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                                    TestFixture::kWithQualityType,
+                                                    Callable,
+                                                    MethodReturnType,
+                                                    FirstInArgType,
+                                                    SecondInArgType>()));
 }
 
-TEST(MethodTraitsCheckerNoReturnAndNoInArgsRuntimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
+TYPED_TEST(MethodTraitsCheckerNoReturnAndNoInArgsRuntimeTest, CallingAssertCallableWithCallableDoesNotTerminate)
 {
     // Given a method with no return type and no InArgs.
     using MethodReturnType = void;
 
     // and given a callable that accepts no return and no InArgs.
-    using Callable = std::function<void()>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType)>,
+                                        std::function<void()>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the call does not terminate
-    AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME, Callable, MethodReturnType>();
+    AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                               TestFixture::kWithQualityType,
+                                               Callable,
+                                               MethodReturnType>();
 }
 
-TEST(MethodTraitsCheckerNoReturnAndNoInArgsRuntimeTest, CallingAssertCallableWithCallableWithInArgTerminates)
+TYPED_TEST(MethodTraitsCheckerNoReturnAndNoInArgsRuntimeTest, CallingAssertCallableWithCallableWithInArgTerminates)
 {
     // Given a method with no return type and no InArgs.
     using MethodReturnType = void;
 
     // and given a callable that accepts an InArg.
-    using Callable = std::function<void(const int&)>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<void(QualityType, const int&)>,
+                                        std::function<void(const int&)>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the function terminates with a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        (AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME, Callable, MethodReturnType>()));
+        (AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                                    TestFixture::kWithQualityType,
+                                                    Callable,
+                                                    MethodReturnType>()));
 }
 
-TEST(MethodTraitsCheckerNoReturnAndNoInArgsRuntimeTest, CallingAssertCallableWithCallableWithReturnTypeTerminates)
+TYPED_TEST(MethodTraitsCheckerNoReturnAndNoInArgsRuntimeTest, CallingAssertCallableWithCallableWithReturnTypeTerminates)
 {
     // Given a method with no return type and no InArgs.
     using MethodReturnType = void;
 
     // and given a callable that returns a non-void value.
-    using Callable = std::function<int()>;
+    using Callable = std::conditional_t<TestFixture::kWithQualityType == WithQuality::kYes,
+                                        std::function<int(QualityType)>,
+                                        std::function<int()>>;
 
     // When calling AssertMethodHandlerSupportsMethodSignature
     // Then the function terminates with a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        (AssertMethodHandlerSupportsMethodSignature<FailureMode::RUNTIME, Callable, MethodReturnType>()));
+        (AssertMethodHandlerSupportsMethodSignature<FailureMode::kRuntime,
+                                                    TestFixture::kWithQualityType,
+                                                    Callable,
+                                                    MethodReturnType>()));
 }
 
 TEST(MethodTraitsCheckerAssertMethodCallableIsNotStdBindCompileTimeTest, CallingWithNonStdBindCallableDoesNotTerminate)
@@ -438,7 +563,7 @@ TEST(MethodTraitsCheckerAssertMethodCallableIsNotStdBindCompileTimeTest, Calling
     // When calling AssertMethodCallableIsNotStdBind with a non-std::bind type
     // Then the call does not terminate
     auto non_std_bind_callable = []() {};
-    AssertMethodCallableIsNotStdBind<FailureMode::COMPILE_TIME, decltype(non_std_bind_callable)>();
+    AssertMethodCallableIsNotStdBind<FailureMode::kCompileTime, decltype(non_std_bind_callable)>();
 }
 
 TEST(MethodTraitsCheckerAssertMethodCallableIsNotStdBindRuntimeTimeTest, CallingWithNonStdBindCallableDoesNotTerminate)
@@ -446,7 +571,7 @@ TEST(MethodTraitsCheckerAssertMethodCallableIsNotStdBindRuntimeTimeTest, Calling
     // When calling AssertMethodCallableIsNotStdBind with a non-std::bind type
     // Then the call does not terminate
     auto non_std_bind_callable = []() {};
-    AssertMethodCallableIsNotStdBind<FailureMode::RUNTIME, decltype(non_std_bind_callable)>();
+    AssertMethodCallableIsNotStdBind<FailureMode::kRuntime, decltype(non_std_bind_callable)>();
 }
 
 TEST(MethodTraitsCheckerAssertMethodCallableIsNotStdBindRuntimeTimeTest, CallingWithStdBindTypeTerminates)
@@ -455,7 +580,7 @@ TEST(MethodTraitsCheckerAssertMethodCallableIsNotStdBindRuntimeTimeTest, Calling
     // Then the function terminates with a contract violation
     auto std_bind_expression = std::bind([]() {});
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        (AssertMethodCallableIsNotStdBind<FailureMode::RUNTIME, decltype(std_bind_expression)>()));
+        (AssertMethodCallableIsNotStdBind<FailureMode::kRuntime, decltype(std_bind_expression)>()));
 }
 
 TEST(MethodTraitsCheckerAssertMethodCallableIsNotStdBindRuntimeTimeTest, CallingWithLValueRefToStdBindTypeTerminates)
@@ -465,7 +590,7 @@ TEST(MethodTraitsCheckerAssertMethodCallableIsNotStdBindRuntimeTimeTest, Calling
     auto std_bind_expression = std::bind([]() {});
     using lvalue_ref_to_std_bind_expression = decltype(std_bind_expression)&;
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        (AssertMethodCallableIsNotStdBind<FailureMode::RUNTIME, lvalue_ref_to_std_bind_expression>()));
+        (AssertMethodCallableIsNotStdBind<FailureMode::kRuntime, lvalue_ref_to_std_bind_expression>()));
 }
 
 TEST(AssertMethodSignatureDoesNotContainPointersOrReferencesCompileTimeTest,
@@ -482,7 +607,7 @@ TEST(AssertMethodSignatureDoesNotContainPointersOrReferencesCompileTimeTest,
     // When calling AssertMethodSignatureDoesNotContainPointersOrReferences with a method signature where no argument is
     // a pointer or reference
     // Then the call does not terminate
-    AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::COMPILE_TIME,
+    AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::kCompileTime,
                                                             MethodReturnType,
                                                             std::tuple_element_t<0, MethodInArgTypes>,
                                                             std::tuple_element_t<1, MethodInArgTypes>>();
@@ -502,7 +627,7 @@ TEST(AssertMethodSignatureDoesNotContainPointersOrReferencesRuntimeTimeTest,
     // When calling AssertMethodSignatureDoesNotContainPointersOrReferences with a method signature where no argument is
     // a pointer or reference
     // Then the call does not terminate
-    AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::RUNTIME,
+    AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::kRuntime,
                                                             MethodReturnType,
                                                             std::tuple_element_t<0, MethodInArgTypes>,
                                                             std::tuple_element_t<1, MethodInArgTypes>>();
@@ -523,7 +648,7 @@ TEST(AssertMethodSignatureDoesNotContainPointersOrReferencesRuntimeTimeTest,
     // arguments is a pointer
     // Then the function terminates with a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        (AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::RUNTIME,
+        (AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::kRuntime,
                                                                  MethodReturnType,
                                                                  std::tuple_element_t<0, MethodInArgTypes>,
                                                                  std::tuple_element_t<1, MethodInArgTypes>>()));
@@ -544,7 +669,7 @@ TEST(AssertMethodSignatureDoesNotContainPointersOrReferencesRuntimeTimeTest,
     // type is a pointer
     // Then the function terminates with a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        (AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::RUNTIME,
+        (AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::kRuntime,
                                                                  MethodReturnType,
                                                                  std::tuple_element_t<0, MethodInArgTypes>,
                                                                  std::tuple_element_t<1, MethodInArgTypes>>()));
@@ -565,7 +690,7 @@ TEST(AssertMethodSignatureDoesNotContainPointersOrReferencesRuntimeTimeTest,
     // arguments is a reference
     // Then the function terminates with a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        (AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::RUNTIME,
+        (AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::kRuntime,
                                                                  MethodReturnType,
                                                                  std::tuple_element_t<0, MethodInArgTypes>,
                                                                  std::tuple_element_t<1, MethodInArgTypes>>()));
@@ -586,7 +711,7 @@ TEST(AssertMethodSignatureDoesNotContainPointersOrReferencesRuntimeTimeTest,
     // type is a reference
     // Then the function terminates with a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        (AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::RUNTIME,
+        (AssertMethodSignatureDoesNotContainPointersOrReferences<FailureMode::kRuntime,
                                                                  MethodReturnType,
                                                                  std::tuple_element_t<0, MethodInArgTypes>,
                                                                  std::tuple_element_t<1, MethodInArgTypes>>()));

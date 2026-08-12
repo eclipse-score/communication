@@ -15,7 +15,6 @@
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_SAMPLE_SENDER_RECEIVER_H
 
 #include "score/concurrency/notification.h"
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/big_datatype.h"
 #include "score/os/utils/interprocess/interprocess_notification.h"

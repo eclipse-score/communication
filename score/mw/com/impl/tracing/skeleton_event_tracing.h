@@ -59,7 +59,7 @@ template <typename SampleType>
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<SampleType>& sample_data_ptr) noexcept
+TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<SampleType>& sample_data_ptr)
 {
     const auto& binding_ptr_variant = SampleAllocateePtrView{sample_data_ptr}.GetUnderlyingVariant();
     auto visitor = score::cpp::overload(
@@ -87,7 +87,7 @@ TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<SampleType>
         [](const mock_binding::SampleAllocateePtr<SampleType>& ptr) -> TracingData {
             return {0U, {ptr.get(), sizeof(SampleType)}};
         },
-        [](const score::cpp::blank&) noexcept -> TracingData {
+        [](const score::cpp::blank&) -> TracingData {
             std::terminate();
         });
     return std::visit(visitor, binding_ptr_variant);
@@ -102,7 +102,7 @@ template <typename SampleType>
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleType>& sample_data_ptr) noexcept
+TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleType>& sample_data_ptr)
 {
     auto& binding_ptr_variant = SampleAllocateePtrMutableView{sample_data_ptr}.GetUnderlyingVariant();
     auto visitor = score::cpp::overload(
@@ -124,7 +124,7 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
         // LCOV_EXCL_START (Defensive programming: CreateTypeErasedSamplePtr is always called after
         // ExtractBindingTracingData. If the SampleAllocateePtr contains a blank binding, then ExtractBindingTracingData
         // will terminate. Therefore, we will never reach this branch.
-        [](score::cpp::blank&) noexcept -> TypeErasedSamplePtr {
+        [](score::cpp::blank&) -> TypeErasedSamplePtr {
             std::terminate();
         });
     // LCOV_EXCL_STOP
@@ -134,23 +134,23 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
 
 void UpdateTracingDataFromTraceResult(const Result<void> trace_result,
                                       SkeletonEventTracingData& skeleton_event_tracing_data,
-                                      bool& skeleton_event_trace_point) noexcept;
+                                      bool& skeleton_event_trace_point);
 
 }  // namespace detail_skeleton_event_tracing
 
 tracing::SkeletonEventTracingData GenerateSkeletonTracingStructFromEventConfig(
     const InstanceIdentifier& instance_identifier,
     const BindingType binding_type,
-    const std::string_view event_name) noexcept;
+    const std::string_view event_name);
 tracing::SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(
     const InstanceIdentifier& instance_identifier,
     const BindingType binding_type,
-    const std::string_view field_name) noexcept;
+    const std::string_view field_name);
 
 template <typename SampleType>
 void TraceSend(SkeletonEventTracingData& skeleton_event_tracing_data,
                const SkeletonEventBindingBase& skeleton_event_binding_base,
-               impl::SampleAllocateePtr<SampleType>& sample_data_ptr) noexcept
+               impl::SampleAllocateePtr<SampleType>& sample_data_ptr)
 {
     if (skeleton_event_tracing_data.enable_send)
     {
@@ -195,7 +195,7 @@ void TraceSend(SkeletonEventTracingData& skeleton_event_tracing_data,
 template <typename SampleType>
 void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data,
                            const SkeletonEventBindingBase& skeleton_event_binding_base,
-                           impl::SampleAllocateePtr<SampleType>& sample_data_ptr) noexcept
+                           impl::SampleAllocateePtr<SampleType>& sample_data_ptr)
 {
     if (skeleton_event_tracing_data.enable_send_with_allocate)
     {
@@ -239,14 +239,14 @@ void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data
 
 template <typename SampleType>
 auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
-                               const SkeletonEventBindingBase& skeleton_event_binding_base) noexcept
+                               const SkeletonEventBindingBase& skeleton_event_binding_base)
     -> std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
 {
     std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> tracing_handler{};
     if (skeleton_event_tracing_data.enable_send)
     {
         tracing_handler = [&skeleton_event_tracing_data, &skeleton_event_binding_base](
-                              impl::SampleAllocateePtr<SampleType>& sample_data_ptr) mutable noexcept {
+                              impl::SampleAllocateePtr<SampleType>& sample_data_ptr) mutable {
             TraceSend<SampleType>(skeleton_event_tracing_data, skeleton_event_binding_base, sample_data_ptr);
         };
     }
@@ -255,14 +255,14 @@ auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_
 
 template <typename SampleType>
 auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
-                                           const SkeletonEventBindingBase& skeleton_event_binding_base) noexcept
+                                           const SkeletonEventBindingBase& skeleton_event_binding_base)
     -> std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
 {
     std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> tracing_handler{};
     if (skeleton_event_tracing_data.enable_send_with_allocate)
     {
         tracing_handler = [&skeleton_event_tracing_data, &skeleton_event_binding_base](
-                              impl::SampleAllocateePtr<SampleType>& sample_data_ptr) mutable noexcept {
+                              impl::SampleAllocateePtr<SampleType>& sample_data_ptr) mutable {
             TraceSendWithAllocate<SampleType>(
                 skeleton_event_tracing_data, skeleton_event_binding_base, sample_data_ptr);
         };

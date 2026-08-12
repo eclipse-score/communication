@@ -425,8 +425,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
 // so no way for throwing std::bad_optional_access which leds to std::terminate(). This suppression should be
 // removed after fixing [Ticket-173043](broken_link_j/Ticket-173043) coverity[autosar_cpp14_a15_5_3_violation :
 // FALSE]
-auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> unregister_shm_object_callback) noexcept
-    -> void
+auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> unregister_shm_object_callback) -> void
 {
     prepare_stop_offer_called_ = true;
 
@@ -575,7 +574,7 @@ bool Skeleton::VerifyAllMethodHandlersRegistered() const
 auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
                                const SkeletonEventProperties& element_properties,
                                const size_t sample_size,
-                               const size_t sample_alignment) noexcept -> GenericRegistrationResult
+                               const size_t sample_alignment) -> GenericRegistrationResult
 {
     if (use_gateway_forwarded_shm_ || was_old_shm_region_reopened_)
     {

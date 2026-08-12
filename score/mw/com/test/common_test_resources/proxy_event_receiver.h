@@ -13,38 +13,38 @@
 #ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_PROXY_EVENT_RECEIVER_H
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_PROXY_EVENT_RECEIVER_H
 
-#include "score/concurrency/notification.h"
 #include "score/mw/com/test/common_test_resources/fail_test.h"
-#include "score/mw/com/types.h"
+
+#include "score/concurrency/notification.h"
 
 #include <score/stop_token.hpp>
 
-#include <cstdint>
+#include <functional>
 #include <iostream>
-#include <optional>
+#include <utility>
 
 namespace score::mw::com::test
 {
 
 /// \brief Helper class which registers a receiveHandler on construction and allows waiting for a
 /// certain number of samples to be received. It also checks that the received samples are in the expected order.
-template <typename ProxyEventType, typename GetNewSamplesCallback>
+template <typename ProxyOrFieldType>
 class ProxyEventReceiver
 {
   public:
-    explicit ProxyEventReceiver(ProxyEventType& proxy_event, GetNewSamplesCallback get_new_samples_callback)
-        : proxy_event_{proxy_event}, get_new_samples_callback_{std::move(get_new_samples_callback)}
+    explicit ProxyEventReceiver(ProxyOrFieldType& proxy_event_or_field)
+        : received_sample_notification_{}, proxy_event_or_field_{proxy_event_or_field}
     {
         auto receive_handler = [&received_sample_notification = received_sample_notification_]() {
             std::cout << "ProxyEventReceiver: Received event notification" << std::endl;
             received_sample_notification.notify();
         };
-        proxy_event_.SetReceiveHandler(receive_handler);
+        proxy_event_or_field_.SetReceiveHandler(receive_handler);
     }
 
     ~ProxyEventReceiver()
     {
-        proxy_event_.UnsetReceiveHandler();
+        proxy_event_or_field_.UnsetReceiveHandler();
     }
 
     ProxyEventReceiver(const ProxyEventReceiver&) = delete;
@@ -56,15 +56,17 @@ class ProxyEventReceiver
     ///
     /// \return true if the expected number of samples was received, false if the wait was interrupted by the
     /// stop_token.
+    template <typename GetNewSamplesCallback>
     [[nodiscard]] bool WaitForSamples(const score::cpp::stop_token& stop_token,
-                                      const std::size_t num_samples_to_receive)
+                                      const std::size_t num_samples_to_receive,
+                                      GetNewSamplesCallback&& get_new_samples_callback)
     {
         std::size_t received_count{0U};
         while (!stop_token.stop_requested())
         {
-            auto get_samples_result = proxy_event_.GetNewSamples(
-                [this](SamplePtr<std::uint32_t> sample) {
-                    std::invoke(get_new_samples_callback_, std::move(sample));
+            auto get_samples_result = proxy_event_or_field_.GetNewSamples(
+                [&get_new_samples_callback](auto sample) {
+                    std::invoke(get_new_samples_callback, std::move(sample));
                 },
                 num_samples_to_receive);
             if (!get_samples_result.has_value())
@@ -103,11 +105,44 @@ class ProxyEventReceiver
         return true;
     }
 
+    /// \brief Wait for a certain set of events to be received in the expected order.
+    ///
+    /// \return true if the expected samples were received, false if the wait was interrupted by the
+    /// stop_token.
+    template <typename SampleType>
+    [[nodiscard]] bool WaitForSamples(const score::cpp::stop_token& stop_token,
+                                      const std::vector<SampleType>& expected_samples)
+    {
+        const auto number_of_expected_samples = expected_samples.size();
+        std::size_t sample_idx{0U};
+        auto get_new_samples_callback =
+            [&expected_samples, &sample_idx, number_of_expected_samples](const auto& sample_ptr) {
+                const auto& received_value = *sample_ptr;
+                if (sample_idx >= expected_samples.size())
+                {
+                    FailTest("ProxyEventReceiver: Received more samples than expected. Expected: ",
+                             number_of_expected_samples,
+                             ". Received: ",
+                             sample_idx + 1);
+                }
+
+                const auto expected_value = expected_samples[sample_idx];
+                if (received_value != expected_value)
+                {
+                    FailTest("ProxyEventReceiver: Received unexpected value. Expected: ",
+                             expected_value,
+                             ". Received: ",
+                             received_value);
+                }
+                std::cout << "ProxyEventReceiver: Received expected value: " << received_value << std::endl;
+                ++sample_idx;
+            };
+        return WaitForSamples(stop_token, number_of_expected_samples, std::move(get_new_samples_callback));
+    }
+
   private:
-    score::concurrency::Notification received_sample_notification_{};
-    std::optional<std::uint32_t> latest_value_{};
-    ProxyEventType& proxy_event_;
-    GetNewSamplesCallback get_new_samples_callback_;
+    score::concurrency::Notification received_sample_notification_;
+    ProxyOrFieldType& proxy_event_or_field_;
 };
 
 }  // namespace score::mw::com::test

@@ -15,8 +15,7 @@
 namespace score::mw::com::impl::lola
 {
 
-TransactionLog::TransactionLog(const std::size_t number_of_slots,
-                               memory::shared::ManagedMemoryResource& resource) noexcept
+TransactionLog::TransactionLog(const std::size_t number_of_slots, memory::shared::ManagedMemoryResource& resource)
     : reference_count_slots_(number_of_slots, resource), subscribe_transactions_{}, subscription_max_sample_count_{}
 {
 }

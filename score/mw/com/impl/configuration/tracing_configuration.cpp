@@ -101,7 +101,7 @@ void TracingConfiguration::SetServiceElementTracingEnabled(tracing::ServiceEleme
 // coverity[autosar_cpp14_a15_5_3_violation]
 bool TracingConfiguration::IsServiceElementTracingEnabled(
     tracing::ServiceElementIdentifierView service_element_identifier_view,
-    std::string_view instance_specifier_view) const noexcept
+    std::string_view instance_specifier_view) const
 {
     const auto find_result = service_element_tracing_enabled_map_.find(service_element_identifier_view);
     if (find_result == service_element_tracing_enabled_map_.end())

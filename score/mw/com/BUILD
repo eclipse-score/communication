@@ -67,6 +67,7 @@ cc_library(
         ":types",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/mocking:i_runtime",
+        "@score_baselibs//score/language/safecpp/string_view:zstring_view",
     ],
 )
 
@@ -98,7 +99,6 @@ cc_library(
     deps = [
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/string_manipulation:string_literal",
     ],
 )
 

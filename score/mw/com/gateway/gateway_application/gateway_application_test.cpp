@@ -12,6 +12,7 @@
  *******************************************************************************/
 #include "score/mw/com/gateway/gateway_application/gateway_application.h"
 
+#include "score/memory/data_type_size_info.h"
 #include "score/mw/com/gateway/gateway_application/configuration/gateway_configuration.h"
 #include "score/mw/com/gateway/gateway_application/gateway_error.h"
 #include "score/mw/com/gateway/transport_layer/transport_mock.h"
@@ -701,7 +702,7 @@ class GatewayApplicationFlowTest : public ::testing::Test
         // --- Generic skeleton event binding factory: yields a fresh mock per event --------------
         ON_CALL(generic_skeleton_event_binding_factory_mock_, Create(::testing::_, ::testing::_, ::testing::_))
             .WillByDefault(::testing::Invoke(
-                [this](impl::SkeletonBase&, std::string_view event_name, const impl::DataTypeMetaInfo&)
+                [this](impl::SkeletonBase&, std::string_view event_name, const score::memory::DataTypeSizeInfo&)
                     -> score::Result<std::unique_ptr<impl::GenericSkeletonEventBinding>> {
                     auto mock = std::make_unique<::testing::NiceMock<impl::mock_binding::GenericSkeletonEvent>>();
                     ON_CALL(*mock, SetReceiveHandlerRegistrationChangedHandler(::testing::_))
@@ -1065,9 +1066,9 @@ TEST_F(GatewayApplicationFlowTest, ProvideServiceCreatesSkeletonRegistersCallbac
     // Given a whitelisted ("svc/a") provide request with one event whose binding expects exactly one
     // subscription-callback registration.
     ON_CALL(generic_skeleton_event_binding_factory_mock_, Create(::testing::_, ::testing::_, ::testing::_))
-        .WillByDefault(
-            ::testing::Invoke([this](impl::SkeletonBase&, std::string_view event_name, const impl::DataTypeMetaInfo&)
-                                  -> score::Result<std::unique_ptr<impl::GenericSkeletonEventBinding>> {
+        .WillByDefault(::testing::Invoke(
+            [this](impl::SkeletonBase&, std::string_view event_name, const score::memory::DataTypeSizeInfo&)
+                -> score::Result<std::unique_ptr<impl::GenericSkeletonEventBinding>> {
                 auto mock = std::make_unique<::testing::NiceMock<impl::mock_binding::GenericSkeletonEvent>>();
                 EXPECT_CALL(*mock, SetReceiveHandlerRegistrationChangedHandler(::testing::_))
                     .WillOnce(::testing::Return(score::Result<void>{}));
@@ -1203,9 +1204,9 @@ TEST_F(GatewayApplicationFlowTest, ProvideServiceSetReceiveHandlerRegistrationFa
 {
     // Given the skeleton event rejects the receive-handler-registration-changed handler
     ON_CALL(generic_skeleton_event_binding_factory_mock_, Create(::testing::_, ::testing::_, ::testing::_))
-        .WillByDefault(
-            ::testing::Invoke([this](impl::SkeletonBase&, std::string_view event_name, const impl::DataTypeMetaInfo&)
-                                  -> score::Result<std::unique_ptr<impl::GenericSkeletonEventBinding>> {
+        .WillByDefault(::testing::Invoke(
+            [this](impl::SkeletonBase&, std::string_view event_name, const score::memory::DataTypeSizeInfo&)
+                -> score::Result<std::unique_ptr<impl::GenericSkeletonEventBinding>> {
                 auto mock = std::make_unique<::testing::NiceMock<impl::mock_binding::GenericSkeletonEvent>>();
                 ON_CALL(*mock, SetReceiveHandlerRegistrationChangedHandler(::testing::_))
                     .WillByDefault(

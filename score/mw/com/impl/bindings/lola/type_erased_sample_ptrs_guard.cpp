@@ -20,12 +20,12 @@ namespace score::mw::com::impl::lola::tracing
 {
 
 TypeErasedSamplePtrsGuard::TypeErasedSamplePtrsGuard(
-    const impl::tracing::ServiceElementTracingData service_element_tracing_data) noexcept
+    const impl::tracing::ServiceElementTracingData service_element_tracing_data)
     : service_element_tracing_data_{service_element_tracing_data}
 {
 }
 
-TypeErasedSamplePtrsGuard::~TypeErasedSamplePtrsGuard() noexcept
+TypeErasedSamplePtrsGuard::~TypeErasedSamplePtrsGuard() noexcept(false)
 {
     const auto* const tracing_runtime = impl::Runtime::getInstance().GetTracingRuntime();
     if (tracing_runtime != nullptr)

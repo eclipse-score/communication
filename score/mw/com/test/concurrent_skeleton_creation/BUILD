@@ -29,6 +29,7 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:bigdata_type",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 

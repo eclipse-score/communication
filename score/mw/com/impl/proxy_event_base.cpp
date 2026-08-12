@@ -35,7 +35,7 @@ namespace score::mw::com::impl
 thread_local bool ProxyEventBase::is_in_receive_handler_context = false;
 
 ProxyEventBase::ProxyEventBase(std::string_view event_name,
-                               Result<std::unique_ptr<ProxyEventBindingBase>> proxy_event_binding) noexcept
+                               Result<std::unique_ptr<ProxyEventBindingBase>> proxy_event_binding)
     : EnableReferenceToMoveableFromThis<ProxyEventBase>(),
       binding_construction_result_{},
       binding_base_{std::move(proxy_event_binding)
@@ -73,7 +73,7 @@ ProxyEventBase& ProxyEventBase::operator=(ProxyEventBase&&) noexcept = default;
 // which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count) noexcept
+Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count)
 {
     if (proxy_event_base_mock_ != nullptr)
     {
@@ -181,7 +181,7 @@ SubscriptionState ProxyEventBase::GetSubscriptionState() const noexcept
     return binding_base_->GetSubscriptionState();
 }
 
-Result<std::size_t> ProxyEventBase::GetNumNewSamplesAvailable() const noexcept
+Result<std::size_t> ProxyEventBase::GetNumNewSamplesAvailable() const
 {
     if (proxy_event_base_mock_ != nullptr)
     {

@@ -43,6 +43,7 @@ using ::testing::ByMove;
 using ::testing::Field;
 using ::testing::Invoke;
 using ::testing::NiceMock;
+using ::testing::Property;
 using ::testing::Return;
 using ::testing::ReturnRef;
 
@@ -188,8 +189,8 @@ TEST_F(GenericSkeletonTest, CreateWithEventsInitializesEventBindings)
     params.events = event_storage;
 
     // Expect the Event Factory to be called
-    auto MetaMatcher =
-        AllOf(Field(&DataTypeMetaInfo::size, meta_info.size), Field(&DataTypeMetaInfo::alignment, meta_info.alignment));
+    auto MetaMatcher = AllOf(Property(&score::memory::DataTypeSizeInfo::Size, meta_info.size),
+                             Property(&score::memory::DataTypeSizeInfo::Alignment, meta_info.alignment));
 
     EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, event_name, MetaMatcher))
         .WillOnce(Return(ByMove(std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>())));
@@ -203,6 +204,54 @@ TEST_F(GenericSkeletonTest, CreateWithEventsInitializesEventBindings)
     ASSERT_EQ(events.size(), 1);
 
     EXPECT_NE(events.find(event_name), events.cend());
+}
+
+TEST_F(GenericSkeletonTest, CreateWithInvalidDataTypeMetaInfoAlignmentFails)
+{
+    // Given configuration for one event whose meta-info has an alignment that is not a power of two
+    auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithEvent();
+    const std::string event_name = "test_event";
+    const DataTypeMetaInfo meta_info{16, 6};
+
+    std::vector<EventInfo> event_storage;
+    event_storage.push_back({event_name, meta_info});
+
+    GenericSkeletonServiceElementInfo params;
+    params.events = event_storage;
+
+    // Expecting that the event factory is never be called for invalid meta-info
+    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, _, _)).Times(0);
+
+    // When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then creation fails with kInvalidConfiguration
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kInvalidConfiguration);
+}
+
+TEST_F(GenericSkeletonTest, CreateWithInvalidDataTypeMetaInfoSizeFails)
+{
+    // Given configuration for one event whose size is not a multiple of its (valid) alignment
+    auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithEvent();
+    const std::string event_name = "test_event";
+    const DataTypeMetaInfo meta_info{10, 8};
+
+    std::vector<EventInfo> event_storage;
+    event_storage.push_back({event_name, meta_info});
+
+    GenericSkeletonServiceElementInfo params;
+    params.events = event_storage;
+
+    // Expecting that the event factory is never be called for invalid meta-info
+    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, _, _)).Times(0);
+
+    // When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then creation fails with kInvalidConfiguration
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kInvalidConfiguration);
 }
 
 TEST_F(GenericSkeletonTest, CreateWithDuplicateEventNamesFails)

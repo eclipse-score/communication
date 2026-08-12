@@ -118,13 +118,15 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
         foo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, foo_unique_method_id);
         dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_unique_method_id);
 
-        std::ignore = foo_method_->RegisterHandler([this](std::optional<score::cpp::span<std::byte>> in_args,
+        std::ignore = foo_method_->RegisterHandler([this](QualityType quality_type,
+                                                          std::optional<score::cpp::span<std::byte>> in_args,
                                                           std::optional<score::cpp::span<std::byte>> return_arg) {
-            std::invoke(foo_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg);
+            std::invoke(foo_mock_type_erased_callback_.AsStdFunction(), quality_type, in_args, return_arg);
         });
-        std::ignore = dumb_method_->RegisterHandler([this](std::optional<score::cpp::span<std::byte>> in_args,
+        std::ignore = dumb_method_->RegisterHandler([this](QualityType quality_type,
+                                                           std::optional<score::cpp::span<std::byte>> in_args,
                                                            std::optional<score::cpp::span<std::byte>> return_arg) {
-            std::invoke(dumb_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg);
+            std::invoke(dumb_mock_type_erased_callback_.AsStdFunction(), quality_type, in_args, return_arg);
         });
     }
 
@@ -870,16 +872,16 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRegistersAMethodCallHan
 
     // Expecting that the type erased callback will be called for each method with InArgs and ReturnArg storage
     // provided if TypeErasedElementInfo for the method in MethodData contains InArgs / a ReturnArg
-    EXPECT_CALL(foo_mock_type_erased_callback_, Call(_, _))
-        .WillOnce(Invoke([](auto in_args_optional, auto result_optional) {
+    EXPECT_CALL(foo_mock_type_erased_callback_, Call(QualityType::kASIL_QM, _, _))
+        .WillOnce(WithArgs<1, 2>(Invoke([](auto in_args_optional, auto result_optional) {
             EXPECT_EQ(in_args_optional.has_value(), kFooTypeErasedElementInfo.in_arg_type_info.has_value());
             EXPECT_EQ(result_optional.has_value(), kFooTypeErasedElementInfo.return_type_info.has_value());
-        }));
-    EXPECT_CALL(dumb_mock_type_erased_callback_, Call(_, _))
-        .WillOnce(Invoke([](auto in_args_optional, auto result_optional) {
+        })));
+    EXPECT_CALL(dumb_mock_type_erased_callback_, Call(QualityType::kASIL_QM, _, _))
+        .WillOnce(WithArgs<1, 2>(Invoke([](auto in_args_optional, auto result_optional) {
             EXPECT_EQ(in_args_optional.has_value(), kDumbTypeErasedElementInfo.in_arg_type_info.has_value());
             EXPECT_EQ(result_optional.has_value(), kDumbTypeErasedElementInfo.return_type_info.has_value());
-        }));
+        })));
 
     // Expecting that a method call handler is registered for both methods which calls the handler directly with the
     // largest possible queue index for that method
@@ -907,6 +909,53 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRegistersAMethodCallHan
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
                                      proxy_instance_identifier_qm_,
                                      test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
+}
+
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
+       CallingAsilBRegistersAMethodCallHandlerPerMethodWithInfoFromMethodData)
+{
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Expecting that the type erased callback will be called for each method with InArgs and ReturnArg storage
+    // provided if TypeErasedElementInfo for the method in MethodData contains InArgs / a ReturnArg
+    EXPECT_CALL(foo_mock_type_erased_callback_, Call(QualityType::kASIL_B, _, _))
+        .WillOnce(WithArgs<1, 2>(Invoke([](auto in_args_optional, auto result_optional) {
+            EXPECT_EQ(in_args_optional.has_value(), kFooTypeErasedElementInfo.in_arg_type_info.has_value());
+            EXPECT_EQ(result_optional.has_value(), kFooTypeErasedElementInfo.return_type_info.has_value());
+        })));
+    EXPECT_CALL(dumb_mock_type_erased_callback_, Call(QualityType::kASIL_B, _, _))
+        .WillOnce(WithArgs<1, 2>(Invoke([](auto in_args_optional, auto result_optional) {
+            EXPECT_EQ(in_args_optional.has_value(), kDumbTypeErasedElementInfo.in_arg_type_info.has_value());
+            EXPECT_EQ(result_optional.has_value(), kDumbTypeErasedElementInfo.return_type_info.has_value());
+        })));
+
+    // Expecting that a method call handler is registered for both methods which calls the handler directly with the
+    // largest possible queue index for that method with quality type ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_B, foo_proxy_method_identifier_b_, _, _))
+        .WillOnce(WithArgs<2>(Invoke([this](auto method_call_handler) {
+            std::invoke(method_call_handler, test::kFooMethodQueueSize - 1U);
+            return MethodCallRegistrationGuardFactory::Create(message_passing_mock_,
+                                                              kDummyQualityType,
+                                                              foo_proxy_method_identifier_b_,
+                                                              method_call_registration_guard_scope_);
+        })));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_B, dumb_proxy_method_identifier_b_, _, _))
+        .WillOnce(WithArgs<2>(Invoke([this](auto method_call_handler) {
+            std::invoke(method_call_handler, test::kDumbMethodQueueSize - 1U);
+            return MethodCallRegistrationGuardFactory::Create(message_passing_mock_,
+                                                              kDummyQualityType,
+                                                              dumb_proxy_method_identifier_b_,
+                                                              method_call_registration_guard_scope_);
+        })));
+
+    // When calling the asil-b registered method subscribed handler
+    ASSERT_TRUE(captured_method_subscribed_handler_b_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_b_.value(),
+                                     proxy_instance_identifier_b_,
+                                     test::kAllowedAsilBMethodConsumer,
                                      kDummyPid);
 }
 

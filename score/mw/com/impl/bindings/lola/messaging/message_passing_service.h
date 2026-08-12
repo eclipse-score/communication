@@ -66,7 +66,7 @@ class MessagePassingService final : public IMessagePassingService
     /// \param factory optional factory used to create MessagePassingServiceInstances
     MessagePassingService(const AsilSpecificCfg& config_asil_qm,
                           const std::optional<AsilSpecificCfg>& config_asil_b,
-                          const std::unique_ptr<IMessagePassingServiceInstanceFactory>& factory) noexcept;
+                          const std::unique_ptr<IMessagePassingServiceInstanceFactory>& factory);
 
     MessagePassingService(const MessagePassingService&) = delete;
     MessagePassingService(MessagePassingService&&) = delete;

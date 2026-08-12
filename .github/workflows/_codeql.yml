@@ -27,10 +27,144 @@ on:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL:
         required: false
+      SCORE_QNX_LICENSE:
+        required: false
+      SCORE_QNX_USER:
+        required: false
+      SCORE_QNX_PASSWORD:
+        required: false
 
 jobs:
-  codeql:
-    name: Build & Test
+  # Whether to additionally analyze the --config=qnx build is derived
+  # automatically from secret availability rather than a caller-supplied
+  # flag: it only runs when the QNX license secret has actually been
+  # provided (e.g. not forwarded by cache-warming callers). Computed once,
+  # up front, so both analysis jobs below can start in parallel gated on
+  # the same `needs.determine-qnx.outputs.available` job output (secrets
+  # cannot be referenced directly in a job-level `if:`).
+  determine-qnx:
+    name: Determine QNX availability
+    runs-on: ubuntu-24.04
+    outputs:
+      available: ${{ steps.qnx.outputs.available }}
+    steps:
+      - id: qnx
+        run: |
+          if [[ -n "${{ secrets.SCORE_QNX_LICENSE }}" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Linux analysis runs on its own runner so it can proceed concurrently
+  # with the QNX analysis below rather than waiting on it.
+  codeql-linux:
+    name: Run CodeQL analysis (Linux)
+    needs: [determine-qnx]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: ""
+          cache-mode: ${{ inputs.cache-mode }}
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+      - name: Fetch dependencies (--nobuild)
+        if: inputs.fetch-only == 'true'
+        run: bazel build --nobuild //...
+
+      - name: Run CodeQL analysis (Linux)
+        if: inputs.fetch-only != 'true'
+        id: run-codeql
+        run: |
+          set -euo pipefail
+
+          bazel run //quality/static_analysis:codeql_lint -- \
+            --output-dir /tmp/codeql-results/linux \
+            --output-prefix codeql-nightly \
+            --target //score/message_passing //score/mw/com
+
+      - name: Upload Linux SARIF (intermediate)
+        if: inputs.fetch-only != 'true' && steps.run-codeql.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif-linux
+          path: /tmp/codeql-results/linux/codeql-nightly.sarif
+          retention-days: 1
+
+      - name: Upload MISRA compliance reports (Linux)
+        if: inputs.fetch-only != 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-misra-reports
+          path: /tmp/codeql-results/linux/analysis_reports/
+          retention-days: 30
+          if-no-files-found: warn
+
+  # QNX analysis runs in parallel with codeql-linux (both only need
+  # determine-qnx); the merge job below waits on both.
+  codeql-qnx:
+    name: Run CodeQL analysis (QNX, --config=qnx)
+    needs: [determine-qnx]
+    if: inputs.fetch-only != 'true' && needs.determine-qnx.outputs.available == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: Setup QNX and QEMU environment
+        uses: ./.github/actions/00_infrastructure/setup_qnx_environment
+        with:
+          qnx-license: ${{ secrets.SCORE_QNX_LICENSE }}
+
+      - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
+        with:
+          disk-cache: ""
+          cache-mode: ${{ inputs.cache-mode }}
+          ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+      - name: Run CodeQL analysis (QNX, --config=qnx)
+        id: run-codeql-qnx
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          bazel run //quality/static_analysis:codeql_lint -- \
+            --build-config qnx \
+            --output-dir /tmp/codeql-results/qnx \
+            --output-prefix codeql-nightly-qnx \
+            --target //score/message_passing //score/mw/com
+
+      - name: Upload QNX SARIF (intermediate)
+        if: steps.run-codeql-qnx.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif-qnx
+          path: /tmp/codeql-results/qnx/codeql-nightly-qnx.sarif
+          retention-days: 1
+
+  # All merging/deduplication happens on the SARIF documents; the CSV is
+  # generated once, at the end, directly from the resulting deduplicated
+  # union SARIF. Both tools are invoked directly (no custom wrapper
+  # script): the official Microsoft SARIF SDK CLI (@sarif_multitool, the
+  # same tool used by .github/actions/00_infrastructure/merge_sarif_reports
+  # for rules_lint) merges/dedups the SARIF, then the `sarif` CLI from
+  # sarif-tools (https://github.com/microsoft/sarif-tools) derives the
+  # CSV. This job always runs (even Linux-only, i.e. when codeql-qnx was
+  # skipped) since it is now the only place that produces the published CSV.
+  merge:
+    name: Merge & deduplicate findings (Linux ∪ QNX union)
+    needs: [determine-qnx, codeql-linux, codeql-qnx]
+    if: always() && inputs.fetch-only != 'true' && needs.codeql-linux.result == 'success'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -45,42 +179,53 @@ jobs:
           cache-mode: ${{ inputs.cache-mode }}
           ubuntu-snapshot-mirror-url: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
-      - name: Fetch dependencies (--nobuild)
-        if: inputs.fetch-only == 'true'
-        run: bazel build --nobuild //...
+      - name: Download Linux SARIF
+        uses: actions/download-artifact@v4
+        with:
+          name: codeql-sarif-linux
+          path: /tmp/codeql-results/linux
 
-      - name: Run CodeQL analysis
-        if: inputs.fetch-only != 'true'
-        id: run-codeql
+      - name: Download QNX SARIF
+        if: needs.codeql-qnx.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: codeql-sarif-qnx
+          path: /tmp/codeql-results/qnx
+
+      - name: Merge & deduplicate findings (Linux ∪ QNX union)
+        id: merge-codeql
         run: |
           set -euo pipefail
 
-          bazel run //quality/static_analysis:codeql_lint -- \
-            --output-dir /tmp/codeql-results \
-            --output-prefix codeql-nightly \
-            --target //score/message_passing //score/mw/com
+          sarif_inputs=(/tmp/codeql-results/linux/codeql-nightly.sarif)
+          if [[ -f /tmp/codeql-results/qnx/codeql-nightly-qnx.sarif ]]; then
+            sarif_inputs+=(/tmp/codeql-results/qnx/codeql-nightly-qnx.sarif)
+          fi
 
+          mkdir -p /tmp/codeql-results/publish
+          bazel run @sarif_multitool//:sarif_multitool_cli -- \
+            merge "${sarif_inputs[@]}" --merge-empty-logs \
+            --output-file /tmp/codeql-results/publish/codeql-nightly.sarif
+
+          bazel run //quality/static_analysis:sarif_cli -- \
+            csv /tmp/codeql-results/publish/codeql-nightly.sarif \
+            --output /tmp/codeql-results/publish/codeql-nightly.csv
+
+      # Single canonical published SARIF/CSV: the deduplicated union of Linux
+      # and QNX findings (or just the deduplicated Linux findings when QNX was
+      # not run).
       - name: Upload SARIF to GitHub Code Scanning
-        if: inputs.fetch-only != 'true' && always() && steps.run-codeql.outcome == 'success'
+        if: always() && steps.merge-codeql.outcome == 'success'
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: /tmp/codeql-results/codeql-nightly.sarif
+          sarif_file: /tmp/codeql-results/publish/codeql-nightly.sarif
           category: codeql-nightly
 
       - name: Upload CSV results
-        if: inputs.fetch-only != 'true' && always() && steps.run-codeql.outcome == 'success'
+        if: always() && steps.merge-codeql.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: codeql-csv-results
-          path: /tmp/codeql-results/codeql-nightly.csv
+          path: /tmp/codeql-results/publish/codeql-nightly.csv
           retention-days: 30
-
-      - name: Upload MISRA compliance reports
-        if: inputs.fetch-only != 'true' && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: codeql-misra-reports
-          path: /tmp/codeql-results/analysis_reports/
-          retention-days: 30
-          if-no-files-found: warn

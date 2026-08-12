@@ -23,6 +23,7 @@
 #include "score/mw/com/impl/mocking/i_skeleton_base.h"
 
 #include "score/result/result.h"
+#include "score/scope_exit/scope_exit.h"
 
 #include <score/span.hpp>
 #include <optional>
@@ -72,7 +73,7 @@ class SkeletonBase
      * \return On failure, returns an error code according to the SW Component Requirements SCR-17434118 and
      * SCR-566325.
      */
-    [[nodiscard]] Result<void> OfferService() noexcept;
+    [[nodiscard]] Result<void> OfferService();
 
     /**
      * \api
@@ -108,8 +109,8 @@ class SkeletonBase
 
     ISkeletonBase* skeleton_mock_;
 
-    [[nodiscard]] score::Result<void> OfferServiceEvents() const noexcept;
-    [[nodiscard]] score::Result<void> OfferServiceFields() const noexcept;
+    [[nodiscard]] score::Result<std::vector<utils::ScopeExit<>>> OfferServiceEvents() const noexcept;
+    [[nodiscard]] score::Result<std::vector<utils::ScopeExit<>>> OfferServiceFields() const noexcept;
 
     FlagOwner service_offered_flag_;
 };

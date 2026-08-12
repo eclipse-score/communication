@@ -62,7 +62,7 @@ class ProxyBase
      *         failure, returns an error code.
      * \requirement SWS_CM_00622
      */
-    static Result<ServiceHandleContainer<HandleType>> FindService(InstanceSpecifier specifier) noexcept;
+    static Result<ServiceHandleContainer<HandleType>> FindService(InstanceSpecifier specifier);
 
     /**
      * \api
@@ -72,7 +72,7 @@ class ProxyBase
      * \return A result which on success contains a list of found handles that can be used to create a proxy. On
      *         failure, returns an error code.
      */
-    static Result<ServiceHandleContainer<HandleType>> FindService(InstanceIdentifier instance_identifier) noexcept;
+    static Result<ServiceHandleContainer<HandleType>> FindService(InstanceIdentifier instance_identifier);
 
     /**
      * \api
@@ -85,7 +85,7 @@ class ProxyBase
      *         error code.
      */
     static Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType> handler,
-                                                      InstanceIdentifier instance_identifier) noexcept;
+                                                      InstanceIdentifier instance_identifier);
 
     /**
      * \api
@@ -98,7 +98,7 @@ class ProxyBase
      *         error code.
      */
     static Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType> handler,
-                                                      InstanceSpecifier instance_specifier) noexcept;
+                                                      InstanceSpecifier instance_specifier);
 
     /**
      * \api
@@ -108,7 +108,7 @@ class ProxyBase
      * \param handle The handle returned by StartFindService identifying the find operation to stop.
      * \return A result indicating success or failure of stopping the find operation.
      */
-    static score::Result<void> StopFindService(const FindServiceHandle handle) noexcept;
+    static score::Result<void> StopFindService(const FindServiceHandle handle);
 
     /**
      * \api

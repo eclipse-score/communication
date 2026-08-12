@@ -85,7 +85,7 @@ bool SampleHyperVisorTransport::IsMemorySharingSupported() const
     return true;
 }
 
-score::ResultBlank SampleHyperVisorTransport::Setup()
+score::Result<void> SampleHyperVisorTransport::Setup()
 {
     message_transport_->SetMessageHandler([this](std::unique_ptr<TransportMessage> message) {
         OnMessageReceived(std::move(message));
@@ -212,8 +212,8 @@ void SampleHyperVisorTransport::Shutdown()
     message_transport_->Shutdown();
 }
 
-score::ResultBlank SampleHyperVisorTransport::ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                                             std::vector<impl::EventInfo> service_elements)
+score::Result<void> SampleHyperVisorTransport::ProvideService(impl::InstanceSpecifier service_instance_specifier,
+                                                              std::vector<impl::EventInfo> service_elements)
 {
     const auto shm_sizes = GetShmSizes(service_instance_specifier);
 
@@ -222,28 +222,28 @@ score::ResultBlank SampleHyperVisorTransport::ProvideService(impl::InstanceSpeci
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank SampleHyperVisorTransport::OfferService(impl::InstanceSpecifier service_instance_specifier)
+score::Result<void> SampleHyperVisorTransport::OfferService(impl::InstanceSpecifier service_instance_specifier)
 {
     OfferServiceRequest request{std::move(service_instance_specifier)};
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank SampleHyperVisorTransport::StopOfferService(impl::InstanceSpecifier service_instance_specifier)
+score::Result<void> SampleHyperVisorTransport::StopOfferService(impl::InstanceSpecifier service_instance_specifier)
 {
     StopOfferServiceRequest request{std::move(service_instance_specifier)};
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank SampleHyperVisorTransport::NotifyUpdate(impl::InstanceSpecifier service_instance_specifier,
-                                                           impl::ServiceElementType updated_element_type,
-                                                           std::string updated_element_name)
+score::Result<void> SampleHyperVisorTransport::NotifyUpdate(impl::InstanceSpecifier service_instance_specifier,
+                                                            impl::ServiceElementType updated_element_type,
+                                                            std::string updated_element_name)
 {
     UpdateNotification notification{
         std::move(service_instance_specifier), updated_element_type, std::move(updated_element_name)};
     return message_transport_->SendNotification(notification);
 }
 
-score::ResultBlank SampleHyperVisorTransport::RegisterUpdateNotification(
+score::Result<void> SampleHyperVisorTransport::RegisterUpdateNotification(
     impl::InstanceSpecifier service_instance_specifier,
     impl::ServiceElementType element_type,
     std::string element_name)
@@ -252,7 +252,7 @@ score::ResultBlank SampleHyperVisorTransport::RegisterUpdateNotification(
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank SampleHyperVisorTransport::UnregisterUpdateNotification(
+score::Result<void> SampleHyperVisorTransport::UnregisterUpdateNotification(
     impl::InstanceSpecifier service_instance_specifier,
     impl::ServiceElementType element_type,
     std::string element_name)

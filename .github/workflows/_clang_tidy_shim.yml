@@ -1,0 +1,45 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# TEMPORARY MIGRATION SHIM — remove once branch protection is updated.
+#
+# GitHub names the status check for a job that calls a reusable workflow as
+# "<caller job name> / <called job name>". The legacy, still-required check
+# was produced by a "Clang-Tidy" job calling a reusable workflow whose job
+# was named "Build & Test", yielding "Clang-Tidy / Build & Test". This
+# reusable workflow exists solely to reproduce that same nesting so the
+# check name matches exactly; see build_and_test_host.yml for how it's
+# invoked and for removal instructions.
+
+name: "Clang-Tidy Migration Shim"
+
+on:
+  workflow_call:
+    inputs:
+      lint-result:
+        description: "Result of the Linters job (whose clang-tidy matrix entry this check mirrors)."
+        type: string
+        required: true
+
+jobs:
+  clang-tidy:
+    name: Build & Test
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mirror Linters/clang-tidy result
+        run: |
+          echo "This is a migration shim for the renamed 'Clang-Tidy / Build & Test' status check; see comment above the job in build_and_test_host.yml."
+          if [[ "${{ inputs.lint-result }}" != "success" ]]; then
+            echo "::error::Linters job did not succeed (result: ${{ inputs.lint-result }})"
+            exit 1
+          fi

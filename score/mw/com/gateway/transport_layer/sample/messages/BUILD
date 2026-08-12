@@ -28,6 +28,7 @@ cc_library(
 
 cc_library(
     name = "serialization",
+    srcs = ["serialization.cpp"],
     hdrs = ["serialization.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [

@@ -19,11 +19,7 @@
 
 #include <utility>
 
-namespace score
-{
-namespace mw
-{
-namespace service
+namespace score::mw::service
 {
 
 // Forward declare to allow alias
@@ -33,9 +29,7 @@ template <typename ServiceType>
 class ProvidedServiceDecorator;
 }
 
-namespace backend
-{
-namespace mw_com
+namespace backend::mw_com
 {
 
 /// @brief Minimal stub for config_daemon testing
@@ -76,15 +70,12 @@ class ProvidedServiceBuilder
 // Backward compatibility: Tests expect mw::service::backend::mw_com::ProvidedServices
 using ProvidedServices = score::mw::service::ProvidedServices<ProvidedServiceDecorator>;
 
-}  // namespace mw_com
-}  // namespace backend
+}  // namespace backend::mw_com
 
 // Make ProvidedServiceBuilder available in mw::service namespace
 // for backward compatibility with existing code
 using backend::mw_com::ProvidedServiceBuilder;
 
-}  // namespace service
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::service
 
 #endif  // SCORE_MW_SERVICE_BACKEND_MW_COM_PROVIDED_SERVICE_BUILDER_H

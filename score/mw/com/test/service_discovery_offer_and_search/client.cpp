@@ -12,7 +12,6 @@
  *******************************************************************************/
 
 #include "score/concurrency/future/interruptible_promise.h"
-#include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/test/common_test_resources/proxy_observer.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 #include "score/mw/com/test/common_test_resources/sync_utils.h"

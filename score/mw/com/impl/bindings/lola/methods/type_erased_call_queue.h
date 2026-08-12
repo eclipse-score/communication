@@ -42,7 +42,7 @@ class TypeErasedCallQueue final
     TypeErasedCallQueue(memory::shared::ManagedMemoryResource& resource,
                         const TypeErasedElementInfo& type_erased_element_info);
 
-    ~TypeErasedCallQueue();
+    ~TypeErasedCallQueue() noexcept;
 
     TypeErasedCallQueue(const TypeErasedCallQueue&) = delete;
     TypeErasedCallQueue& operator=(const TypeErasedCallQueue&) = delete;

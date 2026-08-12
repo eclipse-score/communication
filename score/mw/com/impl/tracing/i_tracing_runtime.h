@@ -56,10 +56,9 @@ class ITracingRuntime
     virtual void RegisterShmObject(const BindingType binding_type,
                                    const ServiceElementInstanceIdentifierView service_element_instance_identifier_view,
                                    const memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
-                                   void* const shm_memory_start_address) noexcept = 0;
-    virtual void UnregisterShmObject(
-        BindingType binding_type,
-        ServiceElementInstanceIdentifierView service_element_instance_identifier_view) noexcept = 0;
+                                   void* const shm_memory_start_address) = 0;
+    virtual void UnregisterShmObject(BindingType binding_type,
+                                     ServiceElementInstanceIdentifierView service_element_instance_identifier_view) = 0;
 
     virtual Result<void> Trace(const BindingType binding_type,
                                const ServiceElementTracingData service_element_tracing_data,
@@ -68,14 +67,14 @@ class ITracingRuntime
                                const TracePointDataId trace_point_data_id,
                                TypeErasedSamplePtr sample_ptr,
                                const void* const shm_data_ptr,
-                               const std::size_t shm_data_size) noexcept = 0;
+                               const std::size_t shm_data_size) = 0;
 
     virtual Result<void> Trace(const BindingType binding_type,
                                const ServiceElementInstanceIdentifierView service_element_instance_identifier,
                                const TracePointType trace_point_type,
                                const std::optional<TracePointDataId> trace_point_data_id,
                                const void* const local_data_ptr,
-                               const std::size_t local_data_size) noexcept = 0;
+                               const std::size_t local_data_size) = 0;
 
     virtual IBindingTracingRuntime& GetBindingTracingRuntime(const BindingType binding_type) const noexcept = 0;
 

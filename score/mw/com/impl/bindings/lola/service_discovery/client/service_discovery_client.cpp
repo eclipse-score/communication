@@ -44,7 +44,7 @@ auto ReadMaskSet(const os::InotifyEvent& event, const os::InotifyEvent::ReadMask
 }
 
 std::vector<HandleType> GetKnownHandles(EnrichedInstanceIdentifier enriched_instance_identifier,
-                                        QualityAwareContainer<KnownInstancesContainer> known_instances) noexcept
+                                        QualityAwareContainer<KnownInstancesContainer> known_instances)
 {
     std::vector<HandleType> known_handles{};
     // Suppress "AUTOSAR C++14 M6-4-3" rule finding. This rule declares: "A switch statement shall be
@@ -144,7 +144,7 @@ ServiceDiscoveryClient::~ServiceDiscoveryClient() noexcept
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_identifier) noexcept -> Result<void>
+auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_identifier) -> Result<void>
 {
     const EnrichedInstanceIdentifier enriched_instance_identifier{instance_identifier};
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
@@ -222,9 +222,9 @@ auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_iden
     return {};
 }
 
-auto ServiceDiscoveryClient::StopOfferService(
-    const InstanceIdentifier instance_identifier,
-    const IServiceDiscovery::QualityTypeSelector quality_type_selector) noexcept -> Result<void>
+auto ServiceDiscoveryClient::StopOfferService(const InstanceIdentifier instance_identifier,
+                                              const IServiceDiscovery::QualityTypeSelector quality_type_selector)
+    -> Result<void>
 {
     const EnrichedInstanceIdentifier enriched_instance_identifier{instance_identifier};
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
@@ -264,7 +264,7 @@ auto ServiceDiscoveryClient::StopOfferService(
     return {};
 }
 
-auto ServiceDiscoveryClient::StopFindService(const FindServiceHandle find_service_handle) noexcept -> Result<void>
+auto ServiceDiscoveryClient::StopFindService(const FindServiceHandle find_service_handle) -> Result<void>
 {
     {
         // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced
@@ -286,7 +286,7 @@ auto ServiceDiscoveryClient::TransferSearchRequests() noexcept -> void
     TransferObsoleteSearchRequests();
 }
 
-auto ServiceDiscoveryClient::TransferNewSearchRequest(NewSearchRequest search_request) noexcept
+auto ServiceDiscoveryClient::TransferNewSearchRequest(NewSearchRequest search_request)
     -> SearchRequestsContainer::value_type&
 {
     auto& [find_service_handle,
@@ -319,7 +319,7 @@ auto ServiceDiscoveryClient::TransferNewSearchRequest(NewSearchRequest search_re
     return *(added_search_request.first);
 }
 
-auto ServiceDiscoveryClient::TransferObsoleteSearchRequests() noexcept -> void
+auto ServiceDiscoveryClient::TransferObsoleteSearchRequests() -> void
 {
     for (const auto& obsolete_search_request : obsolete_search_requests_)
     {
@@ -328,8 +328,7 @@ auto ServiceDiscoveryClient::TransferObsoleteSearchRequests() noexcept -> void
     obsolete_search_requests_.clear();
 }
 
-auto ServiceDiscoveryClient::TransferObsoleteSearchRequest(const FindServiceHandle& find_service_handle) noexcept
-    -> void
+auto ServiceDiscoveryClient::TransferObsoleteSearchRequest(const FindServiceHandle& find_service_handle) -> void
 {
     const auto search_iterator = search_requests_.find(find_service_handle);
     if (search_iterator == search_requests_.end())
@@ -373,7 +372,7 @@ auto ServiceDiscoveryClient::TransferObsoleteSearchRequest(const FindServiceHand
 
 auto ServiceDiscoveryClient::HandleEvents(
     const score::cpp::expected<score::cpp::static_vector<os::InotifyEvent, os::InotifyInstance::max_events>, os::Error>&
-        expected_events) noexcept -> void
+        expected_events) -> void
 {
     // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced initialization.
     // This is a false positive, we don't use auto here.
@@ -447,7 +446,7 @@ auto ServiceDiscoveryClient::HandleEvents(
     HandleCreationEvents(creation_events);
 }
 
-auto ServiceDiscoveryClient::HandleDeletionEvents(const std::vector<os::InotifyEvent>& events) noexcept -> void
+auto ServiceDiscoveryClient::HandleDeletionEvents(const std::vector<os::InotifyEvent>& events) -> void
 {
     std::unordered_set<FindServiceHandle> impacted_searches{};
     for (const auto& event : events)
@@ -486,7 +485,7 @@ auto ServiceDiscoveryClient::HandleDeletionEvents(const std::vector<os::InotifyE
     CallHandlers(impacted_searches);
 }
 
-auto ServiceDiscoveryClient::HandleCreationEvents(const std::vector<os::InotifyEvent>& events) noexcept -> void
+auto ServiceDiscoveryClient::HandleCreationEvents(const std::vector<os::InotifyEvent>& events) -> void
 {
     std::unordered_set<FindServiceHandle> impacted_searches{};
     for (const auto& event : events)
@@ -515,7 +514,7 @@ auto ServiceDiscoveryClient::HandleCreationEvents(const std::vector<os::InotifyE
     CallHandlers(impacted_searches);
 }
 
-auto ServiceDiscoveryClient::CallHandlers(const std::unordered_set<FindServiceHandle>& search_keys) noexcept -> void
+auto ServiceDiscoveryClient::CallHandlers(const std::unordered_set<FindServiceHandle>& search_keys) -> void
 {
     for (const auto& search_key : search_keys)
     {
@@ -598,7 +597,7 @@ auto ServiceDiscoveryClient::CallHandlers(const std::unordered_set<FindServiceHa
 }
 
 auto ServiceDiscoveryClient::StoreWatch(const os::InotifyWatchDescriptor& watch_descriptor,
-                                        const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+                                        const EnrichedInstanceIdentifier& enriched_instance_identifier)
     -> WatchesContainer::iterator
 {
     const auto watch_result = watches_.emplace(
@@ -623,7 +622,7 @@ auto ServiceDiscoveryClient::StoreWatch(const os::InotifyWatchDescriptor& watch_
     return watch_result.first;
 }
 
-auto ServiceDiscoveryClient::EraseWatch(const WatchesContainer::iterator& watch_iterator) noexcept -> void
+auto ServiceDiscoveryClient::EraseWatch(const WatchesContainer::iterator& watch_iterator) -> void
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(watch_iterator->second.find_service_handles.empty(),
                                                       "Watch must not be associated to any searches");
@@ -705,10 +704,9 @@ auto ServiceDiscoveryClient::UnlinkWatchWithSearchRequest(
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-Result<void> ServiceDiscoveryClient::StartFindService(
-    const FindServiceHandle find_service_handle,
-    FindServiceHandler<HandleType> handler,
-    const EnrichedInstanceIdentifier enriched_instance_identifier) noexcept
+Result<void> ServiceDiscoveryClient::StartFindService(const FindServiceHandle find_service_handle,
+                                                      FindServiceHandler<HandleType> handler,
+                                                      const EnrichedInstanceIdentifier enriched_instance_identifier)
 {
     // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced initialization.
     // This is a false positive, we don't use auto here
@@ -784,7 +782,7 @@ Result<void> ServiceDiscoveryClient::StartFindService(
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto ServiceDiscoveryClient::OnInstanceDirectoryCreated(const WatchesContainer::iterator& watch_iterator,
-                                                        std::string_view name) noexcept -> void
+                                                        std::string_view name) -> void
 {
     const auto& [enriched_instance_identifier, search_keys] = watch_iterator->second;
 
@@ -819,7 +817,7 @@ auto ServiceDiscoveryClient::OnInstanceDirectoryCreated(const WatchesContainer::
 }
 
 void ServiceDiscoveryClient::OnInstanceFlagFileCreated(const WatchesContainer::iterator& watch_iterator,
-                                                       const std::string_view name) noexcept
+                                                       const std::string_view name)
 {
     const auto& enriched_instance_identifier = watch_iterator->second.enriched_instance_identifier;
 
@@ -864,7 +862,7 @@ void ServiceDiscoveryClient::OnInstanceFlagFileCreated(const WatchesContainer::i
 }
 
 void ServiceDiscoveryClient::OnInstanceFlagFileRemoved(const WatchesContainer::iterator& watch_iterator,
-                                                       std::string_view name) noexcept
+                                                       std::string_view name)
 {
     const auto& enriched_instance_identifier = watch_iterator->second.enriched_instance_identifier;
 
@@ -912,7 +910,7 @@ void ServiceDiscoveryClient::OnInstanceFlagFileRemoved(const WatchesContainer::i
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<ServiceHandleContainer<HandleType>> ServiceDiscoveryClient::FindService(
-    const EnrichedInstanceIdentifier enriched_instance_identifier) noexcept
+    const EnrichedInstanceIdentifier enriched_instance_identifier)
 {
     // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced initialization.
     // This is a false positive, we don't use auto here

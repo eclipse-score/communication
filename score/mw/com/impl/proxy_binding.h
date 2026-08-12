@@ -53,7 +53,7 @@ class ProxyBinding
     ///
     /// \param event_name The event name to check.
     /// \return True if the event name exists, otherwise, false
-    virtual bool IsEventProvided(const std::string_view event_name) const noexcept = 0;
+    virtual bool IsEventProvided(const std::string_view event_name) const = 0;
 
     /// \brief Performs any binding specific setup required.
     ///

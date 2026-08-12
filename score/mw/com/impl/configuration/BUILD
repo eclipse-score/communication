@@ -39,7 +39,9 @@ cc_library(
     hdrs = ["quality_type.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola/messaging:__pkg__"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
 )
 
 # A common library for configuration validation and parsing. It shall be used by both strategies (JSON & Flatbuffers) parsers.
@@ -130,6 +132,7 @@ cc_library(
         "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
+        ":configuration_error",
         ":global_configuration",
         ":service_identifier_type",
         ":service_instance_deployment",

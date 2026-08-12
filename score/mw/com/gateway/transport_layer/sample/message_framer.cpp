@@ -98,7 +98,7 @@ std::unique_ptr<TransportMessage> MessageFramer::CreateMessageForType(MessageTyp
     }
 }
 
-score::ResultBlank MessageFramer::SendMessage(std::int32_t socket_fd, const TransportMessage& message)
+score::Result<void> MessageFramer::SendMessage(std::int32_t socket_fd, const TransportMessage& message)
 {
     const auto payload_size = message.Serialize(send_buffer_);
     if (payload_size == 0U)

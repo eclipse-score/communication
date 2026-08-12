@@ -48,7 +48,7 @@ constexpr auto kInterVmForwarded = "interVmForwarded";
 // be sure json.As<T> call will return a value. See Ticket-177855.
 // coverity[autosar_cpp14_a15_5_3_violation]
 std::unordered_map<QualityType, std::vector<uid_t>> ConvertJsonToUidMap(const json::Object& json_object,
-                                                                        std::string_view key) noexcept
+                                                                        std::string_view key)
 {
     const auto& uid_map_json = GetValueFromJson<json::Object>(json_object, key);
 
@@ -143,7 +143,7 @@ bool operator<(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstan
 // See Note 1 for autosar_cpp14_a15_5_3_violation.
 // coverity[autosar_cpp14_a12_1_5_violation]
 // coverity[autosar_cpp14_a15_5_3_violation]
-LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::json::Object& json_object) noexcept
+LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::json::Object& json_object)
     : LolaServiceInstanceDeployment{
           {},
           ConvertJsonToServiceElementMap<EventInstanceMapping>(json_object, kEventsKeyInstDepl),
@@ -215,7 +215,7 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(
 {
 }
 
-score::json::Object LolaServiceInstanceDeployment::Serialize() const noexcept
+score::json::Object LolaServiceInstanceDeployment::Serialize() const
 {
     json::Object json_object{};
     json_object[kSerializationVersionKeyInstDepl] = score::json::Any{serializationVersion};

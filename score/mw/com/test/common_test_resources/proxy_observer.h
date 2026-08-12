@@ -12,9 +12,7 @@
  *******************************************************************************/
 
 #include "score/concurrency/future/interruptible_promise.h"
-#include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/proxy_base.h"
-#include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/com_error_domain.h"
 #include "score/mw/com/types.h"
 
 #include <fstream>
@@ -94,11 +92,11 @@ class ProxyObserver
     }
 
   private:
-    score::Result<score::mw::com::impl::InstanceSpecifier> instance_specifier_result_;
+    score::Result<score::mw::com::InstanceSpecifier> instance_specifier_result_;
     std::unordered_map<typename Proxy::HandleType, Proxy> proxies_{};
     concurrency::InterruptiblePromise<void> promise_{};
     // handle has deleted default constructor
-    Result<FindServiceHandle> handle_ = MakeUnexpected(score::mw::com::impl::ComErrc::kUnsetFailure);
+    Result<FindServiceHandle> handle_ = MakeUnexpected(score::mw::com::ComErrc::kUnsetFailure);
 };
 
 }  // namespace

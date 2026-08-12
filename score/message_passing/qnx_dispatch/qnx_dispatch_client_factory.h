@@ -15,9 +15,7 @@
 
 #include "score/message_passing/i_client_factory.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 // Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "A type, object or function that is used in multiple
@@ -51,7 +49,6 @@ class QnxDispatchClientFactory final : public IClientFactory
     const std::shared_ptr<QnxDispatchEngine> engine_;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_QNX_DISPATCH_QNX_DISPATCH_CLIENT_FACTORY_H

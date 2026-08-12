@@ -16,9 +16,7 @@
 
 #include <score/assert.hpp>
 
-namespace score::mw::com::impl
-{
-namespace detail
+namespace score::mw::com::impl::detail
 {
 
 bool IsMethodOrFieldEnabled(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
@@ -73,6 +71,4 @@ LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle,
     return lola_method_instance_deployment.queue_size_.value();
 }
 
-}  // namespace detail
-
-}  // namespace score::mw::com::impl
+}  // namespace score::mw::com::impl::detail

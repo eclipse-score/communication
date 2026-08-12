@@ -90,7 +90,7 @@ class ProxyEventBindingBase
     /// \return Either 0 if no new samples are available (and GetNewSamples() wouldn't return any) or N, where 1 <= N <=
     /// actual new samples. I.e. an implementation is allowed to report a lower number than actual new samples, which
     /// would be provided by a call to GetNewSamples().
-    virtual Result<std::size_t> GetNumNewSamplesAvailable() const noexcept = 0;
+    virtual Result<std::size_t> GetNumNewSamplesAvailable() const = 0;
 
     /// \brief Returns the current max sample count that was provided in the Subscribe call that was most recently
     /// processed or is currently processing.

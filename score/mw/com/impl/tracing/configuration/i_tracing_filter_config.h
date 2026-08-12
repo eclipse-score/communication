@@ -73,7 +73,7 @@ class ITracingFilterConfig
                                InstanceSpecifierView instance_specifier,
                                ProxyFieldTracePointType proxy_field_trace_point_type) noexcept = 0;
 
-    virtual std::uint16_t GetNumberOfTracingSlots(score::mw::com::impl::Configuration& config) const noexcept = 0;
+    virtual std::uint16_t GetNumberOfTracingSlots(score::mw::com::impl::Configuration& config) const = 0;
 };
 
 }  // namespace score::mw::com::impl::tracing

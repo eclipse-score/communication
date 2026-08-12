@@ -21,9 +21,7 @@
 
 #include <type_traits>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 namespace
 {
@@ -115,5 +113,4 @@ TEST(UnixDomainServerTest, RunningServersWithSameId)
 #endif
 
 }  // namespace
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing

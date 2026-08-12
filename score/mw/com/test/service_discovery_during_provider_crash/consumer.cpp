@@ -15,6 +15,7 @@
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/check_point_control.h"
 #include "score/mw/com/test/common_test_resources/consumer_resources.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include "score/mw/com/test/common_test_resources/general_resources.h"
 #include "score/mw/com/test/service_discovery_during_provider_crash/test_datatype.h"
@@ -41,7 +42,7 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
         std::cerr
             << "Consumer: Initializing LoLa/mw::com runtime from cmd-line args handed over by parent/controller ..."
             << std::endl;
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
         std::cerr << "Consumer: Initializing LoLa/mw::com runtime done." << std::endl;
     }
 

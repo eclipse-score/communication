@@ -22,11 +22,7 @@
 #include <utility>
 #include <vector>
 
-namespace score
-{
-namespace mw
-{
-namespace service
+namespace score::mw::service
 {
 class ProvidedService;
 
@@ -124,8 +120,6 @@ class ProvidedServices : public ProvidedServicesBase
     std::vector<std::pair<std::string, ProvidedServiceHolder>> services_;
 };
 
-}  // namespace service
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::service
 
 #endif  // SCORE_MW_SERVICE_BACKEND_MW_COM_PROVIDED_SERVICES_H

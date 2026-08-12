@@ -10,10 +10,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/generic_skeleton.h"
-#include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/proxy_event.h"
-#include "score/mw/com/impl/traits.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
@@ -62,15 +58,14 @@ constexpr std::string_view kEventName = "Event8Byte";
 
 int run_provider(score::cpp::stop_token stop_token)
 {
-    const auto instance_specifier =
-        score::mw::com::impl::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
-    const score::mw::com::impl::DataTypeMetaInfo meta{sizeof(MyEventData), alignof(MyEventData)};
-    const std::vector<score::mw::com::impl::EventInfo> events = {{kEventName, meta}};
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
+    const score::mw::com::DataTypeMetaInfo meta{sizeof(MyEventData), alignof(MyEventData)};
+    const std::vector<score::mw::com::EventInfo> events = {{kEventName, meta}};
 
-    score::mw::com::impl::GenericSkeletonServiceElementInfo create_params;
+    score::mw::com::GenericSkeletonServiceElementInfo create_params;
     create_params.events = events;
 
-    auto skeleton_res = score::mw::com::impl::GenericSkeleton::Create(instance_specifier, create_params);
+    auto skeleton_res = score::mw::com::GenericSkeleton::Create(instance_specifier, create_params);
     if (!skeleton_res.has_value())
     {
         score::mw::log::LogFatal("GenericSkeletonProvider") << "Failed to create skeleton.";
@@ -90,7 +85,7 @@ int run_provider(score::cpp::stop_token stop_token)
         score::mw::log::LogFatal("GenericSkeletonProvider") << "Failed to find event in skeleton.";
         return 1;
     }
-    auto& generic_event = const_cast<score::mw::com::impl::GenericSkeletonEvent&>(it->second);
+    auto& generic_event = it->second;
 
     // Wait for the consumer to start and subscribe BEFORE sending data
     score::mw::log::LogInfo("GenericSkeletonProvider")
@@ -126,12 +121,11 @@ class MyTestService : public Trait::Base
     using Trait::Base::Base;
     typename Trait::template Event<MyEventData> event_{*this, std::string{kEventName}};
 };
-using MyTestServiceProxy = score::mw::com::impl::AsProxy<MyTestService>;
+using MyTestServiceProxy = score::mw::com::AsProxy<MyTestService>;
 
 int run_consumer()
 {
-    const auto instance_specifier =
-        score::mw::com::impl::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
 
     score::Result<score::mw::com::ServiceHandleContainer<MyTestServiceProxy::HandleType>> handles_res;
     int retries{0};

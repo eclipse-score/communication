@@ -69,6 +69,7 @@ format_test(
     cc = "@clang_format//:executable",
     no_sandbox = True,
     starlark = "@buildifier_prebuilt//:buildifier",
+    tags = ["no-flaky-test-detection"],
     target_compatible_with = ["@platforms//os:linux"],
     workspace = "//:LICENSE",
 )

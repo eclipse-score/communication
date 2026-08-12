@@ -79,6 +79,21 @@ cc_library(
 )
 
 cc_library(
+    name = "i_generic_skeleton_event_binding_factory",
+    srcs = ["i_generic_skeleton_event_binding_factory.cpp"],
+    hdrs = ["i_generic_skeleton_event_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/plumbing:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:generic_skeleton_event_binding",
+        "//score/mw/com/impl:skeleton_base",
+    ],
+)
+
+cc_library(
     name = "skeleton_method_binding_factory_impl",
     srcs = ["skeleton_method_binding_factory_impl.cpp"],
     hdrs = ["skeleton_method_binding_factory_impl.h"],
@@ -330,6 +345,7 @@ cc_library(
         ":lola_proxy_element_building_blocks",
         ":proxy_event_binding_factory",
         ":proxy_method_binding_factory",
+        "//score/mw/com/impl:field_getter_setter_signatures",
         "//score/mw/com/impl:method_type",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -635,8 +651,8 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":i_generic_skeleton_event_binding_factory",
         ":skeleton_service_element_binding_factory_impl",
-        "//score/mw/com/impl:i_generic_skeleton_event_binding_factory",
         "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
     ],
 )
@@ -657,8 +673,8 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":i_generic_skeleton_event_binding_factory",
         ":skeleton_service_element_binding_factory_impl",
-        "//score/mw/com/impl:i_generic_skeleton_event_binding_factory",
         "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
     ],
 )
@@ -674,7 +690,7 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
-        "//score/mw/com/impl:i_generic_skeleton_event_binding_factory",
+        ":i_generic_skeleton_event_binding_factory",
         "@googletest//:gtest",
     ],
 )

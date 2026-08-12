@@ -14,6 +14,7 @@ module(name = "score_communication")
 
 # Dependencies that will get propagated to our users as transitive dependencies
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "boost.container", version = "1.83.0.bcr.4")
 bazel_dep(name = "boost.interprocess", version = "1.83.0.bcr.4")
 bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
 bazel_dep(name = "download_utils", version = "1.2.2")
@@ -29,7 +30,7 @@ bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
 bazel_dep(name = "score_baselibs", version = "0.2.9")
 git_override(
     module_name = "score_baselibs",
-    commit = "82f9402474d6dd210fb0cfe5d1867f0d757318c4",
+    commit = "54d67260077a0e7cdf37faf4366ca3a72f35739f",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
@@ -37,7 +38,7 @@ git_override(
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
-bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
+bazel_dep(name = "score_bazel_platforms", version = "1.0.0")
 bazel_dep(name = "score_crates", version = "0.0.10", repo_name = "score_communication_crate_index")
 git_override(
     module_name = "score_crates",
@@ -182,7 +183,7 @@ git_override(
     remote = "https://github.com/eclipse-score/itf.git",
 )
 
-bazel_dep(name = "score_rules_imagefs", version = "0.0.3", dev_dependency = True)
+bazel_dep(name = "score_rules_imagefs", version = "0.0.4", dev_dependency = True)
 
 imagefs = use_extension("@score_rules_imagefs//extensions:imagefs.bzl", "imagefs", dev_dependency = True)
 imagefs.toolchain(
@@ -204,7 +205,7 @@ use_repo(imagefs, "score_qnx_aarch64_ifs_toolchain", "score_qnx_x86_64_ifs_toolc
 bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
 git_override(
     module_name = "rules_distroless",
-    commit = "dbf25be1c3a9a1698511a4817582efe61dc5ec15",
+    commit = "e1df344fde5adaef7397c34076b56f27771d08b8",
     remote = "https://github.com/LittleHuba/rules_distroless.git",
 )
 
@@ -234,6 +235,7 @@ apt.install(
     dependency_set = "ubuntu24_04_sysroot",
     mergedusr = True,
     packages = [
+        "base-files",  # mergedusr symlinks
         "libatomic1",  # Non-lock-free atomics support
         "libc6",  # Core C/POSIX
         "libc6-dev",  # Core C/POSIX
@@ -252,6 +254,7 @@ apt.install(
     dependency_set = "ubuntu24_04_integration_testing",
     mergedusr = True,
     packages = [
+        "base-files",  # mergedusr symlinks
         "bash",  # Required as default entrypoint of Docker
         "binutils",  # provides addr2line, required for backtraces in sanitizers
         "coreutils",  # for commands like `ls`
@@ -297,6 +300,7 @@ llvm.toolchain(
     cxx_standard = {"": "c++17"},
     extra_enabled_features = [
         "//quality/compiler_warnings/clang:default_flags",
+        "//quality/compiler_warnings:fortify_source",
         "//quality/compiler_warnings/clang:minimal_warnings",
     ],
     extra_known_features = [
@@ -334,7 +338,7 @@ llvm.sysroot(
 )
 use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
 
-bazel_dep(name = "score_toolchains_rust", version = "0.9.2", dev_dependency = True)
+bazel_dep(name = "score_toolchains_rust", version = "0.10.0", dev_dependency = True)
 
 gcc_ferrocene = use_extension(
     "@score_toolchains_rust//extensions:ferrocene_toolchain_ext.bzl",
@@ -343,9 +347,9 @@ gcc_ferrocene = use_extension(
 )
 gcc_ferrocene.toolchain(
     name = "ferrocene_x86_64_unknown_linux_gnu_llvm",
-    coverage_tools_sha256 = "497958e925bc94833ea226d68f6d5ba38bd890f571c73e230141d2923e30dd94",
+    coverage_tools_sha256 = "f4b1cdcaf644b3dac429dfc50c674cde8f9620e1a563e3dcdfb313a7ce68c888",
     coverage_tools_strip_prefix = "779fbed05ae9e9fe2a04137929d99cc9b3d516fd/x86_64-unknown-linux-gnu",
-    coverage_tools_url = "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.0.1/coverage-tools-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
+    coverage_tools_url = "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.3.0/coverage-tools-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
     exec_triple = "x86_64-unknown-linux-gnu",
     extra_rustc_flags = [
         "-Clink-arg=-Wl,--no-as-needed",
@@ -379,10 +383,16 @@ download_file(
 )
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.0", dev_dependency = True)
+
+lint_toolchains = use_extension("@aspect_rules_lint//lint:extensions.bzl", "toolchains", dev_dependency = True)
+lint_toolchains.sarif_parser()
+use_repo(lint_toolchains, "sarif_parser_toolchains")
+
+bazel_dep(name = "score_rust_policies", version = "0.0.5", dev_dependency = True)
 bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
 bazel_dep(name = "rules_build_error", version = "0.11.0", dev_dependency = True)
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
-bazel_dep(name = "buildifier_prebuilt", version = "8.5.1", dev_dependency = True)
+bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.3", dev_dependency = True)
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
     module_name = "hedron_compile_commands",
@@ -408,7 +418,7 @@ single_version_override(
     patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
 )
 
-bazel_dep(name = "score_docs_as_code", version = "4.6.1", dev_dependency = True)
+bazel_dep(name = "score_docs_as_code", version = "7.0.1", dev_dependency = True)
 
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension", dev_dependency = True)
@@ -439,10 +449,10 @@ use_repo(pip, "codeql_coding_standards_pip_hub")
 bazel_dep(name = "trlc", version = "3.0.0", dev_dependency = True)
 
 # Lobster dependency for requirements traceability
-bazel_dep(name = "lobster", version = "1.0.4", dev_dependency = True)
+bazel_dep(name = "lobster", version = "1.0.6", dev_dependency = True)
 git_override(
     module_name = "lobster",
-    commit = "07382c33f95e22992e0f8788c0537ec06877e51f",
+    commit = "0069786d1261d59817fc97cb6e7b359b522e14d5",
     remote = "https://github.com/bmw-software-engineering/lobster.git",
 )
 
@@ -490,6 +500,23 @@ codeql_release_pack(
     pack_tarball = "misra-cpp-coding-standards.tgz",
     sha256 = "775e34cb36e522c30f3c4381c0758a7fbe29e6c9a5428eb6c9ad67ebd145cb0b",
     urls = ["https://github.com/github/codeql-coding-standards/releases/download/v{version}/coding-standards-codeql-packs.zip".format(version = CODING_STANDARDS_VERSION)],
+)
+
+# Self-contained (single-file .NET publish) Linux x64 build of the official
+# Microsoft SARIF SDK's Sarif.Multitool, distributed as the npm package
+# @microsoft/sarif-multitool-linux (the same tool used by
+# .github/actions/00_infrastructure/merge_sarif_reports for rules_lint, and by
+# //quality/static_analysis:merge_codeql_findings for the Linux/QNX CodeQL
+# union). Fetched by pinned URL + sha256 (like codeql_bundle above) rather
+# than via `npx` at runtime, so the merge step needs no network access and is
+# fully reproducible.
+http_archive(
+    name = "sarif_multitool",
+    build_file = "//third_party/sarif:sarif_multitool.BUILD",
+    patch_cmds = ["chmod +x Sarif.Multitool"],
+    sha256 = "019fe2535318b1954579bea1dac391b652e90e24dea11082625abd9a25d3816d",
+    strip_prefix = "package",
+    url = "https://registry.npmjs.org/@microsoft/sarif-multitool-linux/-/sarif-multitool-linux-5.6.0.tgz",
 )
 
 register_toolchains(

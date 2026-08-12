@@ -73,7 +73,7 @@ BidirectionalTransport::~BidirectionalTransport()
     Shutdown();
 }
 
-score::ResultBlank BidirectionalTransport::Setup()
+score::Result<void> BidirectionalTransport::Setup()
 {
     auto listen_result = SetupListenSocket();
     if (!listen_result.has_value())
@@ -106,7 +106,7 @@ score::ResultBlank BidirectionalTransport::Setup()
     return {};
 }
 
-score::ResultBlank BidirectionalTransport::SetupSendSocket(score::cpp::stop_token stop_token)
+score::Result<void> BidirectionalTransport::SetupSendSocket(score::cpp::stop_token stop_token)
 {
     auto socket_result = Socket::instance().socket(Socket::Domain::kIPv4, SOCK_STREAM, 0);
     if (!socket_result.has_value())
@@ -158,7 +158,7 @@ score::ResultBlank BidirectionalTransport::SetupSendSocket(score::cpp::stop_toke
     return score::MakeUnexpected(TransportErrorc::kConnectionFailure);
 }
 
-score::ResultBlank BidirectionalTransport::SetupListenSocket()
+score::Result<void> BidirectionalTransport::SetupListenSocket()
 {
     auto socket_result = Socket::instance().socket(Socket::Domain::kIPv4, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if (!socket_result.has_value())
@@ -377,14 +377,15 @@ void BidirectionalTransport::HandleResponse(std::unique_ptr<TransportMessage> re
     pending_tracker_->Acknowledge(ack->GetAckedSequence());
 }
 
-score::ResultBlank BidirectionalTransport::SendAck(const std::uint32_t sequence)
+score::Result<void> BidirectionalTransport::SendAck(const std::uint32_t sequence)
 {
     AckResponse ack_response(sequence);
     std::lock_guard<std::mutex> lock(send_mutex_);
     return message_framer_->SendMessage(send_socket_.Get(), ack_response);
 }
 
-score::ResultBlank BidirectionalTransport::TrySendAndWaitForAck(TransportMessage& message, const std::uint32_t sequence)
+score::Result<void> BidirectionalTransport::TrySendAndWaitForAck(TransportMessage& message,
+                                                                 const std::uint32_t sequence)
 {
     {
         std::lock_guard<std::mutex> lock(send_mutex_);
@@ -401,7 +402,7 @@ score::ResultBlank BidirectionalTransport::TrySendAndWaitForAck(TransportMessage
         sequence, std::chrono::milliseconds(socket_config_.request_timeout_ms_), is_connected_);
 }
 
-score::ResultBlank BidirectionalTransport::SendRequest(TransportMessage& message)
+score::Result<void> BidirectionalTransport::SendRequest(TransportMessage& message)
 {
     if (!is_connected_)
     {
@@ -413,7 +414,7 @@ score::ResultBlank BidirectionalTransport::SendRequest(TransportMessage& message
 
     pending_tracker_->RegisterPendingRequest(sequence);
 
-    score::ResultBlank last_result = score::MakeUnexpected(TransportErrorc::kSendFailure);
+    score::Result<void> last_result = score::MakeUnexpected(TransportErrorc::kSendFailure);
     for (std::size_t attempt = 0U; attempt < kMaxSendRetries; ++attempt)
     {
         if (!is_connected_)
@@ -447,7 +448,7 @@ score::ResultBlank BidirectionalTransport::SendRequest(TransportMessage& message
     return last_result;
 }
 
-score::ResultBlank BidirectionalTransport::SendNotification(TransportMessage& message)
+score::Result<void> BidirectionalTransport::SendNotification(TransportMessage& message)
 {
     if (!is_connected_)
     {

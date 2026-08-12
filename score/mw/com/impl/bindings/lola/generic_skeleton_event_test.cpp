@@ -54,7 +54,7 @@ class GenericSkeletonEventFixture : public SkeletonEventFixture
     }
 
     std::unique_ptr<GenericSkeletonEvent> generic_skeleton_event_;
-    const DataTypeMetaInfo size_info_{10U, 8U};
+    const memory::DataTypeSizeInfo size_info_{16U, 8U};
 };
 
 // TODO: Fix requirement linkage as soon as requirements are matured in S-CORE.
@@ -123,8 +123,8 @@ TEST_F(GenericSkeletonEventFixture, GetSizeInfo)
     auto size_info = generic_skeleton_event_->GetSizeInfo();
 
     // Then we get the correct size and alignment
-    EXPECT_EQ(size_info.first, size_info_.size);
-    EXPECT_EQ(size_info.second, size_info_.alignment);
+    EXPECT_EQ(size_info.first, size_info_.Size());
+    EXPECT_EQ(size_info.second, size_info_.Alignment());
 }
 
 // Test: GetMaxSize
@@ -148,7 +148,7 @@ TEST_F(GenericSkeletonEventFixture, GetMaxSize)
     auto max_size = generic_skeleton_event_->GetMaxSize();
 
     // Then we get the correct size
-    EXPECT_EQ(max_size, size_info_.size);
+    EXPECT_EQ(max_size, size_info_.Size());
 }
 
 // Test: PrepareOffer

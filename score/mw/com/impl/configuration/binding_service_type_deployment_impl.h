@@ -66,7 +66,7 @@ template <typename ServiceElementIdType>
 // ToDo: implement a runtime validation check for json, after parsing when the first json object is created, s.t. we can
 // be sure json.As<T> call will return a value. See Ticket-177855.
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ConvertJsonToServiceElementIdMap(const json::Object& json_object, const std::string_view key) noexcept
+auto ConvertJsonToServiceElementIdMap(const json::Object& json_object, const std::string_view key)
     -> std::unordered_map<std::string, ServiceElementIdType>
 {
     const auto& service_element_json = GetValueFromJson<json::Object>(json_object, key);
@@ -116,7 +116,7 @@ BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdTy
 
 template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
 BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>::BindingServiceTypeDeployment(
-    const score::json::Object& json_object) noexcept
+    const score::json::Object& json_object)
     : BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>::BindingServiceTypeDeployment(
           GetValueFromJson<ServiceIdType>(json_object, detail::kServiceIdKey),
           detail::ConvertJsonToServiceElementIdMap<EventIdType>(json_object, detail::kEventsKey),

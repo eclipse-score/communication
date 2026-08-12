@@ -23,12 +23,14 @@ load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 cc_library(
     name = "heap_check_lib",
+    srcs = ["heap_check/heap_check.cpp"],
     hdrs = ["heap_check/heap_check.h"],
     includes = ["."],
 )
 
 cc_library(
     name = "service_interface",
+    srcs = ["common/tire_pressure_service.cpp"],
     hdrs = ["common/tire_pressure_service.h"],
     includes = ["."],
     deps = [

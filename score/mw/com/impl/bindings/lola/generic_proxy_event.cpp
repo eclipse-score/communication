@@ -49,7 +49,7 @@ SubscriptionState GenericProxyEvent::GetSubscriptionState() const noexcept
     return proxy_event_common_.GetSubscriptionState();
 }
 
-inline Result<std::size_t> GenericProxyEvent::GetNumNewSamplesAvailable() const noexcept
+inline Result<std::size_t> GenericProxyEvent::GetNumNewSamplesAvailable() const
 {
     /// In case of LoLa binding we can also dispatch to GetNumNewSamplesAvailableImpl() in case of kSubscriptionPending!
     /// Because a pre-condition to kSubscriptionPending is that we once had a successful subscription... and then we can
@@ -63,7 +63,7 @@ inline Result<std::size_t> GenericProxyEvent::GetNumNewSamplesAvailable() const 
     return GetNumNewSamplesAvailableImpl();
 }
 
-inline Result<std::size_t> GenericProxyEvent::GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept
+inline Result<std::size_t> GenericProxyEvent::GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker)
 {
     /// In case of LoLa binding we can also dispatch to GetNewSamplesImpl() in case of kSubscriptionPending!
     /// Because a pre-condition to kSubscriptionPending is that we once had a successful subscription... and then we can
@@ -79,7 +79,7 @@ inline Result<std::size_t> GenericProxyEvent::GetNewSamples(Callback&& receiver,
 
 std::size_t GenericProxyEvent::GetSampleSize() const noexcept
 {
-    return meta_info_.data_type_info_.size;
+    return meta_info_.data_type_info_.Size();
 }
 
 bool GenericProxyEvent::HasSerializedFormat() const noexcept
@@ -108,11 +108,6 @@ Result<void> GenericProxyEvent::UnsetSubscriptionStateChangeHandler() noexcept
     return proxy_event_common_.UnsetSubscriptionStateChangeHandler();
 }
 
-pid_t GenericProxyEvent::GetEventSourcePid() const noexcept
-{
-    return proxy_event_common_.GetEventSourcePid();
-}
-
 ElementFqId GenericProxyEvent::GetElementFQId() const noexcept
 {
     return proxy_event_common_.GetElementFQId();
@@ -123,7 +118,7 @@ std::optional<std::uint16_t> GenericProxyEvent::GetMaxSampleCount() const noexce
     return proxy_event_common_.GetMaxSampleCount();
 }
 
-Result<std::size_t> GenericProxyEvent::GetNumNewSamplesAvailableImpl() const noexcept
+Result<std::size_t> GenericProxyEvent::GetNumNewSamplesAvailableImpl() const
 {
     return proxy_event_common_.GetNumNewSamplesAvailable();
 }
@@ -132,7 +127,7 @@ Result<std::size_t> GenericProxyEvent::GetNumNewSamplesAvailableImpl() const noe
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have a value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, TrackerGuardFactory& tracker) noexcept
+Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, TrackerGuardFactory& tracker)
 {
     const auto max_sample_count = tracker.GetNumAvailableGuards();
 
@@ -140,8 +135,8 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
 
     auto& event_data_control_local = proxy_event_common_.GetConsumerEventDataControlLocal();
 
-    const std::size_t sample_size = meta_info_.data_type_info_.size;
-    const std::size_t sample_alignment = meta_info_.data_type_info_.alignment;
+    const std::size_t sample_size = meta_info_.data_type_info_.Size();
+    const std::size_t sample_alignment = meta_info_.data_type_info_.Alignment();
     const std::size_t aligned_size =
         memory::shared::CalculateAlignedSize(sample_size, static_cast<std::size_t>(sample_alignment));
 

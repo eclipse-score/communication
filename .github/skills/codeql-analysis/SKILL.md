@@ -30,7 +30,11 @@ the pitfalls. Use it when:
    vendored **source** pack (`@codeql_coding_standards`).
 
 CI (`.github/workflows/_codeql.yml`, invoked by `nightly_quality.yml`, cron `0 0 * * *`) runs
-the **identical** command. So any local-vs-CI difference is NOT in the command.
+this command for the **Linux** config, and — automatically, whenever the `SCORE_QNX_LICENSE`
+secret is provided — a second time for the **QNX** config (`--build-config qnx`), then
+deduplicates on SARIF into a single union (Recipe C). For a single-config run the command is
+**identical** to the local one, so any local-vs-CI difference in the Linux number is NOT in
+the command.
 
 ## Key pins (MODULE.bazel)
 - `codeql_bundle` — the CodeQL CLI + extractors. **URL-pinned**, e.g. `codeql-bundle-v2.21.4`.
@@ -92,7 +96,16 @@ cd <repo>
 bazel run //quality/static_analysis:codeql_lint -- \
   --output-dir /tmp/codeql-results --output-prefix codeql-nightly \
   --target //score/message_passing //score/mw/com
-wc -l /tmp/codeql-results/codeql-nightly.csv
+# codeql_lint only produces SARIF now (no CSV). Derive the CSV (and dedupe,
+# even for a single input) via the pinned Sarif.Multitool + sarif-tools CLIs
+# directly (no custom wrapper script):
+bazel run @sarif_multitool//:sarif_multitool_cli -- \
+  merge /tmp/codeql-results/codeql-nightly.sarif --merge-empty-logs \
+  --output-file /tmp/codeql-results/codeql-nightly-final.sarif
+bazel run //quality/static_analysis:sarif_cli -- \
+  csv /tmp/codeql-results/codeql-nightly-final.sarif \
+  --output /tmp/codeql-results/codeql-nightly-final.csv
+wc -l /tmp/codeql-results/codeql-nightly-final.csv
 ```
 ~8–12 min. Deterministic (~2717 on a complete DB at time of writing). Compare against the
 **provenance-checked** CI CSV from GitHub Pages, not a remembered figure.
@@ -141,6 +154,13 @@ bazel run //quality/static_analysis:codeql_lint -- \
   --phase analyze-database --database-path /var/tmp/codeql_databases/db_fresh \
   --output-dir /tmp/relpack --output-prefix rel \
   --target //score/message_passing //score/mw/com
+# codeql_lint only emits SARIF; derive rel.csv via the pinned Sarif.Multitool +
+# sarif-tools CLIs directly (no custom wrapper script).
+bazel run @sarif_multitool//:sarif_multitool_cli -- \
+  merge /tmp/relpack/rel.sarif --merge-empty-logs \
+  --output-file /tmp/relpack/rel-merged.sarif
+bazel run //quality/static_analysis:sarif_cli -- \
+  csv /tmp/relpack/rel-merged.sarif --output /tmp/relpack/rel.csv
 for f in /tmp/relpack/rel.csv /tmp/mainline.csv; do
   grep -oE '(RULE|DIR)-[0-9]+-[0-9]+-[0-9]+' "$f" | sort | uniq -c > "$f.rules"; done
 join -1 2 -2 2 -a1 -a2 -e0 -o '0,1.1,2.1' \
@@ -152,6 +172,66 @@ join -1 2 -2 2 -a1 -a2 -e0 -o '0,1.1,2.1' \
 ```bash
 mv ~/.codeql/packages/codeql/misra-cpp-coding-standards/<ver>{.hidden,}
 ```
+
+## Recipe C — Analyze the QNX build and deduplicate against Linux
+The nightly runs the analysis for two Bazel configs: the default **Linux** build and
+`--config=qnx` (QCC toolchain, QNX SDP headers, QNX platform). They compile the **same** TUs, so
+most MISRA findings are identical; only platform-gated code (`#ifdef __QNX__`, QNX headers,
+QCC-deduced types) differs. We report a single **deduplicated union** (no separate QNX-only delta
+is published). In CI (`_codeql.yml`) Linux and QNX each run as their own job on their own runner in
+parallel (both gated only on a tiny `determine-qnx` job that resolves secret availability); a final
+`merge` job waits on both and does the SARIF merge + CSV steps below.
+
+**C0. Prerequisites** (same as any QNX build): a qnx.com account, an assigned QNX 8 license under
+`/opt/score_qnx/license/licenses`, and `~/.netrc` credentials (see the QNX section in `//.bazelrc`).
+`codeql_lint.py` runs `bazel build` with the ambient environment, so the QNX credential helper
+picks up `SCORE_QNX_USER` / `SCORE_QNX_PASSWORD` if exported (that is how CI passes them).
+
+**C1. Build + analyze each config into a distinct output dir** (distinct `/var/tmp` DBs; §1 still
+applies to both). Each run only produces SARIF (no CSV):
+```bash
+# Linux (unchanged)
+bazel run //quality/static_analysis:codeql_lint -- \
+  --output-dir /tmp/codeql-results/linux --output-prefix codeql-nightly \
+  --target //score/message_passing //score/mw/com
+# QNX: layer --config=qnx onto the traced build via --build-config (repeatable)
+bazel run //quality/static_analysis:codeql_lint -- \
+  --build-config qnx \
+  --output-dir /tmp/codeql-results/qnx --output-prefix codeql-nightly-qnx \
+  --target //score/message_passing //score/mw/com
+```
+`--build-config qnx` ⇒ `bazel build --config=codeql --config=qnx`. The configs layer additively:
+QCC matches the QNX platform, and the base `codeql` config's llvm-linux toolchain simply is not
+selected for QNX-platform targets. If a real flag conflict ever appears, split the shared hermetic
+flags in `static_analysis.bazelrc` into a `codeql_common` base and add a dedicated `codeql_qnx`.
+
+**Verify the QNX DB is complete before trusting counts** (§2 applies to QCC extraction too — a
+traced QCC build that silently under-populates the DB collapses whole-program rules just like the
+Linux case).
+
+**C2. Merge / deduplicate on SARIF, then derive the CSV — both tools invoked directly**
+(no custom wrapper script):
+```bash
+bazel run @sarif_multitool//:sarif_multitool_cli -- \
+  merge /tmp/codeql-results/linux/codeql-nightly.sarif \
+        /tmp/codeql-results/qnx/codeql-nightly-qnx.sarif \
+  --merge-empty-logs \
+  --output-file /tmp/codeql-results/codeql-nightly.sarif
+bazel run //quality/static_analysis:sarif_cli -- \
+  csv /tmp/codeql-results/codeql-nightly.sarif \
+  --output /tmp/codeql-results/codeql-nightly.csv
+```
+All deduplication happens on the two SARIF documents (never on a CSV) via `Sarif.Multitool merge` (the
+same tool used by `merge_sarif_reports`/action.yml for rules_lint — no hand-rolled dedup key); the
+binary is a pinned, sha256-verified Bazel dependency (`@sarif_multitool` in `MODULE.bazel`, fetched by
+URL like `@codeql_bundle` — not via `npx`/npm at runtime, so no network access is needed). The CSV is
+generated last, directly from the resulting union SARIF, via the `sarif` CLI from `sarif-tools`
+(`//quality/static_analysis:sarif_cli`, a `py_console_script_binary` — again no custom wrapper script).
+Writes a single `codeql-nightly.{sarif,csv}` — the deduplicated union (linux ∪ qnx); every distinct
+finding across both configs exactly once. Invariant to sanity-check: `union <= linux + qnx` (equality
+only if there is no overlap). CI uploads the union under Code Scanning category `codeql-nightly`; the
+union CSV feeds the dashboard KPI (there is no QNX-only delta category, artifact, or dashboard column
+anymore).
 
 ## Worked example (2026-07, for calibration)
 - Bundle `2.21.4`, pinned pack `2.61.0`, checkout branch on `2.62.0-dev`.

@@ -57,6 +57,23 @@ void RunConsumer(const InstanceSpecifier& instance_specifier,
     auto& proxy = proxy_container.GetProxy();
 
     // Step 2. Register receive handler
+    std::cout << "\nConsumer: Step 2 - Register receive handler" << std::endl;
+    ProxyEventReceiver proxy_event_receiver{proxy.moved_event_};
+
+    // Step 3. Register state change handler
+    std::cout << "\nConsumer: Step 3 - Register state change handler" << std::endl;
+    ProxyEventStateChangeNotifier proxy_event_state_change_notifier{proxy.moved_event_};
+
+    // Step 4. Subscribe
+    std::cout << "\nConsumer: Step 4 - Subscribe" << std::endl;
+    auto subscribe_result = proxy.moved_event_.Subscribe(num_samples_to_receive);
+    if (!subscribe_result.has_value())
+    {
+        FailTest("skeleton_event_move_semantics consumer failed: Subscribe failed: ", subscribe_result.error());
+    }
+
+    // Step 5. Wait for provider to send values and notify
+    std::cout << "\nConsumer: Step 5 - Wait for provider to send values and notify" << std::endl;
     std::optional<std::uint32_t> latest_value{0U};
     auto get_new_samples_callback = [&latest_value](SamplePtr<std::uint32_t> sample) {
         if (sample == nullptr)
@@ -73,23 +90,6 @@ void RunConsumer(const InstanceSpecifier& instance_specifier,
         }
         latest_value = *sample;
     };
-    std::cout << "\nConsumer: Step 2 - Register receive handler" << std::endl;
-    ProxyEventReceiver proxy_event_receiver{proxy.moved_event_, std::move(get_new_samples_callback)};
-
-    // Step 3. Register state change handler
-    std::cout << "\nConsumer: Step 3 - Register state change handler" << std::endl;
-    ProxyEventStateChangeNotifier proxy_event_state_change_notifier{proxy.moved_event_};
-
-    // Step 4. Subscribe
-    std::cout << "\nConsumer: Step 4 - Subscribe" << std::endl;
-    auto subscribe_result = proxy.moved_event_.Subscribe(num_samples_to_receive);
-    if (!subscribe_result.has_value())
-    {
-        FailTest("skeleton_event_move_semantics consumer failed: Subscribe failed: ", subscribe_result.error());
-    }
-
-    // Step 5. Wait for provider to send values and notify
-    std::cout << "\nConsumer: Step 5 - Wait for provider to send values and notify" << std::endl;
     for (std::size_t iteration = 0U; iteration < num_send_iterations; ++iteration)
     {
         std::cout << "\nConsumer: Iteration " << (iteration + 1) << " of " << num_send_iterations << std::endl;
@@ -100,7 +100,8 @@ void RunConsumer(const InstanceSpecifier& instance_specifier,
             FailTest("skeleton_event_move_semantics consumer failed: WaitForStateChange was interrupted by stop_token");
         }
 
-        const auto wait_for_samples_result = proxy_event_receiver.WaitForSamples(stop_token, num_samples_to_receive);
+        const auto wait_for_samples_result =
+            proxy_event_receiver.WaitForSamples(stop_token, num_samples_to_receive, get_new_samples_callback);
         if (!wait_for_samples_result)
         {
             FailTest("skeleton_event_move_semantics consumer failed: WaitForSamples was interrupted by stop_token");

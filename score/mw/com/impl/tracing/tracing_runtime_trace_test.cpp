@@ -40,6 +40,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include <variant>
 
 namespace score::mw::com::impl::tracing
 {
@@ -1114,7 +1115,7 @@ TEST_P(TracingRuntimeShmMetaInfoFixture, ShmTraceCallMetaInfoContainsAraComMetaI
     EXPECT_CALL(*generic_trace_api_mock_.get(), Trace(trace_client_id_, _, _, trace_context_id_))
         .WillOnce(WithArg<1>(Invoke([](const auto& meta_info) -> analysis::tracing::TraceResult {
             // Then the meta_info is set to the variant AraComMetaInfo
-            const auto* const ara_com_meta_info = score::cpp::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
+            const auto* const ara_com_meta_info = std::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
             EXPECT_NE(ara_com_meta_info, nullptr);
 
             return analysis::tracing::TraceResult{};
@@ -1152,7 +1153,7 @@ TEST_P(TracingRuntimeShmMetaInfoFixture,
     EXPECT_CALL(*generic_trace_api_mock_.get(), Trace(trace_client_id_, _, _, trace_context_id_))
         .WillOnce(
             WithArg<1>(Invoke([&expected_trace_point_type](const auto& meta_info) -> analysis::tracing::TraceResult {
-                const auto* const ara_com_meta_info = score::cpp::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
+                const auto* const ara_com_meta_info = std::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
                 EXPECT_NE(ara_com_meta_info, nullptr);
 
                 // Then the meta_info properties contain the correct TracePointType and ServiceInstanceElement
@@ -1192,7 +1193,7 @@ TEST_P(TracingRuntimeLocalMetaInfoFixture, LocalTraceCallMetaInfoContainsAraComM
     EXPECT_CALL(*generic_trace_api_mock_.get(), Trace(trace_client_id_, _, _))
         .WillOnce(WithArg<1>(Invoke([](const auto& meta_info) -> analysis::tracing::TraceResult {
             // Then the meta_info is set to the variant AraComMetaInfo
-            const auto* const ara_com_meta_info = score::cpp::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
+            const auto* const ara_com_meta_info = std::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
             EXPECT_NE(ara_com_meta_info, nullptr);
 
             return analysis::tracing::TraceResult{};
@@ -1229,7 +1230,7 @@ TEST_P(TracingRuntimeLocalMetaInfoFixture,
         .WillOnce(
             WithArg<1>(Invoke([&expected_trace_point_type](const auto& meta_info) -> analysis::tracing::TraceResult {
                 // Then the meta_info is set to the variant AraComMetaInfo
-                const auto* const ara_com_meta_info = score::cpp::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
+                const auto* const ara_com_meta_info = std::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
                 EXPECT_NE(ara_com_meta_info, nullptr);
 
                 // Then the meta_info properties contain the correct TracePointType and ServiceInstanceElement
@@ -1289,7 +1290,7 @@ TEST_P(TracingRuntimeTraceDataLossFlagParameterisedFixture, CallingShmTraceWillT
 
     EXPECT_CALL(*generic_trace_api_mock_.get(), Trace(trace_client_id_, _, _, trace_context_id_))
         .WillOnce(WithArg<1>(Invoke([data_loss_flag](const auto& meta_info) -> analysis::tracing::TraceResult {
-            const auto ara_com_meta_info = score::cpp::get<analysis::tracing::AraComMetaInfo>(meta_info);
+            const auto ara_com_meta_info = std::get<analysis::tracing::AraComMetaInfo>(meta_info);
             const auto transmitted_data_loss_value_bitset = ara_com_meta_info.trace_status;
 
             if (data_loss_flag)
@@ -1337,7 +1338,7 @@ TEST_P(TracingRuntimeTraceDataLossFlagParameterisedFixture, CallingLocalTraceWil
 
     EXPECT_CALL(*generic_trace_api_mock_.get(), Trace(trace_client_id_, _, _))
         .WillOnce(WithArg<1>(Invoke([data_loss_flag](const auto& meta_info) -> analysis::tracing::TraceResult {
-            const auto ara_com_meta_info = score::cpp::get<analysis::tracing::AraComMetaInfo>(meta_info);
+            const auto ara_com_meta_info = std::get<analysis::tracing::AraComMetaInfo>(meta_info);
             const auto transmitted_data_loss_value_bitset = ara_com_meta_info.trace_status;
 
             if (data_loss_flag)

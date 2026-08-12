@@ -24,11 +24,11 @@ namespace score::mw::com::gateway
 class BidirectionalTransportMock : public IBidirectionalTransport
 {
   public:
-    MOCK_METHOD((score::ResultBlank), Setup, (), (override));
+    MOCK_METHOD((score::Result<void>), Setup, (), (override));
     MOCK_METHOD((void), Shutdown, (), (override));
     MOCK_METHOD((bool), IsConnected, (), (const, override));
-    MOCK_METHOD((score::ResultBlank), SendRequest, (TransportMessage&), (override));
-    MOCK_METHOD((score::ResultBlank), SendNotification, (TransportMessage&), (override));
+    MOCK_METHOD((score::Result<void>), SendRequest, (TransportMessage&), (override));
+    MOCK_METHOD((score::Result<void>), SendNotification, (TransportMessage&), (override));
     MOCK_METHOD((void), SetMessageHandler, (MessageHandler), (override));
 };
 

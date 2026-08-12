@@ -49,7 +49,7 @@ class IProxyMethodBindingFactory
     virtual auto Create(HandleType parent_handle,
                         ProxyBinding& parent_binding,
                         const std::string_view method_name,
-                        MethodType method_type) noexcept -> Result<std::unique_ptr<ProxyMethodBinding>> = 0;
+                        MethodType method_type) -> Result<std::unique_ptr<ProxyMethodBinding>> = 0;
 };
 
 }  // namespace score::mw::com::impl

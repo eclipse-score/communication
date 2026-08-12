@@ -16,16 +16,16 @@
 #include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/skeleton_base.h"
 
-// Updated signature to use DataTypeMetaInfo
+// Updated signature to use score::memory::DataTypeSizeInfo
 score::Result<std::unique_ptr<score::mw::com::impl::GenericSkeletonEventBinding>>
 score::mw::com::impl::GenericSkeletonEventBindingFactoryImpl::Create(SkeletonBase& parent,
                                                                      std::string_view event_name,
-                                                                     const DataTypeMetaInfo& meta_info) noexcept
+                                                                     const memory::DataTypeSizeInfo& size_info) noexcept
 {
     const auto& instance_identifier = SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier();
 
     return CreateGenericSkeletonEventOrField<GenericSkeletonEventBinding,
                                              lola::GenericSkeletonEvent,
                                              ServiceElementType::EVENT>(
-        instance_identifier, parent, event_name, meta_info);
+        instance_identifier, parent, event_name, size_info);
 }

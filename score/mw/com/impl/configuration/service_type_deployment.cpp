@@ -27,7 +27,7 @@ namespace
 {
 
 // coverity[autosar_cpp14_a2_10_4_violation] False positive, function is in anonymous namespace
-ServiceTypeDeployment::BindingInformation GetBindingInfoFromJson(const score::json::Object& json_object) noexcept
+ServiceTypeDeployment::BindingInformation GetBindingInfoFromJson(const score::json::Object& json_object)
 {
     const auto variant_index = GetValueFromJson<std::ptrdiff_t>(json_object, kBindingInfoIndexKey);
 
@@ -50,7 +50,7 @@ ServiceTypeDeployment::BindingInformation GetBindingInfoFromJson(const score::js
 // coverity[autosar_cpp14_a2_10_4_violation] False positive, function is in anonymous namespace
 // coverity[autosar_cpp14_a2_10_1_violation] See above
 // coverity[autosar_cpp14_a15_5_3_violation]
-std::string ToHashStringImpl(const ServiceTypeDeployment::BindingInformation& binding_info) noexcept
+std::string ToHashStringImpl(const ServiceTypeDeployment::BindingInformation& binding_info)
 {
     // The conversion to hex string below does not work with a std::uint8_t, so we cast it to an int. However, we
     // ensure that the value is less than 16 to ensure it will fit with a single char in the string representation.
@@ -89,7 +89,7 @@ std::string ToHashStringImpl(const ServiceTypeDeployment::BindingInformation& bi
 // This rule states: Common class initialization for non-constant members shall be done by a delegating constructor.
 // Justification: This constructor is used by other constructors for delegation.
 // coverity[autosar_cpp14_a12_1_5_violation]
-ServiceTypeDeployment::ServiceTypeDeployment(const BindingInformation binding) noexcept
+ServiceTypeDeployment::ServiceTypeDeployment(const BindingInformation binding)
     : binding_info_{binding}, hash_string_{ToHashStringImpl(binding_info_)}
 {
 }
@@ -98,7 +98,7 @@ ServiceTypeDeployment::ServiceTypeDeployment(const BindingInformation binding) n
 // This rule states: Common class initialization for non-constant members shall be done by a delegating constructor.
 // Justification: Delegating constructor is used.
 // coverity[autosar_cpp14_a12_1_5_violation]
-ServiceTypeDeployment::ServiceTypeDeployment(const score::json::Object& json_object) noexcept
+ServiceTypeDeployment::ServiceTypeDeployment(const score::json::Object& json_object)
     : ServiceTypeDeployment{GetBindingInfoFromJson(json_object)}
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKey);
@@ -115,7 +115,7 @@ ServiceTypeDeployment::ServiceTypeDeployment(const score::json::Object& json_obj
 // std::visit will only throw std::bad_variant_access if the variant is empty by exception. Since we do not use
 // exceptions, a variant can never be in this state, i.e. std::visit can never throw std::bad_variant_access.
 // coverity[autosar_cpp14_a15_5_3_violation]
-score::json::Object ServiceTypeDeployment::Serialize() const noexcept
+score::json::Object ServiceTypeDeployment::Serialize() const
 {
     score::json::Object json_object{};
     json_object[kBindingInfoIndexKey] = score::json::Any{binding_info_.index()};
@@ -136,7 +136,7 @@ std::string_view ServiceTypeDeployment::ToHashString() const noexcept
     return hash_string_;
 }
 
-bool operator==(const ServiceTypeDeployment& lhs, const ServiceTypeDeployment& rhs) noexcept
+bool operator==(const ServiceTypeDeployment& lhs, const ServiceTypeDeployment& rhs)
 {
     return lhs.binding_info_ == rhs.binding_info_;
 }

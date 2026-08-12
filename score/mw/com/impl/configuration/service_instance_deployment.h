@@ -39,7 +39,7 @@ class ServiceInstanceDeployment
   public:
     using BindingInformation = std::variant<LolaServiceInstanceDeployment, score::cpp::blank>;
 
-    explicit ServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
+    explicit ServiceInstanceDeployment(const score::json::Object& json_object);
     ServiceInstanceDeployment(const ServiceIdentifierType service,
                               BindingInformation binding,
                               const QualityType asil_level,
@@ -58,9 +58,9 @@ class ServiceInstanceDeployment
     ServiceInstanceDeployment(ServiceInstanceDeployment&& other) noexcept = default;
     ServiceInstanceDeployment& operator=(ServiceInstanceDeployment&& other) noexcept = default;
 
-    score::json::Object Serialize() const noexcept;
+    score::json::Object Serialize() const;
 
-    BindingType GetBindingType() const noexcept;
+    BindingType GetBindingType() const;
 
     // Note the struct is not compliant to POD type containing non-POD member.
     // The struct is used as a config storage obtained by performing the parsing json object.
@@ -76,8 +76,8 @@ class ServiceInstanceDeployment
     constexpr static std::uint32_t serializationVersion = 1U;
 };
 
-bool operator==(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) noexcept;
-bool operator<(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) noexcept;
+bool operator==(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs);
+bool operator<(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs);
 bool areCompatible(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs);
 
 template <typename ServiceInstanceDeploymentBinding>

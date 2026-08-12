@@ -1,0 +1,49 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package MessagePassing
+
+import ScoreReq
+
+section "Requirements towards the system" {
+
+ScoreReq.CompReq SafetyCertifiedTransportMechanismUnderQNX {
+    description = "On the QNX operating system, the message passing component shall use the QNX-message-passing as the underlying IPC mechanism."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.SafetyCertifiedTransportMechanism@1, MessagePassing.OSIndependentAPI@1]
+    version = 1
+}
+
+ScoreReq.CompReq TransportMechanismOnLinux {
+    description = "On the Linux operating system, the message passing component shall use unix domain-sockets as the underlying IPC mechanism."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.SafetyCertifiedTransportMechanism@1, MessagePassing.OSIndependentAPI@1]
+    version = 1
+}
+
+
+ScoreReq.CompReq OSProvidedSenderIdentity {
+    description = "The message passing server shall be able to identify the sender of each received message by the sender's OS-provided user ID (UID)."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.ServerInterface@1]
+    version = 1
+}
+
+ScoreReq.CompReq UnforgableSenderIdentity {
+    description = "The transport mechanism shall ensure that the UID used to identify a message, cannot be forged by the client."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassing.ServerInterface@1]
+    version = 1
+}
+
+}
+

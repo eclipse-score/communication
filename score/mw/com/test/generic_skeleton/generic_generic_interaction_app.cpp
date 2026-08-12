@@ -1,6 +1,3 @@
-#include "score/mw/com/impl/generic_proxy.h"
-#include "score/mw/com/impl/generic_skeleton.h"
-#include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
@@ -50,20 +47,20 @@ constexpr std::string_view kEventName = "Event8Byte";
 
 int run_provider(score::cpp::stop_token stop_token)
 {
-    const auto instance_specifier = score::mw::com::impl::InstanceSpecifier::Create(kInstanceSpecifier).value();
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(kInstanceSpecifier).value();
     std::cout << "[PROVIDER] Instance specifier created." << std::endl;
-    const score::mw::com::impl::DataTypeMetaInfo meta{sizeof(MyEventData), alignof(MyEventData)};
+    const score::mw::com::DataTypeMetaInfo meta{sizeof(MyEventData), alignof(MyEventData)};
     std::cout << "[PROVIDER] DataTypeMetaInfo created (size=" << sizeof(MyEventData)
               << ", align=" << alignof(MyEventData) << ")." << std::endl;
-    const std::vector<score::mw::com::impl::EventInfo> events = {{kEventName, meta}};
+    const std::vector<score::mw::com::EventInfo> events = {{kEventName, meta}};
     std::cout << "[PROVIDER] EventInfo vector created for event: " << kEventName << std::endl;
 
-    score::mw::com::impl::GenericSkeletonServiceElementInfo create_params;
+    score::mw::com::GenericSkeletonServiceElementInfo create_params;
     create_params.events = events;
     std::cout << "[PROVIDER] GenericSkeletonServiceElementInfo prepared." << std::endl;
 
     std::cout << "[PROVIDER] Calling GenericSkeleton::Create..." << std::endl;
-    auto skeleton_res = score::mw::com::impl::GenericSkeleton::Create(instance_specifier, create_params);
+    auto skeleton_res = score::mw::com::GenericSkeleton::Create(instance_specifier, create_params);
     if (!skeleton_res.has_value())
     {
         std::cerr << "[PROVIDER] GenericSkeleton::Create FAILED." << std::endl;
@@ -90,7 +87,7 @@ int run_provider(score::cpp::stop_token stop_token)
     std::cout << "[PROVIDER] Event reference obtained." << std::endl;
 
     // Get reference to the GenericSkeletonEvent
-    auto& generic_event = const_cast<score::mw::com::impl::GenericSkeletonEvent&>(it->second);
+    auto& generic_event = it->second;
 
     std::cout << "[PROVIDER] Generic-Generic " << PAYLOAD_SIZE << "-byte - Waiting 5s for consumer to subscribe..."
               << std::endl;
@@ -126,13 +123,13 @@ int run_provider(score::cpp::stop_token stop_token)
 
 int run_consumer()
 {
-    const auto instance_specifier = score::mw::com::impl::InstanceSpecifier::Create(kInstanceSpecifier).value();
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(kInstanceSpecifier).value();
 
-    score::Result<score::mw::com::ServiceHandleContainer<score::mw::com::impl::GenericProxy::HandleType>> handles_res;
+    score::Result<score::mw::com::ServiceHandleContainer<score::mw::com::GenericProxy::HandleType>> handles_res;
     int retries{0};
     while (retries < 50)
     {
-        handles_res = score::mw::com::impl::GenericProxy::FindService(instance_specifier);
+        handles_res = score::mw::com::GenericProxy::FindService(instance_specifier);
         if (handles_res.has_value() && !handles_res.value().empty())
             break;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -141,7 +138,7 @@ int run_consumer()
     if (!handles_res.has_value() || handles_res.value().empty())
         return 1;
 
-    auto proxy_res = score::mw::com::impl::GenericProxy::Create(handles_res.value()[0]);
+    auto proxy_res = score::mw::com::GenericProxy::Create(handles_res.value()[0]);
     if (!proxy_res.has_value())
         return 1;
     auto& proxy = proxy_res.value();

@@ -156,7 +156,7 @@ Then the user provided service-method will be called with the `IN-args`/`OUT-arg
 
 When the user provided service-method-handler returns, it has already updated/set the `OUT-args` in the `METHOD`-shm-object. Then a reply-message is sent back via `message_passing` to the caller and the skeleton side is done with the processing of the method call and the thread will again wait for reception of a new call message.
 
-![Process Call Method](hhttp://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/eclipse-score/communication/master/score/mw/com/dependability/software_architectural_design/method/assets/process_method_call.puml)
+![Process Call Method](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/eclipse-score/communication/master/score/mw/com/dependability/software_architectural_design/method/assets/process_method_call.puml)
 
 #### Concluding call of method
 

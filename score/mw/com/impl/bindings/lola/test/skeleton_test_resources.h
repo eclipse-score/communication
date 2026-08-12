@@ -479,7 +479,7 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
             std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(event_data_storage));
         EXPECT_TRUE(inserted_data_slots.second);
 
-        const DataTypeMetaInfo sample_meta_info{10U, 16U};
+        const score::memory::DataTypeSizeInfo sample_meta_info{16U, 16U};
         auto* event_data_raw_array = event_data_storage->data();
         auto inserted_meta_info = service_data_storage.events_metainfo_.emplace(
             std::piecewise_construct,

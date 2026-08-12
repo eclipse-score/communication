@@ -92,7 +92,7 @@ class SkeletonBinding
      *
      * \return void
      */
-    virtual void PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback>) noexcept = 0;
+    virtual void PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback>) = 0;
 
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;

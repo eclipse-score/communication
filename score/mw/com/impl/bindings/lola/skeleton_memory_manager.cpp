@@ -195,7 +195,7 @@ void* SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
     size_t sample_size,
-    size_t sample_alignment) noexcept
+    size_t sample_alignment)
 {
     // Guard against over-aligned types (Short-term solution protection)
     if (sample_alignment > alignof(std::max_align_t))
@@ -224,7 +224,7 @@ void* SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory(
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
                                                 "Couldn't register/emplace event-storage in data-section.");
 
-    const DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
+    const memory::DataTypeSizeInfo sample_meta_info{sample_size, sample_alignment};
     void* const event_data_raw_array = data_storage->data();
 
     auto inserted_meta_info =
@@ -239,7 +239,7 @@ void* SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory(
 
 void* SkeletonMemoryManager::RetrieveGenericEventDataFromOpenedSharedMemory(
     const ElementFqId element_fq_id,
-    const SkeletonEventProperties& element_properties) noexcept
+    const SkeletonEventProperties& element_properties)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(storage_ != nullptr, "Service data storage is not available.");
 
@@ -247,8 +247,8 @@ void* SkeletonMemoryManager::RetrieveGenericEventDataFromOpenedSharedMemory(
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_meta_info_it != storage_->events_metainfo_.cend(),
                                                 "Could not find element fq id in meta info map");
 
-    const auto sample_size = event_meta_info_it->second.data_type_info_.size;
-    const auto sample_alignment = event_meta_info_it->second.data_type_info_.alignment;
+    const auto sample_size = event_meta_info_it->second.data_type_info_.Size();
+    const auto sample_alignment = event_meta_info_it->second.data_type_info_.Alignment();
     const auto aligned_sample_size =
         memory::shared::CalculateAlignedSize(sample_size, static_cast<std::size_t>(sample_alignment));
     const auto total_event_slots_size = safe_math::Multiply<safe_math::ReturnMode::kAbortOnError>(
@@ -743,7 +743,7 @@ EventControl& SkeletonMemoryManager::EmplaceEventControl(const QualityType asil_
 }
 
 EventMetaInfo& SkeletonMemoryManager::EmplaceEventMetaInfo(const ElementFqId element_fq_id,
-                                                           const DataTypeMetaInfo& sample_meta_info,
+                                                           const memory::DataTypeSizeInfo& sample_meta_info,
                                                            void* type_erased_event_data_storage)
 {
     auto inserted_meta_info =

@@ -17,13 +17,14 @@
 #include "score/mw/com/test/move_semantics/skeleton_event/consumer.h"
 #include "score/mw/com/test/move_semantics/skeleton_event/provider.h"
 #include "score/mw/com/test/move_semantics/skeleton_event/test_parameters.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 int main(int argc, const char** argv)
 {
     auto test_configuration{score::mw::com::test::ReadCommandLineArguments(argc, argv)};
 
     score::mw::com::test::SetupAssertHandler();
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
 
     score::cpp::stop_source stop_source{};
     const bool sig_term_handler_setup_success = score::mw::com::SetupStopTokenSigTermHandler(stop_source);

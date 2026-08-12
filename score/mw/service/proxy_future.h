@@ -16,11 +16,7 @@
 
 #include "score/concurrency/future/interruptible_future.h"
 
-namespace score
-{
-namespace mw
-{
-namespace service
+namespace score::mw::service
 {
 
 /**
@@ -30,8 +26,6 @@ namespace service
 template <typename T>
 using ProxyFuture = score::concurrency::InterruptibleFuture<T>;
 
-}  // namespace service
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::service
 
 #endif  // SCORE_MW_SERVICE_PROXY_FUTURE_H

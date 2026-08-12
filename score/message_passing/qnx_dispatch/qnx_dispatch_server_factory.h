@@ -15,9 +15,7 @@
 
 #include "score/message_passing/i_server_factory.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 class QnxDispatchEngine;
@@ -49,7 +47,6 @@ class QnxDispatchServerFactory final : public IServerFactory
     const std::shared_ptr<QnxDispatchEngine> engine_;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_QNX_DISPATCH_QNX_DISPATCH_SERVER_FACTORY_H

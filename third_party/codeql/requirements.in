@@ -11,3 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 pyyaml
+jsonpatch
+jsonpath-ng==1.7.0
+jsonpointer
+jsonschema

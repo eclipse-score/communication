@@ -14,11 +14,7 @@
 
 #include <score/utility.hpp>
 
-namespace score
-{
-namespace message_passing
-{
-namespace detail
+namespace score::message_passing::detail
 {
 
 void TimedCommandQueue::RegisterImmediateEntry(Entry& entry, QueuedCallback callback, const void* const owner) noexcept
@@ -80,6 +76,4 @@ void TimedCommandQueue::CleanUpOwner(const void* const owner) noexcept
         });
 }
 
-}  // namespace detail
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing::detail

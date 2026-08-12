@@ -35,15 +35,15 @@ class LolaEventInstanceDeployment
                                          const bool enforce_max_samples,
                                          const TracingSlotSizeType number_of_tracing_slots) noexcept;
 
-    explicit LolaEventInstanceDeployment(const score::json::Object& json_object) noexcept;
+    explicit LolaEventInstanceDeployment(const score::json::Object& json_object);
 
-    static LolaEventInstanceDeployment CreateFromJson(const score::json::Object& json_object) noexcept;
+    static LolaEventInstanceDeployment CreateFromJson(const score::json::Object& json_object);
 
-    score::json::Object Serialize() const noexcept;
+    score::json::Object Serialize() const;
 
     void SetNumberOfSampleSlots(SampleSlotCountType number_of_sample_slots) noexcept;
 
-    [[nodiscard]] std::optional<SampleSlotCountType> GetNumberOfSampleSlots() const noexcept;
+    [[nodiscard]] std::optional<SampleSlotCountType> GetNumberOfSampleSlots() const;
     [[nodiscard]] std::optional<SampleSlotCountType> GetNumberOfSampleSlotsExcludingTracingSlot() const noexcept;
 
     [[nodiscard]] TracingSlotSizeType GetNumberOfTracingSlots() const noexcept;

@@ -70,7 +70,93 @@ To analyze a specific target:
 bazel run //quality/static_analysis:codeql_lint -- --target=//score/message_passing/...
 ```
 
-This command automatically creates the database, generates SARIF, and creates 4 compliance reports in one step.
+This command automatically creates the database, generates SARIF, and creates 4 compliance reports in one step. Only SARIF is produced here — no CSV is generated at this stage (see [Deduplicating and reporting Linux + QNX findings](#deduplicating-and-reporting-linux--qnx-findings) below for how the CSV is derived).
+
+### Analyzing the QNX build (`--config=qnx`)
+
+By default the analysis compiles the code for **Linux**. The same translation
+units can also be analyzed as compiled for **QNX** (QCC toolchain, QNX SDP
+headers, QNX platform) by layering an extra Bazel `--config` onto the traced
+build via `--build-config`:
+
+```bash
+# Analyze the QNX build (requires a working QNX SDP setup: qnx.com account,
+# license under /opt/score_qnx/license/licenses, and ~/.netrc credentials —
+# see the QNX section in //.bazelrc).
+bazel run //quality/static_analysis:codeql_lint -- \
+  --build-config qnx \
+  --output-dir /tmp/codeql-results/qnx --output-prefix codeql-nightly-qnx \
+  --target //score/message_passing //score/mw/com
+```
+
+`--build-config qnx` turns the traced build into
+`bazel build --config=codeql --config=qnx`, so CodeQL extracts the code along
+the QNX-specific preprocessor paths (`#ifdef __QNX__`, QNX headers, QCC-deduced
+types). Any additional `--config` may be passed the same way (repeatable).
+
+Because Linux and QNX compile the **same** sources, most MISRA findings are
+identical. The nightly pipeline therefore runs both configs and deduplicates the
+results (see below) instead of double-counting shared findings.
+
+### Deduplicating and reporting Linux + QNX findings
+
+All merging and deduplication happens on the **SARIF** documents, never on a
+CSV — and both tools are invoked **directly**, with no custom wrapper script:
+
+1. The Linux and, optionally, QNX SARIF (produced by `codeql_lint` above) are
+   merged/deduplicated into a single union SARIF via the official Microsoft
+   SARIF SDK CLI (`Sarif.Multitool merge` — the SAME tool already used by
+   [`merge_sarif_reports`](../.github/actions/00_infrastructure/merge_sarif_reports/action.yml)
+   for the rules_lint pipeline):
+   ```bash
+   bazel run @sarif_multitool//:sarif_multitool_cli -- \
+     merge /tmp/codeql-results/linux/codeql-nightly.sarif \
+           /tmp/codeql-results/qnx/codeql-nightly-qnx.sarif \
+     --merge-empty-logs \
+     --output-file /tmp/codeql-results/publish/codeql-nightly.sarif
+   ```
+   The Multitool binary itself (a self-contained linux-x64 .NET publish) is a
+   pinned, sha256-verified Bazel dependency (`@sarif_multitool` in
+   `MODULE.bazel`), fetched by URL like `@codeql_bundle` — NOT via `npx`/npm
+   at runtime — so this step needs no network access and is fully hermetic.
+   `sarif merge` coalesces runs by tool name/version into one run per
+   distinct tool, deduplicating identical results — so no hand-rolled dedup
+   key is maintained in this repo. Passing a single SARIF file (Linux-only)
+   still works and simply deduplicates within itself.
+
+2. Only then — as the very last step — the CSV is derived from that final
+   SARIF using the `sarif` CLI from
+   [`sarif-tools`](https://github.com/microsoft/sarif-tools)
+   (`//quality/static_analysis:sarif_cli`, a
+   [`py_console_script_binary`](https://rules-python.readthedocs.io/en/latest/api/rules_python/python/entry_points/py_console_script_binary.html)
+   wrapping the `sarif-tools` PyPI package's `sarif` console-script entry
+   point — again, no custom wrapper script):
+   ```bash
+   bazel run //quality/static_analysis:sarif_cli -- \
+     csv /tmp/codeql-results/publish/codeql-nightly.sarif \
+     --output /tmp/codeql-results/publish/codeql-nightly.csv
+   ```
+   No CSV is ever created before the SARIF merge, and no CSV is ever
+   re-parsed or mutated afterward.
+
+This writes exactly one deduplicated view — `codeql-nightly.sarif` and
+`codeql-nightly.csv` — the **union** of every distinct finding across all
+inputs, exactly once. This is the canonical compliance figure shown on the
+dashboard; there is no separate "QNX-only delta" output.
+
+The CSV uses `sarif-tools`' own record schema:
+`Tool,Severity,Code,Description,Location,Line`.
+
+In CI (`nightly_quality.yml` → `_codeql.yml`) the QNX build is analyzed
+automatically whenever the `SCORE_QNX_LICENSE` secret is provided (no
+caller-supplied flag is needed). The Linux and QNX analyses run as two
+separate jobs (`codeql-linux`, `codeql-qnx`) on their own runners in
+**parallel** — both only depend on a tiny up-front `determine-qnx` job — each
+uploading its own SARIF as a short-lived intermediate artifact. A final
+`merge` job waits on both, downloads whichever SARIF(s) are available, and
+performs the merge/CSV steps above; the union SARIF is uploaded to GitHub
+Code Scanning under category `codeql-nightly`, and the union CSV feeds the
+quality dashboard's CodeQL KPI counts.
 
 ### Automatic Compliance Report Generation
 

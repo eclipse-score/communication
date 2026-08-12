@@ -31,13 +31,13 @@ class IBidirectionalTransport
 
     virtual ~IBidirectionalTransport() = default;
 
-    virtual score::ResultBlank Setup() = 0;
+    virtual score::Result<void> Setup() = 0;
     virtual void Shutdown() = 0;
 
     virtual bool IsConnected() const = 0;
 
-    virtual score::ResultBlank SendRequest(TransportMessage& message) = 0;
-    virtual score::ResultBlank SendNotification(TransportMessage& message) = 0;
+    virtual score::Result<void> SendRequest(TransportMessage& message) = 0;
+    virtual score::Result<void> SendNotification(TransportMessage& message) = 0;
 
     virtual void SetMessageHandler(MessageHandler handler) = 0;
 };

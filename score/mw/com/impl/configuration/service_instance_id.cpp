@@ -34,7 +34,7 @@ constexpr auto kSerializationVersionKeySerInstID = "serializationVersion";
 
 // This function with this signature is only defined here. And is in  anonymous namespace.
 // coverity[autosar_cpp14_a2_10_4_violation : FALSE]
-ServiceInstanceId::BindingInformation GetBindingInfoFromJson(const score::json::Object& json_object) noexcept
+ServiceInstanceId::BindingInformation GetBindingInfoFromJson(const score::json::Object& json_object)
 {
     const auto variant_index = GetValueFromJson<std::ptrdiff_t>(json_object, kBindingInfoIndexKeySerInstID);
 
@@ -60,7 +60,7 @@ ServiceInstanceId::BindingInformation GetBindingInfoFromJson(const score::json::
 // coverity[autosar_cpp14_a2_10_1_violation]
 // coverity[autosar_cpp14_a15_5_3_violation] Note 1
 // coverity[autosar_cpp14_a2_10_4_violation : FALSE]
-std::string ToHashStringImpl(const ServiceInstanceId::BindingInformation& binding_info) noexcept
+std::string ToHashStringImpl(const ServiceInstanceId::BindingInformation& binding_info)
 {
 
     // The conversion to hex string below does not work with a std::uint8_t, so we cast it to an int. However, we
@@ -101,7 +101,7 @@ std::string ToHashStringImpl(const ServiceInstanceId::BindingInformation& bindin
 // This rule states: Common class initialization for non-constant members shall be done by a delegating constructor.
 // Justification: This constructor is used by other constructors for delegation.
 // coverity[autosar_cpp14_a12_1_5_violation]
-ServiceInstanceId::ServiceInstanceId(BindingInformation binding_info) noexcept
+ServiceInstanceId::ServiceInstanceId(BindingInformation binding_info)
     : binding_info_{std::move(binding_info)}, hash_string_{ToHashStringImpl(binding_info_)}
 {
 }
@@ -110,7 +110,7 @@ ServiceInstanceId::ServiceInstanceId(BindingInformation binding_info) noexcept
 // This rule states: Common class initialization for non-constant members shall be done by a delegating constructor.
 // Justification: Delegating constructor is used.
 // coverity[autosar_cpp14_a12_1_5_violation]
-ServiceInstanceId::ServiceInstanceId(const score::json::Object& json_object) noexcept
+ServiceInstanceId::ServiceInstanceId(const score::json::Object& json_object)
     : ServiceInstanceId{GetBindingInfoFromJson(json_object)}
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKeySerInstID);
@@ -122,7 +122,7 @@ ServiceInstanceId::ServiceInstanceId(const score::json::Object& json_object) noe
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-score::json::Object ServiceInstanceId::Serialize() const noexcept
+score::json::Object ServiceInstanceId::Serialize() const
 {
     score::json::Object json_object{};
     json_object[kBindingInfoIndexKeySerInstID] = score::json::Any{binding_info_.index()};
@@ -144,7 +144,7 @@ std::string_view ServiceInstanceId::ToHashString() const noexcept
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-bool operator==(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs) noexcept
+bool operator==(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs)
 {
     auto visitor = score::cpp::overload(
         [&rhs](const LolaServiceInstanceId& lhs_lola) noexcept -> bool {
@@ -163,7 +163,7 @@ bool operator==(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs) noex
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-bool operator<(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs) noexcept
+bool operator<(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs)
 {
     auto visitor = score::cpp::overload(
         [&rhs](const LolaServiceInstanceId& lhs_lola) noexcept -> bool {

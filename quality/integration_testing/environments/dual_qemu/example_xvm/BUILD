@@ -37,8 +37,8 @@ cc_library(
     deps = [
         # Umbrella target that exports the factory + resource; the concrete
         # :shared_memory_factory target is not visible to us.
-        "@score_baselibs//score/memory/shared",
-        "@score_baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
+        "//score/memory/shared",
+        "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
         "@score_baselibs//score/os:errno",
     ],
 )
@@ -52,10 +52,10 @@ cc_binary(
     target_compatible_with = ["@platforms//os:qnx"],
     deps = [
         ":ivshmem_lib_memory_support",
-        "@score_baselibs//score/memory/shared",
-        "@score_baselibs//score/memory/shared:managed_memory_resource",
-        "@score_baselibs//score/memory/shared:map",
-        "@score_baselibs//score/memory/shared:vector",
+        "//score/memory/shared",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:map",
+        "//score/memory/shared:vector",
         "@score_baselibs//score/mw/log:console",
     ],
 )

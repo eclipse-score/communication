@@ -46,6 +46,7 @@
 #include <cstring>
 #include <exception>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -144,9 +145,15 @@ auto SerializeToMessage(const std::uint8_t message_id, const T& t) noexcept -> s
 
     std::array<std::uint8_t, sizeof(T) + 1> out{};
     out[0] = message_id;
-    // NOLINTBEGIN(score-banned-function) serialization of trivially copyable
-    score::cpp::ignore = std::memcpy(&out[1], &t, sizeof(T));
-    // NOLINTEND(score-banned-function) deserialization of trivially copyable
+    // Use an explicit byte-range copy instead of memcpy(&out[1], &t, sizeof(T)). CodeQL's
+    // cpp/misra/pointer-argument-to-cstring-function-is-invalid check reasons about the size of memcpy's read
+    // buffer per call site, but for a templated memcpy call it can conflate the buffer size of one instantiation
+    // of T with the size argument of another instantiation, producing a false-positive size mismatch. Deriving the
+    // source range directly from the same pointer (source_begin / source_end) that is copied keeps the range
+    // trivially self-consistent for every instantiation of T.
+    const auto* const source_begin = reinterpret_cast<const std::uint8_t*>(&t);
+    const auto* const source_end = source_begin + sizeof(T);
+    std::copy(source_begin, source_end, std::next(out.begin()));
     return out;
 }
 
@@ -251,10 +258,9 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(
     // Suppress autosar_cpp14_a15_5_3_violation: False Positive
     // Rationale: Passing an argument by reference cannot throw
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    auto received_send_message_callback =
-        [scoped_function = message_callback_scoped_function](
-            score::message_passing::IServerConnection& connection,
-            const score::cpp::span<const std::uint8_t> message) noexcept -> score::cpp::blank {
+    auto received_send_message_callback = [scoped_function = message_callback_scoped_function](
+                                              score::message_passing::IServerConnection& connection,
+                                              const score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(std::holds_alternative<std::uintptr_t>(connection.GetUserData()),
                                                     "Message Passing: UserData does not contain a uintptr_t");
         // Suppress "AUTOSAR C++14 A15-5-3" The rule states: "Implicit call of std::terminate()"
@@ -296,15 +302,13 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(
 
 message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessageWithReplyCallback()
 {
-    auto message_callback_with_reply_scoped_function =
-        std::make_shared<score::safecpp::MoveOnlyScopedFunction<score::Result<void>(
-            uid_t, pid_t, score::cpp::span<const std::uint8_t>)>>(
-            message_callback_scope_,
-            [this](uid_t sender_uid,
-                   pid_t sender_pid,
-                   score::cpp::span<const std::uint8_t> message) noexcept -> score::Result<void> {
-                return this->MessageCallbackWithReply(sender_uid, sender_pid, message);
-            });
+    auto message_callback_with_reply_scoped_function = std::make_shared<score::safecpp::MoveOnlyScopedFunction<
+        score::Result<void>(uid_t, pid_t, score::cpp::span<const std::uint8_t>)>>(
+        message_callback_scope_,
+        [this](
+            uid_t sender_uid, pid_t sender_pid, score::cpp::span<const std::uint8_t> message) -> score::Result<void> {
+            return this->MessageCallbackWithReply(sender_uid, sender_pid, message);
+        });
 
     // Note. When received_send_message_with_reply_callback returns an error, the message passing connection with the
     // client will be disconnected. Therefore, we only return an error from the callback when the error is unrecoverable
@@ -313,7 +317,7 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
     auto received_send_message_with_reply_callback =
         [message_callback_with_reply_scoped_function = std::move(message_callback_with_reply_scoped_function)](
             score::message_passing::IServerConnection& connection,
-            score::cpp::span<const std::uint8_t> message) noexcept -> score::cpp::expected_blank<score::os::Error> {
+            score::cpp::span<const std::uint8_t> message) -> score::cpp::expected_blank<score::os::Error> {
         const auto client_identity = connection.GetClientIdentity();
         const pid_t client_pid = client_identity.pid;
         const auto client_uid = client_identity.uid;
@@ -921,7 +925,17 @@ void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id
             // previous condition will be true only if the distance between current node id and last node id in the map
             // is more than one. So, no way for overflow.
             // coverity[autosar_cpp14_a4_7_1_violation]
-            start_node_id = nodeIdentifiersTmp.back() + 1;
+            const pid_t last_node_id = nodeIdentifiersTmp.back();
+            if (last_node_id < std::numeric_limits<pid_t>::max())
+            {
+                start_node_id = last_node_id + 1;
+            }
+            else
+            {
+                // last_node_id already holds the maximum representable pid_t; no larger node id can exist, so
+                // there is nothing left to copy in a further iteration.
+                break;
+            }
         }
     } while (num_ids_copied.second == true);
 

@@ -71,6 +71,9 @@ def cc_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
 
     Args:
       name: Target name, to be forwarded to cc_unit_test and transitively to cc_test
+      target_compatible_with: Forwarded to the public
+      forwarding test target so that incompatible platforms are correctly skipped instead of
+      being silently ignored. Calling an underlying platform specific target will circumvent this for obvious reasons.
 
       **kwargs: Additional parameters to be forwarded to cc_unit_test and transitively to cc_test. size and timeout
       cannot be provided and if tags is provided, it should not contain the tag unit.
@@ -136,6 +139,7 @@ def cc_unit_test(name, target_compatible_with = [], tags = [], **kwargs):
             ],
             "//conditions:default": [],
         }),
+        target_compatible_with = target_compatible_with,
         tags = tags + ["unit"],
         visibility = kwargs["visibility"],
     )

@@ -331,8 +331,8 @@ TEST_F(SkeletonEventComponentTestFixture, SkeletonWillCalculateEventMetaInfoFrom
 
     // Then the event meta info should correspond to the type of the skeleton event
     ASSERT_TRUE(event_meta_info.has_value());
-    EXPECT_EQ(event_meta_info.value().data_type_info_.alignment, alignof(SkeletonEventSampleType));
-    EXPECT_EQ(event_meta_info.value().data_type_info_.size, sizeof(SkeletonEventSampleType));
+    EXPECT_EQ(event_meta_info.value().data_type_info_.Alignment(), alignof(SkeletonEventSampleType));
+    EXPECT_EQ(event_meta_info.value().data_type_info_.Size(), sizeof(SkeletonEventSampleType));
 }
 
 using SkeletonEventComponentDeathTest = SkeletonEventComponentTestFixture;

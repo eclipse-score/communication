@@ -37,21 +37,12 @@ runs:
       run: |
         set -euo pipefail
 
-        OUTPUT_DIR="${RUNNER_TEMP}/bazel-failed-testlogs"
+        OUTPUT_DIR="${RUNNER_TEMP}/bazel-testlogs-${{ inputs.artifact-name }}-${{ github.run_id }}-${{ github.run_attempt }}"
         mkdir -p "${OUTPUT_DIR}"
 
         declare -a SEARCH_ROOTS=()
         if [[ -d "${GITHUB_WORKSPACE}/bazel-out" ]]; then
           SEARCH_ROOTS+=("${GITHUB_WORKSPACE}")
-        fi
-        if [[ -d "/home/runner/.bazel" ]]; then
-          SEARCH_ROOTS+=("/home/runner/.bazel")
-        fi
-        if command -v bazel >/dev/null 2>&1; then
-          BAZEL_OUTPUT_BASE="$(bazel info output_base 2>/dev/null || true)"
-          if [[ -n "${BAZEL_OUTPUT_BASE}" && -d "${BAZEL_OUTPUT_BASE}" ]]; then
-            SEARCH_ROOTS+=("${BAZEL_OUTPUT_BASE}")
-          fi
         fi
 
         if [[ "${#SEARCH_ROOTS[@]}" -eq 0 ]]; then
@@ -77,7 +68,7 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ runner.temp }}/bazel-failed-testlogs
+        path: ${{ runner.temp }}/bazel-testlogs-${{ inputs.artifact-name }}-${{ github.run_id }}-${{ github.run_attempt }}
         if-no-files-found: ignore
         retention-days: ${{ inputs.retention-days }}
 

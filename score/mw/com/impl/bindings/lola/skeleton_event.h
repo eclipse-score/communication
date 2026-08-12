@@ -77,7 +77,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     SkeletonEvent& operator=(const SkeletonEvent&) & = delete;
     SkeletonEvent& operator=(SkeletonEvent&&) & noexcept = delete;
 
-    ~SkeletonEvent() override = default;
+    ~SkeletonEvent() noexcept override = default;
 
     /// \brief Sends a value by _copy_ towards a consumer. It will allocate the necessary space and then copy the value
     /// into Shared Memory.

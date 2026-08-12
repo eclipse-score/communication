@@ -15,9 +15,7 @@
 #include "score/message_passing/client_connection.h"
 #include "score/message_passing/qnx_dispatch/qnx_dispatch_engine.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 // coverity[autosar_cpp14_a3_3_1_violation] False positive: Constructor implementation for class declared in header
 QnxDispatchClientFactory::QnxDispatchClientFactory(score::cpp::pmr::memory_resource* const resource) noexcept
@@ -41,5 +39,4 @@ score::cpp::pmr::unique_ptr<IClientConnection> QnxDispatchClientFactory::Create(
         engine_->GetMemoryResource(), engine_, protocol_config, client_config);
 }
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing

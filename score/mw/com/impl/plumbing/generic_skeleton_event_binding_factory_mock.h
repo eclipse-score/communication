@@ -13,10 +13,12 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_GENERIC_SKELETON_EVENT_BINDING_FACTORY_MOCK_H
 #define SCORE_MW_COM_IMPL_PLUMBING_GENERIC_SKELETON_EVENT_BINDING_FACTORY_MOCK_H
 
-#include "score/mw/com/impl/data_type_meta_info.h"
-#include "score/mw/com/impl/i_generic_skeleton_event_binding_factory.h"
+#include "score/mw/com/impl/plumbing/i_generic_skeleton_event_binding_factory.h"
+
+#include "score/memory/data_type_size_info.h"
 
 #include <gmock/gmock.h>
+#include <memory>
 
 namespace score::mw::com::impl
 {
@@ -26,7 +28,7 @@ class GenericSkeletonEventBindingFactoryMock : public IGenericSkeletonEventBindi
   public:
     MOCK_METHOD(score::Result<std::unique_ptr<GenericSkeletonEventBinding>>,
                 Create,
-                (SkeletonBase&, std::string_view, const DataTypeMetaInfo&),
+                (SkeletonBase&, std::string_view, const memory::DataTypeSizeInfo&),
                 (noexcept, override));
 };
 

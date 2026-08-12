@@ -159,6 +159,25 @@ TYPED_TEST(LolaProxyEventCommonFixture, DoNotRegisterEventHandler)
     EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
 }
 
+TYPED_TEST(LolaProxyEventCommonFixture, CallingSetReceiveHandlerRegistersEventNotificationWithPidFromSharedMemory)
+{
+    const std::size_t max_sample_count{1U};
+
+    // Expecting that a receive handler will be registered with the pid that was written to shared memory by the
+    // skeleton
+    EXPECT_CALL(*this->mock_service_,
+                RegisterEventNotification(QualityType::kASIL_QM, kElementFqId, _, this->kDummyPid));
+
+    // Given a subscribed ProxyEvent
+    this->InitialiseProxyAndEvent();
+    std::ignore = this->proxy_event_->Subscribe(max_sample_count);
+
+    // When registering a receive handler
+    safecpp::Scope<> event_receive_handler_scope{};
+    std::ignore =
+        this->proxy_event_->SetReceiveHandler(FromMockFunction(event_receive_handler_scope, this->event_handler_));
+}
+
 TYPED_TEST(LolaProxyEventCommonFixture, SubscriptionFailsWhenProviderRejectsSubscription)
 {
     this->RecordProperty("Verifies", "SCR-21269964, SCR-14137270, SCR-17292398, SCR-14033248");

@@ -27,7 +27,7 @@ class LolaServiceInstanceIdentifier
 {
   public:
     explicit LolaServiceInstanceIdentifier(LolaServiceId service_id) noexcept;
-    explicit LolaServiceInstanceIdentifier(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept;
+    explicit LolaServiceInstanceIdentifier(const EnrichedInstanceIdentifier& enriched_instance_identifier);
 
     LolaServiceId GetServiceId() const noexcept;
     std::optional<LolaServiceInstanceId::InstanceId> GetInstanceId() const noexcept;
@@ -47,7 +47,7 @@ template <>
 class hash<score::mw::com::impl::lola::LolaServiceInstanceIdentifier>
 {
   public:
-    std::size_t operator()(const score::mw::com::impl::lola::LolaServiceInstanceIdentifier& identifier) const noexcept;
+    std::size_t operator()(const score::mw::com::impl::lola::LolaServiceInstanceIdentifier& identifier) const;
 };
 
 }  // namespace std

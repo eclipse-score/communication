@@ -66,6 +66,7 @@ cc_library(
 
 cc_library(
     name = "transport_mock",
+    srcs = ["transport_mock.cpp"],
     hdrs = ["transport_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/gateway:__subpackages__"],

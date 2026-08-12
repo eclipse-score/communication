@@ -13,7 +13,6 @@
 
 #include "score/mw/com/test/subscribe_handler/subscribe_handler_application.h"
 
-#include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/test/common_test_resources/sample_sender_receiver.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 #include "score/mw/com/test/common_test_resources/shared_memory_object_creator.h"

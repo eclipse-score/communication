@@ -18,7 +18,6 @@
 #include "score/mw/com/runtime_configuration.h"
 
 #include "score/filesystem/path.h"
-#include "score/string_manipulation/string_literal.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -82,6 +81,7 @@ TEST_F(RuntimeMockFixture, ResolveInstanceIdsReturnsErrorWhenMockReturnsError)
     EXPECT_EQ(resolve_instance_ids_result.error(), error_code);
 }
 
+// TODO: Once InitializeRuntime(argc, argv) is removed, this test will also be removed
 TEST_F(RuntimeMockFixture, InitializeRuntimeDispatchesToMockAfterInjectingMock)
 {
     // Given that a mocked runtime has been injected
@@ -89,10 +89,10 @@ TEST_F(RuntimeMockFixture, InitializeRuntimeDispatchesToMockAfterInjectingMock)
     // Expecting that InitializeRuntime will be called on the mock with the same argc / argv that is passed to
     // InitializeRuntime (where argv has been converted to an score::cpp::span
     constexpr std::int32_t argc{1U};
-    score::StringLiteral argv[] = {"some_argument"};
+    const char* argv[] = {"some_argument"};
     EXPECT_CALL(runtime_mock_, InitializeRuntime(argc, _)).WillOnce(Invoke([argv](auto, auto argv_span) {
-        const score::cpp::span<const score::StringLiteral> expected_argv_span(
-            argv, static_cast<score::cpp::span<const score::StringLiteral>::size_type>(argc));
+        const score::cpp::span<const char*> expected_argv_span(
+            const_cast<const char**>(argv), static_cast<score::cpp::span<const char*>::size_type>(argc));
         ASSERT_EQ(argv_span.size(), expected_argv_span.size());
         for (std::size_t i = 0; i < argv_span.size(); ++i)
         {
@@ -104,15 +104,40 @@ TEST_F(RuntimeMockFixture, InitializeRuntimeDispatchesToMockAfterInjectingMock)
     InitializeRuntime(argc, argv);
 }
 
+TEST_F(RuntimeMockFixture, InitializeRuntimeWithZStringViewsDispatchesToMockAfterInjectingMock)
+{
+    // Given that a mocked runtime has been injected
+
+    // Expecting that InitializeRuntime will be called on the mock with the same span that is passed to
+    // InitializeRuntime
+    using safecpp::literals::operator""_zsv;
+    constexpr auto kDummyApplicationNameZsv = "dummyname"_zsv;
+    safecpp::zstring_view argv[] = {kDummyApplicationNameZsv};
+    score::cpp::span<safecpp::zstring_view> argv_span(argv, std::size(argv));
+
+    EXPECT_CALL(runtime_mock_, InitializeRuntime(An<cpp::span<safecpp::zstring_view>>()))
+        .WillOnce(Invoke([argv_span](auto arguments_span) {
+            ASSERT_EQ(argv_span.size(), arguments_span.size());
+            for (std::size_t i = 0; i < argv_span.size(); ++i)
+            {
+                EXPECT_EQ(argv_span.data()[i], arguments_span.data()[i]);
+            }
+        }));
+
+    // When calling InitializeRuntime
+    InitializeRuntime(argv);
+}
+
 TEST_F(RuntimeMockFixture, InitializeRuntimeWithRuntimeConfigurationDispatchesToMockAfterInjectingMock)
 {
     // Given that a mocked runtime has been injected
 
     // Expecting that InitializeRuntime will be called on the mock
     RuntimeConfiguration runtime_configuration{kDummyConfigurationPath};
-    EXPECT_CALL(runtime_mock_, InitializeRuntime(_)).WillOnce(Invoke([](auto& runtime_configuration) {
-        EXPECT_EQ(runtime_configuration.GetConfigurationPath(), kDummyConfigurationPath);
-    }));
+    EXPECT_CALL(runtime_mock_, InitializeRuntime(An<const RuntimeConfiguration&>()))
+        .WillOnce(Invoke([](auto& runtime_configuration) {
+            EXPECT_EQ(runtime_configuration.GetConfigurationPath(), kDummyConfigurationPath);
+        }));
 
     // When calling InitializeRuntime
     InitializeRuntime(runtime_configuration);

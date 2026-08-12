@@ -48,6 +48,7 @@ cc_binary(
         "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
         "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 

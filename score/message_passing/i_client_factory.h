@@ -20,9 +20,7 @@
 
 #include <cstdint>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 /// \brief A generic factory interface to create instances of IClientConnection.
@@ -80,7 +78,6 @@ class IClientFactory
     IClientFactory& operator=(IClientFactory&&) = delete;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_CLIENT_FACTORY_H

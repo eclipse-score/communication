@@ -31,11 +31,11 @@ class LolaFieldInstanceDeployment
                                          const bool use_get_if_available,
                                          const bool use_set_if_available) noexcept;
 
-    explicit LolaFieldInstanceDeployment(const score::json::Object& json_object) noexcept;
+    explicit LolaFieldInstanceDeployment(const score::json::Object& json_object);
 
-    static LolaFieldInstanceDeployment CreateFromJson(const score::json::Object& json_object) noexcept;
+    static LolaFieldInstanceDeployment CreateFromJson(const score::json::Object& json_object);
 
-    score::json::Object Serialize() const noexcept;
+    score::json::Object Serialize() const;
 
     // Note the struct is not compliant to POD type containing non-POD member.
     // The struct is used as a config storage obtained by performing the parsing json object.

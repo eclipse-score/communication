@@ -84,14 +84,48 @@ jobs:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
-  clang-tidy:
-    name: Clang-Tidy
-    uses: ./.github/workflows/_clang_tidy.yml
+  lint:
+    name: Linters
+    uses: ./.github/workflows/_linter.yml
     with:
       cache-mode: ${{ inputs.cache-mode }}
       fetch-only: ${{ inputs.fetch-only }}
     permissions:
       contents: read
       actions: write
+      security-events: write
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+  # --------------------------------------------------------------------
+  # TEMPORARY MIGRATION SHIM — remove once branch protection is updated.
+  #
+  # The clang-tidy job used to run directly in this workflow as a
+  # "Clang-Tidy" job calling a reusable workflow with a "Build & Test"
+  # job (see git history of this file), and GitHub's resulting status
+  # check name "Clang-Tidy / Build & Test" is still configured as a
+  # required check in this repository's branch protection rules.
+  # Clang-tidy now runs as part of the "Linters" matrix job above
+  # (surfaced as "Linters / clang-tidy"), so the old
+  # "Clang-Tidy / Build & Test" check is never reported anymore, which
+  # would otherwise leave every PR stuck waiting on it indefinitely.
+  #
+  # This job exists solely to keep reporting a "Clang-Tidy / Build & Test"
+  # status check so PRs stay mergeable. It does no actual linting — that
+  # is fully covered by the `lint` job above. It must keep calling the
+  # nested reusable workflow (_clang_tidy_shim.yml) rather than running
+  # steps inline, because GitHub names a job-calling-a-reusable-workflow
+  # check as "<this job's name> / <called job's name>" — running steps
+  # directly here would instead produce "Host / Clang-Tidy". Once the
+  # required status checks in the repository/branch protection config
+  # (e.g. otterdog) are updated to require "Linters / clang-tidy" instead
+  # of "Clang-Tidy / Build & Test", delete this job and
+  # _clang_tidy_shim.yml.
+  # --------------------------------------------------------------------
+  clang-tidy-legacy-check-shim:
+    name: Clang-Tidy
+    needs: lint
+    if: always()
+    uses: ./.github/workflows/_clang_tidy_shim.yml
+    with:
+      lint-result: ${{ needs.lint.result }}

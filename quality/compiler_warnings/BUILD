@@ -27,9 +27,6 @@ cc_args(
         "-fPIC",
         "-fstack-protector-strong",
         "-fdiagnostics-color=always",
-        # Fortify libc calls (buffer-overflow checks) used by message (de)serialization.
-        # NOTE: effective only at -O1+; requires the non-executable stack link hardening below.
-        "-D_FORTIFY_SOURCE=2",
         # Bounds/precondition checks on libstdc++ containers (ABI-safe; not _GLIBCXX_DEBUG).
         "-D_GLIBCXX_ASSERTIONS",
         # Per-page stack probing so a large VLA/alloca in deep IPC dispatch cannot skip the guard page.
@@ -47,6 +44,27 @@ cc_args(
 )
 
 cc_args(
+    name = "fortify_source_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = [
+        "-U_FORTIFY_SOURCE",
+        "-D_FORTIFY_SOURCE=2",
+    ],
+    visibility = ["//quality/compiler_warnings:__subpackages__"],
+)
+
+cc_feature(
+    name = "fortify_source",
+    args = [
+        ":fortify_source_args",
+    ],
+    feature_name = "score_communication_fortify_source",
+    visibility = ["//visibility:public"],
+)
+
+cc_args(
     name = "default_link_args",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
@@ -61,7 +79,6 @@ cc_args(
         "-Wl,-as-needed",
         "-ldl",
         "-Wl,--pop-state",
-        "-fuse-ld=gold",
         "-Wl,-no-as-needed",
         "-lc",
         "-lm",

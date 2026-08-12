@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_SKELETON_FIELD_H
 #define SCORE_MW_COM_IMPL_SKELETON_FIELD_H
 
+#include "score/mw/com/impl/field_getter_setter_signatures.h"
 #include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
@@ -205,13 +206,6 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     }
 
   private:
-    /// \brief Signatures of the internal Set and Get methods.
-    ///
-    /// Since the setter / getter functions can fail within the middleware code (e.g. when trying to update the field
-    /// value fails), we need to return a result from the setter and getter.
-    using SetMethodSignature = score::Result<FieldType>(FieldType);
-    using GetMethodSignature = FieldType();
-
     [[nodiscard]] bool IsInitialValueSaved() const noexcept override
     {
         return initial_field_value_ != nullptr;
@@ -253,16 +247,17 @@ class SkeletonFieldImpl : public SkeletonFieldBase
 
     /// \brief Builds the Get-method dispatch when WithGetter is enabled.
     /// \return A valid SkeletonMethod dispatch when WithGetter is in the tag pack, nullptr otherwise.
-    static std::unique_ptr<SkeletonMethod<GetMethodSignature>> MakeGetMethodIfEnabled(SkeletonBase& parent,
-                                                                                      const std::string_view field_name)
+    static std::unique_ptr<SkeletonMethod<GetMethodSignature<FieldType>>> MakeGetMethodIfEnabled(
+        SkeletonBase& parent,
+        const std::string_view field_name)
     {
         if constexpr (kHasGetter)
         {
-            return std::make_unique<SkeletonMethod<GetMethodSignature>>(
+            return std::make_unique<SkeletonMethod<GetMethodSignature<FieldType>>>(
                 parent,
                 field_name,
                 ::score::mw::com::impl::MethodType::kGet,
-                typename SkeletonMethod<GetMethodSignature>::FieldOnlyConstructorEnabler{});
+                typename SkeletonMethod<GetMethodSignature<FieldType>>::FieldOnlyConstructorEnabler{});
         }
         else
         {
@@ -274,16 +269,17 @@ class SkeletonFieldImpl : public SkeletonFieldBase
 
     /// \brief Builds the Set-method dispatch when WithSetter is enabled.
     /// \return A valid SkeletonMethod dispatch when WithSetter is in the tag pack, nullptr otherwise.
-    static std::unique_ptr<SkeletonMethod<SetMethodSignature>> MakeSetMethodIfEnabled(SkeletonBase& parent,
-                                                                                      const std::string_view field_name)
+    static std::unique_ptr<SkeletonMethod<SetMethodSignature<FieldType>>> MakeSetMethodIfEnabled(
+        SkeletonBase& parent,
+        const std::string_view field_name)
     {
         if constexpr (kHasSetter)
         {
-            return std::make_unique<SkeletonMethod<SetMethodSignature>>(
+            return std::make_unique<SkeletonMethod<SetMethodSignature<FieldType>>>(
                 parent,
                 field_name,
                 ::score::mw::com::impl::MethodType::kSet,
-                typename SkeletonMethod<SetMethodSignature>::FieldOnlyConstructorEnabler{});
+                typename SkeletonMethod<SetMethodSignature<FieldType>>::FieldOnlyConstructorEnabler{});
         }
         else
         {
@@ -293,13 +289,23 @@ class SkeletonFieldImpl : public SkeletonFieldBase
         }
     }
 
+    /// \brief Registers a get handler with the skeleton get method dispatch which will be called when a connected
+    /// ProxyField calls Get().
+    ///
+    /// This function will be called by SkeletonFieldBase::PrepareOffer(). We do it there instead of in the constructor
+    /// since a mocked SkeletonField will have the mock injected after construction. RegisterGetHandler will dispatch to
+    /// the binding which is a nullptr in case of mocking. Therefore, we would crash because we'd be accessing a null
+    /// binding. In practice, there is currently no error path in SkeletonMethod::RegisterHandler() so there's no
+    /// practical issue with delaying the registration until PrepareOffer() is called.
+    [[nodiscard]] Result<void> RegisterGetHandler() override;
+
     /// \brief Single private delegating constructor. Both the production and test ctors funnel through here with
     ///        appropriate dispatches (real ones from the Make*IfEnabled helpers, or nullptr).
     SkeletonFieldImpl(SkeletonBase& parent,
                       const std::string_view field_name,
                       std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
-                      std::unique_ptr<SkeletonMethod<SetMethodSignature>> skeleton_set_method_dispatch,
-                      std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch);
+                      std::unique_ptr<SkeletonMethod<SetMethodSignature<FieldType>>> skeleton_set_method_dispatch,
+                      std::unique_ptr<SkeletonMethod<GetMethodSignature<FieldType>>> skeleton_get_method_dispatch);
 
     std::unique_ptr<FieldType> initial_field_value_;
     ISkeletonField<FieldType>* skeleton_field_mock_;
@@ -317,8 +323,18 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     /// moveable).
     std::unique_ptr<std::mutex> set_handler_mutex_{};
 
-    std::unique_ptr<SkeletonMethod<SetMethodSignature>> set_method_;
-    std::unique_ptr<SkeletonMethod<GetMethodSignature>> get_method_;
+    /// \brief Mutex to ensure that only one get_handler is executed at a time for this field.
+    ///
+    /// Each get handler will reference an event slot while it copies the latest sample into the method return value.
+    /// We don't want multiple consumers to be able to reference multiple slots for reading at the same time as this
+    /// would require allocating additional slots in the worst case.
+    ///
+    /// This mutex must be allocated on the heap since SkeletonField must be moveable (and a std::mutex is not
+    /// moveable).
+    std::unique_ptr<std::mutex> get_handler_mutex_{};
+
+    std::unique_ptr<SkeletonMethod<SetMethodSignature<FieldType>>> set_method_;
+    std::unique_ptr<SkeletonMethod<GetMethodSignature<FieldType>>> get_method_;
 };
 
 template <typename SampleDataType, typename... Tags>
@@ -326,13 +342,14 @@ SkeletonFieldImpl<SampleDataType, Tags...>::SkeletonFieldImpl(
     SkeletonBase& parent,
     const std::string_view field_name,
     std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
-    std::unique_ptr<SkeletonMethod<SetMethodSignature>> skeleton_set_method_dispatch,
-    std::unique_ptr<SkeletonMethod<GetMethodSignature>> skeleton_get_method_dispatch)
+    std::unique_ptr<SkeletonMethod<SetMethodSignature<FieldType>>> skeleton_set_method_dispatch,
+    std::unique_ptr<SkeletonMethod<GetMethodSignature<FieldType>>> skeleton_get_method_dispatch)
     : SkeletonFieldBase{field_name, std::move(skeleton_event_dispatch)},
       initial_field_value_{nullptr},
       skeleton_field_mock_{nullptr},
       is_set_handler_registered_{false},
       set_handler_mutex_{std::make_unique<std::mutex>()},
+      get_handler_mutex_{std::make_unique<std::mutex>()},
       set_method_{std::move(skeleton_set_method_dispatch)},
       get_method_{std::move(skeleton_get_method_dispatch)}
 {
@@ -433,6 +450,39 @@ auto SkeletonFieldImpl<SampleDataType, Tags...>::GetTypedEvent() const noexcept 
     auto* const typed_event = dynamic_cast<SkeletonEvent<FieldType>*>(skeleton_event_dispatch_.get());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event != nullptr, "Downcast to SkeletonEvent<FieldType> failed!");
     return *typed_event;
+}
+
+template <typename SampleDataType, typename... Tags>
+Result<void> SkeletonFieldImpl<SampleDataType, Tags...>::RegisterGetHandler()
+{
+    if constexpr (!kHasGetter)
+    {
+        return {};
+    }
+
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        get_method_ != nullptr,
+        "Defensive programming: We check in the constructor that get_method_ is non-null when WithGetter is enabled.");
+
+    // The get handler requires access to the event owned by the field in order to get the latest field value. We
+    // pass a reference to the event since the event is owned via unique_ptr so will never be moved (which would
+    // invalidate the reference to the field). We pass in the get_handler_mutex_ directly for similar reasons.
+    auto& typed_event = GetTypedEvent();
+    auto get_handler = [&typed_event, &get_handler_mutex = *get_handler_mutex_](
+                           QualityType quality_type, score::Result<FieldType>& return_value) {
+        // In case of concurrent Get calls, we want to ensure that they are processed sequentially so that only one
+        // slot is referenced at a time.
+        std::lock_guard<std::mutex> lock{get_handler_mutex};
+        const auto sample_ptr_result = SkeletonEventView<FieldType>{typed_event}.GetLatestSample(quality_type);
+        if (!sample_ptr_result.has_value())
+        {
+            return_value = score::Unexpected(std::move(sample_ptr_result).error());
+            return;
+        }
+        const auto& sample_ptr = sample_ptr_result.value();
+        return_value = *sample_ptr;
+    };
+    return get_method_->RegisterHandlerWithQuality(std::move(get_handler));
 }
 
 template <typename SampleDataType, typename... Tags>
