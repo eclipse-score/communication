@@ -30,9 +30,7 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
     ],
-    visibility = [
-        "//score/mw/com/gateway:__subpackages__",
-    ],
+    visibility = ["//score/mw/com/gateway:__subpackages__"],
     deps = [
         ":gateway_core",
         "//score/mw/com/gateway/gateway_application/configuration:gateway_configuration",

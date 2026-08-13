@@ -56,7 +56,12 @@ cc_library(
     ],
     deps = [
         ":transport",
+        "//score/memory/shared",
         "//score/mw/com/gateway/gateway_application:gateway_core",
+        "//score/mw/com/gateway/transport_layer/qemu:qemu_hypervisor_transport",
+        "//score/mw/com/gateway/transport_layer/qemu/configuration:qemu_transport_config_parser",
+        "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_bar_discovery",
+        "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_typed_memory_provider",
         "//score/mw/com/gateway/transport_layer/sample:bidirectional_transport",
         "//score/mw/com/gateway/transport_layer/sample:sample_hypervisor_transport",
         "//score/mw/com/gateway/transport_layer/sample/configuration:hypervisor_socket_configuration",
