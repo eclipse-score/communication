@@ -25,16 +25,16 @@ namespace score::mw::com::test
 {
 
 /// Sends an incrementing sequence of number_of_samples_to_send_per_offer samples via
-/// skeleton.moved_event_, starting at initial_value.
-template <typename Skeleton>
-void SendIncrementingSequenceOfSamples(Skeleton& skeleton,
+/// event, starting at initial_value.
+template <typename Event>
+void SendIncrementingSequenceOfSamples(Event& event,
                                        const std::size_t number_of_samples_to_send_per_offer,
                                        const std::uint32_t initial_value)
 {
     std::cout << "\nProvider: Sending " << number_of_samples_to_send_per_offer << " samples" << std::endl;
     for (std::uint32_t i = 0; i < number_of_samples_to_send_per_offer; ++i)
     {
-        auto send_result = skeleton.moved_event_.Send(i + initial_value);
+        auto send_result = event.Send(i + initial_value);
         if (!send_result.has_value())
         {
             FailTest("Provider: Send failed: ", send_result.error());
