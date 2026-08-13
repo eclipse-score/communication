@@ -55,16 +55,13 @@ download_archive(
     urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
-bazel_dep(name = "score_tooling", version = "1.3.1")
-
-# Patch only required locally when this module is the root module.
-# We have rules_distroless as a dev-dependency and use a newer version with a different API.
-# This triggers errors in score_tooling where the old incompatible API is still used.
-single_version_override(
+bazel_dep(name = "score_tooling", version = "2.0.0")
+git_override(
     module_name = "score_tooling",
-    patch_strip = 1,
-    patches = ["//third_party/score_tooling:bump_rules_distroless_api.patch"],
-    version = "1.3.1",
+    # Picks up the aspect_rules_py -> rules_python sphinx_build_binary migration,
+    # which drops the pip_rules_score/certifi duplicate from sphinx_toolchain_binary's venv.
+    commit = "9f1b29dbbf322816291694685ce2b8d0d7c5738f",
+    remote = "https://github.com/eclipse-score/tooling.git",
 )
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
