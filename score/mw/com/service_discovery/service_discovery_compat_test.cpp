@@ -35,6 +35,7 @@ namespace score::mw::com::impl
 
 TEST(ServiceDiscoveryCompatTest, OfferFindAndStartFindServiceRemainCompatible)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.ServiceDiscoveryCompatibilityFacade");
     struct CallbackState
     {
         std::mutex mutex{};

@@ -54,6 +54,7 @@ auto MakeRegistration(const std::uint64_t service_id,
 
 TEST(ServiceDiscoveryRegistryTest, RegistersAndResolvesSingleInstance)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.RegistryRegisterApi");
     ServiceDiscoveryRegistry unit{};
     const auto registration = MakeRegistration(100U, 1U, 10U, 1000U, IntegrityLevel::kAsilQm, IntegrityLevel::kAsilQm);
     const auto provider_context = MakeProviderContext(10U, 1000U, 1U);
@@ -68,6 +69,7 @@ TEST(ServiceDiscoveryRegistryTest, RegistersAndResolvesSingleInstance)
 
 TEST(ServiceDiscoveryRegistryTest, RejectsDuplicateRegistrationFromSameProvider)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.RegistryRegisterApi");
     ServiceDiscoveryRegistry unit{};
     const auto registration = MakeRegistration(100U, 1U, 10U, 1000U, IntegrityLevel::kAsilQm, IntegrityLevel::kAsilQm);
     const auto provider_context = MakeProviderContext(10U, 1000U, 1U);
@@ -78,6 +80,7 @@ TEST(ServiceDiscoveryRegistryTest, RejectsDuplicateRegistrationFromSameProvider)
 
 TEST(ServiceDiscoveryRegistryTest, RejectsInvalidAsilBClaimFromQmProvider)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.RegisterRejectsIntegrityEscalation");
     ServiceDiscoveryRegistry unit{};
     const auto registration = MakeRegistration(100U, 1U, 10U, 1000U, IntegrityLevel::kAsilB, IntegrityLevel::kAsilQm);
     const auto provider_context = MakeProviderContext(10U, 1000U, 1U);
@@ -88,6 +91,7 @@ TEST(ServiceDiscoveryRegistryTest, RejectsInvalidAsilBClaimFromQmProvider)
 
 TEST(ServiceDiscoveryRegistryTest, UnregistersByProviderIdentity)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.UnregisterChecksOwnership");
     ServiceDiscoveryRegistry unit{};
     const auto registration = MakeRegistration(100U, 1U, 10U, 1000U, IntegrityLevel::kAsilQm, IntegrityLevel::kAsilQm);
     const auto provider_context = MakeProviderContext(10U, 1000U, 1U);
@@ -100,6 +104,7 @@ TEST(ServiceDiscoveryRegistryTest, UnregistersByProviderIdentity)
 
 TEST(ServiceDiscoveryRegistryTest, RejectsUnregisterFromDifferentProvider)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.UnregisterChecksOwnership");
     ServiceDiscoveryRegistry unit{};
     const auto registration = MakeRegistration(100U, 1U, 10U, 1000U, IntegrityLevel::kAsilQm, IntegrityLevel::kAsilQm);
     const auto provider_context = MakeProviderContext(10U, 1000U, 1U);
@@ -113,6 +118,7 @@ TEST(ServiceDiscoveryRegistryTest, RejectsUnregisterFromDifferentProvider)
 
 TEST(ServiceDiscoveryRegistryTest, RemoveBySessionRemovesAllRegistrationsOwnedByDisconnectedSession)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.ConnectionLossRemovesOwnedState");
     ServiceDiscoveryRegistry unit{};
     const auto first_registration =
         MakeRegistration(100U, 1U, 10U, 1000U, IntegrityLevel::kAsilQm, IntegrityLevel::kAsilQm);
@@ -132,6 +138,7 @@ TEST(ServiceDiscoveryRegistryTest, RemoveBySessionRemovesAllRegistrationsOwnedBy
 
 TEST(ServiceDiscoveryRegistryTest, ResolveAnyInstanceReturnsAllMatchingServiceInstances)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.RegistrySupportsAnyInstanceLookup");
     ServiceDiscoveryRegistry unit{};
     const auto first_registration =
         MakeRegistration(100U, 1U, 10U, 1000U, IntegrityLevel::kAsilQm, IntegrityLevel::kAsilQm);
@@ -154,6 +161,7 @@ TEST(ServiceDiscoveryRegistryTest, ResolveAnyInstanceReturnsAllMatchingServiceIn
 
 TEST(ServiceDiscoveryRegistryTest, CreationLockIsExclusiveAndReleasedByUnregister)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.ServiceCreationLockIsExclusive");
     ServiceDiscoveryRegistry unit{};
     const auto key = ServiceKey{100U, 1U};
     const auto owner_context = MakeProviderContext(10U, 1000U, 1U);
@@ -170,6 +178,8 @@ TEST(ServiceDiscoveryRegistryTest, CreationLockIsExclusiveAndReleasedByUnregiste
 
 TEST(ServiceDiscoveryRegistryTest, UsageSharedAndExclusiveLocksConflictAsExpected)
 {
+    ::testing::Test::RecordProperty("lobster-tracing",
+                                    "ServiceDiscovery.ServiceUsageLockSupportsSharedAndExclusiveModes");
     ServiceDiscoveryRegistry unit{};
     const auto key = ServiceKey{100U, 1U};
     const auto shared_owner_a = MakeProviderContext(10U, 1000U, 1U);
@@ -188,6 +198,7 @@ TEST(ServiceDiscoveryRegistryTest, UsageSharedAndExclusiveLocksConflictAsExpecte
 
 TEST(ServiceDiscoveryRegistryTest, DisconnectCleanupReleasesCreationAndUsageLocks)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.ConnectionLossRemovesOwnedState");
     ServiceDiscoveryRegistry unit{};
     const auto key = ServiceKey{100U, 1U};
     const auto owner_context = MakeProviderContext(10U, 1000U, 1U);
@@ -200,6 +211,42 @@ TEST(ServiceDiscoveryRegistryTest, DisconnectCleanupReleasesCreationAndUsageLock
 
     EXPECT_EQ(unit.AcquireCreationLock(key, other_context), std::nullopt);
     EXPECT_EQ(unit.AcquireUsageExclusiveLock(key, other_context), std::nullopt);
+}
+
+TEST(ServiceDiscoveryRegistryTest, ResolveUsesServiceAndInstanceKeyTuple)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.RegistrySupportsServiceKeyLookup");
+
+    ServiceDiscoveryRegistry unit{};
+    const auto key_a = ServiceKey{100U, 1U};
+    const auto key_b = ServiceKey{100U, 2U};
+    const auto registration_a =
+        MakeRegistration(100U, 1U, 10U, 1000U, IntegrityLevel::kAsilQm, IntegrityLevel::kAsilQm);
+    const auto registration_b =
+        MakeRegistration(100U, 2U, 11U, 1001U, IntegrityLevel::kAsilQm, IntegrityLevel::kAsilQm);
+
+    ASSERT_EQ(unit.Register(registration_a, MakeProviderContext(10U, 1000U, 1U)), std::nullopt);
+    ASSERT_EQ(unit.Register(registration_b, MakeProviderContext(11U, 1001U, 2U)), std::nullopt);
+
+    const auto resolved = unit.Resolve(key_a);
+    ASSERT_EQ(resolved.size, 1U);
+    EXPECT_EQ(resolved.values[0].key.service_id, key_a.service_id);
+    EXPECT_EQ(resolved.values[0].key.instance_id, key_a.instance_id);
+}
+
+TEST(ServiceDiscoveryRegistryTest, UnregisterApiRemovesSpecifiedProviderEntry)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.RegistryUnregisterApi");
+
+    ServiceDiscoveryRegistry unit{};
+    const auto registration = MakeRegistration(200U, 9U, 15U, 1015U, IntegrityLevel::kAsilQm, IntegrityLevel::kAsilQm);
+    const auto provider_context = MakeProviderContext(15U, 1015U, 7U);
+
+    ASSERT_EQ(unit.Register(registration, provider_context), std::nullopt);
+    ASSERT_EQ(unit.Resolve(registration.key).size, 1U);
+
+    EXPECT_EQ(unit.Unregister(registration.key, provider_context), std::nullopt);
+    EXPECT_TRUE(unit.Resolve(registration.key).Empty());
 }
 
 }  // namespace score::mw::com::service_discovery

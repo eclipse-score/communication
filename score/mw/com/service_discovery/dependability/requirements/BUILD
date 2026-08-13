@@ -46,3 +46,10 @@ component_requirements(
         "//score/mw/com/service_discovery/dependability/assumed_system:assumed_system_requirements",
     ],
 )
+
+trlc_requirements_ai_test(
+    name = "component_requirements_ai_check",
+    batch_size = 10,
+    reqs = [":component_requirements"],
+    tags = ["manual"],
+)

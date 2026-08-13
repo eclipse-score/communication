@@ -20,6 +20,7 @@ load(
 component(
     name = "component_service_discovery",
     components = [
+        "//score/mw/com/service_discovery:service_discovery_compat_unit",
         "//score/mw/com/service_discovery:service_discovery_daemon_unit",
         "//score/mw/com/service_discovery:service_discovery_message_passing_client_unit",
         "//score/mw/com/service_discovery:service_discovery_message_passing_server_unit",

@@ -55,6 +55,7 @@ auto MakeRequest(const ProtocolOperation operation,
 
 TEST(ServiceDiscoveryDaemonTest, RegisterThenResolveReturnsRegistration)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.DaemonBasedRegistry");
     ServiceDiscoveryRegistry registry{};
     ServiceDiscoveryDaemon daemon{registry};
     const auto provider_context = MakeProviderContext(101U, 202U, 1U);
@@ -92,6 +93,7 @@ TEST(ServiceDiscoveryDaemonTest, RegisterThenResolveReturnsRegistration)
 
 TEST(ServiceDiscoveryDaemonTest, RejectsMalformedRequest)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.ProtocolEncodesRegisterUnregisterResolve");
     ServiceDiscoveryRegistry registry{};
     ServiceDiscoveryDaemon daemon{registry};
 
@@ -105,6 +107,8 @@ TEST(ServiceDiscoveryDaemonTest, RejectsMalformedRequest)
 
 TEST(ServiceDiscoveryDaemonTest, CreationLockRequestConflictsUntilOwnerDisconnects)
 {
+    ::testing::Test::RecordProperty("lobster-tracing",
+                                    "ServiceDiscovery.ServiceCreationLockReleasedOnUnregisterOrDisconnect");
     ServiceDiscoveryRegistry registry{};
     ServiceDiscoveryDaemon daemon{registry};
 
@@ -141,6 +145,40 @@ TEST(ServiceDiscoveryDaemonTest, CreationLockRequestConflictsUntilOwnerDisconnec
     lock_response = DeserializeResponse(score::cpp::span<const std::uint8_t>{response_buffer.data(), response_size});
     ASSERT_TRUE(lock_response.has_value());
     EXPECT_EQ(lock_response->status_code, 0U);
+}
+
+TEST(ServiceDiscoveryDaemonTest, ResolveReturnsOneSnapshotPerRequest)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.LookupReturnsConsistentSnapshot");
+
+    ServiceDiscoveryRegistry registry{};
+    ServiceDiscoveryDaemon daemon{registry};
+
+    std::array<std::uint8_t, kMaxResponsePayloadSize> response_buffer{};
+    std::size_t response_size{0U};
+    const auto provider_context = MakeProviderContext(500U, 600U, 42U);
+
+    const auto register_payload = SerializeRequest(MakeRequest(ProtocolOperation::kRegister, 77U, 1U, 0U, 0U));
+    ASSERT_TRUE(
+        daemon.HandlePayload(score::cpp::span<const std::uint8_t>{register_payload.data(), register_payload.size()},
+                             score::cpp::span<std::uint8_t>{response_buffer.data(), response_buffer.size()},
+                             provider_context,
+                             response_size));
+
+    const auto resolve_payload = SerializeRequest(MakeRequest(ProtocolOperation::kResolve, 77U, 1U, 0U, 0U));
+    ASSERT_TRUE(
+        daemon.HandlePayload(score::cpp::span<const std::uint8_t>{resolve_payload.data(), resolve_payload.size()},
+                             score::cpp::span<std::uint8_t>{response_buffer.data(), response_buffer.size()},
+                             provider_context,
+                             response_size));
+
+    const auto resolve_response =
+        DeserializeResponse(score::cpp::span<const std::uint8_t>{response_buffer.data(), response_size});
+    ASSERT_TRUE(resolve_response.has_value());
+    EXPECT_EQ(resolve_response->status_code, 0U);
+    ASSERT_EQ(resolve_response->registrations.size, 1U);
+    EXPECT_EQ(resolve_response->registrations.values[0].key.service_id, 77U);
+    EXPECT_EQ(resolve_response->registrations.values[0].key.instance_id, 1U);
 }
 
 }  // namespace score::mw::com::service_discovery
