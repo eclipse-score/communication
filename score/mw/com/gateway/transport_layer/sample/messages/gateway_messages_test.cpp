@@ -184,7 +184,8 @@ TEST(GatewayMessagesTest, SequenceNumberIsSetAndRetrievedCorrectly)
 {
     const auto sequence_number = 123U;
     // Given a ProvideServiceRequest with a specific instance specifier and empty service elements
-    ProvideServiceRequest request{score::mw::com::InstanceSpecifier::Create("TestService/Instance1").value(), {}};
+    ProvideServiceRequest request{
+        score::mw::com::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(), {}};
     EXPECT_EQ(request.GetSequenceNumber(), 0U);
     // when setting the sequence number
     request.SetSequenceNumber(sequence_number);
@@ -195,7 +196,8 @@ TEST(GatewayMessagesTest, SequenceNumberIsSetAndRetrievedCorrectly)
 TEST(GatewayMessagesTest, MessageTypeCanBeRetrievedCorrectly)
 {
     // Given a ProvideServiceRequest
-    ProvideServiceRequest request{score::mw::com::InstanceSpecifier::Create("TestService/Instance1").value(), {}};
+    ProvideServiceRequest request{
+        score::mw::com::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(), {}};
     // when retrieving the message type
     auto type = request.GetType();
     // then the message type is correct
@@ -205,7 +207,8 @@ TEST(GatewayMessagesTest, MessageTypeCanBeRetrievedCorrectly)
 TEST(GatewayMessagesTest, MessageHeaderCanBeRetrievedCorrectly)
 {
     // Given a ProvideServiceRequest with a specific instance specifier and empty service elements
-    ProvideServiceRequest request{score::mw::com::InstanceSpecifier::Create("TestService/Instance1").value(), {}};
+    ProvideServiceRequest request{
+        score::mw::com::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(), {}};
     // when retrieving the message header
     const auto& header = request.GetHeader();
     // then the message header contains the correct type and default sequence and payload size

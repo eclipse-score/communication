@@ -300,7 +300,7 @@ class GatewayApplicationSubscriptionTest : public ::testing::Test
 TEST_F(GatewayApplicationSubscriptionTest, FirstSubscriberCallsRegisterUpdateNotification)
 {
     // Given no previous subscriptions for "svc/a" / "EventA"
-    auto specifier = impl::InstanceSpecifier::Create("svc/a").value();
+    auto specifier = impl::InstanceSpecifier::Create(std::string{"svc/a"}).value();
     EXPECT_CALL(*mock_, RegisterUpdateNotification(specifier, impl::ServiceElementType::EVENT, std::string{"EventA"}))
         .WillOnce(Return(score::Result<void>{}));
 
@@ -328,7 +328,7 @@ TEST_F(GatewayApplicationSubscriptionTest, LastUnsubscriberCallsUnregisterUpdate
 
     // When all consumers unsubscribe
     // Then UnregisterUpdateNotification is called for the event
-    auto specifier = impl::InstanceSpecifier::Create("svc/a").value();
+    auto specifier = impl::InstanceSpecifier::Create(std::string{"svc/a"}).value();
     EXPECT_CALL(*mock_, UnregisterUpdateNotification(specifier, impl::ServiceElementType::EVENT, std::string{"EventA"}))
         .WillOnce(Return(score::Result<void>{}));
     CallOnSubscriptionStateChanged("svc/a", "EventA", false);
