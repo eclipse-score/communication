@@ -16,12 +16,14 @@ import ScoreReq
 
 ScoreReq.AoU DaemonStartedBeforeClients {
     description = "The service discovery daemon shall be started before service providers and consumers initiate registration or lookup calls."
+    note = "Client and provider startup depends on an already reachable daemon session endpoint."
     safety = ScoreReq.Asil.B
     version = 1
 }
 
 ScoreReq.AoU SingleDaemonAuthority {
     description = "Exactly one service discovery daemon instance shall act as registry authority at a time."
+    note = "Multiple concurrent authorities can diverge registry state and break deterministic lookup behavior."
     safety = ScoreReq.Asil.B
     version = 1
 }

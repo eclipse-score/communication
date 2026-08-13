@@ -214,3 +214,16 @@ unit(
     visibility = ["//score/mw/com/service_discovery/dependability:__pkg__"],
     implementation = [":service_discovery_message_passing_server"],
 )
+
+unit(
+    name = "service_discovery_compat_unit",
+    scope = [
+        "@@//score/mw/com/service_discovery:__subpackages__",
+    ],
+    tests = [
+        ":service_discovery_compat_test_linux",
+    ],
+    unit_design = ["//score/mw/com/service_discovery/dependability/software_unit_design:service_discovery_compat_unit_design"],
+    visibility = ["//score/mw/com/service_discovery/dependability:__pkg__"],
+    implementation = [":service_discovery_compat"],
+)

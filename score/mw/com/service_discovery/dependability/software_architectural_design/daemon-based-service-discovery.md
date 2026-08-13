@@ -15,13 +15,16 @@ The service discovery functionality is extracted into a dedicated daemon library
 Providers (skeletons) and consumers (proxies) communicate with the daemon only through the message passing layer.
 The daemon owns the authoritative registry state and answers register, unregister, and resolve operations.
 
-Current implementation slices already provide:
+The current implementation provides:
 
 - A thread-safe in-memory registry with ownership checks.
 - Binary protocol encoding and decoding for daemon requests and responses.
 - A daemon request handler that applies protocol operations against the registry.
 - A message-passing server and client adapter pair that carries the daemon protocol over the platform IPC layer.
 - A compatibility facade that preserves the current IServiceDiscovery entry points while mapping them onto the daemon-backed client.
+
+The daemon protocol and registry also support start-find and stop-find operations, lock ownership semantics for service instances,
+and deterministic per-request response ordering for batch-compatible operation handling.
 
 ## Component Decomposition
 
@@ -79,12 +82,50 @@ Current implementation slices already provide:
 - Deterministic lookup
 : Resolve returns immutable per-request snapshots.
 
+- Session-bound cleanup
+: Registrations, subscriptions, and lock ownership are removed when the owning daemon session disconnects.
+
 - Stale entry supervision
-: Planned next slice introduces lease and liveness timeouts using monotonic time.
+: Liveness supervision requirements are modeled and tied to monotonic time assumptions.
 
 ## Migration Plan Hooks
 
-- Keep daemon library standalone first.
-- Add message passing server adapter in next implementation step.
-- Integrate proxy/skeleton runtime in a later step once protocol and daemon behavior are stabilized.
-- Preserve the current IServiceDiscovery facade until the runtime migration can absorb the new subscription-oriented API.
+- Keep compatibility facade as the runtime integration boundary while daemon protocol evolves.
+- Preserve a single daemon authority per system configuration.
+- Keep test coverage for register, resolve, find-service notifications, and lock cleanup on disconnect as release-gate evidence.
+- Extend supervision and policy configuration test depth before moving maturity from development to release.
+
+## Deferred Capabilities (Development Maturity)
+
+The following capabilities are intentionally deferred while maturity remains set to development.
+These are tracked as existing component requirements and become release-gate obligations once implemented.
+
+1. ServiceDiscovery.StaticOfferAuthorizationLoadedAtStartup
+Status: Deferred
+Reason: Daemon startup policy-ingestion path is not implemented yet.
+Activation trigger: Add startup policy loading and verify with positive/negative authorization tests.
+
+2. ServiceDiscovery.RegisterRejectsUnauthorizedOfferer
+Status: Deferred
+Reason: Depends on active static offer policy configuration in daemon runtime.
+Activation trigger: Enforce UID authorization in register flow and add rejection behavior coverage.
+
+3. ServiceDiscovery.StaleEntriesAreRemoved
+Status: Deferred
+Reason: Liveness supervision loop and expiry execution policy are not implemented yet.
+Activation trigger: Implement monotonic-time supervision cycle and expiry-based removal tests.
+
+4. ServiceDiscovery.BatchedOperationsPreservePerCallResults
+Status: Deferred
+Reason: End-to-end batch request execution path is not implemented yet.
+Activation trigger: Add batch processing pipeline and ordered per-call result verification.
+
+5. ServiceDiscovery.ProtocolEncodesBatchRequests
+Status: Deferred
+Reason: Protocol currently covers single-operation request-reply exchanges.
+Activation trigger: Add operation-list payload encoding/decoding and parser interoperability tests.
+
+6. ServiceDiscovery.AuthorizationPolicyConfigurationApi
+Status: Deferred
+Reason: Runtime-facing configuration API for policy handover is not exposed yet.
+Activation trigger: Add configuration API and startup integration tests proving policy availability before offers.

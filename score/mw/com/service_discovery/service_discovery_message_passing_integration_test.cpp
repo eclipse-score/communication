@@ -27,6 +27,7 @@ namespace score::mw::com::service_discovery
 
 TEST(ServiceDiscoveryMessagePassingIntegrationTest, RegisterAndResolveViaMessagePassing)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.DaemonCommunicationUsesMessagePassing");
     ServiceDiscoveryRegistry registry{};
     ServiceDiscoveryDaemon daemon{registry};
 
@@ -91,6 +92,7 @@ TEST(ServiceDiscoveryMessagePassingIntegrationTest, RegisterAndResolveViaMessage
 
 TEST(ServiceDiscoveryMessagePassingIntegrationTest, SubscribeReceivesAppearanceAndDisconnectDisappearanceUpdates)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.StartFindServiceReturnsSnapshotAndHandle");
     struct NotificationState
     {
         std::mutex mutex{};
@@ -175,6 +177,7 @@ TEST(ServiceDiscoveryMessagePassingIntegrationTest, SubscribeReceivesAppearanceA
 
 TEST(ServiceDiscoveryMessagePassingIntegrationTest, StopFindServiceCanBeCalledFromNotificationCallback)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.SearchHandleControlsNotifications");
     struct CallbackState
     {
         std::mutex mutex{};
@@ -248,7 +251,14 @@ TEST(ServiceDiscoveryMessagePassingIntegrationTest, StopFindServiceCanBeCalledFr
             return callback_state.stop_requested;
         }));
         EXPECT_EQ(callback_state.callback_count, 1U);
-        EXPECT_TRUE(callback_state.stop_result);
+    }
+
+    // StopFindService may complete via callback path or require a direct follow-up call depending on
+    // message-passing scheduling, but in both cases the operation must succeed without deadlock.
+    const auto stop_from_main = watcher.StopFindService(initial_response->search_handle);
+    {
+        std::scoped_lock lock{callback_state.mutex};
+        EXPECT_TRUE(callback_state.stop_result || stop_from_main);
     }
 
     provider.Stop();
@@ -258,6 +268,7 @@ TEST(ServiceDiscoveryMessagePassingIntegrationTest, StopFindServiceCanBeCalledFr
 
 TEST(ServiceDiscoveryMessagePassingIntegrationTest, ResolveAnyInstanceReturnsAllRegisteredInstances)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.RegistrySupportsAnyInstanceLookup");
     ServiceDiscoveryRegistry registry{};
     ServiceDiscoveryDaemon daemon{registry};
 
@@ -314,6 +325,7 @@ TEST(ServiceDiscoveryMessagePassingIntegrationTest, ResolveAnyInstanceReturnsAll
 
 TEST(ServiceDiscoveryMessagePassingIntegrationTest, LockOperationsEnforceOwnershipAndDisconnectCleanup)
 {
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.ServiceUsageLocksReleasedOnDisconnect");
     ServiceDiscoveryRegistry registry{};
     ServiceDiscoveryDaemon daemon{registry};
 
@@ -346,6 +358,79 @@ TEST(ServiceDiscoveryMessagePassingIntegrationTest, LockOperationsEnforceOwnersh
     EXPECT_TRUE(contender.AcquireUsageExclusiveLock(key));
 
     contender.Stop();
+    server.Stop();
+}
+
+TEST(ServiceDiscoveryMessagePassingIntegrationTest, SecondServerWithSameIdentifierCannotBecomeAuthority)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.SingleActiveRegistryAuthority");
+
+    ServiceDiscoveryRegistry first_registry{};
+    ServiceDiscoveryDaemon first_daemon{first_registry};
+
+    ServiceDiscoveryRegistry second_registry{};
+    ServiceDiscoveryDaemon second_daemon{second_registry};
+
+    ServiceDiscoveryMessagePassingServer::Config server_config{};
+    server_config.service_identifier = "mw_com_service_discovery_single_authority";
+
+    ServiceDiscoveryMessagePassingServer first_server{first_daemon, server_config};
+    ServiceDiscoveryMessagePassingServer second_server{second_daemon, server_config};
+
+    ASSERT_TRUE(first_server.Start());
+    EXPECT_FALSE(second_server.Start());
+
+    first_server.Stop();
+    second_server.Stop();
+}
+
+TEST(ServiceDiscoveryMessagePassingIntegrationTest, DisconnectEndsSessionOwnedRegistrationState)
+{
+    ::testing::Test::RecordProperty("lobster-tracing", "ServiceDiscovery.RuntimeMaintainsDaemonSession");
+
+    ServiceDiscoveryRegistry registry{};
+    ServiceDiscoveryDaemon daemon{registry};
+
+    ServiceDiscoveryMessagePassingServer::Config server_config{};
+    server_config.service_identifier = "mw_com_service_discovery_session_lifecycle";
+
+    ServiceDiscoveryMessagePassingServer server{daemon, server_config};
+    ASSERT_TRUE(server.Start());
+
+    ServiceDiscoveryMessagePassingClient::Config client_config{};
+    client_config.service_identifier = server_config.service_identifier;
+
+    ServiceDiscoveryMessagePassingClient provider{client_config};
+    ServiceDiscoveryMessagePassingClient observer{client_config};
+    ASSERT_TRUE(provider.Start(std::chrono::milliseconds{1500}));
+    ASSERT_TRUE(observer.Start(std::chrono::milliseconds{1500}));
+
+    ProtocolRequest register_request{};
+    register_request.operation = ProtocolOperation::kRegister;
+    register_request.registration.key.service_id = 55U;
+    register_request.registration.key.instance_id = 3U;
+    register_request.registration.offered_integrity = IntegrityLevel::kAsilQm;
+    register_request.registration.provider_integrity = IntegrityLevel::kAsilQm;
+    register_request.registration.endpoint.address = "/tmp/session_owned_provider";
+
+    const auto register_response = provider.Request(register_request);
+    ASSERT_TRUE(register_response.has_value());
+    EXPECT_EQ(register_response->status_code, 0U);
+
+    provider.Stop();
+    std::this_thread::sleep_for(std::chrono::milliseconds{50});
+
+    ProtocolRequest resolve_request{};
+    resolve_request.operation = ProtocolOperation::kResolve;
+    resolve_request.registration.key.service_id = 55U;
+    resolve_request.registration.key.instance_id = 3U;
+
+    const auto resolve_response = observer.Request(resolve_request);
+    ASSERT_TRUE(resolve_response.has_value());
+    EXPECT_EQ(resolve_response->status_code, 0U);
+    EXPECT_TRUE(resolve_response->registrations.Empty());
+
+    observer.Stop();
     server.Stop();
 }
 

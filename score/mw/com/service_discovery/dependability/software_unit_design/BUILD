@@ -37,3 +37,8 @@ unit_design(
     name = "service_discovery_message_passing_server_unit_design",
     visibility = ["//score/mw/com/service_discovery:__pkg__"],
 )
+
+unit_design(
+    name = "service_discovery_compat_unit_design",
+    visibility = ["//score/mw/com/service_discovery:__pkg__"],
+)

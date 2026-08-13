@@ -35,7 +35,7 @@ ScoreReq.FailureMode StaleRegistryEntry {
 ScoreReq.FailureMode MissedServiceDiscoveryNotification {
     guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.TooLate]
     description = "A subscriber does not receive an availability change notification for a service key it is tracking."
-    failureeffect = "Consumers may continue to wait for a service that is already available or may not react to removal in time."
+    failureeffect = "Consumers may continue to wait for a service that is already available or continue using service data after the service has been removed."
     interface = "IServiceDiscovery.StartFindService"
     version = 1
     safety = ScoreReq.Asil.B

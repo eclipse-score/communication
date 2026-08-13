@@ -15,10 +15,10 @@ package ServiceDiscovery
 import ScoreReq
 
 ScoreReq.AssumedSystemReq ServiceDiscoveryTransportAvailable {
-    description = "The system shall provide process-local IPC transport suitable for communication with the service discovery daemon."
-    rationale = "Service discovery relies on message passing transport and does not access the network stack under QNX."
+    description = "The system shall provide same-host inter-process message-passing transport for communication between client processes and the service discovery daemon."
+    rationale = "Service discovery relies on local message passing between processes and does not access the network stack under QNX."
     safety = ScoreReq.Asil.B
-    version = 1
+    version = 2
 }
 
 ScoreReq.AssumedSystemReq ProcessIdentityProvidedByOS {

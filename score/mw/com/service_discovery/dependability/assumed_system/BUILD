@@ -16,19 +16,10 @@ load(
     "assumed_system_requirements",
     "assumptions_of_use",
 )
-load("@trlc//:trlc.bzl", "trlc_requirements")
-
-trlc_requirements(
-    name = "aous_trlc",
-    srcs = ["aous.trlc"],
-    spec = ["@score_tooling//bazel/rules/rules_score/trlc/config:score_requirements_model"],
-    target_compatible_with = ["@platforms//os:linux"],
-    visibility = ["//score/mw/com/service_discovery/dependability:__subpackages__"],
-)
 
 assumptions_of_use(
     name = "aous",
-    srcs = [":aous_trlc"],
+    srcs = ["aous.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/service_discovery/dependability:__subpackages__"],
 )
