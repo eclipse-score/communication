@@ -78,7 +78,7 @@ class DualQemuProcess(QemuProcess):
         intervm=None,
         vm_index=0,
         max_boot_attempts=3,
-        boot_timeout=100,
+        boot_timeout=180,
     ):
         super().__init__(path_to_qemu_image, available_ram, available_cores, port_forwarding=port_forwarding)
         # Replace the base's default Qemu with our ivshmem-capable subclass.
@@ -119,6 +119,9 @@ class DualQemuProcess(QemuProcess):
                     self.stop()
                 except Exception:  # pylint: disable=broad-except
                     logger.exception("Failed to stop the wedged QEMU before retrying")
+                if attempt < self._max_boot_attempts:
+                    logger.info("Waiting 5 s before next boot attempt to let resources settle")
+                    time.sleep(5)
         raise RuntimeError(
             f"VM never booted into a usable state after {self._max_boot_attempts} attempts: {last_error}"
         )
