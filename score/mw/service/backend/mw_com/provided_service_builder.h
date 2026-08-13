@@ -42,18 +42,16 @@ namespace mw_com
 class ProvidedServiceBuilder
 {
   public:
-    // Workaround: Since template aliases can't be used as template template parameters,
-    // we expose ProvidedServiceDecorator through a type member that acts as a "forwarding" name
-    // This allows: GetServices<ProvidedServiceBuilder::DecoratorType>()
+    // Type alias so callers can use: GetServices<ProvidedServiceBuilder::DecoratorType>()
+    // This must be a pass-through alias to ProvidedServiceDecorator (not a distinct subclass),
+    // otherwise ProvidedServices<DecoratorType> and ProvidedServices<ProvidedServiceDecorator>
+    // would be unrelated types and dynamic_cast-based lookups would always fail.
     template <typename ServiceType>
-    struct DecoratorType : ProvidedServiceDecorator<ServiceType>
-    {
-        using ProvidedServiceDecorator<ServiceType>::ProvidedServiceDecorator;
-    };
+    using DecoratorType = ProvidedServiceDecorator<ServiceType>;
 
-    // Provide a convenient type alias for ProvidedServices instantiated with ProvidedServiceDecorator
+    // Provide a convenient type alias for ProvidedServices instantiated with DecoratorType
     // This allows tests to use: ProvidedServiceBuilder::ProvidedServicesType
-    using ProvidedServicesType = score::mw::service::ProvidedServices<ProvidedServiceDecorator>;
+    using ProvidedServicesType = score::mw::service::ProvidedServices<DecoratorType>;
 
     ProvidedServiceBuilder() = default;
 
@@ -70,11 +68,15 @@ class ProvidedServiceBuilder
     }
 
   private:
-    score::mw::service::ProvidedServices<ProvidedServiceDecorator> services_;
+    score::mw::service::ProvidedServices<DecoratorType> services_;
 };
 
 // Backward compatibility: Tests expect mw::service::backend::mw_com::ProvidedServices
-using ProvidedServices = score::mw::service::ProvidedServices<ProvidedServiceDecorator>;
+// Must use ProvidedServiceBuilder::DecoratorType (not ProvidedServiceDecorator directly) so that
+// this alias is the SAME template-template-argument instantiation as used internally by
+// ProvidedServiceBuilder/GetServices<>() -- some compilers treat a pass-through alias template
+// as a distinct template-template-parameter from the template it aliases.
+using ProvidedServices = score::mw::service::ProvidedServices<ProvidedServiceBuilder::DecoratorType>;
 
 }  // namespace mw_com
 }  // namespace backend
