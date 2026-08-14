@@ -67,7 +67,7 @@ def config(request):
 
 
 @pytest.fixture(scope="session")
-def ivshmem_backend(config, tmp_path_factory):
+def ivshmem_backend(config, tmp_path_factory):  # pylint: disable=redefined-outer-name
     """Create the single host backing file both VMs map as their ivshmem region."""
     ivshmem = config.dual_config.ivshmem
     size_bytes = parse_size(ivshmem.size)
@@ -85,7 +85,7 @@ def ivshmem_backend(config, tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
-def _targets(config, ivshmem_backend):
+def _targets(config, ivshmem_backend):  # pylint: disable=redefined-outer-name
     """Boot both VMs sequentially, verify them, and tear down in reverse order."""
     logger.info(f"Starting dual-VM tests on host: {socket.gethostname()}")
     dual_config = config.dual_config
