@@ -109,5 +109,5 @@ Features:
 
    self
    mp_safety
-   dependable_element_message_passing_index/index
+   docs/sphinx/dependable_element_message_passing_index/index
 

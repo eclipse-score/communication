@@ -22,6 +22,7 @@ LoLa / mw::com
    :hidden:
 
    self
+   score/mw/com/README
    score/mw/com/doc/tutorial/README
    generated/api_index
    docs/sphinx/mw_com_index/index

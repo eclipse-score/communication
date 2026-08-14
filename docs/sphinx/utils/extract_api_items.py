@@ -28,6 +28,15 @@ from typing import Dict, List, Optional
 class APITagExtractor: # pylint: disable=too-few-public-methods
     """Extracts API-tagged items from Doxygen XML output."""
 
+    # Matches the compound (namespace/class/struct) portion of a Doxygen
+    # refid, e.g. "namespacescore_1_1mw_1_1com_1ad1234" -> group(1) is
+    # "namespacescore_1_1mw_1_1com". Shared by `_get_member_kind_from_xml`
+    # (to locate the compound's XML file) and `_get_enclosing_scope`
+    # (to detect/dedupe direct namespace/class-scope members).
+    _COMPOUND_REFID_RE = (
+        r'((?:namespace|class|struct)[^_]+(?:_1_1[^_]+)*?)_1[a-f0-9]'
+    )
+
     def __init__(self, xml_file_path: str):
         """Initialize the API extractor.
 
@@ -78,7 +87,70 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
             sys.exit(1)
 
         self._extract_from_api_references(api_items)
+        self._drop_members_covered_by_enclosing_scope(api_items)
         return api_items
+
+    def _drop_members_covered_by_enclosing_scope(
+            self, api_items: Dict[str, List[Dict[str, str]]]
+    ) -> None:
+        """Remove members already documented via their enclosing
+        namespace or class/struct directive.
+
+        Two directives Breathe emits for other categories already pull in
+        *all* of a scope's direct members:
+        - ``.. doxygennamespace:: <name>\n   :content-only:`` (namespaces)
+        - ``.. doxygenclass:: <name>\n   :members:\n   :undoc-members:``
+          (classes/structs)
+
+        If a member belonging to such a scope is *also* individually
+        tagged with ``@api`` (which commonly happens, since Doxygen tags
+        a declaration both individually and as part of its enclosing
+        scope), it would otherwise be emitted a second time via
+        ``api_members.rst``, causing Sphinx/Breathe "Duplicate C++
+        declaration" warnings.
+
+        Args:
+            api_items: Dictionary of categorized API items, filtered in place
+        """
+        documented_scopes = {
+            item['name'] for item in api_items['namespaces']
+        } | {
+            item['name'] for item in api_items['classes']
+        }
+        if not documented_scopes:
+            return
+
+        api_items['members'] = [
+            member for member in api_items['members']
+            if self._get_enclosing_scope(member['id'])
+            not in documented_scopes
+        ]
+
+    def _get_enclosing_scope(self, refid: str) -> Optional[str]:
+        """Return the qualified name of the namespace/class/struct a
+        member directly belongs to, or None if it can't be determined.
+
+        Args:
+            refid: The reference ID from api.xml
+                   (e.g., "namespacescore_1_1mw_1_1com_1ad..." or
+                   "classscore_1_1mw_1_1com_1_1impl_1_1InstanceIdentifier"
+                   "_1a...")
+
+        Returns:
+            The qualified scope name (e.g. "score::mw::com" or
+            "score::mw::com::impl::InstanceIdentifier"), or None if
+            `refid` doesn't match a known compound naming pattern.
+        """
+        match = re.match(self._COMPOUND_REFID_RE, refid)
+        if not match:
+            return None
+        compound_name = match.group(1)
+        for kind_prefix in ('namespace', 'class', 'struct'):
+            if compound_name.startswith(kind_prefix):
+                return (
+                    compound_name[len(kind_prefix):].replace('_1_1', '::')
+                )
+        return None
 
     def _extract_member_signature(self, term_elem: ET.Element) -> str:
         """Extract member signature from term element.
@@ -124,10 +196,7 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
         #   -> "classbmw_1_1mw_1_1com_1_1impl_1_1FindServiceHandle.xml"
 
         # Split on the last occurrence of _1 followed by a lowercase letter
-        match = re.match(
-            r'((?:namespace|class|struct)[^_]+(?:_1_1[^_]+)*?)_1[a-f0-9]',
-            refid
-        )
+        match = re.match(self._COMPOUND_REFID_RE, refid)
         if match:
             compound_name = match.group(1)
             xml_file = Path(self.xml_dir) / f"{compound_name}.xml"
@@ -530,14 +599,34 @@ This section contains all {category} tagged with @api.
         # Reconstruct the signature
         simplified = f"{base_name}({', '.join(simplified_params)})"
 
-        # Check for const qualifier after the closing parenthesis
-        # Look for "const" keyword after the parameters
-        # but before other qualifiers
+        # Check for const/ref qualifiers after the closing parenthesis.
+        # Breathe requires an exact signature match, so a ref-qualified
+        # member function (e.g. "GetHandle() const &") must keep its "&"/
+        # "&&" -- dropping it (as before) made Breathe unable to resolve
+        # functions like ProxyBase::GetHandle, which is only declared as
+        # "const HandleType &GetHandle() const & noexcept". Other
+        # qualifiers (noexcept, override, final, =default) are still
+        # intentionally dropped since Breathe's signature matching
+        # ignores them.
         remainder = signature[paren_end+1:].strip()
-        if remainder.startswith('const'):
-            # Add const to the signature, but remove other qualifiers
-            # like noexcept, override, final, =default
-            simplified += " const"
+        remainder_tokens = remainder.split()
+        qualifiers = []
+        idx = 0
+        if remainder_tokens and remainder_tokens[0] == 'const':
+            qualifiers.append('const')
+            idx += 1
+        if idx < len(remainder_tokens):
+            # Doxygen sometimes emits the ref-qualifier glued directly to
+            # the following keyword with no separating space (e.g.
+            # "&noexcept" or "&&noexcept"), so check for a prefix match
+            # rather than requiring the token to be exactly "&"/"&&".
+            token = remainder_tokens[idx]
+            if token.startswith('&&'):
+                qualifiers.append('&&')
+            elif token.startswith('&'):
+                qualifiers.append('&')
+        if qualifiers:
+            simplified += ' ' + ' '.join(qualifiers)
 
         return simplified
 
