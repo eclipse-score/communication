@@ -53,7 +53,7 @@ def load_api_surface(name: str) -> dict:
 
     # Fallback: search runfiles
     if runfiles_dir:
-        for root, dirs, files in os.walk(runfiles_dir):
+        for root, _dirs, files in os.walk(runfiles_dir):
             for fname in files:
                 if fname == f"{name}_api_test_gen.json":
                     with open(os.path.join(root, fname)) as f:
