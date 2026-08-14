@@ -332,6 +332,37 @@ bazel run //:copyright.check
 bazel run //:copyright.fix
 ```
 
+### Pylint
+
+Pylint performs static analysis of Python sources using a set of checks configured in the root
+[`.pylintrc`](../.pylintrc) file. It is integrated into Bazel via `@aspect_rules_lint`, the same
+way Clang-Tidy is integrated for C++.
+
+```bash
+# Check all targets
+bazel build --config=pylint //...
+
+# Check a specific target or subtree
+bazel build --config=pylint //docs/sphinx/utils/...
+
+# Check-only convenience wrapper (equivalent to the command above)
+bazel run //:pylint.check
+```
+
+> **Note:** Pylint has no automatic-fix mode in `aspect_rules_lint` (unlike Clang-Tidy), so there
+> is no `pylint.fix` target — violations must always be fixed manually.
+
+`.pylintrc` disables checks in two clearly separated groups:
+
+1. A pre-existing, general-purpose disable list (stylistic choices and known upstream pylint
+   issues, e.g. version-specific false positives) inherited from another SCORE project's config.
+2. A dedicated **"SCORE Communication rollout suppressions"** block, added when pylint was first
+   wired up for this repo. Those entries are *not* misconfigurations or false positives — they are
+   real findings (unused imports, overly complex functions, shadowed names, etc.) produced by the
+   first full-repo `bazel build --config=pylint --keep_going //...` run. They are disabled
+   temporarily so pylint can be enabled repo-wide without requiring an immediate, large-scale code
+   cleanup; each should be re-enabled (and the underlying code fixed) incrementally over time.
+
 ### C++ and Bazel Files Formatter
 
 ```bash

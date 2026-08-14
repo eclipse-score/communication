@@ -14,6 +14,9 @@
 # Python dependencies for integration testing framework
 -r ./quality/integration_testing/requirements.txt
 
+# Python dependencies for pylint static analysis
+pylint==4.0.7
+
 # Python dependencies for documentation generation
 breathe
 sphinx_rtd_theme

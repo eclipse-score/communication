@@ -46,6 +46,8 @@ jobs:
             bazel-config: clang-tidy
           - id: clippy
             bazel-config: clippy
+          - id: pylint
+            bazel-config: pylint
     steps:
       - uses: actions/checkout@v6.0.2
 
