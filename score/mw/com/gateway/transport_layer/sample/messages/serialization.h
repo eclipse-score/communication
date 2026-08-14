@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_SAMPLE_MESSAGES_SERIALIZATION_H_
 
 #include "score/mw/com/gateway/transport_layer/sample/messages/message_error.h"
+#include "score/mw/com/impl/generic_skeleton.h"
 
 #include <score/span.hpp>
 
@@ -238,6 +239,32 @@ score::Result<uint32_t> Serialize(const T& non_trivial_copyable,
     return total_written_bytes;
 }
 
+/**
+ * @brief Serialize implementation for score::mw::com::impl::EventInfo.
+ * @details Necessery because EventInfo has a std::string_view member, which is not trivially copyable and not a
+ * std::string.
+ */
+template <>
+inline score::Result<uint32_t> Serialize<score::mw::com::impl::EventInfo>(const score::mw::com::impl::EventInfo& value,
+                                                                          score::cpp::span<std::byte> target_buffer)
+{
+    const auto name_size = value.name.size();
+    const std::size_t name_required = name_size + 1U;
+    if (target_buffer.size() < name_required)
+    {
+        return score::MakeUnexpected(MessageErrorc::kBufferTooSmall);
+    }
+    std::memcpy(target_buffer.data(), value.name.data(), name_size);
+    std::memset(&target_buffer[name_size], 0, 1U);
+
+    auto meta_result = Serialize(value.data_type_meta_info, target_buffer.subspan(name_required));
+    if (!meta_result)
+    {
+        return meta_result;
+    }
+    return static_cast<uint32_t>(name_required) + meta_result.value();
+}
+
 template <typename T>
 score::Result<uint32_t> Serialize(const T& value, score::cpp::span<std::byte> target_buffer)
 {
@@ -281,6 +308,12 @@ std::size_t ComputeSerializedSize(const T& non_trivial, non_trivial_tag)
         },
         members);
     return size;
+}
+
+template <>
+inline std::size_t ComputeSerializedSize<score::mw::com::impl::EventInfo>(const score::mw::com::impl::EventInfo& value)
+{
+    return value.name.size() + 1U + ComputeSerializedSize(value.data_type_meta_info);
 }
 
 template <typename T>
@@ -388,6 +421,34 @@ score::Result<uint32_t> Deserialize(T& non_trivial_copyable,
         return score::MakeUnexpected(score::mw::com::gateway::MessageErrorc::kPayloadInvalid);
     }
     return total_consumed_bytes;
+}
+
+/**
+ * @brief Deserialize implementation for score::mw::com::impl::EventInfo.
+ * @details Necessery because EventInfo has a std::string_view member, which is not trivially copyable and not a
+ * std::string.
+ */
+template <>
+inline score::Result<uint32_t> Deserialize<score::mw::com::impl::EventInfo>(
+    score::mw::com::impl::EventInfo& value,
+    score::cpp::span<const std::byte> source_buffer)
+{
+    const auto* name_start = reinterpret_cast<const char*>(source_buffer.data());
+    const auto name_len = strnlen(name_start, source_buffer.size());
+    if (name_len == source_buffer.size() || name_len == 0)
+    {
+        return score::MakeUnexpected(MessageErrorc::kPayloadInvalid);
+    }
+
+    value.name = std::string_view(name_start, name_len);
+
+    const auto consumed_by_name = static_cast<uint32_t>(name_len + 1U);
+    auto meta_result = Deserialize(value.data_type_meta_info, source_buffer.subspan(consumed_by_name));
+    if (!meta_result)
+    {
+        return meta_result;
+    }
+    return consumed_by_name + meta_result.value();
 }
 
 template <typename T>
