@@ -153,9 +153,9 @@ def main():
     joined_config_json = load_json(joined_config_json_path)
     base_mw_com_config_json = load_json(base_mw_com_config_path)
 
-    numberOfSampleSlots, maxSamples = calculate_slot_numbers(joined_config_json)
+    number_of_sample_slots, max_samples = calculate_slot_numbers(joined_config_json)
 
-    client_config_benchmark_json = create_client_benchmark_config(joined_config_json, maxSamples)
+    client_config_benchmark_json = create_client_benchmark_config(joined_config_json, max_samples)
     save_json(f"{out_dir}/client_benchmark_config.json", client_config_benchmark_json)
     client_mw_com_config_json = create_client_mw_com_config(base_mw_com_config_json,
                                                             joined_config_json["common"]["asil_level"])
@@ -165,7 +165,7 @@ def main():
     save_json(f"{out_dir}/service_benchmark_config.json", service_config_benchmark_json)
     service_mw_com_config_json = create_service_mw_com_config(base_mw_com_config_json,
                                                               joined_config_json["common"]["asil_level"],
-                                                              numberOfSampleSlots)
+                                                              number_of_sample_slots)
     save_json(f"{out_dir}/service_mw_com_config.json", service_mw_com_config_json)
 
 

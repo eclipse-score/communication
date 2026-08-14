@@ -53,7 +53,10 @@ class IvshmemQemu(Qemu):
         super().__init__(path_to_image, ram, cores, cpu="host", port_forwarding=[])
         # Re-resolve: "host" is invalid under TCG, fall back to "max".
         if self._accelerator_support == "tcg":
-            self._Qemu__cpu = "max"
+            # Reaching into the base Qemu class's name-mangled private attribute is
+            # intentional here: Qemu.__cpu has no protected/public setter, and changing
+            # its access modifier is out of scope for this fix.
+            self._Qemu__cpu = "max"  # pylint: disable=invalid-name
             logger.warning("Running under TCG: using -cpu max instead of host.")
 
     def _extra_qemu_args(self):
