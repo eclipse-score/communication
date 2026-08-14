@@ -447,7 +447,6 @@ class DryRunGitHubClient:
 
     def search_issue(self, target: str) -> Issue | None:
         self.log.append(f"search_issue({target}) -> None")
-        return None
 
     def list_run_comments(self, issue: Issue) -> list[str]:
         return []
