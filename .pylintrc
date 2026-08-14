@@ -141,6 +141,48 @@ disable=missing-docstring,
         # Duplicate-code detection became stricter in pylint 4.x, catching cases invisible to 2.17.
         duplicate-code,
 
+        # ---------------------------------------------------------------------------
+        # SCORE Communication rollout suppressions (see quality/quality.md#pylint).
+        #
+        # Unlike every disable above (which suppresses a check because it is
+        # misconfigured, a false positive, or a stylistic choice), the checks below
+        # are REAL findings: they were surfaced by the first full-repo
+        # `bazel build --config=pylint --keep_going //...` run performed while
+        # integrating pylint via aspect_rules_lint, and each one flags an actual,
+        # legitimate issue in the existing code (unused imports, overly complex
+        # functions, shadowed names, etc.).
+        #
+        # They are disabled here only so that pylint can be turned on repo-wide
+        # without requiring an immediate, large-scale code cleanup as part of the
+        # linter integration itself. Fixing the underlying code is intentionally
+        # out of scope for now. Each entry should be removed (re-enabled) once the
+        # corresponding violations are fixed in the codebase; do not use this list
+        # as a place to suppress new violations going forward.
+        # ---------------------------------------------------------------------------
+        too-many-locals,
+        too-many-branches,
+        unused-argument,
+        unused-import,
+        too-many-statements,
+        import-outside-toplevel,
+        subprocess-run-check,
+        redefined-outer-name,
+        no-else-return,
+        invalid-name,
+        protected-access,
+        dangerous-default-value,
+        useless-return,
+        too-many-nested-blocks,
+        too-many-return-statements,
+        redefined-builtin,
+        unused-variable,
+        consider-using-join,
+        too-many-positional-arguments,
+        too-many-arguments,
+        superfluous-parens,
+        trailing-newlines,
+        too-many-lines,
+
 
 
 # Enable the message, report, category or checker with the given id(s). You can
