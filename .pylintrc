@@ -174,7 +174,6 @@ disable=missing-docstring,
         consider-using-join,
         too-many-positional-arguments,
         too-many-arguments,
-        trailing-newlines,
         too-many-lines,
 
 
