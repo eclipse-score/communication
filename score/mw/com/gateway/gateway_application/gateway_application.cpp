@@ -474,7 +474,7 @@ score::Result<void> GatewayApplication::RegisterUpdateNotification(impl::Instanc
     }
 
     auto& proxy_event = event_it->second;
-    proxy_event.Subscribe(kGatewaySubscribeSamples);
+    score::cpp::ignore = proxy_event.Subscribe(kGatewaySubscribeSamples);
 
     using ReceiveCallback = safecpp::MoveOnlyScopedFunction<void()>;
     auto scoped_handler = std::make_shared<ReceiveCallback>(
@@ -483,7 +483,8 @@ score::Result<void> GatewayApplication::RegisterUpdateNotification(impl::Instanc
             auto specifier_result = impl::InstanceSpecifier::Create(std::string{spec});
             if (specifier_result.has_value())
             {
-                transport_layer_->NotifyUpdate(std::move(specifier_result).value(), elem_type, std::string{elem_name});
+                score::cpp::ignore = transport_layer_->NotifyUpdate(
+                    std::move(specifier_result).value(), elem_type, std::string{elem_name});
             }
         });
 
@@ -525,7 +526,7 @@ score::Result<void> GatewayApplication::UnregisterUpdateNotification(impl::Insta
         return MakeUnexpected(GatewayErrorc::kUnknownServiceElement);
     }
 
-    event_it->second.UnsetReceiveHandler();
+    score::cpp::ignore = event_it->second.UnsetReceiveHandler();
     event_it->second.Unsubscribe();
     return {};
 }
@@ -555,7 +556,7 @@ score::Result<void> GatewayApplication::NotifyUpdate(impl::InstanceSpecifier ser
         return MakeUnexpected(GatewayErrorc::kUnknownServiceElement);
     }
 
-    event_it->second.Notify();
+    score::cpp::ignore = event_it->second.Notify();
     return {};
 }
 

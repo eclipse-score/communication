@@ -255,7 +255,7 @@ TEST(GatewayApplicationSetupTest, SetupWithoutInjectedTransportCallsTransportFac
 
     // When Setup() is called without a pre-injected transport
     // Then TransportFactory::Create is invoked and the process terminates
-    EXPECT_DEATH(app.Setup(), ".*");
+    EXPECT_DEATH(score::cpp::ignore = app.Setup(), ".*");
 }
 
 // ---------------------------------------------------------------------------

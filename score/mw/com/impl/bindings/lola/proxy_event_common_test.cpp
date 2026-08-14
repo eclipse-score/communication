@@ -346,10 +346,10 @@ TYPED_TEST(LolaProxyEventCommonFixture, RegisterSubscriptionStateChangeHandler)
         last_subscription_state = new_state;
         return true;
     };
-    this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
+    score::cpp::ignore = this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
 
     // When subscribed
-    this->proxy_event_->Subscribe(1U);
+    score::cpp::ignore = this->proxy_event_->Subscribe(1U);
 
     // Then the callback is triggered with kSubscribed new status
     EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
@@ -372,10 +372,10 @@ TYPED_TEST(LolaProxyEventCommonFixture, RegisterSubscriptionStateChangeHandlerSe
         last_subscription_state = new_state;
         return new_state != SubscriptionState::kSubscribed;
     };
-    this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
+    score::cpp::ignore = this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
 
     // When subscribed
-    this->proxy_event_->Subscribe(1U);
+    score::cpp::ignore = this->proxy_event_->Subscribe(1U);
 
     // Then the callback is triggered with kSubscribed new status
     EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
@@ -398,11 +398,11 @@ TYPED_TEST(LolaProxyEventCommonFixture, RegisterAndRemoveSubscriptionStateChange
         last_subscription_state = new_state;
         return true;
     };
-    this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
+    score::cpp::ignore = this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
 
     // When removing the callback and subscribing
-    this->proxy_event_->UnsetSubscriptionStateChangeHandler();
-    this->proxy_event_->Subscribe(1U);
+    score::cpp::ignore = this->proxy_event_->UnsetSubscriptionStateChangeHandler();
+    score::cpp::ignore = this->proxy_event_->Subscribe(1U);
 
     // Then the callback is not triggered
     EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);

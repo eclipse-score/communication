@@ -142,7 +142,11 @@ void SampleHyperVisorTransport::HandleProvideServiceRequest(std::unique_ptr<Tran
         return;
     }
     PreCreateInterVmSharedMemory(specifier_result.value(), request.GetShmControlSize(), request.GetShmDataSize());
-    gateway_app_.ProvideService(specifier_result.value(), request.GetServiceElements());
+    const auto result = gateway_app_.ProvideService(specifier_result.value(), request.GetServiceElements());
+    if (!result.has_value())
+    {
+        log::LogError("LoLa") << "SampleTransport: ProvideService failed!";
+    }
 }
 
 void SampleHyperVisorTransport::HandleStopOfferServiceRequest(std::unique_ptr<TransportMessage> message)
@@ -166,7 +170,11 @@ void SampleHyperVisorTransport::HandleOfferServiceRequest(std::unique_ptr<Transp
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in OfferServiceRequest!";
         return;
     }
-    gateway_app_.OfferService(specifier_result.value());
+    const auto result = gateway_app_.OfferService(specifier_result.value());
+    if (!result.has_value())
+    {
+        log::LogError("LoLa") << "SampleTransport: OfferService failed!";
+    }
 }
 
 void SampleHyperVisorTransport::HandleUpdateNotification(std::unique_ptr<TransportMessage> message)
@@ -178,7 +186,12 @@ void SampleHyperVisorTransport::HandleUpdateNotification(std::unique_ptr<Transpo
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in UpdateNotification!";
         return;
     }
-    gateway_app_.NotifyUpdate(specifier_result.value(), notification.GetElementType(), notification.GetElementName());
+    const auto result = gateway_app_.NotifyUpdate(
+        specifier_result.value(), notification.GetElementType(), notification.GetElementName());
+    if (!result.has_value())
+    {
+        log::LogError("LoLa") << "SampleTransport: NotifyUpdate failed!";
+    }
 }
 
 void SampleHyperVisorTransport::HandleRegisterNotificationRequest(std::unique_ptr<TransportMessage> message)
@@ -190,8 +203,12 @@ void SampleHyperVisorTransport::HandleRegisterNotificationRequest(std::unique_pt
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in RegisterNotificationRequest!";
         return;
     }
-    gateway_app_.RegisterUpdateNotification(
+    const auto result = gateway_app_.RegisterUpdateNotification(
         specifier_result.value(), request.GetElementType(), request.GetElementName());
+    if (!result.has_value())
+    {
+        log::LogError("LoLa") << "SampleTransport: RegisterUpdateNotification failed!";
+    }
 }
 
 void SampleHyperVisorTransport::HandleUnregisterNotificationRequest(std::unique_ptr<TransportMessage> message)
@@ -203,8 +220,12 @@ void SampleHyperVisorTransport::HandleUnregisterNotificationRequest(std::unique_
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in UnregisterNotificationRequest!";
         return;
     }
-    gateway_app_.UnregisterUpdateNotification(
+    const auto result = gateway_app_.UnregisterUpdateNotification(
         specifier_result.value(), request.GetElementType(), request.GetElementName());
+    if (!result.has_value())
+    {
+        log::LogError("LoLa") << "SampleTransport: UnregisterUpdateNotification failed!";
+    }
 }
 
 void SampleHyperVisorTransport::Shutdown()

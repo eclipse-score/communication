@@ -1408,7 +1408,7 @@ TEST_F(SkeletonFieldMoveConstructionFixture, SecondRegisterSetHandlerReplacesHan
     MySetterAndGetterSkeleton unit2{std::move(unit)};
 
     // Then the method should still be usable (validated by calling RegisterSetHandler which dispatches to the method)
-    unit2.my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
+    score::cpp::ignore = unit2.my_setter_field_.RegisterSetHandler([](TestSampleType& /*value*/) noexcept {});
 }
 
 TEST_F(SkeletonFieldMoveConstructionFixture,

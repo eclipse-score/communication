@@ -53,7 +53,7 @@ class ProxyEventStateChangeNotifier
 
     ~ProxyEventStateChangeNotifier()
     {
-        proxy_event_.UnsetSubscriptionStateChangeHandler();
+        score::cpp::ignore = proxy_event_.UnsetSubscriptionStateChangeHandler();
     }
 
     ProxyEventStateChangeNotifier(const ProxyEventStateChangeNotifier&) = delete;

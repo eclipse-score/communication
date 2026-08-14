@@ -318,7 +318,7 @@ void BidirectionalTransport::HandleIncomingMessage(std::unique_ptr<TransportMess
 
     if (RequiresResponse(message->GetType()))
     {
-        SendAck(message->GetSequenceNumber());
+        score::cpp::ignore = SendAck(message->GetSequenceNumber());
     }
 
     // Post to dispatch queue rather than calling the handler inline.

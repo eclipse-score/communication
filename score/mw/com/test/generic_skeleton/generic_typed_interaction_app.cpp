@@ -103,7 +103,7 @@ int run_provider(score::cpp::stop_token stop_token)
         }
         auto* typed_sample = static_cast<MyEventData*>(sample_res.value().Get());
         typed_sample->counter = i;
-        generic_event.Send(std::move(sample_res.value()));
+        score::cpp::ignore = generic_event.Send(std::move(sample_res.value()));
 
         score::mw::log::LogInfo("GenericSkeletonProvider") << PAYLOAD_SIZE << "-byte Event Sent sample: " << i;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -158,11 +158,11 @@ int run_consumer()
     std::uint64_t expected{0};
     int data_mismatches{0};
     bool is_first_sample{true};
-    proxy.event_.Subscribe(kSamplesToSubscribe);
+    score::cpp::ignore = proxy.event_.Subscribe(kSamplesToSubscribe);
 
     while (received < kSamplesToProcess)
     {
-        proxy.event_.GetNewSamples(
+        score::cpp::ignore = proxy.event_.GetNewSamples(
             [&](score::mw::com::SamplePtr<MyEventData> sample) {
                 if (is_first_sample)
                 {

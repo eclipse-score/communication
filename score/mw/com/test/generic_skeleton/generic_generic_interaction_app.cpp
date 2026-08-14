@@ -109,7 +109,7 @@ int run_provider(score::cpp::stop_token stop_token)
         typed_sample->counter = i;
 
         std::cout << "[PROVIDER] Sending sample: " << i << std::endl;
-        generic_event.Send(std::move(sample_res.value()));
+        score::cpp::ignore = generic_event.Send(std::move(sample_res.value()));
         std::cout << "[PROVIDER] " << PAYLOAD_SIZE << "-byte Event Sent sample: " << i << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         i++;
@@ -149,7 +149,7 @@ int run_consumer()
 
     // Get reference to the GenericProxyEvent
     auto& generic_event = event_it->second;
-    generic_event.Subscribe(kSamplesToSubscribe);
+    score::cpp::ignore = generic_event.Subscribe(kSamplesToSubscribe);
 
     std::uint64_t expected{0};
     std::uint64_t received{0};
@@ -159,7 +159,7 @@ int run_consumer()
     while (received < kSamplesToProcess)
     {
         // The receiver callback operates on type-erased memory (SamplePtr<const void>)
-        generic_event.GetNewSamples(
+        score::cpp::ignore = generic_event.GetNewSamples(
             [&](auto sample) {
                 auto* typed_sample = static_cast<const MyEventData*>(sample.get());
 
