@@ -13,6 +13,7 @@
 
 load(
     "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "assumptions_of_use",
     "fmea",
 )
 
@@ -35,4 +36,10 @@ fmea(
     failuremodes = ["failure_modes.trlc"],
     root_causes = [":root_causes"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
+)
+
+assumptions_of_use(
+    name = "assumptions_of_use",
+    srcs = ["aou.trlc"],
+    visibility = ["//visibility:public"],
 )
