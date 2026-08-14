@@ -30,7 +30,7 @@ class IvshmemQemu(Qemu):
         path_to_image,
         ram="1G",
         cores="2",
-        port_forwarding=[],
+        port_forwarding=None,
         ivshmem_path=None,
         ivshmem_size="4M",
         intervm=None,
@@ -47,7 +47,7 @@ class IvshmemQemu(Qemu):
         self._ivshmem_size = ivshmem_size
         self._intervm = intervm
         self._vm_index = vm_index
-        self._dual_port_forwarding = port_forwarding
+        self._dual_port_forwarding = port_forwarding if port_forwarding is not None else []
         # Pass port_forwarding=[] to the base so it doesn't add default-MAC devices.
         # We handle port forwarding ourselves in _extra_qemu_args with per-VM MACs.
         super().__init__(path_to_image, ram, cores, cpu="host", port_forwarding=[])

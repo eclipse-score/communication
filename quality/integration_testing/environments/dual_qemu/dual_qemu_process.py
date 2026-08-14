@@ -72,7 +72,7 @@ class DualQemuProcess(QemuProcess):
         available_ram,
         available_cores,
         vm_config,
-        port_forwarding=[],
+        port_forwarding=None,
         ivshmem_path=None,
         ivshmem_size="4M",
         intervm=None,
@@ -80,6 +80,7 @@ class DualQemuProcess(QemuProcess):
         max_boot_attempts=3,
         boot_timeout=100,
     ):
+        port_forwarding = port_forwarding if port_forwarding is not None else []
         super().__init__(path_to_qemu_image, available_ram, available_cores, port_forwarding=port_forwarding)
         # Replace the base's default Qemu with our ivshmem-capable subclass.
         self._qemu = IvshmemQemu(
