@@ -15,7 +15,6 @@
 This is necessary because the sphinx_build_binary provided by rules_python
 does not support all the arguments we need."""
 import argparse
-import sys
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sphinx build wrapper for Bazel")
