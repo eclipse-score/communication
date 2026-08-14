@@ -178,7 +178,6 @@ disable=missing-docstring,
         consider-using-join,
         too-many-positional-arguments,
         too-many-arguments,
-        superfluous-parens,
         trailing-newlines,
         too-many-lines,
 

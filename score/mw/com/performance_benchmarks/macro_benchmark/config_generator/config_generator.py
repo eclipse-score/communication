@@ -49,7 +49,7 @@ def calculate_slot_numbers(joined_config_json: dict):
     reader_count = joined_config_json["common"]["number_of_clients"]
 
     # this is the special case, where the client doesn't poll cyclically for new samples, but registers a receive-handler
-    if (read_cycle_time_ms == 0):
+    if read_cycle_time_ms == 0:
         number_of_sample_slots = reader_count
         max_samples = 1
     else:
