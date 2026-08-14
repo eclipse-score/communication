@@ -578,10 +578,9 @@ def _get_coverage_color(pct: float) -> str:
     """Return the llvm-cov color class for a coverage percentage."""
     if pct >= 100.0:
         return "green"
-    elif pct >= 80.0:
+    if pct >= 80.0:
         return "yellow"
-    else:
-        return "red"
+    return "red"
 
 
 def _update_totals_row(content: str, stats: Dict[str, Any]) -> str:

@@ -121,17 +121,17 @@ def extract_signature(node: dict) -> str:
     if kind in ("FunctionDecl", "CXXMethodDecl", "FunctionTemplateDecl",
                 "CXXConstructorDecl", "CXXDestructorDecl"):
         return f"{name} : {type_info}" if type_info else name
-    elif kind in ("TypeAliasDecl", "TypedefDecl", "TypeAliasTemplateDecl"):
+    if kind in ("TypeAliasDecl", "TypedefDecl", "TypeAliasTemplateDecl"):
         return f"using {name} = {type_info}" if type_info else f"using {name}"
-    elif kind == "CXXRecordDecl":
+    if kind == "CXXRecordDecl":
         tag = node.get("tagUsed", "class")
         return f"{tag} {name}"
-    elif kind == "EnumDecl":
+    if kind == "EnumDecl":
         scoped = node.get("scopedEnumTag", "")
         return f"enum {scoped} {name}" if scoped else f"enum {name}"
-    elif kind == "EnumConstantDecl":
+    if kind == "EnumConstantDecl":
         return name
-    elif kind == "VarDecl":
+    if kind == "VarDecl":
         return f"{name} : {type_info}" if type_info else name
     return name
 

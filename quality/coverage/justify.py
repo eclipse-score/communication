@@ -151,9 +151,9 @@ def resolve_location_lines(location: Dict[str, Any]) -> List[int]:
     """Resolve line numbers from a YAML location entry."""
     if "lines" in location:
         return location["lines"]
-    elif "line_start" in location and "line_end" in location:
+    if "line_start" in location and "line_end" in location:
         return list(range(location["line_start"], location["line_end"] + 1))
-    elif "line" in location:
+    if "line" in location:
         return [location["line"]]
     return []
 
