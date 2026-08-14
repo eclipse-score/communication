@@ -88,13 +88,13 @@ class IvshmemQemu(Qemu):
         ``port_forwarding=[]`` to the base and handle it here with unique MACs instead.
         """
         result = []
-        for id, forwarding in enumerate(self._dual_port_forwarding, start=1):
+        for net_id, forwarding in enumerate(self._dual_port_forwarding, start=1):
             result.extend(
                 [
                     "-netdev",
-                    f"user,id=net{id},hostfwd=tcp::{forwarding.host_port}-:{forwarding.guest_port}",
+                    f"user,id=net{net_id},hostfwd=tcp::{forwarding.host_port}-:{forwarding.guest_port}",
                     "-device",
-                    f"virtio-net-pci,netdev=net{id},mac={self._mac_for(id)}",
+                    f"virtio-net-pci,netdev=net{net_id},mac={self._mac_for(net_id)}",
                 ]
             )
         return result
