@@ -445,10 +445,7 @@ def main():
 
 
 def _get_action_env_extension(codeql_env):
-    action_env_extension = ""
-    for env_var in codeql_env:
-        action_env_extension += f" --action_env={env_var}"
-    return action_env_extension
+    return "".join(f" --action_env={env_var}" for env_var in codeql_env)
 
 
 def _get_merged_environment(codeql_env):
