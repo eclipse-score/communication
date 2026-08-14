@@ -118,7 +118,7 @@ def run_extract_api(headers: list[str], target_files: list[str]) -> dict:
             "-I", workspace_root,
             combined_path,
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=False)
         if not result.stdout:
             raise RuntimeError(f"clang produced no output. stderr: {result.stderr[:500]}")
         ast = json.loads(result.stdout)
@@ -133,7 +133,7 @@ def run_extract_api(headers: list[str], target_files: list[str]) -> dict:
         "--target-label", "//test:target",
     ]
     result = subprocess.run(
-        cmd, input=json.dumps(ast), capture_output=True, text=True, timeout=30
+        cmd, input=json.dumps(ast), capture_output=True, text=True, timeout=30, check=False
     )
     if result.returncode != 0:
         raise RuntimeError(f"extract_api.py failed: {result.stderr}")
@@ -500,6 +500,7 @@ class TestCliModes(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 timeout=30,
+                check=False,
             )
         finally:
             os.unlink(header_path)
