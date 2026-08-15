@@ -18,6 +18,8 @@
 
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/sample_allocatee_guard.h"
+
+#include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
 #include <cstddef>
@@ -35,8 +37,6 @@ class GenericSkeletonEventBinding : public SkeletonEventBindingBase
 
     /// \brief Get Notification when new sample is available.
     virtual Result<void> Notify() noexcept = 0;
-
-    virtual std::pair<size_t, size_t> GetSizeInfo() const noexcept = 0;
 
     virtual Result<void> SetReceiveHandlerRegistrationChangedHandler(
         ReceiveHandlerRegistrationChangedCallback callback) noexcept = 0;

@@ -266,15 +266,15 @@ TEST_F(GenericSkeletonEventTest, GetSizeInfoDispatchesToBinding)
     this->GivenAGenericSkeletonWithOneEvent();
 
     // Expect the binding to return specific size info
-    std::pair<std::size_t, std::uint8_t> expected_size_info{32, 16};
+    memory::DataTypeSizeInfo expected_size_info{32, 16};
     EXPECT_CALL(*mock_event_binding_ptr_, GetSizeInfo()).WillOnce(Return(expected_size_info));
 
     // When calling GetSizeInfo
     auto result_info = event_->GetSizeInfo();
 
     // Then it matches the binding's return values
-    EXPECT_EQ(result_info.size, expected_size_info.first);
-    EXPECT_EQ(result_info.alignment, expected_size_info.second);
+    EXPECT_EQ(result_info.size, expected_size_info.Size());
+    EXPECT_EQ(result_info.alignment, expected_size_info.Alignment());
 }
 
 TEST_F(GenericSkeletonEventTest, NotifyBeforeOfferReturnsError)

@@ -106,8 +106,8 @@ DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
     const auto* const binding = static_cast<const GenericSkeletonEventBinding*>(binding_.get());
     if (!binding)
         return {};
-    const auto size_info_pair = binding->GetSizeInfo();
-    return {size_info_pair.first, size_info_pair.second};
+    const auto data_type_size_info = binding->GetSizeInfo();
+    return {data_type_size_info.Size(), data_type_size_info.Alignment()};
 }
 
 Result<void> GenericSkeletonEvent::SetReceiveHandlerRegistrationChangedHandler(

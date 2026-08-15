@@ -328,6 +328,9 @@ cc_library(
         "generic_skeleton_event.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/memory:data_type_size_info",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -742,13 +745,20 @@ cc_library(
     srcs = ["event_data_storage.cpp"],
     hdrs = ["event_data_storage.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/safecpp/safe_math",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":control_slot_types",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:offset_ptr",
         "//score/memory/shared:types",
-        "@score_baselibs//score/containers:dynamic_array",
+        "//score/mw/com/impl:initialize_sample_callback",
+        "@score_baselibs//score/memory:data_type_size_info",
     ],
 )
 
@@ -1268,10 +1278,15 @@ cc_unit_test(
     srcs = [
         "event_data_storage_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
+    features = COMPILER_WARNING_FEATURES + [
+        # SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED catches an exception, so disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
     deps = [
         ":event_data_storage",
-        "@score_baselibs//score/containers:dynamic_array",
+        "//score/memory/shared:new_delete_delegate_resource",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/mw/log",
     ],
 )

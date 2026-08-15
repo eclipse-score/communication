@@ -55,6 +55,7 @@ constexpr auto control_shm = "/dev/shm/lola-ctl-0000000000000001-00016";
 constexpr auto asil_control_shm = "/dev/shm/lola-ctl-0000000000000001-00016-b";
 #endif
 
+const memory::DataTypeSizeInfo kSampleTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
 const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
 constexpr std::size_t kNumberOfSlots{10U};
 const SkeletonEventProperties kEventProperties{kNumberOfSlots, 0U, 0U, false, 10U, true};
@@ -150,8 +151,10 @@ class SkeletonComponentTestFixture : public ::testing::Test
         ON_CALL(lola_runtime_mock_, GetLolaMessaging()).WillByDefault(ReturnRef(message_passing_service_mock_));
         ON_CALL(runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock_));
 
-        ON_CALL(mock_event_binding_, GetMaxSize()).WillByDefault(Return(sizeof(TestSampleType)));
-        ON_CALL(mock_field_binding_, GetMaxSize()).WillByDefault(Return(sizeof(TestSampleType)));
+        ON_CALL(mock_event_binding_, GetSizeInfo())
+            .WillByDefault(Return(memory::DataTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)}));
+        ON_CALL(mock_field_binding_, GetSizeInfo())
+            .WillByDefault(Return(memory::DataTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)}));
     }
 
     void TearDown() override
@@ -243,13 +246,13 @@ class SkeletonComponentTestFixture : public ::testing::Test
         ON_CALL(mock_event_binding_, PrepareOffer()).WillByDefault(testing::Invoke([&skeleton]() -> Result<void> {
             const ElementFqId element_fq_id{
                 test::kLolaServiceId, test::kFooEventId, test::kDefaultLolaInstanceId, ServiceElementType::EVENT};
-            skeleton.Register<TestSampleType>(element_fq_id, kEventProperties);
+            skeleton.Register(element_fq_id, kEventProperties, kSampleTypeSizeInfo);
             return {};
         }));
         ON_CALL(mock_field_binding_, PrepareOffer()).WillByDefault(testing::Invoke([&skeleton]() -> Result<void> {
             const ElementFqId element_fq_id{
                 test::kLolaServiceId, test::kFooFieldId, test::kDefaultLolaInstanceId, ServiceElementType::FIELD};
-            skeleton.Register<TestSampleType>(element_fq_id, kEventProperties);
+            skeleton.Register(element_fq_id, kEventProperties, kSampleTypeSizeInfo);
             return {};
         }));
     }
@@ -579,11 +582,6 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_Data_QM)
     // Expect, that the LoLa runtime returns that ShmSize calculation shall be done via (analytic) estimation
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
 
-    // The analytic size calculation queries the maximum sample-size of each event/field binding. Since the events are
-    // registered below as uint8_t, GetMaxSize() has to report the matching size.
-    ON_CALL(mock_event_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
-    ON_CALL(mock_field_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
-
     // Expecting that the event and field are registered
     RegisterEventAndFieldOnPrepareOffer(*unit);
 
@@ -627,11 +625,6 @@ TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_Control_QM)
 
     // Expect, that the LoLa runtime returns that ShmSize calculation shall be done via (analytic) estimation
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
-
-    // The analytic size calculation queries the maximum sample-size of each event/field binding. Since the events are
-    // registered below as uint8_t, GetMaxSize() has to report the matching size.
-    ON_CALL(mock_event_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
-    ON_CALL(mock_field_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
 
     // Expecting that the event and field are registered
     RegisterEventAndFieldOnPrepareOffer(*unit);

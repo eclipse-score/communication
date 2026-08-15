@@ -17,8 +17,6 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
-#include "score/mw/com/impl/bindings/lola/i_runtime.h"
-#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/lola/sample_ptr.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
@@ -28,15 +26,16 @@
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
-#include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
+#include "score/memory/data_type_size_info.h"
+#include "score/mw/log/logging.h"
 #include "score/result/result.h"
+
 #include <score/assert.hpp>
 #include <score/utility.hpp>
 
-#include <cstdint>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -109,7 +108,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     }
 
   private:
-    EventDataStorage<SampleType>* event_data_storage_;
+    EventDataStorage* event_data_storage_;
     SkeletonEventCommon<SampleType> skeleton_event_common_;
 };
 
@@ -186,7 +185,7 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     //  GetLatestSample().
     return MakeSampleAllocateePtr(
         SampleAllocateePtr<SampleType>(
-            &event_data_storage_->at(static_cast<std::uint64_t>(slot_index)),
+            static_cast<SampleType*>(event_data_storage_->GetTypeErasedDataSlot(slot_index, sizeof(SampleType))),
             skeleton_event_common_.GetEventDataControlComposite(),
             skeleton_event_common_.GetConsumerEventDataControlLocalView(QualityType::kASIL_QM),
             slot_index),
@@ -223,9 +222,10 @@ Result<impl::SamplePtr<SampleType>> SkeletonEvent<SampleType>::GetLatestSample(Q
     }
 
     return impl::SamplePtr<SampleType>{
-        lola::SamplePtr<SampleType>{&event_data_storage_->at(static_cast<std::uint64_t>(*slot_result)),
-                                    consumer_event_data_control_local,
-                                    slot_result.value()},
+        lola::SamplePtr<SampleType>{
+            static_cast<SampleType*>(event_data_storage_->GetTypeErasedDataSlot(*slot_result, sizeof(SampleType))),
+            consumer_event_data_control_local,
+            slot_result.value()},
         std::move(*guard)};
 }
 
@@ -240,8 +240,9 @@ Result<void> SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
     // Invariant: after a successful PrepareOffer(), event_data_storage_ is guaranteed to be non-null.
     // All methods that require event_data_storage_ (e.g. GetLatestSample) rely on this invariant.
-    const auto registration_result = skeleton_event_common_.GetParent().template Register<SampleType>(
-        skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties());
+    memory::DataTypeSizeInfo sample_size_info{sizeof(SampleType), alignof(SampleType)};
+    const auto registration_result = skeleton_event_common_.GetParent().Register(
+        skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties(), sample_size_info);
     event_data_storage_ = &registration_result.event_data_storage;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_storage_ != nullptr,
                                                 "event_data_storage_ must be non-null after PrepareOffer");

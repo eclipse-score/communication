@@ -19,7 +19,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <limits>
 #include <memory>
 #include <string_view>
 
@@ -27,8 +26,6 @@ namespace score::mw::com::impl::lola
 {
 namespace
 {
-
-const std::size_t kMaxSampleCount{2U};
 
 class LolaGenericProxyEventFixture : public LolaProxyEventResources
 {
@@ -137,32 +134,6 @@ TEST_F(LolaGenericProxyEventDeathTest, FailOnEventNotFound)
     // When constructing a GenericProxyEvent from an unknown event
     // Then the program terminates
     EXPECT_DEATH(WithAGenericProxyEvent(bad_element_fq_id, bad_event_name), ".*");
-}
-
-TEST_F(LolaGenericProxyEventDeathTest, OverflowWhenCalculatingRawEventsSlotsArraySizeTerminates)
-{
-    SampleReferenceTracker sample_reference_tracker_{kMaxSampleCount};
-    TrackerGuardFactory guard_factory{sample_reference_tracker_.Allocate(1U)};
-
-    // Given a mocked SkeletonEvent whose metainfo stores a size which will lead to an overflow when calculating the raw
-    // event slot array size
-    const auto align_of = fake_data_->data_storage->events_metainfo_.at(element_fq_id_).data_type_info_.Alignment();
-
-    // Subtract the align of from the max size to prevent an overflow when calculating the aligned size.
-    // Keep the size a multiple of the alignment to satisfy the DataTypeSizeInfo invariant.
-    fake_data_->data_storage->events_metainfo_.at(element_fq_id_).data_type_info_ =
-        score::memory::DataTypeSizeInfo{(std::numeric_limits<std::size_t>::max() / align_of) * align_of, align_of};
-
-    // and given a GenericProxyEvent which has subscribed
-    WithAGenericProxyEvent(element_fq_id_, event_name_);
-    std::ignore = generic_proxy_event_->Subscribe(kMaxSampleCount);
-
-    // When calling GetNewSamples
-    // Then the program terminates
-    EXPECT_DEATH(
-        score::cpp::ignore = generic_proxy_event_->GetNewSamples(
-            [](impl::SamplePtr<void>, const tracing::ITracingRuntime::TracePointDataId) noexcept {}, guard_factory),
-        ".*");
 }
 
 }  // namespace
