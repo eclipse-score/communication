@@ -225,6 +225,7 @@ cc_library(
     deps = [
         ":receive_handler_registration_changed_handler",
         ":skeleton_event_binding",
+        "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/result",
     ],
 )

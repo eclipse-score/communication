@@ -125,32 +125,8 @@ TEST_F(GenericSkeletonEventFixture, GetSizeInfo)
     auto size_info = generic_skeleton_event_->GetSizeInfo();
 
     // Then we get the correct size and alignment
-    EXPECT_EQ(size_info.first, size_info_.Size());
-    EXPECT_EQ(size_info.second, size_info_.Alignment());
-}
-
-// Test: GetMaxSize
-TEST_F(GenericSkeletonEventFixture, GetMaxSize)
-{
-    RecordProperty("Verifies", "SCR-14035184");
-    RecordProperty("Description", "Checks that GetMaxSize returns correct maximum size.");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("Priority", "1");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    const bool enforce_max_samples{true};
-    const std::size_t max_samples{5U};
-    const std::uint8_t max_subscribers{3U};
-
-    // Given a GenericSkeletonEvent
-    CreateGenericSkeletonEvent(
-        fake_element_fq_id_, fake_event_name_, max_samples, max_subscribers, enforce_max_samples);
-
-    // When requesting max size
-    auto max_size = generic_skeleton_event_->GetMaxSize();
-
-    // Then we get the correct size
-    EXPECT_EQ(max_size, size_info_.Size());
+    EXPECT_EQ(size_info.Size(), size_info_.Size());
+    EXPECT_EQ(size_info.Alignment(), size_info_.Alignment());
 }
 
 // Test: PrepareOffer

@@ -86,7 +86,7 @@ FakeServiceData::FakeServiceData(const std::string& control_file_name,
         },
         65535U);
 
-    data_memory = score::memory::shared::SharedMemoryFactory::Create(
+    data_memory_resource = score::memory::shared::SharedMemoryFactory::Create(
         data_file_name,
         [this, initialise_skeleton_data, skeleton_process_pid_in, skeleton_uid_in](
             std::shared_ptr<ISharedMemoryResource> memory_resource) {

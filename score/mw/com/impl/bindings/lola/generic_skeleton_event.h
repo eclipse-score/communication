@@ -50,7 +50,10 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 
     Result<void> Notify() noexcept override;
 
-    std::pair<size_t, size_t> GetSizeInfo() const noexcept override;
+    memory::DataTypeSizeInfo GetSizeInfo() const noexcept override
+    {
+        return size_info_;
+    }
 
     Result<void> PrepareOffer() noexcept override;
     void PrepareStopOffer() noexcept override;
@@ -58,16 +61,6 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
     {
         skeleton_event_common_.SetSkeletonEventTracingData(tracing_data);
-    }
-
-    std::size_t GetMaxSize() const noexcept override
-    {
-        return size_info_.Size();
-    }
-
-    std::size_t GetAlignment() const noexcept override
-    {
-        return size_info_.Alignment();
     }
 
     /// \brief Set callback, to get notified, when either the 1st event-notification has been registered or the last
@@ -89,7 +82,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 
   private:
     memory::DataTypeSizeInfo size_info_;
-    std::uint8_t* event_data_storage_;
+    EventDataStorage* event_data_storage_;
     SkeletonEventCommon<void> skeleton_event_common_;
 };
 

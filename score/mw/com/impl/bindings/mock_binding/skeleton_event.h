@@ -29,8 +29,7 @@ class SkeletonEventBase : public SkeletonEventBindingBase
   public:
     MOCK_METHOD(Result<void>, PrepareOffer, (), (noexcept, override));
     MOCK_METHOD(void, PrepareStopOffer, (), (noexcept, override));
-    MOCK_METHOD(std::size_t, GetMaxSize, (), (const, noexcept, override));
-    MOCK_METHOD(std::size_t, GetAlignment, (), (const, noexcept, override));
+    MOCK_METHOD(memory::DataTypeSizeInfo, GetSizeInfo, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
 };
@@ -57,7 +56,7 @@ class SkeletonEvent : public SkeletonEventBinding<SampleType>
     MOCK_METHOD(Result<score::mw::com::impl::SamplePtr<SampleType>>, GetLatestSample, (QualityType), (override));
     MOCK_METHOD(Result<void>, PrepareOffer, (), (noexcept, override));
     MOCK_METHOD(void, PrepareStopOffer, (), (noexcept, override));
-    MOCK_METHOD(std::size_t, GetMaxSize, (), (const, noexcept, override));
+    MOCK_METHOD(memory::DataTypeSizeInfo, GetSizeInfo, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
 };
@@ -102,9 +101,9 @@ class SkeletonEventFacade : public SkeletonEventBinding<SampleType>
     {
         return skeleton_event_.PrepareStopOffer();
     }
-    std::size_t GetMaxSize() const noexcept override
+    memory::DataTypeSizeInfo GetSizeInfo() const noexcept override
     {
-        return skeleton_event_.GetMaxSize();
+        return skeleton_event_.GetSizeInfo();
     }
     BindingType GetBindingType() const noexcept override
     {

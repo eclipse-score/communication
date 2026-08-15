@@ -51,14 +51,13 @@ std::size_t CalculateServiceDataStorageShmSize(
         alignof(ServiceDataStorage::EventMetaInfoMap::value_type));
 
     // (3) For each event/field (in the exact order it gets registered/offered): the EventDataStorage object plus its
-    // raw slot-array. The exact size/alignment of the slot-array (which differs between typed and generic
-    // events/fields, see SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory() resp.
-    // CreateGenericEventDataInCreatedSharedMemory()) is provided by the caller.
+    // data-slot-array (type_erased_data_slots_). The exact size/alignment of the slot-array (see
+    // SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()) is provided by the caller.
 
-    // The size/alignment of the EventDataStorage control structure (a DynamicArray) is independent of the concrete
+    // The size/alignment of the EventDataStorage control structure is independent of the concrete
     // sample-type (it only holds an offset-pointer, an allocator and two size_t members).
-    constexpr std::size_t event_data_storage_object_size = sizeof(EventDataStorage<std::max_align_t>);
-    constexpr std::size_t event_data_storage_object_alignment = alignof(EventDataStorage<std::max_align_t>);
+    constexpr std::size_t event_data_storage_object_size = sizeof(EventDataStorage);
+    constexpr std::size_t event_data_storage_object_alignment = alignof(EventDataStorage);
     for (const auto& service_element : event_and_fields_size_info)
     {
         allocation_sequence.emplace_back(event_data_storage_object_size, event_data_storage_object_alignment);
