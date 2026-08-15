@@ -35,13 +35,10 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
 
 Result<void> GenericSkeletonEvent::PrepareOffer() noexcept
 {
-    const auto registration_result =
-        skeleton_event_common_.GetParent().RegisterGeneric(skeleton_event_common_.GetElementFQId(),
-                                                           skeleton_event_common_.GetEventProperties(),
-                                                           size_info_.Size(),
-                                                           size_info_.Alignment());
+    const auto registration_result = skeleton_event_common_.GetParent().Register(
+        skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties(), size_info_);
 
-    event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
+    event_data_storage_ = &(registration_result.event_data_storage);
 
     skeleton_event_common_.PrepareOfferCommon(registration_result.event_control_qm,
                                               registration_result.event_control_asil_b);
@@ -85,11 +82,6 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
 Result<void> GenericSkeletonEvent::Notify() noexcept
 {
     return skeleton_event_common_.NotifyConsumersIfHandlersRegistered();
-}
-
-std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
-{
-    return {size_info_.Size(), size_info_.Alignment()};
 }
 
 void GenericSkeletonEvent::PrepareStopOffer() noexcept

@@ -135,7 +135,7 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
             score::memory::shared::SharedMemoryFactory::Open(path_builder.GetDataChannelShmName(instance_id), false);
 
         auto* storage = static_cast<ServiceDataStorage*>(memory->getUsableBaseAddress());
-        auto* values = storage->events_.at(fake_element_fq_id_).template get<EventDataStorage<std::uint32_t>>();
+        auto* event_data_storage = storage->events_.at(fake_element_fq_id_).get();
 
         auto path = path_builder.GetControlChannelShmName(instance_id, QualityType::kASIL_QM);
         auto memory_control = score::memory::shared::SharedMemoryFactory::Open(path, false);
@@ -153,11 +153,12 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
             dummy_transaction_log_id, consumer_event_data_control_local);
         auto slot_index = consumer_event_data_control_local.ReferenceNextEvent(0);
         EXPECT_TRUE(slot_index.has_value());
-        const auto value = values->at(slot_index.value());
+        auto* const value = static_cast<std::uint32_t*>(
+            event_data_storage->GetTypeErasedDataSlot(slot_index.value(), sizeof(std::uint32_t)));
 
         consumer_event_data_control_local.DereferenceEvent(slot_index.value());
 
-        return value;
+        return *value;
     }
 
     std::size_t GetFreeSampleSlots() const

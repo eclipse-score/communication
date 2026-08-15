@@ -61,10 +61,11 @@ class MyEvent final : public SkeletonEventBinding<SampleType>
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData) noexcept override {}
 };
 
-TEST(SkeletonEventBindingTest, CanGetMaxSizeOfLiteralType)
+TEST(SkeletonEventBindingTest, CanGetSizeInfoOfLiteralType)
 {
     MyEvent<std::uint8_t> unit{};
-    EXPECT_EQ(unit.GetMaxSize(), 1);
+    EXPECT_EQ(unit.GetSizeInfo().Size(), 1);
+    EXPECT_EQ(unit.GetSizeInfo().Alignment(), 1);
 }
 
 TEST(SkeletonEventBindingTest, SkeletonEventBindingShouldNotBeCopyable)

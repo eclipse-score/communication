@@ -20,6 +20,7 @@
 #include "score/mw/com/impl/sample_allocatee_guard.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
+#include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
 #include <score/callback.hpp>
@@ -60,12 +61,8 @@ class SkeletonEventBindingBase
     /// de-initialization)
     virtual void PrepareStopOffer() noexcept = 0;
 
-    /// \brief Calculate the necessary memory for the underlying event-type (including possible dynamic memory
-    /// allocations)
-    virtual std::size_t GetMaxSize() const noexcept = 0;
-
-    /// \brief Alignment requirement (in bytes) of the underlying event-type's sample data.
-    virtual std::size_t GetAlignment() const noexcept = 0;
+    /// \brief Get size for the underlying event-type (including possible dynamic memory allocations) and its alignment
+    virtual memory::DataTypeSizeInfo GetSizeInfo() const noexcept = 0;
 
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;
@@ -98,14 +95,9 @@ class SkeletonEventBinding : public SkeletonEventBindingBase
     /// \brief Retrieves the latest sample, intended to support the getter of a SkeletonField.
     virtual Result<SamplePtr<SampleType>> GetLatestSample(QualityType quality_type) = 0;
 
-    std::size_t GetMaxSize() const noexcept override
+    memory::DataTypeSizeInfo GetSizeInfo() const noexcept override
     {
-        return sizeof(SampleType);
-    }
-
-    std::size_t GetAlignment() const noexcept override
-    {
-        return alignof(SampleType);
+        return memory::DataTypeSizeInfo{sizeof(SampleType), alignof(SampleType)};
     }
 };
 

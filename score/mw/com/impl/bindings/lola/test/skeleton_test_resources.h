@@ -141,6 +141,9 @@ static constexpr std::size_t kConfiguredDeploymentControlAsilBShmSize{1024U};
 static constexpr std::size_t kConfiguredDeploymentControlQmShmSize{1024U};
 static constexpr LolaServiceInstanceId::InstanceId kDefaultLolaInstanceId{16U};
 
+static constexpr memory::DataTypeSizeInfo kTestSampleTypeSizeInfo{sizeof(test::TestSampleType),
+                                                                  alignof(test::TestSampleType)};
+
 static const auto kFooEventName{"fooEvent"};
 static const auto kDumbEventName{"dumbEvent"};
 static const auto kFooFieldName{"fooField"};
@@ -470,39 +473,33 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     template <typename SampleType>
     ServiceDataStorage CreateServiceDataStorageWithEvent(ElementFqId element_fq_id) noexcept
     {
+        memory::DataTypeSizeInfo sample_size_info{sizeof(SampleType), alignof(SampleType)};
         ServiceDataStorage service_data_storage{1U, *data_shared_memory_resource_mock_};
 
-        auto* event_data_storage = data_shared_memory_resource_mock_->construct<EventDataStorage<SampleType>>(
-            10U, *data_shared_memory_resource_mock_);
+        auto* event_data_storage = data_shared_memory_resource_mock_->construct<EventDataStorage>(
+            *data_shared_memory_resource_mock_, SlotIndexType{10U}, sample_size_info);
 
         auto inserted_data_slots = service_data_storage.events_.emplace(
             std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(event_data_storage));
         EXPECT_TRUE(inserted_data_slots.second);
 
-        const score::memory::DataTypeSizeInfo sample_meta_info{16U, 16U};
-        auto* event_data_raw_array = event_data_storage->data();
         auto inserted_meta_info = service_data_storage.events_metainfo_.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(element_fq_id),
-            std::forward_as_tuple(sample_meta_info, event_data_raw_array));
+            std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(sample_size_info));
         EXPECT_TRUE(inserted_meta_info.second);
 
         return service_data_storage;
     }
 
-    template <typename SampleType>
-    EventDataStorage<SampleType>& GetEventStorageFromServiceDataStorage(
-        ElementFqId element_fq_id,
-        ServiceDataStorage& service_data_storage) noexcept
+    EventDataStorage& GetEventStorageFromServiceDataStorage(ElementFqId element_fq_id,
+                                                            ServiceDataStorage& service_data_storage) noexcept
     {
         auto event_data_storage_it = service_data_storage.events_.find(element_fq_id);
         EXPECT_NE(event_data_storage_it, service_data_storage.events_.cend());
         auto event_data_storage_offset_ptr = event_data_storage_it->second;
 
-        auto* const typed_event_data_storage =
-            event_data_storage_offset_ptr.template get<EventDataStorage<SampleType>>();
-        EXPECT_NE(typed_event_data_storage, nullptr);
-        return *typed_event_data_storage;
+        auto* const event_data_storage = event_data_storage_offset_ptr.template get<EventDataStorage>();
+        EXPECT_NE(event_data_storage, nullptr);
+        return *event_data_storage;
     }
 
     void CleanUpSkeleton();

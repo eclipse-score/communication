@@ -122,7 +122,7 @@ TEST_F(ProxyCreationFixture, ProxyCreationOpensSharedMemoryWithoutProvidersIfNot
         .WillOnce(WithArg<2>(
             Invoke([this](const auto& provider_list) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
                 EXPECT_FALSE(provider_list.has_value());
-                return fake_data_->data_memory;
+                return fake_data_->data_memory_resource;
             })));
 
     // When creating a proxy
@@ -157,7 +157,7 @@ TEST_F(ProxyCreationFixture, ProxyCreationOpensSharedMemoryWithProvidersFromConf
             EXPECT_TRUE(provider_list.has_value());
             EXPECT_THAT(provider_list.value(), Contains(allowed_qm_providers[0]));
             EXPECT_THAT(provider_list.value(), Contains(allowed_qm_providers[1]));
-            return fake_data_->data_memory;
+            return fake_data_->data_memory_resource;
         })));
 
     // When creating a proxy
@@ -672,7 +672,7 @@ TEST_F(ProxyGetEventMetaInfoDeathTest, CallingGetEventMetaInfoWhenGettingDataSec
     InitialiseProxyWithCreate(identifier_);
 
     // and that getting the usable base address (from which we read the EventMetaInfo) returns a nullptr
-    ON_CALL(*(fake_data_->data_memory), getUsableBaseAddress()).WillByDefault(Return(nullptr));
+    ON_CALL(*(fake_data_->data_memory_resource), getUsableBaseAddress()).WillByDefault(Return(nullptr));
 
     // When getting the EventMetaInfo for a random element fq id
     // Then the program terminates

@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/linear_search_map.h"
@@ -36,16 +37,15 @@ class ServiceDataStorage
 {
   public:
     /// \brief associative container mapping a service-element (event/field) to the raw storage of its event-data slots.
-    /// \details The value-type of the map is a type-erased pointer to the raw storage of the event-data slots.
-    ///          The OffsetPtr points to a EventDataStorage<SampleType>, which gets created by events/fields, when
-    ///          calling Skeleton::Register()!
-    ///
-    using EventDataStorageMap = LinearSearchMap<ElementFqId, score::memory::shared::OffsetPtr<void>>;
+    /// \details The value-type of the map is a pointer to the storage of the type-erased event-data slots.
+    ///          The OffsetPtr points to a EventDataStorage, which gets created by events/fields, when calling
+    ///          Skeleton::Register()!
+    using EventDataStorageMap = LinearSearchMap<ElementFqId, score::memory::shared::OffsetPtr<EventDataStorage>>;
     /// \brief associative container mapping a service-element (event/field) to its (type-erased) meta-information.
     using EventMetaInfoMap = LinearSearchMap<ElementFqId, EventMetaInfo>;
 
     /// \brief Ctor for the ServiceDataStorage with a given memory resource to be used for internal storage allocation.
-    /// \details ServiceDataStorage no longer uses dynamically allocating map-types. Instead it uses fixed-capacity
+    /// \details ServiceDataStorage no longer uses dynamically allocating map-types. Instead, it uses fixed-capacity
     ///          containers (LinearSearchMap) whose capacity has to be provided at construction time. The capacity
     ///          equals the number of service-elements (events + fields) of the service-instance, which is known
     ///          up-front. This makes the memory footprint of ServiceDataStorage deterministic and calculable without a
@@ -92,7 +92,7 @@ class ServiceDataStorage
 ///          (see SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()).
 ///        - generic events allocate number_of_slots * sample_size bytes rounded up to a whole number of
 ///          std::max_align_t elements, aligned to alignof(std::max_align_t) (see
-///          SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory()).
+///          SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()).
 ///        The size of the span equals the number of service-elements (events + fields), which is the fixed capacity
 ///        the ServiceDataStorage containers are constructed with.
 /// \return the exact number of bytes needed for the data shm-object.
