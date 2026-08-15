@@ -225,6 +225,7 @@ cc_library(
     deps = [
         ":receive_handler_registration_changed_handler",
         ":skeleton_event_binding",
+        "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/result",
     ],
 )
@@ -577,6 +578,7 @@ cc_library(
     ],
     deps = [
         ":binding_type",
+        ":initialize_sample_callback",
         ":sample_allocatee_tracker",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/plumbing:sample_ptr",
@@ -917,6 +919,18 @@ cc_library(
     name = "event_receive_handler",
     srcs = ["event_receive_handler.cpp"],
     hdrs = ["event_receive_handler.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = ["@score_baselibs//score/language/futurecpp"],
+)
+
+cc_library(
+    name = "initialize_sample_callback",
+    srcs = ["initialize_sample_callback.cpp"],
+    hdrs = ["initialize_sample_callback.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [

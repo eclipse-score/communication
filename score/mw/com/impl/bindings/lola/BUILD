@@ -328,6 +328,9 @@ cc_library(
         "generic_skeleton_event.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/memory:data_type_size_info",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -747,8 +750,12 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":control_slot_types",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:offset_ptr",
         "//score/memory/shared:types",
-        "@score_baselibs//score/containers:dynamic_array",
+        "//score/mw/com/impl:initialize_sample_callback",
+        "@score_baselibs//score/memory:data_type_size_info",
     ],
 )
 
@@ -1271,7 +1278,8 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":event_data_storage",
-        "@score_baselibs//score/containers:dynamic_array",
+        "//score/memory/shared:new_delete_delegate_resource",
+        "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/mw/log",
     ],
 )
