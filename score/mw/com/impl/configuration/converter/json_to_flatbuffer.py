@@ -17,12 +17,14 @@ values (e.g. ``file-permissions-on-empty``), but FlatBuffers identifiers cannot 
 hyphens, so ``mw_com_config.fbs`` spells them with underscores. This script is a thin,
 *generic* preprocessor: it rewrites ``-`` -> ``_`` in object keys and in enum-valued
 strings, then writes the normalized JSON back out. No field or enum name is hardcoded --
-the set of enum symbols is read from the ``.fbs``-derived JSON schema (produced by
-``flatc --jsonschema``), so the mapping stays in lock-step with the single source of truth.
+the set of enum symbols is read from the ``.fbs``-derived JSON schema, so the mapping stays
+in lock-step with the single source of truth.
 
-This module does *not* invoke ``flatc``. The build rule runs ``flatc --jsonschema`` and
-``flatc --binary`` as separate Bazel actions and passes the generated schema in via
-``--schema``; keeping the normalization pure keeps it trivially testable.
+This module does *not* invoke ``flatc``. The build rule produces the JSON schema (via
+baselibs' ``generate_json_schema``) as a separate Bazel action and passes it in via
+``--schema``; keeping the normalization pure keeps it trivially testable. The enum symbols
+are read shape-agnostically (any nested ``enum`` array), so either flatc's raw
+``--jsonschema`` output or baselibs' post-processed rich schema works as the source.
 """
 
 import argparse
@@ -30,23 +32,33 @@ import json
 import sys
 
 
+def _collect_enum_symbols(node, symbols):
+    """Recursively add every string in any ``enum`` array found within ``node``."""
+    if isinstance(node, dict):
+        enum = node.get("enum")
+        if isinstance(enum, list):
+            symbols.update(value for value in enum if isinstance(value, str))
+        for value in node.values():
+            _collect_enum_symbols(value, symbols)
+    elif isinstance(node, list):
+        for item in node:
+            _collect_enum_symbols(item, symbols)
+
+
 def _enum_symbols_from_schema(schema_path):
     """Return the set of enum symbols (underscore form) declared in a JSON schema.
 
-    ``schema_path`` is the ``flatc --jsonschema`` output for the ``.fbs``, whose ``enum``
-    arrays list exactly the symbols of every fbs enum -- so the preprocessor never
-    hardcodes any enum name.
+    ``schema_path`` is a ``.fbs``-derived JSON schema whose ``enum`` arrays list exactly the
+    symbols of every fbs enum, so the preprocessor never hardcodes any enum name. The walk
+    is shape-agnostic: it works on flatc's raw ``--jsonschema`` output (``definitions`` with
+    ``enum`` arrays) as well as on baselibs' post-processed rich schema (inline ``enum`` +
+    ``$defs``), since fbs enum values are preserved in underscore form in both.
     """
     with open(schema_path, encoding="utf-8") as handle:
         schema = json.load(handle)
 
     symbols = set()
-    for definition in schema.get("definitions", {}).values():
-        for value in definition.get("enum", []):
-            symbols.add(value)
-        for field in definition.get("properties", {}).values():
-            for value in field.get("enum", []):
-                symbols.add(value)
+    _collect_enum_symbols(schema, symbols)
     return symbols
 
 
@@ -88,7 +100,7 @@ def main(argv=None):
     parser.add_argument(
         "--schema",
         required=True,
-        help="Path to the flatc --jsonschema output for the .fbs (source of enum symbols).",
+        help="Path to a .fbs-derived JSON schema (source of enum symbols).",
     )
     parser.add_argument("--json", required=True, help="Path to the JSON config to normalize.")
     parser.add_argument("--output", required=True, help="Where to write the normalized JSON.")
