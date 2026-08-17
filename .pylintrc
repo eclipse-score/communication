@@ -83,10 +83,6 @@ disable=missing-docstring,
         # logging-fstring-interpolation stays disabled as a deliberate
         # style choice.
         logging-fstring-interpolation,
-        # When updating pylint, some checkers are removed. If a suppression for that checker is not removed,
-        # then a useless-option-value is triggered. We disable that until we remove all useless suppressions.
-        # This allow us to upgrade pylint without having to cleanup suppressions at the same time.
-        useless-option-value,
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
