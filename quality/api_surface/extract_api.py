@@ -112,7 +112,7 @@ def build_qualified_name(name: str, namespace_stack: list[str]) -> str:
     return f"{prefix}::{name}" if prefix else name
 
 
-def extract_signature(node: dict) -> str:
+def extract_signature(node: dict) -> str:  # pylint: disable=too-many-return-statements
     """Extract a human-readable signature from an AST node."""
     kind = node.get("kind", "")
     name = node.get("name", "")
@@ -331,7 +331,7 @@ def build_file_map(ast_root: dict) -> dict[str, str]:
     return file_map
 
 
-def extract_from_ast(
+def extract_from_ast(  # pylint: disable=too-many-locals,too-many-statements
     ast_root: dict,
     target_files: set[str],
     target_label: str,
@@ -388,7 +388,7 @@ def extract_from_ast(
                 return target
         return file_path
 
-    def walk(node: dict, namespace_stack: list[str], access: str = "public",
+    def walk(node: dict, namespace_stack: list[str], access: str = "public",  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
              extern_c: bool = False):
         kind = node.get("kind", "")
         name = node.get("name", "")

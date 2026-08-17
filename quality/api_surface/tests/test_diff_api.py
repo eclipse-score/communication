@@ -22,8 +22,8 @@ from quality.api_surface import diff_api
 
 class DiffApiDocsFlagTest(unittest.TestCase):
     def test_docs_flag_parser(self):
-        self.assertTrue(diff_api._should_check_docs(["--check-docs"]))
-        self.assertFalse(diff_api._should_check_docs([]))
+        self.assertTrue(diff_api._should_check_docs(["--check-docs"]))  # pylint: disable=protected-access
+        self.assertFalse(diff_api._should_check_docs([]))  # pylint: disable=protected-access
 
     def test_compare_passes_matching_surfaces(self):
         payload = {

@@ -100,7 +100,7 @@ def launch_processes(cla: CommandLineArguments()):
 def main():
     cla = CommandLineArguments()
 
-    def signal_handler(sig, frame):
+    def signal_handler(sig, frame):  # pylint: disable=unused-argument
         print("\nSIGINT received!")
         clean_up(cla.service_mw_com_config_path)
         sys.exit(0)

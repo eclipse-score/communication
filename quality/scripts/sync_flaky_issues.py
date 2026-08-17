@@ -282,7 +282,7 @@ def _issue_title(target: str) -> str:
 # --------------------------------------------------------------------------- #
 # Orchestration
 # --------------------------------------------------------------------------- #
-def sync(merged_summary: dict, client: GitHubClient, ctx: RunContext) -> list[dict]:
+def sync(merged_summary: dict, client: GitHubClient, ctx: RunContext) -> list[dict]:  # pylint: disable=too-many-locals
     """Create/update flaky issues for all flaky targets in the merged summary.
 
     Returns a list of action records (for logging / dry-run visibility).
@@ -448,20 +448,20 @@ class DryRunGitHubClient:
     def search_issue(self, target: str) -> Issue | None:
         self.log.append(f"search_issue({target}) -> None")
 
-    def list_run_comments(self, issue: Issue) -> list[str]:
+    def list_run_comments(self, issue: Issue) -> list[str]:  # pylint: disable=unused-argument
         return []
 
     def create_issue(self, title: str, body: str, labels: list[str]) -> Issue:
         self.log.append(f"create_issue(title={title!r}, labels={labels})")
         return Issue(number=0, body=body, state="open", labels=labels)
 
-    def update_issue_body(self, issue: Issue, body: str) -> None:
+    def update_issue_body(self, issue: Issue, body: str) -> None:  # pylint: disable=unused-argument
         self.log.append(f"update_issue_body(#{issue.number})")
 
     def reopen_issue(self, issue: Issue) -> None:
         self.log.append(f"reopen_issue(#{issue.number})")
 
-    def add_comment(self, issue: Issue, body: str) -> None:
+    def add_comment(self, issue: Issue, body: str) -> None:  # pylint: disable=unused-argument
         self.log.append(f"add_comment(#{issue.number})")
 
 

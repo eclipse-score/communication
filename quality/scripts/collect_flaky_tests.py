@@ -33,7 +33,7 @@ def _merge_status(current: str | None, incoming: str) -> str:
     return incoming if PRIORITY.get(incoming, 0) > PRIORITY.get(current, 0) else current
 
 
-def _parse_bep(path: Path, target_stats: dict[str, dict]) -> None:
+def _parse_bep(path: Path, target_stats: dict[str, dict]) -> None:  # pylint: disable=too-many-locals
     if not path.is_file():
         return
 
@@ -126,7 +126,7 @@ def _write_markdown(summary: dict, output_md: Path) -> None:
     output_md.write_text("\n".join(lines), encoding="utf-8")
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:  # pylint: disable=too-many-locals
     parser = argparse.ArgumentParser(description="Collect flaky tests from Bazel outputs.")
     parser.add_argument("--config-name", required=True)
     parser.add_argument("--bep-json", required=True)

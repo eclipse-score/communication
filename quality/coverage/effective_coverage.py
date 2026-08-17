@@ -24,6 +24,7 @@ Supports two HTML formats:
 Usage:
     python effective_coverage.py --html-dir <path> --manifest <manifest.json> --output <report.json> [--lcov <lcov.dat>]
 """
+# pylint: disable=too-many-lines
 
 import argparse
 import json
@@ -69,7 +70,7 @@ def main() -> None:
         _main_llvm_cov(args, html_dir, justified_files)
 
 
-def _main_llvm_cov(args: argparse.Namespace, html_dir: Path, justified_files: Dict) -> None:
+def _main_llvm_cov(args: argparse.Namespace, html_dir: Path, justified_files: Dict) -> None:  # pylint: disable=too-many-locals
     """Main logic for llvm-cov HTML format."""
 
     # Parse raw coverage totals from the index page (matches llvm-cov exactly).
@@ -178,7 +179,7 @@ def _main_llvm_cov(args: argparse.Namespace, html_dir: Path, justified_files: Di
         )
 
 
-def process_html_file(
+def process_html_file(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     html_file: Path,
     justifications: Dict[int, Dict[str, str]],
     applied_justifications: List[Dict[str, Any]],
@@ -461,7 +462,7 @@ tr:has(> td.justified-line) > td.code {
         f.write(justified_css)
 
 
-def update_index_page(html_dir: Path, stats: Dict[str, Any], per_file_stats: Dict[str, Dict[str, int]]) -> None:
+def update_index_page(html_dir: Path, stats: Dict[str, Any], per_file_stats: Dict[str, Dict[str, int]]) -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Update the index page with effective coverage info and per-file adjusted percentages."""
     index_file = html_dir / "index.html"
     if not index_file.exists():
@@ -583,7 +584,7 @@ def _get_coverage_color(pct: float) -> str:
     return "red"
 
 
-def _update_totals_row(content: str, stats: Dict[str, Any]) -> str:
+def _update_totals_row(content: str, stats: Dict[str, Any]) -> str:  # pylint: disable=too-many-locals
     """Update the TOTALS row in the index page with effective coverage numbers."""
     # Find the TOTALS row — it's the last row before </table>
     totals_idx = content.rfind("Totals")
@@ -806,7 +807,7 @@ def _parse_lcov_totals(lcov_path: Path) -> Dict[str, Tuple[int, int]]:
 # gcovr support
 # =============================================================================
 
-def _main_gcovr(args: argparse.Namespace, html_dir: Path, justified_files: Dict) -> None:
+def _main_gcovr(args: argparse.Namespace, html_dir: Path, justified_files: Dict) -> None:  # pylint: disable=too-many-locals
     """Main logic for gcovr HTML format (produced by lcov_to_html.py via gcovr)."""
 
     # Parse coverage totals from LCOV file or gcovr index page.
@@ -1005,7 +1006,7 @@ def _extract_gcovr_source_path(html_file: Path) -> str:
     return filename
 
 
-def _process_gcovr_file(
+def _process_gcovr_file(  # pylint: disable=too-many-locals
     html_file: Path,
     justifications: Dict[int, Dict[str, str]],
     applied_justifications: List[Dict[str, Any]],

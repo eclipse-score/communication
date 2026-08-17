@@ -34,7 +34,7 @@ from typing import List, Optional, Set, Tuple
 from python.runfiles import Runfiles
 
 
-def main() -> None:
+def main() -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Main entry point."""
     args = parse_args()
     r = Runfiles.Create()
@@ -555,7 +555,7 @@ def load_coverage_allowlist(runfiles: Runfiles, rlocation_path: str) -> List[str
 
 
 def load_baseline_objects(
-    runfiles: Runfiles, rlocation_path: str, workspace_root: str,
+    runfiles: Runfiles, rlocation_path: str, workspace_root: str,  # pylint: disable=unused-argument
 ) -> List[str]:
     """Load baseline object archive paths and resolve them to absolute paths.
 

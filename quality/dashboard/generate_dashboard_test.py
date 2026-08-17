@@ -175,7 +175,7 @@ class GenerateDashboardTest(unittest.TestCase):
         self.assertEqual(codeql["findings"][0]["severity"], "error")
         self.assertEqual(codeql["findings"][1]["severity"], "warning")
 
-    def test_main_generates_dashboard_from_clang_tidy_and_clippy_sarif(self) -> None:
+    def test_main_generates_dashboard_from_clang_tidy_and_clippy_sarif(self) -> None:  # pylint: disable=too-many-locals
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = pathlib.Path(tmp_dir)
             lcov_path = tmp_path / "coverage.dat"

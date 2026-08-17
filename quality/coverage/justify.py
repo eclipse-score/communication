@@ -52,7 +52,7 @@ VALID_PLATFORMS = {
 }
 
 
-def main() -> None:
+def main() -> None:  # pylint: disable=too-many-locals,too-many-branches
     """Main entry point."""
     args = parse_args()
 
@@ -167,7 +167,7 @@ def _matches_platform(entry: Dict[str, Any], platform: str) -> bool:
     return platform in platforms
 
 
-def scan_file_for_markers(
+def scan_file_for_markers(  # pylint: disable=too-many-locals,too-many-branches
     file_path: Path,
     rel_path: str,
     justifications_by_id: Dict[str, Dict[str, Any]],
@@ -271,9 +271,9 @@ def load_yaml(yaml_path: Path) -> Dict[str, Any]:
     return yaml.safe_load(content)
 
 
-def validate_yaml(data: Dict[str, Any]) -> None:
+def validate_yaml(data: Dict[str, Any]) -> None:  # pylint: disable=too-many-branches,too-many-statements
     """Validate the justification YAML structure and types."""
-    try:
+    try:  # pylint: disable=too-many-nested-blocks
         errors = []
 
         if not isinstance(data, dict):

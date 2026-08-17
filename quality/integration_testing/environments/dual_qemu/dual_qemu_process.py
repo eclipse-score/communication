@@ -66,7 +66,7 @@ class DualQemuProcess(QemuProcess):
             ...
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         path_to_qemu_image,
         available_ram,

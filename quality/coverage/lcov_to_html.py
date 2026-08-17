@@ -39,7 +39,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 PROC_SELF_CWD_PREFIX = "/proc/self/cwd/"
 
 
-def parse_lcov(lcov_path: Path) -> List[Dict[str, Any]]:
+def parse_lcov(lcov_path: Path) -> List[Dict[str, Any]]:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Parse an LCOV trace file into gcovr JSON v0.14 file entries.
 
     Returns a list of dicts, each representing one file in the gcovr JSON
@@ -354,7 +354,7 @@ def _load_filter_regexes(path: Path) -> List[re.Pattern]:
     return patterns
 
 
-def main() -> None:
+def main() -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Main entry point."""
     args = parse_args()
 
@@ -438,7 +438,7 @@ def main() -> None:
 
         print(f"Running gcovr with {len(file_entries)} files...")
         sys.argv = gcovr_args
-        from gcovr.__main__ import main as gcovr_main
+        from gcovr.__main__ import main as gcovr_main  # pylint: disable=import-outside-toplevel
         try:
             gcovr_main()
         except SystemExit as e:

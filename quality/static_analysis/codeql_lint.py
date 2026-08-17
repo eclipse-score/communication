@@ -43,7 +43,7 @@ def _find_coding_standards_root():
     tree. Only used for the `--query-spec` override, which analyzes a query from
     these sources rather than the pre-compiled release pack.
     """
-    from python.runfiles import Runfiles
+    from python.runfiles import Runfiles  # pylint: disable=import-outside-toplevel
 
     runfiles = Runfiles.Create()
     anchor = runfiles.Rlocation("codeql_coding_standards/cpp/common/src/qlpack.yml")
@@ -72,7 +72,7 @@ def _find_compiled_pack_root():
 
     Returns the pack root directory (the one containing qlpack.yml).
     """
-    from python.runfiles import Runfiles
+    from python.runfiles import Runfiles  # pylint: disable=import-outside-toplevel
 
     runfiles = Runfiles.Create()
     anchor = runfiles.Rlocation(COMPILED_PACK_RUNFILE)
@@ -165,7 +165,7 @@ def create_database(code_ql_path, config_path, target, source_root, database_pat
     subprocess.run(f"{code_ql_path} database finalize -j=0 -- {database_path}", shell=True, check=True)
 
 
-def analyze_database(
+def analyze_database(  # pylint: disable=too-many-locals
     code_ql_path,
     database_path,
     source_root,
@@ -366,7 +366,7 @@ def _remap_artifact_indices(value, artifact_index_map):
 
 
 def _find_recategorization_schema_paths():
-    from python.runfiles import Runfiles
+    from python.runfiles import Runfiles  # pylint: disable=import-outside-toplevel
 
     runfiles = Runfiles.Create()
     coding_standards_schema_path = runfiles.Rlocation(

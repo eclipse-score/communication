@@ -202,7 +202,7 @@ class FakeGitHubClient:
     def list_run_comments(self, issue):
         return list(self.comments.get(issue.number, []))
 
-    def create_issue(self, title, body, labels):
+    def create_issue(self, title, body, labels):  # pylint: disable=unused-argument
         number = self._next_number
         self._next_number += 1
         issue = Issue(number=number, body=body, state="open", labels=list(labels))

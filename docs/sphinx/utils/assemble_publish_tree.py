@@ -49,7 +49,7 @@ _STATIC = pathlib.Path(__file__).parent.parent / "_static"
 _CSS = _STATIC / "css" / "version_flyout.css"
 _JS  = _STATIC / "js"  / "version_flyout.js"
 
-def main() -> int:
+def main() -> int:  # pylint: disable=too-many-locals
     parser = argparse.ArgumentParser(
         description="Assemble the GitHub Pages publish tree for versioned Sphinx docs."
     )

@@ -75,7 +75,7 @@ class GenerateMatrixTest(unittest.TestCase):
         buf = io.StringIO()
         with redirect_stdout(buf):
             generate_matrix.main(["--config", _write(CONFIG)])
-        import json
+        import json  # pylint: disable=import-outside-toplevel
         parsed = json.loads(buf.getvalue())  # must be pure JSON
         # GitHub Actions consumes this as strategy.matrix: only `include` is allowed,
         # otherwise any extra top-level key becomes an unwanted matrix axis.

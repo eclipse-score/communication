@@ -66,7 +66,7 @@ def _delta_badge(curr, prev, higher_is_better: bool) -> Markup:
 
 # ── Data parsers ──────────────────────────────────────────────────────────────
 
-def load_lcov(path: pathlib.Path) -> tuple[dict, list[dict]]:
+def load_lcov(path: pathlib.Path) -> tuple[dict, list[dict]]:  # pylint: disable=too-many-branches
     if not path or not path.is_file():
         return {}, []
     files, cur = [], None
@@ -154,7 +154,7 @@ def _extract_sarif_rule_levels(run: dict) -> dict[str, str]:
     return rules
 
 
-def _load_linter_sarif(path: pathlib.Path) -> dict | None:
+def _load_linter_sarif(path: pathlib.Path) -> dict | None:  # pylint: disable=too-many-locals
     if not path or not path.is_file():
         return None
     try:
@@ -294,7 +294,7 @@ def render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history
 
 # ── GitHub Actions step summary ───────────────────────────────────────────────
 
-def write_github_summary(cov_summary, clang_tidy, clippy, codeql, history, summary_path) -> None:
+def write_github_summary(cov_summary, clang_tidy, clippy, codeql, history, summary_path) -> None:  # pylint: disable=too-many-locals
     lines = ["## Quality Dashboard\n"]
 
     lines.append("### Coverage\n")

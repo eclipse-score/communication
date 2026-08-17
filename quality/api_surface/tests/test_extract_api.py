@@ -57,7 +57,7 @@ def get_clang_binary():
     to a runfiles-relative path for the hermetic LLVM toolchain driver; resolve
     it against TEST_SRCDIR. Outside Bazel, fall back to a system clang++.
     """
-    import shutil
+    import shutil  # pylint: disable=import-outside-toplevel
 
     clang_path = os.environ.get("CLANG_PATH", "")
     if clang_path:
