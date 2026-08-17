@@ -701,17 +701,17 @@ def write_summary(
         f.write(f"Covered lines:            {stats['covered_lines']}\n")
         f.write(f"Justified lines:          {stats['justified_lines']}\n")
         f.write(f"Unjustified uncovered:    {stats['unjustified_uncovered_lines']}\n")
-        f.write(f"\n")
+        f.write("\n")
         f.write(f"Raw line coverage:        {stats['raw_line_coverage_pct']}%\n")
         f.write(f"Effective line coverage:  {stats['effective_line_coverage_pct']}%\n")
-        f.write(f"\n")
+        f.write("\n")
         if stats.get("total_branches", 0) > 0:
             f.write(f"Total branches:           {stats['total_branches']}\n")
             f.write(f"Covered branches:         {stats['covered_branches']}\n")
             f.write(f"Justified branches:       {stats['justified_branches']}\n")
             f.write(f"Raw branch coverage:      {stats['raw_branch_coverage_pct']}%\n")
             f.write(f"Effective branch coverage: {stats['effective_branch_coverage_pct']}%\n")
-            f.write(f"\n")
+            f.write("\n")
         if stale:
             f.write(f"Stale justifications ({len(stale)}):\n")
             for s in stale:

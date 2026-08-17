@@ -83,14 +83,6 @@ disable=missing-docstring,
         # logging-fstring-interpolation stays disabled as a deliberate
         # style choice.
         logging-fstring-interpolation,
-        # Static strings may sometimes use f-strings intentionally to maintain
-        # consistency or as placeholders for future dynamic content. Enforcing
-        # this rule can lead to false positives in such cases.
-        # See: https://github.com/pylint-dev/pylint/issues/3857
-        # There are numerous violations of this rule across the codebase, and
-        # addressing them would result in unnecessary changes with little to no
-        # practical benefit.
-        f-string-without-interpolation,
         # When updating pylint, some checkers are removed. If a suppression for that checker is not removed,
         # then a useless-option-value is triggered. We disable that until we remove all useless suppressions.
         # This allow us to upgrade pylint without having to cleanup suppressions at the same time.

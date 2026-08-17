@@ -93,7 +93,7 @@ def main() -> int:  # pylint: disable=too-many-locals
         if stable_dir.exists():
             shutil.rmtree(stable_dir)
         shutil.copytree(docs_out, stable_dir)
-        print(f"Created stable/ from current tag build")
+        print("Created stable/ from current tag build")
     else:
         # Promote the newest already-downloaded v* directory to stable/
         tagged = sorted(
