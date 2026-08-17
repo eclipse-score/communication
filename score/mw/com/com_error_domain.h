@@ -15,14 +15,6 @@
 
 #include "score/mw/com/impl/com_error.h"
 
-///  \api
-// clang-format off
-namespace score::mw::com::dummy
-{
-    // This is just a dummy empty namespace otherwise our documentation build fails if there is no namespace tagged with api
-}
-// clang-format on
-
 /// \brief The com error domain header file includes the error related definitions which are specific for the
 /// mw::com API.
 /// \requirement SWS_CM_11264, SWS_CM_10432, SWS_CM_11327, SWS_CM_11329

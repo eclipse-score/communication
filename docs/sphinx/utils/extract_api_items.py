@@ -351,9 +351,8 @@ class RSTGenerator: # pylint: disable=too-few-public-methods
 
         # Generate category-specific files
         for category, items in api_items.items():
-            if items:  # Only generate files for non-empty categories
-                rst_file = self._generate_category_file(category, items)
-                generated_files.append(rst_file)
+            rst_file = self._generate_category_file(category, items)
+            generated_files.append(rst_file)
 
         return generated_files
 
@@ -380,10 +379,8 @@ This document contains all public API items tagged with @api for \
 
 """
 
-        # Add toctree entries for non-empty categories
         for category, items in api_items.items():
-            if items:
-                content += f"   api_{category}\n"
+            content += f"   api_{category}\n"
 
         content += """
 Overview
