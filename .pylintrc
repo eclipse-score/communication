@@ -100,46 +100,11 @@ disable=missing-docstring,
         useless-option-value,
         # This was added in pylint 2.8. We disable until we fix it in most of the places of our codebase
         consider-using-with,
-        # These were added in pylint 2.9. We disable them until we fix it in most places of our codebase
-        consider-using-from-import,
-        consider-using-dict-items,
-        use-maxsplit-arg,
-        unnecessary-dict-index-lookup,
-        deprecated-decorator,
         # These were added in pylint 2.10. We disable them until we fix it in most places of our codebase
         unspecified-encoding,
-        use-list-literal,
         use-dict-literal,
-        use-sequence-for-iteration,
         # This was added in pylint 2.11. We disable until we fix it in most of the places of our codebase
         consider-using-f-string,
-        # This was added in pylint 2.12. We disable until we fix it in most of the places of our codebase
-        use-implicit-booleaness-not-comparison,
-        # This was added in pylint 2.13. We disable until we fix it in most of the places of our codebase
-        modified-iterating-list,
-        # These were added in pylint 2.14. We disable them until we fix it in most places of our codebase
-        unnecessary-dunder-call,
-        unnecessary-list-index-lookup,
-        unnecessary-lambda-assignment,
-        unnecessary-direct-lambda-call,
-        invalid-enum-extension,
-        method-cache-max-size-none,
-        # This was added in pylint 2.15. We disable until we fix it in most of the places of our codebase
-        missing-timeout,
-        # This was added in pylint 2.16. We disable until we fix it in most of the places of our codebase
-        broad-exception-raised,
-        pointless-exception-statement,
-
-        # These were added in pylint 3.1. We disable them until we fix it in most places of our codebase
-        use-yield-from,
-
-        # New in pylint 4.x. Flags pytest yield-fixtures using contextmanager as missing cleanup.
-        # Many false positives; the pattern is intentional in test fixtures.
-        contextmanager-generator-missing-cleanup,
-        # Do not lint into extensions for now
-        c-extension-no-member,
-        # Duplicate-code detection became stricter in pylint 4.x, catching cases invisible to 2.17.
-        duplicate-code,
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
