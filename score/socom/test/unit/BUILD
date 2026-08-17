@@ -21,7 +21,6 @@ cc_test(
     target_compatible_with = SOCOM_FEATURE_COMPATIBILITY,
     deps = [
         "//score/socom:mock",
-        "//score/socom/test/framework:socom_test_framework",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
