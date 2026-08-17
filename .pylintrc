@@ -77,14 +77,11 @@ disable=missing-docstring,
         # unconditional import-error false positives for every legitimately declared
         # first- and third-party dependency.
         import-error,
-        # f-string for logging impact performance when the the log level makes
-        # the message to be discarded, however we prefer to have better
-        # readability than this performance penalty
-        # With the current pylint version we cannot differentiate between
-        # f-string formatting and formatting with % or format function
-        # https://github.com/PyCQA/pylint/issues/3361
-        # https://www.reddit.com/r/learnpython/comments/19drkfr/why_is_w1203_loggingfstringinterpolation/
-        logging-format-interpolation,
+        # f-string formatting for logging impacts performance when the log
+        # level makes the message be discarded, however we prefer to have
+        # better readability than this performance penalty, so
+        # logging-fstring-interpolation stays disabled as a deliberate
+        # style choice.
         logging-fstring-interpolation,
         # Static strings may sometimes use f-strings intentionally to maintain
         # consistency or as placeholders for future dynamic content. Enforcing
