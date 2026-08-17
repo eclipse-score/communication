@@ -18,7 +18,6 @@ bazel_dep(name = "boost.container", version = "1.83.0.bcr.4")
 bazel_dep(name = "boost.interprocess", version = "1.83.0.bcr.4")
 bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
 bazel_dep(name = "download_utils", version = "1.2.2")
-bazel_dep(name = "flatbuffers", version = "25.12.19")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.0.0")
@@ -29,14 +28,22 @@ bazel_dep(name = "rules_rust", version = "0.68.1-score")
 # Cannot be dev-dependency due to being required in "load" statements
 bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
 bazel_dep(name = "score_baselibs", version = "0.2.9")
+
+# DO NOT MERGE
+# TEMPORARY: point baselibs at the flatbuffers_to_rich_json_schema_converter fork
+# branch, which provides score/flatbuffers/bazel:schema_generator and the
+# generate_json_schema / generate_cpp / serialize_buffer rules used here. This also
+# makes @flatbuffers a transitive (non-dev) dependency, so this module no longer
+# declares flatbuffers directly. Revert to the upstream eclipse-score/baselibs commit
+# once the branch is merged.
 git_override(
     module_name = "score_baselibs",
-    commit = "54d67260077a0e7cdf37faf4366ca3a72f35739f",
+    commit = "f8242a4dd84d8aee68ef690e1cf23d1537f60d7e",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
     patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
-    remote = "https://github.com/eclipse-score/baselibs.git",
+    remote = "https://github.com/etas-contrib/score_baselibs.git",
 )
 
 bazel_dep(name = "score_bazel_platforms", version = "1.0.0")
