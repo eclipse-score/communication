@@ -19,10 +19,13 @@
 
 #include <score/stop_token.hpp>
 
+#include <chrono>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <mutex>
 #include <optional>
+#include <thread>
 
 namespace score::mw::com::test
 {
@@ -43,7 +46,7 @@ class ProxyEventStateChangeNotifier
             condition_variable_.notify_all();
             return true;
         };
-        const auto registration_result = proxy_event_.SetSubscriptionStateChangeHandler(state_change_handler);
+        const auto registration_result = proxy_event_.get().SetSubscriptionStateChangeHandler(state_change_handler);
         if (!registration_result.has_value())
         {
             FailTest("ProxyEventStateChangeNotifier: Failed to register state change handler: ",
@@ -53,7 +56,17 @@ class ProxyEventStateChangeNotifier
 
     ~ProxyEventStateChangeNotifier()
     {
-        proxy_event_.UnsetSubscriptionStateChangeHandler();
+        proxy_event_.get().UnsetSubscriptionStateChangeHandler();
+    }
+
+    /// \brief Rebind this notifier to a different event after a proxy move.
+    ///
+    /// Does NOT re-register the subscription state change handler — the handler was already transferred to the
+    /// new event by the proxy move. Only updates the internal reference so that subsequent GetSubscriptionState
+    /// calls target the correct event.
+    void Reattach(ProxyEventType& new_event) noexcept
+    {
+        proxy_event_ = std::ref(new_event);
     }
 
     ProxyEventStateChangeNotifier(const ProxyEventStateChangeNotifier&) = delete;
@@ -68,29 +81,39 @@ class ProxyEventStateChangeNotifier
     /// \return true if the desired state was reached, false if the wait was interrupted by the stop_token.
     [[nodiscard]] bool WaitForStateChange(const score::cpp::stop_token& stop_token, SubscriptionState desired_state)
     {
-        std::unique_lock lock(mutex_);
-        const auto current_state = proxy_event_.GetSubscriptionState();
-        if (current_state == desired_state)
+        // Poll every 10 ms, checking both the callback-recorded state and the live
+        // GetSubscriptionState(). Relying solely on the callback is unreliable: under LoLa SHM the
+        // state-change callback is sometimes never delivered after an unsubscribe/re-subscribe cycle.
+        //
+        // IMPORTANT: GetSubscriptionState() is intentionally called WITHOUT holding mutex_.
+        // LoLa's background thread can hold an internal LoLa lock while invoking the state-change
+        // callback (which acquires mutex_). If we called GetSubscriptionState() (which may also
+        // acquire the same internal LoLa lock) while holding mutex_, we would get an ABBA deadlock.
+        while (!stop_token.stop_requested())
         {
-            return true;
-        }
-
-        return condition_variable_.wait(lock, stop_token, [this, desired_state]() {
-            const bool desired_state_entered =
-                last_seen_state_.has_value() && last_seen_state_.value() == desired_state;
-            if (desired_state_entered)
             {
-                last_seen_state_.reset();
+                std::lock_guard lock(mutex_);
+                if (last_seen_state_.has_value() && last_seen_state_.value() == desired_state)
+                {
+                    last_seen_state_.reset();
+                    return true;
+                }
             }
-            return desired_state_entered;
-        });
+            // Check the live state outside the lock to avoid the ABBA deadlock described above.
+            if (proxy_event_.get().GetSubscriptionState() == desired_state)
+            {
+                return true;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds{10});
+        }
+        return false;
     }
 
   private:
     std::mutex mutex_{};
     concurrency::InterruptibleConditionalVariable condition_variable_{};
     std::optional<SubscriptionState> last_seen_state_{};
-    ProxyEventType& proxy_event_;
+    std::reference_wrapper<ProxyEventType> proxy_event_;
 };
 
 }  // namespace score::mw::com::test

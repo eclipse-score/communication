@@ -21,36 +21,72 @@
 
 #include <functional>
 #include <iostream>
+#include <type_traits>
 #include <utility>
+#include <variant>
 
 namespace score::mw::com::test
 {
 
 /// \brief Helper class which registers a receiveHandler on construction and allows waiting for a
 /// certain number of samples to be received. It also checks that the received samples are in the expected order.
-template <typename ProxyOrFieldType>
+template <typename ProxyOrFieldType, typename StoredCallback = std::monostate>
 class ProxyEventReceiver
 {
   public:
     explicit ProxyEventReceiver(ProxyOrFieldType& proxy_event_or_field)
-        : received_sample_notification_{}, proxy_event_or_field_{proxy_event_or_field}
+        : received_sample_notification_{}, proxy_event_or_field_{proxy_event_or_field}, stored_callback_{}
     {
         auto receive_handler = [&received_sample_notification = received_sample_notification_]() {
             std::cout << "ProxyEventReceiver: Received event notification" << std::endl;
             received_sample_notification.notify();
         };
-        proxy_event_or_field_.SetReceiveHandler(receive_handler);
+        proxy_event_or_field_.get().SetReceiveHandler(receive_handler);
+    }
+
+    explicit ProxyEventReceiver(ProxyOrFieldType& proxy_event_or_field, StoredCallback callback)
+        : received_sample_notification_{},
+          proxy_event_or_field_{proxy_event_or_field},
+          stored_callback_{std::move(callback)}
+    {
+        auto receive_handler = [&received_sample_notification = received_sample_notification_]() {
+            std::cout << "ProxyEventReceiver: Received event notification" << std::endl;
+            received_sample_notification.notify();
+        };
+        proxy_event_or_field_.get().SetReceiveHandler(receive_handler);
     }
 
     ~ProxyEventReceiver()
     {
-        proxy_event_or_field_.UnsetReceiveHandler();
+        proxy_event_or_field_.get().UnsetReceiveHandler();
     }
 
     ProxyEventReceiver(const ProxyEventReceiver&) = delete;
     ProxyEventReceiver& operator=(const ProxyEventReceiver&) = delete;
     ProxyEventReceiver(ProxyEventReceiver&&) = delete;
     ProxyEventReceiver& operator=(ProxyEventReceiver&&) = delete;
+
+    /// \brief Reattach the receiver to a new event object (e.g. after a proxy move).
+    /// Updates the internal reference so that GetNewSamples and UnsetReceiveHandler
+    /// are called on the new event without re-registering the receive handler.
+    void Reattach(ProxyOrFieldType& new_event)
+    {
+        proxy_event_or_field_ = std::ref(new_event);
+    }
+
+    /// \brief Wait for a certain number of samples to be received using the stored callback.
+    ///
+    /// Only available when constructed with a callback argument.
+    ///
+    /// \return true if the expected number of samples was received, false if the wait was interrupted by the
+    /// stop_token.
+    template <typename CB = StoredCallback>
+    [[nodiscard]] typename std::enable_if<!std::is_same<CB, std::monostate>::value, bool>::type WaitForSamples(
+        const score::cpp::stop_token& stop_token,
+        const std::size_t num_samples_to_receive)
+    {
+        return WaitForSamples(stop_token, num_samples_to_receive, stored_callback_);
+    }
 
     /// \brief Wait for a certain number of samples to be received.
     ///
@@ -64,7 +100,7 @@ class ProxyEventReceiver
         std::size_t received_count{0U};
         while (!stop_token.stop_requested())
         {
-            auto get_samples_result = proxy_event_or_field_.GetNewSamples(
+            auto get_samples_result = proxy_event_or_field_.get().GetNewSamples(
                 [&get_new_samples_callback](auto sample) {
                     std::invoke(get_new_samples_callback, std::move(sample));
                 },
@@ -86,10 +122,10 @@ class ProxyEventReceiver
             const auto notification_received = received_sample_notification_.waitWithAbort(stop_token);
             if (!notification_received)
             {
-                std::cout << "ProxyEventReceiver: Wait for samples was interrupted by stop_token." << std::endl;
+                std::cout << "ProxyEventReceiver: Wait for sample notification was interrupted by stop_token"
+                          << std::endl;
                 return false;
             }
-
             received_sample_notification_.reset();
         }
 
@@ -142,8 +178,15 @@ class ProxyEventReceiver
 
   private:
     score::concurrency::Notification received_sample_notification_;
-    ProxyOrFieldType& proxy_event_or_field_;
+    std::reference_wrapper<ProxyOrFieldType> proxy_event_or_field_;
+    StoredCallback stored_callback_;
 };
+
+template <typename ProxyOrFieldType>
+ProxyEventReceiver(ProxyOrFieldType&) -> ProxyEventReceiver<ProxyOrFieldType>;
+
+template <typename ProxyOrFieldType, typename CallbackType>
+ProxyEventReceiver(ProxyOrFieldType&, CallbackType) -> ProxyEventReceiver<ProxyOrFieldType, CallbackType>;
 
 }  // namespace score::mw::com::test
 
