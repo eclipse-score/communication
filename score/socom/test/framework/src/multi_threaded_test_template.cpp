@@ -13,7 +13,6 @@
 
 #include "score/socom/multi_threaded_test_template.hpp"
 
-#include <bits/chrono.h>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
