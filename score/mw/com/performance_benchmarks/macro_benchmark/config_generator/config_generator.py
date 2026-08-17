@@ -74,7 +74,7 @@ def create_client_benchmark_config(joined_config_json: dict, max_samples: int):
     '''
 
     client_config: dict = joined_config_json["client_config"]
-    client_benchmark_config = dict()
+    client_benchmark_config = {}
     client_benchmark_config["number_of_clients"] = joined_config_json["common"]["number_of_clients"]
     client_benchmark_config["read_cycle_time_ms"] = client_config["read_cycle_time_ms"]
     client_benchmark_config["max_num_samples"] = max_samples
@@ -115,7 +115,7 @@ def create_service_benchmark_config(joined_config_json: dict):
         Returns:
                 service benchmark config in form of a dict suitable to generate the expected json file from.
     '''
-    service_benchmark_config = dict()
+    service_benchmark_config = {}
     service_benchmark_config["number_of_clients"] = joined_config_json["common"]["number_of_clients"]
     service_benchmark_config["send_cycle_time_ms"] = joined_config_json["service_config"]["send_cycle_time_ms"]
     return service_benchmark_config
