@@ -98,7 +98,7 @@ incorrect behavior and data race.
 in the [Partial Restart design](../partial_restart/README.md#identification-of-transaction-logs).
 
 ### Mapping to concrete (technical) instances
-As mentioned [above](#responsibility-for-servicetypedeploymentserviceinstancedeployment), it is the task of the
+As mentioned [above](#responsibility-for-servicetypedeployment-and-serviceinstancedeployment), it is the task of the
 integrator, to map those `InstanceSpecifier`s to concrete technical instances of the services.
 
 We decided to implement this mapping description via a JSON format.

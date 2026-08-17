@@ -33,7 +33,7 @@ The LoLa binding uses two kinds of "communication channels" for which it has to 
 - **shared-memory objects**, to which both provider and consumer applications have access.
 
 These basic building blocks can also be seen in the high-level architecture documentation, located
-`here <https://eclipse-score.github.io/score/main/features/communication/ipc/docs/architecture/index.html>`__.
+`here <https://eclipse-score.github.io/score/main/features/communication/ipc/architecture/index.html>`__.
 
 .. note::
 
