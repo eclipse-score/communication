@@ -10,44 +10,35 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-"""Generate ``mw_com_config_schema.json`` from ``mw_com_config.fbs``.
+"""Generate ``mw_com_config_schema.json`` from the FlatBuffers single source of truth.
 
 The FlatBuffers schema (``mw_com_config.fbs``) is the single source of truth for the
-mw::com runtime configuration. This tool regenerates the rich JSON schema from it so
-that the schema never drifts from the FlatBuffers definition.
+mw::com runtime configuration. The rich JSON schema is regenerated from it so that the
+schema never drifts from the FlatBuffers definition.
 
-Pipeline:
-  1. Run ``flatc --jsonschema`` on the .fbs. flatc emits structure, ``description`` (from
-     ``///`` doc comments), string ``enum`` (from fbs enums), ``deprecated`` and type-based
-     integer ranges -- but NOT ``title`` / ``default`` / custom ``minimum`` / ``maximum``,
-     and it uses draft 2019-09 with ``definitions`` + ``$ref``.
-  2. Post-process flatc's output into the rich draft-2020-12 schema:
-       * split ``@title:`` / ``@default:`` / ``@min:`` / ``@max:`` / ``@required`` token lines
-         out of each ``description`` into proper JSON-schema attributes;
-       * strip flatc's type-based ``minimum`` / ``maximum``, re-adding only from ``@min`` / ``@max``;
-       * inline every ``$ref`` except tables marked ``@shared: <name>`` in the .fbs, which
-         are lifted into ``$defs/<name>`` and referenced (used for tables shared by 2+ parents);
-       * restore ``_`` -> ``-`` in object keys and enum values (fbs identifiers can't contain ``-``).
+The heavy lifting -- running ``flatc --jsonschema`` and post-processing its output into a
+rich draft-2020-12 schema (splitting ``@title`` / ``@default`` / ``@min`` / ``@max`` /
+``@required`` tokens out of descriptions, lifting ``@shared`` tables into ``$defs``,
+etc.) -- is done by baselibs' ``schema_generator`` in a Bazel action. Its output is the
+``mw_com_config.postproc.schema.json`` passed in via ``--in``.
 
-The result is deterministic (fixed key ordering, ``json.dumps(indent=4)``), so the checked-in
-schema is simply this tool's committed output and a drift test can compare byte-for-byte.
+This tool performs the **only** step that is specific to mw::com's public config format:
+restoring the fbs ``-`` -> ``_`` mapping. FlatBuffers identifiers cannot contain ``-``, so
+the .fbs spells hyphenated public names (e.g. ``asil-level``, ``file-permissions-on-empty``)
+with underscores; here they are turned back into hyphens. Restoration is targeted -- it
+touches object property keys, ``required`` entries, ``enum`` values and enum-valued
+``default`` strings only, never ``$defs`` keys, ``$ref`` targets or free-form strings such
+as file paths.
+
+baselibs already fixed key ordering and ``indent=4``, so the
+checked-in schema is simply this tool's committed output and a drift test can compare it
+byte-for-byte.
 """
 
 import argparse
 import json
 import os
-import re
-import subprocess
 import sys
-import tempfile
-
-_TOKEN_RE = re.compile(r"^@(title|default|min|max|required|shared)\b\s*:?\s*(.*)$")
-
-_DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema"
-
-
-class GenerationError(RuntimeError):
-    """Raised when schema generation fails."""
 
 
 def _restore_hyphens(name):
@@ -55,213 +46,58 @@ def _restore_hyphens(name):
     return name.replace("_", "-")
 
 
-def _parse_default(raw):
-    """Parse an ``@default:`` token value into its JSON type (bool / int / string)."""
-    if raw == "true":
-        return True
-    if raw == "false":
-        return False
-    try:
-        return int(raw)
-    except ValueError:
-        return raw
+def _restore_node(node):
+    """Recursively restore hyphens in fbs-derived identifiers within ``node``.
 
+    Restores ``_`` -> ``-`` in:
+      * object property keys (under ``properties``);
+      * ``required`` entries;
+      * ``enum`` values;
+      * a ``default`` string, only when a sibling (restored) ``enum`` contains it.
 
-def _parse_description(text):
-    """Split a flatc ``description`` string into (metadata, clean_description).
-
-    ``@token`` lines are extracted into a dict; the remaining lines form the human-readable
-    description (joined with ``\\n``, preserving the original multi-line layout).
+    Leaves everything else untouched: ``$defs`` keys, ``$ref`` targets and arbitrary
+    string values (e.g. file paths) keep their underscores.
     """
-    meta = {
-        "title": None,
-        "default": None,
-        "min": None,
-        "max": None,
-        "required": False,
-        "shared": None,
-    }
-    desc_lines = []
-    for line in text.split("\n"):
-        match = _TOKEN_RE.match(line)
-        if match is None:
-            desc_lines.append(line)
-            continue
-        key, value = match.group(1), match.group(2).strip()
-        if key == "required":
-            meta["required"] = True
-        elif key in ("min", "max"):
-            meta[key] = int(value)
-        elif key == "default":
-            meta["default"] = _parse_default(value)
-        elif key == "shared":
-            meta["shared"] = value
-        else:  # title
-            meta["title"] = value
-    return meta, "\n".join(desc_lines)
+    if isinstance(node, list):
+        return [_restore_node(item) for item in node]
+    if not isinstance(node, dict):
+        return node
+
+    out = {}
+    for key, value in node.items():
+        if key == "properties" and isinstance(value, dict):
+            out[key] = {
+                _restore_hyphens(prop): _restore_node(prop_node)
+                for prop, prop_node in value.items()
+            }
+        elif key == "required" and isinstance(value, list):
+            out[key] = [_restore_hyphens(entry) for entry in value]
+        elif key == "enum" and isinstance(value, list):
+            out[key] = [_restore_hyphens(entry) for entry in value]
+        else:
+            out[key] = _restore_node(value)
+
+    # A default that names an enum symbol must be hyphen-restored to match its enum.
+    default = out.get("default")
+    enum = out.get("enum")
+    if isinstance(default, str) and isinstance(enum, list):
+        restored = _restore_hyphens(default)
+        if restored in enum:
+            out["default"] = restored
+    return out
 
 
-class _Enricher:
-    def __init__(self, definitions, shared_defs):
-        self._defs = definitions
-        # Maps a full (namespaced) def name -> the ``$defs`` key it is lifted into.
-        self._shared_defs = shared_defs
+def generate(postproc_schema_path):
+    """Return the final schema (as a string) by hyphen-restoring the post-processed schema.
 
-    def _ref_name(self, node):
-        return node["$ref"].split("/")[-1]
-
-    def _is_enum(self, def_name):
-        return "enum" in self._defs[def_name]
-
-    def _enum_values(self, def_name):
-        return [_restore_hyphens(v) for v in self._defs[def_name]["enum"]]
-
-    def build_field(self, node):
-        """Build an enriched schema node for a property. Returns (schema_node, required)."""
-        if "$ref" in node:
-            ref = self._ref_name(node)
-            if ref in self._shared_defs:
-                meta, _ = _parse_description(node.get("description", ""))
-                return {"$ref": "#/$defs/%s" % self._shared_defs[ref]}, meta["required"]
-            if self._is_enum(ref):
-                meta, desc = _parse_description(node.get("description", ""))
-                out = {"type": "string"}
-                if meta["title"] is not None:
-                    out["title"] = meta["title"]
-                if desc:
-                    out["description"] = desc
-                out["enum"] = self._enum_values(ref)
-                if meta["default"] is not None:
-                    out["default"] = meta["default"]
-                return out, meta["required"]
-            # Non-shared table reference -> inline it. Such fields are authored bare
-            # (metadata lives on the referenced table), so they are never required here.
-            return self.build_object(self._defs[ref]), False
-
-        node_type = node.get("type")
-        if node_type == "array":
-            meta, desc = _parse_description(node.get("description", ""))
-            out = {"type": "array"}
-            if meta["title"] is not None:
-                out["title"] = meta["title"]
-            if desc:
-                out["description"] = desc
-            out["items"] = self._build_items(node["items"])
-            return out, meta["required"]
-
-        # Scalar / string / bool leaf.
-        meta, desc = _parse_description(node.get("description", ""))
-        out = {"type": node_type}
-        if meta["title"] is not None:
-            out["title"] = meta["title"]
-        if desc:
-            out["description"] = desc
-        if "enum" in node:  # inline enum defined directly on the node (not via $ref)
-            out["enum"] = [_restore_hyphens(v) for v in node["enum"]]
-        if meta["default"] is not None:
-            out["default"] = meta["default"]
-        if meta["min"] is not None:
-            out["minimum"] = meta["min"]
-        if meta["max"] is not None:
-            out["maximum"] = meta["max"]
-        if node.get("deprecated"):
-            out["deprecated"] = True
-        return out, meta["required"]
-
-    def _build_items(self, items):
-        if "$ref" in items:
-            ref = self._ref_name(items)
-            if ref in self._shared_defs:
-                return {"$ref": "#/$defs/%s" % self._shared_defs[ref]}
-            if self._is_enum(ref):
-                return {"type": "string", "enum": self._enum_values(ref)}
-            return self.build_object(self._defs[ref])
-        # Scalar vector items: drop flatc's type-based min/max (schema has none for these).
-        return {"type": items["type"]}
-
-    def build_object(self, def_node):
-        meta, desc = _parse_description(def_node.get("description", ""))
-        properties = {}
-        required = []
-        for field_name, field_node in def_node.get("properties", {}).items():
-            built, is_required = self.build_field(field_node)
-            key = _restore_hyphens(field_name)
-            properties[key] = built
-            if is_required:
-                required.append(key)
-        out = {"type": "object"}
-        if meta["title"] is not None:
-            out["title"] = meta["title"]
-        if desc:
-            out["description"] = desc
-        if required:
-            out["required"] = required
-        out["additionalProperties"] = False
-        out["properties"] = properties
-        return out
-
-
-def _collect_shared_defs(definitions):
-    """Map full def name -> ``$defs`` key for every table marked ``@shared: <name>``.
-
-    Iteration follows ``definitions`` order (i.e. .fbs order), keeping ``$defs`` deterministic.
+    ``postproc_schema_path`` is baselibs' ``generate_json_schema`` output (a rich
+    draft-2020-12 schema whose fbs-derived identifiers still use underscores).
     """
-    shared = {}
-    for full_name, def_node in definitions.items():
-        meta, _ = _parse_description(def_node.get("description", ""))
-        name = meta["shared"]
-        if name is None:
-            continue
-        if name in shared.values():
-            raise GenerationError("duplicate @shared name: %s" % name)
-        shared[full_name] = name
-    return shared
+    with open(postproc_schema_path, "r", encoding="utf-8") as handle:
+        schema = json.load(handle)
 
-
-def _run_flatc_jsonschema(flatc, fbs_path):
-    with tempfile.TemporaryDirectory() as out_dir:
-        result = subprocess.run(
-            [flatc, "-o", out_dir, "--jsonschema", fbs_path],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            raise GenerationError(
-                "flatc --jsonschema failed:\n%s\n%s" % (result.stdout, result.stderr)
-            )
-        stem = os.path.splitext(os.path.basename(fbs_path))[0]
-        schema_file = os.path.join(out_dir, stem + ".schema.json")
-        with open(schema_file, "r", encoding="utf-8") as handle:
-            return json.load(handle)
-
-
-def generate(fbs_path, flatc="flatc"):
-    """Return the rich JSON schema (as a string) generated from ``fbs_path``."""
-    raw = _run_flatc_jsonschema(flatc, fbs_path)
-    definitions = raw["definitions"]
-    shared_defs = _collect_shared_defs(definitions)
-    enricher = _Enricher(definitions, shared_defs)
-
-    root_name = raw["$ref"].split("/")[-1]
-    root_obj = enricher.build_object(definitions[root_name])
-
-    schema = {"$schema": _DRAFT_2020_12}
-    if "title" in root_obj:
-        schema["title"] = root_obj["title"]
-    if "description" in root_obj:
-        schema["description"] = root_obj["description"]
-    schema["type"] = "object"
-    if "required" in root_obj:
-        schema["required"] = root_obj["required"]
-    schema["additionalProperties"] = root_obj["additionalProperties"]
-    schema["properties"] = root_obj["properties"]
-    schema["$defs"] = {
-        name: enricher.build_object(definitions[full])
-        for full, name in shared_defs.items()
-    }
-
-    return json.dumps(schema, indent=4, ensure_ascii=False) + "\n"
+    restored = _restore_node(schema)
+    return json.dumps(restored, indent=4, ensure_ascii=False) + "\n"
 
 
 # Workspace-relative location of the schema, used to write back to the source tree when
@@ -269,8 +105,9 @@ def generate(fbs_path, flatc="flatc"):
 _SCHEMA_RELPATH = "score/mw/com/impl/configuration/mw_com_config_schema.json"
 
 
-def main(argv=None):
-    argv = list(sys.argv[1:] if argv is None else argv)
+def build_arg_parser():
+    """Argument parser for the CLI entry point (schema_drift_test.py parses --in separately
+    before handing remaining args to unittest)."""
     here = os.path.dirname(os.path.abspath(__file__))
     workspace = os.environ.get("BUILD_WORKSPACE_DIRECTORY")
     default_output = (
@@ -280,14 +117,10 @@ def main(argv=None):
     )
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--fbs",
-        default=os.path.join(here, "mw_com_config.fbs"),
-        help="Path to the FlatBuffers schema (default: sibling mw_com_config.fbs).",
-    )
-    parser.add_argument(
-        "--flatc",
-        default=os.environ.get("FLATC_PATH", "flatc"),
-        help="Path to the flatc binary (default: $FLATC_PATH or 'flatc').",
+        "--in",
+        dest="input",
+        required=True,
+        help="Path to baselibs' post-processed schema (generate_json_schema output).",
     )
     parser.add_argument(
         "--output",
@@ -295,9 +128,14 @@ def main(argv=None):
         help="Where to write the schema, or '-' for stdout "
         "(default: the checked-in mw_com_config_schema.json).",
     )
-    args = parser.parse_args(argv)
+    return parser
 
-    schema = generate(args.fbs, args.flatc)
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    args = build_arg_parser().parse_args(argv)
+
+    schema = generate(args.input)
     if args.output == "-":
         sys.stdout.write(schema)
     else:
