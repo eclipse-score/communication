@@ -14,6 +14,7 @@ import os
 import subprocess
 import sys
 import signal
+import contextlib
 from typing import List, Optional
 import json
 import shutil
@@ -71,29 +72,30 @@ class CommandLineArguments:
 
 def launch_processes(cla: CommandLineArguments()):
 
-    service_proc = subprocess.Popen([cla.service_path,
-                                     cla.service_config_path,
-                                     cla.client_mw_com_config_path])
-    service_pid = service_proc.pid
+    with contextlib.ExitStack() as stack:
+        service_proc = stack.enter_context(subprocess.Popen([cla.service_path,
+                                         cla.service_config_path,
+                                         cla.client_mw_com_config_path]))
+        service_pid = service_proc.pid
 
-    service_perf = subprocess.Popen(
-            ["perf", "record", "-F", "99", "-a", "-g", "-p",
-             str(service_pid), "-o", "data_service.perf"])
+        service_perf = stack.enter_context(subprocess.Popen(
+                ["perf", "record", "-F", "99", "-a", "-g", "-p",
+                 str(service_pid), "-o", "data_service.perf"]))
 
-    client_proc = subprocess.Popen([cla.client_path,
-                                    cla.client_config_path,
-                                    cla.service_mw_com_config_path])
-    client_pid = client_proc.pid
+        client_proc = stack.enter_context(subprocess.Popen([cla.client_path,
+                                        cla.client_config_path,
+                                        cla.service_mw_com_config_path]))
+        client_pid = client_proc.pid
 
-    client_perf = subprocess.Popen(
-            ["perf", "record", "-F", "99", "-a", "-g", "-p",
-             str(client_pid), "-o", "data_client.perf"])
+        client_perf = stack.enter_context(subprocess.Popen(
+                ["perf", "record", "-F", "99", "-a", "-g", "-p",
+                 str(client_pid), "-o", "data_client.perf"]))
 
-    service_proc.wait()
-    client_proc.wait()
+        service_proc.wait()
+        client_proc.wait()
 
-    clean_up(cla.client_mw_com_config_path, [service_proc, client_proc,
-                                             service_perf, client_perf])
+        clean_up(cla.client_mw_com_config_path, [service_proc, client_proc,
+                                                 service_perf, client_perf])
     print("All Done")
 
 

@@ -98,8 +98,6 @@ disable=missing-docstring,
         # then a useless-option-value is triggered. We disable that until we remove all useless suppressions.
         # This allow us to upgrade pylint without having to cleanup suppressions at the same time.
         useless-option-value,
-        # This was added in pylint 2.8. We disable until we fix it in most of the places of our codebase
-        consider-using-with,
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
