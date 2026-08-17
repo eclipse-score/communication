@@ -49,13 +49,13 @@ cc_library(
 
 filegroup(
     name = "mock_headers",
-    srcs = glob(["mock/**"]),
+    srcs = glob(["mock/*.hpp"]),
 )
 
 cc_library(
     name = "mock",
+    srcs = ["mock/mocks.cpp"],
     hdrs = [":mock_headers"],
-    includes = ["mock"],
     target_compatible_with = SOCOM_FEATURE_COMPATIBILITY,
     visibility = [
         "//:__pkg__",
