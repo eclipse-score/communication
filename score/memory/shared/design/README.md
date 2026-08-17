@@ -339,7 +339,7 @@ Obviously, since the SharedMemoryResource is contained within a shared_ptr, in t
 
 ## Ownership of the SharedMemoryResource
 
-Getting the `uid` of the creator of the underlying memory managed by a `SharedMemoryResource` is essential to ensure that only memory with the expected allowed providers can be opened by a user of the library as this feature is used by some ASIL B components (for example see this [requirement](broken_link_c/issue/33047276) or this [one](broken_link_c/issue/8742625)).
+Getting the `uid` of the creator of the underlying memory managed by a `SharedMemoryResource` is essential to ensure that only memory with the expected allowed providers can be opened by a user of the library as this feature is used by some ASIL B components (for example see this [requirement](broken_link_c/issue/33047276) or ScoreReq.CompReq CheckTheUidOfTheProducer).
 This library only supports opening a shared memory area based on the path therefore this concept is only valid for the named memory use case, annonymous memory is not considered.
 
 There are 2 possible use-cases :

@@ -26,7 +26,6 @@ sync_skills()
 sphinx_docs_library(
     name = "contributing_md",
     srcs = ["CONTRIBUTING.md"],
-    prefix = "docs/sphinx/",  # Place under sphinx out folder
     visibility = ["//docs/sphinx:__pkg__"],
 )
 

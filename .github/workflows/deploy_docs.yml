@@ -18,12 +18,17 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+  # Intentionally no `paths:` filter here. The Sphinx build's dependency
+  # surface is a Bazel graph, not a fixed set of directories: e.g. the
+  # generated API docs depend on the *entire* //score/mw/com C++ target
+  # (via Doxygen/Breathe), and sphinx_docs_library sources can be added
+  # anywhere in the repo. Any path allowlist would either be incomplete
+  # (silently missing future doc-affecting changes, as happened before
+  # this fix) or so broad it approximates "no filter" anyway. Bazel's
+  # disk cache (configured below) keeps unaffected reruns cheap, so we
+  # let the build graph -- not a hand-maintained list -- decide relevance.
   pull_request:
     branches: [main]
-    paths:
-      - 'docs/**'
-      - '.github/workflows/deploy_docs.yml'
-      - '.github/actions/10_docs/build_sphinx_package/action.yml'
   workflow_dispatch:
   workflow_run:
     workflows: ["Nightly Quality Jobs"]

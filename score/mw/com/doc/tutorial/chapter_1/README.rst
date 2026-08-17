@@ -149,7 +149,7 @@ implementation of the service interface gets generated via instantiation of the 
 corresponding proxy/skeleton trait. Thus, also the line `using Trait::Base::Base;` is mandatory for each service
 interface a user designs.
 What is specific to our `HelloWorldInterface` is only the datatype declaration for a `FixedSizeString` and the line:
-typename Trait::template Event<FixedSizeString> message{*this, "message"};
+``typename Trait::template Event<FixedSizeString> message{*this, "message"};``
 
 This line expresses, that our service interface `HelloWorldInterface` contains an event with name "message".
 The datatype of the event is `FixedSizeString`, which we declared in the line above.
@@ -440,16 +440,16 @@ A short summary of what we have learned in this chapter:
 - The service interface is defined in terms of a C++ struct, which has to follow a certain pattern, which is documented
   in `traits.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/impl/traits.h>`__.
 - The provider side skeleton data type is generated via the `AsSkeleton` template, which is instantiated with the service
-interface.
+  interface.
 - The consumer side proxy data type is generated via the `AsProxy` template, which is instantiated with the service
-interface.
+  interface.
 - For both, the provider and the consumer, the service instance is identified via an `instance specifier`, which is a
   string that is used for a configuration lookup.
 - The provider creates a skeleton instance via the `Create` method of the skeleton data type and then offers the service
-instance via the `OfferService` method.
+  instance via the `OfferService` method.
 - The consumer finds the service instance via the `FindService` method of the proxy data type and then creates a proxy
-instance via the `Create` method of the proxy data type.
+  instance via the `Create` method of the proxy data type.
 - The consumer, which wants to receive event samples, the provider sends out, 1st needs to subscribe to the event via
-the `Subscribe` method of the proxy event data type.
+  the `Subscribe` method of the proxy event data type.
 - The consumer then can retrieve new samples via the `GetNewSamples` method of the proxy event data type, which takes a
-callback as argument, which is called for each new sample.
+  callback as argument, which is called for each new sample.

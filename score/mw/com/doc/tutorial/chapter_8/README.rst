@@ -296,8 +296,9 @@ A short summary of what we have learned in this chapter:
   **first argument by (mutable) reference** (an out-parameter), followed by the input arguments by const-reference –
   i.e. the expected handler signature for `ReturnType(ArgTypes...)` is `void(ReturnType&, const ArgTypes&...)`.
 - On the **consumer** side a method member is callable via `operator()`. There are two variants:
+
   - the **copy** call operator `proxy.method(args...)` – convenient for small, cheap-to-copy arguments (it
-    internally `Allocate()`s, copies the arguments in and calls);
+    internally `Allocate()`\s, copies the arguments in and calls);
   - the **zero-copy** call operator `proxy.method(MethodInArgPtr...)` – for (potentially large) arguments: first
     `Allocate()` the argument directly in the shared-memory slot, fill it **in place**, then invoke the method with the
     obtained pointer(s), avoiding an extra copy.

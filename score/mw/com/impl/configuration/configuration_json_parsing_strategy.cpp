@@ -1208,7 +1208,7 @@ Configuration ConfigurationJsonParsingStrategy::Parse(const std::string_view pat
 {
     const score::json::JsonParser json_parser_obj;
     // Reason for banning is AoU of vaJson library about integrity of provided path.
-    // This AoU is forwarded as AoU of Lola. See broken_link_c/issue/5835192
+    // This AoU is forwarded as AoU of Lola. See ScoreReq.AoU ConfigOnASafeFilesystem
     // NOLINTNEXTLINE(score-banned-function): The user has to guarantee the integrity of the path
     auto json_result = json_parser_obj.FromFile(path);
     if (!json_result.has_value())

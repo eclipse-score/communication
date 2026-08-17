@@ -17,11 +17,11 @@ load("//quality/api_surface:api_surface.bzl", "api_surface_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
-# Capture README.md for Sphinx documentation at convenient location
+# Capture README.md for Sphinx documentation.
 sphinx_docs_library(
     name = "readme_md",
     srcs = ["README.md"],
-    prefix = "docs/sphinx/",  # Place under sphinx out folder
+    prefix = "score/mw/com/",
     visibility = ["//docs/sphinx:__pkg__"],
 )
 

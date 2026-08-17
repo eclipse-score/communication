@@ -248,8 +248,8 @@ cc_library(
     ],
     deps = [
         ":memory_region_bounds",
+        "@score_baselibs//score/concurrency:atomic_indirector",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
     ],
 )
 
@@ -639,7 +639,7 @@ cc_unit_test(
     deps = [
         ":memory_region_map",
         ":shared_memory_test_resources",
-        "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )

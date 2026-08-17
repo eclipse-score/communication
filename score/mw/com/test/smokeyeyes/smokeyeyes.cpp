@@ -38,7 +38,6 @@
 
 using namespace std::chrono_literals;
 
-// uid 1300 - 1311 is reserved for use. See broken_link_cf/display/ipnext/User+Management
 const uid_t kUidStart{1300};
 
 namespace score::mw::com::test

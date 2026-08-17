@@ -530,14 +530,34 @@ This section contains all {category} tagged with @api.
         # Reconstruct the signature
         simplified = f"{base_name}({', '.join(simplified_params)})"
 
-        # Check for const qualifier after the closing parenthesis
-        # Look for "const" keyword after the parameters
-        # but before other qualifiers
+        # Check for const/ref qualifiers after the closing parenthesis.
+        # Breathe requires an exact signature match, so a ref-qualified
+        # member function (e.g. "GetHandle() const &") must keep its "&"/
+        # "&&" -- dropping it (as before) made Breathe unable to resolve
+        # functions like ProxyBase::GetHandle, which is only declared as
+        # "const HandleType &GetHandle() const & noexcept". Other
+        # qualifiers (noexcept, override, final, =default) are still
+        # intentionally dropped since Breathe's signature matching
+        # ignores them.
         remainder = signature[paren_end+1:].strip()
-        if remainder.startswith('const'):
-            # Add const to the signature, but remove other qualifiers
-            # like noexcept, override, final, =default
-            simplified += " const"
+        remainder_tokens = remainder.split()
+        qualifiers = []
+        idx = 0
+        if remainder_tokens and remainder_tokens[0] == 'const':
+            qualifiers.append('const')
+            idx += 1
+        if idx < len(remainder_tokens):
+            # Doxygen sometimes emits the ref-qualifier glued directly to
+            # the following keyword with no separating space (e.g.
+            # "&noexcept" or "&&noexcept"), so check for a prefix match
+            # rather than requiring the token to be exactly "&"/"&&".
+            token = remainder_tokens[idx]
+            if token.startswith('&&'):
+                qualifiers.append('&&')
+            elif token.startswith('&'):
+                qualifiers.append('&')
+        if qualifiers:
+            simplified += ' ' + ' '.join(qualifiers)
 
         return simplified
 
