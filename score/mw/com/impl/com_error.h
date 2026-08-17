@@ -88,7 +88,6 @@ class ComErrorDomain final : public score::result::ErrorDomain
     /// (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=78010). When bug is fixed, remove the override keyword from the
     /// MessageFor function signature and the AUTOSAR.MEMB.VIRTUAL.SPEC klocwork suppression.
     /**
-     * \api
      * \brief Translates an error code into a human readable message
      * \details This function is required by the std::error_domain interface
      * \param code The error code to translates

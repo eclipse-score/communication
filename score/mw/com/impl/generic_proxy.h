@@ -60,7 +60,6 @@ class GenericProxy : public ProxyBase
     using EventMapView = ServiceElementMapView<GenericProxyEvent>;
 
     /**
-     * \api
      * \brief Exception-less GenericProxy constructor
      * \param instance_handle Handle to the instance
      * \return Result containing the created GenericProxy instance or an error code.
@@ -76,7 +75,6 @@ class GenericProxy : public ProxyBase
     GenericProxy& operator=(GenericProxy&& other) noexcept;
 
     /**
-     * \api
      * \brief Returns a read-only view to the name-keyed map of events.
      * \note The returned view is valid as long as the GenericProxy lives.
      * \return View to the event map.

@@ -40,7 +40,6 @@ class InstanceIdentifier final
 {
   public:
     /**
-     * \api
      * \brief Exception-less constructor to create InstanceIdentifier from a serialized InstanceIdentifier created with
      * InstanceIdentifier::ToString()
      * \param serialized_format The serialized format to create the InstanceIdentifier from
@@ -69,7 +68,6 @@ class InstanceIdentifier final
      */
 
     /**
-     * \api
      * \brief CopyAssignment for InstanceIdentifier
      * \post *this == other
      * \param other The InstanceIdentifier *this shall be constructed from
@@ -77,7 +75,6 @@ class InstanceIdentifier final
      */
     InstanceIdentifier& operator=(const InstanceIdentifier& other) = default;
     /**
-     * \api
      * \brief Copy constructor for InstanceIdentifier
      *
      * \param other The InstanceIdentifier to copy from
@@ -85,7 +82,6 @@ class InstanceIdentifier final
      */
     InstanceIdentifier(const InstanceIdentifier&) = default;
     /**
-     * \api
      * \brief Move constructor for InstanceIdentifier
      *
      * \post *this == other
@@ -94,7 +90,6 @@ class InstanceIdentifier final
      */
     InstanceIdentifier(InstanceIdentifier&&) noexcept = default;
     /**
-     * \api
      * \brief MoveAssignment for InstanceIdentifier
      *
      * \post *this == other
@@ -104,7 +99,6 @@ class InstanceIdentifier final
     InstanceIdentifier& operator=(InstanceIdentifier&& other) noexcept = default;
 
     /**
-     * \api
      * \brief Returns the serialized form of the unknown internals of this class as a meaningful string
      *
      * \return A non-owning string representation of the internals of this class
@@ -112,7 +106,6 @@ class InstanceIdentifier final
     std::string_view ToString() const noexcept;
 
     /**
-     * \api
      * \brief Compares two instances for equality
      *
      * \param lhs The first instance to check for equality
@@ -122,7 +115,6 @@ class InstanceIdentifier final
     friend bool operator==(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs);
 
     /**
-     * \api
      * \brief LessThanComparable operator
      *
      * \param lhs The first InstanceIdentifier instance to compare

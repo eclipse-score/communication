@@ -34,7 +34,6 @@
 #include "score/mw/com/impl/traits.h"
 
 #include <vector>
-/// \api
 /// \brief The Types header file includes the data type definitions which are specific for the
 /// mw::com API.
 /// \requirement SWS_CM_01018, SWS_CM_01013
@@ -83,10 +82,12 @@ using FindServiceHandler = ::score::mw::com::impl::FindServiceHandler<T>;
 /// See ProxyEvent::GetSubscriptionStatus for slightly more information.
 using SubscriptionState = ::score::mw::com::impl::SubscriptionState;
 
+/// \api
 /// Carries the received data on proxy side
 template <typename SampleType>
 using SamplePtr = impl::SamplePtr<SampleType>;
 
+/// \api
 /// Carries a reference to the allocated memory that will hold the data that is to be sent to the receivers after having
 /// been filled by the sending application.
 template <typename SampleType>
@@ -108,9 +109,15 @@ using MethodInArgTypePtr = impl::MethodInArgPtr<ReturnType>;
 using EventReceiveHandler = impl::EventReceiveHandler;
 
 /// \api
-/// \brief Field tag types used in service-interface definitions to enable Get/Set/Notifier on a field.
+/// \brief Field tag type used in service-interface definitions to enable Get on a field.
 using WithGetter = impl::WithGetter;
+
+/// \api
+/// \brief Field tag type used in service-interface definitions to enable Set on a field.
 using WithSetter = impl::WithSetter;
+
+/// \api
+/// \brief Field tag type used in service-interface definitions to enable Notifier on a field.
 using WithNotifier = impl::WithNotifier;
 
 /// \api
@@ -127,6 +134,7 @@ using AsSkeleton = impl::AsSkeleton<T>;
 /// \brief A type erased proxy that can be used to read the raw data from a skeleton without knowing the SampleType
 using GenericProxy = impl::GenericProxy;
 
+/// \api
 /// \brief A type erased proxy event that can be used to receive data without knowing the SampleType.
 using GenericProxyEvent = impl::GenericProxyEvent;
 

@@ -38,7 +38,6 @@ class InstanceSpecifier
 
   public:
     /**
-     * \api
      * \brief Create an InstanceSpecifier from a shortname path.
      * \param shortname_path The shortname path to create the InstanceSpecifier from.
      * \return A Result containing the created InstanceSpecifier or an error.
@@ -70,7 +69,6 @@ class InstanceSpecifier
     }
 
     /**
-     * \api
      * \brief Convert the InstanceSpecifier to a string representation.
      * \return A string representation of the InstanceSpecifier.
      */

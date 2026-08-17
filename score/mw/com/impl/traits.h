@@ -456,12 +456,10 @@ template <template <class> class Interface>
 std::optional<std::unordered_map<HandleType, std::queue<Result<ProxyWrapperClass<Interface>>>>>
     ProxyWrapperClass<Interface>::creation_results_{};
 
-/// \api
 /// \brief Interpret an interface that follows our traits as proxy (see description above)
 template <template <class> class T>
 using AsProxy = ProxyWrapperClass<T>;
 
-/// \api
 /// \brief Interpret an interface that follows our traits as skeleton (see description above)
 template <template <class> class T>
 using AsSkeleton = SkeletonWrapperClass<T>;

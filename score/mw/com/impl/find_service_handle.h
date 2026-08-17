@@ -45,7 +45,6 @@ class FindServiceHandle final
     ~FindServiceHandle() noexcept = default;
 
     /**
-     * \api
      * \brief CopyAssignment for FindServiceHandle
      *
      * \post *this == other
@@ -54,14 +53,12 @@ class FindServiceHandle final
      */
     FindServiceHandle& operator=(const FindServiceHandle& other) = default;
     /**
-     * \api
      * \brief CopyConstructor for FindServiceHandle
      * \param other The FindServiceHandle to copy from
      * \return The FindServiceHandle that was constructed
      */
     FindServiceHandle(const FindServiceHandle& other) = default;
     /**
-     * \api
      * \brief MoveAssignment for FindServiceHandle
      * \post *this == other
      * \param other The FindServiceHandle *this shall be constructed from
@@ -69,7 +66,6 @@ class FindServiceHandle final
      */
     FindServiceHandle(FindServiceHandle&& other) noexcept = default;
     /**
-     * \api
      * \brief MoveAssignment for FindServiceHandle
      * \post *this == other
      * \param other The FindServiceHandle *this shall be constructed from
@@ -78,7 +74,6 @@ class FindServiceHandle final
     FindServiceHandle& operator=(FindServiceHandle&& other) noexcept = default;
 
     /**
-     * \api
      * \brief Compares two instances for equality
      * \param lhs The first instance to check for equality
      * \param rhs The second instance to check for equality
@@ -87,7 +82,6 @@ class FindServiceHandle final
     friend bool operator==(const FindServiceHandle& lhs, const FindServiceHandle& rhs) noexcept;
 
     /**
-     * \api
      * \brief LessThanComparable operator
      * \param lhs The first FindServiceHandle instance to compare
      * \param rhs The second FindServiceHandle instance to compare
@@ -96,7 +90,6 @@ class FindServiceHandle final
     friend bool operator<(const FindServiceHandle& lhs, const FindServiceHandle& rhs) noexcept;
 
     /**
-     * \api
      * \brief Stream operator which enables logging of FindServiceHandle via mw::log::LogStream.
      * \param log_stream The log stream to write to
      * \param find_service_handle The FindServiceHandle to log
@@ -104,7 +97,6 @@ class FindServiceHandle final
      */
     friend mw::log::LogStream& operator<<(mw::log::LogStream& log_stream, const FindServiceHandle& find_service_handle);
     /**
-     * \api
      * \brief Stream operator which enables logging of FindServiceHandle via std::ostream.
      * \param ostream_out The output stream to write to
      * \param find_service_handle The FindServiceHandle to log
