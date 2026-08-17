@@ -19,14 +19,14 @@ from typing import Dict
 
 
 def load_json(json_path: str) -> Dict:
-    with open(json_path, 'r') as json_file:
+    with open(json_path, 'r', encoding="utf-8") as json_file:
         loaded_json = json.load(json_file)
     return loaded_json
 
 
 def save_json(json_path: str, json_data: Dict):
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
-    with open(json_path, "w") as json_file:
+    with open(json_path, "w", encoding="utf-8") as json_file:
         json.dump(json_data, json_file, indent=4, sort_keys=True)
 
 

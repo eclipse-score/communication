@@ -114,7 +114,7 @@ def _read_pack_identity(pack_root):
     """
     name = None
     version = None
-    with open(os.path.join(pack_root, "qlpack.yml")) as handle:
+    with open(os.path.join(pack_root, "qlpack.yml"), encoding="utf-8") as handle:
         for line in handle:
             stripped = line.strip()
             if name is None and stripped.startswith("name:"):
@@ -144,7 +144,7 @@ def create_database(code_ql_path, config_path, target, source_root, database_pat
         shell=True, check=True)
 
     env_file = os.path.join(database_path, "temp/tracingEnvironment/start-tracing.json")
-    with open(env_file) as f:
+    with open(env_file, encoding="utf-8") as f:
         codeql_env = json.load(f)
     env = _get_merged_environment(codeql_env)
 

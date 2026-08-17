@@ -48,7 +48,7 @@ def load_api_surface(name: str) -> dict:
 
     for path in candidates:
         if os.path.isfile(path):
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 return json.load(f)
 
     # Fallback: search runfiles
@@ -56,7 +56,7 @@ def load_api_surface(name: str) -> dict:
         for root, _dirs, files in os.walk(runfiles_dir):
             for fname in files:
                 if fname == f"{name}_api_test_gen.json":
-                    with open(os.path.join(root, fname)) as f:
+                    with open(os.path.join(root, fname), encoding="utf-8") as f:
                         return json.load(f)
 
     raise FileNotFoundError(

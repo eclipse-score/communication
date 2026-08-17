@@ -22,7 +22,7 @@ import shutil
 def clean_up(mw_com_config_path: str,
              processes: Optional[List[subprocess.Popen]]=None):
 
-    with open(mw_com_config_path, "r") as mw_com_config_fp:
+    with open(mw_com_config_path, "r", encoding="utf-8") as mw_com_config_fp:
         mw_com_config = json.load(mw_com_config_fp)
         # NOTE: this is not a general way to parse the mw_com_config and will
         # stop working if the config is changed

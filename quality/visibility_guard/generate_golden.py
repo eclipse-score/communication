@@ -40,7 +40,7 @@ def main():
     golden_path = os.path.join(
         repo_root, "quality", "visibility_guard", "public_targets.golden"
     )
-    with open(golden_path, "w") as f:
+    with open(golden_path, "w", encoding="utf-8") as f:
         f.write("\n".join(public_targets) + "\n")
 
     print(f"Written {len(public_targets)} public targets to {golden_path}")

@@ -815,7 +815,7 @@ def main():
 
     # Mode 1: Pre-generated AST JSON (Bazel action mode)
     if args.ast_json:
-        with open(args.ast_json, "r") as f:
+        with open(args.ast_json, "r", encoding="utf-8") as f:
             ast = json.load(f)
         target_files = collect_target_files()
         label = args.target_label or args.target or ""

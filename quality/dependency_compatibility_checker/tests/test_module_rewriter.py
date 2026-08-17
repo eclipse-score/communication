@@ -65,7 +65,7 @@ class RewritePlainTest(unittest.TestCase):
         module_rewriter.rewrite(module, _config(CONFIG),
                                 {"bazel": "8.7.0", "rules_cc": "0.2.21",
                                  "index": 0, "has_patches": False, "flags": ""})
-        text = Path(module).read_text()
+        text = Path(module).read_text(encoding="utf-8")
         self.assertIn("single_version_override(", text)
         self.assertIn('module_name = "rules_cc"', text)
         self.assertIn('version = "0.2.21"', text)
@@ -78,7 +78,7 @@ class RewriteGitOverrideTest(unittest.TestCase):
         module_rewriter.rewrite(module, _config(CONFIG),
                                 {"bazel": "8.7.0", "score_baselibs": "0.2.9",
                                  "index": 0, "has_patches": True, "flags": ""})
-        text = Path(module).read_text()
+        text = Path(module).read_text(encoding="utf-8")
         self.assertNotIn("git_override(", text)
         self.assertEqual(_count(text, 'module_name = "score_baselibs"'), 1)
         self.assertIn('patch_strip = 1', text)
@@ -91,7 +91,7 @@ class RewriteSingleOverrideTest(unittest.TestCase):
         module_rewriter.rewrite(module, _config(CONFIG),
                                 {"bazel": "8.7.0", "rules_cc": "0.2.21",
                                  "index": 0, "has_patches": False, "flags": ""})
-        text = Path(module).read_text()
+        text = Path(module).read_text(encoding="utf-8")
         # exactly one active override, pinned to the new version
         self.assertEqual(_count(text, '    module_name = "rules_cc",'), 1)
         self.assertIn('version = "0.2.21"', text)
@@ -105,18 +105,18 @@ class IdempotencyTest(unittest.TestCase):
         combo = {"bazel": "8.7.0", "rules_cc": "0.2.21",
                  "index": 0, "has_patches": False, "flags": ""}
         module_rewriter.rewrite(module, _config(CONFIG), combo)
-        first = Path(module).read_text()
+        first = Path(module).read_text(encoding="utf-8")
         module_rewriter.rewrite(module, _config(CONFIG), combo)
-        self.assertEqual(first, Path(module).read_text())
+        self.assertEqual(first, Path(module).read_text(encoding="utf-8"))
 
     def test_second_run_is_identical_with_patches(self):
         module = _copy("git_override.MODULE")
         combo = {"bazel": "8.7.0", "score_baselibs": "0.2.9",
                  "index": 0, "has_patches": True, "flags": ""}
         module_rewriter.rewrite(module, _config(CONFIG), combo)
-        first = Path(module).read_text()
+        first = Path(module).read_text(encoding="utf-8")
         module_rewriter.rewrite(module, _config(CONFIG), combo)
-        self.assertEqual(first, Path(module).read_text())
+        self.assertEqual(first, Path(module).read_text(encoding="utf-8"))
         self.assertEqual(_count(first, 'module_name = "score_baselibs"'), 1)
 
 
@@ -151,7 +151,7 @@ class BracketInCommentTest(unittest.TestCase):
             )
         ''')
         module_rewriter.rewrite(module, _config(CONFIG_NOPATCH), BASELIBS_COMBO)
-        text = Path(module).read_text()
+        text = Path(module).read_text(encoding="utf-8")
         # the whole git_override block must be gone, with no orphaned lines
         self.assertNotIn("git_override(", text)
         self.assertNotIn("remote =", text)
@@ -169,7 +169,7 @@ class BracketInCommentTest(unittest.TestCase):
             )
         ''')
         module_rewriter.rewrite(module, _config(CONFIG_NOPATCH), BASELIBS_COMBO)
-        text = Path(module).read_text()
+        text = Path(module).read_text(encoding="utf-8")
         self.assertNotIn("git_override(", text)
         self.assertNotIn("remote =", text)
         self.assertEqual(_count(text, 'module_name = "score_baselibs"'), 1)
@@ -187,7 +187,7 @@ class BracketInStringTest(unittest.TestCase):
             )
         ''')
         module_rewriter.rewrite(module, _config(CONFIG_NOPATCH), BASELIBS_COMBO)
-        text = Path(module).read_text()
+        text = Path(module).read_text(encoding="utf-8")
         self.assertNotIn("git_override(", text)
         self.assertNotIn("foo(bar)", text)
         self.assertEqual(_count(text, 'module_name = "score_baselibs"'), 1)
@@ -201,7 +201,7 @@ class BracketInStringTest(unittest.TestCase):
             bazel_dep(name = "rules_cc", version = "0.2.17")
         ''')
         module_rewriter.rewrite(module, _config(CONFIG_NOPATCH), BASELIBS_COMBO)
-        text = Path(module).read_text()
+        text = Path(module).read_text(encoding="utf-8")
         # the old single-line override is removed, the unrelated bazel_dep survives
         self.assertIn('bazel_dep(name = "rules_cc"', text)
         self.assertEqual(_count(text, 'module_name = "score_baselibs"'), 1)
@@ -218,7 +218,7 @@ class MultipleBlocksSameModuleTest(unittest.TestCase):
             )
         ''')
         module_rewriter.rewrite(module, _config(CONFIG_NOPATCH), BASELIBS_COMBO)
-        text = Path(module).read_text()
+        text = Path(module).read_text(encoding="utf-8")
         self.assertNotIn("git_override(", text)
         self.assertNotIn('version = "0.1.0"', text)
         self.assertEqual(_count(text, 'module_name = "score_baselibs"'), 1)
@@ -231,7 +231,7 @@ class OtherModulePreservedTest(unittest.TestCase):
             single_version_override(module_name = "some_other_dep", version = "3.3.3")
         ''')
         module_rewriter.rewrite(module, _config(CONFIG_NOPATCH), BASELIBS_COMBO)
-        text = Path(module).read_text()
+        text = Path(module).read_text(encoding="utf-8")
         self.assertEqual(_count(text, 'module_name = "some_other_dep"'), 1)
         self.assertIn('version = "3.3.3"', text)
 
@@ -246,7 +246,7 @@ class TrailingCommentOnClosingParenTest(unittest.TestCase):
             )  # pinned for testing )
         ''')
         module_rewriter.rewrite(module, _config(CONFIG_NOPATCH), BASELIBS_COMBO)
-        text = Path(module).read_text()
+        text = Path(module).read_text(encoding="utf-8")
         self.assertNotIn("git_override(", text)
         self.assertNotIn("pinned for testing", text)
         self.assertEqual(_count(text, 'module_name = "score_baselibs"'), 1)

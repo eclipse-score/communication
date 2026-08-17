@@ -56,7 +56,7 @@ def main():
     actual_content = "\n".join(actual_targets) + "\n"
 
     # Read golden file
-    with open(golden_path, "r") as f:
+    with open(golden_path, "r", encoding="utf-8") as f:
         golden_content = f.read()
 
     if actual_content == golden_content:
