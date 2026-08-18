@@ -343,3 +343,58 @@ ScoreReq.AoU NoGuaranteeOnSubscriptionStateCorrectness {
     note = "On a technical level, kSubscribed and kSubscriptionPending cannot be reliably differentiated, see {{SubscriptionState}} Component requirement for more details"
     version = 1
 }
+
+/* E2E supervision */
+
+ScoreReq.AoU PeriodicInvocationRequiredForE2EWindowConsistency {
+    description = "It shall be ensured that applications invoke GetNewSamples() (periodic invocation on the provider side) at the expected, regular cadence for E2E-protected events and fields, so that the profile Check()/state-machine window is fed one result per cycle as specified."
+    safety = ScoreReq.Asil.B
+    note = "This governs correct window/threshold counting only. A stalled or dead sender is not detected by the windowed state machine regardless of invocation cadence, since a valid state does not degrade on repeated no-new-data results alone; stall/dead-sender detection is out of scope for E2E and remains the responsibility of mw::com's subscription/service-availability lifecycle (e.g. the subscription-state-change handler), not the E2E state machine."
+    version = 1
+    mitigates = ""
+}
+
+ScoreReq.AoU NToOneServerTopologyForE2EProtectedMethods {
+    description = "It shall be ensured that an E2E-protected service method is provided by exactly one server instance per system (N:1)."
+    safety = ScoreReq.Asil.B
+    note = "..."
+    version = 1
+}
+
+ScoreReq.AoU SessionAwareProfileForClientSpecificDetection {
+    description = "A session/client-aware E2E profile variant shall be used instead of the plain data-element variant when client-specific repetition or insertion at the server needs to be detected."
+    safety = ScoreReq.Asil.B
+    version = 1
+}
+
+ScoreReq.AoU FixedE2EProfileParameterConfiguration {
+    description = "It shall be ensured that the standard-defined E2E profile parameters (data ID mode, counter offset, CRC offset, data ID nibble offset, header offset) are configured identically and unmodified on both the producer and consumer side of an E2E-protected communication element."
+    safety = ScoreReq.Asil.B
+    note = "These parameters are fixed by the profile definition; a mismatch between producer and consumer configuration silently defeats the protection instead of producing a detectable error."
+    version = 1
+    mitigates = ""
+}
+
+ScoreReq.AoU LowerLayerCommunicationErrorsNotCoveredByE2E {
+    description = "It shall be ensured that failure modes already detected and discarded by lower communication layers before reaching the application (e.g. transport or header checksum errors) are not additionally assumed to be covered by mw::com's E2E protection."
+    safety = ScoreReq.Asil.B
+    note = "Such discarded messages never reach the application or the E2E check function at all; E2E supervision only covers messages that arrive at the binding."
+    version = 1
+    mitigates = ""
+}
+
+ScoreReq.AoU ApplicationResponsibleForActingOnE2EStatus {
+    description = "It shall be ensured that the consuming application evaluates the delivered E2E status and takes the necessary action (e.g. discarding the sample or transitioning to a safe state) when it is not valid."
+    safety = ScoreReq.Asil.B
+    note = "mw::com computes and delivers the E2E status per sample but does not itself gate delivery or take any safety action based on the result; a consumer that ignores the status receives no protection despite E2E being enabled on the event."
+    version = 1
+    mitigates = ""
+}
+
+ScoreReq.AoU CorrectlyConfiguredE2EProfilePerCommunicationElement {
+    description = "It shall be ensured that the E2E profile ID, Data ID, and state-machine window/threshold parameters configured for a protected event, field, or method are identical across all producer and consumer deployment configurations referencing that communication element."
+    safety = ScoreReq.Asil.B
+    note = "Inconsistent profile or window/threshold configuration across processes leads to spurious check failures or, worse, silently accepted invalid data, without producing a build-time or startup diagnostic."
+    version = 1
+    mitigates = ""
+}
