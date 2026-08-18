@@ -12,9 +12,76 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@score_baselibs//score/flatbuffers/bazel:codegen.bzl", "generate_cpp")
+load("@score_baselibs//score/flatbuffers/bazel:tools.bzl", "generate_json_schema")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+load(":flatbuffers_flags.bzl", "flatbuffers_flags")
+
+# FlatBuffers feature flag + config_setting (enable via --config=flatbuffers).
+flatbuffers_flags()
+
+exports_files(
+    [
+        "mw_com_config.fbs",
+        "mw_com_config_schema.json",
+    ],
+    visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
+)
+
+# mw_com_config.fbs is the single source of truth for the configuration schema.
+# The rich JSON schema (mw_com_config_schema.json) is generated from it; schema_drift_test
+# guards that they never diverge.
+#
+# generate_cpp compiles the .fbs to a C++ header via baselibs' flatc rule. 
+generate_cpp(
+    name = "mw_com_config_fbs",
+    output = "mw_com_config_generated.h",
+    schema = "mw_com_config.fbs",
+    target_compatible_with = select({
+        ":flatbuffers_enabled": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
+)
+
+# Post-processed (but not yet hyphen-restored) rich JSON schema: baselibs' generate_json_schema
+# runs flatc --jsonschema and its schema_generator. generate_schema.py then only restores
+# the fbs "_" -> "-" mapping on this output to produce the checked-in mw_com_config_schema.json.
+generate_json_schema(
+    name = "mw_com_config_postproc_schema",
+    output = "mw_com_config.postproc.schema.json",
+    schema = "mw_com_config.fbs",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+# Regenerates mw_com_config_schema.json from mw_com_config.fbs.
+#   bazel run //score/mw/com/impl/configuration:generate_schema
+py_binary(
+    name = "generate_schema",
+    srcs = ["generate_schema.py"],
+    args = ["--in", "$(location :mw_com_config_postproc_schema)"],
+    data = [":mw_com_config_postproc_schema"],
+    main = "generate_schema.py",
+)
+
+# Drift guard: hyphen-restoring the post-processed schema reproduces the checked-in schema.
+py_test(
+    name = "schema_drift_test",
+    srcs = [
+        "generate_schema.py",
+        "schema_drift_test.py",
+    ],
+    args = ["--in", "$(location :mw_com_config_postproc_schema)"],
+    data = [
+        "mw_com_config_schema.json",
+        ":mw_com_config_postproc_schema",
+    ],
+    main = "schema_drift_test.py",
+    target_compatible_with = ["@platforms//os:linux"],
+)
 
 validate_json_schema_test(
     name = "validate_mw_com_config_schema",
