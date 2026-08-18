@@ -135,6 +135,71 @@ TEST(SerializationTest, SerializeAndDeserializeVectorOfStringsProducesOriginalVa
     EXPECT_EQ(out, original);
 }
 
+TEST(SerializationTest, SerializeAndDeserializeVectorOfEventInfoProducesOriginalValues)
+{
+    // Expected values captured as independent std::strings, not string_views --
+    // so the final comparison can't accidentally succeed by reading through a
+    // stale/dangling view into memory we're about to free.
+    const std::string kExpectedSpeedName = "SpeedEvent_LongEnoughToDefeatSSO_AAAAAAAAAA";
+    const std::string kExpectedBrakeName = "BrakeEvent_LongEnoughToDefeatSSO_BBBBBBBBBB";
+    const impl::DataTypeMetaInfo kExpectedSpeedMeta{64U, 8U};
+    const impl::DataTypeMetaInfo kExpectedBrakeMeta{32U, 4U};
+
+    std::array<std::byte, 256> buf{};
+    score::Result<uint32_t> written;
+    score::Result<uint32_t> consumed;
+    std::vector<impl::EventInfo> out;
+
+    {
+        // Heap-allocate the source strings explicitly (not literals, not SSO-sized)
+        // so their backing memory is a real, freeable heap block, and so we control
+        // exactly when it's destroyed.
+        auto speed_name = std::make_unique<std::string>(kExpectedSpeedName);
+        auto brake_name = std::make_unique<std::string>(kExpectedBrakeName);
+
+        std::vector<impl::EventInfo> original = {{std::string_view(*speed_name), kExpectedSpeedMeta},
+                                                 {std::string_view(*brake_name), kExpectedBrakeMeta}};
+
+        written = Serialize(original, score::cpp::span<std::byte>(buf.data(), buf.size()));
+        ASSERT_TRUE(written.has_value());
+
+        // original's string_views are only needed until Serialize() has copied
+        // their bytes into buf -- drop the vector now.
+        original.clear();
+        original.shrink_to_fit();
+
+        // Poison and free the actual string backing memory original's
+        // string_views pointed at, BEFORE Deserialize is even called.
+        std::memset(speed_name->data(), 0xCD, speed_name->size());
+        std::memset(brake_name->data(), 0xCD, brake_name->size());
+        speed_name.reset();
+        brake_name.reset();
+
+        // Nudge the allocator into reusing those freed blocks with different
+        // content, so an accidental dependency on the old memory is more likely
+        // to surface as a wrong value instead of coincidentally-correct leftovers.
+        std::vector<std::unique_ptr<std::string>> heap_pressure;
+        heap_pressure.reserve(64);
+        for (int i = 0; i < 64; ++i)
+        {
+            heap_pressure.push_back(std::make_unique<std::string>(kExpectedSpeedName.size(), 'X'));
+        }
+
+        // Deserialize now runs with the original source strings already gone --
+        // out[i].name can only be valid if it was built from buf, not from them.
+        consumed = Deserialize(out, score::cpp::span<const std::byte>(buf.data(), written.value()));
+    }
+
+    ASSERT_TRUE(consumed.has_value());
+    ASSERT_EQ(out.size(), 2U);
+    EXPECT_EQ(out[0].name, kExpectedSpeedName);
+    EXPECT_EQ(out[1].name, kExpectedBrakeName);
+    EXPECT_EQ(out[0].data_type_meta_info.size, kExpectedSpeedMeta.size);
+    EXPECT_EQ(out[0].data_type_meta_info.alignment, kExpectedSpeedMeta.alignment);
+    EXPECT_EQ(out[1].data_type_meta_info.size, kExpectedBrakeMeta.size);
+    EXPECT_EQ(out[1].data_type_meta_info.alignment, kExpectedBrakeMeta.alignment);
+}
+
 TEST(SerializationTest, VectorSerializeAndDeserializeFailWhenBufferTooSmallForHeader)
 {
     const std::vector<std::uint32_t> original = {1U};
