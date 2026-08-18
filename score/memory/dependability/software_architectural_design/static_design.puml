@@ -1,0 +1,61 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+interface "score::memory::shared" as memory_public_api
+interface "OS" as os
+
+component "Memory" as dependable_element_memory <<SEooC>> {
+
+    component "Memory" as component_memory <<component>> {
+
+        component "SharedMemoryManagement" as shared_memory_management <<component>> {
+            component "ManagedMemoryResource" as managed_memory_resource <<unit>>
+            component "SharedMemoryResource" as shared_memory_resource <<unit>>
+            component "SharedMemoryFactory" as shared_memory_factory <<unit>>
+            component "MemoryResourceRegistry" as memory_resource_registry <<unit>>
+        }
+
+        component "OffsetPointer" as offset_pointer <<component>> {
+            component "OffsetPtr" as offset_ptr <<unit>>
+            component "PolymorphicOffsetPtrAllocator" as polymorphic_offset_ptr_allocator <<unit>>
+        }
+
+        component "SharedMemoryContainers" as shared_memory_containers <<component>> {
+            component "Containers" as containers <<unit>>
+        }
+
+        component "SharedMemorySynchronization" as shared_memory_synchronization <<component>> {
+            component "FlockMutex" as flock_mutex <<unit>>
+        }
+
+        component "TypedAndSealedMemory" as typed_and_sealed_memory <<component>> {
+            component "TypedMemory" as typed_memory <<unit>>
+            component "SealedSharedMemory" as sealed_shared_memory <<unit>>
+        }
+    }
+
+    portout " " as memory_public_api_port
+    portin " " as port_os
+
+    offset_pointer -u[hidden]- shared_memory_management
+    offset_pointer -u[hidden]- shared_memory_containers
+    shared_memory_containers -u[hidden]- shared_memory_synchronization
+    shared_memory_synchronization -u[hidden]- typed_and_sealed_memory
+}
+
+memory_public_api -r-() memory_public_api_port
+port_os -u-( os : uses
+
+@enduml
