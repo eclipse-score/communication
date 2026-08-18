@@ -1,0 +1,25 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+component "PolymorphicOffsetPtrAllocator<T>" as allocator
+component "OffsetPtr<const MemoryResourceProxy>" as proxy_ptr
+component "MemoryResourceProxy" as memory_resource_proxy
+component "ManagedMemoryResource" as managed_memory_resource
+
+allocator --> proxy_ptr
+proxy_ptr --> memory_resource_proxy
+allocator --> managed_memory_resource
+
+@enduml

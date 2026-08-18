@@ -15,50 +15,69 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
 
 unit_design(
     name = "managed_memory_resource_unit_design",
+    dynamic = ["managed_memory_resource_dynamic.puml"],
+    static = ["managed_memory_resource_static.puml"],
     visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "shared_memory_resource_unit_design",
+    dynamic = ["shared_memory_resource_dynamic.puml"],
+    static = ["shared_memory_resource_static.puml"],
     visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "shared_memory_factory_unit_design",
+    dynamic = ["shared_memory_factory_dynamic.puml"],
+    static = ["shared_memory_factory_static.puml"],
     visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "memory_resource_registry_unit_design",
+    dynamic = ["memory_resource_registry_dynamic.puml"],
+    static = ["memory_resource_registry_static.puml"],
     visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "offset_ptr_unit_design",
+    dynamic = ["offset_ptr_dynamic.puml"],
+    static = ["offset_ptr_static.puml"],
     visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "polymorphic_offset_ptr_allocator_unit_design",
+    dynamic = ["polymorphic_offset_ptr_allocator_dynamic.puml"],
+    static = ["polymorphic_offset_ptr_allocator_static.puml"],
     visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "containers_unit_design",
+    static = ["containers_static.puml"],
     visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "flock_mutex_unit_design",
+    dynamic = ["flock_mutex_dynamic.puml"],
+    static = ["flock_mutex_static.puml"],
     visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "typed_memory_unit_design",
+    dynamic = ["typed_memory_dynamic.puml"],
+    static = ["typed_memory_static.puml"],
     visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "sealed_shared_memory_unit_design",
+    dynamic = ["sealed_shared_memory_dynamic.puml"],
+    static = ["sealed_shared_memory_static.puml"],
     visibility = ["//score/memory/shared:__pkg__"],
 )

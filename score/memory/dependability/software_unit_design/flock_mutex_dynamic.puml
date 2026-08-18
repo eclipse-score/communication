@@ -1,0 +1,43 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+title ExclusiveFlockMutex::try_lock translates EWOULDBLOCK into a non-blocking failure
+
+participant Client
+participant ExclusiveFlockMutex as Exclusive
+participant FlockMutex
+participant "score::os::Fcntl" as Fcntl
+
+Client -> Exclusive : try_lock()
+activate Exclusive
+Exclusive -> FlockMutex : try_lock()
+activate FlockMutex
+FlockMutex -> Fcntl : flock(fd, kLockExclusive | kLockNB)
+alt flock succeeds
+    Fcntl --> FlockMutex : success
+    FlockMutex --> Exclusive : true
+    Exclusive --> Client : true
+else errno == EWOULDBLOCK
+    Fcntl --> FlockMutex : error(EWOULDBLOCK)
+    FlockMutex --> Exclusive : false
+    Exclusive --> Client : false
+else other flock error
+    Fcntl --> FlockMutex : unexpected error
+    FlockMutex -> FlockMutex : LogFatal + terminate()
+end
+deactivate FlockMutex
+deactivate Exclusive
+
+@enduml
