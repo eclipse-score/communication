@@ -88,6 +88,7 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/memory:__pkg__",
+        "//score/memory/shared:__pkg__",
     ],
     deps = [
         ":exclusive_flock_mutex",

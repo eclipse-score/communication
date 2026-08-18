@@ -15,50 +15,50 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
 
 unit_design(
     name = "managed_memory_resource_unit_design",
-    visibility = ["//score/memory:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "shared_memory_resource_unit_design",
-    visibility = ["//score/memory:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "shared_memory_factory_unit_design",
-    visibility = ["//score/memory:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "memory_resource_registry_unit_design",
-    visibility = ["//score/memory:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "offset_ptr_unit_design",
-    visibility = ["//score/memory:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "polymorphic_offset_ptr_allocator_unit_design",
-    visibility = ["//score/memory:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "containers_unit_design",
-    visibility = ["//score/memory:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "flock_mutex_unit_design",
-    visibility = ["//score/memory:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "typed_memory_unit_design",
-    visibility = ["//score/memory:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
 )
 
 unit_design(
     name = "sealed_shared_memory_unit_design",
-    visibility = ["//score/memory:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
 )

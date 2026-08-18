@@ -21,28 +21,28 @@ component "Memory" as dependable_element_memory <<SEooC>> {
     component "Memory" as component_memory <<component>> {
 
         component "SharedMemoryManagement" as shared_memory_management <<component>> {
-            component "ManagedMemoryResource" as managed_memory_resource <<unit>>
-            component "SharedMemoryResource" as shared_memory_resource <<unit>>
-            component "SharedMemoryFactory" as shared_memory_factory <<unit>>
-            component "MemoryResourceRegistry" as memory_resource_registry <<unit>>
+            component "ManagedMemoryResource" as managed_memory_resource_unit <<unit>>
+            component "SharedMemoryResource" as shared_memory_resource_unit <<unit>>
+            component "SharedMemoryFactory" as shared_memory_factory_unit <<unit>>
+            component "MemoryResourceRegistry" as memory_resource_registry_unit <<unit>>
         }
 
         component "OffsetPointer" as offset_pointer <<component>> {
-            component "OffsetPtr" as offset_ptr <<unit>>
-            component "PolymorphicOffsetPtrAllocator" as polymorphic_offset_ptr_allocator <<unit>>
+            component "OffsetPtr" as offset_ptr_unit <<unit>>
+            component "PolymorphicOffsetPtrAllocator" as polymorphic_offset_ptr_allocator_unit <<unit>>
         }
 
         component "SharedMemoryContainers" as shared_memory_containers <<component>> {
-            component "Containers" as containers <<unit>>
+            component "Containers" as containers_unit <<unit>>
         }
 
         component "SharedMemorySynchronization" as shared_memory_synchronization <<component>> {
-            component "FlockMutex" as flock_mutex <<unit>>
+            component "FlockMutex" as flock_mutex_unit <<unit>>
         }
 
         component "TypedAndSealedMemory" as typed_and_sealed_memory <<component>> {
-            component "TypedMemory" as typed_memory <<unit>>
-            component "SealedSharedMemory" as sealed_shared_memory <<unit>>
+            component "TypedMemory" as typed_memory_unit <<unit>>
+            component "SealedSharedMemory" as sealed_shared_memory_unit <<unit>>
         }
     }
 
