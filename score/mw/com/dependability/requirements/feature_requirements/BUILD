@@ -34,3 +34,18 @@ trlc_requirements_ai_test(
     reqs = [":feature_requirements_ipc"],
     tags = ["manual"],
 )
+
+feature_requirements(
+    name = "feature_requirements_e2e",
+    srcs = ["feature_requirements_e2e.trlc"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//score/mw/com/dependability:__subpackages__"],
+    deps = ["//score/mw/com/dependability/assumed_system:assumed_system_requirements"],
+)
+
+trlc_requirements_ai_test(
+    name = "requirements_ai_check_e2e",
+    batch_size = 10,
+    reqs = [":feature_requirements_e2e"],
+    tags = ["manual"],
+)
