@@ -55,9 +55,9 @@ void PendingRequestTracker::Acknowledge(std::uint32_t sequence)
     }
 }
 
-score::ResultBlank PendingRequestTracker::WaitForAck(std::uint32_t sequence,
-                                                     std::chrono::milliseconds timeout,
-                                                     const std::atomic<bool>& is_connected)
+score::Result<void> PendingRequestTracker::WaitForAck(std::uint32_t sequence,
+                                                      std::chrono::milliseconds timeout,
+                                                      const std::atomic<bool>& is_connected)
 {
     std::unique_lock<std::mutex> lock(pending_mutex_);
     auto it = pending_requests_.find(sequence);

@@ -50,7 +50,7 @@ class SkeletonFacade : public SkeletonBinding
         return skeleton_.PrepareOffer(skeleton_event_binding, skeleton_field_binding, std::move(callback));
     }
 
-    void PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> callback) noexcept override final
+    void PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> callback) override final
     {
         return skeleton_.PrepareStopOffer(std::move(callback));
     }

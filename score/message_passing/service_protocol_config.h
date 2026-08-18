@@ -17,9 +17,7 @@
 #include <memory>
 #include <string_view>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 /// \brief The common part of the library configuration of a server and a client
@@ -32,7 +30,6 @@ struct ServiceProtocolConfig
     std::uint32_t max_notify_size;  ///< Maximum size in bytes for the notification message from server to client
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_SERVICE_PROTOCOL_CONFIG_H

@@ -23,6 +23,7 @@
 #include <iostream>
 #include <mutex>
 #include <optional>
+#include <utility>
 
 namespace score::mw::com::test
 {
@@ -53,7 +54,7 @@ class ProxyEventStateChangeNotifier
 
     ~ProxyEventStateChangeNotifier()
     {
-        proxy_event_.UnsetSubscriptionStateChangeHandler();
+        std::ignore = proxy_event_.UnsetSubscriptionStateChangeHandler();
     }
 
     ProxyEventStateChangeNotifier(const ProxyEventStateChangeNotifier&) = delete;

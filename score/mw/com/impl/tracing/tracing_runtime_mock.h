@@ -30,8 +30,8 @@ class TracingRuntimeMock : public ITracingRuntime
     MOCK_METHOD(void,
                 RegisterShmObject,
                 (BindingType, ServiceElementInstanceIdentifierView, analysis::tracing::ShmObjectHandle, void*),
-                (noexcept, override));
-    MOCK_METHOD(void, UnregisterShmObject, (BindingType, ServiceElementInstanceIdentifierView), (noexcept, override));
+                (override));
+    MOCK_METHOD(void, UnregisterShmObject, (BindingType, ServiceElementInstanceIdentifierView), (override));
 
     MOCK_METHOD(Result<void>,
                 Trace,
@@ -43,7 +43,7 @@ class TracingRuntimeMock : public ITracingRuntime
                  TypeErasedSamplePtr sample_ptr,
                  const void*,
                  std::size_t),
-                (noexcept, override));
+                (override));
     MOCK_METHOD(Result<void>,
                 Trace,
                 (BindingType,
@@ -52,7 +52,7 @@ class TracingRuntimeMock : public ITracingRuntime
                  std::optional<TracePointDataId>,
                  const void*,
                  std::size_t),
-                (noexcept, override));
+                (override));
     MOCK_METHOD(IBindingTracingRuntime&, GetBindingTracingRuntime, (BindingType), (const, noexcept, override));
 };
 

@@ -59,14 +59,14 @@ class GenericSkeleton : public SkeletonBase
     ///   `initial_value_bytes.size()` must be <= `size_info.size`.
     /// - On error, no partially-created elements are left behind.
     [[nodiscard]] static Result<GenericSkeleton> Create(const InstanceIdentifier& identifier,
-                                                        const GenericSkeletonServiceElementInfo& in) noexcept;
+                                                        const GenericSkeletonServiceElementInfo& in);
 
     /// \brief Same as Create(InstanceIdentifier, ...) but resolves the specifier first.
     /// \param specifier The instance specifier.
     /// \param in Input parameters for creation.
     /// \return A GenericSkeleton or an error.
     [[nodiscard]] static Result<GenericSkeleton> Create(const InstanceSpecifier& specifier,
-                                                        const GenericSkeletonServiceElementInfo& in) noexcept;
+                                                        const GenericSkeletonServiceElementInfo& in);
 
     /// \brief Returns a read-only view to the name-keyed map of events.
     /// \note The returned view is valid as long as the GenericSkeleton lives.
@@ -74,10 +74,10 @@ class GenericSkeleton : public SkeletonBase
 
     /// \brief Offers the service instance.
     /// \return A blank result, or an error if offering fails.
-    [[nodiscard]] Result<void> OfferService() noexcept;
+    [[nodiscard]] Result<void> OfferService();
 
     /// \brief Stops offering the service instance.
-    void StopOfferService() noexcept;
+    void StopOfferService();
 
   private:
     // Private constructor, only callable by static Create methods.

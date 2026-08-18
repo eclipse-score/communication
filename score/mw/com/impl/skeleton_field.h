@@ -289,6 +289,16 @@ class SkeletonFieldImpl : public SkeletonFieldBase
         }
     }
 
+    /// \brief Registers a get handler with the skeleton get method dispatch which will be called when a connected
+    /// ProxyField calls Get().
+    ///
+    /// This function will be called by SkeletonFieldBase::PrepareOffer(). We do it there instead of in the constructor
+    /// since a mocked SkeletonField will have the mock injected after construction. RegisterGetHandler will dispatch to
+    /// the binding which is a nullptr in case of mocking. Therefore, we would crash because we'd be accessing a null
+    /// binding. In practice, there is currently no error path in SkeletonMethod::RegisterHandler() so there's no
+    /// practical issue with delaying the registration until PrepareOffer() is called.
+    [[nodiscard]] Result<void> RegisterGetHandler() override;
+
     /// \brief Single private delegating constructor. Both the production and test ctors funnel through here with
     ///        appropriate dispatches (real ones from the Make*IfEnabled helpers, or nullptr).
     SkeletonFieldImpl(SkeletonBase& parent,
@@ -313,6 +323,16 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     /// moveable).
     std::unique_ptr<std::mutex> set_handler_mutex_{};
 
+    /// \brief Mutex to ensure that only one get_handler is executed at a time for this field.
+    ///
+    /// Each get handler will reference an event slot while it copies the latest sample into the method return value.
+    /// We don't want multiple consumers to be able to reference multiple slots for reading at the same time as this
+    /// would require allocating additional slots in the worst case.
+    ///
+    /// This mutex must be allocated on the heap since SkeletonField must be moveable (and a std::mutex is not
+    /// moveable).
+    std::unique_ptr<std::mutex> get_handler_mutex_{};
+
     std::unique_ptr<SkeletonMethod<SetMethodSignature<FieldType>>> set_method_;
     std::unique_ptr<SkeletonMethod<GetMethodSignature<FieldType>>> get_method_;
 };
@@ -329,6 +349,7 @@ SkeletonFieldImpl<SampleDataType, Tags...>::SkeletonFieldImpl(
       skeleton_field_mock_{nullptr},
       is_set_handler_registered_{false},
       set_handler_mutex_{std::make_unique<std::mutex>()},
+      get_handler_mutex_{std::make_unique<std::mutex>()},
       set_method_{std::move(skeleton_set_method_dispatch)},
       get_method_{std::move(skeleton_get_method_dispatch)}
 {
@@ -429,6 +450,39 @@ auto SkeletonFieldImpl<SampleDataType, Tags...>::GetTypedEvent() const noexcept 
     auto* const typed_event = dynamic_cast<SkeletonEvent<FieldType>*>(skeleton_event_dispatch_.get());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event != nullptr, "Downcast to SkeletonEvent<FieldType> failed!");
     return *typed_event;
+}
+
+template <typename SampleDataType, typename... Tags>
+Result<void> SkeletonFieldImpl<SampleDataType, Tags...>::RegisterGetHandler()
+{
+    if constexpr (!kHasGetter)
+    {
+        return {};
+    }
+
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        get_method_ != nullptr,
+        "Defensive programming: We check in the constructor that get_method_ is non-null when WithGetter is enabled.");
+
+    // The get handler requires access to the event owned by the field in order to get the latest field value. We
+    // pass a reference to the event since the event is owned via unique_ptr so will never be moved (which would
+    // invalidate the reference to the field). We pass in the get_handler_mutex_ directly for similar reasons.
+    auto& typed_event = GetTypedEvent();
+    auto get_handler = [&typed_event, &get_handler_mutex = *get_handler_mutex_](
+                           QualityType quality_type, score::Result<FieldType>& return_value) {
+        // In case of concurrent Get calls, we want to ensure that they are processed sequentially so that only one
+        // slot is referenced at a time.
+        std::lock_guard<std::mutex> lock{get_handler_mutex};
+        const auto sample_ptr_result = SkeletonEventView<FieldType>{typed_event}.GetLatestSample(quality_type);
+        if (!sample_ptr_result.has_value())
+        {
+            return_value = score::Unexpected(std::move(sample_ptr_result).error());
+            return;
+        }
+        const auto& sample_ptr = sample_ptr_result.value();
+        return_value = *sample_ptr;
+    };
+    return get_method_->RegisterHandlerWithQuality(std::move(get_handler));
 }
 
 template <typename SampleDataType, typename... Tags>

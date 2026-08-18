@@ -20,6 +20,7 @@
 #include "score/concurrency/notification.h"
 #include "score/mw/com/test/common_test_resources/general_resources.h"
 #include "score/scope_exit/scope_exit.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <iostream>
 
@@ -60,7 +61,7 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
         std::cerr
             << "Consumer: Initializing LoLa/mw::com runtime from cmd-line args handed over by parent/controller ..."
             << std::endl;
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
         std::cerr << "Consumer: Initializing LoLa/mw::com runtime done." << std::endl;
     }
 

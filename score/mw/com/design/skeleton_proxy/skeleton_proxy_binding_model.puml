@@ -11,7 +11,7 @@ class "ComErrorDomain" {
 }
 
 class "<< Stereotype >>\nglobal function" as GlobalFunction {
-  +MakeError(code : ComErrc, message : score::StringLiteral) : score::result::Error
+  +MakeError(code : ComErrc, message : std::string_view) : score::result::Error
 }
 
 note top of ScoreResultErrorDomain
@@ -292,7 +292,6 @@ class "lola::ProxyEventCommon" as LolaProxyEventCommon {
   +GetSubscriptionState() : SubscriptionState
   +SetReceiveHandler(EventReceiveHandler handler) : void
   +UnsetReceiveHandler(EventReceiveHandler handler) : void
-  +GetEventSourcePid() : pid_t
   +GetElementFQId() : ElementFqId
   +GetNumNewSamplesAvailable(): Result<std::size_t>
   +GetEventControl(): ConsumerEventControlLocalView&

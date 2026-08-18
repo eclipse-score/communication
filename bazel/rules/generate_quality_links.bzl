@@ -70,7 +70,7 @@ def _generate_quality_links_impl(ctx):
         coverage_ref = "`Coverage report <quality/coverage/index.html>`__"
         dashboard_ref = "`Quality Dashboard <quality/index.html>`__"
         clang_tidy_ref = "`Clang-Tidy report <quality/clang_tidy_findings.txt>`__"
-        codeql_ref = "`CodeQL findings <quality/codeql_findings.txt>`__"
+        codeql_ref = "`CodeQL findings <quality/codeql_findings.sarif>`__"
         codeql_integrity_ref = "`Database integrity <quality/codeql/database_integrity_report.md>`__"
         codeql_deviations_ref = "`Deviations <quality/codeql/deviations_report.md>`__"
         codeql_compliance_ref = "`Compliance summary <quality/codeql/guideline_compliance_summary.md>`__"
@@ -116,7 +116,7 @@ def _generate_quality_links_impl(ctx):
                                 release_codeql_asset_url + ">`__")
         else:
             codeql_ref = ("`CodeQL findings (latest) <" + latest +
-                          "/quality/codeql_findings.txt>`__")
+                          "/quality/codeql_findings.sarif>`__")
             codeql_integrity_ref = ("`Database integrity (latest) <" + latest +
                                     "/quality/codeql/database_integrity_report.md>`__")
             codeql_deviations_ref = ("`Deviations (latest) <" + latest +

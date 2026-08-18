@@ -19,11 +19,7 @@
 #include <score/utility.hpp>
 #include <tuple>
 
-namespace score
-{
-namespace message_passing
-{
-namespace detail
+namespace score::message_passing::detail
 {
 
 namespace
@@ -49,7 +45,7 @@ void UnixDomainServer::ServerConnection::AcceptConnection(UserData&& data,
     endpoint_.owner = &server_;
     endpoint_.fd = fd_;
     endpoint_.max_receive_size = server_.max_request_size_;
-    endpoint_.input = [this]() noexcept {
+    endpoint_.input = [this]() {
         if (!ProcessInput())
         {
             server_.engine_->UnregisterPosixEndpoint(endpoint_);
@@ -102,7 +98,7 @@ void UnixDomainServer::ServerConnection::RequestDisconnect() noexcept
     server_.engine_->UnregisterPosixEndpoint(endpoint_);
 }
 
-bool UnixDomainServer::ServerConnection::ProcessInput() noexcept
+bool UnixDomainServer::ServerConnection::ProcessInput()
 {
     std::uint8_t code;
     auto& user_data = *user_data_;
@@ -140,9 +136,10 @@ UnixDomainServer::ServerConnection::~ServerConnection() noexcept
     {
         auto& user_data = *user_data_;
         using HandlerPointerT = score::cpp::pmr::unique_ptr<IConnectionHandler>;
-        if (std::holds_alternative<HandlerPointerT>(user_data))
+        auto* const handler = std::get_if<HandlerPointerT>(&user_data);
+        if (handler != nullptr)
         {
-            std::get<HandlerPointerT>(user_data)->OnDisconnect(*this);
+            (*handler)->OnDisconnect(*this);
         }
         else
         {
@@ -273,6 +270,4 @@ void UnixDomainServer::ProcessConnect() noexcept
     connection->AcceptConnection(std::move(data_expected.value()), std::move(connection));
 }
 
-}  // namespace detail
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing::detail

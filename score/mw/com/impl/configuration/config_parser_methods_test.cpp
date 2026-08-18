@@ -559,8 +559,10 @@ TEST_F(ConfigParserFixture, MethodQueueSizeIsNulloptWhenNotProvided)
     const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
 
     // Then the queue size should be nullopt (not provided)
-    const auto deployments =
-        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+    const auto& deployments =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
     const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployments.bindingInfo_);
     EXPECT_FALSE(lola_deployment.methods_.at("SetPressure").queue_size_.has_value());
 }
@@ -625,8 +627,10 @@ TEST_F(ConfigParserFixture, MethodQueueSizeCanBeSpecified)
     const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
 
     // Then the queue size should be set to the specified value
-    const auto deployments =
-        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+    const auto& deployments =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
     const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployments.bindingInfo_);
     EXPECT_EQ(lola_deployment.methods_.at("SetPressure").queue_size_, 5);
 }
@@ -691,8 +695,10 @@ TEST_F(ConfigParserFixture, MethodCanBeExplicitlyDisabled)
     const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
 
     // Then the method should be disabled
-    const auto deployments =
-        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+    const auto& deployments =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
     const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployments.bindingInfo_);
     EXPECT_FALSE(lola_deployment.methods_.at("SetPressure").enabled_);
 }
@@ -757,8 +763,10 @@ TEST_F(ConfigParserFixture, MethodCanBeExplicitlyEnabled)
     const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
 
     // Then the method should be enabled
-    const auto deployments =
-        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+    const auto& deployments =
+        config.GetServiceInstanceDeployment(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value())
+            .value()
+            .get();
     const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployments.bindingInfo_);
     EXPECT_TRUE(lola_deployment.methods_.at("SetPressure").enabled_);
 }

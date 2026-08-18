@@ -22,7 +22,10 @@ Run, reproduce, and debug the repository's CodeQL / MISRA static analysis
 - Recipe A: reproduce CI locally.
 - Recipe B: analyze a mainline/dev `codeql-coding-standards` checkout — including the two
   non-obvious traps (cached pack shadowing, and `--rerun` for cached query results).
-- Diagnosing local-vs-CI divergence via the GitHub Pages published CSV + nightly `headSha`
+- Recipe C: analyze the QNX build (`--build-config qnx`) and deduplicate against Linux, on the
+  SARIF documents, into a single union that is consumed directly by the quality dashboard
+  (no CSV export).
+- Diagnosing local-vs-CI divergence via the GitHub Pages published SARIF + nightly `headSha`
   provenance, and the rule-fingerprint method for classifying a difference.
 
 ## Key facts (see SKILL.md for detail)

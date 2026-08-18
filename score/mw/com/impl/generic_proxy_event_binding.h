@@ -48,7 +48,7 @@ class GenericProxyEventBinding : public ProxyEventBindingBase
     /// \param receiver Callback that will be used to hand over data to the upper layer.
     /// \param reference_tracker Tracker that is used to produce reference counted SamplePtrs.
     /// \return Number of samples that were handed over to the callable.
-    virtual Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept = 0;
+    virtual Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) = 0;
 
     /// \brief return the (aligned) size in bytes of the underlying event sample data type.
     /// \return size in bytes.

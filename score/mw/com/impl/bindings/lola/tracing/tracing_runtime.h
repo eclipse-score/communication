@@ -77,7 +77,7 @@ class TracingRuntime : public impl::tracing::IBindingTracingRuntime
 
     bool RegisterWithGenericTraceApi() noexcept override;
 
-    analysis::tracing::TraceClientId GetTraceClientId() const noexcept override
+    analysis::tracing::TraceClientId GetTraceClientId() const override
     {
         return trace_client_id_.value();
     }
@@ -123,7 +123,7 @@ class TracingRuntime : public impl::tracing::IBindingTracingRuntime
 
     analysis::tracing::ServiceInstanceElement ConvertToTracingServiceInstanceElement(
         const impl::tracing::ServiceElementInstanceIdentifierView service_element_instance_identifier_view)
-        const noexcept override;
+        const override;
 
     /// \brief EmplaceTypeErasedSamplePtr takes a ServiceElementTracingData and returns a TraceContextId, which allows
     /// to correctly retrieve the sample ptr again. Discarding this value will make it impossible to free the sample
@@ -131,7 +131,7 @@ class TracingRuntime : public impl::tracing::IBindingTracingRuntime
     /// function returns an empty optional.
     [[nodiscard]] std::optional<TraceContextId> EmplaceTypeErasedSamplePtr(
         impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr,
-        const impl::tracing::ServiceElementTracingData service_element_tracing_data) noexcept override;
+        const impl::tracing::ServiceElementTracingData service_element_tracing_data) override;
 
     void ClearTypeErasedSamplePtr(const TraceContextId trace_context_id) noexcept override;
     void ClearTypeErasedSamplePtrs(

@@ -16,6 +16,7 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "i_bidirectional_transport",
+    srcs = ["i_bidirectional_transport.cpp"],
     hdrs = ["i_bidirectional_transport.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
@@ -223,6 +224,7 @@ cc_unit_test(
 
 cc_library(
     name = "bidirectional_transport_mock",
+    srcs = ["bidirectional_transport_mock.cpp"],
     hdrs = ["bidirectional_transport_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [

@@ -21,8 +21,16 @@ std::pair<ApplicationIdPidMappingEntry::MappingEntryStatus, std::uint32_t>
 ApplicationIdPidMappingEntry::GetStatusAndApplicationIdAtomic() noexcept
 {
     constexpr std::uint64_t kMaskApplicationId = 0x00000000FFFFFFFFU;
+    // MappingEntryStatus has an underlying type of std::uint16_t (see CreateKey() below, which only ever stores a
+    // std::uint16_t-sized status in bits 32..47 of the key). Masking to 16 bits here (in addition to the shift)
+    // makes the value range of status_part provably fit the enum's underlying type, avoiding an out-of-range enum
+    // cast (CodeQL cpp/misra/out-of-range-enum-cast-critical-unspecified-behavior).
+    constexpr std::uint64_t kMaskStatus = 0x000000000000FFFFU;
     auto status_applictionid = key_application_id_status_.load();
-    const auto status_part = static_cast<std::uint32_t>(status_applictionid >> 32U);
+    static_assert(std::is_same<std::uint16_t,
+                               std::underlying_type<ApplicationIdPidMappingEntry::MappingEntryStatus>::type>::value,
+                  "MappingEntryStatus is not of expected underlying type");
+    const auto status_part = static_cast<std::uint16_t>((status_applictionid >> 32U) & kMaskStatus);
     const auto application_id_part = static_cast<std::uint32_t>(status_applictionid & kMaskApplicationId);
     // Suppress "AUTOSAR C++14 A7-2-1" rule: "An expression with enum underlying type shall only have values
     // corresponding to the enumerators of the enumeration.".

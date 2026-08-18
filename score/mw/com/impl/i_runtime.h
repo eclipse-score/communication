@@ -52,7 +52,7 @@ class IRuntime
 
     /// \brief Returns TracingFilterConfig that is parsed from a json config file.
     /// \return TracingFilterConfig pointer or nullptr in case the config file could not be found or parsed.
-    virtual const tracing::ITracingFilterConfig* GetTracingFilterConfig() const noexcept = 0;
+    virtual const tracing::ITracingFilterConfig* GetTracingFilterConfig() const = 0;
 
   protected:
     IRuntime(const IRuntime&) = default;

@@ -1,0 +1,390 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "Public_API_Specification" {
+
+        section "Generic_Skeleton" {
+
+            section "Functionality" {
+
+                ScoreReq.CompReq GenericSkeletonElementsListSource {
+                    description = '''A {{GenericSkeleton}} instance shall deduce its supported events, fields and methods from the {{GenericSkeletonServiceElementInfo}} parameter of the Create API.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonEventTypeInfoSource {
+                    description = '''The type information for each of the events supported by a {{GenericSkeleton}} instance, has to be provided by the user code in the form of {{GenericSkeletonServiceElementInfo}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonClass {
+                    description = '''The class {{GenericSkeleton}} is not a generated class and shall be provided in the namespace {{score::mw::com}}. {{GenericSkeleton}} users shall be able to access this definition by inclusion of {{platform/aas/mw/com/types.h}}'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.CommunicationInterfaces@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonConstructor {
+                    description = '''The constructor of the class {{GenericSkeleton}} shall be private.
+
+                    Note: Construction of a {{GenericSkeleton}} instance by the user shall only be possible via the public static {{Create()}} methods (See GenericSkeleton exception-less creation).
+
+                    Therefore the signature of the constructor of {{GenericSkeleton}} is implementation defined.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForProgrammingLanguageIdioms@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonExceptionLessCreation {
+                    description = '''The {{GenericSkeleton}} class shall provide a non-throwing constructor using the Named Constructor idom (See Creation of an object using Named Constructor approach.)
+
+                    {{{static score::Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identifier, const GenericSkeletonServiceElementInfo& in) noexcept;}}}
+                    {{{static score::Result<GenericSkeleton> GenericSkeleton::Create(const InstanceSpecifier& specifier, const GenericSkeletonServiceElementInfo& in) noexcept;}}}
+
+                    Arguments:
+
+                    * InstanceIdentifier: The given {{identifier}} parameter shall be an {{InstanceIdentifier}} read from the mw::com service configuration.
+                    * InstanceSpecifier: The given {{specifier}} parameter shall be an {{InstanceSpecifier}} read from the mw::com service configuration.
+                    * GenericSkeletonServiceElementInfo: The given {{in}} parameter shall be a {{GenericSkeletonServiceElementInfo}}, see [Common_API_Types.GenericSkeletonServiceElementInfo].
+
+                    Return values: returns score::Result which contains
+
+                    * on success, a {{GenericSkeleton}}
+
+                    * {{score::result::Error}} containing the value {{ComErrc::kInstanceIDCouldNotBeResolved}} if the instance identifier could not be resolved from the instance specifier
+                    * {{score::result::Error}} containing the value {{ComErrc::kBindingCreationFailure}} if the binding could not be created
+                    * {{score::result::Error}} containing the value {{ComErrc::kServiceElementAlreadyExists}} if a duplicate event- or field-name is provided
+                    * {{score::result::Error}} containing the value {{ComErrc::kInvalidServiceElement}}  if an event or field is not part of the configuration
+                    * {{score::result::Error}} containing the value {{ComErrc::kServiceElementBindingFailure}} if an event- or field-binding could not be created
+                    * {{score::result::Error}} containing the value {{ComErrc::kServiceElementBindingStorageFailure}} if an event- or field-binding could not be stored.'''
+
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.ErrorHandling@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonInterfaceElementInConfigurationVerification {
+                    description = '''The {{GenericSkeleton::Create(...)}} methods shall fail if for one of the elements in {{GenericSkeletonServiceElementInfo}} there is no correlated type/deployment information in the provided {{mw_com_config.json}}}.
+                    See also [GenericSkeletonExceptionLessCreation].
+
+                    Return values: returns score::Result which contains
+
+                    * on success, {{score::Result<void>}}
+
+                    * {{score::result::Error}} containing the value {{ComErrc::kGenericSkeletonElementMissingTypeInformation}} if there is no correlated type information.
+
+                    '''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.ErrorHandling@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonCopySemantics {
+                    description = '''The {{GenericSkeleton}} class shall neither be copy-constructible nor copy-assignable.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonMoveSemantics {
+                    description = '''The {{GenericSkeleton}} class shall be move-constructible as well as being move-assignable.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForProgrammingLanguageIdioms@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                    version = 1
+                }
+
+                 ScoreReq.CompReq GenericSkeletonOfferService {
+                    description = '''The {{GenericSkeleton}}
+                     class shall contain a public method:
+
+                    {{{Result<void> OfferService() noexcept}}}
+
+                    Behaviour: is described in Behaviour of OfferService [Referenced_Requirements.BehaviourOfSubscribe].
+
+                    Return values: returned score::Result which contains
+
+                    *  on success, void
+
+                    *  or, a {{score::result::Error}} containing the value {{ComErrc::kBindingFailure}} if the underlying binding is not configured correctly or the service discovery could not offer this service.
+                    '''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.ServiceDiscovery@1]
+                    version = 1
+                 }
+
+                 ScoreReq.CompReq GenericSkeletonStopOfferService {
+                     description = '''The {{GenericSkeleton}} class shall contain a public method:
+
+                     {{{void GenericSkeleton::StopOfferService() noexcept}}}
+
+                     Behaviour: is described in Behaviour of StopOfferService [Referenced_Requirements.BehaviourOfStopOfferService].'''
+                     safety = ScoreReq.Asil.B
+                     derived_from = [Communication.ServiceDiscovery@1, Communication.SafeCommunication@1]
+                     version = 1
+                 }
+
+                 ScoreReq.CompReq GenericSkeletonGetEvents {
+                     description = '''The {{GenericSkeleton}} class shall contain a {{public}} method:
+
+                     {{{const GenericSkeleton::EventMapView GenericSkeleton::GetEvents() const noexcept }}}
+
+                     Return value: the read-only view to the map of events the {{GenericSkeleton}} provides (See GenericSkeleton EventMapView class [[GenericSkeletonEventMapViewClass]]).'''
+                     safety = ScoreReq.Asil.B
+                     derived_from = [Communication.EventType@1]
+                     version = 1
+                 }
+
+                 ScoreReq.CompReq GenericSkeletonEventMapViewClass {
+                     description = '''{{GenericSkeleton}} class shall have a {{public}} nested class {{EventMapView}}. The {{GenericSkeletonEvent}}s that shall be contained in {{EventMapView}} are according to Event List Source.'''
+                     safety = ScoreReq.Asil.B
+                     derived_from = [Communication.EventType@1]
+                     version = 1
+                 }
+
+                  ScoreReq.CompReq GenericSkeletonEventMapViewClassProperties {
+                     description = '''{{GenericSkeleton::EventMapView}} shall provide a mapping between event names in the form of {{std::string_view}} and {{GenericSkeletonEvent}}.
+
+                     It shall provide the same signature as {{GenericProxy::EventMapView}}, see [GenericProxy.Functionality.GenericProxyEventMapClassProperties].'''
+                     safety = ScoreReq.Asil.B
+                     derived_from = [Communication.EventType@1]
+                     version = 1
+                 }
+
+                 ScoreReq.CompReq GenericSkeletonGetFields {
+                      description = '''The {{GenericSkeleton}} class shall contain a {{public}} method:
+
+                      {{{const GenericSkeleton::FieldMapView& GenericSkeleton::GetFields() const noexcept }}}
+
+                      Return value: the read-only view to the map of fields the {{GenericSkeleton}} provides (See GenericSkeleton FieldMapView class, [[GenericSkeletonFieldMapViewClass]]).'''
+                      safety = ScoreReq.Asil.B
+                      derived_from = [Communication.Field@1]
+                      version = 1
+                  }
+
+                  ScoreReq.CompReq GenericSkeletonFieldMapViewClass {
+                      description = '''{{GenericSkeleton}} class shall have a {{public}} nested class FieldMapView. The {{GenericSkeletonField}}s that shall be contained in {{FieldMapView}} are according to Field List Source.'''
+                      safety = ScoreReq.Asil.B
+                      derived_from = [Communication.Field@1]
+                      version = 1
+                  }
+
+                   ScoreReq.CompReq GenericSkeletonFieldMapViewClassProperties {
+                      description = '''{{GenericSkeleton::FieldMap}} shall provide a mapping between field names in the form of {{std::string_view}} and {{GenericSkeletonField}}.
+
+                      It shall provide the same signature as {{GenericProxy::FieldMapView}}, see [GenericProxy.Functionality.GenericProxyEventViewMapClassProperties].'''
+                      safety = ScoreReq.Asil.B
+                      derived_from = [Communication.Field@1]
+                      version = 1
+                  }
+
+            }
+
+            section "Generic_Skeleton_Event" {
+
+                 ScoreReq.CompReq GenericSkeletonEventClass {
+                    description = '''Event members within a GenericSkeleton class shall be of a {{GenericSkeletonEvent}} class, whose properties are defined in this section.
+
+                    The class {{GenericSkeletonEvent}} shall be provided in the namespace {{score::mw::com}}.
+
+                    The class {{GenericSkeletonEvent}} is essentially a SkeletonEvent class, where the concrete event data type/{{SampleType}} is unknown and therefore represented as {{void}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1, Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonEventCopySemantics {
+                    description = '''The class {{GenericSkeletonEvent}} shall neither be copy-constructible nor copy-assignable.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonEventMoveSemantics {
+                    description = '''The {{GenericSkeletonEvent}} class shall be move-constructible as well as move-assignable'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForProgrammingLanguageIdioms@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonEventSend {
+                    description = '''A {{GenericSkeletonEvent}} class shall provide a public method:
+
+                    {{{Result<void> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample) noexcept}}}
+
+                    Behaviour is described in Behaviour of Zero-Copy Update/Send [ReferencedRequirements.BehaviourOfZeroCopyUpdateSend].'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonEventAllocate {
+                    description = '''A {{GenericSkeletonEvent}} class shall provide a public method:
+
+                    {{{Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept}}}
+
+                    Behaviour is described in Behaviour of Allocate.
+
+                    Return value is described in Return value of Allocate.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonEventGetSizeInfo {
+                    description = '''A {{GenericSkeletonEvent}} class shall provide a public method:
+
+                    {{{score::memory::DataTypeSizeInfo GetSizeInfo() const noexcept}}}
+
+                    which shall return the size and alignment information for this GenericSkeletonEvent.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonEventSetReceiveHandlerChangedHandler {
+                    description = '''A {{{GenericSkeletonEvent}}} class shall provide a public method:
+
+                    {{{score::Result<void> GenericSkeletonEvent::SetReceiveHandlerRegistrationChangedHandler(ReceiveHandlerRegistrationChangedCallback callback) noexcept}}}
+
+                    Behaviour: It shall allow setting a callback that will be called if the first {{ReceiveHandler}} has been registered or the last {{ReceiveHandler}}
+                    has been withdrawn for this event.
+
+                    Arguments:
+                    * callback: A function with one boolean argument (true = first ReceiveHandler registered, false = last ReceiveHandler withdrawn) and {{void}} as the return type. '''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericSkeletonEventUnsetReceiveHandlerChangedHandler {
+                    description = '''A {{{GenericSkeletonEvent}}} class shall provide a public method:
+
+                    {{{score::Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept;}}}
+
+                    Behaviour: It shall allow clearing a previously set callback for ReceiveHandler changes, see [GenericSkeletonEventSetReceiveHandlerChangedHandler].'''
+
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+
+            }
+
+            section "Generic_Skeleton_Field" {
+
+                         ScoreReq.CompReq GenericSkeletonFieldClass {
+                            description = '''Field members within a GenericSkeleton class shall be of a {{GenericSkeletonEvent}} class, whose properties are defined in this section.
+
+                            The class {{GenericSkeletonEvent}} shall be provided in the namespace {{score::mw::com}}.
+
+                            The class {{GenericSkeletonEvent}} is essentially a SkeletonEvent class, where the concrete event data type/{{SampleType}} is unknown and therefore represented as {{void}}.'''
+                            safety = ScoreReq.Asil.B
+                            derived_from = [Communication.Field@1, Communication.CommunicationInterfaces@1]
+                            version = 1
+                        }
+
+                        ScoreReq.CompReq GenericSkeletonFieldCopySemantics {
+                            description = '''The class {{GenericSkeletonField}} shall neither be copy-constructible nor copy-assignable.'''
+                            safety = ScoreReq.Asil.B
+                            derived_from = [Communication.DataLoss@1]
+                            version = 1
+                        }
+
+                        ScoreReq.CompReq GenericSkeletonFieldMoveSemantics {
+                            description = '''The {{GenericSkeletonField}} class shall be move-constructible as well as move-assignable'''
+                            safety = ScoreReq.Asil.B
+                            derived_from = [Communication.SupportForProgrammingLanguageIdioms@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                            version = 1
+                        }
+
+                        ScoreReq.CompReq GenericSkeletonFieldSend {
+                            description = '''A {{GenericSkeletonField}} class shall provide a public method:
+
+                            {{{Result<void> GenericSkeletonField::Send(SampleAllocateePtr<void> sample) noexcept}}}
+
+                            Behaviour is described in Behaviour of Zero-Copy Update/Send [ReferencedRequirements.BehaviourOfZeroCopyUpdateSend].'''
+                            safety = ScoreReq.Asil.B
+                            derived_from = [Communication.Field@1]
+                            version = 1
+                        }
+
+                        ScoreReq.CompReq GenericSkeletonFieldAllocate {
+                            description = '''A {{GenericSkeletonField}} class shall provide a public method:
+
+                            {{{Result<SampleAllocateePtr<void>> GenericSkeletonField::Allocate() noexcept}}}
+
+                            Behaviour is described in Behaviour of Allocate.
+
+                            Return value is described in Return value of Allocate.'''
+                            safety = ScoreReq.Asil.B
+                            derived_from = [Communication.Field@1]
+                            version = 1
+                        }
+
+                        ScoreReq.CompReq GenericSkeletonFieldGetSizeInfo {
+                            description = '''A {{GenericSkeletonField}} class shall provide a public method:
+
+                            {{{score::memory::DataTypeSizeInfo GetSizeInfo() const noexcept}}}
+
+                            which shall return the size and alignment information for this GenericSkeletonField.
+
+                            Return value: {{score::memory::DataTypeSizeInfo}}'''
+                            safety = ScoreReq.Asil.B
+                            derived_from = [Communication.Field@1]
+                            version = 1
+                        }
+
+                        ScoreReq.CompReq GenericSkeletonFieldSetReceiveHandlerChangedHandler {
+                            description = '''A {{{GenericSkeletonField}}} class shall provide a public method:
+
+                            {{{score::Result<void> GenericSkeletonField::SetReceiveHandlerRegistrationChangedHandler(ReceiveHandlerRegistrationChangedCallback callback) noexcept; }}}
+
+                            Behaviour: It shall allow setting a callback that will be called if the first {{ReceiveHandler}} has been registered or the last {{ReceiveHandler}}
+                            has been withdrawn for this event.
+
+                            Arguments:
+                            * callback: A function with one boolean argument (true = first ReceiveHandler registered, false = last ReceiveHandler withdrawn) and {{void}} as the return type. '''
+                            safety = ScoreReq.Asil.B
+                            derived_from = [Communication.Method@1]
+                            version = 1
+                        }
+
+                        ScoreReq.CompReq GenericSkeletonFieldUnsetReceiveHandlerChangedHandler {
+                            description = '''A {{{GenericSkeletonField}}} class shall provide a public method:
+
+                            {{{score::Result<void> GenericSkeletonField::UnsetReceiveHandlerRegistrationChangedHandler() noexcept; }}}
+
+                            Behaviour: It shall allow clearing a previously set callback for ReceiveHandler changes, see [GenericSkeletonFieldSetReceiveHandlerChangedHandler].'''
+
+                            safety = ScoreReq.Asil.B
+                            derived_from = [Communication.Method@1]
+                            version = 1
+                        }
+
+
+                  }
+
+
+        }
+    }
+}

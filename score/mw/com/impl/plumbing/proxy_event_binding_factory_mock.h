@@ -38,7 +38,7 @@ class GenericProxyEventBindingFactoryMock : public IGenericProxyEventBindingFact
         Result<std::unique_ptr<GenericProxyEventBinding>>,
         Create,
         (HandleType, ProxyBinding&, const std::string_view event_name, const ServiceElementType service_element_type),
-        (noexcept, override));
+        (override));
 };
 
 }  // namespace score::mw::com::impl

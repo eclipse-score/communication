@@ -18,9 +18,7 @@
 #include <score/expected.hpp>
 #include <score/span.hpp>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 // forward declaration
@@ -47,7 +45,6 @@ class IConnectionHandler
     virtual void OnDisconnect(IServerConnection& connection) noexcept = 0;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_CONNECTION_HANDLER_H

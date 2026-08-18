@@ -38,6 +38,7 @@ py_test(
         "external",
         "lint",
         "no-cache",
+        "no-flaky-test-detection",
         "no-sandbox",
     ],
     target_compatible_with = ["@platforms//os:linux"],

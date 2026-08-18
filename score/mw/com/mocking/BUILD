@@ -34,7 +34,6 @@ cc_library(
         "//score/mw/com/impl:instance_specifier",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
-        "@score_baselibs//score/string_manipulation:string_literal",
     ],
 )
 

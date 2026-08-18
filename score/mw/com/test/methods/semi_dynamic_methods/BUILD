@@ -102,6 +102,7 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 
@@ -116,6 +117,7 @@ cc_binary(
         ":consumer",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 
@@ -132,6 +134,7 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 

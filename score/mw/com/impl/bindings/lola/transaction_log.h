@@ -43,7 +43,7 @@ class TransactionLog
         score::containers::DynamicArray<TransactionLogSlot,
                                         memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogSlot>>;
 
-    TransactionLog(const std::size_t number_of_slots, memory::shared::ManagedMemoryResource& resource) noexcept;
+    TransactionLog(const std::size_t number_of_slots, memory::shared::ManagedMemoryResource& resource);
 
     /// \brief Vector containing one TransactionLogSlot for each slot in the corresponding control vector.
     TransactionLogSlots reference_count_slots_;

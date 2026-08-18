@@ -46,18 +46,18 @@ jobs:
 
       - name: Fetch dependencies (--nobuild)
         if: inputs.fetch-only == 'true'
-        run: bazel build --nobuild //...
+        run: bazel build --nobuild --config=ci //...
 
       - name: Run coverage
         if: inputs.fetch-only != 'true'
         id: run-coverage
-        run: bazel coverage //... --build_tests_only
+        run: bazel coverage --config=ci //... --build_tests_only
 
       - name: Generate coverage report
         if: inputs.fetch-only != 'true' && steps.run-coverage.outcome == 'success'
         id: generate-report
         run: |
-          bazel run //quality/coverage:generate_coverage_html -- \
+          bazel run --config=ci //quality/coverage:generate_coverage_html -- \
             --archive "${{ github.event.repository.name }}_coverage_report_${{ github.sha }}" \
             cpp_coverage_linux
 

@@ -28,6 +28,38 @@ cc_args(
     ],
 )
 
+# The sysroot needs its "mergedusr" bin/lib/lib64 compat symlinks (see
+# MODULE.bazel's ubuntu24_04_sysroot apt.install()) so that glibc's linker-script
+# stub .so files (e.g. libm.so's `GROUP ( /lib/x86_64-linux-gnu/libm.so.6 ... )`,
+# which hardcodes an absolute, non-merged-usr path) resolve correctly at link time.
+# But those same symlinks make Clang's GCC-installation auto-detection pick an
+# ambiguous, symlink-relative candidate (<sysroot>/lib/gcc/<triple>/13) instead of
+# the canonical one (<sysroot>/usr/lib/gcc/<triple>/13); the resulting relative-path
+# math to libstdc++'s headers only resolves if the execution environment
+# transparently follows the symlink during path traversal, which does not happen
+# the same way on RBE workers and causes "cstddef file not found" errors. Pin the
+# canonical, non-symlinked GCC install directory explicitly so Clang's detector
+# never has to guess.
+cc_args(
+    name = "gcc_install_dir_args_amd64",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = ["--gcc-install-dir={sysroot}/usr/lib/gcc/x86_64-linux-gnu/13"],
+    data = ["@ubuntu24_04_sysroot_amd64//sysroot"],
+    format = {"sysroot": "@ubuntu24_04_sysroot_amd64//sysroot"},
+)
+
+cc_args(
+    name = "gcc_install_dir_args_arm64",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = ["--gcc-install-dir={sysroot}/usr/lib/gcc/aarch64-linux-gnu/13"],
+    data = ["@ubuntu24_04_sysroot_arm64//sysroot"],
+    format = {"sysroot": "@ubuntu24_04_sysroot_arm64//sysroot"},
+)
+
 # Complete default flag set for the LLVM/Clang toolchain: the shared compile and
 # link defaults plus the Clang-only compile args, combined into a single feature.
 cc_feature(
@@ -36,7 +68,13 @@ cc_feature(
         "//quality/compiler_warnings:default_compile_args",
         "//quality/compiler_warnings:default_link_args",
         ":default_compile_args",
-    ],
+    ] + select(
+        {
+            "@platforms//cpu:aarch64": [":gcc_install_dir_args_arm64"],
+            "@platforms//cpu:x86_64": [":gcc_install_dir_args_amd64"],
+        },
+        no_match_error = "Unsupported platform",
+    ),
     feature_name = "score_communication_clang_default_flags",
     visibility = ["//visibility:public"],
 )

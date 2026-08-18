@@ -59,7 +59,7 @@ class ProviderEventDataControlLocalView final
 
     using LocalEventControlSlots = score::cpp::span<ControlSlotType>;
 
-    ProviderEventDataControlLocalView(EventDataControl& event_data_control) noexcept;
+    ProviderEventDataControlLocalView(EventDataControl& event_data_control);
 
     ~ProviderEventDataControlLocalView() noexcept = default;
 

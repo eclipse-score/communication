@@ -134,7 +134,6 @@ class EventDataControlComposite
         const noexcept;
 
     std::optional<SlotIndexType> AllocateNextMultiSlot() noexcept;
-    void CheckForValidDataControls() const noexcept;
 };
 
 }  // namespace score::mw::com::impl::lola

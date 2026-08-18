@@ -37,7 +37,7 @@ namespace detail_skeleton_event_tracing
 
 void UpdateTracingDataFromTraceResult(const Result<void> trace_result,
                                       SkeletonEventTracingData& skeleton_event_tracing_data,
-                                      bool& skeleton_event_trace_point) noexcept
+                                      bool& skeleton_event_trace_point)
 {
     if (!trace_result.has_value())
     {
@@ -63,7 +63,7 @@ namespace
 {
 template <ServiceElementType service_element_type>
 std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifier,
-                                     std::string_view service_element_name) noexcept
+                                     std::string_view service_element_name)
 {
     static_assert(service_element_type != ServiceElementType::INVALID);
 
@@ -118,7 +118,7 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
     const auto& service_element_instance_deployment = service_element_instance_deployment_it->second;
     // coverity[autosar_cpp14_a7_1_8_violation : FALSE]
     // coverity[autosar_cpp14_m6_4_1_violation : FALSE]
-    const auto slots_per_tracing_point = [&service_element_instance_deployment]() noexcept {
+    const auto slots_per_tracing_point = [&service_element_instance_deployment]() {
         if constexpr (service_element_type == ServiceElementType::EVENT)
         {
             return service_element_instance_deployment.GetNumberOfTracingSlots();
@@ -140,7 +140,7 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
 // coverity[autosar_cpp14_a3_1_1_violation]
 SkeletonEventTracingData GenerateSkeletonTracingStructFromEventConfig(const InstanceIdentifier& instance_identifier,
                                                                       const BindingType binding_type,
-                                                                      const std::string_view event_name) noexcept
+                                                                      const std::string_view event_name)
 {
     auto& runtime = Runtime::getInstance();
     auto* const tracing_runtime = runtime.GetTracingRuntime();
@@ -193,7 +193,7 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromEventConfig(const Inst
 // coverity[autosar_cpp14_a3_1_1_violation]
 SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(const InstanceIdentifier& instance_identifier,
                                                                       const BindingType binding_type,
-                                                                      const std::string_view field_name) noexcept
+                                                                      const std::string_view field_name)
 {
     auto& runtime = Runtime::getInstance();
     const auto* const tracing_config = runtime.GetTracingFilterConfig();

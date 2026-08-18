@@ -10,10 +10,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/generic_skeleton.h"
-#include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/proxy_event.h"
-#include "score/mw/com/impl/traits.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
@@ -62,15 +58,14 @@ constexpr std::string_view kEventName = "Event8Byte";
 
 int run_provider(score::cpp::stop_token stop_token)
 {
-    const auto instance_specifier =
-        score::mw::com::impl::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
-    const score::mw::com::impl::DataTypeMetaInfo meta{sizeof(MyEventData), alignof(MyEventData)};
-    const std::vector<score::mw::com::impl::EventInfo> events = {{kEventName, meta}};
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
+    const score::mw::com::DataTypeMetaInfo meta{sizeof(MyEventData), alignof(MyEventData)};
+    const std::vector<score::mw::com::EventInfo> events = {{kEventName, meta}};
 
-    score::mw::com::impl::GenericSkeletonServiceElementInfo create_params;
+    score::mw::com::GenericSkeletonServiceElementInfo create_params;
     create_params.events = events;
 
-    auto skeleton_res = score::mw::com::impl::GenericSkeleton::Create(instance_specifier, create_params);
+    auto skeleton_res = score::mw::com::GenericSkeleton::Create(instance_specifier, create_params);
     if (!skeleton_res.has_value())
     {
         score::mw::log::LogFatal("GenericSkeletonProvider") << "Failed to create skeleton.";
@@ -90,7 +85,7 @@ int run_provider(score::cpp::stop_token stop_token)
         score::mw::log::LogFatal("GenericSkeletonProvider") << "Failed to find event in skeleton.";
         return 1;
     }
-    auto& generic_event = const_cast<score::mw::com::impl::GenericSkeletonEvent&>(it->second);
+    auto& generic_event = it->second;
 
     // Wait for the consumer to start and subscribe BEFORE sending data
     score::mw::log::LogInfo("GenericSkeletonProvider")
@@ -108,7 +103,12 @@ int run_provider(score::cpp::stop_token stop_token)
         }
         auto* typed_sample = static_cast<MyEventData*>(sample_res.value().Get());
         typed_sample->counter = i;
-        generic_event.Send(std::move(sample_res.value()));
+        const auto send_result = generic_event.Send(std::move(sample_res.value()));
+        if (!send_result.has_value())
+        {
+            score::mw::log::LogFatal("GenericSkeletonProvider") << "Failed to send sample.";
+            return 1;
+        }
 
         score::mw::log::LogInfo("GenericSkeletonProvider") << PAYLOAD_SIZE << "-byte Event Sent sample: " << i;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -126,12 +126,11 @@ class MyTestService : public Trait::Base
     using Trait::Base::Base;
     typename Trait::template Event<MyEventData> event_{*this, std::string{kEventName}};
 };
-using MyTestServiceProxy = score::mw::com::impl::AsProxy<MyTestService>;
+using MyTestServiceProxy = score::mw::com::AsProxy<MyTestService>;
 
 int run_consumer()
 {
-    const auto instance_specifier =
-        score::mw::com::impl::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifier}).value();
 
     score::Result<score::mw::com::ServiceHandleContainer<MyTestServiceProxy::HandleType>> handles_res;
     int retries{0};
@@ -164,11 +163,16 @@ int run_consumer()
     std::uint64_t expected{0};
     int data_mismatches{0};
     bool is_first_sample{true};
-    proxy.event_.Subscribe(kSamplesToSubscribe);
+    const auto subscribe_result = proxy.event_.Subscribe(kSamplesToSubscribe);
+    if (!subscribe_result.has_value())
+    {
+        score::mw::log::LogFatal("TypedProxyConsumer") << "Failed to subscribe.";
+        return 1;
+    }
 
     while (received < kSamplesToProcess)
     {
-        proxy.event_.GetNewSamples(
+        const auto get_new_samples_result = proxy.event_.GetNewSamples(
             [&](score::mw::com::SamplePtr<MyEventData> sample) {
                 if (is_first_sample)
                 {
@@ -191,6 +195,11 @@ int run_consumer()
                 received++;
             },
             kSamplesToSubscribe);
+        if (!get_new_samples_result.has_value())
+        {
+            score::mw::log::LogFatal("TypedProxyConsumer") << "Failed to get new samples.";
+            return 1;
+        }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }

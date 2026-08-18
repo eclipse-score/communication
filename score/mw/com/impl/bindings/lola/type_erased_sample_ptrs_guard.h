@@ -24,9 +24,8 @@ namespace score::mw::com::impl::lola::tracing
 class TypeErasedSamplePtrsGuard
 {
   public:
-    explicit TypeErasedSamplePtrsGuard(
-        const impl::tracing::ServiceElementTracingData service_element_tracing_data) noexcept;
-    ~TypeErasedSamplePtrsGuard() noexcept;
+    explicit TypeErasedSamplePtrsGuard(const impl::tracing::ServiceElementTracingData service_element_tracing_data);
+    ~TypeErasedSamplePtrsGuard() noexcept(false);
 
     TypeErasedSamplePtrsGuard(const TypeErasedSamplePtrsGuard&) = delete;
     TypeErasedSamplePtrsGuard& operator=(const TypeErasedSamplePtrsGuard&) = delete;

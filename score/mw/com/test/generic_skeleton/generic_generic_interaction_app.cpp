@@ -1,6 +1,3 @@
-#include "score/mw/com/impl/generic_proxy.h"
-#include "score/mw/com/impl/generic_skeleton.h"
-#include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
@@ -50,20 +47,20 @@ constexpr std::string_view kEventName = "Event8Byte";
 
 int run_provider(score::cpp::stop_token stop_token)
 {
-    const auto instance_specifier = score::mw::com::impl::InstanceSpecifier::Create(kInstanceSpecifier).value();
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(kInstanceSpecifier).value();
     std::cout << "[PROVIDER] Instance specifier created." << std::endl;
-    const score::mw::com::impl::DataTypeMetaInfo meta{sizeof(MyEventData), alignof(MyEventData)};
+    const score::mw::com::DataTypeMetaInfo meta{sizeof(MyEventData), alignof(MyEventData)};
     std::cout << "[PROVIDER] DataTypeMetaInfo created (size=" << sizeof(MyEventData)
               << ", align=" << alignof(MyEventData) << ")." << std::endl;
-    const std::vector<score::mw::com::impl::EventInfo> events = {{kEventName, meta}};
+    const std::vector<score::mw::com::EventInfo> events = {{kEventName, meta}};
     std::cout << "[PROVIDER] EventInfo vector created for event: " << kEventName << std::endl;
 
-    score::mw::com::impl::GenericSkeletonServiceElementInfo create_params;
+    score::mw::com::GenericSkeletonServiceElementInfo create_params;
     create_params.events = events;
     std::cout << "[PROVIDER] GenericSkeletonServiceElementInfo prepared." << std::endl;
 
     std::cout << "[PROVIDER] Calling GenericSkeleton::Create..." << std::endl;
-    auto skeleton_res = score::mw::com::impl::GenericSkeleton::Create(instance_specifier, create_params);
+    auto skeleton_res = score::mw::com::GenericSkeleton::Create(instance_specifier, create_params);
     if (!skeleton_res.has_value())
     {
         std::cerr << "[PROVIDER] GenericSkeleton::Create FAILED." << std::endl;
@@ -90,7 +87,7 @@ int run_provider(score::cpp::stop_token stop_token)
     std::cout << "[PROVIDER] Event reference obtained." << std::endl;
 
     // Get reference to the GenericSkeletonEvent
-    auto& generic_event = const_cast<score::mw::com::impl::GenericSkeletonEvent&>(it->second);
+    auto& generic_event = it->second;
 
     std::cout << "[PROVIDER] Generic-Generic " << PAYLOAD_SIZE << "-byte - Waiting 5s for consumer to subscribe..."
               << std::endl;
@@ -112,7 +109,12 @@ int run_provider(score::cpp::stop_token stop_token)
         typed_sample->counter = i;
 
         std::cout << "[PROVIDER] Sending sample: " << i << std::endl;
-        generic_event.Send(std::move(sample_res.value()));
+        const auto send_result = generic_event.Send(std::move(sample_res.value()));
+        if (!send_result.has_value())
+        {
+            std::cerr << "[PROVIDER] Send failed for sample: " << i << std::endl;
+            return 1;
+        }
         std::cout << "[PROVIDER] " << PAYLOAD_SIZE << "-byte Event Sent sample: " << i << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         i++;
@@ -126,33 +128,47 @@ int run_provider(score::cpp::stop_token stop_token)
 
 int run_consumer()
 {
-    const auto instance_specifier = score::mw::com::impl::InstanceSpecifier::Create(kInstanceSpecifier).value();
+    const auto instance_specifier = score::mw::com::InstanceSpecifier::Create(kInstanceSpecifier).value();
 
-    score::Result<score::mw::com::ServiceHandleContainer<score::mw::com::impl::GenericProxy::HandleType>> handles_res;
+    score::Result<score::mw::com::ServiceHandleContainer<score::mw::com::GenericProxy::HandleType>> handles_res;
     int retries{0};
     while (retries < 50)
     {
-        handles_res = score::mw::com::impl::GenericProxy::FindService(instance_specifier);
+        handles_res = score::mw::com::GenericProxy::FindService(instance_specifier);
         if (handles_res.has_value() && !handles_res.value().empty())
             break;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         retries++;
     }
     if (!handles_res.has_value() || handles_res.value().empty())
+    {
+        std::cerr << "[CONSUMER] Failed to get handle." << std::endl;
         return 1;
+    }
 
-    auto proxy_res = score::mw::com::impl::GenericProxy::Create(handles_res.value()[0]);
+    auto proxy_res = score::mw::com::GenericProxy::Create(handles_res.value()[0]);
     if (!proxy_res.has_value())
+    {
+        std::cerr << "[CONSUMER] Failed to create." << std::endl;
         return 1;
+    }
     auto& proxy = proxy_res.value();
 
     auto event_it = proxy.GetEvents().find(kEventName);
     if (event_it == proxy.GetEvents().cend())
+    {
+        std::cerr << "[CONSUMER] Failed to get events." << std::endl;
         return 1;
+    }
 
     // Get reference to the GenericProxyEvent
     auto& generic_event = event_it->second;
-    generic_event.Subscribe(kSamplesToSubscribe);
+    const auto subscribe_result = generic_event.Subscribe(kSamplesToSubscribe);
+    if (!subscribe_result.has_value())
+    {
+        std::cerr << "[CONSUMER] Failed to subscribe." << std::endl;
+        return 1;
+    }
 
     std::uint64_t expected{0};
     std::uint64_t received{0};
@@ -162,7 +178,7 @@ int run_consumer()
     while (received < kSamplesToProcess)
     {
         // The receiver callback operates on type-erased memory (SamplePtr<const void>)
-        generic_event.GetNewSamples(
+        const auto get_new_samples_result = generic_event.GetNewSamples(
             [&](auto sample) {
                 auto* typed_sample = static_cast<const MyEventData*>(sample.get());
 
@@ -187,6 +203,11 @@ int run_consumer()
                 received++;
             },
             kSamplesToSubscribe);
+        if (!get_new_samples_result.has_value())
+        {
+            std::cerr << "[CONSUMER] Failed to get new samples." << std::endl;
+            return 1;
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
     if (data_mismatches > 0)

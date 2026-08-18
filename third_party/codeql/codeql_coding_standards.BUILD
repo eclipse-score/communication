@@ -20,6 +20,24 @@ py_binary(
 )
 
 py_binary(
+    name = "guideline_recategorize",
+    srcs = ["scripts/guideline_recategorization/recategorize.py"],
+    main = "scripts/guideline_recategorization/recategorize.py",
+    data = [
+        "schemas/coding-standards-schema-1.0.0.json",
+        "schemas/sarif-schema-2.1.0.json",
+    ],
+    deps = [
+        requirement("jsonpath-ng"),
+        requirement("jsonpatch"),
+        requirement("jsonpointer"),
+        requirement("jsonschema"),
+        requirement("pyyaml"),
+    ],
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
     name = "analysis_report",
     srcs = ["scripts/reports/analysis_report.py",
             "scripts/reports/diagnostics.py" ,

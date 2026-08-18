@@ -1,0 +1,30 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Setup QNX and QEMU environment"
+description: "Installs QEMU/KVM prerequisites, configures QNX license, and cleans up in post step."
+
+inputs:
+  qnx-license:
+    description: "Base64-encoded QNX license payload."
+    required: true
+  license-dir:
+    description: "QNX license directory."
+    required: false
+    default: "/opt/score_qnx/license"
+
+runs:
+  using: "node24"
+  main: "main.js"
+  post: "post.js"
+  post-if: "always()"

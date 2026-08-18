@@ -20,6 +20,7 @@ import shutil
 
 
 TMP_PATH_FOR_DATABASES = "/var/tmp/codeql_databases"
+CODING_STANDARDS_CONFIG_RELATIVE_PATH = "quality/static_analysis/coding-standards.yaml"
 
 
 # Default query suite (relative to the MISRA C++ pack root) run by the analysis.
@@ -83,7 +84,14 @@ def _find_compiled_pack_root():
             "in this target's `data`. Refusing to fall back to any other query "
             "source.")
     # anchor = <pack_root>/qlpack.yml
-    pack_root = os.path.dirname(anchor)
+    # Resolve symlinks: Bazel runfiles are a symlink farm where individual files
+    # are symlinked into the runfiles tree.  CodeQL's data-extension glob
+    # (qlpack.yml `dataExtensions:`) does NOT follow symlinks when matching
+    # .model.yml files, so using the runfiles path causes all extensible
+    # predicates (allocationFunctionModel, throwingFunctionModel, etc.) to come
+    # up as undefined.  realpath() jumps from the runfiles symlink to the actual
+    # Bazel external-repository directory, where the model files are real files.
+    pack_root = os.path.dirname(os.path.realpath(anchor))
 
     suite_path = os.path.join(pack_root, MISRA_DEFAULT_SUITE_NAME)
     if not os.path.exists(suite_path):
@@ -119,8 +127,17 @@ def _read_pack_identity(pack_root):
     return name, version
 
 
-def create_database(code_ql_path, config_path, target, source_root, database_path):
-    """Create the CodeQL database: init, build with tracing, finalize."""
+def create_database(code_ql_path, config_path, target, source_root, database_path,
+                    build_configs=None):
+    """Create the CodeQL database: init, build with tracing, finalize.
+
+    ``build_configs`` is an optional list of additional Bazel ``--config`` names
+    layered on top of the base ``codeql`` config for the traced build. For
+    example ``["qnx"]`` produces ``bazel build --config=codeql --config=qnx``,
+    which retargets the traced compilation at the QNX platform + QCC toolchain
+    (see ``//.bazelrc`` ``common:qnx``). With no extra configs the build is the
+    unchanged Linux analysis.
+    """
     subprocess.run(
         f"{code_ql_path} database init --overwrite --begin-tracing --language=cpp "
         f"--codescanning-config={config_path} --source-root={source_root} -- {database_path}",
@@ -139,6 +156,8 @@ def create_database(code_ql_path, config_path, target, source_root, database_pat
     # Build with CodeQL tracing
     timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
     bazel_cmd = f"bazel build --config=codeql --stamp --action_env=CODEQL_SEED_FORCE_RECOMPILE={timestamp}"
+    for extra_config in (build_configs or []):
+        bazel_cmd += f" --config={extra_config}"
     bazel_cmd += _get_action_env_extension(codeql_env)
     subprocess.run(f"{bazel_cmd} {target}", shell=True, env=env, cwd=source_root, check=True)
 
@@ -151,6 +170,8 @@ def analyze_database(
     database_path,
     source_root,
     analysis_report_path=None,
+    recategorize_path=None,
+    coding_standards_config_path=None,
     query_spec=None,
     output_prefix="codeql",
     output_dir=None,
@@ -181,9 +202,11 @@ def analyze_database(
         common_analyze_flags = f"--search-path={pack_root}"
     query_arg = f" {query_target}"
     sarif_path = f"{output_base}/{output_prefix}.sarif"
-    csv_path = f"{output_base}/{output_prefix}.csv"
 
-    # Run CodeQL analysis (generates SARIF)
+    # Run CodeQL analysis, producing SARIF only. The merged/deduplicated
+    # union SARIF (see @sarif_multitool//:sarif_multitool_cli in
+    # _codeql.yml) is published and consumed directly by the quality
+    # dashboard afterward; no CSV is ever generated.
     print("\n Running CodeQL analysis...")
     subprocess.run(
         f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
@@ -191,12 +214,12 @@ def analyze_database(
         f"--format=sarifv2.1.0 --output={sarif_path}",
         shell=True, check=True)
 
-    # Generate CSV results
-    subprocess.run(
-        f"{code_ql_path} database analyze -j=0 {database_path}{query_arg} "
-        f"{common_analyze_flags} "
-        f"--format=csv --output={csv_path}",
-        shell=True, check=True)
+    recategorize_sarif(
+        recategorize_path,
+        coding_standards_config_path,
+        sarif_path,
+    )
+    normalize_sarif_rule_order(sarif_path)
 
     # Generate reports using CodeQL analysis_report tool
     if analysis_report_path and os.path.exists(analysis_report_path):
@@ -241,11 +264,130 @@ def analyze_database(
             print(f"Report generation exception: {e}")
 
 
+def recategorize_sarif(recategorize_path, coding_standards_config_path, sarif_path):
+    if not recategorize_path:
+        return sarif_path
+    if not coding_standards_config_path or not os.path.isfile(coding_standards_config_path):
+        raise RuntimeError(
+            f"Coding standards config file not found: {coding_standards_config_path!r}"
+        )
+
+    recategorize_path = os.path.realpath(recategorize_path)
+    coding_standards_schema_path, sarif_schema_path = _find_recategorization_schema_paths()
+    coding_standards_schema_path = os.path.realpath(coding_standards_schema_path)
+    sarif_schema_path = os.path.realpath(sarif_schema_path)
+    recategorized_sarif_path = f"{sarif_path}.recategorized"
+    subprocess.run(
+        [
+            recategorize_path,
+            "--coding-standards-schema-file",
+            coding_standards_schema_path,
+            "--sarif-schema-file",
+            sarif_schema_path,
+            coding_standards_config_path,
+            sarif_path,
+            recategorized_sarif_path,
+        ],
+        check=True,
+    )
+    os.replace(recategorized_sarif_path, sarif_path)
+    return sarif_path
+
+
+def normalize_sarif_rule_order(sarif_path):
+    with open(sarif_path, "r", encoding="utf-8") as sarif_file:
+        sarif = json.load(sarif_file)
+
+    runs = sarif.get("runs", [])
+    if not runs:
+        return sarif_path
+
+    for run in runs:
+        _normalize_sarif_run(run)
+
+    normalized_sarif_path = f"{sarif_path}.normalized"
+    with open(normalized_sarif_path, "w", encoding="utf-8") as sarif_file:
+        json.dump(sarif, sarif_file, indent=2)
+        sarif_file.write("\n")
+    os.replace(normalized_sarif_path, sarif_path)
+    return sarif_path
+
+
+def _normalize_sarif_run(run):
+    driver = run.get("tool", {}).get("driver", {})
+    rules = driver.get("rules", [])
+    ordered_rules = sorted(
+        enumerate(rules),
+        key=lambda indexed_rule: indexed_rule[1].get("id", ""),
+    )
+    index_map = {
+        old_index: new_index
+        for new_index, (old_index, _) in enumerate(ordered_rules)
+    }
+    driver["rules"] = [rule for _, rule in ordered_rules]
+
+    artifacts = run.get("artifacts", [])
+    ordered_artifacts = sorted(
+        enumerate(artifacts),
+        key=lambda indexed_artifact: indexed_artifact[1].get(
+            "location", {}).get("uri", ""),
+    )
+    artifact_index_map = {
+        old_index: new_index
+        for new_index, (old_index, _) in enumerate(ordered_artifacts)
+    }
+    run["artifacts"] = [artifact for _, artifact in ordered_artifacts]
+
+    for result in run.get("results", []):
+        if "ruleIndex" in result:
+            result["ruleIndex"] = index_map[result["ruleIndex"]]
+        result_rule = result.get("rule")
+        if result_rule is not None and "index" in result_rule:
+            result_rule["index"] = index_map[result_rule["index"]]
+
+    for key, value in run.items():
+        if key != "artifacts":
+            _remap_artifact_indices(value, artifact_index_map)
+
+
+def _remap_artifact_indices(value, artifact_index_map):
+    if isinstance(value, dict):
+        artifact_location = value.get("artifactLocation")
+        if isinstance(artifact_location, dict) and "index" in artifact_location:
+            if artifact_location.get("uri"):
+                del artifact_location["index"]
+            else:
+                artifact_location["index"] = artifact_index_map[artifact_location["index"]]
+        for child in value.values():
+            _remap_artifact_indices(child, artifact_index_map)
+    elif isinstance(value, list):
+        for child in value:
+            _remap_artifact_indices(child, artifact_index_map)
+
+
+def _find_recategorization_schema_paths():
+    from python.runfiles import Runfiles
+
+    runfiles = Runfiles.Create()
+    coding_standards_schema_path = runfiles.Rlocation(
+        "codeql_coding_standards/schemas/coding-standards-schema-1.0.0.json"
+    )
+    sarif_schema_path = runfiles.Rlocation(
+        "codeql_coding_standards/schemas/sarif-schema-2.1.0.json"
+    )
+    if not coding_standards_schema_path or not os.path.isfile(coding_standards_schema_path):
+        raise RuntimeError("Failed to load Coding Standards schema!")
+    if not sarif_schema_path or not os.path.isfile(sarif_schema_path):
+        raise RuntimeError("Failed to load Sarif schema!")
+    return coding_standards_schema_path, sarif_schema_path
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run CodeQL linting operations")
     parser.add_argument("--codeql_path", help="Path to CodeQL binary")
     parser.add_argument("--config_path", help="CodeQL config file")
     parser.add_argument("--analysis_report_path", help="Path to analysis_report binary")
+    parser.add_argument("--guideline_recategorize_path", help="Path to guideline recategorization binary")
     parser.add_argument("--target", nargs="+", help="Bazel targets to build")
     parser.add_argument("--phase", choices=["create-database", "analyze-database", "all"],
                        default="all", help="Execution phase")
@@ -253,6 +395,11 @@ def main():
     parser.add_argument("--query-spec", help="CodeQL query spec")
     parser.add_argument("--output-prefix", default="codeql", help="Output prefix")
     parser.add_argument("--output-dir", help="Output directory")
+    parser.add_argument(
+        "--build-config", action="append", default=[], dest="build_configs",
+        metavar="CONFIG",
+        help="Additional Bazel --config to layer on the traced build (repeatable). "
+             "E.g. --build-config qnx runs 'bazel build --config=codeql --config=qnx'.")
 
     args = parser.parse_args()
     target = " ".join(args.target) if args.target else ""
@@ -260,14 +407,20 @@ def main():
 
     # Make codeql_path absolute
     codeql_path = os.path.abspath(args.codeql_path) if args.codeql_path else None
+    coding_standards_config_path = os.path.join(source_root, CODING_STANDARDS_CONFIG_RELATIVE_PATH)
+    if not os.path.isabs(coding_standards_config_path):
+        coding_standards_config_path = os.path.abspath(coding_standards_config_path)
 
     if args.phase == "create-database":
         os.makedirs(os.path.dirname(args.database_path), exist_ok=True)
-        create_database(codeql_path, args.config_path, target, source_root, args.database_path)
+        create_database(codeql_path, args.config_path, target, source_root, args.database_path,
+                        build_configs=args.build_configs)
 
     elif args.phase == "analyze-database":
         analyze_database(codeql_path, args.database_path, source_root,
                         analysis_report_path=args.analysis_report_path,
+                        recategorize_path=args.guideline_recategorize_path,
+                        coding_standards_config_path=coding_standards_config_path,
                         query_spec=args.query_spec, output_prefix=args.output_prefix,
                         output_dir=args.output_dir)
 
@@ -281,9 +434,12 @@ def main():
         os.makedirs(TMP_PATH_FOR_DATABASES, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=TMP_PATH_FOR_DATABASES) as database_location:
 
-            create_database(codeql_path, args.config_path, target, source_root, database_location)
+            create_database(codeql_path, args.config_path, target, source_root, database_location,
+                           build_configs=args.build_configs)
             analyze_database(codeql_path, database_location, source_root,
                            analysis_report_path=args.analysis_report_path,
+                           recategorize_path=args.guideline_recategorize_path,
+                           coding_standards_config_path=coding_standards_config_path,
                            query_spec=args.query_spec, output_prefix=args.output_prefix,
                            output_dir=args.output_dir)
 
@@ -323,5 +479,3 @@ def _get_bazel_info(source_root):
 
 if __name__ == "__main__":
     main()
-
-

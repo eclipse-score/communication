@@ -309,7 +309,17 @@ class ProxyFieldImpl : public ProxyFieldBase
               typename = std::enable_if_t<is_tag_enabled<T, SampleDataType, WithGetter, Tags...>::value>>
     score::Result<MethodReturnTypePtr<T>> Get() noexcept
     {
-        return proxy_method_get_dispatch_->operator()();
+        // If the method call itself fails, then we return the error code to the user here.
+        auto method_call_result = proxy_method_get_dispatch_->operator()();
+        if (!method_call_result.has_value())
+        {
+            return MakeUnexpected<MethodReturnTypePtr<T>>(std::move(method_call_result).error());
+        }
+
+        // Since the internal method call returns a MethodReturnTypePtr<Result<T>> but we want to return a
+        // Result<MethodReturnTypePtr<T>> to the user, we propagate any error reported by the internal Result in the
+        // Result returned by this function and create a new Result<MethodReturnTypePtr<T>>.
+        return CreateMethodReturnTypePtrToT(std::move(method_call_result).value());
     }
 
     /**
@@ -328,21 +338,10 @@ class ProxyFieldImpl : public ProxyFieldBase
             return MakeUnexpected<MethodReturnTypePtr<T>>(std::move(method_call_result).error());
         }
 
-        // If the method call itself succeeded but executing the setter itself on skeleton side failed (e.g. because
-        // updating the field value failed), then we return the error code to the user as well.
-        auto setter_return_type_ptr = std::move(method_call_result).value();
-        if (!setter_return_type_ptr->has_value())
-        {
-            return MakeUnexpected<MethodReturnTypePtr<T>>(std::move(*setter_return_type_ptr).error());
-        }
-
-        // If the method call and executing the setter itself succeeded, then we return a pointer to the set value to
-        // the user.
-        T& value_ptr = setter_return_type_ptr->value();
-
-        MethodReturnTypePtr<T> return_value{value_ptr, std::move(setter_return_type_ptr)};
-
-        return return_value;
+        // Since the internal method call returns a MethodReturnTypePtr<Result<T>> but we want to return a
+        // Result<MethodReturnTypePtr<T>> to the user, we propagate any error reported by the internal Result in the
+        // Result returned by this function and create a new Result<MethodReturnTypePtr<T>>.
+        return CreateMethodReturnTypePtrToT(std::move(method_call_result).value());
     }
 
     template <typename T = SampleDataType,
@@ -435,6 +434,32 @@ class ProxyFieldImpl : public ProxyFieldBase
           proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)},
           proxy_method_get_dispatch_{std::move(proxy_method_get_dispatch)}
     {
+    }
+
+    /// \brief Helper function to convert a MethodReturnTypePtr<Result<T>> to a Result<MethodReturnTypePtr<T>> which are
+    /// returned by the internal setter / getter method calls.
+    ///
+    /// Since the internal method call returns a MethodReturnTypePtr<Result<T>> but we want to return a
+    /// Result<MethodReturnTypePtr<T>> to the user in Get() / Set(), we propagate any error reported by the internal
+    /// Result in the Result returned by this function and create a new MethodReturnTypePtr<T> from provided
+    /// MethodReturnTypePtr<score::Result<SampleDataType>>
+    score::Result<MethodReturnTypePtr<SampleDataType>> CreateMethodReturnTypePtrToT(
+        MethodReturnTypePtr<score::Result<SampleDataType>> setter_getter_return_type_ptr)
+    {
+        // If the middleware method communication call itself succeeded but executing the setter/getter itself on
+        // skeleton side failed (e.g. because updating / reading the field value failed), then we return the error code
+        // to the user as well.
+        if (!setter_getter_return_type_ptr->has_value())
+        {
+            return MakeUnexpected<MethodReturnTypePtr<SampleDataType>>(
+                std::move(*setter_getter_return_type_ptr).error());
+        }
+
+        // If the middleware method communication call and executing the setter/getter itself succeeded, then we return
+        // a pointer to the value returned by the setter/getter to the user.
+        SampleDataType& value_ptr = setter_getter_return_type_ptr->value();
+
+        return MethodReturnTypePtr<SampleDataType>{value_ptr, std::move(setter_getter_return_type_ptr)};
     }
 
     std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;

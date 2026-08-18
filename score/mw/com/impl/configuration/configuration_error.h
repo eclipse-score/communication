@@ -27,6 +27,12 @@ enum class configuration_errc : score::result::ErrorCode
     serialization_deploymentinformation_invalid = 0,
     serialization_no_shmbindinginformation = 1,
     serialization_shmbindinginformation_invalid = 2,
+    configuration_invalid_asil_configuration = 3,
+    configuration_invalid_type_reference_from_instance = 4,
+    configuration_unsupported_instance_binding = 5,
+    configuration_unsupported_type_binding = 6,
+    configuration_invalid_event_reference_from_instance = 7,
+    configuration_invalid_field_reference_from_instance = 8,
 };
 
 /// \brief See above explanation in configuration_errc
@@ -58,6 +64,31 @@ class ConfigurationErrorDomain final : public score::result::ErrorDomain
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(configuration_errc::serialization_shmbindinginformation_invalid):
                 return "serialization of <LoLaShmBindingInfo> is invalid";
+            // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(configuration_errc::configuration_invalid_asil_configuration):
+                return "Service instance has a higher ASIL than the process. This is invalid, terminating";
+                // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(
+                configuration_errc::configuration_invalid_type_reference_from_instance):
+                return "Service instance refers to a service type, which is not configured. This is invalid, "
+                       "terminating";
+                // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(configuration_errc::configuration_unsupported_instance_binding):
+                return "Service instance refers to an not yet supported binding. This is invalid, terminating";
+                // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(configuration_errc::configuration_unsupported_type_binding):
+                return "Service type refers to an not yet supported binding. This is invalid, terminating";
+                // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(
+                configuration_errc::configuration_invalid_event_reference_from_instance):
+                return "Service instance refers to an event, which doesn't exist in the referenced service type. This "
+                       "is invalid, terminating";
+                // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(
+                configuration_errc::configuration_invalid_field_reference_from_instance):
+                return "Service instance refers to a field, which doesn't exist in the referenced service type. This "
+                       "is invalid, terminating";
+
             // coverity[autosar_cpp14_m6_4_5_violation]
             default:
                 return "unknown configuration error";

@@ -45,7 +45,7 @@ class TransactionLogLocalView
     using UnsubscribeCallback =
         score::cpp::callback<void(TransactionLog::MaxSampleCountType subscription_max_sample_count)>;
 
-    TransactionLogLocalView(TransactionLog& transaction_log) noexcept;
+    TransactionLogLocalView(TransactionLog& transaction_log);
 
     /// \brief Record Subscription / Unsubscription transactions
     ///
@@ -82,7 +82,7 @@ class TransactionLogLocalView
     /// will decrement all reference counts that the old Proxy had incremented in the EventDataControl which were
     /// recorded in this TransactionLog.
     Result<void> RollbackProxyElementLog(const DereferenceSlotCallback& dereference_slot_callback,
-                                         const UnsubscribeCallback& unsubscribe_callback) noexcept;
+                                         const UnsubscribeCallback& unsubscribe_callback);
 
     /// \brief Rollback all previous increments that were recorded in the transaction log.
     /// \param dereference_slot_callback Callback which will decrement the slot in EventDataControl with the provided
@@ -100,7 +100,7 @@ class TransactionLogLocalView
 
   private:
     Result<void> RollbackIncrementTransactions(const DereferenceSlotCallback& dereference_slot_callback) noexcept;
-    Result<void> RollbackSubscribeTransactions(const UnsubscribeCallback& unsubscribe_callback) noexcept;
+    Result<void> RollbackSubscribeTransactions(const UnsubscribeCallback& unsubscribe_callback);
 
     /// \brief View pointing to DynamicArray containing one TransactionLogSlot for each slot in the corresponding
     /// control vector.

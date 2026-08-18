@@ -17,9 +17,7 @@
 
 #include "gmock/gmock.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 class ServerMock : public IServer
@@ -39,6 +37,6 @@ class ServerMock : public IServer
     }
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
+
 #endif  // SCORE_MW_COM_MESSAGE_PASSING_NEW_SERVER_MOCK_H

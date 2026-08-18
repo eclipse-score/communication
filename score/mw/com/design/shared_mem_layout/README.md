@@ -62,7 +62,8 @@ placed into the `SharedMemoryResource` for **Data** is an instance of `lola::Ser
 `LoLa` skeleton instance during `lola::Skeleton::PrepareOffer()` within the initialization callback of the
 newly created shared-memory object.
 This anchor element of the `SharedMemoryResource` contains two members:
-* `events_`: a map for the data storage (slots) of every event the service provides.
+* `events_`: a fixed-capacity, associative container (`lola::LinearSearchMap`) for the data storage (slots) of every
+  event the service provides.
   Note, that the storage slots, which are effectively vectors of `SampleType`s:
   ```
   template <typename SampleType>
@@ -72,8 +73,18 @@ This anchor element of the `SharedMemoryResource` contains two members:
   type and only later when the skeleton events register themselves dynamically or access that storage they are cast to
   the effective/concrete type.
 
-* `events_metainfo_`: a map for meta information of every event the service provides
+* `events_metainfo_`: a fixed-capacity, associative container (`lola::LinearSearchMap`) for meta information of every
+  event the service provides
 * `skeleton_pid_`: PID of the provider/skeleton process.
+
+> **Note on container choice / shared-memory sizing:** `ServiceDataStorage` deliberately does **not** use dynamically
+> allocating map-types (like `std::map` / `boost::interprocess::map`) anymore. Instead it uses `lola::LinearSearchMap`,
+> a flat, fixed-capacity container built on `score::containers::NonRelocatableVector`. Its capacity (the number of
+> service-elements = events + fields) is known up-front, so the container performs exactly one allocation of a
+> deterministic size on construction. This makes the total size of the **Data** shared-memory object analytically
+> computable via `SkeletonMemoryManager::CalculateDataShmResourceStorageSize()` (selected through the
+> `ShmSizeCalculationMode::kAnalysis` mode), avoiding the otherwise necessary (and costly) heap-based "simulation
+> run".
 
 ## Shared-Memory Object for Control
 
@@ -82,7 +93,9 @@ placed into the `SharedMemoryResource` for **Control** is an instance of `lola::
 created by a `LoLa` skeleton instance during `lola::Skeleton::PrepareOffer()` within the initialization
 callback of the newly created shared-memory object.
 This anchor element of the `SharedMemoryResource` contains the members:
-* `event_controls_`: a map containing an `EventControl` entry for every event the service provides. Each `EventControl`
+* `event_controls_`: a fixed-capacity `lola::LinearSearchMap` containing an `EventControl` entry for every event the
+  service provides. Its capacity equals the number of offered service elements (events + fields), which is known
+  up-front, so the required shared-memory size can be computed analytically (no simulation run). Each `EventControl`
   aggregates the event's data control slots (`EventDataControl`), subscription control (`EventSubscriptionControl`), and
   the transaction log set (`TransactionLogSet`).
 * `application_id_pid_mapping_`: a mapping from application identifiers to process IDs, used by proxy instances to

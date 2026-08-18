@@ -40,8 +40,10 @@ void PerformProviderActions(CheckPointControl& check_point_control,
 
     std::cout << "Provider: Starting actions! mw_com_config_path: " << mw_com_config_path << std::endl;
     // Initialize mw::com runtime with our explicit configuration
-    const char* argv[2U] = {"--service_instance_manifest", mw_com_config_path.data()};
-    runtime::InitializeRuntime(2, argv);
+    using safecpp::literals::operator""_zsv;
+    const auto path = safecpp::zstring_view{mw_com_config_path.data(), mw_com_config_path.size()};
+    std::vector arguments = {"--service_instance_manifest"_zsv, path};
+    runtime::InitializeRuntime(arguments);
 
     //***************************************************
     // Step (1)- create and offer service

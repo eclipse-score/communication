@@ -99,9 +99,7 @@ abstract class "mw::com::impl::IRuntime" {
 
 class "mw::com::impl::Runtime" {
   -binding_runtimes_ : std:unordered_map<BindingType, std::unique_ptr<IBindingRuntime>>
-  {static} +Initialize() : void
-  {static} +Initialize(int argc, score::StringLiteral argv) : void
-  {static} +Initialize(std::string const&) : void
+  {static} +Initialize(runtime::RuntimeConfiguration&) : void
   {static} +getInstance() : Runtime&
   +Runtime(Configuration&& config)
   +resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>

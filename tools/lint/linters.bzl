@@ -16,6 +16,7 @@
 load("@aspect_rules_lint//lint:clang_tidy.bzl", "lint_clang_tidy_aspect")
 load("@aspect_rules_lint//lint:lint_test.bzl", "lint_test")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load(":clang_tidy_lint_gate.bzl", "lint_clang_tidy_gate_aspect")
 
 visibility(["//..."])
 
@@ -33,8 +34,20 @@ clang_tidy = lint_clang_tidy_aspect(
 # Create a test rule for clang-tidy (for individual targets)
 clang_tidy_test = lint_test(aspect = clang_tidy)
 
-# Export the aspect for use in multirun
-clang_tidy_aspect = clang_tidy
+# Same as `clang_tidy` above, but skips cc_library targets that have neither
+# `srcs` nor `hdrs` (pure alias/aggregator libraries with nothing to lint).
+# Used for CI SARIF collection so those targets don't produce empty reports
+# that `merge_sarif_reports` would otherwise treat as a hard failure. See
+# clang_tidy_lint_gate.bzl for details.
+clang_tidy_aspect = lint_clang_tidy_gate_aspect(
+    binary = Label("@llvm_toolchain//:clang-tidy"),
+    configs = [
+        Label("//:.clang-tidy"),
+    ],
+    lint_target_headers = True,
+    angle_includes_are_system = True,
+    verbose = False,
+)
 
 APPLY_PATCHES = [
     'echo ""',

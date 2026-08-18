@@ -20,9 +20,7 @@
 #include <future>
 #include <thread>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 namespace
 {
@@ -1234,5 +1232,4 @@ TEST_F(ClientConnectionTest, ConnectedReceivesPingInCallback)
 }
 
 }  // namespace
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing

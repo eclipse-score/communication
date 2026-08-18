@@ -18,6 +18,7 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 # This provides registration macros for generated C++ code that bridges Rust and C++ types.
 cc_library(
     name = "register_interface",
+    srcs = ["register_interface.cpp"],
     hdrs = ["register_interface.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [

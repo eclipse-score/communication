@@ -19,6 +19,7 @@
 #include "score/mw/com/test/common_test_resources/general_resources.h"
 #include "score/mw/com/test/partial_restart/test_datatype.h"
 #include "score/mw/com/types.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <chrono>
 #include <cstddef>
@@ -46,7 +47,8 @@ ConsumerActions::ConsumerActions(CheckPointControl& check_point_control,
       test_stop_token_{std::move(test_stop_token)},
       consumer_parameters_{consumer_parameters},
       proxies_{},
-      handle_notification_data_{}
+      handle_notification_data_{},
+      find_service_handle_{std::nullopt}
 {
     // Initialize mw::com runtime explicitly, if we were called with cmd-line args from main/parent
     if (argc > 0 && argv != nullptr)
@@ -54,7 +56,7 @@ ConsumerActions::ConsumerActions(CheckPointControl& check_point_control,
         std::cerr
             << "Consumer: Initializing LoLa/mw::com runtime from cmd-line args handed over by parent/controller ..."
             << std::endl;
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
         std::cerr << "Consumer: Initializing LoLa/mw::com runtime done." << std::endl;
     }
 }
@@ -104,6 +106,26 @@ void ConsumerActions::DoConsumerActions() noexcept
         return;
     }
 
+    // ********************************************************************************
+    // Step (C.21) - Stop async FindService
+    // ********************************************************************************
+    std::cout << "Consumer Step (C.21): Stop async FindService" << std::endl;
+    if (!find_service_handle_.has_value())
+    {
+        std::cerr << "Consumer Step (C.21): Missing FindService handle!" << std::endl;
+        check_point_control_.ErrorOccurred();
+        return;
+    }
+
+    auto stop_find_service_result = TestServiceProxy::StopFindService(find_service_handle_.value());
+    if (!stop_find_service_result.has_value())
+    {
+        std::cerr << "Consumer Step (C.21): Stop async FindService failed with error: "
+                  << stop_find_service_result.error() << std::endl;
+        check_point_control_.ErrorOccurred();
+        return;
+    }
+
     std::cout << "Consumer: Finishing actions!" << std::endl;
 }
 
@@ -123,9 +145,10 @@ void ConsumerActions::DoConsumerActionsBeforeRestart() noexcept
     {
         return;
     }
+    find_service_handle_ = find_service_handle_result.value();
 
     // ********************************************************************************
-    // Step (C.2) - Wait for FindServiceHandler to be called. Call StopFindService in handler
+    // Step (C.2) - Wait for FindServiceHandler to be called
     // ********************************************************************************
     std::cout << "Consumer Step (C.2): Wait for FindServiceHandler to be called" << std::endl;
     if (!WaitTillServiceAppears(handle_notification_data_, kMaxHandleNotificationWaitTime))
@@ -229,7 +252,7 @@ void ConsumerActions::DoConsumerActionsAfterRestart() noexcept
     WaitTillServiceDisappears(handle_notification_data_);
 
     // ********************************************************************************
-    // Step (C.12) - Wait for FindServiceHandler to be called. Call StopFindService in handler
+    // Step (C.12) - Wait for FindServiceHandler to be called
     // ********************************************************************************
     std::cout << "Consumer Step (C.12): Wait for FindServiceHandler to be called." << std::endl;
     if (!WaitTillServiceAppears(handle_notification_data_, kMaxHandleNotificationWaitTime))

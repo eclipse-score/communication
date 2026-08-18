@@ -20,9 +20,7 @@
 #include <score/expected.hpp>
 #include <score/span.hpp>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 /// \brief Interface of a Message Passing Server connection
@@ -49,7 +47,6 @@ class IServerConnection
     IServerConnection& operator=(IServerConnection&&) = delete;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_SERVER_CONNECTION_H

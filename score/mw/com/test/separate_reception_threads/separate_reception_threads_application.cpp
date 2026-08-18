@@ -11,13 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/i_runtime.h"
-#include "score/mw/com/impl/i_binding_runtime.h"
-#include "score/mw/com/impl/runtime.h"
-#include "score/mw/com/impl/scoped_event_receive_handler.h"
-#include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
+#include "score/mw/com/types.h"
 
 #include "score/mw/log/logging.h"
 

@@ -13,9 +13,11 @@
 
 #include "score/mw/com/test/concurrent_skeleton_creation/concurrent_skeleton_creation_application.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/big_datatype.h"
 #include "score/mw/com/types.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <score/jthread.hpp>
 #include <score/stop_token.hpp>
@@ -54,7 +56,7 @@ void CreateAndOfferSkeleton(const score::mw::com::InstanceSpecifier& instance_sp
  */
 int main(int argc, const char** argv)
 {
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
 
     const auto instance_specifier_result_1 =
         score::mw::com::InstanceSpecifier::Create(std::string{"score/cp60/MapApiLanesStamped1"});

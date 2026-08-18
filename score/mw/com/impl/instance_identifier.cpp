@@ -44,7 +44,7 @@ Configuration* InstanceIdentifier::configuration_{nullptr};
 // std::bad_optional_access which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string&& serialized_format) noexcept
+score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string&& serialized_format)
 {
     if (configuration_ == nullptr)
     {
@@ -80,7 +80,7 @@ score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string&& seria
 // Rationale: Delegation to a separate constructor complexifies the code significantly.
 // This adds more risk than doing the initialization of the members in each constructor.
 // coverity[autosar_cpp14_a12_1_5_violation : FALSE]
-InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::string&& serialized_string) noexcept
+InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::string&& serialized_string)
     : instance_deployment_{nullptr}, type_deployment_{nullptr}, serialized_string_{std::move(serialized_string)}
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKey);
@@ -116,14 +116,14 @@ InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::str
 // This adds more risk than doing the initialization of the members in each constructor.
 // coverity[autosar_cpp14_a12_1_5_violation : FALSE]
 InstanceIdentifier::InstanceIdentifier(const ServiceInstanceDeployment& deployment,
-                                       const ServiceTypeDeployment& type_deployment) noexcept
+                                       const ServiceTypeDeployment& type_deployment)
     : instance_deployment_{&deployment},
       type_deployment_{&type_deployment},
       serialized_string_{ToStringImpl(Serialize())}
 {
 }
 
-auto InstanceIdentifier::Serialize() const noexcept -> json::Object
+auto InstanceIdentifier::Serialize() const -> json::Object
 {
     json::Object json_object{};
     json_object[kSerializationVersionKey] = score::json::Any{serializationVersion};
@@ -139,13 +139,13 @@ auto InstanceIdentifier::ToString() const noexcept -> std::string_view
     return serialized_string_;
 }
 
-auto operator==(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs) noexcept -> bool
+auto operator==(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs) -> bool
 {
     return (((lhs.instance_deployment_->service_ == rhs.instance_deployment_->service_) &&
              (*lhs.instance_deployment_ == *rhs.instance_deployment_)));
 }
 
-auto operator<(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs) noexcept -> bool
+auto operator<(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs) -> bool
 {
     return std::tie(lhs.instance_deployment_->service_, *lhs.instance_deployment_) <
            std::tie(rhs.instance_deployment_->service_, *rhs.instance_deployment_);
@@ -161,7 +161,7 @@ InstanceIdentifierView::InstanceIdentifierView(const InstanceIdentifier& identif
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto InstanceIdentifierView::GetServiceInstanceId() const noexcept -> std::optional<ServiceInstanceId>
+auto InstanceIdentifierView::GetServiceInstanceId() const -> std::optional<ServiceInstanceId>
 {
     auto visitor = score::cpp::overload(
         [](const LolaServiceInstanceDeployment& deployment) -> std::optional<ServiceInstanceId> {

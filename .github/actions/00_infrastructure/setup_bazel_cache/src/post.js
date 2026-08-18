@@ -90,9 +90,13 @@ async function run() {
       const diskKey = `disk-cache-${diskCacheName}-${runId}`;
       core.info(`Saving disk cache with key: ${diskKey}`);
       try {
-        await cache.saveCache([diskCacheDir], diskKey);
-        core.info("Disk cache saved.");
-        await deleteOldCaches(`disk-cache-${diskCacheName}-`, diskKey);
+        const cacheId = await cache.saveCache([diskCacheDir], diskKey);
+        if (typeof cacheId !== "number" || cacheId < 0) {
+          core.warning("Disk cache upload did not complete; keeping existing remote caches.");
+        } else {
+          core.info("Disk cache saved.");
+          await deleteOldCaches(`disk-cache-${diskCacheName}-`, diskKey);
+        }
       } catch (error) {
         if (error.name === "ReserveCacheError" || error.message?.includes("Unable to reserve cache")) {
           core.info("Disk cache already exists, skipping save.");
@@ -108,9 +112,13 @@ async function run() {
       const repoKey = `repo-cache-${hash}`;
       core.info(`Saving repository cache with key: ${repoKey}`);
       try {
-        await cache.saveCache([repoCacheDir], repoKey);
-        core.info("Repository cache saved.");
-        await deleteOldCaches("repo-cache-", repoKey);
+        const cacheId = await cache.saveCache([repoCacheDir], repoKey);
+        if (typeof cacheId !== "number" || cacheId < 0) {
+          core.warning("Repository cache upload did not complete; keeping existing remote caches.");
+        } else {
+          core.info("Repository cache saved.");
+          await deleteOldCaches("repo-cache-", repoKey);
+        }
       } catch (error) {
         if (error.name === "ReserveCacheError" || error.message?.includes("Unable to reserve cache")) {
           core.info("Repository cache already exists (same content hash), skipping save.");

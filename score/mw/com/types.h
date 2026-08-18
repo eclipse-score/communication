@@ -108,9 +108,15 @@ using MethodInArgTypePtr = impl::MethodInArgPtr<ReturnType>;
 using EventReceiveHandler = impl::EventReceiveHandler;
 
 /// \api
-/// \brief Field tag types used in service-interface definitions to enable Get/Set/Notifier on a field.
+/// \brief Field tag type used in service-interface definitions to enable Get on a field.
 using WithGetter = impl::WithGetter;
+
+/// \api
+/// \brief Field tag type used in service-interface definitions to enable Set on a field.
 using WithSetter = impl::WithSetter;
+
+/// \api
+/// \brief Field tag type used in service-interface definitions to enable Notifier on a field.
 using WithNotifier = impl::WithNotifier;
 
 /// \api
@@ -127,6 +133,7 @@ using AsSkeleton = impl::AsSkeleton<T>;
 /// \brief A type erased proxy that can be used to read the raw data from a skeleton without knowing the SampleType
 using GenericProxy = impl::GenericProxy;
 
+/// \api
 /// \brief A type erased proxy event that can be used to receive data without knowing the SampleType.
 using GenericProxyEvent = impl::GenericProxyEvent;
 

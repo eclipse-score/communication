@@ -35,7 +35,7 @@ namespace
 
 void UpdateTracingDataFromTraceResult(Result<void> trace_result,
                                       ProxyEventTracingData& proxy_event_tracing_data,
-                                      bool& proxy_event_trace_point) noexcept
+                                      bool& proxy_event_trace_point)
 {
     if (!trace_result.has_value())
     {
@@ -62,7 +62,7 @@ void UpdateTracingDataFromTraceResult(Result<void> trace_result,
 // This is false positive. Function is declared only once.
 // coverity[autosar_cpp14_a3_1_1_violation]
 ProxyEventTracingData GenerateProxyTracingStructFromEventConfig(const InstanceIdentifier& instance_identifier,
-                                                                const std::string_view event_name) noexcept
+                                                                const std::string_view event_name)
 {
     const auto* const tracing_config = Runtime::getInstance().GetTracingFilterConfig();
     ProxyEventTracingData proxy_event_tracing_data{};
@@ -116,7 +116,7 @@ ProxyEventTracingData GenerateProxyTracingStructFromEventConfig(const InstanceId
 // This is false positive. Function is declared only once.
 // coverity[autosar_cpp14_a3_1_1_violation]
 ProxyEventTracingData GenerateProxyTracingStructFromFieldConfig(const InstanceIdentifier& instance_identifier,
-                                                                const std::string_view field_name) noexcept
+                                                                const std::string_view field_name)
 {
     const auto* const tracing_config = Runtime::getInstance().GetTracingFilterConfig();
     ProxyEventTracingData proxy_event_tracing_data{};
@@ -167,7 +167,7 @@ ProxyEventTracingData GenerateProxyTracingStructFromFieldConfig(const InstanceId
 
 void TraceSubscribe(ProxyEventTracingData& proxy_event_tracing_data,
                     const ProxyEventBindingBase& proxy_event_binding_base,
-                    const std::size_t max_sample_count) noexcept
+                    const std::size_t max_sample_count)
 {
     if (proxy_event_tracing_data.enable_subscribe)
     {
@@ -202,7 +202,7 @@ void TraceSubscribe(ProxyEventTracingData& proxy_event_tracing_data,
 }
 
 void TraceUnsubscribe(ProxyEventTracingData& proxy_event_tracing_data,
-                      const ProxyEventBindingBase& proxy_event_binding_base) noexcept
+                      const ProxyEventBindingBase& proxy_event_binding_base)
 {
     if (proxy_event_tracing_data.enable_unsubscribe)
     {
@@ -237,7 +237,7 @@ void TraceUnsubscribe(ProxyEventTracingData& proxy_event_tracing_data,
 }
 
 void TraceSetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                            const ProxyEventBindingBase& proxy_event_binding_base) noexcept
+                            const ProxyEventBindingBase& proxy_event_binding_base)
 {
     if (proxy_event_tracing_data.enable_set_receive_handler)
     {
@@ -272,7 +272,7 @@ void TraceSetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
 }
 
 void TraceUnsetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                              const ProxyEventBindingBase& proxy_event_binding_base) noexcept
+                              const ProxyEventBindingBase& proxy_event_binding_base)
 {
     if (proxy_event_tracing_data.enable_unset_receive_handler)
     {
@@ -307,7 +307,7 @@ void TraceUnsetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
 }
 
 void TraceGetNewSamples(ProxyEventTracingData& proxy_event_tracing_data,
-                        const ProxyEventBindingBase& proxy_event_binding_base) noexcept
+                        const ProxyEventBindingBase& proxy_event_binding_base)
 {
     if (proxy_event_tracing_data.enable_get_new_samples)
     {
@@ -343,7 +343,7 @@ void TraceGetNewSamples(ProxyEventTracingData& proxy_event_tracing_data,
 
 void TraceCallGetNewSamplesCallback(ProxyEventTracingData& proxy_event_tracing_data,
                                     const ProxyEventBindingBase& proxy_event_binding_base,
-                                    ITracingRuntime::TracePointDataId trace_point_data_id) noexcept
+                                    ITracingRuntime::TracePointDataId trace_point_data_id)
 {
     if (proxy_event_tracing_data.enable_new_samples_callback)
     {
@@ -381,7 +381,7 @@ void TraceCallGetNewSamplesCallback(ProxyEventTracingData& proxy_event_tracing_d
 }
 
 void TraceCallReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                             const ProxyEventBindingBase& proxy_event_binding_base) noexcept
+                             const ProxyEventBindingBase& proxy_event_binding_base)
 {
     if (proxy_event_tracing_data.enable_call_receive_handler)
     {
@@ -593,12 +593,12 @@ void SetupSubscriptionStateChangeHandlerTracing(ProxyEventTracingData& proxy_eve
 score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(
     ProxyEventTracingData& proxy_event_tracing_data,
     const ProxyEventBindingBase& proxy_event_binding_base,
-    EventReceiveHandler handler) noexcept
+    EventReceiveHandler handler)
 {
     if (proxy_event_tracing_data.enable_call_receive_handler)
     {
         score::cpp::callback<void(void), 128U> tracing_receive_handler =
-            [&proxy_event_tracing_data, &proxy_event_binding_base, handler = std::move(handler)]() noexcept {
+            [&proxy_event_tracing_data, &proxy_event_binding_base, handler = std::move(handler)]() {
                 TraceCallReceiveHandler(proxy_event_tracing_data, proxy_event_binding_base);
                 handler();
             };

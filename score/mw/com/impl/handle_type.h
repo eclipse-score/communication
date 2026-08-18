@@ -38,7 +38,7 @@ class HandleType;
  * this value will be used instead of the value in the configuration, referenced from identifier.
  * \return A constructed InstanceIdentifier
  */
-HandleType make_HandleType(InstanceIdentifier identifier, std::optional<ServiceInstanceId> instance_id = {}) noexcept;
+HandleType make_HandleType(InstanceIdentifier identifier, std::optional<ServiceInstanceId> instance_id = {});
 
 /**
  * \brief It types the handle for a specific service
@@ -63,7 +63,7 @@ class HandleType
      * \param rhs The second instance to check for equality
      * \return true if lhs and rhs equal, false otherwise
      */
-    friend bool operator==(const HandleType& lhs, const HandleType& rhs) noexcept;
+    friend bool operator==(const HandleType& lhs, const HandleType& rhs);
 
     /**
      * \brief LessThanComparable operator
@@ -72,7 +72,7 @@ class HandleType
      * \param rhs The second HandleType instance to compare
      * \return true if lhs is less than rhs, false otherwise
      */
-    friend bool operator<(const HandleType& lhs, const HandleType& rhs) noexcept;
+    friend bool operator<(const HandleType& lhs, const HandleType& rhs);
 
     /**
      * \brief Query the associated instance
@@ -107,13 +107,13 @@ class HandleType
     InstanceIdentifier identifier_;
     ServiceInstanceId instance_id_;
 
-    explicit HandleType(InstanceIdentifier, std::optional<ServiceInstanceId> instance_id) noexcept;
+    explicit HandleType(InstanceIdentifier, std::optional<ServiceInstanceId> instance_id);
 
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Design decision: Friend class required to access private constructor.
     // This way more implementation details can be hidden from the user.
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend HandleType make_HandleType(InstanceIdentifier, std::optional<ServiceInstanceId> instance_id) noexcept;
+    friend HandleType make_HandleType(InstanceIdentifier, std::optional<ServiceInstanceId> instance_id);
 };
 
 }  // namespace score::mw::com::impl

@@ -14,7 +14,6 @@
 #include "score/mw/com/test/reserving_skeleton_slots/reserving_skeleton_slots_application.h"
 
 #include "score/mw/com/impl/configuration/config_parser.h"
-#include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/test/common_test_resources/sample_sender_receiver.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 
@@ -26,14 +25,14 @@
 namespace
 {
 
-using InstanceSpecifier = score::mw::com::impl::InstanceSpecifier;
+using InstanceSpecifier = score::mw::com::InstanceSpecifier;
 
 std::uint16_t GetNumSkeletonSlotsFromConfig(const std::string& service_instance_manifest_path,
                                             const InstanceSpecifier instance_specifier)
 {
     const auto configuration = score::mw::com::impl::configuration::Parse(service_instance_manifest_path);
 
-    const auto deployment = configuration.GetServiceInstances().at(instance_specifier);
+    const auto& deployment = configuration.GetServiceInstanceDeployment(instance_specifier).value().get();
     const auto lola_binding = std::get<score::mw::com::impl::LolaServiceInstanceDeployment>(deployment.bindingInfo_);
 
     std::string event_name{"map_api_lanes_stamped"};

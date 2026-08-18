@@ -9,11 +9,11 @@ This chapter is about correctly sizing the `numberOfSampleSlots` property of an 
 depend on the provider alone – it depends on the **consumers**: on *how many* consumers (proxy instances) subscribe
 to the event and with which `max_sample_count` they subscribe.
 
-The `max_sample_count` a subscriber passes to `Subscribe()` expresses how many samples (in the form of `SamplePtr`s) that
+The `max_sample_count` a subscriber passes to `Subscribe()` expresses how many samples (in the form of `SamplePtr`\s) that
 subscriber wants to be able to **hold in parallel**.
 
-Why the sum of all `max_sample_count`s?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Why the sum of all `max_sample_count`\s?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 Consumers are, in general, **completely independent** of each other. The point in time when a consumer calls
@@ -25,7 +25,7 @@ parallel, subscriber 2 up to **three**. Then, because the two can hold their sam
 points in time, the provider must provide at least `2 + 3 = 5` sample slots. Consider these two extreme situations for
 the underlying control-slot-vector (of size 5):
 
-1. **Closely coupled:** consumer 1 acquires new samples and keeps the `SamplePtr`s; shortly after, consumer 2
+1. **Closely coupled:** consumer 1 acquires new samples and keeps the `SamplePtr`\s; shortly after, consumer 2
    does the same and ends up referencing largely the *same* slots. We might then have two slots with a reference count of
    2 (referenced by both consumers), one slot with a reference count of 1 (only consumer 2), and two remaining slots
    that are not referenced by either consumer. Such a not-referenced slot is either *uninitialized* (does not yet contain
@@ -74,7 +74,7 @@ The `bazel` project for this chapter is located in `score/mw/com/doc/tutorial/ch
    * - `BUILD <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/BUILD>`__
      - This file contains bazel targets for this example.
    * - `consumer/consumer.cpp <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/consumer.cpp>`__
-     - Implementation of the service consumer app (polling, keeps `SamplePtr`s).
+     - Implementation of the service consumer app (polling, keeps `SamplePtr`\s).
    * - `consumer/consumer.h <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/consumer.h>`__
      - Header (empty - we just always want to have cpp/h pairs) of the service consumer.
    * - `consumer/logging.json <https://github.com/eclipse-score/communication/blob/main/score/mw/com/doc/tutorial/chapter_6/consumer/logging.json>`__
@@ -130,7 +130,7 @@ end of the `GetNewSamples()` callback, so they effectively never held more than 
 this chapter is more realistic:
 
 - It uses the **polling** approach again (cyclically calling `GetNewSamples()`).
-- It **keeps** the received `SamplePtr`s by *moving* them out of the callback into a container (`std::deque`) that lives
+- It **keeps** the received `SamplePtr`\s by *moving* them out of the callback into a container (`std::deque`) that lives
   in `main()`. It therefore holds up to `max_sample_count` samples in parallel.
 - It takes the `max_sample_count` to use as a **command-line argument**.
 - Whenever it already holds `max_sample_count` samples, it releases the **oldest** one before calling `GetNewSamples()`
@@ -203,7 +203,7 @@ Playing with the sizing
 
 With `numberOfSampleSlots` fixed at **10**, you can now explore the three interesting variations:
 
-- **`4` and `5` – rule of thumb satisfied.** The sum of the `max_sample_count`s is `4 + 5 = 9`, plus the safety
+- **`4` and `5` – rule of thumb satisfied.** The sum of the `max_sample_count`\s is `4 + 5 = 9`, plus the safety
   margin of 1 gives 10, which is exactly `numberOfSampleSlots`. In this configuration you should **never** see the
   provider log that it could not allocate a sample slot.
 - **`5` and `5` – missing the `+ 1`.** Both consumers can still subscribe (`5 + 5 = 10 =
@@ -231,7 +231,7 @@ A short summary of what we have learned in this chapter:
 
 - `numberOfSampleSlots` is configured by the **provider**, but its correct value is dictated by the **consumers**: by
   how many subscribe and with which `max_sample_count`.
-- `max_sample_count` (passed to `Subscribe()`) is the number of `SamplePtr`s a subscriber wants to be able to hold in
+- `max_sample_count` (passed to `Subscribe()`) is the number of `SamplePtr`\s a subscriber wants to be able to hold in
   parallel. Because subscribers are independent, in the worst case all of them hold their maximum at disjoint slots at
   the same time.
 - Rule of thumb: **`numberOfSampleSlots = Sum of (max_sample_count of all subscribers) + 1`**. The `+ 1` guarantees the

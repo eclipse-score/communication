@@ -62,7 +62,7 @@ bool DoesLogContainIncrementOrDecrementTransactions(
 
 }  // namespace
 
-TransactionLogLocalView::TransactionLogLocalView(TransactionLog& transaction_log) noexcept
+TransactionLogLocalView::TransactionLogLocalView(TransactionLog& transaction_log)
     : reference_count_slots_local_{transaction_log.reference_count_slots_.data(),
                                    transaction_log.reference_count_slots_.size()},
       subscribe_transactions_{transaction_log.subscribe_transactions_},
@@ -173,7 +173,7 @@ void TransactionLogLocalView::DereferenceTransactionCommit(SlotIndexType slot_in
 }
 
 Result<void> TransactionLogLocalView::RollbackProxyElementLog(const DereferenceSlotCallback& dereference_slot_callback,
-                                                              const UnsubscribeCallback& unsubscribe_callback) noexcept
+                                                              const UnsubscribeCallback& unsubscribe_callback)
 {
     const bool was_no_subscribe_recorded{!subscribe_transactions_.get().GetTransactionBegin() &&
                                          !subscribe_transactions_.get().GetTransactionEnd()};
@@ -240,8 +240,7 @@ Result<void> TransactionLogLocalView::RollbackIncrementTransactions(
     return {};
 }
 
-Result<void> TransactionLogLocalView::RollbackSubscribeTransactions(
-    const UnsubscribeCallback& unsubscribe_callback) noexcept
+Result<void> TransactionLogLocalView::RollbackSubscribeTransactions(const UnsubscribeCallback& unsubscribe_callback)
 {
     const bool was_subscribe_succesfully_recorded{subscribe_transactions_.get().GetTransactionBegin() &&
                                                   subscribe_transactions_.get().GetTransactionEnd()};

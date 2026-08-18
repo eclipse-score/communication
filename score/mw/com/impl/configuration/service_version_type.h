@@ -45,7 +45,7 @@ ServiceVersionType make_ServiceVersionType(const std::uint32_t major_version_num
 class ServiceVersionType final
 {
   public:
-    explicit ServiceVersionType(const score::json::Object& json_object) noexcept;
+    explicit ServiceVersionType(const score::json::Object& json_object);
 
     ServiceVersionType() = delete;
     ~ServiceVersionType() noexcept = default;

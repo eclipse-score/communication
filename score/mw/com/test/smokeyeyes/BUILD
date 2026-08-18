@@ -29,6 +29,7 @@ cc_binary(
         "@boost.interprocess",
         "@boost.program_options",
         "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 

@@ -1,0 +1,751 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "Public_API_Specification" {
+
+        section "Generic_Proxy" {
+
+            section "Functionality" {
+
+                /* broken_link_c/issue/15600146 */
+                ScoreReq.CompReq EventListSource {
+                    description = '''A {{GenericProxy}} instance shall deduce its supported events from the {{LoLa}} json configuration containing deployment information.
+
+                    Note: A {{GenericProxy}} is created via the Create API based on {{HandleType}} containing its related deployment information.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/15601194 */
+                ScoreReq.CompReq EventTypeInfoSource {
+                    description = '''The type information for each of the events supported by a {{GenericProxy}} instance, shall be gathered from the shared memory data section published by the {{LoLa}} skeleton instance providing the service instance, the {{GenericProxy}} is connected with.
+
+                    Note: This information is needed for the [GetSampleSize() API|ISSUE:14035184].'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/15603826 */
+                ScoreReq.CompReq ReactionOnMissingEventTypeInfo {
+                    description = '''In case, that there is no related Event Type Info source provided in shared memory for a given Event enlisted in the deployment for the {{GenericProxy}}, an ERROR message shall be logged.
+
+                    No corresponding Event shall be inserted into the event map member of the {{GenericProxy}} instance.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+            /* broken_link_c/issue/14005667 */
+            ScoreReq.CompReq GenericProxyClass {
+                description = '''The class {{GenericProxy}} is not a generated class and shall be provided in the namespace {{score::mw::com}}. {{GenericProxy}} users shall be able to access the definition of by inclusion of {{platform/aas/mw/com/types.h}}.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.CommunicationInterfaces@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/14005999 */
+            ScoreReq.CompReq GenericProxyConstructor {
+                description = '''The constructor of the class {{GenericProxy}} shall be private.
+
+                Note: Construction of a {{GenericProxy}} instance by the user shall only be possible via the public static {{Create()}} method (See GenericProxy Exception-less Creation).
+
+                Therefore the signature of the constructor of {{GenericProxy}} is implementation defined.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.SupportForProgrammingLanguageIdioms@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/14005969 */
+            ScoreReq.CompReq GenericProxyExceptionLessCreation {
+                description = '''The {{GenericProxy}} class shall provide a non-throwing constructor using the Named Constructor idom (See Creation of an object using Named Constructor approach.
+
+                {{{static bmw::Result<GenericProxy> GenericProxy::Create(const GenericProxy::HandleType &handle) noexcept;}}}
+
+                Arguments:
+
+                * HandleType: The given {{handle}} parameter shall be a handle returned from one of the {{GenericProxy::FindService()}} API overloads.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.ErrorHandling@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/17292012 */
+            ScoreReq.CompReq GenericProxyCopySemantics {
+                description = '''The {{GenericProxy}} class shall neither be copy-constructible nor copy-assignable.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.DataLoss@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/17292032 */
+            ScoreReq.CompReq GenericProxyMoveSemantics {
+                description = '''The {{GenericProxy}} class shall be move-constructible as well as being move-assignable.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.SupportForProgrammingLanguageIdioms@1, Communication.SupportForMultipleProgrammingLanguages@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/14005977 */
+            ScoreReq.CompReq GenericProxyFindServiceWithInstanceSpecifier {
+                description = '''The {{GenericProxy}}
+                 class shall contain a public method:
+
+                {{{static bmw::Result<mw::com::ServiceHandleContainer> GenericProxy::FindService(mw::com::InstanceSpecifier instance\_specifier) noexcept}}}
+
+                Arguments:
+
+                *  instance\_specifier: An instance of default-cursor InstanceSpecifier Class.
+
+                Behaviour: is described in default-cursor Behaviour of FindService.
+
+                Return values: returned bmw::Result which contains
+
+                *  on success, a HandleType for each available service instance according to Behaviour of FindService.
+
+                *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kBindingFailure}} if the lookup of all service instances corresponding to the service instance (See InstanceSpecifier Correspondence to Service Instances) by the binding returned errors.
+
+                *  '''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.ServiceDiscovery@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/14005991 */
+            ScoreReq.CompReq GenericProxyFindServiceWithInstanceIdentifier {
+                description = '''The {{GenericProxy}}
+
+                 class shall contain a public method:
+
+                {{{static bmw::Result<mw::com::ServiceHandleContainer> GenericProxy::FindService(mw::com::InstanceIdentifier instance\_identifier) noexcept}}}
+
+                Arguments:
+
+                *  instance\_identifier: An instance of InstanceIdentifier Class.
+
+                Behaviour: is described in Behaviour of FindService.
+
+                Return values: returned bmw::Result which contains
+
+                *  on success, a HandleType for each available service instance according to Behaviour of FindService.
+
+                *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kBindingFailure}} if the lookup of all service instances corresponding to the service instance (See InstanceSpecifier Correspondence to Service Instances) by the binding returned errors.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.ServiceDiscovery@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/21788695 */
+            ScoreReq.CompReq GenericProxyStartFindServiceWithInstanceSpecifier {
+                description = '''The {{GenericProxy}}
+                 class shall contain a public method:
+
+                {{{static bmw::Result<mw::com::FindServiceHandle> GenericProxy::StartFindService(bmw::mw::com::FindServiceHandler handler, bmw::mw::com::InstanceSpecifier instance\_specifier) noexcept}}}
+
+                Arguments:
+
+                * handler: An instance of FindServiceHandler.
+
+                *  instance\_specifier: An instance of default-cursor InstanceSpecifier Class.
+
+                Behaviour: is described in Behaviour of StartFindService.
+
+                Return values: returned {{bmw::Result}} which contains
+
+                *  on success, a FindServiceHandle for stopping the search, according to Behaviour of StartFindService.
+
+                *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kFindServiceHandlerFailure}} if the handler could not be installed.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.MultiBindingSupport@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/21790264 */
+            ScoreReq.CompReq GenericProxyStartFindServiceWithInstanceIdentifier {
+                description = '''The {{GenericProxy}}
+                 class shall contain a public method:
+
+                {{{static bmw::Result<bmw::mw::com::FindServiceHandle> GenericProxy::StartFindService(bmw::mw::com::FindServiceHandler handler, bmw::mw::com::InstanceIdentifier instance\_identifier) noexcept}}}
+
+                Arguments:
+
+                *  handler: An instance of FindServiceHandler.
+
+                *  instance\_identifier: An instance of InstanceIdentifier Class
+
+                Behaviour: is described in Behaviour of StartFindService.
+
+                Return values: returned {{bmw::Result}} which contains
+
+                *  on success, a FindServiceHandle for stopping the search, according to Behaviour of StartFindService.
+
+                *  or, a {{bmw::result::Error}} containing the value {{ComErrc::kFindServiceHandlerFailure}} if the handler could not be installed.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.ServiceDiscovery@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/21790756 */
+            ScoreReq.CompReq GenericProxyStopFindService {
+                description = '''The {{GenericProxy}} class shall contain a public method:
+
+                {{static bmw::Result<void> GenericProxy::StopFindService(mw::com::FindServiceHandle handle) noexcept}}
+
+                Arguments:
+
+                * {{handle}}: A handle of type FindServiceHandle identifying a previously started search.
+
+                Behaviour: Stops the asynchronous search for available services, which has been started by either GenericProxy StartFindService with InstanceIdentifier or GenericProxy StartFindService with InstanceSpecifier. After the call has returned no further calls to the user provided FindServiceHandler takes place.
+
+                Return values: returned {{bmw::Result<void>}}, which contains a {{bmw::result::Error}} containing the value {{ComErrc::kInvalidHandle}}, in case the given handle hasn't been returned by a corresponding {{StartFindService}} call on the same class or is a handle for a search, which has already been stopped.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.ServiceDiscovery@1, Communication.SafeCommunication@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/14006006 */
+            ScoreReq.CompReq GenericProxyGetEvents {
+                description = '''The {{GenericProxy}} class shall contain a {{public}} method:
+
+                {{{GenericProxy::EventMapView GenericProxy::GetEvents() noexcept }}}
+
+                Return value: the read-only view of the map of events the {{GenericProxy}} provides (See GenericProxy EventMapView class, [[GenericProxyEventMapViewClass]]).'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.EventType@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq GenericProxyGetFields {
+                description = '''The {{GenericProxy}} class shall contain a {{public}} method:
+
+                {{{GenericProxy::FieldMapView GenericProxy::GetFields() noexcept }}}
+
+                Return value: the read-only view of the map of fields the {{GenericProxy}} provides (See GenericProxy FieldMapView class, [[GenericProxyFieldMapViewClass]]).'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.Field@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/14030261 */
+            ScoreReq.CompReq GenericProxyGetHandle {
+                description = '''The {{GenericProxy}} class shall contain a public method:
+
+                {{{HandleType GenericProxy::GetHandle() const noexcept}}}
+
+                Return value: the {{GenericProxy}}handle from which the  instance has been created whose type is specified in GenericProxy HandleType class.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.ServiceInstance@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/14030385 */
+            ScoreReq.CompReq GenericProxyHandleTypeClass {
+                description = '''The {{GenericProxy}}
+                {{HandleType}}
+
+                 class shall contain a public member type  which shall adhere to the requirements of HandleType'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.CommunicationInterfaces@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/14031112 */
+            ScoreReq.CompReq GenericProxyEventMapViewClass {
+                description = '''{{GenericProxy}} class shall have a {{public}} nested class EventMapView. The {{GenericProxyEvent}}s that shall be contained in {{EventMap}} are according to Event List Source.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.EventType@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/14031544 */
+            ScoreReq.CompReq GenericProxyEventMapViewClassProperties {
+                description = '''{{GenericProxy::EventMapView}} shall provide a mapping between event names in the form of {{std::string_view}} and {{GenericProxyEvent}}.
+
+                It shall provide at least the following signature, which is taken from {{std::map}} and shall behave identically to {{std::map<std::string_view, GenericProxyEvent>}} with regards to the listed signatures:
+
+                * cbegin()
+
+                * cend()
+
+                * find()
+
+                * size()
+
+                * empty()'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.EventType@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq GenericProxyFieldMapViewClass {
+                description = '''{{GenericProxy}} class shall have a {{public}} nested class FieldMapView. The {{GenericProxyField}}s that shall be contained in {{FieldMapView}} are according to Field List Source.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.Field@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq GenericProxyFieldMapViewClassProperties {
+                description = '''{{GenericProxy::FieldMapView}} shall provide a mapping between field names in the form of {{std::string_view}} and {{GenericProxyField}}.
+
+                It shall provide at least the following signature, which is taken from {{std::map}} and shall behave identically to {{std::map<std::string_view, GenericProxyField>}} with regards to the listed signatures:
+
+                * cbegin()
+
+                * cend()
+
+                * find()
+
+                * size()
+
+                * empty()'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.Field@1]
+                version = 1
+            }
+
+
+            }
+
+            section "Generic_Proxy_Event" {
+
+                /* broken_link_c/issue/14031999 */
+                ScoreReq.CompReq GenericProxyEventClass {
+                    description = '''Event members within a GenericProxy Class shall be of a {{GenericProxyEvent}} class, whose properties are defined in this section.
+
+                    {{GenericProxyEvent}}
+
+                    The  shall be provided in the namespace {{score::mw::com}}
+
+                    The class {{GenericProxyEvent}} is essentially a ProxyEvent class class, where the concrete event data type / {{SampleType}} is unknown and therefore represented as {{void}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1, Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/20237033 */
+                ScoreReq.CompReq GenericProxyEventDestructor {
+                    description = '''The {{destructor}} of {{GenericProxyEvent}} shall fulfill requirement Implicit Lifetime ending by destruction of context with regard to callables registered by the following APIs:
+
+                    * {{SetReceiveHandler}} (See GenericProxyEvent SetReceiveHandler)'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForProgrammingLanguageIdioms@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14032718 */
+                ScoreReq.CompReq GenericProxyEventCopySemantics {
+                    description = '''The {{GenericProxyEvent}}
+                     class shall neither be copy-constructible nor copy-assignable'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14033248 */
+                ScoreReq.CompReq GenericProxyEventSubscribe {
+                    description = '''A {{GenericProxyEvent}}
+                     class shall provide a public method:
+
+                    {{{bmw::Result<void> GenericProxyEvent::Subscribe(std::size\_t max\_sample\_count) noexcept}}}
+
+                    Behaviour is described in Behaviour of Subscribe.
+
+                    Return value is described in Return value of Subscribe.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14033377 */
+                ScoreReq.CompReq GenericProxyEventUnsubscribe {
+                    description = '''Class {{GenericProxyEvent}} shall provide a public method:
+
+                    {{{void GenericProxyEvent::Unsubscribe() noexcept}}}
+
+                    Behaviour is described in Behaviour of Unsubscribe.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14034825 */
+                ScoreReq.CompReq GenericProxyEventGetSubscriptionState {
+                    description = '''A {{GenericProxyEvent}} shall provide a public method:
+
+                    {{{SubscriptionState GenericProxyEvent::GetSubscriptionState() const noexcept; }}}
+
+                    Return value: returns the subscription state of an event.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/21466689 */
+                ScoreReq.CompReq GenericProxyEventSetSubscriptionStateChangeHandler {
+                    description = '''The {{GenericProxyEvent}}
+
+                     class shall provide a public method:
+
+                    {{{bmw::Result<void> GenericProxyEvent::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler subscription\_state\_change\_handler) noexcept; }}}
+
+                    Arguments:
+
+                    *  subscription\_state\_change\_handler: See SubscriptionStateChangeHandler for its definition.
+
+                    Behaviour: is described in Behaviour of SetSubscriptionStateChangeHandler.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.EventType@1, Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/21466698 */
+                ScoreReq.CompReq GenericProxyEventUnsetSubscriptionStateChangeHandler {
+                    description = '''The {{GenericProxyEvent}}
+                     class shall provide a public method:
+
+                    {{{void GenericProxyEvent::UnsetSubscriptionStateChangeHandler() noexcept;}}}
+
+                    Behaviour: is described in default-cursor Behaviour of UnsetSubscriptionStateChangeHandler.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.EventType@1, Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14034910 */
+                ScoreReq.CompReq GenericProxyEventGetNewSamples {
+                    description = '''The {{GenericProxyEvent}} shall provide a public method:
+
+                    {{{template <typename F>
+                    bmw::Result<std::size\_t> GenericProxyEvent::GetNewSamples(F&& receiver, std::size\_t max\_num\_samples) noexcept;}}}
+
+                    Arguments:
+
+                    * receiver: Callable that fulfills the signature requirement in GetNewSamples receiver signature.
+
+                    * max\_num\_samples: size\_t value whose behaviour is defined in Behaviour of GetNewSamples
+
+                    Behaviour is described in Behaviour of GetNewSamples
+
+                    Return value:{{bmw::Result}} returned  which contains
+
+                    * on success, a value defined in Return value of successful GetNewSamples.
+
+                    *  or, a {{bmw::result::Error}} containing the value {{kMaxSamplesReached}} when the implementation has a new sample, but can't call the receiver callback, because the number of {{SamplePtr}} s currently held by the application has met the maximum number passed to the GenericProxyEvent Subscribe call.
+
+                    * or, a {{bmw::result::Error}}, according to Error Codes relating to Active Subscription.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1, Communication.EventType@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14034916 */
+                ScoreReq.CompReq GenericProxyEventSetReceiveHandler {
+                    description = '''The {{GenericProxyEvent}} shall provide a public method:
+
+                    {{{bmw::Result<void> GenericProxyEvent::SetReceiveHandler(mw::com::EventReceiveHandler handler) noexcept;}}}
+
+                    Arguments:
+
+                    *  EventReceiveHandler: See Event Receive Handler for its definition.
+
+                    Behaviour is described in Behaviour of SetReceiveHandler.
+
+                    Return value: In case {{SetReceiveHandler()}} fails, {{ComErrc::kSetHandlerNotSet}} shall be returned in the {{Result}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14035152 */
+                ScoreReq.CompReq GenericProxyEventUnsetReceiveHandler {
+                    description = '''The {{GenericProxyEvent}} shall provide a public method:
+
+                    {{{bmw::Result<void> GenericProxyEvent::UnsetReceiveHandler() noexcept}}}
+
+                    Behaviour is described in Behaviour of UnsetReceiveHandler.
+
+                    Return value: {{UnsetReceiveHandler()}}{{ComErrc::kUnsetFailure}}{{Result}}In case  fails,  shall be returned in the '''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14035121 */
+                ScoreReq.CompReq GenericProxyEventGetFreeSampleCount {
+                    description = '''The {{GenericProxyEvent}} shall provide a public method:
+
+                    {{{std::size\_t GenericProxyEvent::GetFreeSampleCount() const noexcept}}}
+
+                    Return value is described in Return value of GetFreeSampleCount.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1, Communication.DataReordering@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14035142 */
+                ScoreReq.CompReq GenericProxyEventGetNumNewSamplesAvailable {
+                    description = '''The {{GenericProxyEvent}} shall provide a public method:
+
+                    {{{bmw::Result<std::size\_t> GenericProxyEvent::GetNumNewSamplesAvailable() const noexcept}}}
+
+                    Behaviour is described in Behaviour of GetNumNewSamplesAvailable.
+
+                    Return value: returned {{bmw::Result}} which contains
+
+                    * on success, number of new samples available as described in Behaviour of GetNumNewSamplesAvailable,
+
+                    * or, a {{bmw::result::ErrorCode}}, according to Error Codes relating to Active Subscription'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14035184 */
+                ScoreReq.CompReq GenericProxyEventGetSampleSize {
+                    description = '''The {{GenericProxyEvent}} shall provide a public method:
+
+                    {{{std::size\_t GenericProxyEvent::GetSampleSize() const noexcept}}}
+
+                    Behaviour: {{GetSampleSize}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety.
+
+                    Return value: returns the aligned size in bytes of the underlying event sample data type. I.e. in case the underlying data type is T, it shall return {{sizeof(T)}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/14035199 */
+                ScoreReq.CompReq GenericProxyEventHasSerializedFormat {
+                    description = '''The {{GenericProxyEvent}} shall provide a public method:
+
+                    {{{bool GenericProxyEvent::HasSerializedFormat() const noexcept}}}
+
+                    Behaviour: {{HasSerializedFormat}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety. {{mw::com}}{{false}}Our  implementation shall always return  in case the shared-memory based binding is used.
+
+                    Return value: {{GenericProxyEvent}}{{true}}{{false}}returns whether the representation of a sample event provided by the  instance has some (internal) serialization format ( or is 1:1 the binary representation of the underlying C++ data type of the event sample ('''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+            }
+
+            section "Generic_Proxy_Field" {
+
+                ScoreReq.CompReq GenericProxyFieldClass {
+                    description = '''Event members within a GenericProxy Class shall be of a {{GenericProxyField}} class, whose properties are defined in this section.
+
+                    {{GenericProxyField}} shall be provided in the namespace {{score::mw::com}}
+
+                    The class {{GenericProxyField}} is essentially a ProxyField class, where the concrete event data type / {{SampleType}} is unknown and therefore represented as {{void}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1, Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldDestructor {
+                    description = '''The {{destructor}} of {{GenericProxyField}} shall fulfill requirement Implicit Lifetime ending by destruction of context with regard to callables registered by the following APIs:
+
+                    * {{SetReceiveHandler}} (See GenericProxyField SetReceiveHandler)'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForProgrammingLanguageIdioms@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldCopySemantics {
+                    description = '''The {{GenericProxyField}} class shall neither be copy-constructible nor copy-assignable'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldSubscribe {
+                    description = '''A {{GenericProxyField}} class shall provide a public method:
+
+                    {{{bmw::Result<void> GenericProxyEvent::Subscribe(std::size_t max_sample_count) noexcept}}}
+                    Behaviour is described in Behaviour of Subscribe.
+
+                    Return value is described in Return value of Subscribe.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Field@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldUnsubscribe {
+                    description = '''Class {{GenericProxyField}} shall provide a public method:
+
+                    {{{void GenericProxyField::Unsubscribe() noexcept}}}
+
+                    Behaviour is described in Behaviour of Unsubscribe.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Field@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldGetSubscriptionState {
+                    description = '''A {{GenericProxyField}} shall provide a public method:
+
+                    {{{SubscriptionState GenericProxyField::GetSubscriptionState() const noexcept; }}}
+
+                    Return value: returns the subscription state of an field.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldSetSubscriptionStateChangeHandler {
+                    description = '''The {{GenericProxyField}}
+
+                     class shall provide a public method:
+
+                    {{{bmw::Result<void> GenericProxyField::SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler subscription_state_change_handler) noexcept; }}}
+
+                    Arguments:
+
+                    *  subscription_state_change_handler: See SubscriptionStateChangeHandler for its definition.
+
+                    Behaviour: is described in Behaviour of SetSubscriptionStateChangeHandler.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.Field@1, Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldUnsetSubscriptionStateChangeHandler {
+                    description = '''The {{GenericProxyField}} class shall provide a public method:
+
+                    {{{void GenericProxyField::UnsetSubscriptionStateChangeHandler() noexcept;}}}
+
+                    Behaviour: is described in Behaviour of UnsetSubscriptionStateChangeHandler.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.Field@1, Communication.ProducerConsumerPattern@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldGetNewSamples {
+                    description = '''The {{GenericProxyField}} shall provide a public method:
+
+                    {{{template <typename F>
+                    score::Result<std::size_t> GenericProxyField::GetNewSamples(F&& receiver, std::size_t max_num_samples) noexcept;}}}
+
+                    Arguments:
+
+                    * receiver: Callable that fulfills the signature requirement in GetNewSamples receiver signature.
+
+                    * max_num_samples: size_t value whose behaviour is defined in Behaviour of GetNewSamples
+
+                    Behaviour is described in Behaviour of GetNewSamples
+
+                    Return value:{{score::Result}} returned  which contains
+
+                    * on success, a value defined in Return value of successful GetNewSamples.
+
+                    *  or, a {{score::result::Error}} containing the value {{kMaxSamplesReached}} when the implementation has a new sample, but can't call the receiver callback, because the number of {{SamplePtr}} s currently held by the application has met the maximum number passed to the GenericProxyEvent Subscribe call.
+
+                    * or, a {{score::result::Error}}, according to Error Codes relating to Active Subscription.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1, Communication.Field@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldSetReceiveHandler {
+                    description = '''The {{GenericProxyField}} shall provide a public method:
+
+                    {{{score::Result<void> GenericProxyField::SetReceiveHandler(mw::com::EventReceiveHandler handler) noexcept;}}}
+
+                    Arguments:
+
+                    *  EventReceiveHandler: See Event Receive Handler for its definition.
+
+                    Behaviour is described in Behaviour of SetReceiveHandler.
+
+                    Return value: In case {{SetReceiveHandler()}} fails, {{ComErrc::kSetHandlerNotSet}} shall be returned in the {{Result}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldUnsetReceiveHandler {
+                    description = '''The {{GenericProxyField}} shall provide a public method:
+
+                    {{{bmw::Result<void> GenericProxyField::UnsetReceiveHandler() noexcept}}}
+
+                    Behaviour is described in Behaviour of UnsetReceiveHandler.
+
+                    Return value: {{{ComErrc::kUnsetFailure}} shall be returned in case UnsetReceiveHandler() fails '''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Method@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldGetFreeSampleCount {
+                    description = '''The {{GenericProxyField}} shall provide a public method:
+
+                    {{{std::size_t GenericProxyField::GetFreeSampleCount() const noexcept}}}
+
+                    Return value is described in Return value of GetFreeSampleCount.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1, Communication.DataReordering@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldGetNumNewSamplesAvailable {
+                    description = '''The {{GenericProxyField}} shall provide a public method:
+
+                    {{{score::Result<std::size_t> GenericProxyField::GetNumNewSamplesAvailable() const noexcept}}}
+
+                    Behaviour is described in Behaviour of GetNumNewSamplesAvailable.
+
+                    Return value: returned {{score::Result}} which contains
+
+                    * on success, number of new samples available as described in Behaviour of GetNumNewSamplesAvailable,
+
+                    * or, a {{bmw::result::ErrorCode}}, according to Error Codes relating to Active Subscription'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldGetSampleSize {
+                    description = '''The {{GenericProxyField}} shall provide a public method:
+
+                    {{{std::size_t GenericProxyField::GetSampleSize() const noexcept}}}
+
+                    Behaviour: {{GetSampleSize}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety.
+
+                    Return value: returns the aligned size in bytes of the underlying event sample data type. I.e. in case the underlying data type is T, it shall return {{sizeof(T)}}.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Field@1]
+                    version = 1
+                }
+
+                ScoreReq.CompReq GenericProxyFieldHasSerializedFormat {
+                    description = '''The {{GenericProxyField}} shall provide a public method:
+
+                    {{{bool GenericProxyEvent::HasSerializedFormat() const noexcept}}}
+
+                    Behaviour: {{HasSerializedFormat}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety. Our {{mw::com}} implementation shall always return {{false}} in case the shared-memory based binding is used.
+
+                    Return value: returns whether the representation of a sample event provided by the {{GenericProxyField}} instance has some (internal) serialization format ({{true}}) or is 1:1 the binary representation of the underlying C++ data type of the event sample ({{false}})'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.Field@1]
+                    version = 1
+                }
+            }
+        }
+    }
+}

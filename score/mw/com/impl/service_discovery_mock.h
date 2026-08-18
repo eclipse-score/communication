@@ -51,7 +51,7 @@ class ServiceDiscoveryMock : public IServiceDiscovery
                 (noexcept, override));
     MOCK_METHOD(Result<void>, StopFindService, (FindServiceHandle), (noexcept, override));
     MOCK_METHOD(Result<ServiceHandleContainer<HandleType>>, FindService, (InstanceIdentifier), (noexcept, override));
-    MOCK_METHOD(Result<ServiceHandleContainer<HandleType>>, FindService, (InstanceSpecifier), (noexcept, override));
+    MOCK_METHOD(Result<ServiceHandleContainer<HandleType>>, FindService, (InstanceSpecifier), (override));
 };
 
 }  // namespace score::mw::com::impl

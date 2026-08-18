@@ -29,7 +29,7 @@ class MockPendingRequestTracker : public IPendingRequestTracker
     MOCK_METHOD(void, ErasePendingRequest, (std::uint32_t), (override));
     MOCK_METHOD(void, ResetAcknowledgement, (std::uint32_t), (override));
     MOCK_METHOD(void, Acknowledge, (std::uint32_t), (override));
-    MOCK_METHOD((score::ResultBlank),
+    MOCK_METHOD((score::Result<void>),
                 WaitForAck,
                 (std::uint32_t, std::chrono::milliseconds, const std::atomic<bool>&),
                 (override));

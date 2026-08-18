@@ -25,7 +25,7 @@ dependable_element(
     maturity = "development",
     requirements = [
         "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_ipc",
-        "//score/mw/com/dependability/requirements/assumed_system_requirements:assumed_system_requirements",
+        "//score/mw/com/dependability/assumed_system:assumed_system_requirements",
     ],
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],

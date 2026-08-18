@@ -17,9 +17,7 @@
 
 #include "gmock/gmock.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 class SharedResourceEngineMock : public ISharedResourceEngine
@@ -51,6 +49,6 @@ class SharedResourceEngineMock : public ISharedResourceEngine
     MOCK_METHOD(void, CleanUpOwner, (const void* const owner), (noexcept, override));
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
+
 #endif  // SCORE_LIB_MESSAGE_PASSING_MOCK_SHARED_RESOURCE_ENGINE_MOCK_H

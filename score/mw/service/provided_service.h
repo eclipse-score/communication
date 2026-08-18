@@ -14,11 +14,7 @@
 #ifndef SCORE_MW_SERVICE_PROVIDED_SERVICE_H
 #define SCORE_MW_SERVICE_PROVIDED_SERVICE_H
 
-namespace score
-{
-namespace mw
-{
-namespace service
+namespace score::mw::service
 {
 
 /// @brief Minimal stub base class for provided services
@@ -50,8 +46,6 @@ class ProvidedService
     ProvidedService& operator=(const ProvidedService&) & noexcept = default;
 };
 
-}  // namespace service
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::service
 
 #endif  // SCORE_MW_SERVICE_PROVIDED_SERVICE_H

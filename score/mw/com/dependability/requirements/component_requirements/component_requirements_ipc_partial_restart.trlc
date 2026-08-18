@@ -1,0 +1,134 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "Functional_Specification" {
+
+        section "Partial_Restart" {
+
+            /* broken_link_c/issue/29682823 */
+            ScoreReq.CompReq ProxyAutoReconnect {
+                description = '''When a {{ProxyEvent}} or {{ProxyField}} is subscribed to a {{SkeletonEvent}} or {{SkeletonField}} and the {{Skeleton}} containing the {{SkeletonEvent}} or {{SkeletonField}} stops offering and after a finite amount of time {{Skeleton}} offers again.
+
+                Then the {{ProxyEvent}} or {{ProxyField}} shall automatically re-subscribe to the {{SkeletonEvent}} or {{SkeletonField}}.
+
+                Note:
+
+                This can be seen by the user by inspecting the SubscriptionState (SubscriptionState).
+
+                This includes that all previously registered handlers (e.g. event update handler) shall still be valid.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.SupportForTimeBasedArchitecture@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/31295163 */
+            ScoreReq.CompReq DefinitionOfRestart {
+                description = '''We define a {{restart}} as the execution of an executable as a process with a different and new POSIX PID,
+
+                while the old POSIX PID, belonging to the execution of the same executable, is no longer valid.'''
+                safety = ScoreReq.Asil.QM
+                derived_from = [Communication.SupportForTimeBasedArchitecture@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/29682665 */
+            ScoreReq.CompReq AbilityToReinstantiateAnyProxy {
+                description = '''After an application, which had
+
+                - instantiated a valid proxy instance for a service instance provided by a different process
+
+                - and maybe subscribed to events and/or fields of the provided service instance
+
+                restarts, it shall be able to successfully instantiate a proxy instance for the same service instance, given that the given the service instance is still offered.
+
+                Note:
+
+                This shall be true for all proxies within an application.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.ServiceDiscovery@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/31295554 */
+            ScoreReq.CompReq DefinitionOfResourceNeeds {
+                description = '''A service instance provider side is configured to support a given number of proxy instances with defined sample-counts in their event/field subscriptions. Therefore it reserves given resources to fulfill the communication setup demanded by this configuration'''
+                safety = ScoreReq.Asil.QM
+                derived_from = [Communication.ProducerConsumerPattern@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/30571867 */
+            ScoreReq.CompReq NoImpairmentOfCommunicationOfOtherApplications {
+                description = '''A restarting {{Proxy}}, must not acquire additional resources (Definition of resource needs) on the provider side in a way, that other consumer applications might be negatively affected'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                version = 1
+            }
+
+            /* broken_link_c/issue/31295722 */
+            ScoreReq.CompReq ErrorOnUnsuccessfulRestart {
+                description = '''If a successful restart on the consumer side cannot be guaranteed, an {{bmw::result::Error}} containing the value {{ComErrc::kBindingFailure}} error shall be forwarded to the user in the call to {{Proxy::Create()}}.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                version = 1
+            }
+
+            /* broken_link_c/issue/31295728 */
+            ScoreReq.CompReq KeepUserProvidedDataValidAfterSkeletonRestart {
+                description = '''After an application restarts, a skeleton shall be able to be created without .altering or invalidating user-provided data'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.SafeCommunication@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/31295729 */
+            ScoreReq.CompReq RecoverSubscriptionStateAfterSkeletonRestart {
+                description = '''After restarting a {{Skeleton}}, the previously subscribed events/fields shall still be subscribed, including their max-sample counts.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.ProducerConsumerPattern@1, Communication.EventType@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/31295733 */
+            ScoreReq.CompReq RecoverSubscriptionCapacityAfterSkeletonRestart {
+                description = '''After restarting a {{Skeleton}}, it shall have the same capacity for new subscribers like it had before the restart.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.ProducerConsumerPattern@1, Communication.EventType@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/31295746 */
+            ScoreReq.CompReq RecoverAllocatableSamplesAfterSkeletonRestart {
+                description = '''After restarting a {{Skeleton}}, it shall be able to allocate the configured amount of {{SampleAllocateePtr}} as before the restart.'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.ZeroCopy@1]
+                version = 1
+            }
+
+            /* broken_link_c/issue/31295752 */
+            ScoreReq.CompReq RecoverHandlersAfterSkeletonRestart {
+                description = '''After restarting a skeleton, all previously registered handlers shall still be functional.
+
+                Note: Possible handlers are: {{EventUpdateNotificationHandler}}, {{SubscriptionStateChangeHandler}}'''
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.ProducerConsumerPattern@1, Communication.EventType@1]
+                version = 1
+            }
+        }
+    }
+}

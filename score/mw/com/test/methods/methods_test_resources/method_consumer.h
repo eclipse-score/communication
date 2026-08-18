@@ -92,10 +92,8 @@ bool MethodConsumer<Proxy>::CallMethodWithInArgsAndReturn(const std::int32_t inp
 {
     auto& proxy = proxy_container_.GetProxy();
 
-    auto call_result = [&proxy,
-                        copy_mode,
-                        input_argument_a,
-                        input_argument_b]() -> score::Result<impl::MethodReturnTypePtr<std::int32_t>> {
+    auto call_result =
+        [&proxy, copy_mode, input_argument_a, input_argument_b]() -> score::Result<MethodReturnTypePtr<std::int32_t>> {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(copy_mode == CopyMode::WITH_COPY || copy_mode == CopyMode::ZERO_COPY);
         if (copy_mode == CopyMode::ZERO_COPY)
         {

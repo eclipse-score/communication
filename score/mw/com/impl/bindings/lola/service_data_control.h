@@ -16,9 +16,13 @@
 #include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
+#include "score/mw/com/impl/bindings/lola/linear_search_map.h"
 
-#include "score/memory/shared/map.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
+
+#include <score/span.hpp>
+
+#include <cstddef>
 
 namespace score::mw::com::impl::lola
 {
@@ -30,15 +34,18 @@ class ServiceDataControl
     ///       calculation based on config settings and then hand over this calculated number ...
     static constexpr std::uint16_t kMaxApplicationIdPidMappings = 50U;
 
-    /// \brief Ctor for the ServiceDataControl to place it in given shared memory resource identified via given
-    ///        memory resource proxy.
+    /// \brief Ctor for the ServiceDataControl with a given memory resource to be used.
     /// \details ServiceDataControl is designed to be located in shared memory, therefore the explicit
-    ///          MemoryResourceProxy argument! (Yes one could come up with a MemoryResourceProxy pointing to a local
-    ///          memory resource, but this would be "uncommon")
-    /// \param proxy MemoryResourceProxy pointing to the memory-resource to be used
+    ///          ManagedMemoryResource argument!
+    /// \param number_of_events_and_fields the (fixed) number of events + fields this service-instance provides. It is
+    ///        used as the fixed capacity of the event_controls_ container. Since event_controls_ uses a
+    ///        fixed-capacity container (LinearSearchMap), its capacity must be known at construction time.
+    /// \param resource ManagedMemoryResource used for allocating underlying storage
 
-    explicit ServiceDataControl(score::memory::shared::ManagedMemoryResource& resource)
-        : event_controls_(resource), application_id_pid_mapping_(kMaxApplicationIdPidMappings, resource)
+    explicit ServiceDataControl(const std::size_t number_of_events_and_fields,
+                                score::memory::shared::ManagedMemoryResource& resource)
+        : event_controls_(number_of_events_and_fields, resource),
+          application_id_pid_mapping_(kMaxApplicationIdPidMappings, resource)
     {
     }
 
@@ -53,7 +60,7 @@ class ServiceDataControl
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::memory::shared::Map<ElementFqId, EventControl> event_controls_;
+    LinearSearchMap<ElementFqId, EventControl> event_controls_;
 
     /// \brief mapping of a proxy's application identifier to its process ID (pid).
     /// \details Every proxy instance for this service shall register itself in this mapping. The identifier used is
@@ -70,6 +77,35 @@ class ServiceDataControl
     ApplicationIdPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<ApplicationIdPidMappingEntry>>
         application_id_pid_mapping_;
 };
+
+/// \brief Per service-element (event/field) information required to analytically size a ServiceDataControl.
+struct ServiceElementControlSizeInfo
+{
+    /// \brief Number of event-data slots the service-element provides.
+    std::size_t number_of_slots;
+    /// \brief Maximum number of subscribers configured for the service-element.
+    std::size_t max_subscribers;
+};
+
+/// \brief Analytically calculates the exact number of bytes a (single) ServiceDataControl (a control shm-object)
+///        occupies.
+/// \details This is used by SkeletonMemoryManager, but located next to ServiceDataControl so that the layout-dependent
+///          size algorithm stays coupled to the data structure it reasons about.
+///          It does NOT allocate any memory nor construct a ServiceDataControl; the size is
+///          derived purely from the (fixed) container capacities.
+///          The same size applies to the QM and (if present) the ASIL-B control shm-object, as both hold a
+///          ServiceDataControl created with the very same configuration.
+///          The result is exact (not just a bound): since all our allocations happen strictly sequentially (single
+///          threaded, on a (monotonic) shared-memory resource which always starts allocating at a std::max_align_t
+///          aligned location) and we know the size/alignment/order of every individual allocation performed by the
+///          real construction, we can reconstruct the exact same sequence of allocations here and compute the exact
+///          alignment-padding between them (see score::memory::shared::CalculateAlignedSizeOfSequence()).
+/// \param events_and_fields_size_info per service-element sizing information. Its size equals the number of
+///        service-elements (events + fields), which is the fixed capacity the event_controls_ container is constructed
+///        with.
+/// \return the exact number of bytes needed for a single control shm-object.
+std::size_t CalculateServiceDataControlShmSize(
+    score::cpp::span<const ServiceElementControlSizeInfo> events_and_fields_size_info);
 
 }  // namespace score::mw::com::impl::lola
 

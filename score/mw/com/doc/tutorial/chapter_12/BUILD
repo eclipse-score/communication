@@ -169,6 +169,12 @@ filegroup(
         "**/*.cpp",
         "**/*.h",
         "**/*.json",
-    ]),
+    ]) + [
+        # README.rst literalincludes this chapter's own BUILD file (to show
+        # the cc_unit_test target definitions); the default glob above
+        # doesn't match "BUILD" so it must be added explicitly, or the
+        # literalinclude silently can't find it in the merged Sphinx tree.
+        "BUILD",
+    ],
     visibility = ["//score/mw/com/doc/tutorial:__pkg__"],
 )

@@ -256,11 +256,8 @@ void TracingRuntime::ClearCachedFileDescriptorForReregisteringShmObject(
 // The instance specifier is loaded into the configuration during the initialization.
 // coverity[autosar_cpp14_a15_5_3_violation]
 analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServiceInstanceElement(
-    const impl::tracing::ServiceElementInstanceIdentifierView service_element_instance_identifier_view) const noexcept
+    const impl::tracing::ServiceElementInstanceIdentifierView service_element_instance_identifier_view) const
 {
-    const auto& service_instance_deployments = configuration_.GetServiceInstances();
-    const auto& service_type_deployments = configuration_.GetServiceTypes();
-
     // @todo: Replace the configuration unordered_maps with maps and use CompareId?
     std::string instance_specifier_to_create{service_element_instance_identifier_view.instance_specifier};
     const auto instance_specifier = InstanceSpecifier::Create(std::move(instance_specifier_to_create)).value();
@@ -269,14 +266,15 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
     // The instance specifier is loaded into the configuration during the initialization, so the container
     // will always have an element with the specified key.
     // coverity[autosar_cpp14_a15_4_2_violation]
-    const auto& service_instance_deployment = service_instance_deployments.at(instance_specifier);
+    const auto& service_instance_deployment =
+        configuration_.GetServiceInstanceDeployment(instance_specifier).value().get();
     auto* lola_service_instance_deployment =
         std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(lola_service_instance_deployment != nullptr);
 
     const auto& service_identifier = service_instance_deployment.service_;
 
-    const auto service_type_deployment = service_type_deployments.at(service_identifier);
+    const auto& service_type_deployment = configuration_.GetServiceTypeDeployment(service_identifier).value().get();
     const auto* const lola_service_type_deployment =
         std::get_if<LolaServiceTypeDeployment>(&service_type_deployment.binding_info_);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(lola_service_type_deployment != nullptr);
@@ -404,9 +402,8 @@ auto TracingRuntime::GetTraceContextId(
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-TracingRuntime::EmplaceTypeErasedSamplePtr(
-    impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr,
-    const impl::tracing::ServiceElementTracingData service_element_tracing_data) noexcept
+TracingRuntime::EmplaceTypeErasedSamplePtr(impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr,
+                                           const impl::tracing::ServiceElementTracingData service_element_tracing_data)
 {
     if (service_element_tracing_data.service_element_range_start >=
         next_available_position_for_new_service_element_range_start_)

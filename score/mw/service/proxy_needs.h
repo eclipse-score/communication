@@ -26,9 +26,7 @@ namespace cpp
 class stop_token;
 }  // namespace cpp
 
-namespace mw
-{
-namespace service
+namespace mw::service
 {
 
 /// @brief Wrapper for optional proxy instances
@@ -148,8 +146,8 @@ class ProxyNeeds
     }
 };
 
-}  // namespace service
-}  // namespace mw
+}  // namespace mw::service
+
 }  // namespace score
 
 #endif  // SCORE_MW_SERVICE_PROXY_NEEDS_H

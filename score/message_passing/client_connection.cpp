@@ -23,11 +23,7 @@
 #include <cstdint>
 #include <thread>
 
-namespace score
-{
-namespace message_passing
-{
-namespace detail
+namespace score::message_passing::detail
 {
 
 namespace
@@ -379,15 +375,29 @@ void ClientConnection::TryConnect() noexcept
         }
         std::int32_t retry_delay = connect_retry_ms_;
 
+        // kConnectRetryT is a positive compile-time constant, so it can never be 0 or -1; this guarantees the
+        // division below can never hit the undefined-behavior case of dividend == INT64_MIN with divisor == -1,
+        // nor divide by zero.
+        static_assert(kConnectRetryT > 0,
+                      "kConnectRetryT must be a positive divisor to avoid overflow/underflow in division.");
         const auto retry_increase_ms =
             (static_cast<std::int64_t>(connect_retry_ms_) + static_cast<std::int64_t>(kConnectRetryT) - 1) /
             static_cast<std::int64_t>(kConnectRetryT);
-        if ((retry_increase_ms <= kConnectRetryMsMax) &&
-            (connect_retry_ms_ <= (kConnectRetryMsMax - retry_increase_ms)))
+        if (retry_increase_ms <= kConnectRetryMsMax)
         {
-            // At this point checks guarantee no data loss
-            // coverity[autosar_cpp14_a4_7_1_violation]
-            connect_retry_ms_ += static_cast<std::int32_t>(retry_increase_ms);
+            // retry_increase_ms is now known to be <= kConnectRetryMsMax, so this subtraction (evaluated in
+            // std::int64_t) cannot underflow.
+            const auto max_allowed_current_retry_ms = kConnectRetryMsMax - retry_increase_ms;
+            if (connect_retry_ms_ <= max_allowed_current_retry_ms)
+            {
+                // At this point checks guarantee connect_retry_ms_ + retry_increase_ms <= kConnectRetryMsMax,
+                // which fits well within std::int32_t; compute the sum in std::int64_t and assign once instead
+                // of using operator+= on connect_retry_ms_, so the addition and the narrowing cast back to
+                // std::int32_t are both provably free of overflow/data loss.
+                // coverity[autosar_cpp14_a4_7_1_violation]
+                connect_retry_ms_ =
+                    static_cast<std::int32_t>(static_cast<std::int64_t>(connect_retry_ms_) + retry_increase_ms);
+            }
         }
 
         engine_->EnqueueCommand(
@@ -652,6 +662,4 @@ void ClientConnection::ProcessStateChange(const State state) noexcept
     }
 }
 
-}  // namespace detail
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing::detail

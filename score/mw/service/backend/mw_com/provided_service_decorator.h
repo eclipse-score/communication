@@ -19,15 +19,7 @@
 #include <memory>
 #include <utility>
 
-namespace score
-{
-namespace mw
-{
-namespace service
-{
-namespace backend
-{
-namespace mw_com
+namespace score::mw::service::backend::mw_com
 {
 
 /// @brief Simplified stub decorator for provided services
@@ -110,10 +102,6 @@ class ProvidedServiceDecorator : public ProvidedService
     ServiceHolder service_;
 };
 
-}  // namespace mw_com
-}  // namespace backend
-}  // namespace service
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::service::backend::mw_com
 
 #endif  // SCORE_MW_SERVICE_BACKEND_MW_COM_PROVIDED_SERVICE_DECORATOR_H

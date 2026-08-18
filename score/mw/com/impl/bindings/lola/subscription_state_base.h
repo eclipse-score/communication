@@ -40,18 +40,18 @@ class SubscriptionStateBase
     SubscriptionStateBase(SubscriptionStateBase&&) noexcept = delete;
     SubscriptionStateBase& operator=(SubscriptionStateBase&&) & noexcept = delete;
 
-    virtual Result<void> SubscribeEvent(const std::size_t max_sample_count) noexcept = 0;
-    virtual void UnsubscribeEvent() noexcept = 0;
-    virtual void StopOfferEvent() noexcept = 0;
-    virtual void ReOfferEvent(const pid_t new_event_source_pid) noexcept = 0;
+    virtual Result<void> SubscribeEvent(const std::size_t max_sample_count) = 0;
+    virtual void UnsubscribeEvent() = 0;
+    virtual void StopOfferEvent() = 0;
+    virtual void ReOfferEvent(const pid_t new_event_source_pid) = 0;
 
-    virtual void SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept = 0;
-    virtual void UnsetReceiveHandler() noexcept = 0;
-    virtual std::optional<std::uint16_t> GetMaxSampleCount() const noexcept = 0;
+    virtual void SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) = 0;
+    virtual void UnsetReceiveHandler() = 0;
+    virtual std::optional<std::uint16_t> GetMaxSampleCount() const = 0;
     virtual std::optional<SlotCollector>& GetSlotCollector() & noexcept = 0;
     virtual const std::optional<SlotCollector>& GetSlotCollector() const& noexcept = 0;
 
-    virtual void OnEntry() noexcept {};
+    virtual void OnEntry() {};
     virtual void OnExit() noexcept {};
 
   protected:

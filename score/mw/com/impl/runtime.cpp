@@ -126,7 +126,7 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
     score::cpp::ignore = initialization_config_.emplace(std::move(config));
 }
 
-auto Runtime::getInstance() noexcept -> IRuntime&
+auto Runtime::getInstance() -> IRuntime&
 {
     if (mock_ != nullptr)
     {
@@ -144,7 +144,7 @@ auto Runtime::getInstance() noexcept -> IRuntime&
 // std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-Runtime& Runtime::getInstanceInternal() noexcept
+Runtime& Runtime::getInstanceInternal()
 {
     TouchStaticDependencies();
     // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
@@ -219,18 +219,19 @@ Runtime::~Runtime() noexcept
 std::vector<InstanceIdentifier> Runtime::resolve(const InstanceSpecifier& specifier) const
 {
     std::vector<InstanceIdentifier> result;
-    const auto instanceSearch = configuration_.GetServiceInstances().find(specifier);
-    if (instanceSearch != configuration_.GetServiceInstances().end())
+    const auto instance_deployment = configuration_.GetServiceInstanceDeployment(specifier);
+    if (instance_deployment.has_value())
     {
         // @todo: Right now we don't support multi-binding, if we do, we need to have some kind of loop
-        const auto type_deployment = configuration_.GetServiceTypes().find(instanceSearch->second.service_);
+        const auto type_deployment =
+            configuration_.GetServiceTypeDeployment(instance_deployment.value().get().service_);
         // LCOV_EXCL_BR_START defensive programming: The configuration parser ensures that if a matching service
         // instance is available, there is also a matching service type available. Because parsing of the configuration
         // is automatically done before instantiating the runtime, this condition is always positive. To increase the
         // robustness of the code, we still check for this condition.
-        if (type_deployment != configuration_.GetServiceTypes().cend())
+        if (type_deployment.has_value())
         {
-            result.push_back(make_InstanceIdentifier(instanceSearch->second, type_deployment->second));
+            result.push_back(make_InstanceIdentifier(instance_deployment.value().get(), type_deployment.value().get()));
         }
         else
         {
@@ -261,7 +262,7 @@ auto Runtime::GetServiceDiscovery() & noexcept -> IServiceDiscovery&
     return service_discovery_;
 }
 
-auto Runtime::GetTracingFilterConfig() const noexcept -> const tracing::ITracingFilterConfig*
+auto Runtime::GetTracingFilterConfig() const -> const tracing::ITracingFilterConfig*
 {
     if (!tracing_filter_configuration_.has_value())
     {

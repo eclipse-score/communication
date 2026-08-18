@@ -17,11 +17,11 @@ load("//quality/api_surface:api_surface.bzl", "api_surface_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
-# Capture README.md for Sphinx documentation at convenient location
+# Capture README.md for Sphinx documentation.
 sphinx_docs_library(
     name = "readme_md",
     srcs = ["README.md"],
-    prefix = "docs/sphinx/",  # Place under sphinx out folder
+    prefix = "score/mw/com/",
     visibility = ["//docs/sphinx:__pkg__"],
 )
 
@@ -67,6 +67,7 @@ cc_library(
         ":types",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/mocking:i_runtime",
+        "@score_baselibs//score/language/safecpp/string_view:zstring_view",
     ],
 )
 
@@ -98,7 +99,6 @@ cc_library(
     deps = [
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/string_manipulation:string_literal",
     ],
 )
 

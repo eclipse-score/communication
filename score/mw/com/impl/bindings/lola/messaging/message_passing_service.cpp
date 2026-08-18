@@ -48,7 +48,7 @@ MessagePassingService::MessagePassingService(
     const AsilSpecificCfg& config_asil_qm,
     const std::optional<AsilSpecificCfg>& config_asil_b,
     // coverity[autosar_cpp14_a8_4_12_violation] Function only uses the object without affecting ownership
-    const std::unique_ptr<IMessagePassingServiceInstanceFactory>& factory) noexcept
+    const std::unique_ptr<IMessagePassingServiceInstanceFactory>& factory)
     : IMessagePassingService{},
       client_factory_{score::cpp::pmr::make_shared<Engine>(score::cpp::pmr::get_default_resource(),
                                                            score::cpp::pmr::get_default_resource(),

@@ -47,7 +47,7 @@ void EventReceiveHandlerManager::Reregister(
     }
 }
 
-void EventReceiveHandlerManager::Unregister() noexcept
+void EventReceiveHandlerManager::Unregister()
 {
     if (registration_number_.has_value())
     {

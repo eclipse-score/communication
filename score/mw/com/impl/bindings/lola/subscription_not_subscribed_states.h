@@ -35,18 +35,18 @@ class NotSubscribedState final : public SubscriptionStateBase
 
     ~NotSubscribedState() noexcept override = default;
 
-    Result<void> SubscribeEvent(const std::size_t max_sample_count) noexcept override;
+    Result<void> SubscribeEvent(const std::size_t max_sample_count) override;
     void UnsubscribeEvent() noexcept override;
     void StopOfferEvent() noexcept override;
     void ReOfferEvent(const pid_t new_event_source_pid) noexcept override;
 
     void SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override;
-    void UnsetReceiveHandler() noexcept override;
+    void UnsetReceiveHandler() override;
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
     std::optional<SlotCollector>& GetSlotCollector() & noexcept override;
     const std::optional<SlotCollector>& GetSlotCollector() const& noexcept override;
 
-    void OnEntry() noexcept override;
+    void OnEntry() override;
 };
 
 }  // namespace score::mw::com::impl::lola

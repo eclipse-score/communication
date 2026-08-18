@@ -29,9 +29,11 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:bigdata_type",
+        "//score/mw/com/test/common_test_resources:general_resources",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
         "@score_baselibs//score/concurrency:notification",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 

@@ -42,6 +42,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
     MOCK_METHOD(std::size_t, GetMaxSize, (), (const, noexcept, override));
+    MOCK_METHOD(std::size_t, GetAlignment, (), (const, noexcept, override));
     MOCK_METHOD(Result<void>,
                 SetReceiveHandlerRegistrationChangedHandler,
                 (ReceiveHandlerRegistrationChangedCallback),

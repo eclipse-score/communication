@@ -17,8 +17,8 @@ namespace score::mw::com::impl
 
 bool operator==(const FieldTagsStore& lhs, const FieldTagsStore& rhs)
 {
-    return lhs.HasGetter() == rhs.HasGetter() && lhs.HasSetter() == rhs.HasSetter() &&
-           lhs.HasNotifier() == rhs.HasNotifier();
+    return (lhs.HasGetter() == rhs.HasGetter()) && (lhs.HasSetter() == rhs.HasSetter()) &&
+           (lhs.HasNotifier() == rhs.HasNotifier());
 }
 
 }  // namespace score::mw::com::impl

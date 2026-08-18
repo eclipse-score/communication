@@ -47,12 +47,12 @@ LolaEventInstanceDeployment::LolaEventInstanceDeployment(std::optional<SampleSlo
 {
 }
 
-LolaEventInstanceDeployment::LolaEventInstanceDeployment(const score::json::Object& json_object) noexcept
+LolaEventInstanceDeployment::LolaEventInstanceDeployment(const score::json::Object& json_object)
     : LolaEventInstanceDeployment(LolaEventInstanceDeployment::CreateFromJson(json_object))
 {
 }
 
-LolaEventInstanceDeployment LolaEventInstanceDeployment::CreateFromJson(const score::json::Object& json_object) noexcept
+LolaEventInstanceDeployment LolaEventInstanceDeployment::CreateFromJson(const score::json::Object& json_object)
 {
 
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKey);
@@ -83,7 +83,7 @@ LolaEventInstanceDeployment LolaEventInstanceDeployment::CreateFromJson(const sc
 //                                                                   implicitly"
 // false positive std::bad_optional_access. We check and early exit in case the optional is empty.
 // coverity[autosar_cpp14_a15_5_3_violation]
-score::json::Object LolaEventInstanceDeployment::Serialize() const noexcept
+score::json::Object LolaEventInstanceDeployment::Serialize() const
 {
     score::json::Object json_object{};
     if (number_of_sample_slots_.has_value())
@@ -113,7 +113,7 @@ score::json::Object LolaEventInstanceDeployment::Serialize() const noexcept
 //                                                                   implicitly"
 // false positive std::bad_optional_access. We check and early exit in case the optional is empty.
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto LolaEventInstanceDeployment::GetNumberOfSampleSlots() const noexcept -> std::optional<SampleSlotCountType>
+auto LolaEventInstanceDeployment::GetNumberOfSampleSlots() const -> std::optional<SampleSlotCountType>
 {
     if (!number_of_sample_slots_.has_value())
     {

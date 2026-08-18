@@ -109,6 +109,7 @@ constexpr auto kPermissionChecksKey = "permission-checks"sv;
 
 constexpr auto kShmBinding = "SHM"sv;
 constexpr auto kShmSizeCalcModeSimulation = "SIMULATION"sv;
+constexpr auto kShmSizeCalcModeAnalysis = "ANALYSIS"sv;
 
 constexpr auto kTracingTraceFilterConfigPathDefaultValue = "./etc/mw_com_trace_filter.json"sv;
 constexpr auto kStrictPermission = "strict"sv;
@@ -227,6 +228,10 @@ auto ParseShmSizeCalcMode(const score::json::Object& json_map) -> std::optional<
         if (shm_size_calc_mode_value == kShmSizeCalcModeSimulation)
         {
             return ShmSizeCalculationMode::kSimulation;
+        }
+        else if (shm_size_calc_mode_value == kShmSizeCalcModeAnalysis)
+        {
+            return ShmSizeCalculationMode::kAnalysis;
         }
         else
         {
@@ -1203,7 +1208,7 @@ Configuration ConfigurationJsonParsingStrategy::Parse(const std::string_view pat
 {
     const score::json::JsonParser json_parser_obj;
     // Reason for banning is AoU of vaJson library about integrity of provided path.
-    // This AoU is forwarded as AoU of Lola. See broken_link_c/issue/5835192
+    // This AoU is forwarded as AoU of Lola. See ScoreReq.AoU ConfigOnASafeFilesystem
     // NOLINTNEXTLINE(score-banned-function): The user has to guarantee the integrity of the path
     auto json_result = json_parser_obj.FromFile(path);
     if (!json_result.has_value())
@@ -1239,8 +1244,13 @@ Configuration ConfigurationJsonParsingStrategy::Parse(score::json::Any json) con
                                 std::move(global_configuration),
                                 std::move(tracing_configuration)};
 
-    CrosscheckAsilLevels(configuration);
-    CrosscheckServiceInstancesToTypes(configuration);
+    const auto validation_result = configuration.Validate();
+
+    if (!validation_result.has_value())
+    {
+        ::score::mw::log::LogFatal("lola") << validation_result.error().UserMessage();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
 
     return configuration;
 }

@@ -14,6 +14,7 @@
 #include "score/mw/com/test/smokeyeyes/smokeyeyes.h"
 
 #include "score/mw/com/runtime.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <boost/functional/hash.hpp>
 #include <boost/interprocess/anonymous_shared_memory.hpp>
@@ -37,7 +38,6 @@
 
 using namespace std::chrono_literals;
 
-// uid 1300 - 1311 is reserved for use. See broken_link_cf/display/ipnext/User+Management
 const uid_t kUidStart{1300};
 
 namespace score::mw::com::test
@@ -456,7 +456,7 @@ int main(int argc, const char** argv)
     // Has to be done after forking as messaging permanently stores the pid as the node identifier
     if (args.count("service_instance_manifest") > 0U)
     {
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
     }
 
     int result{};

@@ -42,7 +42,7 @@ jobs:
 
       - id: gen
         run: |
-          MATRIX="$(bazel run --ui_event_filters=-info,-stdout --noshow_progress \
+          MATRIX="$(bazel run --config=ci --ui_event_filters=-info,-stdout --noshow_progress \
             --lockfile_mode=off \
             //quality/dependency_compatibility_checker:generate_matrix -- \
             --config "$PWD/quality/dependency_compatibility_checker/config.yaml")"
@@ -91,14 +91,14 @@ jobs:
           # The rewrite intentionally mutates MODULE.bazel, so the committed
           # lockfile is stale by design. Disable lockfile verification for the
           # resolve/build/test steps (repo .bazelrc sets --lockfile_mode=error).
-          run_stage rewrite bazel run --lockfile_mode=off \
+          run_stage rewrite bazel run --config=ci --lockfile_mode=off \
             //quality/dependency_compatibility_checker:module_rewriter -- \
             --module-file "$PWD/MODULE.bazel" \
             --config "$PWD/quality/dependency_compatibility_checker/config.yaml" \
             --combination-json "$COMBINATION_JSON"
-          run_stage deps bazel mod deps --lockfile_mode=off
-          run_stage build bazel build //... --lockfile_mode=off ${{ matrix.flags }}
-          run_stage test bazel test //... --build_tests_only --lockfile_mode=off ${{ matrix.flags }}
+          run_stage deps bazel mod deps --config=ci --lockfile_mode=off
+          run_stage build bazel build --config=ci //... --lockfile_mode=off ${{ matrix.flags }}
+          run_stage test bazel test --config=ci //... --build_tests_only --lockfile_mode=off ${{ matrix.flags }}
           if [ -z "$FAILED_STAGE" ]; then
             echo "BUILD_STATUS=success" >> "$GITHUB_ENV"
           else
@@ -164,7 +164,7 @@ jobs:
 
       - name: Render report (never fails, so artifacts always upload)
         run: |
-          bazel run --lockfile_mode=off //quality/dependency_compatibility_checker:generate_report -- \
+          bazel run --config=ci --lockfile_mode=off //quality/dependency_compatibility_checker:generate_report -- \
             --results-dir "$PWD/matrix-results" \
             --config "$PWD/quality/dependency_compatibility_checker/config.yaml" \
             --output-dir "$PWD/matrix-results" \

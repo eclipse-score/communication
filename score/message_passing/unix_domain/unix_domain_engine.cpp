@@ -17,9 +17,7 @@
 #include <future>
 #include <tuple>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 UnixDomainEngine::UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource, LoggingCallback logger) noexcept
@@ -345,13 +343,13 @@ std::int32_t UnixDomainEngine::ProcessTimerQueue() noexcept
     {
         return -1;
     }
-    const auto distance = std::chrono::duration_cast<std::chrono::milliseconds>(then - Clock::now()).count() + 1;
-    if (distance > INT32_MAX)
+    const auto distance_ms = std::chrono::duration_cast<std::chrono::milliseconds>(then - Clock::now()).count();
+    if (distance_ms >= INT32_MAX)
     {
         return INT32_MAX;
     }
-    return static_cast<std::int32_t>(distance);
+    // At this point distance_ms < INT32_MAX, so adding 1 cannot overflow.
+    return static_cast<std::int32_t>(distance_ms + 1);
 }
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing

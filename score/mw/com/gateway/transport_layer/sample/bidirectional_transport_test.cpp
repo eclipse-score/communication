@@ -83,12 +83,12 @@ class BidirectionalTransportWithMocksFixture : public ::testing::Test
     }
     BidirectionalTransportWithMocksFixture& WithSendMessageSucceeding()
     {
-        EXPECT_CALL(*framer_mock_, SendMessage(_, _)).WillOnce(Return(score::ResultBlank{}));
+        EXPECT_CALL(*framer_mock_, SendMessage(_, _)).WillOnce(Return(score::Result<void>{}));
         return *this;
     }
     BidirectionalTransportWithMocksFixture& WithWaitForAckSucceeding(std::uint32_t sequence = 1U)
     {
-        EXPECT_CALL(*tracker_mock_, WaitForAck(sequence, _, _)).WillOnce(Return(score::ResultBlank{}));
+        EXPECT_CALL(*tracker_mock_, WaitForAck(sequence, _, _)).WillOnce(Return(score::Result<void>{}));
         return *this;
     }
 
@@ -171,7 +171,7 @@ TEST_F(BidirectionalTransportWithMocksFixture, SendRequestTimeoutReturnsTimeoutE
 {
     // Given a connected transport where ACKs will never be received due to timeouts
     WithConnectedTransport().WithFullRequestLifecycle(1U);
-    EXPECT_CALL(*framer_mock_, SendMessage(_, _)).WillRepeatedly(Return(score::ResultBlank{}));
+    EXPECT_CALL(*framer_mock_, SendMessage(_, _)).WillRepeatedly(Return(score::Result<void>{}));
     EXPECT_CALL(*tracker_mock_, WaitForAck(1U, _, _))
         .WillRepeatedly(Return(score::MakeUnexpected(TransportErrorc::kTimeout)));
     EXPECT_CALL(*tracker_mock_, ResetAcknowledgement(1U)).Times(::testing::AnyNumber());
@@ -191,7 +191,7 @@ TEST_F(BidirectionalTransportWithMocksFixture, SendRequestRetriesOnTimeout)
     WithConnectedTransport().WithFullRequestLifecycle(1U);
     EXPECT_CALL(*framer_mock_, SendMessage(_, _))
         .Times(::testing::Exactly(5))
-        .WillRepeatedly(Return(score::ResultBlank{}));
+        .WillRepeatedly(Return(score::Result<void>{}));
     EXPECT_CALL(*tracker_mock_, WaitForAck(1U, _, _))
         .Times(::testing::Exactly(5))
         .WillRepeatedly(Return(score::MakeUnexpected(TransportErrorc::kTimeout)));
@@ -212,7 +212,7 @@ TEST_F(BidirectionalTransportWithMocksFixture, SendRequestReturnsNotConnectedIfD
     WithConnectedTransport().WithFullRequestLifecycle(1U).WithSendMessageSucceeding();
     EXPECT_CALL(*tracker_mock_, WaitForAck(1U, _, _))
         .WillOnce(
-            Invoke([this](std::uint32_t, std::chrono::milliseconds, const std::atomic<bool>&) -> score::ResultBlank {
+            Invoke([this](std::uint32_t, std::chrono::milliseconds, const std::atomic<bool>&) -> score::Result<void> {
                 attorney_->SetIsConnected(false);
                 return score::MakeUnexpected(TransportErrorc::kNotConnected);
             }));
@@ -251,7 +251,7 @@ TEST_F(BidirectionalTransportWithMocksFixture, SendRequestFailsWhenSendMessageFa
     // Given a connected transport where SendMessage fails and causes a state switch to 'disconnected'
     WithConnectedTransport().WithFullRequestLifecycle(1U);
     EXPECT_CALL(*framer_mock_, SendMessage(_, _))
-        .WillOnce(Invoke([this](std::int32_t, const TransportMessage&) -> score::ResultBlank {
+        .WillOnce(Invoke([this](std::int32_t, const TransportMessage&) -> score::Result<void> {
             attorney_->SetIsConnected(false);
             return score::MakeUnexpected(TransportErrorc::kSendFailure);
         }));
@@ -272,7 +272,7 @@ TEST_F(BidirectionalTransportWithMocksFixture, SendRequestReturnsNotConnectedIfD
     WithConnectedTransport().WithFullRequestLifecycle(sequence_number).WithSendMessageSucceeding();
     EXPECT_CALL(*tracker_mock_, WaitForAck(sequence_number, _, _))
         .WillOnce(
-            Invoke([this](std::uint32_t, std::chrono::milliseconds, const std::atomic<bool>&) -> score::ResultBlank {
+            Invoke([this](std::uint32_t, std::chrono::milliseconds, const std::atomic<bool>&) -> score::Result<void> {
                 attorney_->SetIsConnected(false);
                 return score::MakeUnexpected(TransportErrorc::kTimeout);
             }));
@@ -492,7 +492,7 @@ TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenSendSocketCreationFail
         .WillRepeatedly(Return(score::cpp::expected<std::int32_t, score::os::Error>{
             score::cpp::make_unexpected(score::os::Error::createFromErrno(EAGAIN))}));
 
-    score::ResultBlank result = {};
+    score::Result<void> result = {};
     std::thread setup_thread([this, &result]() {
         result = transport_->Setup();
     });
@@ -525,7 +525,7 @@ TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenSendSocketRecreationFa
         .WillRepeatedly(Return(score::cpp::expected<std::int32_t, score::os::Error>{
             score::cpp::make_unexpected(score::os::Error::createFromErrno(EAGAIN))}));
 
-    score::ResultBlank result = {};
+    score::Result<void> result = {};
     std::thread setup_thread([this, &result]() {
         result = transport_->Setup();
     });
@@ -562,7 +562,7 @@ TEST_F(BidirectionalTransportSocketFixture, SetupFailsWhenReEstablishingListenSo
     EXPECT_CALL(socket_mock_, recv(kReceiveFd, _, _, _))
         .WillOnce(Return(score::cpp::expected<ssize_t, score::os::Error>{static_cast<ssize_t>(0)}));
 
-    score::ResultBlank result = {};
+    score::Result<void> result = {};
     std::thread setup_thread([this, &result]() {
         result = transport_->Setup();
     });
@@ -592,7 +592,7 @@ TEST_F(BidirectionalTransportSocketFixture, SetupReturnsConnectionFailureWhenShu
         .WillRepeatedly(Return(score::cpp::expected<std::int32_t, score::os::Error>{
             score::cpp::make_unexpected(score::os::Error::createFromErrno(EAGAIN))}));
 
-    score::ResultBlank result = {};
+    score::Result<void> result = {};
     std::thread setup_thread([this, &result]() {
         result = transport_->Setup();
     });
@@ -966,7 +966,7 @@ TEST_F(BidirectionalTransportSocketFixture, ReceivesIncomingAckResponseAndComple
 
     // When sending a request
     StopOfferServiceRequest message{};
-    score::ResultBlank result = score::MakeUnexpected(TransportErrorc::kSendFailure);
+    score::Result<void> result = score::MakeUnexpected(TransportErrorc::kSendFailure);
     std::atomic<bool> send_request_finished{false};
     std::thread send_request_thread([this, &message, &result, &send_request_finished]() {
         result = transport_->SendRequest(message);
@@ -1018,7 +1018,7 @@ TEST_F(BidirectionalTransportWithMocksFixture, ReceiveLoopProcessesValidMessageA
     valid_message->SetSequenceNumber(kSequence);
 
     // SendAck will be called synchronously for the incoming request
-    EXPECT_CALL(*framer_mock_, SendMessage(_, _)).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*framer_mock_, SendMessage(_, _)).WillOnce(Return(score::Result<void>{}));
 
     {
         ::testing::InSequence seq;

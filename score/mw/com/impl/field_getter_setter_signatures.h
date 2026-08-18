@@ -26,7 +26,7 @@ template <typename FieldType>
 using SetMethodSignature = score::Result<FieldType>(FieldType);
 
 template <typename FieldType>
-using GetMethodSignature = FieldType();
+using GetMethodSignature = score::Result<FieldType>();
 
 }  // namespace score::mw::com::impl
 

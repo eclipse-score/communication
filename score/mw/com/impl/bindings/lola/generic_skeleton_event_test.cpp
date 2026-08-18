@@ -35,9 +35,11 @@ class GenericSkeletonEventFixture : public SkeletonEventFixture
         // Initialize the skeleton
         InitialiseSkeleton(GetValidInstanceIdentifier());
 
-        // Prepare the skeleton with empty bindings
+        // Prepare the skeleton offering a single service-element, so the fixed-capacity containers within
+        // ServiceDataStorage are sized to hold the one generic event that the tests register below.
         SkeletonBinding::SkeletonEventBindings events{};
         SkeletonBinding::SkeletonFieldBindings fields{};
+        events.emplace(fake_event_name_, mock_event_binding_);
         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback{};
         std::ignore = skeleton_->PrepareOffer(events, fields, std::move(register_shm_object_trace_callback));
     }
@@ -54,7 +56,7 @@ class GenericSkeletonEventFixture : public SkeletonEventFixture
     }
 
     std::unique_ptr<GenericSkeletonEvent> generic_skeleton_event_;
-    const DataTypeMetaInfo size_info_{10U, 8U};
+    const memory::DataTypeSizeInfo size_info_{16U, 8U};
 };
 
 // TODO: Fix requirement linkage as soon as requirements are matured in S-CORE.
@@ -123,8 +125,8 @@ TEST_F(GenericSkeletonEventFixture, GetSizeInfo)
     auto size_info = generic_skeleton_event_->GetSizeInfo();
 
     // Then we get the correct size and alignment
-    EXPECT_EQ(size_info.first, size_info_.size);
-    EXPECT_EQ(size_info.second, size_info_.alignment);
+    EXPECT_EQ(size_info.first, size_info_.Size());
+    EXPECT_EQ(size_info.second, size_info_.Alignment());
 }
 
 // Test: GetMaxSize
@@ -148,7 +150,7 @@ TEST_F(GenericSkeletonEventFixture, GetMaxSize)
     auto max_size = generic_skeleton_event_->GetMaxSize();
 
     // Then we get the correct size
-    EXPECT_EQ(max_size, size_info_.size);
+    EXPECT_EQ(max_size, size_info_.Size());
 }
 
 // Test: PrepareOffer

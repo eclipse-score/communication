@@ -167,7 +167,6 @@ class "lola::ProxyEventCommon" #yellow {
   +GetSubscriptionState() : SubscriptionState
   +SetReceiveHandler(EventReceiveHandler handler) : void
   +UnsetReceiveHandler(EventReceiveHandler handler) : void
-  +GetEventSourcePid() : pid_t
   +GetElementFQId() : ElementFqId
   +GetNumNewSamplesAvailable(): Result<std::size_t>
   +GetEventControl(): ConsumerEventControlLocalView&

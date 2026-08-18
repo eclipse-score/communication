@@ -66,7 +66,8 @@ class SkeletonMethod : public SkeletonMethodBinding
     void UnregisterMethodCallHandlers();
 
   private:
-    void Call(const std::optional<score::cpp::span<std::byte>> in_args,
+    void Call(QualityType quality_type,
+              const std::optional<score::cpp::span<std::byte>> in_args,
               const std::optional<score::cpp::span<std::byte>> return_arg);
     void CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid);
 

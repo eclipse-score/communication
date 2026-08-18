@@ -127,11 +127,12 @@ TEST_F(LolaGenericProxyEventDeathTest, OverflowWhenCalculatingRawEventsSlotsArra
 
     // Given a mocked SkeletonEvent whose metainfo stores a size which will lead to an overflow when calculating the raw
     // event slot array size
-    const auto align_of = fake_data_->data_storage->events_metainfo_.at(element_fq_id_).data_type_info_.alignment;
+    const auto align_of = fake_data_->data_storage->events_metainfo_.at(element_fq_id_).data_type_info_.Alignment();
 
-    // Subtract the align of from the max size to prevent an overflow when calculating the aligned size
-    fake_data_->data_storage->events_metainfo_.at(element_fq_id_).data_type_info_.size =
-        std::numeric_limits<std::size_t>::max() - align_of;
+    // Subtract the align of from the max size to prevent an overflow when calculating the aligned size.
+    // Keep the size a multiple of the alignment to satisfy the DataTypeSizeInfo invariant.
+    fake_data_->data_storage->events_metainfo_.at(element_fq_id_).data_type_info_ =
+        score::memory::DataTypeSizeInfo{(std::numeric_limits<std::size_t>::max() / align_of) * align_of, align_of};
 
     // and given a GenericProxyEvent which has subscribed
     WithAGenericProxyEvent(element_fq_id_, event_name_);

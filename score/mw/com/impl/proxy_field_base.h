@@ -75,7 +75,7 @@ class ProxyFieldBase : public EnableReferenceToMoveableFromThis<ProxyFieldBase>
      */
     /// \{
   protected:
-    Result<void> Subscribe(const std::size_t max_sample_count) noexcept
+    Result<void> Subscribe(const std::size_t max_sample_count)
     {
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_event_base_dispatch_ != nullptr);
         return proxy_event_base_dispatch_->Subscribe(max_sample_count);
@@ -162,7 +162,7 @@ class ProxyFieldBaseView
     {
         // If the WithNotifier tag is not set, proxy_event_base_dispatch_ will be nullptr. In that case, we never had to
         // create the event binding so we report that there were no construction errors.
-        return proxy_field_base_.proxy_event_base_dispatch_ != nullptr
+        return (proxy_field_base_.proxy_event_base_dispatch_ != nullptr)
                    ? ProxyEventBaseView{*proxy_field_base_.proxy_event_base_dispatch_}.GetBindingConstructionResult()
                    : Result<void>{};
     }
@@ -171,7 +171,7 @@ class ProxyFieldBaseView
     {
         // If the WithSetter tag is not set, proxy_set_method_dispatch_ will be nullptr. In that case, we never had to
         // create the setter method binding so we report that there were no construction errors.
-        return proxy_field_base_.proxy_set_method_dispatch_ != nullptr
+        return (proxy_field_base_.proxy_set_method_dispatch_ != nullptr)
                    ? ProxyMethodBaseView{*proxy_field_base_.proxy_set_method_dispatch_}.GetBindingConstructionResult()
                    : Result<void>{};
     }
@@ -180,7 +180,7 @@ class ProxyFieldBaseView
     {
         // If the WithGetter tag is not set, proxy_get_method_dispatch_ will be nullptr. In that case, we never had to
         // create the getter method binding so we report that there were no construction errors.
-        return proxy_field_base_.proxy_get_method_dispatch_ != nullptr
+        return (proxy_field_base_.proxy_get_method_dispatch_ != nullptr)
                    ? ProxyMethodBaseView{*proxy_field_base_.proxy_get_method_dispatch_}.GetBindingConstructionResult()
                    : Result<void>{};
     }

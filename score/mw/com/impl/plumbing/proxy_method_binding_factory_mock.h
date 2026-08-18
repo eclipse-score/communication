@@ -31,7 +31,7 @@ class ProxyMethodBindingFactoryMock : public IProxyMethodBindingFactory
                  ProxyBinding& parent_binding,
                  const std::string_view method_name,
                  MethodType method_type),
-                (noexcept, override));
+                (override));
 };
 
 }  // namespace score::mw::com::impl

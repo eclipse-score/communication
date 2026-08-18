@@ -43,7 +43,7 @@ class LolaServiceInstanceDeployment
     using MethodInstanceMapping = std::unordered_map<std::string, LolaMethodInstanceDeployment>;
 
     LolaServiceInstanceDeployment() = default;
-    explicit LolaServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
+    explicit LolaServiceInstanceDeployment(const score::json::Object& json_object);
     explicit LolaServiceInstanceDeployment(const std::optional<LolaServiceInstanceId> instance_id,
                                            EventInstanceMapping events = {},
                                            FieldInstanceMapping fields = {},
@@ -85,7 +85,7 @@ class LolaServiceInstanceDeployment
     bool inter_vm_support_{false};
     bool inter_vm_forwarded_{false};
 
-    score::json::Object Serialize() const noexcept;
+    score::json::Object Serialize() const;
     bool ContainsEvent(const std::string& event_name) const noexcept;
     bool ContainsField(const std::string& field_name) const noexcept;
     bool ContainsMethod(const std::string& method_name) const noexcept;

@@ -15,14 +15,15 @@
 LoLa / mw::com
 ==============
 
-.. include:: README.md
+.. include:: score/mw/com/README.md
    :parser: myst_parser.sphinx_
 
 .. toctree::
    :hidden:
 
    self
-   tutorial/README
+   score/mw/com/README
+   score/mw/com/doc/tutorial/README
    generated/api_index
-   mw_com_index/index
+   docs/sphinx/mw_com_index/index
 

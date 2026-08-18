@@ -18,6 +18,7 @@ load(
 
 architectural_design(
     name = "message_passing_architectural_design",
+    maturity = "development",
     public_api = [
         "public_api.puml",
     ],

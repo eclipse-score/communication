@@ -15,7 +15,7 @@
 #define OUR_NAME_SPACE_SOMEINTERFACE_SOMEINTERFACE_COMMON_H
 
 #include "our/name_space/impl_type_valueevttype.h"
-#include "score/mw/com/impl/traits.h"
+#include "score/mw/com/types.h"
 
 #include <vector>
 

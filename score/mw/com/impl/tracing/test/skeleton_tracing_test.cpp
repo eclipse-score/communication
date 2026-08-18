@@ -28,13 +28,7 @@
 #include <utility>
 #include <vector>
 
-namespace score
-{
-namespace mw
-{
-namespace com
-{
-namespace impl
+namespace score::mw::com::impl
 {
 namespace
 {
@@ -529,7 +523,4 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture,
 }
 
 }  // namespace
-}  // namespace impl
-}  // namespace com
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::com::impl

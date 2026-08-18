@@ -23,9 +23,9 @@ cc_binary(
     ],
     visibility = ["//score/mw/com/test/flock:__pkg__"],
     deps = [
+        "//score/memory/shared/flock:exclusive_flock_mutex",
+        "//score/memory/shared/flock:shared_flock_mutex",
         "@score_baselibs//score/filesystem",
-        "@score_baselibs//score/memory/shared/flock:exclusive_flock_mutex",
-        "@score_baselibs//score/memory/shared/flock:shared_flock_mutex",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os:fcntl",
     ],

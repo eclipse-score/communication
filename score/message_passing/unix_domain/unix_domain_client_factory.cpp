@@ -15,9 +15,7 @@
 #include "score/message_passing/client_connection.h"
 #include "score/message_passing/unix_domain/unix_domain_engine.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 UnixDomainClientFactory::UnixDomainClientFactory(score::cpp::pmr::memory_resource* const resource) noexcept
@@ -40,5 +38,4 @@ score::cpp::pmr::unique_ptr<IClientConnection> UnixDomainClientFactory::Create(
         engine_->GetMemoryResource(), engine_, protocol_config, client_config);
 }
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing

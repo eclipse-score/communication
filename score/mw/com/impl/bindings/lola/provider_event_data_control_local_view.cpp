@@ -32,7 +32,7 @@ constexpr auto MAX_ALLOCATE_RETRIES = 100U;
 
 template <template <class> class AtomicIndirectorType>
 ProviderEventDataControlLocalView<AtomicIndirectorType>::ProviderEventDataControlLocalView(
-    EventDataControl& event_data_control) noexcept
+    EventDataControl& event_data_control)
     : state_slots_{event_data_control.state_slots_.begin(), event_data_control.state_slots_.size()}
 {
 }

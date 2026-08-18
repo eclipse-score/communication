@@ -24,6 +24,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace score::mw::com::gateway
@@ -474,7 +475,12 @@ score::Result<void> GatewayApplication::RegisterUpdateNotification(impl::Instanc
     }
 
     auto& proxy_event = event_it->second;
-    proxy_event.Subscribe(kGatewaySubscribeSamples);
+    const auto subscribe_result = proxy_event.Subscribe(kGatewaySubscribeSamples);
+    if (!subscribe_result.has_value())
+    {
+        score::mw::log::LogError() << "GatewayApplication: Failed to subscribe to " << element_name;
+        return MakeUnexpected(GatewayErrorc::kSubscriptionFailed);
+    }
 
     using ReceiveCallback = safecpp::MoveOnlyScopedFunction<void()>;
     auto scoped_handler = std::make_shared<ReceiveCallback>(
@@ -483,7 +489,12 @@ score::Result<void> GatewayApplication::RegisterUpdateNotification(impl::Instanc
             auto specifier_result = impl::InstanceSpecifier::Create(std::string{spec});
             if (specifier_result.has_value())
             {
-                transport_layer_->NotifyUpdate(std::move(specifier_result).value(), elem_type, std::string{elem_name});
+                const auto notify_update_result = transport_layer_->NotifyUpdate(
+                    std::move(specifier_result).value(), elem_type, std::string{elem_name});
+                if (!notify_update_result.has_value())
+                {
+                    score::mw::log::LogError() << "GatewayApplication: Failed to notify update for " << elem_name;
+                }
             }
         });
 
@@ -525,7 +536,9 @@ score::Result<void> GatewayApplication::UnregisterUpdateNotification(impl::Insta
         return MakeUnexpected(GatewayErrorc::kUnknownServiceElement);
     }
 
-    event_it->second.UnsetReceiveHandler();
+    // Any errors in this call have no adverse effect, since Unsubscribe below fully cleans up the receive handler
+    // anyway.
+    std::ignore = event_it->second.UnsetReceiveHandler();
     event_it->second.Unsubscribe();
     return {};
 }
@@ -555,7 +568,12 @@ score::Result<void> GatewayApplication::NotifyUpdate(impl::InstanceSpecifier ser
         return MakeUnexpected(GatewayErrorc::kUnknownServiceElement);
     }
 
-    event_it->second.Notify();
+    const auto notify_result = event_it->second.Notify();
+    if (!notify_result.has_value())
+    {
+        score::mw::log::LogError() << "GatewayApplication: Failed to notify update for event " << updated_element_name;
+        return MakeUnexpected(GatewayErrorc::kNotificationFailed);
+    }
     return {};
 }
 

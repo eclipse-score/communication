@@ -176,7 +176,7 @@ visibility, i.e. an API that should be visible to the entire implementation name
 we use a pattern involving a friend class. In these cases, an `Example` class has a public API exposed to the end user,
 and one or both friend classes, named `ExampleView` and `ExampleMutableView`, will provide view or modification access,
 respectively, to the private members of the `ExampleClass`. We then restrict the visibility of these friend classes to
-the implementation namespace through an [AoU](broken_link_c/issue/5835119), which effectively
+the implementation namespace through an AoU (see ScoreReq.AoU NoApisFromImplementationNamespace), which effectively
 provides us with module-level encapsulation.
 Since this use of the `friend` keyword does not break encapsulation but provides us with a new kind of encapsulation
 that we need, we find that in spirit it does not contradict the guideline, and we deem such use as acceptable in
@@ -184,7 +184,7 @@ that we need, we find that in spirit it does not contradict the guideline, and w
 
 ## Assumptions of Use (AoUs)
 
-A full list of AoUs can be seen [here](broken_link_c/issue/6221478). The following presents only a
+A full list of AoUs can be seen [in the safety analysis folder](../dependability/safety_analysis/aou.trlc). The following presents only a
 small selection.
 
 ## Use of `std::terminate` in `LoLa`

@@ -60,22 +60,20 @@ ServiceDiscovery::~ServiceDiscovery() noexcept
     }
 }
 
-auto ServiceDiscovery::OfferService(score::mw::com::impl::InstanceIdentifier instance_identifier) noexcept
-    -> Result<void>
+auto ServiceDiscovery::OfferService(score::mw::com::impl::InstanceIdentifier instance_identifier) -> Result<void>
 {
     auto& service_discovery_client = GetServiceDiscoveryClient(instance_identifier);
 
     return service_discovery_client.OfferService(std::move(instance_identifier));
 }
 
-auto ServiceDiscovery::StopOfferService(score::mw::com::impl::InstanceIdentifier instance_identifier) noexcept
-    -> Result<void>
+auto ServiceDiscovery::StopOfferService(score::mw::com::impl::InstanceIdentifier instance_identifier) -> Result<void>
 {
     return StopOfferService(instance_identifier, QualityTypeSelector::kBoth);
 }
 
 auto ServiceDiscovery::StopOfferService(score::mw::com::impl::InstanceIdentifier instance_identifier,
-                                        QualityTypeSelector quality_type) noexcept -> Result<void>
+                                        QualityTypeSelector quality_type) -> Result<void>
 {
     auto& service_discovery_client = GetServiceDiscoveryClient(instance_identifier);
 
@@ -83,8 +81,7 @@ auto ServiceDiscovery::StopOfferService(score::mw::com::impl::InstanceIdentifier
 }
 
 auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
-                                        const InstanceSpecifier instance_specifier) noexcept
-    -> Result<FindServiceHandle>
+                                        const InstanceSpecifier instance_specifier) -> Result<FindServiceHandle>
 {
     const auto instance_identifiers = runtime_.resolve(instance_specifier);
     const std::vector<EnrichedInstanceIdentifier> enriched_instance_identifiers(instance_identifiers.begin(),
@@ -135,15 +132,15 @@ auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
     return find_service_handle;
 }
 
-auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
-                                        InstanceIdentifier instance_identifier) noexcept -> Result<FindServiceHandle>
+auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler, InstanceIdentifier instance_identifier)
+    -> Result<FindServiceHandle>
 {
     EnrichedInstanceIdentifier enriched_instance_identifier{std::move(instance_identifier)};
     return StartFindService(std::move(handler), std::move(enriched_instance_identifier));
 }
 
 auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
-                                        const EnrichedInstanceIdentifier enriched_instance_identifier) noexcept
+                                        const EnrichedInstanceIdentifier enriched_instance_identifier)
     -> Result<FindServiceHandle>
 {
     auto find_service_handle = GetNextFreeFindServiceHandle();
@@ -173,8 +170,7 @@ auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
     return result;
 }
 
-[[nodiscard]] auto ServiceDiscovery::StopFindService(const FindServiceHandle find_service_handle) noexcept
-    -> Result<void>
+[[nodiscard]] auto ServiceDiscovery::StopFindService(const FindServiceHandle find_service_handle) -> Result<void>
 {
     // Make a copy of the EnrichedInstanceIdentifiers for which we need to call StopFindService. We make a copy under
     // lock to ensure that the map isn't modified while we're accessing it. However, StopFindService is called on the
@@ -209,7 +205,7 @@ auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
 
 auto ServiceDiscovery::StartFindServiceImpl(FindServiceHandle find_service_handle,
                                             std::weak_ptr<FindServiceHandler<HandleType>> handler_weak_ptr,
-                                            const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+                                            const EnrichedInstanceIdentifier& enriched_instance_identifier)
     -> Result<FindServiceHandle>
 {
     auto result = BindingSpecificStartFindService(find_service_handle, handler_weak_ptr, enriched_instance_identifier);
@@ -224,7 +220,7 @@ auto ServiceDiscovery::StartFindServiceImpl(FindServiceHandle find_service_handl
 void ServiceDiscovery::RemoveUnusedInstanceIdentifiers(
     FindServiceHandle find_service_handle,
     std::vector<EnrichedInstanceIdentifier>::const_iterator last_used_iterator,
-    std::vector<EnrichedInstanceIdentifier>::const_iterator container_end) noexcept
+    std::vector<EnrichedInstanceIdentifier>::const_iterator container_end)
 {
     const bool all_identifiers_processed{last_used_iterator == container_end};
     // GCOV_EXCL_START : This is a never true. Defensive programming: This function is only called by StartFindService.
@@ -290,7 +286,7 @@ auto ServiceDiscovery::StoreInstanceIdentifier(const FindServiceHandle& find_ser
                                                       std::forward_as_tuple(enriched_instance_identifier));
 }
 
-auto ServiceDiscovery::GetServiceDiscoveryClient(const InstanceIdentifier& instance_identifier) noexcept
+auto ServiceDiscovery::GetServiceDiscoveryClient(const InstanceIdentifier& instance_identifier)
     -> IServiceDiscoveryClient&
 {
     InstanceIdentifierView instance_identifier_view{instance_identifier};
@@ -307,16 +303,16 @@ auto ServiceDiscovery::GetServiceDiscoveryClient(const InstanceIdentifier& insta
     return binding_runtime->GetServiceDiscoveryClient();
 }
 
-auto ServiceDiscovery::BindingSpecificStartFindService(
-    FindServiceHandle search_handle,
-    std::weak_ptr<FindServiceHandler<HandleType>> handler_weak_ptr,
-    const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept -> Result<void>
+auto ServiceDiscovery::BindingSpecificStartFindService(FindServiceHandle search_handle,
+                                                       std::weak_ptr<FindServiceHandler<HandleType>> handler_weak_ptr,
+                                                       const EnrichedInstanceIdentifier& enriched_instance_identifier)
+    -> Result<void>
 {
     auto& service_discovery_client = GetServiceDiscoveryClient(enriched_instance_identifier.GetInstanceIdentifier());
 
     return service_discovery_client.StartFindService(
         search_handle,
-        [handler_weak_ptr](auto container, auto handle) noexcept {
+        [handler_weak_ptr](auto container, auto handle) {
             if (auto handler_shared_ptr = handler_weak_ptr.lock())
             {
                 (*handler_shared_ptr)(container, handle);
@@ -325,8 +321,7 @@ auto ServiceDiscovery::BindingSpecificStartFindService(
         enriched_instance_identifier);
 }
 
-Result<ServiceHandleContainer<HandleType>> ServiceDiscovery::FindService(
-    InstanceIdentifier instance_identifier) noexcept
+Result<ServiceHandleContainer<HandleType>> ServiceDiscovery::FindService(InstanceIdentifier instance_identifier)
 {
     EnrichedInstanceIdentifier enriched_instance_identifier{std::move(instance_identifier)};
     auto& service_discovery_client = GetServiceDiscoveryClient(enriched_instance_identifier.GetInstanceIdentifier());
@@ -344,7 +339,7 @@ Result<ServiceHandleContainer<HandleType>> ServiceDiscovery::FindService(
 // which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-Result<ServiceHandleContainer<HandleType>> ServiceDiscovery::FindService(InstanceSpecifier instance_specifier) noexcept
+Result<ServiceHandleContainer<HandleType>> ServiceDiscovery::FindService(InstanceSpecifier instance_specifier)
 {
     ServiceHandleContainer<HandleType> handles;
     const auto instance_identifiers = runtime_.resolve(instance_specifier);

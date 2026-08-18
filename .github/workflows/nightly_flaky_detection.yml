@@ -1,0 +1,192 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: Nightly Flaky Test Detection
+
+on:
+  schedule:
+    - cron: "30 0 * * *"
+  workflow_dispatch:
+    inputs:
+      runs_per_test:
+        description: "Repeated executions per unit test target."
+        required: false
+        default: "300"
+        type: string
+      integration_runs_per_test:
+        description: "Repeated executions per integration test target."
+        required: false
+        default: "100"
+        type: string
+
+concurrency:
+  group: nightly-flaky-detection
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  flaky-gcc15-unit:
+    uses: ./.github/workflows/_nightly_flaky_detection_runner.yml
+    with:
+      config-name: gcc15-unit
+      bazel-config: ""
+      target-pattern: //...
+      test-tag-filters: unit
+      runs-per-test: ${{ fromJSON(github.event.inputs.runs_per_test || '300') }}
+    permissions:
+      contents: read
+      actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+  flaky-gcc15-integration:
+    uses: ./.github/workflows/_nightly_flaky_detection_runner.yml
+    with:
+      config-name: gcc15-integration
+      bazel-config: ""
+      target-pattern: //...
+      test-tag-filters: integration-test
+      runs-per-test: ${{ fromJSON(github.event.inputs.integration_runs_per_test || '100') }}
+    permissions:
+      contents: read
+      actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+  flaky-asan-ubsan-lsan:
+    uses: ./.github/workflows/_nightly_flaky_detection_runner.yml
+    with:
+      config-name: asan-ubsan-lsan
+      bazel-config: asan_ubsan_lsan
+      target-pattern: //...
+      test-tag-filters: unit
+      runs-per-test: ${{ fromJSON(github.event.inputs.runs_per_test || '300') }}
+    permissions:
+      contents: read
+      actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+  flaky-tsan:
+    uses: ./.github/workflows/_nightly_flaky_detection_runner.yml
+    with:
+      config-name: tsan
+      bazel-config: tsan
+      target-pattern: //...
+      test-tag-filters: unit
+      runs-per-test: ${{ fromJSON(github.event.inputs.runs_per_test || '300') }}
+    permissions:
+      contents: read
+      actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+
+  flaky-qnx-unit:
+    uses: ./.github/workflows/_nightly_flaky_detection_runner.yml
+    with:
+      config-name: qnx-unit
+      bazel-config: qnx
+      target-pattern: //score/...
+      test-tag-filters: unit
+      runs-per-test: ${{ fromJSON(github.event.inputs.runs_per_test || '300') }}
+      use-qnx-environment: true
+    permissions:
+      contents: read
+      actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+      SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
+      SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+      SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+
+  flaky-qnx-integration:
+    uses: ./.github/workflows/_nightly_flaky_detection_runner.yml
+    with:
+      config-name: qnx-integration
+      bazel-config: qnx
+      target-pattern: //score/...
+      test-tag-filters: integration-test
+      runs-per-test: ${{ fromJSON(github.event.inputs.integration_runs_per_test || '100') }}
+      use-qnx-environment: true
+    permissions:
+      contents: read
+      actions: write
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+      SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
+      SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+      SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+
+  aggregate-flaky-results:
+    name: Aggregate flaky detection reports
+    needs:
+      - flaky-gcc15-unit
+      - flaky-gcc15-integration
+      - flaky-asan-ubsan-lsan
+      - flaky-tsan
+      - flaky-qnx-unit
+      - flaky-qnx-integration
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: Download per-config artifacts
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nightly-flaky-*-${{ github.run_id }}
+          path: /tmp/nightly_flaky
+          merge-multiple: false
+
+      - name: Build consolidated report
+        id: merge
+        run: |
+          python3 quality/scripts/merge_flaky_reports.py \
+            --reports-root /tmp/nightly_flaky \
+            --output-json /tmp/nightly_flaky/merged/summary.json \
+            --output-md /tmp/nightly_flaky/merged/summary.md \
+            --github-output "${GITHUB_OUTPUT}"
+
+      - name: Add summary to workflow
+        if: always()
+        run: cat /tmp/nightly_flaky/merged/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Sync flaky test issues
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [[ ! -f /tmp/nightly_flaky/merged/summary.json ]]; then
+            echo "No merged summary found; skipping flaky issue sync."
+            exit 0
+          fi
+          python3 quality/scripts/sync_flaky_issues.py \
+            --merged-summary /tmp/nightly_flaky/merged/summary.json \
+            --repo "${{ github.repository }}" \
+            --run-id "${{ github.run_id }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Upload consolidated artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-flaky-summary-${{ github.run_id }}
+          path: /tmp/nightly_flaky/merged
+          retention-days: 14

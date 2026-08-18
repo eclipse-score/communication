@@ -1060,7 +1060,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     std::ignore = unit.some_field.Update(field_value);
 
     // and registering a field set handler
-    unit.some_field.RegisterSetHandler([](TestSampleType&) {});
+    std::ignore = unit.some_field.RegisterSetHandler([](TestSampleType&) {});
 
     // and offering the service
     const auto result = unit.OfferService();

@@ -14,6 +14,7 @@
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
+#include "score/mw/com/impl/data_type_meta_info.h"
 #include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
 #include "score/mw/com/impl/runtime.h"
@@ -54,7 +55,7 @@ std::string_view GetEventName(const InstanceIdentifier& identifier, std::string_
 }  // namespace
 
 Result<GenericSkeleton> GenericSkeleton::Create(const InstanceSpecifier& specifier,
-                                                const GenericSkeletonServiceElementInfo& in) noexcept
+                                                const GenericSkeletonServiceElementInfo& in)
 {
     const auto instance_identifier_result = GetInstanceIdentifier(specifier);
 
@@ -68,7 +69,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceSpecifier& specifi
 }
 
 Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identifier,
-                                                const GenericSkeletonServiceElementInfo& in) noexcept
+                                                const GenericSkeletonServiceElementInfo& in)
 {
     auto binding = SkeletonBindingFactory::Create(identifier);
     if (!binding)
@@ -100,8 +101,21 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
+        // Validate & convert the public DataTypeMetaInfo into the internal DataTypeSizeInfo. Invalid meta-info (e.g.
+        // alignment not a power of two, or size not a multiple of alignment) results in an error instead of a later
+        // contract violation. Unfortunately our public interface DataTypeMetaInfo does not enforce these invariants,
+        // so we have to check them here. @ToDo: At some point we should already enforce this on DataTypeMetaInfo,
+        // but this would require a break in the public API!
+        auto data_type_size_info_result = MakeDataTypeSizeInfo(info.data_type_meta_info);
+        if (!data_type_size_info_result.has_value())
+        {
+            score::mw::log::LogError("GenericSkeleton")
+                << "Invalid data type meta-info provided for event: " << info.name;
+            return MakeUnexpected(ComErrc::kInvalidConfiguration);
+        }
+
         auto event_binding_result =
-            GenericSkeletonEventBindingFactory::Create(skeleton, info.name, info.data_type_meta_info);
+            GenericSkeletonEventBindingFactory::Create(skeleton, info.name, data_type_size_info_result.value());
 
         if (!event_binding_result.has_value())
         {
@@ -128,12 +142,12 @@ ServiceElementMapView<GenericSkeletonEvent> GenericSkeleton::GetEvents() const n
     return ServiceElementMapViewFactory<GenericSkeletonEvent>::Create(*events_);
 }
 
-Result<void> GenericSkeleton::OfferService() noexcept
+Result<void> GenericSkeleton::OfferService()
 {
     return SkeletonBase::OfferService();
 }
 
-void GenericSkeleton::StopOfferService() noexcept
+void GenericSkeleton::StopOfferService()
 {
     SkeletonBase::StopOfferService();
 }

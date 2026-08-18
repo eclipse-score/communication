@@ -23,6 +23,7 @@
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
+#include "score/memory/data_type_size_info.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
 #include <score/assert.hpp>
@@ -32,6 +33,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 
@@ -111,7 +113,7 @@ class SkeletonMemoryManager final
     auto CreateGenericEventDataInCreatedSharedMemory(const ElementFqId element_fq_id,
                                                      const SkeletonEventProperties& element_properties,
                                                      size_t sample_size,
-                                                     size_t sample_alignment) noexcept -> void*;
+                                                     size_t sample_alignment) -> void*;
 
     /// \brief Opens an EventControl for QM and optionally for ASIL-B (if the Skeleton is ASIL-B) for a specific
     /// event that were created by a previous skeleton.
@@ -133,8 +135,7 @@ class SkeletonMemoryManager final
     /// Generic events use EventMetaInfo as the stable type-erased contract. No interpretation to a
     /// DynamicArray<SampleType> takes place in this case.
     auto RetrieveGenericEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
-                                                        const SkeletonEventProperties& element_properties) noexcept
-        -> void*;
+                                                        const SkeletonEventProperties& element_properties) -> void*;
 
     /// \brief Rolls back any existing operations in the TransactionLog corresponding to a SkeletonEvent
     ///
@@ -171,7 +172,7 @@ class SkeletonMemoryManager final
         std::optional<std::size_t> control_asil_b_size;
     };
 
-    /// \brief Calculates needed sizes for shm-objects for data and ctrl either via simulation or a rough estimation
+    /// \brief Calculates needed sizes for shm-objects for data and ctrl either via simulation or an analytic estimation
     /// depending on config.
     /// \return storage sizes for the different shm-objects
     ShmResourceStorageSizes CalculateShmResourceStorageSizes(SkeletonBinding::SkeletonEventBindings& events,
@@ -182,6 +183,36 @@ class SkeletonMemoryManager final
     ShmResourceStorageSizes CalculateShmResourceStorageSizesBySimulation(
         SkeletonBinding::SkeletonEventBindings& events,
         SkeletonBinding::SkeletonFieldBindings& fields);
+
+    /// \brief Calculates the needed size for the data shm-object (holding the ServiceDataStorage) analytically.
+    /// \details Does NOT allocate any (heap) memory and does not create a ServiceDataStorage. It collects the exact
+    /// per service-element sizing information (exact slot-array size/alignment, distinguishing typed and generic
+    /// events/fields) from the handed-over event/field bindings and the deployment configuration and delegates the
+    /// actual layout math to CalculateServiceDataStorageShmSize (located next to ServiceDataStorage), which computes
+    /// the exact size needed.
+    /// \return needed size (in bytes) for the data shm-object.
+    std::size_t CalculateDataShmResourceStorageSize(SkeletonBinding::SkeletonEventBindings& events,
+                                                    SkeletonBinding::SkeletonFieldBindings& fields) const;
+
+    /// \brief Calculates the needed size for a control shm-object (holding a ServiceDataControl) analytically.
+    /// \details Does NOT allocate any (heap) memory and does not create a ServiceDataControl. It collects the per
+    /// service-element sizing information (number of slots, max-subscribers) from the handed-over event/field bindings
+    /// and the deployment configuration and delegates the actual layout math to CalculateServiceDataControlShmSize
+    /// (located next to ServiceDataControl), which computes the exact size needed.
+    /// The same size applies to the QM and (if present) the ASIL-B control shm-object, as both hold a
+    /// ServiceDataControl created with the very same configuration.
+    /// \return needed size (in bytes) for a single control shm-object.
+    std::size_t CalculateControlShmResourceStorageSize(SkeletonBinding::SkeletonEventBindings& events,
+                                                       SkeletonBinding::SkeletonFieldBindings& fields) const;
+
+    /// \brief Looks up the configured number of sample-slots for the given service-element.
+    /// \param service_element_name name of the event/field.
+    std::size_t GetNumberOfSampleSlotsFromConfig(const std::string_view service_element_name,
+                                                 const bool is_field) const;
+
+    /// \brief Looks up the configured maximum number of subscribers for the given service-element.
+    /// \param service_element_name name of the event/field.
+    std::size_t GetMaxSubscribersFromConfig(const std::string_view service_element_name, const bool is_field) const;
 
     /// Functions for creating / opening / initializing shared memory within PrepareOffer.
     bool CreateSharedMemoryForData(
@@ -207,7 +238,7 @@ class SkeletonMemoryManager final
                                                           const SkeletonEventProperties& element_properties);
 
     EventMetaInfo& EmplaceEventMetaInfo(const ElementFqId element_fq_id,
-                                        const DataTypeMetaInfo& sample_meta_info,
+                                        const memory::DataTypeSizeInfo& sample_meta_info,
                                         void* type_erased_event_data_storage);
 
     QualityType quality_type_;
@@ -224,6 +255,13 @@ class SkeletonMemoryManager final
     ServiceDataStorage* storage_;
     ServiceDataControl* control_qm_;
     ServiceDataControl* control_asil_b_;
+
+    /// \brief Number of events + fields of the service-instance.
+    /// \details Determines the fixed capacity of the containers within ServiceDataStorage and ServiceDataControl.
+    /// Empty until it is set in CreateSharedMemory (before the ServiceDataStorage / ServiceDataControl are
+    /// constructed). Every read site asserts that the value has been set, so an accidental use before initialization is
+    /// caught deterministically instead of silently defaulting to a (potentially valid) capacity of 0.
+    std::optional<std::size_t> number_of_events_and_fields_;
 
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> storage_resource_;
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> control_qm_resource_;
@@ -244,7 +282,7 @@ auto SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory(const ElementFq
 {
     auto& event_data_storage = EmplaceEventDataStorage<SampleType>(element_fq_id, element_properties);
 
-    constexpr DataTypeMetaInfo sample_meta_info{sizeof(SampleType), static_cast<std::uint8_t>(alignof(SampleType))};
+    constexpr memory::DataTypeSizeInfo sample_meta_info{sizeof(SampleType), alignof(SampleType)};
     auto* const event_data_raw_array = event_data_storage.data();
     score::cpp::ignore = EmplaceEventMetaInfo(element_fq_id, sample_meta_info, event_data_raw_array);
 

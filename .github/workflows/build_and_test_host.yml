@@ -84,14 +84,15 @@ jobs:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
-  clang-tidy:
-    name: Clang-Tidy
-    uses: ./.github/workflows/_clang_tidy.yml
+  lint:
+    name: Linters
+    uses: ./.github/workflows/_linter.yml
     with:
       cache-mode: ${{ inputs.cache-mode }}
       fetch-only: ${{ inputs.fetch-only }}
     permissions:
       contents: read
       actions: write
+      security-events: write
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}

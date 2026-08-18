@@ -40,7 +40,7 @@ namespace
 {
 
 QualityAwareContainer<KnownInstancesContainer> GetAlreadyExistingInstances(
-    std::vector<EnrichedInstanceIdentifier>& quality_unaware_identifiers_to_check) noexcept
+    std::vector<EnrichedInstanceIdentifier>& quality_unaware_identifiers_to_check)
 {
     QualityAwareContainer<KnownInstancesContainer> known_instances{};
     for (const auto& quality_unaware_identifier_to_check : quality_unaware_identifiers_to_check)
@@ -115,7 +115,7 @@ FlagFileCrawler::FlagFileCrawler(os::InotifyInstance& inotify_instance, filesyst
 // which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto FlagFileCrawler::Crawl(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+auto FlagFileCrawler::Crawl(const EnrichedInstanceIdentifier& enriched_instance_identifier)
     -> score::Result<QualityAwareContainer<KnownInstancesContainer>>
 {
     constexpr auto kAddWatch = false;
@@ -127,7 +127,7 @@ auto FlagFileCrawler::Crawl(const EnrichedInstanceIdentifier& enriched_instance_
     return std::get<1>(result.value());
 }
 
-auto FlagFileCrawler::CrawlAndWatch(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+auto FlagFileCrawler::CrawlAndWatch(const EnrichedInstanceIdentifier& enriched_instance_identifier)
     -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
                                 QualityAwareContainer<KnownInstancesContainer>>>
 {
@@ -142,7 +142,7 @@ auto FlagFileCrawler::CrawlAndWatch(const EnrichedInstanceIdentifier& enriched_i
 // This suppression should be removed after fixing[Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto FlagFileCrawler::CrawlAndWatchImpl(const EnrichedInstanceIdentifier& enriched_instance_identifier,
-                                        const bool add_watch) noexcept
+                                        const bool add_watch)
     -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
                                 QualityAwareContainer<KnownInstancesContainer>>>
 {
@@ -212,7 +212,7 @@ auto FlagFileCrawler::CrawlAndWatchImpl(const EnrichedInstanceIdentifier& enrich
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto FlagFileCrawler::CrawlAndWatchWithRetry(const EnrichedInstanceIdentifier& enriched_instance_identifier,
-                                             const std::uint8_t max_number_of_retries) noexcept
+                                             const std::uint8_t max_number_of_retries)
     -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
                                 QualityAwareContainer<KnownInstancesContainer>>>
 {
@@ -276,8 +276,7 @@ auto FlagFileCrawler::ParseQualityTypeFromString(const std::string_view filename
 // std::bad_optional_access which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto FlagFileCrawler::GatherExistingInstanceDirectories(
-    const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+auto FlagFileCrawler::GatherExistingInstanceDirectories(const EnrichedInstanceIdentifier& enriched_instance_identifier)
     -> score::Result<std::vector<EnrichedInstanceIdentifier>>
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
@@ -323,7 +322,7 @@ auto FlagFileCrawler::GatherExistingInstanceDirectories(
 // throwing std::bad_optional_access which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto FlagFileCrawler::AddWatchToInotifyInstance(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+auto FlagFileCrawler::AddWatchToInotifyInstance(const EnrichedInstanceIdentifier& enriched_instance_identifier)
     -> Result<os::InotifyWatchDescriptor>
 {
 

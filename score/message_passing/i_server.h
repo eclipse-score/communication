@@ -17,9 +17,7 @@
 
 #include "score/os/errno.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 /// \brief Interface of a Message Passing Server.
@@ -60,7 +58,6 @@ class IServer
     IServer& operator=(IServer&&) = delete;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_SERVER_H

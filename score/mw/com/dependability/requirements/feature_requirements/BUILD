@@ -25,7 +25,7 @@ feature_requirements(
     srcs = ["feature_requirements_ipc.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
-    deps = ["//score/mw/com/dependability/requirements/assumed_system_requirements"],
+    deps = ["//score/mw/com/dependability/assumed_system:assumed_system_requirements"],
 )
 
 trlc_requirements_ai_test(

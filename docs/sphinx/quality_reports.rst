@@ -34,7 +34,9 @@ nightly run of the `Nightly Quality Jobs`_ workflow.
      - Static analysis findings (errors and warnings) across all C++ targets
      - |clang_tidy_report_link|
    * - CodeQL
-     - MISRA C++ compliance findings via CodeQL (codeql/misra-cpp-coding-standards)
+     - MISRA C++ compliance findings via CodeQL (codeql/misra-cpp-coding-standards).
+       Analyzed for both the Linux and QNX (``--config=qnx``) builds; the published
+       findings are the **deduplicated union** of both configs.
      - | |codeql_report_link|
        | |codeql_integrity_report_link|
        | |codeql_deviations_report_link|

@@ -17,7 +17,7 @@
 namespace score::mw::com::impl::lola
 {
 
-auto KnownInstancesContainer::Insert(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept -> bool
+auto KnownInstancesContainer::Insert(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> bool
 {
     const auto instance_id = enriched_instance_identifier.GetBindingSpecificInstanceId<LolaServiceInstanceId>();
     if (instance_id.has_value())
@@ -41,7 +41,7 @@ auto KnownInstancesContainer::Insert(const EnrichedInstanceIdentifier& enriched_
     return false;
 }
 
-auto KnownInstancesContainer::Remove(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept -> void
+auto KnownInstancesContainer::Remove(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> void
 {
     const auto instance_id = enriched_instance_identifier.GetBindingSpecificInstanceId<LolaServiceInstanceId>();
     if (instance_id.has_value())
@@ -55,8 +55,8 @@ auto KnownInstancesContainer::Remove(const EnrichedInstanceIdentifier& enriched_
     }
 }
 
-auto KnownInstancesContainer::GetKnownHandles(
-    const EnrichedInstanceIdentifier& enriched_instance_identifier) const noexcept -> std::vector<HandleType>
+auto KnownInstancesContainer::GetKnownHandles(const EnrichedInstanceIdentifier& enriched_instance_identifier) const
+    -> std::vector<HandleType>
 {
     std::vector<HandleType> handles{};
 

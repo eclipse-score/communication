@@ -33,7 +33,7 @@ constexpr auto MAX_REFERENCE_RETRIES = 100U;
 
 template <template <class> class AtomicIndirectorType>
 ConsumerEventDataControlLocalView<AtomicIndirectorType>::ConsumerEventDataControlLocalView(
-    EventDataControl& event_data_control_shared) noexcept
+    EventDataControl& event_data_control_shared)
     : state_slots_{event_data_control_shared.state_slots_.begin(), event_data_control_shared.state_slots_.size()}
 {
 }
@@ -41,7 +41,7 @@ ConsumerEventDataControlLocalView<AtomicIndirectorType>::ConsumerEventDataContro
 template <template <class> class AtomicIndirectorType>
 ConsumerEventDataControlLocalView<AtomicIndirectorType>::ConsumerEventDataControlLocalView(
     EventDataControl& event_data_control_shared,
-    TransactionLogLocalView transaction_log_local_view) noexcept
+    TransactionLogLocalView transaction_log_local_view)
     : ConsumerEventDataControlLocalView{event_data_control_shared}
 {
     SetTransactionLogLocalView(transaction_log_local_view);
@@ -55,7 +55,7 @@ template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
     const EventSlotStatus::EventTimeStamp last_search_time,
-    const EventSlotStatus::EventTimeStamp upper_limit) noexcept -> std::optional<SlotIndexType>
+    const EventSlotStatus::EventTimeStamp upper_limit) -> std::optional<SlotIndexType>
 {
     // function can only finish with result, if use count was able to be increased
     std::optional<SlotIndexType> possible_index{};

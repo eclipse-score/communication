@@ -18,13 +18,11 @@ This file is auto-generated from a template and should not be edited directly.
 Template variables like {PROJECT_NAME} are replaced during Bazel build.
 """
 
-import bazel_sphinx_needs
-
 from pathlib import Path
-import os
 
-from python.runfiles import Runfiles
 from sphinx.util import logging
+
+import sphinx_conf_helpers
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +37,12 @@ project_url = (
 
 # Sphinx extensions - comprehensive list for SCORE modules
 extensions = [
+    "sphinx_module_ext",
     "sphinx_needs",
     "sphinx_design",
     "myst_parser",
     "sphinxcontrib.plantuml",
+    "clickable_plantuml",
     "breathe",
     "trlc",
 ]
@@ -57,13 +57,10 @@ breathe_show_define_initializer = True
 breathe_show_enumvalue_initializer = True
 
 # MyST parser extensions
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = sphinx_conf_helpers.DEFAULT_MYST_ENABLE_EXTENSIONS
 
 # Exclude patterns for Bazel builds
-exclude_patterns = [
-    "bazel-*",
-    ".venv*",
-]
+exclude_patterns = sphinx_conf_helpers.DEFAULT_EXCLUDE_PATTERNS
 
 # Enable markdown rendering
 source_suffix = {
@@ -120,65 +117,18 @@ html_theme_options = {
 # Enable numref for cross-references
 numfig = True
 
-# Load external needs and log configuration
-suppress_warnings = ["toc.not_readable", "myst.xref_missing"]
+# Needs external-needs loading and config logging are now handled by the
+# "sphinx_module_ext" extension registered above (see
+# @score_tooling//bazel/rules/rules_score:src/sphinx_module_ext.py) instead of
+# calling bazel_sphinx_needs directly.
+suppress_warnings = sphinx_conf_helpers.DEFAULT_SUPPRESS_WARNINGS + ["myst.xref_missing"]
 
-needs_external_needs = bazel_sphinx_needs.load_external_needs()
-bazel_sphinx_needs.log_config_info(project)
-
-# Resolve the PlantUML binary via Bazel runfiles.
-# The plantuml java_binary target is in data of the local sphinx_build binary
-# (//bazel/toolchains:sphinx_build), so it is accessible under the _main repo.
-r = Runfiles.Create()
-if r is None:
-    raise ValueError("Could not initialize Bazel runfiles.")
-
-_plantuml_path = None
-# Use source_repo="" (the root module's canonical source repo key in repo_mapping)
-# so Bazel resolves the apparent name "score_tooling" to the correct canonical
-# name regardless of how the dep is declared (local_path_override → "score_tooling+",
-# BCR/git_repository → "score_tooling").
-_candidate = r.Rlocation("score_tooling/third_party/plantuml/plantuml", source_repo="")
-if _candidate and Path(_candidate).exists():
-    _plantuml_path = Path(_candidate)
-    logger.info(f"PlantUML resolved from runfiles: {_plantuml_path}")
-
-if _plantuml_path is None:
-    logger.warning(
-        "PlantUML binary not found in runfiles — diagrams will not be rendered. "
-        "Ensure @score_tooling//third_party/plantuml:plantuml is in sphinx_build data."
-    )
-else:
-    _fta_metamodel_dir = ""
-    _metamodel_candidate = r.Rlocation("score_tooling/plantuml/fta_metamodel.puml", source_repo="")
-    if _metamodel_candidate and Path(_metamodel_candidate).exists():
-        _fta_metamodel_dir = str(Path(_metamodel_candidate).parent)
-        logger.info(f"fta_metamodel.puml found at: {_metamodel_candidate}")
-    else:
-        logger.warning(
-            "fta_metamodel.puml not found in runfiles — FTA diagrams using "
-            "!include fta_metamodel.puml will fail to render. "
-            "Ensure @score_tooling//plantuml:fta_metamodel is in sphinx_build data."
-        )
-
-    # Resolve hermetic graphviz dot via Bazel runfiles.
-    _dot_candidate = r.Rlocation("score_tooling/third_party/docs_runtime/dot", source_repo="")
-    if _dot_candidate and Path(_dot_candidate).exists():
-        _dot_path = str(Path(_dot_candidate))
-        logger.info(f"graphviz dot resolved from runfiles: {_dot_path}")
-    else:
-        logger.warning("graphviz dot not found in runfiles — PlantUML will use built-in layout.")
-        _dot_path = None
-
-    _include_flag = (
-        f" --jvm_flag=-Dplantuml.include.path={_fta_metamodel_dir}"
-        if _fta_metamodel_dir
-        else ""
-    )
-    _layout_flag = f" -graphvizdot {_dot_path}" if _dot_path else " -Playout=smetana"
-    plantuml = f"{_plantuml_path}{_include_flag}{_layout_flag}"
-    plantuml_output_format = "svg_obj"
-
-
-def setup(app):
-    return bazel_sphinx_needs.setup_sphinx_extension(app, needs_external_needs)
+# Hermetic PlantUML / Graphviz / FTA-metamodel resolution.
+# PLANTUML_BIN, GRAPHVIZ_DOT and FTA_METAMODEL_DIR are injected into every
+# sphinx_module build action by sphinx_module.bzl itself, so no Bazel
+# runfiles lookup is needed here anymore -- see sphinx_conf_helpers'
+# module docstring for details.
+_graphviz_dot = sphinx_conf_helpers.resolve_graphviz_dot()
+plantuml_output_format = "svg_obj"
+plantuml = sphinx_conf_helpers.resolve_plantuml_command(graphviz_dot_path=_graphviz_dot)
+graphviz_output_format = "svg"

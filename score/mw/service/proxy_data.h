@@ -16,11 +16,7 @@
 
 #include "score/mw/service/proxy_needs.h"
 
-namespace score
-{
-namespace mw
-{
-namespace service
+namespace score::mw::service
 {
 
 /// @brief Stub alias for OptionalProxyData — wraps an optional proxy instance.
@@ -28,8 +24,6 @@ namespace service
 template <typename T>
 using OptionalProxyData = Optional<T>;
 
-}  // namespace service
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::service
 
 #endif  // SCORE_MW_SERVICE_PROXY_DATA_H

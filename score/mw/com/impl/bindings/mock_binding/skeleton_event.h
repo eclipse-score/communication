@@ -30,6 +30,7 @@ class SkeletonEventBase : public SkeletonEventBindingBase
     MOCK_METHOD(Result<void>, PrepareOffer, (), (noexcept, override));
     MOCK_METHOD(void, PrepareStopOffer, (), (noexcept, override));
     MOCK_METHOD(std::size_t, GetMaxSize, (), (const, noexcept, override));
+    MOCK_METHOD(std::size_t, GetAlignment, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
 };

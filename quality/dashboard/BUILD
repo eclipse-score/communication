@@ -11,16 +11,28 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 
-py_binary(
-    name = "generate_dashboard",
+py_library(
+    name = "dashboard_lib",
     srcs = ["generate_dashboard.py"],
     data = ["dashboard.html.j2"],
-    main = "generate_dashboard.py",
-    visibility = ["//visibility:private"],
     deps = [
         "@score_communication_pip//jinja2",
         "@score_communication_pip//markupsafe",
     ],
+)
+
+py_binary(
+    name = "generate_dashboard",
+    srcs = ["generate_dashboard.py"],
+    main = "generate_dashboard.py",
+    visibility = ["//visibility:private"],
+    deps = [":dashboard_lib"],
+)
+
+py_test(
+    name = "generate_dashboard_test",
+    srcs = ["generate_dashboard_test.py"],
+    deps = [":dashboard_lib"],
 )

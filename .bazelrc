@@ -24,8 +24,13 @@ common --http_timeout_scaling=2.0
 # Do not use automatically C++ generated toolchains
 build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
+# rules_python defaults py_binary/py_test bootstrapping to "system_python", which generates a `#!/usr/bin/env python3`
+# shebang and relies on a python3 interpreter already being present on PATH. This is non-hermetic.
+# Use the hermetic "script" bootstrap, which resolves the interpreter from a registered rules_python toolchain instead.
+build --@rules_python//python/config_settings:bootstrap_impl=script
+
 common --@score_baselibs//score/json:base_library=nlohmann
-common --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
+common --//score/memory/shared/flags:use_typedshmd=False
 common --@score_baselibs//score/analysis/tracing/generic_trace_library:implementation=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
 common --extra_toolchains=@gcc_toolchain_x86_64//:cc_toolchain
 common --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_unknown_linux_gnu
@@ -86,8 +91,8 @@ common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_toolchains
 # the acceptance page once.
 common:qnx_x86_64 --credential_helper_timeout="60s" # QNX credential helper can be slow
 common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
-common:qnx_x86_64 --extra_toolchains=@score_qnx_x86_64_ifs_toolchain//:ifs-x86_64-qnx-sdp_8.0.0
-common:qnx_x86_64 --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0
+# @score_qnx_x86_64_ifs_toolchain and @score_qcc_x86_64_toolchain are registered
+# globally in MODULE.bazel, so they don't need to be repeated here.
 common:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_pc_nto_qnx800
 common:qnx_x86_64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_x86_64 --sandbox_writable_path=/var/tmp
@@ -95,8 +100,8 @@ common:qnx_x86_64 --test_env=QEMU_CPU=Cascadelake-Server-v5
 
 common:qnx_arm64 --credential_helper_timeout="60s" # QNX credential helper can be slow
 common:qnx_arm64 --platforms=@score_bazel_platforms//:aarch64-qnx-sdp_8.0.0-posix
-common:qnx_arm64 --extra_toolchains=@score_qnx_aarch64_ifs_toolchain//:ifs-aarch64-qnx-sdp_8.0.0
-common:qnx_arm64 --extra_toolchains=@score_qcc_aarch64_toolchain//:aarch64-qnx-sdp_8.0.0
+# @score_qnx_aarch64_ifs_toolchain and @score_qcc_aarch64_toolchain are
+# registered globally in MODULE.bazel, so they don't need to be repeated here.
 common:qnx_arm64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_aarch64_unknown_nto_qnx800
 common:qnx_arm64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_arm64 --sandbox_writable_path=/var/tmp
@@ -110,6 +115,13 @@ test --sandbox_tmpfs_path=/tmp
 
 # Tests require to be run in a sandbox. Otherwise some will be flaky.
 test --nosandbox_default_allow_network
+
+# As explained in the CI design (https://github.com/eclipse-score/communication/blob/main/CI.md#check-and-merge-queue), we do not want to fail
+# because of a flaky test
+common:ci --flaky_test_attempts=5
+# We do not want in the CI a high frequency showing progress messages otherwise the log file will blow up
+# Still we do not want to disable it to be able to see if a job is directly hanging or even just know the current progress
+common:ci --show_progress_rate_limit=10
 
 # Bzlmod
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/

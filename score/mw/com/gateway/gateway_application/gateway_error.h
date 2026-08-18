@@ -27,8 +27,10 @@ enum class GatewayErrorc : score::result::ErrorCode
     kSkeletonStopOfferFailed,
     kUnknownServiceInstance,
     kUnknownServiceElement,
+    kSubscriptionFailed,
     kReceiveHandlerRegistrationFailed,
     kNonWhitelistedService,
+    kNotificationFailed,
 };
 
 score::result::Error MakeError(const GatewayErrorc code, const std::string_view message = "");
@@ -48,11 +50,15 @@ class GatewayErrorDomain final : public score::result::ErrorDomain
                 return "Gateway received an API call for an unknown service instance identifier.";
             case static_cast<score::result::ErrorCode>(GatewayErrorc::kUnknownServiceElement):
                 return "Gateway received an API call for an unknown service element within an instance identifier.";
+            case static_cast<score::result::ErrorCode>(GatewayErrorc::kSubscriptionFailed):
+                return "Gateway couldn't subscribe its generic proxy to event.";
             case static_cast<score::result::ErrorCode>(GatewayErrorc::kReceiveHandlerRegistrationFailed):
                 return "Gateway couldn't register event-receive-handler at its generic proxy to forward event update "
                        "notifications.";
             case static_cast<score::result::ErrorCode>(GatewayErrorc::kNonWhitelistedService):
                 return "Gateway received request to provide a non-whitelised service.";
+            case static_cast<score::result::ErrorCode>(GatewayErrorc::kNotificationFailed):
+                return "Gateway couldn't notify for this event.";
             default:
                 return "unknown gateway error";
         }

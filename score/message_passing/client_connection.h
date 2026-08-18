@@ -25,11 +25,7 @@
 #include <mutex>
 #include <optional>
 
-namespace score
-{
-namespace message_passing
-{
-namespace detail
+namespace score::message_passing::detail
 {
 
 class ClientConnection final : public IClientConnection
@@ -143,8 +139,6 @@ class ClientConnection final : public IClientConnection
     ISharedResourceEngine::PosixEndpointEntry posix_endpoint_;
 };
 
-}  // namespace detail
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing::detail
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_CLIENT_CONNECTION_H

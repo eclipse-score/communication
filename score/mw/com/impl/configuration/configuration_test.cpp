@@ -12,8 +12,11 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/configuration.h"
 #include "score/mw/com/impl/configuration/config_parser.h"
+#include "score/mw/com/impl/configuration/configuration_error.h"
+#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 
 #include "score/json/internal/model/any.h"
@@ -107,9 +110,9 @@ TEST_F(ConfigurationFixture, construct)
     Configuration unit2(std::move(unit_.value()));
 
     // verify that unit2 really contains still valid copies
-    EXPECT_EQ(unit2.GetServiceTypes().size(), 1);
-    EXPECT_EQ(unit2.GetServiceInstances().size(), 1);
-    EXPECT_NE(unit2.GetServiceInstances().find(kConfigStoreQm.instance_specifier_), unit2.GetServiceInstances().end());
+    EXPECT_EQ(unit2.GetNumberOfServiceTypes(), 1);
+    EXPECT_EQ(unit2.GetNumberOfServiceInstances(), 1);
+    EXPECT_TRUE(unit2.GetServiceInstanceDeployment(kConfigStoreQm.instance_specifier_).has_value());
 
     // verify default values of global section
     EXPECT_EQ(unit2.GetGlobalConfiguration().GetProcessAsilLevel(), QualityType::kASIL_QM);
@@ -149,8 +152,9 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
     const LolaServiceTypeDeployment manual_lola_service_type(service_id, service_events, service_fields);
 
     // Match ServiceTypes generated from json
+    const auto& generated_service_type = config.GetServiceTypeDeployment(service_identifier_type).value().get();
     const auto* generated_lola_service_type =
-        std::get_if<LolaServiceTypeDeployment>(&config.GetServiceTypes().at(service_identifier_type).binding_info_);
+        std::get_if<LolaServiceTypeDeployment>(&generated_service_type.binding_info_);
     ASSERT_NE(generated_lola_service_type, nullptr);
     EXPECT_EQ(manual_lola_service_type.service_id_, generated_lola_service_type->service_id_);
     const auto& manual_service_events = manual_lola_service_type.events_;
@@ -214,7 +218,7 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
 
     // Match ServiceInstances generated from json
     const ServiceInstanceDeployment& generated_service_instance =
-        config.GetServiceInstances().at(instance_specifier_result.value());
+        config.GetServiceInstanceDeployment(instance_specifier_result.value()).value().get();
 
     auto serialized_manual_service_instance = manual_service_instance.Serialize();
     auto serialized_manual_service_instance_string = GetStringFromJson(manual_service_instance.Serialize());
@@ -277,6 +281,375 @@ TEST_F(ConfigurationFixture,
     EXPECT_EQ(*service_instance_deployment_ptr, *kConfigStoreQm.service_instance_deployment_);
 }
 
+// ---------------------------------------------------------------------------
+// Configuration::Validate()
+// ---------------------------------------------------------------------------
+namespace validate_test
+{
+
+constexpr auto kValidInstanceSpecifier = "abc/abc/TirePressurePort";
+
+ServiceIdentifierType MakeServiceIdentifier(const std::string& name = "/score/ncar/services/TirePressureService")
+{
+    return make_ServiceIdentifierType(name, 12U, 34U);
+}
+
+LolaEventInstanceDeployment MakeEventInstanceDeployment()
+{
+    return LolaEventInstanceDeployment{std::nullopt, std::nullopt, std::nullopt, false, 0U};
+}
+
+Configuration MakeConfigurationWithAsilLevel(const QualityType process_asil_level)
+{
+    GlobalConfiguration global_configuration{};
+    global_configuration.SetProcessAsilLevel(process_asil_level);
+    return Configuration{{}, {}, std::move(global_configuration), TracingConfiguration{}};
+}
+
+}  // namespace validate_test
+
+TEST(ConfigurationCrossCheckAsilLevels, InstanceAsilNotHigherThanProcessPasses)
+{
+    using namespace validate_test;
+
+    // Given a Configuration whose process ASIL level matches the ASIL level of its only service instance, and whose
+    // service instance correctly references its service type
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_B);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+    config.AddServiceTypeDeployment(service_identifier,
+                                    ServiceTypeDeployment{LolaServiceTypeDeployment{LolaServiceId{1234U}, {}, {}, {}}});
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier,
+                                  LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                                  QualityType::kASIL_B,
+                                  instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation succeeds
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST(ConfigurationCrossCheckAsilLevels, InstanceAsilHigherThanProcessReturnsError)
+{
+    using namespace validate_test;
+
+    // Given a Configuration whose process ASIL level is lower than the ASIL level of its only service instance
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier,
+                                  LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                                  QualityType::kASIL_B,
+                                  instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation fails with the expected error code
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(*result.error(), static_cast<int>(configuration_errc::configuration_invalid_asil_configuration));
+}
+
+// ---------------------------------------------------------------------------
+// Configuration::Validate() - CrosscheckServiceInstancesToTypes
+// ---------------------------------------------------------------------------
+TEST(ConfigurationValidateCrosscheckServiceInstancesToTypes, MatchingInstanceAndTypeWithMatchingEventPasses)
+{
+    using namespace validate_test;
+
+    // Given a Configuration where the service instance's event refers to an existing event of its service type
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+
+    config.AddServiceTypeDeployment(
+        service_identifier,
+        ServiceTypeDeployment{LolaServiceTypeDeployment{LolaServiceId{1234U}, {{"event_a", 1U}}, {}, {}}});
+
+    LolaServiceInstanceDeployment lola_instance{LolaServiceInstanceId{1U}};
+    lola_instance.events_.emplace("event_a", MakeEventInstanceDeployment());
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier, lola_instance, QualityType::kASIL_QM, instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation succeeds
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST(ConfigurationValidateCrosscheckServiceInstancesToTypes, InstanceReferencingUnknownServiceTypeReturnsError)
+{
+    using namespace validate_test;
+
+    // Given a Configuration with a service instance which refers to a service type that isn't configured
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+
+    // No matching ServiceTypeDeployment is added for service_identifier.
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier,
+                                  LolaServiceInstanceDeployment{LolaServiceInstanceId{1U}},
+                                  QualityType::kASIL_QM,
+                                  instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation fails with the expected error code
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(*result.error(),
+              static_cast<int>(configuration_errc::configuration_invalid_type_reference_from_instance));
+}
+
+TEST(ConfigurationValidateCrosscheckServiceInstancesToTypes, InstanceEventNotInServiceTypeReturnsError)
+{
+    using namespace validate_test;
+
+    // Given a Configuration where the service instance's event doesn't exist in the referenced service type
+    auto config = MakeConfigurationWithAsilLevel(QualityType::kASIL_QM);
+    const auto service_identifier = MakeServiceIdentifier();
+    const auto instance_specifier = InstanceSpecifier::Create(std::string{kValidInstanceSpecifier}).value();
+
+    // Service type deployment does not contain "event_a".
+    config.AddServiceTypeDeployment(service_identifier,
+                                    ServiceTypeDeployment{LolaServiceTypeDeployment{LolaServiceId{1234U}, {}, {}, {}}});
+
+    LolaServiceInstanceDeployment lola_instance{LolaServiceInstanceId{1U}};
+    lola_instance.events_.emplace("event_a", MakeEventInstanceDeployment());
+    config.AddServiceInstanceDeployments(
+        instance_specifier,
+        ServiceInstanceDeployment{service_identifier, lola_instance, QualityType::kASIL_QM, instance_specifier});
+
+    // When validating the configuration
+    const auto result = config.Validate();
+
+    // Then validation fails with the expected error code
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(*result.error(),
+              static_cast<int>(configuration_errc::configuration_invalid_event_reference_from_instance));
+}
+
+TEST_F(ConfigurationFixture, HasLolaServiceDeploymentReturnsTrueIfLolaServiceTypeDeploymentExists)
+{
+    // Given a configuration containing a LolaServiceTypeDeployment
+    WithMinimalConfiguration();
+
+    // When checking if the configuration has a Lola service deployment
+    const auto result = unit_.value().HasLolaServiceDeployment();
+
+    // Then the result should be true
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value());
+}
+
+TEST_F(ConfigurationFixture, HasLolaServiceDeploymentReturnsFalseIfNoLolaServiceTypeDeploymentExists)
+{
+    // Given a configuration without any LolaServiceTypeDeployment
+    WithEmptyConfiguration();
+
+    // When checking if the configuration has a Lola service deployment
+    const auto result = unit_.value().HasLolaServiceDeployment();
+
+    // Then the result should be false
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(result.value());
+}
+
+TEST_F(ConfigurationFixture, GetListOfNamesOfConfiguredServicesReturnsCorrectServiceNames)
+{
+    // Given a configuration containing 2 ServiceTypeDeployments
+    WithMinimalConfiguration();
+    const auto additional_service_identifier = make_ServiceIdentifierType("/bla/blub/two", 3U, 4U);
+    unit_.value().AddServiceTypeDeployment(
+        additional_service_identifier,
+        ServiceTypeDeployment{LolaServiceTypeDeployment{LolaServiceId{5678U}, {}, {}, {}}});
+
+    // When calling GetListOfNamesOfConfiguredServices
+    const auto service_names = unit_.value().GetServiceTypeNames();
+
+    // Then the result should contain the correct service names
+    EXPECT_EQ(service_names.size(), 2);
+    EXPECT_TRUE(service_names.find("/bla/blub/one") != service_names.end());
+    EXPECT_TRUE(service_names.find("/bla/blub/two") != service_names.end());
+}
+
+TEST_F(ConfigurationFixture, GetListOfNamesOfConfiguredServicesReturnsEmptySetIfNoServiceTypes)
+{
+    // Given a configuration without any ServiceTypeDeployments
+    WithEmptyConfiguration();
+
+    // When calling GetListOfNamesOfConfiguredServices
+    const auto service_names = unit_.value().GetServiceTypeNames();
+
+    // Then the result should be an empty set
+    EXPECT_TRUE(service_names.empty());
+}
+
+TEST_F(ConfigurationFixture, GetElementNamesOfServiceTypeReturnsCorrectEventNames)
+{
+    // Given a configuration containing a ServiceTypeDeployment with events and fields
+    WithEmptyConfiguration();
+    const auto additional_service_identifier = make_ServiceIdentifierType("/bla/blub/two", 3U, 4U);
+    unit_.value().AddServiceTypeDeployment(
+        additional_service_identifier,
+        ServiceTypeDeployment{LolaServiceTypeDeployment{
+            LolaServiceId{5678U}, {{"event1", 1}, {"event2", 2}}, {{"field1", 1}, {"field2", 2}}, {}}});
+
+    // When calling GetElementNamesOfServiceType for events
+    const auto event_names = unit_.value().GetElementNamesOfServiceType("/bla/blub/two", ServiceElementType::EVENT);
+
+    // Then the result should contain the correct event names ...
+    EXPECT_EQ(event_names.size(), 2);
+    EXPECT_TRUE(event_names.find("event1") != event_names.end());
+    EXPECT_TRUE(event_names.find("event2") != event_names.end());
+}
+
+TEST_F(ConfigurationFixture, GetElementNamesOfServiceTypeReturnsCorrectFieldNames)
+{
+    // Given a configuration containing a ServiceTypeDeployment with events and fields
+    WithEmptyConfiguration();
+    const auto additional_service_identifier = make_ServiceIdentifierType("/bla/blub/two", 3U, 4U);
+    unit_.value().AddServiceTypeDeployment(
+        additional_service_identifier,
+        ServiceTypeDeployment{LolaServiceTypeDeployment{
+            LolaServiceId{5678U}, {{"event1", 1}, {"event2", 2}}, {{"field1", 1}, {"field2", 2}}, {}}});
+
+    // When calling GetElementNamesOfServiceType for events
+    const auto field_names = unit_.value().GetElementNamesOfServiceType("/bla/blub/two", ServiceElementType::FIELD);
+
+    // Then the result should contain the correct field names
+    EXPECT_EQ(field_names.size(), 2);
+    EXPECT_TRUE(field_names.find("field1") != field_names.end());
+    EXPECT_TRUE(field_names.find("field2") != field_names.end());
+}
+
+TEST_F(ConfigurationFixture, GetAggregatedAllowedUsersReturnsCorrectUserIds)
+{
+    // Given a configuration with 2 LoLa service instance deployments each with a certain set of
+    // allowed consumers and producers for ASIL_QM and ASIL_B
+    WithEmptyConfiguration();
+
+    const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
+    const auto kInstanceSpecifier2 = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort2"}).value();
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment1;
+
+    lolaServiceInstanceDeployment1.allowed_consumer_.insert({QualityType::kASIL_QM, {42, 43}});
+    lolaServiceInstanceDeployment1.allowed_consumer_.insert({QualityType::kASIL_B, {54, 55}});
+    lolaServiceInstanceDeployment1.allowed_provider_.insert({QualityType::kASIL_QM, {15}});
+    lolaServiceInstanceDeployment1.allowed_provider_.insert({QualityType::kASIL_B, {15}});
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment2;
+    lolaServiceInstanceDeployment2.allowed_consumer_.insert({QualityType::kASIL_QM, {42, 60}});
+    lolaServiceInstanceDeployment2.allowed_consumer_.insert({QualityType::kASIL_B, {42, 60}});
+    lolaServiceInstanceDeployment2.allowed_provider_.insert({QualityType::kASIL_QM, {55}});
+    lolaServiceInstanceDeployment2.allowed_provider_.insert({QualityType::kASIL_B, {56}});
+    ServiceInstanceDeployment::BindingInformation binding1(lolaServiceInstanceDeployment1);
+    ServiceInstanceDeployment::BindingInformation binding2(lolaServiceInstanceDeployment2);
+
+    ServiceIdentifierType si1 = make_ServiceIdentifierType("foo", 1U, 1U);
+    ServiceIdentifierType si2 = make_ServiceIdentifierType("bar", 1U, 1U);
+    ServiceInstanceDeployment deployment1(si1, binding1, QualityType::kASIL_B, kInstanceSpecifier);
+    ServiceInstanceDeployment deployment2(si2, binding2, QualityType::kASIL_QM, kInstanceSpecifier2);
+
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier, deployment1);
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier2, deployment2);
+
+    // When calling GetAggregatedAllowedUsers for ASIL_QM and ASIL_B
+    const auto allowed_users_qm = unit_.value().GetAggregatedAllowedUsers(QualityType::kASIL_QM);
+    const auto allowed_users_asil_b = unit_.value().GetAggregatedAllowedUsers(QualityType::kASIL_B);
+
+    // Then the result should contain the correct user IDs
+    EXPECT_EQ(allowed_users_qm.size(), 5);
+    EXPECT_TRUE(allowed_users_qm.find(15) != allowed_users_qm.end());
+    EXPECT_TRUE(allowed_users_qm.find(42) != allowed_users_qm.end());
+    EXPECT_TRUE(allowed_users_qm.find(43) != allowed_users_qm.end());
+    EXPECT_TRUE(allowed_users_qm.find(55) != allowed_users_qm.end());
+    EXPECT_TRUE(allowed_users_qm.find(60) != allowed_users_qm.end());
+
+    EXPECT_EQ(allowed_users_asil_b.size(), 6);
+    EXPECT_TRUE(allowed_users_asil_b.find(15) != allowed_users_asil_b.end());
+    EXPECT_TRUE(allowed_users_asil_b.find(42) != allowed_users_asil_b.end());
+    EXPECT_TRUE(allowed_users_asil_b.find(54) != allowed_users_asil_b.end());
+    EXPECT_TRUE(allowed_users_asil_b.find(55) != allowed_users_asil_b.end());
+    EXPECT_TRUE(allowed_users_asil_b.find(56) != allowed_users_asil_b.end());
+    EXPECT_TRUE(allowed_users_asil_b.find(60) != allowed_users_asil_b.end());
+}
+
+TEST_F(ConfigurationFixture, GetAggregatedAllowedUsersReturnsEmptySetIfNoAllowedAppsAreConfigured)
+{
+    // Given a configuration with 2 LoLa service instance deployments for which no allowed consumer or provider
+    // apps are configured
+    WithEmptyConfiguration();
+
+    const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
+    const auto kInstanceSpecifier2 = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort2"}).value();
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment1;
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment2;
+
+    ServiceInstanceDeployment::BindingInformation binding1(lolaServiceInstanceDeployment1);
+    ServiceInstanceDeployment::BindingInformation binding2(lolaServiceInstanceDeployment2);
+
+    ServiceIdentifierType si1 = make_ServiceIdentifierType("foo", 1U, 1U);
+    ServiceIdentifierType si2 = make_ServiceIdentifierType("bar", 1U, 1U);
+    ServiceInstanceDeployment deployment1(si1, binding1, QualityType::kASIL_B, kInstanceSpecifier);
+    ServiceInstanceDeployment deployment2(si2, binding2, QualityType::kASIL_QM, kInstanceSpecifier2);
+
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier, deployment1);
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier2, deployment2);
+
+    // When calling GetAggregatedAllowedUsers for ASIL_QM and ASIL_B
+    const auto allowed_users_qm = unit_.value().GetAggregatedAllowedUsers(QualityType::kASIL_QM);
+    const auto allowed_users_asil_b = unit_.value().GetAggregatedAllowedUsers(QualityType::kASIL_B);
+
+    // Then the resulting lists should be empty for both ASIL levels
+    EXPECT_TRUE(allowed_users_qm.empty());
+    EXPECT_TRUE(allowed_users_asil_b.empty());
+}
+
+TEST_F(ConfigurationFixture, GetInstancesOfServiceTypeReturnsCorrectInstanceSpecifiers)
+{
+    // Given a configuration with 2 LoLa service instance deployments for the same service type "foo"
+    WithEmptyConfiguration();
+
+    const auto kInstanceSpecifier1 = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort1"}).value();
+    const auto kInstanceSpecifier2 = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort2"}).value();
+    const auto kInstanceSpecifier3 = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort3"}).value();
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment1;
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment2;
+    LolaServiceInstanceDeployment lolaServiceInstanceDeployment3;
+
+    ServiceInstanceDeployment::BindingInformation binding1(lolaServiceInstanceDeployment1);
+    ServiceInstanceDeployment::BindingInformation binding2(lolaServiceInstanceDeployment2);
+    ServiceInstanceDeployment::BindingInformation binding3(lolaServiceInstanceDeployment3);
+
+    ServiceIdentifierType si1 = make_ServiceIdentifierType("foo", 1U, 1U);
+    ServiceIdentifierType si2 = make_ServiceIdentifierType("bar", 1U, 1U);
+    ServiceIdentifierType si3 = make_ServiceIdentifierType("foo", 1U, 2U);
+    ServiceInstanceDeployment deployment1(si1, binding1, QualityType::kASIL_B, kInstanceSpecifier1);
+    ServiceInstanceDeployment deployment2(si2, binding2, QualityType::kASIL_QM, kInstanceSpecifier2);
+    ServiceInstanceDeployment deployment3(si3, binding3, QualityType::kASIL_B, kInstanceSpecifier3);
+
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier1, deployment1);
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier2, deployment2);
+    unit_.value().AddServiceInstanceDeployments(kInstanceSpecifier3, deployment3);
+
+    // When calling GetInstanceOfServiceType with identifier "foo"
+    const auto result = unit_.value().GetInstancesOfServiceType("foo");
+
+    // Then we should find 2 entries with the respective instance specifiers
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_TRUE(result.find("abc/abc/TirePressurePort1") != result.end());
+    EXPECT_TRUE(result.find("abc/abc/TirePressurePort3") != result.end());
+}
 using ConfigurationDeathTest = ConfigurationFixture;
 TEST_F(ConfigurationDeathTest, AddingAServiceTypeDeploymentWithDuplicateServiceIdentifierTypeTerminates)
 {

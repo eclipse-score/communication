@@ -86,6 +86,11 @@ class MyDummyField : public SkeletonFieldBase
         return false;
     }
 
+    Result<void> RegisterGetHandler() override
+    {
+        return {};
+    }
+
     bool was_deferred_update_called_{false};
     bool is_initial_value_saved_{true};
 };

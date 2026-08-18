@@ -83,7 +83,7 @@ void run_client(const std::size_t num_retries, const std::chrono::milliseconds r
 
     std::ignore = lola_proxy.test_field.Subscribe(kMaxNumSamples);
     std::size_t retries = num_retries;
-    while (lola_proxy.test_field.GetSubscriptionState() != score::mw::com::impl::SubscriptionState::kSubscribed)
+    while (lola_proxy.test_field.GetSubscriptionState() != score::mw::com::SubscriptionState::kSubscribed)
     {
         std::this_thread::sleep_for(retry_backoff_time);
         retries--;

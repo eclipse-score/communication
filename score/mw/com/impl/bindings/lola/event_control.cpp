@@ -18,7 +18,7 @@ namespace score::mw::com::impl::lola
 EventControl::EventControl(const SlotIndexType number_of_slots,
                            const SubscriberCountType max_subscribers,
                            const bool enforce_max_samples,
-                           score::memory::shared::ManagedMemoryResource& resource) noexcept
+                           score::memory::shared::ManagedMemoryResource& resource)
     : data_control{number_of_slots, resource},
       subscription_control{number_of_slots, max_subscribers, enforce_max_samples},
       transaction_log_set_{max_subscribers, number_of_slots, resource}

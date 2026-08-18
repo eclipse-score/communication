@@ -21,6 +21,7 @@
 #include "score/mw/com/test/common_test_resources/general_resources.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/test/partial_restart/test_datatype.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include "score/mw/com/test/common_test_resources/timeout_supervisor.h"
 #include <optional>

@@ -13,7 +13,6 @@
 
 #include "score/mw/com/test/receive_handler_unsubscribe/receive_handler_unsubscribe_application.h"
 
-#include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/test/common_test_resources/sample_sender_receiver.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 

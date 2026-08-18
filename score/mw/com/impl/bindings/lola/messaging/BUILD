@@ -217,7 +217,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
+        "//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
@@ -229,6 +229,7 @@ cc_library(
 
 cc_library(
     name = "messaging",
+    srcs = ["messaging.cpp"],
     hdrs = [
         "thread_abstraction.h",
     ],

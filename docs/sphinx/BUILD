@@ -88,6 +88,7 @@ sphinx_module(
     exec_compatible_with = ["@platforms//os:linux"],
     extra_opts = [
         "-Dbreathe_default_project=doxygen_build",
+        "-W",
     ],
     extra_opts_targets = [
         # Pass location of Doxygen XML output to Breathe via -D option

@@ -18,51 +18,61 @@ load("//quality/api_surface:api_surface.bzl", "api_surface_test")
 
 cc_library(
     name = "basic_class_lib",
+    srcs = ["basic_class.cpp"],
     hdrs = ["basic_class.h"],
 )
 
 cc_library(
     name = "type_alias_lib",
+    srcs = ["type_alias.cpp"],
     hdrs = ["type_alias.h"],
 )
 
 cc_library(
     name = "inheritance_lib",
+    srcs = ["inheritance.cpp"],
     hdrs = ["inheritance.h"],
 )
 
 cc_library(
     name = "template_alias_lib",
+    srcs = ["template_alias.cpp"],
     hdrs = ["template_alias.h"],
 )
 
 cc_library(
     name = "private_changes_lib",
+    srcs = ["private_changes.cpp"],
     hdrs = ["private_changes.h"],
 )
 
 cc_library(
     name = "types_in_signatures_lib",
+    srcs = ["types_in_signatures.cpp"],
     hdrs = ["types_in_signatures.h"],
 )
 
 cc_library(
     name = "enum_and_free_functions_lib",
+    srcs = ["enum_and_free_functions.cpp"],
     hdrs = ["enum_and_free_functions.h"],
 )
 
 cc_library(
     name = "internal_namespace_lib",
+    srcs = ["internal_namespace.cpp"],
     hdrs = ["internal_namespace.h"],
 )
 
 cc_library(
     name = "result_type_support_lib",
+    srcs = ["result_type_support.cpp"],
     hdrs = ["result_type_support.h"],
 )
 
 cc_library(
     name = "result_type_regression_lib",
+    srcs = ["result_type_regression.cpp"],
     hdrs = ["result_type_regression.h"],
     deps = [":result_type_support_lib"],
 )
@@ -141,56 +151,67 @@ api_surface_test(
 
 cc_library(
     name = "multi_inheritance_lib",
+    srcs = ["multi_inheritance.cpp"],
     hdrs = ["multi_inheritance.h"],
 )
 
 cc_library(
     name = "ref_qualifiers_lib",
+    srcs = ["ref_qualifiers.cpp"],
     hdrs = ["ref_qualifiers.h"],
 )
 
 cc_library(
     name = "member_function_templates_lib",
+    srcs = ["member_function_templates.cpp"],
     hdrs = ["member_function_templates.h"],
 )
 
 cc_library(
     name = "globals_lib",
+    srcs = ["globals.cpp"],
     hdrs = ["globals.h"],
 )
 
 cc_library(
     name = "protected_methods_lib",
+    srcs = ["protected_methods.cpp"],
     hdrs = ["protected_methods.h"],
 )
 
 cc_library(
     name = "constexpr_members_lib",
+    srcs = ["constexpr_members.cpp"],
     hdrs = ["constexpr_members.h"],
 )
 
 cc_library(
     name = "forward_declared_lib",
+    srcs = ["forward_declared.cpp"],
     hdrs = ["forward_declared.h"],
 )
 
 cc_library(
     name = "extern_c_lib",
+    srcs = ["extern_c.cpp"],
     hdrs = ["extern_c.h"],
 )
 
 cc_library(
     name = "extern_explicit_lib",
+    srcs = ["extern_explicit.cpp"],
     hdrs = ["extern_explicit.h"],
 )
 
 cc_library(
     name = "cpp_attributes_lib",
+    srcs = ["cpp_attributes.cpp"],
     hdrs = ["cpp_attributes.h"],
 )
 
 cc_library(
     name = "sfinae_lib",
+    srcs = ["sfinae.cpp"],
     hdrs = ["sfinae.h"],
 )
 
@@ -199,11 +220,13 @@ cc_library(
 
 cc_library(
     name = "private_changes_v2_lib",
+    srcs = ["private_changes_v2.cpp"],
     hdrs = ["private_changes_v2.h"],
 )
 
 cc_library(
     name = "all_private_lib",
+    srcs = ["all_private.cpp"],
     hdrs = ["all_private.h"],
 )
 

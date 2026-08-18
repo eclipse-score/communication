@@ -32,11 +32,11 @@ class ServiceTypeDeployment
   public:
     using BindingInformation = std::variant<LolaServiceTypeDeployment, score::cpp::blank>;
 
-    explicit ServiceTypeDeployment(const score::json::Object& json_object) noexcept;
+    explicit ServiceTypeDeployment(const score::json::Object& json_object);
 
-    explicit ServiceTypeDeployment(const BindingInformation binding) noexcept;
+    explicit ServiceTypeDeployment(const BindingInformation binding);
 
-    score::json::Object Serialize() const noexcept;
+    score::json::Object Serialize() const;
     std::string_view ToHashString() const noexcept;
 
     // This variable has no invariance that needs to be conserved and is needed to be both accessed and set by the user
@@ -65,7 +65,7 @@ class ServiceTypeDeployment
     std::string hash_string_;
 };
 
-bool operator==(const ServiceTypeDeployment& lhs, const ServiceTypeDeployment& rhs) noexcept;
+bool operator==(const ServiceTypeDeployment& lhs, const ServiceTypeDeployment& rhs);
 
 template <typename ServiceTypeDeploymentBinding>
 const ServiceTypeDeploymentBinding& GetServiceTypeDeploymentBinding(

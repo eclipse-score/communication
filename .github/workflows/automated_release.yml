@@ -234,10 +234,10 @@ jobs:
           echo "::error::CodeQL failed — aborting release. Draft will be deleted."
           exit 1
 
-      - name: Download CodeQL CSV findings artifact
+      - name: Download CodeQL SARIF findings artifact
         uses: actions/download-artifact@v4
         with:
-          name: codeql-csv-results
+          name: codeql-sarif-results
           path: ./codeql_report
 
       - name: Download CodeQL MISRA reports artifact
@@ -300,26 +300,26 @@ jobs:
           name: clang-tidy-findings
           path: /tmp/clang_tidy
 
-      - name: Download CodeQL CSV artifact
+      - name: Download CodeQL SARIF artifact
         uses: actions/download-artifact@v4
         with:
-          name: codeql-csv-results
+          name: codeql-sarif-results
           path: /tmp/codeql
 
       - name: Prepare CodeQL findings for dashboard
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/_quality"
-          if [[ -f /tmp/codeql/codeql-nightly.csv ]]; then
-            cp /tmp/codeql/codeql-nightly.csv \
-               "${GITHUB_WORKSPACE}/_quality/codeql_findings.txt"
+          if [[ -f /tmp/codeql/codeql-nightly.sarif ]]; then
+            cp /tmp/codeql/codeql-nightly.sarif \
+               "${GITHUB_WORKSPACE}/_quality/codeql_findings.sarif"
           fi
 
       - name: Generate quality dashboard
         run: |
-          bazel run //quality/dashboard:generate_dashboard -- \
+          bazel run --config=ci //quality/dashboard:generate_dashboard -- \
             --lcov     /tmp/coverage_zip/extracted/artifacts/coverage_report.dat \
             --clang-tidy /tmp/clang_tidy/clang_tidy_findings.txt \
-            --codeql-csv "${GITHUB_WORKSPACE}/_quality/codeql_findings.txt" \
+            --codeql "${GITHUB_WORKSPACE}/_quality/codeql_findings.sarif" \
             --html     "${GITHUB_WORKSPACE}/_dashboard/index.html"
 
       - name: Package and upload quality dashboard to existing draft release

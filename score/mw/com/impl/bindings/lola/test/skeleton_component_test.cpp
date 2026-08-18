@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/service_data_control.h"
+#include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
@@ -55,6 +57,7 @@ constexpr auto asil_control_shm = "/dev/shm/lola-ctl-0000000000000001-00016-b";
 
 const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
 constexpr std::size_t kNumberOfSlots{10U};
+const SkeletonEventProperties kEventProperties{kNumberOfSlots, 0U, 0U, false, 10U, true};
 
 SkeletonBinding::SkeletonEventBindings kEmptyEvents{};
 SkeletonBinding::SkeletonFieldBindings kEmptyFields{};
@@ -146,6 +149,9 @@ class SkeletonComponentTestFixture : public ::testing::Test
 
         ON_CALL(lola_runtime_mock_, GetLolaMessaging()).WillByDefault(ReturnRef(message_passing_service_mock_));
         ON_CALL(runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock_));
+
+        ON_CALL(mock_event_binding_, GetMaxSize()).WillByDefault(Return(sizeof(TestSampleType)));
+        ON_CALL(mock_field_binding_, GetMaxSize()).WillByDefault(Return(sizeof(TestSampleType)));
     }
 
     void TearDown() override
@@ -186,7 +192,12 @@ class SkeletonComponentTestFixture : public ::testing::Test
     {
         events_.emplace(test::kFooEventName, mock_event_binding_);
         lola_event_instance_deployments_.push_back(
-            {test::kFooEventName, LolaEventInstanceDeployment{kNumberOfSlots, 10U, 1U, true, 0}});
+            {test::kFooEventName,
+             LolaEventInstanceDeployment{kEventProperties.GetTotalNumberOfSlots(),
+                                         kEventProperties.max_subscribers,
+                                         1U,
+                                         kEventProperties.enforce_max_samples,
+                                         0}});
         fields_.emplace(test::kFooFieldName, mock_field_binding_);
         lola_field_instance_deployments_.push_back(
             {test::kFooFieldName,
@@ -219,6 +230,28 @@ class SkeletonComponentTestFixture : public ::testing::Test
         EXPECT_NE(service_instance_deployment_, nullptr);
         EXPECT_NE(service_type_deployment_, nullptr);
         return make_InstanceIdentifier(*service_instance_deployment_, *service_type_deployment_);
+    }
+
+    /// \brief Wires the mock event- and field-bindings so that their PrepareOffer() registers the corresponding
+    ///        service-element at its parent lola::Skeleton (exactly like a real lola::SkeletonEvent does).
+    /// \details Without this the mock bindings PrepareOffer() would be a no-op and the service-elements would
+    ///          never be emplaced into the ServiceDataControl / ServiceDataStorage. As a consequence the shared-memory
+    ///          size calculation (simulation dry-run as well as the real construction) would omit all per-element
+    ///          allocations!
+    void RegisterEventAndFieldOnPrepareOffer(Skeleton& skeleton)
+    {
+        ON_CALL(mock_event_binding_, PrepareOffer()).WillByDefault(testing::Invoke([&skeleton]() -> Result<void> {
+            const ElementFqId element_fq_id{
+                test::kLolaServiceId, test::kFooEventId, test::kDefaultLolaInstanceId, ServiceElementType::EVENT};
+            skeleton.Register<TestSampleType>(element_fq_id, kEventProperties);
+            return {};
+        }));
+        ON_CALL(mock_field_binding_, PrepareOffer()).WillByDefault(testing::Invoke([&skeleton]() -> Result<void> {
+            const ElementFqId element_fq_id{
+                test::kLolaServiceId, test::kFooFieldId, test::kDefaultLolaInstanceId, ServiceElementType::FIELD};
+            skeleton.Register<TestSampleType>(element_fq_id, kEventProperties);
+            return {};
+        }));
     }
 
     /// mocks used by test
@@ -389,10 +422,10 @@ TEST_F(SkeletonComponentTestFixture, ASILShmIsCreated)
     EXPECT_GT(GetSize(asil_control_shm), test::kConfiguredDeploymentControlAsilBShmSize);
 }
 
-TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_QM)
+TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Simulation_QM)
 {
     RecordProperty("Verifies", "SCR-5899126");
-    RecordProperty("Description", "Check if the data_shm is calculated correctly.");
+    RecordProperty("Description", "Check if the size of data and control shm is calculated correctly.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -413,24 +446,7 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_QM)
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kSimulation));
 
     // Expecting that the event and field are offered during the simulation dry run
-    ON_CALL(mock_event_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
-            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
-                                      test::kFooEventId,
-                                      test::kDefaultLolaInstanceId,
-                                      ServiceElementType::EVENT};
-            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
-            return {};
-        }));
-    ON_CALL(mock_field_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
-            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
-                                      test::kFooFieldId,
-                                      test::kDefaultLolaInstanceId,
-                                      ServiceElementType::FIELD};
-            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
-            return {};
-        }));
+    RegisterEventAndFieldOnPrepareOffer(*unit);
 
     // When offering a service and all events
     const auto val = unit->PrepareOffer(events_, fields_, {});
@@ -449,10 +465,10 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_QM)
     EXPECT_GE(GetSize(control_shm), CalculateLowerBoundControlShmSize({{sizeof(TestSampleType), kNumberOfSlots}}));
 }
 
-TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_AsilB)
+TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Simulation_AsilB)
 {
     RecordProperty("Verifies", "SCR-5899126");
-    RecordProperty("Description", "Check if the data_shm is calculated correctly.");
+    RecordProperty("Description", "Check if the size of data and control shm is calculated correctly.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -473,24 +489,7 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_AsilB)
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kSimulation));
 
     // Expecting that the event and field are offered during the simulation dry run
-    ON_CALL(mock_event_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
-            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
-                                      test::kFooEventId,
-                                      test::kDefaultLolaInstanceId,
-                                      ServiceElementType::EVENT};
-            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
-            return {};
-        }));
-    ON_CALL(mock_field_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
-            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
-                                      test::kFooFieldId,
-                                      test::kDefaultLolaInstanceId,
-                                      ServiceElementType::FIELD};
-            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
-            return {};
-        }));
+    RegisterEventAndFieldOnPrepareOffer(*unit);
 
     // When offering a service and all events
     const auto val = unit->PrepareOffer(events_, fields_, {});
@@ -512,15 +511,15 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_AsilB)
 }
 
 TEST_F(SkeletonComponentTestFixture,
-       DataShmObjectSizeCalc_Simulation_QM_DoesNotTerminateWhenConfiguredSizeIsLargerThanEstimate)
+       ShmObjectSizeCalc_Simulation_QM_DoesNotTerminateWhenConfiguredDataShmSizeIsLargerThanDetermined)
 {
     RecordProperty("Verifies", "SCR-5899126");
-    RecordProperty("Description", "Check if the data_shm is calculated correctly.");
+    RecordProperty("Description", "Check if the size of data_shm is calculated correctly.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // At the time of writing, 648 bytes is needed for the data segment used in this test.
+    // At the time of writing, the data segment requires 482 bytes for the event and field registered in this test.
     constexpr std::size_t large_enough_user_specified_memory_size{1000U};
 
     // Given a skeleton with one event "fooEvent" and one field "fooField" registered with a user configured shared
@@ -537,6 +536,9 @@ TEST_F(SkeletonComponentTestFixture,
         std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
     ASSERT_NE(lola_service_type_deployment, nullptr);
 
+    // and that the event and field register themselves at their parent skeleton during the simulation dry-run
+    RegisterEventAndFieldOnPrepareOffer(*unit);
+
     // and that the LoLa runtime returns that ShmSize calculation shall be done via simulation
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kSimulation));
 
@@ -549,11 +551,109 @@ TEST_F(SkeletonComponentTestFixture,
     EXPECT_TRUE(prepare_offer_result.has_value());
 }
 
-using SkeletonComponentTestDeathTest = SkeletonComponentTestFixture;
-TEST_F(SkeletonComponentTestDeathTest, DataShmObjectSizeCalc_Simulation_QM_TerminatesWithTooSmallConfiguredSize)
+/// \brief Verifies that the data shared-memory object size can be calculated analytically (mode kAnalysis), i.e.
+///        WITHOUT relying on the value obtained from the simulation dry-run, and that the analytically sized shared
+///        memory is large enough to hold the actually registered events/fields.
+TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_Data_QM)
 {
     RecordProperty("Verifies", "SCR-5899126");
-    RecordProperty("Description", "Check if the data_shm is calculated correctly.");
+    RecordProperty("Description",
+                   "Check that the data_shm size is calculated analytically (without a simulation run) and is "
+                   "sufficient to hold the registered events/fields.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a skeleton with one event "fooEvent" and one field "fooField" registered
+    WithAServiceInstanceDeploymentContainingSingleEventAndField(QualityType::kASIL_QM)
+        .WithAServiceTypeDeploymentContainingSingleEventAndField();
+    const auto instance_identifier = CreateInstanceIdentifier();
+
+    auto unit = CreateSkeleton(instance_identifier);
+    ASSERT_NE(unit, nullptr);
+
+    const auto* const lola_service_type_deployment =
+        std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
+    ASSERT_NE(lola_service_type_deployment, nullptr);
+
+    // Expect, that the LoLa runtime returns that ShmSize calculation shall be done via (analytic) estimation
+    EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
+
+    // The analytic size calculation queries the maximum sample-size of each event/field binding. Since the events are
+    // registered below as uint8_t, GetMaxSize() has to report the matching size.
+    ON_CALL(mock_event_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
+    ON_CALL(mock_field_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
+
+    // Expecting that the event and field are registered
+    RegisterEventAndFieldOnPrepareOffer(*unit);
+
+    // When offering a service and registering all events/fields into the analytically-sized shared-memory
+    const auto val = unit->PrepareOffer(events_, fields_, {});
+    std::ignore = mock_event_binding_.PrepareOffer();
+    std::ignore = mock_field_binding_.PrepareOffer();
+
+    // then expect, that it succeeds (i.e. the analytically calculated data-shm size was sufficient; had it been too
+    // small, the construction of the event-storage in the fixed-size shared-memory would have aborted)
+    EXPECT_TRUE(val.has_value());
+
+    // and the created data-shm is at least as large as the pure payload it must hold
+    EXPECT_GE(GetSize(data_shm), CalculateLowerBoundDataShmSize({{sizeof(TestSampleType), kNumberOfSlots}}));
+}
+
+/// \brief Verifies that the control shared-memory object size can be calculated analytically (mode kAnalysis), i.e.
+///        WITHOUT relying on the value obtained from the simulation dry-run, and that the analytically sized control
+///        shared memory is large enough to hold the actually registered events/fields.
+TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_Control_QM)
+{
+    RecordProperty("Verifies", "SCR-5899126");
+    RecordProperty("Description",
+                   "Check that the control_shm size is calculated analytically (without a simulation run) and is "
+                   "sufficient to hold the registered events/fields.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a skeleton with one event "fooEvent" and one field "fooField" registered
+    WithAServiceInstanceDeploymentContainingSingleEventAndField(QualityType::kASIL_QM)
+        .WithAServiceTypeDeploymentContainingSingleEventAndField();
+    const auto instance_identifier = CreateInstanceIdentifier();
+
+    auto unit = CreateSkeleton(instance_identifier);
+    ASSERT_NE(unit, nullptr);
+
+    const auto* const lola_service_type_deployment =
+        std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
+    ASSERT_NE(lola_service_type_deployment, nullptr);
+
+    // Expect, that the LoLa runtime returns that ShmSize calculation shall be done via (analytic) estimation
+    EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
+
+    // The analytic size calculation queries the maximum sample-size of each event/field binding. Since the events are
+    // registered below as uint8_t, GetMaxSize() has to report the matching size.
+    ON_CALL(mock_event_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
+    ON_CALL(mock_field_binding_, GetMaxSize()).WillByDefault(Return(sizeof(std::uint8_t)));
+
+    // Expecting that the event and field are registered
+    RegisterEventAndFieldOnPrepareOffer(*unit);
+
+    // When offering a service and registering all events/fields into the analytically-sized shared-memory
+    const auto val = unit->PrepareOffer(events_, fields_, {});
+    std::ignore = mock_event_binding_.PrepareOffer();
+    std::ignore = mock_field_binding_.PrepareOffer();
+
+    // then expect, that it succeeds (i.e. the analytically calculated control-shm size was sufficient; had it been too
+    // small, the construction of the event-control in the fixed-size shared-memory would have aborted)
+    EXPECT_TRUE(val.has_value());
+
+    // and the created control-shm is at least as large as the pure payload it must hold
+    EXPECT_GE(GetSize(control_shm), CalculateLowerBoundControlShmSize({{sizeof(TestSampleType), kNumberOfSlots}}));
+}
+
+using SkeletonComponentTestDeathTest = SkeletonComponentTestFixture;
+TEST_F(SkeletonComponentTestDeathTest, ShmObjectSizeCalc_Simulation_QM_Data_TerminatesWithTooSmallConfiguredSize)
+{
+    RecordProperty("Verifies", "SCR-5899126");
+    RecordProperty("Description", "Check if the size of data_shm is calculated correctly.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -575,6 +675,9 @@ TEST_F(SkeletonComponentTestDeathTest, DataShmObjectSizeCalc_Simulation_QM_Termi
             std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
         ASSERT_NE(lola_service_type_deployment, nullptr);
 
+        // and that the event and field register themselves at their parent skeleton during the simulation dry-run
+        RegisterEventAndFieldOnPrepareOffer(*unit);
+
         // and that the LoLa runtime returns that ShmSize calculation shall be done via simulation
         EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode())
             .WillOnce(Return(ShmSizeCalculationMode::kSimulation));
@@ -587,7 +690,7 @@ TEST_F(SkeletonComponentTestDeathTest, DataShmObjectSizeCalc_Simulation_QM_Termi
 }
 
 TEST_F(SkeletonComponentTestFixture,
-       DataShmObjectSizeCalc_Simulation_QM_DoesNotTerminateWhenConfiguredControlQmSizeIsLargerThanEstimate)
+       ShmObjectSizeCalc_Simulation_QM_Control_DoesNotTerminateWhenConfiguredSizeIsLargerThanDetermined)
 {
     RecordProperty("Verifies", "SCR-5899126");
     RecordProperty("Description", "Check if the control_shm is calculated correctly.");
@@ -595,8 +698,8 @@ TEST_F(SkeletonComponentTestFixture,
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // At the time of writing, 1000 bytes are sufficient for the control segment.
-    constexpr std::size_t large_enough_user_specified_control_qm_memory_size{1000U};
+    // At the time of writing, the control segment requires 2500 bytes for the event and field registered in this test.
+    constexpr std::size_t large_enough_user_specified_control_qm_memory_size{4000U};
 
     // Given a skeleton with one event "fooEvent" and one field "fooField" registered with a user configured shared
     // memory size which is larger than the required control qm shm size
@@ -614,10 +717,13 @@ TEST_F(SkeletonComponentTestFixture,
         std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
     ASSERT_NE(lola_service_type_deployment, nullptr);
 
+    // and that the event and field register themselves at their parent skeleton during the simulation dry-run
+    RegisterEventAndFieldOnPrepareOffer(*unit);
+
     // and that the LoLa runtime returns that ShmSize calculation shall be done via simulation
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kSimulation));
 
-    // When preparing to offer a service
+    // When preparing to offer a service and its event and field
     const auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
     std::ignore = mock_event_binding_.PrepareOffer();
     std::ignore = mock_field_binding_.PrepareOffer();
@@ -627,7 +733,7 @@ TEST_F(SkeletonComponentTestFixture,
 }
 
 TEST_F(SkeletonComponentTestFixture,
-       DataShmObjectSizeCalc_Simulation_QM_DoesNotTerminateWhenConfiguredControlAsilBSizeIsLargerThanEstimate)
+       ShmObjectSizeCalc_Simulation_QM_Control_DoesNotTerminateWhenConfiguredAsilBSizeIsLargerThanDetermined)
 {
     RecordProperty("Verifies", "SCR-5899126");
     RecordProperty("Description", "Check if the asil_control_shm is calculated correctly.");
@@ -635,8 +741,8 @@ TEST_F(SkeletonComponentTestFixture,
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // At the time of writing, 1000 bytes are sufficient for the control segment.
-    constexpr std::size_t large_enough_user_specified_control_asil_b_memory_size{1000U};
+    // At the time of writing, the control segment requires 2500 bytes for the event and field registered in this test.
+    constexpr std::size_t large_enough_user_specified_control_asil_b_memory_size{4000U};
 
     // Given a skeleton with one event "fooEvent" and one field "fooField" registered with a user configured shared
     // memory size which is larger than the required control ASIL-B shm size
@@ -652,10 +758,13 @@ TEST_F(SkeletonComponentTestFixture,
         std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
     ASSERT_NE(lola_service_type_deployment, nullptr);
 
+    // and that the event and field register themselves at their parent skeleton during the simulation dry-run
+    RegisterEventAndFieldOnPrepareOffer(*unit);
+
     // and that the LoLa runtime returns that ShmSize calculation shall be done via simulation
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kSimulation));
 
-    // When preparing to offer a service
+    // When preparing to offer a service and its event and field
     const auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
     std::ignore = mock_event_binding_.PrepareOffer();
     std::ignore = mock_field_binding_.PrepareOffer();
@@ -665,7 +774,7 @@ TEST_F(SkeletonComponentTestFixture,
 }
 
 TEST_F(SkeletonComponentTestFixture,
-       DataShmObjectSizeCalc_Simulation_QM_DoesNotTerminateWhenShmSizesAreLargerThanEstimates)
+       ShmObjectSizeCalc_Simulation_QM_Data_Control_DoesNotTerminateWhenShmSizesAreLargerThanDetermined)
 {
     RecordProperty("Verifies", "SCR-5899126");
     RecordProperty("Description", "Check if all shm sizes are calculated correctly.");
@@ -673,10 +782,11 @@ TEST_F(SkeletonComponentTestFixture,
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // At the time of writing, 1000 bytes are sufficient for every segment.
+    // At the time of writing, the registered event and field require ~482 bytes for the data segment and ~2500 bytes
+    // for each control segment.
     constexpr std::size_t large_enough_user_specified_data_shm_memory_size{1000U};
-    constexpr std::size_t large_enough_user_specified_control_asil_b_memory_size{1000U};
-    constexpr std::size_t large_enough_user_specified_control_qm_memory_size{1000U};
+    constexpr std::size_t large_enough_user_specified_control_asil_b_memory_size{4000U};
+    constexpr std::size_t large_enough_user_specified_control_qm_memory_size{4000U};
 
     // Given a skeleton with one event "fooEvent" and one field "fooField" registered with a user configured shared
     // memory size which is larger than the required control ASIL-B shm size
@@ -694,10 +804,13 @@ TEST_F(SkeletonComponentTestFixture,
         std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
     ASSERT_NE(lola_service_type_deployment, nullptr);
 
+    // and that the event and field register themselves at their parent skeleton when offered
+    RegisterEventAndFieldOnPrepareOffer(*unit);
+
     // and that the LoLa runtime returns that ShmSize calculation shall be done via simulation
     EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kSimulation));
 
-    // When preparing to offer a service
+    // When preparing to offer a service and its event and field
     const auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
     std::ignore = mock_event_binding_.PrepareOffer();
     std::ignore = mock_field_binding_.PrepareOffer();
@@ -706,9 +819,106 @@ TEST_F(SkeletonComponentTestFixture,
     EXPECT_TRUE(prepare_offer_result.has_value());
 }
 
+TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_QM_Control_SizeMatchesSimulationResult)
+{
+    RecordProperty("Verifies", "SCR-5899126");
+    RecordProperty("Description", "Check if all shm sizes are calculated correctly.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a skeleton with one event "fooEvent" and one field "fooField"
+    WithAServiceInstanceDeploymentContainingSingleEventAndField(QualityType::kASIL_QM)
+        .WithAServiceTypeDeploymentContainingSingleEventAndField();
+    const auto instance_identifier = CreateInstanceIdentifier();
+
+    auto unit = CreateSkeleton(instance_identifier);
+    ASSERT_NE(unit, nullptr);
+
+    // and that the event and field register themselves at their parent skeleton when offered
+    RegisterEventAndFieldOnPrepareOffer(*unit);
+
+    // and that the LoLa runtime returns that ShmSize calculation shall be done via simulation
+    EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kSimulation));
+
+    // When preparing to offer a service and its event and field
+    auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
+    std::ignore = mock_event_binding_.PrepareOffer();
+    std::ignore = mock_field_binding_.PrepareOffer();
+
+    // then expect, that PrepareOffer was successful
+    EXPECT_TRUE(prepare_offer_result.has_value());
+    // then we store the actual size of the control-shm object
+    const auto control_shm_size_simulation = GetSize(control_shm);
+    // and PrepareStopOffer
+    unit->PrepareStopOffer(std::nullopt);
+
+    // expect, that the LoLa runtime returns that ShmSize calculation shall be done via kAnalysis
+    EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
+    // When preparing to offer a service and its event and field a 2nd time
+    prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
+    std::ignore = mock_event_binding_.PrepareOffer();
+    std::ignore = mock_field_binding_.PrepareOffer();
+
+    // then expect, that PrepareOffer was successful
+    EXPECT_TRUE(prepare_offer_result.has_value());
+
+    // and that the size calculated by analysis exactly matches the size resulting from simulation.
+    const auto control_shm_size_analysis = GetSize(control_shm);
+    EXPECT_EQ(control_shm_size_analysis, control_shm_size_simulation);
+}
+
+TEST_F(SkeletonComponentTestFixture, ShmObjectSizeCalc_Analysis_QM_Data_SizeMatchesSimulationResult)
+{
+    RecordProperty("Verifies", "SCR-5899126");
+    RecordProperty("Description", "Check if all shm sizes are calculated correctly.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a skeleton with one event "fooEvent" and one field "fooField"
+    WithAServiceInstanceDeploymentContainingSingleEventAndField(QualityType::kASIL_QM)
+        .WithAServiceTypeDeploymentContainingSingleEventAndField();
+    const auto instance_identifier = CreateInstanceIdentifier();
+
+    auto unit = CreateSkeleton(instance_identifier);
+    ASSERT_NE(unit, nullptr);
+
+    // and that the event and field register themselves at their parent skeleton when offered
+    RegisterEventAndFieldOnPrepareOffer(*unit);
+
+    // and that the LoLa runtime returns that ShmSize calculation shall be done via simulation
+    EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kSimulation));
+
+    // When preparing to offer a service and its event and field
+    auto prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
+    std::ignore = mock_event_binding_.PrepareOffer();
+    std::ignore = mock_field_binding_.PrepareOffer();
+
+    // then expect, that PrepareOffer was successful
+    EXPECT_TRUE(prepare_offer_result.has_value());
+    // then we store the actual size of the data-shm object
+    const auto data_shm_size_simulation = GetSize(data_shm);
+    // and PrepareStopOffer
+    unit->PrepareStopOffer(std::nullopt);
+
+    // expect, that the LoLa runtime returns that ShmSize calculation shall be done via kAnalysis
+    EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kAnalysis));
+    // When preparing to offer a service and its event and field a 2nd time
+    prepare_offer_result = unit->PrepareOffer(events_, fields_, {});
+    std::ignore = mock_event_binding_.PrepareOffer();
+    std::ignore = mock_field_binding_.PrepareOffer();
+
+    // then expect, that PrepareOffer was successful
+    EXPECT_TRUE(prepare_offer_result.has_value());
+
+    // and that the size calculated by analysis exactly matches the size resulting from simulation.
+    const auto data_shm_size_analysis = GetSize(data_shm);
+    EXPECT_EQ(data_shm_size_analysis, data_shm_size_simulation);
+}
+
 using SkeletonComponentTestDeathTest = SkeletonComponentTestFixture;
-TEST_F(SkeletonComponentTestDeathTest,
-       DataShmObjectSizeCalc_Simulation_QM_TerminatesWithTooSmallConfiguredControlQmSize)
+TEST_F(SkeletonComponentTestDeathTest, ShmObjectSizeCalc_Simulation_QM_Control_TerminatesWithTooSmallConfiguredSize)
 {
     RecordProperty("Verifies", "SCR-5899126");
     RecordProperty("Description", "Check if the control_shm is calculated correctly.");
@@ -735,6 +945,9 @@ TEST_F(SkeletonComponentTestDeathTest,
             std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
         ASSERT_NE(lola_service_type_deployment, nullptr);
 
+        // and that the event and field register themselves at their parent skeleton during the simulation dry-run
+        RegisterEventAndFieldOnPrepareOffer(*unit);
+
         // and that the LoLa runtime returns that ShmSize calculation shall be done via simulation
         EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode())
             .WillOnce(Return(ShmSizeCalculationMode::kSimulation));
@@ -748,7 +961,7 @@ TEST_F(SkeletonComponentTestDeathTest,
 
 using SkeletonComponentTestDeathTest = SkeletonComponentTestFixture;
 TEST_F(SkeletonComponentTestDeathTest,
-       DataShmObjectSizeCalc_Simulation_QM_TerminatesWithTooSmallConfiguredControlAsilBSize)
+       ShmObjectSizeCalc_Simulation_AsilB_Control_TerminatesWithTooSmallConfiguredAsilBSize)
 {
     RecordProperty("Verifies", "SCR-5899126");
     RecordProperty("Description", "Check if the asil_control_shm is calculated correctly.");
@@ -772,6 +985,9 @@ TEST_F(SkeletonComponentTestDeathTest,
         const auto* const lola_service_type_deployment =
             std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
         ASSERT_NE(lola_service_type_deployment, nullptr);
+
+        // and that the event and field register themselves at their parent skeleton during the simulation dry-run
+        RegisterEventAndFieldOnPrepareOffer(*unit);
 
         // and that the LoLa runtime returns that ShmSize calculation shall be done via simulation
         EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode())
