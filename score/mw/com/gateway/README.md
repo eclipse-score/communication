@@ -23,6 +23,8 @@ This README describes the implementation details specific to this codebase.
 | [gateway_application/gateway_error.h](gateway_application/gateway_error.h) | Error codes returned by `GatewayApplication`. |
 | [gateway_application/configuration/gateway_configuration.h](gateway_application/configuration/gateway_configuration.h) | Parsed gateway configuration (forwarded/received services, transport ID, config path). |
 | [gateway_application/configuration/gateway_config_parser.h](gateway_application/configuration/gateway_config_parser.h) | Parses `mw_com_gateway_config.json` into `GatewayConfiguration`. |
+| [gateway_application/gateway_application_runner.h](gateway_application/gateway_application_runner.h) / [.cpp](gateway_application/gateway_application_runner.cpp) | `RunGatewayApplication()` / `SignalHandler()` — reusable library entry point: parses the gateway config, sets up and starts a `GatewayApplication`, then blocks until shutdown is requested. Depended on by `gateway_application_bin`; can equally be linked into another process/library that wants to embed a gateway. |
+| [gateway_application/gateway_application_main.cpp](gateway_application/gateway_application_main.cpp) | `main()` of `gateway_application_bin`. Parses the two CLI args, initializes the `mw::com` runtime, installs `SIGINT`/`SIGTERM` handlers, and calls `RunGatewayApplication()`. |
 | [transport_layer/transport.h](transport_layer/transport.h) | `Transport` abstract base class — called by `GatewayApplication` to send cross-domain requests. |
 | [transport_layer/transport_factory.h](transport_layer/transport_factory.h) | Creates the correct `Transport` implementation from configuration. |
 | [transport_layer/transport_mock.h](transport_layer/transport_mock.h) | GMock of `Transport` used in unit tests. |
@@ -108,6 +110,24 @@ Key fields:
   (via `config-path`).
 
 See [gateway_application/configuration/](gateway_application/configuration/) for the JSON schema and examples.
+
+### Running the Gateway Application
+
+`gateway_application_bin` (built from [gateway_application_main.cpp](gateway_application/gateway_application_main.cpp))
+takes exactly two positional arguments:
+
+```sh
+gateway_application_bin <mw_com_config-path> <gateway-config-path>
+```
+
+`main()` only handles argument parsing, `mw::com` runtime initialization and `SIGINT`/`SIGTERM` handling; the actual
+setup/start/wait-for-shutdown sequence lives in `RunGatewayApplication()` in
+[gateway_application_runner.h](gateway_application/gateway_application_runner.h) /
+[.cpp](gateway_application/gateway_application_runner.cpp), so it can be reused from another binary or embedded
+directly into another process without going through `main()`/`argv`.
+
+See [gateway_application/etc/](gateway_application/etc/) for a complete runnable pair of sample configs (Source +
+Destination side) and the exact commands to launch them.
 
 ## Detailed Sequences
 
