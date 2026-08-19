@@ -116,6 +116,38 @@ cc_unit_test(
 )
 
 cc_library(
+    name = "gateway_application_runner",
+    srcs = ["gateway_application_runner.cpp"],
+    hdrs = ["gateway_application_runner.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+    ],
+    deps = [
+        ":gateway_application",
+        "//score/mw/com/gateway/gateway_application/configuration:gateway_config_parser",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_binary(
+    name = "gateway_application_bin",
+    srcs = ["gateway_application_main.cpp"],
+    data = [
+        ":logging.json",
+    ],
+    env = {"MW_LOG_CONFIG_FILE": "$(location logging.json)"},
+    visibility = ["//visibility:public"],
+    deps = [
+        ":gateway_application_runner",
+        "//score/mw/com:runtime",
+        "//score/mw/com:runtime_configuration",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_library(
     name = "gateway_core_mock",
     srcs = ["gateway_core_mock.cpp"],
     hdrs = ["gateway_core_mock.h"],
