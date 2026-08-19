@@ -1,0 +1,8 @@
+{
+  "hypervisor-socket": {
+    "remote-ip": "172.17.0.6",
+    "local-port": 45001,
+    "remote-port": 45002,
+    "request-timeout-ms": 5000
+  }
+}
