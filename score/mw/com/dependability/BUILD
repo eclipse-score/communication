@@ -15,25 +15,37 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "dependable_elem
 dependable_element(
     name = "mw_com",
     architectural_design = ["//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design"],
+# =======
+#     architectural_design = [
+#         "//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design",
+#         "//score/mw/com/dependability/software_architectural_design/static_design:binding_independent_static_design",
+#         "//score/mw/com/dependability/software_architectural_design/static_design:lola_static_design",
+#         "//score/mw/com/dependability/software_architectural_design/static_design:someip_static_design",
+#         "//score/mw/com/dependability/software_architectural_design/static_design:mock_binding_static_design",
+#         "//score/mw/com/dependability/software_architectural_design/static_design/interfaces:mw_com_interfaces_design",
+#         "//score/mw/com/dependability/software_architectural_design/static_design/interfaces:tst",
+#     ],
     assumptions_of_use = [],
     components = [
-        "//score/mw/com/impl:frontend_component",
-        "//score/mw/com/impl/bindings",
+        # "//score/mw/com/impl:frontend_component",
+        # "//score/mw/com/impl/bindings",
     ],
-    dependability_analysis = ["//score/mw/com/dependability/safety_analysis:mw_com_fmea"],
+    dependability_analysis = [
+        # "//score/mw/com/dependability/safety_analysis:mw_com_fmea"
+        ],
     integrity_level = "B",
     maturity = "development",
     requirements = [
-        "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_ipc",
-        "//score/mw/com/dependability/assumed_system:assumed_system_requirements",
+        # "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_ipc",
+        # "//score/mw/com/dependability/assumed_system:assumed_system_requirements",
     ],
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],
     visibility = ["//visibility:public"],
     deps = [
-        "//third_party/score_baselibs:bitmanipulation",
-        "//third_party/score_baselibs:containers",
-        "//third_party/score_baselibs:futurecpp",
-        "//third_party/score_baselibs:os",
+        # "//third_party/score_baselibs:bitmanipulation",
+        # "//third_party/score_baselibs:containers",
+        # "//third_party/score_baselibs:futurecpp",
+        # "//third_party/score_baselibs:os",
     ],
 )
