@@ -14,17 +14,20 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "dependable_elem
 
 dependable_element(
     name = "mw_com",
-    architectural_design = ["//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design"],
-# =======
-#     architectural_design = [
-#         "//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design",
-#         "//score/mw/com/dependability/software_architectural_design/static_design:binding_independent_static_design",
-#         "//score/mw/com/dependability/software_architectural_design/static_design:lola_static_design",
-#         "//score/mw/com/dependability/software_architectural_design/static_design:someip_static_design",
-#         "//score/mw/com/dependability/software_architectural_design/static_design:mock_binding_static_design",
-#         "//score/mw/com/dependability/software_architectural_design/static_design/interfaces:mw_com_interfaces_design",
-#         "//score/mw/com/dependability/software_architectural_design/static_design/interfaces:tst",
-#     ],
+    architectural_design = [
+        "//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design",
+        "//score/mw/com/dependability/software_architectural_design/static_design:interface_design",
+    ],
+    # =======
+    #     architectural_design = [
+    #         "//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design",
+    #         "//score/mw/com/dependability/software_architectural_design/static_design:binding_independent_static_design",
+    #         "//score/mw/com/dependability/software_architectural_design/static_design:lola_static_design",
+    #         "//score/mw/com/dependability/software_architectural_design/static_design:someip_static_design",
+    #         "//score/mw/com/dependability/software_architectural_design/static_design:mock_binding_static_design",
+    #         "//score/mw/com/dependability/software_architectural_design/static_design/interfaces:mw_com_interfaces_design",
+    #         "//score/mw/com/dependability/software_architectural_design/static_design/interfaces:tst",
+    #     ],
     assumptions_of_use = [],
     components = [
         # "//score/mw/com/impl:frontend_component",
@@ -32,7 +35,7 @@ dependable_element(
     ],
     dependability_analysis = [
         # "//score/mw/com/dependability/safety_analysis:mw_com_fmea"
-        ],
+    ],
     integrity_level = "B",
     maturity = "development",
     requirements = [
