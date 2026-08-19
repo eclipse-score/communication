@@ -13,13 +13,40 @@
 
 @startuml
 
-component "OffsetPtr<PointedType>" as offset_ptr
-component "offset_ptr_bounds_check" as bounds_check
-component "pointer_arithmetic_util" as pointer_arithmetic_util
-component "MemoryRegionBounds" as memory_region_bounds
+namespace score::memory::shared {
 
-offset_ptr --> bounds_check
-offset_ptr --> pointer_arithmetic_util
-offset_ptr --> memory_region_bounds
+class OffsetPtr {
+  +OffsetPtr(ptr)
+  +OffsetPtr(other)
+  {static} +pointer_to(ref): OffsetPtr
+  +operator*(): reference
+  +operator[](idx): reference
+  +operator+=(offset): OffsetPtr&
+  +operator-=(offset): OffsetPtr&
+  +get(): pointer
+  +operator->(): pointer
+  +operator!(): bool
+  {static} -CopyFrom(source_offset_ptr, target_offset_ptr): std::pair<difference_type, MemoryRegionBounds>
+  {static} -GetPointerWithBoundsCheck(offset_ptr_address, offset, offset_ptr_memory_bounds_when_not_in_shm, pointed_type_size): pointer
+  {static} -GetPointerWithoutBoundsCheck(offset_ptr_address, offset): pointer
+  -IncrementOffset(multiple_of_pointed_type_to_increment): void
+  -DecrementOffset(multiple_of_pointed_type_to_decrement): void
+  {static} -CalculateOffsetFromPointer(offset_ptr_address, pointed_to_address): difference_type
+  {static} -CalculatePointerFromOffset(offset, offset_ptr): pointer
+  --
+  -offset_ : detail_offset_ptr::difference_type
+  -memory_bounds_ : MemoryRegionBounds
+}
+
+class MemoryRegionBounds
+class MemoryResourceRegistry
+
+OffsetPtr *-- MemoryRegionBounds
+OffsetPtr ..> MemoryResourceRegistry
+
+' OffsetPtr relies on the free functions declared in offset_ptr_bounds_check.h
+' and pointer_arithmetic_util.h for bounds validation and pointer arithmetic.
+
+}
 
 @enduml

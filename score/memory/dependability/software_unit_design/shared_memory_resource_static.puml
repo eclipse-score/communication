@@ -14,18 +14,94 @@
 @startuml
 
 namespace score::memory::shared {
-    abstract class ManagedMemoryResource
-    abstract class ISharedMemoryResource
-    class SharedMemoryResource
-    class LockFile
-    class MemoryResourceProxy
-    abstract class TypedMemory
 
-    ManagedMemoryResource <|-- ISharedMemoryResource
-    ISharedMemoryResource <|-- SharedMemoryResource
-    SharedMemoryResource ..> LockFile
-    SharedMemoryResource ..> MemoryResourceProxy
-    SharedMemoryResource ..> TypedMemory
+abstract class ManagedMemoryResource
+
+abstract class ISharedMemoryResource {
+  {abstract} +getPath(): const std::string*
+  {abstract} +UnlinkFilesystemEntry(): void
+  {abstract} +GetFileDescriptor(): FileDescriptor
+  {abstract} +IsShmInTypedMemory(): bool
+  {abstract} +GetIdentifier(): std::string_view
+}
+
+class SharedMemoryResource {
+  +~SharedMemoryResource()
+  +getMemoryResourceProxy(): const MemoryResourceProxy*
+  +getBaseAddress(): void*
+  +getUsableBaseAddress(): void*
+  +GetUserAllocatedBytes(): std::size_t
+  +IsOffsetPtrBoundsCheckBypassingEnabled(): bool
+  +getPath(): const std::string*
+  +GetIdentifier(): std::string_view
+  +GetFileDescriptor(): FileDescriptor
+  +IsShmInTypedMemory(): bool
+  -Create(path, reserve_bytes, initialize_callback, permissions, acl_factory, typed_memory_ptr)
+  -CreateAnonymous(shared_memory_resource_id, reserve_bytes, initialize_callback, permissions, acl_factory, typed_memory_ptr)
+  -CreateOrOpen(path, reserve_bytes, initialize_callback, permissions, acl_factory, typed_memory_ptr)
+  -Open(path, is_read_write, acl_factory, typed_memory_ptr)
+  -GetNeededManagementSpace(): std::size_t
+  -CreateImpl(reserve_bytes, initialize_callback, permissions)
+  -CreateOrOpenImpl(reserve_bytes, initialize_callback, permissions)
+  -OpenImpl(is_read_write)
+  -UnlinkFilesystemEntry(): void
+  -calcStatModeForPermissions(permissions)
+  -CreateLockFileForNamedSharedMemory(lock_file)
+  -AllocateInTypedMemory(permissions, flags)
+  -OpenSharedMemory(flags, mode)
+  -SealAnonymousOrReserveNamedSharedMemory(): void
+  --
+  -file_descriptor_ : FileDescriptor
+  -file_owner_uid_ : uid_t
+  -lock_file_path_ : std::optional<std::string>
+  -virtual_address_space_to_reserve_ : std::size_t
+  -typed_memory_ptr_ : std::shared_ptr<TypedMemory>
+  -opening_mode_ : ::score::os::Fcntl::Open
+  -map_mode_ : ::score::os::Mman::Protection
+  -base_address_ : void*
+  -control_block_ : ControlBlock*
+  -acl_factory_ : AccessControlListFactory
+  -is_shm_in_typed_memory_ : bool
+  -log_identification_ : std::string
+  -memory_identifier_ : std::uint64_t
+  -shared_memory_resource_identifier_ : std::variant<std::string, std::uint64_t>
+  -start_ : void*
+}
+
+class "SharedMemoryResource::ControlBlock" as ControlBlock {
+  +ControlBlock(id)
+  --
+  +alreadyAllocatedBytes : std::atomic<std::size_t>
+  +memoryResourceProxy : MemoryResourceProxy
+}
+
+class "ISharedMemoryResource::AccessControl" as AccessControl {
+  +permissions_ : const UserPermissions&
+  +allowedProviders_ : const std::optional<score::cpp::span<const uid_t>>
+}
+
+class WorldReadable
+class WorldWritable
+class MemoryResourceProxy
+class SharedMemoryFactory
+abstract class TypedMemory
+class LockFile
+
+enum SharedMemoryErrorCode {
+  UnknownSharedMemoryIdentifier = 1
+}
+
+ManagedMemoryResource <|-- ISharedMemoryResource
+ISharedMemoryResource <|-- SharedMemoryResource
+SharedMemoryFactory ..> SharedMemoryResource : creates / opens
+SharedMemoryResource *-- ControlBlock
+ControlBlock *-- MemoryResourceProxy
+SharedMemoryResource ..> LockFile
+SharedMemoryResource ..> TypedMemory
+AccessControl ..> WorldReadable
+AccessControl ..> WorldWritable
+SharedMemoryResource ..> SharedMemoryErrorCode
+
 }
 
 @enduml

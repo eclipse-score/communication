@@ -14,10 +14,64 @@
 @startuml
 
 namespace score::memory::shared {
-    abstract class ISharedMemoryFactory
-    class SharedMemoryFactory
 
-    SharedMemoryFactory ..> ISharedMemoryFactory
+abstract class ISharedMemoryFactory {
+  {abstract} +Open(path, is_read_write, allowedProviders): std::shared_ptr<ISharedMemoryResource>
+  {abstract} +Create(path, cb, reserve_bytes, permissions, prefer_typed_memory): std::shared_ptr<ISharedMemoryResource>
+  {abstract} +CreateAnonymous(shared_memory_resource_id, cb, reserve_bytes, permissions, prefer_typed_memory): std::shared_ptr<ISharedMemoryResource>
+  {abstract} +CreateOrOpen(path, cb, reserve_bytes, access_control, prefer_typed_memory): std::shared_ptr<ISharedMemoryResource>
+  {abstract} +Remove(path): void
+  {abstract} +RemoveStaleArtefacts(path): void
+  {abstract} +SetTypedMemoryProvider(typed_memory_ptr): void
+  {abstract} +SetInterVMMemoryProvider(intervm_memory_ptr): void
+  {abstract} +GetControlBlockSize(): std::size_t
+  {abstract} +Clear(): void
+}
+
+class SharedMemoryFactory {
+  {static} +Open(path, is_read_write, allowedProviders): std::shared_ptr<ISharedMemoryResource>
+  {static} +Create(path, cb, reserve_bytes, permissions, prefer_typed_memory): std::shared_ptr<ISharedMemoryResource>
+  {static} +CreateAnonymous(shared_memory_resource_id, cb, reserve_bytes, permissions, prefer_typed_memory): std::shared_ptr<ISharedMemoryResource>
+  {static} +CreateOrOpen(path, cb, reserve_bytes, access_control, prefer_typed_memory): std::shared_ptr<ISharedMemoryResource>
+  {static} +Remove(path): void
+  {static} +RemoveStaleArtefacts(path): void
+  {static} +SetTypedMemoryProvider(typed_memory_ptr): void
+  {static} +SetInterVMMemoryProvider(intervm_memory_ptr): void
+  {static} +GetControlBlockSize(): std::size_t
+  {static} +Clear(): void
+  {static} +InjectMock(mock): void
+  -instance(): ISharedMemoryFactory&
+  --
+  -mock_ : ISharedMemoryFactory*
+}
+
+class SharedMemoryFactoryImpl {
+  +Open(path, is_read_write, allowedProviders): std::shared_ptr<ISharedMemoryResource>
+  +Create(path, cb, reserve_bytes, permissions, prefer_typed_memory): std::shared_ptr<ISharedMemoryResource>
+  +CreateAnonymous(shared_memory_resource_id, cb, reserve_bytes, permissions, prefer_typed_memory): std::shared_ptr<ISharedMemoryResource>
+  +CreateOrOpen(path, cb, reserve_bytes, access_control, prefer_typed_memory): std::shared_ptr<ISharedMemoryResource>
+  +Remove(path): void
+  +RemoveStaleArtefacts(path): void
+  +SetTypedMemoryProvider(typed_memory_ptr): void
+  +SetInterVMMemoryProvider(intervm_memory_ptr): void
+  +GetControlBlockSize(): std::size_t
+  +Clear(): void
+  --
+  -mutex_ : std::mutex
+  -resources_ : std::unordered_map<std::string, std::weak_ptr<score::memory::shared::SharedMemoryResource>>
+  -typed_memory_ptr_ : std::shared_ptr<score::memory::shared::TypedMemory>
+  -intervm_memory_ptr_ : std::shared_ptr<score::memory::shared::TypedMemory>
+}
+
+class SharedMemoryResource
+abstract class TypedMemory
+class ISharedMemoryResource
+
+ISharedMemoryFactory <|-- SharedMemoryFactoryImpl
+SharedMemoryFactory ..> ISharedMemoryFactory : facade / mock injection
+SharedMemoryFactoryImpl ..> SharedMemoryResource : creates / opens
+SharedMemoryFactoryImpl ..> TypedMemory : provider selection
+
 }
 
 @enduml

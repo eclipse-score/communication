@@ -13,13 +13,82 @@
 
 @startuml
 
-component "MemoryResourceRegistry" as memory_resource_registry
-component "MemoryRegionMapImpl<AtomicIndirectorType>" as memory_region_map
-component "MemoryRegionBounds" as memory_region_bounds
-component "ManagedMemoryResource" as managed_memory_resource
+namespace score::memory::shared {
 
-memory_resource_registry --> memory_region_map
-memory_resource_registry --> managed_memory_resource
-memory_region_map --> memory_region_bounds
+abstract class ManagedMemoryResource
+
+class MemoryResourceRegistry {
+  +getInstance(): MemoryResourceRegistry&
+  +at(identifier): ManagedMemoryResource*
+  +insert_resource(input): bool
+  +remove_resource(identifier): void
+  +clear(): void
+  +GetBoundsFromAddress(pointer): std::optional<MemoryRegionBounds>
+  +GetBoundsFromAddressAsInteger(pointer_as_integer): std::optional<MemoryRegionBounds>
+  +GetBoundsFromIdentifier(identifier): score::Result<MemoryRegionBounds>
+  -CheckResourceInput(resource): void
+  --
+  -mutex_ : std::shared_timed_mutex
+  -registry_ : std::unordered_map<MemoryResourceIdentifier, ManagedMemoryResource*>
+  -region_map_ : MemoryRegionMap
+}
+
+class MemoryResourceProxy {
+  +MemoryResourceProxy(identifier)
+  +allocate(size, alignment): void*
+  +deallocate(ptr, size): void
+  {static} +EnableBoundsChecking(enable): bool
+  -PerformBoundsCheck(memory_identifier): void
+  --
+  -memory_identifier_ : const std::uint64_t
+}
+
+class MemoryRegionBounds {
+  +MemoryRegionBounds()
+  +MemoryRegionBounds(start_address, end_address)
+  +Set(start_address, end_address): void
+  +Reset(): void
+  +has_value(): bool
+  +GetStartAddress(): std::uintptr_t
+  +GetEndAddress(): std::uintptr_t
+  --
+  -start_address_ : std::uintptr_t
+  -end_address_ : std::uintptr_t
+}
+
+class "detail::MemoryRegionMapImpl<AtomicIndirectorType>" as MemoryRegionMapImpl {
+  +MemoryRegionMapImpl()
+  +GetBoundsFromAddress(pointer): std::optional<MemoryRegionBounds>
+  +UpdateKnownRegion(memory_range_start, memory_range_end): bool
+  +RemoveKnownRegion(memory_range_start): void
+  +ClearKnownRegions(): void
+  +GetSize(): std::size_t
+  -AcquireLatestRegionVersionForRead(): std::optional<AcquiredRefcountIndex>
+  -AcquireRegionVersionForOverwrite(): std::optional<std::uint8_t>
+  --
+  -known_regions_versions_ : std::array<std::map<std::uintptr_t, std::uintptr_t>, VERSION_COUNT>
+  -known_regions_versions_refcounts_ : std::array<std::atomic<RegionVersionRefCountType>, VERSION_COUNT>
+  -latest_known_region_version_ : std::atomic_uint8_t
+}
+
+class "MemoryRegionMapImpl::AcquiredRefcountIndex" as AcquiredRefcountIndex {
+  +AcquiredRefcountIndex(refcount_index, ref_count)
+  +~AcquiredRefcountIndex()
+  +GetIndex(): std::uint8_t
+  --
+  -index_ : std::uint8_t
+  -ref_count_ : std::reference_wrapper<std::atomic<RegionVersionRefCountType>>
+  -owns_resource_ : bool
+}
+
+MemoryResourceRegistry o-- ManagedMemoryResource
+MemoryResourceRegistry *-- MemoryRegionMapImpl
+MemoryResourceRegistry ..> MemoryResourceProxy
+
+' MemoryResourceProxy keeps a process-global static flag bounds_checking_enabled_.
+MemoryRegionMapImpl *-- AcquiredRefcountIndex
+MemoryRegionMapImpl ..> MemoryRegionBounds
+
+}
 
 @enduml

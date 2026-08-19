@@ -14,29 +14,32 @@
 @startuml
 
 namespace score::memory::shared {
-    class PolymorphicOffsetPtrAllocator
 
-    class Vector {
-        +allocator_type
-    }
+class "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator
 
-    class Map {
-        +allocator_type
-        +storage_backend
-    }
+class "Vector<T>" as Vector {
+  +alias : std::vector<T, std::scoped_allocator_adaptor<PolymorphicOffsetPtrAllocator<T>>>
+}
 
-    class BasicString {
-        +allocator_type
-    }
+class "Map<K, V, Comp>" as Map {
+  +allocator_type : PolymorphicOffsetPtrAllocator<value_type>
+  +linux_impl : boost::interprocess::map
+  +other_impl : std::map
+}
 
-    class String {
-        +alias_of
-    }
+class "BasicString<CharT, Traits>" as BasicString {
+  +alias : std::basic_string<CharT, Traits, PolymorphicOffsetPtrAllocator<CharT>>
+}
 
-    Vector ..> PolymorphicOffsetPtrAllocator
-    Map ..> PolymorphicOffsetPtrAllocator
-    BasicString ..> PolymorphicOffsetPtrAllocator
-    String ..> BasicString
+class String {
+  +alias : BasicString<char>
+}
+
+Vector ..> PolymorphicOffsetPtrAllocator : scoped allocator adaptor
+Map ..> PolymorphicOffsetPtrAllocator : linux=boost::interprocess, else=std::map
+BasicString ..> PolymorphicOffsetPtrAllocator : allocator
+String ..> BasicString
+
 }
 
 @enduml

@@ -14,10 +14,28 @@
 @startuml
 
 namespace score::memory::shared {
-    abstract class ISealedShm
-    class SealedShm
 
-    ISealedShm <|-- SealedShm
+abstract class ISealedShm {
+  {abstract} +OpenAnonymous(mode): score::cpp::expected<std::int32_t, score::os::Error>
+  {abstract} +Seal(fd, size): score::cpp::expected_blank<score::os::Error>
+}
+
+class SealedShm {
+  +OpenAnonymous(mode): score::cpp::expected<std::int32_t, score::os::Error>
+  +Seal(fd, size): score::cpp::expected_blank<score::os::Error>
+  {static} +InjectMock(mock): void
+  {static} +instance(): ISealedShm&
+  --
+  -mock_ : ISealedShm*
+}
+
+class SharedMemoryResource
+
+ISealedShm <|-- SealedShm
+SharedMemoryResource ..> SealedShm
+
+' QNX builds additionally store a private mman_ handle inside SealedShm.
+
 }
 
 @enduml
