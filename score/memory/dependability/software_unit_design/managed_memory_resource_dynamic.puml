@@ -17,8 +17,7 @@ title NewDeleteDelegateMemoryResource dry-run allocation accounting
 
 participant Client
 participant NewDeleteDelegateMemoryResource as DryRunResource
-participant "upstream_resource_
-score::cpp::pmr::memory_resource" as Upstream
+participant "upstream_resource_ : score::cpp::pmr::memory_resource" as Upstream
 collections current_upstream_allocations_ as Allocations
 
 Client -> DryRunResource : construct<T>(args...)
