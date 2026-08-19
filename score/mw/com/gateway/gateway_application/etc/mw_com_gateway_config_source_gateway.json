@@ -1,0 +1,12 @@
+{
+  "forwarded-services": [
+    "MyHelloWorldServiceInstance",
+    "/Vehicle/Service1/Instance"
+  ],
+  "expected-received-services": [
+  ],
+  "transport-layer": {
+    "id": "sample_hypervisor",
+    "config-path": "/etc/mw_com_gateway_sample_transport_config_source_gateway.json"
+  }
+}
