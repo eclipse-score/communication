@@ -18,8 +18,6 @@ from proxy_restart_shall_not_affect_other_proxies_test_fixture import proxy_rest
 # Test configuration
 NUMBER_OF_CONSUMER_RESTARTS = 20
 KILL_CONSUMER = 0
-
-
 def test_proxy_restart_shall_not_affect_other_proxies_graceful(target):
     """Test that graceful proxy restart does not affect other proxies."""
     with proxy_restart_shall_not_affect_other_proxies(target, NUMBER_OF_CONSUMER_RESTARTS, KILL_CONSUMER):

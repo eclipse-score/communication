@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_data_slots_read_only.py"],
     filesystem = "//score/mw/com/test/data_slots_read_only:data_slots_read_only-pkg",
+    service_discovery_daemon = True,
 )

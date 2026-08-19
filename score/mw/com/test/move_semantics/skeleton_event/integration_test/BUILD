@@ -21,6 +21,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = "//score/mw/com/test/move_semantics/skeleton_event:main_consumer_and_provider-pkg",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -30,6 +31,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = "//score/mw/com/test/move_semantics/skeleton_event:main_consumer_and_provider-pkg",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -39,6 +41,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = "//score/mw/com/test/move_semantics/skeleton_event:main_consumer_and_provider-pkg",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -48,6 +51,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = "//score/mw/com/test/move_semantics/skeleton_event:main_consumer_and_provider-pkg",
+    service_discovery_daemon = True,
 )
 
 pkg_filegroup(
@@ -65,6 +69,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = ":different_processes_filesystem",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -74,6 +79,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = ":different_processes_filesystem",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -83,6 +89,7 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = ":different_processes_filesystem",
+    service_discovery_daemon = True,
 )
 
 integration_test(
@@ -92,4 +99,5 @@ integration_test(
         "test_fixture.py",
     ],
     filesystem = ":different_processes_filesystem",
+    service_discovery_daemon = True,
 )

@@ -10,7 +10,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup")
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
+
+pkg_filegroup(
+    name = "filesystem",
+    srcs = [
+        "//score/mw/com/test/bigdata:bigdata-pkg",
+        "//score/mw/com/test/service_discovery_daemon:service_discovery_daemon-pkg",
+    ],
+)
 
 integration_test(
     name = "test_bigdata_exchange",
@@ -18,5 +27,5 @@ integration_test(
     srcs = [
         "test_bigdata.py",
     ],
-    filesystem = "//score/mw/com/test/bigdata:bigdata-pkg",
+    filesystem = ":filesystem",
 )

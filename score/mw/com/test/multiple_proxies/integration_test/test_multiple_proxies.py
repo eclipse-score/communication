@@ -30,11 +30,21 @@ def multiple_proxies(target, mode, cycle_time=None, num_cycles=None, **kwargs):
     )
 
 
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
+
 def test_multiple_proxies(target):
     """Test multiple proxy instances with sender and receiver."""
     # num_cycles = 0 signifies that the sender will run untill interrupted
-    with (
-        multiple_proxies(target, "send", cycle_time=40, num_cycles=0),
-        multiple_proxies(target, "recv", num_cycles=25, wait_timeout=60),
-    ):
-        pass
+    with service_discovery_daemon(target):
+        with (
+            multiple_proxies(target, "send", cycle_time=40, num_cycles=0),
+            multiple_proxies(target, "recv", num_cycles=25, wait_timeout=60),
+        ):
+            pass

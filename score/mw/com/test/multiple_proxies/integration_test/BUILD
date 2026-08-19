@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_multiple_proxies.py"],
     filesystem = "//score/mw/com/test/multiple_proxies:multiple_proxies-pkg",
+    service_discovery_daemon = True,
 )

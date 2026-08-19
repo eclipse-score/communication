@@ -24,6 +24,24 @@ def consumer(target, **kwargs):
     return target.wrap_exec("bin/main_consumer", args, cwd="/opt/MainConsumerApp/", wait_on_exit=True, **kwargs)
 
 
+from contextlib import contextmanager
+
+
+def service_discovery_daemon(target, **kwargs):
+    del kwargs
+
+    @contextmanager
+    def _service_discovery_daemon():
+        daemon_process = target.execute_async(
+            "bin/service_discovery_daemon_app",
+            args=[],
+            cwd="/opt/ServiceDiscoveryDaemonApp",
+        )
+        yield daemon_process
+
+    return _service_discovery_daemon()
+
+
 def test_signature_variations(target):
     """
     Test method call functionality for different method signature variations between provider and consumer which are run in different processes. Each method signature contains a type which is not trivially constructible.
@@ -41,6 +59,6 @@ def test_signature_variations(target):
 
     Test is successful if all previous checks return true and we have no crashes.
     """
-    with provider(target, wait_timeout=120):
+    with service_discovery_daemon(target), provider(target, wait_timeout=120):
         with consumer(target, wait_timeout=120):
             pass

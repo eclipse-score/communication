@@ -10,8 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+from contextlib import contextmanager
 
 
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
+
+@contextmanager
 def partial_restart_consumer(target, number_restart_cycles, kill_consumer, **kwargs):
     args = [
         "--kill",
@@ -21,11 +32,13 @@ def partial_restart_consumer(target, number_restart_cycles, kill_consumer, **kwa
         "--service_instance_manifest",
         "etc/mw_com_config.json",
     ]
-    return target.wrap_exec(
-        "bin/consumer_restart_application",
-        args,
-        cwd="/opt/consumer_restart",
-        wait_on_exit=True,
-        wait_timeout=120,
-        **kwargs,
-    )
+    with service_discovery_daemon(target):
+        with target.wrap_exec(
+            "bin/consumer_restart_application",
+            args,
+            cwd="/opt/consumer_restart",
+            wait_on_exit=True,
+            wait_timeout=120,
+            **kwargs,
+        ):
+            yield

@@ -22,8 +22,18 @@ def service(target, **kwargs):
     return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp", **kwargs)
 
 
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
+
 def test_field_initial_value(target):
     """Test field initial value exchange between service and client."""
-    with service(target):
-        with client(target):
-            pass
+    with service_discovery_daemon(target):
+        with service(target):
+            with client(target):
+                pass

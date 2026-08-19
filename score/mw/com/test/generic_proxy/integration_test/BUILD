@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_generic_proxy.py"],
     filesystem = "//score/mw/com/test/generic_proxy:generic_proxy-pkg",
+    service_discovery_daemon = True,
 )

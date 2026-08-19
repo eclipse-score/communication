@@ -1,0 +1,101 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package ServiceDiscovery
+
+import ScoreReq
+
+ScoreReq.FeatReq DaemonBasedRegistry {
+    description = "The service discovery component shall provide a daemon-owned registry for service registration, unregistration, and lookup operations."
+    safety = ScoreReq.Asil.B
+    derived_from = [
+        ServiceDiscovery.ServiceDiscoveryTransportAvailable@2,
+        ServiceDiscovery.ProcessIdentityProvidedByOS@1,
+    ]
+    version = 2
+}
+
+ScoreReq.FeatReq OsIndependentDaemonProtocol {
+    description = "The service discovery component shall use one transport-independent daemon protocol for message-passing communication on supported operating systems."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.ServiceDiscoveryTransportAvailable@2]
+    version = 2
+}
+
+ScoreReq.FeatReq PartitionedVisibilityForIntegrityLevels {
+    description = "The service discovery component shall enforce integrity partitioning so lower-integrity participants cannot influence higher-integrity service selection results."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.ProcessIdentityProvidedByOS@1]
+    version = 2
+}
+
+ScoreReq.FeatReq StaleEntrySupervision {
+    description = "The service discovery component shall supervise registration liveness and remove registrations whose lease validity has expired."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.MonotonicTimeSourceAvailable@1]
+    version = 2
+}
+
+ScoreReq.FeatReq DeterministicLookupBehavior {
+    description = "The service discovery component shall provide deterministic lookup results for identical service-key queries against the same registry state."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.ServiceDiscoveryTransportAvailable@2]
+    version = 2
+}
+
+ScoreReq.FeatReq AsyncServiceDiscoveryUpdates {
+    description = "The service discovery component shall provide asynchronous add and remove notifications for matching service availability changes."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.ServiceDiscoveryTransportAvailable@2]
+    version = 2
+}
+
+ScoreReq.FeatReq SessionBoundClientLifecycle {
+    description = "The service discovery component shall bind registrations, searches, and lock ownership to daemon client sessions and invalidate owned state on session loss."
+    safety = ScoreReq.Asil.B
+    derived_from = [
+        ServiceDiscovery.ServiceDiscoveryTransportAvailable@2,
+        ServiceDiscovery.ProcessIdentityProvidedByOS@1,
+    ]
+    version = 2
+}
+
+ScoreReq.FeatReq AnyInstanceServiceSelection {
+    description = "The service discovery component shall support explicit instance selection and any-instance queries that match at least one available instance of a service identifier."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.ServiceDiscoveryTransportAvailable@2]
+    version = 2
+}
+
+ScoreReq.FeatReq DaemonManagedServiceInstanceLocks {
+    description = "The service discovery component shall provide daemon-managed exclusive and shared lock semantics for service-instance creation and usage control."
+    safety = ScoreReq.Asil.B
+    derived_from = [
+        ServiceDiscovery.ServiceDiscoveryTransportAvailable@2,
+        ServiceDiscovery.ProcessIdentityProvidedByOS@1,
+    ]
+    version = 2
+}
+
+ScoreReq.FeatReq BatchedDaemonOperations {
+    description = "The service discovery component shall support ordered batching of daemon operations within one request-reply exchange."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.ServiceDiscoveryTransportAvailable@2]
+    version = 2
+}
+
+ScoreReq.FeatReq StaticOfferAuthorizationPolicy {
+    description = "The service discovery component shall support a static authorization policy that constrains which UIDs may offer configured service instances."
+    safety = ScoreReq.Asil.B
+    derived_from = [ServiceDiscovery.ProcessIdentityProvidedByOS@1]
+    version = 2
+}

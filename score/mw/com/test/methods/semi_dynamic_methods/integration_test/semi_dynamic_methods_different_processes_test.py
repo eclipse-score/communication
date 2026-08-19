@@ -22,10 +22,20 @@ def consumer(target, **kwargs):
     return target.wrap_exec("bin/main_consumer", args, cwd="/opt/MainConsumerApp", wait_on_exit=True, **kwargs)
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_semi_dynamic_methods_different_processes_test(target):
     """Test semi-dynamic methods with provider and consumer in different processes.
 
     The provider process offers the service and the consumer process connects to it.
     """
-    with provider(target), consumer(target):
+    with service_discovery_daemon(target), provider(target), consumer(target):
         pass

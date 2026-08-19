@@ -88,12 +88,6 @@ void ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier, co
         FailTest(failure_message_prefix, " Consumer: StartFindService() failed to get handle");
     }
 
-    auto stop_find_service_result = Proxy::StopFindService(start_find_service_result.value());
-    if (!stop_find_service_result.has_value())
-    {
-        FailTest(failure_message_prefix, " Consumer: StopFindService() failed: ", stop_find_service_result.error());
-    }
-
     auto proxy_result = Proxy::Create(*handle_);
     proxy_creation_lock.unlock();
     if (!proxy_result.has_value())

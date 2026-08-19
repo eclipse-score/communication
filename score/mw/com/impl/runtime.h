@@ -19,10 +19,10 @@
 #include "score/mw/com/impl/i_runtime.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/service_discovery.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime.h"
 #include "score/mw/com/runtime_configuration.h"
+#include "score/mw/com/service_discovery/service_discovery_compat.h"
 
 #include <score/assert.hpp>
 #include <score/span.hpp>
@@ -168,7 +168,7 @@ class Runtime final : public IRuntime
     std::unique_ptr<tracing::ITracingRuntime> tracing_runtime_;
 
     /// \brief Service Discovery
-    ServiceDiscovery service_discovery_;
+    ServiceDiscoveryCompat service_discovery_;
 
     /// \brief Executor for long-running tasks, that is handed down to binding-specific runtimes to be also used in
     ///        their context

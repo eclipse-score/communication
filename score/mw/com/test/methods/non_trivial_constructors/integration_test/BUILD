@@ -28,4 +28,5 @@ integration_test(
         "non_trivial_constructors_test.py",
     ],
     filesystem = ":filesystem",
+    service_discovery_daemon = True,
 )

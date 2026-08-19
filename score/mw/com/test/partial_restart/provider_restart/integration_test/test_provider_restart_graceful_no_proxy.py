@@ -19,8 +19,6 @@ from provider_restart_test_fixture import partial_restart_provider
 NUMBER_RESTART_CYCLES = 3
 CREATE_PROXY = 0
 KILL_PROVIDER = 0
-
-
 def test_provider_restart_graceful_no_proxy(target):
     """Test provider restart with graceful shutdown and no proxy."""
     with partial_restart_provider(target, NUMBER_RESTART_CYCLES, CREATE_PROXY, KILL_PROVIDER):

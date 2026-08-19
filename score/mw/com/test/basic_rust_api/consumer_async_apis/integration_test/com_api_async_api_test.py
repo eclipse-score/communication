@@ -11,6 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+from contextlib import contextmanager
+
 
 def producer(target, num_cycles, **kwargs):
     args = ["-n", str(num_cycles)]
@@ -41,6 +43,21 @@ def consumer_async_stream(target, num_cycles, **kwargs):
     )
 
 
+def service_discovery_daemon(target, **kwargs):
+    del kwargs
+
+    @contextmanager
+    def _service_discovery_daemon():
+        daemon_process = target.execute_async(
+            "bin/service_discovery_daemon_app",
+            args=[],
+            cwd="/opt/ServiceDiscoveryDaemonApp",
+        )
+        yield daemon_process
+
+    return _service_discovery_daemon()
+
+
 def test_bigdata_async_with_cancellation(target):
     """Test async receive with cancellable_receive API.
     
@@ -48,7 +65,7 @@ def test_bigdata_async_with_cancellation(target):
     with 50ms timeout (using futures::channel::oneshot) and exits cleanly after reaching num_cycles.
     Producer sends sample with 100ms interval, so consumer will timeout intermittently while waiting for samples, demonstrating the cancellation behavior.
     """
-    with producer(target, num_cycles=40), consumer_async_with_cancellation(
+    with service_discovery_daemon(target), producer(target, num_cycles=40), consumer_async_with_cancellation(
         target, num_cycles=25, wait_timeout=120
     ):
         pass
@@ -60,7 +77,7 @@ def test_bigdata_async_without_cancellation(target):
     Producer sends 40 samples, consumer receives 25 using standard async
     receive and exits cleanly after reaching num_cycles.
     """
-    with producer(target, num_cycles=40), consumer_async_without_cancellation(
+    with service_discovery_daemon(target), producer(target, num_cycles=40), consumer_async_without_cancellation(
         target, num_cycles=25, wait_timeout=120
     ):
         pass
@@ -72,7 +89,7 @@ def test_bigdata_async_stream(target):
     Producer sends 40 samples, consumer receives 25 using async stream
     and exits cleanly after reaching num_cycles.
     """
-    with producer(target, num_cycles=40), consumer_async_stream(
-        target, num_cycles=25, wait_timeout=120
-    ):
-        pass
+    with service_discovery_daemon(target):
+        with producer(target, num_cycles=40, wait_on_exit=True, wait_timeout=120):
+            with consumer_async_stream(target, num_cycles=25, wait_timeout=120):
+                pass

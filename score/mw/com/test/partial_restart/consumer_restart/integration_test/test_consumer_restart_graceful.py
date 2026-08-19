@@ -18,8 +18,6 @@ from consumer_restart_test_fixture import partial_restart_consumer
 # Test configuration
 NUMBER_RESTART_CYCLES = 3
 KILL_CONSUMER = 0
-
-
 def test_partial_restart_consumer_graceful(target):
     """Test consumer restart with graceful shutdown."""
     with partial_restart_consumer(target, NUMBER_RESTART_CYCLES, KILL_CONSUMER):

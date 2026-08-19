@@ -26,9 +26,23 @@ def bigdata(target, mode, cycle_time=None, num_cycles=None, **kwargs):
     return target.wrap_exec("bin/bigdata", args, cwd="/opt/bigdata", wait_on_exit=wait_on_exit, **kwargs)
 
 
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
+
 def test_bigdata_exchange(target):
     """Test bigdata exchange between sender and receiver."""
     # Sender runs for continuous cycles at 40ms intervals, Receiver receives 25 cycles
     # num_cycles = 0 signifies that the sender will run untill interrupted
-    with bigdata(target, "send", cycle_time=40, num_cycles=0), bigdata(target, "recv", num_cycles=25, wait_timeout=120):
+    with service_discovery_daemon(target), bigdata(target, "send", cycle_time=40, num_cycles=0), bigdata(
+        target,
+        "recv",
+        num_cycles=25,
+        wait_timeout=120,
+    ):
         pass

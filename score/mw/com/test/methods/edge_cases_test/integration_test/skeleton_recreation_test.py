@@ -10,7 +10,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+from contextlib import contextmanager
+
+
+def service_discovery_daemon(target):
+    @contextmanager
+    def _service_discovery_daemon():
+        daemon_process = target.execute_async(
+            "bin/service_discovery_daemon_app",
+            args=[],
+            cwd="/opt/ServiceDiscoveryDaemonApp",
+        )
+        yield daemon_process
+
+    return _service_discovery_daemon()
+
+
 def test_edge_cases(target):
     args = ["--service_instance_manifest", "./etc/mw_com_config.json"]
-    with target.wrap_exec("bin/skeleton_recreation_test", args, cwd="/opt/EdgeCasesTestApp", wait_on_exit=True):
+    with service_discovery_daemon(target), target.wrap_exec("bin/skeleton_recreation_test", args, cwd="/opt/EdgeCasesTestApp", wait_on_exit=True):
         pass

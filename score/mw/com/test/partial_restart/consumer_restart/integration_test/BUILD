@@ -21,6 +21,7 @@ integration_test(
         "test_consumer_restart_graceful.py",
     ],
     filesystem = "//score/mw/com/test/partial_restart/consumer_restart:consumer_restart-pkg",
+    service_discovery_daemon = True,
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )
@@ -38,6 +39,7 @@ integration_test(
     # RegisterEventNotificationMessage to fail.  The consumer then waits
     # for event notifications that were never registered.
     flaky = True,
+    service_discovery_daemon = True,
     # Disabled for thread sanitizer because of detected race (Ticket-246892)
     target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
 )

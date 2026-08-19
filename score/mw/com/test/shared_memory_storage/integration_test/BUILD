@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_shared_memory_storage.py"],
     filesystem = "//score/mw/com/test/shared_memory_storage:shared_memory_storage-pkg",
+    service_discovery_daemon = True,
 )

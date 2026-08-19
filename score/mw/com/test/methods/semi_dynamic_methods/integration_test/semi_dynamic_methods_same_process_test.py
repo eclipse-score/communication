@@ -19,11 +19,20 @@ def consumer_and_provider(target, **kwargs):
     )
 
 
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
+
 def test_semi_dynamic_methods_same_process_test(target):
     """Test semi-dynamic methods with provider and consumer in the same process.
 
     The test starts a single process with two threads. The first thread creates a Skeleton
     instance while the second thread creates a Proxy subscribing to that service.
     """
-    with consumer_and_provider(target):
+    with service_discovery_daemon(target), consumer_and_provider(target):
         pass

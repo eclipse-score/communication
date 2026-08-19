@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_unsubscribe_deadlock.py"],
     filesystem = "//score/mw/com/test/unsubscribe_deadlock:unsubscribe_deadlock-pkg",
+    service_discovery_daemon = True,
 )

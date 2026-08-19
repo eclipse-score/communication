@@ -18,4 +18,5 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_separate_reception_threads.py"],
     filesystem = "//score/mw/com/test/separate_reception_threads:separate_reception_threads-pkg",
+    service_discovery_daemon = True,
 )

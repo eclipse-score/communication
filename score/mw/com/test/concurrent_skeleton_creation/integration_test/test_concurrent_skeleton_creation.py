@@ -24,7 +24,17 @@ def concurrent_skeleton_creation(target, **kwargs):
     )
 
 
+
+
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
 def test_concurrent_skeleton_creation(target):
     """Test concurrent skeleton creation and offer behavior."""
-    with concurrent_skeleton_creation(target, wait_timeout=30):
+    with service_discovery_daemon(target), concurrent_skeleton_creation(target, wait_timeout=30):
         pass

@@ -10,8 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+from contextlib import contextmanager
 
 
+def service_discovery_daemon(target, **kwargs):
+    return target.wrap_exec(
+        "bin/service_discovery_daemon_app",
+        [],
+        cwd="/opt/ServiceDiscoveryDaemonApp",
+        **kwargs,
+    )
+
+
+@contextmanager
 def provider_restart_max_subscribers(target, is_proxy_connected_during_restart, **kwargs):
     args = [
         "--is-proxy-connected-during-restart",
@@ -21,11 +32,13 @@ def provider_restart_max_subscribers(target, is_proxy_connected_during_restart, 
         "--service_instance_manifest",
         "etc/mw_com_config.json",
     ]
-    return target.wrap_exec(
-        "bin/provider_restart_max_subscribers_application",
-        args,
-        cwd="/opt/provider_restart_max_subscribers",
-        wait_on_exit=True,
-        wait_timeout=120,
-        **kwargs,
-    )
+    with service_discovery_daemon(target):
+        with target.wrap_exec(
+            "bin/provider_restart_max_subscribers_application",
+            args,
+            cwd="/opt/provider_restart_max_subscribers",
+            wait_on_exit=True,
+            wait_timeout=120,
+            **kwargs,
+        ):
+            yield
