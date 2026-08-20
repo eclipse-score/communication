@@ -1,0 +1,27 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+@startuml safety_sentinel_mwcom_design
+title "mw_com_static_architecture"
+
+package "mw_com" as mw_com <<SEooC>>  {
+  component "Configuration" as configuration <<unit>> 
+  component "Binding Factories" as binding_factories <<unit>>
+  component "Tracing" as tracing <<component>> 
+
+  package "Binding Independent" as binding_independent <<component>>
+  package "Lola Binding" as lola_binding <<component>>
+  package "SOME/IP Binding" as someip_binding <<component>>
+  package "Mock Binding" as mock_binding <<component>>
+}
+
+@enduml

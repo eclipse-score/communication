@@ -28,8 +28,7 @@ cc_library(
         "//score/mw/com/gateway:__subpackages__",
     ],
     deps = [
-        "//score/mw/com/impl:generic_skeleton",
-        "//score/mw/com/impl:instance_specifier",
+        "//score/mw/com:types",
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/result",
     ],

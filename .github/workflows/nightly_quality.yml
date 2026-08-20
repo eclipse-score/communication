@@ -37,6 +37,16 @@ on:
   schedule:
     - cron: "0 0 * * *" # every day at midnight UTC
   workflow_dispatch:
+  workflow_call:
+    secrets:
+      UBUNTU_SNAPSHOT_MIRROR_URL:
+        required: false
+      SCORE_QNX_LICENSE:
+        required: false
+      SCORE_QNX_USER:
+        required: false
+      SCORE_QNX_PASSWORD:
+        required: false
 
 permissions:
   contents: write

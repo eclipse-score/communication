@@ -92,7 +92,7 @@ score::Result<void> GatewayApplication::StartServiceDiscovery()
 
     for (const auto& service_str : forwarded_services)
     {
-        const auto specifier_result = impl::InstanceSpecifier::Create(std::string{service_str});
+        const auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{service_str});
         if (!specifier_result.has_value())
         {
             score::mw::log::LogError() << "GatewayApplication: Invalid instance specifier: " << service_str;
@@ -101,15 +101,16 @@ score::Result<void> GatewayApplication::StartServiceDiscovery()
 
         auto scoped_find_callback = std::make_shared<FindCallbackScopedCb>(
             scope_,
-            [this, specifier = std::string(service_str)](impl::ServiceHandleContainer<impl::HandleType> handles,
-                                                         impl::FindServiceHandle /*find_handle*/) {
+            [this, specifier = std::string(service_str)](
+                score::mw::com::ServiceHandleContainer<score::mw::com::HandleType> handles,
+                score::mw::com::FindServiceHandle /*find_handle*/) {
                 OnServiceAvailabilityChanged(specifier, std::move(handles));
             });
 
-        auto find_result = impl::GenericProxy::StartFindService(
-            [scoped_find_callback](impl::ServiceHandleContainer<impl::HandleType> handles,
-                                   impl::FindServiceHandle find_handle) {
-                (*scoped_find_callback)(std::move(handles), std::move(find_handle));
+        auto find_result = score::mw::com::GenericProxy::StartFindService(
+            [scoped_find_callback](score::mw::com::ServiceHandleContainer<score::mw::com::HandleType> handles,
+                                   score::mw::com::FindServiceHandle find_handle) {
+                (*scoped_find_callback)(std::move(handles), find_handle);
             },
             std::move(specifier_result).value());
 
@@ -127,7 +128,7 @@ score::Result<void> GatewayApplication::StartServiceDiscovery()
 }
 
 void GatewayApplication::OnServiceAvailabilityChanged(const std::string& specifier_str,
-                                                      std::vector<impl::HandleType> handles)
+                                                      std::vector<score::mw::com::HandleType> handles)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     if (handles.empty())
@@ -148,7 +149,7 @@ void GatewayApplication::OnServiceAvailabilityChanged(const std::string& specifi
 
     score::mw::log::LogInfo() << "GatewayApplication: Service found: " << specifier_str;
 
-    auto proxy_result = impl::GenericProxy::Create(std::move(handles.front()));
+    auto proxy_result = score::mw::com::GenericProxy::Create(std::move(handles.front()));
     if (!proxy_result.has_value())
     {
         score::mw::log::LogError() << "GatewayApplication: Failed to create proxy for " << specifier_str;
@@ -169,7 +170,7 @@ void GatewayApplication::OnServiceUnavailable(const std::string& specifier_str)
 
     score::mw::log::LogInfo() << "GatewayApplication: Service no longer available: " << specifier_str;
 
-    auto specifier_result = impl::InstanceSpecifier::Create(std::string{specifier_str});
+    auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{specifier_str});
     if (specifier_result.has_value())
     {
         auto result = transport_layer_->StopOfferService(std::move(specifier_result).value());
@@ -191,19 +192,20 @@ void GatewayApplication::PropagateService(const std::string& specifier_str)
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_it != proxies_.cend(),
                                                 "GatewayApplication: Proxy not found in PropagateService");
 
-    auto specifier_result = impl::InstanceSpecifier::Create(std::string{specifier_str});
+    auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{specifier_str});
     if (!specifier_result.has_value())
     {
         score::mw::log::LogError() << "GatewayApplication: Invalid instance specifier: " << specifier_str;
         return;
     }
 
-    std::vector<impl::EventInfo> elements{};
+    std::vector<score::mw::com::EventInfo> elements{};
     const auto& event_map = proxy_it->second.GetEvents();
-    for (auto it = event_map.cbegin(); it != event_map.cend(); ++it)
+    for (const auto& [event_name, event] : std::as_const(event_map))
     {
-        const auto sample_size = it->second.GetSampleSize();
-        elements.push_back(impl::EventInfo{it->first, impl::DataTypeMetaInfo{sample_size, 0U}});
+        const auto sample_size = event.GetSampleSize();
+        elements.push_back(
+            score::mw::com::impl::EventInfo{event_name, score::mw::com::impl::DataTypeMetaInfo{sample_size, 0U}});
     }
 
     auto provide_result = transport_layer_->ProvideService(std::move(specifier_result).value(), std::move(elements));
@@ -220,7 +222,7 @@ void GatewayApplication::PropagateService(const std::string& specifier_str)
     score::mw::log::LogInfo() << "GatewayApplication: Propagated service " << specifier_str;
 }
 
-void GatewayApplication::RegisterEventReceiveHandlerCallback(impl::GenericSkeleton& skeleton,
+void GatewayApplication::RegisterEventReceiveHandlerCallback(score::mw::com::GenericSkeleton& skeleton,
                                                              const std::string& specifier_str,
                                                              const std::string& event_name)
 {
@@ -255,7 +257,7 @@ void GatewayApplication::OnSubscriptionStateChanged(const std::string& specifier
                                                     bool has_subscribers)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-    const auto specifier_result = impl::InstanceSpecifier::Create(std::string{specifier_str});
+    const auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{specifier_str});
     if (!specifier_result.has_value())
     {
         score::mw::log::LogError() << "GatewayApplication: Invalid instance specifier in subscription callback: "
@@ -319,7 +321,7 @@ void GatewayApplication::ReRegisterActiveEventSubscriptions(const std::string& s
 
     for (const auto& event_name : sub_it->second)
     {
-        auto specifier_result = impl::InstanceSpecifier::Create(std::string{specifier_str});
+        auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{specifier_str});
         if (!specifier_result.has_value())
         {
             continue;
@@ -338,8 +340,8 @@ void GatewayApplication::ReRegisterActiveEventSubscriptions(const std::string& s
     }
 }
 
-score::Result<void> GatewayApplication::ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                                       std::vector<impl::EventInfo> service_elements)
+score::Result<void> GatewayApplication::ProvideService(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                                       std::vector<score::mw::com::EventInfo> service_elements)
 {
     if (!IsServiceInstanceAccepted(service_instance_specifier.ToString()))
     {
@@ -373,9 +375,9 @@ score::Result<void> GatewayApplication::ProvideService(impl::InstanceSpecifier s
         return {};
     }
 
-    impl::GenericSkeletonServiceElementInfo skeleton_info;
+    score::mw::com::GenericSkeletonServiceElementInfo skeleton_info;
     skeleton_info.events = service_elements;
-    auto skeleton_result = impl::GenericSkeleton::Create(service_instance_specifier, skeleton_info);
+    auto skeleton_result = score::mw::com::GenericSkeleton::Create(service_instance_specifier, skeleton_info);
     if (!skeleton_result.has_value())
     {
         score::mw::log::LogError() << "GatewayApplication: Failed to create skeleton for "
@@ -408,7 +410,7 @@ score::Result<void> GatewayApplication::ProvideService(impl::InstanceSpecifier s
     return {};
 }
 
-void GatewayApplication::StopOfferService(impl::InstanceSpecifier service_instance_specifier)
+void GatewayApplication::StopOfferService(score::mw::com::InstanceSpecifier service_instance_specifier)
 {
     auto service_instance_specifier_str = std::string(service_instance_specifier.ToString());
     score::mw::log::LogInfo() << "GatewayApplication: StopOfferService for " << service_instance_specifier;
@@ -427,7 +429,7 @@ void GatewayApplication::StopOfferService(impl::InstanceSpecifier service_instan
                               << " (skeleton kept for reuse)";
 }
 
-score::Result<void> GatewayApplication::OfferService(impl::InstanceSpecifier service_instance_specifier)
+score::Result<void> GatewayApplication::OfferService(score::mw::com::InstanceSpecifier service_instance_specifier)
 {
     auto specifier_str = std::string(service_instance_specifier.ToString());
     score::mw::log::LogInfo() << "GatewayApplication: HandleOfferServiceRequest for " << service_instance_specifier;
@@ -450,9 +452,10 @@ score::Result<void> GatewayApplication::OfferService(impl::InstanceSpecifier ser
     return {};
 }
 
-score::Result<void> GatewayApplication::RegisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,
-                                                                   impl::ServiceElementType element_type,
-                                                                   std::string element_name)
+score::Result<void> GatewayApplication::RegisterUpdateNotification(
+    score::mw::com::InstanceSpecifier service_instance_specifier,
+    impl::ServiceElementType element_type,
+    std::string element_name)
 {
     auto specifier_str = std::string(service_instance_specifier.ToString());
     score::mw::log::LogInfo() << "GatewayApplication: HandleRegisterNotificationRequest for "
@@ -486,7 +489,7 @@ score::Result<void> GatewayApplication::RegisterUpdateNotification(impl::Instanc
     auto scoped_handler = std::make_shared<ReceiveCallback>(
         scope_, [this, spec = specifier_str, elem_name = std::string(element_name), elem_type = element_type]() {
             std::lock_guard<std::recursive_mutex> lock(mutex_);
-            auto specifier_result = impl::InstanceSpecifier::Create(std::string{spec});
+            auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{spec});
             if (specifier_result.has_value())
             {
                 const auto notify_update_result = transport_layer_->NotifyUpdate(
@@ -510,9 +513,10 @@ score::Result<void> GatewayApplication::RegisterUpdateNotification(impl::Instanc
     return {};
 }
 
-score::Result<void> GatewayApplication::UnregisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,
-                                                                     impl::ServiceElementType element_type,
-                                                                     std::string element_name)
+score::Result<void> GatewayApplication::UnregisterUpdateNotification(
+    score::mw::com::InstanceSpecifier service_instance_specifier,
+    impl::ServiceElementType element_type,
+    std::string element_name)
 {
     auto specifier_str = std::string(service_instance_specifier.ToString());
 
@@ -543,7 +547,7 @@ score::Result<void> GatewayApplication::UnregisterUpdateNotification(impl::Insta
     return {};
 }
 
-score::Result<void> GatewayApplication::NotifyUpdate(impl::InstanceSpecifier service_instance_specifier,
+score::Result<void> GatewayApplication::NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                                                      impl::ServiceElementType updated_element_type,
                                                      std::string updated_element_name)
 {

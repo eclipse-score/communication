@@ -73,7 +73,7 @@ class LinearSearchMap
     using mapped_type = MappedType;
     using value_type = std::pair<Key, MappedType>;
     using size_type = std::size_t;
-    using key_equal = KeyEqual;
+    using key_compare = KeyEqual;
     using iterator = value_type*;
     using const_iterator = const value_type*;
 
@@ -104,7 +104,7 @@ class LinearSearchMap
     const_iterator find(const Key& key) const noexcept;
 
     /// \brief Returns the key-equality predicate used by this map.
-    key_equal key_eq() const;
+    key_compare key_eq() const;
 
     mapped_type& at(const Key& key);
 
@@ -230,7 +230,7 @@ LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::find(const Key& key) cons
 }
 
 template <typename Key, typename MappedType, typename KeyEqual, typename Allocator>
-typename LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::key_equal
+typename LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::key_compare
 LinearSearchMap<Key, MappedType, KeyEqual, Allocator>::key_eq() const
 {
     return key_equal_;

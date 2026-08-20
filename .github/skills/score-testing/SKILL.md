@@ -1,3 +1,9 @@
+---
+name: score-testing
+description: "Testing and test-coverage traceability for S-CORE SEooCs using the rules_score Bazel rules. USE FOR: attaching tests to unit/component/dependable_element targets, annotating GoogleTest cases with lobster-tracing and Given-When-Then RecordProperty calls, requirement-to-test traceability, the test_case_coverage.lock.yaml workflow (bazel run .update vs bazel test drift check), maturity-driven enforcement, and running rules_score tests. Use when writing tests, wiring test targets, annotating tests for traceability, or measuring test-case coverage."
+argument-hint: "unit/component test or coverage task"
+---
+
 <!-- ----------------------------------------------------------------------------
   Copyright (c) 2026 Contributors to the Eclipse Foundation
 
@@ -10,12 +16,6 @@
 
   SPDX-License-Identifier: Apache-2.0
 ----------------------------------------------------------------------------- -->
-
----
-name: score-testing
-description: "Testing and test-coverage traceability for S-CORE SEooCs using the rules_score Bazel rules. USE FOR: attaching tests to unit/component/dependable_element targets, annotating GoogleTest cases with lobster-tracing and Given-When-Then RecordProperty calls, requirement-to-test traceability, the test_case_coverage.lock.yaml workflow (bazel run .update vs bazel test drift check), maturity-driven enforcement, and running rules_score tests. Use when writing tests, wiring test targets, annotating tests for traceability, or measuring test-case coverage."
-argument-hint: "unit/component test or coverage task"
----
 
 # S-CORE Testing Skill
 

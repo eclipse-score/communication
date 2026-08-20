@@ -22,7 +22,6 @@ section "com" {
 
             section "Functionality" {
 
-                /* broken_link_c/issue/15600146 */
                 ScoreReq.CompReq EventListSource {
                     description = '''A {{GenericProxy}} instance shall deduce its supported events from the {{LoLa}} json configuration containing deployment information.
 
@@ -32,7 +31,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/15601194 */
                 ScoreReq.CompReq EventTypeInfoSource {
                     description = '''The type information for each of the events supported by a {{GenericProxy}} instance, shall be gathered from the shared memory data section published by the {{LoLa}} skeleton instance providing the service instance, the {{GenericProxy}} is connected with.
 
@@ -42,7 +40,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/15603826 */
                 ScoreReq.CompReq ReactionOnMissingEventTypeInfo {
                     description = '''In case, that there is no related Event Type Info source provided in shared memory for a given Event enlisted in the deployment for the {{GenericProxy}}, an ERROR message shall be logged.
 
@@ -52,7 +49,6 @@ section "com" {
                     version = 1
                 }
 
-            /* broken_link_c/issue/14005667 */
             ScoreReq.CompReq GenericProxyClass {
                 description = '''The class {{GenericProxy}} is not a generated class and shall be provided in the namespace {{score::mw::com}}. {{GenericProxy}} users shall be able to access the definition of by inclusion of {{platform/aas/mw/com/types.h}}.'''
                 safety = ScoreReq.Asil.B
@@ -60,7 +56,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/14005999 */
             ScoreReq.CompReq GenericProxyConstructor {
                 description = '''The constructor of the class {{GenericProxy}} shall be private.
 
@@ -72,7 +67,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/14005969 */
             ScoreReq.CompReq GenericProxyExceptionLessCreation {
                 description = '''The {{GenericProxy}} class shall provide a non-throwing constructor using the Named Constructor idom (See Creation of an object using Named Constructor approach.
 
@@ -219,7 +213,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/14006006 */
             ScoreReq.CompReq GenericProxyGetEvents {
                 description = '''The {{GenericProxy}} class shall contain a {{public}} method:
 

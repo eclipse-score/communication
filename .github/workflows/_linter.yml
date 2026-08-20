@@ -46,8 +46,12 @@ jobs:
             bazel-config: clang-tidy
           - id: clippy
             bazel-config: clippy
+          - id: ruff
+            bazel-config: ruff
     steps:
       - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
 
       - uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
         with:

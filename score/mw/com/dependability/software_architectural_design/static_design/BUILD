@@ -14,6 +14,12 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_d
 
 architectural_design(
     name = "software_architectural_design",
-    static = ["static_view.puml"],
+    static = [
+        "overall.puml",
+        "binding_independent.puml",
+        "lola_binding.puml",
+        "someip_binding.puml",
+        "mock_binding.puml",
+    ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

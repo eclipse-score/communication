@@ -5,15 +5,14 @@ local_path_override(
 )
 
 bazel_dep(name = "rules_cc", version = "0.2.17")
-bazel_dep(name = "score_baselibs", version = "0.2.9")
-git_override(
+bazel_dep(name = "score_baselibs", version = "0.2.11")
+single_version_override(
     module_name = "score_baselibs",
-    commit = "54d67260077a0e7cdf37faf4366ca3a72f35739f",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
+    # See https://github.com/eclipse-score/bazel_cpp_toolchains/issues/68
     patches = ["//:restore_qnx8_poll_workaround.patch"],
-    remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
 # Only required to build the example, shall be replaceable with nearly every other C++ Toolchain setup

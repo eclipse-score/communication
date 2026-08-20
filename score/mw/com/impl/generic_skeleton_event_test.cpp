@@ -358,7 +358,7 @@ TEST_F(GenericSkeletonEventTest, SetReceiveHandlerNotificationCallbackDispatches
 
     EXPECT_CALL(*mock_event_binding_ptr_, SetReceiveHandlerRegistrationChangedHandler(_));
 
-    event_->SetReceiveHandlerRegistrationChangedHandler(std::move(expected_callback));
+    std::ignore = event_->SetReceiveHandlerRegistrationChangedHandler(std::move(expected_callback));
 }
 
 }  // namespace

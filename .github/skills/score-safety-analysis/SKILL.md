@@ -1,3 +1,9 @@
+---
+name: score-safety-analysis
+description: "Step-by-step workflow for creating or extending a FMEA-based safety analysis in TRLC format for S-CORE software components. Use when asked to: add failure modes, create FTA diagrams, add control measures, or validate the safety analysis traceability chain. Covers clustering, FailureMode records, FTA PlantUML files, ControlMeasure records, BUILD wiring, and trlc validation."
+argument-hint: "interface or component name to analyse"
+---
+
 <!-- ----------------------------------------------------------------------------
   Copyright (c) 2026 Contributors to the Eclipse Foundation
 
@@ -10,12 +16,6 @@
 
   SPDX-License-Identifier: Apache-2.0
 ----------------------------------------------------------------------------- -->
-
----
-name: score-safety-analysis
-description: "Step-by-step workflow for creating or extending a FMEA-based safety analysis in TRLC format for S-CORE software components. Use when asked to: add failure modes, create FTA diagrams, add control measures, or validate the safety analysis traceability chain. Covers clustering, FailureMode records, FTA PlantUML files, ControlMeasure records, BUILD wiring, and trlc validation."
-argument-hint: "interface or component name to analyse"
----
 
 # S-CORE Safety Analysis — TRLC Workflow
 

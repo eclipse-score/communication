@@ -42,7 +42,11 @@ class CollectFlakyTest(unittest.TestCase):
                     json.dumps(
                         {
                             "id": {"testSummary": {"label": "//pkg:flaky_low"}},
-                            "testSummary": {"overallStatus": "FLAKY", "failed": [{}] * 5, "passed": [{}] * 995},
+                            "testSummary": {
+                                "overallStatus": "FLAKY",
+                                "failed": [{}] * 5,
+                                "passed": [{}] * 995,
+                            },
                         }
                     )
                     + "\n"
@@ -51,7 +55,11 @@ class CollectFlakyTest(unittest.TestCase):
                     json.dumps(
                         {
                             "id": {"testSummary": {"label": "//pkg:flaky_high"}},
-                            "testSummary": {"overallStatus": "FLAKY", "failed": [{}] * 11, "passed": [{}] * 989},
+                            "testSummary": {
+                                "overallStatus": "FLAKY",
+                                "failed": [{}] * 11,
+                                "passed": [{}] * 989,
+                            },
                         }
                     )
                     + "\n"
@@ -60,7 +68,11 @@ class CollectFlakyTest(unittest.TestCase):
                     json.dumps(
                         {
                             "id": {"testSummary": {"label": "//pkg:failed"}},
-                            "testSummary": {"overallStatus": "FAILED", "failed": [{}], "passed": []},
+                            "testSummary": {
+                                "overallStatus": "FAILED",
+                                "failed": [{}],
+                                "passed": [],
+                            },
                         }
                     )
                     + "\n"
@@ -121,7 +133,12 @@ class MergeFlakyTest(unittest.TestCase):
                         "config_name": "tsan",
                         "flaky_count": 1,
                         "flaky_test_details": [
-                            {"target": "//pkg:shared", "failed_runs": 7, "total_runs": 300, "failures_per_thousand": 23.3}
+                            {
+                                "target": "//pkg:shared",
+                                "failed_runs": 7,
+                                "total_runs": 300,
+                                "failures_per_thousand": 23.3,
+                            }
                         ],
                         "failed_count": 0,
                         "passed_count": 10,
@@ -135,7 +152,12 @@ class MergeFlakyTest(unittest.TestCase):
                         "config_name": "asan",
                         "flaky_count": 1,
                         "flaky_test_details": [
-                            {"target": "//pkg:shared", "failed_runs": 5, "total_runs": 300, "failures_per_thousand": 16.6}
+                            {
+                                "target": "//pkg:shared",
+                                "failed_runs": 5,
+                                "total_runs": 300,
+                                "failures_per_thousand": 16.6,
+                            }
                         ],
                         "failed_count": 2,
                         "passed_count": 5,
@@ -226,7 +248,12 @@ class FakeGitHubClient:
 def _summary(target, failed, total, configs):
     return {
         "flaky_targets": [
-            {"target": target, "failed_runs": failed, "total_runs": total, "configs": configs}
+            {
+                "target": target,
+                "failed_runs": failed,
+                "total_runs": total,
+                "configs": configs,
+            }
         ]
     }
 
@@ -308,8 +335,20 @@ class SyncPureFunctionsTest(unittest.TestCase):
 
     def test_aggregate_sums_across_configs(self):
         records = [
-            RunRecord("1", "2026-07-20", 3, 300, {"tsan": {"failed_runs": 3, "total_runs": 300}}),
-            RunRecord("2", "2026-07-27", 5, 300, {"asan": {"failed_runs": 5, "total_runs": 300}}),
+            RunRecord(
+                "1",
+                "2026-07-20",
+                3,
+                300,
+                {"tsan": {"failed_runs": 3, "total_runs": 300}},
+            ),
+            RunRecord(
+                "2",
+                "2026-07-27",
+                5,
+                300,
+                {"asan": {"failed_runs": 5, "total_runs": 300}},
+            ),
         ]
         stats = aggregate("//pkg:a", records)
         self.assertEqual(stats.cumulative_failed_runs, 8)
@@ -325,7 +364,10 @@ class SyncPureFunctionsTest(unittest.TestCase):
         # New stats after a second run.
         stats2 = aggregate(
             "//pkg:a",
-            [RunRecord("1", "2026-07-27", 1, 10, {}), RunRecord("2", "2026-07-28", 2, 10, {})],
+            [
+                RunRecord("1", "2026-07-27", 1, 10, {}),
+                RunRecord("2", "2026-07-28", 2, 10, {}),
+            ],
         )
         merged = merge_body(existing, render_body(stats2))
         self.assertIn("Human triage notes.", merged)

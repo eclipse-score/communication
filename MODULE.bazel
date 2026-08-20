@@ -27,15 +27,14 @@ bazel_dep(name = "rules_rust", version = "0.68.1-score")
 
 # Cannot be dev-dependency due to being required in "load" statements
 bazel_dep(name = "score_qnx_unit_tests", version = "0.2.0")
-bazel_dep(name = "score_baselibs", version = "0.2.9")
-git_override(
+bazel_dep(name = "score_baselibs", version = "0.2.11")
+single_version_override(
     module_name = "score_baselibs",
-    commit = "54d67260077a0e7cdf37faf4366ca3a72f35739f",
     patch_strip = 1,
     # Patch baselibs with a QNX8 workaround for poll
     # until a fix is provided by the QNX SDP
+    # See https://github.com/eclipse-score/bazel_cpp_toolchains/issues/68
     patches = ["//third_party/score_baselibs:restore_qnx8_poll_workaround.patch"],
-    remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
 bazel_dep(name = "score_bazel_platforms", version = "1.0.0")
@@ -50,22 +49,7 @@ download_archive(
     urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
-bazel_dep(name = "score_tooling", version = "2.0.1")
-
-# TEMPORARY: score_tooling 2.0.1's DEFAULT_EXCLUDE_PATTERNS ("**/*_design")
-# silently drops this repo's architectural_design docs (Message Passing and
-# mw::com architecture pages) from the Sphinx build; a second, previously
-# masked bug then breaks the same-directory `.. uml::` diagram reference once
-# that exclusion is lifted. Both are fixed upstream in
-# https://github.com/eclipse-score/tooling/pull/428, merged to main as
-# commit 8eb4166. Pin to that commit until it is included in a released
-# score_tooling version, then remove this override and restore the plain
-# bazel_dep pin above.
-git_override(
-    module_name = "score_tooling",
-    commit = "8eb41667929f75748ade3c3f9186186ea22a06a0",
-    remote = "https://github.com/eclipse-score/tooling.git",
-)
+bazel_dep(name = "score_tooling", version = "2.0.2")
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.10.0", dev_dependency = True)
@@ -109,6 +93,8 @@ score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gc
 # score_communication_* cc_features (currently consumed by the LLVM toolchain).
 SCORE_GCC_MINIMAL_WARNING_COMPILE_FLAGS = [
     "-Wall",
+    "-Werror",
+    "-Wshadow",
     "-Wno-error=deprecated-declarations",
     "-Wno-error=cpp",
     "-Wno-builtin-macro-redefined",
@@ -201,20 +187,6 @@ imagefs.toolchain(
     type = "ifs",
 )
 use_repo(imagefs, "score_qnx_aarch64_ifs_toolchain", "score_qnx_x86_64_ifs_toolchain")
-
-# Register the QNX toolchains so that toolchain resolution can select them for
-# any target built for a QNX platform (e.g. via the test_on_qnx transition),
-# without every caller having to pass --extra_toolchains. This is also why they
-# are no longer listed as --extra_toolchains in the qnx_x86_64/qnx_arm64
-# .bazelrc configs: keeping them there in addition to here would just
-# reintroduce the duplication.
-register_toolchains(
-    "@score_qnx_x86_64_ifs_toolchain//:ifs-x86_64-qnx-sdp_8.0.0",
-    "@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0",
-    "@score_qnx_aarch64_ifs_toolchain//:ifs-aarch64-qnx-sdp_8.0.0",
-    "@score_qcc_aarch64_toolchain//:aarch64-qnx-sdp_8.0.0",
-    dev_dependency = True,
-)
 
 # rules_distroless is only used via its plain, BCR-published apt.install()
 # API (see @score_tooling//bazel/rules/sysroot_from_lock:sysroot_from_lock.bzl
@@ -426,6 +398,13 @@ pip.parse(
     requirements_lock = "//third_party/codeql:requirements_lock.txt",
 )
 use_repo(pip, "codeql_coding_standards_pip_hub")
+
+pip.parse(
+    hub_name = "review_checklists_dependencies",
+    python_version = "3.12",
+    requirements_lock = "//tools/review-checklists:requirements.txt",
+)
+use_repo(pip, "review_checklists_dependencies")
 
 # TRLC dependency for requirements traceability
 bazel_dep(name = "trlc", version = "3.0.1", dev_dependency = True)

@@ -52,7 +52,7 @@ bool StartFindServiceAndWait(const std::string& tag,
     std::cout << "Consumer Step: Call StartFindService" << std::endl;
     auto find_service_callback = [&tag, &check_point_control, &handle_notification_data](
                                      auto service_handle_container, auto find_service_handle) noexcept {
-        score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        score::utils::ScopeExit check_point_control_error_guard_start_find_service{[&check_point_control]() {
             check_point_control.ErrorOccurred();
         }};
 
@@ -71,7 +71,7 @@ bool StartFindServiceAndWait(const std::string& tag,
         std::cerr << tag << ": FindServiceHandler handler done - found one service instance." << std::endl;
 
         std::ignore = TestServiceProxy::StopFindService(find_service_handle);
-        check_point_control_error_guard.Release();
+        check_point_control_error_guard_start_find_service.Release();
     };
 
     auto find_service_handle_result =

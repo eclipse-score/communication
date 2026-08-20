@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 
-class APITagExtractor: # pylint: disable=too-few-public-methods
+class APITagExtractor:  # pylint: disable=too-few-public-methods
     """Extracts API-tagged items from Doxygen XML output."""
 
     # Matches the compound (namespace/class/struct) portion of a Doxygen
@@ -33,9 +33,7 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
     # "namespacescore_1_1mw_1_1com". Shared by `_get_member_kind_from_xml`
     # (to locate the compound's XML file) and `_get_enclosing_scope`
     # (to detect/dedupe direct namespace/class-scope members).
-    _COMPOUND_REFID_RE = (
-        r'((?:namespace|class|struct)[^_]+(?:_1_1[^_]+)*?)_1[a-f0-9]'
-    )
+    _COMPOUND_REFID_RE = r"((?:namespace|class|struct)[^_]+(?:_1_1[^_]+)*?)_1[a-f0-9]"
 
     def __init__(self, xml_file_path: str):
         """Initialize the API extractor.
@@ -56,10 +54,7 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
             tree = ET.parse(self.xml_file_path)
             self.root = tree.getroot()
         except ET.ParseError as e:
-            print(
-                f"Error parsing XML file {self.xml_file_path}: {e}",
-                file=sys.stderr
-            )
+            print(f"Error parsing XML file {self.xml_file_path}: {e}", file=sys.stderr)
             sys.exit(1)
         except FileNotFoundError:
             print(f"XML file not found: {self.xml_file_path}", file=sys.stderr)
@@ -71,18 +66,13 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
         Returns:
             Dictionary with categorized API items, each containing name and id
         """
-        api_items = {
-            'namespaces': [],
-            'classes': [],
-            'members': []
-        }
+        api_items = {"namespaces": [], "classes": [], "members": []}
 
         # Verify this is an api.xml file with pre-filtered @api tagged items
         if not self._is_api_reference_file():
             print(
-                f"Error: Expected api.xml file with @api tagged items, "
-                f"got {self.xml_file_path}",
-                file=sys.stderr
+                f"Error: Expected api.xml file with @api tagged items, got {self.xml_file_path}",
+                file=sys.stderr,
             )
             sys.exit(1)
 
@@ -90,9 +80,7 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
         self._drop_members_covered_by_enclosing_scope(api_items)
         return api_items
 
-    def _drop_members_covered_by_enclosing_scope(
-            self, api_items: Dict[str, List[Dict[str, str]]]
-    ) -> None:
+    def _drop_members_covered_by_enclosing_scope(self, api_items: Dict[str, List[Dict[str, str]]]) -> None:
         """Remove members already documented via their enclosing
         namespace or class/struct directive.
 
@@ -112,18 +100,16 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
         Args:
             api_items: Dictionary of categorized API items, filtered in place
         """
-        documented_scopes = {
-            item['name'] for item in api_items['namespaces']
-        } | {
-            item['name'] for item in api_items['classes']
+        documented_scopes = {item["name"] for item in api_items["namespaces"]} | {
+            item["name"] for item in api_items["classes"]
         }
         if not documented_scopes:
             return
 
-        api_items['members'] = [
-            member for member in api_items['members']
-            if self._get_enclosing_scope(member['id'])
-            not in documented_scopes
+        api_items["members"] = [
+            member
+            for member in api_items["members"]
+            if self._get_enclosing_scope(member["id"]) not in documented_scopes
         ]
 
     def _get_enclosing_scope(self, refid: str) -> Optional[str]:
@@ -145,11 +131,9 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
         if not match:
             return None
         compound_name = match.group(1)
-        for kind_prefix in ('namespace', 'class', 'struct'):
+        for kind_prefix in ("namespace", "class", "struct"):
             if compound_name.startswith(kind_prefix):
-                return (
-                    compound_name[len(kind_prefix):].replace('_1_1', '::')
-                )
+                return compound_name[len(kind_prefix) :].replace("_1_1", "::")
         return None
 
     def _extract_member_signature(self, term_elem: ET.Element) -> str:
@@ -169,9 +153,9 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
                 signature_parts.append(text)
 
         # Join and clean up the signature
-        full_signature = ' '.join(signature_parts)
+        full_signature = " ".join(signature_parts)
         # Remove extra whitespace
-        full_signature = ' '.join(full_signature.split())
+        full_signature = " ".join(full_signature.split())
         return full_signature
 
     def _get_member_kind_from_xml(self, refid: str) -> Optional[str]:
@@ -208,7 +192,7 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
                 # Find the memberdef with this id
                 memberdef = root.find(f'.//memberdef[@id="{refid}"]')
                 if memberdef is not None:
-                    kind = memberdef.get('kind', '')
+                    kind = memberdef.get("kind", "")
                     self._member_kind_cache[refid] = kind
                     return kind
             except (FileNotFoundError, ET.ParseError):
@@ -229,14 +213,10 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
             True if this is an api.xml reference file
         """
         # Check if root has a compounddef with kind="page" and id="api"
-        api_compound = self.root.find(
-            './/compounddef[@kind="page"][@id="api"]'
-        )
+        api_compound = self.root.find('.//compounddef[@kind="page"][@id="api"]')
         return api_compound is not None
 
-    def _extract_from_api_references(
-            self, api_items: Dict[str, List[Dict[str, str]]]
-    ) -> None:
+    def _extract_from_api_references(self, api_items: Dict[str, List[Dict[str, str]]]) -> None:
         """Extract API items from api.xml reference file.
 
         The api.xml file structure contains:
@@ -257,67 +237,61 @@ class APITagExtractor: # pylint: disable=too-few-public-methods
         function_overloads = {}
 
         # Find all varlistentry elements in the api.xml file
-        for varlistentry in self.root.findall('.//varlistentry'):
-            term_elem = varlistentry.find('term')
+        for varlistentry in self.root.findall(".//varlistentry"):
+            term_elem = varlistentry.find("term")
             if term_elem is None:
                 continue
 
             # Get the term text to determine item type
-            term_text = ''.join(term_elem.itertext()).strip()
+            term_text = "".join(term_elem.itertext()).strip()
 
             # Find the ref element within the term
-            ref_elem = term_elem.find('.//ref')
+            ref_elem = term_elem.find(".//ref")
             if ref_elem is None:
                 continue
 
-            refid = ref_elem.get('refid', '')
-            ref_text = ref_elem.text or ''
+            refid = ref_elem.get("refid", "")
+            ref_text = ref_elem.text or ""
 
             if not refid or not ref_text:
                 continue
 
             # Determine category based on term prefix (only 3 types in api.xml)
-            if term_text.startswith('Namespace '):
+            if term_text.startswith("Namespace "):
                 # Extract namespace name
-                item_data = {'name': ref_text.strip(), 'id': refid}
-                api_items['namespaces'].append(item_data)
+                item_data = {"name": ref_text.strip(), "id": refid}
+                api_items["namespaces"].append(item_data)
 
-            elif term_text.startswith('Class '):
+            elif term_text.startswith("Class "):
                 # Extract class name
-                item_data = {'name': ref_text.strip(), 'id': refid}
-                api_items['classes'].append(item_data)
+                item_data = {"name": ref_text.strip(), "id": refid}
+                api_items["classes"].append(item_data)
 
-            elif term_text.startswith('Member '):
+            elif term_text.startswith("Member "):
                 # Extract member with full signature if present
                 # This includes: methods, functions, typedefs, enums,
                 # variables, etc.
                 signature = self._extract_member_signature(term_elem)
                 # Remove "Member " prefix to get the actual signature
-                if signature.startswith('Member '):
+                if signature.startswith("Member "):
                     signature = signature[7:].strip()
 
                 # Get the actual kind from the XML file
                 member_kind = self._get_member_kind_from_xml(refid)
 
                 # Track function overloads
-                if member_kind == 'function' or '(' in signature:
-                    base_name = signature.split('(', maxsplit=1)[0].strip()
-                    function_overloads[base_name] = (
-                        function_overloads.get(base_name, 0) + 1
-                    )
+                if member_kind == "function" or "(" in signature:
+                    base_name = signature.split("(", maxsplit=1)[0].strip()
+                    function_overloads[base_name] = function_overloads.get(base_name, 0) + 1
 
-                item_data = {
-                    'name': signature,
-                    'id': refid,
-                    'kind': member_kind
-                }
-                api_items['members'].append(item_data)
+                item_data = {"name": signature, "id": refid, "kind": member_kind}
+                api_items["members"].append(item_data)
 
         # Store overload information for RST generation
         self._function_overloads = function_overloads
 
 
-class RSTGenerator: # pylint: disable=too-few-public-methods
+class RSTGenerator:  # pylint: disable=too-few-public-methods
     """Generates RST documentation files from extracted API items."""
 
     def __init__(self, project_name: str, output_dir: str):
@@ -350,7 +324,7 @@ class RSTGenerator: # pylint: disable=too-few-public-methods
             function is a template-class member, otherwise None.
         """
         # Must be a qualified member (contains top-level ::)
-        if '::' not in base_name:
+        if "::" not in base_name:
             return None
 
         # Find the last top-level '::' (outside angle brackets) to
@@ -360,11 +334,11 @@ class RSTGenerator: # pylint: disable=too-few-public-methods
         pos = 0
         while pos < len(base_name) - 1:
             char = base_name[pos]
-            if char == '<':
+            if char == "<":
                 angle_bracket_depth += 1
-            elif char == '>':
+            elif char == ">":
                 angle_bracket_depth = max(angle_bracket_depth - 1, 0)
-            elif base_name[pos:pos+2] == '::' and angle_bracket_depth == 0:
+            elif base_name[pos : pos + 2] == "::" and angle_bracket_depth == 0:
                 last_scope_separator_pos = pos
                 pos += 2
                 continue
@@ -376,7 +350,7 @@ class RSTGenerator: # pylint: disable=too-few-public-methods
         qualified_class_part = base_name[:last_scope_separator_pos]
 
         # Check if the class portion contains template parameters
-        if '<' not in qualified_class_part:
+        if "<" not in qualified_class_part:
             return None
 
         # Single-pass: emit only top-level non-template characters and
@@ -387,23 +361,21 @@ class RSTGenerator: # pylint: disable=too-few-public-methods
         pos = 0
         while pos < len(qualified_class_part):
             char = qualified_class_part[pos]
-            if char == '<':
+            if char == "<":
                 angle_bracket_depth += 1
-            elif char == '>':
+            elif char == ">":
                 angle_bracket_depth = max(angle_bracket_depth - 1, 0)
             elif angle_bracket_depth == 0:
-                if qualified_class_part[pos:pos+2] == '::':
-                    cleaned_name_parts.append('::')
+                if qualified_class_part[pos : pos + 2] == "::":
+                    cleaned_name_parts.append("::")
                     pos += 2
                     continue
                 cleaned_name_parts.append(char)
             pos += 1
 
-        return ''.join(cleaned_name_parts)
+        return "".join(cleaned_name_parts)
 
-    def generate_rst_files(
-            self, api_items: Dict[str, List[Dict[str, str]]]
-    ) -> List[str]:
+    def generate_rst_files(self, api_items: Dict[str, List[Dict[str, str]]]) -> List[str]:
         """Generate separate RST files for each category.
 
         Args:
@@ -426,9 +398,7 @@ class RSTGenerator: # pylint: disable=too-few-public-methods
 
         return generated_files
 
-    def _generate_index_file(
-            self, api_items: Dict[str, List[Dict[str, str]]]
-    ) -> str:
+    def _generate_index_file(self, api_items: Dict[str, List[Dict[str, str]]]) -> str:
         """Generate main API index RST file.
 
         Args:
@@ -474,14 +444,12 @@ category.
                 content += f"- {category.title()}: {len(items)} items\n"
 
         index_path = self.output_dir / "api_index.rst"
-        with open(index_path, 'w', encoding='utf-8') as f:
+        with open(index_path, "w", encoding="utf-8") as f:
             f.write(content)
 
         return str(index_path)
 
-    def _generate_category_file(
-            self, category: str, items: List[Dict[str, str]]
-    ) -> str:
+    def _generate_category_file(self, category: str, items: List[Dict[str, str]]) -> str:
         """Generate RST file for a specific category.
 
         Args:
@@ -491,29 +459,29 @@ category.
         Returns:
             Path to generated category file
         """
-        title = category.title().rstrip('s')  # Remove trailing 's'
+        title = category.title().rstrip("s")  # Remove trailing 's'
         content = f"""{title} Reference
-{'=' * (len(title) + 11)}
+{"=" * (len(title) + 11)}
 
 This section contains all {category} tagged with @api.
 
 """
 
         # Sort items by name for consistent output
-        sorted_items = sorted(items, key=lambda x: x['name'])
+        sorted_items = sorted(items, key=lambda x: x["name"])
 
         for item in sorted_items:
-            name = item['name']
-            kind = item.get('kind')  # Get the kind if available
+            name = item["name"]
+            kind = item.get("kind")  # Get the kind if available
             content += self._generate_item_documentation(category, name, kind)
 
         file_path = self.output_dir / f"api_{category}.rst"
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
 
         return str(file_path)
 
-    def _simplify_signature(self, signature: str) -> str: # pylint: disable=too-many-locals,too-many-branches
+    def _simplify_signature(self, signature: str) -> str:  # pylint: disable=too-many-locals,too-many-branches
         """Simplify a function signature for Breathe.
 
         Converts: "ClassName::method (const Type &param) noexcept = default"
@@ -527,27 +495,27 @@ This section contains all {category} tagged with @api.
             Simplified signature with just parameter types
         """
         # Extract base name and parameters
-        if '(' not in signature:
+        if "(" not in signature:
             return signature
 
-        base_name = signature.split('(', maxsplit=1)[0].strip()
+        base_name = signature.split("(", maxsplit=1)[0].strip()
 
         # Extract everything between first ( and last )
         # Handle nested parentheses in parameter types
-        paren_start = signature.index('(')
+        paren_start = signature.index("(")
         paren_count = 0
         paren_end = paren_start
 
         for i in range(paren_start, len(signature)):
-            if signature[i] == '(':
+            if signature[i] == "(":
                 paren_count += 1
-            elif signature[i] == ')':
+            elif signature[i] == ")":
                 paren_count -= 1
                 if paren_count == 0:
                     paren_end = i
                     break
 
-        params_str = signature[paren_start+1:paren_end]
+        params_str = signature[paren_start + 1 : paren_end]
 
         # Simplify parameters: remove parameter names, keep types
         # This is a simplified approach - for complex cases,
@@ -560,11 +528,11 @@ This section contains all {category} tagged with @api.
         depth = 0
 
         for char in params_str:
-            if char in '<(':
+            if char in "<(":
                 depth += 1
-            elif char in '>)':
+            elif char in ">)":
                 depth -= 1
-            elif char == ',' and depth == 0:
+            elif char == "," and depth == 0:
                 param_parts.append(current_param.strip())
                 current_param = ""
                 continue
@@ -589,8 +557,8 @@ This section contains all {category} tagged with @api.
             param_clean = param.strip()
 
             # Remove default values (everything after =)
-            if '=' in param_clean:
-                param_clean = param_clean.split('=', maxsplit=1)[0].strip()
+            if "=" in param_clean:
+                param_clean = param_clean.split("=", maxsplit=1)[0].strip()
 
             # For complex types, just use the parameter as-is
             # Breathe is quite flexible with parameter matching
@@ -608,12 +576,12 @@ This section contains all {category} tagged with @api.
         # qualifiers (noexcept, override, final, =default) are still
         # intentionally dropped since Breathe's signature matching
         # ignores them.
-        remainder = signature[paren_end+1:].strip()
+        remainder = signature[paren_end + 1 :].strip()
         remainder_tokens = remainder.split()
         qualifiers = []
         idx = 0
-        if remainder_tokens and remainder_tokens[0] == 'const':
-            qualifiers.append('const')
+        if remainder_tokens and remainder_tokens[0] == "const":
+            qualifiers.append("const")
             idx += 1
         if idx < len(remainder_tokens):
             # Doxygen sometimes emits the ref-qualifier glued directly to
@@ -621,17 +589,17 @@ This section contains all {category} tagged with @api.
             # "&noexcept" or "&&noexcept"), so check for a prefix match
             # rather than requiring the token to be exactly "&"/"&&".
             token = remainder_tokens[idx]
-            if token.startswith('&&'):
-                qualifiers.append('&&')
-            elif token.startswith('&'):
-                qualifiers.append('&')
+            if token.startswith("&&"):
+                qualifiers.append("&&")
+            elif token.startswith("&"):
+                qualifiers.append("&")
         if qualifiers:
-            simplified += ' ' + ' '.join(qualifiers)
+            simplified += " " + " ".join(qualifiers)
 
         return simplified
 
-    def _generate_item_documentation( # pylint: disable=too-many-return-statements
-            self, category: str, name: str, kind: Optional[str] = None
+    def _generate_item_documentation(  # pylint: disable=too-many-return-statements
+        self, category: str, name: str, kind: Optional[str] = None
     ) -> str:
         """Generate RST directive for a single item.
 
@@ -643,37 +611,34 @@ This section contains all {category} tagged with @api.
         Returns:
             RST content for the item
         """
-        if category == 'namespaces':
+        if category == "namespaces":
             return f"""
 .. doxygennamespace:: {name}
    :content-only:
 
 """
-        if category == 'classes':
+        if category == "classes":
             return f"""
 .. doxygenclass:: {name}
    :members:
    :undoc-members:
 
 """
-        if category == 'members':
+        if category == "members":
             # For callable items, we may need the full signature for
             # overloaded functions
             # For non-callable items (typedefs, enums), use just the name
 
             # Extract base name for categorization
-            base_name = (name.split('(', maxsplit=1)[0].strip()
-                         if '(' in name else name)
+            base_name = name.split("(", maxsplit=1)[0].strip() if "(" in name else name
 
             # Use the kind to determine the appropriate directive
-            if kind in ('function', 'friend'):
+            if kind in ("function", "friend"):
                 # Check if this is a member of a template class.
                 # Template class members often lack standalone XML
                 # entries in Doxygen output, so Breathe cannot find
                 # them via doxygenfunction. Use doxygenclass instead.
-                template_class = self._extract_template_class(
-                    base_name
-                )
+                template_class = self._extract_template_class(base_name)
                 if template_class is not None:
                     if template_class in self._documented_template_classes:
                         return ""
@@ -689,7 +654,7 @@ This section contains all {category} tagged with @api.
                 # if available for better precision
                 # This helps Breathe resolve overloaded functions,
                 # templates, operators, etc.
-                if '(' in name:
+                if "(" in name:
                     # Has signature: simplify and use it
                     func_signature = self._simplify_signature(name)
                     return f"""
@@ -701,24 +666,24 @@ This section contains all {category} tagged with @api.
 .. doxygenfunction:: {base_name}
 
 """
-            if kind == 'typedef':
+            if kind == "typedef":
                 return f"""
 .. doxygentypedef:: {base_name}
 
 """
-            if kind == 'enum':
+            if kind == "enum":
                 return f"""
 .. doxygenenum:: {base_name}
 
 """
-            if kind == 'variable':
+            if kind == "variable":
                 return f"""
 .. doxygenvariable:: {base_name}
 
 """
             # Fallback: Use function directive if it has parentheses,
             # otherwise try typedef
-            if '(' in name:
+            if "(" in name:
                 return f"""
 .. doxygenfunction:: {base_name}
 
@@ -742,43 +707,35 @@ def parse_arguments() -> argparse.Namespace:
         Parsed command line arguments
     """
     parser = argparse.ArgumentParser(
-        description='Extract API items from Doxygen XML and generate RST files',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        description="Extract API items from Doxygen XML and generate RST files",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     # Support both positional and flag-based arguments for flexibility
+    parser.add_argument("xml_file", nargs="?", help="Path to Doxygen api.xml file")
+    parser.add_argument("output_dir", nargs="?", help="Output directory for generated RST files")
     parser.add_argument(
-        'xml_file',
-        nargs='?',
-        help='Path to Doxygen api.xml file'
+        "--xml-file",
+        dest="xml_file_flag",
+        help="Path to Doxygen api.xml file (alternative to positional)",
     )
     parser.add_argument(
-        'output_dir',
-        nargs='?',
-        help='Output directory for generated RST files'
+        "--output-dir",
+        dest="output_dir_flag",
+        help="Output directory for generated RST files (alternative to positional)",
     )
     parser.add_argument(
-        '--xml-file',
-        dest='xml_file_flag',
-        help='Path to Doxygen api.xml file (alternative to positional)'
+        "--project-name",
+        default="Project",
+        help="Project name for documentation (default: Project)",
     )
     parser.add_argument(
-        '--output-dir',
-        dest='output_dir_flag',
-        help='Output directory for generated RST files (alternative to positional)'
+        "--max-items",
+        type=int,
+        default=1000,
+        help="Maximum number of items per category (default: 1000)",
     )
-    parser.add_argument(
-        '--project-name', default='Project',
-        help='Project name for documentation (default: Project)'
-    )
-    parser.add_argument(
-        '--max-items', type=int, default=1000,
-        help='Maximum number of items per category (default: 1000)'
-    )
-    parser.add_argument(
-        '--verbose', '-v', action='store_true',
-        help='Enable verbose output'
-    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
 
     args = parser.parse_args()
 
@@ -786,13 +743,13 @@ def parse_arguments() -> argparse.Namespace:
     if args.xml_file_flag:
         args.xml_file = args.xml_file_flag
     elif not args.xml_file:
-        parser.error('xml_file is required (either positional or --xml-file)')
+        parser.error("xml_file is required (either positional or --xml-file)")
 
     # Resolve output_dir: prefer flag, fallback to positional
     if args.output_dir_flag:
         args.output_dir = args.output_dir_flag
     elif not args.output_dir:
-        parser.error('output_dir is required (either positional or --output-dir)')
+        parser.error("output_dir is required (either positional or --output-dir)")
 
     return args
 
@@ -814,11 +771,8 @@ def main() -> None:
     for category, items in api_items.items():
         if len(items) > args.max_items:
             if args.verbose:
-                print(
-                    f"Warning: Limiting {category} from {len(items)} "
-                    f"to {args.max_items} items"
-                )
-            api_items[category] = items[:args.max_items]
+                print(f"Warning: Limiting {category} from {len(items)} to {args.max_items} items")
+            api_items[category] = items[: args.max_items]
 
     # Generate RST files
     generator = RSTGenerator(args.project_name, args.output_dir)
@@ -826,10 +780,7 @@ def main() -> None:
 
     # Print summary
     total_items = sum(len(items) for items in api_items.values())
-    print(
-        f"Generated {len(generated_files)} RST files with "
-        f"{total_items} API items"
-    )
+    print(f"Generated {len(generated_files)} RST files with {total_items} API items")
 
     if args.verbose:
         for category, items in api_items.items():
@@ -840,5 +791,5 @@ def main() -> None:
             print(f"  {file_path}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

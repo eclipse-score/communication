@@ -13,7 +13,9 @@
 
 """Integration test for provider_restart_max_subscribers (no proxy connected)."""
 
-from provider_restart_max_subscribers_test_fixture import provider_restart_max_subscribers
+from provider_restart_max_subscribers_test_fixture import (
+    provider_restart_max_subscribers,
+)
 
 # Test configuration
 IS_PROXY_CONNECTED_DURING_RESTART = 0

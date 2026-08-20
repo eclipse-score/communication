@@ -1,6 +1,6 @@
 # Quality Tools
 
-This document provides instructions for developers on how to execute the quality tools available in Score (Clang-Tidy, CodeQL, Coverage, Sanitizers, Copyright Checker, and C++, Bazel Files Formatter) locally.
+This document provides instructions for developers on how to execute the quality tools available in Score (Clang-Tidy, Ruff, CodeQL, Coverage, Sanitizers, Copyright Checker, and C++, Bazel Files Formatter) locally.
 
 ## Clang-Tidy
 
@@ -331,6 +331,37 @@ bazel run //:copyright.check
 # Fix Sources
 bazel run //:copyright.fix
 ```
+
+### Ruff
+
+Ruff performs static analysis and lints Python sources using its own built-in default rule set
+(no repo-specific `pyproject.toml`/`ruff.toml` override). It is integrated into Bazel via
+`@aspect_rules_lint`, the same way Clang-Tidy is integrated for C++.
+
+```bash
+# Check all targets
+bazel test --config=ruff //...
+
+# Check a specific target or subtree
+bazel test --config=ruff //docs/sphinx/utils/...
+
+# Check-only convenience wrapper (equivalent to the command above)
+bazel run //:ruff.check
+```
+
+Many ruff rules are auto-fixable. Use the `ruff.fix` target to run ruff in fix mode and apply
+patches to the source tree:
+
+```bash
+# Fix all targets
+bazel run //:ruff.fix
+
+# Fix a specific target or subtree
+bazel run //:ruff.fix -- //docs/sphinx/utils/...
+```
+
+> **Note:** Violations without an automatic fix are still reported in the terminal but leave no
+> patch file, same as Clang-Tidy.
 
 ### C++ and Bazel Files Formatter
 

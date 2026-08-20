@@ -81,7 +81,7 @@ def get_clang_binary():
         if candidate and os.path.isfile(candidate):
             return candidate
         # Try to find in PATH
-        if candidate and not os.path.sep in candidate:
+        if candidate and os.path.sep not in candidate:
             found = shutil.which(candidate)
             if found:
                 return found
@@ -99,9 +99,7 @@ def run_extract_api(headers: list[str], target_files: list[str]) -> dict:
     workspace_root = os.path.dirname(os.path.dirname(test_dir))
 
     # Run clang AST dump
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".cpp", delete=False, prefix="test_api_"
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".cpp", delete=False, prefix="test_api_") as f:
         for header in headers:
             f.write(f'#include "{os.path.abspath(header)}"\n')
         combined_path = f.name
@@ -109,13 +107,16 @@ def run_extract_api(headers: list[str], target_files: list[str]) -> dict:
     try:
         cmd = [
             clang,
-            "-Xclang", "-ast-dump=json",
+            "-Xclang",
+            "-ast-dump=json",
             "-fsyntax-only",
-            "-x", "c++",
+            "-x",
+            "c++",
             "-std=c++17",
             "-fparse-all-comments",
             "-w",
-            "-I", workspace_root,
+            "-I",
+            workspace_root,
             combined_path,
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
@@ -127,14 +128,16 @@ def run_extract_api(headers: list[str], target_files: list[str]) -> dict:
 
     # Run extraction
     cmd = [
-        sys.executable, extract_script,
-        "--ast-json", "/dev/stdin",
-        "--target-headers", ",".join(target_files),
-        "--target-label", "//test:target",
+        sys.executable,
+        extract_script,
+        "--ast-json",
+        "/dev/stdin",
+        "--target-headers",
+        ",".join(target_files),
+        "--target-label",
+        "//test:target",
     ]
-    result = subprocess.run(
-        cmd, input=json.dumps(ast), capture_output=True, text=True, timeout=30
-    )
+    result = subprocess.run(cmd, input=json.dumps(ast), capture_output=True, text=True, timeout=30)
     if result.returncode != 0:
         raise RuntimeError(f"extract_api.py failed: {result.stderr}")
     return json.loads(result.stdout)
@@ -493,9 +496,12 @@ class TestCliModes(unittest.TestCase):
         try:
             result = subprocess.run(
                 [
-                    sys.executable, extract_script,
-                    "--clang", "/definitely/not/a/clang/binary",
-                    "--headers", header_path,
+                    sys.executable,
+                    extract_script,
+                    "--clang",
+                    "/definitely/not/a/clang/binary",
+                    "--headers",
+                    header_path,
                 ],
                 capture_output=True,
                 text=True,
@@ -507,7 +513,6 @@ class TestCliModes(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("unrecognized arguments", result.stderr)
         self.assertIn("--clang", result.stderr)
-
 
 
 class TestMultiInheritance(unittest.TestCase):
@@ -552,12 +557,10 @@ class TestRefQualifiers(unittest.TestCase):
         self.assertIn("test::Buffer", qualified_names(self.symbols))
 
     def test_both_data_overloads_present(self):
-        sigs = [s["signature"] for s in self.symbols
-                if s["qualified_name"] == "test::Buffer::data"]
+        sigs = [s["signature"] for s in self.symbols if s["qualified_name"] == "test::Buffer::data"]
         self.assertEqual(len(sigs), 2)
         self.assertTrue(any(sig.rstrip().endswith("&&") for sig in sigs))
-        self.assertTrue(any(sig.rstrip().endswith("&") and not sig.rstrip().endswith("&&")
-                            for sig in sigs))
+        self.assertTrue(any(sig.rstrip().endswith("&") and not sig.rstrip().endswith("&&") for sig in sigs))
 
     def test_const_lvalue_qualifier(self):
         sym = find_symbol(self.symbols, "test::Buffer::size")
@@ -830,9 +833,7 @@ def _public_surface(result: dict) -> dict:
 
 def _extract_source(source: str) -> dict:
     """Write `source` to a temporary header and run the extraction pipeline."""
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".h", delete=False, prefix="neg_case_"
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".h", delete=False, prefix="neg_case_") as f:
         f.write(source)
         header = f.name
     try:

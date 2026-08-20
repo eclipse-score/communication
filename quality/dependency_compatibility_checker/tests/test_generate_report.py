@@ -22,8 +22,9 @@ from quality.dependency_compatibility_checker import generate_report
 
 def _config() -> str:
     path = Path(tempfile.mkdtemp()) / "config.yaml"
-    path.write_text(textwrap.dedent(
-        """
+    path.write_text(
+        textwrap.dedent(
+            """
         dependencies:
           bazel:
             versions: [{version: "8.7.0"}]
@@ -33,7 +34,9 @@ def _config() -> str:
               - version: "0.2.21"
                 skip: "broken, see #700"
         """
-    ), encoding="utf-8")
+        ),
+        encoding="utf-8",
+    )
     return str(path)
 
 
@@ -55,12 +58,18 @@ class ClassifyTest(unittest.TestCase):
 class ReportTest(unittest.TestCase):
     def _run(self, fail_on, *results):
         out = Path(tempfile.mkdtemp())
-        rc = generate_report.main([
-            "--results-dir", _results(*results),
-            "--config", _config(),
-            "--output-dir", str(out),
-            "--fail-on", fail_on,
-        ])
+        rc = generate_report.main(
+            [
+                "--results-dir",
+                _results(*results),
+                "--config",
+                _config(),
+                "--output-dir",
+                str(out),
+                "--fail-on",
+                fail_on,
+            ]
+        )
         summary = json.loads((out / "summary.json").read_text())
         html = (out / "report.html").read_text()
         return rc, summary, html
@@ -68,8 +77,12 @@ class ReportTest(unittest.TestCase):
     def test_summary_and_html_written(self):
         rc, summary, html = self._run(
             "never",
-            {"index": 0, "versions": {"bazel": "8.7.0", "rules_cc": "0.2.17"},
-             "build_status": "success", "has_patches": False},
+            {
+                "index": 0,
+                "versions": {"bazel": "8.7.0", "rules_cc": "0.2.17"},
+                "build_status": "success",
+                "has_patches": False,
+            },
         )
         self.assertEqual(rc, 0)
         self.assertEqual(summary["totals"], {"green": 1, "orange": 0, "red": 0})
@@ -79,16 +92,24 @@ class ReportTest(unittest.TestCase):
     def test_fail_on_red(self):
         rc, _, _ = self._run(
             "red",
-            {"index": 0, "versions": {"bazel": "8.7.0", "rules_cc": "0.2.17"},
-             "build_status": "failure", "has_patches": False},
+            {
+                "index": 0,
+                "versions": {"bazel": "8.7.0", "rules_cc": "0.2.17"},
+                "build_status": "failure",
+                "has_patches": False,
+            },
         )
         self.assertNotEqual(rc, 0)
 
     def test_fail_on_never_ignores_red(self):
         rc, _, _ = self._run(
             "never",
-            {"index": 0, "versions": {"bazel": "8.7.0", "rules_cc": "0.2.17"},
-             "build_status": "failure", "has_patches": False},
+            {
+                "index": 0,
+                "versions": {"bazel": "8.7.0", "rules_cc": "0.2.17"},
+                "build_status": "failure",
+                "has_patches": False,
+            },
         )
         self.assertEqual(rc, 0)
 

@@ -133,14 +133,14 @@ TEST_F(RuntimeMockFixture, InitializeRuntimeWithRuntimeConfigurationDispatchesTo
     // Given that a mocked runtime has been injected
 
     // Expecting that InitializeRuntime will be called on the mock
-    RuntimeConfiguration runtime_configuration{kDummyConfigurationPath};
+    RuntimeConfiguration dummy_runtime_configuration{kDummyConfigurationPath};
     EXPECT_CALL(runtime_mock_, InitializeRuntime(An<const RuntimeConfiguration&>()))
         .WillOnce(Invoke([](auto& runtime_configuration) {
             EXPECT_EQ(runtime_configuration.GetConfigurationPath(), kDummyConfigurationPath);
         }));
 
     // When calling InitializeRuntime
-    InitializeRuntime(runtime_configuration);
+    InitializeRuntime(dummy_runtime_configuration);
 }
 
 }  // namespace

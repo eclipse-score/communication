@@ -15,10 +15,12 @@ import pytest
 
 logger = logging.getLogger(__name__)
 
+
 def run_interaction_app(target, app_bin, mode, config_path, cwd, wait_on_exit=False, **kwargs):
     """Helper to run an application using the framework's native wrap_exec method."""
     args = ["--mode", mode, "--service_instance_manifest", config_path]
     return target.wrap_exec(app_bin, args, cwd=cwd, wait_on_exit=wait_on_exit, **kwargs)
+
 
 @pytest.mark.xfail(reason="Generic Skeleton memory alignment and base pointer bug")
 def test_generic_typed_interaction_64_byte(target):
@@ -37,8 +39,17 @@ def test_generic_typed_interaction_64_byte(target):
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")
         # INCREASED wait_timeout to 60 to ensure it has time to finish
-        with run_interaction_app(target, app_bin, "consumer", config_path, cwd=app_root, wait_on_exit=True, wait_timeout=60):
+        with run_interaction_app(
+            target,
+            app_bin,
+            "consumer",
+            config_path,
+            cwd=app_root,
+            wait_on_exit=True,
+            wait_timeout=60,
+        ):
             pass
+
 
 @pytest.mark.xfail(reason="Generic Skeleton memory alignment and base pointer bug")
 def test_generic_typed_interaction_32_byte(target):
@@ -54,8 +65,17 @@ def test_generic_typed_interaction_32_byte(target):
         time.sleep(2)
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")
-        with run_interaction_app(target, app_bin, "consumer", config_path, cwd=app_root, wait_on_exit=True, wait_timeout=60):
+        with run_interaction_app(
+            target,
+            app_bin,
+            "consumer",
+            config_path,
+            cwd=app_root,
+            wait_on_exit=True,
+            wait_timeout=60,
+        ):
             pass
+
 
 @pytest.mark.xfail(reason="Generic Skeleton memory alignment and base pointer bug")
 def test_generic_typed_interaction_16_byte(target):
@@ -71,8 +91,17 @@ def test_generic_typed_interaction_16_byte(target):
         time.sleep(2)
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")
-        with run_interaction_app(target, app_bin, "consumer", config_path, cwd=app_root, wait_on_exit=True, wait_timeout=60):
+        with run_interaction_app(
+            target,
+            app_bin,
+            "consumer",
+            config_path,
+            cwd=app_root,
+            wait_on_exit=True,
+            wait_timeout=60,
+        ):
             pass
+
 
 @pytest.mark.xfail(reason="Generic Skeleton memory alignment and base pointer bug")
 def test_generic_typed_interaction_8_byte(target):
@@ -88,5 +117,13 @@ def test_generic_typed_interaction_8_byte(target):
         time.sleep(2)
 
         logger.info(f"Starting consumer: {app_bin} in {app_root}")
-        with run_interaction_app(target, app_bin, "consumer", config_path, cwd=app_root, wait_on_exit=True, wait_timeout=60):
+        with run_interaction_app(
+            target,
+            app_bin,
+            "consumer",
+            config_path,
+            cwd=app_root,
+            wait_on_exit=True,
+            wait_timeout=60,
+        ):
             pass

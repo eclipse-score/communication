@@ -20,7 +20,7 @@ build:_lint --keep_going
 # Clang-tidy configuration
 # Run clang-tidy on all C++ targets with: bazel test --config=clang-tidy //...
 build:clang-tidy --config=_lint
-build:clang-tidy --aspects=//tools/lint:linters.bzl%clang_tidy_aspect
+build:clang-tidy --aspects=//tools/lint:linters.bzl%clang_tidy
 build:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 build:clang-tidy --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 
@@ -28,6 +28,20 @@ build:clang-tidy --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:r
 # Run clippy on all C++ targets with: bazel test --config=clippy //...
 build:clippy --config=_lint
 build:clippy --aspects=@score_rust_policies//clippy:linters.bzl%clippy_strict
+
+# Ruff configuration
+# Run ruff on all Python targets with: bazel test --config=ruff //...
+build:ruff --config=_lint
+build:ruff --aspects=//tools/lint:linters.bzl%ruff
+
+# Ruff autofix configuration
+# Inherits all ruff flags above and additionally enables fix mode so that
+# aspect_rules_lint runs `ruff check --fix` in a sandbox and collects the
+# edits as a unified-diff patch. Use `bazel run //:ruff.fix` to apply those
+# patches back to the workspace.
+build:ruff-fix --config=ruff
+build:ruff-fix --@aspect_rules_lint//lint:fix
+build:ruff-fix --output_groups=+rules_lint_patch
 
 # Clang-tidy autofix configuration
 # Inherits all clang-tidy flags above and additionally enables fix mode so that

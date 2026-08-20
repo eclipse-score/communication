@@ -45,6 +45,7 @@ _TEMPLATE_DIR = pathlib.Path(__file__).parent
 
 # ── Template helpers ──────────────────────────────────────────────────────────
 
+
 def _cov_colour(pct) -> str:
     pct = float(pct or 0)
     return "#27ae60" if pct >= 90 else ("#e67e22" if pct >= 70 else "#e74c3c")
@@ -66,6 +67,7 @@ def _delta_badge(curr, prev, higher_is_better: bool) -> Markup:
 
 # ── Data parsers ──────────────────────────────────────────────────────────────
 
+
 def load_lcov(path: pathlib.Path) -> tuple[dict, list[dict]]:
     if not path or not path.is_file():
         return {}, []
@@ -73,8 +75,17 @@ def load_lcov(path: pathlib.Path) -> tuple[dict, list[dict]]:
     for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
         line = raw.strip()
         if line.startswith("SF:"):
-            cur = {"file": line[3:], "lf": 0, "lh": 0, "fnf": 0, "fnh": 0,
-                   "brf": 0, "brh": 0, "_lf": 0, "_lh": 0}
+            cur = {
+                "file": line[3:],
+                "lf": 0,
+                "lh": 0,
+                "fnf": 0,
+                "fnh": 0,
+                "brf": 0,
+                "brh": 0,
+                "_lf": 0,
+                "_lh": 0,
+            }
         elif cur is None:
             continue
         elif line.startswith("DA:"):
@@ -110,22 +121,22 @@ def load_lcov(path: pathlib.Path) -> tuple[dict, list[dict]]:
         return round(100.0 * h / f, 1) if f else 0.0
 
     for f in files:
-        f["line_pct"]   = pct(f["lh"],  f["lf"])
-        f["func_pct"]   = pct(f["fnh"], f["fnf"])
+        f["line_pct"] = pct(f["lh"], f["lf"])
+        f["func_pct"] = pct(f["fnh"], f["fnf"])
         f["branch_pct"] = pct(f["brh"], f["brf"])
 
-    lf  = sum(f["lf"]  for f in files)
-    lh  = sum(f["lh"]  for f in files)
+    lf = sum(f["lf"] for f in files)
+    lh = sum(f["lh"] for f in files)
     fnf = sum(f["fnf"] for f in files)
     fnh = sum(f["fnh"] for f in files)
     brf = sum(f["brf"] for f in files)
     brh = sum(f["brh"] for f in files)
     summary = {
-        "line_pct":   pct(lh,  lf),
-        "func_pct":   pct(fnh, fnf),
+        "line_pct": pct(lh, lf),
+        "func_pct": pct(fnh, fnf),
         "branch_pct": pct(brh, brf),
-        "lines":    f"{lh}/{lf}",
-        "funcs":    f"{fnh}/{fnf}",
+        "lines": f"{lh}/{lf}",
+        "funcs": f"{fnh}/{fnf}",
         "branches": f"{brh}/{brf}",
     }
     return summary, sorted(files, key=lambda f: f["line_pct"])
@@ -195,13 +206,15 @@ def _load_linter_sarif(path: pathlib.Path) -> dict | None:
             artifact_location = physical_location.get("artifactLocation") or {}
             region = physical_location.get("region") or {}
             message = result.get("message") or {}
-            findings.append({
-                "severity": level,
-                "name": rule_id,
-                "message": message.get("text") or message.get("markdown") or "",
-                "path": artifact_location.get("uri") or "",
-                "line": region.get("startLine") or "",
-            })
+            findings.append(
+                {
+                    "severity": level,
+                    "name": rule_id,
+                    "message": message.get("text") or message.get("markdown") or "",
+                    "path": artifact_location.get("uri") or "",
+                    "line": region.get("startLine") or "",
+                }
+            )
 
     return {
         "loaded": True,
@@ -218,9 +231,14 @@ def _load_linter_text(path: pathlib.Path) -> dict | None:
     if not path or not path.is_file():
         return None
     text = path.read_text(encoding="utf-8", errors="replace")
-    errors   = len([l for l in text.splitlines() if "error:"   in l])
-    warnings = len([l for l in text.splitlines() if "warning:" in l])
-    return {"errors": errors, "warnings": warnings, "notes": 0, "total": errors + warnings}
+    errors = len([line for line in text.splitlines() if "error:" in line])
+    warnings = len([line for line in text.splitlines() if "warning:" in line])
+    return {
+        "errors": errors,
+        "warnings": warnings,
+        "notes": 0,
+        "total": errors + warnings,
+    }
 
 
 def load_linter_findings(path: pathlib.Path) -> dict | None:
@@ -255,6 +273,7 @@ def load_codeql_sarif(path: pathlib.Path) -> dict | None:
         "findings": sarif["findings"],
     }
 
+
 def load_history(path: pathlib.Path) -> list[dict]:
     if not path or not path.exists():
         return []
@@ -273,12 +292,13 @@ def save_history(path: pathlib.Path, history: list[dict]) -> None:
 
 # ── HTML rendering ────────────────────────────────────────────────────────────
 
+
 def render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history, timestamp) -> str:
     env = Environment(loader=FileSystemLoader(str(_TEMPLATE_DIR)), autoescape=True)
     env.globals["cov_colour"] = _cov_colour
-    env.globals["delta"]      = _delta_badge
-    env.filters["basename"]   = lambda p: pathlib.Path(p).name or p
-    env.tests["number"]       = lambda x: isinstance(x, (int, float)) and x is not None
+    env.globals["delta"] = _delta_badge
+    env.filters["basename"] = lambda p: pathlib.Path(p).name or p
+    env.tests["number"] = lambda x: isinstance(x, (int, float)) and x is not None
     tmpl = env.get_template("dashboard.html.j2")
     return tmpl.render(
         timestamp=timestamp,
@@ -293,6 +313,7 @@ def render_dashboard(cov_summary, cov_files, clang_tidy, clippy, codeql, history
 
 
 # ── GitHub Actions step summary ───────────────────────────────────────────────
+
 
 def write_github_summary(cov_summary, clang_tidy, clippy, codeql, history, summary_path) -> None:
     lines = ["## Quality Dashboard\n"]
@@ -352,33 +373,32 @@ def write_github_summary(cov_summary, clang_tidy, clippy, codeql, history, summa
     if len(history) >= 2:
         prev, curr = history[-2], history[-1]
         lines += [
-            "", "### Trend vs Previous Run\n",
+            "",
+            "### Trend vs Previous Run\n",
             "| Metric | Prev | Now | Δ |",
             "|--------|------|-----|---|",
         ]
         for label, key, higher_better in [
-            ("Line coverage %",     "line_cov",   True),
-            ("Function coverage %", "func_cov",   True),
-            ("Branch coverage %",   "branch_cov", True),
-            ("Clang-Tidy errors",   "ct_errors",  False),
+            ("Line coverage %", "line_cov", True),
+            ("Function coverage %", "func_cov", True),
+            ("Branch coverage %", "branch_cov", True),
+            ("Clang-Tidy errors", "ct_errors", False),
             ("Clang-Tidy warnings", "ct_warnings", False),
-            ("Clippy errors",       "clippy_errors", False),
-            ("Clippy warnings",     "clippy_warnings", False),
-            ("Clippy total",        "clippy_total", False),
-            ("CodeQL errors",       "codeql_errors",   False),
-            ("CodeQL warnings",     "codeql_warnings",  False),
-            ("CodeQL total",        "codeql_total",     False),
+            ("Clippy errors", "clippy_errors", False),
+            ("Clippy warnings", "clippy_warnings", False),
+            ("Clippy total", "clippy_total", False),
+            ("CodeQL errors", "codeql_errors", False),
+            ("CodeQL warnings", "codeql_warnings", False),
+            ("CodeQL total", "codeql_total", False),
         ]:
             pv, cv = prev.get(key), curr.get(key)
             if pv is not None and cv is not None:
                 diff = cv - pv
-                sym  = "↓" if diff < 0 else ("↑" if diff > 0 else "=")
+                sym = "↓" if diff < 0 else ("↑" if diff > 0 else "=")
                 improved = (diff < 0) if not higher_better else (diff > 0)
                 icon = "✅" if (diff != 0 and improved) else ("⚠️" if (diff != 0 and not improved) else "")
                 lines.append(f"| {label} | {pv:.1f} | {cv:.1f} | {sym}{abs(diff):.1f} {icon} |")
-        lines.append(
-            f"\n_Tracking since {history[0].get('date', 'start')} ({len(history)} runs)_"
-        )
+        lines.append(f"\n_Tracking since {history[0].get('date', 'start')} ({len(history)} runs)_")
 
     with open(summary_path, "a", encoding="utf-8") as fh:
         fh.write("\n".join(lines) + "\n")
@@ -386,46 +406,54 @@ def write_github_summary(cov_summary, clang_tidy, clippy, codeql, history, summa
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate quality dashboard")
     parser.add_argument(
-        "--lcov", default="",
+        "--lcov",
+        default="",
         help="Path to LCOV .dat coverage data file",
     )
     parser.add_argument(
-        "--clang-tidy", default="",
+        "--clang-tidy",
+        default="",
         dest="clang_tidy",
         help="Path to clang-tidy SARIF report (or legacy findings text file)",
     )
     parser.add_argument(
-        "--clippy", default="",
+        "--clippy",
+        default="",
         help="Path to clippy SARIF report (or legacy findings text file)",
     )
     parser.add_argument(
-        "--codeql", default="",
+        "--codeql",
+        default="",
         dest="codeql",
         help="Path to the merged (deduplicated Linux ∪ QNX union) CodeQL SARIF file",
     )
     parser.add_argument(
-        "--html", default="dashboard.html",
+        "--html",
+        default="dashboard.html",
         help="Output HTML dashboard path",
     )
     parser.add_argument(
-        "--github-summary", action="store_true",
+        "--github-summary",
+        action="store_true",
         help="Append markdown summary to $GITHUB_STEP_SUMMARY",
     )
     parser.add_argument(
-        "--history", default="",
+        "--history",
+        default="",
         help="Path to KPI history JSON file (read before, updated after rendering)",
     )
     args = parser.parse_args()
 
-    lcov_path      = pathlib.Path(args.lcov)       if args.lcov       else pathlib.Path("")
-    ct_path        = pathlib.Path(args.clang_tidy) if args.clang_tidy else pathlib.Path("")
-    clippy_path    = pathlib.Path(args.clippy)     if args.clippy     else pathlib.Path("")
-    codeql_path    = pathlib.Path(args.codeql)     if args.codeql     else pathlib.Path("")
-    html_path      = pathlib.Path(args.html)
-    hist_path      = pathlib.Path(args.history)    if args.history    else None
+    lcov_path = pathlib.Path(args.lcov) if args.lcov else pathlib.Path("")
+    ct_path = pathlib.Path(args.clang_tidy) if args.clang_tidy else pathlib.Path("")
+    clippy_path = pathlib.Path(args.clippy) if args.clippy else pathlib.Path("")
+    codeql_path = pathlib.Path(args.codeql) if args.codeql else pathlib.Path("")
+    html_path = pathlib.Path(args.html)
+    hist_path = pathlib.Path(args.history) if args.history else None
 
     html_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -436,21 +464,23 @@ def main() -> int:
     timestamp = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     history = load_history(hist_path) if hist_path else []
-    history.append({
-        "date":                   timestamp,
-        "line_cov":               cov_summary.get("line_pct")   if cov_summary else None,
-        "func_cov":               cov_summary.get("func_pct")   if cov_summary else None,
-        "branch_cov":             cov_summary.get("branch_pct") if cov_summary else None,
-        "ct_errors":              clang_tidy["errors"]           if clang_tidy  else None,
-        "ct_warnings":            clang_tidy["warnings"]         if clang_tidy  else None,
-        "clippy_errors":          clippy["errors"]               if clippy      else None,
-        "clippy_warnings":        clippy["warnings"]             if clippy      else None,
-        "clippy_total":           clippy["total"]                if clippy      else None,
-        "codeql_errors":          codeql["errors"]               if codeql      else None,
-        "codeql_warnings":        codeql["warnings"]             if codeql      else None,
-        "codeql_recommendations": codeql["recommendations"]      if codeql      else None,
-        "codeql_total":           codeql["total"]                if codeql      else None,
-    })
+    history.append(
+        {
+            "date": timestamp,
+            "line_cov": cov_summary.get("line_pct") if cov_summary else None,
+            "func_cov": cov_summary.get("func_pct") if cov_summary else None,
+            "branch_cov": cov_summary.get("branch_pct") if cov_summary else None,
+            "ct_errors": clang_tidy["errors"] if clang_tidy else None,
+            "ct_warnings": clang_tidy["warnings"] if clang_tidy else None,
+            "clippy_errors": clippy["errors"] if clippy else None,
+            "clippy_warnings": clippy["warnings"] if clippy else None,
+            "clippy_total": clippy["total"] if clippy else None,
+            "codeql_errors": codeql["errors"] if codeql else None,
+            "codeql_warnings": codeql["warnings"] if codeql else None,
+            "codeql_recommendations": codeql["recommendations"] if codeql else None,
+            "codeql_total": codeql["total"] if codeql else None,
+        }
+    )
     if hist_path:
         save_history(hist_path, history)
 
@@ -475,13 +505,19 @@ def main() -> int:
     else:
         print("  Clippy: N/A")
     if codeql:
-        print(f"  CodeQL errors: {codeql['errors']}  warnings: {codeql['warnings']}  recommendations: {codeql['recommendations']}")
+        print(
+            f"  CodeQL errors: {codeql['errors']}  warnings: {codeql['warnings']}  recommendations: {codeql['recommendations']}"
+        )
     else:
         print("  CodeQL: N/A")
 
     if args.github_summary:
         write_github_summary(
-            cov_summary, clang_tidy, clippy, codeql, history,
+            cov_summary,
+            clang_tidy,
+            clippy,
+            codeql,
+            history,
             os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"),
         )
 

@@ -120,7 +120,7 @@ jobs:
       needs:
         - precheck
         - approval
-      if: ${{ always() && needs.precheck.outputs.should-run == 'true' && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
+      if: ${{ !cancelled() && needs.precheck.outputs.should-run == 'true' && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
       runs-on: ubuntu-24.04
       permissions:
         contents: read

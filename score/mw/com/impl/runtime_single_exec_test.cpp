@@ -315,7 +315,7 @@ TEST_F(RuntimeTest, CannotRetrieveUnconfiguredBinding)
 
 TEST_F(RuntimeTest, HandleTypeContainsEventsSpecifiedInConfiguration)
 {
-    RecordProperty("Verifies", "SCR-15600146");
+    RecordProperty("lobster-tracing", "Communication.EventListSource");
     RecordProperty("Description",
                    "A HandleType containing the events in the Lola configuration file can be created from the "
                    "configuration file.");

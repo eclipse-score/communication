@@ -1,3 +1,9 @@
+---
+name: score-requirements
+description: "Requirements engineering for S-CORE projects with TRLC and the rules_score Bazel rules. USE FOR: writing .trlc requirement records (AssumedSystemReq, FeatReq, CompReq, AoU), understanding the ScoreReq requirements model (.rsl), traceability chains (AssumedSystemReq → FeatReq → CompReq), version pinning, ASIL classification, wiring assumed_system_requirements / feature_requirements / component_requirements / assumptions_of_use Bazel targets, requirement allocation to components, embedding images/diagrams in descriptions, and validating requirements with bazel test. Use when working on requirements, .trlc/.rsl files, traceability, or safety classifications."
+argument-hint: "requirement level (system/feature/component) or record to add"
+---
+
 <!-- ----------------------------------------------------------------------------
   Copyright (c) 2026 Contributors to the Eclipse Foundation
 
@@ -10,12 +16,6 @@
 
   SPDX-License-Identifier: Apache-2.0
 ----------------------------------------------------------------------------- -->
-
----
-name: score-requirements
-description: "Requirements engineering for S-CORE projects with TRLC and the rules_score Bazel rules. USE FOR: writing .trlc requirement records (AssumedSystemReq, FeatReq, CompReq, AoU), understanding the ScoreReq requirements model (.rsl), traceability chains (AssumedSystemReq → FeatReq → CompReq), version pinning, ASIL classification, wiring assumed_system_requirements / feature_requirements / component_requirements / assumptions_of_use Bazel targets, requirement allocation to components, embedding images/diagrams in descriptions, and validating requirements with bazel test. Use when working on requirements, .trlc/.rsl files, traceability, or safety classifications."
-argument-hint: "requirement level (system/feature/component) or record to add"
----
 
 # S-CORE Requirements Skill
 

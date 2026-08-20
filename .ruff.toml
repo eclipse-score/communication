@@ -1,0 +1,40 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Ruff configuration for this repo.
+#
+# This file is shared by both `ruff format` (//:format / //:format.check)
+# and `ruff check` (the `ruff` aspect in tools/lint/linters.bzl, `bazel test
+# --config=ruff`), so a future project-specific override for either only
+# needs to be added here.
+#
+# Bazel already pins the exact ruff binary version (via the hermetic
+# `rules_multitool`/`aspect_rules_lint` toolchain), so every other formatter
+# default (quote-style, indent-style, line-length, target-version detection,
+# preview mode, ...) is already fully reproducible as-is: the same pinned
+# binary always makes the same decision for the same input, on every machine
+# and in CI. Don't pin those here just to restate the default.
+#
+# `line-ending` is the one setting that is genuinely not reproducible without
+# an explicit override: its default, "auto", preserves whatever line ending
+# is already present in a given file, which depends on how that file was
+# checked out/saved (OS, editor, git `core.autocrlf`, ...) rather than on the
+# ruff version. Pin it so formatting output can't vary across contributors.
+#
+# Any other configuration applied here is an active choice to diverge from the
+# default.
+
+line-length = 120
+
+[format]
+line-ending = "lf"

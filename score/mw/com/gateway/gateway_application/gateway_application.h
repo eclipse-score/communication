@@ -18,9 +18,7 @@
 #include "score/mw/com/gateway/gateway_application/configuration/gateway_configuration.h"
 #include "score/mw/com/gateway/gateway_application/gateway_core.h"
 #include "score/mw/com/gateway/transport_layer/transport.h"
-#include "score/mw/com/impl/generic_proxy.h"
-#include "score/mw/com/impl/generic_skeleton.h"
-#include "score/mw/com/impl/instance_specifier.h"
+#include "score/mw/com/types.h"
 
 #include <memory>
 #include <mutex>
@@ -52,31 +50,32 @@ class GatewayApplication : public GatewayCore
 
     score::Result<void> Start();
 
-    score::Result<void> ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                       std::vector<impl::EventInfo> service_elements) override;
-    void StopOfferService(impl::InstanceSpecifier service_instance_specifier) override;
-    score::Result<void> OfferService(impl::InstanceSpecifier service_instance_specifier) override;
-    score::Result<void> RegisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,
+    score::Result<void> ProvideService(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                       std::vector<score::mw::com::EventInfo> service_elements) override;
+    void StopOfferService(score::mw::com::InstanceSpecifier service_instance_specifier) override;
+    score::Result<void> OfferService(score::mw::com::InstanceSpecifier service_instance_specifier) override;
+    score::Result<void> RegisterUpdateNotification(score::mw::com::InstanceSpecifier service_instance_specifier,
                                                    impl::ServiceElementType element_type,
                                                    std::string element_name) override;
-    score::Result<void> UnregisterUpdateNotification(impl::InstanceSpecifier service_instance_specifier,
+    score::Result<void> UnregisterUpdateNotification(score::mw::com::InstanceSpecifier service_instance_specifier,
                                                      impl::ServiceElementType element_type,
                                                      std::string element_name) override;
-    score::Result<void> NotifyUpdate(impl::InstanceSpecifier service_instance_specifier,
+    score::Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                                      impl::ServiceElementType updated_element_type,
                                      std::string updated_element_name) override;
 
   private:
     using FindCallbackScopedCb =
-        safecpp::MoveOnlyScopedFunction<void(impl::ServiceHandleContainer<impl::HandleType>, impl::FindServiceHandle)>;
+        safecpp::MoveOnlyScopedFunction<void(score::mw::com::ServiceHandleContainer<score::mw::com::HandleType>,
+                                             score::mw::com::FindServiceHandle)>;
 
     GatewayConfiguration app_configuration_;
     std::unique_ptr<Transport> transport_layer_;
 
     std::recursive_mutex mutex_;
-    std::unordered_map<std::string, impl::GenericProxy> proxies_;
-    std::unordered_map<std::string, impl::GenericSkeleton> skeletons_;
-    std::vector<impl::FindServiceHandle> find_handles_;
+    std::unordered_map<std::string, score::mw::com::GenericProxy> proxies_;
+    std::unordered_map<std::string, score::mw::com::GenericSkeleton> skeletons_;
+    std::vector<score::mw::com::FindServiceHandle> find_handles_;
     std::unordered_map<std::string, std::unordered_set<std::string>> active_event_subscriptions_;
 
     /// \brief Starts asynchronous service discovery for all forwarded services.
@@ -89,11 +88,12 @@ class GatewayApplication : public GatewayCore
     /// \return true if the service instance is accepted, false otherwise.
     bool IsServiceInstanceAccepted(std::string_view service_instance_str) const;
 
-    void OnServiceAvailabilityChanged(const std::string& specifier_str, std::vector<impl::HandleType> handles);
+    void OnServiceAvailabilityChanged(const std::string& specifier_str,
+                                      std::vector<score::mw::com::HandleType> handles);
     void OnServiceUnavailable(const std::string& specifier_str);
     void PropagateService(const std::string& specifier_str);
 
-    void RegisterEventReceiveHandlerCallback(impl::GenericSkeleton& skeleton,
+    void RegisterEventReceiveHandlerCallback(score::mw::com::GenericSkeleton& skeleton,
                                              const std::string& specifier_str,
                                              const std::string& event_name);
     void OnSubscriptionStateChanged(const std::string& specifier_str,

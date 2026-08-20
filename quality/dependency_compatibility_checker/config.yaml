@@ -17,7 +17,6 @@
 dependencies:
   bazel:                       # special: drives USE_BAZEL_VERSION, not a MODULE dep
     versions:
-      - version: "8.5.1"
       - version: "8.6.0"
       - version: "8.7.0"
       - version: "9.0.2"

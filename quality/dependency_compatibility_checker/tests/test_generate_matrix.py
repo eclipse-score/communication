@@ -68,7 +68,13 @@ class GenerateMatrixTest(unittest.TestCase):
         skipped = generate_matrix.build_matrix(_write(CONFIG))["skipped"]
         self.assertEqual(
             skipped,
-            [{"dependency": "rules_cc", "version": "0.2.21", "reason": "broken, see #700"}],
+            [
+                {
+                    "dependency": "rules_cc",
+                    "version": "0.2.21",
+                    "reason": "broken, see #700",
+                }
+            ],
         )
 
     def test_main_prints_only_include(self):
@@ -76,6 +82,7 @@ class GenerateMatrixTest(unittest.TestCase):
         with redirect_stdout(buf):
             generate_matrix.main(["--config", _write(CONFIG)])
         import json
+
         parsed = json.loads(buf.getvalue())  # must be pure JSON
         # GitHub Actions consumes this as strategy.matrix: only `include` is allowed,
         # otherwise any extra top-level key becomes an unwanted matrix axis.

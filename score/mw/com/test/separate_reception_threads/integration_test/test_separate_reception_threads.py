@@ -17,7 +17,11 @@
 def separate_reception_threads(target, **kwargs):
     args = ["-service_instance_manifest", "./etc/mw_com_config.json"]
     return target.wrap_exec(
-        "bin/separate_reception_threads", args, cwd="/opt/separate_reception_threads", wait_on_exit=True, **kwargs
+        "bin/separate_reception_threads",
+        args,
+        cwd="/opt/separate_reception_threads",
+        wait_on_exit=True,
+        **kwargs,
     )
 
 

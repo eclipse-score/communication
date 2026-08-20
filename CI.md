@@ -110,6 +110,11 @@ Also, it lints the files to ensure the basic Bazel best practices.
 Ensure that the modified C++ files are formatted following our decided style.
 The goal is not to ensure a specific format but to have consistency in the project.
 
+#### Formatting of Python files
+
+Ensure that the modified Python files are formatted following our decided style.
+The goal is not to ensure a specific format but to have consistency in the project.
+
 #### Build everything and run unit tests (x86-64 linux)
 
 Builds everything and runs all unit tests for all languages (C++, Rust, Python, etc.).
@@ -174,6 +179,16 @@ Runs the [clang-tidy checks](./.clang-tidy) for the target.
 
 Note: Not yet implemented, it will be done with https://github.com/eclipse-score/communication/issues/790.
 
+#### Linting for Rust (x86-64 linux)
+
+Runs the [default clippy checks](https://rust-lang.github.io/rust-clippy/master/index.html) for the host.
+
+#### Linting for Python (x86-64 linux)
+
+There are many linters for Python with no clear recommendation.
+We chose ruff because it is fast, and it has a good set of default checks.
+Runs the [ruff checks](./.ruff.toml) for the host.
+
 #### API checks
 
 Make sure that the publicly visible targets are part of the public API specification.
@@ -221,6 +236,13 @@ but with the addition of the flag `--runs_per_test=20`.
 
 To be able to have fast feedback, all our CI job use Bazel cache. To avoid permanent cache poisoning and cache size exploding, the cache is recreated nightly.
 More details can be found in the [cache strategy design document](./.github/cache-strategy.md).
+
+#### Review checklists
+
+Ensures that specific manual actions are performed by the reviewers of a pull request.
+Reviewers must acknowledge that they have performed the actions in the checklist before a pull request can be merged.
+During merge to the base branch, the acknowledgements are stored in the git history as evidence.
+The checklists are defined in the [review checklist configuration document](./.github/review_checklists.yml).
 
 ## Post-mortem analysis and follow-up actions
 

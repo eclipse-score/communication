@@ -11,12 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Clang-tidy aspect and developer check/fix targets."""
+"""Clang-tidy and ruff aspects, plus developer check/fix targets."""
 
 load("@aspect_rules_lint//lint:clang_tidy.bzl", "lint_clang_tidy_aspect")
 load("@aspect_rules_lint//lint:lint_test.bzl", "lint_test")
+load("@aspect_rules_lint//lint:ruff.bzl", "lint_ruff_aspect")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load(":clang_tidy_lint_gate.bzl", "lint_clang_tidy_gate_aspect")
 
 visibility(["//..."])
 
@@ -34,19 +34,16 @@ clang_tidy = lint_clang_tidy_aspect(
 # Create a test rule for clang-tidy (for individual targets)
 clang_tidy_test = lint_test(aspect = clang_tidy)
 
-# Same as `clang_tidy` above, but skips cc_library targets that have neither
-# `srcs` nor `hdrs` (pure alias/aggregator libraries with nothing to lint).
-# Used for CI SARIF collection so those targets don't produce empty reports
-# that `merge_sarif_reports` would otherwise treat as a hard failure. See
-# clang_tidy_lint_gate.bzl for details.
-clang_tidy_aspect = lint_clang_tidy_gate_aspect(
-    binary = Label("@llvm_toolchain//:clang-tidy"),
-    configs = [
-        Label("//:.clang-tidy"),
-    ],
-    lint_target_headers = True,
-    angle_includes_are_system = True,
-    verbose = False,
+# Define the ruff linter aspect for Python targets. The repo's //:.ruff.toml
+# is passed so the lint aspect and `ruff format` read the same config file,
+# but that file currently has no [lint]/[lint.*] tables, so ruff still falls
+# back to its own built-in default rule selection
+# (https://docs.astral.sh/ruff/rules/#default-rules). Wiring the file in now
+# means a future project-specific lint override only requires adding a
+# [lint] table to //:.ruff.toml, not touching this aspect definition.
+ruff = lint_ruff_aspect(
+    binary = Label("@aspect_rules_lint//lint:ruff_bin"),
+    configs = [Label("//:.ruff.toml")],
 )
 
 APPLY_PATCHES = [
@@ -90,4 +87,21 @@ def use_clang_tidy_targets(fix_name = "clang-tidy.fix", check_name = "clang-tidy
     make_script(check_name, [
         'echo "=== clang-tidy check: ${TARGETS} ==="',
         "bazel test --config=clang-tidy ${TARGETS}",
+    ])
+
+def use_ruff_targets(fix_name = "ruff.fix", check_name = "ruff.check"):
+    """Declare ruff check and fix script targets.
+
+    Unlike clang-tidy/pylint, `aspect_rules_lint`'s ruff integration can apply
+    fixes directly (via `ruff check --fix`) instead of emitting a patch file,
+    so `ruff.fix` runs bazel with `--config=ruff-fix` and is done.
+    """
+    make_script(fix_name, [
+        'echo "=== ruff autofix: ${TARGETS} ==="',
+        "bazel test --config=ruff-fix ${TARGETS}",
+    ])
+
+    make_script(check_name, [
+        'echo "=== ruff check: ${TARGETS} ==="',
+        "bazel test --config=ruff ${TARGETS}",
     ])
