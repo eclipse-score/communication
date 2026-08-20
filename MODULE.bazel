@@ -298,7 +298,6 @@ fast_llvm_repo(
 # repository. This changes only where LLVM is obtained; its public target
 # layout remains compatible with toolchains_llvm's generated repository.
 llvm.toolchain_root(label = "@llvm_toolchain_llvm//:BUILD")
-
 llvm.sysroot(
     name = "llvm_toolchain",
     label = "@ubuntu24_04_sysroot_amd64//sysroot",
@@ -309,6 +308,7 @@ llvm.sysroot(
     label = "@ubuntu24_04_sysroot_arm64//sysroot",
     targets = ["linux-aarch64"],
 )
+
 # `llvm_toolchain` contains the configured compiler toolchain. The custom
 # repository above provides `llvm_toolchain_llvm` under its original name.
 use_repo(llvm, "llvm_toolchain")
