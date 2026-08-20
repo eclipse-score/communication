@@ -51,6 +51,7 @@ component_requirements(
     name = "component_requirements_e2e",
     srcs = [
         "component_requirements_e2e_api.trlc",
+        "component_requirements_e2e_configuration.trlc",
     ],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
