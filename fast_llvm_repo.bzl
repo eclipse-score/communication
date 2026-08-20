@@ -1,6 +1,35 @@
 # The supported LLVM releases. Each entry maps a requested version and host
 # architecture to the upstream archive Bazel downloads and verifies.
 _LLVM_DISTRIBUTIONS = {
+    "19.1.0": {
+        "aarch64": {
+            # Official prebuilt LLVM package for 64-bit ARM Linux hosts.
+            "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/clang+llvm-19.1.0-aarch64-linux-gnu.tar.xz",
+            # SHA-256 pinned by toolchains_llvm for this exact upstream archive.
+            "sha256": "7bb54afd330fe1a1c2d4c593fa1e2dbe2abd9bf34fb3597994ff41e443cf144b",
+        },
+        "x86_64": {
+            # Official prebuilt LLVM package for 64-bit x86 Linux hosts.
+            "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/LLVM-19.1.0-Linux-X64.tar.xz",
+            # SHA-256 of that archive. `ctx.download` rejects altered or corrupt
+            # downloads instead of unpacking them.
+            "sha256": "cee77d641690466a193d9b88c89705de1c02bbad46bde6a3b126793c0a0f2923",
+        },
+    },
+    "19.1.1": {
+        "aarch64": {
+            # Official prebuilt LLVM package for 64-bit ARM Linux hosts.
+            "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.1/clang+llvm-19.1.1-aarch64-linux-gnu.tar.xz",
+            # SHA-256 pinned by toolchains_llvm for this exact upstream archive.
+            "sha256": "414d2ebef10c5035e9df10a224e81b484dbe17d319373050d0c1b3b1467040d2",
+        },
+        "x86_64": {
+            # Official prebuilt LLVM package for 64-bit x86 Linux hosts.
+            "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.1/LLVM-19.1.1-Linux-X64.tar.xz",
+            # SHA-256 pinned by toolchains_llvm for this exact upstream archive.
+            "sha256": "8204de000b6a6921f0572e038336601e3225898e9a253c8aaa43b0a5fae8a4ce",
+        },
+    },
     "22.1.7": {
         "aarch64": {
             # Official prebuilt LLVM package for 64-bit ARM Linux hosts.
@@ -20,8 +49,8 @@ _LLVM_DISTRIBUTIONS = {
 
 _ARCH_ALIASES = {
     "aarch64": "aarch64",
-    "arm64": "aarch64",
     "amd64": "x86_64",
+    "arm64": "aarch64",
     "x86_64": "x86_64",
 }
 
@@ -58,26 +87,49 @@ def _fast_llvm_repo_impl(ctx):
     if not tar:
         fail("tar not found in PATH")
 
-    # Unpack the distribution into the root of this external repository.
-    # `--strip-components=1` removes LLVM's top-level directory so paths such
-    # as `bin/clang` are directly under `@llvm_toolchain_llvm`.
-    result = ctx.execute(
-        [
-            tar,
-            "-xf",
-            archive,
-            "--strip-components=1",
-            # Extract into the external repository represented by `ctx`.
-            "-C",
-            ctx.path("."),
-        ],
-        # Allow the relatively large archive up to 30 minutes to unpack.
-        timeout = 1800,
-        # Do not suppress `tar` output from Bazel's repository-rule log.
-        quiet = False,
-    )
+    # LLVM's archive has many independently decompressible XZ blocks. Let xz
+    # decode them in parallel, then stream the resulting tar file directly to
+    # tar; materializing the 8+ GiB uncompressed archive would be wasteful.
+    # Keep the regular tar invocation for minimal Linux hosts without xz.
+    xz = ctx.which("xz")
+    if xz:
+        print("fast_llvm_repo: extracting LLVM for %s with xz -T0 and tar" % host_arch)
+        sh = ctx.which("sh")
+        if not sh:
+            fail("sh not found in PATH")
+        result = ctx.execute(
+            [
+                sh,
+                "-c",
+                "set -e; \"$1\" -T0 -dc \"$2\" | \"$3\" -xf - --strip-components=1 -C \"$4\"",
+                "fast_llvm_repo",
+                xz,
+                archive,
+                tar,
+                ctx.path("."),
+            ],
+            # Allow the relatively large archive up to 30 minutes to unpack.
+            timeout = 1800,
+            # Do not suppress command output from Bazel's repository-rule log.
+            quiet = False,
+        )
+    else:
+        print("fast_llvm_repo: xz not found; extracting LLVM for %s with tar fallback" % host_arch)
+        result = ctx.execute(
+            [
+                tar,
+                "-xf",
+                archive,
+                "--strip-components=1",
+                # Extract into the external repository represented by `ctx`.
+                "-C",
+                ctx.path("."),
+            ],
+            timeout = 1800,
+            quiet = False,
+        )
 
-    # Stop repository creation if `tar` reported an extraction error.
+    # Stop repository creation if extraction reported an error.
     if result.return_code:
         fail(result.stderr)
 
@@ -85,7 +137,7 @@ def _fast_llvm_repo_impl(ctx):
     # distribution files in the external repository.
     ctx.delete(archive)
 
-    # Generate the BUILD file expected by toolchains_llvm 1.8.  LLVM 16 and
+    # Generate the BUILD file expected by toolchains_llvm 1.7. LLVM 16 and
     # later store compiler resources in a directory named by the major version.
     ctx.template(
         "BUILD.bazel",
