@@ -1,0 +1,77 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "E2E" {
+
+        section "Public_API" {
+
+            ScoreReq.CompReq E2EProfileCheckStatusValues {
+                description = """{{E2EProfileCheckStatus}} shall distinguish at least the following outcomes of E2E supervision for a delivered sample: valid, no data received yet, initial monitoring, repeated sample, wrong sequence, error, and not available."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EStatusReportingToApplication@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq SamplePtrExposesE2EStatus {
+                description = """{{SamplePtr}} shall provide an accessor that returns the {{E2EProfileCheckStatus}} of the delivered sample, when E2E supervision is enabled for the delivering {{ProxyEvent}} or {{ProxyField}}."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EStatusReportingToApplication@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2EStatusDeliveredRegardlessOfConsumerCriticality {
+                description = """The E2E status accessor on {{SamplePtr}} shall return a value for every consuming {{ProxyEvent}} or {{ProxyField}} instance of an {{Event}} or {{Field}} that carries a configured E2E profile, regardless of that consumer's own criticality level."""
+                safety = ScoreReq.Asil.B
+                note = "A QM consumer of an E2E-supervised event still receives a populated status by default and is free to ignore it; criticality alone shall not withhold the status (see [[PerConsumerE2ECheckOptOut]] for the only opt-out mechanism)."
+                derived_from = [Communication.E2EStatusReportingToApplication@1, Communication.MixedCriticalityE2ESupervision@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2EStatusAbsentOnlyWhenNotConfiguredOrOptedOut {
+                description = """The E2E status accessor on {{SamplePtr}} shall return no value only when the delivering {{Event}} or {{Field}} carries no configured E2E profile, or when the consuming {{ProxyEvent}} or {{ProxyField}} instance has explicitly opted out of E2E supervision (see [[PerConsumerE2ECheckOptOut]])."""
+                safety = ScoreReq.Asil.B
+                note = "The concrete configuration mechanism for expressing this opt-out (e.g. a deployment-model field) is not yet designed; this requirement only constrains SamplePtr accessor behavior once the opt-out is in effect, independent of how it is configured."
+                derived_from = [Communication.E2EStatusReportingToApplication@1, Communication.MixedCriticalityE2ESupervision@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2EStatusMutationRestrictedToSupervisionLogic {
+                description = """Only the binding-independent E2E supervision logic shall be able to set the {{E2EProfileCheckStatus}} carried by a {{SamplePtr}}."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EStatusReportingToApplication@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2EStatusReadOnlyForApplication {
+                description = """The consuming application shall only be able to read the {{E2EProfileCheckStatus}} carried by a {{SamplePtr}}."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EStatusReportingToApplication@1]
+                version = 1
+            }
+            ScoreReq.CompReq GetNewSamplesCallbackSignatureUnchangedByE2E {
+                description = """Enabling E2E supervision for an {{Event}} or {{Field}} shall not change the signature of the sample-delivery callback passed to {{GetNewSamples}}."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EStatusReportingToApplication@1]
+                version = 1
+            }
+
+        }
+
+    }
+
+}
