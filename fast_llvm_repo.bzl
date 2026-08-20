@@ -54,6 +54,9 @@ _ARCH_ALIASES = {
     "x86_64": "x86_64",
 }
 
+def _log(message):
+    print("[fast_llvm_repo] " + message)
+
 # Implementation of `fast_llvm_repo`. Repository rules run while Bazel is
 # preparing external dependencies, before analysing or building project code.
 def _fast_llvm_repo_impl(ctx):
@@ -75,11 +78,13 @@ def _fast_llvm_repo_impl(ctx):
     archive = ctx.path("llvm.tar.xz")
 
     # Download the archive and verify its SHA-256 before using it.
+    _log("downloading LLVM %s for %s" % (ctx.attr.llvm_version, host_arch))
     ctx.download(
         url = dist["url"],
         output = archive,
         sha256 = dist["sha256"],
     )
+    _log("download completed")
 
     # Use the host's `tar` executable to unpack the xz archive. `ctx.which`
     # returns None instead of guessing when `tar` is unavailable.
@@ -93,7 +98,7 @@ def _fast_llvm_repo_impl(ctx):
     # Keep the regular tar invocation for minimal Linux hosts without xz.
     xz = ctx.which("xz")
     if xz:
-        print("fast_llvm_repo: extracting LLVM for %s with xz -T0 and tar" % host_arch)
+        _log("extracting LLVM with xz -T0 and tar")
         sh = ctx.which("sh")
         if not sh:
             fail("sh not found in PATH")
@@ -114,7 +119,7 @@ def _fast_llvm_repo_impl(ctx):
             quiet = False,
         )
     else:
-        print("fast_llvm_repo: xz not found; extracting LLVM for %s with tar fallback" % host_arch)
+        _log("xz not found; extracting LLVM with tar fallback")
         result = ctx.execute(
             [
                 tar,
@@ -132,6 +137,7 @@ def _fast_llvm_repo_impl(ctx):
     # Stop repository creation if extraction reported an error.
     if result.return_code:
         fail(result.stderr)
+    _log("extraction completed")
 
     # The archive is no longer needed after extraction; leave only the LLVM
     # distribution files in the external repository.
@@ -139,11 +145,13 @@ def _fast_llvm_repo_impl(ctx):
 
     # Generate the BUILD file expected by toolchains_llvm 1.7. LLVM 16 and
     # later store compiler resources in a directory named by the major version.
+    _log("generating BUILD.bazel")
     ctx.template(
         "BUILD.bazel",
         Label("@toolchains_llvm//toolchain:BUILD.llvm_repo.tpl"),
         substitutions = {"{LLVM_VERSION}": ctx.attr.llvm_version.split(".")[0]},
     )
+    _log("llvm setup completed")
 
 # Public repository rule used from MODULE.bazel. Its only user-facing input
 # is an LLVM version.
