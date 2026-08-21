@@ -66,6 +66,12 @@ class ProvidedServiceDecorator : public ProvidedService
         return service_.get();
     }
 
+    /// @brief Release ownership of the wrapped service instance
+    ServiceHolder ExtractService() noexcept
+    {
+        return std::move(service_);
+    }
+
     /// @brief Override for polymorphic lookup (stub-specific)
     void* GetServicePtr() noexcept override
     {
