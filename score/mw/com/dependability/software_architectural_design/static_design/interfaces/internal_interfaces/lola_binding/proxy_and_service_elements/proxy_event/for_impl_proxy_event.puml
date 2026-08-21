@@ -1,0 +1,22 @@
+@startuml
+
+namespace mw_com {
+  namespace lola_binding {
+    interface "LolaProxyEventForImplProxyEventInterface" as lola_proxy_event_for_impl_proxy_event_interface <<interface>> {
+      Subscribe()
+      Unsubscribe()
+      GetSubscriptionState()
+      GetNumNewSamplesAvailable()
+      GetNewSamples()
+      SetReceiveHandler()
+      UnsetReceiveHandler()
+      SetSubscriptionStateChangeHandler()
+      UnsetSubscriptionStateChangeHandler()
+      GetMaxSampleCount()
+      GetBindingType()
+      NotifyServiceInstanceChangedAvailability()
+    }
+  }
+}
+
+@enduml

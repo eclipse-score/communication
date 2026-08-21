@@ -1,0 +1,14 @@
+@startuml
+
+namespace mw_com {
+  namespace lola_binding {
+    interface "LolaSkeletonMethodForLolaSkeletonInterface" as lola_skeleton_method_for_lola_skeleton_interface <<interface>> {
+      OnProxyMethodSubscribeFinished()
+      OnProxyMethodUnsubscribeFinished()
+      IsRegistered()
+      UnregisterMethodCallHandlers()
+    }
+  }
+}
+
+@enduml

@@ -1,0 +1,15 @@
+@startuml
+
+namespace mw_com {
+  namespace lola_binding {
+    interface "LolaProxyForLolaProxyEventInterface" as lola_proxy_for_lola_proxy_event_interface <<interface>> {
+      RegisterEvent()
+      GetConsumerEventDataControlLocalView()
+      GetEventSubscriptionControl()
+      GetTransactionLogSet()
+      GetEventMetaInfo()
+    }
+  }
+}
+
+@enduml
