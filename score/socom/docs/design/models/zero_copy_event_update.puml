@@ -1,0 +1,109 @@
+' *******************************************************************************
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml Zero Copy Event Update from Network
+
+actor network as "Network"
+
+box Network Daemon
+
+participant someip_network_impl as "SOME/IP Network implementation"
+participant socom_server_nd as "socom::Server_connector"
+participant socom_client_nd as "socom::Client_connector"
+
+end box
+
+participant ipc as "Message passing IPC"
+
+box Gateway Daemon
+
+participant socom_server_gd as "socom::Server_connector"
+participant socom_client_gd as "socom::Client_connector"
+participant gateway as "Gatway logic"
+participant mwcom as "mw::com"
+
+end box
+
+note right network
+socom was design with a 1:n relationship. An event update by a Server_connector
+is distributed to multiple Client_connectors. However this does not work well
+with zero-copy.
+
+For zero-copy there needs to be a 1:1 relationship between Server_connector
+and Client_connector. The assumption is that Message passing / mw::com
+will do the multiplexing if needed.
+end note
+
+== Read event from network into IPC buffer ==
+
+network -> someip_network_impl : Receive event update notification
+
+activate someip_network_impl
+someip_network_impl -> socom_server_nd : allocate_event_update()
+activate socom_server_nd
+socom_server_nd -> socom_client_nd : allocate_payload()
+
+note right
+Call is actually callback through Client_connector and does not really invoke Client_connector code.
+Actually the Server_connector calls a callback which directly uses Message Passing to allocate the buffer.
+
+This applies to all Client_connector calls in this diagram.
+end note
+
+activate socom_client_nd
+socom_client_nd -> ipc : allocate_ipc_buffer()
+activate ipc
+return Buffer
+return Buffer
+return Buffer
+someip_network_impl -> network : Read event update into buffer
+
+== Send event update via IPC to Gateway Daemon ==
+
+someip_network_impl -> socom_server_nd : update_event(event_id, Buffer)
+activate socom_server_nd
+socom_server_nd -> socom_client_nd : update_event(event_id, Buffer)
+activate socom_client_nd
+socom_client_nd -> ipc : send_event_update(event_id, Buffer)
+activate ipc
+return
+return
+return
+deactivate someip_network_impl
+
+== Gateway Daemon allocates buffer for event update ==
+
+ipc -> socom_server_gd : receive_event_update(event_id, Buffer)
+activate socom_server_gd
+socom_server_gd -> socom_client_gd : allocate_event_payload(event_id)
+activate socom_client_gd
+socom_client_gd -> gateway : allocate()
+activate gateway
+gateway -> mwcom : allocate(event_id)
+activate mwcom
+return Buffer
+return Buffer
+return Buffer
+
+== Gateway Daemon processes event update ==
+
+socom_server_gd -> socom_client_gd : update_event(event_id, Buffer)
+activate socom_client_gd
+socom_client_gd -> gateway : update_event(event_id, Buffer)
+activate gateway
+gateway -> gateway : E2E check
+gateway -> gateway : Process event update
+
+gateway -> mwcom : send(event_id, processed Buffer)
+
+@enduml

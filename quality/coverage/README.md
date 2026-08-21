@@ -34,7 +34,7 @@ Coverage reports **must** be generated directly by `llvm-cov show` using LLVM's 
 
 ### REQ-COV-002: Instrumentation Filtering
 
-Only project source code under `//score/message_passing` and `//score/mw/com` shall be instrumented and reported. Tests, benchmarks, and external/third-party code must be excluded from the report.
+Only project source code under `//score/message_passing`, `//score/mw/com`, and `//score/socom` shall be instrumented and reported. Tests, benchmarks, and external/third-party code must be excluded from the report.
 
 > **Note:** `--experimental_use_llvm_covmap` causes Bazel to instrument ALL targets regardless of `--instrumentation_filter`. Actual source filtering is enforced by `--ignore-filename-regex` in the merger and reporter. See `coverage.bazelrc` for details.
 

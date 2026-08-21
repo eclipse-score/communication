@@ -1,0 +1,84 @@
+' *******************************************************************************
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+participant app as "Application" <<component user>>
+participant socom as "SOCom"
+participant bridge as "Generic service bridge" <<component user>>
+autonumber
+
+== Initialization ==
+
+activate app
+app  -> socom ** : create_runtime()
+activate socom
+
+app  -> bridge ** : create_bridge_component()
+activate bridge
+
+bridge -> socom :  register_service_bridge(bridge_request_service)
+activate socom
+return
+
+note right
+To get information about services the
+bridge needs to create a client connector.
+end note
+
+== Application requests a service instance ==
+
+app -> socom : make_client_connector(interface_A, instance_1)
+activate socom
+socom -> bridge : bridge_request_service(interface_A, instance_1)
+activate bridge
+
+group Implementation detail
+bridge -> bridge
+note right
+The generic service bridge
+requests for the service instance on
+its remote counterparts.
+end note
+end
+return
+
+app <-- socom
+deactivate socom
+
+== remote service instance connect ==
+
+group Implementation detail
+bridge -> bridge
+note right
+The generic service bridge connects to a remote counterpart
+which hosts the service instance.
+end note
+end
+
+bridge -> socom : make_server_connector(interface_A, instance_1)
+activate socom
+return
+
+group !!! Important: break circle !!!
+socom -X bridge : bridge_find_callback(interface_A, instance_1, State::added)
+note right #FFAAAA
+The bridge shall detect that find result is
+caused by it's own created server_connector.
+end note
+end
+
+socom -> socom
+note right
+SOCom connects client_connector to server_connector.
+end note
+@enduml
