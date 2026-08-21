@@ -802,6 +802,12 @@
       "signature": "GenericProxyEvent : void (ProxyBase &, const std::string_view)"
     },
     {
+      "name": "GetDataTypeSizeInfo",
+      "qualified_name": "score::mw::com::GenericProxyEvent::GetDataTypeSizeInfo",
+      "kind": "method",
+      "signature": "GetDataTypeSizeInfo : memory::DataTypeSizeInfo () const"
+    },
+    {
       "name": "GetNewSamples",
       "qualified_name": "score::mw::com::GenericProxyEvent::GetNewSamples",
       "kind": "template_function",
@@ -817,7 +823,7 @@
       "name": "GetSampleSize",
       "qualified_name": "score::mw::com::GenericProxyEvent::GetSampleSize",
       "kind": "method",
-      "signature": "GetSampleSize : std::size_t () const noexcept"
+      "signature": "GetSampleSize : std::size_t () const noexcept [[deprecated]]"
     },
     {
       "name": "HasSerializedFormat",
