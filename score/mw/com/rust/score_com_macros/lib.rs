@@ -223,7 +223,8 @@ fn check_attrs(fields: &Fields) -> Result<(), syn::Error> {
 ///
 /// # Validation performed by this macro
 ///
-/// - **`#[repr(C)]`** must be present on the type.
+/// - **`#[repr(C)]`** must be present on the type. For C-like enums, a primitive
+///   integer repr (e.g. `#[repr(u8)]`) is accepted as well.
 /// - It must be a struct, tuple struct, or C-like enum (no unions or non-C-like enums).
 ///
 /// These checks are intentionally kept in `Reloc` rather than `CommData` so that each macro
@@ -237,7 +238,10 @@ pub fn derive_reloc(input: TokenStream) -> TokenStream {
     if !has_repr_c(&input_args.attrs) {
         return syn::Error::new_spanned(
             ident_name,
-            "The #[derive(Reloc)] macro requires #[repr(C)] on the type",
+            concat!(
+                "The #[derive(Reloc)] macro requires #[repr(C)] or a primitive integer repr ",
+                "(e.g. #[repr(u8)]) on the type"
+            ),
         )
         .to_compile_error()
         .into();
@@ -260,8 +264,10 @@ pub fn derive_reloc(input: TokenStream) -> TokenStream {
         Err(()) => {
             return syn::Error::new_spanned(
                 ident_name,
-                "The #[derive(Reloc)] macro is supported only for enums(C like), structs and \
-                 tuple structs",
+                concat!(
+                    "The #[derive(Reloc)] macro is supported only for enums(C like), structs ",
+                    "and tuple structs"
+                ),
             )
             .to_compile_error()
             .into()
@@ -293,16 +299,45 @@ fn create_bounds_with_reloc(mut generics: Generics) -> Generics {
     generics
 }
 
-/// Check for #[repr(C)] existence
+/// Check whether the type is representable as C struct or enum.
 fn has_repr_c(attrs: &[syn::Attribute]) -> bool {
+    const INT_REPRS: [&str; 10] = [
+        "u8", "u16", "u32", "u64", "usize", "i8", "i16", "i32", "i64", "isize",
+    ];
+
     for attr in attrs {
-        if attr.path().is_ident("repr") {
-            if let Meta::List(list) = &attr.meta {
-                let tokens = list.tokens.to_string();
-                if tokens.split(',').any(|t| t.trim() == "C") {
-                    return true;
-                }
+        if !attr.path().is_ident("repr") {
+            continue;
+        }
+
+        let mut found = false;
+        let _ = attr.parse_nested_meta(|meta| {
+            if meta.path.is_ident("C") {
+                found = true;
+                return Ok(());
             }
+
+            if meta
+                .path
+                .get_ident()
+                .is_some_and(|id| INT_REPRS.contains(&id.to_string().as_str()))
+            {
+                found = true;
+                return Ok(());
+            }
+
+            // Unrecognized modifier (e.g. align(4), packed(2)); consume any
+            // parenthesized arguments so parsing succeeds, then ignore it.
+            if meta.input.peek(syn::token::Paren) {
+                let content;
+                syn::parenthesized!(content in meta.input);
+                let _ = content;
+            }
+            Ok(())
+        });
+
+        if found {
+            return true;
         }
     }
     false
@@ -372,6 +407,70 @@ fn reloc_works_on_c_like_enums() {}
 /// use score_com_macros::Reloc;
 ///
 /// #[derive(Reloc)]
+/// #[repr(u8)]
+/// enum EnumU8 {
+///     A,
+///     B,
+///     C
+/// }
+///
+/// #[derive(Reloc)]
+/// #[repr(u32)]
+/// enum EnumU32 {
+///     A,
+///     B,
+///     C
+/// }
+/// ```
+#[cfg(doctest)]
+fn reloc_works_on_c_like_enums_with_int_repr() {}
+
+/// ```
+/// pub unsafe trait Reloc: Send + Unpin + 'static {}
+/// unsafe impl Reloc for u8 {}
+/// use score_com_macros::Reloc;
+///
+/// #[derive(Reloc)]
+/// #[repr(C, align(4))]
+/// pub struct StructWithAlign {
+///     a: u8,
+/// }
+///
+/// #[derive(Reloc)]
+/// #[repr(u8, align(4))]
+/// enum EnumWithAlign {
+///     A,
+///     B,
+///     C
+/// }
+/// ```
+#[cfg(doctest)]
+fn reloc_works_with_repr_c_and_align() {}
+
+/// ```
+/// pub unsafe trait Reloc: Send + Unpin + 'static {}
+/// pub trait CommData: Reloc {
+///    const ID: &'static str;
+/// }
+/// use score_com_macros::{CommData, Reloc};
+///
+/// #[derive(Reloc, CommData)]
+/// #[repr(u8)]
+/// pub enum MyEnum {
+///     A,
+///     B,
+///     C,
+/// }
+/// // ID will be auto-generated as "module_path::MyEnum"
+/// ```
+#[cfg(doctest)]
+fn comm_data_and_reloc_work_on_enum_with_int_repr() {}
+
+/// ```
+/// pub unsafe trait Reloc: Send + Unpin + 'static {}
+/// use score_com_macros::Reloc;
+///
+/// #[derive(Reloc)]
 /// #[repr(C)]
 /// struct StructTag{}
 /// ```
@@ -434,6 +533,21 @@ fn reloc_works_on_tuples() {}
 /// ```
 #[cfg(doctest)]
 fn reloc_fail_on_non_c_like_enums() {}
+
+/// ```compile_fail
+/// pub unsafe trait Reloc: Send + Unpin + 'static {}
+/// use score_com_macros::Reloc;
+///
+/// #[derive(Reloc)]
+/// #[repr(u8)]
+/// pub struct StructType {
+///     a: u32,
+/// }
+/// ```
+/// This will fail because rustc itself rejects a primitive integer repr on structs
+/// (it is only legal on enums).
+#[cfg(doctest)]
+fn reloc_fails_on_struct_with_int_repr() {}
 
 /// ```compile_fail
 /// pub unsafe trait Reloc: Send + Unpin + 'static {}
