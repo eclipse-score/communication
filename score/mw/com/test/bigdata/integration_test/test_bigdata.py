@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-
 def bigdata(target, mode, cycle_time=None, num_cycles=None, **kwargs):
     args = ["--mode", mode]
     if num_cycles is not None:

@@ -189,10 +189,12 @@ use_repo(
 )
 
 bazel_dep(name = "score_itf", version = "0.5.0", dev_dependency = True)
+
+# Use pinned score_itf fork commit for integration testing changes.
 git_override(
     module_name = "score_itf",
-    commit = "54cab4f6ebc1fb40d0b93a8c1a451a03bda77b6a",
-    remote = "https://github.com/eclipse-score/itf.git",
+    commit = "fc6416bbad6d5b4328cd53930ef3726e3daa3e70",
+    remote = "git@github.com:Tejaswini-Janjale25/itf.git",
 )
 
 bazel_dep(name = "score_rules_imagefs", version = "0.0.4", dev_dependency = True)
