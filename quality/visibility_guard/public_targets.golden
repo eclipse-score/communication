@@ -1,3 +1,4 @@
+//:fast_llvm_repo.bzl
 //quality/compiler_warnings/clang:additional_warnings
 //quality/compiler_warnings/clang:default_flags
 //quality/compiler_warnings/clang:minimal_warnings
