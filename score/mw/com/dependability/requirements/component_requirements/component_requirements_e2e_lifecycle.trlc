@@ -1,0 +1,50 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "E2E" {
+
+        section "Context_Lifecycle" {
+
+            ScoreReq.CompReq E2ECheckContextResetOnSubscriptionReestablishment {
+                description = """{{ProxyEventBase}} shall reset the E2E check and state-machine context of a consuming {{ProxyEvent}} or {{ProxyField}} instance whenever its subscription transitions from not-subscribed back to subscribed."""
+                safety = ScoreReq.Asil.B
+                note = "Without this reset, valid post-reconnection frames could be interpreted as a wrong sequence, driving the state machine to invalid even though the communication channel was correctly re-established."
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2EProtectContextResetOnServiceReoffer {
+                description = """{{SkeletonEventBase}} shall reset the E2E protect context of a {{SkeletonEvent}} or {{SkeletonField}} instance whenever the corresponding service instance is re-offered after having stopped offering."""
+                safety = ScoreReq.Asil.B
+                note = "The protect context is shared across all consumers of the event or field (see E2EProtectContextNotReplicatedPerConsumer); resetting it on re-offer keeps it symmetric with the per-consumer check context reset, since all subscribers are guaranteed to observe the same stop-offer/re-offer transition."
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+            ScoreReq.CompReq E2EContextResetUsesExistingSubscriptionStateSignal {
+                description = """Resetting of E2E protect and check contexts shall be performed by the binding-independent layer using the existing subscription-state and service-offering signals, without requiring additional binding-specific support."""
+                safety = ScoreReq.Asil.B
+                derived_from = [Communication.E2EProtectionForEvents@1]
+                version = 1
+            }
+
+        }
+
+    }
+
+}
