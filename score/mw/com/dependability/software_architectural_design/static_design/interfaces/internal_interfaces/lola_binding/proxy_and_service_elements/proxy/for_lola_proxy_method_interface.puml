@@ -1,0 +1,13 @@
+@startuml
+
+namespace mw_com {
+  namespace lola_binding {
+    interface "LolaProxyForLolaProxyMethodInterface" as lola_proxy_for_lola_proxy_method_interface <<interface>> {
+      RegisterMethod()
+      GetSourcePid()
+      GetMethodMemoryResource()
+    }
+  }
+}
+
+@enduml

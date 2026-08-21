@@ -14,12 +14,18 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_d
 
 architectural_design(
     name = "software_architectural_design",
+    internal_api = [
+        "//score/mw/com/dependability/software_architectural_design/static_design/interfaces/internal_interfaces:internal_interfaces",
+    ],
     static = [
         "overall.puml",
         "binding_independent.puml",
         "lola_binding.puml",
         "someip_binding.puml",
         "mock_binding.puml",
+    ],
+    static_view = [
+        "//score/mw/com/dependability/software_architectural_design/static_design/interfaces/component_interactions:component_interactions",
     ],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )

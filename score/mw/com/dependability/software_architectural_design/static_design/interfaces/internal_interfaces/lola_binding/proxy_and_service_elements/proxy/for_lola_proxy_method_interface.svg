@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="264px" preserveAspectRatio="none" style="width:372px;height:264px;" version="1.1" viewBox="0 0 372 264" width="372px" zoomAndPan="magnify"><defs><filter height="300%" id="f1i40g4vow1l6g" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><!--MD5=[ba7b66c8e17a7a0216614a3f83094638]
+cluster mw_com--><polygon fill="#FFFFFF" filter="url(#f1i40g4vow1l6g)" points="22,24,90,24,97,49.0679,350,49.0679,350,252,22,252,22,24" style="stroke: #000000; stroke-width: 1.5;"/><line style="stroke: #000000; stroke-width: 1.5;" x1="22" x2="97" y1="49.0679" y2="49.0679"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="62" x="26" y="40.9659">mw_com</text><!--MD5=[794d514f6aa3da63a0357b89cd1b22f9]
+cluster mw_com.lola_binding--><polygon fill="#FFFFFF" filter="url(#f1i40g4vow1l6g)" points="46,70,136,70,143,95.0679,326,95.0679,326,228,46,228,46,70" style="stroke: #000000; stroke-width: 1.5;"/><line style="stroke: #000000; stroke-width: 1.5;" x1="46" x2="143" y1="95.0679" y2="95.0679"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="84" x="50" y="86.9659">lola_binding</text><!--MD5=[5d3f42b6681e0f93086aaa34e0831275]
+class mw_com.lola_binding.lola_proxy_for_lola_proxy_method_interface--><rect fill="#FEFECE" filter="url(#f1i40g4vow1l6g)" height="103.6339" id="mw_com.lola_binding.lola_proxy_for_lola_proxy_method_interface" style="stroke: #A80036; stroke-width: 1.5;" width="247" x="62.5" y="108"/><ellipse cx="77.5" cy="129.3441" fill="#B4A7E5" rx="11" ry="11" style="stroke: #A80036; stroke-width: 1.0;"/><path d="M73.4219,125.1097 L73.4219,122.9535 L80.8125,122.9535 L80.8125,125.1097 L78.3438,125.1097 L78.3438,133.1879 L80.8125,133.1879 L80.8125,135.3441 L73.4219,135.3441 L73.4219,133.1879 L75.8906,133.1879 L75.8906,125.1097 L73.4219,125.1097 Z "/><text fill="#000000" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="59" x="169.5" y="125.8281">«interface»</text><text fill="#000000" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="215" x="91.5" y="142.1722">LolaProxyForLolaProxyMethodInterface</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="63.5" x2="308.5" y1="150.6882" y2="150.6882"/><line style="stroke: #A80036; stroke-width: 1.5;" x1="63.5" x2="308.5" y1="158.6882" y2="158.6882"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="90" x="68.5" y="174.4471">RegisterMethod()</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="77" x="68.5" y="189.429">GetSourcePid()</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="157" x="68.5" y="204.4109">GetMethodMemoryResource()</text><!--MD5=[2ee6e86e9942fe2261b59e84ddf6b9c3]
+@startuml
+
+namespace mw_com {
+  namespace lola_binding {
+    interface "LolaProxyForLolaProxyMethodInterface" as lola_proxy_for_lola_proxy_method_interface <<interface>> {
+      RegisterMethod()
+      GetSourcePid()
+      GetMethodMemoryResource()
+    }
+  }
+}
+
+@enduml
+
+PlantUML version 1.2020.02(Sun Mar 01 11:22:07 CET 2020)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Java Version: 21.0.11+10-1-24.04.2-Ubuntu
+Operating System: Linux
+Default Encoding: UTF-8
+Language: en
+Country: null
+--></g></svg>
