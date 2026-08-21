@@ -37,6 +37,7 @@ cc_library(
     srcs = ["gateway_configuration.cpp"],
     hdrs = ["gateway_configuration.h"],
     features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/gateway:__subpackages__"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -50,6 +51,7 @@ cc_library(
     implementation_deps = [
         "@score_baselibs//score/mw/log",
     ],
+    visibility = ["//score/mw/com/gateway:__subpackages__"],
     deps = [
         ":gateway_configuration",
         "@score_baselibs//score/json",

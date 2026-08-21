@@ -219,8 +219,11 @@ def dual_qemu_integration_test(
     # Two VMs require even more resources than a single one.
     if "size" not in kwargs:
         kwargs["size"] = "enormous"
+
+    # Dual-QEMU boots two guests and can fall back to slower TCG in CI, so give
+    # it more wall-clock budget than a single-VM integration test.
     if "timeout" not in kwargs:
-        kwargs["timeout"] = "moderate"
+        kwargs["timeout"] = "long"
 
     # Driving two real QNX guests under KVM has rare, environment-induced boot
     # nondeterminism (e.g. a guest occasionally wedging during device bring-up).
