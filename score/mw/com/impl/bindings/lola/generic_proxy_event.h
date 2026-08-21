@@ -70,6 +70,8 @@ class GenericProxyEvent final : public GenericProxyEventBinding
     Result<void> UnsetReceiveHandler() noexcept override;
     Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept override;
     Result<void> UnsetSubscriptionStateChangeHandler() noexcept override;
+    void SetSubscriptionStateChangeTracingCallback(
+        score::cpp::callback<void(SubscriptionState), 64U> callback) noexcept override;
 
     ElementFqId GetElementFQId() const noexcept;
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
