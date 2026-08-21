@@ -523,6 +523,19 @@ section "com" {
                     version = 1
                 }
 
+                ScoreReq.CompReq GenericProxyEventGetDataTypeSizeInfo {
+                    description = '''The {{GenericProxyEvent}} shall provide a public method:
+
+                    {{{memory::DataTypeSizeInfo GetDataTypeSizeInfo() const noexcept}}}
+
+                    Behaviour: {{GetDataTypeSizeInfo}} shall adhere to the re-entrance and thread-safety specifications described in Re-entrance and Thread-safety.
+
+                    Return value: returns the data type size info (size in bites and alignment in bytes) of the underlying event sample data type.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.EventType@1]
+                    version = 1
+                }
+
                 /* broken_link_c/issue/14035199 */
                 ScoreReq.CompReq GenericProxyEventHasSerializedFormat {
                     description = '''The {{GenericProxyEvent}} shall provide a public method:

@@ -164,8 +164,7 @@ These are the deviations:
 3. For this obviously a void specialization of `mw::com::SamplePtr` is needed. This specialization removes the
    following members:
     - `T& operator*() const noexcept`
-4. `GenericProxyEvent` gets a new member function: `std::size_t GetSampleSize()`, which returns the "static" size of the sample
-   type in bytes.
+4. `GenericProxyEvent` gets new member function: `memory::DataTypeSizeInfo GenericProxyEvent::GetDataTypeSizeInfo()` which returns the "static" size and alignment of the sample type in bytes.
 5. `GenericProxyEvent` gets a new member function: `bool HasSerializedFormat()`, which returns `true` in case the
    representation of the event provided by the implementation is some serialized format or `false` in case the
    representation is that of the expected C++ type. (see [here](#binary-representation-of-untyped-form))

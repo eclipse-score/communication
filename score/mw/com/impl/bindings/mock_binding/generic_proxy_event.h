@@ -49,6 +49,7 @@ class GenericProxyEvent : public GenericProxyEventBinding
     MOCK_METHOD(Result<void>, Subscribe, (std::size_t), (noexcept, override));
     MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (const, noexcept, override));
     MOCK_METHOD(std::size_t, GetSampleSize, (), (const, noexcept, override));
+    MOCK_METHOD(memory::DataTypeSizeInfo, GetDataTypeSizeInfo, (), (const, noexcept, override));
     MOCK_METHOD(bool, HasSerializedFormat, (), (const, noexcept, override));
     MOCK_METHOD(Result<std::size_t>,
                 GetNewSamples,
