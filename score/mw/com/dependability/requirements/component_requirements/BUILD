@@ -53,6 +53,7 @@ component_requirements(
         "component_requirements_e2e_api.trlc",
         "component_requirements_e2e_configuration.trlc",
         "component_requirements_e2e_lifecycle.trlc",
+        "component_requirements_e2e_methods.trlc",
         "component_requirements_e2e_proxy.trlc",
         "component_requirements_e2e_skeleton.trlc",
     ],

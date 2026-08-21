@@ -24,6 +24,7 @@ dependable_element(
     integrity_level = "B",
     maturity = "development",
     requirements = [
+        "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_e2e",
         "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_ipc",
         "//score/mw/com/dependability/assumed_system:assumed_system_requirements",
     ],
