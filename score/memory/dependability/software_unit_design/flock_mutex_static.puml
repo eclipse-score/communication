@@ -1,0 +1,58 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+namespace score::memory::shared {
+
+class LockFile {
+  {static} +Create(string path): std::optional<score::memory::shared::LockFile>
+  {static} +CreateOrOpen(string path, bool take_ownership): std::optional<score::memory::shared::LockFile>
+  {static} +Open(string path): std::optional<score::memory::shared::LockFile>
+  +TakeOwnership(): void
+  +~LockFile()
+  -CleanupFile(): void
+  --
+  -lock_file_path_ : std::string
+  -file_descriptor_ : std::int32_t
+  -lock_file_owns_file_ : bool
+}
+
+class FlockMutex {
+  +FlockMutex(const LockFile& lock_file, const int locking_operation, const int try_locking_operation)
+  +lock(): void
+  +try_lock(): bool
+  +unlock(): void
+  --
+  -file_descriptor_ : std::int32_t
+  -locking_operation_ : int
+  -try_locking_operation_ : int
+}
+
+class ExclusiveFlockMutex {
+  +ExclusiveFlockMutex(const LockFile& lock_file)
+  +lock(): void
+  +try_lock(): bool
+  +unlock(): void
+  --
+  -exclusive_flock_mutex_ : score::memory::shared::FlockMutex
+}
+
+ExclusiveFlockMutex *-- FlockMutex
+FlockMutex ..> LockFile
+
+' The same lock-file pattern is reused by SharedFlockMutex and FlockMutexAndLock<T> in sibling headers.
+
+}
+
+@enduml
