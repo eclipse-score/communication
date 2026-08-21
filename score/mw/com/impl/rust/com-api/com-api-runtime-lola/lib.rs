@@ -26,13 +26,24 @@
 //! that utilize the COM API abstractions.
 
 mod consumer;
+// Note: The `method` module is currently a placeholder and
+// will be implemented in the future for the Lola runtime.
+// https://github.com/eclipse-score/communication/issues/782
+mod field_consumer;
+mod field_producer;
+mod method;
 mod producer;
 mod runtime;
 
 pub use consumer::{LolaConsumerDiscovery, LolaConsumerInfo, LolaSample, LolaSubscribableImpl};
+pub use field_consumer::LolaFieldSubscriber;
+pub use field_producer::LolaFieldPublisher;
 pub use producer::{
     LolaProducerBuilder, LolaProviderInfo, LolaPublisher, LolaSampleMaybeUninit, LolaSampleMut,
 };
 pub use runtime::{LolaRuntimeImpl, RuntimeBuilderImpl};
 
-use core::fmt::Debug;
+pub use method::{
+    LolaFieldGetCaller, LolaFieldSetCaller, LolaMethodCaller, LolaMethodHandler,
+    LolaMethodInArgAllocator, LolaMethodInArgMaybeUninit, LolaMethodReturnSample,
+};

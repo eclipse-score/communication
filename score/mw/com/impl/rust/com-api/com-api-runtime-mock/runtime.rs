@@ -36,10 +36,14 @@ use std::collections::VecDeque;
 use std::path::Path;
 
 use score_com_concept::{
-    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, FindServiceSpecifier,
-    InstanceSpecifier, Interface, Producer, ProducerBuilder, ProviderInfo, Publisher, Result,
-    Runtime, RuntimeBuilder, Sample, SampleContainer, SampleMaybeUninit, SampleMut,
-    ServiceDiscovery, Subscriber, Subscription,
+    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, EventSampleMut,
+    FieldPublisher, FieldSampleMut, FieldSubscriber, FieldSubscription, FindServiceSpecifier,
+    InstanceSpecifier, Interface, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple, MethodCaller,
+    MethodHandler, MethodHandlerCall, MethodInArgAllocator, MethodInArgMaybeUninit, MethodInArgPtr,
+    MethodReturnSample, Producer, ProducerBuilder, ProviderInfo, Publisher,
+    Result, Runtime, RuntimeBuilder, Sample, SampleContainer,
+    SampleMaybeUninit as SampleMaybeUninitTrait, SampleMaybeUninit, SampleMut, ServiceDiscovery,
+    Subscriber, Subscription, ZeroCopyArgs,
 };
 
 pub struct MockRuntimeImpl {}
@@ -69,6 +73,14 @@ impl Runtime for MockRuntimeImpl {
     type Subscriber<T: CommData + Debug> = MockSubscribableImpl<T>;
     type ProducerBuilder<I: Interface> = MockProducerBuilder<I>;
     type Publisher<T: CommData + Debug> = MockPublisher<T>;
+    type MethodInArgAllocator = MockMethodInArgAllocator;
+    type MethodReturnSample<T: CommData> = MockMethodReturnSample<T>;
+    type MethodCaller<Args: MethodArgs, Return: CommData> = MockMethodCaller<Args, Return, Self>;
+    type MethodHandler<Args: MethodArgs, Return: CommData> = MockMethodHandler<Args, Return, Self>;
+    type FieldSubscriber<T: CommData + Debug> = MockFieldSubscriber<T>;
+    type FieldGetCaller<T: CommData + Debug> = MockMethodCaller<(), T, Self>;
+    type FieldSetCaller<T: CommData + Debug> = MockMethodCaller<(T,), T, Self>;
+    type FieldPublisher<T: CommData + Debug> = MockFieldPublisher<T>;
     type ProviderInfo = MockProviderInfo;
     type ConsumerInfo = MockConsumerInfo;
 
@@ -191,7 +203,9 @@ where
     lifetime: PhantomData<&'a T>,
 }
 
-impl<'a, T> SampleMut<T> for MockSampleMut<'a, T>
+impl<'a, T> SampleMut<T> for MockSampleMut<'a, T> where T: CommData + Debug {}
+
+impl<'a, T> EventSampleMut<T> for MockSampleMut<'a, T>
 where
     T: CommData + Debug,
 {
@@ -507,9 +521,312 @@ impl RuntimeBuilderImpl {
     }
 }
 
+// Mock zero-copy allocator types for method arguments.
+pub struct MockMethodInArgMaybeUninit<T> {
+    _phantom: PhantomData<T>,
+}
+
+pub struct MockMethodInArgPtr<T> {
+    _phantom: PhantomData<T>,
+}
+
+impl<T> MethodInArgPtr<T> for MockMethodInArgPtr<T> {}
+
+impl<T: CommData> MethodInArgMaybeUninit<T> for MockMethodInArgMaybeUninit<T> {
+    type Ptr = MockMethodInArgPtr<T>;
+
+    fn write(self, _val: T) -> ZeroCopyArgs<MockMethodInArgPtr<T>> {
+        todo!()
+    }
+
+    unsafe fn assume_init(self) -> ZeroCopyArgs<MockMethodInArgPtr<T>> {
+        todo!()
+    }
+}
+
+pub struct MockMethodInArgAllocator;
+
+impl MethodInArgAllocator for MockMethodInArgAllocator {
+    type MethodInArgPtr<T: CommData> = MockMethodInArgPtr<T>;
+    type MethodInArgMaybeUninit<T: CommData> = MockMethodInArgMaybeUninit<T>;
+
+    fn allocate<T: CommData>(&self) -> MockMethodInArgMaybeUninit<T> {
+        todo!()
+    }
+}
+
+pub struct MockMethodHandler<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> {
+    _phantom: core::marker::PhantomData<(Args, Return, R)>,
+}
+
+impl<Args: MethodArgs, Return: CommData, R: Runtime + ?Sized> MethodHandler<Args, Return, R>
+    for MockMethodHandler<Args, Return, R>
+{
+    fn new(_method_name: &str, _instance_info: R::ProviderInfo) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        // Implementation for creating a new method handler
+        Ok(MockMethodHandler {
+            _phantom: core::marker::PhantomData,
+        })
+    }
+
+    fn register_handler<F>(&self, _handler: F)
+    where
+        F: MethodHandlerCall<Args, Return>,
+    {
+        todo!("Implement the logic to register the handler with the underlying system");
+    }
+}
+
+/// Placeholder return sample for a mock method call result.
+/// Wraps the return value and provides `Deref<Target = T>` access,
+/// mirroring `LolaMethodReturnSample<T>` in the LoLa runtime.
+pub struct MockMethodReturnSample<T> {
+    value: T,
+}
+
+impl<T> Deref for MockMethodReturnSample<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.value
+    }
+}
+
+impl<T> MethodReturnSample<T> for MockMethodReturnSample<T> {}
+
+pub struct MockMethodCaller<Args: MethodArgs, Return: CommData, R: Runtime> {
+    _phantom: core::marker::PhantomData<(Args, Return, R)>,
+}
+
+impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, R>
+    for MockMethodCaller<Args, Return, R>
+{
+    fn new(_method_name: &str, _instance_info: R::ConsumerInfo) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        Ok(MockMethodCaller {
+            _phantom: core::marker::PhantomData,
+        })
+    }
+
+    fn invoke_with_copy<'a>(
+        &'a self,
+        _args: Args,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a {
+        async move { todo!("Implement the logic to call the method with copied arguments") }
+    }
+
+    fn allocate(&self) -> Result<<Args as MethodArgsAllocate<R::MethodInArgAllocator>>::UninitTuple>
+    where
+        Args: MethodArgsAllocate<R::MethodInArgAllocator>,
+    {
+        todo!("Implement the logic to allocate method arguments using the MethodInArgAllocator");
+    }
+
+    fn invoke_zero_copy<'a>(
+        &'a self,
+        _ptrs: <Args as MethodArgsPtrTuple<R>>::PtrTuple,
+    ) -> impl Future<Output = Result<R::MethodReturnSample<Return>>> + 'a
+    where
+        Args: MethodArgsPtrTuple<R>,
+    {
+        async move {
+            todo!("Implement the logic to call the method with pre-allocated argument pointers")
+        }
+    }
+}
+
+/// Field subscriber type which implements the FieldSubscriber trait for Mock runtime.
+pub struct MockFieldSubscriber<T: CommData + Debug> {
+    identifier: &'static str,
+    instance_info: MockConsumerInfo,
+    _data: PhantomData<T>,
+}
+
+/// Marker implementation of FieldSubscriber trait.
+/// Field get/set are exposed as async MethodCaller-based wrappers on the consumer struct
+/// generated by the interface! macro; they are not part of FieldSubscriber itself.
+impl<T: CommData + Debug> FieldSubscriber<T, MockRuntimeImpl> for MockFieldSubscriber<T> {}
+
+/// Implementation of Subscriber trait for MockFieldSubscriber.
+impl<T: CommData + Debug> Subscriber<T, MockRuntimeImpl> for MockFieldSubscriber<T> {
+    type Subscription = MockFieldSubscription<T>;
+
+    fn new(identifier: &'static str, instance_info: MockConsumerInfo) -> Result<Self> {
+        Ok(Self {
+            identifier,
+            instance_info,
+            _data: PhantomData,
+        })
+    }
+
+    fn subscribe(self, _max_num_samples: usize) -> Result<Self::Subscription> {
+        Ok(MockFieldSubscription {
+            identifier: self.identifier,
+            instance_info: self.instance_info,
+            _data: PhantomData,
+        })
+    }
+}
+
+/// FieldSubscription type which provides data receiving APIs and unsubscribe method.
+pub struct MockFieldSubscription<T: CommData + Debug> {
+    identifier: &'static str,
+    instance_info: MockConsumerInfo,
+    _data: PhantomData<T>,
+}
+
+impl<T: CommData + Debug> FieldSubscription<T, MockRuntimeImpl> for MockFieldSubscription<T> {
+    fn get_free_sample_count(&self) -> Result<usize> {
+        todo!()
+    }
+
+    fn get_num_new_samples_available(&self) -> Result<usize> {
+        todo!()
+    }
+}
+
+/// Implementation of Subscription trait which provides receiving APIs.
+impl<T: CommData + Debug> Subscription<T, MockRuntimeImpl> for MockFieldSubscription<T> {
+    type Subscriber = MockFieldSubscriber<T>;
+    type Sample<'a>
+        = MockSample<'a, T>
+    where
+        Self: 'a;
+
+    fn unsubscribe(self) -> Self::Subscriber {
+        MockFieldSubscriber {
+            identifier: self.identifier,
+            instance_info: self.instance_info,
+            _data: PhantomData,
+        }
+    }
+
+    fn try_receive<'a>(
+        &'a self,
+        _scratch: &'_ mut SampleContainer<Self::Sample<'a>>,
+        _max_samples: usize,
+    ) -> Result<usize> {
+        todo!()
+    }
+
+    fn cancellable_receive<'a>(
+        &'a self,
+        _scratch: SampleContainer<Self::Sample<'a>>,
+        _new_samples: usize,
+        _max_samples: usize,
+        _cancellation: impl Future<Output = ()> + Send + 'static,
+    ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
+        async { todo!() }
+    }
+
+    fn to_stream<'a>(&'a mut self) -> impl Stream<Item = Result<Self::Sample<'a>>> + Unpin + 'a {
+        stream::empty()
+    }
+}
+
+/// Field publisher type for Mock runtime.
+pub struct MockFieldPublisher<T: CommData + Debug> {
+    _data: PhantomData<T>,
+}
+
+/// Field sample mutable type.
+#[derive(Debug)]
+pub struct MockFieldSampleMut<'a, T: CommData + Debug> {
+    data: T,
+    _lifetime: PhantomData<&'a T>,
+}
+
+impl<'a, T: CommData + Debug> Deref for MockFieldSampleMut<'a, T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.data
+    }
+}
+
+impl<'a, T: CommData + Debug> DerefMut for MockFieldSampleMut<'a, T> {
+    fn deref_mut(&mut self) -> &mut T {
+        &mut self.data
+    }
+}
+
+impl<'a, T: CommData + Debug> SampleMut<T> for MockFieldSampleMut<'a, T> {}
+
+impl<'a, T: CommData + Debug> FieldSampleMut<T> for MockFieldSampleMut<'a, T> {
+    fn update(self) -> Result<()> {
+        todo!()
+    }
+}
+
+/// Field sample maybe uninit type.
+#[derive(Debug)]
+pub struct MockFieldSampleMaybeUninit<'a, T: CommData + Debug> {
+    data: MaybeUninit<T>,
+    _lifetime: PhantomData<&'a T>,
+}
+
+impl<'a, T: CommData + Debug> AsMut<MaybeUninit<T>> for MockFieldSampleMaybeUninit<'a, T> {
+    fn as_mut(&mut self) -> &mut MaybeUninit<T> {
+        &mut self.data
+    }
+}
+
+impl<'a, T: CommData + Debug> SampleMaybeUninitTrait<T> for MockFieldSampleMaybeUninit<'a, T> {
+    type SampleMut = MockFieldSampleMut<'a, T>;
+
+    unsafe fn assume_init(self) -> MockFieldSampleMut<'a, T> {
+        MockFieldSampleMut {
+            data: unsafe { self.data.assume_init() },
+            _lifetime: PhantomData,
+        }
+    }
+
+    fn write(self, value: T) -> MockFieldSampleMut<'a, T> {
+        MockFieldSampleMut {
+            data: value,
+            _lifetime: PhantomData,
+        }
+    }
+}
+
+impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublisher<T> {
+    type SampleMaybeUninit<'a>
+        = MockFieldSampleMaybeUninit<'a, T>
+    where
+        Self: 'a;
+
+    fn new(_identifier: &'static str, _instance_info: MockProviderInfo) -> Result<Self> {
+        Ok(Self { _data: PhantomData })
+    }
+
+    fn allocate(&self) -> Result<Self::SampleMaybeUninit<'_>> {
+        Ok(MockFieldSampleMaybeUninit {
+            data: MaybeUninit::uninit(),
+            _lifetime: PhantomData,
+        })
+    }
+
+    fn update(&self, _value: T) -> Result<()> {
+        todo!()
+    }
+
+    fn register_set_handler(&self, _callback: impl Fn(T) + Send + 'static) {
+        todo!()
+    }
+
+    fn register_get_handler(&self, _callback: impl Fn() -> T + Send + 'static) {
+        todo!()
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use score_com_concept::{Publisher, SampleContainer, SampleMaybeUninit, SampleMut, Subscription};
+    use score_com_concept::{
+        Publisher, SampleContainer, SampleMaybeUninit, SampleMut, Subscription,
+    };
 
     #[test]
     fn receive_stuff() {
