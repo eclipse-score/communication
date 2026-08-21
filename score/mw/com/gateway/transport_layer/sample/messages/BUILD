@@ -36,6 +36,7 @@ cc_library(
     ],
     deps = [
         "//score/mw/com/gateway/transport_layer/sample/messages:message_error",
+        "//score/mw/com/impl:generic_skeleton",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
