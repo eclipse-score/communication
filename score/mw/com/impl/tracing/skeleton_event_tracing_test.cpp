@@ -20,6 +20,7 @@
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/mocking/test_type_utilities.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
@@ -45,6 +46,9 @@ namespace
 
 using namespace ::testing;
 
+using TestSampleType = std::uint32_t;
+
+const memory::DataTypeSizeInfo kDummySampleSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
 const std::string kDummyEventName{"my_dummy_event"};
 const std::string kDummyFieldName{"my_dummy_field"};
 
@@ -103,12 +107,10 @@ class SkeletonEventTracingFixture : public ::testing::TestWithParam<ServiceEleme
         return *this;
     }
 
-    using TestSampleType = std::uint32_t;
-
+    TestSampleType test_sample_buffer_{10};
     SkeletonEventTracingData skeleton_event_tracing_data_{};
-    mock_binding::SkeletonEvent<TestSampleType> skeleton_event_binding_base_{};
-    impl::SampleAllocateePtr<TestSampleType> sample_data_ptr_{
-        MakeSampleAllocateePtr(std::make_unique<TestSampleType>(10U))};
+    mock_binding::SkeletonEvent skeleton_event_binding_base_{};
+    impl::SampleAllocateePtr<void> sample_allocatee_data_ptr_{MakeFakeSampleAllocateePtr<void>(&test_sample_buffer_)};
 
     TracingRuntimeMock tracing_runtime_mock_{};
     RuntimeMockGuard runtime_mock_guard_{};
@@ -143,7 +145,8 @@ TEST_P(SkeletonEventTraceSendFixture, TraceSendWillDispatchToBindingTracingRunti
     EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _));
 
     // When calling TraceSend
-    TraceSend<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_);
+    TraceSend(
+        skeleton_event_tracing_data_, kDummySampleSizeInfo, skeleton_event_binding_base_, sample_allocatee_data_ptr_);
 }
 
 TEST_P(SkeletonEventTraceSendFixture, TraceSendWillNotDispatchToBindingTracingRuntimeIfTracingDisabled)
@@ -155,7 +158,8 @@ TEST_P(SkeletonEventTraceSendFixture, TraceSendWillNotDispatchToBindingTracingRu
     EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _)).Times(0);
 
     // When calling TraceSend
-    TraceSend<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_);
+    TraceSend(
+        skeleton_event_tracing_data_, kDummySampleSizeInfo, skeleton_event_binding_base_, sample_allocatee_data_ptr_);
 }
 
 TEST_P(SkeletonEventTraceSendFixture,
@@ -170,7 +174,8 @@ TEST_P(SkeletonEventTraceSendFixture,
         .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance)));
 
     // When calling TraceSend
-    TraceSend<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_);
+    TraceSend(
+        skeleton_event_tracing_data_, kDummySampleSizeInfo, skeleton_event_binding_base_, sample_allocatee_data_ptr_);
 
     // Then the enable_send trace point is disabled
     EXPECT_FALSE(skeleton_event_tracing_data_.enable_send);
@@ -187,7 +192,8 @@ TEST_P(SkeletonEventTraceSendFixture,
         .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints)));
 
     // When calling TraceSend
-    TraceSend<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_);
+    TraceSend(
+        skeleton_event_tracing_data_, kDummySampleSizeInfo, skeleton_event_binding_base_, sample_allocatee_data_ptr_);
 
     // Then all trace points are disabled
     EXPECT_TRUE(AreAllTracePointsDisabled(skeleton_event_tracing_data_));
@@ -204,7 +210,8 @@ TEST_P(SkeletonEventTraceSendFixture, TraceSendWillIgnoreUnknownErrorFromBinding
         .WillByDefault(Return(MakeUnexpected(unknown_error_code)));
 
     // When calling TraceSend
-    TraceSend<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_);
+    TraceSend(
+        skeleton_event_tracing_data_, kDummySampleSizeInfo, skeleton_event_binding_base_, sample_allocatee_data_ptr_);
 
     // Then the enable_send trace point is still enabled
     EXPECT_TRUE(skeleton_event_tracing_data_.enable_send);
@@ -217,8 +224,11 @@ TEST_F(SkeletonEventTraceSendParamaterisedDeathTest, TraceSendWithInvalidTraceSe
 
     // When calling TraceSend
     // Then we terminate
-    EXPECT_DEATH(
-        TraceSend<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_), ".*");
+    EXPECT_DEATH(TraceSend(skeleton_event_tracing_data_,
+                           kDummySampleSizeInfo,
+                           skeleton_event_binding_base_,
+                           sample_allocatee_data_ptr_),
+                 ".*");
 }
 
 TEST_P(SkeletonEventTraceSendParamaterisedDeathTest, TraceSendWithAllocateWithNullSampleAllocateePtrTerminates)
@@ -227,10 +237,12 @@ TEST_P(SkeletonEventTraceSendParamaterisedDeathTest, TraceSendWithAllocateWithNu
     WithAValidSkeletonEventTracingData().WithAllTracePointsEnabled();
 
     // When calling TraceSend with a sample allocatee ptr containing nullptr
-    SampleAllocateePtr<TestSampleType> null_sample_allocatee_ptr{nullptr};
+    SampleAllocateePtr<void> null_sample_allocatee_ptr{nullptr};
     // Then we terminate
-    EXPECT_DEATH(TraceSend<TestSampleType>(
-                     skeleton_event_tracing_data_, skeleton_event_binding_base_, null_sample_allocatee_ptr),
+    EXPECT_DEATH(TraceSend(skeleton_event_tracing_data_,
+                           kDummySampleSizeInfo,
+                           skeleton_event_binding_base_,
+                           null_sample_allocatee_ptr),
                  ".*");
 }
 
@@ -244,7 +256,8 @@ TEST_P(SkeletonEventTraceSendWithAllocateFixture, TraceSendWithAllocateWillDispa
     EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _));
 
     // When calling TraceSendWithAllocate
-    TraceSendWithAllocate<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_);
+    TraceSendWithAllocate(
+        skeleton_event_tracing_data_, kDummySampleSizeInfo, skeleton_event_binding_base_, sample_allocatee_data_ptr_);
 }
 
 TEST_P(SkeletonEventTraceSendWithAllocateFixture,
@@ -257,7 +270,8 @@ TEST_P(SkeletonEventTraceSendWithAllocateFixture,
     EXPECT_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _)).Times(0);
 
     // When calling TraceSendWithAllocate
-    TraceSendWithAllocate<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_);
+    TraceSendWithAllocate(
+        skeleton_event_tracing_data_, kDummySampleSizeInfo, skeleton_event_binding_base_, sample_allocatee_data_ptr_);
 }
 
 TEST_P(SkeletonEventTraceSendWithAllocateFixture,
@@ -272,7 +286,8 @@ TEST_P(SkeletonEventTraceSendWithAllocateFixture,
         .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance)));
 
     // When calling TraceSendWithAllocate
-    TraceSendWithAllocate<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_);
+    TraceSendWithAllocate(
+        skeleton_event_tracing_data_, kDummySampleSizeInfo, skeleton_event_binding_base_, sample_allocatee_data_ptr_);
 
     // Then the enable_send_with_allocate trace point is disabled
     EXPECT_FALSE(skeleton_event_tracing_data_.enable_send_with_allocate);
@@ -289,7 +304,8 @@ TEST_P(SkeletonEventTraceSendWithAllocateFixture,
         .WillByDefault(Return(MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints)));
 
     // When calling TraceSendWithAllocate
-    TraceSendWithAllocate<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_);
+    TraceSendWithAllocate(
+        skeleton_event_tracing_data_, kDummySampleSizeInfo, skeleton_event_binding_base_, sample_allocatee_data_ptr_);
 
     // Then all trace points are disabled
     EXPECT_TRUE(AreAllTracePointsDisabled(skeleton_event_tracing_data_));
@@ -306,7 +322,8 @@ TEST_P(SkeletonEventTraceSendWithAllocateFixture, TraceSendWithAllocateWillIgnor
         .WillByDefault(Return(MakeUnexpected(unknown_error_code)));
 
     // When calling TraceSendWithAllocate
-    TraceSendWithAllocate<TestSampleType>(skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_);
+    TraceSendWithAllocate(
+        skeleton_event_tracing_data_, kDummySampleSizeInfo, skeleton_event_binding_base_, sample_allocatee_data_ptr_);
 
     // Then the enable_send_with_allocate trace point is still enabled
     EXPECT_TRUE(skeleton_event_tracing_data_.enable_send_with_allocate);
@@ -320,8 +337,10 @@ TEST_P(SkeletonEventTraceSendWithAllocateParamaterisedDeathTest,
 
     // When calling TraceSendWithAllocate
     // Then we terminate
-    EXPECT_DEATH(TraceSendWithAllocate<TestSampleType>(
-                     skeleton_event_tracing_data_, skeleton_event_binding_base_, sample_data_ptr_),
+    EXPECT_DEATH(TraceSendWithAllocate(skeleton_event_tracing_data_,
+                                       kDummySampleSizeInfo,
+                                       skeleton_event_binding_base_,
+                                       sample_allocatee_data_ptr_),
                  ".*");
 }
 
@@ -332,10 +351,12 @@ TEST_P(SkeletonEventTraceSendWithAllocateParamaterisedDeathTest,
     WithAValidSkeletonEventTracingData().WithAllTracePointsEnabled();
 
     // When calling TraceSendWithAllocate with a sample allocatee ptr containing nullptr
-    SampleAllocateePtr<TestSampleType> null_sample_allocatee_ptr{nullptr};
+    SampleAllocateePtr<void> null_sample_allocatee_ptr{nullptr};
     // Then we terminate
-    EXPECT_DEATH(TraceSendWithAllocate<TestSampleType>(
-                     skeleton_event_tracing_data_, skeleton_event_binding_base_, null_sample_allocatee_ptr),
+    EXPECT_DEATH(TraceSendWithAllocate(skeleton_event_tracing_data_,
+                                       kDummySampleSizeInfo,
+                                       skeleton_event_binding_base_,
+                                       null_sample_allocatee_ptr),
                  ".*");
 }
 

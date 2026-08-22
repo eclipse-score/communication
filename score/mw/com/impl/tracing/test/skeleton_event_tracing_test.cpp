@@ -304,7 +304,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreTracedWhenEnabled)
         })));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -386,7 +386,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendTracePointShouldBeDisabledAfterTrace
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -476,7 +476,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendTracePointShouldBeDisabledAfterTrace
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -547,7 +547,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenDisabled)
             })));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // Then a trace call relating to Send should never be called
 
@@ -596,7 +596,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenTracingFilterCo
             })));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // Then a trace call relating to Send should never be called
 
@@ -648,7 +648,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenTracingRuntimeC
             })));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // Then a trace call relating to Send should never be called
 
@@ -739,7 +739,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendCallsAreTracedWhenEnable
         })));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -832,7 +832,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture,
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -933,7 +933,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture,
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // and that GetBindingType is called on the skeleton event binding twice (once in SkeletonEvent creation and once
     // when calling tracing)
@@ -1014,7 +1014,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendCallsAreNotTracedWhenDis
             })));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // Then a trace call relating to Send should never be called
 
@@ -1073,7 +1073,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendCallsAreNotTracedWhenTra
             })));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // Then a trace call relating to Send should never be called
 
@@ -1135,7 +1135,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendCallsAreNotTracedWhenTra
             })));
 
     // and that PrepareOffer is called on the skeleton event binding
-    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer());
+    EXPECT_CALL(*mock_skeleton_event_binding_, PrepareOffer(_));
 
     // Then a trace call relating to Send should never be called
 

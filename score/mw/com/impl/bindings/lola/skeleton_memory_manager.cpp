@@ -24,7 +24,7 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
-#include "score/mw/com/impl/generic_skeleton_event_binding.h"
+
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
@@ -210,10 +210,18 @@ auto SkeletonMemoryManager::CreateEventControlsInCreatedSharedMemory(const Eleme
 EventDataStorage& SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
-    memory::DataTypeSizeInfo sample_size_info)
+    memory::DataTypeSizeInfo sample_size_info,
+    const std::optional<InitializeSampleCallback>& initialize_sample_callback)
 {
+    // Construction and initialization of the (type-erased) storage slots is done as one step by EventDataStorage's
+    // constructor: it initializes the freshly created slots using the initializer handed down from the strongly
+    // typed binding independent layer. The callback might be empty if the binding independent layer doesn't need to
+    // initialize the slots (e.g. for a generic event or a simulation-only PrepareOffer() call).
     auto* data_storage = storage_resource_->construct<EventDataStorage>(
-        *storage_resource_, static_cast<SlotIndexType>(element_properties.GetTotalNumberOfSlots()), sample_size_info);
+        *storage_resource_,
+        static_cast<SlotIndexType>(element_properties.GetTotalNumberOfSlots()),
+        sample_size_info,
+        initialize_sample_callback);
 
     auto inserted_data_slots = storage_->events_.emplace(
         std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(data_storage));
@@ -239,18 +247,13 @@ auto SkeletonMemoryManager::RetrieveEventDataFromOpenedSharedMemory(const Elemen
     auto find_element = [](auto& map, const ElementFqId& target_element_fq_id) -> auto {
         const auto it = map.find(target_element_fq_id);
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(it != map.cend(), "Could not find element fq id in map");
-        return it;
+        return *it;
     };
 
     score::cpp::ignore = find_element(storage_->events_metainfo_, element_fq_id);
-    auto* const event_data_storage_it = find_element(storage_->events_, element_fq_id);
+    auto event_data_storage_it = find_element(storage_->events_, element_fq_id);
 
-    // Suppress "AUTOSAR C++14 A5-3-2": Don't dereference null pointers.
-    // Justification: The "event_data_storage_it" variable is an iterator of interprocess map returned by the
-    // "find_element" method. A check is made that the iterator is not equal to map.cend(). Therefore, the call to
-    // "event_data_storage_it->" does not return nullptr.
-    // coverity[autosar_cpp14_a5_3_2_violation]
-    auto* const type_erased_event_data_storage_ptr = event_data_storage_it->second.get();
+    auto* const type_erased_event_data_storage_ptr = event_data_storage_it.second.get();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_erased_event_data_storage_ptr != nullptr,
                                                 "Could not get EventDataStorage*");
 
@@ -491,14 +494,17 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
     }
     InitializeSharedMemoryForData(storage_resource_);
 
-    // Offer events to calculate the shared memory allocated for the control and data segments for each event
+    // Offer events to calculate the shared memory allocated for the control and data segments for each event.
+    // We hand over an empty optional for the initialize_sample_callback, since this simulation-only PrepareOffer()
+    // call is solely used to calculate the required shared-memory size and does not need type-correct
+    // initialization of the (type-erased) storage slots.
     for (auto& event : events)
     {
-        score::cpp::ignore = event.second.get().PrepareOffer();
+        score::cpp::ignore = event.second.get().PrepareOffer(std::nullopt);
     }
     for (auto& field : fields)
     {
-        score::cpp::ignore = field.second.get().PrepareOffer();
+        score::cpp::ignore = field.second.get().PrepareOffer(std::nullopt);
     }
 
     const auto control_qm_size = control_qm_resource_->GetUserAllocatedBytes();
@@ -536,10 +542,11 @@ std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
             for (const auto& binding : bindings)
             {
                 const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
-                SkeletonEventBindingBase& event_binding = binding.second.get();
+                SkeletonEventBinding& event_binding = binding.second.get();
 
-                const std::size_t slot_array_size = number_of_slots * event_binding.GetSizeInfo().Size();
-                events_and_fields_size_infos.emplace_back(slot_array_size, event_binding.GetSizeInfo().Alignment());
+                const std::size_t slot_array_size = number_of_slots * event_binding.GetEventDataTypeSizeInfo().Size();
+                events_and_fields_size_infos.emplace_back(slot_array_size,
+                                                          event_binding.GetEventDataTypeSizeInfo().Alignment());
             }
         };
     std::vector<score::memory::DataTypeSizeInfo> events_and_fields_size_infos{};

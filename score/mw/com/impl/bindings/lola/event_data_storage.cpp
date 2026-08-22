@@ -31,8 +31,13 @@ EventDataStorage::EventDataStorage(memory::shared::ManagedMemoryResource& resour
       type_erased_data_slots_(nullptr),
       type_erased_data_slots_storage_size_in_bytes_(0)
 {
-    const auto storage_bytes_needed = safe_math::Multiply<safe_math::ReturnMode::kAbortOnError, std::size_t>(
-        number_of_slots, event_sample_size_info.Size());
+    const auto storage_bytes_needed_result =
+        safe_math::Multiply<safe_math::ReturnMode::kReturnResultOnError, std::size_t>(number_of_slots,
+                                                                                      event_sample_size_info.Size());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        storage_bytes_needed_result.has_value(),
+        "Overflow while calculating the total size of the raw event-data slot-array.");
+    const auto storage_bytes_needed = storage_bytes_needed_result.value();
 
     // The alignment used here must match exactly the alignment CalculateServiceDataStorageShmSize() assumes for this
     // allocation (see service_data_storage.cpp), i.e. event_sample_size_info.Alignment(). Using a different (e.g.
@@ -69,6 +74,8 @@ void EventDataStorage::InitializeSlots(const InitializeSampleCallback& initializ
     auto last_slot_ptr = type_erased_data_slots_ + decltype(type_erased_data_slots_)::difference_type(last_slot_offset);
     auto* last_slot_raw_ptr = last_slot_ptr.get();
 
+    // This is our low-level data storage, where we work on type-erased data, thus pointer arithmetic can't be avoided.
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic) see above
     for (auto* current_slot_raw_ptr = first_slot_raw_ptr; current_slot_raw_ptr <= last_slot_raw_ptr;
          current_slot_raw_ptr += sample_size_info_.Size())
     {
@@ -103,6 +110,13 @@ void* EventDataStorage::GetTypeErasedDataSlot(SlotIndexType index, size_t data_s
 SlotIndexType EventDataStorage::GetNumberOfSlots() const
 {
     return number_of_slots_;
+}
+
+void AddEventDataStorageShmSizeAllocation(std::vector<score::memory::DataTypeSizeInfo>& allocation_sequence,
+                                          memory::DataTypeSizeInfo event_sample_array_size_info)
+{
+    allocation_sequence.emplace_back(sizeof(EventDataStorage), alignof(EventDataStorage));
+    allocation_sequence.emplace_back(event_sample_array_size_info.Size(), event_sample_array_size_info.Alignment());
 }
 
 }  // namespace score::mw::com::impl::lola

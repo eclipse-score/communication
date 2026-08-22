@@ -18,11 +18,13 @@
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
+#include "score/mw/com/impl/sample_allocatee_guard.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <optional>
+#include <utility>
 
 namespace score::mw::com::impl::lola
 {
@@ -37,13 +39,14 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
                                  const std::size_t max_samples,
                                  const std::uint8_t max_subscribers,
                                  bool enforce_max_samples = true,
+                                 const QualityType quality_type = QualityType::kASIL_QM,
                                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {},
-                                 bool field_getter_enabled = false,
-                                 std::optional<InstanceIdentifier> instance_identifier = std::nullopt);
+                                 bool field_getter_enabled = false);
 
-    InstanceIdentifier GetValidInstanceIdentifier();
+    InstanceIdentifier GetValidInstanceIdentifier(QualityType quality_type);
 
     EventControl* GetEventControl(ElementFqId element_fq_id, QualityType quality_type) const noexcept;
+    std::optional<std::reference_wrapper<TransactionLog>> GetSkeletonTransactionLog(const QualityType quality_type);
 
     const std::uint8_t max_samples_{5U};
     std::uint8_t max_subscribers_{3U};
@@ -82,16 +85,35 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
                                                             QualityType::kASIL_QM,
                                                             instance_specifier_};
 
-    std::unique_ptr<SkeletonEvent<test::TestSampleType>> skeleton_event_;
+    std::unique_ptr<SkeletonEvent> skeleton_event_;
 
     /// \brief Mock event binding used only to "offer" a single service-element when the parent skeleton's
     ///        PrepareOffer() is called (see InitialiseSkeletonEvent). Offering one binding sizes the fixed-capacity
     ///        containers within ServiceDataStorage to hold the single event/field that the test subsequently registers.
-    mock_binding::SkeletonEvent<test::TestSampleType> mock_event_binding_{};
+    mock_binding::SkeletonEvent mock_event_binding_{};
 
     /// mocks used by test
     ServiceDiscoveryMock service_discovery_mock_{};
 };
+
+/// \brief Test helper that mimics what the binding-independent impl::SkeletonEvent layer now does for a "send by
+/// copy": allocate a slot on the binding, copy-assign the value into it, and then send the allocated slot. This
+/// replaces the removed lola::SkeletonEvent::Send(const void*, ...) convenience overload, which used to do the
+/// allocate+memcpy internally.
+template <typename SampleType>
+Result<void> SendValueByCopy(SkeletonEvent& skeleton_event,
+                             const SampleType& value,
+                             std::optional<SkeletonEventBinding::SendTraceCallback> send_trace_callback = std::nullopt)
+{
+    auto allocate_result = skeleton_event.Allocate(SampleAllocateeGuard{});
+    if (!allocate_result.has_value())
+    {
+        return MakeUnexpected<void>(allocate_result.error());
+    }
+    auto allocated_slot = std::move(allocate_result).value();
+    *static_cast<SampleType*>(allocated_slot.Get()) = value;
+    return skeleton_event.Send(std::move(allocated_slot), std::move(send_trace_callback));
+}
 
 }  // namespace score::mw::com::impl::lola
 

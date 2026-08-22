@@ -679,6 +679,35 @@ TEST_F(ProxyGetEventMetaInfoDeathTest, CallingGetEventMetaInfoWhenGettingDataSec
     EXPECT_DEATH(score::cpp::ignore = proxy_->GetEventMetaInfo(kDummyElementFqId), ".*");
 }
 
+using ProxyGetEventDataStorageFixture = ProxyMockedMemoryFixture;
+TEST_F(ProxyGetEventDataStorageFixture, GetEventDataStorageWillReturnDataForEventThatWasCreatedBySkeleton)
+{
+    // Given a dummy SkeletonEvent which creates the EventDataStorage
+    InitialiseDummySkeletonEvent(kDummyElementFqId,
+                                 SkeletonEventProperties{kMaxNumSlots, 0U, 0U, false, kMaxSubscribers, true});
+
+    // and a constructed Proxy
+    InitialiseProxyWithCreate(identifier_);
+
+    // When getting the EventDataStorage
+    const auto& event_data_storage = proxy_->GetEventDataStorage(kDummyElementFqId);
+
+    // Then the returned EventDataStorage will be the same one that was created by the SkeletonEvent
+    EXPECT_EQ(&event_data_storage, event_data_storage_);
+}
+
+using ProxyGetEventDataStorageDeathTest = ProxyGetEventDataStorageFixture;
+TEST_F(ProxyGetEventDataStorageDeathTest,
+       CallingGetEventDataStorageWhenSkeletonEventDoesNotExistInSharedMemoryWillTerminate)
+{
+    // Given a constructed Proxy with no corresponding SkeletonEvent
+    InitialiseProxyWithCreate(identifier_);
+
+    // When getting the EventDataStorage for a random element fq id
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = proxy_->GetEventDataStorage(kDummyElementFqId), ".*");
+}
+
 class ProxyUidPidRegistrationFixture : public ProxyMockedMemoryFixture
 {
   protected:
