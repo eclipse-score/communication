@@ -24,78 +24,69 @@
 namespace score::mw::com::impl::mock_binding
 {
 
-class SkeletonEventBase : public SkeletonEventBindingBase
-{
-  public:
-    MOCK_METHOD(Result<void>, PrepareOffer, (), (noexcept, override));
-    MOCK_METHOD(void, PrepareStopOffer, (), (noexcept, override));
-    MOCK_METHOD(memory::DataTypeSizeInfo, GetSizeInfo, (), (const, noexcept, override));
-    MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
-    MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
-};
-
-template <typename SampleType>
-class SkeletonEvent : public SkeletonEventBinding<SampleType>
+class SkeletonEvent : public SkeletonEventBinding
 {
   public:
     MOCK_METHOD(Result<void>,
                 Send,
-                (const SampleType& value,
-                 std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>,
-                 SampleAllocateeGuard),
+                (const void* value, std::optional<SendTraceCallback>, SampleAllocateeGuard),
                 (noexcept, override));
     MOCK_METHOD(Result<void>,
                 Send,
-                (score::mw::com::impl::SampleAllocateePtr<SampleType> sample,
-                 std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>),
+                (score::mw::com::impl::SampleAllocateePtr<void> sample, std::optional<SendTraceCallback>),
                 (noexcept, override));
-    MOCK_METHOD(Result<score::mw::com::impl::SampleAllocateePtr<SampleType>>,
+    MOCK_METHOD(Result<score::mw::com::impl::SampleAllocateePtr<void>>,
                 Allocate,
                 (SampleAllocateeGuard),
                 (noexcept, override));
-    MOCK_METHOD(Result<score::mw::com::impl::SamplePtr<SampleType>>, GetLatestSample, (QualityType), (override));
-    MOCK_METHOD(Result<void>, PrepareOffer, (), (noexcept, override));
+    MOCK_METHOD(Result<score::mw::com::impl::SamplePtr<void>>, GetLatestSample, (QualityType), (override));
+    MOCK_METHOD(Result<void>,
+                PrepareOffer,
+                (const std::optional<impl::InitializeSampleCallback>&),
+                (noexcept, override));
     MOCK_METHOD(void, PrepareStopOffer, (), (noexcept, override));
     MOCK_METHOD(memory::DataTypeSizeInfo, GetSizeInfo, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
+    MOCK_METHOD(Result<void>, Notify, (), (noexcept, override));
+    MOCK_METHOD(Result<void>,
+                SetReceiveHandlerRegistrationChangedHandler,
+                (ReceiveHandlerRegistrationChangedCallback),
+                (noexcept, override));
+    MOCK_METHOD(Result<void>, UnsetReceiveHandlerRegistrationChangedHandler, (), (noexcept, override));
 };
 
-template <typename SampleType>
-class SkeletonEventFacade : public SkeletonEventBinding<SampleType>
+class SkeletonEventFacade : public SkeletonEventBinding
 {
-    SkeletonEvent<SampleType>& skeleton_event_;
+    SkeletonEvent& skeleton_event_;
 
   public:
-    SkeletonEventFacade(SkeletonEvent<SampleType>& skeleton_event)
-        : SkeletonEventBinding<SampleType>{}, skeleton_event_{skeleton_event}
-    {
-    }
+    SkeletonEventFacade(SkeletonEvent& skeleton_event) : SkeletonEventBinding{}, skeleton_event_{skeleton_event} {}
 
     ~SkeletonEventFacade() override = default;
-    Result<void> Send(const SampleType& value,
-                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> callback,
+    Result<void> Send(const void* value,
+                      std::optional<SendTraceCallback> callback,
                       SampleAllocateeGuard guard) noexcept override
     {
         return skeleton_event_.Send(value, std::move(callback), std::move(guard));
     };
-    Result<void> Send(
-        score::mw::com::impl::SampleAllocateePtr<SampleType> sample,
-        std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> callback) noexcept override
+    Result<void> Send(score::mw::com::impl::SampleAllocateePtr<void> sample,
+                      std::optional<SendTraceCallback> callback) noexcept override
     {
         return skeleton_event_.Send(std::move(sample), std::move(callback));
     }
-    Result<impl::SampleAllocateePtr<SampleType>> Allocate(SampleAllocateeGuard guard) noexcept override
+    Result<impl::SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) noexcept override
     {
         return skeleton_event_.Allocate(std::move(guard));
     };
-    Result<score::mw::com::impl::SamplePtr<SampleType>> GetLatestSample(QualityType quality_type) override
+    Result<score::mw::com::impl::SamplePtr<void>> GetLatestSample(QualityType quality_type) override
     {
         return skeleton_event_.GetLatestSample(quality_type);
     }
-    Result<void> PrepareOffer() noexcept override
+    Result<void> PrepareOffer(
+        const std::optional<InitializeSampleCallback>& initialize_sample_callback) noexcept override
     {
-        return skeleton_event_.PrepareOffer();
+        return skeleton_event_.PrepareOffer(initialize_sample_callback);
     }
     void PrepareStopOffer() noexcept override
     {
@@ -112,6 +103,19 @@ class SkeletonEventFacade : public SkeletonEventBinding<SampleType>
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
     {
         return skeleton_event_.SetSkeletonEventTracingData(tracing_data);
+    }
+    Result<void> Notify() noexcept override
+    {
+        return skeleton_event_.Notify();
+    }
+    Result<void> SetReceiveHandlerRegistrationChangedHandler(
+        ReceiveHandlerRegistrationChangedCallback callback) noexcept override
+    {
+        return skeleton_event_.SetReceiveHandlerRegistrationChangedHandler(std::move(callback));
+    }
+    Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept override
+    {
+        return skeleton_event_.UnsetReceiveHandlerRegistrationChangedHandler();
     }
 };
 }  // namespace score::mw::com::impl::mock_binding

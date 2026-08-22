@@ -629,7 +629,7 @@ const EventDataStorage& Proxy::GetEventDataStorage(const ElementFqId element_fq_
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         data_ != nullptr, "Proxy::GetEventDataStorage: Managed memory data pointer is Null");
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
-    const auto event_entry = service_data_storage.events_.find(element_fq_id);
+    auto* const event_entry = service_data_storage.events_.find(element_fq_id);
     if (event_entry == service_data_storage.events_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__

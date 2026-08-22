@@ -35,6 +35,7 @@
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/initialize_sample_callback.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
@@ -118,6 +119,12 @@ class Skeleton final : public SkeletonBinding
     /// \param element_fq_id The full qualified ID of the element (event) that shall be registered.
     /// \param element_properties Properties of the element (e.g. number of slots, max subscribers).
     /// \param data_type_size_info The size and alignment of a single data sample in bytes.
+    /// \param initialize_sample_callback Optional callback to initialize a sample in the underlying type-erased
+    ///        storage slots. Only used (forwarded to SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()) in
+    ///        case the EventDataStorage is freshly created in this call. If instead an already existing
+    ///        EventDataStorage (of a previously offered instance) is (re-)opened, the callback is ignored, since
+    ///        re-initializing the slots would potentially tamper with event data that consumers of the previous
+    ///        instance offering might still be accessing.
     /// \return The registered data structures within the Skeleton
     ///         (first: where to store data, second: control data access)
     ///         If PrepareOffer created the shared memory, then will create an EventDataControl (for QM and
@@ -125,7 +132,9 @@ class Skeleton final : public SkeletonBinding
     ///         shared memory, then the opened event data from the existing shared memory will be returned.
     auto Register(const ElementFqId element_fq_id,
                   const SkeletonEventProperties& element_properties,
-                  const memory::DataTypeSizeInfo data_type_size_info) -> RegistrationResult;
+                  const memory::DataTypeSizeInfo data_type_size_info,
+                  const std::optional<InitializeSampleCallback>& initialize_sample_callback = std::nullopt)
+        -> RegistrationResult;
 
     QualityType GetInstanceQualityType() const;
 

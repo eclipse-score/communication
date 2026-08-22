@@ -573,7 +573,8 @@ bool Skeleton::VerifyAllMethodHandlersRegistered() const
 
 auto Skeleton::Register(const ElementFqId element_fq_id,
                         const SkeletonEventProperties& element_properties,
-                        const memory::DataTypeSizeInfo sample_size_info) -> RegistrationResult
+                        const memory::DataTypeSizeInfo sample_size_info,
+                        const std::optional<InitializeSampleCallback>& initialize_sample_callback) -> RegistrationResult
 {
     if (use_gateway_forwarded_shm_ || was_old_shm_region_reopened_)
     {
@@ -600,8 +601,8 @@ auto Skeleton::Register(const ElementFqId element_fq_id,
         return {event_data_storage, event_data_control_qm, event_data_control_asil_b};
     }
 
-    auto& event_data_storage =
-        memory_manager_.CreateEventDataInCreatedSharedMemory(element_fq_id, element_properties, sample_size_info);
+    auto& event_data_storage = memory_manager_.CreateEventDataInCreatedSharedMemory(
+        element_fq_id, element_properties, sample_size_info, initialize_sample_callback);
     auto [event_data_control_qm, event_data_control_asil_b] =
         memory_manager_.CreateEventControlsInCreatedSharedMemory(element_fq_id, element_properties);
 

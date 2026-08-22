@@ -68,6 +68,15 @@ class SampleAllocateePtr
     /// \brief Constructs a SampleAllocateePtr by transferring ownership from other to *this.
     SampleAllocateePtr(SampleAllocateePtr<SampleType>&& other) noexcept;
 
+    /// \brief Constructs a SampleAllocateePtr by transferring ownership from other to *this, even if other has a
+    /// different SampleType. This is a rebind-move-ctor used by the binding independent layer!
+    /// \details The binding independent layer exchanges SampleAllocateePtr<void> with the binding layer. I.e. bindings
+    /// are expected to store type-erased pointers in the variant member (internal_). But towards the user API/layer,
+    /// the binding independent layer uses SampleAllocateePtr<SampleType> to provide type-safety. This constructor
+    /// allows to move from a SampleAllocateePtr<void> to a SampleAllocateePtr<SampleType>.
+    template <typename OtherSampleType>
+    SampleAllocateePtr(SampleAllocateePtr<OtherSampleType>&& other) noexcept;
+
     /// \brief Move assignment operator. Transfers ownership from other to *this
     SampleAllocateePtr& operator=(SampleAllocateePtr<SampleType>&& other) & noexcept;
 
@@ -80,6 +89,12 @@ class SampleAllocateePtr
 
     /// \brief Swaps the managed objects of *this and another SampleAllocateePtr object other.
     void Swap(SampleAllocateePtr<SampleType>& other) noexcept;
+
+    /// \brief Swaps the managed objects of *this and another SampleAllocateePtr object other, even if other has a
+    /// different SampleType. This is safe because the underlying internal_/allocatee_guard_ members have identical
+    /// types across all SampleAllocateePtr<X> instantiations (the binding layer is fully type-erased).
+    template <typename OtherSampleType>
+    void Swap(SampleAllocateePtr<OtherSampleType>& other) noexcept;
 
     /// \brief Returns a pointer to the managed object or nullptr if no object is owned.
     // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
@@ -139,16 +154,23 @@ class SampleAllocateePtr
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Friend class required to access private constructor as we do not have everything we need public.
     // This is because we want to shield the end user from implementation details and avoid wrong usage.
-    // Thus the design decision was made to introduce friend classes to access expose private parts to
+    // Thus, the design decision was made to introduce friend classes to access expose private parts to
     // wrappers that are then only used by the implementation.
     template <typename T>
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend auto MakeSampleAllocateePtr(T ptr) noexcept -> SampleAllocateePtr<typename T::element_type>;
+    friend auto MakeSampleAllocateePtr(T ptr) noexcept -> SampleAllocateePtr<void>;
 
     template <typename T>
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend auto MakeSampleAllocateePtr(T ptr, SampleAllocateeGuard guard) noexcept
-        -> SampleAllocateePtr<typename T::element_type>;
+    friend auto MakeSampleAllocateePtr(T ptr, SampleAllocateeGuard guard) noexcept -> SampleAllocateePtr<void>;
+
+    // Grants every instantiation of SampleAllocateePtr access to every other instantiation's private members. This is
+    // required by the converting constructor above, which rebinds a SampleAllocateePtr<OtherSampleType> (typically
+    // SampleAllocateePtr<void> handed out by the type-erased binding layer) into *this by moving out its
+    // internal_/allocatee_guard_ members.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    template <typename T>
+    friend class SampleAllocateePtr;
 
     template <typename T>
     // coverity[autosar_cpp14_a11_3_1_violation]
@@ -160,8 +182,7 @@ class SampleAllocateePtr
 
     // We don't use the pimpl idiom because it would require dynamic memory allocation (that we want to avoid)
     // Stores either the LoLa pointer or the Mock Binding pointer (which handles void safely)
-    std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, mock_binding::SampleAllocateePtr<SampleType>>
-        internal_;
+    std::variant<score::cpp::blank, lola::SampleAllocateePtr, mock_binding::SampleAllocateePtr> internal_;
     /// \brief Guard that tracks this allocation's lifetime in the SampleAllocateeTracker.
     /// Stored in an optional to handle both cases default-constructed SampleAllocateePtr (which don't track any
     /// allocation) and allocated SampleAllocateePtr (which are tracked).
@@ -170,6 +191,14 @@ class SampleAllocateePtr
 
 template <typename SampleType>
 SampleAllocateePtr<SampleType>::SampleAllocateePtr(SampleAllocateePtr<SampleType>&& other) noexcept
+    : SampleAllocateePtr()
+{
+    this->Swap(other);
+}
+
+template <typename SampleType>
+template <typename OtherSampleType>
+SampleAllocateePtr<SampleType>::SampleAllocateePtr(SampleAllocateePtr<OtherSampleType>&& other) noexcept
     : SampleAllocateePtr()
 {
     this->Swap(other);
@@ -199,11 +228,11 @@ void SampleAllocateePtr<SampleType>::reset() noexcept
         // separate line.". Following line statement is fine, this happens due to
         // clang formatting.
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> void {
+        [](lola::SampleAllocateePtr& internal_ptr) noexcept -> void {
             internal_ptr.reset();
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](mock_binding::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> void {
+        [](mock_binding::SampleAllocateePtr& internal_ptr) noexcept -> void {
             internal_ptr.reset(nullptr);
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
@@ -225,6 +254,16 @@ void SampleAllocateePtr<SampleType>::Swap(SampleAllocateePtr<SampleType>& other)
 }
 
 template <typename SampleType>
+template <typename OtherSampleType>
+void SampleAllocateePtr<SampleType>::Swap(SampleAllocateePtr<OtherSampleType>& other) noexcept
+{
+    // Search for custom swap functions via ADL, and use std::swap if none are found.
+    using std::swap;
+    swap(internal_, other.internal_);
+    swap(allocatee_guard_, other.allocatee_guard_);
+}
+
+template <typename SampleType>
 auto SampleAllocateePtr<SampleType>::Get() const noexcept -> pointer
 {
     using ReturnType = pointer;
@@ -235,8 +274,8 @@ auto SampleAllocateePtr<SampleType>::Get() const noexcept -> pointer
         // separate line.". Following line statement is fine, this happens due to
         // clang formatting.
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
-            return internal_ptr.get();
+        [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
+            return static_cast<SampleType*>(internal_ptr.get());
         },
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
@@ -244,8 +283,8 @@ auto SampleAllocateePtr<SampleType>::Get() const noexcept -> pointer
         // This is a false positive, we here using lvalue reference.
         // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const mock_binding::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
-            return internal_ptr.get();
+        [](const mock_binding::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
+            return static_cast<SampleType*>(internal_ptr.get());
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> ReturnType {
@@ -259,7 +298,7 @@ template <typename SampleType>
 SampleAllocateePtr<SampleType>::operator bool() const noexcept
 {
     auto visitor = score::cpp::overload(
-        [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> bool {
+        [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> bool {
             return static_cast<bool>(internal_ptr);
         },
         // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
@@ -272,7 +311,7 @@ SampleAllocateePtr<SampleType>::operator bool() const noexcept
         // This is a false positive, we here using lvalue reference.
         // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const mock_binding::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> bool {
+        [](const mock_binding::SampleAllocateePtr& internal_ptr) noexcept -> bool {
             return static_cast<bool>(internal_ptr);
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
@@ -295,8 +334,8 @@ typename std::add_lvalue_reference<SampleType>::type SampleAllocateePtr<SampleTy
         // separate line.". Following line statement is fine, this happens due to
         // clang formatting.
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
-            return *internal_ptr;
+        [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
+            return *static_cast<SampleType*>(internal_ptr.get());
         },
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
@@ -304,8 +343,8 @@ typename std::add_lvalue_reference<SampleType>::type SampleAllocateePtr<SampleTy
         // This is a false positive, we here using lvalue reference.
         // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const mock_binding::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
-            return *internal_ptr;
+        [](const mock_binding::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
+            return *static_cast<SampleType*>(internal_ptr.get());
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> ReturnType {
@@ -327,8 +366,8 @@ auto SampleAllocateePtr<SampleType>::operator->() const noexcept -> pointer
         // separate line.". Following line statement is fine, this happens due to
         // clang formatting.
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
-            return internal_ptr.get();
+        [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
+            return static_cast<SampleType*>(internal_ptr.get());
         },
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
@@ -336,8 +375,8 @@ auto SampleAllocateePtr<SampleType>::operator->() const noexcept -> pointer
         // This is a false positive, we here using lvalue reference.
         // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const mock_binding::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
-            return internal_ptr.get();
+        [](const mock_binding::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
+            return static_cast<SampleType*>(internal_ptr.get());
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> ReturnType {
@@ -373,17 +412,17 @@ void swap(SampleAllocateePtr<T>& lhs, SampleAllocateePtr<T>& rhs) noexcept
 /// In production, guards must be obtained from SampleAllocateeTracker::Allocate(); use MakeSampleAllocateePtr
 /// with a guard instead.
 template <typename T>
-auto MakeSampleAllocateePtr(T ptr) noexcept -> SampleAllocateePtr<typename T::element_type>
+auto MakeSampleAllocateePtr(T ptr) noexcept -> SampleAllocateePtr<void>
 {
-    return SampleAllocateePtr<typename T::element_type>{std::move(ptr)};
+    return SampleAllocateePtr<void>{std::move(ptr)};
 }
 
 /// \brief Helper function to create a SampleAllocateePtr with a lifetime-tracking guard within the middleware (not to
 /// be used by the user)
 template <typename T>
-auto MakeSampleAllocateePtr(T ptr, SampleAllocateeGuard guard) noexcept -> SampleAllocateePtr<typename T::element_type>
+auto MakeSampleAllocateePtr(T ptr, SampleAllocateeGuard guard) noexcept -> SampleAllocateePtr<void>
 {
-    return SampleAllocateePtr<typename T::element_type>{std::move(ptr), std::move(guard)};
+    return SampleAllocateePtr<void>{std::move(ptr), std::move(guard)};
 }
 
 /// \brief SampleAllocateePtr is user facing, in order to interact with its internals we provide a view towards it
@@ -401,9 +440,8 @@ class SampleAllocateePtrView
         return std::get_if<T>(&ptr_.internal_);
     }
 
-    const std::
-        variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, mock_binding::SampleAllocateePtr<SampleType>>&
-        GetUnderlyingVariant() const noexcept
+    const std::variant<score::cpp::blank, lola::SampleAllocateePtr, mock_binding::SampleAllocateePtr>&
+    GetUnderlyingVariant() const noexcept
     {
         return ptr_.internal_;
     }
@@ -419,7 +457,7 @@ class SampleAllocateePtrMutableView
   public:
     explicit SampleAllocateePtrMutableView(SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
 
-    std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, mock_binding::SampleAllocateePtr<SampleType>>&
+    std::variant<score::cpp::blank, lola::SampleAllocateePtr, mock_binding::SampleAllocateePtr>&
     GetUnderlyingVariant() noexcept
     {
         // Suppress "AUTOSAR C++14 A9-3-1", The rule states: "Member functions shall not return non-const “raw” pointers

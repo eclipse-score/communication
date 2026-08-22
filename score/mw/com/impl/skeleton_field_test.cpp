@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
+#include "score/mw/com/impl/mocking/test_type_utilities.h"
 #include "score/mw/com/impl/sample_allocatee_guard.h"
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
@@ -65,10 +66,19 @@ using ::testing::InvokeWithoutArgs;
 using ::testing::Return;
 using ::testing::WithArg;
 
+// Send()'s first parameter is a type-erased const void*, so the built-in Pointee() matcher can't be used to compare
+// the value it points to (Pointee() needs to dereference the pointer, but void* can't be dereferenced). This
+// matcher reinterprets the void* as a const TestSampleType* before comparing.
+MATCHER_P(PointsToValue, expected, "")
+{
+    return (arg != nullptr) && (*static_cast<const TestSampleType*>(arg) == expected);
+}
+
 constexpr std::string_view kFieldName{"Field1"};
 const TestSampleType kDummyInitialValue{42};
 const TestSampleType kDummySetValue{43};
 const TestSampleType kDummyLatestValue{44};
+const memory::DataTypeSizeInfo kFieldTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
 
 ServiceIdentifierType kServiceIdentifier{make_ServiceIdentifierType("foo", 1U, 0U)};
 std::uint16_t kInstanceId{23U};
@@ -78,6 +88,7 @@ const ServiceInstanceDeployment kDeploymentInfo{kServiceIdentifier,
                                                 QualityType::kASIL_QM,
                                                 kInstanceSpecifier};
 std::uint16_t kServiceId{34U};
+TestSampleType test_sample_buffer{};
 const ServiceTypeDeployment kTypeDeployment{LolaServiceTypeDeployment{kServiceId}};
 const auto kInstanceIdWithLolaBinding = make_InstanceIdentifier(kDeploymentInfo, kTypeDeployment);
 
@@ -97,10 +108,9 @@ class SkeletonFieldTestFixture : public ::testing::Test
     void SetUp() override
     {
         ON_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, _))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, kFieldTypeSizeInfo, _))
             .WillByDefault(InvokeWithoutArgs([this]() {
-                return std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(
-                    skeleton_field_binding_mock_);
+                return std::make_unique<mock_binding::SkeletonEventFacade>(skeleton_field_binding_mock_);
             }));
 
         ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
@@ -120,10 +130,10 @@ class SkeletonFieldTestFixture : public ::testing::Test
 
     RuntimeMockGuard runtime_mock_guard_{};
 
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard_{};
+    SkeletonFieldBindingFactoryMockGuard skeleton_field_binding_factory_mock_guard_{};
     SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard_{};
 
-    mock_binding::SkeletonEvent<TestSampleType> skeleton_field_binding_mock_{};
+    mock_binding::SkeletonEvent skeleton_field_binding_mock_{};
     mock_binding::SkeletonMethod skeleton_field_get_binding_mock_{};
     mock_binding::SkeletonMethod skeleton_field_set_binding_mock_{};
 };
@@ -184,8 +194,10 @@ using SkeletonFieldCreationFixture = SkeletonFieldTestFixture;
 TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithNotifierCallsFactoryWithNotifier)
 {
     // Expect that the factory is called with WithNotifier
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithNotifier>()));
+    EXPECT_CALL(
+        skeleton_field_binding_factory_mock_guard_.factory_mock_,
+        CreateEventBinding(
+            kInstanceIdWithLolaBinding, _, kFieldName, kFieldTypeSizeInfo, FieldTagsStore::Create<WithNotifier>()));
 
     // When creating a SkeletonField with WithNotifier
     SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -195,8 +207,10 @@ TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithNotifierCallsFactoryWithNo
 TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithGetterCallsFactoryWithGetter)
 {
     // Expect that the factory is called with WithGetter
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithGetter>()));
+    EXPECT_CALL(
+        skeleton_field_binding_factory_mock_guard_.factory_mock_,
+        CreateEventBinding(
+            kInstanceIdWithLolaBinding, _, kFieldName, kFieldTypeSizeInfo, FieldTagsStore::Create<WithGetter>()));
 
     // When creating a SkeletonField with WithGetter
     SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -207,8 +221,11 @@ TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithNotifierAndSetterCallsFact
 {
     // Expect that the factory is called with WithNotifier and WithSetter
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(
-                    kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithNotifier, WithSetter>()));
+                CreateEventBinding(kInstanceIdWithLolaBinding,
+                                   _,
+                                   kFieldName,
+                                   kFieldTypeSizeInfo,
+                                   FieldTagsStore::Create<WithNotifier, WithSetter>()));
 
     // When creating a SkeletonField with WithNotifier and WithSetter
     SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -219,8 +236,11 @@ TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithGetterAndSetterCallsFactor
 {
     // Expect that the factory is called with WithGetter and WithSetter
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(
-                    kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithGetter, WithSetter>()));
+                CreateEventBinding(kInstanceIdWithLolaBinding,
+                                   _,
+                                   kFieldName,
+                                   kFieldTypeSizeInfo,
+                                   FieldTagsStore::Create<WithGetter, WithSetter>()));
 
     // When creating a SkeletonField with WithGetter and WithSetter
     SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -231,8 +251,11 @@ TEST_F(SkeletonFieldCreationFixture, CreatingFieldWithNotifierAndGetterCallsFact
 {
     // Expect that the factory is called with WithNotifier and WithGetter
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(
-                    kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithNotifier, WithGetter>()));
+                CreateEventBinding(kInstanceIdWithLolaBinding,
+                                   _,
+                                   kFieldName,
+                                   kFieldTypeSizeInfo,
+                                   FieldTagsStore::Create<WithNotifier, WithGetter>()));
 
     // When creating a SkeletonField with WithNotifier and WithGetter
     SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -243,10 +266,12 @@ TEST_F(SkeletonFieldCreationFixture,
        CreatingFieldWithNotifierAndGetterAndSetterCallsFactoryWithNotifierAndGetterAndSetter)
 {
     // Expect that the factory is called with WithNotifier, WithGetter and WithSetter
-    EXPECT_CALL(
-        skeleton_field_binding_factory_mock_guard_.factory_mock_,
-        CreateEventBinding(
-            kInstanceIdWithLolaBinding, _, kFieldName, FieldTagsStore::Create<WithNotifier, WithGetter, WithSetter>()));
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(kInstanceIdWithLolaBinding,
+                                   _,
+                                   kFieldName,
+                                   kFieldTypeSizeInfo,
+                                   FieldTagsStore::Create<WithNotifier, WithGetter, WithSetter>()));
 
     // When creating a SkeletonField with WithNotifier, WithGetter and WithSetter
     SkeletonBase skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -268,10 +293,10 @@ TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToO
     bool is_send_called_on_binding{false};
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value and returns an empty result
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _))
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _))
         .WillOnce(InvokeWithoutArgs([&is_send_called_on_binding]() noexcept -> Result<void> {
             is_send_called_on_binding = true;
             return {};
@@ -314,10 +339,10 @@ TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServicePropagatesBin
     bool is_send_called_on_binding{false};
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value and returns an error
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _))
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _))
         .WillOnce(InvokeWithoutArgs([&is_send_called_on_binding] {
             is_send_called_on_binding = true;
             return MakeUnexpected(ComErrc::kInvalidBindingInformation);
@@ -358,13 +383,15 @@ TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServiceDispatchesToBi
     const TestSampleType updated_value{kDummyInitialValue + 1U};
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value and returns an empty result
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _))
+        .WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called a second time on the event binding with the updated value and returns an empty result
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(updated_value, _, _)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(updated_value), _, _))
+        .WillOnce(Return(score::Result<void>{}));
 
     // Given a skeleton created based on a Lola binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -402,13 +429,14 @@ TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServicePropagatesBind
     const TestSampleType updated_value{kDummyInitialValue + 1U};
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value and returns an empty result
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _))
+        .WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called a second time on the event binding with the updated value and returns an error
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(updated_value, _, _))
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(updated_value), _, _))
         .WillOnce(Return(MakeUnexpected(ComErrc::kInvalidBindingInformation)));
 
     // Given a skeleton created based on a Lola binding
@@ -440,7 +468,7 @@ using SkeletonFieldAllocateTest = SkeletonFieldTestFixture;
 TEST_F(SkeletonFieldAllocateTest, CallingAllocateBeforePrepareOfferDoesNotReturnValidSlot)
 {
     // and that PrepareOffer() will not be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).Times(0);
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).Times(0);
 
     // and Allocate will not be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock_, Allocate(_)).Times(0);
@@ -466,14 +494,14 @@ TEST_F(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBi
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _));
 
     // and Allocate will be called again which returns a valid SampleAllocateePtr
     EXPECT_CALL(skeleton_field_binding_mock_, Allocate(_))
-        .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::make_unique<TestSampleType>(), SampleAllocateeGuard{}))));
+        .WillOnce(Return(ByMove(MakeFakeSampleAllocateePtr(&test_sample_buffer))));
 
     // Given a skeleton created based on a Lola binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -507,10 +535,10 @@ TEST_F(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferFailsWhenBindi
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _));
 
     // and Allocate will be called again which returns a nullptr
     EXPECT_CALL(skeleton_field_binding_mock_, Allocate(_))
@@ -556,17 +584,17 @@ TEST_F(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceDi
     const TestSampleType new_value{kDummyInitialValue + 1U};
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _));
 
     // and Allocate will be called again which returns a valid SampleAllocateePtr
     EXPECT_CALL(skeleton_field_binding_mock_, Allocate(_))
-        .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::make_unique<TestSampleType>(), SampleAllocateeGuard{}))));
+        .WillOnce(Return(ByMove(MakeFakeSampleAllocateePtr(&test_sample_buffer))));
 
     // and Send will be called a second time on the event binding with a new value which returns an empty result
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(An<SampleAllocateePtr<void>>(), _))
         .WillOnce(WithArg<0>(Invoke([new_value](SampleAllocateePtr<TestSampleType> sample_ptr) -> Result<void> {
             EXPECT_EQ(*sample_ptr, new_value);
             return {};
@@ -618,17 +646,17 @@ TEST_F(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServicePr
     const TestSampleType new_value{kDummyInitialValue + 1U};
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _));
 
     // and Allocate will be called again which returns a valid SampleAllocateePtr
     EXPECT_CALL(skeleton_field_binding_mock_, Allocate(_))
-        .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::make_unique<TestSampleType>(), SampleAllocateeGuard{}))));
+        .WillOnce(Return(ByMove(MakeFakeSampleAllocateePtr(&test_sample_buffer))));
 
     // and Send will be called a second time on the event binding with a new value which returns an error
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(An<SampleAllocateePtr<void>>(), _))
         .WillOnce(WithArg<0>(Invoke([new_value](SampleAllocateePtr<TestSampleType> sample_ptr) -> Result<void> {
             EXPECT_EQ(*sample_ptr, new_value);
             return MakeUnexpected(ComErrc::kInvalidBindingInformation);
@@ -680,10 +708,10 @@ TEST_F(SkeletonFieldInitialValueFixture, LatestFieldValueWillBeSetOnPrepareOffer
     const TestSampleType latest_value{kDummyInitialValue + 1U};
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called only once on the event binding with the latest value
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(latest_value, _, _));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(latest_value), _, _));
 
     // Given a skeleton created based on a Lola binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -716,7 +744,7 @@ TEST_F(SkeletonFieldInitialValueFixture, OfferingFieldBeforeUpdatingValueReturns
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // and that PrepareOffer() will not be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).Times(0);
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).Times(0);
 
     // Given a skeleton created based on a Lola binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -734,10 +762,10 @@ TEST_F(SkeletonFieldInitialValueFixture, OfferingFieldBeforeUpdatingValueReturns
 TEST_F(SkeletonFieldInitialValueFixture, MoveConstructingFieldBeforePrepareOfferWillKeepInitialValue)
 {
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _));
 
     // Given a skeleton created based on a Lola binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -765,7 +793,7 @@ TEST(SkeletonFieldInitialValueTest, MoveAssigningFieldBeforePrepareOfferWillKeep
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
 
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
+    SkeletonFieldBindingFactoryMockGuard skeleton_field_binding_factory_mock_guard{};
     SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard{};
 
     mock_binding::SkeletonMethod skeleton_method_mock{};
@@ -775,19 +803,19 @@ TEST(SkeletonFieldInitialValueTest, MoveAssigningFieldBeforePrepareOfferWillKeep
         }));
 
     // Expecting that a SkeletonField binding is created
-    auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, _))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, kFieldTypeSizeInfo, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     EXPECT_CALL(skeleton_field_binding_mock, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value from the moved-from field
-    EXPECT_CALL(skeleton_field_binding_mock, Send(kDummyInitialValue, _, _));
+    EXPECT_CALL(skeleton_field_binding_mock, Send(PointsToValue(kDummyInitialValue), _, _));
 
     // Given a skeleton created based on a Lola binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -807,10 +835,10 @@ TEST(SkeletonFieldInitialValueTest, MoveAssigningFieldBeforePrepareOfferWillKeep
     InstanceIdentifier identifier2{make_InstanceIdentifier(instance_deployment, kTypeDeployment)};
 
     // and Expecting that a second SkeletonField binding is created
-    auto skeleton_field_binding_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_field_binding_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_field_binding_mock_2 = *skeleton_field_binding_mock_ptr_2;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier2, _, kFieldName, _))
+                CreateEventBinding(identifier2, _, kFieldName, kFieldTypeSizeInfo, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr_2))));
 
     EXPECT_CALL(skeleton_field_binding_mock_2, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -919,24 +947,25 @@ TEST_F(SkeletonFieldDeathTest, DestroyingSkeletonFieldWhileHoldingSampleAllocate
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
 
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
+    SkeletonFieldBindingFactoryMockGuard skeleton_field_binding_factory_mock_guard{};
 
     // Expecting that a SkeletonField binding is created
-    auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, _))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName, kFieldTypeSizeInfo, _))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() is called once on the field binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer(_)).WillOnce(Return(score::Result<void>{}));
 
     // and that Send() is called once on the field binding with the initial value
-    EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _, _));
+    EXPECT_CALL(skeleton_field_binding_mock, Send(PointsToValue(initial_value), _, _));
 
     // and that Allocate() is called once on the field binding, returning a ptr backed by a real tracker guard
     EXPECT_CALL(skeleton_field_binding_mock, Allocate(_)).WillOnce([](SampleAllocateeGuard guard) {
-        return MakeSampleAllocateePtr(std::make_unique<TestSampleType>(), std::move(guard));
+        return MakeSampleAllocateePtr(mock_binding::SampleAllocateePtr{&test_sample_buffer, [](void*) noexcept {}},
+                                      std::move(guard));
     });
 
     // Given a skeleton which has a mock skeleton-binding
@@ -1228,8 +1257,10 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerCallsSend)
 {
     // Expect that Send will be called on the event binding twice: (1) when the initial value of the field is set. (2)
     // with the value provided to the set handler when the handler is called
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _)).WillOnce(Return(Result<void>{}));
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummySetValue, _, _)).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _))
+        .WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummySetValue), _, _))
+        .WillOnce(Return(Result<void>{}));
 
     GivenAFieldWithSetterAndGetterEnabled().WhichCapturesASetHandler();
 
@@ -1248,8 +1279,9 @@ TEST_F(SkeletonFieldSetHandlerTest, MethodHandlerDoesNotTerminateWhenSendFails)
 {
     // Expect that Send will be called on the event binding twice: (1) when the initial value of the field is set. (2)
     // with the value provided to the set handler when the handler is called which returns an error.
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _)).WillOnce(Return(Result<void>{}));
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummySetValue, _, _))
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _))
+        .WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummySetValue), _, _))
         .WillOnce(Return(MakeUnexpected(ComErrc::kCommunicationLinkError)));
 
     GivenAFieldWithSetterAndGetterEnabled().WhichCapturesASetHandler();
@@ -1283,8 +1315,10 @@ TEST_F(SkeletonFieldSetHandlerTest, CallingMethodHandlerCallsSendWithValueModifi
 
     // Expect that Send will be called on the event binding twice: (1) when the initial value of the field is set. (2)
     // with the value modified by the set handler when the handler is called
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _)).WillOnce(Return(Result<void>{}));
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(modified_value, _, _)).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _))
+        .WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(modified_value), _, _))
+        .WillOnce(Return(Result<void>{}));
 
     GivenAFieldWithSetterAndGetterEnabled().WhichCapturesASetHandler();
 
@@ -1359,10 +1393,11 @@ TEST_F(SkeletonFieldGetHandlerTest, CallingMethodHandlerPutsLatestSampleInMethod
 
     // Expecting that GetLatestSample is called on the event binding which returns a valid sample
     const QualityType kDummyQuality{QualityType::kASIL_QM};
+    TestSampleType* dummyLatestValue{const_cast<TestSampleType*>(&kDummyLatestValue)};
     EXPECT_CALL(skeleton_field_binding_mock_, GetLatestSample(kDummyQuality))
-        .WillOnce(Return(ByMove(SamplePtr<TestSampleType>{
-            mock_binding::SamplePtr<TestSampleType>{std::make_unique<TestSampleType>(kDummyLatestValue)},
-            SampleReferenceGuard{}})));
+        .WillOnce(Return(ByMove(
+            SamplePtr<void>{mock_binding::SamplePtr<void>{static_cast<void*>(dummyLatestValue), [](void*) noexcept {}},
+                            SampleReferenceGuard{}})));
 
     // When calling the get handler that was captured by the method binding
     auto out_span = CreateFieldGetterReturnSpan(score::Result<TestSampleType>{});
@@ -1432,8 +1467,10 @@ TEST_F(SkeletonFieldMoveConstructionFixture,
 
     // Expect that Send will be called on the event binding twice: (1) when the initial value of the field is set. (2)
     // with the value modified by the set handler when the handler is called
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(kDummyInitialValue, _, _)).WillOnce(Return(Result<void>{}));
-    EXPECT_CALL(skeleton_field_binding_mock_, Send(modified_value, _, _)).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(kDummyInitialValue), _, _))
+        .WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(PointsToValue(modified_value), _, _))
+        .WillOnce(Return(Result<void>{}));
 
     GivenAFieldWithSetterAndGetterEnabled().WhichCapturesASetHandler();
 

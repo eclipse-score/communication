@@ -86,13 +86,8 @@ class ServiceDataStorage
 ///          alignment-padding between them (see score::memory::shared::CalculateAlignedSizeOfSequence()).
 /// \param event_and_fields_size_info per service-element sizing information (Size() being the exact size, in bytes,
 ///        of the raw slot-array that will be allocated for the service-element; Alignment() being its required
-///        alignment). The caller (SkeletonMemoryManager) is responsible for computing these values, since they
-///        depend on whether the service-element is a typed or a generic (type-erased) event/field:
-///        - typed events allocate exactly number_of_slots * sizeof(SampleType) bytes, aligned to alignof(SampleType)
-///          (see SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()).
-///        - generic events allocate number_of_slots * sample_size bytes rounded up to a whole number of
-///          std::max_align_t elements, aligned to alignof(std::max_align_t) (see
-///          SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()).
+///        alignment). The caller (SkeletonMemoryManager) is responsible for computing these values
+///        (see SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()).
 ///        The size of the span equals the number of service-elements (events + fields), which is the fixed capacity
 ///        the ServiceDataStorage containers are constructed with.
 /// \return the exact number of bytes needed for the data shm-object.

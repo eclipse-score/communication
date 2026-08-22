@@ -21,6 +21,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/initialize_sample_callback.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
 #include "score/memory/data_type_size_info.h"
@@ -101,10 +102,14 @@ class SkeletonMemoryManager final
     /// \param element_fq_id The full qualified ID of the element.
     /// \param element_properties Properties of the event.
     /// \param sample_size_info Information about the size and alignment of the data sample.
+    /// \param initialize_sample_callback Optional callback used to initialize (default-construct) every newly
+    ///        created storage slot.
     /// \return A raw pointer to the EventDataStorage.
-    auto CreateEventDataInCreatedSharedMemory(const ElementFqId element_fq_id,
-                                              const SkeletonEventProperties& element_properties,
-                                              memory::DataTypeSizeInfo sample_size_info) -> EventDataStorage&;
+    auto CreateEventDataInCreatedSharedMemory(
+        const ElementFqId element_fq_id,
+        const SkeletonEventProperties& element_properties,
+        memory::DataTypeSizeInfo sample_size_info,
+        const std::optional<InitializeSampleCallback>& initialize_sample_callback = std::nullopt) -> EventDataStorage&;
 
     /// \brief Opens an EventControl for QM and optionally for ASIL-B (if the Skeleton is ASIL-B) for a specific
     /// event that were created by a previous skeleton.

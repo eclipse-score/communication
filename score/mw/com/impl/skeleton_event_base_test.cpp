@@ -23,6 +23,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <optional>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -53,11 +54,14 @@ const auto kEventName{"DummyEvent1"};
 class MyDummyEvent final : public SkeletonEventBase
 {
   public:
-    MyDummyEvent() : SkeletonEventBase{kEventName, std::make_unique<StrictMock<mock_binding::SkeletonEventBase>>()} {}
-
-    StrictMock<mock_binding::SkeletonEventBase>* GetMockBinding() noexcept
+    MyDummyEvent()
+        : SkeletonEventBase{kEventName, std::nullopt, std::make_unique<StrictMock<mock_binding::SkeletonEvent>>()}
     {
-        auto* const mock_event_binding = dynamic_cast<StrictMock<mock_binding::SkeletonEventBase>*>(binding_.get());
+    }
+
+    StrictMock<mock_binding::SkeletonEvent>* GetMockBinding() noexcept
+    {
+        auto* const mock_event_binding = dynamic_cast<StrictMock<mock_binding::SkeletonEvent>*>(binding_.get());
         return mock_event_binding;
     }
 };
@@ -74,7 +78,7 @@ class SkeletonEventBaseFixture : public ::testing::Test
     }
 
     std::unique_ptr<MyDummyEvent> skeleton_event_{nullptr};
-    StrictMock<mock_binding::SkeletonEventBase>* mock_event_binding_{nullptr};
+    StrictMock<mock_binding::SkeletonEvent>* mock_event_binding_{nullptr};
 };
 
 TEST(SkeletonEventBaseTests, NotCopyable)
@@ -95,7 +99,7 @@ TEST_F(SkeletonEventBaseFixture, PrepareOfferDispatchesToBinding)
     CreateSkeletonEvent();
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer(_)).WillOnce(Return(Result<void>{}));
 
     // When offering the event
     const auto result = skeleton_event_->PrepareOffer();
@@ -110,7 +114,7 @@ TEST_F(SkeletonEventBaseFixture, PrepareStopOfferDispatchesToBinding)
     CreateSkeletonEvent();
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer(_)).WillOnce(Return(Result<void>{}));
 
     // When offering the event
     const auto result = skeleton_event_->PrepareOffer();
@@ -129,7 +133,7 @@ TEST_F(SkeletonEventBaseFixture, PrepareOfferPropagatesErrorFromBinding)
     CreateSkeletonEvent();
 
     // When PrepareOffer() is called on the binding and returns an error
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer())
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer(_))
         .WillOnce(Return(score::MakeUnexpected(score::mw::com::impl::ComErrc::kInvalidBindingInformation)));
 
     // Expecting that when offering the event

@@ -179,12 +179,11 @@ TEST_F(TestTypesDummyInstanceIdentifierCreationFixture, HashIsDifferentForDiffer
 using TestTypesSampleAllocateePtrCreationFixture = TestTypesFixture;
 TEST_F(TestTypesSampleAllocateePtrCreationFixture, CanCreateFakeSampleAllocateePtrWithUniquePtr)
 {
-    // Given a unique_ptr pointing to some value
-    const std::uint32_t pointed_to_value{10U};
-    auto my_unique_ptr = std::make_unique<std::uint32_t>(pointed_to_value);
+    // Given a sample allocatee location/variable
+    std::uint32_t pointed_to_value{10U};
 
-    // When creating a fake SampleAllocateePtr from the unique_ptr
-    auto sample_allocatee_ptr = MakeFakeSampleAllocateePtr(std::move(my_unique_ptr));
+    // When creating a fake SampleAllocateePtr pointinmg to it
+    auto sample_allocatee_ptr = MakeFakeSampleAllocateePtr(&pointed_to_value);
 
     // Then the SampleAllocateePtr points to the same data
     ASSERT_TRUE(sample_allocatee_ptr);

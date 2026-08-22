@@ -46,7 +46,7 @@ class EventDataStorage final
     ///          upper layer with type knowledge calls this API handing over a callback, which does the correct
     ///          initialization.
     /// \param callback The callback to be called for each slot, which has a type erased signature.
-    void InitializeSlots(InitializeSampleCallback callback);
+    void InitializeSlots(const InitializeSampleCallback& callback);
 
     /// \brief Returns a pointer to the type-erased data slot at the given index.
     /// \details This access also does a complete bounds-check to verify that the returned raw-pointer is within the
@@ -68,6 +68,16 @@ class EventDataStorage final
     /// size of type_erased_data_slots_ storage in bytes. This is equal to number_of_slots_ * sample_size_info_.Size()
     std::size_t type_erased_data_slots_storage_size_;
 };
+
+/// \brief Adds allocation done by EventDataStorage to an existing allocation_sequence
+/// \details Gets called by the "parent" CalculateServiceDataStorageShmSize() in its calculation.
+/// \param allocation_sequence The sequence of allocations to which the EventDataStorage allocations will be added.
+/// \param event_sample_array_size_info The size information of the event sample array.
+/// \todo Handing over the complete event sample array should be changed, because it already contains the expectation,
+/// how EventDataStorage will internally store the events/slots! But it needs a rework in the call chain!
+/// I.e. we should hand down number_of_slots/DataTypeSizeInfo per single event separately.
+void AddEventDataStorageShmSizeAllocation(std::vector<score::memory::DataTypeSizeInfo>& allocation_sequence,
+                                          memory::DataTypeSizeInfo event_sample_array_size_info);
 
 }  // namespace score::mw::com::impl::lola
 

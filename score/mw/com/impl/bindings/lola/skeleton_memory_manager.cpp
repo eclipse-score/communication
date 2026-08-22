@@ -24,7 +24,7 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
-#include "score/mw/com/impl/generic_skeleton_event_binding.h"
+
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
@@ -210,10 +210,19 @@ auto SkeletonMemoryManager::CreateEventControlsInCreatedSharedMemory(const Eleme
 EventDataStorage& SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
-    memory::DataTypeSizeInfo sample_size_info)
+    memory::DataTypeSizeInfo sample_size_info,
+    const std::optional<InitializeSampleCallback>& initialize_sample_callback)
 {
     auto* data_storage = storage_resource_->construct<EventDataStorage>(
         *storage_resource_, static_cast<SlotIndexType>(element_properties.GetTotalNumberOfSlots()), sample_size_info);
+
+    // Initialize the freshly created type-erased storage slots using the initializer handed down from the strongly
+    // typed binding independent layer. The callback might be empty if the binding independent layer doesn't need to
+    // initialize the slots (e.g. for a generic event or a simulation-only PrepareOffer() call).
+    if (initialize_sample_callback.has_value())
+    {
+        data_storage->InitializeSlots(*initialize_sample_callback);
+    }
 
     auto inserted_data_slots = storage_->events_.emplace(
         std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(data_storage));
@@ -491,14 +500,17 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
     }
     InitializeSharedMemoryForData(storage_resource_);
 
-    // Offer events to calculate the shared memory allocated for the control and data segments for each event
+    // Offer events to calculate the shared memory allocated for the control and data segments for each event.
+    // We hand over an empty optional for the initialize_sample_callback, since this simulation-only PrepareOffer()
+    // call is solely used to calculate the required shared-memory size and does not need type-correct
+    // initialization of the (type-erased) storage slots.
     for (auto& event : events)
     {
-        score::cpp::ignore = event.second.get().PrepareOffer();
+        score::cpp::ignore = event.second.get().PrepareOffer(std::nullopt);
     }
     for (auto& field : fields)
     {
-        score::cpp::ignore = field.second.get().PrepareOffer();
+        score::cpp::ignore = field.second.get().PrepareOffer(std::nullopt);
     }
 
     const auto control_qm_size = control_qm_resource_->GetUserAllocatedBytes();
@@ -536,7 +548,7 @@ std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
             for (const auto& binding : bindings)
             {
                 const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
-                SkeletonEventBindingBase& event_binding = binding.second.get();
+                SkeletonEventBinding& event_binding = binding.second.get();
 
                 const std::size_t slot_array_size = number_of_slots * event_binding.GetSizeInfo().Size();
                 events_and_fields_size_infos.emplace_back(slot_array_size, event_binding.GetSizeInfo().Alignment());

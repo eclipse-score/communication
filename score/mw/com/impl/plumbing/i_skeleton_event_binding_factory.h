@@ -13,10 +13,11 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_I_SKELETON_EVENT_BINDING_FACTORY_H
 #define SCORE_MW_COM_IMPL_PLUMBING_I_SKELETON_EVENT_BINDING_FACTORY_H
 
-#include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
+
+#include "score/memory/data_type_size_info.h"
 
 #include <memory>
 #include <string_view>
@@ -26,7 +27,6 @@ namespace score::mw::com::impl
 
 /// \brief Interface for a factory class that dispatches calls to the appropriate binding based on
 /// binding information in the deployment configuration.
-template <typename SampleType>
 class ISkeletonEventBindingFactory
 {
   public:
@@ -40,15 +40,16 @@ class ISkeletonEventBindingFactory
     ISkeletonEventBindingFactory& operator=(const ISkeletonEventBindingFactory&) = delete;
 
     /// Creates instances of the event binding of a Skeleton event with a particular data type.
-    /// \tparam SampleType Type of the data that is exchanged
     /// \param identifier The instance identifier containing the binding information.
-    /// \param parent A reference to the Skeleton which owns this event.
+    /// \param parent_binding A reference to the Skeleton which owns this event.
     /// \param event_name The binding unspecific name of the event inside the skeleton denoted by instance identifier.
+    /// \param sample_type_size_info The size and alignment information of the SampleType.
     /// \return An instance of SkeletonEventBinding or nullptr in case of an error.
     virtual auto Create(const InstanceIdentifier& identifier,
                         SkeletonBinding& parent_binding,
-                        const std::string_view event_name) noexcept
-        -> std::unique_ptr<SkeletonEventBinding<SampleType>> = 0;
+                        const std::string_view event_name,
+                        memory::DataTypeSizeInfo sample_type_size_info) noexcept
+        -> std::unique_ptr<SkeletonEventBinding> = 0;
 };
 
 }  // namespace score::mw::com::impl
