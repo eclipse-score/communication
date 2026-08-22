@@ -10,10 +10,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-///
-/// @file
-/// @copyright Copyright (C) 2023, Bayerische Motoren Werke Aktiengesellschaft (BMW AG)
-///
 
 #include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 
@@ -29,7 +25,8 @@ namespace score::mw::com::impl::lola
 GenericProxyEvent::GenericProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
     : GenericProxyEventBinding{},
       proxy_event_common_{parent, element_fq_id, event_name},
-      meta_info_{parent.GetEventMetaInfo(element_fq_id)}
+      meta_info_{parent.GetEventMetaInfo(element_fq_id)},
+      event_data_storage_{parent.GetEventDataStorage(element_fq_id)}
 {
     parent.RegisterEvent(event_name, *this);
 }
@@ -136,53 +133,17 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
     auto& event_data_control_local = proxy_event_common_.GetConsumerEventDataControlLocal();
 
     const std::size_t sample_size = meta_info_.data_type_info_.Size();
-    const std::size_t sample_alignment = meta_info_.data_type_info_.Alignment();
-    const std::size_t aligned_size =
-        memory::shared::CalculateAlignedSize(sample_size, static_cast<std::size_t>(sample_alignment));
 
-    const std::size_t max_number_of_sample_slots = event_data_control_local.GetMaxSampleSlots();
-    const auto event_slots_raw_array_size = safe_math::Multiply(aligned_size, max_number_of_sample_slots);
-
-    if (!event_slots_raw_array_size.has_value())
-    {
-        score::mw::log::LogFatal("lola") << "Could not calculate the event slots raw array size. Terminating.";
-        std::terminate();
-    }
-
-    const void* const event_slots_raw_array = meta_info_.event_slots_raw_array_.get(event_slots_raw_array_size.value());
-
-    // AMP assert that the event_slots_raw_array address is according to sample_alignment
     for (auto slot_it = slot_indices.begin; slot_it != slot_indices.end; ++slot_it)
     {
         const auto slot_index = *slot_it;
 
-        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic) The pointer event_slots_raw_array points
-        // to the memory managed by a DynamicArray which has been type erased. The DynamicArray wraps a regular pointer
-        // array so elements may be accessed by using offsets to regular pointers to elements. Therefore, the pointer
-        // arithmetic is being done on memory which can be treated as an array.
-        // Suppress "AUTOSAR C++14 M5-2-8" rule: "An object with integer type or pointer to void type shall not be
-        // converted to an object with pointer type.".
-        // Casting to uint8_t pointer is as minimum byte size for pointer arithmetic to address a certain chunk of
-        // memory.
-        // coverity[autosar_cpp14_m5_2_8_violation]
-        const auto* const event_slots_array = static_cast<const std::uint8_t*>(event_slots_raw_array);
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(nullptr != event_slots_array, "Null event slot array");
-        // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule states: "Null pointers shall not be dereferenced.".
-        // Suppress "AUTOSAR C++14 M5-0-15" rule finding. This rule states: "Array indexing shall be the only form of
-        // pointer arithmetic.".
-        // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
-        // data loss.". The result of the integer operation will be stored in a std::size_t which is the biggest integer
-        // type.
-        // coverity[autosar_cpp14_a5_3_2_violation] The check above ensures that array is not NULL
-        // coverity[autosar_cpp14_m5_0_15_violation] False-positive, get access through array indexing
-        // coverity[autosar_cpp14_a4_7_1_violation]
-        const auto* const object_start_address = &event_slots_array[aligned_size * slot_index];
-        /* NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic) deviation ends here */
+        const void* type_erased_sample_ptr = event_data_storage_.GetTypeErasedDataSlot(slot_index, sample_size);
 
         const EventSlotStatus event_slot_status{event_data_control_local[slot_index]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
-        SamplePtr<void> sample{object_start_address, event_data_control_local, slot_index};
+        SamplePtr<void> sample{type_erased_sample_ptr, event_data_control_local, slot_index};
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));

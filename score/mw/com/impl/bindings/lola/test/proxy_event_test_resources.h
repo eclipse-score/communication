@@ -218,8 +218,7 @@ class ProxyMockedMemoryFixture : public ::testing::Test
     EventControl* event_control_{nullptr};
     std::optional<ProviderEventDataControlLocalView<>> provider_event_data_control_local_{};
     std::optional<ConsumerEventDataControlLocalView<>> consumer_event_data_control_local_{};
-    EventDataStorage<SampleType>* event_data_storage_{nullptr};
-    void* event_slots_raw_array_{nullptr};
+    EventDataStorage* event_data_storage_{nullptr};
     RollbackSynchronization rollback_synchronization_{};
 
     std::shared_ptr<MessagePassingServiceMock> mock_service_{std::make_shared<MessagePassingServiceMock>()};

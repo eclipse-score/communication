@@ -58,15 +58,15 @@ class MyDummyField : public SkeletonFieldBase
         : SkeletonFieldBase{
               kFieldName,
               std::make_unique<SkeletonEventBase>(kFieldName,
-                                                  std::make_unique<StrictMock<mock_binding::SkeletonEventBase>>())}
+                                                  std::make_unique<StrictMock<mock_binding::SkeletonEvent>>())}
     {
     }
 
-    StrictMock<mock_binding::SkeletonEventBase>* GetMockEventBinding() noexcept
+    StrictMock<mock_binding::SkeletonEvent>* GetMockEventBinding() noexcept
     {
         auto* const skeleton_field_base_binding = SkeletonFieldBaseView{*this}.GetEventBinding();
         auto* const mock_event_binding =
-            dynamic_cast<StrictMock<mock_binding::SkeletonEventBase>*>(skeleton_field_base_binding);
+            dynamic_cast<StrictMock<mock_binding::SkeletonEvent>*>(skeleton_field_base_binding);
         return mock_event_binding;
     }
 
@@ -121,7 +121,7 @@ class SkeletonFieldBaseFixture : public ::testing::Test
     }
 
     std::unique_ptr<MyDummyField> skeleton_field_{nullptr};
-    StrictMock<mock_binding::SkeletonEventBase>* mock_event_binding_{nullptr};
+    StrictMock<mock_binding::SkeletonEvent>* mock_event_binding_{nullptr};
 };
 
 TEST_F(SkeletonFieldBaseFixture, PrepareOfferDispatchesToBinding)
@@ -232,7 +232,7 @@ TEST(SkeletonFieldBaseTest, PrepareOfferPropagatesErrorFromInitialValueUpdateCal
     // Given a constructed SkeletonField with a valid mock binding which has a DoDeferredUpdate function which will
     // return an error
     MyDummyFieldFailingDeferredUpdate skeleton_field;
-    StrictMock<mock_binding::SkeletonEventBase>* mock_event_binding{skeleton_field.GetMockEventBinding()};
+    StrictMock<mock_binding::SkeletonEvent>* mock_event_binding{skeleton_field.GetMockEventBinding()};
     ASSERT_NE(mock_event_binding, nullptr);
 
     // Expecting that PrepareOffer() is called on the binding

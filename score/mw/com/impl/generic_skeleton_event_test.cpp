@@ -13,11 +13,9 @@
 #include "score/mw/com/impl/generic_skeleton_event.h"
 #include "score/mw/com/impl/generic_skeleton.h"
 
-#include "score/mw/com/impl/bindings/mock_binding/generic_skeleton_event.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
-#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h"
-#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory_mock.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/skeleton_event_binding_factory_mock.h"
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/i_binding_runtime.h"
@@ -63,7 +61,7 @@ class GenericSkeletonEventTest : public ::testing::Test
   public:
     GenericSkeletonEventTest()
     {
-        GenericSkeletonEventBindingFactory::mock_ = &generic_event_binding_factory_mock_;
+        SkeletonEventBindingFactory::InjectMockBinding(&skeleton_event_binding_factory_mock_);
 
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetBindingRuntime(BindingType::kLoLa))
             .WillByDefault(Return(&binding_runtime_mock_));
@@ -89,22 +87,26 @@ class GenericSkeletonEventTest : public ::testing::Test
 
     ~GenericSkeletonEventTest() override
     {
-        GenericSkeletonEventBindingFactory::mock_ = nullptr;
+        SkeletonEventBindingFactory::InjectMockBinding(nullptr);
     }
 
     /// \brief Creates a GenericSkeleton with one event
     GenericSkeletonEventTest& GivenAGenericSkeletonWithOneEvent(
         const std::string& event_name = "test_event",
         DataTypeMetaInfo size_info = {16, 8},
-        std::unique_ptr<NiceMock<mock_binding::GenericSkeletonEvent>> mock_event_binding = nullptr)
+        std::unique_ptr<NiceMock<mock_binding::SkeletonEvent>> mock_event_binding = nullptr)
     {
+        auto data_type_size_info = MakeDataTypeSizeInfo(size_info);
+        EXPECT_TRUE(data_type_size_info.has_value());
+        auto instance_identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithEvent();
         if (!mock_event_binding)
         {
-            mock_event_binding = std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
+            mock_event_binding = std::make_unique<NiceMock<mock_binding::SkeletonEvent>>();
         }
         auto* mock_event_binding_ptr = mock_event_binding.get();
 
-        EXPECT_CALL(generic_event_binding_factory_mock_, Create(_, event_name, _))
+        EXPECT_CALL(skeleton_event_binding_factory_mock_,
+                    Create(instance_identifier, _, event_name, data_type_size_info.value()))
             .WillOnce(Return(ByMove(std::move(mock_event_binding))));
 
         GenericSkeletonServiceElementInfo create_params;
@@ -112,8 +114,7 @@ class GenericSkeletonEventTest : public ::testing::Test
         events.push_back({event_name, size_info});
         create_params.events = events;
 
-        auto skeleton_result = GenericSkeleton::Create(
-            dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithEvent(), create_params);
+        auto skeleton_result = GenericSkeleton::Create(instance_identifier, create_params);
         EXPECT_TRUE(skeleton_result.has_value());
 
         auto& skeleton = skeleton_result.value();
@@ -141,10 +142,10 @@ class GenericSkeletonEventTest : public ::testing::Test
   protected:
     std::unique_ptr<GenericSkeleton> skeleton_;
     GenericSkeletonEvent* event_;
-    mock_binding::GenericSkeletonEvent* mock_event_binding_ptr_;
+    mock_binding::SkeletonEvent* mock_event_binding_ptr_;
 
     // Mocks
-    NiceMock<GenericSkeletonEventBindingFactoryMock> generic_event_binding_factory_mock_;
+    NiceMock<SkeletonEventBindingFactoryMock> skeleton_event_binding_factory_mock_;
     RuntimeMockGuard runtime_mock_guard_{};
     NiceMock<IBindingRuntimeMock> binding_runtime_mock_{};
     NiceMock<ServiceDiscoveryMock> service_discovery_mock_{};
@@ -181,7 +182,7 @@ TEST_F(GenericSkeletonEventTest, SendBeforeOfferReturnsError)
     this->GivenAGenericSkeletonWithOneEvent();
 
     // And a valid sample to send
-    mock_binding::SampleAllocateePtr<void> dummy_sample{nullptr, [](void*) {}};
+    mock_binding::SampleAllocateePtr dummy_sample{nullptr, [](void*) {}};
 
     // When calling Send() before OfferService()
     auto send_result = event_->Send(MakeSampleAllocateePtr(std::move(dummy_sample)));
@@ -200,7 +201,7 @@ TEST_F(GenericSkeletonEventTest, AllocateAndSendDispatchesToBindingAfterOffer)
     this->GivenAGenericSkeletonWithOneEvent().OfferSkeletonService();
 
     // When calling Allocate()
-    mock_binding::SampleAllocateePtr<void> dummy_alloc{nullptr, [](void*) {}};
+    mock_binding::SampleAllocateePtr dummy_alloc{nullptr, [](void*) {}};
     EXPECT_CALL(*mock_event_binding_ptr_, Allocate(_))
         .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::move(dummy_alloc)))));
 
@@ -208,7 +209,7 @@ TEST_F(GenericSkeletonEventTest, AllocateAndSendDispatchesToBindingAfterOffer)
     ASSERT_TRUE(alloc_result.has_value());
 
     // And When calling Send() with the allocated sample
-    EXPECT_CALL(*mock_event_binding_ptr_, Send(_)).WillOnce(Return(score::Result<void>{}));
+    EXPECT_CALL(*mock_event_binding_ptr_, Send(_, _)).WillOnce(Return(score::Result<void>{}));
 
     auto send_result = event_->Send(std::move(alloc_result.value()));
 
@@ -246,10 +247,10 @@ TEST_F(GenericSkeletonEventTest, SendReturnsErrorWhenBindingFails)
     this->GivenAGenericSkeletonWithOneEvent().OfferSkeletonService();
 
     // Expect the binding to fail sending
-    EXPECT_CALL(*mock_event_binding_ptr_, Send(_)).WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+    EXPECT_CALL(*mock_event_binding_ptr_, Send(_, _)).WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
     // When calling Send() with a dummy sample
-    mock_binding::SampleAllocateePtr<void> dummy_alloc{nullptr, [](void*) {}};
+    mock_binding::SampleAllocateePtr dummy_alloc{nullptr, [](void*) {}};
     auto send_result = event_->Send(MakeSampleAllocateePtr(std::move(dummy_alloc)));
 
     // Then it fails with kBindingFailure
@@ -266,15 +267,15 @@ TEST_F(GenericSkeletonEventTest, GetSizeInfoDispatchesToBinding)
     this->GivenAGenericSkeletonWithOneEvent();
 
     // Expect the binding to return specific size info
-    std::pair<std::size_t, std::uint8_t> expected_size_info{32, 16};
+    memory::DataTypeSizeInfo expected_size_info{32, 16};
     EXPECT_CALL(*mock_event_binding_ptr_, GetSizeInfo()).WillOnce(Return(expected_size_info));
 
     // When calling GetSizeInfo
     auto result_info = event_->GetSizeInfo();
 
     // Then it matches the binding's return values
-    EXPECT_EQ(result_info.size, expected_size_info.first);
-    EXPECT_EQ(result_info.alignment, expected_size_info.second);
+    EXPECT_EQ(result_info.size, expected_size_info.Size());
+    EXPECT_EQ(result_info.alignment, expected_size_info.Alignment());
 }
 
 TEST_F(GenericSkeletonEventTest, NotifyBeforeOfferReturnsError)
@@ -283,25 +284,10 @@ TEST_F(GenericSkeletonEventTest, NotifyBeforeOfferReturnsError)
     RecordProperty("TestType", "Requirements-based test");
 
     // Given a skeleton created with one event "test_event"
-    const std::string event_name = "test_event";
-
-    GenericSkeletonServiceElementInfo create_params;
-    std::vector<EventInfo> events;
-    events.push_back({event_name, {16, 8}});
-    create_params.events = events;
-
-    EXPECT_CALL(generic_event_binding_factory_mock_, Create(_, event_name, _))
-        .WillOnce(Return(ByMove(std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>())));
-
-    auto skeleton_result = GenericSkeleton::Create(
-        dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithEvent(), create_params);
-    ASSERT_TRUE(skeleton_result.has_value());
-
-    auto& skeleton = skeleton_result.value();
-    auto* event = &skeleton.GetEvents().find(event_name)->second;
+    this->GivenAGenericSkeletonWithOneEvent();
 
     // When calling Notify() before OfferService()
-    auto notify_result = event->Notify();
+    auto notify_result = event_->Notify();
 
     // Then it fails with kNotOffered
     ASSERT_FALSE(notify_result.has_value());
@@ -314,32 +300,11 @@ TEST_F(GenericSkeletonEventTest, NotifyDispatchesToBindingAfterOffer)
     RecordProperty("TestType", "Requirements-based test");
 
     // Given a skeleton configured with an event binding mock
-    const std::string event_name = "test_event";
-    auto mock_event_binding = std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>();
-    auto* mock_event_binding_ptr = mock_event_binding.get();
-
-    EXPECT_CALL(generic_event_binding_factory_mock_, Create(_, event_name, _))
-        .WillOnce(Return(ByMove(std::move(mock_event_binding))));
-
-    GenericSkeletonServiceElementInfo create_params;
-    std::vector<EventInfo> events;
-    events.push_back({event_name, {16, 8}});
-    create_params.events = events;
-
-    auto skeleton_result = GenericSkeleton::Create(
-        dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithEvent(), create_params);
-    ASSERT_TRUE(skeleton_result.has_value());
-    auto& skeleton = skeleton_result.value();
-    auto* event = &skeleton.GetEvents().find(event_name)->second;
-
-    // And Given the service is Offered
-    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodHandlersRegistered()).WillRepeatedly(Return(true));
-    EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
-    ASSERT_TRUE(skeleton.OfferService().has_value());
+    this->GivenAGenericSkeletonWithOneEvent().OfferSkeletonService();
 
     // When calling Notify()
-    EXPECT_CALL(*mock_event_binding_ptr, Notify()).WillOnce(Return(score::Result<void>{}));
-    auto notify_result = event->Notify();
+    EXPECT_CALL(*mock_event_binding_ptr_, Notify()).WillOnce(Return(score::Result<void>{}));
+    auto notify_result = event_->Notify();
 
     // Then it succeeds
     ASSERT_TRUE(notify_result.has_value());

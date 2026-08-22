@@ -40,9 +40,10 @@ HandleType MakeFakeHandle(const std::uint16_t unique_identifier);
 void ResetInstanceIdentifierConfiguration();
 
 template <typename SampleType>
-SampleAllocateePtr<SampleType> MakeFakeSampleAllocateePtr(std::unique_ptr<SampleType> fake_sample_allocatee_ptr)
+SampleAllocateePtr<SampleType> MakeFakeSampleAllocateePtr(SampleType* fake_sample_allocatee_ptr)
 {
-    return impl::MakeSampleAllocateePtr(std::move(fake_sample_allocatee_ptr));
+    return impl::MakeSampleAllocateePtr(
+        mock_binding::SampleAllocateePtr{fake_sample_allocatee_ptr, [](void*) noexcept {}});
 }
 
 template <typename SampleType>

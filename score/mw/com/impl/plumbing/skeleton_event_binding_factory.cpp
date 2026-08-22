@@ -11,3 +11,26 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
+
+#include "score/mw/com/impl/plumbing/skeleton_event_binding_factory_impl.h"
+
+namespace score::mw::com::impl
+{
+auto SkeletonEventBindingFactory::instance() noexcept -> ISkeletonEventBindingFactory&
+{
+    if (mock_ != nullptr)
+    {
+        return *mock_;
+    }
+
+    // Suppress "AUTOSAR C++14 A3-3-2", The rule states: "Static and thread-local objects shall be constant-initialized"
+    // It cannot be made const since we will need to call non-const methods from a static instance.
+    // coverity[autosar_cpp14_a3_3_2_violation]
+    static SkeletonEventBindingFactoryImpl instance{};
+    return instance;
+}
+
+// Suppress "AUTOSAR_C++14_A3-1-1" rule finding. This rule states:" It shall be possible to include any header file
+// in multiple translation units without violating the One Definition Rule".
+ISkeletonEventBindingFactory* SkeletonEventBindingFactory::mock_ = nullptr;
+}  // namespace score::mw::com::impl

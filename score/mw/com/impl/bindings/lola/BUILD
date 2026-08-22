@@ -320,34 +320,10 @@ cc_library(
 )
 
 cc_library(
-    name = "generic_skeleton_event",
-    srcs = [
-        "generic_skeleton_event.cpp",
-    ],
-    hdrs = [
-        "generic_skeleton_event.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-    ],
-    deps = [
-        ":event",
-        ":skeleton",
-        ":type_erased_sample_ptrs_guard",
-        "//score/mw/com/impl:error",
-        "//score/mw/com/impl:generic_skeleton_event_binding",
-        "//score/mw/com/impl/tracing:skeleton_event_tracing",
-    ],
-)
-
-cc_library(
     name = "skeleton",
     srcs = [
         "skeleton.cpp",
         "skeleton_event.cpp",
-        "skeleton_event_common.cpp",
         "skeleton_event_properties.cpp",
         "skeleton_memory_manager.cpp",
         "skeleton_method.cpp",
@@ -355,7 +331,6 @@ cc_library(
     hdrs = [
         "skeleton.h",
         "skeleton_event.h",
-        "skeleton_event_common.h",
         "skeleton_event_properties.h",
         "skeleton_memory_manager.h",
         "skeleton_method.h",
@@ -387,7 +362,6 @@ cc_library(
         "//score/memory/shared/flock:exclusive_flock_mutex",
         "//score/memory/shared/flock:flock_mutex_and_lock",
         "//score/mw/com/impl:error",
-        "//score/mw/com/impl:generic_skeleton_event_binding",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:skeleton_binding",
@@ -747,8 +721,11 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":control_slot_types",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:offset_ptr",
         "//score/memory/shared:types",
-        "@score_baselibs//score/containers:dynamic_array",
+        "@score_baselibs//score/memory:data_type_size_info",
     ],
 )
 
@@ -991,16 +968,6 @@ cc_unit_test(
 )
 
 cc_unit_test(
-    name = "generic_skeleton_event_test",
-    srcs = ["generic_skeleton_event_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":generic_skeleton_event",
-        "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
-    ],
-)
-
-cc_unit_test(
     name = "skeleton_method_test",
     srcs = ["skeleton_method_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [
@@ -1162,17 +1129,6 @@ cc_unit_test(
 )
 
 cc_unit_test(
-    name = "skeleton_event_common_test",
-    srcs = ["skeleton_event_common_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":skeleton",
-        "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
-        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
-    ],
-)
-
-cc_unit_test(
     name = "proxy_test",
     srcs = ["proxy_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [
@@ -1271,7 +1227,8 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":event_data_storage",
-        "@score_baselibs//score/containers:dynamic_array",
+        "//score/memory/shared:new_delete_delegate_resource",
+        "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/mw/log",
     ],
 )

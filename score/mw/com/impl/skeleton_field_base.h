@@ -143,7 +143,7 @@ class SkeletonFieldBaseView
     // A SkeletonField does not contain a SkeletonFieldBinding, as it dispatches to a SkeletonEvent at the binding
     // independent level. Instead, it consists of an event binding and (in the future when method support is
     // implemented) two method bindings.
-    SkeletonEventBindingBase* GetEventBinding()
+    SkeletonEventBinding* GetEventBinding()
     {
         SkeletonEventBase& skeleton_event_base = *base_.skeleton_event_dispatch_;
         return SkeletonEventBaseView{skeleton_event_base}.GetBinding();

@@ -25,8 +25,7 @@ namespace score::mw::com::impl
 namespace
 {
 
-template <typename SampleType>
-class MyEvent final : public SkeletonEventBinding<SampleType>
+class MyEvent final : public SkeletonEventBinding
 {
   public:
     Result<void> PrepareOffer() noexcept override
@@ -34,49 +33,72 @@ class MyEvent final : public SkeletonEventBinding<SampleType>
         return {};
     }
     void PrepareStopOffer() noexcept override {}
-    Result<void> Send(const SampleType&,
-                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>,
+    Result<void> Send(const void*,
+                      std::optional<typename SkeletonEventBinding::SendTraceCallback>,
                       SampleAllocateeGuard) noexcept override
     {
         return {};
     }
-    Result<void> Send(SampleAllocateePtr<SampleType>,
-                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>) noexcept override
+    Result<void> Send(SampleAllocateePtr<void>,
+                      std::optional<SkeletonEventBinding::SendTraceCallback>) noexcept override
     {
         return {};
     }
-    Result<SampleAllocateePtr<SampleType>> Allocate(SampleAllocateeGuard guard) noexcept override
+    Result<SampleAllocateePtr<void>> Allocate(SampleAllocateeGuard guard) noexcept override
     {
-        return MakeSampleAllocateePtr(std::make_unique<SampleType>(), std::move(guard));
+        return MakeSampleAllocateePtr(mock_binding::SampleAllocateePtr{&test_sample_buffer_, [](void*) noexcept {}},
+                                      std::move(guard));
     }
-    Result<SamplePtr<SampleType>> GetLatestSample(QualityType) override
+    Result<SamplePtr<void>> GetLatestSample(QualityType) override
     {
-        return SamplePtr<SampleType>{mock_binding::SamplePtr<SampleType>{std::make_unique<SampleType>()},
-                                     SampleReferenceGuard{}};
+        return SamplePtr<void>{mock_binding::SamplePtr<void>{&test_sample_buffer_, [](void*) noexcept {}},
+                               SampleReferenceGuard{}};
     }
     BindingType GetBindingType() const noexcept override
     {
         return BindingType::kFake;
     }
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData) noexcept override {}
+    memory::DataTypeSizeInfo GetSizeInfo() const noexcept override
+    {
+        return sample_data_type_size_info;
+    }
+    Result<void> Notify() noexcept override
+    {
+        return {};
+    }
+    Result<void> SetReceiveHandlerRegistrationChangedHandler(
+        ReceiveHandlerRegistrationChangedCallback) noexcept override
+    {
+        return {};
+    }
+    Result<void> UnsetReceiveHandlerRegistrationChangedHandler() noexcept override
+    {
+        return {};
+    }
+
+  private:
+    memory::DataTypeSizeInfo sample_data_type_size_info{sizeof(std::uint8_t), alignof(std::uint8_t)};
+    std::uint8_t test_sample_buffer_{};
 };
 
-TEST(SkeletonEventBindingTest, CanGetMaxSizeOfLiteralType)
+TEST(SkeletonEventBindingTest, CanGetSizeInfoOfLiteralType)
 {
-    MyEvent<std::uint8_t> unit{};
-    EXPECT_EQ(unit.GetMaxSize(), 1);
+    MyEvent unit{};
+    EXPECT_EQ(unit.GetSizeInfo().Size(), sizeof(std::uint8_t));
+    EXPECT_EQ(unit.GetSizeInfo().Alignment(), alignof(std::uint8_t));
 }
 
 TEST(SkeletonEventBindingTest, SkeletonEventBindingShouldNotBeCopyable)
 {
-    static_assert(!std::is_copy_constructible<MyEvent<std::uint8_t>>::value, "Is wrongly copyable");
-    static_assert(!std::is_copy_assignable<MyEvent<std::uint8_t>>::value, "Is wrongly copyable");
+    static_assert(!std::is_copy_constructible<MyEvent>::value, "Is wrongly copyable");
+    static_assert(!std::is_copy_assignable<MyEvent>::value, "Is wrongly copyable");
 }
 
 TEST(SkeletonEventBindingTest, SkeletonEventBindingShouldNotBeMoveable)
 {
-    static_assert(!std::is_move_constructible<MyEvent<std::uint8_t>>::value, "Is wrongly moveable");
-    static_assert(!std::is_move_assignable<MyEvent<std::uint8_t>>::value, "Is wrongly moveable");
+    static_assert(!std::is_move_constructible<MyEvent>::value, "Is wrongly moveable");
+    static_assert(!std::is_move_assignable<MyEvent>::value, "Is wrongly moveable");
 }
 
 }  // namespace

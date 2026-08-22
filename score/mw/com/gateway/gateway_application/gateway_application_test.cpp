@@ -16,7 +16,6 @@
 #include "score/mw/com/gateway/gateway_application/configuration/gateway_configuration.h"
 #include "score/mw/com/gateway/gateway_application/gateway_error.h"
 #include "score/mw/com/gateway/transport_layer/transport_mock.h"
-#include "score/mw/com/impl/bindings/mock_binding/generic_skeleton_event.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/find_service_handle.h"
@@ -25,8 +24,6 @@
 #include "score/mw/com/impl/i_binding_runtime.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h"
-#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory_mock.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 #include "score/mw/com/impl/service_discovery_client_mock.h"
@@ -457,7 +454,7 @@ class GatewayApplicationRegisterCallbackTest : public ::testing::Test
   protected:
     GatewayApplicationRegisterCallbackTest()
     {
-        impl::GenericSkeletonEventBindingFactory::mock_ = &event_binding_factory_mock_;
+        impl::SkeletonEventBindingFactory::InjectMockBinding(&event_binding_factory_mock_);
 
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetBindingRuntime(impl::BindingType::kLoLa))
             .WillByDefault(::testing::Return(&binding_runtime_mock_));
@@ -487,7 +484,7 @@ class GatewayApplicationRegisterCallbackTest : public ::testing::Test
 
     ~GatewayApplicationRegisterCallbackTest() override
     {
-        impl::GenericSkeletonEventBindingFactory::mock_ = nullptr;
+        impl::SkeletonEventBindingFactory::InjectMockBinding(nullptr);
     }
 
     void CallRegisterEventReceiveHandlerCallback(impl::GenericSkeleton& skeleton,
@@ -501,13 +498,14 @@ class GatewayApplicationRegisterCallbackTest : public ::testing::Test
     // Returns the skeleton (by move) and a raw pointer to the mock event binding.
     // IMPORTANT: Set EXPECT_CALL on the returned mock_event BEFORE calling
     // CallRegisterEventReceiveHandlerCallback to capture the stored callback.
-    std::pair<impl::GenericSkeleton, impl::mock_binding::GenericSkeletonEvent*> CreateSkeletonWithMockEvent(
+    std::pair<impl::GenericSkeleton, impl::mock_binding::SkeletonEvent*> CreateSkeletonWithMockEvent(
         const std::string& event_name)
     {
-        auto mock_event = std::make_unique<::testing::NiceMock<impl::mock_binding::GenericSkeletonEvent>>();
+        auto mock_event = std::make_unique<::testing::NiceMock<impl::mock_binding::SkeletonEvent>>();
         auto* mock_event_ptr = mock_event.get();
 
-        EXPECT_CALL(event_binding_factory_mock_, Create(::testing::_, event_name, ::testing::_))
+        EXPECT_CALL(event_binding_factory_mock_,
+                    Create(::testing::_, ::testing::_, event_name, memory::DataTypeSizeInfo{16, 8}))
             .WillOnce(::testing::Return(::testing::ByMove(std::move(mock_event))));
 
         std::vector<impl::EventInfo> event_storage{{event_name, impl::DataTypeMetaInfo{16, 8}}};
@@ -525,7 +523,7 @@ class GatewayApplicationRegisterCallbackTest : public ::testing::Test
     std::unique_ptr<GatewayApplication> app_;
     TransportMock* transport_mock_{nullptr};
 
-    ::testing::NiceMock<impl::GenericSkeletonEventBindingFactoryMock> event_binding_factory_mock_;
+    ::testing::NiceMock<impl::SkeletonEventBindingFactoryMock> event_binding_factory_mock_;
     impl::RuntimeMockGuard runtime_mock_guard_{};
     ::testing::NiceMock<IBindingRuntimeMock> binding_runtime_mock_{};
     ::testing::NiceMock<impl::ServiceDiscoveryMock> service_discovery_mock_{};
@@ -622,7 +620,7 @@ class GatewayApplicationFlowTest : public ::testing::Test
   protected:
     GatewayApplicationFlowTest()
     {
-        impl::GenericSkeletonEventBindingFactory::mock_ = &generic_skeleton_event_binding_factory_mock_;
+        impl::SkeletonEventBindingFactory::InjectMockBinding(&generic_skeleton_event_binding_factory_mock_);
 
         // --- Runtime / service discovery wiring -------------------------------------------------
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetServiceDiscovery())
@@ -701,11 +699,14 @@ class GatewayApplicationFlowTest : public ::testing::Test
             }));
 
         // --- Generic skeleton event binding factory: yields a fresh mock per event --------------
-        ON_CALL(generic_skeleton_event_binding_factory_mock_, Create(::testing::_, ::testing::_, ::testing::_))
+        ON_CALL(generic_skeleton_event_binding_factory_mock_,
+                Create(::testing::_, ::testing::_, ::testing::_, ::testing::_))
             .WillByDefault(::testing::Invoke(
-                [this](impl::SkeletonBase&, std::string_view event_name, const score::memory::DataTypeSizeInfo&)
-                    -> score::Result<std::unique_ptr<impl::GenericSkeletonEventBinding>> {
-                    auto mock = std::make_unique<::testing::NiceMock<impl::mock_binding::GenericSkeletonEvent>>();
+                [this](const impl::InstanceIdentifier&,
+                       impl::SkeletonBinding&,
+                       std::string_view event_name,
+                       score::memory::DataTypeSizeInfo) -> std::unique_ptr<impl::SkeletonEventBinding> {
+                    auto mock = std::make_unique<::testing::NiceMock<impl::mock_binding::SkeletonEvent>>();
                     ON_CALL(*mock, SetReceiveHandlerRegistrationChangedHandler(::testing::_))
                         .WillByDefault(::testing::Return(score::Result<void>{}));
                     ON_CALL(*mock, PrepareOffer()).WillByDefault(::testing::Return(score::Result<void>{}));
@@ -739,7 +740,7 @@ class GatewayApplicationFlowTest : public ::testing::Test
         // destroyed first (members destruct in reverse declaration order), the real Runtime would be
         // lazily initialised and abort trying to parse a non-existent config file.
         app_.reset();
-        impl::GenericSkeletonEventBindingFactory::mock_ = nullptr;
+        impl::SkeletonEventBindingFactory::InjectMockBinding(nullptr);
     }
 
     // Builds a HandleType carrying the given proxy events. A fresh builder is stored per handle so
@@ -805,12 +806,12 @@ class GatewayApplicationFlowTest : public ::testing::Test
     impl::ProxyBindingFactoryMockGuard proxy_binding_factory_mock_guard_{};
     impl::GenericProxyEventBindingFactoryMockGuard generic_proxy_event_binding_factory_mock_guard_{};
     impl::SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard_{};
-    ::testing::NiceMock<impl::GenericSkeletonEventBindingFactoryMock> generic_skeleton_event_binding_factory_mock_{};
+    ::testing::NiceMock<impl::SkeletonEventBindingFactoryMock> generic_skeleton_event_binding_factory_mock_{};
 
     impl::mock_binding::Proxy* proxy_binding_mock_{nullptr};
     impl::mock_binding::Skeleton* skeleton_binding_mock_{nullptr};
     std::map<std::string, impl::mock_binding::GenericProxyEvent*> proxy_event_mocks_{};
-    std::map<std::string, impl::mock_binding::GenericSkeletonEvent*> skeleton_event_mocks_{};
+    std::map<std::string, impl::mock_binding::SkeletonEvent*> skeleton_event_mocks_{};
 
     impl::FindServiceHandler<impl::HandleType> captured_find_handler_{};
     bool find_handler_captured_{false};
@@ -1066,11 +1067,14 @@ TEST_F(GatewayApplicationFlowTest, ProvideServiceCreatesSkeletonRegistersCallbac
 {
     // Given a whitelisted ("svc/a") provide request with one event whose binding expects exactly one
     // subscription-callback registration.
-    ON_CALL(generic_skeleton_event_binding_factory_mock_, Create(::testing::_, ::testing::_, ::testing::_))
-        .WillByDefault(::testing::Invoke(
-            [this](impl::SkeletonBase&, std::string_view event_name, const score::memory::DataTypeSizeInfo&)
-                -> score::Result<std::unique_ptr<impl::GenericSkeletonEventBinding>> {
-                auto mock = std::make_unique<::testing::NiceMock<impl::mock_binding::GenericSkeletonEvent>>();
+    ON_CALL(generic_skeleton_event_binding_factory_mock_,
+            Create(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillByDefault(
+            ::testing::Invoke([this](const impl::InstanceIdentifier&,
+                                     impl::SkeletonBinding&,
+                                     std::string_view event_name,
+                                     score::memory::DataTypeSizeInfo) -> std::unique_ptr<impl::SkeletonEventBinding> {
+                auto mock = std::make_unique<::testing::NiceMock<impl::mock_binding::SkeletonEvent>>();
                 EXPECT_CALL(*mock, SetReceiveHandlerRegistrationChangedHandler(::testing::_))
                     .WillOnce(::testing::Return(score::Result<void>{}));
                 ON_CALL(*mock, PrepareOffer()).WillByDefault(::testing::Return(score::Result<void>{}));
@@ -1204,11 +1208,14 @@ TEST_F(GatewayApplicationFlowTest, ProvideServiceSkeletonCreationFailureReturnsE
 TEST_F(GatewayApplicationFlowTest, ProvideServiceSetReceiveHandlerRegistrationFailureStillSucceeds)
 {
     // Given the skeleton event rejects the receive-handler-registration-changed handler
-    ON_CALL(generic_skeleton_event_binding_factory_mock_, Create(::testing::_, ::testing::_, ::testing::_))
-        .WillByDefault(::testing::Invoke(
-            [this](impl::SkeletonBase&, std::string_view event_name, const score::memory::DataTypeSizeInfo&)
-                -> score::Result<std::unique_ptr<impl::GenericSkeletonEventBinding>> {
-                auto mock = std::make_unique<::testing::NiceMock<impl::mock_binding::GenericSkeletonEvent>>();
+    ON_CALL(generic_skeleton_event_binding_factory_mock_,
+            Create(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillByDefault(
+            ::testing::Invoke([this](const impl::InstanceIdentifier&,
+                                     impl::SkeletonBinding&,
+                                     std::string_view event_name,
+                                     score::memory::DataTypeSizeInfo) -> std::unique_ptr<impl::SkeletonEventBinding> {
+                auto mock = std::make_unique<::testing::NiceMock<impl::mock_binding::SkeletonEvent>>();
                 ON_CALL(*mock, SetReceiveHandlerRegistrationChangedHandler(::testing::_))
                     .WillByDefault(
                         ::testing::Return(score::MakeUnexpected(GatewayErrorc::kReceiveHandlerRegistrationFailed)));

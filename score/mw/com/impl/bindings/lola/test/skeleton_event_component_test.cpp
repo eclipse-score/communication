@@ -38,34 +38,33 @@
 namespace score::mw::com::impl::lola
 {
 
-template <typename SampleType>
 class SkeletonEventAttorney
 {
   public:
-    explicit SkeletonEventAttorney(SkeletonEvent<SampleType>& skeleton_event) noexcept : skeleton_event_{skeleton_event}
-    {
-    }
+    explicit SkeletonEventAttorney(SkeletonEvent& skeleton_event) noexcept : skeleton_event_{skeleton_event} {}
 
     EventDataControlComposite<>& GetEventDataControlComposite()
     {
-        return skeleton_event_.skeleton_event_common_.GetEventDataControlComposite();
+        return skeleton_event_.GetEventDataControlComposite();
     }
 
     /// \brief Set handler availability flags for testing purposes
     void SetHandlerAvailability(bool qm_available, bool asil_b_available)
     {
-        skeleton_event_.skeleton_event_common_.SetQmNotificationsRegistered(qm_available);
-        skeleton_event_.skeleton_event_common_.SetAsilBNotificationsRegistered(asil_b_available);
+        skeleton_event_.SetQmNotificationsRegistered(qm_available);
+        skeleton_event_.SetAsilBNotificationsRegistered(asil_b_available);
     }
 
   private:
-    SkeletonEvent<SampleType>& skeleton_event_;
+    SkeletonEvent& skeleton_event_;
 };
 
 namespace
 {
 
 using SkeletonEventSampleType = std::uint32_t;
+const memory::DataTypeSizeInfo kEventSampleTypeSizeInfo{sizeof(SkeletonEventSampleType),
+                                                        alignof(SkeletonEventSampleType)};
 
 template <std::size_t MaxSamples>
 class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
@@ -135,7 +134,7 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
             score::memory::shared::SharedMemoryFactory::Open(path_builder.GetDataChannelShmName(instance_id), false);
 
         auto* storage = static_cast<ServiceDataStorage*>(memory->getUsableBaseAddress());
-        auto* values = storage->events_.at(fake_element_fq_id_).template get<EventDataStorage<std::uint32_t>>();
+        auto* event_data_storage = storage->events_.at(fake_element_fq_id_).get();
 
         auto path = path_builder.GetControlChannelShmName(instance_id, QualityType::kASIL_QM);
         auto memory_control = score::memory::shared::SharedMemoryFactory::Open(path, false);
@@ -153,11 +152,12 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
             dummy_transaction_log_id, consumer_event_data_control_local);
         auto slot_index = consumer_event_data_control_local.ReferenceNextEvent(0);
         EXPECT_TRUE(slot_index.has_value());
-        const auto value = values->at(slot_index.value());
+        auto* const value = static_cast<std::uint32_t*>(
+            event_data_storage->GetTypeErasedDataSlot(slot_index.value(), sizeof(std::uint32_t)));
 
         consumer_event_data_control_local.DereferenceEvent(slot_index.value());
 
-        return value;
+        return *value;
     }
 
     std::size_t GetFreeSampleSlots() const
@@ -245,10 +245,11 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
                          filesystem::FilesystemFactory{}.CreateInstance(),
                          std::make_unique<ShmPathBuilder>(service_id_),
                          std::make_unique<PartialRestartPathBuilder>(service_id_))};
-    SkeletonEvent<SkeletonEventSampleType> skeleton_event_{
+    SkeletonEvent skeleton_event_{
         *parent_skeleton_,
         fake_element_fq_id_,
         fake_event_name_,
+        kEventSampleTypeSizeInfo,
         SkeletonEventProperties{MaxSamples, 0U, 0U, false, max_subscribers_, enforce_max_samples_},
         disabled_tracing_data_};
 };
@@ -270,7 +271,7 @@ TEST_F(SkeletonEventComponentTestFixture, CanAllocateAndSendEvent)
 
     // Simulate handlers being available for the test
     // This is necessary because the optimization only sends NotifyEvent when handlers are present
-    auto attorney = SkeletonEventAttorney<SkeletonEventSampleType>{skeleton_event_};
+    auto attorney = SkeletonEventAttorney{skeleton_event_};
     attorney.SetHandlerAvailability(true, true);  // Enable both QM and ASIL-B handler availability
 
     // When allocating and sending the allocated event
@@ -278,7 +279,9 @@ TEST_F(SkeletonEventComponentTestFixture, CanAllocateAndSendEvent)
     ASSERT_TRUE(slot_result.has_value());
     auto slot = std::move(slot_result).value();
 
-    *slot = 5;
+    void* type_erased_value_ptr = slot.Get();
+    SkeletonEventSampleType new_value{5U};
+    std::memcpy(type_erased_value_ptr, &new_value, sizeof(SkeletonEventSampleType));
 
     // expect, that an event update notification is sent for QM and ASIL-B
     EXPECT_CALL(message_passing_service_mock_, NotifyEvent(QualityType::kASIL_QM, fake_element_fq_id_));
@@ -305,8 +308,9 @@ TEST_F(SkeletonEventComponentTestFixture, CanSendByValue)
     // store the number of free slots before sending ...
     auto free_slots_before = GetFreeSampleSlots();
 
-    // When  sending by value
-    std::ignore = skeleton_event_.Send(5, {}, SampleAllocateeGuard{});
+    // When sending by value
+    SkeletonEventSampleType new_value{5U};
+    std::ignore = skeleton_event_.Send(&new_value, {}, SampleAllocateeGuard{});
 
     // Then the send event in shared memory can be found by a proxy
     EXPECT_EQ(GetLastSendEvent(), 5);
@@ -348,7 +352,8 @@ TEST_F(SkeletonEventComponentDeathTest, CallingSendWillTerminateWhenLolaRuntimeD
         ASSERT_TRUE(prepare_offer_result.has_value());
 
         // When sending by value
-        score::cpp::ignore = skeleton_event_.Send(5, {}, SampleAllocateeGuard{});
+        SkeletonEventSampleType new_value{5U};
+        score::cpp::ignore = skeleton_event_.Send(&new_value, {}, SampleAllocateeGuard{});
     };
     // Then the program terminates
     EXPECT_DEATH(test_function(), ".*");
@@ -366,7 +371,8 @@ TEST_F(SkeletonEventSingleSlotComponentTestFixture, SendByValueReturnsErrorIfSlo
     ASSERT_TRUE(slot_result.has_value());
 
     // When sending by value
-    const auto send_result = skeleton_event_.Send(5, {}, SampleAllocateeGuard{});
+    SkeletonEventSampleType new_value{5U};
+    const auto send_result = skeleton_event_.Send(&new_value, {}, SampleAllocateeGuard{});
 
     // Then the result should contain an error indicating that the allocation failes
     ASSERT_FALSE(send_result.has_value());
@@ -391,8 +397,9 @@ TEST_F(SkeletonEventSingleSlotComponentTestFixture, SendByValueFreesSampleAlloca
     EXPECT_EQ(GetFreeSampleSlots(), 1);
 
     // and when calling Send twice
-    const auto send_result_1 = skeleton_event_.Send(5, {}, SampleAllocateeGuard{});
-    const auto send_result_2 = skeleton_event_.Send(5, {}, SampleAllocateeGuard{});
+    SkeletonEventSampleType new_value{5U};
+    const auto send_result_1 = skeleton_event_.Send(&new_value, {}, SampleAllocateeGuard{});
+    const auto send_result_2 = skeleton_event_.Send(&new_value, {}, SampleAllocateeGuard{});
 
     // Then both sends return no errors indicating that each call allocated a slot and freed it before returning
     ASSERT_TRUE(send_result_1.has_value());

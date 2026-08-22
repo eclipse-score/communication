@@ -38,7 +38,7 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
     friend SkeletonEventBaseView;
 
   public:
-    SkeletonEventBase(const std::string_view event_name, std::unique_ptr<SkeletonEventBindingBase> binding)
+    SkeletonEventBase(const std::string_view event_name, std::unique_ptr<SkeletonEventBinding> binding)
         : EnableReferenceToMoveableFromThis<SkeletonEventBase>(),
           binding_{std::move(binding)},
           event_name_{event_name},
@@ -84,7 +84,7 @@ class SkeletonEventBase : public EnableReferenceToMoveableFromThis<SkeletonEvent
     // be private.". We need these data elements to exchange this information between the SkeletonEventBase and the
     // SkeletonEvent.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    std::unique_ptr<SkeletonEventBindingBase> binding_;
+    std::unique_ptr<SkeletonEventBinding> binding_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::string_view event_name_;
     // coverity[autosar_cpp14_m11_0_1_violation]
@@ -107,7 +107,7 @@ class SkeletonEventBaseView
     {
     }
 
-    SkeletonEventBindingBase* GetBinding()
+    SkeletonEventBinding* GetBinding()
     {
         return skeleton_event_base_.binding_.get();
     }

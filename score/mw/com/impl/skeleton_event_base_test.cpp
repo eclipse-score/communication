@@ -53,11 +53,11 @@ const auto kEventName{"DummyEvent1"};
 class MyDummyEvent final : public SkeletonEventBase
 {
   public:
-    MyDummyEvent() : SkeletonEventBase{kEventName, std::make_unique<StrictMock<mock_binding::SkeletonEventBase>>()} {}
+    MyDummyEvent() : SkeletonEventBase{kEventName, std::make_unique<StrictMock<mock_binding::SkeletonEvent>>()} {}
 
-    StrictMock<mock_binding::SkeletonEventBase>* GetMockBinding() noexcept
+    StrictMock<mock_binding::SkeletonEvent>* GetMockBinding() noexcept
     {
-        auto* const mock_event_binding = dynamic_cast<StrictMock<mock_binding::SkeletonEventBase>*>(binding_.get());
+        auto* const mock_event_binding = dynamic_cast<StrictMock<mock_binding::SkeletonEvent>*>(binding_.get());
         return mock_event_binding;
     }
 };
@@ -74,7 +74,7 @@ class SkeletonEventBaseFixture : public ::testing::Test
     }
 
     std::unique_ptr<MyDummyEvent> skeleton_event_{nullptr};
-    StrictMock<mock_binding::SkeletonEventBase>* mock_event_binding_{nullptr};
+    StrictMock<mock_binding::SkeletonEvent>* mock_event_binding_{nullptr};
 };
 
 TEST(SkeletonEventBaseTests, NotCopyable)
