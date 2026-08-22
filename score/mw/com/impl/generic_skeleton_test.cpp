@@ -12,12 +12,9 @@
  ********************************************************************************/
 #include "score/mw/com/impl/generic_skeleton.h"
 
-#include "score/mw/com/impl/bindings/mock_binding/generic_skeleton_event.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/i_binding_runtime.h"
-#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h"
-#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory_mock.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_client_mock.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
@@ -61,7 +58,7 @@ class GenericSkeletonTest : public ::testing::Test
   public:
     GenericSkeletonTest()
     {
-        GenericSkeletonEventBindingFactory::mock_ = &generic_skeleton_event_binding_factory_mock_;
+        SkeletonEventBindingFactory::InjectMockBinding(&skeleton_event_binding_factory_mock_);
 
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetBindingRuntime(BindingType::kLoLa))
             .WillByDefault(Return(&binding_runtime_mock_));
@@ -82,12 +79,12 @@ class GenericSkeletonTest : public ::testing::Test
 
     ~GenericSkeletonTest() override
     {
-        GenericSkeletonEventBindingFactory::mock_ = nullptr;
+        SkeletonEventBindingFactory::InjectMockBinding(nullptr);
     }
 
     RuntimeMockGuard runtime_mock_guard_{};
     SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard_{};
-    NiceMock<GenericSkeletonEventBindingFactoryMock> generic_skeleton_event_binding_factory_mock_{};
+    NiceMock<SkeletonEventBindingFactoryMock> skeleton_event_binding_factory_mock_{};
 
     NiceMock<IBindingRuntimeMock> binding_runtime_mock_{};
     NiceMock<ServiceDiscoveryMock> service_discovery_mock_{};
@@ -144,9 +141,8 @@ TEST_F(GenericSkeletonTest, CreateWithUnresolvedInstanceSpecifierFails)
 
 TEST_F(GenericSkeletonTest, CreateFailsIfEventBindingCannotBeCreated)
 {
-    RecordProperty(
-        "Description",
-        "Checks that creation fails if the GenericSkeletonEventBindingFactory returns an error for any event.");
+    RecordProperty("Description",
+                   "Checks that creation fails if the SkeletonEventBindingFactory returns an error for any event.");
     RecordProperty("TestType", "Requirements-based test");
 
     // 1. Given an identifier and configuration with one valid event
@@ -160,9 +156,9 @@ TEST_F(GenericSkeletonTest, CreateFailsIfEventBindingCannotBeCreated)
     params.events = event_storage;
 
     // 2. Expect the Event Binding Factory to be called, but force it to FAIL
-    // We simulate an internal failure by returning MakeUnexpected
-    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, event_name, _))
-        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+    // We simulate an internal failure by returning a nullptr
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(identifier, _, event_name, _))
+        .WillOnce(Return(std::unique_ptr<SkeletonEventBinding>(nullptr)));
 
     // 3. When creating the skeleton
     auto result = GenericSkeleton::Create(identifier, params);
@@ -192,8 +188,8 @@ TEST_F(GenericSkeletonTest, CreateWithEventsInitializesEventBindings)
     auto MetaMatcher = AllOf(Property(&score::memory::DataTypeSizeInfo::Size, meta_info.size),
                              Property(&score::memory::DataTypeSizeInfo::Alignment, meta_info.alignment));
 
-    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, event_name, MetaMatcher))
-        .WillOnce(Return(ByMove(std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>())));
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(identifier, _, event_name, MetaMatcher))
+        .WillOnce(Return(ByMove(std::make_unique<NiceMock<mock_binding::SkeletonEvent>>())));
 
     // When creating the skeleton
     auto result = GenericSkeleton::Create(identifier, params);
@@ -220,7 +216,7 @@ TEST_F(GenericSkeletonTest, CreateWithInvalidDataTypeMetaInfoAlignmentFails)
     params.events = event_storage;
 
     // Expecting that the event factory is never be called for invalid meta-info
-    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, _, _)).Times(0);
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(_, _, _, _)).Times(0);
 
     // When creating the skeleton
     auto result = GenericSkeleton::Create(identifier, params);
@@ -244,7 +240,7 @@ TEST_F(GenericSkeletonTest, CreateWithInvalidDataTypeMetaInfoSizeFails)
     params.events = event_storage;
 
     // Expecting that the event factory is never be called for invalid meta-info
-    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, _, _)).Times(0);
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(_, _, _, _)).Times(0);
 
     // When creating the skeleton
     auto result = GenericSkeleton::Create(identifier, params);
@@ -271,8 +267,8 @@ TEST_F(GenericSkeletonTest, CreateWithDuplicateEventNamesFails)
     params.events = event_storage;
 
     // Expecting at least one attempt to create an event binding
-    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, event_name, _))
-        .WillRepeatedly(Return(ByMove(std::make_unique<NiceMock<mock_binding::GenericSkeletonEvent>>())));
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(identifier, _, event_name, _))
+        .WillRepeatedly(Return(ByMove(std::make_unique<NiceMock<mock_binding::SkeletonEvent>>())));
 
     // When creating the skeleton
     auto result = GenericSkeleton::Create(identifier, params);

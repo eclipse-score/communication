@@ -48,6 +48,16 @@ using ::testing::ReturnRef;
 
 using TestSampleType = std::uint8_t;
 
+const memory::DataTypeSizeInfo kTestSampleTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
+
+// Send()'s first parameter is a type-erased const void*, so the built-in Pointee() matcher can't be used to compare
+// the value it points to (Pointee() needs to dereference the pointer, but void* can't be dereferenced). This
+// matcher reinterprets the void* as a const TestSampleType* before comparing.
+MATCHER_P(PointsToValue, expected, "")
+{
+    return (arg != nullptr) && (*static_cast<const TestSampleType*>(arg) == expected);
+}
+
 const auto kDummyEventName{"DummyEvent"};
 const auto kDummyEventName2{"DummyEvent2"};
 const auto kDummyFieldName{"DummyField"};
@@ -105,10 +115,10 @@ class SkeletonBaseFixture : public ::testing::Test
 
     void ExpectEventCreation(const InstanceIdentifier& instance_identifier) noexcept
     {
-        auto skeleton_event_mock_ptr_1 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
-        auto skeleton_event_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
-        auto skeleton_field_mock_ptr_1 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
-        auto skeleton_field_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+        auto skeleton_event_mock_ptr_1 = std::make_unique<mock_binding::SkeletonEvent>();
+        auto skeleton_event_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent>();
+        auto skeleton_field_mock_ptr_1 = std::make_unique<mock_binding::SkeletonEvent>();
+        auto skeleton_field_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent>();
 
         event_binding_mock_1_ = skeleton_event_mock_ptr_1.get();
         event_binding_mock_2_ = skeleton_event_mock_ptr_2.get();
@@ -116,16 +126,16 @@ class SkeletonBaseFixture : public ::testing::Test
         field_binding_mock_2_ = skeleton_field_mock_ptr_2.get();
 
         EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                    Create(instance_identifier, _, kDummyEventName))
+                    Create(instance_identifier, _, kDummyEventName, kTestSampleTypeSizeInfo))
             .WillOnce(Return(ByMove(std::move(skeleton_event_mock_ptr_1))));
         EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                    Create(instance_identifier, _, kDummyEventName2))
+                    Create(instance_identifier, _, kDummyEventName2, kTestSampleTypeSizeInfo))
             .WillOnce(Return(ByMove(std::move(skeleton_event_mock_ptr_2))));
         EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                    CreateEventBinding(instance_identifier, _, kDummyFieldName, _))
+                    CreateEventBinding(instance_identifier, _, kDummyFieldName, kTestSampleTypeSizeInfo, _))
             .WillOnce(Return(ByMove(std::move(skeleton_field_mock_ptr_1))));
         EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                    CreateEventBinding(instance_identifier, _, kDummyFieldName2, _))
+                    CreateEventBinding(instance_identifier, _, kDummyFieldName2, kTestSampleTypeSizeInfo, _))
             .WillOnce(Return(ByMove(std::move(skeleton_field_mock_ptr_2))));
 
         EXPECT_CALL(*event_binding_mock_1_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -194,13 +204,13 @@ class SkeletonBaseFixture : public ::testing::Test
     RuntimeMockGuard runtime_mock_guard_{};
 
     mock_binding::Skeleton* binding_mock_{nullptr};
-    mock_binding::SkeletonEvent<TestSampleType>* event_binding_mock_1_{nullptr};
-    mock_binding::SkeletonEvent<TestSampleType>* event_binding_mock_2_{nullptr};
-    mock_binding::SkeletonEvent<TestSampleType>* field_binding_mock_1_{nullptr};
-    mock_binding::SkeletonEvent<TestSampleType>* field_binding_mock_2_{nullptr};
+    mock_binding::SkeletonEvent* event_binding_mock_1_{nullptr};
+    mock_binding::SkeletonEvent* event_binding_mock_2_{nullptr};
+    mock_binding::SkeletonEvent* field_binding_mock_1_{nullptr};
+    mock_binding::SkeletonEvent* field_binding_mock_2_{nullptr};
 
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard_{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard_{};
+    SkeletonEventBindingFactoryMockGuard skeleton_event_binding_factory_mock_guard_{};
+    SkeletonFieldBindingFactoryMockGuard skeleton_field_binding_factory_mock_guard_{};
 
     std::unique_ptr<MyDummySkeleton> skeleton_{nullptr};
 };
@@ -231,8 +241,8 @@ TEST_F(SkeletonBaseOfferFixture, OfferService)
     ExpectOfferService();
 
     // and expecting that Send is called on the field event bindings with the initial value
-    EXPECT_CALL(*field_binding_mock_1_, Send(kInitialFieldValue, _, _));
-    EXPECT_CALL(*field_binding_mock_2_, Send(kInitialFieldValue2, _, _));
+    EXPECT_CALL(*field_binding_mock_1_, Send(PointsToValue(kInitialFieldValue), _, _));
+    EXPECT_CALL(*field_binding_mock_2_, Send(PointsToValue(kInitialFieldValue2), _, _));
 
     // and the initial field values are set
     std::ignore = skeleton_->dummy_field.Update(kInitialFieldValue);
@@ -503,7 +513,8 @@ TEST_F(SkeletonBaseStopOfferFixture, PrepareStopOffer)
     ExpectStopOfferService();
 
     // and expecting that Send is called on the event binding with the initial value
-    EXPECT_CALL(*field_binding_mock_1_, Send(kInitialFieldValue, _, _));
+    EXPECT_CALL(*field_binding_mock_1_, Send(PointsToValue(kInitialFieldValue), _, _));
+    EXPECT_CALL(*field_binding_mock_2_, Send(PointsToValue(kInitialFieldValue2), _, _));
 
     // and the initial field values are set
     std::ignore = skeleton_->dummy_field.Update(kInitialFieldValue);
@@ -617,8 +628,8 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingServi
     EXPECT_CALL(service_discovery_mock_, OfferService(_)).Times(2);
 
     // and expecting that Send is called on the event binding once with the initial value
-    EXPECT_CALL(*field_binding_mock_1_, Send(kInitialFieldValue, _, _));
-    EXPECT_CALL(*field_binding_mock_2_, Send(kInitialFieldValue2, _, _));
+    EXPECT_CALL(*field_binding_mock_1_, Send(PointsToValue(kInitialFieldValue), _, _));
+    EXPECT_CALL(*field_binding_mock_2_, Send(PointsToValue(kInitialFieldValue2), _, _));
 
     // and the initial field values are set
     std::ignore = skeleton.dummy_field.Update(kInitialFieldValue);
@@ -698,7 +709,7 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterCallingStopOfferServi
         EXPECT_CALL(service_discovery_mock_, OfferService(_)).Times(2);
 
         // and expecting that Send is called on the event binding with the initial value
-        EXPECT_CALL(*field_binding_mock_1_, Send(kInitialFieldValue, _, _));
+        EXPECT_CALL(*field_binding_mock_1_, Send(PointsToValue(kInitialFieldValue), _, _));
 
         // and the initial field values are set
         std::ignore = skeleton.dummy_field.Update(kInitialFieldValue);
@@ -737,13 +748,14 @@ TEST_F(SkeletonBaseOfferFixture, NoStopOfferOnErrorIdentifier)
 
     // Expect that the events and field bindings are never created
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(instance_identifier, _, kDummyEventName))
+                Create(instance_identifier, _, kDummyEventName, kTestSampleTypeSizeInfo))
         .Times(0);
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(instance_identifier, _, kDummyEventName2))
+                Create(instance_identifier, _, kDummyEventName2, kTestSampleTypeSizeInfo))
         .Times(0);
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(GetInstanceIdentifierWithoutBinding(), _, kDummyFieldName, _))
+    EXPECT_CALL(
+        skeleton_field_binding_factory_mock_guard_.factory_mock_,
+        CreateEventBinding(GetInstanceIdentifierWithoutBinding(), _, kDummyFieldName, kTestSampleTypeSizeInfo, _))
         .Times(0);
 
     // Given a constructed Skeleton with a invalid identifier
@@ -829,13 +841,13 @@ class SkeletonBaseServiceElementReferencesFixture : public ::testing::Test
     mock_binding::Skeleton skeleton_binding_mock_{};
     MySkeleton skeleton_{std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_), instance_identifier_};
 
-    SkeletonEventBase event_0_{event_name_0_, std::make_unique<mock_binding::SkeletonEventBase>()};
-    SkeletonEventBase event_1_{event_name_1_, std::make_unique<mock_binding::SkeletonEventBase>()};
+    SkeletonEventBase event_0_{event_name_0_, std::make_unique<mock_binding::SkeletonEvent>()};
+    SkeletonEventBase event_1_{event_name_1_, std::make_unique<mock_binding::SkeletonEvent>()};
 
     std::unique_ptr<SkeletonEventBase> field_event_dispatch_0_{
-        std::make_unique<SkeletonEventBase>(field_name_0_, std::make_unique<mock_binding::SkeletonEventBase>())};
+        std::make_unique<SkeletonEventBase>(field_name_0_, std::make_unique<mock_binding::SkeletonEvent>())};
     std::unique_ptr<SkeletonEventBase> field_event_dispatch_1_{
-        std::make_unique<SkeletonEventBase>(field_name_1_, std::make_unique<mock_binding::SkeletonEventBase>())};
+        std::make_unique<SkeletonEventBase>(field_name_1_, std::make_unique<mock_binding::SkeletonEvent>())};
 
     DummyField field_0_{field_name_0_, std::move(field_event_dispatch_0_)};
     DummyField field_1_{field_name_1_, std::move(field_event_dispatch_1_)};
@@ -929,10 +941,10 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferenc
     MySkeleton skeleton_2{std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock), instance_identifier_};
 
     // and given that an Event, Field and Method were registered on the second skeleton
-    SkeletonEventBase event{other_event_name, std::make_unique<mock_binding::SkeletonEventBase>()};
+    SkeletonEventBase event{other_event_name, std::make_unique<mock_binding::SkeletonEvent>()};
 
     auto field_event_dispatch =
-        std::make_unique<SkeletonEventBase>(other_field_name, std::make_unique<mock_binding::SkeletonEventBase>());
+        std::make_unique<SkeletonEventBase>(other_field_name, std::make_unique<mock_binding::SkeletonEvent>());
 
     DummyField field{other_field_name, std::move(field_event_dispatch)};
 

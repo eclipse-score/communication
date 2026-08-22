@@ -24,7 +24,7 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
-#include "score/mw/com/impl/generic_skeleton_event_binding.h"
+
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
@@ -536,7 +536,7 @@ std::size_t SkeletonMemoryManager::CalculateDataShmResourceStorageSize(
             for (const auto& binding : bindings)
             {
                 const std::size_t number_of_slots = GetNumberOfSampleSlotsFromConfig(binding.first, are_fields);
-                SkeletonEventBindingBase& event_binding = binding.second.get();
+                SkeletonEventBinding& event_binding = binding.second.get();
 
                 const std::size_t slot_array_size = number_of_slots * event_binding.GetSizeInfo().Size();
                 events_and_fields_size_infos.emplace_back(slot_array_size, event_binding.GetSizeInfo().Alignment());

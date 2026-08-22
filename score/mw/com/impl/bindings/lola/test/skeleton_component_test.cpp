@@ -264,8 +264,8 @@ class SkeletonComponentTestFixture : public ::testing::Test
     MessagePassingServiceMock message_passing_service_mock_{};
     impl::tracing::TracingRuntimeMock tracing_runtime_mock_{};
 
-    mock_binding::SkeletonEvent<TestSampleType> mock_event_binding_{};
-    mock_binding::SkeletonEvent<TestSampleType> mock_field_binding_{};
+    mock_binding::SkeletonEvent mock_event_binding_{};
+    mock_binding::SkeletonEvent mock_field_binding_{};
 
     std::vector<std::pair<std::string, LolaEventInstanceDeployment>> lola_event_instance_deployments_;
     std::vector<std::pair<std::string, LolaFieldInstanceDeployment>> lola_field_instance_deployments_;
