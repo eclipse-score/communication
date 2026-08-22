@@ -53,15 +53,12 @@ std::size_t CalculateServiceDataStorageShmSize(
     // (3) For each event/field (in the exact order it gets registered/offered): the EventDataStorage object plus its
     // data-slot-array (type_erased_data_slots_). The exact size/alignment of the slot-array (see
     // SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory()) is provided by the caller.
+    // \ToDo see also comment in AddEventDataStorageShmSizeAllocation(): We should eventually hand down number_of_slots/
+    // event sample size info separated, instead of aggregated arrays as it "anticipates", what EventDataStorage does!
 
-    // The size/alignment of the EventDataStorage control structure is independent of the concrete
-    // sample-type (it only holds an offset-pointer, an allocator and two size_t members).
-    constexpr std::size_t event_data_storage_object_size = sizeof(EventDataStorage);
-    constexpr std::size_t event_data_storage_object_alignment = alignof(EventDataStorage);
     for (const auto& service_element : event_and_fields_size_info)
     {
-        allocation_sequence.emplace_back(event_data_storage_object_size, event_data_storage_object_alignment);
-        allocation_sequence.emplace_back(service_element.Size(), service_element.Alignment());
+        AddEventDataStorageShmSizeAllocation(allocation_sequence, service_element);
     }
 
     return score::memory::shared::CalculateAlignedSizeOfSequence(allocation_sequence);

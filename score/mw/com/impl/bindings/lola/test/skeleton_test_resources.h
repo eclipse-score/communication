@@ -130,6 +130,8 @@ namespace test
 
 using TestSampleType = std::uint8_t;
 
+constexpr memory::DataTypeSizeInfo kEventSampleTypeSizeInfo{sizeof(TestSampleType), alignof(TestSampleType)};
+
 constexpr std::uint64_t kControlQmMemoryResourceId{0x01234567};
 constexpr std::uint64_t kControlAsilBMemoryResourceId{0x12345678};
 constexpr std::uint64_t kDataMemoryResourceId{0x23456789};

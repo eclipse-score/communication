@@ -57,15 +57,15 @@ class SampleAllocateePtrFixture : public ::testing::Test
     lola::ConsumerEventDataControlLocalView<> consumer_event_data_ctrl_qm_local_{event_data_ctrl_qm_};
     lola::EventDataControlComposite<> event_data_ctrl_{provider_event_data_ctrl_qm_local_, nullptr};
     lola::SlotIndexType event_data_slot_index_{std::numeric_limits<lola::SlotIndexType>::max()};
-    lola::SampleAllocateePtr<std::uint8_t> lola_allocatee_ptr_{&value_,
-                                                               event_data_ctrl_,
-                                                               consumer_event_data_ctrl_qm_local_,
-                                                               event_data_slot_index_};
+    lola::SampleAllocateePtr lola_allocatee_ptr_{&value_,
+                                                 event_data_ctrl_,
+                                                 consumer_event_data_ctrl_qm_local_,
+                                                 event_data_slot_index_};
     SampleAllocateePtr<std::uint8_t> valid_unit_{MakeSampleAllocateePtr(std::move(lola_allocatee_ptr_))};
 
-    SampleAllocateePtr<std::uint8_t> unit_with_unique_ptr_{MakeSampleAllocateePtr(
-        mock_binding::SampleAllocateePtr<std::uint8_t>(new std::uint8_t(42), [](std::uint8_t* p) {
-            delete p;
+    SampleAllocateePtr<std::uint8_t> unit_with_unique_ptr_{
+        MakeSampleAllocateePtr(mock_binding::SampleAllocateePtr(new std::uint8_t(42), [](void* p) {
+            delete static_cast<std::uint8_t*>(p);
         }))};
 
     SampleAllocateeTracker tracker_{};
@@ -109,9 +109,8 @@ TEST_F(SampleAllocateePtrFixture, CanSwap)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
     // Given a valid_unit and a second SampleAllocateePtr
     std::uint8_t value{0x43};
-    lola::SampleAllocateePtr<std::uint8_t> foo{
-        &value, event_data_ctrl_, consumer_event_data_ctrl_qm_local_, event_data_slot_index_};
-    auto unit = MakeSampleAllocateePtr(std::move(foo));
+    lola::SampleAllocateePtr foo{&value, event_data_ctrl_, consumer_event_data_ctrl_qm_local_, event_data_slot_index_};
+    SampleAllocateePtr<std::uint8_t> unit{MakeSampleAllocateePtr(std::move(foo))};
 
     // When swapping both classes
     unit.Swap(valid_unit_);
@@ -220,8 +219,11 @@ TEST(SampleAllocateePtrTest, InterfaceMatchesRequirements)
                   "Should contain operator bool");
 
     // Swaps the managed object
-    static_assert(std::is_member_function_pointer_v<decltype(&SampleAllocateePtr<SampleType>::Swap)>,
-                  "Should contain Swap");
+    static_assert(
+        std::is_member_function_pointer_v<
+            decltype(static_cast<void (SampleAllocateePtr<SampleType>::*)(SampleAllocateePtr<SampleType>&) noexcept>(
+                &SampleAllocateePtr<SampleType>::Swap))>,
+        "Should contain Swap");
 
     // Returns the stored object
     static_assert(std::is_member_function_pointer_v<decltype(&SampleAllocateePtr<SampleType>::Get)>,
@@ -231,7 +233,7 @@ TEST(SampleAllocateePtrTest, InterfaceMatchesRequirements)
 TEST(SampleAllocateePtrTest, NullLolaSampleAllocateePtrConvertsToFalse)
 {
     // Given a lola::SampleAllocateePtr which holds a nullptr
-    lola::SampleAllocateePtr<std::uint8_t> null_lola_ptr{nullptr};
+    lola::SampleAllocateePtr null_lola_ptr{nullptr};
 
     // When creating an impl::SampleAllocateePtr from the lola::SampleAllocateePtr
     auto ptr = MakeSampleAllocateePtr(std::move(null_lola_ptr));
@@ -245,7 +247,7 @@ TEST(SampleAllocateePtrTest, NullUniquePtrConvertsToFalse)
 {
     // Given a unique_ptr which holds a nullptr
 
-    mock_binding::SampleAllocateePtr<std::uint8_t> null_unique_ptr{nullptr};
+    mock_binding::SampleAllocateePtr null_unique_ptr{nullptr};
 
     // When creating an impl::SampleAllocateePtr from the unique_ptr
     auto ptr = MakeSampleAllocateePtr(std::move(null_unique_ptr));
@@ -263,7 +265,7 @@ TEST_F(SampleAllocateePtrFixture, ValidLolaSampleAllocateePtrConvertsToTrue)
     } value;
 
     // Given a valid lola::SampleAllocateePtr
-    lola::SampleAllocateePtr<Foo> valid_lola_ptr{
+    lola::SampleAllocateePtr valid_lola_ptr{
         &value, event_data_ctrl_, consumer_event_data_ctrl_qm_local_, event_data_slot_index_};
 
     // When creating an impl::SampleAllocateePtr from the lola::SampleAllocateePtr
@@ -278,8 +280,8 @@ TEST_F(SampleAllocateePtrFixture, ValidUniquePtrConvertsToTrue)
 {
     // Given a valid unique_ptr
 
-    mock_binding::SampleAllocateePtr<std::uint8_t> valid_unique_ptr(new std::uint8_t(10), [](std::uint8_t* p) {
-        delete p;
+    mock_binding::SampleAllocateePtr valid_unique_ptr(new std::uint8_t(10), [](void* p) {
+        delete static_cast<std::uint8_t*>(p);
     });
     EXPECT_TRUE(valid_unique_ptr);
 
@@ -318,9 +320,8 @@ TEST_F(SampleAllocateePtrFixture, CanDereferenceUsingArrow)
 
     value.bar = 0x42;
 
-    lola::SampleAllocateePtr<Foo> foo{
-        &value, event_data_ctrl_, consumer_event_data_ctrl_qm_local_, event_data_slot_index_};
-    const auto unit = MakeSampleAllocateePtr(std::move(foo));
+    lola::SampleAllocateePtr foo{&value, event_data_ctrl_, consumer_event_data_ctrl_qm_local_, event_data_slot_index_};
+    const SampleAllocateePtr<Foo> unit{MakeSampleAllocateePtr(std::move(foo))};
 
     EXPECT_EQ(value.bar, unit->bar);
 }
@@ -332,13 +333,12 @@ TEST_F(SampleAllocateePtrFixture, CanAccessUnderlyingSlot)
     {
         std::uint8_t bar{};
     } value;
-    lola::SampleAllocateePtr<Foo> foo{
-        &value, event_data_ctrl_, consumer_event_data_ctrl_qm_local_, event_data_slot_index_};
-    const auto ptr = MakeSampleAllocateePtr(std::move(foo));
+    lola::SampleAllocateePtr foo{&value, event_data_ctrl_, consumer_event_data_ctrl_qm_local_, event_data_slot_index_};
+    const SampleAllocateePtr<Foo> ptr{MakeSampleAllocateePtr(std::move(foo))};
     const auto unit = SampleAllocateePtrView<Foo>{ptr};
 
     // When trying to read its underlying implementation
-    const auto* underlying_impl = unit.As<lola::SampleAllocateePtr<Foo>>();
+    const auto* underlying_impl = unit.As<lola::SampleAllocateePtr>();
 
     // This is possible and we can interact with it
     ASSERT_NE(underlying_impl, nullptr);
@@ -376,11 +376,10 @@ TEST_F(SampleAllocateePtrFixture, CanResetUnderlyingPointerUsingUniquePtr)
 {
     // Given a SampleAllocateePtr with an underlying unique_ptr
     bool is_destructed{false};
-    SampleAllocateePtr<ObjectDestructionNotifier> unit_with_unique_ptr{
-        MakeSampleAllocateePtr(mock_binding::SampleAllocateePtr<ObjectDestructionNotifier>(
-            new ObjectDestructionNotifier(is_destructed), [](ObjectDestructionNotifier* p) {
-                delete p;
-            }))};
+    SampleAllocateePtr<ObjectDestructionNotifier> unit_with_unique_ptr{MakeSampleAllocateePtr(
+        mock_binding::SampleAllocateePtr(new ObjectDestructionNotifier(is_destructed), [](void* p) {
+            delete static_cast<ObjectDestructionNotifier*>(p);
+        }))};
 
     // When calling Reset
     unit_with_unique_ptr.reset();
@@ -425,11 +424,12 @@ TEST_F(SampleAllocateePtrFixture, CanDereferenceUsingArrowUsingUniquePtr)
         std::uint8_t bar{};
     };
 
-    auto value = mock_binding::SampleAllocateePtr<Foo>(new Foo(), [](Foo* p) {
-        delete p;
+    auto* const foo_ptr = new Foo();
+    foo_ptr->bar = 42;
+    auto value = mock_binding::SampleAllocateePtr(foo_ptr, [](void* p) {
+        delete static_cast<Foo*>(p);
     });
-    value->bar = 42;
-    const auto unit = MakeSampleAllocateePtr(std::move(value));
+    const SampleAllocateePtr<Foo> unit{MakeSampleAllocateePtr(std::move(value))};
 
     EXPECT_EQ(42, unit->bar);
 }
@@ -438,15 +438,15 @@ TEST_F(SampleAllocateePtrFixture, CanWrapUniquePtr)
 {
     // Given a SampleAllocateePtr with an underlying unique_ptr
 
-    const auto ptr =
-        MakeSampleAllocateePtr(mock_binding::SampleAllocateePtr<std::uint8_t>(new std::uint8_t(), [](std::uint8_t* p) {
-            delete p;
-        }));
+    const SampleAllocateePtr<std::uint8_t> ptr{
+        MakeSampleAllocateePtr(mock_binding::SampleAllocateePtr(new std::uint8_t(), [](void* p) {
+            delete static_cast<std::uint8_t*>(p);
+        }))};
     const auto unit = SampleAllocateePtrView<std::uint8_t>{ptr};
 
     // When trying to read its underlying implementation
 
-    const auto* underlying_impl = unit.As<mock_binding::SampleAllocateePtr<std::uint8_t>>();
+    const auto* underlying_impl = unit.As<mock_binding::SampleAllocateePtr>();
 
     // This is possible and we can interact with it
     ASSERT_NE(underlying_impl, nullptr);
@@ -457,9 +457,9 @@ TEST_F(SampleAllocateePtrFixture, CanCompareTwoUnequalPtrs)
     // Given a valid_unit and a second SampleAllocateePtr pointing to a different value
     std::uint8_t value{0x43};
 
-    SampleAllocateePtr<std::uint8_t> unit2{MakeSampleAllocateePtr(
-        mock_binding::SampleAllocateePtr<std::uint8_t>(new std::uint8_t(value), [](std::uint8_t* p) {
-            delete p;
+    SampleAllocateePtr<std::uint8_t> unit2{
+        MakeSampleAllocateePtr(mock_binding::SampleAllocateePtr(new std::uint8_t(value), [](void* p) {
+            delete static_cast<std::uint8_t*>(p);
         }))};
 
     // When testing equality
@@ -510,11 +510,10 @@ TEST(SampleAllocateePtrTest, UnderlyingUniquePtrIsFreedOnDestruction)
     {
         // Given a SampleAllocateePtr with an underlying unique_ptr
 
-        SampleAllocateePtr<ObjectDestructionNotifier> unit_with_unique_ptr{
-            MakeSampleAllocateePtr(mock_binding::SampleAllocateePtr<ObjectDestructionNotifier>(
-                new ObjectDestructionNotifier(is_destructed), [](ObjectDestructionNotifier* p) {
-                    delete p;
-                }))};
+        SampleAllocateePtr<ObjectDestructionNotifier> unit_with_unique_ptr{MakeSampleAllocateePtr(
+            mock_binding::SampleAllocateePtr(new ObjectDestructionNotifier(is_destructed), [](void* p) {
+                delete static_cast<ObjectDestructionNotifier*>(p);
+            }))};
 
         // The underlying object will not be freed while the SampleAllocateePtr has not been destructed
         EXPECT_FALSE(is_destructed);
@@ -540,7 +539,7 @@ TEST_F(SampleAllocateePtrFixture, UnderlyingLolaPtrIsFreedOnDestruction)
 
     bool is_destructed{false};
     ObjectDestructionNotifier object_destruction_notifier(is_destructed);
-    lola::SampleAllocateePtr<ObjectDestructionNotifier> lola_allocatee_ptr{
+    lola::SampleAllocateePtr lola_allocatee_ptr{
         &object_destruction_notifier, event_data_ctrl, consumer_event_data_ctrl_qm_local_, event_data_slot_index_};
     {
         SampleAllocateePtr<ObjectDestructionNotifier> unit_with_lola_sample_allocatee_ptr{

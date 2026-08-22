@@ -36,13 +36,10 @@
 namespace score::mw::com::impl::lola
 {
 
-template <typename SampleType>
 class SkeletonEventAttorney
 {
   public:
-    explicit SkeletonEventAttorney(SkeletonEvent<SampleType>& skeleton_event) noexcept : skeleton_event_{skeleton_event}
-    {
-    }
+    explicit SkeletonEventAttorney(SkeletonEvent& skeleton_event) noexcept : skeleton_event_{skeleton_event} {}
 
     void SetQmDisconnect(const bool qm_disconnect_value)
     {
@@ -51,11 +48,11 @@ class SkeletonEventAttorney
 
     EventDataControlComposite<>& GetEventDataControlComposite()
     {
-        return skeleton_event_.skeleton_event_common_.GetEventDataControlComposite();
+        return skeleton_event_.GetEventDataControlComposite();
     }
 
   private:
-    SkeletonEvent<SampleType>& skeleton_event_;
+    SkeletonEvent& skeleton_event_;
 };
 
 namespace
@@ -90,8 +87,7 @@ class SkeletonEventTracingFixture : public SkeletonEventFixture
 
     EventSlotStatus::EventTimeStamp GetLastSendEventTimestamp(const SlotIndexType slot) noexcept
     {
-        auto& event_data_control_composite =
-            SkeletonEventAttorney<test::TestSampleType>{*skeleton_event_}.GetEventDataControlComposite();
+        auto& event_data_control_composite = SkeletonEventAttorney{*skeleton_event_}.GetEventDataControlComposite();
         return event_data_control_composite.GetEventSlotTimestamp(slot);
     }
 
@@ -166,15 +162,16 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreTracedWhenEnabled)
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points);
 
     // Given an offered event in an offered service
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // and then send is called
-    auto tracing_handler =
-        impl::tracing::CreateTracingSendCallback<test::TestSampleType>(expected_enabled_trace_points, *skeleton_event_);
-    std::ignore = skeleton_event_->Send(sample_data, {std::move(tracing_handler)}, SampleAllocateeGuard{});
+    auto tracing_handler = impl::tracing::CreateTracingSendCallback(
+        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+    std::ignore = skeleton_event_->Send(&sample_data, {std::move(tracing_handler)}, SampleAllocateeGuard{});
 }
 
 TEST_F(SkeletonEventTracingSendFixture, MultipleSendCallsUsesCorrectTracePointDataId)
@@ -235,19 +232,20 @@ TEST_F(SkeletonEventTracingSendFixture, MultipleSendCallsUsesCorrectTracePointDa
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points);
 
     // Given an offered event in an offered service
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // and then send is called twice
-    auto tracing_handler =
-        impl::tracing::CreateTracingSendCallback<test::TestSampleType>(expected_enabled_trace_points, *skeleton_event_);
-    std::ignore = skeleton_event_->Send(sample_data[0], {std::move(tracing_handler)}, SampleAllocateeGuard{});
+    auto tracing_handler = impl::tracing::CreateTracingSendCallback(
+        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+    std::ignore = skeleton_event_->Send(&sample_data[0], {std::move(tracing_handler)}, SampleAllocateeGuard{});
 
-    auto tracing_handler_2 =
-        impl::tracing::CreateTracingSendCallback<test::TestSampleType>(expected_enabled_trace_points, *skeleton_event_);
-    std::ignore = skeleton_event_->Send(sample_data[1], {std::move(tracing_handler_2)}, SampleAllocateeGuard{});
+    auto tracing_handler_2 = impl::tracing::CreateTracingSendCallback(
+        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+    std::ignore = skeleton_event_->Send(&sample_data[1], {std::move(tracing_handler_2)}, SampleAllocateeGuard{});
 }
 
 TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenAllocateFails)
@@ -274,7 +272,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenAllocateFails)
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, kEnforceMaxSamples);
 
     // Given an offered event in an offered service
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // When all of the available slots are used up such that the next call to Send will not be able to allocate a slot
     std::list<impl::SampleAllocateePtr<test::TestSampleType>> data_vector{};
@@ -286,9 +284,9 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenAllocateFails)
     }
 
     // and then send is called
-    auto tracing_handler =
-        impl::tracing::CreateTracingSendCallback<test::TestSampleType>(expected_enabled_trace_points, *skeleton_event_);
-    std::ignore = skeleton_event_->Send(sample_data, {std::move(tracing_handler)}, SampleAllocateeGuard{});
+    auto tracing_handler = impl::tracing::CreateTracingSendCallback(
+        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
+    std::ignore = skeleton_event_->Send(&sample_data, {std::move(tracing_handler)}, SampleAllocateeGuard{});
 }
 
 using SkeletonEventTracingSendWithAllocateFixture = SkeletonEventTracingFixture;
@@ -348,10 +346,11 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendWithAllocateCallsAreTrac
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points);
 
     // Given an offered event in an offered service
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // When allocating a slot
     auto slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
@@ -359,11 +358,11 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendWithAllocateCallsAreTrac
     auto& slot = slot_result.value();
 
     // and assigning a value to the slot
-    *slot = sample_data;
+    *(static_cast<test::TestSampleType*>(slot.Get())) = sample_data;
 
     // and then send is called
-    auto tracing_handler = impl::tracing::CreateTracingSendWithAllocateCallback<test::TestSampleType>(
-        expected_enabled_trace_points, *skeleton_event_);
+    auto tracing_handler = impl::tracing::CreateTracingSendWithAllocateCallback(
+        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
     std::ignore = skeleton_event_->Send(std::move(slot), {std::move(tracing_handler)});
 }
 TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrectTracePointDataId)
@@ -425,10 +424,11 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points);
 
     // Given an offered event in an offered service
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // When allocating a slot
     auto slot_result = skeleton_event_->Allocate(SampleAllocateeGuard{});
@@ -436,11 +436,11 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
     auto& slot = slot_result.value();
 
     // and assigning a value to the slot
-    *slot = sample_data[0];
+    *(static_cast<test::TestSampleType*>(slot.Get())) = sample_data[0];
 
     // and then send is called
-    auto tracing_handler = impl::tracing::CreateTracingSendWithAllocateCallback<test::TestSampleType>(
-        expected_enabled_trace_points, *skeleton_event_);
+    auto tracing_handler = impl::tracing::CreateTracingSendWithAllocateCallback(
+        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
     std::ignore = skeleton_event_->Send(std::move(slot), {std::move(tracing_handler)});
 
     // and then allocating another slot
@@ -449,9 +449,9 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
     auto& slot_2 = slot_result_2.value();
 
     // and assigning a value to the slot
-    *slot_2 = sample_data[1];
-    auto tracing_handler_2 = impl::tracing::CreateTracingSendWithAllocateCallback<test::TestSampleType>(
-        expected_enabled_trace_points, *skeleton_event_);
+    *(static_cast<test::TestSampleType*>(slot_2.Get())) = sample_data[1];
+    auto tracing_handler_2 = impl::tracing::CreateTracingSendWithAllocateCallback(
+        expected_enabled_trace_points, test::kEventSampleTypeSizeInfo, *skeleton_event_);
 
     // and then send is called again
     std::ignore = skeleton_event_->Send(std::move(slot_2), {std::move(tracing_handler_2)});
@@ -470,10 +470,11 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture, DisablingTracingWillNotRegisterT
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points);
 
     // Given an offered event in an offered service
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // Then a TransactionLog is not registered
     auto& transaction_log_set = GetTransactionLogSet(QualityType::kASIL_QM);
@@ -495,10 +496,11 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture, WhenSendTracingEnabledTransactio
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points);
 
     // Given an offered event in an offered service
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // Then a TransactionLog is registered
     ASSERT_TRUE(GetSkeletonTransactionLog(QualityType::kASIL_QM).has_value());
@@ -517,10 +519,11 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture, EnablingSendWithAllocateTracingW
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points);
 
     // Given an offered event in an offered service
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // Then a TransactionLog is registered
     ASSERT_TRUE(GetSkeletonTransactionLog(QualityType::kASIL_QM).has_value());
@@ -539,11 +542,12 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture,
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points,
                             field_getter_enabled);
 
     // When the event is offered
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // Then a TransactionLog is registered on the QM TransactionLogSet
     ASSERT_TRUE(GetSkeletonTransactionLog(QualityType::kASIL_QM).has_value());
@@ -563,10 +567,11 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillRemoveRe
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points);
 
     // Given an offered event in an offered service
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // Then a TransactionLog is registered
     auto& transaction_log_set = GetTransactionLogSet(QualityType::kASIL_QM);
@@ -590,10 +595,11 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillNotRemov
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points);
 
     // Given an offered event in an offered service
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // Then a TransactionLog is not registered, because expected_enabled_trace_points has no corresponding trace points
     // enabled
@@ -625,8 +631,9 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillCallClea
                             max_samples_,
                             max_subscribers_,
                             kEnforceMaxSamples,
+                            QualityType::kASIL_QM,
                             expected_enabled_trace_points);
-    std::ignore = skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer(std::nullopt);
 
     // When calling PrepareStopOffer
     skeleton_event_->PrepareStopOffer();

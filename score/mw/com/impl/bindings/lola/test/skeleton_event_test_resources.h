@@ -37,13 +37,14 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
                                  const std::size_t max_samples,
                                  const std::uint8_t max_subscribers,
                                  bool enforce_max_samples = true,
+                                 const QualityType quality_type = QualityType::kASIL_QM,
                                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {},
-                                 bool field_getter_enabled = false,
-                                 std::optional<InstanceIdentifier> instance_identifier = std::nullopt);
+                                 bool field_getter_enabled = false);
 
-    InstanceIdentifier GetValidInstanceIdentifier();
+    InstanceIdentifier GetValidInstanceIdentifier(QualityType quality_type);
 
     EventControl* GetEventControl(ElementFqId element_fq_id, QualityType quality_type) const noexcept;
+    std::optional<std::reference_wrapper<TransactionLog>> GetSkeletonTransactionLog(const QualityType quality_type);
 
     const std::uint8_t max_samples_{5U};
     std::uint8_t max_subscribers_{3U};
@@ -82,12 +83,12 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
                                                             QualityType::kASIL_QM,
                                                             instance_specifier_};
 
-    std::unique_ptr<SkeletonEvent<test::TestSampleType>> skeleton_event_;
+    std::unique_ptr<SkeletonEvent> skeleton_event_;
 
     /// \brief Mock event binding used only to "offer" a single service-element when the parent skeleton's
     ///        PrepareOffer() is called (see InitialiseSkeletonEvent). Offering one binding sizes the fixed-capacity
     ///        containers within ServiceDataStorage to hold the single event/field that the test subsequently registers.
-    mock_binding::SkeletonEvent<test::TestSampleType> mock_event_binding_{};
+    mock_binding::SkeletonEvent mock_event_binding_{};
 
     /// mocks used by test
     ServiceDiscoveryMock service_discovery_mock_{};

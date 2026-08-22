@@ -25,55 +25,33 @@
 namespace score::mw::com::impl::lola
 {
 
-/// \brief SampleAllocateePtr behaves as unique_ptr to an allocated sample (event slot). A user might manipulate the
+/// \brief SampleAllocateePtr behaves as unique_ptr to an allocated sample (event slot). It is type-erased as generally
+/// our binding layer is type-erased (i.e. it just moves bytes around).
+/// A user might manipulate the
 /// value of the underlying pointer in any regard. If the value shall be transmitted to any consumer Send() most be
 /// invoked.
 /// If the pointer gets destroyed without invoking Send(), the changed data will be lost.
 ///
 /// This type should not be created on its own, rather it shall be created by an Allocate() call towards an event. In
 /// any case this type is the binding specific representation of an SampleAllocateePtr.
-template <typename SampleType>
 class SampleAllocateePtr
 {
     // friends to the View wrapper; is used to access managed obj and event_data_control_ptr_
-    template <typename T>
     // coverity[autosar_cpp14_a11_3_1_violation] see above
     friend class SampleAllocateePtrView;
-    template <typename T>
     // coverity[autosar_cpp14_a11_3_1_violation] see above
     friend class SampleAllocateePtrMutableView;
 
   public:
-    using pointer = SampleType*;
-    using const_pointer = SampleType* const;
-    using element_type = SampleType;
+    using pointer = void*;
+    using const_pointer = void* const;
+    using element_type = void;
 
     /// \brief default ctor giving invalid SampleAllocateePtr (owning no managed object, invalid event slot)
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-member-init): all members are initialized in the delegated constructor
-    // Suppress "AUTOSAR C++14 M3-2-2" rule finding. This rule declares: "The One Definition Rule shall not be
-    // violated.".
-    // Templates are allowed to have multiple definitions across translation units as long as they are identical.
-    // coverity[autosar_cpp14_m3_2_2_violation]
     explicit SampleAllocateePtr() noexcept : SampleAllocateePtr{nullptr} {}
-    // NOLINTEND(cppcoreguidelines-pro-type-member-init): see above
 
     /// \brief ctor from nullptr_t also giving invalid SampleAllocateePtr like default ctor.
-    // Suppress "AUTOSAR C++14 M3-2-2" rule finding. This rule declares: "The One Definition Rule shall not be
-    // violated.".
-    // Templates are allowed to have multiple definitions across translation units as long as they are identical.
-    // Suppress "AUTOSAR C++14 A12-1-5" rule finding. This rule declares: "Common class initialization for non-constant
-    // members shall be done by a delegating constructor.".
-    // Here we need to differentiation the class initialization in case sampleAllocateePtr is nullptr and the other
-    // constructor(case) if we provide a valid ptr(not null) so for sure EventDataControlComposite has a valid
-    // reference. So we need to have two different class initializations. coverity[autosar_cpp14_m3_2_2_violation]
-    // coverity[autosar_cpp14_a12_1_5_violation]
-    explicit SampleAllocateePtr(std::nullptr_t /* ptr */) noexcept
-        : managed_object_{nullptr},
-          event_slot_index_{kUninitialisedEventSlotIndex},
-          event_data_control_ptr_{nullptr},
-          consumer_event_data_control_local_view_{nullptr}
-    {
-    }
+    explicit SampleAllocateePtr(std::nullptr_t /* ptr */) noexcept;
 
     /// \brief ctor creates valid SampleAllocateePtr from its members.
     /// \param ptr pointer to managed object
@@ -82,54 +60,28 @@ class SampleAllocateePtr
     SampleAllocateePtr(pointer ptr,
                        EventDataControlComposite<>& event_data_ctrl,
                        ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view,
-                       const SlotIndexType slot_index) noexcept
-        : managed_object_{ptr},
-          event_slot_index_{slot_index},
-          event_data_control_ptr_{&event_data_ctrl},
-          consumer_event_data_control_local_view_{&consumer_event_data_control_local_view}
-    {
-    }
+                       const SlotIndexType slot_index) noexcept;
 
     /// \brief SampleAllocateePtr is not copyable.
     SampleAllocateePtr(const SampleAllocateePtr&) = delete;
 
     /// \brief SampleAllocateePtr is movable.
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): all members initialized by default constructor
-    SampleAllocateePtr(SampleAllocateePtr&& other) noexcept : SampleAllocateePtr()
-    {
-        this->swap(other);
-    };
+    SampleAllocateePtr(SampleAllocateePtr&& other) noexcept;
 
     /// \brief dtor discards underlying event in event slot (if we have a valid event slot)
-    ~SampleAllocateePtr() noexcept
-    {
-        internal_delete();
-    };
+    ~SampleAllocateePtr() noexcept;
 
     /// \brief returns managed object.
-    /// \todo: Maybe remove later, if not used anymore by user facing wrappers.
     pointer get() const noexcept
     {
         return managed_object_;
-    };
+    }
 
     /// \brief reset managed object and eventually discard underlying event slot.
-    void reset() noexcept
-    {
-        internal_delete();
-    }
+    void reset() noexcept;
 
     /// \brief swap content with _other_
-    void swap(SampleAllocateePtr& other) noexcept
-    {
-        // Search for custom swap functions via ADL, and use std::swap if none are found.
-        using std::swap;
-
-        swap(this->managed_object_, other.managed_object_);
-        swap(this->event_slot_index_, other.event_slot_index_);
-        swap(this->event_data_control_ptr_, other.event_data_control_ptr_);
-        swap(this->consumer_event_data_control_local_view_, other.consumer_event_data_control_local_view_);
-    }
+    void swap(SampleAllocateePtr& other) noexcept;
 
     /// \brief check validity.
     /// \return true, if SampleAllocateePtr owns a valid managed object
@@ -138,60 +90,27 @@ class SampleAllocateePtr
         return managed_object_ != nullptr;
     }
 
-    /// \brief deref underlying managed object.
-    /// \return ref of managed object.
-    typename std::add_lvalue_reference<SampleType>::type operator*() const noexcept
-    {
-        return *managed_object_;
-    }
-    /// \brief access managed object
-    /// \return pointer to managed object
-    pointer operator->() const noexcept
-    {
-        return managed_object_;
-    }
-
     /// \brief assign nullptr.
     /// \return reference to nullptr assigned (invalid) SampleAllocateePtr
-    SampleAllocateePtr& operator=(std::nullptr_t /* ptr */) & noexcept
-    {
-        internal_delete();
-        return *this;
-    }
+    SampleAllocateePtr& operator=(std::nullptr_t /* ptr */) & noexcept;
+
     /// \brief SampleAllocateePtr is not copy assignable.
     SampleAllocateePtr& operator=(const SampleAllocateePtr& other) & = delete;
 
     /// \brief SampleAllocateePtr is move assignable.
-    SampleAllocateePtr& operator=(SampleAllocateePtr&& other) & noexcept
-    {
-        this->swap(other);
-        return *this;
-    };
+    SampleAllocateePtr& operator=(SampleAllocateePtr&& other) & noexcept;
 
     /// \brief access to internal slot index
     /// \return slot index of underlying shmem event slot.
     SlotIndexType GetReferencedSlot() const noexcept
     {
         return event_slot_index_;
-    };
+    }
 
   private:
     static constexpr SlotIndexType kUninitialisedEventSlotIndex = std::numeric_limits<SlotIndexType>::max();
 
-    void internal_delete()
-    {
-        managed_object_ = nullptr;
-        if (event_slot_index_ < kUninitialisedEventSlotIndex)
-        {
-            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-                event_data_control_ptr_ != nullptr,
-                "The only time that event_data_control_ptr_ is nullptr is if the SampleAllocateePtr is default "
-                "initialised or initialised with a nullptr. In both these, cases event_slot_index_ == "
-                "kUninitialisedEventSlotIndex so we will never enter this branch.");
-            event_data_control_ptr_->Discard(event_slot_index_);
-            event_slot_index_ = kUninitialisedEventSlotIndex;
-        }
-    }
+    void internal_delete();
 
     pointer managed_object_;
     SlotIndexType event_slot_index_;
@@ -207,56 +126,35 @@ class SampleAllocateePtr
 
 /// \brief Specializes the std::swap algorithm for SampleAllocateePtr. Swaps the contents of lhs and rhs. Calls
 /// lhs.swap(rhs)
-template <typename SampleType>
-void swap(SampleAllocateePtr<SampleType>& lhs, SampleAllocateePtr<SampleType>& rhs) noexcept
-{
-    lhs.swap(rhs);
-}
+void swap(SampleAllocateePtr& lhs, SampleAllocateePtr& rhs) noexcept;
 
 /// \brief SampleAllocateePtr is user facing, in order to interact with its internals we provide a view towards it
-template <typename SampleType>
 class SampleAllocateePtrView
 {
   public:
-    explicit SampleAllocateePtrView(const SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
+    explicit SampleAllocateePtrView(const SampleAllocateePtr& ptr) : ptr_{ptr} {}
 
-    const EventDataControlComposite<>& GetEventDataControlComposite() const noexcept
-    {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(ptr_.event_data_control_ptr_ != nullptr);
-        return *ptr_.event_data_control_ptr_;
-    }
+    const EventDataControlComposite<>& GetEventDataControlComposite() const noexcept;
 
-    typename SampleAllocateePtr<SampleType>::pointer GetManagedObject() const noexcept
-    {
-        return ptr_.managed_object_;
-    }
+    typename SampleAllocateePtr::pointer GetManagedObject() const noexcept;
 
   private:
-    const SampleAllocateePtr<SampleType>& ptr_;
+    const SampleAllocateePtr& ptr_;
 };
 
 /// \brief SampleAllocateePtr is user facing, in order to interact with its internals we provide a view towards it
-template <typename SampleType>
 class SampleAllocateePtrMutableView
 {
   public:
-    explicit SampleAllocateePtrMutableView(SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
+    explicit SampleAllocateePtrMutableView(SampleAllocateePtr& ptr) : ptr_{ptr} {}
 
-    EventDataControlComposite<>& GetEventDataControlComposite() const noexcept
-    {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(ptr_.event_data_control_ptr_ != nullptr);
-        return *ptr_.event_data_control_ptr_;
-    }
+    EventDataControlComposite<>& GetEventDataControlComposite() const noexcept;
 
     [[nodiscard]]
-    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView()
-    {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(ptr_.consumer_event_data_control_local_view_ != nullptr);
-        return *ptr_.consumer_event_data_control_local_view_;
-    }
+    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView();
 
   private:
-    SampleAllocateePtr<SampleType>& ptr_;
+    SampleAllocateePtr& ptr_;
 };
 
 // SampleAllocateePtr stores a raw pointer to EventDataControlComposite. If the composite were

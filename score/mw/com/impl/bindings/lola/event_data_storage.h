@@ -90,6 +90,16 @@ class EventDataStorage final
     std::size_t type_erased_data_slots_storage_size_in_bytes_;
 };
 
+/// \brief Adds allocation done by EventDataStorage to an existing allocation_sequence
+/// \details Gets called by the "parent" CalculateServiceDataStorageShmSize() in its calculation.
+/// \param allocation_sequence The sequence of allocations to which the EventDataStorage allocations will be added.
+/// \param event_sample_array_size_info The size information of the event sample array.
+/// \todo Handing over the complete event sample array should be changed, because it already contains the expectation,
+/// how EventDataStorage will internally store the events/slots! But it needs a rework in the call chain!
+/// I.e. we should hand down number_of_slots/DataTypeSizeInfo per single event separately.
+void AddEventDataStorageShmSizeAllocation(std::vector<score::memory::DataTypeSizeInfo>& allocation_sequence,
+                                          memory::DataTypeSizeInfo event_sample_array_size_info);
+
 }  // namespace score::mw::com::impl::lola
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_STORAGE_H

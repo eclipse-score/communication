@@ -113,7 +113,7 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
     SkeletonBinding::SkeletonEventBindings events_{};
     SkeletonBinding::SkeletonFieldBindings fields_{};
 
-    mock_binding::SkeletonEvent<std::string> mock_event_binding_{};
+    mock_binding::SkeletonEvent mock_event_binding_{};
 };
 
 TEST_F(SkeletonTestMockedSharedMemoryFixture, GetBindingType)
@@ -1300,7 +1300,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
     ServiceTypeDeployment service_type_depl = CreateTypeDeployment(
         1U, {{test::kFooEventName, test::kFooEventId}, {test::kDumbEventName, test::kDumbEventId}});
 
-    mock_binding::SkeletonEvent<std::string> foo_event{}, dumb_event{};
+    mock_binding::SkeletonEvent foo_event{}, dumb_event{};
 
     std::vector<std::pair<std::string, LolaEventInstanceDeployment>> lola_event_inst_depls;
     std::vector<std::pair<std::string, LolaFieldInstanceDeployment>> lola_field_inst_depls;

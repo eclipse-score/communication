@@ -80,6 +80,7 @@ cc_library(
     ],
     deps = [
         ":skeleton_test_resources",
+        ":transaction_log_test_resources",
         "//score/mw/com/impl:service_discovery_mock",
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_mock",

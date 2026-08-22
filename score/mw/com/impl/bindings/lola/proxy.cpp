@@ -629,12 +629,13 @@ const EventDataStorage& Proxy::GetEventDataStorage(const ElementFqId element_fq_
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         data_ != nullptr, "Proxy::GetEventDataStorage: Managed memory data pointer is Null");
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
-    const auto event_entry = service_data_storage.events_.find(element_fq_id);
+    auto* const event_entry = service_data_storage.events_.find(element_fq_id);
     if (event_entry == service_data_storage.events_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find data storage for given event instance. Terminating.";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(false,
+                                                          "Unable to find data storage for given event instance.");
     }
     // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
     // The "event_entry" variable is an iterator of interprocess map returned by the "find" method.

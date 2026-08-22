@@ -144,9 +144,6 @@ class Proxy : public ProxyBinding
     TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id);
 
     /// Retrieves a reference to the event data storage area for a given ElementFqId.
-    ///
-    /// \param element_fq_id The Event ID.
-    /// \return A reference to the EventDataStorage.
     const EventDataStorage& GetEventDataStorage(const ElementFqId element_fq_id) const;
 
     /// Retrieves an event data meta info.

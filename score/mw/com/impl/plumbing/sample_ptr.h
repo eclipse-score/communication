@@ -22,6 +22,7 @@
 #include <score/overload.hpp>
 
 #include <memory>
+#include <type_traits>
 #include <utility>
 #include <variant>
 
@@ -77,6 +78,45 @@ class SamplePtr final
     }
     SamplePtr& operator=(const SamplePtr<SampleType>&) = delete;
     SamplePtr& operator=(SamplePtr<SampleType>&& other) & noexcept = default;
+
+    /// \brief Interim rebind ctor converting a type-erased SamplePtr<void> into a concrete SamplePtr<SampleType>.
+    ///
+    /// \details This is needed because, as part of a stepwise refactoring, the skeleton-side binding API
+    /// already returns type-erased SamplePtr<void> instances (see SkeletonEventBinding::GetLatestSample()), while
+    /// this class - unlike SampleAllocateePtr - still is (and, for now, needs to remain) a class template, since it
+    /// is also used unchanged by the (not yet refactored) proxy-side (e.g. GetNewSamples()).
+    ///
+    /// \attention This is an INTERIM solution only! Once lola::SamplePtr and mock_binding::SamplePtr get converted
+    /// into non-template, fully type-erased classes (mirroring what was already done for SampleAllocateePtr), this
+    /// constructor - and the whole rebind mechanism built around it - becomes obsolete and shall be removed.
+    ///
+    /// Unlike SampleAllocateePtr's rebind ctor, this cannot be implemented as a simple whole-variant swap: since
+    /// lola::SamplePtr<T> and mock_binding::SamplePtr<T> remain templated on SampleType, binding_sample_ptr_'s
+    /// variant type differs between SamplePtr<void> and SamplePtr<SampleType>. Instead, the currently active
+    /// alternative of \p other is visited and rebuilt as the corresponding alternative of this instance.
+    ///
+    /// \tparam OtherSampleType source SampleType; only enabled for OtherSampleType == void and SampleType != void, as
+    ///                         the rebind direction is always from type-erased to concrete.
+    /// \param other type-erased SamplePtr<void> to rebind into a SamplePtr<SampleType>. Left in an invalid
+    ///              (blank) state afterwards.
+    template <typename OtherSampleType,
+              typename = std::enable_if_t<std::is_void<OtherSampleType>::value && !std::is_void<SampleType>::value>>
+    explicit SamplePtr(SamplePtr<OtherSampleType>&& other) noexcept
+        : reference_guard_{std::move(other.reference_guard_)}
+    {
+        auto rebind_visitor = score::cpp::overload(
+            [this](lola::SamplePtr<void>&& lola_ptr) noexcept {
+                binding_sample_ptr_ = lola::SamplePtr<SampleType>{std::move(lola_ptr)};
+            },
+            [this](mock_binding::SamplePtr<void>&& mock_ptr) noexcept {
+                binding_sample_ptr_ = mock_binding::RebindSamplePtr<SampleType>(std::move(mock_ptr));
+            },
+            [this](score::cpp::blank&&) noexcept {
+                binding_sample_ptr_ = score::cpp::blank{};
+            });
+        std::visit(rebind_visitor, std::move(other.binding_sample_ptr_));
+        other.binding_sample_ptr_ = score::cpp::blank{};
+    }
 
     SamplePtr& operator=(std::nullptr_t) noexcept
     {
@@ -199,6 +239,13 @@ class SamplePtr final
     std::variant<score::cpp::blank, lola::SamplePtr<SampleType>, mock_binding::SamplePtr<SampleType>>
         binding_sample_ptr_;
     SampleReferenceGuard reference_guard_;
+
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision: needed so that the interim rebind ctor above can access the private members of a
+    // differently-instantiated SamplePtr<OtherSampleType>. See the rebind ctor's doxygen comment for context.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    template <typename OtherSampleType>
+    friend class SamplePtr;
 
     template <typename SamplePtrType>
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
