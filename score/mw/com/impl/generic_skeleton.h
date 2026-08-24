@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <string_view>
+#include <tuple>
 
 namespace score::mw::com::impl
 {
@@ -33,6 +34,16 @@ struct EventInfo
 {
     std::string_view name;
     DataTypeMetaInfo data_type_meta_info;
+
+    /// @brief Members to be (de)serialized by score::mw::com::gateway serialization, in order.
+    std::tuple<const std::string_view&, const DataTypeMetaInfo&> GetSerializeMembers() const
+    {
+        return {name, data_type_meta_info};
+    }
+    std::tuple<std::string_view&, DataTypeMetaInfo&> GetSerializeMembers()
+    {
+        return {name, data_type_meta_info};
+    }
 };
 
 struct GenericSkeletonServiceElementInfo

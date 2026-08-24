@@ -20,6 +20,7 @@
 #include <cstring>
 #include <limits>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -49,6 +50,30 @@ struct is_std_string<std::string> : std::true_type
 {
 };
 
+// Helper to detect std::string_view
+template <typename T>
+struct is_std_string_view : std::false_type
+{
+};
+
+template <>
+struct is_std_string_view<std::string_view> : std::true_type
+{
+};
+
+// Helper to detect types that opt into member-wise (de)serialization via GetSerializeMembers(),
+// so they are not accidentally routed to a raw memcpy just because they happen to be trivially
+// copyable (e.g. a struct holding a std::string_view).
+template <typename T, typename = void>
+struct has_get_serialize_members : std::false_type
+{
+};
+
+template <typename T>
+struct has_get_serialize_members<T, std::void_t<decltype(std::declval<T&>().GetSerializeMembers())>> : std::true_type
+{
+};
+
 // Tag types for dispatch
 struct trivially_copyable_tag
 {
@@ -57,6 +82,9 @@ struct std_vector_tag
 {
 };
 struct std_string_tag
+{
+};
+struct std_string_view_tag
 {
 };
 struct non_trivial_tag
@@ -70,6 +98,14 @@ constexpr auto serialization_tag()
     if constexpr (is_std_string<std::decay_t<T>>::value)
     {
         return std_string_tag{};
+    }
+    else if constexpr (is_std_string_view<std::decay_t<T>>::value)
+    {
+        return std_string_view_tag{};
+    }
+    else if constexpr (has_get_serialize_members<T>::value)
+    {
+        return non_trivial_tag{};
     }
     else if constexpr (std::is_trivially_copyable_v<T>)
     {
@@ -147,6 +183,28 @@ score::Result<uint32_t> Serialize(const T& string, score::cpp::span<std::byte> t
     // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage): This is no string_view.
     std::memcpy(target_buffer.data(), string.data(), string.size());
     std::memset(&target_buffer[string.size()], 0, 1U);
+    return static_cast<uint32_t>(required_size);
+}
+
+/**
+ * @brief Serialize implementation for std::string_view.
+ * @details See above in the main Serialize function. Uses the same wire format as std::string: the
+ * viewed characters followed by a null terminator. Necessary because std::string_view is trivially
+ * copyable as an object (pointer + length), which would otherwise cause it to be serialized as a raw
+ * copy of the pointer/length rather than of the characters it views.
+ */
+template <typename T>
+score::Result<uint32_t> Serialize(const T& string_view_value,
+                                  score::cpp::span<std::byte> target_buffer,
+                                  std_string_view_tag)
+{
+    const auto required_size = string_view_value.size() + 1U;
+    if (target_buffer.size() < required_size)
+    {
+        return score::MakeUnexpected(score::mw::com::gateway::MessageErrorc::kBufferTooSmall);
+    }
+    std::memcpy(target_buffer.data(), string_view_value.data(), string_view_value.size());
+    std::memset(&target_buffer[string_view_value.size()], 0, 1U);
     return static_cast<uint32_t>(required_size);
 }
 
@@ -254,6 +312,12 @@ std::size_t ComputeSerializedSize(const T& value, std_string_tag)
 }
 
 template <typename T>
+std::size_t ComputeSerializedSize(const T& value, std_string_view_tag)
+{
+    return value.size() + 1U;
+}
+
+template <typename T>
 std::size_t ComputeSerializedSize(const T&, trivially_copyable_tag)
 {
     return sizeof(T);
@@ -304,6 +368,28 @@ score::Result<uint32_t> Deserialize(T& target_string, score::cpp::span<const std
         return score::MakeUnexpected(score::mw::com::gateway::MessageErrorc::kPayloadInvalid);
     }
     target_string.assign(string_start, string_len);
+    return static_cast<uint32_t>(string_len + 1U);
+}
+
+/**
+ * @brief Deserialize implementation for std::string_view.
+ * @details See above in the main Deserialize function. Unlike std::string, std::string_view cannot own a copy of
+ * the data, so the deserialized view points back into source_buffer; the caller is responsible for keeping the
+ * buffer alive for as long as the view is used.
+ */
+template <typename T>
+score::Result<uint32_t> Deserialize(T& target_string_view,
+                                    score::cpp::span<const std::byte> source_buffer,
+                                    std_string_view_tag)
+{
+    auto string_start = reinterpret_cast<const char*>(source_buffer.data());
+    const auto string_len = strnlen(string_start, source_buffer.size());
+    const auto remaining_size = source_buffer.size();
+    if (string_len == remaining_size || string_len == 0)
+    {
+        return score::MakeUnexpected(score::mw::com::gateway::MessageErrorc::kPayloadInvalid);
+    }
+    target_string_view = T(string_start, string_len);
     return static_cast<uint32_t>(string_len + 1U);
 }
 
