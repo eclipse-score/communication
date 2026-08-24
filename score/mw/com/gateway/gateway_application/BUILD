@@ -117,9 +117,7 @@ cc_library(
     srcs = ["gateway_application_runner.cpp"],
     hdrs = ["gateway_application_runner.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/mw/com/gateway:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":gateway_application",
         "//score/mw/com/gateway/gateway_application/configuration:gateway_config_parser",
@@ -134,7 +132,9 @@ cc_binary(
         ":logging.json",
     ],
     env = {"MW_LOG_CONFIG_FILE": "$(location logging.json)"},
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//score/mw/com/gateway:__subpackages__",
+    ],
     deps = [
         ":gateway_application_runner",
         "//score/mw/com:runtime",
