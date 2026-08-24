@@ -38,6 +38,8 @@ using HelloWorldProxy = score::mw::com::AsProxy<score::mw::com::tutorial::HelloW
 namespace
 {
 
+constexpr auto kSamplePollInterval{std::chrono::milliseconds{200}};
+
 // Bundles a proxy for a discovered service instance together with a human-readable description of its instance id
 // (used for logging).
 struct DiscoveredInstance
@@ -153,7 +155,7 @@ int main()
     // Main loop: poll the "message" event of every discovered service instance for new samples.
     while (g_running.load(std::memory_order_relaxed))
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(kSamplePollInterval);
 
         std::lock_guard<std::mutex> lock{discovered_instances_mutex};
         for (auto& discovered_instance : discovered_instances)

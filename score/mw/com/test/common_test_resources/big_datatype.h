@@ -29,6 +29,19 @@ namespace score::mw::com::test
 
 constexpr std::size_t MAX_SUCCESSORS = 16U;
 constexpr std::size_t MAX_LANES = 32000U;
+inline constexpr std::size_t MAX_LANE_CONNECTION_INFOS = 10U;
+inline constexpr std::size_t MAX_LANE_RESTRICTION_INFOS = 10U;
+inline constexpr std::size_t MAX_SHOULDER_LANE_INFOS = 10U;
+inline constexpr std::size_t MAX_LINK_IDS_PER_LANE = 10U;
+inline constexpr std::size_t MAX_PREDECESSOR_LANES = 10U;
+inline constexpr std::size_t MAX_CENTER_LINE_POINTS = 10U;
+inline constexpr std::size_t MAX_SPEED_LIMITS_PER_LANE = 10U;
+inline constexpr std::size_t MAX_BOUNDARY_IDS_PER_SIDE = 10U;
+inline constexpr std::size_t MAX_LINK_ASSOCIATIONS_PER_LANE = 10U;
+inline constexpr std::size_t MAX_BIDIRECTIONAL_USAGE_RANGES = 10U;
+inline constexpr std::size_t FRAME_ID_LENGTH = 10U;
+inline constexpr std::size_t MAX_LANE_BOUNDARIES = 20000U;
+inline constexpr std::size_t MAX_LANE_GROUPS = 20000U;
 
 enum class StdTimestampSyncState : std::uint32_t
 {
@@ -126,7 +139,7 @@ struct LaneConnectionInfo
     }
 };
 
-using LaneConnectionInfoList = std::array<LaneConnectionInfo, 10U>;
+using LaneConnectionInfoList = std::array<LaneConnectionInfo, MAX_LANE_CONNECTION_INFOS>;
 
 struct LaneRestrictionInfo
 {
@@ -138,7 +151,7 @@ struct LaneRestrictionInfo
     }
 };
 
-using LaneRestrictionInfoList = std::array<LaneRestrictionInfo, 10U>;
+using LaneRestrictionInfoList = std::array<LaneRestrictionInfo, MAX_LANE_RESTRICTION_INFOS>;
 
 struct ShoulderLaneInfo
 {
@@ -150,7 +163,7 @@ struct ShoulderLaneInfo
     }
 };
 
-using ShoulderLaneInfoList = std::array<ShoulderLaneInfo, 10U>;
+using ShoulderLaneInfoList = std::array<ShoulderLaneInfo, MAX_SHOULDER_LANE_INFOS>;
 
 struct LaneToLinkAssociation
 {
@@ -225,16 +238,16 @@ struct MapApiLaneData
     LaneIdType lane_id{0U};
 
     /// @brief range: [1, n]. The IDs of all links that this lane belongs to
-    std::array<map_api::LinkId, 10U> link_ids;
+    std::array<map_api::LinkId, MAX_LINK_IDS_PER_LANE> link_ids;
 
     /// @brief The IDs of all lane from which this lane can be reached in longitudinal direction
-    std::array<LaneIdType, 10U> predecessor_lanes;
+    std::array<LaneIdType, MAX_PREDECESSOR_LANES> predecessor_lanes;
 
     /// @brief The IDs of all lane that can be reached from this lane in longitudinal direction
     std::array<LaneIdType, MAX_SUCCESSORS> successor_lanes;
 
     /// @brief The center line of this lane
-    std::array<adp::MapApiPointData, 10U> center_line;
+    std::array<adp::MapApiPointData, MAX_CENTER_LINE_POINTS> center_line;
 
     /// @brief The innermost left boundary at the beginning of this lane
     LaneBoundaryId left_boundary_id{0U};
@@ -278,7 +291,7 @@ struct MapApiLaneData
     map_api::LengthM length_in_m{0.0};
 
     /// @brief The speed limits on the current lane
-    std::array<adp::map_api::SpeedLimit, 10U> speed_limits;
+    std::array<adp::map_api::SpeedLimit, MAX_SPEED_LIMITS_PER_LANE> speed_limits;
 
     /// @brief struct describing whether the lane is part of calculated Most Probable Path, or if yes within a range
     adp::map_api::LaneFollowsMpp lane_follows_mpp;
@@ -287,16 +300,16 @@ struct MapApiLaneData
     bool is_fully_attributed{false};
 
     /// @brief array containing the IDs of all left lane boundaries ordered from curb to middle
-    std::array<LaneBoundaryId, 10U> left_lane_boundaries_ids;
+    std::array<LaneBoundaryId, MAX_BOUNDARY_IDS_PER_SIDE> left_lane_boundaries_ids;
 
     /// @brief array containing the IDs of all right lane boundaries ordered from curb to middle
-    std::array<LaneBoundaryId, 10U> right_lane_boundaries_ids;
+    std::array<LaneBoundaryId, MAX_BOUNDARY_IDS_PER_SIDE> right_lane_boundaries_ids;
 
     /// @brief links associated with current lane
-    std::array<map_api::LaneToLinkAssociation, 10U> link_associations;
+    std::array<map_api::LaneToLinkAssociation, MAX_LINK_ASSOCIATIONS_PER_LANE> link_associations;
 
     /// @brief array of lane ranges where lane can be used in both directions.
-    std::array<map_api::LaneUsedInBothDirections, 10U> used_in_both_directions;
+    std::array<map_api::LaneUsedInBothDirections, MAX_BIDIRECTIONAL_USAGE_RANGES> used_in_both_directions;
 
     using IsEnumerableTag = void;
 
@@ -359,7 +372,7 @@ struct MapApiLanesStamped
     /// Depending on the driving scenario, different coordinate frames can be used.
     /// Case "map_debug" : for Highway scenario it is an NTM planar coordinate system.
     /// Case: "local_map_frame": for Urban scenario it is a vehicle's local coordinate system.
-    std::array<char, 10U> frame_id;
+    std::array<char, FRAME_ID_LENGTH> frame_id;
 
     /// @brief Current projection id.
     ///
@@ -375,12 +388,12 @@ struct MapApiLanesStamped
 
     /// @brief An array, containing lane boundaries, which refer to lanes from the given parent data structure. Lane
     /// boundary indicates edge of the lane.
-    std::array<MapApiLaneBoundaryData, 20000U> lane_boundaries;
+    std::array<MapApiLaneBoundaryData, MAX_LANE_BOUNDARIES> lane_boundaries;
 
     /// @brief All lanes from HD map for a relevant piece of road.
     std::array<MapApiLaneData, MAX_LANES> lanes;
 
-    std::array<LaneGroupData, 20000U> lane_groups;
+    std::array<LaneGroupData, MAX_LANE_GROUPS> lane_groups;
 
     std::uint32_t x;
     std::size_t hash_value;

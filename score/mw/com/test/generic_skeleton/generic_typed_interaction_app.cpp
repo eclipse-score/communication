@@ -32,11 +32,19 @@
 namespace
 {
 
+constexpr std::size_t kCounterFieldSize = sizeof(std::uint64_t);
+constexpr std::chrono::seconds kConsumerSubscriptionWait{5};
+constexpr std::chrono::milliseconds kSendInterval{10};
+constexpr std::chrono::seconds kServiceDiscoveryTimeout{5};
+constexpr std::chrono::milliseconds kServiceDiscoveryPollInterval{100};
+constexpr auto kServiceDiscoveryRetryCount = kServiceDiscoveryTimeout / kServiceDiscoveryPollInterval;
+constexpr std::chrono::milliseconds kSamplePollInterval{5};
+
 struct MyEventData
 {
     std::uint64_t counter;
 #if PAYLOAD_SIZE > 8
-    char padding[PAYLOAD_SIZE - 8];
+    char padding[PAYLOAD_SIZE - kCounterFieldSize];
 #endif
 };
 
@@ -90,7 +98,7 @@ int run_provider(score::cpp::stop_token stop_token)
     // Wait for the consumer to start and subscribe BEFORE sending data
     score::mw::log::LogInfo("GenericSkeletonProvider")
         << PAYLOAD_SIZE << "-byte - Waiting 5s for consumer to subscribe...";
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(kConsumerSubscriptionWait);
 
     std::uint64_t i{0};
     while (!stop_token.stop_requested())
@@ -111,7 +119,7 @@ int run_provider(score::cpp::stop_token stop_token)
         }
 
         score::mw::log::LogInfo("GenericSkeletonProvider") << PAYLOAD_SIZE << "-byte Event Sent sample: " << i;
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(kSendInterval);
         i++;
     }
 
@@ -134,14 +142,14 @@ int run_consumer()
 
     score::Result<score::mw::com::ServiceHandleContainer<MyTestServiceProxy::HandleType>> handles_res;
     int retries{0};
-    while (retries < 50)  // Try for up to 5 seconds
+    while (retries < kServiceDiscoveryRetryCount)
     {
         handles_res = MyTestServiceProxy::FindService(instance_specifier);
         if (handles_res.has_value() && !handles_res.value().empty())
         {
             break;  // Service found!
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(kServiceDiscoveryPollInterval);
         retries++;
     }
 
@@ -201,7 +209,7 @@ int run_consumer()
             return 1;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(kSamplePollInterval);
     }
 
     if (data_mismatches > 0)

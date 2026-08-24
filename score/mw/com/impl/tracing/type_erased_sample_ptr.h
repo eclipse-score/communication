@@ -30,7 +30,9 @@ class TypeErasedSamplePtr
     }
 
   private:
-    score::cpp::callback<void(), 128U> type_erased_sample_ptr_;
+    static constexpr auto kTypeErasedSamplePtrCallbackStorageSize{128U};
+
+    score::cpp::callback<void(), kTypeErasedSamplePtrCallbackStorageSize> type_erased_sample_ptr_;
 };
 
 }  // namespace score::mw::com::impl::tracing

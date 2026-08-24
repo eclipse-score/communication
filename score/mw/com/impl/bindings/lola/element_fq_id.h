@@ -127,9 +127,13 @@ struct hash<score::mw::com::impl::lola::ElementFqId>
 {
     std::size_t operator()(const score::mw::com::impl::lola::ElementFqId& element_fq_id) const noexcept
     {
-        return std::hash<std::uint64_t>{}((static_cast<std::uint64_t>(element_fq_id.service_id_) << 32U) |
-                                          (static_cast<std::uint64_t>(element_fq_id.element_id_) << 16U) |
-                                          static_cast<std::uint64_t>(element_fq_id.instance_id_));
+        static constexpr unsigned int kServiceIdShiftBits{32U};
+        static constexpr unsigned int kElementIdShiftBits{16U};
+
+        return std::hash<std::uint64_t>{}(
+            (static_cast<std::uint64_t>(element_fq_id.service_id_) << kServiceIdShiftBits) |
+            (static_cast<std::uint64_t>(element_fq_id.element_id_) << kElementIdShiftBits) |
+            static_cast<std::uint64_t>(element_fq_id.instance_id_));
     }
 };
 }  // namespace std

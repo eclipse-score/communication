@@ -31,6 +31,7 @@ constexpr std::string_view kInstanceSpecifierString{"MyHelloWorldServiceInstance
 // kSubscriptionPending.
 constexpr std::chrono::seconds kOfferDuration{8};
 constexpr std::chrono::seconds kStopOfferDuration{5};
+constexpr auto kSendCycleDelay = std::chrono::milliseconds{500};
 
 static std::atomic<bool> g_running{true};
 
@@ -126,7 +127,7 @@ int main()
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(kSendCycleDelay);
 
         // Only send event updates while the service is currently offered.
         if (offered)

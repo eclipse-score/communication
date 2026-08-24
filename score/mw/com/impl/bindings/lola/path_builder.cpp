@@ -22,6 +22,8 @@ namespace
 {
 
 using InstanceId = LolaServiceInstanceId::InstanceId;
+constexpr std::int32_t kServiceIdWidth{16};
+constexpr std::int32_t kInstanceIdWidth{5};
 
 }  // namespace
 
@@ -39,12 +41,12 @@ void AppendServiceAndInstance(std::ostream& out, const std::uint16_t service_id,
 
 void AppendService(std::ostream& out, const std::uint16_t service_id) noexcept
 {
-    out << std::setfill('0') << std::setw(16) << service_id << '-';
+    out << std::setfill('0') << std::setw(kServiceIdWidth) << service_id << '-';
 }
 
 void AppendInstanceId(std::ostream& out, const InstanceId instance_id) noexcept
 {
-    out << std::setw(5) << instance_id;
+    out << std::setw(kInstanceIdWidth) << instance_id;
 }
 
 }  // namespace score::mw::com::impl::lola

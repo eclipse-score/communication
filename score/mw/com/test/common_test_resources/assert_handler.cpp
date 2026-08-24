@@ -27,6 +27,8 @@ namespace score::mw::com::test
 namespace
 {
 
+constexpr auto kAssertionLogFlushDelay{std::chrono::milliseconds{500}};
+
 void assert_handler(const score::cpp::handler_parameters& params)
 {
     std::cerr << "Assertion \"" << params.condition << "\" failed";
@@ -38,7 +40,7 @@ void assert_handler(const score::cpp::handler_parameters& params)
     std::cerr.flush();
 
     score::mw::log::LogFatal("AsHa") << params.condition << params.message << params.file << params.line;
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(kAssertionLogFlushDelay);
 
     const char* const no_abort = std::getenv("ASSERT_NO_CORE");
     if (no_abort != nullptr)
@@ -62,7 +64,7 @@ void SetupAssertHandler()
     score::cpp::set_assertion_handler(assert_handler);
     // in addition, delay the calls to std::terminate() till the datarouter is able to read the logs
     std::set_terminate([]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(kAssertionLogFlushDelay);
         std::abort();
     });
 }

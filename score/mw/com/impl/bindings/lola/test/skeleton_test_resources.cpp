@@ -43,6 +43,9 @@ using ::testing::ReturnRef;
 using ::testing::StrEq;
 using ::testing::WithArg;
 
+constexpr std::uint16_t kEventControlNumberOfSlots{10U};
+constexpr std::uint16_t kEventControlMaxSubscribers{10U};
+
 }  // namespace
 
 LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(
@@ -348,10 +351,10 @@ std::unique_ptr<ServiceDataControl> SkeletonMockedMemoryFixture::CreateServiceDa
                                                                           : control_asil_b_shared_memory_resource_mock_;
     auto service_data_control = std::make_unique<ServiceDataControl>(1U, *created_resource);
 
-    auto event_control =
-        service_data_control->event_controls_.emplace(std::piecewise_construct,
-                                                      std::forward_as_tuple(element_fq_id),
-                                                      std::forward_as_tuple(10U, 10U, true, *created_resource));
+    auto event_control = service_data_control->event_controls_.emplace(
+        std::piecewise_construct,
+        std::forward_as_tuple(element_fq_id),
+        std::forward_as_tuple(kEventControlNumberOfSlots, kEventControlMaxSubscribers, true, *created_resource));
     EXPECT_TRUE(event_control.second);
     return service_data_control;
 }

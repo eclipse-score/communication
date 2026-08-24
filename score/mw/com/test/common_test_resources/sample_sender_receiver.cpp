@@ -41,6 +41,8 @@ namespace
 {
 
 constexpr std::size_t START_HASH = 64738U;
+constexpr std::size_t kMaxShmOpenPathLength = 1024U;
+constexpr std::chrono::milliseconds kSubscriptionStatePollInterval{100};
 
 std::ostream& operator<<(std::ostream& stream, const InstanceSpecifier& instance_specifier)
 {
@@ -69,7 +71,7 @@ std::string ToString(Args... args)
     return oss.str();
 }
 
-void HashArray(const std::array<LaneIdType, 16U>& array, std::size_t& seed)
+void HashArray(const std::array<LaneIdType, MAX_SUCCESSORS>& array, std::size_t& seed)
 {
     const std::ptrdiff_t buffer_size =
         reinterpret_cast<const std::uint8_t*>(&*array.cend()) - reinterpret_cast<const std::uint8_t*>(&*array.cbegin());
@@ -145,7 +147,7 @@ class MmanMock : public os::Mman
     }
 
   private:
-    mutable char last_shm_open_path_[1024];
+    mutable char last_shm_open_path_[kMaxShmOpenPathLength];
     mutable std::uint32_t shm_open_callcount_;
 };
 
@@ -867,7 +869,7 @@ int EventSenderReceiver::RunAsProxyCheckValuesCreatedFromConfig(
     // Wait for the subscription to finish before unsubscribing.
     while (bigdata.map_api_lanes_stamped_.GetSubscriptionState() != SubscriptionState::kSubscribed)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(kSubscriptionStatePollInterval);
     }
 
     std::cout << "Unsubscribing...";

@@ -41,6 +41,7 @@ const std::string_view kProviderCheckpointControlName = "Provider";
 const std::string_view kConsumerCheckpointControlName = "Consumer";
 
 const std::chrono::seconds kMaxWaitTimeToReachCheckpoint{60U};
+constexpr std::size_t kDefaultProviderRestartIterations{5U};
 
 using CheckPointControl = score::mw::com::test::CheckPointControl;
 
@@ -66,7 +67,7 @@ std::optional<TestParameters> ParseTestParameters(int argc, const char** argv) n
     options.add_options()
         ("help", "Display the help message")
         ("service_instance_manifest", po::value<std::string>(&service_instance_manifest)->default_value(""), "Path to the com configuration file")
-        ("iterations,t", po::value<std::size_t>(&test_parameters.number_test_iterations)->default_value(5), "Number of cycles (provider restarts) to be done")
+        ("iterations,t", po::value<std::size_t>(&test_parameters.number_test_iterations)->default_value(kDefaultProviderRestartIterations), "Number of cycles (provider restarts) to be done")
         ("is-proxy-connected-during-restart,c", po::value<bool>(&test_parameters.connected_proxy_during_restart), "Whether a proxy should be connected to the skeleton during skeleton restart.");
     // clang-format on
     po::variables_map args;

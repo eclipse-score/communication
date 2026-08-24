@@ -30,6 +30,7 @@ namespace
 
 const auto kControlChannelPrefix{"/lola-ctl-"};
 const auto kDataChannelPrefix{"/lola-data-"};
+constexpr std::uint32_t kFindServiceHandleValue{10U};
 
 using namespace ::score::memory::shared;
 
@@ -133,7 +134,7 @@ void ProxyMockedMemoryFixture::InitialiseProxyWithConstructor(const InstanceIden
                 // In practice, if a service is available at the point in time when the Proxy is created then the find
                 // service handler will be called synchronously in the StartFindService call. We simulate this here by
                 // calling the handler with a handle.
-                auto find_service_handle = make_FindServiceHandle(10U);
+                auto find_service_handle = make_FindServiceHandle(kFindServiceHandleValue);
                 auto handle = make_HandleType(identifier_);
                 auto found_service_handle_container = ServiceHandleContainer<HandleType>{handle};
 
@@ -158,7 +159,7 @@ void ProxyMockedMemoryFixture::InitialiseProxyWithCreate(const InstanceIdentifie
 {
     EnrichedInstanceIdentifier enriched_instance_identifier{instance_identifier};
     ON_CALL(service_discovery_mock_, StartFindService(_, enriched_instance_identifier))
-        .WillByDefault(Return(make_FindServiceHandle(10U)));
+        .WillByDefault(Return(make_FindServiceHandle(kFindServiceHandleValue)));
 
     proxy_ = Proxy::Create(make_HandleType(instance_identifier));
 }

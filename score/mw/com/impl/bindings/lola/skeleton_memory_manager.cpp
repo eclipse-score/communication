@@ -99,12 +99,16 @@ enum class ShmObjectType : std::uint8_t
     kData = 0x02,
 };
 
+constexpr std::uint32_t kServiceIdShiftBits{24U};
+constexpr std::uint32_t kInstanceIdShiftBits{8U};
+
 std::uint64_t CalculateMemoryResourceId(const LolaServiceTypeDeployment::ServiceId lola_service_id,
                                         const LolaServiceInstanceId::InstanceId lola_instance_id,
                                         const ShmObjectType object_type)
 {
-    return ((static_cast<std::uint64_t>(lola_service_id) << 24U) +
-            (static_cast<std::uint64_t>(lola_instance_id) << 8U) + static_cast<std::uint8_t>(object_type));
+    return ((static_cast<std::uint64_t>(lola_service_id) << kServiceIdShiftBits) +
+            (static_cast<std::uint64_t>(lola_instance_id) << kInstanceIdShiftBits) +
+            static_cast<std::uint8_t>(object_type));
 }
 
 /// \brief Determines whether the given event/field bindings are generic (type-erased) or typed bindings.

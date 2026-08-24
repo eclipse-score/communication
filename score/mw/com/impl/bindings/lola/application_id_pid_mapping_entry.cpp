@@ -17,6 +17,13 @@
 namespace score::mw::com::impl::lola
 {
 
+namespace
+{
+
+constexpr std::uint32_t kStatusBitShift{32U};
+
+}  // namespace
+
 std::pair<ApplicationIdPidMappingEntry::MappingEntryStatus, std::uint32_t>
 ApplicationIdPidMappingEntry::GetStatusAndApplicationIdAtomic() noexcept
 {
@@ -30,7 +37,7 @@ ApplicationIdPidMappingEntry::GetStatusAndApplicationIdAtomic() noexcept
     static_assert(std::is_same<std::uint16_t,
                                std::underlying_type<ApplicationIdPidMappingEntry::MappingEntryStatus>::type>::value,
                   "MappingEntryStatus is not of expected underlying type");
-    const auto status_part = static_cast<std::uint16_t>((status_applictionid >> 32U) & kMaskStatus);
+    const auto status_part = static_cast<std::uint16_t>((status_applictionid >> kStatusBitShift) & kMaskStatus);
     const auto application_id_part = static_cast<std::uint32_t>(status_applictionid & kMaskApplicationId);
     // Suppress "AUTOSAR C++14 A7-2-1" rule: "An expression with enum underlying type shall only have values
     // corresponding to the enumerators of the enumeration.".
@@ -50,7 +57,7 @@ ApplicationIdPidMappingEntry::key_type ApplicationIdPidMappingEntry::CreateKey(M
                                                                                std::uint32_t application_id) noexcept
 {
     ApplicationIdPidMappingEntry::key_type result = static_cast<std::uint16_t>(status);
-    result = result << 32U;
+    result = result << kStatusBitShift;
     result |= static_cast<std::uint64_t>(application_id);
     return result;
 }

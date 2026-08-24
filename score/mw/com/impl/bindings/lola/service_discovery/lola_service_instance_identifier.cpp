@@ -16,6 +16,9 @@
 namespace score::mw::com::impl::lola
 {
 
+constexpr auto kServiceIdShiftBits{32U};
+constexpr auto kInstanceIdShiftBits{16U};
+
 LolaServiceInstanceIdentifier::LolaServiceInstanceIdentifier(LolaServiceId service_id) noexcept
     : service_id_{service_id}, instance_id_{std::nullopt}
 {
@@ -65,10 +68,12 @@ std::size_t std::hash<score::mw::com::impl::lola::LolaServiceInstanceIdentifier>
 {
     static_assert(sizeof(score::mw::com::impl::LolaServiceId) <= 4U);
     static_assert(sizeof(score::mw::com::impl::LolaServiceInstanceId::InstanceId) <= 2U);
-    std::size_t result{static_cast<std::size_t>(identifier.GetServiceId()) << 32U};
+    std::size_t result{static_cast<std::size_t>(identifier.GetServiceId())
+                       << score::mw::com::impl::lola::kServiceIdShiftBits};
     if (identifier.GetInstanceId().has_value())
     {
-        result += static_cast<std::size_t>(identifier.GetInstanceId().value()) << 16U;
+        result += static_cast<std::size_t>(identifier.GetInstanceId().value())
+                  << score::mw::com::impl::lola::kInstanceIdShiftBits;
         result += 1U;
     }
     return result;

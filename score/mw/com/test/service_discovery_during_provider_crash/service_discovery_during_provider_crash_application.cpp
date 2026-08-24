@@ -42,6 +42,7 @@ constexpr std::string_view kProviderCheckpointControlName = "Provider";
 constexpr std::string_view kConsumerCheckpointControlName = "Consumer";
 
 const std::chrono::seconds kMaxWaitTimeToReachCheckpoint{30U};
+constexpr auto kConsumerHealthCheckDelay{std::chrono::milliseconds{10}};
 
 /// \brief Test parameters for the ITF test.
 struct TestParameters
@@ -202,10 +203,9 @@ int DoConsumerCrash(const score::cpp::stop_token& test_stop_token, int argc, con
     // ********************************************************************************
     // Step (5) - Short Idle time to check if consumer is ok
     // ********************************************************************************
-    std::chrono::milliseconds short_wait{10};
     std::cout << "Controller Step (5): Idling for a few milliseconds,"
               << "before checking if the consumer is still in a valid state." << std::endl;
-    std::this_thread::sleep_for(short_wait);
+    std::this_thread::sleep_for(kConsumerHealthCheckDelay);
 
     if (consumer_checkpoint_control.HasErrorOccurred())
     {

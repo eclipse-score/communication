@@ -56,6 +56,7 @@ struct TestValues
     static constexpr std::size_t some_share_memory_size{65535U};
     static constexpr uid_t our_uid{99};
     static constexpr uid_t typedmemd_uid{3020U};
+    static constexpr auto defaultLockFileDescriptor = 10;
 };
 
 class ManagedMemoryResourceTestAttorney
@@ -217,11 +218,12 @@ class SharedMemoryResourceTest : public ::testing::TestWithParam<bool>
                            bool is_read_write = true,
                            bool is_death_test = false);
 
-    void expectSharedMemorySuccessfullyOpened(std::int32_t file_descriptor,
-                                              bool is_read_write,
-                                              void* const data_region_start = reinterpret_cast<void*>(1),
-                                              uid_t st_uid = TestValues::our_uid,
-                                              std::int32_t lock_file_descriptor = 10);
+    void expectSharedMemorySuccessfullyOpened(
+        std::int32_t file_descriptor,
+        bool is_read_write,
+        void* const data_region_start = reinterpret_cast<void*>(1),
+        uid_t st_uid = TestValues::our_uid,
+        std::int32_t lock_file_descriptor = TestValues::defaultLockFileDescriptor);
 
     void expectSharedMemorySuccessfullyCreated(
         const std::int32_t file_descriptor,

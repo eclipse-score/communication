@@ -40,6 +40,9 @@ namespace score::mw::com::test
 namespace
 {
 const char kChildDone = 'Z';
+constexpr auto kChildSleepDuration{std::chrono::seconds{5U}};
+constexpr int kChildNotificationMaxRetries{10};
+constexpr auto kChildNotificationPollInterval{std::chrono::milliseconds{100U}};
 
 /// \brief Action the forked child process does.
 /// \details Child process creates TWO "lock-files" under /tmp_discovery/flockTest. One it flocks with a shared-lock,
@@ -107,7 +110,7 @@ void DoChildActions(int fd_to_write_to)
     while (true)
     {
         std::cout << "Child: Going to sleep" << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds{5U});
+        std::this_thread::sleep_for(kChildSleepDuration);
         std::cout << "Child: Wake up again." << std::endl;
     }
 }
@@ -249,7 +252,7 @@ bool WaitForChildFinished(int fd_to_read_from)
         return false;
     }
     // Wait until child has created flocked files ...
-    for (auto i = 0; i < 10; ++i)
+    for (auto i = 0; i < kChildNotificationMaxRetries; ++i)
     {
         c = fgetc(stream);
         if (c == EOF)
@@ -259,7 +262,7 @@ bool WaitForChildFinished(int fd_to_read_from)
                 // child hasn't sent notification, that it is done yet
                 std::cerr << "Controller: Child has not yet created flock-files. Go to sleep again and recheck later."
                           << std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds{100U});
+                std::this_thread::sleep_for(kChildNotificationPollInterval);
             }
             else
             {

@@ -155,6 +155,10 @@ enum class DataState
 
 int run_sender(SharedState& shared_state, const std::size_t turns, const std::size_t batch_size, const bool no_wait)
 {
+    constexpr int kOfferServiceFailureExitCode{-5};
+    constexpr int kSentSamplesColumnWidth{16};
+    constexpr std::size_t kMillisecondsPerSecond{1000U};
+
     auto instance_specifier_result =
         score::mw::com::InstanceSpecifier::Create(std::string{"smokeyeyes/small_but_great"});
     if (!instance_specifier_result.has_value())
@@ -175,7 +179,7 @@ int run_sender(SharedState& shared_state, const std::size_t turns, const std::si
     if (!offer_service_result.has_value())
     {
         std::cerr << "Unable to offer service: " << offer_service_result.error() << "!\n";
-        return -5;
+        return kOfferServiceFailureExitCode;
     }
 
     const auto start_clock = std::chrono::steady_clock::now();
@@ -194,7 +198,8 @@ int run_sender(SharedState& shared_state, const std::size_t turns, const std::si
         const auto now = std::chrono::steady_clock::now();
         if (now - time_last_stats > 1s)
         {
-            std::cout << "\rSent samples: " << std::setfill(' ') << std::setw(16) << turn * batch_size << std::flush;
+            std::cout << "\rSent samples: " << std::setfill(' ') << std::setw(kSentSamplesColumnWidth)
+                      << turn * batch_size << std::flush;
             time_last_stats = now;
         }
 
@@ -210,7 +215,7 @@ int run_sender(SharedState& shared_state, const std::size_t turns, const std::si
     const auto duration = std::chrono::steady_clock::now() - start_clock;
     const auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
     std::cout << "Sending " << turns * batch_size << " messages took " << elapsed_ms << "ms ("
-              << turns * batch_size * 1000 / static_cast<std::size_t>(elapsed_ms) << " msg/s)\n";
+              << turns * batch_size * kMillisecondsPerSecond / static_cast<std::size_t>(elapsed_ms) << " msg/s)\n";
 
     return 0;
 }
@@ -223,6 +228,12 @@ int run_receiver(SharedState& shared_state,
 {
     constexpr auto FIND_SERVICE_POLL_INTERVAL{20ms};
     constexpr std::size_t FIND_SERVICE_MAX_NUM_RETRIES{250U};
+    constexpr int kProxyCreationFailureExitCode{-5};
+    constexpr std::size_t kSubscriptionStatePollRetries{100U};
+    constexpr auto kSubscriptionStatePollInterval{10ms};
+    constexpr int kSampleReceiveFailureExitCode{-6};
+    constexpr int kSubscriptionTimeoutExitCode{-7};
+    constexpr int kDataValidationFailureExitCode{-8};
 
     ServiceHandleContainer<DataProxy::HandleType> handles{};
     for (std::size_t retry = 0U; retry < FIND_SERVICE_MAX_NUM_RETRIES; ++retry)
@@ -277,19 +288,19 @@ int run_receiver(SharedState& shared_state,
     {
         std::cerr << "Unable to establish connection to sender: " << std::move(receiver_result).error()
                   << ", terminating\n";
-        return -5;
+        return kProxyCreationFailureExitCode;
     }
     auto& receiver = receiver_result.value();
     std::ignore = receiver.struct_event_.Subscribe(num_slots);
-    for (std::size_t retry = 0U; retry < 100U; ++retry)
+    for (std::size_t retry = 0U; retry < kSubscriptionStatePollRetries; ++retry)
     {
         if (receiver.struct_event_.GetSubscriptionState() != SubscriptionState::kSubscribed)
         {
-            std::this_thread::sleep_for(10ms);
+            std::this_thread::sleep_for(kSubscriptionStatePollInterval);
         }
         else
         {
-            out << "Subscribed after " << retry * 10 << "ms\n";
+            out << "Subscribed after " << retry * kSubscriptionStatePollInterval.count() << "ms\n";
             break;
         }
     }
@@ -297,7 +308,7 @@ int run_receiver(SharedState& shared_state,
     if (receiver.struct_event_.GetSubscriptionState() != SubscriptionState::kSubscribed)
     {
         std::cerr << "PID " << getpid() << " unable to subscribe to service, terminating!\n";
-        return -7;
+        return kSubscriptionTimeoutExitCode;
     }
 
     int result{0};
@@ -331,7 +342,7 @@ int run_receiver(SharedState& shared_state,
             if (!num_samples_received.has_value())
             {
                 out << "Error receiving sample: " << std::move(num_samples_received).error() << ", terminating!\n";
-                result = -6;
+                result = kSampleReceiveFailureExitCode;
                 break;
             }
             else
@@ -372,7 +383,7 @@ int run_receiver(SharedState& shared_state,
 
     if (result == 0 && data_state != DataState::kUnchanged)
     {
-        result = -8;
+        result = kDataValidationFailureExitCode;
     }
 
     return result;
@@ -387,6 +398,8 @@ int main(int argc, const char** argv)
     namespace ipc = boost::interprocess;
     using namespace score;
 
+    constexpr std::size_t kDefaultTurns{10U};
+
     std::size_t num_clients;
     std::size_t turns;
     std::size_t batch_size;
@@ -399,7 +412,7 @@ int main(int argc, const char** argv)
         ("help", "Display the help message")
         ("service_instance_manifest", po::value<std::string>(), "Path to the com configuration file")
         ("num-clients", po::value<std::size_t>(&num_clients)->default_value(1U), "Number of clients that will be spawned during a test run")
-        ("turns", po::value<std::size_t>(&turns)->default_value(10U), "Number of sample batches to send before terminating")
+        ("turns", po::value<std::size_t>(&turns)->default_value(kDefaultTurns), "Number of sample batches to send before terminating")
         ("batch-size", po::value<std::size_t>(&batch_size)->default_value(3U), "Number of samples per batch")
         ("no-wait", po::bool_switch(&no_wait), "If set, do not wait for receivers after having sent a batch")
         ("log-prefix", po::value<std::string>(), "Log output to a file with this prefix and a .log suffix")

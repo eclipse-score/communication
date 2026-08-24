@@ -32,6 +32,9 @@ namespace score::mw::com::impl::tracing
 namespace
 {
 
+constexpr auto kTracingReceiveHandlerStorageSize{128U};
+using TracingReceiveHandler = score::cpp::callback<void(void), kTracingReceiveHandlerStorageSize>;
+
 void UpdateTracingDataFromTraceResult(Result<void> trace_result,
                                       ProxyEventTracingData& proxy_event_tracing_data,
                                       bool& proxy_event_trace_point)
@@ -414,14 +417,13 @@ void TraceCallReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
     }
 }
 
-score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(
-    ProxyEventTracingData& proxy_event_tracing_data,
-    const ProxyEventBindingBase& proxy_event_binding_base,
-    EventReceiveHandler handler)
+TracingReceiveHandler CreateTracingReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
+                                                  const ProxyEventBindingBase& proxy_event_binding_base,
+                                                  EventReceiveHandler handler)
 {
     if (proxy_event_tracing_data.enable_call_receive_handler)
     {
-        score::cpp::callback<void(void), 128U> tracing_receive_handler =
+        TracingReceiveHandler tracing_receive_handler =
             [&proxy_event_tracing_data, &proxy_event_binding_base, handler = std::move(handler)]() {
                 TraceCallReceiveHandler(proxy_event_tracing_data, proxy_event_binding_base);
                 handler();

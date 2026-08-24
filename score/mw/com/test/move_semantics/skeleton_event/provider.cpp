@@ -17,6 +17,7 @@
 #include "score/mw/com/test/common_test_resources/skeleton_container.h"
 #include "score/mw/com/test/move_semantics/skeleton_event/test_event_datatype.h"
 
+#include <chrono>
 #include <cstdint>
 #include <utility>
 
@@ -26,6 +27,7 @@ namespace
 {
 
 const std::string kInterprocessNotificationShmPath{"/skeleton_event_move_semantics_interprocess_notification"};
+constexpr auto kSampleSendInterval = std::chrono::milliseconds{20};
 
 void SendSamples(SkeletonMoveSemanticsSkeleton& skeleton,
                  const std::size_t number_of_samples_to_send_per_offer,
@@ -39,7 +41,7 @@ void SendSamples(SkeletonMoveSemanticsSkeleton& skeleton,
         {
             FailTest("Provider: Send failed: ", send_result.error());
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        std::this_thread::sleep_for(kSampleSendInterval);
     }
 }
 

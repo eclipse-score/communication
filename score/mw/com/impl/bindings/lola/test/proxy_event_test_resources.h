@@ -170,6 +170,9 @@ class ProxyMockedMemoryFixture : public ::testing::Test
     static constexpr pid_t kDummyPid{123456};
     static constexpr uid_t kDummyUid{2543};
     static constexpr GlobalConfiguration::ApplicationId kDummyApplicationId{6543};
+    static constexpr LolaServiceInstanceId::InstanceId kLolaServiceInstanceIdValue{0x10U};
+    static constexpr LolaServiceId kLolaServiceIdValue{0xCDEFU};
+    static constexpr IMessagePassingService::HandlerRegistrationNoType kCurrentSubscriptionNo{37U};
 
     ProxyMockedMemoryFixture() noexcept;
 
@@ -189,8 +192,8 @@ class ProxyMockedMemoryFixture : public ::testing::Test
     void InitialiseDummySkeletonEvent(const ElementFqId element_fq_id,
                                       const SkeletonEventProperties& skeleton_event_properties);
 
-    LolaServiceInstanceId lola_service_instance_id_{0x10};
-    LolaServiceId lola_service_id_{0xcdef};
+    LolaServiceInstanceId lola_service_instance_id_{kLolaServiceInstanceIdValue};
+    LolaServiceId lola_service_id_{kLolaServiceIdValue};
     LolaServiceInstanceDeployment lola_service_instance_deployment_{lola_service_instance_id_};
     LolaServiceTypeDeployment lola_service_deployment_{lola_service_id_};
     ServiceIdentifierType service_identifier_ = make_ServiceIdentifierType("foo");
@@ -255,7 +258,7 @@ class LolaProxyEventResources : public ProxyMockedMemoryFixture
                                      lola_service_instance_id_.GetId(),
                                      ServiceElementType::EVENT};
 
-    IMessagePassingService::HandlerRegistrationNoType current_subscription_no_ = 37U;
+    IMessagePassingService::HandlerRegistrationNoType current_subscription_no_ = kCurrentSubscriptionNo;
 };
 
 }  // namespace score::mw::com::impl::lola

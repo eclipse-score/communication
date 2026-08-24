@@ -31,6 +31,7 @@ namespace
 constexpr auto kBindingInfoKeySerInstID = "bindingInfo";
 constexpr auto kBindingInfoIndexKeySerInstID = "bindingInfoIndex";
 constexpr auto kSerializationVersionKeySerInstID = "serializationVersion";
+constexpr auto kMaxSingleHexDigitValue{0xFU};
 
 // This function with this signature is only defined here. And is in  anonymous namespace.
 // coverity[autosar_cpp14_a2_10_4_violation : FALSE]
@@ -65,7 +66,7 @@ std::string ToHashStringImpl(const ServiceInstanceId::BindingInformation& bindin
 
     // The conversion to hex string below does not work with a std::uint8_t, so we cast it to an int. However, we
     // ensure that the value is less than 16 to ensure it will fit with a single char in the string representation.
-    static_assert(std::variant_size<ServiceInstanceId::BindingInformation>::value <= 0xFU,
+    static_assert(std::variant_size<ServiceInstanceId::BindingInformation>::value <= kMaxSingleHexDigitValue,
                   "BindingInformation variant size should be less than 16");
 
     // The above assert checks that the variant type, of which binding_info_is a type of holds less variants than can

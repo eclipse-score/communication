@@ -21,6 +21,14 @@
 namespace score::mw::com::impl
 {
 
+namespace
+{
+
+constexpr LolaServiceInstanceId::InstanceId kDummyLolaServiceInstanceIdValue{0x42U};
+constexpr uid_t kDummyAllowedConsumerUid{42};
+
+}  // namespace
+
 DummyInstanceIdentifierBuilder::DummyInstanceIdentifierBuilder()
     : service_instance_deployment_{},
       service_type_deployment_{0x0},
@@ -33,8 +41,8 @@ DummyInstanceIdentifierBuilder::DummyInstanceIdentifierBuilder()
 
 InstanceIdentifier DummyInstanceIdentifierBuilder::CreateValidLolaInstanceIdentifier()
 {
-    service_instance_deployment_.instance_id_ = LolaServiceInstanceId{0x42};
-    service_instance_deployment_.allowed_consumer_ = {{QualityType::kASIL_QM, {42}}};
+    service_instance_deployment_.instance_id_ = LolaServiceInstanceId{kDummyLolaServiceInstanceIdValue};
+    service_instance_deployment_.allowed_consumer_ = {{QualityType::kASIL_QM, {kDummyAllowedConsumerUid}}};
     type_deployment_.binding_info_ = service_type_deployment_;
     instance_deployment_ = std::make_unique<ServiceInstanceDeployment>(
         type_, service_instance_deployment_, QualityType::kASIL_QM, instance_specifier_);
@@ -55,8 +63,8 @@ InstanceIdentifier DummyInstanceIdentifierBuilder::CreateValidLolaInstanceIdenti
 InstanceIdentifier DummyInstanceIdentifierBuilder::CreateValidLolaInstanceIdentifierWithEvent(
     const LolaServiceInstanceDeployment::EventInstanceMapping& events)
 {
-    service_instance_deployment_.instance_id_ = LolaServiceInstanceId{0x42};
-    service_instance_deployment_.allowed_consumer_ = {{QualityType::kASIL_QM, {42}}};
+    service_instance_deployment_.instance_id_ = LolaServiceInstanceId{kDummyLolaServiceInstanceIdValue};
+    service_instance_deployment_.allowed_consumer_ = {{QualityType::kASIL_QM, {kDummyAllowedConsumerUid}}};
     service_instance_deployment_.events_ = events;
 
     // The GenericSkeleton needs the event names to be present in the Type Deployment
@@ -78,8 +86,8 @@ InstanceIdentifier DummyInstanceIdentifierBuilder::CreateValidLolaInstanceIdenti
 InstanceIdentifier DummyInstanceIdentifierBuilder::CreateValidLolaInstanceIdentifierWithField(
     const LolaServiceInstanceDeployment::FieldInstanceMapping& fields)
 {
-    service_instance_deployment_.instance_id_ = LolaServiceInstanceId{0x42};
-    service_instance_deployment_.allowed_consumer_ = {{QualityType::kASIL_QM, {42}}};
+    service_instance_deployment_.instance_id_ = LolaServiceInstanceId{kDummyLolaServiceInstanceIdValue};
+    service_instance_deployment_.allowed_consumer_ = {{QualityType::kASIL_QM, {kDummyAllowedConsumerUid}}};
     service_instance_deployment_.fields_ = fields;
     type_deployment_.binding_info_ = service_type_deployment_;
     instance_deployment_ = std::make_unique<ServiceInstanceDeployment>(

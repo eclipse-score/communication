@@ -36,6 +36,7 @@ using HelloWorldProxy = score::mw::com::AsProxy<score::mw::com::tutorial::HelloW
 
 namespace
 {
+constexpr auto kProxyMainLoopPollInterval{std::chrono::milliseconds{200}};
 
 // Returns a human-readable name for a subscription state (for logging).
 const char* ToString(const score::mw::com::SubscriptionState state) noexcept
@@ -278,7 +279,7 @@ int main()
             break;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(kProxyMainLoopPollInterval);
 
         std::lock_guard<std::mutex> lock{state.mutex};
         if (!state.proxies_created)

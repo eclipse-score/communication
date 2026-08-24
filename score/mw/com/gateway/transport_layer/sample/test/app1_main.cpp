@@ -14,6 +14,7 @@
 #include "score/mw/com/gateway/transport_layer/sample/configuration/hypervisor_socket_configuration.h"
 
 #include <atomic>
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -23,13 +24,17 @@ using score::mw::com::gateway::HyperVisorSocketConfiguration;
 
 namespace
 {
+constexpr std::uint16_t kApp1LocalPort{9001U};
+constexpr std::uint16_t kApp1RemotePort{9000U};
+constexpr int kMaxReceivePollCount{200};
+constexpr auto kReceivePollInterval = std::chrono::milliseconds{50};
 
 HyperVisorSocketConfiguration CreateConfiguration()
 {
     HyperVisorSocketConfiguration config{};
     config.remote_ip_ = score::os::Ipv4Address{"127.0.0.1"};
-    config.local_port_ = 9001;
-    config.remote_port_ = 9000;
+    config.local_port_ = kApp1LocalPort;
+    config.remote_port_ = kApp1RemotePort;
     return config;
 }
 
@@ -70,9 +75,9 @@ int ExecuteWithRegularConnection()
 
     int sleep_counter = 0;
     // Sleep until all expected messages are received or a timeout occurs (whichever comes first)
-    while (received_message_count < expected_amount_received_messages || sleep_counter < 200)
+    while (received_message_count < expected_amount_received_messages || sleep_counter < kMaxReceivePollCount)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(kReceivePollInterval);
         sleep_counter++;
     }
 

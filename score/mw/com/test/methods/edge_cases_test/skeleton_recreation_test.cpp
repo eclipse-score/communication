@@ -19,6 +19,7 @@
 
 #include "score/mw/com/runtime.h"
 
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -35,6 +36,7 @@ const std::string kFailureMessagePrefix{"skeleton_recreation_test"};
 constexpr std::int32_t kReturnOnlyMethodReturnValue{15};
 constexpr std::int32_t kInArgOnlyMethodTestValueA{17};
 constexpr std::int32_t kInArgOnlyMethodTestValueB{18};
+constexpr auto kProxyReconnectPollInterval = std::chrono::milliseconds{30};
 
 constexpr std::int32_t kTestValueA{10};
 constexpr std::int32_t kTestValueB{20};
@@ -146,7 +148,7 @@ void RunSkeletonRecreationWithSameProxyTest(const score::cpp::stop_token& stop_t
         // method in a loop until it succeeds. If it succeeded then it indicates that the proxy reconnected.
         while (!stop_token.stop_requested() && !consumer.GetProxy().without_args_or_return().has_value())
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(30));
+            std::this_thread::sleep_for(kProxyReconnectPollInterval);
         }
         if (stop_token.stop_requested())
         {

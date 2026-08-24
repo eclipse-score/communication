@@ -228,7 +228,7 @@ void ProviderEventDataControlLocalView<AtomicIndirectorType>::LogPerformanceMetr
 {
     score::cpp::ignore = num_alloc_retries.fetch_add(retry_counter);
 
-    if ((retry_counter >= 100U))
+    if ((retry_counter >= MAX_ALLOCATE_RETRIES))
     {
         ++num_alloc_misses;
     }

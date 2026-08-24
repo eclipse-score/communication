@@ -29,6 +29,7 @@
 
 // The number of leading array elements the consumer fills and asks the provider to average.
 constexpr std::size_t kNumberOfMeanElements{500U};
+constexpr std::uint32_t kMaximumMeanElementValue{100U};
 
 // The main thread blocks on this condition variable until either the method calls have completed or a termination
 // signal (SIGINT/SIGTERM) requests the shut down.
@@ -126,7 +127,7 @@ void CallArithmeticMean(CalculatorProxy& proxy, std::mt19937& random_engine)
     auto& [array_ptr] = allocate_result.value();
 
     // Step 2: Fill the array *in place* (through the pointer into the shared-memory slot - no copy of the array).
-    std::uniform_int_distribution<std::uint32_t> value_distribution{0U, 100U};
+    std::uniform_int_distribution<std::uint32_t> value_distribution{0U, kMaximumMeanElementValue};
     for (std::size_t index = 0U; index < kNumberOfMeanElements; ++index)
     {
         array_ptr->internal_array_[index] = value_distribution(random_engine);

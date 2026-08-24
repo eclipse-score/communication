@@ -18,16 +18,20 @@
 
 #include <score/callback.hpp>
 
+#include <cstddef>
 #include <memory>
 
 namespace score::mw::com::gateway
 {
 
+inline constexpr std::size_t kMessageHandlerInlineStorageSize{64U};
+
 /// \brief Interface of BidirectionalTransport, introduced only for testing/mocking purposes
 class IBidirectionalTransport
 {
   public:
-    using MessageHandler = score::cpp::callback<void(std::unique_ptr<TransportMessage>), 64>;
+    using MessageHandler =
+        score::cpp::callback<void(std::unique_ptr<TransportMessage>), kMessageHandlerInlineStorageSize>;
 
     virtual ~IBidirectionalTransport() = default;
 

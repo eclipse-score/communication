@@ -34,6 +34,7 @@ namespace
 {
 
 const std::chrono::milliseconds kSampleSendCycleTime{40};
+constexpr auto kInitialSimpleEventMember2Value{42U};
 
 /// \brief cyclic event-send-thread used by producer
 class CyclicEventSender
@@ -72,7 +73,7 @@ class CyclicEventSender
   private:
     void CyclicSendActivity(score::cpp::stop_token stop_token) noexcept
     {
-        SimpleEventDatatype event_data{1U, 42U};
+        SimpleEventDatatype event_data{1U, kInitialSimpleEventMember2Value};
         while (!stop_token.stop_requested())
         {
             // Provider sends an event update (which leads - since IPC-Tracing is enabled - to a transaction-log update)

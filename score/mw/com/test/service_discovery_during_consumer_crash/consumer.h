@@ -24,10 +24,12 @@
 
 namespace score::mw::com::test
 {
+inline constexpr auto kMaxRandomDelayNanoseconds{501U};
+
 inline std::chrono::nanoseconds get_random_time()
 {
     auto rd = std::random_device();
-    std::uniform_int_distribution<std::uint32_t> dist(0, 501);
+    std::uniform_int_distribution<std::uint32_t> dist(0, kMaxRandomDelayNanoseconds);
     return std::chrono::nanoseconds{dist(rd)};
 }
 

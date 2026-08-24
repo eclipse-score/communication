@@ -17,6 +17,11 @@
 #include <fstream>
 #include <iostream>
 
+namespace
+{
+constexpr std::chrono::milliseconds kFileCreationPollInterval{500};
+}
+
 score::mw::com::test::SyncCoordinator::SyncCoordinator(std::string file_name) : file_name_{std::move(file_name)} {}
 
 void score::mw::com::test::SyncCoordinator::Signal() noexcept
@@ -57,7 +62,7 @@ void score::mw::com::test::SyncCoordinator::CheckFileCreation(
             return;
         }
         std::cout << "File doesn't exist yet, failed to synchronize" << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds{500});
+        std::this_thread::sleep_for(kFileCreationPollInterval);
     }
 }
 

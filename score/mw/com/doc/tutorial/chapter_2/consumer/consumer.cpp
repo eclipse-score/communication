@@ -21,6 +21,12 @@
 
 static std::atomic<bool> g_running{true};
 
+namespace
+{
+constexpr auto kServiceDiscoveryRetryInterval{std::chrono::milliseconds{100}};
+constexpr auto kSamplePollInterval{std::chrono::milliseconds{200}};
+}  // namespace
+
 static void SignalHandler(int /*signum*/)
 {
     std::cout << "HelloWorld service consumer caught signal." << std::endl;
@@ -42,7 +48,7 @@ int main(int argc, const char* argv[])
     std::optional<HelloWorldProxy::HandleType> service_handle{};
     while (g_running.load(std::memory_order_relaxed))
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(kServiceDiscoveryRetryInterval);
         auto service_handle_container_result = HelloWorldProxy::FindService(instance_specifier.value());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_handle_container_result.has_value(),
                                                     "HelloWorldProxy::FindService failed!");
@@ -77,7 +83,7 @@ int main(int argc, const char* argv[])
     size_t receive_counter{0};
     while (g_running.load(std::memory_order_relaxed))
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(kSamplePollInterval);
         auto get_new_samples_result = hello_world_proxy.message.GetNewSamples(
             [&receive_counter](auto&& sample) {
                 const auto* buf = sample.Get()->data();

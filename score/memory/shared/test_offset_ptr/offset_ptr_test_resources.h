@@ -32,6 +32,11 @@ namespace score::memory::shared::test
 {
 
 constexpr std::size_t kDefaultMemoryRegionSize{1000U};
+inline constexpr std::size_t kComplexTypeArraySize{10U};
+inline constexpr int kDummyIntValue{10};
+inline constexpr std::uint8_t kDummyUInt8Value{11U};
+inline constexpr std::size_t kVeryLargeTypeArraySize{100U};
+inline constexpr int kComplexTypeDummyMemberValue{10};
 
 using UseRegisteredMemoryResource = std::bool_constant<true>;
 using UseUnregisteredMemoryResource = std::bool_constant<false>;
@@ -42,7 +47,7 @@ struct ComplexTypeStruct
     std::uint8_t b;
     std::vector<int> c;
     std::string d;
-    std::array<std::uint8_t, 10> e;
+    std::array<std::uint8_t, kComplexTypeArraySize> e;
 };
 inline bool operator==(const ComplexTypeStruct& lhs, const ComplexTypeStruct& rhs) noexcept
 {
@@ -60,7 +65,7 @@ struct IntType
 
     static Type CreateDummyValue()
     {
-        return 10;
+        return kDummyIntValue;
     }
 };
 struct UInt8Type
@@ -69,12 +74,12 @@ struct UInt8Type
 
     static Type CreateDummyValue()
     {
-        return 11U;
+        return kDummyUInt8Value;
     }
 };
 struct VeryLargeType
 {
-    using Type = std::array<std::uint8_t, 100>;
+    using Type = std::array<std::uint8_t, kVeryLargeTypeArraySize>;
 
     static Type CreateDummyValue()
     {
@@ -93,7 +98,7 @@ struct ComplexType
     static Type CreateDummyValue()
     {
         Type dummy_type{};
-        dummy_type.a = 10;
+        dummy_type.a = kComplexTypeDummyMemberValue;
         return dummy_type;
     }
 };

@@ -470,10 +470,11 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     template <typename SampleType>
     ServiceDataStorage CreateServiceDataStorageWithEvent(ElementFqId element_fq_id) noexcept
     {
+        constexpr auto kEventDataStorageSlotCount = 10U;
         ServiceDataStorage service_data_storage{1U, *data_shared_memory_resource_mock_};
 
         auto* event_data_storage = data_shared_memory_resource_mock_->construct<EventDataStorage<SampleType>>(
-            10U, *data_shared_memory_resource_mock_);
+            kEventDataStorageSlotCount, *data_shared_memory_resource_mock_);
 
         auto inserted_data_slots = service_data_storage.events_.emplace(
             std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(event_data_storage));

@@ -27,9 +27,14 @@
 #include <thread>
 #include <vector>
 
+namespace
+{
+constexpr auto kSkeletonCreateIterations = 10U;
+}  // namespace
+
 void CreateAndOfferSkeleton(const score::mw::com::InstanceSpecifier& instance_specifier, std::atomic_bool& success_flag)
 {
-    for (std::size_t j = 0; j < 10; ++j)
+    for (std::size_t j = 0; j < kSkeletonCreateIterations; ++j)
     {
         auto bigdata_result = score::mw::com::test::BigDataSkeleton::Create(instance_specifier);
         if (!bigdata_result.has_value())

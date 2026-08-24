@@ -33,11 +33,14 @@ namespace score::mw::com::impl
 class GenericProxyEventBinding : public ProxyEventBindingBase
 {
   public:
+    static constexpr auto kCallbackStorageSize{80U};
+
     /// Type-erased callback used for the GetNewSamples method.
     ///
-    /// The size of 80U is chosen to allow us to store another score::cpp::callback within this callback. This is needed
-    /// as we wrap the user provided callback in order to perform tracing functionality.
-    using Callback = score::cpp::callback<void(SamplePtr<void>, tracing::ITracingRuntime::TracePointDataId), 80U>;
+    /// The size of kCallbackStorageSize is chosen to allow us to store another score::cpp::callback within this
+    /// callback. This is needed as we wrap the user provided callback in order to perform tracing functionality.
+    using Callback =
+        score::cpp::callback<void(SamplePtr<void>, tracing::ITracingRuntime::TracePointDataId), kCallbackStorageSize>;
 
     /// \brief Get pending data from the event.
     ///

@@ -38,6 +38,7 @@ namespace
 {
 
 constexpr mode_t kExpectedDirMode{0755U};
+constexpr mode_t kPermissionBitsMask{0777U};
 
 /// \brief Maximum number of add+remove attempts per cycle before a worker reports failure. Tolerates the
 ///        transient EINVAL the QNX io-notify manager can return under heavy concurrent watch churn.
@@ -52,10 +53,10 @@ bool HasCorrectPermissions(const pid_t pid, const std::string& path, const mode_
         std::cerr << pid << ": stat on " << path << " failed: " << strerror(errno) << std::endl;
         return false;
     }
-    if ((st.st_mode & 0777U) != expected_mode)
+    if ((st.st_mode & kPermissionBitsMask) != expected_mode)
     {
         std::cerr << pid << ": Directory " << path << " has wrong permissions: actual " << std::oct
-                  << (st.st_mode & 0777U) << ", expected " << expected_mode << std::dec << std::endl;
+                  << (st.st_mode & kPermissionBitsMask) << ", expected " << expected_mode << std::dec << std::endl;
         return false;
     }
     return true;

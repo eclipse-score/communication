@@ -31,6 +31,7 @@ constexpr auto kControlChannelPrefix = "lola-ctl-";
 constexpr auto kMethodChannelPrefix = "lola-methods-";
 constexpr auto kAsilBControlChannelSuffix = "-b";
 constexpr auto kInterVmSharedShmPrefix = "/intervm-shared-shmem/";
+constexpr int kProxyIdentifierFieldWidth{5};
 
 /// Emit file name of the control file to an ostream
 ///
@@ -103,8 +104,10 @@ void EmitMethodFileName(std::ostream& out,
     AppendServiceAndInstance(out, service_id, instance_id);
 
     out << '-';
-    out << std::setfill('0') << std::setw(5) << proxy_instance_identifier.application_id << '-';
-    out << std::setfill('0') << std::setw(5) << proxy_instance_identifier.proxy_instance_counter;
+    out << std::setfill('0') << std::setw(kProxyIdentifierFieldWidth) << proxy_instance_identifier.application_id
+        << '-';
+    out << std::setfill('0') << std::setw(kProxyIdentifierFieldWidth)
+        << proxy_instance_identifier.proxy_instance_counter;
 }
 
 }  // namespace

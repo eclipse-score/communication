@@ -21,6 +21,10 @@ constexpr EventSlotStatus::value_type INVALID_EVENT = 0U;
 
 /// \brief Indicates that the event data is altered and one should not increase the refcount.
 constexpr EventSlotStatus::value_type IN_WRITING = std::numeric_limits<EventSlotStatus::SubscriberCount>::max();
+
+constexpr EventSlotStatus::value_type kLowWordMask = 0x00000000FFFFFFFFU;
+constexpr EventSlotStatus::value_type kHighWordMask = 0xFFFFFFFF00000000U;
+constexpr std::uint32_t kWordBitWidth = 32U;
 }  // namespace
 
 EventSlotStatus::EventSlotStatus(const value_type init_val) noexcept : data_{init_val} {}
@@ -33,12 +37,12 @@ EventSlotStatus::EventSlotStatus(const EventTimeStamp timestamp, const Subscribe
 
 auto EventSlotStatus::GetReferenceCount() const noexcept -> SubscriberCount
 {
-    return static_cast<SubscriberCount>(data_ & 0x00000000FFFFFFFFU);  // ignore first 4 byte
+    return static_cast<SubscriberCount>(data_ & kLowWordMask);  // ignore first 4 byte
 }
 
 auto EventSlotStatus::GetTimeStamp() const noexcept -> EventTimeStamp
 {
-    return static_cast<EventTimeStamp>(data_ >> 32U);  // ignore last 4 byte
+    return static_cast<EventTimeStamp>(data_ >> kWordBitWidth);  // ignore last 4 byte
 }
 
 auto EventSlotStatus::IsInvalid() const noexcept -> bool
@@ -63,12 +67,12 @@ auto EventSlotStatus::MarkInvalid() noexcept -> void
 
 auto EventSlotStatus::SetTimeStamp(const EventTimeStamp time_stamp) noexcept -> void
 {
-    data_ = static_cast<value_type>(time_stamp) << 32U;
+    data_ = static_cast<value_type>(time_stamp) << kWordBitWidth;
 }
 
 auto EventSlotStatus::SetReferenceCount(const SubscriberCount ref_count) noexcept -> void
 {
-    data_ = (data_ & 0xFFFFFFFF00000000U) | static_cast<value_type>(ref_count);
+    data_ = (data_ & kHighWordMask) | static_cast<value_type>(ref_count);
 }
 
 auto EventSlotStatus::IsTimeStampBetween(const EventTimeStamp min_timestamp,

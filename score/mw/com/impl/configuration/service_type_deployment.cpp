@@ -25,6 +25,7 @@ namespace score::mw::com::impl
 
 namespace
 {
+constexpr auto kMaxSingleHexDigitValue{0xFU};
 
 // coverity[autosar_cpp14_a2_10_4_violation] False positive, function is in anonymous namespace
 ServiceTypeDeployment::BindingInformation GetBindingInfoFromJson(const score::json::Object& json_object)
@@ -54,7 +55,7 @@ std::string ToHashStringImpl(const ServiceTypeDeployment::BindingInformation& bi
 {
     // The conversion to hex string below does not work with a std::uint8_t, so we cast it to an int. However, we
     // ensure that the value is less than 16 to ensure it will fit with a single char in the string representation.
-    static_assert(std::variant_size<ServiceTypeDeployment::BindingInformation>::value <= 0xFU,
+    static_assert(std::variant_size<ServiceTypeDeployment::BindingInformation>::value <= kMaxSingleHexDigitValue,
                   "BindingInformation variant size should be less than 16");
     // coverity[autosar_cpp14_a4_7_1_violation] Static assert ensures that only uint8_t values are used
     auto binding_info_index = static_cast<int>(binding_info.index());

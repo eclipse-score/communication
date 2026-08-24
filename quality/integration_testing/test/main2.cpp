@@ -13,13 +13,15 @@
 #include <fstream>
 #include <thread>
 
+constexpr auto kFileOpenRetryInterval{std::chrono::milliseconds{50}};
+
 int main()
 {
     std::ifstream file("/tmp/Hello.txt");
     while (not file.is_open())
     {
         file = std::ifstream("/tmp/Hello.txt");
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(kFileOpenRetryInterval);
     }
     return 0;
 }

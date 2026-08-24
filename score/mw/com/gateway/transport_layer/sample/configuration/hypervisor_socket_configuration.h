@@ -23,12 +23,14 @@ namespace score::mw::com::gateway
 class HyperVisorSocketConfiguration
 {
   public:
+    static constexpr std::uint32_t kDefaultRequestTimeoutMs{5000U};
+
     HyperVisorSocketConfiguration() = default;
 
     score::os::Ipv4Address remote_ip_{};
     std::uint16_t local_port_{0};
     std::uint16_t remote_port_{0};
-    std::uint32_t request_timeout_ms_{5000};
+    std::uint32_t request_timeout_ms_{kDefaultRequestTimeoutMs};
 };
 
 }  // namespace score::mw::com::gateway

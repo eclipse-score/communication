@@ -23,7 +23,11 @@ namespace score::mw::com::test
 namespace
 {
 constexpr std::string_view kBenchmarkInstanceSpecifier = "test/lolabenchmark";
-}
+constexpr int kBenchmarkRepetitions{10};
+constexpr std::size_t kSubscriptionCapacity{32U};
+constexpr int kSamplesToPublish{100};
+constexpr std::chrono::milliseconds kFixtureCleanupDelay{100};
+}  // namespace
 
 // This fixture will be used to benchmark the LoLa runtime
 class LolaGetNumNewSamplesAvailableBenchmarkFixture : public benchmark::Fixture
@@ -35,7 +39,7 @@ class LolaGetNumNewSamplesAvailableBenchmarkFixture : public benchmark::Fixture
 
     LolaGetNumNewSamplesAvailableBenchmarkFixture()
     {
-        this->Repetitions(10);
+        this->Repetitions(kBenchmarkRepetitions);
         this->ReportAggregatesOnly(true);
         this->ThreadRange(1, 1);
         this->UseRealTime();
@@ -75,11 +79,11 @@ class LolaGetNumNewSamplesAvailableBenchmarkFixture : public benchmark::Fixture
         proxy_ = std::move(proxy_result_.value());
 
         // Subscribe to the event with capacity for 32 samples
-        auto subscribe_result = proxy_->test_event.Subscribe(/*max_num_samples*/ 32);
+        auto subscribe_result = proxy_->test_event.Subscribe(kSubscriptionCapacity);
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(subscribe_result.has_value());
 
         sender_thread_ = std::thread([this]() {
-            for (int i = 0; i < 100; ++i)
+            for (int i = 0; i < kSamplesToPublish; ++i)
             {
                 auto sample_alloc_result = skeleton_->test_event.Allocate();
                 if (!sample_alloc_result.has_value())
@@ -115,7 +119,7 @@ class LolaGetNumNewSamplesAvailableBenchmarkFixture : public benchmark::Fixture
         }
 
         // Allow some time for cleanup to complete
-        std::this_thread::sleep_for(std::chrono::milliseconds{100});
+        std::this_thread::sleep_for(kFixtureCleanupDelay);
     }
 
   protected:

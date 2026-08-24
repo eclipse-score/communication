@@ -26,9 +26,10 @@ using byte = std::uint8_t;
 constexpr std::size_t B = 1;
 constexpr std::size_t KB = 1024 * B;
 constexpr std::size_t MB = KB * KB;
+constexpr std::size_t kPayloadSizeInMegabytes{5U};
 }  // namespace
 
-using DataType = std::array<byte, 5 * MB>;
+using DataType = std::array<byte, kPayloadSizeInMegabytes * MB>;
 
 template <typename T>
 struct TestInterface : public T::Base

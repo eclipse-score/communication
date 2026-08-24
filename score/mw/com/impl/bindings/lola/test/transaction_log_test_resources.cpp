@@ -18,11 +18,18 @@
 namespace score::mw::com::impl::lola
 {
 
+namespace
+{
+
+constexpr std::uint32_t kSubscriberCountBitShift{16U};
+
+}  // namespace
+
 std::uint32_t CreateEventSubscriptionControlState(EventSubscriptionControl<>::SubscriberCountType subscriber_count,
                                                   EventSubscriptionControl<>::SlotNumberType subscribed_slots)
 {
     std::uint32_t result{subscriber_count};
-    result = result << 16U;
+    result = result << kSubscriberCountBitShift;
     result += subscribed_slots;
     return result;
 }

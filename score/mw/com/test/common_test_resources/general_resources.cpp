@@ -27,6 +27,13 @@
 namespace score::mw::com::test
 {
 
+namespace
+{
+
+constexpr std::uint8_t kOpenSharedCheckpointRetries{20U};
+
+}  // namespace
+
 void ObjectCleanupGuard::AddConsumerCheckpointControlGuard(
     SharedMemoryObjectCreator<CheckPointControl>& consumer_checkpoint_control_guard) noexcept
 {
@@ -150,7 +157,7 @@ os::Result<SharedMemoryObjectCreator<CheckPointControl>> OpenSharedCheckPointCon
         SharedMemoryObjectCreator<CheckPointControl>::OpenObject(shared_memory_file_path_string);
     if (!(checkpoint_control_guard_result.has_value()))
     {
-        std::uint8_t retry_counter{20};
+        std::uint8_t retry_counter{kOpenSharedCheckpointRetries};
         while ((retry_counter-- > 0) && (!checkpoint_control_guard_result.has_value()))
         {
             const std::chrono::milliseconds poll_interval{50U};

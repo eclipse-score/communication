@@ -22,13 +22,15 @@
 namespace score::mw::com::tutorial
 {
 
+inline constexpr auto kSerializedInstanceIdentifierCapacity{2048U};
+
 // A fixed-capacity character buffer used to transport the *serialized* form of an InstanceIdentifier
 // (InstanceIdentifier::ToString()) as a method argument. Method arguments are transported through shared memory and are
 // serialized via a plain memcpy, therefore every method argument type must be trivially copyable - which a
 // std::array<char, N> is. The capacity is chosen generously so that it can hold the serialized InstanceIdentifier of
 // the callback service instance used in this chapter (the consumer asserts at runtime that the serialized form actually
 // fits).
-using SerializedInstanceIdentifier = std::array<char, 2048>;
+using SerializedInstanceIdentifier = std::array<char, kSerializedInstanceIdentifierCapacity>;
 
 static_assert(std::is_trivially_copyable_v<SerializedInstanceIdentifier>,
               "SerializedInstanceIdentifier must be trivially copyable to be usable as a method argument.");

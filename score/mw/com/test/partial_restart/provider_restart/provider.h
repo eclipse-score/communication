@@ -19,9 +19,11 @@
 namespace score::mw::com::test
 {
 
+inline constexpr std::size_t kDefaultNumSamplesSentToNotifyCheckPoint{5U};
+
 struct ProviderParameters
 {
-    size_t num_samples_sent_to_notify_check_point{5};
+    size_t num_samples_sent_to_notify_check_point{kDefaultNumSamplesSentToNotifyCheckPoint};
 };
 
 /// \brief

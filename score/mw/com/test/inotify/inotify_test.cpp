@@ -38,6 +38,8 @@ namespace score::mw::com::test
 namespace
 {
 
+constexpr auto kEventProcessingWaitTime = std::chrono::milliseconds{300};
+
 void do_cleanup(const std::string& folder)
 {
     score::filesystem::StandardFilesystem fs;
@@ -167,7 +169,7 @@ int run_inotify_test()
     std::cout << "Deleted file: " << test_file << std::endl;
 
     std::cout << "waiting for events_checker_thread to receive and process the events." << std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));  // On QNX it takes around 251ms to receive the event.
+    std::this_thread::sleep_for(kEventProcessingWaitTime);  // On QNX it takes around 251ms to receive the event.
 
     auto inotify_result = i_notify.RemoveWatch(watch_descriptor.value());
     if (!(inotify_result.has_value()))

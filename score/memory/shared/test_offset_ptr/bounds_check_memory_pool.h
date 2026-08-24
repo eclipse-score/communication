@@ -30,13 +30,18 @@ template <typename PointedType>
 class BoundsCheckMemoryPool
 {
   public:
+    static constexpr std::size_t kMemoryPoolSize{400U};
+    static constexpr std::size_t kPointedToAddressAfterValidRangeOffset{64U};
+    static constexpr std::size_t kValidRegionStartOffset{112U};
+    static constexpr std::size_t kValidRegionEndOffset{200U};
+
     // Memory pool of 400 bytes. The bytes 112 -> 200 are registered with the MemoryResourceRegistry (The specific
     // numbers are chosen to respect alignment of PointedType / OffsetPtr<PointedType>). This range will be used for
     // bounds checking. We use a larger memory pool than that registered with the MemoryResourceRegistry to allow fine
     // grained control of where OffsetPtrs and the pointed-to objects are created for testing e.g. we can create an
     // OffsetPtr within the region and point to an address such that the created object overlaps the memory region
     // boundary which should then fail during bounds checking.
-    using MemoryPool = std::array<std::uint8_t, 400>;
+    using MemoryPool = std::array<std::uint8_t, kMemoryPoolSize>;
 
     void Reset()
     {
@@ -64,7 +69,7 @@ class BoundsCheckMemoryPool
 
     MemoryPool::iterator GetPointedToAddressAfterValidRange() noexcept
     {
-        return end_of_valid_region_ + 64U;
+        return end_of_valid_region_ + kPointedToAddressAfterValidRangeOffset;
     }
 
     MemoryPool::iterator GetPointedToAddressOverlappingWithStartRange() noexcept
@@ -147,8 +152,8 @@ class BoundsCheckMemoryPool
     static constexpr std::size_t kThirdOffsetPtrFromSecondOffsetPtrBuffer{kOffsetPtrFromPointedToAddressBuffer};
 
     alignas(std::max_align_t) MemoryPool data_region_{};
-    MemoryPool::iterator start_of_valid_region_{data_region_.begin() + 112};
-    MemoryPool::iterator end_of_valid_region_{data_region_.begin() + 200};
+    MemoryPool::iterator start_of_valid_region_{data_region_.begin() + kValidRegionStartOffset};
+    MemoryPool::iterator end_of_valid_region_{data_region_.begin() + kValidRegionEndOffset};
 };
 
 template <typename T>

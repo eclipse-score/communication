@@ -23,7 +23,9 @@ class HelloWorldInterface : public Trait::Base
   public:
     using Trait::Base::Base;
 
-    using FixedSizeString = std::array<char, 255>;
+    static constexpr auto kMessageBufferSize = 255U;
+
+    using FixedSizeString = std::array<char, kMessageBufferSize>;
     typename Trait::template Event<FixedSizeString> message{*this, "message"};
 };
 }  // namespace score::mw::com::tutorial

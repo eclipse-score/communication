@@ -21,11 +21,18 @@
 namespace
 {
 
+constexpr std::size_t kCounterPayloadBytes{sizeof(std::uint64_t)};
+constexpr auto kInitialSubscriptionWait = std::chrono::seconds{5};
+constexpr auto kEventSendInterval = std::chrono::milliseconds{10};
+constexpr int kMaxFindServiceRetries{50};
+constexpr auto kFindServiceRetryInterval = std::chrono::milliseconds{100};
+constexpr auto kConsumerPollInterval = std::chrono::milliseconds{5};
+
 struct MyEventData
 {
     std::uint64_t counter;
 #if PAYLOAD_SIZE > 8
-    char padding[PAYLOAD_SIZE - 8];
+    char padding[PAYLOAD_SIZE - kCounterPayloadBytes];
 #endif
 };
 
@@ -91,7 +98,7 @@ int run_provider(score::cpp::stop_token stop_token)
 
     std::cout << "[PROVIDER] Generic-Generic " << PAYLOAD_SIZE << "-byte - Waiting 5s for consumer to subscribe..."
               << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(kInitialSubscriptionWait);
     std::cout << "[PROVIDER] Finished initial 5s sleep." << std::endl;
 
     std::uint64_t i{0};
@@ -116,7 +123,7 @@ int run_provider(score::cpp::stop_token stop_token)
             return 1;
         }
         std::cout << "[PROVIDER] " << PAYLOAD_SIZE << "-byte Event Sent sample: " << i << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(kEventSendInterval);
         i++;
     }
 
@@ -132,12 +139,12 @@ int run_consumer()
 
     score::Result<score::mw::com::ServiceHandleContainer<score::mw::com::GenericProxy::HandleType>> handles_res;
     int retries{0};
-    while (retries < 50)
+    while (retries < kMaxFindServiceRetries)
     {
         handles_res = score::mw::com::GenericProxy::FindService(instance_specifier);
         if (handles_res.has_value() && !handles_res.value().empty())
             break;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(kFindServiceRetryInterval);
         retries++;
     }
     if (!handles_res.has_value() || handles_res.value().empty())
@@ -208,7 +215,7 @@ int run_consumer()
             std::cerr << "[CONSUMER] Failed to get new samples." << std::endl;
             return 1;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(kConsumerPollInterval);
     }
     if (data_mismatches > 0)
     {

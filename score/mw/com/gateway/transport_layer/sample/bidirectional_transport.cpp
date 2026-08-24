@@ -35,6 +35,8 @@ namespace
 {
 
 using score::os::Socket;
+constexpr auto kInitialConnectionPollInterval = std::chrono::milliseconds{10};
+constexpr auto kAcceptRetryInterval = std::chrono::milliseconds{100};
 
 /// \brief Sets the TCP_NODELAY option on the given socket file descriptor to disable Nagle's algorithm in order to
 /// reduce latency.
@@ -94,7 +96,7 @@ score::Result<void> BidirectionalTransport::Setup()
     // the transport is actually ready to send and receive messages
     while (!is_connected_ && !threads_.ShutdownRequested())
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(kInitialConnectionPollInterval);
     }
 
     if (!is_connected_)
@@ -253,7 +255,7 @@ bool BidirectionalTransport::WaitForConnection(score::cpp::stop_token stop_token
             if (accept_result.error() == score::os::Error::createFromErrno(EAGAIN) ||
                 accept_result.error() == score::os::Error::createFromErrno(EWOULDBLOCK))
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(kAcceptRetryInterval);
                 continue;
             }
             if (!stop_token.stop_requested())

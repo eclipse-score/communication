@@ -29,6 +29,7 @@ namespace
 
 constexpr std::uint32_t kNumIterations{200U};
 constexpr std::chrono::milliseconds kCycleTime{10};
+constexpr float kTirePressureStep{0.1F};
 
 }  // namespace
 
@@ -78,7 +79,7 @@ int main()
             return EXIT_FAILURE;
         }
 
-        *sample_result.value() = static_cast<float>(i) * 0.1F;
+        *sample_result.value() = static_cast<float>(i) * kTirePressureStep;
 
         score::Result<void> send_result = skeleton.tire_pressure_update.Send(std::move(sample_result.value()));
         if (!send_result.has_value())
@@ -88,7 +89,8 @@ int main()
             return EXIT_FAILURE;
         }
 
-        score::Result<void> field_result = skeleton.tire_pressure_front_left.Update(static_cast<float>(i) * 0.1F);
+        score::Result<void> field_result =
+            skeleton.tire_pressure_front_left.Update(static_cast<float>(i) * kTirePressureStep);
         if (!field_result.has_value())
         {
             score::mw::log::LogError("SkEf") << "tire_pressure_front_left.Update failed";

@@ -28,6 +28,8 @@ namespace score::message_passing
 namespace
 {
 
+constexpr std::size_t kLogBufferSize{1024U};
+
 // A std::streambuf that writes into a fixed, caller-provided memory block. When the block is full the default
 // overflow() returns EOF, which sets the stream's badbit and silently drops the remainder - so the logger neither
 // allocates nor overflows the buffer. Wrapping a stack buffer this way lets the console fallback logger reuse the
@@ -60,7 +62,7 @@ class FixedBufferStreamBuf final : public std::streambuf
 LoggingCallback GetCerrLogger()
 {
     return [](LogSeverity /*severity*/, LogItems items) -> void {
-        std::array<char, 1024U> buffer{};
+        std::array<char, kLogBufferSize> buffer{};
         FixedBufferStreamBuf stream_buffer{buffer.data(), buffer.size()};
         std::ostream stream{&stream_buffer};
         // Force the classic locale so integer formatting is deterministic (no digit grouping) and allocation-free.

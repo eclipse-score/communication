@@ -33,6 +33,8 @@ namespace score::memory::shared::detail
 namespace
 {
 
+constexpr auto kAcquireRegionVersionRetrySleep = std::chrono::milliseconds{10};
+
 bool DoesRegionIteratorOverlapWithExistingRegionInMap(
     const std::map<std::uintptr_t, std::uintptr_t>::const_iterator region_it,
     const std::map<std::uintptr_t, std::uintptr_t>& map) noexcept
@@ -372,7 +374,7 @@ std::optional<std::uint8_t> MemoryRegionMapImpl<AtomicIndirectorType>::AcquireRe
                 // no action needed - a "continue" would be optimized out and lead to missing code coverage
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds{10});
+        std::this_thread::sleep_for(kAcquireRegionVersionRetrySleep);
     }
     return std::nullopt;
 }

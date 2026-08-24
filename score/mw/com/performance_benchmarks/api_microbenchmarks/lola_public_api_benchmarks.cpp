@@ -26,7 +26,8 @@ namespace score::mw::com::test
 namespace
 {
 constexpr std::string_view kBenchmarkInstanceSpecifier = "/score/mw/com/test/TestInterface";
-}
+constexpr int kBenchmarkRepetitions{10};
+}  // namespace
 
 // This fixture will be used to benchmark the LoLa runtime
 class LolaBenchmarkFixture : public benchmark::Fixture
@@ -34,7 +35,7 @@ class LolaBenchmarkFixture : public benchmark::Fixture
   public:
     LolaBenchmarkFixture()
     {
-        this->Repetitions(10);
+        this->Repetitions(kBenchmarkRepetitions);
         this->ReportAggregatesOnly(true);
         this->ThreadRange(1, 1);
         this->UseRealTime();

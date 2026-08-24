@@ -34,6 +34,7 @@ namespace score::mw::com::test
 namespace
 {
 const std::chrono::seconds kMaxHandleNotificationWaitTime{15U};
+constexpr auto kSubscriptionResubscribePollInterval{std::chrono::milliseconds{50U}};
 }  // namespace
 
 void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
@@ -171,7 +172,7 @@ void DoConsumerActionsWithProxy(CheckPointControl& check_point_control,
             std::cerr << "Consumer: Wait for event switch to kSubscribed aborted via stop-token!" << std::endl;
             return;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds{50U});
+        std::this_thread::sleep_for(kSubscriptionResubscribePollInterval);
         subscription_state = lola_proxy.simple_event_.GetSubscriptionState();
     }
     check_point_control.CheckPointReached(3);

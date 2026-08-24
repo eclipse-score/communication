@@ -33,6 +33,8 @@
 namespace score::mw::com::impl::tracing
 {
 
+inline constexpr auto kTracingReceiveHandlerInlineBufferSize{128U};
+
 ProxyEventTracingData GenerateProxyTracingStructFromEventConfig(const InstanceIdentifier& instance_identifier,
                                                                 const std::string_view event_name);
 ProxyEventTracingData GenerateProxyTracingStructFromFieldConfig(const InstanceIdentifier& instance_identifier,
@@ -55,7 +57,7 @@ void TraceCallGetNewSamplesCallback(ProxyEventTracingData& proxy_event_tracing_d
 void TraceCallReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
                              const ProxyEventBindingBase& proxy_event_binding_base);
 
-score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(
+score::cpp::callback<void(void), kTracingReceiveHandlerInlineBufferSize> CreateTracingReceiveHandler(
     ProxyEventTracingData& proxy_event_tracing_data,
     const ProxyEventBindingBase& proxy_event_binding_base,
     EventReceiveHandler handler);

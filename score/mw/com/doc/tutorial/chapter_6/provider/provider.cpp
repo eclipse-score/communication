@@ -19,6 +19,7 @@
 #include <cstring>
 
 constexpr std::string_view kHelloWorld{"Hello World"};
+constexpr auto kSampleSendInterval = std::chrono::milliseconds{100};
 static std::atomic<bool> g_running{true};
 
 static void SignalHandler(int /*signum*/)
@@ -49,7 +50,7 @@ int main()
     size_t send_counter{0};
     while (g_running.load(std::memory_order_relaxed))
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(kSampleSendInterval);
 
         // Allocate a slot, where to publish the next event
         auto sample_allocatee_ptr = hello_world_service_instance.message.Allocate();

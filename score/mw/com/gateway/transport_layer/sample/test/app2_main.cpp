@@ -14,6 +14,7 @@
 #include "score/mw/com/gateway/transport_layer/sample/configuration/hypervisor_socket_configuration.h"
 
 #include <atomic>
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -24,12 +25,22 @@ using score::mw::com::gateway::HyperVisorSocketConfiguration;
 namespace
 {
 
+constexpr std::uint16_t kApp2LocalPort{9000U};
+constexpr std::uint16_t kApp2RemotePort{9001U};
+constexpr std::uint32_t kTestEventPayloadSize{64U};
+constexpr std::uint32_t kTestEventPayloadAlignment{8U};
+constexpr std::uint32_t kTestFieldPayloadSize{32U};
+constexpr std::uint32_t kSharedMemoryControlSize{4U};
+constexpr std::uint32_t kSharedMemoryDataSize{8U};
+constexpr int kRegularConnectionTimeoutPollCount{100};
+constexpr std::chrono::milliseconds kRegularConnectionPollInterval{50};
+
 HyperVisorSocketConfiguration CreateConfiguration()
 {
     HyperVisorSocketConfiguration config{};
     config.remote_ip_ = score::os::Ipv4Address{"127.0.0.1"};
-    config.local_port_ = 9000;
-    config.remote_port_ = 9001;
+    config.local_port_ = kApp2LocalPort;
+    config.remote_port_ = kApp2RemotePort;
     return config;
 }
 
@@ -37,10 +48,12 @@ void SendMessages(BidirectionalTransport& transport)
 {
     auto service_request = score::mw::com::gateway::ProvideServiceRequest{
         score::mw::com::impl::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(),
-        {{"TestEvent", {64U, 8U}}, {"TestField", {32U, 4U}}},
-        4U,
-        8U};
+        {{"TestEvent", {kTestEventPayloadSize, kTestEventPayloadAlignment}},
+         {"TestField", {kTestFieldPayloadSize, kSharedMemoryControlSize}}},
+        kSharedMemoryControlSize,
+        kSharedMemoryDataSize};
     const auto send_result = transport.SendRequest(service_request);
+    static_cast<void>(send_result);
 
     auto notification = score::mw::com::gateway::RegisterNotificationRequest{
         score::mw::com::impl::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(),
@@ -79,9 +92,10 @@ int ExecuteWithRegularConnection()
     int expected_amount_received_messages = 1;
     int sleep_counter = 0;
     // Sleep until all expected messages are received or a timeout occurs (whichever comes first)
-    while (received_message_count < expected_amount_received_messages || sleep_counter < 100)
+    while (received_message_count < expected_amount_received_messages ||
+           sleep_counter < kRegularConnectionTimeoutPollCount)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(kRegularConnectionPollInterval);
         sleep_counter++;
     }
 
@@ -114,9 +128,9 @@ int ExecuteWithReconnect()
 
         auto request = score::mw::com::gateway::ProvideServiceRequest{
             score::mw::com::impl::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(),
-            {{"TestEvent", {64U, 8U}}},
-            4U,
-            8U};
+            {{"TestEvent", {kTestEventPayloadSize, kTestEventPayloadAlignment}}},
+            kSharedMemoryControlSize,
+            kSharedMemoryDataSize};
         const auto send_result = transport.SendRequest(request);
         if (!send_result)
         {
@@ -150,9 +164,9 @@ int ExecuteWithReconnect()
 
         auto request = score::mw::com::gateway::ProvideServiceRequest{
             score::mw::com::impl::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(),
-            {{"TestField", {32U, 4U}}},
-            4U,
-            8U};
+            {{"TestField", {kTestFieldPayloadSize, kSharedMemoryControlSize}}},
+            kSharedMemoryControlSize,
+            kSharedMemoryDataSize};
         const auto send_result = transport.SendRequest(request);
         if (!send_result)
         {

@@ -18,6 +18,7 @@
 #include <cstdlib>
 
 static std::atomic<bool> g_running{true};
+constexpr auto kSampleSendInterval = std::chrono::milliseconds{100};
 
 static void SignalHandler(int /*signum*/)
 {
@@ -48,7 +49,7 @@ int main()
     size_t send_counter{0};
     while (g_running.load(std::memory_order_relaxed))
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(kSampleSendInterval);
         const auto send_sample_result = skeleton_component.SendSample(send_counter);
         if (send_sample_result == score::mw::com::tutorial::SkeletonComponent::SendSampleResult::kNoSampleAllocated)
         {

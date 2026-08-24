@@ -22,6 +22,8 @@
 #include <cstring>
 
 static std::atomic<bool> g_running{true};
+constexpr std::chrono::milliseconds kFindServiceRetryInterval{100};
+constexpr std::chrono::milliseconds kSamplePollingInterval{200};
 
 static void SignalHandler(int /*signum*/)
 {
@@ -40,7 +42,7 @@ int main()
     std::optional<score::mw::com::tutorial::HelloWorldProxy::HandleType> service_handle{};
     while (g_running.load(std::memory_order_relaxed))
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(kFindServiceRetryInterval);
         auto service_handle_container_result =
             score::mw::com::tutorial::HelloWorldProxy::FindService(instance_specifier.value());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_handle_container_result.has_value(),
@@ -75,7 +77,7 @@ int main()
 
     while (g_running.load(std::memory_order_relaxed))
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(kSamplePollingInterval);
         proxy_component.GetNewSamples();
     }
     std::cout << "HelloWorld service consumer going down." << std::endl;

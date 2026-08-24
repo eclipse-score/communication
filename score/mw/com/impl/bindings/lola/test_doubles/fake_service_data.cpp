@@ -25,6 +25,7 @@ namespace
 // Fixed capacity used for the fixed-capacity containers within the fake ServiceDataStorage. Test-doubles add their
 // events dynamically, so we simply reserve a generous upper bound.
 constexpr std::size_t kMaxNumberOfServiceElements{100U};
+constexpr auto kFakeServiceDataSharedMemorySize{65535U};
 }  // namespace
 
 std::unique_ptr<FakeServiceData> FakeServiceData::Create(const std::string& control_file_name,
@@ -84,7 +85,7 @@ FakeServiceData::FakeServiceData(const std::string& control_file_name,
                     memory_resource->construct<ServiceDataControl>(kMaxNumberOfServiceElements, *memory_resource);
             }
         },
-        65535U);
+        kFakeServiceDataSharedMemorySize);
 
     data_memory = score::memory::shared::SharedMemoryFactory::Create(
         data_file_name,
@@ -98,7 +99,7 @@ FakeServiceData::FakeServiceData(const std::string& control_file_name,
                 data_storage->skeleton_uid_ = skeleton_uid_in;
             }
         },
-        65535U);
+        kFakeServiceDataSharedMemorySize);
 }
 
 FakeServiceData::~FakeServiceData() noexcept

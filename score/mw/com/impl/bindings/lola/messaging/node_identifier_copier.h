@@ -23,7 +23,9 @@
 namespace score::mw::com::impl::lola
 {
 
-using NodeIdTmpBufferType = std::array<pid_t, 20>;
+inline constexpr auto kNodeIdTmpBufferCapacity{20U};
+
+using NodeIdTmpBufferType = std::array<pid_t, kNodeIdTmpBufferCapacity>;
 
 /// \brief Copies node identifiers (pid) contained within (container) values of a map into a given buffer under
 ///        read-lock

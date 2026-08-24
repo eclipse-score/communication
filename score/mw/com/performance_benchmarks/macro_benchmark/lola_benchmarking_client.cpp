@@ -31,6 +31,8 @@ constexpr std::string_view kLogContext{"BCli"};
 namespace score::mw::com::test
 {
 
+constexpr int kClientCreationJitterRangeMs{100};
+
 namespace
 {
 
@@ -399,7 +401,8 @@ int main(int argc, const char** argv)
     for (unsigned int i = 0; i < config.number_of_clients; i++)
     {
         // fuzz the creation time of the proxies
-        std::this_thread::sleep_for(std::chrono::milliseconds{std::rand() % 100});
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds{std::rand() % score::mw::com::test::kClientCreationJitterRangeMs});
         workers.push_back(std::thread([&config, &exit_code, &test_stop_token]() noexcept {
             auto success = score::mw::com::test::RunClient(config, test_stop_token);
 

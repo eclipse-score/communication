@@ -881,7 +881,7 @@ void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id
     do
     {
         // LCOV_EXCL_START exceeds "short" limit for unit tests
-        if (loop_count == 255U)
+        if (loop_count == std::numeric_limits<decltype(loop_count)>::max())
         {
             score::mw::log::LogError("lola")
                 << "An overflow in counting the node identifiers to notifies event update.";

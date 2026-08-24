@@ -63,6 +63,9 @@ namespace
 {
 
 const std::string kShmNamePrefix{"inotify_stress_test_worker_"};
+constexpr mode_t kBaseDirectoryPermissions{0777};
+constexpr std::size_t kDefaultNumProcesses{5U};
+constexpr std::size_t kDefaultCycles{100U};
 
 int DoSetup()
 {
@@ -75,7 +78,7 @@ int DoSetup()
     }
     // Allow non-root worker processes (when --base-uid / --base-gid are used) to create
     // subdirectories and files inside the shared base folder.
-    if (::chmod(kBaseFolder.c_str(), 0777) != 0)
+    if (::chmod(kBaseFolder.c_str(), kBaseDirectoryPermissions) != 0)
     {
         std::cerr << getpid() << ": chmod on base directory failed: " << strerror(errno) << std::endl;
         return -1;
@@ -97,9 +100,9 @@ int ParseArguments(int argc,
     // clang-format off
     options.add_options()
         ("help",          "Display the help message")
-        ("num-processes", po::value<std::size_t>(&num_processes)->default_value(5U),
+        ("num-processes", po::value<std::size_t>(&num_processes)->default_value(kDefaultNumProcesses),
                           "Number of worker processes to spawn")
-        ("cycles",        po::value<std::size_t>(&cycles)->default_value(100U),
+        ("cycles",        po::value<std::size_t>(&cycles)->default_value(kDefaultCycles),
                           "Number of stress cycles before terminating")
         ("base-uid",      po::value<std::uint32_t>(&base_uid)->default_value(0U),
                           "Base UID: worker N calls setuid(base-uid + N). 0 = skip setuid.")

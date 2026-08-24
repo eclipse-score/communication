@@ -29,6 +29,7 @@ namespace
 
 std::size_t gGetNewSamplesBenchmarkIndex{0};
 constexpr std::string_view kBenchmarkInstanceSpecifier = "test/lolabenchmark";
+constexpr int kBenchmarkRepetitions{10};
 
 struct DataExchangeConfig
 {
@@ -52,7 +53,7 @@ class LolaAllocateSendBenchmarkFixture : public benchmark::Fixture
     LolaAllocateSendBenchmarkFixture()
     {
         // This code is run once per benchmark
-        this->Repetitions(10);
+        this->Repetitions(kBenchmarkRepetitions);
         this->ReportAggregatesOnly(true);
         this->ThreadRange(1, 1);
         this->MeasureProcessCPUTime();

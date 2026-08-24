@@ -57,7 +57,8 @@ class IProxyEvent : public IProxyEventBase
     IProxyEvent() = default;
     ~IProxyEvent() override = default;
 
-    using Callback = score::cpp::callback<void(SamplePtr<SampleType>), 80U>;
+    static constexpr std::size_t kCallbackCapacity{80U};
+    using Callback = score::cpp::callback<void(SamplePtr<SampleType>), kCallbackCapacity>;
 
     virtual Result<std::size_t> GetNewSamples(Callback&&, const std::size_t) = 0;
 

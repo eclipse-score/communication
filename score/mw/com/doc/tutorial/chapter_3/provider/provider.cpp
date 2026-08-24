@@ -31,6 +31,7 @@ constexpr std::array<std::string_view, 3U> kInstanceSpecifierStrings{"MyHelloWor
 
 // The provider waits this amount of time after bringing up a service instance before it brings up the next one.
 constexpr std::chrono::seconds kInstanceStaggerDelay{5};
+constexpr auto kSampleSendInterval{std::chrono::milliseconds{100}};
 
 static std::atomic<bool> g_running{true};
 
@@ -121,7 +122,7 @@ int main()
             next_instance_time = std::chrono::steady_clock::now() + kInstanceStaggerDelay;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(kSampleSendInterval);
 
         // Send a new event sample on every service instance that is already up and running.
         for (std::size_t i = 0; i < service_instances.size(); ++i)

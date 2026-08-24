@@ -28,6 +28,7 @@ constexpr auto kInstanceSpecifierString{"partial_restart/small_but_great"};
 const auto kInstanceSpecifier =
     score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifierString}).value();
 const std::chrono::milliseconds kDelayBetweenSendEvents{20U};
+constexpr std::uint32_t kSimpleEventSecondMemberValue{42U};
 }  // namespace
 
 void PerformProviderActions(CheckPointControl& check_point_control,
@@ -67,7 +68,7 @@ void PerformProviderActions(CheckPointControl& check_point_control,
     //*********************************************************
     while (!stop_token.stop_requested())
     {
-        auto result = service_instance.simple_event_.Send({1U, 42U});
+        auto result = service_instance.simple_event_.Send({1U, kSimpleEventSecondMemberValue});
         if (!result.has_value())
         {
             std::cout << "Provider Step(2): Sending of event failed: " << result.error() << "\n";

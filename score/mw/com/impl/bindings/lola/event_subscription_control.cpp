@@ -19,6 +19,9 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
+constexpr std::uint32_t kSubscriberCountBitShift{16U};
+constexpr std::uint32_t kSubscribedSamplesMask{0x0000FFFFU};
+
 inline EventSubscriptionControl<>::SubscriberCountType GetSubscribersFromState(
     std::uint32_t subscription_state) noexcept
 {
@@ -26,7 +29,7 @@ inline EventSubscriptionControl<>::SubscriberCountType GetSubscribersFromState(
     // not lead to data loss.".
     // This is an in purpose casting to get the subscribers from the subscription state.
     // coverity[autosar_cpp14_a4_7_1_violation]
-    return static_cast<EventSubscriptionControl<>::SubscriberCountType>(subscription_state >> 16U);
+    return static_cast<EventSubscriptionControl<>::SubscriberCountType>(subscription_state >> kSubscriberCountBitShift);
 }
 
 inline EventSubscriptionControl<>::SlotNumberType GetSubscribedSamplesFromState(
@@ -36,14 +39,14 @@ inline EventSubscriptionControl<>::SlotNumberType GetSubscribedSamplesFromState(
     // not lead to data loss.".
     // This is an in purpose casting to get the subscribed samples from the subscription state.
     // coverity[autosar_cpp14_a4_7_1_violation]
-    return static_cast<std::uint16_t>(subscription_state & 0x0000FFFFU);
+    return static_cast<std::uint16_t>(subscription_state & kSubscribedSamplesMask);
 }
 
 inline std::uint32_t CreateState(EventSubscriptionControl<>::SubscriberCountType subscriber_count,
                                  EventSubscriptionControl<>::SlotNumberType subscribed_slots)
 {
     std::uint32_t result{subscriber_count};
-    result = result << 16U;
+    result = result << kSubscriberCountBitShift;
     result += subscribed_slots;
     return result;
 }

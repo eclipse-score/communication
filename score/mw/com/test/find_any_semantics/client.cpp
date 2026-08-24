@@ -27,6 +27,9 @@ namespace
 {
 
 constexpr auto kMaxNumSamples{1U};
+constexpr int kFieldSubscribeError{-7};
+constexpr int kSampleNotReceivedError{-5};
+constexpr int kUnexpectedSampleValueError{-6};
 
 int run_client(const std::size_t num_retries, const std::chrono::milliseconds retry_backoff_time)
 {
@@ -86,7 +89,7 @@ int run_client(const std::size_t num_retries, const std::chrono::milliseconds re
         if (!subscribe_result.has_value())
         {
             std::cerr << "Unable to subscribe to field, terminating\n";
-            return -7;
+            return kFieldSubscribeError;
         }
         retries = num_retries;
         while (lola_proxy.test_field.GetSubscriptionState() != score::mw::com::SubscriptionState::kSubscribed)
@@ -110,13 +113,13 @@ int run_client(const std::size_t num_retries, const std::chrono::milliseconds re
         if (!received_value.has_value())
         {
             std::cerr << "Lola didn't receive a sample!\n";
-            return -5;
+            return kSampleNotReceivedError;
         }
 
         if (received_value.value() != kTestValue)
         {
             std::cerr << "Expecting:" << kTestValue << " Received:" << received_value.value() << "!\n ";
-            return -6;
+            return kUnexpectedSampleValueError;
         }
     }
     return 0;

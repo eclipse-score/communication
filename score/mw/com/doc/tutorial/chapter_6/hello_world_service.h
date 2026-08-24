@@ -17,13 +17,15 @@
 
 namespace score::mw::com::tutorial
 {
+inline constexpr std::size_t kFixedSizeStringLength{255};
+
 template <typename Trait>
 class HelloWorldInterface : public Trait::Base
 {
   public:
     using Trait::Base::Base;
 
-    using FixedSizeString = std::array<char, 255>;
+    using FixedSizeString = std::array<char, kFixedSizeStringLength>;
     typename Trait::template Event<FixedSizeString> message{*this, "message"};
 };
 }  // namespace score::mw::com::tutorial

@@ -29,6 +29,7 @@ namespace
 
 constexpr std::uint32_t kNumIterations{100U};
 constexpr std::chrono::milliseconds kCycleTime{10};
+constexpr float kTirePressureIncrement{0.1F};
 
 }  // namespace
 
@@ -78,7 +79,7 @@ int main()
             return EXIT_FAILURE;
         }
 
-        *sample_result.value() = static_cast<float>(i) * 0.1F;
+        *sample_result.value() = static_cast<float>(i) * kTirePressureIncrement;
 
         score::Result<void> send_result = skeleton.tire_pressure_update.Send(std::move(sample_result.value()));
         if (!send_result.has_value())

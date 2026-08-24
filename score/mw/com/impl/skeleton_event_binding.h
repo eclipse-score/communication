@@ -31,6 +31,8 @@
 namespace score::mw::com::impl
 {
 
+inline constexpr std::size_t kSkeletonEventTraceCallbackStorageSize{64U};
+
 // Will come from plumbing
 template <typename SampleType>
 class SampleAllocateePtr;
@@ -38,8 +40,9 @@ class SampleAllocateePtr;
 class SkeletonEventBindingBase
 {
   public:
-    using SubscribeTraceCallback = score::cpp::callback<void(std::size_t, bool), 64U>;
-    using UnsubscribeTraceCallback = score::cpp::callback<void(), 64U>;
+    using SubscribeTraceCallback =
+        score::cpp::callback<void(std::size_t, bool), kSkeletonEventTraceCallbackStorageSize>;
+    using UnsubscribeTraceCallback = score::cpp::callback<void(), kSkeletonEventTraceCallbackStorageSize>;
 
     SkeletonEventBindingBase() = default;
 
@@ -80,7 +83,8 @@ template <typename SampleType>
 class SkeletonEventBinding : public SkeletonEventBindingBase
 {
   public:
-    using SendTraceCallback = score::cpp::callback<void(SampleAllocateePtr<SampleType>&), 64U>;
+    using SendTraceCallback =
+        score::cpp::callback<void(SampleAllocateePtr<SampleType>&), kSkeletonEventTraceCallbackStorageSize>;
 
     /// \brief SampleType is allocated by the user and provided to the middleware to send
     /// \return On failure, returns an error code.

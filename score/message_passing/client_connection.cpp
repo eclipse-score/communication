@@ -33,6 +33,7 @@ constexpr std::int32_t kConnectRetryT = 3;  // new_delay = prev_delay * (1 + 1/T
 constexpr std::int32_t kConnectRetryMsMax = 5000;
 
 constexpr std::chrono::milliseconds kConnectIpcWarningDelay{20};
+constexpr std::chrono::milliseconds kStopWaitPollInterval{10};
 }  // namespace
 
 ClientConnection::ClientConnection(std::shared_ptr<ISharedResourceEngine> engine,
@@ -83,7 +84,7 @@ ClientConnection::~ClientConnection() noexcept
         ClientConnection::Stop();
         while (state_ != State::kStopped)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(kStopWaitPollInterval);
         }
         std::lock_guard<std::recursive_mutex> guard{callback_context_->finalize_mutex};
     }
