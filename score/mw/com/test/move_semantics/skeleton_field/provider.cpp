@@ -39,8 +39,9 @@ void ValueTransformSetHandler(std::int32_t& value) noexcept
 
 void RegisterSetHandler(SkeletonFieldMoveSemanticsSkeleton& skeleton)
 {
-    const auto register_handler_result =
-        skeleton.moved_field_.RegisterSetHandler([](std::int32_t& value) noexcept { ValueTransformSetHandler(value); });
+    const auto register_handler_result = skeleton.moved_field_.RegisterSetHandler([](std::int32_t& value) noexcept {
+        ValueTransformSetHandler(value);
+    });
     if (!register_handler_result.has_value())
     {
         FailTest("Provider: Unable to register set handler: ", register_handler_result.error());
@@ -97,7 +98,7 @@ void RunMoveConstructBeforeOfferProvider(const score::cpp::stop_token& stop_toke
     // Step 2. Move construct skeleton before offering
     std::cout << "\nProvider: Step 2 - Move construct skeleton before offer" << std::endl;
     auto moved_skeleton = std::move(moved_to_skeleton_container.GetSkeleton());
-    
+
     // Step 3. Offer skeleton
     std::cout << "\nProvider: Step 3 - Offer skeleton" << std::endl;
     const auto offer_service_result = moved_skeleton.OfferService();
@@ -208,7 +209,7 @@ void RunMoveConstructAfterOfferProvider(const score::cpp::stop_token& stop_token
         FailTest("Provider: WaitWithAbort (about-to-call) was stopped by stop_token instead of notification");
     }
 
-    // Step 5. Sleep a single random delay, then move construct at random point during the consumer's 
+    // Step 5. Sleep a single random delay, then move construct at random point during the consumer's
     // live WaitForSamples->Set->Get sequence
     std::cout << "\nProvider: Step 5 - Sleep random race delay, then move construct skeleton while offered"
               << std::endl;
@@ -271,7 +272,7 @@ void RunMoveAssignAfterOfferProvider(const score::cpp::stop_token& stop_token)
         FailTest("Provider: WaitWithAbort (about-to-call) was stopped by stop_token instead of notification");
     }
 
-    // Step 5. Sleep a single random delay, then move assign at random point during the consumer's 
+    // Step 5. Sleep a single random delay, then move assign at random point during the consumer's
     // live WaitForSamples->Set->Get sequence.
     std::cout << "\nProvider: Step 5 - Sleep random race delay, then move assign skeleton while offered" << std::endl;
     SleepRandomRaceDelay(kSequenceRaceWindowUs);
