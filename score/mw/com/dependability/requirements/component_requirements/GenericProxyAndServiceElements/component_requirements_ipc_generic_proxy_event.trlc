@@ -207,20 +207,6 @@ section "com" {
                     version = 1
                 }
 
-                /* GetSampleSize is deprecated in favor of GetDataTypeSizeInfo (see GenericProxyEventGetDataTypeSizeInfo), it will be removed in https://github.com/eclipse-score/communication/issues/975 */
-                ScoreReq.CompReq GenericProxyEventGetSampleSize {
-                    description = '''The {{GenericProxyEvent}} shall provide a public method:
-
-                    {{{std::size\_t GenericProxyEvent::GetSampleSize() const noexcept}}}
-
-                    Behaviour: {{GetSampleSize}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety.
-
-                    Return value: returns the aligned size in bytes of the underlying event sample data type. I.e. in case the underlying data type is T, it shall return {{sizeof(T)}}.'''
-                    safety = ScoreReq.Asil.B
-                    derived_from = [Communication.FEAT_EventType@1]
-                    version = 1
-                }
-
                 ScoreReq.CompReq GenericProxyEventGetDataTypeSizeInfo {
                     description = '''The {{GenericProxyEvent}} shall provide a public method:
 
