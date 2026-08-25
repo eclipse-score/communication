@@ -15,6 +15,8 @@
 
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 #include <cstdint>
 namespace score::mw::com::impl::tracing
 {
@@ -30,8 +32,9 @@ struct ServiceElementTracingData
 
 inline bool operator==(const ServiceElementTracingData& lhs, const ServiceElementTracingData& rhs) noexcept
 {
-    return ((lhs.number_of_service_element_tracing_slots == rhs.number_of_service_element_tracing_slots) &&
-            (lhs.service_element_range_start == rhs.service_element_range_start));
+    return (
+        safe_math::CmpEqual(lhs.number_of_service_element_tracing_slots, rhs.number_of_service_element_tracing_slots) &&
+        safe_math::CmpEqual(lhs.service_element_range_start, rhs.service_element_range_start));
 }
 
 }  // namespace score::mw::com::impl::tracing

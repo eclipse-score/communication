@@ -135,6 +135,7 @@ cc_library(
         "//score/mw/com/impl/configuration:lola_field_id",
         "//score/mw/com/impl/configuration:lola_method_id",
         "//score/mw/com/impl/configuration:lola_service_element_id",
+        "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/mw/log",
     ],
 )

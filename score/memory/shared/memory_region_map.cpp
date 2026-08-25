@@ -303,8 +303,8 @@ auto MemoryRegionMapImpl<AtomicIndirectorType>::AcquireLatestRegionVersionForRea
     // It would actually need an insane number of threads, which concurrently try to increment the refcount!
     // We are using this bounded number here instead of a while(true) construct as we are then able to return
     // std::nullopt and leave it to the layer above to react e.g. with a std::terminate()!
-    constexpr std::uint8_t max_retries = 255U;
-    for (std::uint8_t retry_count = 0U; retry_count < max_retries; retry_count++)
+    constexpr std::uint32_t max_retries = 255U;
+    for (std::uint32_t retry_count = 0U; retry_count < max_retries; retry_count++)
     {
         const uint8_t region_index = latest_known_region_version_.load(std::memory_order_relaxed);
         const std::uint32_t previous_refcount = AtomicIndirectorType<RegionVersionRefCountType>::fetch_add(
@@ -340,16 +340,16 @@ std::optional<std::uint8_t> MemoryRegionMapImpl<AtomicIndirectorType>::AcquireRe
 {
     // Arbitrary retry value here. It is expected, that when checking all known regions versions, the writer
     // will find one being unused! Because readers are accessing only the latest for a very short time ...
-    constexpr std::uint8_t max_retries = 10U;
-    for (std::uint8_t retry_count = 0U; retry_count < max_retries; retry_count++)
+    constexpr std::uint32_t max_retries = 10U;
+    for (std::uint32_t retry_count = 0U; retry_count < max_retries; retry_count++)
     {
         // Iterate over version indices starting with the version directly after the current
         // latest_known_region_version_. That way we are checking the oldest version first, to have the lowest
         // probability of clashes with readers.
-        for (std::uint8_t loop_idx = 1U; loop_idx < VERSION_COUNT; loop_idx++)
+        for (std::uint32_t loop_idx = 1U; loop_idx < VERSION_COUNT; loop_idx++)
         {
-            const auto version_idx = static_cast<std::uint8_t>(
-                (loop_idx + latest_known_region_version_.load(std::memory_order_relaxed)) % VERSION_COUNT);
+            const std::uint32_t current_version = latest_known_region_version_.load(std::memory_order_relaxed);
+            const auto version_idx = static_cast<std::uint8_t>((loop_idx + current_version) % VERSION_COUNT);
             RegionVersionRefCountType cur_ref_count =
                 known_regions_versions_refcounts_.at(static_cast<size_t>(version_idx)).load();
             if (cur_ref_count == 0U)

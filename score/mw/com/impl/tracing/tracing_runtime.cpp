@@ -555,7 +555,7 @@ Result<void> TracingRuntime::Trace(const BindingType binding_type,
         // Handle debounced logging for no available tracing slots
         // Log first 10 failures at LogInfo level, then switch to LogDebug to reduce DLT bandwidth.
         ++debounce_counter_;
-        const bool debouncing_active = (debounce_counter_ >= kDebounceAfter);
+        const bool debouncing_active = debounce_counter_ >= kDebounceAfter;
 
         if (!debouncing_active)
         {

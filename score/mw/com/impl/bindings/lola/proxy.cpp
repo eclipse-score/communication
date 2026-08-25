@@ -114,13 +114,13 @@ using memory::DataTypeSizeInfo;
 std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
 PlaceSharedLockOnUsageMarkerFileWithRetry(memory::shared::LockFile& service_instance_usage_marker_file,
                                           std::string_view file_path,
-                                          std::uint8_t max_retries)
+                                          std::uint32_t max_retries)
 {
     auto service_instance_usage_mutex_and_lock =
         std::make_unique<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>(
             service_instance_usage_marker_file);
     constexpr std::chrono::milliseconds kRetryBackoffTime{200U};
-    std::uint8_t retry_counter{0U};
+    std::uint32_t retry_counter{0U};
 
     // We use while true and manually break within the loop to prevent sleeping an additional time in case retry_counter
     // exceeds max_retries.
@@ -369,7 +369,7 @@ std::unique_ptr<Proxy> Proxy::Create(const HandleType handle)
         return nullptr;
     }
 
-    constexpr std::uint8_t kMaxFlockRetries{3U};
+    constexpr std::uint32_t kMaxFlockRetries{3U};
     auto service_instance_usage_mutex_and_lock =
         PlaceSharedLockOnUsageMarkerFileWithRetry(service_instance_usage_marker_file.value(),
                                                   std::string_view(service_instance_usage_marker_file_path),

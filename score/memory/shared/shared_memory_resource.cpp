@@ -211,7 +211,7 @@ ShmObjectStatInfo GetShmObjectStatInfo(const ISharedMemoryResource::FileDescript
     if (typed_memory_ptr != nullptr)
     {
         const auto typedmemd_uid = AcquireTypedMemoryDaemonUid();
-        if (is_named_shm && (typedmemd_uid.has_value() && (typedmemd_uid.value() == owner_uid)))
+        if (is_named_shm && (typedmemd_uid.has_value() && safe_math::CmpEqual(typedmemd_uid.value(), owner_uid)))
         {
             // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
             // variables being given values that are not subsequently used"

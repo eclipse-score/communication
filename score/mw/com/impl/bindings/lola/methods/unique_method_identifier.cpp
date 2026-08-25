@@ -12,12 +12,15 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/methods/unique_method_identifier.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 namespace score::mw::com::impl::lola
 {
 
 bool operator==(const UniqueMethodIdentifier& lhs, const UniqueMethodIdentifier& rhs) noexcept
 {
-    return ((lhs.method_or_field_id == rhs.method_or_field_id) && (lhs.method_type == rhs.method_type));
+    return (safe_math::CmpEqual(lhs.method_or_field_id, rhs.method_or_field_id) &&
+            (lhs.method_type == rhs.method_type));
 }
 
 bool operator!=(const UniqueMethodIdentifier& lhs, const UniqueMethodIdentifier& rhs) noexcept
