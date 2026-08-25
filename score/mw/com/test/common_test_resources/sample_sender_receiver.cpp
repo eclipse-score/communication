@@ -608,6 +608,82 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
     return EXIT_SUCCESS;
 }
 
+int EventSenderReceiver::RunAsSkeletonWithNotificationExchange(
+    const score::mw::com::InstanceSpecifier& instance_specifier,
+    const std::chrono::milliseconds cycle_time,
+    const std::size_t num_cycles,
+    score::os::InterprocessNotification& interprocess_notification_from_proxy,
+    score::os::InterprocessNotification& interprocess_notification_to_proxy,
+    score::os::InterprocessNotification& interprocess_notification_subscribed_from_proxy,
+    const score::cpp::stop_token& stop_token)
+{
+    auto bigdata_result = BigDataSkeleton::Create(instance_specifier);
+    if (!bigdata_result.has_value())
+    {
+        std::cerr << "Unable to construct BigDataSkeleton: " << bigdata_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
+    auto& bigdata = bigdata_result.value();
+
+    const auto offer_result = bigdata.OfferService();
+    if (!offer_result.has_value())
+    {
+        std::cerr << "Unable to offer service for BigDataSkeleton: " << offer_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
+
+    // Let the proxy know the service is now offered and ready to be found/subscribed to.
+    interprocess_notification_to_proxy.notify();
+
+    // Only start sending once the proxy has explicitly confirmed that it has finished subscribing. Without this,
+    // samples sent before the proxy subscribes would be silently dropped/overwritten in the shared-memory ring
+    // buffer, and the proxy would then wait forever for samples that will never arrive.
+    if (!interprocess_notification_subscribed_from_proxy.waitWithAbort(stop_token))
+    {
+        std::cerr << "Request stop on stop token while waiting for proxy to subscribe. Exiting.\n";
+        return EXIT_FAILURE;
+    }
+
+    std::cout << "Starting to send data\n";
+
+    for (std::size_t cycle = 0U; cycle < num_cycles && !stop_token.stop_requested(); ++cycle)
+    {
+        auto sample_result = PrepareMapLaneSample(bigdata, cycle);
+        if (!sample_result.has_value())
+        {
+            std::cerr << "No sample received. Exiting.\n";
+            return EXIT_FAILURE;
+        }
+        auto sample = std::move(sample_result).value();
+
+        {
+            std::lock_guard<std::mutex> lock{event_sending_mutex_};
+            const auto send_result = bigdata.map_api_lanes_stamped_.Send(std::move(sample));
+            if (!send_result.has_value())
+            {
+                std::cerr << "Unable to send data. Exiting.\n";
+                return EXIT_FAILURE;
+            }
+            event_published_ = true;
+        }
+        std::this_thread::sleep_for(cycle_time);
+    }
+
+    // Stop offer once the proxy has confirmed that it received everything it needed.
+    // This should avoid racing StopOfferService() against the proxy's final GetNewSamples() call.
+    if (!interprocess_notification_from_proxy.waitWithAbort(stop_token))
+    {
+        std::cerr << "Request stop on stop token while waiting for proxy to finish. Exiting.\n";
+        return EXIT_FAILURE;
+    }
+
+    std::cout << "Stop offering service...";
+    bigdata.StopOfferService();
+    std::cout << "and terminating, bye bye\n";
+
+    return EXIT_SUCCESS;
+}
+
 int EventSenderReceiver::RunAsSkeletonWaitForProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
                                                    score::os::InterprocessNotification& interprocess_notification,
                                                    const score::cpp::stop_token& stop_token)
@@ -875,6 +951,105 @@ int EventSenderReceiver::RunAsProxyCheckValuesCreatedFromConfig(
     std::cout << "and terminating, bye bye\n";
 
     // Tell the skeleton that the proxy has finished.
+    interprocess_notification_to_skeleton.notify();
+
+    return EXIT_SUCCESS;
+}
+
+int EventSenderReceiver::RunAsProxyWithNotificationExchange(
+    const score::mw::com::InstanceSpecifier& instance_specifier,
+    const std::chrono::milliseconds cycle_time,
+    const std::size_t num_cycles,
+    score::os::InterprocessNotification& interprocess_notification_from_skeleton,
+    score::os::InterprocessNotification& interprocess_notification_to_skeleton,
+    score::os::InterprocessNotification& interprocess_notification_subscribed_to_skeleton,
+    const score::cpp::stop_token& stop_token)
+{
+    constexpr const std::size_t SAMPLES_PER_CYCLE = 2U;
+
+    // Wait until the skeleton has offered the service before attempting to find it and subscribe
+    if (!interprocess_notification_from_skeleton.waitWithAbort(stop_token))
+    {
+        std::cerr << "Request stop on stop token while waiting for skeleton to offer service. Exiting.\n";
+        return EXIT_FAILURE;
+    }
+
+    auto handle_result = GetHandleFromSpecifier(instance_specifier, stop_token);
+    if (!handle_result.has_value())
+    {
+        std::cerr << "Unable to find service: " << instance_specifier
+                  << ". Failed with error: " << handle_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
+    auto handle = handle_result.value();
+
+    auto proxy_result = BigDataProxy::Create(std::move(handle));
+    if (!proxy_result.has_value())
+    {
+        std::cerr << "Unable to construct BigDataProxy: " << proxy_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
+    auto& bigdata = proxy_result.value();
+    auto& map_api_lanes_stamped_event = bigdata.map_api_lanes_stamped_;
+
+    std::cout << ToString(instance_specifier, ": Subscribing to service\n");
+    const auto subscribe_result = map_api_lanes_stamped_event.Subscribe(SAMPLES_PER_CYCLE);
+    if (!subscribe_result.has_value())
+    {
+        std::cerr << "Unable to subscribe to event: " << subscribe_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
+
+    // Inform the skeleton that proxy subscribed, so it can start sending. Used to avoid that sender sends
+    // before proxy subscribed and samples could get "lost" in buffer, which would not be detected on proxy side.
+    interprocess_notification_subscribed_to_skeleton.notify();
+
+    SampleReceiver receiver{instance_specifier};
+    for (std::size_t cycle = 0U; (cycle < num_cycles) && !stop_token.stop_requested();)
+    {
+        std::this_thread::sleep_for(cycle_time);
+
+        const auto received_before = receiver.GetReceivedSampleCount();
+        Result<std::size_t> num_samples_received = map_api_lanes_stamped_event.GetNewSamples(
+            [&receiver](SamplePtr<MapApiLanesStamped> sample) noexcept {
+                const MapApiLanesStamped& sample_value = GetSamplePtrValue(sample.get());
+                receiver.ReceiveSample(sample_value);
+            },
+            SAMPLES_PER_CYCLE);
+        const auto received = receiver.GetReceivedSampleCount() - received_before;
+
+        const bool get_new_samples_api_error = !num_samples_received.has_value();
+        const bool mismatch_api_returned_receive_count_vs_sample_callbacks =
+            !get_new_samples_api_error && (*num_samples_received != received);
+
+        if (get_new_samples_api_error || mismatch_api_returned_receive_count_vs_sample_callbacks)
+        {
+            std::stringstream ss;
+            ss << instance_specifier << ": Error in cycle " << cycle << " during sample reception: ";
+            if (mismatch_api_returned_receive_count_vs_sample_callbacks)
+            {
+                ss << "number of received samples doesn't match to what IPC claims: " << *num_samples_received << " vs "
+                   << received;
+            }
+            else
+            {
+                ss << std::move(num_samples_received).error();
+            }
+            ss << ", terminating.\n";
+            std::cerr << ss.str();
+
+            map_api_lanes_stamped_event.Unsubscribe();
+            return EXIT_FAILURE;
+        }
+
+        cycle += *num_samples_received;
+    }
+
+    std::cout << ToString(instance_specifier, ": Unsubscribing...\n");
+    map_api_lanes_stamped_event.Unsubscribe();
+    std::cout << ToString(instance_specifier, ": and terminating, bye bye\n");
+
+    // Tell the skeleton that we're done, so it's safe for it to stop offering the service.
     interprocess_notification_to_skeleton.notify();
 
     return EXIT_SUCCESS;

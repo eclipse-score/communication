@@ -56,6 +56,25 @@ class EventSenderReceiver
                                   score::os::InterprocessNotification& interprocess_notification,
                                   const score::cpp::stop_token& stop_token);
 
+    /**
+     * Basically the same as RunAsSkeleton(), but with 3 InterprocessNotification parameters that allow to inform
+     * the other process (RunAsProxyWithNotificationExchange()) about the current status of the communication.
+     * Those state notification objects are used to avoid races if services are offered/received multiple times.
+     *    @param interprocess_notification_to_proxy Notify proxy that service has been offered
+     *    @param interprocess_notification_from_proxy Proxy notifies skeleton that everything was received (so skeleton
+     * can stop offering service)
+     *    @param interprocess_notification_subscribed_from_proxy Proxy notifies skeleton that it has finished
+     * subscribing (so skeleton can start sending samples)
+     */
+    int RunAsSkeletonWithNotificationExchange(
+        const score::mw::com::InstanceSpecifier& instance_specifier,
+        const std::chrono::milliseconds cycle_time,
+        const std::size_t num_cycles,
+        score::os::InterprocessNotification& interprocess_notification_from_proxy,
+        score::os::InterprocessNotification& interprocess_notification_to_proxy,
+        score::os::InterprocessNotification& interprocess_notification_subscribed_from_proxy,
+        const score::cpp::stop_token& stop_token);
+
     template <typename ProxyType = score::mw::com::test::BigDataProxy,
               typename ProxyEventType = score::mw::com::impl::ProxyEvent<MapApiLanesStamped>>
     int RunAsProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
@@ -70,6 +89,22 @@ class EventSenderReceiver
      */
     int RunAsProxyReceiveHandlerOnly(const score::mw::com::InstanceSpecifier& instance_specifier,
                                      const score::cpp::stop_token& stop_token);
+
+    /**
+     * Counterpart of RunAsSkeletonWithNotificationExchange(): Similar to RunAsProxy() but with 3
+     * InterProcessNotification parameters to exchange state information with the skeleton process.
+     * @param interprocess_notification_from_skeleton Skeleton notifies about service offered
+     * @param interprocess_notification_to_skeleton Inform skeleton that all data was received
+     * @param interprocess_notification_subscribed_to_skeleton Inform skeleton that proxy has subscribed
+     */
+    int RunAsProxyWithNotificationExchange(
+        const score::mw::com::InstanceSpecifier& instance_specifier,
+        const std::chrono::milliseconds cycle_time,
+        const std::size_t num_cycles,
+        score::os::InterprocessNotification& interprocess_notification_from_skeleton,
+        score::os::InterprocessNotification& interprocess_notification_to_skeleton,
+        score::os::InterprocessNotification& interprocess_notification_subscribed_to_skeleton,
+        const score::cpp::stop_token& stop_token);
 
     int RunAsProxyCheckEventSlots(const score::mw::com::InstanceSpecifier& instance_specifier,
                                   const std::uint16_t num_proxy_slots,
