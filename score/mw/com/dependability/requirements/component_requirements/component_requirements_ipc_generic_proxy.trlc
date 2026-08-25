@@ -34,7 +34,7 @@ section "com" {
                 ScoreReq.CompReq EventTypeInfoSource {
                     description = '''The type information for each of the events supported by a {{GenericProxy}} instance, shall be gathered from the shared memory data section published by the {{LoLa}} skeleton instance providing the service instance, the {{GenericProxy}} is connected with.
 
-                    Note: This information is needed for the [GetSampleSize() API|ISSUE:14035184].'''
+                    Note: This information is needed for the [GetDataTypeSizeInfo()].'''
                     safety = ScoreReq.Asil.B
                     derived_from = [Communication.EventType@1]
                     version = 1
@@ -509,25 +509,10 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/14035184 */
-                /* GetSampleSize is deprecated in favor of GetDataTypeSizeInfo (see GenericProxyEventGetDataTypeSizeInfo), it will be removed in https://github.com/eclipse-score/communication/issues/975 */
-                ScoreReq.CompReq GenericProxyEventGetSampleSize {
-                    description = '''The {{GenericProxyEvent}} shall provide a public method:
-
-                    {{{std::size\_t GenericProxyEvent::GetSampleSize() const noexcept}}}
-
-                    Behaviour: {{GetSampleSize}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety.
-
-                    Return value: returns the aligned size in bytes of the underlying event sample data type. I.e. in case the underlying data type is T, it shall return {{sizeof(T)}}.'''
-                    safety = ScoreReq.Asil.B
-                    derived_from = [Communication.EventType@1]
-                    version = 1
-                }
-
                 ScoreReq.CompReq GenericProxyEventGetDataTypeSizeInfo {
                     description = '''The {{GenericProxyEvent}} shall provide a public method:
 
-                    {{{memory::DataTypeSizeInfo GetDataTypeSizeInfo() const noexcept}}}
+                    {{{memory::DataTypeSizeInfo GetDataTypeSizeInfo() const}}}
 
                     Behaviour: {{GetDataTypeSizeInfo}} shall adhere to the re-entrance and thread-safety specifications described in Re-entrance and Thread-safety.
 
@@ -727,16 +712,16 @@ section "com" {
                     version = 1
                 }
 
-                ScoreReq.CompReq GenericProxyFieldGetSampleSize {
+                ScoreReq.CompReq GenericProxyFieldGetDataTypeSizeInfo {
                     description = '''The {{GenericProxyField}} shall provide a public method:
 
-                    {{{std::size_t GenericProxyField::GetSampleSize() const noexcept}}}
+                    {{{memory::DataTypeSizeInfo GetDataTypeSizeInfo() const noexcept}}}
 
-                    Behaviour: {{GetSampleSize}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety.
+                    Behaviour: {{GetDataTypeSizeInfo}} shall adhere to the re-entrance and thread-safety specifications described in Re-entrance and Thread-safety.
 
-                    Return value: returns the aligned size in bytes of the underlying event sample data type. I.e. in case the underlying data type is T, it shall return {{sizeof(T)}}.'''
+                    Return value: returns the data type size info (size in bites and alignment in bytes) of the underlying event sample data type.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.Field@1]
+                    derived_from = [Communication.EventType@1]
                     version = 1
                 }
 

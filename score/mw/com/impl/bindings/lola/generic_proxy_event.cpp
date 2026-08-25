@@ -77,11 +77,6 @@ inline Result<std::size_t> GenericProxyEvent::GetNewSamples(Callback&& receiver,
     return GetNewSamplesImpl(std::move(receiver), tracker);
 }
 
-std::size_t GenericProxyEvent::GetSampleSize() const noexcept
-{
-    return meta_info_.data_type_info_.Size();
-}
-
 memory::DataTypeSizeInfo GenericProxyEvent::GetDataTypeSizeInfo() const
 {
     return meta_info_.data_type_info_;

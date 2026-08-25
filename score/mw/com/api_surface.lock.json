@@ -820,12 +820,6 @@
       "signature": "GetReferenceToMoveable : typename ReferenceToMoveable<T>::Reference &()"
     },
     {
-      "name": "GetSampleSize",
-      "qualified_name": "score::mw::com::GenericProxyEvent::GetSampleSize",
-      "kind": "method",
-      "signature": "GetSampleSize : std::size_t () const noexcept [[deprecated]]"
-    },
-    {
       "name": "HasSerializedFormat",
       "qualified_name": "score::mw::com::GenericProxyEvent::HasSerializedFormat",
       "kind": "method",
