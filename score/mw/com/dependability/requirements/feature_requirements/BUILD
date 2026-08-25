@@ -38,6 +38,8 @@ trlc_requirements_ai_test(
 feature_requirements(
     name = "feature_requirements_e2e",
     srcs = ["feature_requirements_e2e.trlc"],
+    name = "feature_requirements_e2e_error_handling",
+    srcs = ["feature_requirements_e2e_error_handling.trlc"],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/mw/com/dependability:__subpackages__"],
     deps = ["//score/mw/com/dependability/assumed_system:assumed_system_requirements"],
@@ -47,5 +49,8 @@ trlc_requirements_ai_test(
     name = "requirements_ai_check_e2e",
     batch_size = 10,
     reqs = [":feature_requirements_e2e"],
+    name = "requirements_ai_check_e2e_error_handling",
+    batch_size = 10,
+    reqs = [":feature_requirements_e2e_error_handling"],
     tags = ["manual"],
 )

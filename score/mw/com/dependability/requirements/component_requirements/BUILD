@@ -71,3 +71,24 @@ trlc_requirements_ai_test(
     reqs = [":component_requirements_e2e"],
     tags = ["manual"],
 )
+
+component_requirements(
+    name = "component_requirements_e2e_error_handling",
+    srcs = ["component_requirements_e2e_error_handling.trlc"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//score/mw/com/dependability:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/dependability/assumed_system:assumed_system_requirements",
+        "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_e2e_error_handling",
+    ],
+)
+
+trlc_requirements_ai_test(
+    name = "requirements_ai_check_e2e_error_handling",
+    batch_size = 10,
+    reqs = [":component_requirements_e2e_error_handling"],
+    tags = ["manual"],
+)

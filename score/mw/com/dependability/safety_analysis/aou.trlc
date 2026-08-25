@@ -398,3 +398,33 @@ ScoreReq.AoU CorrectlyConfiguredE2EProfilePerCommunicationElement {
     version = 1
     mitigates = ""
 }
+
+/* E2E error handling */
+
+ScoreReq.AoU E2EMethodCallsNotNecessarilyPeriodic {
+    description = "It shall be ensured that a safety goal is not violated solely because an E2E-protected method call/request is not invoked periodically."
+    safety = ScoreReq.Asil.B
+    note = "Unlike event communication, method requests are issued on-demand and have no inherent cycle time. E2E cannot reliably detect loss or delay of a request that has no periodic expectation."
+    version = 1
+}
+
+ScoreReq.AoU ApplicationMustWaitForValidStateDuringInitialization {
+    description = "It shall be ensured that safety-relevant use of a sample waits for the E2E state machine to reach a valid state before an initialization-phase check result is treated as a fully-qualified valid result."
+    safety = ScoreReq.Asil.B
+    note = "The initialization condition exists to signal 'not enough history yet', not 'confirmed good'; an application that proceeds as if this were a normal valid result loses the qualification guarantee the warm-up window is meant to provide."
+    version = 1
+}
+
+ScoreReq.AoU ApplicationMustTreatNoNewDataAsUntrustworthy {
+    description = "It shall be ensured that safety-relevant use of a sample treats a no-new-data E2E check result as the absence of a trustworthy sample rather than an implicit pass."
+    safety = ScoreReq.Asil.B
+    note = "A no-new-data result signals only that no fresh sample was available for this check, not that the previous sample remains valid; an application that proceeds as if this were a normal valid result loses the qualification guarantee E2E is meant to provide."
+    version = 1
+}
+
+ScoreReq.AoU DataIdsGloballyUniqueForE2EProtectedElements {
+    description = "It shall be ensured that the Data ID (or Data ID list) configured for each E2E-protected event, field, or method is unique across the whole system of communicating processes."
+    safety = ScoreReq.Asil.B
+    note = "Data ID uniqueness is only a recommendation rather than a structurally mandated constraint; if two protected elements share a Data ID, masquerading detection is weakened because the receiver has less identity information to distinguish one protected message from another."
+    version = 1
+}
