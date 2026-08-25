@@ -34,7 +34,7 @@ section "com" {
                 ScoreReq.CompReq EventTypeInfoSource {
                     description = '''The type information for each of the events supported by a {{GenericProxy}} instance, shall be gathered from the shared memory data section published by the {{LoLa}} skeleton instance providing the service instance, the {{GenericProxy}} is connected with.
 
-                    Note: This information is needed for the [GetSampleSize() API|ISSUE:14035184].'''
+                    Note: This information is needed for the [GetDataTypeSizeInfo()].'''
                     safety = ScoreReq.Asil.B
                     derived_from = [Communication.FEAT_EventType@1]
                     version = 1

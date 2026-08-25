@@ -136,33 +136,6 @@ TEST(GenericProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
     EXPECT_DEATH(proxy_event.reset(), ".*");
 }
 
-TEST(GenericProxyEventGetSampleSizeTest, GetSampleSizeDispatchesToBinding)
-{
-    RecordProperty("lobster-tracing", "Communication.GenericProxyEventGetSampleSize");
-    RecordProperty("Description", "Checks that GetSampleSize will return the sample size from the binding");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("Priority", "1");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    const std::size_t expected_sample_size{8U};
-    const score::memory::DataTypeSizeInfo expected_data_type_size_info{expected_sample_size, 4U};
-
-    // Given a generic proxy event based on a mock binding
-    auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
-    auto& mock_proxy_event = *mock_proxy_event_ptr;
-    GenericProxyEvent proxy_event{kEventName,
-                                  std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
-
-    // Expect that GetDataTypeSizeInfo is called once on the binding, since GetSampleSize() dispatches to it
-    EXPECT_CALL(mock_proxy_event, GetDataTypeSizeInfo()).WillOnce(Return(expected_data_type_size_info));
-
-    // When GetSampleSize is called on the proxy_event
-    const auto sample_size = proxy_event.GetSampleSize();
-
-    // Then the sample size will be the size contained in the data type size info returned by the binding
-    EXPECT_EQ(sample_size, expected_sample_size);
-}
-
 TEST(GenericProxyEventGetDataTypeSizeInfoTest, GetDataTypeSizeInfoDispatchesToBinding)
 {
     RecordProperty("lobster-tracing", "GenericProxyEventGetDataTypeSizeInfo");
