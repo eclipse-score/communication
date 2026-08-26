@@ -60,7 +60,7 @@ int main(int argc, const char** argv)
     if (parsed_max_sample_count <= 0)
     {
         std::cerr << "Invalid max_sample_count '" << *std::next(argv, 1) << "'. It must be a positive integer."
-                   << std::endl;
+                  << std::endl;
         return EXIT_FAILURE;
     }
     const auto max_sample_count = static_cast<std::size_t>(parsed_max_sample_count);
