@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <deque>
 #include <iostream>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <thread>
@@ -52,13 +53,14 @@ int main(int argc, const char** argv)
     // expresses how many samples (SamplePtrs) the consumer wants to be able to hold in parallel.
     if (argc != 2)
     {
-        std::cerr << "Usage: " << argv[0] << " <max_sample_count>" << std::endl;
+        std::cerr << "Usage: " << *argv << " <max_sample_count>" << std::endl;
         return EXIT_FAILURE;
     }
-    const auto parsed_max_sample_count = std::atoi(argv[1]);
+    const auto parsed_max_sample_count = std::atoi(*std::next(argv, 1));
     if (parsed_max_sample_count <= 0)
     {
-        std::cerr << "Invalid max_sample_count '" << argv[1] << "'. It must be a positive integer." << std::endl;
+        std::cerr << "Invalid max_sample_count '" << *std::next(argv, 1) << "'. It must be a positive integer."
+                   << std::endl;
         return EXIT_FAILURE;
     }
     const auto max_sample_count = static_cast<std::size_t>(parsed_max_sample_count);

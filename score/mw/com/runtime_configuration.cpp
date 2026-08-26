@@ -19,7 +19,7 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <exception>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <utility>
@@ -52,7 +52,7 @@ RuntimeConfiguration::RuntimeConfiguration(const std::int32_t argc, const char* 
     std::vector<safecpp::zstring_view> command_line_arguments{};
     for (std::int32_t arg_idx = 0U; arg_idx < argc; arg_idx++)
     {
-        auto argument = std::string_view{argv[arg_idx]};
+        auto argument = std::string_view{*std::next(argv, arg_idx)};
         command_line_arguments.push_back(safecpp::zstring_view{argument.data(), argument.size()});
     }
 

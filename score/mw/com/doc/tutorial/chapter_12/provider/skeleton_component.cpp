@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <string_view>
 
@@ -49,7 +50,7 @@ SkeletonComponent::SendSampleResult SkeletonComponent::SendSample(std::size_t se
     std::memcpy(sample_allocatee_ptr.value().Get()->data(), kHelloWorld.data(), kHelloWorld.size());
     auto* buf = sample_allocatee_ptr.value().Get()->data();
     const auto remaining = sample_allocatee_ptr.value().Get()->size() - kHelloWorld.size();
-    const auto chars_written = std::snprintf(buf + kHelloWorld.size(), remaining, "%zu", send_counter);
+    const auto chars_written = std::snprintf(std::next(buf, kHelloWorld.size()), remaining, "%zu", send_counter);
     if (chars_written < 0)
     {
         std::cerr << "Failed to write 'send_counter' to sample_allocatee_ptr!" << std::endl;

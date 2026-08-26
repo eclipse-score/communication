@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <array>
 #include <cerrno>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <exception>
@@ -152,7 +153,7 @@ auto SerializeToMessage(const std::uint8_t message_id, const T& t) noexcept -> s
     // source range directly from the same pointer (source_begin / source_end) that is copied keeps the range
     // trivially self-consistent for every instantiation of T.
     const auto* const source_begin = reinterpret_cast<const std::uint8_t*>(&t);
-    const auto* const source_end = source_begin + sizeof(T);
+    const auto* const source_end = std::next(source_begin, static_cast<std::ptrdiff_t>(sizeof(T)));
     std::copy(source_begin, source_end, std::next(out.begin()));
     return out;
 }

@@ -15,6 +15,7 @@
 
 #include <atomic>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <thread>
 
@@ -161,7 +162,7 @@ int main(int argc, char* argv[])
     std::string mode = "regular_case";
     if (argc > 1)
     {
-        mode = argv[1];
+        mode = *std::next(argv, 1);
     }
 
     if (mode == "reconnect")

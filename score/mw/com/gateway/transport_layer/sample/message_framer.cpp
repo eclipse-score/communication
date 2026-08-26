@@ -17,6 +17,9 @@
 
 #include <score/span.hpp>
 
+#include <cstddef>
+#include <iterator>
+
 namespace score::mw::com::gateway
 {
 
@@ -37,7 +40,7 @@ int SendAll(std::int32_t socket_fd, const void* data, std::size_t length)
             return -1;
         }
         const auto sent = static_cast<std::size_t>(result.value());
-        ptr += sent;
+        ptr = std::next(ptr, static_cast<std::ptrdiff_t>(sent));
         length -= sent;
     }
     return 0;
@@ -66,7 +69,7 @@ ssize_t ReceiveAll(std::int32_t socket_fd, void* buffer, std::size_t length)
             return 0;
         }
         const auto received = static_cast<std::size_t>(result.value());
-        ptr += received;
+        ptr = std::next(ptr, static_cast<std::ptrdiff_t>(received));
         length -= received;
     }
     return static_cast<ssize_t>(original_length);

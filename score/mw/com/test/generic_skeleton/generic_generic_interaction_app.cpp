@@ -7,7 +7,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
-#include <iostream>
+#include <iterator>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -223,8 +223,8 @@ int main(int argc, const char* argv[])
 {
     std::string mode;
     for (int i = 1; i < argc; ++i)
-        if (std::string(argv[i]) == "--mode" && i + 1 < argc)
-            mode = argv[++i];
+        if (std::string(*std::next(argv, i)) == "--mode" && i + 1 < argc)
+            mode = *std::next(argv, ++i);
     score::mw::com::runtime::InitializeRuntime(score::mw::com::runtime::RuntimeConfiguration(argc, argv));
 
     score::cpp::stop_source stop_source{};
