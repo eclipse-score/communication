@@ -17,14 +17,14 @@ load("//quality/integration_testing:integration_testing.bzl", "integration_test"
 integration_test(
     name = "semi_dynamic_methods_same_process_test",
     srcs = ["semi_dynamic_methods_same_process_test.py"],
-    filesystem = "//score/mw/com/test/methods/semi_dynamic_methods:main_consumer_and_provider-pkg",
+    filesystem = "//score/mw/com/impl/test/methods/semi_dynamic_methods:main_consumer_and_provider-pkg",
 )
 
 pkg_filegroup(
     name = "different_processes_filesystem",
     srcs = [
-        "//score/mw/com/test/methods/semi_dynamic_methods:main_consumer-pkg",
-        "//score/mw/com/test/methods/semi_dynamic_methods:main_provider-pkg",
+        "//score/mw/com/impl/test/methods/semi_dynamic_methods:main_consumer-pkg",
+        "//score/mw/com/impl/test/methods/semi_dynamic_methods:main_provider-pkg",
     ],
 )
 
