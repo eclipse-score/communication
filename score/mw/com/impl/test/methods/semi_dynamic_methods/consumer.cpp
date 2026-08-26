@@ -10,12 +10,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/test/methods/semi_dynamic_methods/consumer.h"
+#include "score/mw/com/impl/test/methods/semi_dynamic_methods/consumer.h"
 
+#include "score/mw/com/impl/test/methods/semi_dynamic_methods/runtime_sized_array.h"
+#include "score/mw/com/impl/test/methods/semi_dynamic_methods/semi_dynamic_method_datatype.h"
 #include "score/mw/com/test/common_test_resources/fail_test.h"
 #include "score/mw/com/test/common_test_resources/process_synchronizer.h"
-#include "score/mw/com/test/methods/semi_dynamic_methods/runtime_sized_array.h"
-#include "score/mw/com/test/methods/semi_dynamic_methods/semi_dynamic_method_datatype.h"
 #include "score/mw/com/types.h"
 
 #include <score/stop_token.hpp>

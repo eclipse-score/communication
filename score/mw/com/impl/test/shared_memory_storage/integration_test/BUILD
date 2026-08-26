@@ -14,8 +14,8 @@
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
 integration_test(
-    name = "test_check_values_created_from_config",
+    name = "shared_memory_storage",
     timeout = "moderate",
-    srcs = ["test_check_values_created_from_config.py"],
-    filesystem = "//score/mw/com/test/check_values_created_from_config:check_values_created_from_config-pkg",
+    srcs = ["test_shared_memory_storage.py"],
+    filesystem = "//score/mw/com/impl/test/shared_memory_storage:shared_memory_storage-pkg",
 )

@@ -14,8 +14,8 @@
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
 integration_test(
-    name = "shared_memory_storage",
+    name = "separate_reception_threads",
     timeout = "moderate",
-    srcs = ["test_shared_memory_storage.py"],
-    filesystem = "//score/mw/com/test/shared_memory_storage:shared_memory_storage-pkg",
+    srcs = ["test_separate_reception_threads.py"],
+    filesystem = "//score/mw/com/impl/test/separate_reception_threads:separate_reception_threads-pkg",
 )

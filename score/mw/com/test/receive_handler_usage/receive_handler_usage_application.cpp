@@ -63,7 +63,7 @@ score::Result<score::mw::com::test::BigDataSkeleton> CreateAndOfferSkeleton(
         std::cerr << "Could not offer service for skeleton with instance specifier" << instance_specifier.ToString()
                   << std::endl;
         return score::MakeUnexpected<score::mw::com::test::BigDataSkeleton>(
-            score::mw::com::impl::MakeError(score::mw::com::ComErrc::kServiceNotOffered));
+            score::mw::com::ComErrc::kServiceNotOffered);
     }
     return bigdata_result;
 }
@@ -99,7 +99,7 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
         std::cerr << "NO instance found for instance specifier" << instance_specifier.ToString()
                   << " although service instance has been successfully offered! Terminating!" << std::endl;
         return score::MakeUnexpected<score::mw::com::test::BigDataProxy>(
-            score::mw::com::impl::MakeError(score::mw::com::ComErrc::kServiceNotAvailable));
+            score::mw::com::ComErrc::kServiceNotAvailable);
     }
 
     return score::mw::com::test::BigDataProxy::Create(handles.front());

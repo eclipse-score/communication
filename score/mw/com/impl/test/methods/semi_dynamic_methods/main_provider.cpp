@@ -10,17 +10,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/impl/test/methods/semi_dynamic_methods/provider.h"
 #include "score/mw/com/runtime.h"
-
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
-#include "score/mw/com/test/methods/semi_dynamic_methods/consumer.h"
-#include "score/mw/com/test/methods/semi_dynamic_methods/provider.h"
 #include "score/string_manipulation/arguments/arguments.h"
 
-#include <cstdlib>
-#include <future>
-#include <iostream>
+#include <score/stop_token.hpp>
 
 int main(int argc, const char** argv)
 {
@@ -34,13 +30,6 @@ int main(int argc, const char** argv)
         std::cerr << "Unable to set signal handler for SIGINT and/or SIGTERM, cautiously continuing\n";
     }
 
-    auto provider_future = std::async(score::mw::com::test::run_provider, stop_source.get_token());
-    auto consumer_future = std::async(score::mw::com::test::run_consumer);
-
-    provider_future.get();
-    consumer_future.get();
-
-    std::cout << "BasicAcceptanceSameProcessTest: Provider and Consumer completed successfully" << std::endl;
-
+    score::mw::com::test::run_provider(stop_source.get_token());
     return EXIT_SUCCESS;
 }

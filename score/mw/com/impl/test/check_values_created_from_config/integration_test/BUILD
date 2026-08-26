@@ -14,8 +14,8 @@
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
 integration_test(
-    name = "reserving_skeleton_slots",
+    name = "test_check_values_created_from_config",
     timeout = "moderate",
-    srcs = ["test_reserving_skeleton_slots.py"],
-    filesystem = "//score/mw/com/test/reserving_skeleton_slots:reserving_skeleton_slots-pkg",
+    srcs = ["test_check_values_created_from_config.py"],
+    filesystem = "//score/mw/com/impl/test/check_values_created_from_config:check_values_created_from_config-pkg",
 )

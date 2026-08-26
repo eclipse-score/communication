@@ -87,7 +87,7 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
         std::cerr << "NO instance found for instance specifier" << instance_specifier.ToString()
                   << " although service instance has been successfully offered! Terminating!" << std::endl;
         return score::MakeUnexpected<score::mw::com::test::BigDataProxy>(
-            score::mw::com::impl::MakeError(score::mw::com::ComErrc::kServiceNotAvailable));
+            score::mw::com::ComErrc::kServiceNotAvailable);
     }
 
     return score::mw::com::test::BigDataProxy::Create(handles.front());

@@ -14,8 +14,8 @@
 load("//quality/integration_testing:integration_testing.bzl", "integration_test")
 
 integration_test(
-    name = "separate_reception_threads",
+    name = "reserving_skeleton_slots",
     timeout = "moderate",
-    srcs = ["test_separate_reception_threads.py"],
-    filesystem = "//score/mw/com/test/separate_reception_threads:separate_reception_threads-pkg",
+    srcs = ["test_reserving_skeleton_slots.py"],
+    filesystem = "//score/mw/com/impl/test/reserving_skeleton_slots:reserving_skeleton_slots-pkg",
 )

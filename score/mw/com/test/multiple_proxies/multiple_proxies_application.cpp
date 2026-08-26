@@ -75,9 +75,7 @@ int main(int argc, const char** argv)
 
             auto future_return_value =
                 std::async(std::launch::async,
-                           &score::mw::com::test::EventSenderReceiver::RunAsProxy<
-                               score::mw::com::test::BigDataProxy,
-                               score::mw::com::impl::ProxyEvent<score::mw::com::test::MapApiLanesStamped>>,
+                           &score::mw::com::test::EventSenderReceiver::RunAsProxy<>,
                            &event_sender_receiver,
                            instance_specifier,
                            cycle_time,

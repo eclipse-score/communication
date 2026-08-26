@@ -15,7 +15,7 @@
 
 #include "score/mw/com/types.h"
 
-#include "score/mw/com/test/methods/semi_dynamic_methods/runtime_sized_array.h"
+#include "score/mw/com/impl/test/methods/semi_dynamic_methods/runtime_sized_array.h"
 
 #include <cstdint>
 
