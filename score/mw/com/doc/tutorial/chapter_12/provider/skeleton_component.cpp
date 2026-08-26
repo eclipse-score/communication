@@ -12,12 +12,14 @@
  ********************************************************************************/
 #include "score/mw/com/doc/tutorial/chapter_12/provider/skeleton_component.h"
 
-#include <cstdio>
+#include <charconv>
+#include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <iterator>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 namespace score::mw::com::tutorial
 {
@@ -50,12 +52,15 @@ SkeletonComponent::SendSampleResult SkeletonComponent::SendSample(std::size_t se
     std::memcpy(sample_allocatee_ptr.value().Get()->data(), kHelloWorld.data(), kHelloWorld.size());
     auto* buf = sample_allocatee_ptr.value().Get()->data();
     const auto remaining = sample_allocatee_ptr.value().Get()->size() - kHelloWorld.size();
-    const auto chars_written = std::snprintf(std::next(buf, kHelloWorld.size()), remaining, "%zu", send_counter);
-    if (chars_written < 0)
+    auto* const number_start = std::next(buf, kHelloWorld.size());
+    const auto to_chars_result =
+        std::to_chars(number_start, std::next(number_start, static_cast<std::ptrdiff_t>(remaining) - 1), send_counter);
+    if (to_chars_result.ec != std::errc{})
     {
         std::cerr << "Failed to write 'send_counter' to sample_allocatee_ptr!" << std::endl;
         return SendSampleResult::kFatalError;
     }
+    *to_chars_result.ptr = '\0';
 
     const std::string payload_for_log{buf};
     auto send_result = hello_world_skeleton_->message.Send(std::move(sample_allocatee_ptr.value()));

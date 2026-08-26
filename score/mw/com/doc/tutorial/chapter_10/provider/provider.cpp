@@ -13,11 +13,13 @@
 #include "score/mw/com/doc/tutorial/chapter_10/hello_world_service.h"
 #include "score/mw/com/types.h"
 
+#include <charconv>
 #include <atomic>
 #include <csignal>
-#include <cstdio>
+#include <cstddef>
 #include <cstring>
 #include <iterator>
+#include <system_error>
 
 constexpr std::string_view kHelloWorld{"Hello World"};
 namespace
@@ -67,12 +69,15 @@ int main()
         std::memcpy(sample_allocatee_ptr.value().Get()->data(), kHelloWorld.data(), kHelloWorld.size());
         auto* buf = sample_allocatee_ptr.value().Get()->data();
         const auto remaining = sample_allocatee_ptr.value().Get()->size() - kHelloWorld.size();
-        const auto chars_written = std::snprintf(std::next(buf, kHelloWorld.size()), remaining, "%zu", send_counter);
-        if (chars_written < 0)
+        auto* const number_start = std::next(buf, kHelloWorld.size());
+        const auto to_chars_result = std::to_chars(
+            number_start, std::next(number_start, static_cast<std::ptrdiff_t>(remaining) - 1), send_counter);
+        if (to_chars_result.ec != std::errc{})
         {
             std::cerr << "Failed to write 'send_counter' to sample_allocatee_ptr!" << std::endl;
             exit(1);
         }
+        *to_chars_result.ptr = '\0';
 
         // Send the new event sample (make it visible to potential consumers)
         auto send_result = hello_world_service_instance.message.Send(std::move(sample_allocatee_ptr.value()));
