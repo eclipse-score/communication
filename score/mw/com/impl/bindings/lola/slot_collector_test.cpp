@@ -46,7 +46,7 @@ class SlotCollectorWithFakeMem : public ::testing::Test
     FakeMemoryResource fake_memory_resource_;
     EventDataControl event_data_control_{kMaxSlots, fake_memory_resource_};
     TransactionLog transaction_log_{kMaxSlots, fake_memory_resource_};
-    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_, transaction_log_};
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_, TransactionLogLocalView{transaction_log_}};
     ProviderEventDataControlLocalView<> provider_event_data_control_local_{event_data_control_};
 };
 

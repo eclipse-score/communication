@@ -78,7 +78,7 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
         auto transaction_log_registration_guard =
             unit_->RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_).value();
         const auto transaction_log_index = transaction_log_registration_guard.GetTransactionLogIndex();
-        TransactionLogLocalView transaction_log_local_view = unit_->GetTransactionLog(transaction_log_index);
+        TransactionLogLocalView transaction_log_local_view{unit_->GetTransactionLog(transaction_log_index)};
         transaction_log_local_view.SubscribeTransactionBegin(kSubscriptionMaxSampleCount);
         transaction_log_local_view.SubscribeTransactionCommit();
 
@@ -99,7 +99,7 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
         auto transaction_log_registration_guard =
             unit_->RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_).value();
         const auto transaction_log_index = transaction_log_registration_guard.GetTransactionLogIndex();
-        TransactionLogLocalView transaction_log_local_view = unit_->GetTransactionLog(transaction_log_index);
+        TransactionLogLocalView transaction_log_local_view{unit_->GetTransactionLog(transaction_log_index)};
         transaction_log_local_view.SubscribeTransactionBegin(kSubscriptionMaxSampleCount);
         transaction_log_local_view.SubscribeTransactionCommit();
         transaction_log_local_view.ReferenceTransactionBegin(slot_index);
@@ -329,7 +329,7 @@ TEST_F(TransactionLogSetRollbackFixture,
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     // and a subscribe transaction is begun but never finished, indicating a crash
-    TransactionLogLocalView transaction_log_local_view = unit_->GetTransactionLog(transaction_log_index);
+    TransactionLogLocalView transaction_log_local_view{unit_->GetTransactionLog(transaction_log_index)};
     transaction_log_local_view.SubscribeTransactionBegin(kSubscriptionMaxSampleCount);
 
     // When MarkTransactionLogsNeedRollback is called
@@ -377,7 +377,7 @@ TEST_F(TransactionLogSetRollbackFixture,
         unit_->RegisterSkeletonTransactionLog(consumer_event_data_control_local_);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
-    TransactionLogLocalView transaction_log_local_view = unit_->GetTransactionLog(transaction_log_index);
+    TransactionLogLocalView transaction_log_local_view{unit_->GetTransactionLog(transaction_log_index)};
 
     // and a successful reference transaction is recorded
     transaction_log_local_view.ReferenceTransactionBegin(slot_index);
@@ -414,7 +414,7 @@ TEST_F(TransactionLogSetRollbackFixture,
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     // and a reference transaction is begun but never finished, indicating a crash
-    TransactionLogLocalView transaction_log_local_view = unit_->GetTransactionLog(transaction_log_index);
+    TransactionLogLocalView transaction_log_local_view{unit_->GetTransactionLog(transaction_log_index)};
     transaction_log_local_view.ReferenceTransactionBegin(slot_index);
 
     // When RollbackProxyTransactions is called
@@ -597,7 +597,7 @@ TEST_F(TransactionLogSetRegisterFixtureDeathTest, CallingUnRegisterWhileTransact
         const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
         // and a reference transaction is begun but never finished, indicating a crash
-        TransactionLogLocalView transaction_log_local_view = unit_->GetTransactionLog(transaction_log_index);
+        TransactionLogLocalView transaction_log_local_view{unit_->GetTransactionLog(transaction_log_index)};
         transaction_log_local_view.ReferenceTransactionBegin(2U);
     };
 

@@ -62,6 +62,7 @@ class CopyableAtomic
     // NOLINTBEGIN(google-explicit-constructor): Explanation provided below.
     // We want to have implicit conversions exactly as std::atomic allows as this is just a wrapper around std::atomic.
     // coverity[autosar_cpp14_a13_5_2_violation]
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(copyable-atomic-implicit-conversion)
     operator T() const noexcept
     {
         return atomic_.operator T();

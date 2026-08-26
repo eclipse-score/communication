@@ -95,7 +95,7 @@ class ConsumerEventDataControlLocalViewFixture : public ::testing::Test
     {
         auto& transaction_log = transaction_log_.emplace(max_slots, memory_);
         event_data_control_ = std::make_unique<EventDataControl>(max_slots, memory_);
-        unit_ = std::make_unique<ConsumerEventDataControlLocalView<>>(*event_data_control_, transaction_log);
+        unit_ = std::make_unique<ConsumerEventDataControlLocalView<>>(*event_data_control_, TransactionLogLocalView{transaction_log});
         provider_event_data_control_local_ =
             std::make_unique<ProviderEventDataControlLocalView<>>(*event_data_control_);
         return *this;
@@ -111,9 +111,8 @@ class ConsumerEventDataControlLocalViewFixture : public ::testing::Test
         atomic_indirector_mock_guard_ =
             std::make_unique<AtomicIndirectorMockGuard<EventSlotStatus::value_type>>(*atomic_mock_);
 
-        unit_with_mock_atomics_ =
-            std::make_unique<ConsumerEventDataControlLocalView<concurrency::AtomicIndirectorMock>>(*event_data_control_,
-                                                                                                   transaction_log);
+        unit_with_mock_atomics_ = std::make_unique<ConsumerEventDataControlLocalView<concurrency::AtomicIndirectorMock>>(
+            *event_data_control_, TransactionLogLocalView{transaction_log});
         provider_event_data_control_local_ =
             std::make_unique<ProviderEventDataControlLocalView<>>(*event_data_control_);
 
@@ -419,7 +418,7 @@ TEST_P(MultiSenderMultiReceiverTest, MultiSenderMultiReceiver)
         // In the real code, each ProxyEvent has its own ConsumerEventDataControlLocalView and TransactionLog. So we
         // replicate that here by creating one of each per receiver thread.
         TransactionLog transaction_log{GetParam().num_slots, memory_};
-        ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_data_control_, transaction_log};
+        ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_data_control_, TransactionLogLocalView{transaction_log}};
         std::vector<SlotIndexType> used_slots{};
         EventSlotStatus::EventTimeStamp start_ts{1};
 
@@ -499,7 +498,7 @@ TEST_P(MultiSenderMultiReceiverTest, DISABLED_MultiSenderMultiReceiverMaxReceive
         // In the real code, each ProxyEvent has its own ConsumerEventDataControlLocalView and TransactionLog. So we
         // replicate that here by creating one of each per receiver thread.
         TransactionLog transaction_log{GetParam().num_slots, memory_};
-        ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_data_control_, transaction_log};
+        ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_data_control_, TransactionLogLocalView{transaction_log}};
         std::vector<SlotIndexType> used_slots{};
         EventSlotStatus::EventTimeStamp start_ts{0};
 

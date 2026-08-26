@@ -238,6 +238,7 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                             size_info,
                                                             tracing::SkeletonEventTracingData{});
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
         });

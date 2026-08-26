@@ -68,11 +68,13 @@ std::string ToHashStringImpl(const ServiceTypeDeployment::BindingInformation& bi
     binding_index_string_stream << std::hex << binding_info_index;
 
     auto visitor = score::cpp::overload(
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const LolaServiceTypeDeployment& service_type_deployment) noexcept -> std::string_view {
             return service_type_deployment.ToHashString();
         },
         // FP: only one statement in this line
         // coverity[autosar_cpp14_a7_1_7_violation]
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept -> std::string_view {
             return "";
         });
@@ -125,6 +127,7 @@ score::json::Object ServiceTypeDeployment::Serialize() const
         [&json_object](const LolaServiceTypeDeployment& deployment) {
             json_object[kBindingInfoKey] = deployment.Serialize();
         },
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, binding_info_);
 

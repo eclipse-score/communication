@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_local_view.h"
 
 #include <gtest/gtest.h>
 
@@ -38,7 +39,8 @@ class LolaForwardingSamplePtrTest : public ::testing::Test
     lola::EventDataControl event_data_control_{kMaxSlots, memory_};
     lola::TransactionLog transaction_log_{kMaxSlots, memory_};
     lola::ProviderEventDataControlLocalView<> provider_event_data_control_local_{event_data_control_};
-    lola::ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_, transaction_log_};
+    lola::ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{
+        event_data_control_, lola::TransactionLogLocalView{transaction_log_}};
 
     lola::SlotIndexType AllocateSlot(lola::EventSlotStatus::EventTimeStamp timestamp)
     {

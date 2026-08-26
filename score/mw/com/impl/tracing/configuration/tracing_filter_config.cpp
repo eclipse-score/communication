@@ -229,6 +229,7 @@ std::size_t FindNumberOfTracingSlots(
             const std::string service_element_name{service_element.service_element_name};
 
             const auto get_number_of_tracing_slots =
+                // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
                 [](const auto& service_elements_map,
                    const std::string& local_service_element_name,
                    const ServiceElementIdentifierView& local_service_element,
@@ -250,6 +251,7 @@ std::size_t FindNumberOfTracingSlots(
                     get_number_of_tracing_slots(lola_service_instance_deployment->events_,
                                                 service_element_name,
                                                 service_element,
+                                                // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
                                                 [](const LolaEventInstanceDeployment& e) noexcept {
                                                     return e.GetNumberOfTracingSlots();
                                                 });
@@ -264,6 +266,7 @@ std::size_t FindNumberOfTracingSlots(
                     get_number_of_tracing_slots(lola_service_instance_deployment->fields_,
                                                 service_element_name,
                                                 service_element,
+                                                // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
                                                 [](const LolaFieldInstanceDeployment& f) noexcept {
                                                     return f.lola_event_instance_deployment_.GetNumberOfTracingSlots();
                                                 });

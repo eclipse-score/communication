@@ -66,6 +66,7 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
     };
 
     auto deployment_info_visitor =
+        // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
         score::cpp::overload(lola_deployment_handler, [](const score::cpp::blank&) noexcept -> LambdaReturnType {
             // coverage false positive. Covered by the test:
             // SkeletonMethodFactoryFixture.CannotConstructEventFromBlankBinding

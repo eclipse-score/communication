@@ -189,6 +189,7 @@ Runtime& Runtime::getInstanceInternal()
     // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
     // constant-initialized.". This cannot be constexpr as the lambda function executes at runtime.
     // coverity[autosar_cpp14_a3_3_2_violation]
+    // Deviation of MISRA RULE-15-1-3: codeql::misra_deviation_next_line(lambda-closure-function-pointer-conversion)
     return singleton::MeyerSingleton<Runtime>::GetInstanceInitializedWithCallable([]() -> Runtime {
         std::lock_guard<std::mutex> lock{mutex_};
         runtime_initialization_locked_ = true;
