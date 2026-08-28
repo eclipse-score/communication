@@ -52,6 +52,12 @@ download_archive(
 )
 
 bazel_dep(name = "score_tooling", version = "2.0.2")
+git_override(
+    module_name = "score_tooling",
+    # Picks up the latest changes to the plantuml parser / architectural_design bazel target: https://github.com/eclipse-score/tooling/pull/437
+    commit = "e5ec4ab5867ed3202ad24257e8f7b9b6d27e0b9a",
+    remote = "https://github.com/eclipse-score/tooling.git",
+)
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.10.0", dev_dependency = True)
