@@ -343,7 +343,7 @@ cc_library(
         ":type_erased_sample_ptrs_guard",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:generic_skeleton_event_binding",
-        "//score/mw/com/impl/bindings/lola/skeleton_and_service_elements:skeleton",
+        "//score/mw/com/impl/bindings/lola/skeleton_and_service_elements:skeleton_event",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
     ],
 )

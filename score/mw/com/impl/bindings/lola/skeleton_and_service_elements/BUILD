@@ -56,14 +56,10 @@ cc_library(
     name = "skeleton",
     srcs = [
         "skeleton.cpp",
-        "skeleton_event.cpp",
-        "skeleton_event_common.cpp",
         "skeleton_memory_manager.cpp",
     ],
     hdrs = [
         "skeleton.h",
-        "skeleton_event.h",
-        "skeleton_event_common.h",
         "skeleton_memory_manager.h",
     ],
     features = COMPILER_WARNING_FEATURES,
@@ -119,6 +115,47 @@ cc_library(
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/memory:data_type_size_info",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "skeleton_event",
+    srcs = [
+        "skeleton_event.cpp",
+        "skeleton_event_common.cpp",
+    ],
+    hdrs = [
+        "skeleton_event.h",
+        "skeleton_event_common.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":i_lola_skeleton",
+        ":skeleton",
+        "//score/mw/com/impl:binding_type",
+        "//score/mw/com/impl:error",
+        "//score/mw/com/impl:sample_reference_tracker",
+        "//score/mw/com/impl:skeleton_binding",
+        "//score/mw/com/impl:skeleton_event_binding",
+        "//score/mw/com/impl/bindings/lola:consumer_event_data_control_local_view",
+        "//score/mw/com/impl/bindings/lola:control_slot_types",
+        "//score/mw/com/impl/bindings/lola:event_data_control_composite",
+        "//score/mw/com/impl/bindings/lola:event_data_storage",
+        "//score/mw/com/impl/bindings/lola:i_runtime",
+        "//score/mw/com/impl/bindings/lola:sample_allocatee_ptr",
+        "//score/mw/com/impl/bindings/lola:sample_ptr",
+        "//score/mw/com/impl/bindings/lola:transaction_log_set",
+        "//score/mw/com/impl/bindings/lola:type_erased_sample_ptrs_guard",
+        "//score/mw/com/impl/bindings/lola/messaging:i_message_passing_service",
+        "//score/mw/com/impl/configuration:quality_type",
+        "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "//score/mw/com/impl/plumbing:sample_ptr",
+        "//score/mw/com/impl/tracing:skeleton_event_tracing_data",
         "@score_baselibs//score/result",
     ],
 )
@@ -228,6 +265,7 @@ cc_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":skeleton",
+        ":skeleton_event",
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
     ],
@@ -243,6 +281,7 @@ cc_unit_test(
         "-aborts_upon_exception",
     ],
     deps = [
+        ":skeleton_event",
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
@@ -255,6 +294,7 @@ cc_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
+        ":skeleton_event",
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_mock",

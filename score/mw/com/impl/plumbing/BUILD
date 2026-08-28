@@ -400,6 +400,7 @@ cc_library(
         "//score/mw/com/impl:field_tags_store",
         "//score/mw/com/impl:skeleton_base",
         "//score/mw/com/impl/bindings/lola",
+        "//score/mw/com/impl/bindings/lola/skeleton_and_service_elements:skeleton_event",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp",
     ],

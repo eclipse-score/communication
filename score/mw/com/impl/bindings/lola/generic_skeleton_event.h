@@ -15,15 +15,12 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_GENERIC_SKELETON_EVENT_H_
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_properties.h"
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/sample_allocatee_guard.h"
 
 #include "score/memory/data_type_size_info.h"
-
-#include <optional>
 
 namespace score::mw::com::impl::lola
 {
