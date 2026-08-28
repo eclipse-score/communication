@@ -21,6 +21,7 @@
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/lola/sample_ptr.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/i_lola_skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_properties.h"
@@ -66,7 +67,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     using typename SkeletonEventBindingBase::SubscribeTraceCallback;
     using typename SkeletonEventBindingBase::UnsubscribeTraceCallback;
 
-    SkeletonEvent(Skeleton& parent,
+    SkeletonEvent(ILolaSkeleton& parent,
                   const ElementFqId element_fq_id,
                   const std::string_view event_name,
                   const SkeletonEventProperties properties,
@@ -114,7 +115,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 };
 
 template <typename SampleType>
-SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
+SkeletonEvent<SampleType>::SkeletonEvent(ILolaSkeleton& parent,
                                          const ElementFqId element_fq_id,
                                          const std::string_view event_name,
                                          const SkeletonEventProperties properties,
@@ -240,7 +241,13 @@ Result<void> SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
     // Invariant: after a successful PrepareOffer(), event_data_storage_ is guaranteed to be non-null.
     // All methods that require event_data_storage_ (e.g. GetLatestSample) rely on this invariant.
-    const auto registration_result = skeleton_event_common_.GetParent().template Register<SampleType>(
+    // TODO: Remove this dynamic cast once the binding layer is type erased and add Register to the ILolaSkeleton
+    // interface.
+    auto& parent = skeleton_event_common_.GetParent();
+    auto& lola_parent = dynamic_cast<lola::Skeleton&>(parent);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        &lola_parent != nullptr, "Parent of SkeletonEvent must be a lola::Skeleton instance, but dynamic_cast failed.");
+    const auto registration_result = lola_parent.template Register<SampleType>(
         skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties());
     event_data_storage_ = &registration_result.event_data_storage;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_storage_ != nullptr,

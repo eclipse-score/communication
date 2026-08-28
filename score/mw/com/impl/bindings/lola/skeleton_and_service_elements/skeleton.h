@@ -14,7 +14,6 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/i_partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
@@ -24,15 +23,11 @@
 #include "score/mw/com/impl/bindings/lola/messaging/method_unsubscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_resource_map.h"
-#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/i_lola_skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_memory_manager.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_method.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
-#include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
@@ -62,7 +57,7 @@ namespace score::mw::com::impl::lola
 /// This includes all actions that need to be performed on Service offerings, as also the possibility to register
 /// events dynamically at this skeleton. All functionality related to shared memory is managed by SkeletonMemoryManager
 /// which is owned by Skeleton.
-class Skeleton final : public SkeletonBinding
+class Skeleton final : public SkeletonBinding, public ILolaSkeleton
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
     // The "SkeletonAttorney" class is a helper, which sets the internal state of "Skeleton" accessing
@@ -75,13 +70,6 @@ class Skeleton final : public SkeletonBinding
     struct RegistrationResult
     {
         EventDataStorage<SampleType>& event_data_storage;
-        EventControl& event_control_qm;
-        EventControl* event_control_asil_b;
-    };
-
-    struct GenericRegistrationResult
-    {
-        void* type_erased_event_data_storage_ptr;
         EventControl& event_control_qm;
         EventControl* event_control_asil_b;
     };
@@ -130,10 +118,10 @@ class Skeleton final : public SkeletonBinding
     /// \return A pair containing:
     ///         - An type erased pointer to the allocated data storage (void*).
     ///         - The EventDataControlComposite for managing the event's control data.
-    auto RegisterGeneric(const ElementFqId element_fq_id,
-                         const SkeletonEventProperties& element_properties,
-                         const size_t sample_size,
-                         const size_t sample_alignment) -> GenericRegistrationResult;
+    GenericRegistrationResult RegisterGeneric(const ElementFqId element_fq_id,
+                                              const SkeletonEventProperties& element_properties,
+                                              const size_t sample_size,
+                                              const size_t sample_alignment) override;
 
     /// \brief Enables dynamic registration of Events at the Skeleton.
     /// \tparam SampleType The type of the event
@@ -148,7 +136,7 @@ class Skeleton final : public SkeletonBinding
     auto Register(const ElementFqId element_fq_id, SkeletonEventProperties element_properties)
         -> RegistrationResult<SampleType>;
 
-    QualityType GetInstanceQualityType() const;
+    QualityType GetInstanceQualityType() const override;
 
     /// \brief Cleans up all allocated slots for this SkeletonEvent of any previous running instance
     /// \details Note: Only invoke _after_ a crash was detected!
@@ -168,7 +156,7 @@ class Skeleton final : public SkeletonBinding
     /// be called during construction of the full Skeleton created by the user. Therefore, the map of skeleton methods
     /// will not be modified after this construction phase and so can be used in any function (except for the
     /// constructor of Skeleton) without locking a mutex.
-    void RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMethod& skeleton_method);
+    void RegisterMethod(const UniqueMethodIdentifier method_id, ILolaSkeletonMethod& skeleton_method) override;
 
     bool VerifyAllMethodHandlersRegistered() const override;
 
@@ -261,7 +249,7 @@ class Skeleton final : public SkeletonBinding
     /// score/docs/features/ipc/lola/method/README.md for details).
     std::mutex on_service_methods_subscribed_mutex_;
     MethodResourceMap method_resources_;
-    std::unordered_map<UniqueMethodIdentifier, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
+    std::unordered_map<UniqueMethodIdentifier, std::reference_wrapper<ILolaSkeletonMethod>> skeleton_methods_;
 
     /// \brief RAII guard objects which will unregister a ServiceMethodSubscribedHandler/RegisterMethodCallHandler
     /// on destruction

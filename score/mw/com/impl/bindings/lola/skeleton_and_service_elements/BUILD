@@ -17,6 +17,42 @@ load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
+    name = "i_lola_skeleton",
+    srcs = ["i_lola_skeleton.cpp"],
+    hdrs = ["i_lola_skeleton.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__subpackages__",
+    ],
+    deps = [
+        ":i_lola_skeleton_method",
+        ":skeleton_event_properties",
+        "//score/mw/com/impl/bindings/lola:element_fq_id",
+        "//score/mw/com/impl/bindings/lola:event_control",
+        "//score/mw/com/impl/bindings/lola/methods:unique_method_identifier",
+    ],
+)
+
+cc_library(
+    name = "i_lola_skeleton_method",
+    srcs = ["i_lola_skeleton_method.cpp"],
+    hdrs = ["i_lola_skeleton_method.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl/bindings/lola/methods:proxy_method_instance_identifier",
+        "//score/mw/com/impl/bindings/lola/methods:type_erased_call_queue",
+        "//score/mw/com/impl/configuration:quality_type",
+        "@score_baselibs//score/language/safecpp/scoped_function:scope",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
     name = "skeleton",
     srcs = [
         "skeleton.cpp",
@@ -41,6 +77,8 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":i_lola_skeleton",
+        ":i_lola_skeleton_method",
         ":skeleton_event_properties",
         "//score/memory/shared",
         "//score/memory/shared:i_shared_memory_resource",

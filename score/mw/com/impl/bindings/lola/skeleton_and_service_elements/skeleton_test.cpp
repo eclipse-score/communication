@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_method.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"

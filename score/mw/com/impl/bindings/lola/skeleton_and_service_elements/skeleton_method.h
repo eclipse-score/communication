@@ -13,10 +13,11 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_METHOD_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_METHOD_H
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/i_lola_skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/i_lola_skeleton_method.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 
@@ -30,7 +31,6 @@
 #include <score/span.hpp>
 
 #include <cstddef>
-#include <ctime>
 #include <optional>
 #include <unordered_map>
 #include <utility>
@@ -38,12 +38,10 @@
 namespace score::mw::com::impl::lola
 {
 
-class Skeleton;
-
-class SkeletonMethod : public SkeletonMethodBinding
+class SkeletonMethod : public SkeletonMethodBinding, public ILolaSkeletonMethod
 {
   public:
-    SkeletonMethod(Skeleton& skeleton, const UniqueMethodIdentifier unique_method_identifier);
+    SkeletonMethod(ILolaSkeleton& skeleton, const UniqueMethodIdentifier unique_method_identifier);
 
     Result<void> RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
 
@@ -55,15 +53,16 @@ class SkeletonMethod : public SkeletonMethodBinding
         const safecpp::Scope<>& method_call_handler_scope,
         uid_t allowed_proxy_uid,
         pid_t proxy_pid,
-        const QualityType asil_level);
+        const QualityType asil_level) override;
 
-    void OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
+    void OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier) override;
 
-    void OnProxyMethodUnsubscribeFinished(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
+    void OnProxyMethodUnsubscribeFinished(
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier) override;
 
-    bool IsRegistered() const;
+    bool IsRegistered() const override;
 
-    void UnregisterMethodCallHandlers();
+    void UnregisterMethodCallHandlers() override;
 
   private:
     void Call(QualityType quality_type,
