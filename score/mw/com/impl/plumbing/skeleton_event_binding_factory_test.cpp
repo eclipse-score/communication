@@ -16,8 +16,8 @@
 // SkeletonEventBindingFactory and NOT SkeletonFieldBindingFactory are added here.
 
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_common.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 

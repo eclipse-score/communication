@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton.h"
 
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
@@ -19,12 +19,11 @@
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/i_lola_skeleton_method.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/com_error.h"
-#include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -557,7 +556,7 @@ void Skeleton::DisconnectQmConsumers()
     }
 }
 
-void Skeleton::RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMethod& skeleton_method)
+void Skeleton::RegisterMethod(const UniqueMethodIdentifier method_id, ILolaSkeletonMethod& skeleton_method)
 {
     const auto [ignorable, was_inserted] = skeleton_methods_.insert({method_id, skeleton_method});
     score::cpp::ignore = ignorable;

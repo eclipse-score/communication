@@ -20,12 +20,11 @@
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/i_lola_skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
-#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
@@ -37,7 +36,6 @@
 
 #include <atomic>
 #include <optional>
-#include <tuple>
 
 namespace score::mw::com::impl::lola
 {
@@ -65,7 +63,7 @@ class SkeletonEventCommon
     using ReceiveHandlerRegistrationChangedCallback = lola::IMessagePassingService::HandlerStatusChangeCallback;
 
   public:
-    SkeletonEventCommon(Skeleton& parent,
+    SkeletonEventCommon(ILolaSkeleton& parent,
                         const std::string_view event_name,
                         const SkeletonEventProperties& event_properties,
                         const ElementFqId& element_fq_id,
@@ -106,7 +104,7 @@ class SkeletonEventCommon
         return element_fq_id_;
     }
 
-    Skeleton& GetParent() &
+    ILolaSkeleton& GetParent() &
     {
         return parent_;
     }
@@ -160,7 +158,7 @@ class SkeletonEventCommon
     }
 
   private:
-    Skeleton& parent_;
+    ILolaSkeleton& parent_;
     std::string_view event_name_;
     SkeletonEventProperties event_properties_;
     ElementFqId element_fq_id_;
@@ -207,7 +205,7 @@ class SkeletonEventCommon
 };
 
 template <typename SampleType>
-SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
+SkeletonEventCommon<SampleType>::SkeletonEventCommon(ILolaSkeleton& parent,
                                                      const std::string_view event_name,
                                                      const SkeletonEventProperties& event_properties,
                                                      const ElementFqId& element_fq_id,
