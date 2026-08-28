@@ -10,20 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_design")
-
-architectural_design(
-    name = "software_architectural_design",
-    internal_api = [
-        "//score/mw/com/dependability/software_architectural_design/static_design/interfaces/internal_interfaces:internal_interfaces",
-    ],
-    static = [
-        "overall.puml",
-        "binding_independent.puml",
-        "lola_binding.puml",
-        "someip_binding.puml",
-        "mock_binding.puml",
-        "//score/mw/com/dependability/software_architectural_design/static_design/interfaces/component_interactions:component_interactions",
-    ],
+filegroup(
+    name = "component_interactions",
+    srcs = glob(["**/*.puml"]),
     visibility = ["//score/mw/com/dependability:__subpackages__"],
 )
