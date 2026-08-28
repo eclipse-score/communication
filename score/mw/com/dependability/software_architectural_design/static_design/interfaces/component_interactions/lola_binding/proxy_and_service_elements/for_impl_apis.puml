@@ -1,0 +1,51 @@
+@startuml safety_sentinel_mwcom_design
+title "lola_to_impl_proxy_interfaces"
+
+package "Binding Independent" as binding_independent <<component>> {
+  package "ProxyAndServiceElements" as proxy_and_service_elements <<component>> {
+    component "Proxy" as impl_proxy <<unit>> 
+    component "ProxyEvent" as impl_proxy_event <<unit>> 
+    component "ProxyMethod" as impl_proxy_method <<unit>> 
+    component "ProxyField" as impl_proxy_field <<unit>> 
+  }
+
+  package "GenericProxyAndServiceElements" as generic_proxy_and_service_elements <<component>> {
+    component "GenericProxy" as impl_generic_proxy <<unit>> 
+  }
+}
+
+component "Binding Factories" as binding_factories <<unit>>
+
+package "Lola Binding" as lola_binding  <<component>> {
+  package "ProxyAndServiceElements" as lola_proxy_and_service_elements <<component>> {
+    component "Proxy" as lola_proxy <<unit>> 
+    component "ProxyEvent" as lola_proxy_event <<unit>> 
+    component "ProxyMethod" as lola_proxy_method <<unit>> 
+  }
+}
+
+''' lola::Proxy interfaces
+' lola::Proxy interfaces
+interface "LolaProxyForImplProxyInterface" as lola_proxy_for_impl_proxy_interface <<interface>>
+impl_proxy --( lola_proxy_for_impl_proxy_interface
+lola_proxy -- lola_proxy_for_impl_proxy_interface
+
+interface "LolaProxyForImplGenericProxy" as lola_proxy_for_impl_generic_proxy_interface <<interface>>
+impl_generic_proxy --( lola_proxy_for_impl_generic_proxy_interface
+lola_proxy -- lola_proxy_for_impl_generic_proxy_interface
+
+interface "LolaProxyForBindingFactoriesInterface" as lola_proxy_for_binding_factories_interface <<interface>>
+binding_factories --( lola_proxy_for_binding_factories_interface
+lola_proxy -- lola_proxy_for_binding_factories_interface
+
+' lola::ProxyEvent interfaces
+interface "LolaProxyEventForImplProxyEventInterface" as lola_proxy_event_for_impl_proxy_event_interface <<interface>>
+impl_proxy_event --( lola_proxy_event_for_impl_proxy_event_interface
+lola_proxy_event -- lola_proxy_event_for_impl_proxy_event_interface
+
+' lola::ProxyMethod interfaces
+interface "LolaProxyMethodForImplProxyMethodInterface" as lola_proxy_method_for_impl_proxy_method_interface <<interface>>
+impl_proxy_method --( lola_proxy_method_for_impl_proxy_method_interface
+lola_proxy_method -- lola_proxy_method_for_impl_proxy_method_interface
+
+@enduml

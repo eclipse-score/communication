@@ -1,0 +1,14 @@
+@startuml
+
+namespace mw_com {
+  namespace lola_binding {
+    interface "LolaProxyMethodForLolaProxyInterface" as lola_proxy_method_for_lola_proxy_interface <<interface>> {
+      GetTypeErasedElementInfo()
+      SetInArgsAndReturnStorages()
+      MarkSubscribed()
+      MarkUnsubscribed()
+    }
+  }
+}
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml lola_to_impl_generic_proxy_interfaces
+title "lola_to_impl_generic_proxy_interfaces"
+
+package "Binding Independent" as binding_independent <<component>> {
+  package "GenericProxyAndServiceElements" as generic_proxy_and_service_elements <<component>> {
+    component "GenericProxy" as impl_generic_proxy <<unit>>
+    component "GenericProxyEvent" as impl_generic_proxy_event <<unit>>
+  }
+}
+
+package "Lola Binding" as lola_binding <<component>> {
+  package "ProxyAndServiceElements" as lola_proxy_and_service_elements <<component>> {
+    component "Proxy" as lola_proxy <<unit>>
+    component "ProxyEvent" as lola_proxy_event <<unit>>
+  }
+}
+
+interface "LolaProxyForImplGenericProxy" as lola_proxy_for_impl_generic_proxy_interface <<interface>>
+impl_generic_proxy --( lola_proxy_for_impl_generic_proxy_interface
+lola_proxy -- lola_proxy_for_impl_generic_proxy_interface
+
+interface "LolaProxyEventForImplGenericProxyEventInterface" as lola_generic_proxy_event_for_impl_generic_proxy_event_interface <<interface>>
+impl_generic_proxy_event --( lola_generic_proxy_event_for_impl_generic_proxy_event_interface
+lola_proxy_event -- lola_generic_proxy_event_for_impl_generic_proxy_event_interface
+
+@enduml
