@@ -32,7 +32,10 @@ cc_library(
     srcs = ["skeleton_container.cpp"],
     hdrs = ["skeleton_container.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/mw/com/test:__subpackages__"],
+    visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
+        "//score/mw/com/test:__subpackages__",
+    ],
     deps = [
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:fail_test",
@@ -49,6 +52,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
@@ -66,6 +70,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
@@ -89,6 +94,7 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
     ],
     visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
@@ -106,6 +112,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/performance_benchmarks:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
@@ -124,6 +131,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/performance_benchmarks:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
@@ -142,7 +150,10 @@ cc_library(
     srcs = ["process_synchronizer.cpp"],
     hdrs = ["process_synchronizer.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/mw/com/test:__subpackages__"],
+    visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
+        "//score/mw/com/test:__subpackages__",
+    ],
     deps = [
         "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/common_test_resources:shared_memory_object_creator",
@@ -163,6 +174,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/performance_benchmarks:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
@@ -182,6 +194,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
@@ -200,6 +213,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
@@ -230,6 +244,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
@@ -406,7 +421,10 @@ cc_library(
     srcs = ["general_resources.cpp"],
     hdrs = ["general_resources.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/mw/com/test:__subpackages__"],
+    visibility = [
+        "//score/mw/com/impl/test:__subpackages__",
+        "//score/mw/com/test:__subpackages__",
+    ],
     deps = [
         ":check_point_control",
         ":child_process_guard",
