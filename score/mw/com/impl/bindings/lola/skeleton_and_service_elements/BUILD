@@ -22,7 +22,6 @@ cc_library(
         "skeleton.cpp",
         "skeleton_event.cpp",
         "skeleton_event_common.cpp",
-        "skeleton_event_properties.cpp",
         "skeleton_memory_manager.cpp",
         "skeleton_method.cpp",
     ],
@@ -30,7 +29,6 @@ cc_library(
         "skeleton.h",
         "skeleton_event.h",
         "skeleton_event_common.h",
-        "skeleton_event_properties.h",
         "skeleton_memory_manager.h",
         "skeleton_method.h",
     ],
@@ -43,6 +41,7 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":skeleton_event_properties",
         "//score/memory/shared",
         "//score/memory/shared:i_shared_memory_resource",
         "//score/memory/shared:lock_file",
@@ -80,6 +79,17 @@ cc_library(
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
         "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "skeleton_event_properties",
+    srcs = ["skeleton_event_properties.cpp"],
+    hdrs = ["skeleton_event_properties.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
     ],
 )
 
