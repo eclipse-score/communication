@@ -47,6 +47,6 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/lola:service_data_control",
         "//score/mw/com/impl/bindings/lola:service_data_storage",
-        "//score/mw/com/impl/bindings/lola:skeleton",
+        "//score/mw/com/impl/bindings/lola/skeleton_and_service_elements:skeleton",
     ],
 )

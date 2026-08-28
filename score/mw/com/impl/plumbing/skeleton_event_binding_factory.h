@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_EVENT_BINDING_FACTORY_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_event_binding_factory.h"

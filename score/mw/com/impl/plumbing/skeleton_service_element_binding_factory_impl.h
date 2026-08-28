@@ -14,9 +14,9 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_SERVICE_ELEMENT_BINDING_FACTORY_IMPL_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_common.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event_properties.h"
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"

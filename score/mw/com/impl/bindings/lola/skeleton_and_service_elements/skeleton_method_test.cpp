@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/skeleton_method.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_method.h"
 
 #include "score/memory/data_type_size_info.h"
 #include "score/memory/shared/i_shared_memory_resource.h"

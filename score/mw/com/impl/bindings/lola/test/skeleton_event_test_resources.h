@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_TEST_RESOURCES_H
 
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"

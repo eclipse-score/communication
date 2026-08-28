@@ -10,14 +10,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/skeleton_method.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_method.h"
 
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/runtime.h"

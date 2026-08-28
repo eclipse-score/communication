@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
 

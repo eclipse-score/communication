@@ -15,7 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
 #include "score/mw/com/impl/configuration/quality_type.h"

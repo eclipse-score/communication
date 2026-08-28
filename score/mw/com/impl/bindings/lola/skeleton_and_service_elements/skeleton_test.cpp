@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"

@@ -22,7 +22,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//score/mw/com/impl/bindings/lola:__pkg__",
+        "//score/mw/com/impl/bindings/lola:__subpackages__",
         "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
     ],
     deps = [
@@ -42,7 +42,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         ":type_erased_call_queue",
         ":unique_method_identifier",
@@ -68,7 +68,7 @@ cc_library(
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         "//score/memory/shared",
         "//score/mw/com/impl/bindings/lola:proxy_instance_identifier",
@@ -89,7 +89,7 @@ cc_library(
         "//score/memory/shared:pointer_arithmetic_util",
     ],
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         "//score/memory/shared:memory_resource_proxy",
         "//score/memory/shared:offset_ptr",
@@ -120,7 +120,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
 )
 
 cc_library(

@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_SKELETON_EVENT_BINDING_FACTORY_IMPL_H
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_EVENT_BINDING_FACTORY_IMPL_H
 
-#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_event.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_service_element_binding_factory_impl.h"

@@ -66,7 +66,7 @@ cc_library(
         ":event",
         ":proxy",
         ":runtime",
-        ":skeleton",
+        "//score/mw/com/impl/bindings/lola/skeleton_and_service_elements:skeleton",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/concurrency",
         "@score_baselibs//score/language/futurecpp",
@@ -93,7 +93,10 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [":path_builder"],
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/plumbing:__pkg__"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__subpackages__",
+        "//score/mw/com/impl/plumbing:__pkg__",
+    ],
     deps = [
         ":i_shm_path_builder",
         "//score/mw/com/impl/configuration",
@@ -107,7 +110,10 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [":path_builder"],
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/plumbing:__pkg__"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__subpackages__",
+        "//score/mw/com/impl/plumbing:__pkg__",
+    ],
     deps = [":i_partial_restart_path_builder"],
 )
 
@@ -273,9 +279,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//score/mw/com/impl/bindings/lola:__pkg__",
-        "//score/mw/com/impl/bindings/lola/test:__pkg__",
-        "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
+        "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         ":element_fq_id",
@@ -300,8 +304,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//score/mw/com/impl/bindings/lola/test:__pkg__",
-        "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
+        "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         ":application_id_pid_mapping",
@@ -334,79 +337,11 @@ cc_library(
     ],
     deps = [
         ":event",
-        ":skeleton",
         ":type_erased_sample_ptrs_guard",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:generic_skeleton_event_binding",
+        "//score/mw/com/impl/bindings/lola/skeleton_and_service_elements:skeleton",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
-    ],
-)
-
-cc_library(
-    name = "skeleton",
-    srcs = [
-        "skeleton.cpp",
-        "skeleton_event.cpp",
-        "skeleton_event_common.cpp",
-        "skeleton_event_properties.cpp",
-        "skeleton_memory_manager.cpp",
-        "skeleton_method.cpp",
-    ],
-    hdrs = [
-        "skeleton.h",
-        "skeleton_event.h",
-        "skeleton_event_common.h",
-        "skeleton_event_properties.h",
-        "skeleton_memory_manager.h",
-        "skeleton_method.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        "//score/mw/com/impl/bindings/lola/tracing:tracing_runtime",
-    ],
-    tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl/bindings/lola/test:__pkg__",
-        "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
-    ],
-    deps = [
-        ":event",
-        ":i_partial_restart_path_builder",
-        ":i_shm_path_builder",
-        ":partial_restart_path_builder",
-        ":proxy_instance_identifier",
-        ":service_data_control",
-        ":service_data_storage",
-        ":shm_path_builder",
-        ":skeleton_instance_identifier",
-        ":type_erased_sample_ptrs_guard",
-        "//score/memory/shared",
-        "//score/memory/shared:i_shared_memory_resource",
-        "//score/memory/shared:lock_file",
-        "//score/memory/shared:new_delete_delegate_resource",
-        "//score/memory/shared/flock:exclusive_flock_mutex",
-        "//score/memory/shared/flock:flock_mutex_and_lock",
-        "//score/mw/com/impl:error",
-        "//score/mw/com/impl:generic_skeleton_event_binding",
-        "//score/mw/com/impl:instance_identifier",
-        "//score/mw/com/impl:runtime",
-        "//score/mw/com/impl:skeleton_binding",
-        "//score/mw/com/impl:skeleton_event_binding",
-        "//score/mw/com/impl/bindings/lola/methods:method_data",
-        "//score/mw/com/impl/bindings/lola/methods:method_resource_map",
-        "//score/mw/com/impl/bindings/lola/methods:type_erased_call_queue",
-        "//score/mw/com/impl/configuration",
-        "//score/mw/com/impl/methods:skeleton_method_binding",
-        "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
-        "//score/mw/com/impl/plumbing:sample_ptr",
-        "//score/mw/com/impl/tracing:skeleton_event_tracing",
-        "//score/mw/com/impl/util:arithmetic_utils",
-        "@score_baselibs//score/filesystem",
-        "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/language/safecpp/safe_math",
-        "@score_baselibs//score/language/safecpp/scoped_function:scope",
-        "@score_baselibs//score/memory:data_type_size_info",
-        "@score_baselibs//score/result",
     ],
 )
 
@@ -772,9 +707,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
-        "//score/mw/com/impl/bindings/lola/test:__pkg__",
-        "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
+        "//score/mw/com/impl/bindings/lola:__subpackages__",
         "//score/mw/com/impl/plumbing:__pkg__",
     ],
     deps = [
@@ -1001,22 +934,6 @@ cc_unit_test(
 )
 
 cc_unit_test(
-    name = "skeleton_method_test",
-    srcs = ["skeleton_method_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
-        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
-        "-aborts_upon_exception",
-    ],
-    deps = [
-        ":skeleton",
-        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
-        "//score/mw/com/impl/configuration/test:configuration_store",
-        "@googletest//:gtest",
-        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-    ],
-)
-
-cc_unit_test(
     name = "type_erased_sample_ptrs_guard_test",
     srcs = ["type_erased_sample_ptrs_guard_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -1124,55 +1041,6 @@ cc_unit_test(
 )
 
 cc_unit_test(
-    name = "skeleton_test",
-    srcs = ["skeleton_test.cpp"],
-    features = COMPILER_WARNING_FEATURES + [
-        "aborts_upon_exception",
-    ],
-    deps = [
-        ":skeleton",
-        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
-        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
-        "//score/mw/com/impl/bindings/mock_binding",
-        "//score/mw/com/impl/tracing:tracing_runtime_mock",
-    ],
-)
-
-cc_unit_test(
-    name = "skeleton_method_handling_test",
-    srcs = [
-        "skeleton_method_handling_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES + [
-        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
-        "-aborts_upon_exception",
-    ],
-    deps = [
-        ":skeleton",
-        "//score/memory/shared:shared_memory_resource_mock",
-        "//score/memory/shared/fake:my_bounded_shared_memory_resource",
-        "//score/mw/com/impl:binding_type",
-        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
-        "//score/mw/com/impl/configuration/test:configuration_store",
-        "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/memory:data_type_size_info",
-        "@score_baselibs//score/result",
-    ],
-)
-
-cc_unit_test(
-    name = "skeleton_event_common_test",
-    srcs = ["skeleton_event_common_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":skeleton",
-        "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
-        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
-    ],
-)
-
-cc_unit_test(
     name = "proxy_test",
     srcs = ["proxy_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [
@@ -1240,12 +1108,12 @@ cc_unit_test(
     deps = [
         ":rollback_synchronization",
         ":runtime_mock",
-        ":skeleton",
         ":transaction_log_rollback_executor",
         "//score/memory/shared:shared_memory_resource_heap_allocator_mock",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:runtime_mock",
         "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_mock",
+        "//score/mw/com/impl/bindings/lola/skeleton_and_service_elements:skeleton",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
     ],
@@ -1393,34 +1261,6 @@ cc_unit_test(
         ":linear_search_map",
         "//score/memory/shared:new_delete_delegate_resource",
         "@score_baselibs//score/mw/log",
-    ],
-)
-
-cc_unit_test(
-    name = "skeleton_event_test",
-    srcs = [
-        "skeleton_event_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES + [
-        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
-        "-aborts_upon_exception",
-    ],
-    deps = [
-        "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
-        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-    ],
-)
-
-cc_unit_test(
-    name = "skeleton_event_tracing_test",
-    srcs = [
-        "skeleton_event_tracing_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
-        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
-        "//score/mw/com/impl/tracing/configuration:tracing_filter_config_mock",
     ],
 )
 

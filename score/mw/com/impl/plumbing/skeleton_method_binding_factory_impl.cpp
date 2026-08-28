@@ -12,8 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory_impl.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_method.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_and_service_elements/skeleton_method.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/service_element_type.h"
 
