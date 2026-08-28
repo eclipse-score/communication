@@ -123,7 +123,10 @@ cc_library(
     hdrs = ["i_runtime.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/plumbing:__pkg__"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__subpackages__",
+        "//score/mw/com/impl/plumbing:__pkg__",
+    ],
     deps = [
         ":rollback_synchronization",
         "//score/mw/com/impl:runtime_interfaces",

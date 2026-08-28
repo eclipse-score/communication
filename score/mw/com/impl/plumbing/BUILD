@@ -98,7 +98,10 @@ cc_library(
     srcs = ["skeleton_method_binding_factory_impl.cpp"],
     hdrs = ["skeleton_method_binding_factory_impl.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["//score/mw/com/impl/bindings/lola"],
+    implementation_deps = [
+        "//score/mw/com/impl/bindings/lola",
+        "//score/mw/com/impl/bindings/lola/skeleton_and_service_elements:skeleton_method",
+    ],
     tags = ["FFI"],
     deps = [
         ":i_skeleton_method_binding_factory",

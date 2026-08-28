@@ -17,9 +17,6 @@
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
-#include "score/memory/shared/memory_resource_proxy.h"
-#include "score/memory/shared/offset_ptr.h"
-#include "score/os/fcntl.h"
 #include "score/result/result.h"
 
 #include <gmock/gmock.h>
