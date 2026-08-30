@@ -35,7 +35,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
         auto* const binding_ptr = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ptr != nullptr,
                                                     "Cast to GenericSkeletonEventBinding failed");
-        if (binding_ptr)
+        if (binding_ptr != nullptr)
         {
             const auto binding_type = binding_ptr->GetBindingType();
             auto tracing_data =
@@ -60,7 +60,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
         auto* const binding_ptr = dynamic_cast<GenericSkeletonEventBinding*>(binding_.get());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ptr != nullptr,
                                                     "Cast to GenericSkeletonEventBinding failed");
-        if (binding_ptr)
+        if (binding_ptr != nullptr)
         {
             const auto binding_type = binding_ptr->GetBindingType();
             auto tracing_data =
@@ -133,7 +133,7 @@ Result<void> GenericSkeletonEvent::Notify() noexcept
 DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
 {
     const auto* const binding = dynamic_cast<const GenericSkeletonEventBinding*>(binding_.get());
-    if (!binding)
+    if (binding == nullptr)
     {
         return {};
     }
