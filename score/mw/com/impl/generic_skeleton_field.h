@@ -85,7 +85,7 @@ class GenericSkeletonField : public SkeletonFieldBase
     ///        to correct/clamp the value in-place.
     /// \return A result indicating success, or ComErrc::kCouldNotExecute if the field was not configured
     ///         with a setter (i.e. has_setter in the constructor was false).
-    Result<void> RegisterSetHandler(std::function<void(score::cpp::span<uint8_t>)> set_handler);
+    Result<void> RegisterSetHandler(const std::function<void(score::cpp::span<uint8_t>)>& set_handler);
 
     /// \brief Internal hook to register the get handler with the binding.
     /// \details This is called by SkeletonFieldBase::PrepareOffer().
