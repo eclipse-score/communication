@@ -102,12 +102,12 @@ class GenericSkeletonField : public SkeletonFieldBase
     GenericSkeletonEvent* GetGenericEvent() const noexcept;
 
     std::vector<uint8_t> initial_field_value_;
-    bool has_initial_value_;
+    bool has_initial_value_{false};
 
     [[maybe_unused]] bool has_getter_;
     bool has_setter_;
     [[maybe_unused]] bool has_notifier_;
-    bool is_set_handler_registered_;
+    bool is_set_handler_registered_{false};
 };
 
 }  // namespace score::mw::com::impl
