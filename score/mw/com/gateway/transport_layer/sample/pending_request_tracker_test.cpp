@@ -116,7 +116,7 @@ TEST_F(PendingRequestTrackerFixture, AcknowledgeSetsFlagAndWakesWaitingThread)
     tracker_.RegisterPendingRequest(7U);
     std::atomic<bool> connected{true};
 
-    score::ResultBlank result = score::MakeUnexpected(TransportErrorc::kTimeout);
+    score::Result<void> result = score::MakeUnexpected(TransportErrorc::kTimeout);
     std::thread waiting_thread([this, &result, &connected]() {
         result = tracker_.WaitForAck(7U, std::chrono::milliseconds(500), connected);
     });
@@ -174,7 +174,7 @@ TEST_F(PendingRequestTrackerFixture, WaitForAckReturnsNotConnectedWhenDisconnect
     tracker_.RegisterPendingRequest(8U);
     std::atomic<bool> connected{true};
 
-    score::ResultBlank result = score::MakeUnexpected(TransportErrorc::kTimeout);
+    score::Result<void> result = score::MakeUnexpected(TransportErrorc::kTimeout);
     std::thread waiting_thread([this, &result, &connected]() {
         result = tracker_.WaitForAck(8U, std::chrono::milliseconds(500), connected);
     });
@@ -211,7 +211,7 @@ TEST_F(PendingRequestTrackerFixture, NotifyAllWakesUpWaitingThreads)
     tracker_.RegisterPendingRequest(11U);
     std::atomic<bool> connected{true};
 
-    score::ResultBlank result = score::MakeUnexpected(TransportErrorc::kSendFailure);
+    score::Result<void> result = score::MakeUnexpected(TransportErrorc::kSendFailure);
     std::thread waiting_thread([this, &result, &connected]() {
         result = tracker_.WaitForAck(11U, std::chrono::milliseconds(500), connected);
     });

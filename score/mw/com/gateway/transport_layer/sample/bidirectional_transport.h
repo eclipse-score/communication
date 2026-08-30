@@ -57,15 +57,15 @@ class BidirectionalTransport : public IBidirectionalTransport
 
     /// \brief Initializes the send and receive sockets and starts the related threads.
     /// Blocks until the first connection is established.
-    score::ResultBlank Setup() override;
+    score::Result<void> Setup() override;
     void Shutdown() override;
 
     bool IsConnected() const override;
 
     /// \brief Send a request message for a maximum of retries. Expects to receive ACK response for this message.
-    score::ResultBlank SendRequest(TransportMessage& message) override;
+    score::Result<void> SendRequest(TransportMessage& message) override;
     /// \brief Send a notification message without expected ACK response.
-    score::ResultBlank SendNotification(TransportMessage& message) override;
+    score::Result<void> SendNotification(TransportMessage& message) override;
 
     /// \brief Set a callback that will handle incoming messages. If not set incoming messages will be dropped.
     /// \param handler The callback to handle incoming messages.
@@ -74,10 +74,10 @@ class BidirectionalTransport : public IBidirectionalTransport
   private:
     /// \brief Send the given message and wait for the ACK response with the same sequence number.
     /// Returns error if unknown sequence number, timeout ocurres or disconnect happens.
-    score::ResultBlank TrySendAndWaitForAck(TransportMessage& message, const std::uint32_t sequence);
+    score::Result<void> TrySendAndWaitForAck(TransportMessage& message, const std::uint32_t sequence);
 
-    score::ResultBlank SetupSendSocket(score::cpp::stop_token stop_token);
-    score::ResultBlank SetupListenSocket();
+    score::Result<void> SetupSendSocket(score::cpp::stop_token stop_token);
+    score::Result<void> SetupListenSocket();
 
     /// \brief Handles in loop that sockets are setup and connected. Calls receiving function if connected.
     void ConnectionLoop(score::cpp::stop_token stop_token);
@@ -96,7 +96,7 @@ class BidirectionalTransport : public IBidirectionalTransport
     void HandleResponse(std::unique_ptr<TransportMessage> response);
 
     /// \brief Sends ACK for the given sequence number.
-    score::ResultBlank SendAck(const std::uint32_t sequence);
+    score::Result<void> SendAck(const std::uint32_t sequence);
 
     HyperVisorSocketConfiguration socket_config_;
 

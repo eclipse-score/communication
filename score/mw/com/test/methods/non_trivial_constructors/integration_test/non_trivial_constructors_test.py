@@ -16,12 +16,24 @@
 
 def provider(target, **kwargs):
     args = ["--service_instance_manifest", "./etc/mw_com_config.json"]
-    return target.wrap_exec("bin/main_provider", args, cwd="/opt/MainProviderApp/", wait_on_exit=True, **kwargs)
+    return target.wrap_exec(
+        "bin/main_provider",
+        args,
+        cwd="/opt/MainProviderApp/",
+        wait_on_exit=True,
+        **kwargs,
+    )
 
 
 def consumer(target, **kwargs):
     args = ["--service_instance_manifest", "./etc/mw_com_config.json"]
-    return target.wrap_exec("bin/main_consumer", args, cwd="/opt/MainConsumerApp/", wait_on_exit=True, **kwargs)
+    return target.wrap_exec(
+        "bin/main_consumer",
+        args,
+        cwd="/opt/MainConsumerApp/",
+        wait_on_exit=True,
+        **kwargs,
+    )
 
 
 def test_signature_variations(target):

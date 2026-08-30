@@ -1,0 +1,31 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+version: 1
+sources:
+  - channel: noble main universe
+    url: https://snapshot.ubuntu.com/ubuntu/20260401T104001Z
+  - channel: noble-security main universe
+    url: https://snapshot.ubuntu.com/ubuntu/20260401T104001Z
+  - channel: noble-updates main universe
+    url: https://snapshot.ubuntu.com/ubuntu/20260401T104001Z
+archs:
+  - amd64
+  - arm64
+packages:
+  - base-files  # mergedusr symlinks
+  - bash  # Required as default entrypoint of Docker
+  - binutils  # provides addr2line, required for backtraces in sanitizers
+  - coreutils  # for commands like `ls`
+  - dash  # Framework expects /bin/sh, which on Ubuntu is provided by dash
+  - libatomic1  # Dynamically linked at runtime to test executables
+  - libstdc++6  # Dynamically linked at runtime to test executables

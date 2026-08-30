@@ -19,11 +19,7 @@
 
 #include <chrono>
 
-namespace score
-{
-namespace message_passing
-{
-namespace detail
+namespace score::message_passing::detail
 {
 
 class TimedCommandQueue;
@@ -46,8 +42,6 @@ class TimedCommandQueueEntry : public score::containers::intrusive_list_element<
     QueuedCallback callback_{};
 };
 
-}  // namespace detail
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing::detail
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_TIMED_COMMAND_QUEUE_ENTRY_H

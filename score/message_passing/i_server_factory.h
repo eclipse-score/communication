@@ -20,14 +20,18 @@
 
 #include <cstdint>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 class IServerFactory
 {
   public:
+    /// \brief An IServerFactory shall not be copyable or movable
+    IServerFactory(const IServerFactory&) = delete;
+    IServerFactory(IServerFactory&&) = delete;
+    IServerFactory& operator=(const IServerFactory&) = delete;
+    IServerFactory& operator=(IServerFactory&&) = delete;
+
     struct ServerConfig
     {
         std::uint32_t max_queued_sends;       ///< Maximum number of Send messages by clients queued on server side.
@@ -46,13 +50,8 @@ class IServerFactory
     ~IServerFactory() = default;
 
     IServerFactory() noexcept = default;
-    IServerFactory(const IServerFactory&) = delete;
-    IServerFactory(IServerFactory&&) = delete;
-    IServerFactory& operator=(const IServerFactory&) = delete;
-    IServerFactory& operator=(IServerFactory&&) = delete;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_SERVER_FACTORY_H

@@ -14,11 +14,7 @@
 
 #include <score/utility.hpp>
 
-namespace score
-{
-namespace message_passing
-{
-namespace detail
+namespace score::message_passing::detail
 {
 
 void TimedCommandQueue::RegisterImmediateEntry(Entry& entry, QueuedCallback callback, const void* const owner) noexcept
@@ -32,6 +28,7 @@ void TimedCommandQueue::RegisterTimedEntry(Entry& entry,
                                            const void* const owner) noexcept
 {
     entry.until_ = until;
+    // Deviation of MISRA RULE-6-8-3: codeql::misra_deviation_next_line(timed-command-queue-owner-tag)
     entry.owner_ = owner;
     entry.callback_ = std::move(callback);
 
@@ -80,6 +77,4 @@ void TimedCommandQueue::CleanUpOwner(const void* const owner) noexcept
         });
 }
 
-}  // namespace detail
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing::detail

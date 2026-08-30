@@ -44,19 +44,17 @@ class ServiceDiscovery final : public IServiceDiscovery
     ServiceDiscovery& operator=(ServiceDiscovery&&) noexcept = delete;
     ~ServiceDiscovery() noexcept override;
 
-    [[nodiscard]] Result<void> OfferService(InstanceIdentifier) noexcept override;
-    [[nodiscard]] Result<void> StopOfferService(InstanceIdentifier) noexcept override;
-    [[nodiscard]] Result<void> StopOfferService(InstanceIdentifier, QualityTypeSelector quality_type) noexcept override;
+    [[nodiscard]] Result<void> OfferService(InstanceIdentifier) override;
+    [[nodiscard]] Result<void> StopOfferService(InstanceIdentifier) override;
+    [[nodiscard]] Result<void> StopOfferService(InstanceIdentifier, QualityTypeSelector quality_type) override;
+    Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>, const InstanceSpecifier) override;
+    Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>, InstanceIdentifier) override;
     Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>,
-                                               const InstanceSpecifier) noexcept override;
-    Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>, InstanceIdentifier) noexcept override;
-    Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>,
-                                               const EnrichedInstanceIdentifier) noexcept override;
-    [[nodiscard]] Result<void> StopFindService(const FindServiceHandle) noexcept override;
+                                               const EnrichedInstanceIdentifier) override;
+    [[nodiscard]] Result<void> StopFindService(const FindServiceHandle) override;
     [[nodiscard]] Result<ServiceHandleContainer<HandleType>> FindService(
-        InstanceIdentifier instance_identifier) noexcept override;
-    [[nodiscard]] Result<ServiceHandleContainer<HandleType>> FindService(
-        InstanceSpecifier instance_specifier) noexcept override;
+        InstanceIdentifier instance_identifier) override;
+    [[nodiscard]] Result<ServiceHandleContainer<HandleType>> FindService(InstanceSpecifier instance_specifier) override;
 
   private:
     /// \brief Dispatches to BindingSpecificStartFindService and processes a binding error if returned
@@ -66,7 +64,7 @@ class ServiceDiscovery final : public IServiceDiscovery
     /// safe.
     Result<FindServiceHandle> StartFindServiceImpl(FindServiceHandle,
                                                    std::weak_ptr<FindServiceHandler<HandleType>> handler_weak_ptr,
-                                                   const EnrichedInstanceIdentifier&) noexcept;
+                                                   const EnrichedInstanceIdentifier&);
 
     /// \brief Generates the next available FindServiceHandle
     ///
@@ -85,7 +83,7 @@ class ServiceDiscovery final : public IServiceDiscovery
     /// This function is NOT threadsafe and should be called with container_mutex_ locked.
     void StoreInstanceIdentifier(const FindServiceHandle&, const EnrichedInstanceIdentifier&) noexcept;
 
-    IServiceDiscoveryClient& GetServiceDiscoveryClient(const InstanceIdentifier&) noexcept;
+    IServiceDiscoveryClient& GetServiceDiscoveryClient(const InstanceIdentifier&);
 
     /// \brief Call the binding specific StartFindService
     ///
@@ -94,16 +92,15 @@ class ServiceDiscovery final : public IServiceDiscovery
     /// safe.
     Result<void> BindingSpecificStartFindService(FindServiceHandle,
                                                  std::weak_ptr<FindServiceHandler<HandleType>> handler_weak_ptr,
-                                                 const EnrichedInstanceIdentifier&) noexcept;
+                                                 const EnrichedInstanceIdentifier&);
 
     /// \brief Removes any InstanceIdentifiers which were added to handle_to_instances_ but were never processed since
     /// StartFindService on another binding failed and we returned early.
     ///
     /// This function is thread safe as it locks container_mutex_ internally as it updates handle_to_instances_.
-    void RemoveUnusedInstanceIdentifiers(
-        FindServiceHandle find_service_handle,
-        std::vector<EnrichedInstanceIdentifier>::const_iterator last_used_iterator,
-        std::vector<EnrichedInstanceIdentifier>::const_iterator container_end) noexcept;
+    void RemoveUnusedInstanceIdentifiers(FindServiceHandle find_service_handle,
+                                         std::vector<EnrichedInstanceIdentifier>::const_iterator last_used_iterator,
+                                         std::vector<EnrichedInstanceIdentifier>::const_iterator container_end);
 
     IRuntime& runtime_;
     std::atomic<std::size_t> next_free_uid_;

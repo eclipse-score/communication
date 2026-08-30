@@ -46,7 +46,7 @@ std::optional<pid_t> TryUpdatePidForExistingId(
     // Rationale: Tolerated due to containers providing pointer-like iterators.
     // The Coverity tool considers these iterators as raw pointers.
     // coverity[autosar_cpp14_m5_0_15_violation]
-    for (auto it = entries_begin; it != entries_end; it++)
+    for (auto* it = entries_begin; it != entries_end; it++)
     {
         // extract out into a separate function
         const auto status_applicationid = it->GetStatusAndApplicationIdAtomic();
@@ -114,7 +114,7 @@ std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPi
         // Rationale: Tolerated due to containers providing pointer-like iterators.
         // The Coverity tool considers these iterators as raw pointers.
         // coverity[autosar_cpp14_m5_0_15_violation]
-        for (auto it = entries_begin; it != entries_end; it++)
+        for (auto* it = entries_begin; it != entries_end; it++)
         {
             const auto status_applicationid = it->GetStatusAndApplicationIdAtomic();
             const auto entry_status = status_applicationid.first;

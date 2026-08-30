@@ -94,6 +94,7 @@ cc_library(
 
 cc_library(
     name = "sample_allocatee_ptr",
+    srcs = ["sample_allocatee_ptr.cpp"],
     hdrs = ["sample_allocatee_ptr.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],

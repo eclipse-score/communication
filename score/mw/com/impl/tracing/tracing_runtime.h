@@ -102,11 +102,10 @@ class TracingRuntime : public ITracingRuntime
     void RegisterShmObject(const BindingType binding_type,
                            const ServiceElementInstanceIdentifierView service_element_instance_identifier_view,
                            const memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
-                           void* const shm_memory_start_address) noexcept override;
+                           void* const shm_memory_start_address) override;
 
-    void UnregisterShmObject(
-        BindingType binding_type,
-        ServiceElementInstanceIdentifierView service_element_instance_identifier_view) noexcept override;
+    void UnregisterShmObject(BindingType binding_type,
+                             ServiceElementInstanceIdentifierView service_element_instance_identifier_view) override;
 
     /// \brief Trace call for data residing in shared-memory being handled async via TraceDoneCallback. So this API
     ///        is only called by SkeletonEvents/Fields emitting data (send/update).
@@ -138,7 +137,7 @@ class TracingRuntime : public ITracingRuntime
                        const TracePointDataId trace_point_data_id,
                        TypeErasedSamplePtr sample_ptr,
                        const void* const shm_data_ptr,
-                       const std::size_t shm_data_size) noexcept override;
+                       const std::size_t shm_data_size) override;
 
     /// \brief Trace call for data residing locally (not in shared-memory) being synchronously copied for tracing.
     /// \param binding_type identification of binding, which does the call.
@@ -156,7 +155,7 @@ class TracingRuntime : public ITracingRuntime
                        const TracePointType trace_point_type,
                        const std::optional<TracePointDataId> trace_point_data_id,
                        const void* const local_data_ptr,
-                       const std::size_t local_data_size) noexcept override;
+                       const std::size_t local_data_size) override;
 
     IBindingTracingRuntime& GetBindingTracingRuntime(const BindingType binding_type) const noexcept override;
 
@@ -173,7 +172,7 @@ class TracingRuntime : public ITracingRuntime
 
     Result<analysis::tracing::ShmObjectHandle> GetRegisteredShmObject(
         IBindingTracingRuntime& binding_runtime,
-        const ServiceElementInstanceIdentifierView service_element_instance_identifier) noexcept;
+        const ServiceElementInstanceIdentifierView service_element_instance_identifier);
 
     std::unordered_map<BindingType, IBindingTracingRuntime*> binding_tracing_runtimes_;
 

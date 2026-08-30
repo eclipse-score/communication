@@ -97,6 +97,11 @@ class ServiceDiscoveryClientFixture : public ::testing::Test
     ServiceDiscoveryClientFixture& WithAnActiveStartFindService(
         const InstanceIdentifier& instance_identifier,
         const FindServiceHandle find_service_handle,
+        // The enclosing FindServiceHandler is a type-erased callback whose call signature takes these
+        // parameters by value; the caller already copies them into that fixed signature before invoking this
+        // lambda, so taking them by const& here would not avoid any copy - it would only (misleadingly) hide
+        // the fact that copies already happened.
+        // NOLINTNEXTLINE(performance-unnecessary-value-param)
         FindServiceHandler<HandleType> find_service_handler = [](auto, auto) noexcept {})
     {
         EXPECT_TRUE(service_discovery_client_->StartFindService(
@@ -105,7 +110,7 @@ class ServiceDiscoveryClientFixture : public ::testing::Test
     }
 
     filesystem::Path GetFlagFilePrefix(const LolaServiceId service_id,
-                                       const LolaServiceInstanceId instance_id,
+                                       const LolaServiceInstanceId& instance_id,
                                        const filesystem::Path& tmp_path) noexcept
     {
         const auto service_id_str = std::to_string(static_cast<std::uint32_t>(service_id));

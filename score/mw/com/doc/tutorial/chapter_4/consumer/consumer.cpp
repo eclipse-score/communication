@@ -24,18 +24,17 @@
 #include <thread>
 #include <utility>
 
-static std::atomic<bool> g_running{true};
+namespace
+{
+std::atomic<bool> g_running{true};
 
-static void SignalHandler(int /*signum*/)
+void SignalHandler(int /*signum*/)
 {
     std::cout << "HelloWorld service consumer caught signal." << std::endl;
     g_running.store(false, std::memory_order_relaxed);
 }
 
 using HelloWorldProxy = score::mw::com::AsProxy<score::mw::com::tutorial::HelloWorldInterface>;
-
-namespace
-{
 
 // Returns a human-readable name for a subscription state (for logging).
 const char* ToString(const score::mw::com::SubscriptionState state) noexcept

@@ -20,9 +20,7 @@
 #include <score/expected.hpp>
 #include <score/span.hpp>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 /// \brief Interface of a Message Passing Server connection
@@ -30,6 +28,12 @@ namespace message_passing
 class IServerConnection
 {
   public:
+    /// \brief An IServerConnection shall not be copyable or movable
+    IServerConnection(const IServerConnection&) = delete;
+    IServerConnection(IServerConnection&&) = delete;
+    IServerConnection& operator=(const IServerConnection&) = delete;
+    IServerConnection& operator=(IServerConnection&&) = delete;
+
     virtual const ClientIdentity& GetClientIdentity() const& noexcept = 0;
     virtual UserData& GetUserData() noexcept = 0;
 
@@ -43,13 +47,8 @@ class IServerConnection
     ~IServerConnection() noexcept = default;
 
     IServerConnection() noexcept = default;
-    IServerConnection(const IServerConnection&) = delete;
-    IServerConnection(IServerConnection&&) = delete;
-    IServerConnection& operator=(const IServerConnection&) = delete;
-    IServerConnection& operator=(IServerConnection&&) = delete;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_SERVER_CONNECTION_H

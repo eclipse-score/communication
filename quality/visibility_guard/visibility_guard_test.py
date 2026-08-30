@@ -18,6 +18,7 @@ import difflib
 
 from quality.visibility_guard.parser import get_all_public_targets
 
+
 def find_repo_root():
     """Find the repository root directory."""
     # BUILD_WORKSPACE_DIRECTORY is set by `bazel run`
@@ -42,9 +43,7 @@ def main():
         print("ERROR: Could not find repository root (MODULE.bazel)")
         sys.exit(1)
 
-    golden_path = os.path.join(
-        repo_root, "quality", "visibility_guard", "public_targets.golden"
-    )
+    golden_path = os.path.join(repo_root, "quality", "visibility_guard", "public_targets.golden")
 
     if not os.path.exists(golden_path):
         print("ERROR: Golden file not found at:", golden_path)

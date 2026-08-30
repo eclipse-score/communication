@@ -21,13 +21,14 @@
 #include "score/mw/com/impl/skeleton_field_base.h"
 #include "score/mw/com/impl/tracing/skeleton_tracing.h"
 
+#include "score/scope_exit/scope_exit.h"
+
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
 #include <score/utility.hpp>
 
 #include <algorithm>
-#include <exception>
 #include <functional>
 #include <utility>
 #include <vector>
@@ -99,8 +100,9 @@ SkeletonBase::SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding, In
         "Skeleton binding should be checked in SkeletonWrapperClass::Create() before constructing the SkeletonBase.");
 }
 
-score::Result<void> SkeletonBase::OfferServiceEvents() const noexcept
+score::Result<std::vector<utils::ScopeExit<>>> SkeletonBase::OfferServiceEvents() const noexcept
 {
+    std::vector<utils::ScopeExit<>> offer_guards{};
     for (const auto& event : events_)
     {
         const auto event_name = event.first;
@@ -113,12 +115,16 @@ score::Result<void> SkeletonBase::OfferServiceEvents() const noexcept
                 << ": Reason:" << offer_result.error().Message() << ": " << offer_result.error().UserMessage();
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
+        offer_guards.emplace_back([&skeleton_event]() {
+            skeleton_event.PrepareStopOffer();
+        });
     }
-    return {};
+    return {std::move(offer_guards)};
 }
 
-score::Result<void> SkeletonBase::OfferServiceFields() const noexcept
+score::Result<std::vector<utils::ScopeExit<>>> SkeletonBase::OfferServiceFields() const noexcept
 {
+    std::vector<utils::ScopeExit<>> offer_guards{};
     for (const auto& field : fields_)
     {
         const auto field_name = field.first;
@@ -135,11 +141,14 @@ score::Result<void> SkeletonBase::OfferServiceFields() const noexcept
             }
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
+        offer_guards.emplace_back([&skeleton_field]() {
+            skeleton_field.PrepareStopOffer();
+        });
     }
-    return {};
+    return {std::move(offer_guards)};
 }
 
-auto SkeletonBase::OfferService() noexcept -> Result<void>
+auto SkeletonBase::OfferService() -> Result<void>
 {
     if (skeleton_mock_ != nullptr)
     {
@@ -152,13 +161,6 @@ auto SkeletonBase::OfferService() noexcept -> Result<void>
     auto register_shm_object_callback =
         tracing::CreateRegisterShmObjectCallback(instance_id_, events_, fields_, *binding_);
 
-    if (!binding_->VerifyAllMethodHandlersRegistered())
-    {
-        constexpr std::string_view msg =
-            "Not all methods have been registered! Call Register(...) with an appropriate callback on each mehtod.";
-        return MakeUnexpected(ComErrc::kBindingFailure, msg);
-    }
-
     const auto result = binding_->PrepareOffer(event_bindings, field_bindings, std::move(register_shm_object_callback));
     if (!result.has_value())
     {
@@ -166,20 +168,31 @@ auto SkeletonBase::OfferService() noexcept -> Result<void>
                                          << result.error().UserMessage();
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
+    utils::ScopeExit binding_offer_guard{[this]() {
+        binding_->PrepareStopOffer({});
+    }};
 
-    const auto event_verification_result = OfferServiceEvents();
-    if (!event_verification_result.has_value())
+    auto event_offer_guards_result = OfferServiceEvents();
+    if (!event_offer_guards_result.has_value())
     {
-        return event_verification_result;
+        return MakeUnexpected<void>(event_offer_guards_result.error());
     }
 
-    const auto fields_verification_result = OfferServiceFields();
-    if (!fields_verification_result.has_value())
+    auto field_offer_guards_result = OfferServiceFields();
+    if (!field_offer_guards_result.has_value())
     {
-        return fields_verification_result;
+        return MakeUnexpected<void>(field_offer_guards_result.error());
     }
 
-    service_offered_flag_.Set();
+    // Since the method handlers for the field getters are registered in the SkeletonField::PrepareOffer() function, we
+    // need to verify that all method handlers have been registered after the calling PrepareOffer() on the
+    // SkeletonFields.
+    if (!binding_->VerifyAllMethodHandlersRegistered())
+    {
+        constexpr std::string_view msg =
+            "Not all methods have been registered! Call Register(...) with an appropriate callback on each mehtod.";
+        return MakeUnexpected(ComErrc::kBindingFailure, msg);
+    }
 
     const auto service_discovery_offer_result = Runtime::getInstance().GetServiceDiscovery().OfferService(instance_id_);
     if (!service_discovery_offer_result.has_value())
@@ -191,6 +204,19 @@ auto SkeletonBase::OfferService() noexcept -> Result<void>
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
+    service_offered_flag_.Set();
+
+    // Since the service has been successfully offered, we release the offer guards so that they do not call
+    // PrepareStopOffer() when they go out of scope.
+    binding_offer_guard.Release();
+    auto release_guards = [](auto& offer_guards) {
+        for (auto& guard : offer_guards)
+        {
+            guard.Release();
+        }
+    };
+    release_guards(event_offer_guards_result.value());
+    release_guards(field_offer_guards_result.value());
     return {};
 }
 

@@ -31,7 +31,7 @@ class LolaServiceInstanceId
   public:
     using InstanceId = std::uint16_t;
 
-    explicit LolaServiceInstanceId(const score::json::Object& json_object) noexcept;
+    explicit LolaServiceInstanceId(const score::json::Object& json_object);
     explicit LolaServiceInstanceId(InstanceId instance_id) noexcept;
 
     score::json::Object Serialize() const noexcept;

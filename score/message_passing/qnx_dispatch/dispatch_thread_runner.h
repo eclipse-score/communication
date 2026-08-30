@@ -69,6 +69,8 @@ class DispatchThreadRunner
         StartPostInit();
     }
 
+    void Stop() noexcept;
+
     dispatch_t* GetDispatchPointer() const noexcept
     {
         return dispatch_pointer_;

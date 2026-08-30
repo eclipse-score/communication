@@ -17,13 +17,14 @@
 #include "score/mw/com/test/move_semantics/skeleton_event/consumer.h"
 #include "score/mw/com/test/move_semantics/skeleton_event/provider.h"
 #include "score/mw/com/test/move_semantics/skeleton_event/test_parameters.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 int main(int argc, const char** argv)
 {
     auto test_configuration{score::mw::com::test::ReadCommandLineArguments(argc, argv)};
 
     score::mw::com::test::SetupAssertHandler();
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
 
     score::cpp::stop_source stop_source{};
     const bool sig_term_handler_setup_success = score::mw::com::SetupStopTokenSigTermHandler(stop_source);
@@ -39,11 +40,13 @@ int main(int argc, const char** argv)
               << score::mw::com::test::kNumberOfSamplesToSendPerOffer << " and number of send iterations"
               << num_send_iterations << std::endl;
 
-    auto provider_future = std::async(score::mw::com::test::RunProvider,
+    auto provider_future = std::async(std::launch::async,
+                                      score::mw::com::test::RunProvider,
                                       test_configuration.scenario,
                                       score::mw::com::test::kNumberOfSamplesToSendPerOffer,
                                       stop_source.get_token());
-    auto consumer_future = std::async(score::mw::com::test::RunConsumer,
+    auto consumer_future = std::async(std::launch::async,
+                                      score::mw::com::test::RunConsumer,
                                       score::mw::com::test::kInstanceSpecifierMovedTo,
                                       score::mw::com::test::kNumberOfSamplesToSendPerOffer,
                                       num_send_iterations,
@@ -52,7 +55,8 @@ int main(int argc, const char** argv)
     if (test_configuration.scenario == score::mw::com::test::SkeletonMoveScenario::kMoveAssignOffered)
     {
         const std::size_t num_moved_to_send_iterations{1U};
-        auto moved_from_consumer_future = std::async(score::mw::com::test::RunConsumer,
+        auto moved_from_consumer_future = std::async(std::launch::async,
+                                                     score::mw::com::test::RunConsumer,
                                                      score::mw::com::test::kInstanceSpecifierMovedFrom,
                                                      score::mw::com::test::kNumberOfSamplesToSendPerOffer,
                                                      num_moved_to_send_iterations,

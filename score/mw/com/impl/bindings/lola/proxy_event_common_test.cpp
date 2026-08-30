@@ -22,6 +22,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <utility>
+
 namespace score::mw::com::impl::lola
 {
 namespace
@@ -159,9 +161,29 @@ TYPED_TEST(LolaProxyEventCommonFixture, DoNotRegisterEventHandler)
     EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
 }
 
+TYPED_TEST(LolaProxyEventCommonFixture, CallingSetReceiveHandlerRegistersEventNotificationWithPidFromSharedMemory)
+{
+    const std::size_t max_sample_count{1U};
+
+    // Expecting that a receive handler will be registered with the pid that was written to shared memory by the
+    // skeleton
+    EXPECT_CALL(*this->mock_service_,
+                RegisterEventNotification(QualityType::kASIL_QM, kElementFqId, _, this->kDummyPid));
+
+    // Given a subscribed ProxyEvent
+    this->InitialiseProxyAndEvent();
+    std::ignore = this->proxy_event_->Subscribe(max_sample_count);
+
+    // When registering a receive handler
+    safecpp::Scope<> event_receive_handler_scope{};
+    std::ignore =
+        this->proxy_event_->SetReceiveHandler(FromMockFunction(event_receive_handler_scope, this->event_handler_));
+}
+
 TYPED_TEST(LolaProxyEventCommonFixture, SubscriptionFailsWhenProviderRejectsSubscription)
 {
-    this->RecordProperty("Verifies", "SCR-21269964, SCR-14137270, SCR-17292398, SCR-14033248");
+    this->RecordProperty("Verifies", "SCR-21269964, SCR-17292398, SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     this->RecordProperty("Description",
                          "Checks that a subscription will fail when the provider rejects the subscription due to "
                          "overflowed max sample count.");
@@ -184,7 +206,8 @@ TYPED_TEST(LolaProxyEventCommonFixture, SubscriptionFailsWhenProviderRejectsSubs
 
 TYPED_TEST(LolaProxyEventCommonFixture, UnsubscribeImmediatelyAfterSubscribing)
 {
-    this->RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-14137271, SCR-21286218");
+    this->RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-21286218");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyEventUnsubscribe");
     this->RecordProperty("Description",
                          "Unsubscribe will be succesfully processed if a user unsubscribes from an event immediately "
                          "after subscribing.");
@@ -327,10 +350,10 @@ TYPED_TEST(LolaProxyEventCommonFixture, RegisterSubscriptionStateChangeHandler)
         last_subscription_state = new_state;
         return true;
     };
-    this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
+    std::ignore = this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
 
     // When subscribed
-    this->proxy_event_->Subscribe(1U);
+    std::ignore = this->proxy_event_->Subscribe(1U);
 
     // Then the callback is triggered with kSubscribed new status
     EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
@@ -353,10 +376,10 @@ TYPED_TEST(LolaProxyEventCommonFixture, RegisterSubscriptionStateChangeHandlerSe
         last_subscription_state = new_state;
         return new_state != SubscriptionState::kSubscribed;
     };
-    this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
+    std::ignore = this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
 
     // When subscribed
-    this->proxy_event_->Subscribe(1U);
+    std::ignore = this->proxy_event_->Subscribe(1U);
 
     // Then the callback is triggered with kSubscribed new status
     EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
@@ -379,11 +402,11 @@ TYPED_TEST(LolaProxyEventCommonFixture, RegisterAndRemoveSubscriptionStateChange
         last_subscription_state = new_state;
         return true;
     };
-    this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
+    std::ignore = this->proxy_event_->SetSubscriptionStateChangeHandler(subscription_state_callback);
 
     // When removing the callback and subscribing
-    this->proxy_event_->UnsetSubscriptionStateChangeHandler();
-    this->proxy_event_->Subscribe(1U);
+    std::ignore = this->proxy_event_->UnsetSubscriptionStateChangeHandler();
+    std::ignore = this->proxy_event_->Subscribe(1U);
 
     // Then the callback is not triggered
     EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);

@@ -55,7 +55,7 @@ class InstanceIdentifier final
      * called with a dummy InstanceSpecifier) triggers this.
      * If the configuration has not been set, kInvalidConfiguration is returned.
      */
-    static score::Result<InstanceIdentifier> Create(std::string&& serialized_format) noexcept;
+    static score::Result<InstanceIdentifier> Create(std::string&& serialized_format);
 
     InstanceIdentifier() = delete;
     ~InstanceIdentifier() noexcept = default;
@@ -119,7 +119,7 @@ class InstanceIdentifier final
      * \param rhs The second instance to check for equality
      * \return true if other and *this equal, false otherwise
      */
-    friend bool operator==(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs) noexcept;
+    friend bool operator==(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs);
 
     /**
      * \api
@@ -129,7 +129,7 @@ class InstanceIdentifier final
      * \param rhs The second InstanceIdentifier instance to compare
      * \return true if *this is less then other, false otherwise
      */
-    friend bool operator<(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs) noexcept;
+    friend bool operator<(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs);
 
   private:
     const ServiceInstanceDeployment* instance_deployment_;
@@ -141,7 +141,7 @@ class InstanceIdentifier final
      * @param json_object Used to construct the InstanceIdentifier (no copies of json_object are made internally).
      * @param serialized_string Serialized string which the json_object is derived from. Used to set serialized_string_.
      */
-    explicit InstanceIdentifier(const json::Object& json_object, std::string&& serialized_string) noexcept;
+    explicit InstanceIdentifier(const json::Object& json_object, std::string&& serialized_string);
 
     /**
      * @brief internal impl. specific ctor.
@@ -150,14 +150,14 @@ class InstanceIdentifier final
      * @param version version info
      * @param deployment deployment info
      */
-    explicit InstanceIdentifier(const ServiceInstanceDeployment&, const ServiceTypeDeployment&) noexcept;
+    explicit InstanceIdentifier(const ServiceInstanceDeployment&, const ServiceTypeDeployment&);
 
     static void SetConfiguration(Configuration* const configuration) noexcept
     {
         InstanceIdentifier::configuration_ = configuration;
     }
 
-    json::Object Serialize() const noexcept;
+    json::Object Serialize() const;
 
     /**
      * @brief serialized format of this InstanceIdentifier instance
@@ -187,7 +187,7 @@ class InstanceIdentifier final
     // This way more implementation details can be hidden from the user.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend InstanceIdentifier make_InstanceIdentifier(const ServiceInstanceDeployment& instance_deployment,
-                                                      const ServiceTypeDeployment& type_deployment) noexcept;
+                                                      const ServiceTypeDeployment& type_deployment);
 
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Design decision. This class provides a view to the private members of this class.
@@ -218,7 +218,7 @@ class InstanceIdentifier final
  * \return A constructed InstanceIdentifier
  */
 inline InstanceIdentifier make_InstanceIdentifier(const ServiceInstanceDeployment& instance_deployment,
-                                                  const ServiceTypeDeployment& type_deployment) noexcept
+                                                  const ServiceTypeDeployment& type_deployment)
 {
     return InstanceIdentifier{instance_deployment, type_deployment};
 }
@@ -236,12 +236,12 @@ class InstanceIdentifierView final
   public:
     explicit InstanceIdentifierView(const InstanceIdentifier&);
 
-    json::Object Serialize() const noexcept
+    json::Object Serialize() const
     {
         return identifier_.Serialize();
     };
 
-    std::optional<ServiceInstanceId> GetServiceInstanceId() const noexcept;
+    std::optional<ServiceInstanceId> GetServiceInstanceId() const;
     const ServiceInstanceDeployment& GetServiceInstanceDeployment() const noexcept;
     const ServiceTypeDeployment& GetServiceTypeDeployment() const;
     bool isCompatibleWith(const InstanceIdentifier&) const;

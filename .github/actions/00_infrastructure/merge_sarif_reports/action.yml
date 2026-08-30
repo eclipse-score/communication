@@ -1,0 +1,141 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Merge rules_lint SARIF reports"
+description: >-
+  Collects the per-file SARIF ".report" files emitted by rules_lint_machine
+  (discovered via a Bazel Build Event Protocol JSON stream), drops any that
+  are empty (0 bytes, meaning the linter never actually ran against that
+  target), and merges the rest into a single, valid SARIF document with one
+  run per distinct tool, via the official Microsoft SARIF SDK's
+  `Sarif.Multitool merge` command, suitable for uploading to GitHub Code
+  Scanning via github/codeql-action/upload-sarif.
+
+inputs:
+  bep-json:
+    description: "Path to the Bazel Build Event Protocol JSON file (--build_event_json_file) to scan for emitted '.report' files."
+    required: true
+  output-file:
+    description: "Path to write the merged SARIF document to."
+    required: true
+  sarif-multitool-version:
+    description: "Version of the @microsoft/sarif-multitool npm package to use."
+    required: false
+    default: "5.6.0"
+
+outputs:
+  sarif-file:
+    description: "Path to the merged SARIF document (same as the output-file input). Only meaningful if 'found' is 'true'."
+    value: ${{ inputs.output-file }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Merge SARIF reports
+      id: merge
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        WORK_DIR="$(mktemp -d)"
+        STAGE_DIR="${WORK_DIR}/reports"
+        mkdir -p "${STAGE_DIR}"
+
+        # Ask Bazel directly (via its Build Event Protocol JSON stream) which
+        # files were produced by the rules_lint_machine output group.
+        ALL_REPORTS=$(jq -r '
+          select(.id.namedSet != null)
+          | .namedSetOfFiles.files[]?
+          | select(.name | endswith(".report"))
+          | .uri
+        ' "${{ inputs.bep-json }}" 2>/dev/null | sed 's|^file://||' | sort -u)
+
+        # A ".report" file is completely empty (0 bytes) when
+        # rules_lint_machine declared the output but the linter never
+        # actually ran against the target (e.g. header-only cc_library
+        # targets with no srcs to compile/analyze, or py_* targets whose
+        # `srcs` resolve entirely to files owned by an external repository).
+        # This is different from a clean, actually-linted file, which still
+        # produces a small but valid SARIF document (an empty `results`
+        # array).
+        #
+        # We deliberately filter these out here instead of maintaining a
+        # local fork of each upstream lint aspect (clang-tidy, ruff, ...)
+        # that skips such targets at analysis time. An earlier iteration of
+        # this workflow did exactly that (see git history for
+        # tools/lint/clang_tidy_lint_gate.bzl), but duplicating aspect
+        # implementation logic per-linter is brittle: it silently drifts out
+        # of sync with upstream `aspect_rules_lint` (new rule kinds, changed
+        # `filter_srcs`/`should_visit` semantics, etc. would need to be
+        # mirrored by hand in every fork), and any *unintended* coverage gap
+        # it introduces (e.g. a target that should be linted but isn't) is
+        # invisible here — it would only ever surface indirectly, if at all,
+        # via our coverage metrics/dashboards flagging unexpectedly low
+        # linter coverage for a package. Filtering empty reports in CI
+        # keeps all targets flowing through the exact same upstream aspects
+        # everyone else uses, at the cost of only being able to detect gaps
+        # via those coverage metrics rather than failing the build outright.
+        REPORTS=""
+        for f in ${ALL_REPORTS}; do
+          if [[ -s "${f}" ]]; then
+            REPORTS+="${f}"$'\n'
+          fi
+        done
+        REPORTS=$(echo "${REPORTS}" | sed '/^$/d')
+
+        if [[ -z "${REPORTS}" ]]; then
+          echo "::error::No non-empty SARIF reports found; nothing to merge/upload."
+          exit 1
+        fi
+
+        # Stage every per-file SARIF report as a symlink, numbered to avoid
+        # basename collisions, in a single flat directory. Handing
+        # `Sarif.Multitool merge` one glob specifier over that directory
+        # (rather than hundreds of individual file paths) keeps the
+        # invocation to a single argv entry no matter how many report files
+        # there are, avoiding shell/xargs argument-length limits that can
+        # otherwise silently corrupt the output (as previously happened with
+        # `xargs jq -s ...`, which split into multiple invocations once the
+        # report list exceeded xargs' default ~128KiB argument limit, each
+        # appending a separate SARIF document to the same output file).
+        # `Sarif.Multitool` expands this glob itself (via .NET's
+        # Directory.EnumerateFiles filter matching), so it must stay quoted
+        # here to survive as one argv entry.
+        i=0
+        while IFS= read -r f; do
+          i=$((i + 1))
+          ln -s "$(readlink -f "${f}")" "${STAGE_DIR}/report_$(printf '%06d' "${i}")"
+        done <<< "${REPORTS}"
+
+        # Merge all per-file SARIF reports into a single SARIF document via
+        # the official Microsoft SARIF SDK CLI. `sarif merge` coalesces runs
+        # by tool name/version into one run per distinct tool by default
+        # (deduplicating identical results), which is required since GitHub
+        # Code Scanning (as of 2025-07-22) rejects SARIF uploads containing
+        # multiple runs that share the same tool/category.
+        #
+        # `--merge-empty-logs` is required: by default, `merge` silently
+        # *drops* any run whose `results` array is empty (i.e. a genuinely
+        # clean lint pass for that file) instead of including it with zero
+        # results. When every input report happens to be clean, that
+        # default produces a `{"runs": []}` document with *no* runs at all,
+        # which GitHub's SARIF upload API then rejects outright with
+        # "Invalid request. 1 item required; only 0 were supplied." rather
+        # than accepting it as "zero findings".
+        npx --yes "@microsoft/sarif-multitool@${{ inputs.sarif-multitool-version }}" \
+          merge "${STAGE_DIR}/*" \
+          --merge-empty-logs \
+          --output-directory "$(dirname "${{ inputs.output-file }}")" \
+          --output-file "$(basename "${{ inputs.output-file }}")"
+
+        echo "Merged ${i} report(s) into ${{ inputs.output-file }}"

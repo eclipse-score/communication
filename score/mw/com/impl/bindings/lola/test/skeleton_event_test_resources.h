@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
+#include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 
 #include <gmock/gmock.h>
@@ -82,6 +83,11 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
                                                             instance_specifier_};
 
     std::unique_ptr<SkeletonEvent<test::TestSampleType>> skeleton_event_;
+
+    /// \brief Mock event binding used only to "offer" a single service-element when the parent skeleton's
+    ///        PrepareOffer() is called (see InitialiseSkeletonEvent). Offering one binding sizes the fixed-capacity
+    ///        containers within ServiceDataStorage to hold the single event/field that the test subsequently registers.
+    mock_binding::SkeletonEvent<test::TestSampleType> mock_event_binding_{};
 
     /// mocks used by test
     ServiceDiscoveryMock service_discovery_mock_{};

@@ -33,7 +33,7 @@ class BindingServiceTypeDeployment
     using MethodIdMapping = std::unordered_map<std::string, MethodIdType>;
     using ServiceId = ServiceIdType;
 
-    explicit BindingServiceTypeDeployment(const score::json::Object& json_object) noexcept;
+    explicit BindingServiceTypeDeployment(const score::json::Object& json_object);
 
     explicit BindingServiceTypeDeployment(const ServiceIdType service_id,
                                           EventIdMapping events = {},

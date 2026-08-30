@@ -46,3 +46,14 @@ cc_unit_test(
         ":log",
     ],
 )
+
+cc_unit_test(
+    name = "logging_callback_test",
+    srcs = [
+        "logging_callback_test.cpp",
+    ],
+    visibility = ["//score:__subpackages__"],
+    deps = [
+        ":log",
+    ],
+)

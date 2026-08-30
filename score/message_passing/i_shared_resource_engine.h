@@ -23,15 +23,19 @@
 #include "score/message_passing/log/logging_callback.h"
 #include "score/message_passing/timed_command_queue_entry.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 class ISharedResourceEngine
 {
   public:
     virtual ~ISharedResourceEngine() noexcept = default;
+
+    /// \brief An ISharedResourceEngine shall not be copyable or movable
+    ISharedResourceEngine(const ISharedResourceEngine&) = delete;
+    ISharedResourceEngine(ISharedResourceEngine&&) = delete;
+    ISharedResourceEngine& operator=(const ISharedResourceEngine&) = delete;
+    ISharedResourceEngine& operator=(ISharedResourceEngine&&) = delete;
 
     virtual score::cpp::pmr::memory_resource* GetMemoryResource() noexcept = 0;
 
@@ -89,13 +93,8 @@ class ISharedResourceEngine
 
   protected:
     ISharedResourceEngine() noexcept = default;
-    ISharedResourceEngine(const ISharedResourceEngine&) = delete;
-    ISharedResourceEngine(ISharedResourceEngine&&) = delete;
-    ISharedResourceEngine& operator=(const ISharedResourceEngine&) = delete;
-    ISharedResourceEngine& operator=(ISharedResourceEngine&&) = delete;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_SHARED_RESOURCE_ENGINE_H

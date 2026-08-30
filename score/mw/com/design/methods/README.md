@@ -31,7 +31,7 @@ mw::com::impl::ProxyMethod<int(double, std::array<char, 10>)>
 ```
 
 Note, that the signature does not include `const` or reference qualifiers and just support data types, which are
-generally supported by the `LoLa` communication framework. (see [AoU](broken_link_c/issue/5835119)
+generally supported by the `LoLa` communication framework. (see ScoreReq.AoU OnlyLoLaSupportedTypes).
 
 ### API
 

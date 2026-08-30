@@ -29,9 +29,9 @@ namespace score::mw::com::impl::lola
 class KnownInstancesContainer final
 {
   public:
-    auto Insert(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept -> bool;
-    auto Remove(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept -> void;
-    auto GetKnownHandles(const EnrichedInstanceIdentifier& enriched_instance_identifier) const noexcept
+    auto Insert(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> bool;
+    auto Remove(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> void;
+    auto GetKnownHandles(const EnrichedInstanceIdentifier& enriched_instance_identifier) const
         -> std::vector<HandleType>;
 
     auto Merge(KnownInstancesContainer&& container_to_be_merged) noexcept -> void;

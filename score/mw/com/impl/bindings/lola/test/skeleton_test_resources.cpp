@@ -25,7 +25,7 @@
 #include <gmock/gmock.h>
 
 #include <unistd.h>
-#include <stdint.h>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -47,11 +47,11 @@ using ::testing::WithArg;
 
 LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(
     std::uint16_t instance_id,
-    std::vector<std::pair<std::string, LolaEventInstanceDeployment>> lola_event_inst_depls,
-    std::vector<std::pair<std::string, LolaFieldInstanceDeployment>> lola_field_inst_depls,
-    std::vector<std::pair<std::string, LolaMethodInstanceDeployment>> lola_method_inst_depls,
-    std::vector<uid_t> allowed_consumers_qm,
-    std::vector<uid_t> allowed_consumers_asil_b,
+    const std::vector<std::pair<std::string, LolaEventInstanceDeployment>>& lola_event_inst_depls,
+    const std::vector<std::pair<std::string, LolaFieldInstanceDeployment>>& lola_field_inst_depls,
+    const std::vector<std::pair<std::string, LolaMethodInstanceDeployment>>& lola_method_inst_depls,
+    const std::vector<uid_t>& allowed_consumers_qm,
+    const std::vector<uid_t>& allowed_consumers_asil_b,
     std::optional<std::size_t> shm_size,
     std::optional<std::size_t> control_asil_b_shm_size,
     std::optional<std::size_t> control_qm_shm_size)
@@ -92,19 +92,19 @@ ServiceTypeDeployment CreateTypeDeployment(const uint16_t lola_service_id,
                                            const std::vector<std::pair<std::string, std::uint8_t>>& method_ids)
 {
     LolaServiceTypeDeployment::EventIdMapping event_id_mapping{};
-    for (auto& event_with_id : event_ids)
+    for (const auto& event_with_id : event_ids)
     {
         event_id_mapping.insert(event_with_id);
     }
 
     LolaServiceTypeDeployment::FieldIdMapping field_id_mapping{};
-    for (auto& field_with_id : field_ids)
+    for (const auto& field_with_id : field_ids)
     {
         field_id_mapping.insert(field_with_id);
     }
 
     LolaServiceTypeDeployment::MethodIdMapping method_id_mapping{};
-    for (auto& method_with_id : method_ids)
+    for (const auto& method_with_id : method_ids)
     {
         method_id_mapping.insert(method_with_id);
     }
@@ -346,7 +346,7 @@ std::unique_ptr<ServiceDataControl> SkeletonMockedMemoryFixture::CreateServiceDa
 {
     const auto created_resource = (quality_type == QualityType::kASIL_QM) ? control_qm_shared_memory_resource_mock_
                                                                           : control_asil_b_shared_memory_resource_mock_;
-    auto service_data_control = std::make_unique<ServiceDataControl>(*created_resource);
+    auto service_data_control = std::make_unique<ServiceDataControl>(1U, *created_resource);
 
     auto event_control =
         service_data_control->event_controls_.emplace(std::piecewise_construct,
@@ -360,7 +360,7 @@ EventControl& SkeletonMockedMemoryFixture::GetEventControlFromServiceDataControl
     ElementFqId element_fq_id,
     ServiceDataControl& service_data_control) noexcept
 {
-    auto event_control_it = service_data_control.event_controls_.find(element_fq_id);
+    auto* event_control_it = service_data_control.event_controls_.find(element_fq_id);
     EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
     auto& event_control = event_control_it->second;
     return event_control;
@@ -370,7 +370,7 @@ ProviderEventDataControlLocalView<> SkeletonMockedMemoryFixture::GetProviderEven
     ElementFqId element_fq_id,
     ServiceDataControl& service_data_control) noexcept
 {
-    auto event_control_it = service_data_control.event_controls_.find(element_fq_id);
+    auto* event_control_it = service_data_control.event_controls_.find(element_fq_id);
     EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
 
     auto& event_control = event_control_it->second;
@@ -381,7 +381,7 @@ ConsumerEventDataControlLocalView<> SkeletonMockedMemoryFixture::GetConsumerEven
     ElementFqId element_fq_id,
     ServiceDataControl& service_data_control) noexcept
 {
-    auto event_control_it = service_data_control.event_controls_.find(element_fq_id);
+    auto* event_control_it = service_data_control.event_controls_.find(element_fq_id);
     EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
 
     auto& event_control = event_control_it->second;
@@ -392,7 +392,7 @@ TransactionLogSet& SkeletonMockedMemoryFixture::GetTransactionLogSetFromServiceD
     ElementFqId element_fq_id,
     ServiceDataControl& service_data_control) noexcept
 {
-    auto event_control_it = service_data_control.event_controls_.find(element_fq_id);
+    auto* event_control_it = service_data_control.event_controls_.find(element_fq_id);
     EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
 
     auto& event_control = event_control_it->second;
@@ -405,7 +405,7 @@ void SkeletonMockedMemoryFixture::CleanUpSkeleton()
     // Because the skeleton will hold a raw pointer to that configuration item and on destruction of the SkeletonGuard
     // as member of this fixture, will invoke "StopOffer" which needs to access this configuration items.
     // Thus, we need to clean up earlier - which will cause now mock calls which have not been there before
-    EXPECT_CALL(shared_memory_factory_mock_, Remove(_)).WillRepeatedly([](auto) {});
+    EXPECT_CALL(shared_memory_factory_mock_, Remove(_)).Times(::testing::AnyNumber());
     skeleton_.reset();
 }
 

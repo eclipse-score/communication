@@ -31,9 +31,7 @@
 
 #include <poll.h>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 /// \brief Class encapsulating resources needed for Unix Domain Client/Server implementation
@@ -152,7 +150,6 @@ class UnixDomainEngine final : public ISharedResourceEngine
     score::cpp::pmr::vector<std::uint8_t> posix_receive_buffer_;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_UNIX_DOMAIN_UNIX_DOMAIN_ENGINE_H

@@ -32,6 +32,7 @@
 #include <memory>
 #include <string_view>
 #include <tuple>
+#include <utility>
 
 namespace score::mw::com::impl
 {
@@ -1105,7 +1106,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture,
     this->GivenAValidProxyMethod();
 
     // When calling InitializeInArgsAndReturnValues
-    this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
+    std::ignore = this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then the zero copy call operator returns a pointer pointing to an initialized object (i.e. the non-trivial
     // default constructor was called, initializing value to NonTriviallyConstructibleType::kInitialValue
@@ -1127,7 +1128,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture,
     this->GivenAValidProxyMethod();
 
     // When calling InitializeInArgsAndReturnValues
-    this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
+    std::ignore = this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then the copy call operator returns a pointer pointing to an initialized object (i.e. the non-trivial
     // default constructor was called, initializing value to NonTriviallyConstructibleType::kInitialValue
@@ -1143,7 +1144,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsOnlyFixture, InitializeInArgs
     this->GivenAValidProxyMethod();
 
     // When calling InitializeInArgsAndReturnValues
-    this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
+    std::ignore = this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then Allocate returns a pointer pointing to an initialized object (i.e. the non-trivial default constructor was
     // called, initializing value to NonTriviallyConstructibleType::kInitialValue
@@ -1182,7 +1183,7 @@ TEST_F(ProxyMethodWithNonTrivialConstructibleReturnOnlyFixture,
     this->GivenAValidProxyMethod();
 
     // When calling InitializeInArgsAndReturnValues
-    this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
+    std::ignore = this->unit_->InitializeInArgsAndReturnValues(this->GetProxyBinding());
 
     // Then the copy call operator returns a pointer pointing to an initialized object (i.e. the non-trivial
     // default constructor was called, initializing value to NonTriviallyConstructibleType::kInitialValue

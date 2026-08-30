@@ -41,7 +41,7 @@ class ProxyFacade : public ProxyBinding
     ProxyFacade(Proxy& proxy) : ProxyBinding{}, proxy_{proxy} {}
     ~ProxyFacade() override = default;
 
-    bool IsEventProvided(const std::string_view event_name) const noexcept override
+    bool IsEventProvided(const std::string_view event_name) const override
     {
         return proxy_.IsEventProvided(event_name);
     }

@@ -64,6 +64,9 @@ class SkeletonEventBindingBase
     /// allocations)
     virtual std::size_t GetMaxSize() const noexcept = 0;
 
+    /// \brief Alignment requirement (in bytes) of the underlying event-type's sample data.
+    virtual std::size_t GetAlignment() const noexcept = 0;
+
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;
 
@@ -98,6 +101,11 @@ class SkeletonEventBinding : public SkeletonEventBindingBase
     std::size_t GetMaxSize() const noexcept override
     {
         return sizeof(SampleType);
+    }
+
+    std::size_t GetAlignment() const noexcept override
+    {
+        return alignof(SampleType);
     }
 };
 

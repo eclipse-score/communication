@@ -23,6 +23,7 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
+#include <utility>
 
 namespace score::mw::com::gateway
 {
@@ -50,7 +51,7 @@ class SampleHyperVisorTransportTest : public ::testing::Test
             .WillOnce([this](IBidirectionalTransport::MessageHandler handler) {
                 captured_handler_ = std::move(handler);
             });
-        EXPECT_CALL(*bi_directional_transport_mock_, Setup()).WillOnce(::testing::Return(score::ResultBlank{}));
+        EXPECT_CALL(*bi_directional_transport_mock_, Setup()).WillOnce(::testing::Return(score::Result<void>{}));
         const auto setup_result = transport_->Setup();
         EXPECT_TRUE(setup_result.has_value());
 
@@ -162,7 +163,7 @@ TEST_F(SampleHyperVisorTransportTest, IsMemorySharingSupportedReturnsTrue)
 TEST_F(SampleHyperVisorTransportTest, SetupCallsSetMessageHandlerAndSetupOnTransport)
 {
     EXPECT_CALL(*bi_directional_transport_mock_, SetMessageHandler(::testing::_)).Times(1);
-    EXPECT_CALL(*bi_directional_transport_mock_, Setup()).WillOnce(::testing::Return(score::ResultBlank{}));
+    EXPECT_CALL(*bi_directional_transport_mock_, Setup()).WillOnce(::testing::Return(score::Result<void>{}));
 
     SampleHyperVisorTransport transport(gateway_core_mock_, std::move(mock_owner_));
     const auto result = transport.Setup();
@@ -200,9 +201,9 @@ TEST_F(SampleHyperVisorTransportTest, OfferServiceRequestWithCorrectType)
     // kOfferServiceRequest
     EXPECT_CALL(*bi_directional_transport_mock_,
                 SendRequest(::testing::Property(&TransportMessage::GetType, MessageType::kOfferServiceRequest)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     // when calling OfferService on SampleHyperVisorTransport
-    transport_->OfferService(specifier);
+    std::ignore = transport_->OfferService(specifier);
 }
 
 TEST_F(SampleHyperVisorTransportTest, StopOfferServiceRequestWithCorrectType)
@@ -214,9 +215,9 @@ TEST_F(SampleHyperVisorTransportTest, StopOfferServiceRequestWithCorrectType)
     // kStopOfferServiceRequest
     EXPECT_CALL(*bi_directional_transport_mock_,
                 SendRequest(::testing::Property(&TransportMessage::GetType, MessageType::kStopOfferServiceRequest)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     // when calling StopOfferService on SampleHyperVisorTransport
-    transport_->StopOfferService(specifier);
+    std::ignore = transport_->StopOfferService(specifier);
 }
 
 TEST_F(SampleHyperVisorTransportTest, NotifyUpdateWithCorrectType)
@@ -228,9 +229,9 @@ TEST_F(SampleHyperVisorTransportTest, NotifyUpdateWithCorrectType)
     // kUpdateNotification
     EXPECT_CALL(*bi_directional_transport_mock_,
                 SendNotification(::testing::Property(&TransportMessage::GetType, MessageType::kUpdateNotification)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     // when calling NotifyUpdate on SampleHyperVisorTransport
-    transport_->NotifyUpdate(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
+    std::ignore = transport_->NotifyUpdate(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
 }
 
 TEST_F(SampleHyperVisorTransportTest, RegisterUpdateNotificationWithCorrectType)
@@ -242,9 +243,9 @@ TEST_F(SampleHyperVisorTransportTest, RegisterUpdateNotificationWithCorrectType)
     // kRegisterNotificationRequest
     EXPECT_CALL(*bi_directional_transport_mock_,
                 SendRequest(::testing::Property(&TransportMessage::GetType, MessageType::kRegisterNotificationRequest)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     // when calling RegisterUpdateNotification on SampleHyperVisorTransport
-    transport_->RegisterUpdateNotification(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
+    std::ignore = transport_->RegisterUpdateNotification(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
 }
 
 TEST_F(SampleHyperVisorTransportTest, UnregisterUpdateNotificationWithCorrectType)
@@ -257,9 +258,9 @@ TEST_F(SampleHyperVisorTransportTest, UnregisterUpdateNotificationWithCorrectTyp
     EXPECT_CALL(
         *bi_directional_transport_mock_,
         SendRequest(::testing::Property(&TransportMessage::GetType, MessageType::kUnregisterNotificationRequest)))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
     // when calling UnregisterUpdateNotification on SampleHyperVisorTransport
-    transport_->UnregisterUpdateNotification(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
+    std::ignore = transport_->UnregisterUpdateNotification(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
 }
 
 TEST_F(SampleHyperVisorTransportTest, ResolveShmPathReturnsEmptyObjectIfSpecifierCanNotBeResolved)
@@ -357,7 +358,7 @@ TEST_F(SampleHyperVisorTransportTest,
     // Then ProvideService should be called on the gateway core with the matching instance specifier and service
     // elements
     EXPECT_CALL(gateway_core_mock_, ProvideService(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
 
     // Invoke the captured handler to trigger OnMessageReceived
     captured_handler_(std::move(request));
@@ -424,7 +425,7 @@ TEST_F(SampleHyperVisorTransportTest,
     auto request = CreateMessageOfType(MessageType::kOfferServiceRequest);
 
     // Then OfferService should be called on the gateway core with the matching instance specifier
-    EXPECT_CALL(gateway_core_mock_, OfferService(::testing::_)).WillOnce(::testing::Return(score::ResultBlank{}));
+    EXPECT_CALL(gateway_core_mock_, OfferService(::testing::_)).WillOnce(::testing::Return(score::Result<void>{}));
 
     // Invoke the captured handler to trigger OnMessageReceived
     captured_handler_(std::move(request));
@@ -461,7 +462,7 @@ TEST_F(
 
     // Then RegisterNotification should be called on the gateway core with the matching instance specifier
     EXPECT_CALL(gateway_core_mock_, RegisterUpdateNotification(::testing::_, ::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
 
     // Invoke the captured handler to trigger OnMessageReceived
     captured_handler_(std::move(request));
@@ -497,7 +498,7 @@ TEST_F(
 
     // Then UnregisterNotification should be called on the gateway core with the matching instance specifier
     EXPECT_CALL(gateway_core_mock_, UnregisterUpdateNotification(::testing::_, ::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
 
     // Invoke the captured handler to trigger OnMessageReceived
     captured_handler_(std::move(request));
@@ -533,7 +534,7 @@ TEST_F(
 
     // Then UnregisterNotification should be called on the gateway core with the matching instance specifier
     EXPECT_CALL(gateway_core_mock_, UnregisterUpdateNotification(::testing::_, ::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
 
     // Invoke the captured handler to trigger OnMessageReceived
     captured_handler_(std::move(request));
@@ -551,7 +552,7 @@ TEST_F(SampleHyperVisorTransportTest,
 
     // Then NotifyUpdate should be called on the gateway core with the matching instance specifier
     EXPECT_CALL(gateway_core_mock_, NotifyUpdate(::testing::_, ::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(score::ResultBlank{}));
+        .WillOnce(::testing::Return(score::Result<void>{}));
 
     // Invoke the captured handler to trigger OnMessageReceived
     captured_handler_(std::move(request));
@@ -622,7 +623,8 @@ TEST_F(SampleHyperVisorTransportTest, ProvideServiceDeathTest)
     // When calling ProvideService with a valid instance specifier, then it is expected to terminate.
     // TODO This test needs to be adapted when implementing ResolveShmPaths() and GetShmSizes() based on the actual
     // HyperVisor SHM technology.
-    EXPECT_DEATH(transport_->ProvideService(CreateValidInstanceSpecifier(), std::vector<impl::EventInfo>{}), ".*");
+    EXPECT_DEATH(
+        std::ignore = transport_->ProvideService(CreateValidInstanceSpecifier(), std::vector<impl::EventInfo>{}), ".*");
 }
 
 }  // namespace

@@ -34,37 +34,36 @@ namespace score::mw::com::impl::tracing
 {
 
 ProxyEventTracingData GenerateProxyTracingStructFromEventConfig(const InstanceIdentifier& instance_identifier,
-                                                                const std::string_view event_name) noexcept;
+                                                                const std::string_view event_name);
 ProxyEventTracingData GenerateProxyTracingStructFromFieldConfig(const InstanceIdentifier& instance_identifier,
-                                                                const std::string_view field_name) noexcept;
+                                                                const std::string_view field_name);
 
 void TraceSubscribe(ProxyEventTracingData& proxy_event_tracing_data,
                     const ProxyEventBindingBase& proxy_event_binding_base,
-                    const std::size_t max_sample_count) noexcept;
+                    const std::size_t max_sample_count);
 void TraceUnsubscribe(ProxyEventTracingData& proxy_event_tracing_data,
-                      const ProxyEventBindingBase& proxy_event_binding_base) noexcept;
+                      const ProxyEventBindingBase& proxy_event_binding_base);
 void TraceSetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                            const ProxyEventBindingBase& proxy_event_binding_base) noexcept;
+                            const ProxyEventBindingBase& proxy_event_binding_base);
 void TraceUnsetReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                              const ProxyEventBindingBase& proxy_event_binding_base) noexcept;
+                              const ProxyEventBindingBase& proxy_event_binding_base);
 void TraceGetNewSamples(ProxyEventTracingData& proxy_event_tracing_data,
-                        const ProxyEventBindingBase& proxy_event_binding_base) noexcept;
+                        const ProxyEventBindingBase& proxy_event_binding_base);
 void TraceCallGetNewSamplesCallback(ProxyEventTracingData& proxy_event_tracing_data,
                                     const ProxyEventBindingBase& proxy_event_binding_base,
-                                    ITracingRuntime::TracePointDataId trace_point_data_id) noexcept;
+                                    ITracingRuntime::TracePointDataId trace_point_data_id);
 void TraceCallReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                             const ProxyEventBindingBase& proxy_event_binding_base) noexcept;
+                             const ProxyEventBindingBase& proxy_event_binding_base);
 
 score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(
     ProxyEventTracingData& proxy_event_tracing_data,
     const ProxyEventBindingBase& proxy_event_binding_base,
-    EventReceiveHandler handler) noexcept;
+    EventReceiveHandler handler);
 
 template <typename SampleType, typename ReceiverType>
 auto CreateTracingGetNewSamplesCallback(ProxyEventTracingData& proxy_event_tracing_data,
                                         const ProxyEventBindingBase& proxy_event_binding_base,
-                                        ReceiverType&& receiver) noexcept ->
-    typename ProxyEventBinding<SampleType>::Callback
+                                        ReceiverType&& receiver) -> typename ProxyEventBinding<SampleType>::Callback
 {
     // LCOV_EXCL_BR_START (Tool incorrectly marks the branch when the condition is true as not covered. However, the
     // lines in that branch are marked as covered indicating that the branch is indeed taken. Suppression can be removed
@@ -78,7 +77,7 @@ auto CreateTracingGetNewSamplesCallback(ProxyEventTracingData& proxy_event_traci
             // reference. std::forward is already used here.
             // coverity[autosar_cpp14_a18_9_2_violation : FALSE]
             [&proxy_event_tracing_data, &proxy_event_binding_base, receiver = std::forward<ReceiverType>(receiver)](
-                SamplePtr<SampleType> sample_ptr, ITracingRuntime::TracePointDataId trace_point_data_id) noexcept {
+                SamplePtr<SampleType> sample_ptr, ITracingRuntime::TracePointDataId trace_point_data_id) {
                 TraceCallGetNewSamplesCallback(proxy_event_tracing_data, proxy_event_binding_base, trace_point_data_id);
                 // Suppress "AUTOSAR C++14 A18-9-2", The rule states: "Forwarding values to other functions shall be
                 // done via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is
@@ -96,7 +95,7 @@ auto CreateTracingGetNewSamplesCallback(ProxyEventTracingData& proxy_event_traci
             // reference. std::forward is already used here.
             // coverity[autosar_cpp14_a18_9_2_violation : FALSE]
             [receiver = std::forward<ReceiverType>(receiver)](SamplePtr<SampleType> sample_ptr,
-                                                              ITracingRuntime::TracePointDataId) noexcept {
+                                                              ITracingRuntime::TracePointDataId) {
                 // Suppress "AUTOSAR C++14 A18-9-2", The rule states: "Forwarding values to other functions shall be
                 // done via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is
                 // forwarding reference. std::move is already used here.
@@ -110,7 +109,7 @@ auto CreateTracingGetNewSamplesCallback(ProxyEventTracingData& proxy_event_traci
 template <typename ReceiverType>
 typename GenericProxyEventBinding::Callback CreateTracingGenericGetNewSamplesCallback(
     ProxyEventTracingData& /* proxy_event_tracing_data */,
-    ReceiverType&& receiver) noexcept
+    ReceiverType&& receiver)
 {
     // Suppress "AUTOSAR C++14 A18-9-2", The rule states: "Forwarding values to other functions shall be done
     // via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding
@@ -118,7 +117,7 @@ typename GenericProxyEventBinding::Callback CreateTracingGenericGetNewSamplesCal
     // coverity[autosar_cpp14_a18_9_2_violation : FALSE]
     typename GenericProxyEventBinding::Callback tracing_receiver = [receiver = std::forward<ReceiverType>(receiver)](
                                                                        SamplePtr<void> sample_ptr,
-                                                                       ITracingRuntime::TracePointDataId) noexcept {
+                                                                       ITracingRuntime::TracePointDataId) {
         // Suppress "AUTOSAR C++14 A18-9-2", The rule states: "Forwarding values to other functions shall be done
         // via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding
         // reference. std::move is already used here.

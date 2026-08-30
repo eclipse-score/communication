@@ -23,9 +23,11 @@
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
 #include "score/scope_exit/scope_exit.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <iostream>
 #include <mutex>
+#include <utility>
 
 namespace score::mw::com::test
 {
@@ -369,7 +371,7 @@ void DoConsumerActions(CheckPointControl& check_point_control,
         std::cerr
             << "Consumer: Initializing LoLa/mw::com runtime from cmd-line args handed over by parent/controller ..."
             << std::endl;
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
         std::cerr << "Consumer: Initializing LoLa/mw::com runtime done." << std::endl;
     }
 
@@ -391,7 +393,7 @@ void DoConsumerActions(CheckPointControl& check_point_control,
         return;
     }
 
-    auto find_service_callback = [&handle_notification_data, &check_point_control](auto service_handle_container,
+    auto find_service_callback = [&handle_notification_data, &check_point_control](const auto& service_handle_container,
                                                                                    auto) noexcept {
         HandleReceivedNotification(service_handle_container, handle_notification_data, check_point_control);
     };

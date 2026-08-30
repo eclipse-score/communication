@@ -129,8 +129,7 @@ class "score::mw::com::impl::Runtime" {
   - configuration_ : Configuration const&
   - parsing_strategy_ : std::unique_ptr<IConfigurationParsingStrategy>
   __
-  {static} + Initialize() : void
-  {static} + Initialize(arguments : score::cpp::span<const score::StringLiteral>) : void
+  {static} + Initialize(const runtime::RuntimeConfiguration& runtime_configuration) : void
   {static} + getInstance() : Runtime&
   + resolve(const InstanceSpecifier&) : InstanceIdentifierContainer
 }

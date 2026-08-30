@@ -18,9 +18,10 @@
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
-#include "score/mw/com/impl/data_type_meta_info.h"
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/sample_allocatee_guard.h"
+
+#include "score/memory/data_type_size_info.h"
 
 #include <optional>
 
@@ -38,8 +39,10 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
                          const std::string_view event_name,
                          const SkeletonEventProperties& event_properties,
                          const ElementFqId& element_fq_id,
-                         const DataTypeMetaInfo& size_info,
+                         const memory::DataTypeSizeInfo& size_info,
                          impl::tracing::SkeletonEventTracingData tracing_data = {});
+
+    ~GenericSkeletonEvent() noexcept override = default;
 
     Result<void> Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
 
@@ -59,7 +62,12 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 
     std::size_t GetMaxSize() const noexcept override
     {
-        return size_info_.size;
+        return size_info_.Size();
+    }
+
+    std::size_t GetAlignment() const noexcept override
+    {
+        return size_info_.Alignment();
     }
 
     /// \brief Set callback, to get notified, when either the 1st event-notification has been registered or the last
@@ -80,7 +88,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     }
 
   private:
-    DataTypeMetaInfo size_info_;
+    memory::DataTypeSizeInfo size_info_;
     std::uint8_t* event_data_storage_;
     SkeletonEventCommon<void> skeleton_event_common_;
 };

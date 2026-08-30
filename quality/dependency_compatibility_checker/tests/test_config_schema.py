@@ -28,8 +28,9 @@ def _write(text: str) -> str:
 
 class LoadConfigTest(unittest.TestCase):
     def test_loads_dependencies_and_defaults(self):
-        cfg = config_schema.load_config(_write(
-            """
+        cfg = config_schema.load_config(
+            _write(
+                """
             dependencies:
               bazel:
                 versions:
@@ -44,7 +45,8 @@ class LoadConfigTest(unittest.TestCase):
                     patches: ["//p:a.patch"]
                     patch_strip: 1
             """
-        ))
+            )
+        )
         deps = {d.key: d for d in cfg.dependencies}
         self.assertTrue(deps["bazel"].is_bazel)
         self.assertEqual(deps["rules_cc"].module_name, "rules_cc")
@@ -56,98 +58,116 @@ class LoadConfigTest(unittest.TestCase):
         self.assertFalse(deps["rules_cc"].versions[0].has_patches)
 
     def test_module_name_override(self):
-        cfg = config_schema.load_config(_write(
-            """
+        cfg = config_schema.load_config(
+            _write(
+                """
             dependencies:
               cc:
                 module_name: rules_cc
                 versions: [{version: "0.2.21"}]
             """
-        ))
+            )
+        )
         self.assertEqual(cfg.dependencies[0].module_name, "rules_cc")
 
     def test_rejects_unknown_top_level_key(self):
         with self.assertRaises(ConfigError):
-            config_schema.load_config(_write(
-                """
+            config_schema.load_config(
+                _write(
+                    """
                 dependencies:
                   rules_cc:
                     versions: [{version: "1.0"}]
                 bogus_top_level: true
                 """
-            ))
+                )
+            )
 
     def test_rejects_unknown_dependency_key(self):
         with self.assertRaises(ConfigError):
-            config_schema.load_config(_write(
-                """
+            config_schema.load_config(
+                _write(
+                    """
                 dependencies:
                   rules_cc:
                     versions: [{version: "1.0"}]
                     bogus: true
                 """
-            ))
+                )
+            )
 
     def test_rejects_unknown_entry_key(self):
         with self.assertRaises(ConfigError):
-            config_schema.load_config(_write(
-                """
+            config_schema.load_config(
+                _write(
+                    """
                 dependencies:
                   rules_cc:
                     versions: [{version: "1.0", bogus: true}]
                 """
-            ))
+                )
+            )
 
     def test_rejects_duplicate_versions(self):
         with self.assertRaises(ConfigError):
-            config_schema.load_config(_write(
-                """
+            config_schema.load_config(
+                _write(
+                    """
                 dependencies:
                   rules_cc:
                     versions: [{version: "1.0"}, {version: "1.0"}]
                 """
-            ))
+                )
+            )
 
     def test_rejects_no_active_versions(self):
         with self.assertRaises(ConfigError):
-            config_schema.load_config(_write(
-                """
+            config_schema.load_config(
+                _write(
+                    """
                 dependencies:
                   rules_cc:
                     versions: [{version: "1.0", skip: "broken"}]
                 """
-            ))
+                )
+            )
 
     def test_rejects_patch_strip_without_patches(self):
         with self.assertRaises(ConfigError):
-            config_schema.load_config(_write(
-                """
+            config_schema.load_config(
+                _write(
+                    """
                 dependencies:
                   rules_cc:
                     versions: [{version: "1.0", patch_strip: 1}]
                 """
-            ))
+                )
+            )
 
     def test_rejects_patches_on_bazel(self):
         with self.assertRaises(ConfigError):
-            config_schema.load_config(_write(
-                """
+            config_schema.load_config(
+                _write(
+                    """
                 dependencies:
                   bazel:
                     versions: [{version: "8.7.0", patches: ["//p:a.patch"]}]
                 """
-            ))
+                )
+            )
 
     def test_rejects_reserved_dependency_name(self):
         for reserved in ("index", "has_patches", "flags"):
             with self.assertRaises(ConfigError):
-                config_schema.load_config(_write(
-                    f"""
+                config_schema.load_config(
+                    _write(
+                        f"""
                     dependencies:
                       {reserved}:
                         versions: [{{version: "1.0"}}]
                     """
-                ))
+                    )
+                )
 
 
 if __name__ == "__main__":

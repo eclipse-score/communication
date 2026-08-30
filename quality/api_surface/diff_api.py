@@ -19,7 +19,6 @@ from __future__ import annotations
 import argparse
 import difflib
 import json
-import sys
 from pathlib import Path
 
 

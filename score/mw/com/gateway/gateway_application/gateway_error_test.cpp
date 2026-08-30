@@ -61,6 +61,11 @@ TEST_F(GatewayErrorTest, MessageForUnknownServiceElement)
                      "Gateway received an API call for an unknown service element within an instance identifier.");
 }
 
+TEST_F(GatewayErrorTest, MessageForSubscriptionFailed)
+{
+    TestErrorMessage(GatewayErrorc::kSubscriptionFailed, "Gateway couldn't subscribe its generic proxy to event.");
+}
+
 TEST_F(GatewayErrorTest, MessageForReceiveHandlerRegistrationFailed)
 {
     TestErrorMessage(
@@ -72,6 +77,11 @@ TEST_F(GatewayErrorTest, MessageForNonWhitelistedService)
 {
     TestErrorMessage(GatewayErrorc::kNonWhitelistedService,
                      "Gateway received request to provide a non-whitelised service.");
+}
+
+TEST_F(GatewayErrorTest, MessageForNotificationFailed)
+{
+    TestErrorMessage(GatewayErrorc::kNotificationFailed, "Gateway couldn't notify for this event.");
 }
 
 TEST_F(GatewayErrorTest, MessageForDefault)

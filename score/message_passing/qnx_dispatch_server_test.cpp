@@ -19,9 +19,7 @@
 
 #include <fcntl.h>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 namespace
 {
@@ -123,5 +121,4 @@ TEST(QnxDispatchServerTest, RunningServerWithConnection)
 }
 
 }  // namespace
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing

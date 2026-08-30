@@ -17,11 +17,7 @@
 
 #include <string_view>
 
-namespace score
-{
-namespace message_passing
-{
-namespace detail
+namespace score::message_passing::detail
 {
 
 inline constexpr std::string_view GetQnxPrefix() noexcept
@@ -47,8 +43,6 @@ class QnxResourcePath
     score::cpp::static_vector<char, GetQnxPrefix().size() + kMaxIdentifierLen + 1U> buffer_;
 };
 
-}  // namespace detail
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing::detail
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_QNX_DISPATCH_QNX_RESOURCE_PATH_H

@@ -12,5 +12,10 @@
 # *******************************************************************************
 def test_edge_cases(target):
     args = ["--service_instance_manifest", "./etc/mw_com_config.json"]
-    with target.wrap_exec("bin/skeleton_recreation_test", args, cwd="/opt/EdgeCasesTestApp", wait_on_exit=True):
+    with target.wrap_exec(
+        "bin/skeleton_recreation_test",
+        args,
+        cwd="/opt/EdgeCasesTestApp",
+        wait_on_exit=True,
+    ):
         pass

@@ -17,9 +17,7 @@
 #include <future>
 #include <tuple>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 UnixDomainEngine::UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource, LoggingCallback logger) noexcept
@@ -199,8 +197,10 @@ score::cpp::expected_blank<score::os::Error> UnixDomainEngine::SendProtocolMessa
     constexpr auto kVectorCount = 3UL;
     std::uint16_t size = static_cast<std::uint16_t>(message.size());
     std::array<iovec, kVectorCount> io;
+    // Deviation of MISRA RULE-6-8-3: codeql::misra_deviation_next_line(unix-domain-iovec-stack-buffers)
     io[0].iov_base = &code;
     io[0].iov_len = sizeof(code);
+    // Deviation of MISRA RULE-6-8-3: codeql::misra_deviation_next_line(unix-domain-iovec-stack-buffers)
     io[1].iov_base = &size;
     io[1].iov_len = sizeof(size);
     io[2].iov_base = const_cast<std::uint8_t*>(message.data());
@@ -227,8 +227,10 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Uni
     constexpr auto kVectorCount = 2UL;
     std::uint16_t size{};
     std::array<iovec, kVectorCount> io;
+    // Deviation of MISRA RULE-6-8-3: codeql::misra_deviation_next_line(unix-domain-iovec-stack-buffers)
     io[0].iov_base = &code;
     io[0].iov_len = sizeof(code);
+    // Deviation of MISRA RULE-6-8-3: codeql::misra_deviation_next_line(unix-domain-iovec-stack-buffers)
     io[1].iov_base = &size;
     io[1].iov_len = sizeof(size);
     msg.msg_iov = io.data();
@@ -278,7 +280,7 @@ void UnixDomainEngine::SendPipeEvent(PipeEvent pipe_event) noexcept
 
 void UnixDomainEngine::ProcessPipeEvent() noexcept
 {
-    PipeEvent pipe_event;
+    PipeEvent pipe_event{PipeEvent::QUIT};
     std::ignore = os_resources_.unistd->read(pipe_fds_[0], &pipe_event, sizeof(pipe_event));
     if (pipe_event == PipeEvent::TIMER)
     {
@@ -345,13 +347,13 @@ std::int32_t UnixDomainEngine::ProcessTimerQueue() noexcept
     {
         return -1;
     }
-    const auto distance = std::chrono::duration_cast<std::chrono::milliseconds>(then - Clock::now()).count() + 1;
-    if (distance > INT32_MAX)
+    const auto distance_ms = std::chrono::duration_cast<std::chrono::milliseconds>(then - Clock::now()).count();
+    if (distance_ms >= INT32_MAX)
     {
         return INT32_MAX;
     }
-    return static_cast<std::int32_t>(distance);
+    // At this point distance_ms < INT32_MAX, so adding 1 cannot overflow.
+    return static_cast<std::int32_t>(distance_ms + 1);
 }
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing

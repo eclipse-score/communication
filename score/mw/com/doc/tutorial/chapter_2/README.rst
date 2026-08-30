@@ -154,8 +154,9 @@ run into an error like this, when starting the consumer app:
 So here are some best practices regarding configuration files for `score::mw::com` applications:
 
 - typically go for the default/implicit approach: Put the configuration file `mw_com_config.json` in the `./etc` path
-relative to the current working directory of the application.
+  relative to the current working directory of the application.
 - if you have a strong reason to have a different configuration file name or path, then go for the explicit approach:
+
   - either call `score::mw::com::runtime::InitializeRuntime(argc, argv)` in your application and provide the path to the
     configuration file via the `--service_instance_manifest` command line argument.
   - or - for the real "power-user" - call `score::mw::com::runtime::InitializeRuntime(const RuntimeConfiguration& runtime_configuration)`,

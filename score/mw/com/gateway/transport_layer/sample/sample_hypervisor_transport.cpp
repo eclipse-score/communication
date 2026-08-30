@@ -25,7 +25,7 @@
 namespace score::mw::com::gateway
 {
 
-ShmPaths ResolveShmPaths(const impl::InstanceSpecifier& specifier)
+ShmPaths ResolveShmPaths(const score::mw::com::InstanceSpecifier& specifier)
 {
     auto& runtime = impl::Runtime::getInstance();
     auto identifiers = runtime.resolve(specifier);
@@ -49,9 +49,10 @@ ShmPaths ResolveShmPaths(const impl::InstanceSpecifier& specifier)
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         false, "Missing implementation of ShmPathBuilder for LoLa Hypervisor gateway.");
     // LCOV_EXCL_STOP
+    return {};
 }
 
-ShmSizes GetShmSizes(const impl::InstanceSpecifier& specifier)
+ShmSizes GetShmSizes(const score::mw::com::InstanceSpecifier& specifier)
 {
     auto paths = ResolveShmPaths(specifier);
     if (paths.control.empty())
@@ -67,6 +68,7 @@ ShmSizes GetShmSizes(const impl::InstanceSpecifier& specifier)
     // implementation does not include this implementation, as it is highly specific to the used hypervisor shared
     // memory technology.
     // LCOV_EXCL_STOP
+    return {};
 }
 
 SampleHyperVisorTransport::SampleHyperVisorTransport(GatewayCore& gateway_app,
@@ -85,7 +87,7 @@ bool SampleHyperVisorTransport::IsMemorySharingSupported() const
     return true;
 }
 
-score::ResultBlank SampleHyperVisorTransport::Setup()
+score::Result<void> SampleHyperVisorTransport::Setup()
 {
     message_transport_->SetMessageHandler([this](std::unique_ptr<TransportMessage> message) {
         OnMessageReceived(std::move(message));
@@ -135,20 +137,26 @@ void SampleHyperVisorTransport::OnMessageReceived(std::unique_ptr<TransportMessa
 void SampleHyperVisorTransport::HandleProvideServiceRequest(std::unique_ptr<TransportMessage> message)
 {
     auto& request = dynamic_cast<ProvideServiceRequest&>(*message);
-    auto specifier_result = impl::InstanceSpecifier::Create(std::string{request.GetInstanceSpecifier()});
+    auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{request.GetInstanceSpecifier()});
     if (!specifier_result.has_value())
     {
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in ProvideServiceRequest!";
         return;
     }
     PreCreateInterVmSharedMemory(specifier_result.value(), request.GetShmControlSize(), request.GetShmDataSize());
-    gateway_app_.ProvideService(specifier_result.value(), request.GetServiceElements());
+    const auto provide_service_result =
+        gateway_app_.ProvideService(specifier_result.value(), request.GetServiceElements());
+    if (!provide_service_result.has_value())
+    {
+        log::LogError("LoLa") << "SampleTransport: Failed to provide service in ProvideServiceRequest!";
+        return;
+    }
 }
 
 void SampleHyperVisorTransport::HandleStopOfferServiceRequest(std::unique_ptr<TransportMessage> message)
 {
     auto& request = dynamic_cast<StopOfferServiceRequest&>(*message);
-    auto specifier_result = impl::InstanceSpecifier::Create(std::string{request.GetInstanceSpecifier()});
+    auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{request.GetInstanceSpecifier()});
     if (!specifier_result.has_value())
     {
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in StopOfferServiceRequest!";
@@ -160,51 +168,74 @@ void SampleHyperVisorTransport::HandleStopOfferServiceRequest(std::unique_ptr<Tr
 void SampleHyperVisorTransport::HandleOfferServiceRequest(std::unique_ptr<TransportMessage> message)
 {
     auto& request = dynamic_cast<OfferServiceRequest&>(*message);
-    auto specifier_result = impl::InstanceSpecifier::Create(std::string{request.GetInstanceSpecifier()});
+    auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{request.GetInstanceSpecifier()});
     if (!specifier_result.has_value())
     {
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in OfferServiceRequest!";
         return;
     }
-    gateway_app_.OfferService(specifier_result.value());
+    const auto offer_service_result = gateway_app_.OfferService(specifier_result.value());
+    if (!offer_service_result.has_value())
+    {
+        log::LogError("LoLa") << "SampleTransport: Failed to offer service in OfferServiceRequest!";
+        return;
+    }
 }
 
 void SampleHyperVisorTransport::HandleUpdateNotification(std::unique_ptr<TransportMessage> message)
 {
     auto& notification = dynamic_cast<UpdateNotification&>(*message);
-    auto specifier_result = impl::InstanceSpecifier::Create(std::string{notification.GetInstanceSpecifier()});
+    auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{notification.GetInstanceSpecifier()});
     if (!specifier_result.has_value())
     {
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in UpdateNotification!";
         return;
     }
-    gateway_app_.NotifyUpdate(specifier_result.value(), notification.GetElementType(), notification.GetElementName());
+    const auto notify_update_result = gateway_app_.NotifyUpdate(
+        specifier_result.value(), notification.GetElementType(), notification.GetElementName());
+    if (!notify_update_result.has_value())
+    {
+        log::LogError("LoLa") << "SampleTransport: Failed to notify update in UpdateNotification!";
+        return;
+    }
 }
 
 void SampleHyperVisorTransport::HandleRegisterNotificationRequest(std::unique_ptr<TransportMessage> message)
 {
     auto& request = dynamic_cast<RegisterNotificationRequest&>(*message);
-    auto specifier_result = impl::InstanceSpecifier::Create(std::string{request.GetInstanceSpecifier()});
+    auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{request.GetInstanceSpecifier()});
     if (!specifier_result.has_value())
     {
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in RegisterNotificationRequest!";
         return;
     }
-    gateway_app_.RegisterUpdateNotification(
+    const auto register_update_notification_result = gateway_app_.RegisterUpdateNotification(
         specifier_result.value(), request.GetElementType(), request.GetElementName());
+    if (!register_update_notification_result.has_value())
+    {
+        log::LogError("LoLa")
+            << "SampleTransport: Failed to register update notification in RegisterNotificationRequest!";
+        return;
+    }
 }
 
 void SampleHyperVisorTransport::HandleUnregisterNotificationRequest(std::unique_ptr<TransportMessage> message)
 {
     auto& request = dynamic_cast<UnregisterNotificationRequest&>(*message);
-    auto specifier_result = impl::InstanceSpecifier::Create(std::string{request.GetInstanceSpecifier()});
+    auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{request.GetInstanceSpecifier()});
     if (!specifier_result.has_value())
     {
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in UnregisterNotificationRequest!";
         return;
     }
-    gateway_app_.UnregisterUpdateNotification(
+    const auto unregister_update_notification_result = gateway_app_.UnregisterUpdateNotification(
         specifier_result.value(), request.GetElementType(), request.GetElementName());
+    if (!unregister_update_notification_result.has_value())
+    {
+        log::LogError("LoLa")
+            << "SampleTransport: Failed to unregister update notification in UnregisterNotificationRequest!";
+        return;
+    }
 }
 
 void SampleHyperVisorTransport::Shutdown()
@@ -212,8 +243,9 @@ void SampleHyperVisorTransport::Shutdown()
     message_transport_->Shutdown();
 }
 
-score::ResultBlank SampleHyperVisorTransport::ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                                             std::vector<impl::EventInfo> service_elements)
+score::Result<void> SampleHyperVisorTransport::ProvideService(
+    score::mw::com::InstanceSpecifier service_instance_specifier,
+    std::vector<score::mw::com::EventInfo> service_elements)
 {
     const auto shm_sizes = GetShmSizes(service_instance_specifier);
 
@@ -222,29 +254,32 @@ score::ResultBlank SampleHyperVisorTransport::ProvideService(impl::InstanceSpeci
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank SampleHyperVisorTransport::OfferService(impl::InstanceSpecifier service_instance_specifier)
+score::Result<void> SampleHyperVisorTransport::OfferService(
+    score::mw::com::InstanceSpecifier service_instance_specifier)
 {
     OfferServiceRequest request{std::move(service_instance_specifier)};
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank SampleHyperVisorTransport::StopOfferService(impl::InstanceSpecifier service_instance_specifier)
+score::Result<void> SampleHyperVisorTransport::StopOfferService(
+    score::mw::com::InstanceSpecifier service_instance_specifier)
 {
     StopOfferServiceRequest request{std::move(service_instance_specifier)};
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank SampleHyperVisorTransport::NotifyUpdate(impl::InstanceSpecifier service_instance_specifier,
-                                                           impl::ServiceElementType updated_element_type,
-                                                           std::string updated_element_name)
+score::Result<void> SampleHyperVisorTransport::NotifyUpdate(
+    score::mw::com::InstanceSpecifier service_instance_specifier,
+    impl::ServiceElementType updated_element_type,
+    std::string updated_element_name)
 {
     UpdateNotification notification{
         std::move(service_instance_specifier), updated_element_type, std::move(updated_element_name)};
     return message_transport_->SendNotification(notification);
 }
 
-score::ResultBlank SampleHyperVisorTransport::RegisterUpdateNotification(
-    impl::InstanceSpecifier service_instance_specifier,
+score::Result<void> SampleHyperVisorTransport::RegisterUpdateNotification(
+    score::mw::com::InstanceSpecifier service_instance_specifier,
     impl::ServiceElementType element_type,
     std::string element_name)
 {
@@ -252,8 +287,8 @@ score::ResultBlank SampleHyperVisorTransport::RegisterUpdateNotification(
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank SampleHyperVisorTransport::UnregisterUpdateNotification(
-    impl::InstanceSpecifier service_instance_specifier,
+score::Result<void> SampleHyperVisorTransport::UnregisterUpdateNotification(
+    score::mw::com::InstanceSpecifier service_instance_specifier,
     impl::ServiceElementType element_type,
     std::string element_name)
 {
@@ -261,7 +296,7 @@ score::ResultBlank SampleHyperVisorTransport::UnregisterUpdateNotification(
     return message_transport_->SendRequest(request);
 }
 
-void SampleHyperVisorTransport::PreCreateInterVmSharedMemory(const impl::InstanceSpecifier& specifier,
+void SampleHyperVisorTransport::PreCreateInterVmSharedMemory(const score::mw::com::InstanceSpecifier& specifier,
                                                              std::uint32_t /* shm_control_size */,
                                                              std::uint32_t /* shm_data_size */)
 {

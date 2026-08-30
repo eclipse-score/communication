@@ -14,7 +14,7 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "dependable_elem
 
 dependable_element(
     name = "mw_com",
-    architectural_design = ["//score/mw/com/dependability/software_architectural_design"],
+    architectural_design = ["//score/mw/com/dependability/software_architectural_design/static_design:software_architectural_design"],
     assumptions_of_use = [],
     components = [
         "//score/mw/com/impl:frontend_component",
@@ -25,7 +25,7 @@ dependable_element(
     maturity = "development",
     requirements = [
         "//score/mw/com/dependability/requirements/feature_requirements:feature_requirements_ipc",
-        "//score/mw/com/dependability/requirements/assumed_system_requirements:assumed_system_requirements",
+        "//score/mw/com/dependability/assumed_system:assumed_system_requirements",
     ],
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],

@@ -23,7 +23,7 @@ namespace score::mw::com::impl
 class ServiceDiscoveryClientMock : public IServiceDiscoveryClient
 {
   public:
-    MOCK_METHOD(Result<void>, OfferService, (InstanceIdentifier), (noexcept, override));
+    MOCK_METHOD(Result<void>, OfferService, (InstanceIdentifier), (override));
     MOCK_METHOD(Result<void>,
                 StopOfferService,
                 (InstanceIdentifier, IServiceDiscovery::QualityTypeSelector),
@@ -31,12 +31,9 @@ class ServiceDiscoveryClientMock : public IServiceDiscoveryClient
     MOCK_METHOD(Result<void>,
                 StartFindService,
                 (FindServiceHandle, (FindServiceHandler<HandleType>), EnrichedInstanceIdentifier),
-                (noexcept, override));
+                (override));
     MOCK_METHOD(Result<void>, StopFindService, (FindServiceHandle), (noexcept, override));
-    MOCK_METHOD(Result<ServiceHandleContainer<HandleType>>,
-                FindService,
-                (EnrichedInstanceIdentifier),
-                (noexcept, override));
+    MOCK_METHOD(Result<ServiceHandleContainer<HandleType>>, FindService, (EnrichedInstanceIdentifier), (override));
 };
 
 }  // namespace score::mw::com::impl

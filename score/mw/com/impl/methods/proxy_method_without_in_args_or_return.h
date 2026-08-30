@@ -44,7 +44,7 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     friend class ProxyMethodView;
 
   public:
-    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name)
         : ProxyMethodBase(method_name,
                           ProxyMethodBindingFactory<void()>::Create(proxy_base.GetHandle(),
                                                                     ProxyBaseView{proxy_base}.GetBinding(),
@@ -56,7 +56,7 @@ class ProxyMethod<void()> final : public ProxyMethodBase
         proxy_base_view.RegisterMethod(method_name_, GetReferenceToMoveable());
     }
 
-    ProxyMethod(std::string_view method_name, std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
+    ProxyMethod(std::string_view method_name, std::unique_ptr<ProxyMethodBinding> proxy_method_binding)
         : ProxyMethodBase(method_name, std::move(proxy_method_binding), MethodType::kMethod)
     {
     }

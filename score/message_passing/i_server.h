@@ -17,9 +17,7 @@
 
 #include "score/os/errno.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 /// \brief Interface of a Message Passing Server.
@@ -32,6 +30,12 @@ class IServer
 {
   public:
     virtual ~IServer() = default;
+
+    /// \brief An IServer shall not be copyable or movable
+    IServer(const IServer&) = delete;
+    IServer(IServer&&) = delete;
+    IServer& operator=(const IServer&) = delete;
+    IServer& operator=(IServer&&) = delete;
 
     /// \brief Sets up the callbacks for connection, disconnection and message reception notifications.
     /// \details The callbacks lifetime (or rather the lifetime of the system state captured in the callbacks by
@@ -54,13 +58,8 @@ class IServer
 
   protected:
     IServer() noexcept = default;
-    IServer(const IServer&) = delete;
-    IServer(IServer&&) = delete;
-    IServer& operator=(const IServer&) = delete;
-    IServer& operator=(IServer&&) = delete;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_SERVER_H

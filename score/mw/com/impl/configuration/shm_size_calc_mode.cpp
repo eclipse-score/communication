@@ -22,6 +22,9 @@ std::ostream& operator<<(std::ostream& ostream_out, const ShmSizeCalculationMode
         case ShmSizeCalculationMode::kSimulation:
             ostream_out << "SIMULATION";
             break;
+        case ShmSizeCalculationMode::kAnalysis:
+            ostream_out << "ANALYSIS";
+            break;
         default:
             ostream_out << "(unknown)";
             break;

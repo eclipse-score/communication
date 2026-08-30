@@ -22,6 +22,7 @@
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
 #include "score/scope_exit/scope_exit.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <chrono>
 #include <iostream>
@@ -46,6 +47,11 @@ class CyclicEventSender
     // Not copyable as our thread member isn't copyable (right so)
     CyclicEventSender(const CyclicEventSender& other) = delete;
     CyclicEventSender& operator=(const CyclicEventSender& rhs) = delete;
+
+    // Not movable either: the send-thread captures `this`, so moving this object would leave the running
+    // thread referencing a stale/moved-from instance.
+    CyclicEventSender(CyclicEventSender&& other) = delete;
+    CyclicEventSender& operator=(CyclicEventSender&& rhs) = delete;
 
     void Start()
     {
@@ -137,7 +143,7 @@ void DoProviderActions(CheckPointControl& check_point_control,
         std::cerr
             << "Provider: Initializing LoLa/mw::com runtime from cmd-line args handed over by parent/controller ..."
             << std::endl;
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
         std::cerr << "Provider: Initializing LoLa/mw::com runtime done." << std::endl;
     }
 

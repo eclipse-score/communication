@@ -58,9 +58,15 @@ def parse_lcov(lcov_path: Path) -> List[Dict[str, Any]]:
 
             if line.startswith("SF:"):
                 if current_file is not None:
-                    files.append(_build_file_entry(
-                        current_file, current_lines, current_branches,
-                        fn_lines, fn_counts))
+                    files.append(
+                        _build_file_entry(
+                            current_file,
+                            current_lines,
+                            current_branches,
+                            fn_lines,
+                            fn_counts,
+                        )
+                    )
                 current_file = line[3:]
                 current_lines = {}
                 current_branches = {}
@@ -108,9 +114,15 @@ def parse_lcov(lcov_path: Path) -> List[Dict[str, Any]]:
 
             elif line == "end_of_record":
                 if current_file is not None:
-                    files.append(_build_file_entry(
-                        current_file, current_lines, current_branches,
-                        fn_lines, fn_counts))
+                    files.append(
+                        _build_file_entry(
+                            current_file,
+                            current_lines,
+                            current_branches,
+                            fn_lines,
+                            fn_counts,
+                        )
+                    )
                 current_file = None
                 current_lines = {}
                 current_branches = {}
@@ -118,9 +130,7 @@ def parse_lcov(lcov_path: Path) -> List[Dict[str, Any]]:
                 fn_counts = {}
 
     if current_file is not None:
-        files.append(_build_file_entry(
-            current_file, current_lines, current_branches,
-            fn_lines, fn_counts))
+        files.append(_build_file_entry(current_file, current_lines, current_branches, fn_lines, fn_counts))
 
     return files
 
@@ -143,9 +153,9 @@ def _normalize_entry_path(filename: str, source_root: str) -> str:
     """Normalize LCOV paths to workspace-relative paths for comparison/output."""
     normalized_source_root = source_root.rstrip("/")
     if normalized_source_root and filename.startswith(normalized_source_root + "/"):
-        return filename[len(normalized_source_root) + 1:]
+        return filename[len(normalized_source_root) + 1 :]
     if filename.startswith(PROC_SELF_CWD_PREFIX):
-        return filename[len(PROC_SELF_CWD_PREFIX):]
+        return filename[len(PROC_SELF_CWD_PREFIX) :]
     if filename.startswith("./"):
         return filename[2:]
     return filename
@@ -238,9 +248,7 @@ def _merge_line_entries(
     the same line can appear in multiple LCOV inputs for identical instrumentation,
     and summing those overlapping records inflates execution counts.
     """
-    merged_lines = {
-        line["line_number"]: _clone_line_entry(line) for line in existing_lines
-    }
+    merged_lines = {line["line_number"]: _clone_line_entry(line) for line in existing_lines}
     for incoming_line in incoming_lines:
         line_number = incoming_line["line_number"]
         incoming_copy = _clone_line_entry(incoming_line)
@@ -378,16 +386,16 @@ def main() -> None:
     if args.baseline_lcov:
         baseline_lcov_path = Path(args.baseline_lcov)
         if not baseline_lcov_path.exists():
-            print(f"ERROR: Baseline LCOV file not found: {baseline_lcov_path}", file=sys.stderr)
+            print(
+                f"ERROR: Baseline LCOV file not found: {baseline_lcov_path}",
+                file=sys.stderr,
+            )
             sys.exit(1)
         baseline_entries = parse_lcov(baseline_lcov_path)
         if baseline_entries:
             baseline_entries = _normalize_file_entries(baseline_entries, source_root)
             file_entries = _merge_file_entries(file_entries, baseline_entries)
-            print(
-                f"Merged baseline LCOV from {baseline_lcov_path} "
-                f"({len(baseline_entries)} file records)"
-            )
+            print(f"Merged baseline LCOV from {baseline_lcov_path} ({len(baseline_entries)} file records)")
 
     allowlist: Set[str] = set()
     if args.allowlist:
@@ -407,8 +415,7 @@ def main() -> None:
         if filter_patterns:
             before = len(file_entries)
             file_entries = [
-                entry for entry in file_entries
-                if not any(p.search(entry["file"]) for p in filter_patterns)
+                entry for entry in file_entries if not any(p.search(entry["file"]) for p in filter_patterns)
             ]
             excluded = before - len(file_entries)
             if excluded > 0:
@@ -420,9 +427,7 @@ def main() -> None:
         "files": file_entries,
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", prefix="lcov_to_gcovr_", delete=False
-    ) as tmp:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", prefix="lcov_to_gcovr_", delete=False) as tmp:
         json.dump(gcovr_json, tmp)
         tracefile_path = tmp.name
 
@@ -431,14 +436,18 @@ def main() -> None:
         output_file = str(output_dir / "index.html")
         gcovr_args = [
             "gcovr",
-            "--add-tracefile", tracefile_path,
-            "--html-details", output_file,
-            "--root", source_root,
+            "--add-tracefile",
+            tracefile_path,
+            "--html-details",
+            output_file,
+            "--root",
+            source_root,
         ]
 
         print(f"Running gcovr with {len(file_entries)} files...")
         sys.argv = gcovr_args
         from gcovr.__main__ import main as gcovr_main
+
         try:
             gcovr_main()
         except SystemExit as e:
@@ -453,20 +462,29 @@ def main() -> None:
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Generate HTML coverage report from LCOV data using gcovr")
-    parser.add_argument("--lcov", required=True,
-                        help="Path to LCOV .dat file")
-    parser.add_argument("--output-dir", required=True,
-                        help="Directory for HTML output")
-    parser.add_argument("--source-root", default="",
-                        help="Source root for resolving relative paths (default: cwd)")
-    parser.add_argument("--filter-regexes", default="",
-                        help="Path to file with regexes (one per line) to exclude from report")
-    parser.add_argument("--allowlist", default="",
-                        help="Path to workspace-relative file allowlist (one path per line)")
-    parser.add_argument("--baseline-lcov", default="",
-                        help="Path to LCOV baseline tracefile to merge before filtering")
+    parser = argparse.ArgumentParser(description="Generate HTML coverage report from LCOV data using gcovr")
+    parser.add_argument("--lcov", required=True, help="Path to LCOV .dat file")
+    parser.add_argument("--output-dir", required=True, help="Directory for HTML output")
+    parser.add_argument(
+        "--source-root",
+        default="",
+        help="Source root for resolving relative paths (default: cwd)",
+    )
+    parser.add_argument(
+        "--filter-regexes",
+        default="",
+        help="Path to file with regexes (one per line) to exclude from report",
+    )
+    parser.add_argument(
+        "--allowlist",
+        default="",
+        help="Path to workspace-relative file allowlist (one path per line)",
+    )
+    parser.add_argument(
+        "--baseline-lcov",
+        default="",
+        help="Path to LCOV baseline tracefile to merge before filtering",
+    )
     return parser.parse_args()
 
 

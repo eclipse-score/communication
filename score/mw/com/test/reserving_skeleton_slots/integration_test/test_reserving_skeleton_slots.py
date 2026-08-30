@@ -22,7 +22,11 @@ def reserving_skeleton_slots(target, mode, **kwargs):
         mode,
     ]
     return target.wrap_exec(
-        "bin/reserving_skeleton_slots", args, cwd="/opt/reserving_skeleton_slots", wait_on_exit=True, **kwargs
+        "bin/reserving_skeleton_slots",
+        args,
+        cwd="/opt/reserving_skeleton_slots",
+        wait_on_exit=True,
+        **kwargs,
     )
 
 

@@ -31,6 +31,18 @@ TEST(ShmSizeCalculationModeTest, OperatorStreamOutputsCorrectStringForkSimulatio
     EXPECT_EQ(oss.str(), "SIMULATION");
 }
 
+TEST(ShmSizeCalculationModeTest, OperatorStreamOutputsCorrectStringForkAnalysis)
+{
+    // Given a ShmSizeCalculationMode set to kAnalysis
+    std::ostringstream oss;
+
+    // When streaming  to ostringstream
+    oss << ShmSizeCalculationMode::kAnalysis;
+
+    // Then the output should match "ANALYSIS"
+    EXPECT_EQ(oss.str(), "ANALYSIS");
+}
+
 TEST(ShmSizeCalculationModeTest, OperatorStreamOutputsUnknownForInvalidValue)
 {
     // Given a ShmSizeCalculationMode set to an invalid value

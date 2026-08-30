@@ -12,5 +12,7 @@
 # *******************************************************************************
 
 # Makes tools/lint/ a Bazel package so linters.bzl can be referenced as a
-# label target (//tools/lint:linters.bzl%clang_tidy_aspect) in bazelrc.
-exports_files(["linters.bzl"])
+# label target (e.g. //tools/lint:linters.bzl%clang_tidy) in bazelrc.
+exports_files([
+    "linters.bzl",
+])

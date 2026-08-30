@@ -130,6 +130,14 @@ def integration_test(name, srcs, filesystem, **kwargs):
         ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
     )
 
+    # Tag as integration test so flaky-detection and other tooling can select
+    # these via --test_tag_filters=integration-test.
+    _extend_list_in_kwargs_without_duplicates(
+        kwargs,
+        "tags",
+        ["integration-test"],
+    )
+
     py_itf_test(
         name = name,
         srcs = srcs,
@@ -220,6 +228,15 @@ def dual_qemu_integration_test(
     # flaky so bazel transparently retries such infrastructure hiccups.
     if "flaky" not in kwargs:
         kwargs["flaky"] = True
+
+    # This test is intentionally marked flaky (above) to retry environment-induced
+    # QEMU boot hiccups, so exclude it from the nightly flaky-test detection to
+    # avoid reporting expected, infrastructure-level nondeterminism.
+    _extend_list_in_kwargs_without_duplicates(
+        kwargs,
+        "tags",
+        ["no-flaky-test-detection"],
+    )
 
     _extend_list_in_kwargs_without_duplicates(
         kwargs,

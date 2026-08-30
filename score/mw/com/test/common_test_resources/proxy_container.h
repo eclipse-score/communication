@@ -39,6 +39,13 @@ class ProxyContainer
         return *proxy_;
     }
 
+    Proxy&& Extract()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_ != nullptr,
+                                                    "Proxy was not successfully created! Cannot extract it!");
+        return std::move(*proxy_);
+    }
+
   private:
     std::unique_ptr<typename Proxy::HandleType> handle_{nullptr};
     std::mutex proxy_creation_mutex_{};
@@ -69,7 +76,7 @@ void ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier, co
         proxy_creation_condition_variable_.notify_all();
     };
 
-    auto start_find_service_result = Proxy::StartFindService(find_service_callback, instance_specifier);
+    auto start_find_service_result = Proxy::StartFindService(find_service_callback, std::move(instance_specifier));
     if (!start_find_service_result.has_value())
     {
         FailTest(failure_message_prefix, " Consumer: StartFindService() failed: ", start_find_service_result.error());

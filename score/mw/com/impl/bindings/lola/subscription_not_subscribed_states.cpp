@@ -35,7 +35,7 @@ namespace score::mw::com::impl::lola
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_count) noexcept
+Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_count)
 {
     auto transaction_log_registration_guard_result = state_machine_.transaction_log_set_.RegisterProxyElement(
         state_machine_.transaction_log_id_, state_machine_.event_data_control_local_);
@@ -128,7 +128,7 @@ void NotSubscribedState::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandl
     state_machine_.event_receiver_handler_ = std::move(handler);
 }
 
-void NotSubscribedState::UnsetReceiveHandler() noexcept
+void NotSubscribedState::UnsetReceiveHandler()
 {
     state_machine_.event_receiver_handler_ = std::nullopt;
 }
@@ -154,7 +154,7 @@ const std::optional<SlotCollector>& NotSubscribedState::GetSlotCollector() const
     return state_machine_.subscription_data_.slot_collector_;
 }
 
-void NotSubscribedState::OnEntry() noexcept
+void NotSubscribedState::OnEntry()
 {
     const auto transaction_log_index = state_machine_.transaction_log_registration_guard_->GetTransactionLogIndex();
     auto& transaction_log = state_machine_.transaction_log_set_.GetTransactionLog(transaction_log_index);

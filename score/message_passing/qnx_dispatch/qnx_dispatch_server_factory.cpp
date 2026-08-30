@@ -15,9 +15,7 @@
 #include "score/message_passing/qnx_dispatch/qnx_dispatch_engine.h"
 #include "score/message_passing/qnx_dispatch/qnx_dispatch_server.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 // coverity[autosar_cpp14_a2_10_6_violation] false-positive: there is nothing with the same name
@@ -42,5 +40,4 @@ score::cpp::pmr::unique_ptr<IServer> QnxDispatchServerFactory::Create(const Serv
         engine_->GetMemoryResource(), engine_, protocol_config, server_config);
 }
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing

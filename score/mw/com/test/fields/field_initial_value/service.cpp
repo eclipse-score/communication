@@ -16,6 +16,7 @@
 #include "score/mw/com/test/common_test_resources/process_synchronizer.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 #include "score/mw/com/test/fields/field_initial_value/test_datatype.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <score/stop_token.hpp>
 
@@ -80,7 +81,7 @@ void run_service(const score::cpp::stop_token& stop_token)
 
 int main(int argc, const char** argv)
 {
-    score::mw::com::runtime::InitializeRuntime(argc, argv);
+    score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
 
     score::cpp::stop_source stop_source{};
     const bool sig_term_handler_setup_success = score::mw::com::SetupStopTokenSigTermHandler(stop_source);

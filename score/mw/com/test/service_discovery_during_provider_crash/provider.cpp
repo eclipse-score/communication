@@ -19,6 +19,7 @@
 #include "score/mw/com/test/service_discovery_during_provider_crash/test_datatype.h"
 
 #include "score/mw/com/runtime.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <chrono>
 #include <iostream>
@@ -41,7 +42,7 @@ void DoProviderActions(CheckPointControl& check_point_control,
         std::cerr
             << "Provider: Initializing LoLa/mw::com runtime from cmd-line args handed over by parent/controller ..."
             << std::endl;
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
         std::cerr << "Provider: Initializing LoLa/mw::com runtime done." << std::endl;
     }
 

@@ -17,9 +17,7 @@
 
 #include "gmock/gmock.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 class ClientFactoryMock : public IClientFactory
@@ -33,7 +31,6 @@ class ClientFactoryMock : public IClientFactory
     virtual ~ClientFactoryMock() = default;  // virtual to make compiler happy
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_MOCK_CLIENT_FACTORY_MOCK_H

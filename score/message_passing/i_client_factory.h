@@ -20,9 +20,7 @@
 
 #include <cstdint>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 /// \brief A generic factory interface to create instances of IClientConnection.
@@ -36,6 +34,12 @@ namespace message_passing
 class IClientFactory
 {
   public:
+    /// \brief An IClientFactory shall not be copyable or movable
+    IClientFactory(const IClientFactory&) = delete;
+    IClientFactory(IClientFactory&&) = delete;
+    IClientFactory& operator=(const IClientFactory&) = delete;
+    IClientFactory& operator=(IClientFactory&&) = delete;
+
     // Suppress "AUTOSAR C++14 A9-6-1" rule findings. This rule declares: "Data types used for interfacing with hardware
     // or conforming to communication protocols shall be trivial, standard-layout and only contain members of types with
     // defined sizes."
@@ -74,13 +78,8 @@ class IClientFactory
     ~IClientFactory() = default;
 
     IClientFactory() noexcept = default;
-    IClientFactory(const IClientFactory&) = delete;
-    IClientFactory(IClientFactory&&) = delete;
-    IClientFactory& operator=(const IClientFactory&) = delete;
-    IClientFactory& operator=(IClientFactory&&) = delete;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_CLIENT_FACTORY_H

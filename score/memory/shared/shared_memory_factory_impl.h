@@ -1,0 +1,100 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+#ifndef SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_FACTORY_IMPL_H
+#define SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_FACTORY_IMPL_H
+
+#include "score/memory/shared/i_shared_memory_factory.h"
+#include "score/memory/shared/shared_memory_resource.h"
+#include "score/memory/shared/typedshm/typedshm_wrapper/typed_memory.h"
+
+#include "score/utils/static_destruction_guard.h"
+
+#include <score/span.hpp>
+
+#include <memory>
+#include <mutex>
+#include <string>
+#include <unordered_map>
+
+namespace score::memory::shared
+{
+
+class SharedMemoryFactoryImpl final : public ISharedMemoryFactory
+{
+  public:
+    std::shared_ptr<ISharedMemoryResource> Open(
+        const std::string& path,
+        const bool is_read_write,
+        const std::optional<score::cpp::span<const uid_t>>& allowedProviders) noexcept override;
+
+    std::shared_ptr<ISharedMemoryResource> Create(std::string path,
+                                                  InitializeCallback cb,
+                                                  const std::size_t user_space_to_reserve,
+                                                  const UserPermissions& permissions,
+                                                  const bool prefer_typed_memory) noexcept override;
+
+    std::shared_ptr<ISharedMemoryResource> CreateAnonymous(std::uint64_t shared_memory_resource_id,
+                                                           InitializeCallback cb,
+                                                           const std::size_t user_space_to_reserve,
+                                                           const UserPermissions& permissions,
+                                                           const bool prefer_typed_memory) noexcept override;
+
+    std::shared_ptr<ISharedMemoryResource> CreateOrOpen(std::string path,
+                                                        InitializeCallback cb,
+                                                        const std::size_t user_space_to_reserve,
+                                                        const AccessControl access_control,
+                                                        const bool prefer_typed_memory) noexcept override;
+
+    void Remove(const std::string& path) noexcept override;
+
+    void RemoveStaleArtefacts(const std::string& path) noexcept override;
+
+    void SetTypedMemoryProvider(std::shared_ptr<score::memory::shared::TypedMemory> typed_memory_ptr) noexcept override;
+
+    void SetInterVMMemoryProvider(
+        std::shared_ptr<score::memory::shared::TypedMemory> intervm_memory_ptr) noexcept override;
+
+    std::size_t GetControlBlockSize() noexcept override
+    {
+        return sizeof(score::memory::shared::SharedMemoryResource::ControlBlock);
+    };
+
+    void Clear() noexcept override
+    {
+        resources_.clear();
+    }
+
+  private:
+    std::mutex mutex_{};
+    std::unordered_map<std::string, std::weak_ptr<score::memory::shared::SharedMemoryResource>> resources_{};
+    std::shared_ptr<score::memory::shared::TypedMemory> typed_memory_ptr_{memory::shared::TypedMemory::Default()};
+    std::shared_ptr<score::memory::shared::TypedMemory> intervm_memory_ptr_{nullptr};
+};
+
+namespace detail
+{
+
+/// \brief Nifty-counter (see score::utils::StaticDestructionGuard) keeping the SharedMemoryFactoryImpl singleton alive.
+/// \details Only translation units that include this (internal) header get a guard instance, i.e. this protects
+///          SharedMemoryFactoryImpl's own construction/destruction ordering against other statics within this
+///          library, analogous to the MemoryResourceRegistry nifty-counter. It is intentionally not exposed via the
+///          public shared_memory_factory.h to avoid pulling the concrete SharedMemoryResource/TypedMemory dependencies
+///          into that lightweight public header.
+// coverity[autosar_cpp14_a3_3_2_violation] non-trivial constructor is required to implement the nifty-counter idiom
+static ::score::utils::StaticDestructionGuard<SharedMemoryFactoryImpl> nifty_counter_shared_memory_factory_impl;
+
+}  // namespace detail
+
+}  // namespace score::memory::shared
+
+#endif  // SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_FACTORY_IMPL_H

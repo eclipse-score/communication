@@ -13,21 +13,14 @@
 
 #include "score/mw/com/test/check_values_created_from_config/check_values_created_from_config_application.h"
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/com_error_domain.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
-#include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/config_parser.h"
-#include "score/mw/com/impl/configuration/lola_event_id.h"
-#include "score/mw/com/impl/configuration/lola_service_instance_id.h"
-#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
-#include "score/mw/com/impl/configuration/service_identifier_type.h"
-#include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/plumbing/proxy_event_binding_factory.h"
-#include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/test/common_test_resources/sample_sender_receiver.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 #include "score/mw/com/test/common_test_resources/shared_memory_object_creator.h"
 #include "score/mw/com/test/common_test_resources/shared_memory_object_guard.h"
+#include "score/mw/com/types.h"
 #include "score/os/utils/interprocess/interprocess_notification.h"
 #include "score/result/result.h"
 
@@ -46,7 +39,7 @@
 namespace
 {
 
-using InstanceSpecifier = score::mw::com::impl::InstanceSpecifier;
+using InstanceSpecifier = score::mw::com::InstanceSpecifier;
 using ElementFqId = score::mw::com::impl::lola::ElementFqId;
 
 using std::string_view_literals::operator""sv;
@@ -60,7 +53,7 @@ constexpr auto kSharedMemoryPathPrefix = "/dev/shm/";
 class ConfigParser
 {
   public:
-    ConfigParser(const std::string& service_instance_manifest_path, const InstanceSpecifier instance_specifier)
+    ConfigParser(const std::string& service_instance_manifest_path, const InstanceSpecifier& instance_specifier)
     {
         const auto configuration = score::mw::com::impl::configuration::Parse(service_instance_manifest_path);
 
@@ -68,9 +61,9 @@ class ConfigParser
             score::mw::com::impl::make_ServiceIdentifierType(
                 std::string{service_type_name_}, major_version_number_, minor_version_number_);
 
-        type_deployment_ = configuration.GetServiceTypes().at(service_identifier_type);
+        type_deployment_ = configuration.GetServiceTypeDeployment(service_identifier_type).value().get();
 
-        const auto deployment = configuration.GetServiceInstances().at(instance_specifier);
+        const auto& deployment = configuration.GetServiceInstanceDeployment(instance_specifier).value().get();
         lola_instance_binding_ = std::get<score::mw::com::impl::LolaServiceInstanceDeployment>(deployment.bindingInfo_);
     }
 
@@ -84,7 +77,7 @@ class ConfigParser
 
         if (lola_service_type_deployment == nullptr)
         {
-            return score::MakeUnexpected(score::mw::com::impl::ComErrc::kInvalidBindingInformation,
+            return score::MakeUnexpected(score::mw::com::ComErrc::kInvalidBindingInformation,
                                          "No lola type deployment available.");
         }
 
@@ -107,7 +100,7 @@ class ConfigParser
 
     std::optional<std::string> GetShmName() const noexcept
     {
-        const auto lola_service_type_deployment =
+        const auto* const lola_service_type_deployment =
             std::get_if<score::mw::com::impl::LolaServiceTypeDeployment>(&type_deployment_.binding_info_);
         if (lola_service_type_deployment == nullptr)
         {

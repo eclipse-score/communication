@@ -42,7 +42,7 @@ ServiceVersionType::ServiceVersionType(const std::uint32_t major_version_number,
 // initialized by the constructor shall be initialized using member initializers".
 // This is false positive, all data members are initialized using member initializers in the delegation constructor.
 // coverity[autosar_cpp14_a12_6_1_violation]
-ServiceVersionType::ServiceVersionType(const score::json::Object& json_object) noexcept
+ServiceVersionType::ServiceVersionType(const score::json::Object& json_object)
     : ServiceVersionType{GetValueFromJson<std::uint32_t>(json_object, kMajorVersionKeySerVerType),
                          GetValueFromJson<std::uint32_t>(json_object, kMinorVersionKeySerVerType)}
 {

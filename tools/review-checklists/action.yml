@@ -1,0 +1,116 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Review Checklists"
+description: >
+  Manages review checklists on pull requests.  Posts checklist comments,
+  tracks reviewer acknowledgements, dismisses stale approvals, and
+  maintains evidence in the PR description and merge-queue evidence notices.
+
+inputs:
+  action:
+    description: >
+      Which action to run.  One of:
+        post            – Post/update checklist comments and evidence
+        check           – Verify acknowledgements; fail if incomplete
+        dismiss_sync    – Invalidate OKs after new push
+    required: true
+  github-token:
+    description: "GitHub token with repo permissions"
+    required: true
+  pr-number:
+    description: "Pull request number"
+    required: false
+    default: ""
+  run-id:
+    description: >
+      The workflow run id of the currently-executing "Review Checklists
+      (Trigger)" run (used by the ``dismiss_sync`` action to look up the
+      previous trigger run for the same branch).
+    required: false
+    default: ""
+  head-branch:
+    description: >
+      Head branch name of the pull request (used by the ``dismiss_sync``
+      action to scope the run-history lookup).
+    required: false
+    default: ""
+  head-sha:
+    description: >
+      Commit SHA to set the status on (used for merge_group events).
+    required: false
+    default: ""
+  event-name:
+    description: >
+      Name of the original triggering event (e.g. 'pull_request_target',
+      'pull_request_review_comment', 'merge_group').  Required when this
+      action is invoked from a workflow_run-triggered privileged workflow,
+      since the ambient GITHUB_EVENT_NAME there is always 'workflow_run'
+      and — being a reserved GitHub Actions variable name — cannot be
+      overridden for the subprocess by a step's own `env:` block.  Defaults
+      to the ambient github.event_name when not set (only correct for
+      direct, non-workflow_run invocations).
+    required: false
+    default: ""
+  config-path:
+    description: >
+      Relative path to the checklist configuration file.
+      Defaults to '.github/review_checklists.yml'.
+    required: false
+    default: ".github/review_checklists.yml"
+
+runs:
+  using: composite
+  steps:
+    # Deliberately installed with plain pip rather than invoked via Bazel:
+    # this action only needs to run a couple of standalone Python scripts
+    # against a locked requirements.txt, and doing that with pip is fast and
+    # has no dependency on the runner having a full Bazel setup or checkout
+    # of this monorepo's build graph. requirements.txt itself is still
+    # generated/locked via Bazel (see BUILD and README.md) so the pinned
+    # versions stay consistent with the rest of the repo's tooling.
+    - name: Install review_checklists requirements
+      shell: bash
+      run: python3 -m pip install -r "$GITHUB_ACTION_PATH/requirements.txt"
+
+    - name: Run post_checklists
+      if: inputs.action == 'post'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+      run: python3 "$GITHUB_ACTION_PATH/scripts/post_checklists.py" --config-path "${{ inputs.config-path }}"
+
+    - name: Run check_acknowledgements
+      if: inputs.action == 'check'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        CHECKLISTS_EVENT_NAME: ${{ inputs.event-name || github.event_name }}
+      run: python3 "$GITHUB_ACTION_PATH/scripts/check_acknowledgements.py" --config-path "${{ inputs.config-path }}"
+
+
+    - name: Run dismiss_and_invalidate
+      if: inputs.action == 'dismiss_sync'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        CURRENT_RUN_ID: ${{ inputs.run-id }}
+        HEAD_BRANCH: ${{ inputs.head-branch }}
+      run: python3 "$GITHUB_ACTION_PATH/scripts/dismiss_and_invalidate.py" --config-path "${{ inputs.config-path }}"

@@ -44,9 +44,7 @@ def build_matrix(config_path) -> dict:
         if v.skip is not None
     ]
 
-    per_dep_choices = [
-        [(dep, v) for v in dep.active_versions] for dep in cfg.dependencies
-    ]
+    per_dep_choices = [[(dep, v) for v in dep.active_versions] for dep in cfg.dependencies]
 
     include = []
     for index, selection in enumerate(itertools.product(*per_dep_choices)):

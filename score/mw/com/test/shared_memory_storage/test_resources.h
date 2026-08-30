@@ -14,13 +14,9 @@
 #ifndef SCORE_MW_COM_TEST_SHARED_MEMORY_STORAGE_TEST_RESOURCES_H
 #define SCORE_MW_COM_TEST_SHARED_MEMORY_STORAGE_TEST_RESOURCES_H
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/proxy.h"
-#include "score/mw/com/impl/bindings/lola/service_data_storage.h"
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
-
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/mw/com/test/common_test_resources/big_datatype.h"
+#include "score/mw/com/types.h"
 #include "score/os/utils/interprocess/interprocess_notification.h"
 
 #include <stdint.h>

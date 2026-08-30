@@ -91,7 +91,7 @@ Result<void> TransactionLogSet::RollbackProxyTransactions(
     // the next TransactionLog. If there are only TransactionLogs remaining which cannot be rolled back, return an
     // error.
     Result<void> rollback_result{};
-    for (const auto transaction_log_node_it : transaction_log_node_iterators_to_be_rolled_back)
+    for (auto* const transaction_log_node_it : transaction_log_node_iterators_to_be_rolled_back)
     {
         rollback_result = transaction_log_node_it->GetTransactionLogLocalView().RollbackProxyElementLog(
             dereference_slot_callback, unsubscribe_callback);
@@ -205,7 +205,7 @@ TransactionLogSet::FindTransactionLogNodesToBeRolledBack(const TransactionLogId&
     //
     // coverity[autosar_cpp14_m5_0_15_violation]
     // coverity[autosar_cpp14_a5_3_2_violation : FALSE]
-    for (auto it = proxy_transaction_logs_.begin(); it != proxy_transaction_logs_.end(); it++)
+    for (auto* it = proxy_transaction_logs_.begin(); it != proxy_transaction_logs_.end(); it++)
     {
         // LCOV_EXCL_BR_STOP
         // coverity[autosar_cpp14_a5_3_2_violation : FALSE]
@@ -247,7 +247,7 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
         //
         // coverity[autosar_cpp14_m5_0_15_violation]
         // coverity[autosar_cpp14_a5_3_2_violation : FALSE]
-        for (auto it = proxy_transaction_logs_.begin(); it != proxy_transaction_logs_.end(); it++)
+        for (auto* it = proxy_transaction_logs_.begin(); it != proxy_transaction_logs_.end(); it++)
         {
             // LCOV_EXCL_BR_STOP
             auto& transaction_log_node = *it;

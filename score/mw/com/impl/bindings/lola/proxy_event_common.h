@@ -71,7 +71,7 @@ class ProxyEventCommon final
     ///
     /// The call is dispatched to SlotCollector. It is the responsibility of the calling code to ensure that
     /// GetNumNewSamplesAvailable() is only called when the event is in the subscribed state.
-    Result<std::size_t> GetNumNewSamplesAvailable() const noexcept;
+    Result<std::size_t> GetNumNewSamplesAvailable() const;
 
     /// \brief Get the indicators of the slots containing samples that are pending for reception in ascending order.
     ///        I.e. returned SlotIndices begin with the oldest slots/events (lowest timestamp) first and end at the
@@ -79,7 +79,7 @@ class ProxyEventCommon final
     ///
     /// The call is dispatched to SlotCollector. It is the responsibility of the calling code to ensure that
     /// GetNewSamplesSlotIndices() is only called when the event is in the subscribed state.
-    SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count) noexcept;
+    SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count);
 
     Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler);
     Result<void> UnsetReceiveHandler();
@@ -87,7 +87,6 @@ class ProxyEventCommon final
     Result<void> SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler) noexcept;
     Result<void> UnsetSubscriptionStateChangeHandler() noexcept;
 
-    pid_t GetEventSourcePid() const noexcept;
     ElementFqId GetElementFQId() const noexcept
     {
         return event_fq_id_;
@@ -109,6 +108,7 @@ class ProxyEventCommon final
     {
         score::cpp::ignore = test_slot_collector_.emplace(std::move(slot_collector));
     };
+
     std::optional<SlotCollector> test_slot_collector_;
 
     Proxy& parent_;

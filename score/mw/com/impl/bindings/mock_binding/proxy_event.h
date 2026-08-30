@@ -153,7 +153,7 @@ class ProxyEventFacade : public ProxyEventBinding<SampleType>
     {
         return proxy_event_.Subscribe(n);
     }
-    Result<std::size_t> GetNumNewSamplesAvailable() const noexcept override
+    Result<std::size_t> GetNumNewSamplesAvailable() const override
     {
         return proxy_event_.GetNumNewSamplesAvailable();
     }

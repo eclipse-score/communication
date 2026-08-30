@@ -14,6 +14,7 @@
 #include "score/mw/com/test/smokeyeyes/smokeyeyes.h"
 
 #include "score/mw/com/runtime.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <boost/functional/hash.hpp>
 #include <boost/interprocess/anonymous_shared_memory.hpp>
@@ -37,7 +38,6 @@
 
 using namespace std::chrono_literals;
 
-// uid 1300 - 1311 is reserved for use. See broken_link_cf/display/ipnext/User+Management
 const uid_t kUidStart{1300};
 
 namespace score::mw::com::test
@@ -136,6 +136,13 @@ struct SharedState
         pthread_barrier_init(&barrier_, &barrier_attr, static_cast<unsigned int>(num_clients + 1U));
         pthread_barrierattr_destroy(&barrier_attr);
     }
+
+    // Not copyable/movable: `barrier_` is an OS resource tied to this object's address (it is placed directly
+    // into shared memory via placement-new), so copying or moving it would not be meaningful.
+    SharedState(const SharedState&) = delete;
+    SharedState& operator=(const SharedState&) = delete;
+    SharedState(SharedState&&) = delete;
+    SharedState& operator=(SharedState&&) = delete;
 
     ~SharedState()
     {
@@ -242,8 +249,14 @@ int run_receiver(SharedState& shared_state,
         std::promise<std::vector<DataProxy::HandleType>> service_discovery_promise{};
         auto service_discovery_future = service_discovery_promise.get_future();
         auto handles_result = DataProxy::StartFindService(
-            [moved_service_discovery_promise = std::move(service_discovery_promise)](auto found_handles,
-                                                                                     auto handle) mutable {
+            [moved_service_discovery_promise = std::move(service_discovery_promise)](
+                // The enclosing FindServiceHandler is a type-erased callback whose call signature takes this
+                // parameter by value; the caller already copies it into that fixed signature before invoking this
+                // lambda, so taking it by const& here would not avoid any copy - it would only (misleadingly) hide
+                // the fact that one already happened.
+                // NOLINTNEXTLINE(performance-unnecessary-value-param)
+                auto found_handles,
+                auto handle) mutable {
                 moved_service_discovery_promise.set_value(found_handles);
                 score::cpp::ignore = DataProxy::StopFindService(handle);
             },
@@ -387,11 +400,11 @@ int main(int argc, const char** argv)
     namespace ipc = boost::interprocess;
     using namespace score;
 
-    std::size_t num_clients;
-    std::size_t turns;
-    std::size_t batch_size;
-    bool no_wait;
-    std::size_t num_slots;
+    std::size_t num_clients{0U};
+    std::size_t turns{0U};
+    std::size_t batch_size{0U};
+    bool no_wait{false};
+    std::size_t num_slots{0U};
 
     po::options_description options;
     // clang-format off
@@ -456,7 +469,7 @@ int main(int argc, const char** argv)
     // Has to be done after forking as messaging permanently stores the pid as the node identifier
     if (args.count("service_instance_manifest") > 0U)
     {
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
     }
 
     int result{};
@@ -487,7 +500,7 @@ int main(int argc, const char** argv)
         bool children_successful = true;
         for (auto pid : children)
         {
-            int wstatus;
+            int wstatus{0};
             waitpid(pid, &wstatus, 0);
             if (WIFEXITED(wstatus))
             {

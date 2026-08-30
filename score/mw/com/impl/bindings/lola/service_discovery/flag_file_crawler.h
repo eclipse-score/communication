@@ -36,15 +36,15 @@ class FlagFileCrawler
     explicit FlagFileCrawler(os::InotifyInstance& inotify_instance,
                              filesystem::Filesystem filesystem = filesystem::FilesystemFactory{}.CreateInstance());
 
-    auto Crawl(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+    auto Crawl(const EnrichedInstanceIdentifier& enriched_instance_identifier)
         -> score::Result<QualityAwareContainer<KnownInstancesContainer>>;
 
-    auto CrawlAndWatch(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+    auto CrawlAndWatch(const EnrichedInstanceIdentifier& enriched_instance_identifier)
         -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
                                     QualityAwareContainer<KnownInstancesContainer>>>;
 
     auto CrawlAndWatchWithRetry(const EnrichedInstanceIdentifier& enriched_instance_identifier,
-                                const std::uint8_t max_number_of_retries) noexcept
+                                const std::uint8_t max_number_of_retries)
         -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
                                     QualityAwareContainer<KnownInstancesContainer>>>;
 
@@ -52,16 +52,14 @@ class FlagFileCrawler
     static auto ParseQualityTypeFromString(const std::string_view filename) noexcept -> QualityType;
 
   private:
-    auto CrawlAndWatchImpl(const EnrichedInstanceIdentifier& enriched_instance_identifier,
-                           const bool add_watch) noexcept
+    auto CrawlAndWatchImpl(const EnrichedInstanceIdentifier& enriched_instance_identifier, const bool add_watch)
         -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
                                     QualityAwareContainer<KnownInstancesContainer>>>;
 
-    static auto GatherExistingInstanceDirectories(
-        const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+    static auto GatherExistingInstanceDirectories(const EnrichedInstanceIdentifier& enriched_instance_identifier)
         -> score::Result<std::vector<EnrichedInstanceIdentifier>>;
 
-    auto AddWatchToInotifyInstance(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
+    auto AddWatchToInotifyInstance(const EnrichedInstanceIdentifier& enriched_instance_identifier)
         -> Result<os::InotifyWatchDescriptor>;
 
     os::InotifyInstance& inotify_instance_;

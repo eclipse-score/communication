@@ -59,11 +59,10 @@ class GenericProxyEventBindingFactoryImpl : public IGenericProxyEventBindingFact
     /// \param handle The handle containing the binding information.
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or an error in case binding creation fails.
-    Result<std::unique_ptr<GenericProxyEventBinding>> Create(
-        HandleType parent_handle,
-        ProxyBinding& parent_binding,
-        const std::string_view event_name,
-        const ServiceElementType service_element_type) noexcept override;
+    Result<std::unique_ptr<GenericProxyEventBinding>> Create(HandleType parent_handle,
+                                                             ProxyBinding& parent_binding,
+                                                             const std::string_view event_name,
+                                                             const ServiceElementType service_element_type) override;
 };
 
 template <typename SampleType>

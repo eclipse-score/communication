@@ -134,10 +134,12 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodHandlersRegisteredS
     GivenASkeletonWithTwoMethods();
 
     // When a callback is registered to both methods
-    auto fooo_callback = [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {};
-    auto dumb_callback = [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {
-        std::cout << "bla\n";
-    };
+    auto fooo_callback =
+        [](QualityType, std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {};
+    auto dumb_callback =
+        [](QualityType, std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {
+            std::cout << "bla\n";
+        };
 
     std::ignore = fooo_method_->RegisterHandler(fooo_callback);
     std::ignore = dumb_method_->RegisterHandler(dumb_callback);
@@ -151,7 +153,8 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodHandlersRegisteredF
     GivenASkeletonWithTwoMethods();
 
     // When one of the methods does not have a callback registered
-    auto fooo_callback = [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {};
+    auto fooo_callback =
+        [](QualityType, std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {};
 
     std::ignore = fooo_method_->RegisterHandler(fooo_callback);
 
@@ -945,6 +948,9 @@ class SkeletonRegisterParamaterisedFixture : public SkeletonTestMockedSharedMemo
 TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmRegionWasCreated)
 {
     // Given a Skeleton constructed from a valid identifier referencing an ASIL-B deployment
+    // The event that will be registered below is also offered here, so that the fixed-capacity containers within
+    // ServiceDataStorage are sized to hold it.
+    events_.emplace(test::kFooEventName, mock_event_binding_);
     InitialiseSkeleton(GetValidASILInstanceIdentifier()).WithNoConnectedProxy();
 
     // when calling PrepareOffer ... expect, that it succeeds
@@ -1263,7 +1269,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, AllocateAfterCleanUp)
 
 TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIsRegistered)
 {
-    RecordProperty("ParentRequirement", "SCR-15601194");
+    RecordProperty("lobster-tracing", "Communication.EventTypeInfoSource");
     RecordProperty("Description", "Checks that the event meta info for an event is published by the Skeleton.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -1360,11 +1366,11 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
     ASSERT_TRUE(event_foo_meta_info_ptr.has_value());
     ASSERT_TRUE(event_dumb_meta_info_ptr.has_value());
     // and they have the expected properties
-    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.size, sizeof(std::uint8_t));
-    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.alignment, alignof(std::uint8_t));
+    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.Size(), sizeof(std::uint8_t));
+    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.Alignment(), alignof(std::uint8_t));
 
-    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.size, sizeof(VeryComplexType));
-    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.alignment, alignof(VeryComplexType));
+    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.Size(), sizeof(VeryComplexType));
+    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.Alignment(), alignof(VeryComplexType));
 
     const auto GetEventSlotsArraySize = [](const std::size_t sample_size,
                                            const std::size_t sample_alignment,
@@ -1374,13 +1380,13 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
         return aligned_size * number_of_sample_slots;
     };
 
-    const auto foo_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size,
-                                                             event_foo_meta_info_ptr->data_type_info_.alignment,
+    const auto foo_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.Size(),
+                                                             event_foo_meta_info_ptr->data_type_info_.Alignment(),
                                                              test::kDefaultEventProperties.GetTotalNumberOfSlots());
     ASSERT_EQ(event_foo_meta_info_ptr->event_slots_raw_array_.get(foo_event_slots_size), foo_event_data_storage);
 
-    const auto dumb_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size,
-                                                              event_foo_meta_info_ptr->data_type_info_.alignment,
+    const auto dumb_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.Size(),
+                                                              event_foo_meta_info_ptr->data_type_info_.Alignment(),
                                                               test::kDefaultEventProperties.GetTotalNumberOfSlots());
     ASSERT_EQ(event_dumb_meta_info_ptr->event_slots_raw_array_.get(dumb_event_slots_size), dumb_event_data_storage);
 
@@ -1442,7 +1448,10 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CallingRegisterWithSameServiceEleme
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     auto test_function = [this]() noexcept {
-        // Given a Skeleton constructed from a valid identifier referencing a QM deployment
+        // Given a Skeleton constructed from a valid identifier referencing a QM deployment. The event that will be
+        // registered below is offered, so that the fixed-capacity containers within ServiceDataStorage can hold it and
+        // the (intended) termination is triggered by the duplicate registration rather than by a capacity overflow.
+        events_.emplace(test::kFooEventName, mock_event_binding_);
         InitialiseSkeleton(GetValidASILInstanceIdentifier());
 
         EXPECT_TRUE(

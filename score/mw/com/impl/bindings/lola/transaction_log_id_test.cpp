@@ -16,15 +16,7 @@
 
 #include <gtest/gtest.h>
 
-namespace score
-{
-namespace mw
-{
-namespace com
-{
-namespace impl
-{
-namespace lola
+namespace score::mw::com::impl::lola
 {
 namespace
 {
@@ -108,8 +100,4 @@ INSTANTIATE_TEST_CASE_P(TransactionLogIdEqualityFixture,
                                                                           kDifferentInstanceSpecifier.ToString()})));
 
 }  // namespace
-}  // namespace lola
-}  // namespace impl
-}  // namespace com
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::com::impl::lola

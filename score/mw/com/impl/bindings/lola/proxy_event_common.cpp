@@ -34,7 +34,7 @@ ProxyEventCommon::ProxyEventCommon(Proxy& parent, const ElementFqId element_fq_i
       transaction_log_set_{parent_.GetTransactionLogSet(event_fq_id_)},
       subscription_event_state_machine_{parent_.GetQualityType(),
                                         event_fq_id_,
-                                        GetEventSourcePid(),
+                                        parent_.GetSourcePid(),
                                         event_data_control_local_,
                                         subscription_control_.get(),
                                         transaction_log_set_.get(),
@@ -62,7 +62,7 @@ SubscriptionState ProxyEventCommon::GetSubscriptionState() const noexcept
     return SubscriptionStateMachineStateToSubscriptionState(current_state);
 }
 
-Result<std::size_t> ProxyEventCommon::GetNumNewSamplesAvailable() const noexcept
+Result<std::size_t> ProxyEventCommon::GetNumNewSamplesAvailable() const
 {
     const auto& slot_collector = test_slot_collector_.has_value()
                                      ? test_slot_collector_
@@ -73,7 +73,7 @@ Result<std::size_t> ProxyEventCommon::GetNumNewSamplesAvailable() const noexcept
     return slot_collector.value().GetNumNewSamplesAvailable();
 }
 
-SlotCollector::SlotIndices ProxyEventCommon::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
+SlotCollector::SlotIndices ProxyEventCommon::GetNewSamplesSlotIndices(const std::size_t max_count)
 {
     auto& slot_collector = test_slot_collector_.has_value()
                                ? test_slot_collector_
@@ -106,11 +106,6 @@ Result<void> ProxyEventCommon::UnsetSubscriptionStateChangeHandler() noexcept
 {
     subscription_event_state_machine_.UnsetSubscriptionStateChangeHandler();
     return {};
-}
-
-pid_t ProxyEventCommon::GetEventSourcePid() const noexcept
-{
-    return parent_.GetSourcePid();
 }
 
 std::optional<std::uint16_t> ProxyEventCommon::GetMaxSampleCount() const noexcept

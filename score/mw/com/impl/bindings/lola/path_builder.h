@@ -57,7 +57,7 @@ std::optional<std::string> OptionalEmitWithPrefix(Prefix prefix, Emitter emitter
 ///                without a leading slash.
 /// \return String that contains the path
 template <typename Emitter, typename Prefix>
-std::string EmitWithPrefix(Prefix prefix, Emitter emitter) noexcept
+std::string EmitWithPrefix(const Prefix& prefix, Emitter emitter) noexcept
 {
     std::stringstream out{};
     out << prefix;

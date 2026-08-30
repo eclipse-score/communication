@@ -78,7 +78,7 @@ class LolaMethodInstanceDeployment
 
 inline bool operator==(const LolaMethodInstanceDeployment& lhs, const LolaMethodInstanceDeployment& rhs) noexcept
 {
-    return lhs.queue_size_ == rhs.queue_size_ && lhs.enabled_ == rhs.enabled_;
+    return (lhs.queue_size_ == rhs.queue_size_) && (lhs.enabled_ == rhs.enabled_);
 }
 
 }  // namespace score::mw::com::impl

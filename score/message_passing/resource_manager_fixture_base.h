@@ -31,9 +31,7 @@
 
 #include <gmock/gmock.h>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 /// \brief Provides QNX Resource Manager emulation layer for use with OSAL mocks
@@ -256,8 +254,8 @@ class ResourceManagerMockHelper
     }
 
     /// Queues a pulse event to process in dispatch loop
-    score::cpp::expected_blank<score::os::Error> MsgSendPulse(const std::int32_t coid,
-                                                              const std::int32_t priority,
+    score::cpp::expected_blank<score::os::Error> MsgSendPulse(const std::int32_t /*coid*/,
+                                                              const std::int32_t /*priority*/,
                                                               const std::int32_t code,
                                                               const std::int32_t value) noexcept
     {
@@ -722,7 +720,6 @@ class ResourceManagerFixtureBase : public ::testing::Test
     const score::cpp::unexpected<score::os::Error> kFakeOsError{score::os::Error::createFromErrno(EINVAL)};
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_RESOURCE_MANAGER_FIXTURE_BASE_H

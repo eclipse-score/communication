@@ -19,8 +19,13 @@ Verifies that method calls are sent from consumer to provider with the correct v
 Verifies that the provider executes the correct handler on the provided values. 
 Verifies that the consumer receives the correct return values.
 """
+
+
 def test_mixed_criticality_consumer_provider(target):
     with provider(target, Criticality.QM):
-        with consumer(target, consumer_criticality=Criticality.ASILB, consumer_expects_criticality=Criticality.QM):
+        with consumer(
+            target,
+            consumer_criticality=Criticality.ASILB,
+            consumer_expects_criticality=Criticality.QM,
+        ):
             pass
-

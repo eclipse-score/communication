@@ -43,7 +43,7 @@ ServiceIdentifierType make_ServiceIdentifierType(std::string, const std::uint32_
 class ServiceIdentifierType final
 {
   public:
-    explicit ServiceIdentifierType(const score::json::Object& json_object) noexcept;
+    explicit ServiceIdentifierType(const score::json::Object& json_object);
 
     ServiceIdentifierType() = delete;
     ~ServiceIdentifierType() noexcept = default;

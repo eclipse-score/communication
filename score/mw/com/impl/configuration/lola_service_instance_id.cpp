@@ -44,7 +44,7 @@ LolaServiceInstanceId::LolaServiceInstanceId(InstanceId instance_id) noexcept
 // This rule states: Common class initialization for non-constant members shall be done by a delegating constructor.
 // Justification: Delegating constructor is used.
 // coverity[autosar_cpp14_a12_1_5_violation]
-LolaServiceInstanceId::LolaServiceInstanceId(const score::json::Object& json_object) noexcept
+LolaServiceInstanceId::LolaServiceInstanceId(const score::json::Object& json_object)
     : LolaServiceInstanceId{GetValueFromJson<InstanceId>(json_object, kInstanceIdKeyLolaSerInstID)}
 {
     const auto serialization_version =

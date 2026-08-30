@@ -73,5 +73,10 @@ coverage_scope(
     deps = [
         "//score/message_passing",
         "//score/mw/com",
+        # Public Rust API crate. Not reachable through the dependable_element
+        # indices above (those traverse C++ components only). The scope aspect
+        # walks its transitive deps, which cover all Rust production crates
+        # (score_com_concept, runtime-lola, ffi-lola, plumbing).
+        "//score/mw/com/rust:score_com",
     ],
 )

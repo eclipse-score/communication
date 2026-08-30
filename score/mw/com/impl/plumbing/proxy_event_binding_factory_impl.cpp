@@ -36,10 +36,10 @@ Result<std::unique_ptr<GenericProxyEventBinding>> GenericProxyEventBindingFactor
     HandleType parent_handle,
     ProxyBinding& parent_binding,
     const std::string_view event_name,
-    const ServiceElementType service_element_type) noexcept
+    const ServiceElementType service_element_type)
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(service_element_type == ServiceElementType::EVENT ||
-                                              service_element_type == ServiceElementType::FIELD);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD((service_element_type == ServiceElementType::EVENT) ||
+                                              (service_element_type == ServiceElementType::FIELD));
 
     using ReturnType = Result<std::unique_ptr<lola::GenericProxyEvent>>;
     auto deployment_info_visitor = score::cpp::overload(

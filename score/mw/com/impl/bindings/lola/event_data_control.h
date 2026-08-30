@@ -41,7 +41,7 @@ class EventDataControl
     using EventControlSlots =
         containers::DynamicArray<ControlSlotType, memory::shared::PolymorphicOffsetPtrAllocator<ControlSlotType>>;
 
-    EventDataControl(const SlotIndexType max_slots, score::memory::shared::ManagedMemoryResource& resource) noexcept
+    EventDataControl(const SlotIndexType max_slots, score::memory::shared::ManagedMemoryResource& resource)
         : state_slots_{max_slots, resource}
     {
     }

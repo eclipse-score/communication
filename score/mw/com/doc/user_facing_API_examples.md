@@ -16,6 +16,7 @@ This document contains examples of each mw::com user facing API.
 | [`RuntimeConfiguration(argc, argv)`](#example-3-using-runtimeconfiguration-for-configuration-management) |
 | [`RuntimeConfiguration(Path)`](#example-3-using-runtimeconfiguration-for-configuration-management) |
 | [`RuntimeConfiguration::GetConfigurationPath()`](#example-3-using-runtimeconfiguration-for-configuration-management) |
+| [`RuntimeConfiguration::InitializeRuntimeAddonConfiguration()`](#example-4-using-initializeruntimeaddonconfiguration-to-load-additional-mwcom-configurations) |
 | **Data Types** |
 | [`InstanceIdentifier::Create()`](#example-1-using-instanceidentifier-for-service-instance-management) |
 | [`InstanceIdentifier::ToString()`](#example-1-using-instanceidentifier-for-service-instance-management) |
@@ -269,6 +270,47 @@ const auto& config_path = default_config.GetConfigurationPath();
 - Explicit path constructor allows direct configuration file specification
 - Command line constructor accepts `argc, argv` for configuration parsing
 - `GetConfigurationPath()` returns the resolved configuration file path
+
+</details>
+
+---
+
+
+### Example 4: Using `InitializeRuntimeAddonConfiguration` to load additional `mw::com` configurations
+
+`Runtime` provides the APIs `InitializeRuntimeAddonConfiguration(RuntimeConfiguration&)` and `InitializeRuntimeAddonConfiguration(score::json::Any)`
+to load additional configurations. For example, this can be used by libraries that also rely on mw::com to load their
+configuration in addition to the application's configuration. It is assumed that prior to that call a complete mw::com configuration has been
+loaded via `InitializeRuntime()`. If not this call will cause an application termination.
+Add-on configurations will be merged into the existing configuration. Merge conflicts due to duplicate service type
+and service instance definitions will lead to an application termination. Add-on configurations are not supposed to contain a `global configuration`
+but only contains additional service types and service instances.
+In all cases of application termination, the error message will indicate the reason for the termination.
+
+<details>
+
+```cpp
+#include "score/mw/com/runtime.h"
+
+int main(int argc, char* argv[]) {
+    // Initialize mw::com runtime with command line arguments
+    score::mw::com::runtime::InitializeRuntime(argc, argv);
+
+    // Load additional add-on configuration
+    score::mw::com::runtime::RuntimeConfiguration addon_config{"/path/to/addon/mw_com_addon_config.json"};
+    score::mw::com::runtime::InitializeAddOnConfiguration(addon_config); 
+    
+    // If no error occurred the application will reach this point and the configuration will be updated
+
+    return 0;
+}
+```
+
+#### Key Points
+- Configurations will be merged into the existing configuration
+- If no (complete) configuration has been loaded so far, calling this function will cause an application termination.
+- In case of merge conflicts, between the existing configuration and the add-on configuration, the application will terminate.
+- Add-on configurations are not supposed to have a `global configuration`
 
 </details>
 

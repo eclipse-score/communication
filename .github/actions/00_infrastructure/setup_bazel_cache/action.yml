@@ -15,7 +15,7 @@ name: "Bazel Post Cache Save"
 description: >
   Internal action: registers a post step that saves Bazel caches.
   Called from within prepare_bazel_environment composite action to ensure cache save
-  runs even on job failure (via post-if: always()).
+  runs even on job failure (via post-if: !cancelled()).
 
 inputs:
   cache-mode:
@@ -34,4 +34,4 @@ runs:
   using: "node24"
   main: "dist/main/index.js"
   post: "dist/post/index.js"
-  post-if: "always()"
+  post-if: "!cancelled()"

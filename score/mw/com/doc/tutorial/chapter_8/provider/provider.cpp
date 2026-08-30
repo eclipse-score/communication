@@ -29,15 +29,18 @@ constexpr std::string_view kInstanceSpecifierString{"MyCalculatorServiceInstance
 // a method. There is nothing to poll in main(), so - just like the event-driven consumer of chapter 5 - the main thread
 // simply blocks on this condition variable until a termination signal (SIGINT/SIGTERM) requests the shut down. The
 // signal handler sets the flag and notifies the condition variable.
-static std::mutex g_shutdown_mutex{};
-static std::condition_variable g_shutdown_cv{};
-static std::atomic<bool> g_shutdown_requested{false};
+namespace
+{
+std::mutex g_shutdown_mutex{};
+std::condition_variable g_shutdown_cv{};
+std::atomic<bool> g_shutdown_requested{false};
 
-static void SignalHandler(int /*signum*/)
+void SignalHandler(int /*signum*/)
 {
     g_shutdown_requested.store(true, std::memory_order_relaxed);
     g_shutdown_cv.notify_one();
 }
+}  // namespace
 
 int main()
 {

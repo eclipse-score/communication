@@ -26,7 +26,7 @@ void WaitTillServiceDisappears(HandleNotificationData& handle_notification_data)
 {
     std::unique_lock lock{handle_notification_data.mutex};
     handle_notification_data.condition_variable.wait(lock, [&handle_notification_data] {
-        return handle_notification_data.service_disappeared == true;
+        return handle_notification_data.service_disappeared;
     });
     handle_notification_data.service_disappeared = false;
 }
@@ -42,7 +42,7 @@ bool WaitTillServiceAppears(HandleNotificationData& handle_notification_data,
     return wait_result;
 }
 
-void HandleReceivedNotification(const ServiceHandleContainer<TestServiceProxy::HandleType> service_handle_container,
+void HandleReceivedNotification(const ServiceHandleContainer<TestServiceProxy::HandleType>& service_handle_container,
                                 HandleNotificationData& handle_notification_data,
                                 CheckPointControl& check_point_control)
 {

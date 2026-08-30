@@ -12,31 +12,16 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//third_party/itf:py_unittest_qnx_test.bzl", "py_unittest_qnx_test")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
-
-py_unittest_qnx_test(
-    name = "unit_tests_qnx",
-    test_cases = [
-        ":client_connection_test",
-        ":qnx_dispatch_test",
-        ":qnx_resource_path_test",
-        ":timed_command_queue_test",
-        ":unix_domain_test",
-    ],
-    test_suites = [
-        "@score_communication//score/message_passing/log:log_test_qnx",
-        "@score_communication//score/message_passing/non_allocating_future:non_allocating_future_test_qnx",
-    ],
-    visibility = ["//score/message_passing:__pkg__"],
-)
 
 test_suite(
     name = "unit_tests",
     tests = [
         ":client_connection_test",
+        # Enable once the dependable_element can deal with QNX only unit tests
+        #":qnx_dispatch_test",
         ":qnx_resource_path_test",
         ":timed_command_queue_test",
         ":unix_domain_test",
@@ -51,6 +36,7 @@ test_suite(
 
 cc_library(
     name = "message_passing",
+    srcs = ["message_passing.cpp"],
     hdrs = [
         "client_factory.h",
         "engine.h",

@@ -55,7 +55,13 @@ class ApiSurface:
 
 
 # Namespace patterns considered internal (not public API)
-INTERNAL_NAMESPACE_PATTERNS = ("::detail::", "::detail", "::internal::", "::internal", "::impl::")
+INTERNAL_NAMESPACE_PATTERNS = (
+    "::detail::",
+    "::detail",
+    "::internal::",
+    "::internal",
+    "::impl::",
+)
 
 
 def is_internal_name(qualified_name: str) -> bool:
@@ -118,8 +124,13 @@ def extract_signature(node: dict) -> str:
     name = node.get("name", "")
     type_info = node.get("type", {}).get("qualType", "")
 
-    if kind in ("FunctionDecl", "CXXMethodDecl", "FunctionTemplateDecl",
-                "CXXConstructorDecl", "CXXDestructorDecl"):
+    if kind in (
+        "FunctionDecl",
+        "CXXMethodDecl",
+        "FunctionTemplateDecl",
+        "CXXConstructorDecl",
+        "CXXDestructorDecl",
+    ):
         return f"{name} : {type_info}" if type_info else name
     elif kind in ("TypeAliasDecl", "TypedefDecl", "TypeAliasTemplateDecl"):
         return f"using {name} = {type_info}" if type_info else f"using {name}"
@@ -388,8 +399,12 @@ def extract_from_ast(
                 return target
         return file_path
 
-    def walk(node: dict, namespace_stack: list[str], access: str = "public",
-             extern_c: bool = False):
+    def walk(
+        node: dict,
+        namespace_stack: list[str],
+        access: str = "public",
+        extern_c: bool = False,
+    ):
         kind = node.get("kind", "")
         name = node.get("name", "")
         effective_file = get_node_file(node)
@@ -428,12 +443,18 @@ def extract_from_ast(
             seen_forward.add(qualified)
             tag = node.get("tagUsed", "class")
             kind_str = "extern_template" if access == "public" else "protected_extern_template"
-            symbols.append(ApiSymbol(
-                name=name, qualified_name=qualified, kind=kind_str,
-                signature=f"extern template {tag} {display}",
-                file=make_relative(effective_file), line=line,
-                has_api_marker=False, has_brief_doc=False,
-            ))
+            symbols.append(
+                ApiSymbol(
+                    name=name,
+                    qualified_name=qualified,
+                    kind=kind_str,
+                    signature=f"extern template {tag} {display}",
+                    file=make_relative(effective_file),
+                    line=line,
+                    has_api_marker=False,
+                    has_brief_doc=False,
+                )
+            )
             return
 
         # Handle class/struct declarations
@@ -446,18 +467,25 @@ def extract_from_ast(
             if not is_definition:
                 if in_target and name and access in ("public", "protected"):
                     qualified = build_qualified_name(name, namespace_stack)
-                    if (not is_internal_name(qualified)
-                            and qualified not in defined_record_qnames
-                            and qualified not in seen_forward):
+                    if (
+                        not is_internal_name(qualified)
+                        and qualified not in defined_record_qnames
+                        and qualified not in seen_forward
+                    ):
                         seen_forward.add(qualified)
-                        fwd_kind = ("forward_class" if access == "public"
-                                    else "protected_forward_class")
-                        symbols.append(ApiSymbol(
-                            name=name, qualified_name=qualified, kind=fwd_kind,
-                            signature=extract_signature(node),
-                            file=make_relative(effective_file), line=line,
-                            has_api_marker=False, has_brief_doc=False,
-                        ))
+                        fwd_kind = "forward_class" if access == "public" else "protected_forward_class"
+                        symbols.append(
+                            ApiSymbol(
+                                name=name,
+                                qualified_name=qualified,
+                                kind=fwd_kind,
+                                signature=extract_signature(node),
+                                file=make_relative(effective_file),
+                                line=line,
+                                has_api_marker=False,
+                                has_brief_doc=False,
+                            )
+                        )
                 return
 
             if in_target and name and access in ("public", "protected"):
@@ -468,16 +496,18 @@ def extract_from_ast(
                     rec_kind = map_kind(node)
                     if access == "protected":
                         rec_kind = "protected_" + rec_kind
-                    symbols.append(ApiSymbol(
-                        name=name,
-                        qualified_name=qualified,
-                        kind=rec_kind,
-                        signature=extract_signature(node),
-                        file=make_relative(effective_file),
-                        line=line,
-                        has_api_marker=has_api,
-                        has_brief_doc=has_brief,
-                    ))
+                    symbols.append(
+                        ApiSymbol(
+                            name=name,
+                            qualified_name=qualified,
+                            kind=rec_kind,
+                            signature=extract_signature(node),
+                            file=make_relative(effective_file),
+                            line=line,
+                            has_api_marker=has_api,
+                            has_brief_doc=has_brief,
+                        )
+                    )
 
             # Walk class members
             member_access = "private" if node.get("tagUsed") == "class" else "public"
@@ -501,12 +531,18 @@ def extract_from_ast(
                 return
             comment = find_comment(node)
             has_api, has_brief = get_comment_markers(comment)
-            symbols.append(ApiSymbol(
-                name=name, qualified_name=qualified, kind="template_class",
-                signature=extract_signature(node),
-                file=make_relative(effective_file), line=line,
-                has_api_marker=has_api, has_brief_doc=has_brief,
-            ))
+            symbols.append(
+                ApiSymbol(
+                    name=name,
+                    qualified_name=qualified,
+                    kind="template_class",
+                    signature=extract_signature(node),
+                    file=make_relative(effective_file),
+                    line=line,
+                    has_api_marker=has_api,
+                    has_brief_doc=has_brief,
+                )
+            )
             for child in node.get("inner", []):
                 if child.get("kind") == "CXXRecordDecl":
                     walk(child, namespace_stack, access)
@@ -520,8 +556,8 @@ def extract_from_ast(
             if is_internal_name(qualified):
                 return
             inner_func = next(
-                (c for c in node.get("inner", [])
-                 if c.get("kind") in ("FunctionDecl", "CXXMethodDecl")), None
+                (c for c in node.get("inner", []) if c.get("kind") in ("FunctionDecl", "CXXMethodDecl")),
+                None,
             )
             type_info = inner_func.get("type", {}).get("qualType", "") if inner_func else ""
             comment = find_comment(node)
@@ -529,12 +565,18 @@ def extract_from_ast(
             base_sig = f"{name} : {type_info}" if type_info else name
             signature = enrich_signature(base_sig, inner_func or node, extern_c)
             tmpl_kind = "template_function" if access == "public" else "protected_template_function"
-            symbols.append(ApiSymbol(
-                name=name, qualified_name=qualified, kind=tmpl_kind,
-                signature=signature,
-                file=make_relative(effective_file), line=line,
-                has_api_marker=has_api, has_brief_doc=has_brief,
-            ))
+            symbols.append(
+                ApiSymbol(
+                    name=name,
+                    qualified_name=qualified,
+                    kind=tmpl_kind,
+                    signature=signature,
+                    file=make_relative(effective_file),
+                    line=line,
+                    has_api_marker=has_api,
+                    has_brief_doc=has_brief,
+                )
+            )
             return
 
         # Handle TypeAliasTemplateDecl
@@ -551,18 +593,33 @@ def extract_from_ast(
                     break
             comment = find_comment(node)
             has_api, has_brief = get_comment_markers(comment)
-            symbols.append(ApiSymbol(
-                name=name, qualified_name=qualified, kind="template_type_alias",
-                signature=f"using {name} = {underlying}" if underlying else f"using {name}",
-                file=make_relative(effective_file), line=line,
-                has_api_marker=has_api, has_brief_doc=has_brief,
-            ))
+            symbols.append(
+                ApiSymbol(
+                    name=name,
+                    qualified_name=qualified,
+                    kind="template_type_alias",
+                    signature=f"using {name} = {underlying}" if underlying else f"using {name}",
+                    file=make_relative(effective_file),
+                    line=line,
+                    has_api_marker=has_api,
+                    has_brief_doc=has_brief,
+                )
+            )
             return
 
         # Handle regular declarations
-        if kind in ("FunctionDecl", "CXXMethodDecl", "CXXConstructorDecl",
-                    "CXXDestructorDecl", "TypeAliasDecl", "TypedefDecl",
-                    "EnumDecl", "EnumConstantDecl", "VarDecl", "FieldDecl"):
+        if kind in (
+            "FunctionDecl",
+            "CXXMethodDecl",
+            "CXXConstructorDecl",
+            "CXXDestructorDecl",
+            "TypeAliasDecl",
+            "TypedefDecl",
+            "EnumDecl",
+            "EnumConstantDecl",
+            "VarDecl",
+            "FieldDecl",
+        ):
             if not in_target or not name or access not in ("public", "protected"):
                 return
             if node.get("isImplicit"):
@@ -577,12 +634,18 @@ def extract_from_ast(
             decl_kind = map_kind(node)
             if access == "protected":
                 decl_kind = "protected_" + decl_kind
-            symbols.append(ApiSymbol(
-                name=name, qualified_name=qualified, kind=decl_kind,
-                signature=enrich_signature(extract_signature(node), node, extern_c),
-                file=make_relative(effective_file), line=line,
-                has_api_marker=has_api, has_brief_doc=has_brief,
-            ))
+            symbols.append(
+                ApiSymbol(
+                    name=name,
+                    qualified_name=qualified,
+                    kind=decl_kind,
+                    signature=enrich_signature(extract_signature(node), node, extern_c),
+                    file=make_relative(effective_file),
+                    line=line,
+                    has_api_marker=has_api,
+                    has_brief_doc=has_brief,
+                )
+            )
             if kind == "EnumDecl":
                 for child in node.get("inner", []):
                     if child.get("kind") == "EnumConstantDecl":
@@ -685,7 +748,13 @@ def extract_from_ast(
             if not child_name:
                 continue
 
-            if child_kind in ("CXXMethodDecl", "CXXConstructorDecl", "CXXDestructorDecl", "FunctionTemplateDecl", "FieldDecl"):
+            if child_kind in (
+                "CXXMethodDecl",
+                "CXXConstructorDecl",
+                "CXXDestructorDecl",
+                "FunctionTemplateDecl",
+                "FieldDecl",
+            ):
                 members.append(child)
 
         # Walk public base classes and include their public members
@@ -725,8 +794,8 @@ def extract_from_ast(
             attr_node = child
             if child_kind == "FunctionTemplateDecl":
                 inner_func = next(
-                    (c for c in child.get("inner", [])
-                     if c.get("kind") in ("FunctionDecl", "CXXMethodDecl")), None
+                    (c for c in child.get("inner", []) if c.get("kind") in ("FunctionDecl", "CXXMethodDecl")),
+                    None,
                 )
                 if inner_func:
                     type_info = inner_func.get("type", {}).get("qualType", "")
@@ -746,16 +815,18 @@ def extract_from_ast(
             }.get(child_kind, "method")
 
             base_sig = f"{child_name} : {type_info}" if type_info else child_name
-            followed_members.append(ApiSymbol(
-                name=child_name,
-                qualified_name=member_qualified,
-                kind=kind_str,
-                signature=enrich_signature(base_sig, attr_node),
-                file=alias_sym.file,
-                line=alias_sym.line,
-                has_api_marker=has_api,
-                has_brief_doc=has_brief,
-            ))
+            followed_members.append(
+                ApiSymbol(
+                    name=child_name,
+                    qualified_name=member_qualified,
+                    kind=kind_str,
+                    signature=enrich_signature(base_sig, attr_node),
+                    file=alias_sym.file,
+                    line=alias_sym.line,
+                    has_api_marker=has_api,
+                    has_brief_doc=has_brief,
+                )
+            )
 
     # Add followed members to the symbols list
     symbols.extend(followed_members)
@@ -781,9 +852,7 @@ def extract_from_ast(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Extract public C++ API surface from headers using clang AST"
-    )
+    parser = argparse.ArgumentParser(description="Extract public C++ API surface from headers using clang AST")
     parser.add_argument("--ast-json", help="Path to pre-generated clang AST JSON dump")
     parser.add_argument("--target-headers", help="Comma-separated target header paths to filter on")
     parser.add_argument("--target-headers-file", help="Path to newline-separated target header paths")

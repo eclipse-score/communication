@@ -47,7 +47,7 @@ jobs:
       - name: Run tests with address/UB/leak sanitizers
         if: inputs.fetch-only != 'true'
         id: run-tests
-        run: bazel test --config=asan_ubsan_lsan //... --build_tests_only
+        run: bazel test --config=ci --config=asan_ubsan_lsan //... --build_tests_only
 
       - name: Upload failed Bazel test logs
         if: inputs.fetch-only != 'true' && failure() && steps.run-tests.outcome == 'failure'
@@ -57,4 +57,4 @@ jobs:
 
       - name: Fetch dependencies (--nobuild)
         if: inputs.fetch-only == 'true'
-        run: bazel build --nobuild --config=asan_ubsan_lsan //...
+        run: bazel build --nobuild --config=ci --config=asan_ubsan_lsan //...

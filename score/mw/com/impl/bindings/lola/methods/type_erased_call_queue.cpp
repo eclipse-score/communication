@@ -90,7 +90,7 @@ TypeErasedCallQueue::TypeErasedCallQueue(memory::shared::ManagedMemoryResource& 
     std::tie(in_args_queue_start_address_, return_queue_start_address_) = AllocateQueue();
 }
 
-TypeErasedCallQueue::~TypeErasedCallQueue()
+TypeErasedCallQueue::~TypeErasedCallQueue() noexcept
 {
     if (in_args_queue_start_address_.data != nullptr)
     {

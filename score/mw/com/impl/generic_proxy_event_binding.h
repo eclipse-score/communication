@@ -48,11 +48,15 @@ class GenericProxyEventBinding : public ProxyEventBindingBase
     /// \param receiver Callback that will be used to hand over data to the upper layer.
     /// \param reference_tracker Tracker that is used to produce reference counted SamplePtrs.
     /// \return Number of samples that were handed over to the callable.
-    virtual Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept = 0;
+    virtual Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) = 0;
 
     /// \brief return the (aligned) size in bytes of the underlying event sample data type.
     /// \return size in bytes.
+    [[deprecated("Use GetDataTypeSizeInfo() for size and alignment information, issue #975")]]
     virtual std::size_t GetSampleSize() const noexcept = 0;
+
+    /// \brief return the size and alignment information of the underlying event sample data type.
+    virtual memory::DataTypeSizeInfo GetDataTypeSizeInfo() const = 0;
 
     /// \brief reports, whether the event sample data the SamplePtr<void> points to is in some internal serialized
     ///        format (true) or it is the binary representation of the underlying C++ data type (false).

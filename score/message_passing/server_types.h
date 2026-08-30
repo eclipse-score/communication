@@ -20,9 +20,7 @@
 
 #include <variant>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 using UserData = std::variant<void*, std::uintptr_t, score::cpp::pmr::unique_ptr<IConnectionHandler>>;
@@ -50,7 +48,6 @@ struct ClientIdentity
     gid_t gid;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_SERVER_TYPES_H

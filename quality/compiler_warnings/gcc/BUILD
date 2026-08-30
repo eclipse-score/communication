@@ -16,11 +16,22 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 
+cc_args(
+    name = "default_link_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-fuse-ld=gold",
+    ],
+)
+
 cc_feature(
     name = "default_flags",
     args = [
         "//quality/compiler_warnings:default_compile_args",
         "//quality/compiler_warnings:default_link_args",
+        ":default_link_args",
     ],
     feature_name = "score_communication_gcc_default_flags",
     visibility = ["//visibility:public"],

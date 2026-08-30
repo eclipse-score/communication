@@ -40,9 +40,11 @@ constexpr std::chrono::milliseconds kMaxUpdateDelay{3000};
 constexpr float kMinTirePressure{2.0F};
 constexpr float kMaxTirePressure{2.5F};
 
-static std::atomic<bool> g_running{true};
+namespace
+{
+std::atomic<bool> g_running{true};
 
-static void SignalHandler(int /*signum*/)
+void SignalHandler(int /*signum*/)
 {
     std::cout << "TirePressure service provider caught signal." << std::endl;
     g_running.store(false, std::memory_order_relaxed);
@@ -57,7 +59,7 @@ using TirePressureField = decltype(TirePressureSkeleton::tire_pressure_front_lef
 // Updates a single field with the given value. In contrast to an event, a field is updated via Field::Update(). We use
 // the Update(const FieldType&) overload here: it takes the value by const-reference and lets the middleware copy it.
 // This is the overload that must also be used to set the *initial* value of a field before OfferService().
-static void UpdateField(TirePressureField& field, const std::string_view field_name, const float value)
+void UpdateField(TirePressureField& field, const std::string_view field_name, const float value)
 {
     const auto update_result = field.Update(value);
     if (!update_result)
@@ -69,6 +71,7 @@ static void UpdateField(TirePressureField& field, const std::string_view field_n
         std::cout << "  " << field_name << " = " << value << " bar" << std::endl;
     }
 }
+}  // namespace
 
 int main()
 {

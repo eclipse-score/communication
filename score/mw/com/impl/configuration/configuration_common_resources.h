@@ -36,7 +36,7 @@ constexpr auto kBindingInfoIndexKey = "bindingInfoIndex";
 // There is a template-method in service_type_deployment.cpp with the same signature, but different due to template use
 // coverity[autosar_cpp14_a2_10_4_violation] False positive, see above
 std::string ToHashStringImpl(const std::uint16_t instance_id, const std::size_t hash_string_size) noexcept;
-std::string ToStringImpl(const json::Object& serialized_json_object) noexcept;
+std::string ToStringImpl(const json::Object& serialized_json_object);
 
 /// \brief Helper function to get a value from a json object.
 ///
@@ -115,7 +115,7 @@ template <typename VariantHeldType>
 class DoConstructVariant
 {
   public:
-    static VariantHeldType Do(const score::json::Object& json_object, std::string_view json_variant_key) noexcept
+    static VariantHeldType Do(const score::json::Object& json_object, std::string_view json_variant_key)
     {
         const auto& binding_info_json_object = GetValueFromJson<json::Object>(json_object, json_variant_key);
         return VariantHeldType{binding_info_json_object};
@@ -134,8 +134,7 @@ class DoConstructVariant<score::cpp::blank>
 
 /// ConstructVariant dispatches to DoConstructVariant in a template class to avoid function template specialization
 template <typename VariantHeldType>
-auto ConstructVariant(const score::json::Object& json_object, std::string_view json_variant_key) noexcept
-    -> VariantHeldType
+auto ConstructVariant(const score::json::Object& json_object, std::string_view json_variant_key) -> VariantHeldType
 {
     return DoConstructVariant<VariantHeldType>::Do(json_object, json_variant_key);
 }

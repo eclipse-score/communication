@@ -19,9 +19,7 @@
 
 #include <future>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 namespace
 {
@@ -221,15 +219,14 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
             const pid_t client_pid = connection.GetClientIdentity().pid;
             return static_cast<std::uintptr_t>(client_pid);
         };
-        auto disconnect_callback = [this](IServerConnection& connection) {
+        auto disconnect_callback = [this](IServerConnection&) {
             ++server_connections_finished_;
         };
-        auto sent_callback = [](IServerConnection& connection,
-                                score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
+        auto sent_callback = [](IServerConnection&, score::cpp::span<const std::uint8_t>) -> score::cpp::blank {
             return {};
         };
-        auto sent_with_reply_callback = [](IServerConnection& connection,
-                                           score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
+        auto sent_with_reply_callback = [](IServerConnection&,
+                                           score::cpp::span<const std::uint8_t>) -> score::cpp::blank {
             return {};
         };
         ASSERT_TRUE(
@@ -615,5 +612,4 @@ TEST_P(ServerToClientQnxFixture, EchoServerClientRestart)
 INSTANTIATE_TEST_SUITE_P(QnxDispatch, ServerToClientQnxFixture, testing::Values(false, true));
 
 }  // namespace
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing

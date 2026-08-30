@@ -17,9 +17,7 @@
 
 #include "gmock/gmock.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 class ClientConnectionMock : public IClientConnection
@@ -114,7 +112,6 @@ class ClientConnectionMockFacade : public IClientConnection
     ClientConnectionMock& client_connection_mock_;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_MOCK_CLIENT_CONNECTION_MOCK_H

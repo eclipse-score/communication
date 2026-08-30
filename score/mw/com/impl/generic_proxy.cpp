@@ -39,7 +39,7 @@ namespace
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identifier) noexcept
+std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identifier)
 {
     using ReturnType = std::vector<std::string_view>;
 
@@ -61,7 +61,7 @@ std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identif
 
 }  // namespace
 
-Result<GenericProxy> GenericProxy::Create(HandleType instance_handle) noexcept
+Result<GenericProxy> GenericProxy::Create(HandleType instance_handle)
 {
     auto proxy_binding_result = ProxyBindingFactory::Create(instance_handle);
     if (!proxy_binding_result.has_value())

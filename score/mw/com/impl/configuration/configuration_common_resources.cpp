@@ -37,7 +37,7 @@ std::string ToHashStringImpl(const std::uint16_t instance_id, const std::size_t 
 // The .value() call will only throw if the ToBuffer returns an error. In this case we are in an unrecoverable state and
 // a terminate callfunction didn't succeed in parsing the json. In this case termination is the intended behaviour.
 // coverity[autosar_cpp14_a15_5_3_violation]
-std::string ToStringImpl(const json::Object& serialized_json_object) noexcept
+std::string ToStringImpl(const json::Object& serialized_json_object)
 {
     score::json::JsonWriter writer{};
     const std::string serialized_form = writer.ToBuffer(serialized_json_object).value();

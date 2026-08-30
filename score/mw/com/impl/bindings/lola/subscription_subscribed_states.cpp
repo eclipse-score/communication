@@ -26,7 +26,7 @@
 namespace score::mw::com::impl::lola
 {
 
-Result<void> SubscribedState::SubscribeEvent(const std::size_t max_sample_count) noexcept
+Result<void> SubscribedState::SubscribeEvent(const std::size_t max_sample_count)
 {
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
     // not lead to data loss.".
@@ -52,7 +52,7 @@ Result<void> SubscribedState::SubscribeEvent(const std::size_t max_sample_count)
     }
 }
 
-void SubscribedState::UnsubscribeEvent() noexcept
+void SubscribedState::UnsubscribeEvent()
 {
     // Unsubscribe functionality will be done in NotSubscribedState::OnEntry() which will be called synchronously by
     // TransitionToState. We do this to avoid code duplication between SubscriptionPendingState::UnsubscribeEvent() and
@@ -60,30 +60,30 @@ void SubscribedState::UnsubscribeEvent() noexcept
     state_machine_.TransitionToState(SubscriptionStateMachineState::NOT_SUBSCRIBED_STATE);
 }
 
-void SubscribedState::StopOfferEvent() noexcept
+void SubscribedState::StopOfferEvent()
 {
     state_machine_.provider_service_instance_is_available_ = false;
     state_machine_.TransitionToState(SubscriptionStateMachineState::SUBSCRIPTION_PENDING_STATE);
 }
 
-void SubscribedState::ReOfferEvent(const pid_t) noexcept
+void SubscribedState::ReOfferEvent(const pid_t)
 {
     ::score::mw::log::LogWarn("lola") << CreateLoggingString("Service cannot be re-offered while already subscribed.",
                                                              state_machine_.GetElementFqId(),
                                                              state_machine_.GetCurrentStateNoLock());
 }
 
-void SubscribedState::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept
+void SubscribedState::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler)
 {
     state_machine_.event_receive_handler_manager_.Register(std::move(handler));
 }
 
-void SubscribedState::UnsetReceiveHandler() noexcept
+void SubscribedState::UnsetReceiveHandler()
 {
     state_machine_.event_receive_handler_manager_.Unregister();
 }
 
-std::optional<std::uint16_t> SubscribedState::GetMaxSampleCount() const noexcept
+std::optional<std::uint16_t> SubscribedState::GetMaxSampleCount() const
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
         state_machine_.subscription_data_.max_sample_count_.value() > 0U,

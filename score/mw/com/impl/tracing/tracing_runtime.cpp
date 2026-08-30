@@ -132,7 +132,7 @@ const std::unordered_map<SkeletonFieldTracePointType, analysis::tracing::TracePo
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 analysis::tracing::TracePointType InternalToExternalTracePointType(
-    const TracingRuntime::TracePointType& internal_trace_point_type) noexcept
+    const TracingRuntime::TracePointType& internal_trace_point_type)
 {
     auto visitor = score::cpp::overload(
         [](const ProxyEventTracePointType& proxy_event_trace_point) -> analysis::tracing::TracePointType {
@@ -174,7 +174,7 @@ analysis::tracing::AraComMetaInfo CreateMetaInfo(
     const ServiceElementInstanceIdentifierView& service_element_instance_identifier,
     const TracingRuntime::TracePointType& trace_point_type,
     const std::optional<TracingRuntime::TracePointDataId> trace_point_data_id,
-    const IBindingTracingRuntime& binding_runtime) noexcept
+    const IBindingTracingRuntime& binding_runtime)
 {
     const analysis::tracing::TracePointType ext_trace_point_type = InternalToExternalTracePointType(trace_point_type);
     // Convert std::optional to score::cpp::optional for baselibs API compatibility
@@ -341,7 +341,7 @@ void TracingRuntime::RegisterShmObject(
     const BindingType binding_type,
     const ServiceElementInstanceIdentifierView service_element_instance_identifier_view,
     const memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
-    void* const shm_memory_start_address) noexcept
+    void* const shm_memory_start_address)
 {
     if (!atomic_state_.is_tracing_enabled)
     {
@@ -397,9 +397,8 @@ void TracingRuntime::RegisterShmObject(
 // In this case, we want the program to terminate and do not rely on any stack unwinding in case of an implicit
 // terminate.
 // coverity[autosar_cpp14_a15_5_3_violation]
-void TracingRuntime::UnregisterShmObject(
-    BindingType binding_type,
-    ServiceElementInstanceIdentifierView service_element_instance_identifier_view) noexcept
+void TracingRuntime::UnregisterShmObject(BindingType binding_type,
+                                         ServiceElementInstanceIdentifierView service_element_instance_identifier_view)
 {
     if (!atomic_state_.is_tracing_enabled)
     {
@@ -452,7 +451,7 @@ void TracingRuntime::UnregisterShmObject(
 // coverity[autosar_cpp14_a15_5_3_violation: FALSE] see justification of autosar_cpp14_a15_5_3_violation for Trace()
 Result<analysis::tracing::ShmObjectHandle> TracingRuntime::GetRegisteredShmObject(
     IBindingTracingRuntime& binding_runtime,
-    const ServiceElementInstanceIdentifierView service_element_instance_identifier) noexcept
+    const ServiceElementInstanceIdentifierView service_element_instance_identifier)
 {
     auto shm_object_handle = binding_runtime.GetShmObjectHandle(service_element_instance_identifier);
     if (shm_object_handle.has_value())
@@ -515,7 +514,7 @@ Result<void> TracingRuntime::Trace(const BindingType binding_type,
                                    const TracePointDataId trace_point_data_id,
                                    TypeErasedSamplePtr sample_ptr,
                                    const void* const shm_data_ptr,
-                                   const std::size_t shm_data_size) noexcept
+                                   const std::size_t shm_data_size)
 {
     if (!atomic_state_.is_tracing_enabled)
     {
@@ -608,7 +607,7 @@ Result<void> TracingRuntime::Trace(const BindingType binding_type,
                                    const TracePointType trace_point_type,
                                    const std::optional<TracePointDataId> trace_point_data_id,
                                    const void* const local_data_ptr,
-                                   const std::size_t local_data_size) noexcept
+                                   const std::size_t local_data_size)
 {
     if (!atomic_state_.is_tracing_enabled)
     {

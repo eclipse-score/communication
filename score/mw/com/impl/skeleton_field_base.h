@@ -73,6 +73,12 @@ class SkeletonFieldBase : public EnableReferenceToMoveableFromThis<SkeletonField
                 return MakeUnexpected(ComErrc::kFieldValueIsNotValid);
             }
 
+            const auto register_get_handler_result = RegisterGetHandler();
+            if (!register_get_handler_result.has_value())
+            {
+                return register_get_handler_result;
+            }
+
             const auto prepare_offer_result = skeleton_event_dispatch_->PrepareOffer();
             if (!prepare_offer_result.has_value())
             {
@@ -119,6 +125,8 @@ class SkeletonFieldBase : public EnableReferenceToMoveableFromThis<SkeletonField
     /// \brief Returns true if a setter has been enabled in the interface and a set handler was not registered via
     /// RegisterSetHandler. Otherwise, returns false.
     [[nodiscard]] virtual bool IsSetHandlerMissing() const noexcept = 0;
+
+    [[nodiscard]] virtual Result<void> RegisterGetHandler() = 0;
 
     /// \brief Sets the initial value of the field.
     ///

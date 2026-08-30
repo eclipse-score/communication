@@ -42,7 +42,7 @@ const HandleType& ProxyBase::GetHandle() const& noexcept
     return handle_;
 }
 
-auto ProxyBase::FindService(InstanceSpecifier specifier) noexcept -> Result<ServiceHandleContainer<HandleType>>
+auto ProxyBase::FindService(InstanceSpecifier specifier) -> Result<ServiceHandleContainer<HandleType>>
 {
     const auto find_service_result = Runtime::getInstance().GetServiceDiscovery().FindService(std::move(specifier));
     if (!find_service_result.has_value())
@@ -52,8 +52,7 @@ auto ProxyBase::FindService(InstanceSpecifier specifier) noexcept -> Result<Serv
     return find_service_result;
 }
 
-auto ProxyBase::FindService(InstanceIdentifier instance_identifier) noexcept
-    -> Result<ServiceHandleContainer<HandleType>>
+auto ProxyBase::FindService(InstanceIdentifier instance_identifier) -> Result<ServiceHandleContainer<HandleType>>
 {
     const auto find_service_result =
         Runtime::getInstance().GetServiceDiscovery().FindService(std::move(instance_identifier));
@@ -65,8 +64,8 @@ auto ProxyBase::FindService(InstanceIdentifier instance_identifier) noexcept
     return find_service_result;
 }
 
-auto ProxyBase::StartFindService(FindServiceHandler<HandleType> handler,
-                                 InstanceIdentifier instance_identifier) noexcept -> Result<FindServiceHandle>
+auto ProxyBase::StartFindService(FindServiceHandler<HandleType> handler, InstanceIdentifier instance_identifier)
+    -> Result<FindServiceHandle>
 {
     const auto start_find_service_result = Runtime::getInstance().GetServiceDiscovery().StartFindService(
         std::move(handler), std::move(instance_identifier));
@@ -77,7 +76,7 @@ auto ProxyBase::StartFindService(FindServiceHandler<HandleType> handler,
     return start_find_service_result;
 }
 
-auto ProxyBase::StartFindService(FindServiceHandler<HandleType> handler, InstanceSpecifier instance_specifier) noexcept
+auto ProxyBase::StartFindService(FindServiceHandler<HandleType> handler, InstanceSpecifier instance_specifier)
     -> Result<FindServiceHandle>
 {
     const auto start_find_service_result = Runtime::getInstance().GetServiceDiscovery().StartFindService(
@@ -89,7 +88,7 @@ auto ProxyBase::StartFindService(FindServiceHandler<HandleType> handler, Instanc
     return start_find_service_result;
 }
 
-score::Result<void> ProxyBase::StopFindService(const FindServiceHandle handle) noexcept
+score::Result<void> ProxyBase::StopFindService(const FindServiceHandle handle)
 {
     const auto stop_find_service_result = Runtime::getInstance().GetServiceDiscovery().StopFindService(handle);
     if (!(stop_find_service_result.has_value()))

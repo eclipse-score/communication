@@ -131,7 +131,6 @@ identification via `serviceTypeName`. This is typically a lengthy string represe
 layer a `binding`-specific more efficient representation is needed. In case of `SHM` `binding` this is an
 unsigned integer (16 bit), which (like the `serviceTypeName`) needs to be unique in the communication setup. I.e. **all**
 applications communicating via `SHM` `binding` need to agree on a unique assignment of `serviceId`s to `service-types`.
-To keep track within BMW, we currently manage the `serviceId` namespace [here](broken_link_cf/pages/viewpage.action?spaceKey=psp&title=LoLa+service+IDs+used+within+BMW)
 
 Then, for each service element (event, field, method), which the `service-type` (the `service-interface` in our C++
 representation) contains, we need to configure a pair of name and id. So in our example the `service-type`

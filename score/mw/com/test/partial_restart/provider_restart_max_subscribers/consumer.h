@@ -18,6 +18,7 @@
 #include "score/mw/com/test/partial_restart/consumer_handle_notification_data.h"
 #include "score/mw/com/test/partial_restart/test_datatype.h"
 
+#include <optional>
 #include <vector>
 
 namespace score::mw::com::test
@@ -48,6 +49,7 @@ class ConsumerActions
     ConsumerParameters consumer_parameters_;
     std::vector<TestServiceProxy> proxies_;
     HandleNotificationData handle_notification_data_;
+    std::optional<FindServiceHandle> find_service_handle_;
 };
 
 }  // namespace score::mw::com::test

@@ -59,8 +59,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
     /// \brief Constructs a ProxyEventBase with the given proxy event binding.
     /// \param event_name Event name of the event.
     /// \param proxy_event_binding The binding that shall be associated with this proxy event.
-    ProxyEventBase(std::string_view event_name,
-                   Result<std::unique_ptr<ProxyEventBindingBase>> proxy_event_binding) noexcept;
+    ProxyEventBase(std::string_view event_name, Result<std::unique_ptr<ProxyEventBindingBase>> proxy_event_binding);
 
     /// \brief A ProxyEventBase shall not be copyable
     ProxyEventBase(const ProxyEventBase&) = delete;
@@ -80,7 +79,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      *                          be able to offer to the using application.
      * \return On failure, returns an error code.
      */
-    Result<void> Subscribe(const std::size_t max_sample_count) noexcept;
+    Result<void> Subscribe(const std::size_t max_sample_count);
 
     /**
      * \api
@@ -140,7 +139,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
      *         actual new samples. I.e. an implementation is allowed to report a lower number than actual new samples,
      *         which would be provided by a call to GetNewSamples().
      */
-    Result<std::size_t> GetNumNewSamplesAvailable() const noexcept;
+    Result<std::size_t> GetNumNewSamplesAvailable() const;
 
     /**
      * \api

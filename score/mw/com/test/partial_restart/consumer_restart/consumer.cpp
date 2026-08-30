@@ -20,6 +20,7 @@
 #include "score/concurrency/notification.h"
 #include "score/mw/com/test/common_test_resources/general_resources.h"
 #include "score/scope_exit/scope_exit.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include <iostream>
 
@@ -60,7 +61,7 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
         std::cerr
             << "Consumer: Initializing LoLa/mw::com runtime from cmd-line args handed over by parent/controller ..."
             << std::endl;
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        score::mw::com::runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
         std::cerr << "Consumer: Initializing LoLa/mw::com runtime done." << std::endl;
     }
 
@@ -71,7 +72,7 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
     HandleNotificationData handle_notification_data{};
     auto find_service_callback = [&check_point_control, &handle_notification_data](auto service_handle_container,
                                                                                    auto find_service_handle) noexcept {
-        score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        score::utils::ScopeExit check_point_control_error_guard_step_1{[&check_point_control]() {
             check_point_control.ErrorOccurred();
         }};
         std::cerr << "Consumer Step (C.1): find service handler called" << std::endl;
@@ -88,7 +89,7 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
         std::cerr << "Consumer Step (C.1): FindServiceHandler handler done - found one service instance." << std::endl;
 
         std::ignore = TestServiceProxy::StopFindService(find_service_handle);
-        check_point_control_error_guard.Release();
+        check_point_control_error_guard_step_1.Release();
     };
 
     auto find_service_handle_result = StartFindService<TestServiceProxy>(
@@ -167,7 +168,7 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
         std::cout << "Consumer Step (C.6): Calling GetNewSamples" << std::endl;
         auto get_new_samples_result = proxy.simple_event_.GetNewSamples(
             [&check_point_control](SamplePtr<SimpleEventDatatype> sample) noexcept {
-                score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+                score::utils::ScopeExit check_point_control_error_guard_step_6{[&check_point_control]() {
                     check_point_control.ErrorOccurred();
                 }};
                 std::cout << "Consumer Step (C.6): Received sample from GetNewSamples: member_1 (" << sample->member_1
@@ -179,7 +180,7 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
                         << std::endl;
                     return;
                 }
-                check_point_control_error_guard.Release();
+                check_point_control_error_guard_step_6.Release();
             },
             max_sample_count);
         if (!(get_new_samples_result.has_value()))

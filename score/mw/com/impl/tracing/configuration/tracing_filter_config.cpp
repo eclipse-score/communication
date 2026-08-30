@@ -172,7 +172,7 @@ std::size_t FindNumberOfTracingSlots(
     const std::unordered_map<TracePointKey, std::set<InstanceSpecifierView>>& trace_point_map,
     std::unordered_set<ServiceElementIdentifierView>& service_element_identifier_view_set,
     const score::mw::com::impl::Configuration& configuration,
-    ServiceElementType service_element_type) noexcept
+    ServiceElementType service_element_type)
 {
     std::size_t number_of_needed_traceing_slots{0U};
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
@@ -207,10 +207,8 @@ std::size_t FindNumberOfTracingSlots(
                 std::terminate();
             }
 
-            const auto& service = configuration.GetServiceInstances();
-
-            const auto service_instance_it = service.find(instance_specifier_result.value());
-            if (service_instance_it == service.end())
+            const auto service_instance = configuration.GetServiceInstanceDeployment(instance_specifier_result.value());
+            if (!service_instance.has_value())
             {
                 score::mw::log::LogFatal()
                     << "Lola: provided service instance with name:" << instance_specifier_result.value()
@@ -219,7 +217,7 @@ std::size_t FindNumberOfTracingSlots(
             }
 
             const auto* lola_service_instance_deployment =
-                std::get_if<LolaServiceInstanceDeployment>(&service_instance_it->second.bindingInfo_);
+                std::get_if<LolaServiceInstanceDeployment>(&service_instance.value().get().bindingInfo_);
             if (lola_service_instance_deployment == nullptr)
             {
                 score::mw::log::LogFatal("lola")
@@ -399,7 +397,7 @@ void TracingFilterConfig::AddTracePoint(std::string_view service_type,
 }
 
 /// @brief: Find the number of configured tracing slots for all trace points.
-std::uint16_t TracingFilterConfig::GetNumberOfTracingSlots(score::mw::com::impl::Configuration& config) const noexcept
+std::uint16_t TracingFilterConfig::GetNumberOfTracingSlots(score::mw::com::impl::Configuration& config) const
 {
     std::unordered_set<ServiceElementIdentifierView> service_element_identifier_view_set{};
     const std::array<std::size_t, 4U> number_trace_points_list{

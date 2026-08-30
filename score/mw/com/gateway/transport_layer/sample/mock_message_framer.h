@@ -24,7 +24,7 @@ namespace score::mw::com::gateway
 class MockMessageFramer : public IMessageFramer
 {
   public:
-    MOCK_METHOD((score::ResultBlank), SendMessage, (std::int32_t, const TransportMessage&), (override));
+    MOCK_METHOD((score::Result<void>), SendMessage, (std::int32_t, const TransportMessage&), (override));
     MOCK_METHOD((std::unique_ptr<TransportMessage>), ReceiveMessage, (std::int32_t), (override));
 };
 

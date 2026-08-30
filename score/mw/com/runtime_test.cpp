@@ -14,7 +14,6 @@
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/instance_identifier.h"
-#include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 
@@ -24,7 +23,6 @@
 #include <score/jthread.hpp>
 #include <cstdint>
 #include <string>
-#include <thread>
 
 #include <fstream>
 #include <iostream>
@@ -148,10 +146,11 @@ TEST_F(RuntimeTestExternalJsonFixture, ResolveInstanceIdsIsThreadSafe)
     constexpr std::size_t number_of_calls_per_thread{10U};
 
     // Given a runtime initialised with the path to a configuration file
+    using safecpp::literals::operator""_zsv;
     auto json_path = get_path("mw_com_config.json");
-    score::StringLiteral test_args[] = {"dummyname", "-service_instance_manifest", json_path.c_str()};
-    const std::int32_t num_test_args{3};
-    InitializeRuntime(num_test_args, test_args);
+    std::vector<safecpp::zstring_view> arguments = {"dummyname"_zsv, "--service_instance_manifest"_zsv, json_path};
+
+    InitializeRuntime(arguments);
 
     // and an instance identifier and InstanceSpecifier derived from the configuration
     const auto instance_specifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();

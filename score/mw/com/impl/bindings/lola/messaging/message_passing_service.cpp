@@ -48,7 +48,7 @@ MessagePassingService::MessagePassingService(
     const AsilSpecificCfg& config_asil_qm,
     const std::optional<AsilSpecificCfg>& config_asil_b,
     // coverity[autosar_cpp14_a8_4_12_violation] Function only uses the object without affecting ownership
-    const std::unique_ptr<IMessagePassingServiceInstanceFactory>& factory) noexcept
+    const std::unique_ptr<IMessagePassingServiceInstanceFactory>& factory)
     : IMessagePassingService{},
       client_factory_{score::cpp::pmr::make_shared<Engine>(score::cpp::pmr::get_default_resource(),
                                                            score::cpp::pmr::get_default_resource(),
@@ -135,11 +135,11 @@ IMessagePassingServiceInstance& MessagePassingService::GetMessagePassingServiceI
         // coverity[autosar_cpp14_m6_4_5_violation] return instead of break
         case QualityType::kASIL_B:
             return *asil_b_;
-        // coverity[autosar_cpp14_m6_4_5_violation] SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE will terminate this
+        // coverity[autosar_cpp14_m6_4_5_violation] SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE will terminate this
         // switch clause
         case QualityType::kInvalid:
         default:
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Invalid asil level");
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE("Invalid asil level");
     }
 }
 

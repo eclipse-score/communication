@@ -46,12 +46,12 @@ jobs:
 
       - name: Build all targets
         if: inputs.fetch-only != 'true'
-        run: bazel build //...
+        run: bazel build --config=ci //...
 
       - name: Run all tests
         if: inputs.fetch-only != 'true'
         id: run-tests
-        run: bazel test //... --build_tests_only
+        run: bazel test --config=ci //... --build_tests_only
 
       - name: Upload failed Bazel test logs
         if: inputs.fetch-only != 'true' && failure() && steps.run-tests.outcome == 'failure'
@@ -66,5 +66,5 @@ jobs:
       - name: Fetch dependencies (--nobuild)
         if: inputs.fetch-only == 'true'
         run: |
-          bazel build --nobuild //...
+          bazel build --nobuild --config=ci //...
           cd module_integration_test && bazel build --nobuild //...

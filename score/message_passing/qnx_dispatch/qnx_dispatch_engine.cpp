@@ -272,10 +272,14 @@ int QnxDispatchEngine::CoidDeathPulseCallback(message_context_t* ctp,
 
 QnxDispatchEngine::~QnxDispatchEngine() noexcept
 {
+    // enforce joining client and server threads, if they are running
+    // otherwise we would depend on order of destruction of not explicitly related class members
+    server_runner_.Stop();
     if (client_runner_.GetDispatchPointer() != nullptr)
     {
         // client was initialized, which means timer was created
         score::cpp::ignore = os_resources_.timer->TimerDestroy(timer_id_);
+        client_runner_.Stop();
     }
 }
 

@@ -17,11 +17,7 @@
 
 #include <iterator>
 
-namespace score
-{
-namespace message_passing
-{
-namespace detail
+namespace score::message_passing::detail
 {
 
 QnxResourcePath::QnxResourcePath(const std::string_view identifier) noexcept
@@ -29,7 +25,7 @@ QnxResourcePath::QnxResourcePath(const std::string_view identifier) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION((identifier.size() > 0U) && (identifier.size() <= kMaxIdentifierLen));
 
-    auto identifier_begin = identifier.cbegin();
+    const auto* identifier_begin = identifier.cbegin();
     if (*identifier_begin == '/')
     {
         identifier_begin = std::next(identifier_begin);
@@ -38,6 +34,4 @@ QnxResourcePath::QnxResourcePath(const std::string_view identifier) noexcept
     buffer_.push_back('\0');  // AUTOSAR C++14 M5-0-11: Use character literal instead of plain integer
 }
 
-}  // namespace detail
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing::detail

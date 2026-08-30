@@ -334,8 +334,8 @@ TEST_F(InstanceIdentifierFixture, CreateStoresDeploymentsIntoConfiguredConfigura
     const auto identifier = make_InstanceIdentifier(service_instance_deployment, service_type_deployment);
 
     // and given the configuration does not yet contain any of these deployments
-    ASSERT_TRUE(configuration.GetServiceTypes().empty());
-    ASSERT_TRUE(configuration.GetServiceInstances().empty());
+    ASSERT_TRUE(configuration.IsServiceTypesEmpty());
+    ASSERT_TRUE(configuration.IsServiceInstancesEmpty());
 
     // When creating an InstanceIdentifier from its serialized form
     const score::Result<InstanceIdentifier> reconstructed_identifier_result =
@@ -343,17 +343,15 @@ TEST_F(InstanceIdentifierFixture, CreateStoresDeploymentsIntoConfiguredConfigura
     ASSERT_TRUE(reconstructed_identifier_result.has_value());
 
     // Then the deserialized deployments have been added into the configured Configuration
-    const auto& service_types = configuration.GetServiceTypes();
-    ASSERT_EQ(service_types.size(), 1);
-    const auto type_it = service_types.find(dummy_service);
-    ASSERT_NE(type_it, service_types.cend());
-    ExpectServiceTypeDeploymentObjectsEqual(type_it->second, service_type_deployment);
+    ASSERT_EQ(configuration.GetNumberOfServiceTypes(), 1);
+    const auto type_deployment = configuration.GetServiceTypeDeployment(dummy_service);
+    ASSERT_TRUE(type_deployment.has_value());
+    ExpectServiceTypeDeploymentObjectsEqual(type_deployment.value().get(), service_type_deployment);
 
-    const auto& service_instances = configuration.GetServiceInstances();
-    ASSERT_EQ(service_instances.size(), 1);
-    const auto instance_it = service_instances.find(kInstanceSpecifier1);
-    ASSERT_NE(instance_it, service_instances.cend());
-    ExpectServiceInstanceDeploymentObjectsEqual(instance_it->second, service_instance_deployment);
+    ASSERT_EQ(configuration.GetNumberOfServiceInstances(), 1);
+    const auto instance_deployment = configuration.GetServiceInstanceDeployment(kInstanceSpecifier1);
+    ASSERT_TRUE(instance_deployment.has_value());
+    ExpectServiceInstanceDeploymentObjectsEqual(instance_deployment.value().get(), service_instance_deployment);
 
     InstanceIdentifierAttorney::SetConfiguration(nullptr);
 }

@@ -32,25 +32,24 @@ constexpr std::size_t kNumberOfMeanElements{500U};
 
 // The main thread blocks on this condition variable until either the method calls have completed or a termination
 // signal (SIGINT/SIGTERM) requests the shut down.
-static std::mutex g_shutdown_mutex{};
-static std::condition_variable g_shutdown_cv{};
-static std::atomic<bool> g_shutdown_requested{false};
+namespace
+{
+std::mutex g_shutdown_mutex{};
+std::condition_variable g_shutdown_cv{};
+std::atomic<bool> g_shutdown_requested{false};
 
-static void RequestShutdown()
+void RequestShutdown()
 {
     g_shutdown_requested.store(true, std::memory_order_relaxed);
     g_shutdown_cv.notify_one();
 }
 
-static void SignalHandler(int /*signum*/)
+void SignalHandler(int /*signum*/)
 {
     RequestShutdown();
 }
 
 using CalculatorProxy = score::mw::com::tutorial::CalculatorProxy;
-
-namespace
-{
 
 // Returns a binding-independent, human-readable description of the service instance a handle refers to. The only
 // portable (public API) way to obtain a representation of the instance id from a handle is:

@@ -15,7 +15,6 @@
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_PROVIDER_RESOURCES_H
 
 #include "score/mw/com/com_error_domain.h"
-#include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/test/common_test_resources/check_point_control.h"
 #include "score/mw/com/types.h"
 

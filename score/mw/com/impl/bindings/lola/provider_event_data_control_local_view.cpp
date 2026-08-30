@@ -32,7 +32,7 @@ constexpr auto MAX_ALLOCATE_RETRIES = 100U;
 
 template <template <class> class AtomicIndirectorType>
 ProviderEventDataControlLocalView<AtomicIndirectorType>::ProviderEventDataControlLocalView(
-    EventDataControl& event_data_control) noexcept
+    EventDataControl& event_data_control)
     : state_slots_{event_data_control.state_slots_.begin(), event_data_control.state_slots_.size()}
 {
 }
@@ -197,8 +197,7 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::RemoveAllocationsF
             auto status_value_type = static_cast<EventSlotStatus::value_type&>(status);
             auto status_new_value_type = static_cast<EventSlotStatus::value_type&>(status_new);
             // coverity[autosar_cpp14_a5_3_2_violation]
-            if (slot.compare_exchange_strong(status_value_type, status_new_value_type, std::memory_order_acq_rel) ==
-                false)
+            if (!slot.compare_exchange_strong(status_value_type, status_new_value_type, std::memory_order_acq_rel))
             {
                 // atomic could not be changed, contract violation (other skeleton must be dead, nobody other should
                 // change the slot)

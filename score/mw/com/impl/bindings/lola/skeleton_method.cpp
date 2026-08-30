@@ -72,7 +72,8 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
     // StopOfferService.
     IMessagePassingService::MethodCallHandler method_call_callback{
         method_call_handler_scope,
-        [this, in_arg_queue_storage, return_queue_storage, type_erased_element_info](std::size_t queue_position) {
+        [this, in_arg_queue_storage, return_queue_storage, type_erased_element_info, asil_level](
+            std::size_t queue_position) {
             std::optional<score::cpp::span<std::byte>> in_args_element_storage{};
             std::optional<score::cpp::span<std::byte>> return_arg_element_storage{};
 
@@ -90,7 +91,7 @@ Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
                     queue_position, return_queue_storage.value(), type_erased_element_info);
             }
 
-            Call(in_args_element_storage, return_arg_element_storage);
+            Call(asil_level, in_args_element_storage, return_arg_element_storage);
         }};
 
     // Check SubscribeMethods for this skeleton_methods_ loop
@@ -141,7 +142,8 @@ bool SkeletonMethod::IsRegistered() const
     return type_erased_callback_.has_value();
 }
 
-void SkeletonMethod::Call(const std::optional<score::cpp::span<std::byte>> in_args,
+void SkeletonMethod::Call(const QualityType quality_type,
+                          const std::optional<score::cpp::span<std::byte>> in_args,
                           const std::optional<score::cpp::span<std::byte>> return_arg)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
@@ -149,7 +151,7 @@ void SkeletonMethod::Call(const std::optional<score::cpp::span<std::byte>> in_ar
         "Defensive programming: Call can only be called after OnProxyMethodSubscribeFinished has "
         "registered the callback with message passing. We check in OnProxyMethodSubscribeFinished "
         "that type_erased_callback_ has a value.");
-    std::invoke(type_erased_callback_.value(), in_args, return_arg);
+    std::invoke(type_erased_callback_.value(), quality_type, in_args, return_arg);
 }
 
 void SkeletonMethod::CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid)

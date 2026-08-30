@@ -19,6 +19,7 @@
 #include "score/memory/shared/i_shared_memory_resource.h"
 
 #include <sched.h>
+#include <cstdint>
 #include <unordered_map>
 #include <utility>
 
@@ -56,7 +57,7 @@ class MethodResourceMap
     /// \brief Iterator of resource map pointing to the ISharedMemoryResource (whose key is ProxyInstanceCounter)
     using iterator = decltype(ProcessSpecificResourceMap::inner_resource_map)::iterator;
 
-    enum class CleanUpResult
+    enum class CleanUpResult : std::uint8_t
     {
         OLD_REGIONS_REMOVED,
         NO_REGIONS_REMOVED

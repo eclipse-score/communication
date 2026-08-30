@@ -62,7 +62,7 @@ class TracingFilterConfig : public ITracingFilterConfig
                        InstanceSpecifierView instance_specifier,
                        ProxyFieldTracePointType proxy_field_trace_point_type) noexcept override;
 
-    std::uint16_t GetNumberOfTracingSlots(score::mw::com::impl::Configuration& config) const noexcept override;
+    std::uint16_t GetNumberOfTracingSlots(score::mw::com::impl::Configuration& config) const override;
 
   private:
     std::set<std::string, std::less<>> config_names_;

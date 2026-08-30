@@ -29,7 +29,7 @@ name: Nightly Cache Recreation
 
 on:
   schedule:
-    - cron: "0 3 * * *" # 3 AM UTC
+    - cron: "0 0 * * *" # midnight UTC
   workflow_dispatch:
 
 env:
@@ -40,10 +40,26 @@ jobs:
   # Phase 1: Fetch dependencies (sequential, --nobuild)
   # Populates the shared repository cache without compiling.
   # ======================================================================
+  fetch-qnx:
+    uses: ./.github/workflows/build_and_test_qnx.yml
+    with:
+      cache_mode: "recreate"
+      fetch_only: "true"
+    secrets:
+      SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
+      SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+      SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
+    permissions:
+      contents: read
+      actions: write
+      pull-requests: read
+
   fetch-host-build:
+    needs: fetch-qnx
     uses: ./.github/workflows/_build_and_test_gcc15.yml
     with:
-      cache-mode: "recreate"
+      cache-mode: "recreate-update"
       fetch-only: "true"
     permissions:
       contents: read
@@ -75,20 +91,21 @@ jobs:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
-  fetch-clang-tidy:
+  fetch-linters:
     needs: fetch-asan
-    uses: ./.github/workflows/_clang_tidy.yml
+    uses: ./.github/workflows/_linter.yml
     with:
       cache-mode: "recreate-update"
       fetch-only: "true"
     permissions:
       contents: read
       actions: write
+      security-events: write
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
   fetch-coverage:
-    needs: fetch-clang-tidy
+    needs: fetch-linters
     uses: ./.github/workflows/_coverage_report.yml
     with:
       cache-mode: "recreate-update"
@@ -112,28 +129,12 @@ jobs:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
-  fetch-qnx:
-    needs: fetch-codeql
-    uses: ./.github/workflows/build_and_test_qnx.yml
-    with:
-      cache_mode: "recreate-update"
-      fetch_only: "true"
-    secrets:
-      SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
-      SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
-      SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
-      UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
-    permissions:
-      contents: read
-      actions: write
-      pull-requests: read
-
   # ======================================================================
   # Phase 2: Build (parallel)
   # All jobs restore the repo cache from Phase 1 and build their disk cache.
   # ======================================================================
   build-host:
-    needs: fetch-qnx
+    needs: fetch-codeql
     uses: ./.github/workflows/_build_and_test_gcc15.yml
     with:
       cache-mode: "recreate-update"
@@ -144,7 +145,7 @@ jobs:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
   build-tsan:
-    needs: fetch-qnx
+    needs: fetch-codeql
     uses: ./.github/workflows/_thread_sanitizer.yml
     with:
       cache-mode: "recreate-update"
@@ -155,7 +156,7 @@ jobs:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
   build-asan:
-    needs: fetch-qnx
+    needs: fetch-codeql
     uses: ./.github/workflows/_address_sanitizer.yml
     with:
       cache-mode: "recreate-update"
@@ -165,19 +166,20 @@ jobs:
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
-  build-clang-tidy:
-    needs: fetch-qnx
-    uses: ./.github/workflows/_clang_tidy.yml
+  build-linters:
+    needs: fetch-codeql
+    uses: ./.github/workflows/_linter.yml
     with:
       cache-mode: "recreate-update"
     permissions:
       contents: read
       actions: write
+      security-events: write
     secrets:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
   build-coverage:
-    needs: fetch-qnx
+    needs: fetch-codeql
     uses: ./.github/workflows/_coverage_report.yml
     with:
       cache-mode: "recreate-update"
@@ -188,7 +190,7 @@ jobs:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
   build-codeql:
-    needs: fetch-qnx
+    needs: fetch-codeql
     uses: ./.github/workflows/_codeql.yml
     with:
       cache-mode: "recreate-update"
@@ -200,7 +202,7 @@ jobs:
       UBUNTU_SNAPSHOT_MIRROR_URL: ${{ secrets.UBUNTU_SNAPSHOT_MIRROR_URL }}
 
   build-qnx:
-    needs: fetch-qnx
+    needs: fetch-codeql
     uses: ./.github/workflows/build_and_test_qnx.yml
     with:
       cache_mode: "recreate-update"

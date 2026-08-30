@@ -35,7 +35,7 @@ class IMessageFramer
     /// \param socket_fd The file descriptor of the socket to send on.
     /// \param message The message to serialize and send.
     /// \return Success or kSendFailure.
-    virtual score::ResultBlank SendMessage(std::int32_t socket_fd, const TransportMessage& message) = 0;
+    virtual score::Result<void> SendMessage(std::int32_t socket_fd, const TransportMessage& message) = 0;
 
     /// \brief Reads a complete framed message from the specified socket file descriptor.
     /// \param socket_fd The file descriptor of the socket to receive from.

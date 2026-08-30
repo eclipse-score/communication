@@ -36,7 +36,7 @@ const InstanceSpecifier kInstanceSpecifier =
 
 void CallMethodWithInArgsAndReturn(NonTrivialConstructorProxy& proxy, const std::string& failure_message_prefix)
 {
-    auto call_result = [&proxy]() -> score::Result<impl::MethodReturnTypePtr<NonTriviallyConstructibleType>> {
+    auto call_result = [&proxy]() -> score::Result<MethodReturnTypePtr<NonTriviallyConstructibleType>> {
         std::cout << "\n=== Test: with_in_args_and_return (zero-copy) ===" << std::endl;
         auto allocated_args_result = proxy.with_in_args_and_return.Allocate();
         if (!allocated_args_result.has_value())

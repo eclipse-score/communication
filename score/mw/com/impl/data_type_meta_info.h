@@ -13,6 +13,9 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_DATA_TYPE_META_INFO_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_DATA_TYPE_META_INFO_H
 
+#include "score/memory/data_type_size_info.h"
+#include "score/result/result.h"
+
 #include <cstddef>
 #include <cstdint>
 
@@ -27,6 +30,17 @@ struct DataTypeMetaInfo
     std::size_t size;
     std::size_t alignment;
 };
+
+/// \brief Validates the given public DataTypeMetaInfo and converts it into the internal
+/// score::memory::DataTypeSizeInfo.
+///
+/// DataTypeSizeInfo enforces (via assertions) that the alignment is a non-zero power of two and that the size is an
+/// integer multiple of the alignment. This function checks these invariants up-front so that invalid meta-info handed
+/// over via the public API results in an error Result instead of a contract violation/abort.
+///
+/// \param meta_info The (public) meta-info to validate and convert.
+/// \return The converted DataTypeSizeInfo on success, or a ComErrc error if the invariants are violated.
+score::Result<memory::DataTypeSizeInfo> MakeDataTypeSizeInfo(const DataTypeMetaInfo& meta_info);
 
 }  // namespace score::mw::com::impl
 

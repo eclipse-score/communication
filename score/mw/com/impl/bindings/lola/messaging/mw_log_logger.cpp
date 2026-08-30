@@ -37,7 +37,7 @@ score::message_passing::LoggingCallback GetMwLogLogger()
             return;
         }
         score::mw::log::LogStream stream = (*StreamFactories.at(severity_num))("mp_2");
-        for (auto& item : items)
+        for (const auto& item : items)
         {
             std::visit(
                 [&stream](auto&& arg) {

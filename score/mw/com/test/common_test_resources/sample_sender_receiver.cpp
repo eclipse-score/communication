@@ -12,16 +12,12 @@
  *******************************************************************************/
 
 #include "score/mw/com/test/common_test_resources/sample_sender_receiver.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event.h"
-#include "score/mw/com/impl/generic_proxy.h"
-#include "score/mw/com/impl/generic_proxy_event.h"
-#include "score/mw/com/impl/handle_type.h"
 
 #include "score/concurrency/notification.h"
 #include "score/memory/shared/vector.h"
+#include "score/mw/com/types.h"
 #include "score/os/mman.h"
 
-#include "score/mw/com/impl/proxy_event.h"
 #include <score/assert.hpp>
 #include <score/hash.hpp>
 #include <optional>
@@ -53,20 +49,20 @@ std::ostream& operator<<(std::ostream& stream, const InstanceSpecifier& instance
 }
 
 template <typename T>
-void ToStringImpl(std::ostream& o, T t)
+void ToStringImpl(std::ostream& o, const T& t)
 {
     o << t;
 }
 
 template <typename T, typename... Args>
-void ToStringImpl(std::ostream& o, T t, Args... args)
+void ToStringImpl(std::ostream& o, const T& t, Args... args)
 {
     ToStringImpl(o, t);
     ToStringImpl(o, args...);
 }
 
 template <typename... Args>
-std::string ToString(Args... args)
+std::string ToString(const Args&... args)
 {
     std::ostringstream oss;
     ToStringImpl(oss, args...);
@@ -93,17 +89,14 @@ class MmanMock : public os::Mman
                                                 const std::int64_t offset) const noexcept override
     {
         // mmap calls are uninteresting and are forwarded directly
-        return reinterpret_cast<os::internal::MmanImpl&>(
-                   os::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage())
-            .mmap(addr, length, protection, flags, fd, offset);
+        return utils::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage().mmap(
+            addr, length, protection, flags, fd, offset);
     };
 
     score::cpp::expected_blank<os::Error> munmap(void* addr, const std::size_t length) const noexcept override
     {
         // munmap calls are uninteresting and are forwarded directly
-        return reinterpret_cast<os::internal::MmanImpl&>(
-                   os::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage())
-            .munmap(addr, length);
+        return utils::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage().munmap(addr, length);
     };
 
     score::cpp::expected<std::int32_t, os::Error> shm_open(const char* pathname,
@@ -113,17 +106,13 @@ class MmanMock : public os::Mman
         // shm_open calls are INTERESTING for this test - we memorize the pathname - and then forward
         std::strcpy(last_shm_open_path_, pathname);
         shm_open_callcount_++;
-        return reinterpret_cast<os::internal::MmanImpl&>(
-                   os::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage())
-            .shm_open(pathname, oflag, mode);
+        return utils::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage().shm_open(pathname, oflag, mode);
     };
 
     score::cpp::expected_blank<os::Error> shm_unlink(const char* pathname) const noexcept override
     {
         // shm_unlink calls are uninteresting and are forwarded directly
-        return reinterpret_cast<os::internal::MmanImpl&>(
-                   os::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage())
-            .shm_unlink(pathname);
+        return utils::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage().shm_unlink(pathname);
     };
 
 #if defined(__EXT_POSIX1_200112)
@@ -132,18 +121,15 @@ class MmanMock : public os::Mman
         const os::Fcntl::Open oflag,
         const os::Mman::PosixTypedMem tflag) const noexcept override
     {
-        return reinterpret_cast<os::internal::MmanImpl&>(
-                   os::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage())
-            .posix_typed_mem_open(name, oflag, tflag);
+        return utils::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage().posix_typed_mem_open(
+            name, oflag, tflag);
     }
 
     score::cpp::expected<std::int32_t, os::Error> posix_typed_mem_get_info(
         const std::int32_t fd,
         struct posix_typed_mem_info* info) const noexcept override
     {
-        return reinterpret_cast<os::internal::MmanImpl&>(
-                   os::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage())
-            .posix_typed_mem_get_info(fd, info);
+        return utils::StaticDestructionGuard<os::internal::MmanImpl>::GetStorage().posix_typed_mem_get_info(fd, info);
     }
 
 #endif
@@ -260,6 +246,10 @@ class TestDestructor
 {
   public:
     TestDestructor(score::cpp::stop_source& stop_source) : stop_source_{stop_source} {}
+    TestDestructor(const TestDestructor&) = delete;
+    TestDestructor& operator=(const TestDestructor&) = delete;
+    TestDestructor(TestDestructor&&) = delete;
+    TestDestructor& operator=(TestDestructor&&) = delete;
     ~TestDestructor()
     {
         stop_source_.request_stop();
@@ -301,8 +291,7 @@ std::optional<std::reference_wrapper<impl::ProxyEvent<MapApiLanesStamped>>> GetM
     return proxy.map_api_lanes_stamped_;
 }
 
-std::optional<std::reference_wrapper<impl::GenericProxyEvent>> GetMapApiLanesStampedProxyEvent(
-    GenericProxy& generic_proxy)
+std::optional<std::reference_wrapper<GenericProxyEvent>> GetMapApiLanesStampedProxyEvent(GenericProxy& generic_proxy)
 {
     const std::string event_name{"map_api_lanes_stamped"};
     auto event_it = generic_proxy.GetEvents().find(event_name);
@@ -325,7 +314,7 @@ const MapApiLanesStamped& GetSamplePtrValue(const MapApiLanesStamped* const samp
 /// Assumes that the object in memory being pointed to is of type MapApiLanesStamped.
 const MapApiLanesStamped& GetSamplePtrValue(const void* const void_ptr)
 {
-    auto* const typed_ptr = static_cast<const MapApiLanesStamped*>(void_ptr);
+    const auto* const typed_ptr = static_cast<const MapApiLanesStamped*>(void_ptr);
     return *typed_ptr;
 }
 
@@ -363,11 +352,11 @@ void ModifySampleValue(const SamplePtr<void>& sample)
 }
 
 template <typename ProxyType = BigDataProxy>
-score::Result<impl::HandleType> GetHandleFromSpecifier(const InstanceSpecifier& instance_specifier,
-                                                       const score::cpp::stop_token& stop_token)
+score::Result<HandleType> GetHandleFromSpecifier(const InstanceSpecifier& instance_specifier,
+                                                 const score::cpp::stop_token& stop_token)
 {
     std::cout << ToString(instance_specifier, ": Running as proxy, looking for services\n");
-    ServiceHandleContainer<impl::HandleType> handles{};
+    ServiceHandleContainer<HandleType> handles{};
     do
     {
         if (stop_token.stop_requested())
@@ -377,7 +366,7 @@ score::Result<impl::HandleType> GetHandleFromSpecifier(const InstanceSpecifier& 
         auto handles_result = ProxyType::FindService(instance_specifier);
         if (!handles_result.has_value())
         {
-            return MakeUnexpected<impl::HandleType>(std::move(handles_result.error()));
+            return MakeUnexpected<HandleType>(std::move(handles_result.error()));
         }
         handles = std::move(handles_result).value();
         if (handles.size() == 0)
@@ -1099,7 +1088,7 @@ template int EventSenderReceiver::RunAsProxy<BigDataProxy, impl::ProxyEvent<MapA
     const std::size_t,
     const score::cpp::stop_token&,
     bool try_writing_to_data_segment);
-template int EventSenderReceiver::RunAsProxy<impl::GenericProxy, impl::GenericProxyEvent>(
+template int EventSenderReceiver::RunAsProxy<GenericProxy, GenericProxyEvent>(
     const score::mw::com::InstanceSpecifier&,
     const std::optional<std::chrono::milliseconds>,
     const std::size_t,

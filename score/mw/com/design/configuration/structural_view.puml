@@ -77,17 +77,36 @@ package "configuration" {
   }
 
   class "score::mw::com::impl::Configuration" {
-    - service_types : const std::unordered_map<ServiceIdentifierType, ServiceTypeDeployment>
-    - service_instances : const std::unordered_map<InstanceSpecifier, ServiceInstanceDeployment>
+    - service_types_ : const std::unordered_map<ServiceIdentifierType, ServiceTypeDeployment>
+    - service_instances_ : const std::unordered_map<InstanceSpecifier, ServiceInstanceDeployment>
     - global_configuration_ : GlobalConfiguration
     - tracing_configuration_ : TracingConfiguration
+    __
     + Configuration(ServiceTypeDeployments service_types, ServiceInstanceDeployments service_instances, GlobalConfiguration global_configuration, TracingConfiguration tracing_configuration)
+    + Configuration(Configuration&& other) noexcept
     + AddServiceTypeDeployment(ServiceIdentifierType, ServiceTypeDeployment) noexcept : ServiceTypeDeployment*
     + AddServiceInstanceDeployments(InstanceSpecifier, ServiceInstanceDeployment) noexcept : ServiceInstanceDeployment*
-    + GetServiceTypes() const noexcept : const ServiceTypeDeployments&
-    + GetServiceInstances() const noexcept : const ServiceInstanceDeployments&
     + GetGlobalConfiguration() const noexcept : const GlobalConfiguration&
     + GetTracingConfiguration() const noexcept : const TracingConfiguration&
+    + GetServiceTypeDeployment(const ServiceIdentifierType&) const noexcept : std::optional<std::reference_wrapper<const ServiceTypeDeployment>>
+    + GetServiceInstanceDeployment(const InstanceSpecifier&) const noexcept : std::optional<std::reference_wrapper<const ServiceInstanceDeployment>>
+    + GetSizeOfServiceTypes() const noexcept : size_t
+    + IsServiceTypesEmpty() const noexcept : bool
+    + GetSizeOfServiceInstances() const noexcept : size_t
+    + IsServiceInstancesEmpty() const noexcept : bool
+    + Validate() const noexcept : score::Result<void>
+    + HasLolaServiceDeployment() const noexcept : score::Result<bool>
+    + GetListOfNamesOfConfiguredServices() const noexcept : std::set<std::string_view>
+    + GetElementNamesOfServiceType(const std::string_view service_type, ServiceElementType element_type) const noexcept : std::set<std::string_view>
+    + GetAggregatedAllowedUsers(const QualityType asil_level) const noexcept : std::set<uid_t>
+    + GetInstancesOfServiceType(std::string_view service_type) const noexcept : std::set<std::string_view>
+    --
+    - CrossCheckAsilLevels() const noexcept : score::Result<void>
+    - CrossCheckServiceInstancesToTypes() const noexcept : score::Result<void>
+    - {static} AggregateAllowedUsers(std::set<uid_t>&, const std::unordered_map<QualityType, std::vector<uid_t>>&, const QualityType) noexcept : bool
+    ..
+    <u>Notes:</u>
+    Class is moveable but not copyable. The two mutexes protect concurrent access to service_types_ and service_instances_ respectively.
   }
 
   class "score::mw::com::impl::LolaServiceTypeDeployment" {
@@ -201,8 +220,7 @@ class "score::mw::com::impl::Runtime" {
   - configuration : Configuration const&
   __
   - Runtime(std::pair<Configuration&&, std::optional<tracing::TracingFilterConfig>&&> configs)
-  {static} + Initialize() : void
-  {static} + Initialize(const score::cpp::span<const score::StringLiteral> arguments) : void
+  {static} + Initialize(const runtime::RuntimeConfiguration& runtime_configuration) : void
   {static} + getInstance() : Runtime&
   + resolve(const InstanceSpecifier&): score::mw::com::InstanceIdentifierContainer
   + GetBindingRuntime(const BindingType binding) const : IBindingRuntime*

@@ -17,11 +17,18 @@
 def shared_memory_storage(target, mode, **kwargs):
     args = ["--mode", mode]
     return target.wrap_exec(
-        "bin/shared_memory_storage", args, cwd="/opt/shared_memory_storage", wait_on_exit=True, **kwargs
+        "bin/shared_memory_storage",
+        args,
+        cwd="/opt/shared_memory_storage",
+        wait_on_exit=True,
+        **kwargs,
     )
 
 
 def test_shared_memory_storage(target):
     """Test shared memory storage functionality with sender and receiver."""
-    with shared_memory_storage(target, "send"), shared_memory_storage(target, "recv", wait_timeout=15):
+    with (
+        shared_memory_storage(target, "send"),
+        shared_memory_storage(target, "recv", wait_timeout=15),
+    ):
         pass

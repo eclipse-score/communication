@@ -19,9 +19,7 @@
 #include <score/expected.hpp>
 #include <score/span.hpp>
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 /// \brief Interface of a Message Passing Client connection
@@ -34,6 +32,12 @@ class IClientConnection
     ///          destruct the connection that is not in the Stopped state. It is unsafe to destruct the connection from
     ///          any of the connection's callbacks except for the StateCallback with the Stopped state as an argument.
     virtual ~IClientConnection() = default;
+
+    /// \brief An IClientConnection shall not be copyable or movable
+    IClientConnection(const IClientConnection&) = delete;
+    IClientConnection(IClientConnection&&) = delete;
+    IClientConnection& operator=(const IClientConnection&) = delete;
+    IClientConnection& operator=(IClientConnection&&) = delete;
 
     /// \brief Send a binary message to the respective server, don't expect a reply
     /// \details The call is non-blocking and will fail if it would otherwise block due to implementation details.
@@ -157,13 +161,8 @@ class IClientConnection
 
   protected:
     IClientConnection() noexcept = default;
-    IClientConnection(const IClientConnection&) = delete;
-    IClientConnection(IClientConnection&&) = delete;
-    IClientConnection& operator=(const IClientConnection&) = delete;
-    IClientConnection& operator=(IClientConnection&&) = delete;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_I_CLIENT_CONNECTION_H

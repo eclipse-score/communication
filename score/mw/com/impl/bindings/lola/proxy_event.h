@@ -96,7 +96,7 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
     {
         return proxy_event_common_.GetSubscriptionState();
     }
-    Result<std::size_t> GetNumNewSamplesAvailable() const noexcept override;
+    Result<std::size_t> GetNumNewSamplesAvailable() const override;
     Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept override;
 
     Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override
@@ -128,10 +128,6 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
         proxy_event_common_.NotifyServiceInstanceChangedAvailability(is_available, new_event_source_pid);
     }
 
-    pid_t GetEventSourcePid() const noexcept
-    {
-        return proxy_event_common_.GetEventSourcePid();
-    }
     ElementFqId GetElementFQId() const noexcept
     {
         return proxy_event_common_.GetElementFQId();
@@ -160,16 +156,16 @@ inline const std::uint8_t* ProxyEvent<SampleType>::InitialiseEventSlotsRawArray(
     const void* const event_slots_raw_array = meta_info_.event_slots_raw_array_.get(event_slots_raw_array_size);
 
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(nullptr != event_slots_raw_array, "Null event slot array");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(meta_info_.data_type_info_.size == sizeof(SampleType),
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(meta_info_.data_type_info_.Size() == sizeof(SampleType),
                                                       "Event sample size mismatch");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(meta_info_.data_type_info_.alignment == alignof(SampleType),
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(meta_info_.data_type_info_.Alignment() == alignof(SampleType),
                                                       "Event sample alignment mismatch");
 
     return static_cast<const std::uint8_t*>(event_slots_raw_array);
 }
 
 template <typename SampleType>
-inline Result<std::size_t> ProxyEvent<SampleType>::GetNumNewSamplesAvailable() const noexcept
+inline Result<std::size_t> ProxyEvent<SampleType>::GetNumNewSamplesAvailable() const
 {
     /// In case of LoLa binding we can also dispatch to GetNumNewSamplesAvailableImpl() in case of kSubscriptionPending!
     /// Because a pre-condition to kSubscriptionPending is that we once had a successful subscription... and then we can

@@ -26,7 +26,7 @@ namespace
 class MyProxy final : public ProxyBinding
 {
   public:
-    bool IsEventProvided(const std::string_view) const noexcept override
+    bool IsEventProvided(const std::string_view) const override
     {
         return true;
     }

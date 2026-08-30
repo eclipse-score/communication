@@ -27,6 +27,8 @@ Provides:
     also implicitly creates a <name>.update runnable target to regenerate the lock file
 """
 
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
+
 visibility(["//..."])
 
 def _get_include_args(compilation_context):
@@ -60,6 +62,49 @@ def _is_under_any_package(path, packages):
         if path.startswith(package + "/"):
             return True
     return False
+
+def _get_hermetic_clang_command(ctx, include_args, source_file):
+    """Derive the clang binary and built-in flags from the registered LLVM cc_toolchain.
+
+    Reuses the exact compiler tool and hermetic flags (target triple,
+    resource-dir, sysroot, stdlib, ...) that a normal C++ compile with the
+    project's LLVM toolchain would use, instead of invoking a raw clang
+    binary with hand-picked include paths. This avoids depending on any
+    system-installed clang/libclang/libstdc++.
+
+    Uses the toolchain's dedicated "c++-header-parsing" action_config
+    (ACTION_NAMES.cpp_header_parsing) rather than "c++-compile". This is the
+    same action Bazel's built-in `parse_headers` feature uses to syntax-check
+    a header standalone: its flag set is -fsyntax-only-style by construction
+    and never contains object-file flags (-c, -o, -MF/-MD, -frandom-seed=,
+    ...), so there is no need to hand-filter a compile command line to make
+    it AST-dump-only.
+    """
+    cc_toolchain = ctx.attr._llvm_cc_toolchain[cc_common.CcToolchainInfo]
+    feature_configuration = cc_common.configure_features(
+        ctx = ctx,
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+    compile_variables = cc_common.create_compile_variables(
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+        source_file = source_file,
+        user_compile_flags = include_args,
+        use_pic = True,
+    )
+    compiler_path = cc_common.get_tool_for_action(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.cpp_header_parsing,
+    )
+    flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.cpp_header_parsing,
+        variables = compile_variables,
+    )
+
+    return compiler_path, flags, cc_toolchain.all_files.to_list()
 
 _ApiSurfaceHeadersInfo = provider(
     doc = "Aggregated header sets for API surface extraction.",
@@ -148,23 +193,23 @@ def _api_surface_gen_impl(ctx):
     # Create AST dump output file
     ast_dump = ctx.actions.declare_file(ctx.label.name + "_ast.json")
 
+    clang_path, hermetic_flags, toolchain_files = _get_hermetic_clang_command(
+        ctx,
+        include_args,
+        combined_header.path,
+    )
+
+    # Add the AST-dump-specific flags
     ctx.actions.run_shell(
         outputs = [ast_dump],
-        inputs = [combined_header] + target_hdrs + all_headers,
-        tools = [ctx.file._clang],
+        inputs = [combined_header] + target_hdrs + all_headers + toolchain_files,
         command = "{clang} {args} > {output}".format(
-            clang = ctx.file._clang.path,
-            args = " ".join([
+            clang = clang_path,
+            args = " ".join(hermetic_flags + [
                 "-Xclang",
                 "-ast-dump=json",
-                "-fsyntax-only",
-                "-x",
-                "c++",
-                "-std=" + ctx.attr.std,
                 "-fparse-all-comments",
-                "-w",
-                "-I.",
-            ] + include_args + [combined_header.path]),
+            ]),
             output = ast_dump.path,
         ),
         mnemonic = "ClangAstDump",
@@ -211,21 +256,18 @@ _api_surface_gen = rule(
             default = "",
             doc = "Bazel target label for metadata.",
         ),
-        "std": attr.string(
-            default = "c++17",
-            doc = "C++ standard for parsing.",
-        ),
         "_extractor": attr.label(
             default = Label("//quality/api_surface:extract_api"),
             executable = True,
             cfg = "exec",
         ),
-        "_clang": attr.label(
-            default = Label("@llvm_toolchain//:bin/clang-cpp"),
-            allow_single_file = True,
+        "_llvm_cc_toolchain": attr.label(
+            default = Label("@llvm_toolchain//:cc-clang-x86_64-linux"),
             cfg = "exec",
+            doc = "Hermetic LLVM cc_toolchain used to derive the clang binary and built-in flags.",
         ),
     },
+    fragments = ["cpp"],
 )
 
 def _api_surface_test_impl(ctx):
@@ -354,20 +396,21 @@ _api_surface_update_rule = rule(
 
 # --- Public macros ---
 
-def api_surface_test(name, lock_file, target, check_docs = True, std = "c++17", tags = [], **kwargs):
+def api_surface_test(name, lock_file, target, check_docs = True, tags = [], **kwargs):
     """Verifies the public C++ API surface hasn't changed.
 
     Also creates an implicit `<name>.update` runnable target that regenerates
     the lock file (run with `bazel run`).
 
     Uses clang to parse headers and compare against a committed lock file.
+    The C++ standard used for parsing comes from the registered LLVM
+    cc_toolchain (its cxx_standard), the same one used for regular compiles.
 
     Args:
         name: Test target name. An implicit `<name>.update` target is also created.
         lock_file: Committed JSON lock file label (must be in the current package).
         target: cc_library target whose transitive direct public headers define the public API.
         check_docs: If True, also check all public symbols have \\api docs.
-        std: C++ standard for parsing (default c++17).
         tags: Additional tags for the test target.
     """
     _linux_only = ["@platforms//os:linux"]
@@ -377,7 +420,6 @@ def api_surface_test(name, lock_file, target, check_docs = True, std = "c++17", 
         name = gen_name,
         deps = [target],
         target_label = target,
-        std = std,
         tags = tags,
         target_compatible_with = _linux_only,
     )

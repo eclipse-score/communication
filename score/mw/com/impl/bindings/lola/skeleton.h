@@ -115,8 +115,7 @@ class Skeleton final : public SkeletonBinding
         SkeletonFieldBindings& fields,
         std::optional<RegisterShmObjectTraceCallback> register_shm_object_trace_callback) override;
 
-    void PrepareStopOffer(
-        std::optional<UnregisterShmObjectTraceCallback> unregister_shm_object_callback) noexcept override;
+    void PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> unregister_shm_object_callback) override;
 
     BindingType GetBindingType() const noexcept override
     {
@@ -134,7 +133,7 @@ class Skeleton final : public SkeletonBinding
     auto RegisterGeneric(const ElementFqId element_fq_id,
                          const SkeletonEventProperties& element_properties,
                          const size_t sample_size,
-                         const size_t sample_alignment) noexcept -> GenericRegistrationResult;
+                         const size_t sample_alignment) -> GenericRegistrationResult;
 
     /// \brief Enables dynamic registration of Events at the Skeleton.
     /// \tparam SampleType The type of the event

@@ -41,8 +41,17 @@ def load_api_surface(name: str) -> dict:
 
     # Try several path patterns
     candidates = [
-        os.path.join(runfiles_dir, workspace_name, "quality/api_surface/tests", f"{name}_api_test_gen.json"),
-        os.path.join(runfiles_dir, workspace_name, f"quality/api_surface/tests/{name}_api_test_gen.json"),
+        os.path.join(
+            runfiles_dir,
+            workspace_name,
+            "quality/api_surface/tests",
+            f"{name}_api_test_gen.json",
+        ),
+        os.path.join(
+            runfiles_dir,
+            workspace_name,
+            f"quality/api_surface/tests/{name}_api_test_gen.json",
+        ),
         f"quality/api_surface/tests/{name}_api_test_gen.json",
     ]
 
@@ -59,10 +68,7 @@ def load_api_surface(name: str) -> dict:
                     with open(os.path.join(root, fname)) as f:
                         return json.load(f)
 
-    raise FileNotFoundError(
-        f"Could not find {name}_api_test_gen.json in runfiles. "
-        f"Searched: {candidates}"
-    )
+    raise FileNotFoundError(f"Could not find {name}_api_test_gen.json in runfiles. Searched: {candidates}")
 
 
 def get_all_symbols(result: dict) -> list[dict]:
@@ -281,8 +287,12 @@ class TestEnumAndFreeFunctions(unittest.TestCase):
 
     def test_enum_values(self):
         qnames = qualified_names(self.symbols)
-        for val in ("test::Status::kOk", "test::Status::kError",
-                    "test::Status::kTimeout", "test::Status::kCancelled"):
+        for val in (
+            "test::Status::kOk",
+            "test::Status::kError",
+            "test::Status::kTimeout",
+            "test::Status::kCancelled",
+        ):
             self.assertIn(val, qnames, f"Missing enum value: {val}")
 
     def test_free_functions(self):
@@ -343,8 +353,11 @@ class TestLockFileFormat(unittest.TestCase):
         """Symbols contain only name, qualified_name, kind, signature."""
         allowed = {"name", "qualified_name", "kind", "signature"}
         for sym in get_all_symbols(self.result):
-            self.assertEqual(set(sym.keys()), allowed,
-                           f"Unexpected fields in symbol: {set(sym.keys()) - allowed}")
+            self.assertEqual(
+                set(sym.keys()),
+                allowed,
+                f"Unexpected fields in symbol: {set(sym.keys()) - allowed}",
+            )
 
     def test_no_file_metadata(self):
         for sym in get_all_symbols(self.result):
@@ -376,7 +389,6 @@ class TestResultTypeRegression(unittest.TestCase):
 
     def test_lock_file_scope_stays_reasonable(self):
         self.assertLess(len(self.symbols), 50)
-
 
 
 class TestMultiInheritance(unittest.TestCase):
@@ -419,12 +431,10 @@ class TestRefQualifiers(unittest.TestCase):
         self.assertIn("test::Buffer", qualified_names(self.symbols))
 
     def test_both_data_overloads_present(self):
-        sigs = [s["signature"] for s in self.symbols
-                if s["qualified_name"] == "test::Buffer::data"]
+        sigs = [s["signature"] for s in self.symbols if s["qualified_name"] == "test::Buffer::data"]
         self.assertEqual(len(sigs), 2)
         self.assertTrue(any(sig.rstrip().endswith("&&") for sig in sigs))
-        self.assertTrue(any(sig.rstrip().endswith("&") and not sig.rstrip().endswith("&&")
-                            for sig in sigs))
+        self.assertTrue(any(sig.rstrip().endswith("&") and not sig.rstrip().endswith("&&") for sig in sigs))
 
     def test_const_lvalue_qualifier(self):
         sym = find_symbol(self.symbols, "test::Buffer::size")
@@ -675,10 +685,7 @@ class TestSfinae(unittest.TestCase):
 
 def public_surface(result: dict) -> dict:
     """Return a comparable {qualified_name: signature} map of the public API."""
-    return {
-        s["qualified_name"]: s.get("signature", "")
-        for s in get_all_symbols(result)
-    }
+    return {s["qualified_name"]: s.get("signature", "") for s in get_all_symbols(result)}
 
 
 class TestPrivateAttributeChanges(unittest.TestCase):
@@ -711,8 +718,16 @@ class TestPrivateAttributeChanges(unittest.TestCase):
     def test_no_private_members_leak(self):
         # Union of the (different) private members from both headers.
         private_members = {
-            "name_", "history_", "cache_", "updateHistory", "clearCache",
-            "counters_", "revision_", "dirty_", "recompute", "invalidate",
+            "name_",
+            "history_",
+            "cache_",
+            "updateHistory",
+            "clearCache",
+            "counters_",
+            "revision_",
+            "dirty_",
+            "recompute",
+            "invalidate",
             "lookup",
         }
         for result in (self.v1, self.v2):

@@ -21,6 +21,7 @@ Exposed session fixtures:
     - ``target_a`` / ``target_b`` -- the two booted VMs (``QemuTarget``).
     - ``ivshmem_backend``         -- path of the shared host backing file.
 """
+
 import logging
 import socket
 

@@ -34,11 +34,13 @@ cc_binary(
     deps = [
         ":consumer",
         ":provider",
+        "//score/mw/com/test/common_test_resources:general_resources",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
         "//score/mw/com/test/common_test_resources:test_resources",
         "@boost.program_options",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 
@@ -48,9 +50,11 @@ cc_library(
     hdrs = ["consumer.h"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
+        "//score/mw/com/test/common_test_resources:general_resources",
         "//score/mw/com/test/common_test_resources:test_resources",
         "//score/mw/com/test/partial_restart:consumer_handle_notification_data",
         "//score/mw/com/test/partial_restart:test_datatype",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
 )
 
@@ -61,8 +65,10 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:general_resources",
         "//score/mw/com/test/partial_restart:consumer_handle_notification_data",
         "//score/mw/com/test/partial_restart:test_datatype",
+        "@score_baselibs//score/string_manipulation/arguments",
     ],
     deps = [
         "//score/mw/com/test/common_test_resources:test_resources",

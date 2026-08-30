@@ -15,6 +15,7 @@
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/check_point_control.h"
 #include "score/mw/com/test/common_test_resources/consumer_resources.h"
+#include "score/string_manipulation/arguments/arguments.h"
 
 #include "score/mw/com/test/common_test_resources/general_resources.h"
 #include "score/mw/com/test/service_discovery_during_provider_crash/test_datatype.h"
@@ -41,7 +42,7 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
         std::cerr
             << "Consumer: Initializing LoLa/mw::com runtime from cmd-line args handed over by parent/controller ..."
             << std::endl;
-        mw::com::runtime::InitializeRuntime(argc, argv);
+        runtime::InitializeRuntime(score::string_manipulation::GetArguments(argc, argv));
         std::cerr << "Consumer: Initializing LoLa/mw::com runtime done." << std::endl;
     }
 
@@ -66,8 +67,15 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
     //              provider while the consumer is still in the callback.
     // ***********************************************************************************
 
-    auto find_service_callback = [&check_point_control](auto service_handle_container,
-                                                        auto find_service_handle) noexcept {
+    auto find_service_callback = [&check_point_control](
+                                     // The enclosing FindServiceHandler is a type-erased callback whose call
+                                     // signature takes this parameter by value; the caller already copies it
+                                     // into that fixed signature before invoking this lambda, so taking it by
+                                     // const& here would not avoid any copy - it would only (misleadingly) hide
+                                     // the fact that one already happened.
+                                     // NOLINTNEXTLINE(performance-unnecessary-value-param)
+                                     auto service_handle_container,
+                                     auto find_service_handle) noexcept {
         std::cerr << "Consumer Step (C.2): find service handler called" << std::endl;
         if (service_handle_container.size() != 1)
         {

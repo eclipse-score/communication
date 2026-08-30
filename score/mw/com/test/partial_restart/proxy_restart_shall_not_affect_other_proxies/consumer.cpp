@@ -52,7 +52,7 @@ bool StartFindServiceAndWait(const std::string& tag,
     std::cout << "Consumer Step: Call StartFindService" << std::endl;
     auto find_service_callback = [&tag, &check_point_control, &handle_notification_data](
                                      auto service_handle_container, auto find_service_handle) noexcept {
-        score::utils::ScopeExit check_point_control_error_guard{[&check_point_control]() {
+        score::utils::ScopeExit check_point_control_error_guard_start_find_service{[&check_point_control]() {
             check_point_control.ErrorOccurred();
         }};
 
@@ -71,7 +71,7 @@ bool StartFindServiceAndWait(const std::string& tag,
         std::cerr << tag << ": FindServiceHandler handler done - found one service instance." << std::endl;
 
         std::ignore = TestServiceProxy::StopFindService(find_service_handle);
-        check_point_control_error_guard.Release();
+        check_point_control_error_guard_start_find_service.Release();
     };
 
     auto find_service_handle_result =
@@ -118,8 +118,10 @@ void PerformFirstConsumerActions(CheckPointControl& check_point_control,
     //***************************************************
     std::cout << "First Consumer Step(1) - mw_com_config_path: " << mw_com_config_path << std::endl;
     // Initialize mw::com runtime with our explicit configuration
-    const char* argv[2U] = {"--service_instance_manifest", mw_com_config_path.data()};
-    runtime::InitializeRuntime(2U, argv);
+    using safecpp::literals::operator""_zsv;
+    const auto path = safecpp::zstring_view{mw_com_config_path.data(), mw_com_config_path.size()};
+    std::vector arguments = {"--service_instance_manifest"_zsv, path};
+    runtime::InitializeRuntime(arguments);
     //***************************************************************************
     // Step (2)- start find service and wait till it is found.
     //***************************************************************************
@@ -209,8 +211,10 @@ void PerformSecondConsumerActions(CheckPointControl& check_point_control,
     //***************************************************
     std::cout << "Second Consumer Step(1) - mw_com_config_path: " << mw_com_config_path << std::endl;
     // Initialize mw::com runtime with our explicit configuration
-    const char* argv[2U] = {"--service_instance_manifest", mw_com_config_path.data()};
-    runtime::InitializeRuntime(2U, argv);
+    using safecpp::literals::operator""_zsv;
+    const auto path = safecpp::zstring_view{mw_com_config_path.data(), mw_com_config_path.size()};
+    std::vector arguments = {"--service_instance_manifest"_zsv, path};
+    runtime::InitializeRuntime(arguments);
     //*********************************************************
     // Step (2)- start find service and wait till it is found.
     //*********************************************************

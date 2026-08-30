@@ -59,7 +59,12 @@ int ExecuteWithRegularConnection()
                 score::mw::com::impl::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(),
                 score::mw::com::impl::ServiceElementType::EVENT,
                 "TestEvent"};
-            transport.SendNotification(ack_response);
+
+            const auto send_notification_result = transport.SendNotification(ack_response);
+            if (!send_notification_result)
+            {
+                std::cerr << "SendNotification failed: " << send_notification_result.error() << std::endl;
+            }
         }
     });
 
@@ -100,7 +105,7 @@ int ExecuteWithReconnect()
     std::atomic<int> received_message_count{0};
     std::atomic<int> sent_message_count{0};
 
-    transport.SetMessageHandler([&](std::unique_ptr<score::mw::com::gateway::TransportMessage> message) {
+    transport.SetMessageHandler([&](std::unique_ptr<score::mw::com::gateway::TransportMessage> /*message*/) {
         const int count = ++received_message_count;
 
         // Send a notification back to the sender when receiving the message after reconnect
@@ -110,7 +115,11 @@ int ExecuteWithReconnect()
                 score::mw::com::impl::InstanceSpecifier::Create(std::string{"TestService/Instance1"}).value(),
                 score::mw::com::impl::ServiceElementType::EVENT,
                 "TestEvent"};
-            transport.SendNotification(notification);
+            const auto send_notification_result = transport.SendNotification(notification);
+            if (!send_notification_result)
+            {
+                std::cerr << "Reconnect: SendNotification failed: " << send_notification_result.error() << std::endl;
+            }
             sent_message_count++;
         }
     });

@@ -25,7 +25,7 @@ class TracingRuntime : public IBindingTracingRuntime
   public:
     MOCK_METHOD(ServiceElementTracingData, RegisterServiceElement, (std::uint8_t), (noexcept, override));
     MOCK_METHOD(bool, RegisterWithGenericTraceApi, (), (noexcept, override));
-    MOCK_METHOD(analysis::tracing::TraceClientId, GetTraceClientId, (), (const, noexcept, override));
+    MOCK_METHOD(analysis::tracing::TraceClientId, GetTraceClientId, (), (const, override));
     MOCK_METHOD(void, SetDataLossFlag, (const bool new_value), (noexcept, override));
     MOCK_METHOD(bool, GetDataLossFlag, (), (const, noexcept, override));
     MOCK_METHOD(void,
@@ -65,7 +65,7 @@ class TracingRuntime : public IBindingTracingRuntime
     MOCK_METHOD(std::optional<TraceContextId>,
                 EmplaceTypeErasedSamplePtr,
                 (TypeErasedSamplePtr, const impl::tracing::ServiceElementTracingData),
-                (noexcept, override));
+                (override));
     MOCK_METHOD(void, ClearTypeErasedSamplePtr, (TraceContextId), (noexcept, override));
     MOCK_METHOD(void,
                 ClearTypeErasedSamplePtrs,

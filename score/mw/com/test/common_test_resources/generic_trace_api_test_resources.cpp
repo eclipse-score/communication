@@ -59,7 +59,7 @@ void SetupGenericTraceApiMocking(GenericTraceApiMockContext& context) noexcept
         }));
     ON_CALL(context.generic_trace_api_mock, Trace(trace_client_id, _, An<ShmDataChunkList&>(), _))
         .WillByDefault(Invoke(
-            [&context](TraceClientId, const MetaInfoVariants::Type&, ShmDataChunkList&, TraceContextId context_id) {
+            [&context](TraceClientId, const MetaInfoVariants::StdType&, ShmDataChunkList&, TraceContextId context_id) {
                 context.last_trace_context_id = context_id;
                 return score::Result<void>{};
             }));

@@ -15,11 +15,7 @@
 
 #include <cstdint>
 
-namespace score
-{
-namespace message_passing
-{
-namespace detail
+namespace score::message_passing::detail
 {
 
 enum class ClientToServer : std::uint8_t
@@ -34,8 +30,6 @@ enum class ServerToClient : std::uint8_t
     NOTIFY
 };
 
-}  // namespace detail
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing::detail
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_CLIENT_SERVER_COMMUNICATION_H

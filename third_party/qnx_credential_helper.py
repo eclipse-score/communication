@@ -49,9 +49,7 @@ if __name__ == "__main__":
             eprint("Failed getting credentials from .netrc")
             sys.exit(1)
 
-    data = urllib.parse.urlencode(
-        {"userlogin": login, "password": password, "UseCookie": "1"}
-    )
+    data = urllib.parse.urlencode({"userlogin": login, "password": password, "UseCookie": "1"})
     data = data.encode("ascii")
 
     cookie_jar = http.cookiejar.CookieJar()

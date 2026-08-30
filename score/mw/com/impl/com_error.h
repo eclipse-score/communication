@@ -211,8 +211,7 @@ class ComErrorDomain final : public score::result::ErrorDomain
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(ComErrc::kInvalid):
             case static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements):
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-                    false,
+                SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE(
                     "kNumEnumElements/kInvalid are not valid states for the enum! They're just used "
                     "for verifying the value of an enum during serialization / deserialization!");
             default:

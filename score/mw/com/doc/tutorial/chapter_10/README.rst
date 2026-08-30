@@ -42,16 +42,16 @@ These basic building blocks can also be seen in the high-level architecture docu
    shared-memory objects.
 
 Access control is configured at the level of a **service instance** in the ``score::mw::com`` configuration file. For a
-specific service instance you can define two properties, each carrying a list of ``uid``s separated by ASIL level:
+specific service instance you can define two properties, each carrying a list of ``uid``\s separated by ASIL level:
 
 - **allowedConsumer** defines which applications, in the role of a **consumer** (proxy), are allowed to access the
   service instance. This is defined at the **provider side** (provider-side configuration). In the LoLa binding the
-  provider uses this list to restrict access to its shared-memory objects (via ACLs) to exactly the given ``uid``s.
+  provider uses this list to restrict access to its shared-memory objects (via ACLs) to exactly the given ``uid``\s.
 - **allowedProvider** defines which applications are expected/allowed, in the role of a **provider** (skeleton), to
   provide the service instance. This is defined at the **consumer side** (consumer-side configuration). With this
   setting a consumer can make sure that it only accepts a verified/specific provider to consume the service from: when
   opening/mapping the shared-memory objects, the consumer checks that they are owned by one of the configured
-  ``allowedProvider`` ``uid``s and terminates if that is not the case.
+  ``allowedProvider`` ``uid``\s and terminates if that is not the case.
 
 A few important rules:
 
@@ -59,7 +59,7 @@ A few important rules:
   given. If a service instance is tagged with ``asil-level`` = ``QM``, only a ``QM`` list may be given in
   ``allowedConsumer`` / ``allowedProvider``.
 - If a property ``allowedConsumer`` or ``allowedProvider`` is **omitted**, this means **no restrictions** regarding
-  ``uid``s.
+  ``uid``\s.
 - If a property ``allowedConsumer`` or ``allowedProvider`` is an **empty list**, the meaning depends on the
   ``permission-checks`` property of the service instance (``file-permissions-on-empty`` – the default – falls back to
   basic ``ugo`` file-system rights; ``strict`` means really no-one is allowed). See the
@@ -171,10 +171,10 @@ Extract both archives (e.g. in a tmp-directory):
 
 
 Unlike the previous chapters, we now need to start the provider and consumer under **specific user-ids**, matching the
-``uid``s we configured (``777`` for the provider, ``778`` for the consumer). The following steps require **root**
+``uid``\s we configured (``777`` for the provider, ``778`` for the consumer). The following steps require **root**
 privileges (to create the users and to run a program as another user).
 
-Create the two users with exactly the ``uid``s used in the configuration:
+Create the two users with exactly the ``uid``\s used in the configuration:
 
 .. code-block:: bash
 
@@ -239,12 +239,12 @@ A short summary of what we have learned in this chapter:
   **shared-memory objects** (the message-passing layer currently has no access control).
 - Access control is configured per **service instance** via two properties:
 
-  - ``allowedConsumer`` (provider-side): the ``uid``s allowed to *consume* the instance; enforced via ACLs on the
+  - ``allowedConsumer`` (provider-side): the ``uid``\s allowed to *consume* the instance; enforced via ACLs on the
     provider's shared-memory objects.
-  - ``allowedProvider`` (consumer-side): the ``uid``s the consumer accepts as *provider*; the consumer checks the
+  - ``allowedProvider`` (consumer-side): the ``uid``\s the consumer accepts as *provider*; the consumer checks the
     ownership of the shared-memory objects and terminates on a mismatch.
 
 - The ``uid`` lists are given per ASIL level (``QM``, and ``B`` only for ASIL-B service instances). An **omitted**
   property means *no restriction*; an **empty** list is interpreted according to the ``permission-checks`` property.
-- If the running ``uid``s do not match the configured lists on either side, the consumer cannot create a proxy and
+- If the running ``uid``\s do not match the configured lists on either side, the consumer cannot create a proxy and
   communication is denied.

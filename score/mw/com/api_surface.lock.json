@@ -23,19 +23,31 @@
       "name": "ResolveInstanceIDs",
       "qualified_name": "score::mw::com::runtime::ResolveInstanceIDs",
       "kind": "function",
-      "signature": "ResolveInstanceIDs : score::Result<score::mw::com::InstanceIdentifierContainer> (const InstanceSpecifier)"
+      "signature": "ResolveInstanceIDs : score::Result<score::mw::com::InstanceIdentifierContainer> (const InstanceSpecifier &)"
     },
     {
       "name": "InitializeRuntime",
       "qualified_name": "score::mw::com::runtime::InitializeRuntime",
       "kind": "function",
-      "signature": "InitializeRuntime : void (const std::int32_t, score::StringLiteral *)"
+      "signature": "InitializeRuntime : void (const cpp::span<safecpp::zstring_view>)"
     },
     {
       "name": "InitializeRuntime",
       "qualified_name": "score::mw::com::runtime::InitializeRuntime",
       "kind": "function",
       "signature": "InitializeRuntime : void (const RuntimeConfiguration &)"
+    },
+    {
+      "name": "InitializeRuntimeAddonConfiguration",
+      "qualified_name": "score::mw::com::runtime::InitializeRuntimeAddonConfiguration",
+      "kind": "function",
+      "signature": "InitializeRuntimeAddonConfiguration : Result<void> (const RuntimeConfiguration &)"
+    },
+    {
+      "name": "InitializeRuntimeAddonConfiguration",
+      "qualified_name": "score::mw::com::runtime::InitializeRuntimeAddonConfiguration",
+      "kind": "function",
+      "signature": "InitializeRuntimeAddonConfiguration : Result<void> (score::json::Any)"
     },
     {
       "name": "RuntimeConfiguration",
@@ -47,7 +59,7 @@
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
       "kind": "constructor",
-      "signature": "RuntimeConfiguration : void (const std::int32_t, score::StringLiteral *)"
+      "signature": "RuntimeConfiguration : void (cpp::span<safecpp::zstring_view>)"
     },
     {
       "name": "RuntimeConfiguration",
@@ -71,7 +83,7 @@
       "name": "Create",
       "qualified_name": "score::mw::com::InstanceIdentifier::Create",
       "kind": "method",
-      "signature": "static Create : score::Result<InstanceIdentifier> (std::string &&) noexcept"
+      "signature": "static Create : score::Result<InstanceIdentifier> (std::string &&)"
     },
     {
       "name": "InstanceIdentifier",
@@ -206,6 +218,18 @@
       "signature": "using WithGetter = impl::WithGetter"
     },
     {
+      "name": "WithSetter",
+      "qualified_name": "score::mw::com::WithSetter",
+      "kind": "type_alias",
+      "signature": "using WithSetter = impl::WithSetter"
+    },
+    {
+      "name": "WithNotifier",
+      "qualified_name": "score::mw::com::WithNotifier",
+      "kind": "type_alias",
+      "signature": "using WithNotifier = impl::WithNotifier"
+    },
+    {
       "name": "AsProxy",
       "qualified_name": "score::mw::com::AsProxy",
       "kind": "template_type_alias",
@@ -227,19 +251,19 @@
       "name": "Create",
       "qualified_name": "score::mw::com::GenericProxy::Create",
       "kind": "method",
-      "signature": "static Create : Result<GenericProxy> (HandleType) noexcept"
+      "signature": "static Create : Result<GenericProxy> (HandleType)"
     },
     {
       "name": "FindService",
       "qualified_name": "score::mw::com::GenericProxy::FindService",
       "kind": "method",
-      "signature": "static FindService : Result<ServiceHandleContainer<HandleType>> (InstanceSpecifier) noexcept"
+      "signature": "static FindService : Result<ServiceHandleContainer<HandleType>> (InstanceSpecifier)"
     },
     {
       "name": "FindService",
       "qualified_name": "score::mw::com::GenericProxy::FindService",
       "kind": "method",
-      "signature": "static FindService : Result<ServiceHandleContainer<HandleType>> (InstanceIdentifier) noexcept"
+      "signature": "static FindService : Result<ServiceHandleContainer<HandleType>> (InstanceIdentifier)"
     },
     {
       "name": "GetEvents",
@@ -257,19 +281,25 @@
       "name": "StartFindService",
       "qualified_name": "score::mw::com::GenericProxy::StartFindService",
       "kind": "method",
-      "signature": "static StartFindService : Result<FindServiceHandle> (FindServiceHandler<HandleType>, InstanceIdentifier) noexcept"
+      "signature": "static StartFindService : Result<FindServiceHandle> (FindServiceHandler<HandleType>, InstanceIdentifier)"
     },
     {
       "name": "StartFindService",
       "qualified_name": "score::mw::com::GenericProxy::StartFindService",
       "kind": "method",
-      "signature": "static StartFindService : Result<FindServiceHandle> (FindServiceHandler<HandleType>, InstanceSpecifier) noexcept"
+      "signature": "static StartFindService : Result<FindServiceHandle> (FindServiceHandler<HandleType>, InstanceSpecifier)"
     },
     {
       "name": "StopFindService",
       "qualified_name": "score::mw::com::GenericProxy::StopFindService",
       "kind": "method",
-      "signature": "static StopFindService : score::Result<void> (const FindServiceHandle) noexcept"
+      "signature": "static StopFindService : score::Result<void> (const FindServiceHandle)"
+    },
+    {
+      "name": "GenericProxyEvent",
+      "qualified_name": "score::mw::com::GenericProxyEvent",
+      "kind": "type_alias",
+      "signature": "using GenericProxyEvent = impl::GenericProxyEvent"
     },
     {
       "name": "GetFreeSampleCount",
@@ -281,7 +311,7 @@
       "name": "GetNumNewSamplesAvailable",
       "qualified_name": "score::mw::com::GenericProxyEvent::GetNumNewSamplesAvailable",
       "kind": "method",
-      "signature": "GetNumNewSamplesAvailable : Result<std::size_t> () const noexcept"
+      "signature": "GetNumNewSamplesAvailable : Result<std::size_t> () const"
     },
     {
       "name": "GetSubscriptionState",
@@ -311,7 +341,7 @@
       "name": "Subscribe",
       "qualified_name": "score::mw::com::GenericProxyEvent::Subscribe",
       "kind": "method",
-      "signature": "Subscribe : Result<void> (const std::size_t) noexcept"
+      "signature": "Subscribe : Result<void> (const std::size_t)"
     },
     {
       "name": "UnsetReceiveHandler",
@@ -341,7 +371,7 @@
       "name": "OfferService",
       "qualified_name": "score::mw::com::GenericSkeleton::OfferService",
       "kind": "method",
-      "signature": "OfferService : Result<void> () noexcept [[nodiscard]]"
+      "signature": "OfferService : Result<void> () [[nodiscard]]"
     },
     {
       "name": "StopOfferService",
@@ -421,7 +451,13 @@
       "name": "InitializeRuntime",
       "qualified_name": "score::mw::com::runtime::IRuntime::InitializeRuntime",
       "kind": "method",
-      "signature": "InitializeRuntime : void (const std::int32_t, score::cpp::span<const score::StringLiteral>)"
+      "signature": "InitializeRuntime : void (const std::int32_t, score::cpp::span<const char *>) [[deprecated]]"
+    },
+    {
+      "name": "InitializeRuntime",
+      "qualified_name": "score::mw::com::runtime::IRuntime::InitializeRuntime",
+      "kind": "method",
+      "signature": "InitializeRuntime : void (const cpp::span<safecpp::zstring_view>)"
     },
     {
       "name": "InitializeRuntime",
@@ -454,10 +490,22 @@
       "signature": "operator= : IRuntime &(const IRuntime &) &"
     },
     {
+      "name": "InitializeRuntime",
+      "qualified_name": "score::mw::com::runtime::InitializeRuntime",
+      "kind": "function",
+      "signature": "InitializeRuntime : void (const std::int32_t, const char **) [[deprecated]]"
+    },
+    {
       "name": "RuntimeConfiguration",
       "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
       "kind": "constructor",
       "signature": "RuntimeConfiguration : void ()"
+    },
+    {
+      "name": "RuntimeConfiguration",
+      "qualified_name": "score::mw::com::runtime::RuntimeConfiguration::RuntimeConfiguration",
+      "kind": "constructor",
+      "signature": "RuntimeConfiguration : void (const std::int32_t, const char **) [[deprecated]]"
     },
     {
       "name": "~InstanceIdentifier",
@@ -700,18 +748,6 @@
       "signature": "~SampleAllocateePtr<SampleType> : void () noexcept"
     },
     {
-      "name": "WithSetter",
-      "qualified_name": "score::mw::com::WithSetter",
-      "kind": "type_alias",
-      "signature": "using WithSetter = impl::WithSetter"
-    },
-    {
-      "name": "WithNotifier",
-      "qualified_name": "score::mw::com::WithNotifier",
-      "kind": "type_alias",
-      "signature": "using WithNotifier = impl::WithNotifier"
-    },
-    {
       "name": "GenericProxy",
       "qualified_name": "score::mw::com::GenericProxy::GenericProxy",
       "kind": "constructor",
@@ -742,12 +778,6 @@
       "signature": "~ProxyBase : void () noexcept"
     },
     {
-      "name": "GenericProxyEvent",
-      "qualified_name": "score::mw::com::GenericProxyEvent",
-      "kind": "type_alias",
-      "signature": "using GenericProxyEvent = impl::GenericProxyEvent"
-    },
-    {
       "name": "EnableReferenceToMoveableFromThis<T>",
       "qualified_name": "score::mw::com::GenericProxyEvent::EnableReferenceToMoveableFromThis<T>",
       "kind": "constructor",
@@ -772,6 +802,12 @@
       "signature": "GenericProxyEvent : void (ProxyBase &, const std::string_view)"
     },
     {
+      "name": "GetDataTypeSizeInfo",
+      "qualified_name": "score::mw::com::GenericProxyEvent::GetDataTypeSizeInfo",
+      "kind": "method",
+      "signature": "GetDataTypeSizeInfo : memory::DataTypeSizeInfo () const"
+    },
+    {
       "name": "GetNewSamples",
       "qualified_name": "score::mw::com::GenericProxyEvent::GetNewSamples",
       "kind": "template_function",
@@ -787,7 +823,7 @@
       "name": "GetSampleSize",
       "qualified_name": "score::mw::com::GenericProxyEvent::GetSampleSize",
       "kind": "method",
-      "signature": "GetSampleSize : std::size_t () const noexcept"
+      "signature": "GetSampleSize : std::size_t () const noexcept [[deprecated]]"
     },
     {
       "name": "HasSerializedFormat",
@@ -799,7 +835,7 @@
       "name": "ProxyEventBase",
       "qualified_name": "score::mw::com::GenericProxyEvent::ProxyEventBase",
       "kind": "constructor",
-      "signature": "ProxyEventBase : void (std::string_view, Result<std::unique_ptr<ProxyEventBindingBase>>) noexcept"
+      "signature": "ProxyEventBase : void (std::string_view, Result<std::unique_ptr<ProxyEventBindingBase>>)"
     },
     {
       "name": "ProxyEventBase",
@@ -841,13 +877,13 @@
       "name": "Create",
       "qualified_name": "score::mw::com::GenericSkeleton::Create",
       "kind": "method",
-      "signature": "static Create : Result<GenericSkeleton> (const InstanceIdentifier &, const GenericSkeletonServiceElementInfo &) noexcept [[nodiscard]]"
+      "signature": "static Create : Result<GenericSkeleton> (const InstanceIdentifier &, const GenericSkeletonServiceElementInfo &) [[nodiscard]]"
     },
     {
       "name": "Create",
       "qualified_name": "score::mw::com::GenericSkeleton::Create",
       "kind": "method",
-      "signature": "static Create : Result<GenericSkeleton> (const InstanceSpecifier &, const GenericSkeletonServiceElementInfo &) noexcept [[nodiscard]]"
+      "signature": "static Create : Result<GenericSkeleton> (const InstanceSpecifier &, const GenericSkeletonServiceElementInfo &) [[nodiscard]]"
     },
     {
       "name": "GetEvents",
@@ -865,7 +901,7 @@
       "name": "OfferService",
       "qualified_name": "score::mw::com::GenericSkeleton::OfferService",
       "kind": "method",
-      "signature": "OfferService : Result<void> () noexcept [[nodiscard]]"
+      "signature": "OfferService : Result<void> () [[nodiscard]]"
     },
     {
       "name": "SkeletonBase",
@@ -877,7 +913,7 @@
       "name": "StopOfferService",
       "qualified_name": "score::mw::com::GenericSkeleton::StopOfferService",
       "kind": "method",
-      "signature": "StopOfferService : void () noexcept"
+      "signature": "StopOfferService : void ()"
     },
     {
       "name": "~SkeletonBase",

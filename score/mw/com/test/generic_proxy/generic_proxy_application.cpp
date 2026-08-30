@@ -13,11 +13,9 @@
 
 #include "score/mw/com/test/generic_proxy/generic_proxy_application.h"
 
-#include "score/mw/com/impl/generic_proxy.h"
-#include "score/mw/com/impl/generic_proxy_event.h"
-#include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/test/common_test_resources/sample_sender_receiver.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
+#include "score/mw/com/types.h"
 
 #include <optional>
 
@@ -57,9 +55,8 @@ int main(int argc, const char** argv)
     else if (mode == "recv" || mode == "proxy")
     {
         const std::optional<std::chrono::milliseconds> cycle_time = {};
-        return event_sender_receiver
-            .RunAsProxy<score::mw::com::impl::GenericProxy, score::mw::com::impl::GenericProxyEvent>(
-                instance_specifier, cycle_time, num_cycles, std::cref(stop_token));
+        return event_sender_receiver.RunAsProxy<score::mw::com::GenericProxy, score::mw::com::GenericProxyEvent>(
+            instance_specifier, cycle_time, num_cycles, std::cref(stop_token));
     }
     else
     {

@@ -72,7 +72,7 @@ LolaMethodInstanceDeployment MakeLolaMethodInstanceDeployment(
 }
 
 LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
-    const std::optional<LolaServiceInstanceId> instance_id,
+    const std::optional<LolaServiceInstanceId>& instance_id,
     const std::optional<std::size_t> shared_memory_size,
     const std::optional<std::size_t> control_asil_b_memory_size,
     const std::optional<std::size_t> control_qm_memory_size) noexcept

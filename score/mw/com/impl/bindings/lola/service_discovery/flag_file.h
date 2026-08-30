@@ -31,15 +31,14 @@ auto GetQualityTypeString(QualityType quality_type) noexcept -> std::string_view
 /// contains an Instance ID.
 ///
 /// The service discovery path is: `<sd>/mw_com_lola/<service_id>/<instance_id>.
-auto GetSearchPathForIdentifier(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
-    -> filesystem::Path;
+auto GetSearchPathForIdentifier(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> filesystem::Path;
 
 class FlagFile
 {
   public:
     using Disambiguator = std::uint64_t;
 
-    ~FlagFile();
+    ~FlagFile() noexcept(false);
 
     /// \brief Creates a flag file for the provided InstanceIdentifier which is read/writable by the creating user and
     /// only readable by everyone else.
@@ -48,7 +47,7 @@ class FlagFile
     /// exist.
     static auto Make(EnrichedInstanceIdentifier enriched_instance_identifier,
                      Disambiguator offer_disambiguator,
-                     filesystem::Filesystem filesystem) noexcept -> score::Result<FlagFile>;
+                     filesystem::Filesystem filesystem) -> score::Result<FlagFile>;
 
     FlagFile(const FlagFile&) = delete;
     FlagFile(FlagFile&&) noexcept;
@@ -60,13 +59,13 @@ class FlagFile
     /// The service discovery path is: `<sd>/mw_com_lola/<service_id>/<instance_id>. Since flag files are always created
     /// in the instance directory, this function will always return false if the InstanceIdentifier does not contain an
     /// Instance ID.
-    static auto Exists(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept -> bool;
+    static auto Exists(const EnrichedInstanceIdentifier& enriched_instance_identifier) -> bool;
 
     /// \brief Creates each directory in the search path (found using GetSearchPathForIdentifier()) for an
     /// InstanceIdentifier in the filesystem.
     static auto CreateSearchPath(
         const EnrichedInstanceIdentifier& enriched_instance_identifier,
-        const filesystem::Filesystem& filesystem = filesystem::FilesystemFactory{}.CreateInstance()) noexcept
+        const filesystem::Filesystem& filesystem = filesystem::FilesystemFactory{}.CreateInstance())
         -> score::Result<filesystem::Path>;
 
   private:

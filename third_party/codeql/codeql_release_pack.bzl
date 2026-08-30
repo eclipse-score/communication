@@ -50,7 +50,10 @@ def _codeql_release_pack_impl(repository_ctx):
         "BUILD.bazel",
         "filegroup(\n" +
         "    name = \"pack\",\n" +
-        "    srcs = glob([\"pack/**\"], allow_empty = False),\n" +
+        "    srcs = glob([\n" +
+        "        \"pack/**\",\n" +
+        "        \"pack/.codeql/**\",\n" +
+        "    ], allow_empty = False),\n" +
         "    visibility = [\"//visibility:public\"],\n" +
         ")\n",
     )

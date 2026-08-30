@@ -14,15 +14,6 @@ because – semantically – **Get() and Set() on a field are just methods**, an
 This chapter takes the ``TirePressureService`` of chapter 7 as its basis, renames it to ``TirePressureExtendedService``
 (``tire_pressure_extended_service.h`` / ``.cpp``) and extends it to demonstrate ``Get()`` and ``Set()``.
 
-.. warning::
-
-   **Current limitation (please read first):** The provider-side handler that serves a field **getter** is not yet
-   auto-registered by the middleware (see the ``TODO: Remove this skip once the field Get handler is auto-registered in
-   SkeletonField.`` in ``score/mw/com/impl/bindings/lola/skeleton.cpp``). As a consequence, while the code of this
-   chapter **builds and links** cleanly, a provider will currently **abort** as soon as a consumer subscribes to a field
-   ``Get()``. ``Set()`` (i.e. ``WithSetter``) already works end-to-end; the ``WithGetter``/``Get()`` path does not yet.
-   This chapter is therefore written to be *complete and correct against the public API*, so that it runs as soon as the
-   middleware gap is closed. The "How to run the example" section below reflects this.
 
 Get() vs. the notifier - why does a getter exist at all?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -267,13 +258,6 @@ method call, so the consumer never subscribes to the tire pressure fields at all
 How to run the example
 ~~~~~~~~~~~~~~~~~~~~~~
 
-
-.. warning::
-
-   As noted at the top of this chapter, the field getter path is not yet functional in the current middleware. The
-   targets **build** successfully, but running provider + consumer will currently make the **provider abort** as soon
-   as the consumer subscribes to a field ``Get()``. The instructions below are provided for completeness and will work
-   unchanged once the middleware auto-registers the field get handler.
 
 The steps are the same as in the previous chapters. The consumer uses the **implicit** configuration loading, so it is
 started **without** the ``--service_instance_manifest`` argument.

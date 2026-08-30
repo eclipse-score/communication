@@ -46,10 +46,8 @@ on:
 
 concurrency:
   group: build_and_test_qnx-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request_target' }}
 
-env:
-  LICENSE_DIR: "/opt/score_qnx/license"
 jobs:
     precheck:
       runs-on: ubuntu-24.04
@@ -122,7 +120,7 @@ jobs:
       needs:
         - precheck
         - approval
-      if: ${{ always() && needs.precheck.outputs.should-run == 'true' && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
+      if: ${{ !cancelled() && needs.precheck.outputs.should-run == 'true' && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
       runs-on: ubuntu-24.04
       permissions:
         contents: read
@@ -134,21 +132,10 @@ jobs:
           with:
             ref: ${{ github.head_ref || github.event.pull_request.head.ref || github.ref }}
             repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
-        - name: Install QEMU
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y qemu-system
-        - name: Enable KVM group perms
-          run: |
-            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-            sudo udevadm control --reload-rules
-            sudo udevadm trigger --name-match=kvm
-        - name: Setup QNX License
-          env:
-            SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
-          run: |
-            sudo mkdir -p "${{ env.LICENSE_DIR }}"
-            echo "${SCORE_QNX_LICENSE}" | base64 --decode | sudo tee "${{ env.LICENSE_DIR }}/licenses" >/dev/null
+        - name: Setup QNX and QEMU environment
+          uses: ./.github/actions/00_infrastructure/setup_qnx_environment
+          with:
+            qnx-license: ${{ secrets.SCORE_QNX_LICENSE }}
         - name: Setup Bazel environment
           uses: ./.github/actions/00_infrastructure/prepare_bazel_environment
           with:
@@ -160,14 +147,14 @@ jobs:
           env:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
-          run: bazel build --config=qnx -- //score/...
+          run: bazel build --config=ci --config=qnx -- //score/...
         - name: Test QNX
           if: inputs.fetch_only != 'true'
           id: run-tests
           env:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
-          run: bazel test --config=qnx -- //score/...
+          run: bazel test --config=ci --config=qnx -- //score/...
         - name: Upload failed Bazel test logs
           if: inputs.fetch_only != 'true' && failure() && steps.run-tests.outcome == 'failure'
           uses: ./.github/actions/00_infrastructure/upload_bazel_testlogs_on_failure
@@ -178,7 +165,4 @@ jobs:
           env:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
-          run: bazel build --nobuild --config=qnx -- //score/...
-        - name: Cleanup QNX License
-          if: always()
-          run: sudo rm -rf "${{ env.LICENSE_DIR }}"
+          run: bazel build --nobuild --config=ci --config=qnx -- //score/...

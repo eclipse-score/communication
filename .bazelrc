@@ -24,8 +24,13 @@ common --http_timeout_scaling=2.0
 # Do not use automatically C++ generated toolchains
 build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
+# rules_python defaults py_binary/py_test bootstrapping to "system_python", which generates a `#!/usr/bin/env python3`
+# shebang and relies on a python3 interpreter already being present on PATH. This is non-hermetic.
+# Use the hermetic "script" bootstrap, which resolves the interpreter from a registered rules_python toolchain instead.
+build --@rules_python//python/config_settings:bootstrap_impl=script
+
 common --@score_baselibs//score/json:base_library=nlohmann
-common --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
+common --//score/memory/shared/flags:use_typedshmd=False
 common --@score_baselibs//score/analysis/tracing/generic_trace_library:implementation=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
 common --extra_toolchains=@gcc_toolchain_x86_64//:cc_toolchain
 common --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_unknown_linux_gnu
@@ -58,6 +63,8 @@ build --per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
 build --host_per_file_copt=external/.*flatbuffers.*@-Wno-error=switch-enum
 build --per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
 build --host_per_file_copt=external/.*boost.*@-Wno-error=sign-conversion
+build --per_file_copt=external/.*boost.*@-Wno-error=shadow
+build --host_per_file_copt=external/.*boost.*@-Wno-error=shadow
 
 # Places with warnings that we need to fix
 build --per_file_copt=score/mw/com/impl/bindings/lola/slot_decrementer.*@-w
@@ -110,6 +117,13 @@ test --sandbox_tmpfs_path=/tmp
 
 # Tests require to be run in a sandbox. Otherwise some will be flaky.
 test --nosandbox_default_allow_network
+
+# As explained in the CI design (https://github.com/eclipse-score/communication/blob/main/CI.md#check-and-merge-queue), we do not want to fail
+# because of a flaky test
+common:ci --flaky_test_attempts=5
+# We do not want in the CI a high frequency showing progress messages otherwise the log file will blow up
+# Still we do not want to disable it to be able to see if a job is directly hanging or even just know the current progress
+common:ci --show_progress_rate_limit=10
 
 # Bzlmod
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/

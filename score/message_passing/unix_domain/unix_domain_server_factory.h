@@ -15,9 +15,7 @@
 
 #include "score/message_passing/i_server_factory.h"
 
-namespace score
-{
-namespace message_passing
+namespace score::message_passing
 {
 
 class UnixDomainEngine;
@@ -42,7 +40,6 @@ class UnixDomainServerFactory final : public IServerFactory
     const std::shared_ptr<UnixDomainEngine> engine_;
 };
 
-}  // namespace message_passing
-}  // namespace score
+}  // namespace score::message_passing
 
 #endif  // SCORE_LIB_MESSAGE_PASSING_UNIX_DOMAIN_UNIX_DOMAIN_SERVER_FACTORY_H

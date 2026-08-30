@@ -34,7 +34,7 @@ sphinx_docs_library(
         "//score/mw/com/doc/tutorial/chapter_8:doc_files",
         "//score/mw/com/doc/tutorial/chapter_9:doc_files",
     ],
-    prefix = "docs/sphinx/tutorial/",
+    prefix = "score/mw/com/doc/tutorial/",
     visibility = ["//docs/sphinx:__pkg__"],
 )
 

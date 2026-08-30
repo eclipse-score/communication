@@ -77,7 +77,7 @@ class TracingConfiguration final
     void SetServiceElementTracingEnabled(tracing::ServiceElementIdentifier service_element_identifier,
                                          InstanceSpecifier instance_specifier) noexcept;
     bool IsServiceElementTracingEnabled(tracing::ServiceElementIdentifierView service_element_identifier_view,
-                                        std::string_view instance_specifier_view) const noexcept;
+                                        std::string_view instance_specifier_view) const;
 
   private:
     std::map<tracing::ServiceElementIdentifier,

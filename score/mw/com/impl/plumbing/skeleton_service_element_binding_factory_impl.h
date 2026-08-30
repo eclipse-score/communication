@@ -20,11 +20,11 @@
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
-#include "score/mw/com/impl/data_type_meta_info.h"
 #include "score/mw/com/impl/field_tags_store.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
+#include "score/memory/data_type_size_info.h"
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
@@ -188,13 +188,13 @@ auto CreateSkeletonEventOrField(const InstanceIdentifier& identifier,
     return std::visit(visitor, identifier_view.GetServiceTypeDeployment().binding_info_);
 }
 
-/// @brief Overload for typed skeletons (which do not have a DataTypeMetaInfo).
+/// @brief Overload for typed skeletons (which do not have a score::memory::DataTypeSizeInfo).
 template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
                                        SkeletonBase& parent,
                                        const std::string_view service_element_name,
-                                       const DataTypeMetaInfo& meta_info) noexcept
+                                       const memory::DataTypeSizeInfo& size_info)
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
     static_assert((element_type == ServiceElementType::EVENT) || (element_type == ServiceElementType::FIELD));
@@ -203,7 +203,7 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
 
     using ReturnType = std::unique_ptr<SkeletonServiceElementBinding>;
     auto visitor = score::cpp::overload(
-        [identifier_view, &parent, &service_element_name, &meta_info](
+        [identifier_view, &parent, &service_element_name, &size_info](
             const LolaServiceTypeDeployment& lola_service_type_deployment) -> ReturnType {
             auto* const lola_parent = dynamic_cast<lola::Skeleton*>(&SkeletonBaseView{parent}.GetBinding());
             if (lola_parent == nullptr)
@@ -235,7 +235,7 @@ auto CreateGenericSkeletonEventOrField(const InstanceIdentifier& identifier,
                                                             service_element_name,
                                                             skeleton_event_properties,
                                                             element_fq_id,
-                                                            meta_info,
+                                                            size_info,
                                                             tracing::SkeletonEventTracingData{});
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {

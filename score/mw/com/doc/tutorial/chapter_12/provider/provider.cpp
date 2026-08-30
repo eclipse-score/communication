@@ -17,13 +17,16 @@
 #include <csignal>
 #include <cstdlib>
 
-static std::atomic<bool> g_running{true};
+namespace
+{
+std::atomic<bool> g_running{true};
 
-static void SignalHandler(int /*signum*/)
+void SignalHandler(int /*signum*/)
 {
     std::cout << "HelloWorld service provider caught signal." << std::endl;
     g_running.store(false, std::memory_order_relaxed);
 }
+}  // namespace
 
 int main()
 {

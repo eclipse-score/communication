@@ -69,9 +69,9 @@ class PendingRequestTracker : public IPendingRequestTracker
     /// \param is_connected A reference to an atomic bool indicating the connection state.
     /// \return Success if acknowledged, kNotConnected if disconnected, kTimeout if timed out,
     ///         kSendFailure if the sequence was not found.
-    score::ResultBlank WaitForAck(std::uint32_t sequence,
-                                  std::chrono::milliseconds timeout,
-                                  const std::atomic<bool>& is_connected) override;
+    score::Result<void> WaitForAck(std::uint32_t sequence,
+                                   std::chrono::milliseconds timeout,
+                                   const std::atomic<bool>& is_connected) override;
 
     /// \brief Wakes up all threads waiting on pending requests (e.g., on shutdown or disconnect).
     void NotifyAll() override;

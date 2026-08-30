@@ -104,7 +104,7 @@ void SubscriptionStateMachine::SetReceiveHandler(std::weak_ptr<ScopedEventReceiv
     GetCurrentEventState().SetReceiveHandler(std::move(handler));
 }
 
-void SubscriptionStateMachine::UnsetReceiveHandler() noexcept
+void SubscriptionStateMachine::UnsetReceiveHandler()
 {
     std::lock_guard<std::mutex> lock{state_mutex_};
     GetCurrentEventState().UnsetReceiveHandler();
@@ -147,7 +147,7 @@ const ElementFqId& SubscriptionStateMachine::GetElementFqId() const& noexcept
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have a value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void SubscriptionStateMachine::TransitionToState(const SubscriptionStateMachineState newState) noexcept
+void SubscriptionStateMachine::TransitionToState(const SubscriptionStateMachineState newState)
 {
     GetCurrentEventState().OnExit();
     current_state_idx_.store(newState);

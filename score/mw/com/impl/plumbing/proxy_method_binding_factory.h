@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <string_view>
+#include <utility>
 
 namespace score::mw::com::impl
 {
@@ -46,7 +47,7 @@ class ProxyMethodBindingFactory<ReturnType(ArgTypes...)> final
                                                               const std::string_view method_name,
                                                               MethodType method_type) noexcept
     {
-        return instance().Create(parent_handle, parent_binding, method_name, method_type);
+        return instance().Create(std::move(parent_handle), parent_binding, method_name, method_type);
     }
 
     /// \brief Inject a mock IProxyMethodBindingFactory. If a mock is injected, then all calls on
