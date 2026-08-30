@@ -89,6 +89,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         })
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn invoke_with_copy<'a>(
         &'a self,
         _args: Args,
@@ -103,6 +104,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         todo!("Implement the logic to allocate argument slots using LolaMethodInArgAllocator");
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn invoke_zero_copy<'a>(
         &'a self,
         _ptrs: <Args as MethodArgsPtrTuple<R>>::PtrTuple,
@@ -168,6 +170,7 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(), T, R> for LolaFieldGetCal
         })
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn invoke_with_copy<'a>(
         &'a self,
         _args: (),
@@ -182,6 +185,7 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(), T, R> for LolaFieldGetCal
         todo!("Implement allocate for LolaFieldGetCaller")
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn invoke_zero_copy<'a>(
         &'a self,
         _ptrs: <() as MethodArgsPtrTuple<R>>::PtrTuple,
@@ -212,6 +216,7 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(T,), T, R> for LolaFieldSetC
         })
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn invoke_with_copy<'a>(
         &'a self,
         _args: (T,),
@@ -226,6 +231,7 @@ impl<T: CommData + Debug, R: Runtime> MethodCaller<(T,), T, R> for LolaFieldSetC
         todo!("Implement allocate for LolaFieldSetCaller if C++ side support is available");
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn invoke_zero_copy<'a>(
         &'a self,
         _ptrs: <(T,) as MethodArgsPtrTuple<R>>::PtrTuple,

@@ -54,17 +54,18 @@ where
 
     // Use validator pattern with compile-time type-state validation
     // Must register handlers and initialize all fields before offer() is available
-    let offered = producer
+    producer
         .init()
         // Register set-handler callbacks - required before offer() for WithSetter fields
         .register_set_handler_left_tire(move |val: Tire| {
             println!("Received tire pressure update: {:?}", val);
             // Additional logic: inspect or act on the accepted value (logging, telemetry, etc.).
             // TODO: in working example add that logic to demonstrate the set handler usage.
+            val
         })
         .register_set_handler_exhaust(|val: Exhaust| {
-            let _ = val;
             println!("Received exhaust update");
+            val
         })
         // Register get-handler callbacks - required before offer() for WithGetter fields
         .register_get_handler_left_tire(|| Tire { pressure: 32.0 })
@@ -74,9 +75,7 @@ where
         .update_exhaust(initial_exhaust_value)
         .expect("Failed to update exhaust field")
         .offer()
-        .expect("Failed to offer producer instance");
-
-    offered
+        .expect("Failed to offer producer instance")
 }
 
 // Function to demonstrate the usage of the offered producer to update fields

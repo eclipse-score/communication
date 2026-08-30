@@ -118,9 +118,9 @@ macro_rules! impl_all_arities {
         }
         impl<F, $($T,)* $nextT, Return> MethodHandlerCall<($($T,)* $nextT,), Return> for F
         where
-            F: Fn($($T,)* $nextT,) -> Return + Send + Sync + 'static,
+            F: Fn($(&$T,)* &$nextT,) -> Return + Send + Sync + 'static,
         {
-            fn call(&self, args: ($($T,)* $nextT,)) -> Return {
+            fn call(&self, args: &($($T,)* $nextT,)) -> Return {
                 #[allow(non_snake_case)]
                 let ($($a,)* $nextA,) = args;
                 (self)($($a,)* $nextA,)

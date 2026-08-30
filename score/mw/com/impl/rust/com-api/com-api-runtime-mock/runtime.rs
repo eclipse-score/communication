@@ -612,6 +612,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         })
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn invoke_with_copy<'a>(
         &'a self,
         _args: Args,
@@ -626,6 +627,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         todo!("Implement the logic to allocate method arguments using the MethodInArgAllocator");
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn invoke_zero_copy<'a>(
         &'a self,
         _ptrs: <Args as MethodArgsPtrTuple<R>>::PtrTuple,
@@ -713,6 +715,7 @@ impl<T: CommData + Debug> Subscription<T, MockRuntimeImpl> for MockFieldSubscrip
         todo!()
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn cancellable_receive<'a>(
         &'a self,
         _scratch: SampleContainer<Self::Sample<'a>>,
@@ -813,7 +816,7 @@ impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublis
         todo!()
     }
 
-    fn register_set_handler(&self, _callback: impl Fn(T) + Send + 'static) {
+    fn register_set_handler(&self, _callback: impl Fn(T) -> T + Send + 'static) {
         todo!()
     }
 
