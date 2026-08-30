@@ -89,15 +89,15 @@ pub trait FieldPublisher<T: CommData + Debug, R: Runtime + ?Sized> {
     fn update(&self, value: T) -> Result<()>;
 
     /// Register a callback invoked by the middleware whenever a consumer calls the field setter.
-    /// The callback receives the proposed new value **by value** as a notification — the FFI
-    /// layer has already committed the value to storage (same as `Publisher::send()` for events).
-    /// The callback is for side effects only (e.g. logging, triggering downstream logic).
+    /// The callback receives the proposed new value **by value** and must explicitly return the
+    /// value to accept. This allows the callback to validate or modify the proposed value (e.g.
+    /// clamping it to a valid range) before it is committed and sent to subscribers.
     ///
     /// This registration is infallible (like `MethodHandler::register_handler`).
     ///
     /// # Parameters
-    /// * `callback` - Receives the accepted value; return type is `()`.
-    fn register_set_handler(&self, callback: impl Fn(T) + Send + 'static);
+    /// * `callback` - Receives the proposed value and returns the value to accept.
+    fn register_set_handler(&self, callback: impl Fn(T) -> T + Send + 'static);
 
     /// Register a callback invoked by the middleware whenever a consumer calls the field getter.
     /// The callback returns the value that will be delivered back to the consumer.
