@@ -23,12 +23,14 @@ load(
 component_requirements(
     name = "component_requirements_ipc",
     srcs = [
+        "GenericSkeletonAndServiceElements/component_requirements_ipc_generic_skeleton.trlc",
+        "GenericSkeletonAndServiceElements/component_requirements_ipc_generic_skeleton_event.trlc",
+        "GenericSkeletonAndServiceElements/component_requirements_ipc_generic_skeleton_field.trlc",
         "SkeletonAndServiceElements/component_requirements_ipc_skeleton.trlc",
         "SkeletonAndServiceElements/component_requirements_ipc_skeleton_event.trlc",
         "SkeletonAndServiceElements/component_requirements_ipc_skeleton_field.trlc",
         "component_requirements_ipc.trlc",
         "component_requirements_ipc_generic_proxy.trlc",
-        "component_requirements_ipc_generic_skeleton.trlc",
         "component_requirements_ipc_methods.trlc",
         "component_requirements_ipc_partial_restart.trlc",
         "component_requirements_ipc_proxy.trlc",
