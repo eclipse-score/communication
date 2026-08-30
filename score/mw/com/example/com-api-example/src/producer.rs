@@ -13,8 +13,8 @@
 
 use crate::VehicleOfferedProducer;
 use score_com::{
-    Builder, InstanceSpecifier, OfferedProducer, Producer, Publisher, Result, Runtime,
-    SampleMaybeUninit, SampleMut,
+    Builder, EventSampleMut, InstanceSpecifier, OfferedProducer, Producer, Publisher, Result,
+    Runtime, SampleMaybeUninit,
 };
 use com_api_gen::{Tire, VehicleInterface};
 use std::thread;

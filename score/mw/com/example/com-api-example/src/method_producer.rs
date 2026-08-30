@@ -56,7 +56,7 @@ fn create_producer_method<R: Runtime>(
             // Return a sample tire pressure value, just dummy value returned for demonstration
             Tire { pressure: 32.0 }
         })
-        .register_update_front_tires_pressure_handler(|tire1: Tire, tire2: Tire| {
+        .register_update_front_tires_pressure_handler(|tire1: &Tire, tire2: &Tire| {
             println!(
                 "Received update_front_tires_pressure call with tire1: {:?}, tire2: {:?}",
                 tire1, tire2
@@ -67,7 +67,7 @@ fn create_producer_method<R: Runtime>(
 }
 
 #[allow(dead_code)]
-fn process_left_tire(tire: Tire) {
+fn process_left_tire(tire: &Tire) {
     // do some processing with the tire data
     println!("Processing left tire pressure: {:?}", tire);
 }

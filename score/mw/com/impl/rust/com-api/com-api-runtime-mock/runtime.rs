@@ -612,6 +612,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         })
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn invoke_with_copy<'a>(
         &'a self,
         _args: Args,
@@ -626,6 +627,7 @@ impl<Args: MethodArgs, Return: CommData, R: Runtime> MethodCaller<Args, Return, 
         todo!("Implement the logic to allocate method arguments using the MethodInArgAllocator");
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn invoke_zero_copy<'a>(
         &'a self,
         _ptrs: <Args as MethodArgsPtrTuple<R>>::PtrTuple,
@@ -713,6 +715,7 @@ impl<T: CommData + Debug> Subscription<T, MockRuntimeImpl> for MockFieldSubscrip
         todo!()
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn cancellable_receive<'a>(
         &'a self,
         _scratch: SampleContainer<Self::Sample<'a>>,
@@ -792,45 +795,6 @@ impl<'a, T: CommData + Debug> SampleMaybeUninitTrait<T> for MockFieldSampleMaybe
     }
 }
 
-pub struct MockMethodInArgMaybeUninit<T> {
-    pub _phantom: core::marker::PhantomData<T>,
-}
-
-/// Runtime-specific concrete type for a fully-initialised Mock method argument pointer.
-pub struct MockMethodInArgPtr<T> {
-    _phantom: core::marker::PhantomData<T>,
-}
-
-impl<T> MethodInArgPtr<T> for MockMethodInArgPtr<T> {}
-
-impl<T> MethodInArgMaybeUninit<T> for MockMethodInArgMaybeUninit<T> {
-    type Ptr = MockMethodInArgPtr<T>;
-
-    fn write(self, _val: T) -> ZeroCopyArgs<MockMethodInArgPtr<T>> {
-        ZeroCopyArgs(MockMethodInArgPtr {
-            _phantom: core::marker::PhantomData,
-        })
-    }
-
-    unsafe fn assume_init(self) -> ZeroCopyArgs<MockMethodInArgPtr<T>> {
-        ZeroCopyArgs(MockMethodInArgPtr {
-            _phantom: core::marker::PhantomData,
-        })
-    }
-}
-
-pub struct MockMethodInArgAllocator;
-
-impl MethodInArgAllocator for MockMethodInArgAllocator {
-    type MethodInArgPtr<T: CommData> = MockMethodInArgPtr<T>;
-    type MethodInArgMaybeUninit<T: CommData> = MockMethodInArgMaybeUninit<T>;
-    fn allocate<T: CommData>(&self) -> MockMethodInArgMaybeUninit<T> {
-        MockMethodInArgMaybeUninit {
-            _phantom: core::marker::PhantomData,
-        }
-    }
-}
-
 impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublisher<T> {
     type SampleMaybeUninit<'a>
         = MockFieldSampleMaybeUninit<'a, T>
@@ -852,7 +816,7 @@ impl<T: CommData + Debug> FieldPublisher<T, MockRuntimeImpl> for MockFieldPublis
         todo!()
     }
 
-    fn register_set_handler(&self, _callback: impl Fn(T) + Send + 'static) {
+    fn register_set_handler(&self, _callback: impl Fn(T) -> T + Send + 'static) {
         todo!()
     }
 

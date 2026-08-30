@@ -41,4 +41,3 @@ pub use paste;
 #[doc(hidden)]
 pub use score_com_macros;
 pub use reloc::Reloc;
-pub use score_com_macros;

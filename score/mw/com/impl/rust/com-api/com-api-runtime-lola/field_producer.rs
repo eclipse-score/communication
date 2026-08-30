@@ -95,11 +95,11 @@ impl<T: CommData + Debug, B: FFIBridge> FieldPublisher<T, LolaRuntimeImpl<B>>
     fn update(&self, _value: T) -> Result<()> {
         todo!()
     }
-    fn register_set_handler(&self, _callback: impl Fn(T) + Send + 'static) {
+    fn register_set_handler(&self, _callback: impl Fn(T) -> T + Send + 'static) {
         // When the middleware receives a set request from a consumer:
-        // - Invoke the callback with a mutable reference to the proposed value so it can
-        //   validate or modify it in-place (matching C++ `void(FieldType&)` semantics).
-        // - Use the (possibly modified) value as the final field value to store and send.
+        // - Invoke the callback with the proposed value; the callback may validate or modify it.
+        // - Use the returned value as the final accepted field value to store and send to
+        //   subscribers.
         // Execution model (thread pool vs. async task pool) to be decided at implementation time.
         todo!()
     }
