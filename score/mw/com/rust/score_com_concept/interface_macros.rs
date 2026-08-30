@@ -55,7 +55,6 @@ pub struct WithNotifier;
 
 /// Macro to implement the Consumer trait for a given interface ID and its events.
 ///
-
 /// Main interface macro that generates Consumer, Producer, and OfferedProducer types
 /// along with all necessary trait implementations.
 ///
@@ -173,7 +172,7 @@ pub struct WithNotifier;
 ///     .register_set_handler_tire_pressure(|v| { /* handle set */ })
 ///     .register_get_handler_speed(|| Speed { value: 0 })
 ///     .update_status(&initial_status)?
-///     .register_calibrate_handler(|tire: Tire| tire)
+///     .register_calibrate_handler(|tire: &Tire| tire.clone())
 ///     .offer()?;
 /// ```
 /// - `VehicleOfferedProducer<R>` contains `left_tire: Publisher<Tire>`
@@ -752,7 +751,7 @@ mod tests {
     ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
     ///     score_com::interface!(interface Vehicle { left_tire_field: Field<Tire, WithNotifier>, });
     ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
-    ///         let _ = p.init().register_set_handler_left_tire_field(|_: Tire| {});
+    ///         let _ = p.init().register_set_handler_left_tire_field(|v: Tire| v);
     ///     }
     /// }
     /// ```
@@ -817,7 +816,7 @@ mod tests {
     ///     impl CommData for Tire { const ID: &'static str = "Tire"; }
     ///     score_com::interface!(interface Vehicle { left_tire_field: Field<Tire, WithGetter>, });
     ///     fn _check<R: score_com::Runtime + ?Sized>(p: VehicleProducer<R>) {
-    ///         let _ = p.init().register_set_handler_left_tire_field(|_: Tire| {});
+    ///         let _ = p.init().register_set_handler_left_tire_field(|v: Tire| v);
     ///     }
     /// }
     /// ```
@@ -848,7 +847,7 @@ mod tests {
     ///     // Compile-time check `register_set_handler_*` exists for WithSetter fields.
     ///     #[allow(dead_code)]
     ///     fn _check_set_handler(p: VehicleProducer<LolaRuntime>) {
-    ///         let _ = p.init().register_set_handler_left_tire_field(|_: Tire| {});
+    ///         let _ = p.init().register_set_handler_left_tire_field(|v: Tire| v);
     ///     }
     /// }
     /// ```
@@ -956,7 +955,7 @@ mod tests {
     ///     // Compile-time proof: both handler methods exist for WithGetter + WithSetter fields.
     ///     #[allow(dead_code)]
     ///     fn _assert_both_handlers(p: VehicleProducer<LolaRuntime>) {
-    ///         let v = p.init().register_set_handler_left_tire_field(|_: Tire| {});
+    ///         let v = p.init().register_set_handler_left_tire_field(|v: Tire| v);
     ///         let _ = v.register_get_handler_left_tire_field(|| Tire { pressure: 0.0 });
     ///     }
     /// }

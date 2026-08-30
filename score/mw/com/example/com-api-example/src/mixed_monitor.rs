@@ -94,10 +94,11 @@ where
         .init()
         //  Field: left_tire_field
         // Register set-handler: called by the middleware when a consumer calls Set on this field.
-        // Receives the accepted value by value for inspection / side effects.
+        // Receives the proposed value by value and must explicitly return the current value.
         .register_set_handler_left_tire_field(|val: Tire| {
             println!("[Producer] set_handler left_tire_field: {:?}", val);
             // Additional validation or side-effect logic can go here.
+            val
         })
         // Register get-handler: called by the middleware when a consumer calls Get on this field.
         // Required before offer() for WithGetter fields.
@@ -107,18 +108,18 @@ where
         .expect("Failed to set initial value for left_tire_field")
         //  Field: exhaust_field
         .register_set_handler_exhaust_field(|val: Exhaust| {
-            let _ = val;
-            println!("[Producer] set_handler exhaust_field");
+            println!("[Producer] set_handler exhaust_field: {:?}", val);
+            val
         })
         .register_get_handler_exhaust_field(|| Exhaust {})
         .update_exhaust_field(initial_exhaust)
         .expect("Failed to set initial value for exhaust_field")
         //  Method: update_tire_pressure(Tire) -> ()
-        .register_update_tire_pressure_handler(|tire: Tire| {
+        .register_update_tire_pressure_handler(|tire: &Tire| {
             println!("[Producer] update_tire_pressure called: {:?}", tire);
         })
         //  Method: update_front_tires_pressure(Tire, Tire) -> ()
-        .register_update_front_tires_pressure_handler(|tire1: Tire, tire2: Tire| {
+        .register_update_front_tires_pressure_handler(|tire1: &Tire, tire2: &Tire| {
             println!(
                 "[Producer] update_front_tires_pressure called: {:?}, {:?}",
                 tire1, tire2

@@ -98,6 +98,7 @@ impl<T: CommData + Debug, B: FFIBridge> Subscription<T, LolaRuntimeImpl<B>>
         todo!()
     }
 
+    #[allow(clippy::manual_async_fn)]
     fn cancellable_receive<'a>(
         &'a self,
         _scratch: SampleContainer<Self::Sample<'a>>,
