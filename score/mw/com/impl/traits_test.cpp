@@ -894,7 +894,7 @@ TEST(GeneratedSkeletonCreationInstanceSpecifierDeathTest, ConstructingFromNonexi
 using GeneratedSkeletonCreationInstanceIdentifierTestFixture = SkeletonCreationFixture;
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromExistingValidSpecifierCreatesSkeleton)
 {
-    RecordProperty("Verifies", "SCR-18447605");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceId");
     RecordProperty("Description", "Checks exception-less creation of skeleton");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -927,7 +927,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromE
 
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonReturnsError)
 {
-    RecordProperty("Verifies", "SCR-18447605");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceId");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -948,7 +948,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
 
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonEventReturnsError)
 {
-    RecordProperty("Verifies", "SCR-18447605");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceId");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -971,7 +971,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
 
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonFieldReturnsError)
 {
-    RecordProperty("Verifies", "SCR-18447605");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceId");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");

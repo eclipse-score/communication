@@ -102,7 +102,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/18447605 */
             ScoreReq.CompReq SkeletonExceptionLessCreationWithInstanceId {
                 description = '''The {{Skeleton}} class shall provide a non-throwing constructor using the Named Constructor idiom (See Creation of an object using Named Constructor approach)
 
