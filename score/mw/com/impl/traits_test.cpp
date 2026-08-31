@@ -737,7 +737,7 @@ using GeneratedSkeletonCreationInstanceSpecifierTestFixture = SkeletonCreationFi
 TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
        ReturnGeneratedSkeletonWhenSuccessfullyCreatingSkeletonWithValidBindings)
 {
-    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceSpecifier");
     RecordProperty("Description", "Checks exception-less creation of skeleton");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -783,7 +783,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
 
 TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCreatingSkeletonWithNoSkeletonBinding)
 {
-    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -804,7 +804,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCre
 
 TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCreatingSkeletonWithNoSkeletonEventBinding)
 {
-    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -827,7 +827,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCre
 
 TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCreatingSkeletonWithNoSkeletonFieldBinding)
 {
-    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
@@ -850,7 +850,7 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCre
 TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
        ReturnErrorWhenCreatingSkeletonWithNoSkeletonMethodBinding)
 {
-    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("lobster-tracing", "Communication.SkeletonExceptionLessCreationWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
     RecordProperty("TestType", "Requirements-based test");
