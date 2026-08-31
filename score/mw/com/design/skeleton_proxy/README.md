@@ -13,79 +13,8 @@ case of strongly typed proxies and skeletons. The special case of "generic proxi
 
 <img alt="PROXY_BINDING_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/proxy_binding_model.puml">
 
-
-The overall structure foresees proxies (`DummyProxy`) and skeletons (`DummySkeleton`), which are generated from IDL.
-Both inherit from a respective base class, where otherwise redundant code that can be reused by any proxy or skeleton is
-shifted to.
-A concrete instance of a proxy or skeleton is always bound to a specific technical binding. Nevertheless, we want to have
-a clear separation between binding independent code and binding specific code. Thus, the interfaces `SkeletonBinding`
-and `ProxyBinding` are introduced for binding specific implementations. Based on the provided
-`InstanceIdentifier`, the proxy and skeletons need to decide which binding to construct. This decision is encapsulated
-within the `.*BindingFactory`.
-
-One central strategy is to **_generate as little code as possible from the IDL_** (arxml), which then has the consequence
-that we have to resort to a generic templated C++ code base.
-
-In the case of our shared memory implementation (also called `LoLa`), it is necessary to access an underlying, not yet
-further specified shared memory region which is specific to each communication instance. A problem can arise if the same
-process includes a skeleton and proxy side of the same service instance. In this case we have to ensure that the shared
-memory region is not mapped twice into the process space. In order to do that, the
-`memory::shared::MemoryResourceRegistry` will take care to check which paths have already been created and will return
-or create the necessary resources if necessary.
-
-The details, if and when a shared memory object created by a communication instance gets cleaned up, can be read in the
-[detailed design of partial restart functionality](../partial_restart/README.md#partial-restart-specific-extensions-to-skeletonpreparestopoffer)
-
-### Copy/Move support for binding independent and dependent proxies/skeletons
-
-### Copy
-
-Proxies and skeletons are **not** copyable! Neither on the binding independent nor binding specific level.
-This is "by design" as proxy and skeleton instances are heavyweight, and it semantically makes **no sense** to create a
-copy of such an instance:
-
-- what would it mean to have a copy of a skeleton instance!? To which instance would a remote proxy talk to then? If the
-  user updates an event on the 1st instance, but **not** on the copy, what does this mean for the remote proxy? Which
-  update does it see?
-- also on the proxy side copies are semantically _problematic_! Proxies and their resource-usage (`max-number-of-samples`
-  used in subscribe calls) are reflected in the configuration done by the provider (in `LoLa` binding this regarding
-  slot allocation resources in shared-memory). Doing simple copies would completely violate this approach!
-  Note, that `LoLa`/`mw::com` allows to explicitly create multiple proxy instances for the same service instance. These
-  are **not** copies, but explicitly separate instances, which happen to interact with the same service instance.
-
-### Move
-
-Proxies and skeletons are movable on the binding independent level! This makes completely sense from the user API
-perspective! Restricting this/disallowing this on the user facing binding independent level would just lead to a bad
-API experience.
-
-However, on the binding dependent level, we **don't** support `move` for proxies and skeletons! The main reasons:
-
-- it isn't needed as a proxy/skeleton instance on binding level is created once and then owned by the binding
-  independent proxy/skeleton via unique-ptr (see further discussion of `pImpl` idiom below).
-- not supporting it makes our life much easier as we then can store references to binding specific proxy/skeleton
-  instances without taking care to update such references after a move.
-
 ### Skeleton creation
 
-In order to perform any service discovery related operations on the skeleton side it is necessary to instantiate the
-skeleton by the user. This has no restrictions of any kind. For this purpose, the user would create an instance of a
-generated skeleton (`DummySkeleton`).
-
-The concrete (technical) binding to be used is defined within the deployment information, which gets evaluated at
-runtime! The transition from the binding independent part to binding dependent part is done via the `pImpl` idiom.
-So `SkeletonBase`, which is the base class for the (generated) skeleton, contains a pointer to the binding specific
-implementation. All (technical) bindings have to implement `SkeletonBinding`.
-
-During construction of `SkeletonBase` the `pImpl` gets initialized from the information contained in the given
-`InstanceIdentifier` (or `InstanceSpecifier`, which gets resolved into an `InstanceIdentifier`). The resolution of the
-correct binding and the construction of the correct subclass of `SkeletonBinding` is performed by `SkeletonBindingFactory`.
-
-However, the generated skeleton is a composite, potentially containing  (depending on its interface description) a number
-of different event (or also field) members. For those composite members the same `pImpl` pattern is applied.
-So `SkeletonEvent` is the binding independent class template (template arg is the data type of the event), which holds
-the `pImpl`, which points to an abstract class `SkeletonEventBinding`, which has to be implemented by each (technical)
-binding. The mechanism to initialize the `pImpl` is conceptually the same as within the `SkeletonBase`.
 
 The following sequence shows the instantiation of a service class up to its service offering based on our `LoLa`
 (shared-mem) binding:
@@ -94,98 +23,8 @@ The following sequence shows the instantiation of a service class up to its serv
 
 #### Binding independent level Registration of skeleton events/fields/methods at their parent skeleton
 
-On construction, the generated skeleton (`DummySkeleton`) checks that all the bindings of its contained service elements
-(events/fields/methods) are valid. This is done by calling the `AreBindingsValid()` on `SkeletonBase`. This will then 
-iterate over the maps of references to its service elements described [below](#binding-independent-level-registration-of-skeleton-eventsfields-at-their-parent-skeleton) 
-and check if each binding was successfully created. If this is not the case, the construction of the skeleton instance 
-returns an error.
 
-Due to our architectural constraints, the `impl::SkeletonBase` (the base class of the generated skeleton/`DummySkeleton`)
-doesn't "know" its event/field/method children. Because events/fields/methods are the members of the generated skeleton
-and not the `impl::SkeletonBase`. But for various functionalities, we require the `impl::SkeletonBase` to have access to
-its children.
-This is solved by a mechanism, where the event/field/method members of the generated skeleton class register themselves
-at their parent skeleton, which they got by reference during their creation/`ctor` call. So in their `ctor` they are
-calling `impl::SkeletonBase::RegisterEvent()`, `impl::SkeletonBase::RegisterField()` or
-`impl::SkeletonBase::RegisterMethod()`, with their own `special reference` (see below) and name. So after creation of a
-generated skeleton, its base class (`impl::SkeletonBase`) has all the event/field/method members stored in `protected`
-members `events_`, `fields_` and `methods_`, so that in the future these could be even made `public`
-accessible to the generated (user facing) skeleton. Since these user facing skeletons have discrete event/field/method
-members anyhow, there is currently no need for such a generalized access.
 
-So while we have this relation/accessibility of children from the "parent" skeleton on the binding **independent**
-level, we **don't** have a symmetric setup on the binding **dependent** level. The binding specific implementation of
-`SkeletonBinding`, where `impl::SkeletonBase` is dispatching to via the `pImpl` idiom doesn't "know" its corresponding
-binding specific events, fields, which would be represented **both** as `SkeletonEventBinding` (as our field is a
-composite, which dispatches to `impl::SkeletonEventBase`, which then &ndash; also via `pImpl` idiom &ndash; dispatches
-to the binding specific `SkeletonEventBinding` [see here](#../todo)). Nor does it know its binding specific methods,
-which would be represented as `SkeletonMethodBinding`.
-
-This symmetry isn't currently needed as we don't have any use case yet, where on the binding dependent level our
-`lola::Skeleton` (implementing `SkeletonBinding`) would need to call functionality on its events/fields!
-I.e. all our use cases, where a skeleton has to delegate some functionality to its "children" (events/fields), happens
-currently solely on the binding independent level.
-
-**_Note_**: If this would need to change in the future, we would only store `SkeletonEventBinding` instances within an
-implementation of `SkeletonBinding`, since we do not have (yet) a field specific class on binding level! To detect,
-whether we have to deal with a "pure" event or the "event part" of a field, we would resort to checking the related
-`ElementFqId`, which contains this differentiation.
-
-#### How we handle moving of skeletons and their events/fields
-
-In the previous section we have seen, that impl::SkeletonEvent, impl::SkeletonField and impl::SkeletonMethod register
-themselves at their parent `impl::SkeletonBase` during their construction with a reference to their parent.
-The special reference is obviously not a normal reference, but a `ReferenceToMoveable<SkeletonEventBase>::Reference` type
-(or `ReferenceToMoveable<SkeletonFieldBase>::Reference` resp. `ReferenceToMoveable<SkeletonMethodBase>::Reference`).
-Why is that? If we stored a normal reference to the event/field/method in the parent skeleton, we would have the
-following problem: whenever the event/field/method instances get moved (which happens, when the user moves his outer
-skeleton instance), the references within the `impl::SkeletonBase` need to be updated. To accomplish this, the
-event/field/method instances would also need a reference to their parent () to do the update! This again complicates
-things further! In case the `impl::SkeletonBase` moves (also happens, when the user moves his outer skeleton instance),
-then also the parent reference has to be updated within all the event/field/method instances.
-
-Our solution to this issue is the following:
-For each event/field/method instance, we store a `ReferenceToMoveable<T>::Reference` on the heap.
-`T` is in this case one of:
-
-- `SkeletonEventBase`
-- `SkeletonFieldBase`
-- `SkeletonMethodBase`
-
-This "special reference" is created during the construction of the event/field/method instance and is passed to the
-`impl::SkeletonBase` during the registration call by reference. But since the `ReferenceToMoveable<T>::Reference` is
-stored on the heap and is **neither** copyable nor moveable, it doesn't get moved when the event/field/method is moved!
-Instead, the `ReferenceToMoveable<T>::Reference` instance is updated with the new address of the moved event/field/method
-instance within the move constructor/move assign op of the event/field/method. So the `impl::SkeletonBase` always has a
-valid reference to the event/field/method instance, even if the user moves the outer skeleton instance as long as it
-uses the `ReferenceToMoveable<T>::Reference::Get()` API to access the event/field/method instance!
-
-The mechanism to provide such a "special reference" for  `impl::SkeletonEventBase`, `impl::SkeletonFieldBase` and
-`impl::SkeletonMethodBase` is realized by inheriting from `EnableReferenceToMoveableFromThis<T>`, where `T` is one of
-the above-mentioned types. making it a `CRTP` pattern!
-
-#### LoLa binding level Registration of skeleton events/fields at their parent skeleton
-
-Despite the last paragraph in the previous chapter, we are doing still "some registration" in our `LoLa`/shared-memory
-binding from `lola::SkeletonEvent` at its parent `lola::Skeleton`!
-
-This registration differs from the registration done on the binding independent layer explained above:
-
-1. Registration does **NOT** take place at construction time of `lola::SkeletonEvent`, but during
-   `lola::SkeletonEvent::PrepareOffer`. I.e. in the context of `impl::Skeleton::OfferService()`.
-2. During this call to `lola::Skeleton::Register()` the `lola::Skeleton` does **NOT** store any references/links to the
-  `lola::SkeletonEvent`, which is doing this call.
-
-Instead, this registration approach via the `lola::Skeleton::Register()` is done, to allow the `lola::SkeletonEvent` to
-set up its specific storage in shared memory! Since the `lola::Skeleton` is the owner/creator of the whole shared-memory
-object, where all the events/fields/(later also methods) belonging to this `lola::Skeleton` are stored, the access to
-the shared-memory object has to be done through the parent `lola::Skeleton` instance. As shown in the 2nd part of the
-sequence diagram in [chapter for skeleton creation](#skeleton-creation), the `lola::SkeletonEvent`s are enriching the
-event maps prepared by the `lola::Skeleton` in `lola::Skeleton::PrepareOffer()` (and stored within shared-memory) with
-their event specific storage. This job has to be done by/shifted to the `lola::SkeletonEvent` as it needs the event/
-field type information, which only the `lola::SkeletonEvent` has (not the `lola::Skeleton`!). This is also the reason,
-that `lola::Skeleton::Register()` is a method template. The `lola::SkeletonEvent` calls the method template
-instantiation with its event/field type.
 
 ### Proxy creation
 The mechanism regarding binding abstraction resp. runtime binding selection on proxy side is almost identical to the
