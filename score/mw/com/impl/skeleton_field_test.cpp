@@ -154,7 +154,7 @@ TEST(SkeletonFieldTest, IsMoveable)
 
 TEST(SkeletonFieldTest, ClassTypeDependsOnFieldDataType)
 {
-    RecordProperty("Verifies", "SCR-29235194");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassDefinition");
     RecordProperty("Description", "SkeletonFields with different field data types should be different classes.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

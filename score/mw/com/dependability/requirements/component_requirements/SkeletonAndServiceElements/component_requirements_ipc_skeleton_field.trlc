@@ -37,7 +37,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/29235194 */
                 ScoreReq.CompReq SkeletonFieldClassDefinition {
                     description = '''For different field data types also different {{SkeletonField}}
                     {{SkeletonField}}
