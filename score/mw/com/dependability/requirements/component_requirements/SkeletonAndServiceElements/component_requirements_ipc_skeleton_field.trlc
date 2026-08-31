@@ -47,7 +47,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/18221574 */
                 ScoreReq.CompReq SkeletonFieldCopySemantics {
                     description = '''The {{SkeletonField}}
                      class shall neither be copy-constructible nor copy-assignable.'''

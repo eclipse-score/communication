@@ -130,7 +130,7 @@ class SkeletonFieldTestFixture : public ::testing::Test
 
 TEST(SkeletonFieldTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-18221574");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldCopySemantics");
     RecordProperty("Description", "Checks copy constructors for SkeletonField");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
