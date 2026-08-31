@@ -385,7 +385,7 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendAfterStopOfferReturnsError)
 
 TEST(SkeletonEventSendZeroCopyTest, CallingSendWhenBindingFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-21840371");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassZeroCopySend");
     RecordProperty("Description", "Checks that calling zero copy Send propagates an error from the binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
