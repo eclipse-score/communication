@@ -441,7 +441,8 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendWhenBindingFailsReturnsError)
 
 TEST(SkeletonEventTest, CallingSendAfterPrepareOfferDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-21553375, SCR-21840370");
+    RecordProperty("Verifies", "SCR-21553375");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassSend");
     RecordProperty("Description", "Checks that calling Send after offer service dispatches to the binding.");
     RecordProperty("Description", "Checks whether allocated data is sent correctly");
     RecordProperty("TestType", "Requirements-based test");
@@ -482,7 +483,7 @@ TEST(SkeletonEventTest, CallingSendAfterPrepareOfferDispatchesToBinding)
 
 TEST(SkeletonEventSendWithCopyTest, CallingSendBeforePrepareOfferReturnsError)
 {
-    RecordProperty("Verifies", "SCR-21840370");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassSend");
     RecordProperty("Description", "Checks that calling Send before offer service returns an error.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -550,7 +551,7 @@ TEST(SkeletonEventSendWithCopyTest, CallingSendAfterStopOfferReturnsError)
 
 TEST(SkeletonEventSendWithCopyTest, CallingSendAfterPrepareOfferWhenBindingFailsReturnsError)
 {
-    RecordProperty("Verifies", "SCR-21840370");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassSend");
     RecordProperty("Description", "Checks that calling Send after offer service propagates an error from the binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
