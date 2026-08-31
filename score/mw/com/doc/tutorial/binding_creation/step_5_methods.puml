@@ -1,0 +1,19 @@
+@startuml binding_step_5_methods
+title Step 5: Implement Method Path
+
+participant "Proxy method" as proxy
+participant "Method transport" as transport
+participant "Skeleton method handler" as skeleton
+
+proxy -> transport : call(request)
+transport -> skeleton : enqueue(request)
+skeleton -> skeleton : invoke handler
+skeleton --> transport : response or error
+transport --> proxy : response or error
+
+note over transport
+Define request/response ownership,
+queue limits, timeout behavior,
+error mapping, and restart behavior.
+end note
+@enduml

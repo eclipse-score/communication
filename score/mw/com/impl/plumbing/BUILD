@@ -156,6 +156,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl/bindings/lola",
+        "//score/mw/com/impl/bindings/someip:someip",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/concurrency:executor",
     ],
@@ -714,6 +715,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:runtime_interfaces",
         "//score/mw/com/impl/bindings/lola:runtime",
+        "//score/mw/com/impl/bindings/someip:someip",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config",
         "@score_baselibs//score/language/futurecpp",

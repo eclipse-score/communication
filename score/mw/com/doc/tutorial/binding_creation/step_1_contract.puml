@@ -1,0 +1,32 @@
+@startuml binding_step_1_contract
+title Step 1: Define Binding Contract
+
+interface "ProxyBinding" as PB {
+  IsEventProvided(name)
+  SetupMethods(extra_shm_bytes)
+  PrepareDeinitialize()
+  FinalizeDeinitialize()
+}
+
+interface "SkeletonBinding" as SB {
+  PrepareOffer(events, fields, trace)
+  PrepareStopOffer(trace)
+  GetBindingType()
+  VerifyAllMethodHandlersRegistered()
+}
+
+interface "ProxyEventBinding<T>" as PEB {
+  GetNewSamples(callback, tracker)
+}
+
+interface "SkeletonEventBinding<T>" as SEB {
+  Allocate()
+  Send(sample)
+  Send(allocated_sample)
+  GetLatestSample(quality)
+}
+
+note "Implement every operation required by abstract interface.\nKeep transport details out of binding-independent classes." as N
+N .. PB
+N .. SB
+@enduml

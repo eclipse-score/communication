@@ -1,0 +1,23 @@
+@startuml binding_step_2_runtime
+title Step 2: Register Binding Runtime
+
+component "impl::Runtime" as core
+component "IBindingRuntime" as interface
+component "NewBinding::Runtime" as concrete
+component "Configuration" as config
+component "Service discovery client" as discovery
+component "Transport infrastructure" as infra
+
+core --> interface : GetBindingRuntime(type)
+interface <|.. concrete
+concrete --> config
+concrete --> discovery
+concrete --> infra
+
+note right of concrete
+Return stable BindingType tag.
+Own binding-wide resources:
+threads, discovery, tracing,
+transport, restart recovery.
+end note
+@enduml

@@ -16,6 +16,7 @@
 
 #include "score/mw/com/impl/bindings/lola/runtime.h"
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
+#include "score/mw/com/impl/bindings/someip/runtime.h"
 
 #include <score/overload.hpp>
 #include <score/utility.hpp>
@@ -51,5 +52,10 @@ score::mw::com::impl::BindingRuntimeFactory::CreateBindingRuntimes(
         const auto pair = result.emplace(BindingType::kLoLa, std::move(lola_runtime));
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(pair.second, "Failed to emplace lola runtime binding");
     }
+
+    auto someip_runtime = std::make_unique<score::mw::com::impl::someip::Runtime>();
+    const auto pair = result.emplace(BindingType::kSomeIp, std::move(someip_runtime));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(pair.second, "Failed to emplace SOME/IP runtime binding");
+
     return result;
 }

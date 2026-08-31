@@ -1,0 +1,50 @@
+@startuml communication_binding_architecture
+title New Communication Binding: Architecture
+skinparam componentStyle rectangle
+
+package "mw::com public API" {
+  component "Proxy<T>" as public_proxy
+  component "Skeleton<T>" as public_skeleton
+}
+
+package "Binding-independent implementation" {
+  component "ProxyBase / ProxyEventBase" as proxy_base
+  component "SkeletonBase / SkeletonEventBase" as skeleton_base
+  interface "ProxyBinding" as proxy_binding
+  interface "SkeletonBinding" as skeleton_binding
+  interface "ProxyEventBinding<T>" as proxy_event_binding
+  interface "SkeletonEventBinding<T>" as skeleton_event_binding
+}
+
+package "New technical binding" {
+  component "Binding Runtime" as binding_runtime
+  component "Service Discovery" as discovery
+  component "Proxy binding" as concrete_proxy
+  component "Skeleton binding" as concrete_skeleton
+  component "Proxy event/method/field" as concrete_proxy_elements
+  component "Skeleton event/method/field" as concrete_skeleton_elements
+  component "Transport + storage" as transport
+}
+
+public_proxy --> proxy_base
+public_skeleton --> skeleton_base
+proxy_base ..|> proxy_binding
+skeleton_base ..|> skeleton_binding
+proxy_base ..|> proxy_event_binding
+skeleton_base ..|> skeleton_event_binding
+concrete_proxy ..|> proxy_binding
+concrete_skeleton ..|> skeleton_binding
+concrete_proxy_elements ..|> proxy_event_binding
+concrete_skeleton_elements ..|> skeleton_event_binding
+binding_runtime --> discovery
+concrete_proxy --> binding_runtime
+concrete_skeleton --> binding_runtime
+concrete_proxy_elements --> transport
+concrete_skeleton_elements --> transport
+
+note right of transport
+Choose transport semantics:
+local shared memory, network,
+serialization, queues, etc.
+end note
+@enduml
