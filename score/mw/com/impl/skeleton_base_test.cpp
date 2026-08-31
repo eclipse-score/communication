@@ -492,7 +492,8 @@ TEST_F(SkeletonBaseOfferDeathTest, TerminateOnOfferWithNoBinding)
 using SkeletonBaseStopOfferFixture = SkeletonBaseFixture;
 TEST_F(SkeletonBaseStopOfferFixture, PrepareStopOffer)
 {
-    RecordProperty("Verifies", "SCR-5897820, SCR-17434265");  // SWS_CM_00111
+    RecordProperty("Verifies", "SCR-5897820");  // SWS_CM_00111
+    RecordProperty("lobster-tracing", "Communication.SkeletonStopOfferService");
     RecordProperty("Description", "Checks that PrepareStopOffer() actually stops a offered service");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

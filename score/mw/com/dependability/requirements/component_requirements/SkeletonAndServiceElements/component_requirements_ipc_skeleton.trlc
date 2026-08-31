@@ -180,7 +180,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/17434265 */
             ScoreReq.CompReq SkeletonStopOfferService {
                 description = '''The {{Skeleton}} shall provide a {{StopOfferService}} method:
 
