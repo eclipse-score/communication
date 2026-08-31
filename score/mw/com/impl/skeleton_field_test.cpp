@@ -545,7 +545,8 @@ using SkeletonFieldZeroCopyUpdateTest = SkeletonFieldTestFixture;
 
 TEST_F(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-17434778, SCR-21553623");
+    RecordProperty("Verifies", "SCR-21553623");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassZeroCopyUpdate");
     RecordProperty("Description",
                    "Checks that calling zero copy Update after offer service dispatches to the binding.");
     RecordProperty("TestType", "Requirements-based test");
@@ -605,7 +606,7 @@ TEST_F(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceDi
 
 TEST_F(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServicePropagatesBindingFail)
 {
-    RecordProperty("Verifies", "SCR-17434778");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassZeroCopyUpdate");
     RecordProperty(
         "Description",
         "Checks that calling zero copy Update after offer service returns kBindingFailure for a generic error code "

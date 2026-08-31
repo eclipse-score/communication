@@ -96,7 +96,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/17434778 */
                 ScoreReq.CompReq SkeletonFieldClassZeroCopyUpdate {
                     description = '''The {{SkeletonField}} class shall contain a public method:
 
