@@ -1,0 +1,123 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+section "com" {
+
+    section "Public_API_Specification" {
+
+        section "Skeleton" {
+
+            section "SkeletonField" {
+
+                section "Functionality" {
+
+                /* ToDo: Potentially uncovered requirement! */
+                /* broken_link_c/issue/17431949 */
+                ScoreReq.CompReq SkeletonFieldClass {
+                    description = '''Field members within a Skeleton Class shall be of a {{SkeletonField}} class, whose properties are defined in this section.
+
+                    The name and namespace of a {{SkeletonField}} class shall be defined by the {{mw::com}} implementation.
+
+                    Note: It is up to the {{mw::com}} implementation, whether it defines/generates different/explicit classes for each {{SkeletonField}} or whether it uses a class template for {{SkeletonField}} class and uses the field data type ({{FieldType}}) as a template argument.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/29235194 */
+                ScoreReq.CompReq SkeletonFieldClassDefinition {
+                    description = '''For different field data types also different {{SkeletonField}}
+                    {{SkeletonField}}
+
+                     classes shall be defined, since the field data type influences the signature of a  class. See for example SkeletonField class member type FieldType.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.CommunicationInterfaces@1, Communication.ServiceInstanceNames@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/18221574 */
+                ScoreReq.CompReq SkeletonFieldCopySemantics {
+                    description = '''The {{SkeletonField}}
+                     class shall neither be copy-constructible nor copy-assignable.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.DataLoss@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/17433130 */
+                ScoreReq.CompReq SkeletonFieldType {
+                    description = '''Each {{SkeletonField}} class shall have a public member type {{FieldType}}, which denotes the data type of a field.
+
+                    {{{using FieldType = <data type>;}}}'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.SupportForTimeBasedArchitecture@1, Communication.CommunicationInterfaces@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/17434933 */
+                ScoreReq.CompReq SkeletonFieldAllocate {
+                    description = '''The {{SkeletonField}} class shall contain a public method:
+
+                    {{{bmw::Result<mw::com::SampleAllocateePtr<FieldType>> SkeletonField::Allocate() noexcept;}}}
+
+                    Behaviour: is described in Behaviour of Allocate.
+
+                    Return value: returned {{bmw::Result}} which contains
+
+                    * on success, a {{SampleAllocateePtr<FieldType>}} (See SampleAllocateePtr).
+
+                    *  on failure, a {{bmw::Result<void>}}, which contains a {{bmw::result::Error}}containing the value {{ComErrc::kNotOffered}} if Skeleton OfferService has not been called or the service offering has been withdrawn with a call to Skeleton StopOfferService.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.ServiceInstance@1, Communication.ZeroCopy@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/17434775 */
+                ScoreReq.CompReq SkeletonFieldClassUpdate {
+                    description = '''The {{SkeletonField}} class shall contain a public method:
+
+                    {{{ bmw::Result<void> SkeletonField::Update(const FieldType &value) noexcept;}}}
+
+                    Arguments:
+
+                    *  value: A value of type ProxyField Member type FieldType which will be used according to Behaviour of Update/Send with Copy.
+
+                    Behaviour: is described in Behaviour of Update/Send with Copy and Behaviour of Setting Field Initial Value.'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.StatelessCommunication@1]
+                    version = 1
+                }
+
+                /* broken_link_c/issue/17434778 */
+                ScoreReq.CompReq SkeletonFieldClassZeroCopyUpdate {
+                    description = '''The {{SkeletonField}} class shall contain a public method:
+
+                    {{{bmw::Result<void> SkeletonField::Update(mw::com::SampleAllocateePtr<FieldType> data) noexcept;}}}
+
+                    Arguments:
+
+                    *  data: A SampleAllocateePtr which will be used according to Behaviour of Zero-copy Update/Send.
+
+                    Behaviour: is described in Behaviour of Zero-copy Update/Send and Behaviour of Setting Field Initial Value'''
+                    safety = ScoreReq.Asil.B
+                    derived_from = [Communication.ZeroCopy@1]
+                    version = 1
+                }
+                }
+            }
+        }
+    }
+}
