@@ -161,7 +161,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/17434118 */
             ScoreReq.CompReq SkeletonOfferService {
                 description = '''The {{mw::com}}/{{LoLa}} shall provide an {{OfferService}} method as part of the {{Skeleton}} class to offer a service to applications.
 
