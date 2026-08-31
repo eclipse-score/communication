@@ -46,7 +46,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/21840365 */
                 ScoreReq.CompReq SkeletonEventCopySemantics {
                     description = '''The {{SkeletonEvent}}
                      class shall neither be copy-constructible nor copy-assignable.'''

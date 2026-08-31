@@ -65,7 +65,7 @@ class MyDummySkeleton final : public SkeletonBase
 
 TEST(SkeletonEventTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-21840365");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventCopySemantics");
     RecordProperty("Description", "Checks that class is neither copy-constructable nor copy-assignable.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
