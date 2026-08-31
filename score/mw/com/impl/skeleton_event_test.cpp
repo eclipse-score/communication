@@ -82,7 +82,7 @@ TEST(SkeletonEventTest, IsMoveable)
 
 TEST(SkeletonEventTest, SkeletonEventContainsPublicSampleType)
 {
-    RecordProperty("Verifies", "SCR-21840366");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassMemberTypeEventType");
     RecordProperty("Description",
                    "A SkeletonEvent contains a public member type EventType which denotes the type of the event.");
     RecordProperty("TestType", "Requirements-based test");

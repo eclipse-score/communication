@@ -54,7 +54,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/21840366 */
                 ScoreReq.CompReq SkeletonEventClassMemberTypeEventType {
                     description = '''Each {{SkeletonEvent}} class shall have a public member type {{EventType}}, which denotes the data type of an event.
 
