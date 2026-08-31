@@ -258,7 +258,8 @@ TEST_F(SkeletonFieldCreationFixture,
 using SkeletonFieldCopyUpdateTest = SkeletonFieldTestFixture;
 TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToOfferService)
 {
-    RecordProperty("Verifies", "SCR-17434775, SCR-17563743, SCR-21553554");
+    RecordProperty("Verifies", "SCR-17563743, SCR-21553554");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassUpdate");
     RecordProperty("Description", "Checks that calling Update before offer service defers the call to OfferService().");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -303,7 +304,8 @@ TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToO
 // Update() before PrepareOffer() is called.
 TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServicePropagatesBindingFailureToOfferService)
 {
-    RecordProperty("Verifies", "SCR-17434775, SCR-21553554");
+    RecordProperty("Verifies", "SCR-21553554");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassUpdate");
     RecordProperty("Description", "Checks that calling Update before offer service defers the call to OfferService().");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -346,7 +348,8 @@ TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServicePropagatesBin
 
 TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServiceDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-17434775, SCR-21553375");
+    RecordProperty("Verifies", "SCR-21553375");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassUpdate");
     RecordProperty("Description", "Checks that calling Update after offer service dispatches to the binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -387,7 +390,8 @@ TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServiceDispatchesToBi
 
 TEST_F(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServicePropagatesBindingFail)
 {
-    RecordProperty("Verifies", "SCR-17434775, SCR-21553375");
+    RecordProperty("Verifies", "SCR-21553375");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldClassUpdate");
     RecordProperty("Description",
                    "Checks that calling Update after offer service returns kBindingFailure for a generic error code "
                    "from the binding.");
