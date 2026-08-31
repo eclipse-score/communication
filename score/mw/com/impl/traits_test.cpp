@@ -649,7 +649,8 @@ TEST(GeneratedSkeletonTest, NotCopyable)
 
 TEST(GeneratedSkeletonTest, IsMoveable)
 {
-    RecordProperty("Verifies", "SCR-5897869, SCR-17432438");  // SWS_CM_00135
+    RecordProperty("Verifies", "SCR-5897869");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");  // SWS_CM_00135
     RecordProperty("Description", "Checks move semantics for Skeletons");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1275,7 +1276,7 @@ TEST_F(GeneratedSkeletonDestructionFixture, DoesNotCallStopOfferServiceOnDestruc
 using GeneratedSkeletonMoveConstructionFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
 TEST_F(GeneratedSkeletonMoveConstructionFixture, MoveConstructingDoesNotCallStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move constructible");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1294,7 +1295,7 @@ TEST_F(GeneratedSkeletonMoveConstructionFixture, MoveConstructingDoesNotCallStop
 
 TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedToSkeletonCallsStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move constructible");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1316,7 +1317,7 @@ TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedToSkeletonCallsS
 
 TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedFromSkeletonDoesNotCallStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move constructible");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1339,7 +1340,7 @@ TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedFromSkeletonDoes
 using GeneratedSkeletonMoveAssignmentFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
 TEST_F(GeneratedSkeletonMoveAssignmentFixture, MoveAssigningCallsStopOfferServiceOnMovedToSkeleton)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1362,7 +1363,7 @@ TEST_F(GeneratedSkeletonMoveAssignmentFixture, MoveAssigningCallsStopOfferServic
 
 TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedToSkeletonCallsStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1384,7 +1385,7 @@ TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedToSkeletonCallsSto
 
 TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedFromSkeletonDoesNotCallStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1406,7 +1407,7 @@ TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedFromSkeletonDoesNo
 
 TEST_F(GeneratedSkeletonMoveAssignmentFixture, MoveAssigningToAMovedFromSkeletonDoesNotCallStopOfferService)
 {
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

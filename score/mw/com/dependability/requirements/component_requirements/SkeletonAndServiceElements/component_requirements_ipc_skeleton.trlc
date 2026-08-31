@@ -153,7 +153,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/17432438 */
             ScoreReq.CompReq SkeletonMoveSemantics {
                 description = '''The {{Skeleton}}
                 class shall be move-constructible as well as being move-assignable.'''

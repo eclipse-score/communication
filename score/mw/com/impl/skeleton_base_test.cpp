@@ -906,7 +906,7 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveConstructingUpdatesRefer
 TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
 {
 
-    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonMoveSemantics");
     RecordProperty("Description", "Skeleton is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
