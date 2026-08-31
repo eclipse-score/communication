@@ -1229,7 +1229,8 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
 using GeneratedSkeletonDestructionFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
 TEST_F(GeneratedSkeletonDestructionFixture, CallsStopOfferServiceOnDestructionOfOfferedService)
 {
-    RecordProperty("Verifies", "SCR-6093144, SCR-17432457");
+    RecordProperty("Verifies", "SCR-6093144");
+    RecordProperty("lobster-tracing", "Communication.SkeletonDestructor");
     RecordProperty("Description", "Check whether the service event offering is stopped when the skeleton is destroyed");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -1252,7 +1253,8 @@ TEST_F(GeneratedSkeletonDestructionFixture, CallsStopOfferServiceOnDestructionOf
 
 TEST_F(GeneratedSkeletonDestructionFixture, DoesNotCallStopOfferServiceOnDestructionOfNotOfferedService)
 {
-    RecordProperty("Verifies", "SCR-6093144, SCR-17432457");
+    RecordProperty("Verifies", "SCR-6093144");
+    RecordProperty("lobster-tracing", "Communication.SkeletonDestructor");
     RecordProperty("Description", "Check whether the service event offering is stopped when the skeleton is destroyed");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

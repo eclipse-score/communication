@@ -589,7 +589,7 @@ TEST_F(SkeletonBaseMoveFixture, SelfMovingAssignmentDoesNotCauseIssues)
 
 TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingService)
 {
-    RecordProperty("Verifies", "SCR-17432457, SCR-17432438");
+    RecordProperty("lobster-tracing", "Communication.SkeletonDestructor, Communication.SkeletonMoveSemantics");
     RecordProperty("Description",
                    "If the service provided by the skeleton is currently being offered at the time of the destruction, "
                    "the offering shall be stopped. And skeleton is move constructible");

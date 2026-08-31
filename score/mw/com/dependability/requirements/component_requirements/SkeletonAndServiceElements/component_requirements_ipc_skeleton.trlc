@@ -91,7 +91,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/17432457 */
             ScoreReq.CompReq SkeletonDestructor {
                 description = '''The {{Skeleton}} shall contain a public destructor.
 
