@@ -63,7 +63,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/21840368 */
                 ScoreReq.CompReq SkeletonEventClassAllocate {
                     description = '''The {{SkeletonEvent}} class shall contain a public method:
 
