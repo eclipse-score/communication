@@ -95,7 +95,7 @@ TEST(SkeletonEventTest, SkeletonEventContainsPublicSampleType)
 
 TEST(SkeletonEventTest, ClassTypeDependsOnEventDataType)
 {
-    RecordProperty("Verifies", "SCR-29235002");
+    RecordProperty("lobster-tracing", "Communication.SkeletonEventClassDefinition");
     RecordProperty("Description", "SkeletonEvents with different event data types should be different classes.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

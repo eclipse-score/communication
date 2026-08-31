@@ -35,7 +35,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/29235002 */
                 ScoreReq.CompReq SkeletonEventClassDefinition {
                     description = '''For different event data types also different {{SkeletonEvent}}
                     {{SkeletonEvent}}
