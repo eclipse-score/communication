@@ -55,7 +55,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/17433130 */
                 ScoreReq.CompReq SkeletonFieldType {
                     description = '''Each {{SkeletonField}} class shall have a public member type {{FieldType}}, which denotes the data type of a field.
 

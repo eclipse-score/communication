@@ -168,7 +168,7 @@ TEST(SkeletonFieldTest, ClassTypeDependsOnFieldDataType)
 
 TEST(SkeletonFieldTest, SkeletonFieldContainsPublicSampleType)
 {
-    RecordProperty("Verifies", "SCR-17433130");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldType");
     RecordProperty("Description",
                    "A SkeletonField contains a public member type FieldType which denotes the type of the field.");
     RecordProperty("TestType", "Requirements-based test");
