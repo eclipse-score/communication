@@ -146,7 +146,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/17432387 */
             ScoreReq.CompReq SkeletonCopySemantics {
                 description = '''The {{Skeleton}} class shall neither be copy-constructible nor copy-assignable.'''
                 safety = ScoreReq.Asil.B

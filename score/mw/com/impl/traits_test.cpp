@@ -636,7 +636,8 @@ TEST(GeneratedProxyHandleTest, GeneratedProxyContainsPublicHandleTypeAlias)
 
 TEST(GeneratedSkeletonTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-5897862, SCR-17432387");  // SWS_CM_00134
+    RecordProperty("Verifies", "SCR-5897862");
+    RecordProperty("lobster-tracing", "Communication.SkeletonCopySemantics");  // SWS_CM_00134
     RecordProperty("Description", "Checks copy semantics for Skeletons");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
