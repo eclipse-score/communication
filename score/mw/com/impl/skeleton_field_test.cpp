@@ -454,7 +454,8 @@ TEST_F(SkeletonFieldAllocateTest, CallingAllocateBeforePrepareOfferDoesNotReturn
 
 TEST_F(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBinding)
 {
-    RecordProperty("Verifies", "SCR-17434933, SCR-21470600");
+    RecordProperty("Verifies", "SCR-21470600");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldAllocate");
     RecordProperty("Description", "Checks that calling allocate after prepare offer dispatches to the binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -494,7 +495,7 @@ TEST_F(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBi
 
 TEST_F(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferFailsWhenBindingReturnsError)
 {
-    RecordProperty("Verifies", "SCR-17434933");
+    RecordProperty("lobster-tracing", "Communication.SkeletonFieldAllocate");
     RecordProperty("Description",
                    "Checks that calling allocate after prepare offer propagates an error from the binding.");
     RecordProperty("TestType", "Requirements-based test");
