@@ -62,7 +62,7 @@ TEST_F(LolaGenericProxyEventFixture, CanConstructAGenericProxyEvent)
 
 TEST_F(LolaGenericProxyEventFixture, GetSampleSize)
 {
-    RecordProperty("Verifies", "SCR-14035184");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventGetSampleSize");
     RecordProperty("Description",
                    "Checks that GetSampleSize will return the sample size of the underlying event data type.");
     RecordProperty("TestType", "Requirements-based test");
@@ -98,7 +98,7 @@ TEST_F(LolaGenericProxyEventFixture, GetDataTypeSizeInfo)
 
 TEST_F(LolaGenericProxyEventFixture, HasSerializedFormat)
 {
-    RecordProperty("Verifies", "SCR-14035199");
+    RecordProperty("lobster-tracing", "Communication.GenericProxyEventHasSerializedFormat");
     RecordProperty("Description", "Checks that HasSerializedFormat will always return false for the Lola binding.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
