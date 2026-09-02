@@ -187,7 +187,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/17292402 */
                 ScoreReq.CompReq ProxyFieldGetFreeSampleCount {
                     description = '''The {{ProxyField}}
                     shall provide a public method:
