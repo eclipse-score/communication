@@ -358,10 +358,11 @@ TEST_F(ProxyBaseStartFindServiceInstanceIdentifierFixture, StartFindServiceWillR
 using ProxyBaseStopFindServiceFixture = ProxyBaseFixture;
 TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillDispatchToBinding)
 {
-    RecordProperty("ParentRequirement", "SCR-21792394, SCR-21790756");
+    RecordProperty("ParentRequirement", "SCR-21790756");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
     RecordProperty("Description",
                    "StopFindService will dispatch to the underlying Proxy binding for a "
-                   "regular Proxy (SCR-21792394) and a GenericProxy (SCR-21790756).");
+                   "regular Proxy (Communication.ProxyStopFindService) and a GenericProxy (SCR-21790756).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
@@ -375,10 +376,12 @@ TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillDispatchToBinding)
 
 TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillReturnValidResultOnSuccess)
 {
-    RecordProperty("ParentRequirement", "SCR-21792394, SCR-21790756");
-    RecordProperty("Description",
-                   "StopFindService will return a valid result from the binding on "
-                   "success for a regular Proxy (SCR-21792394) and a GenericProxy (SCR-21790756).");
+    RecordProperty("ParentRequirement", "SCR-21790756");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
+    RecordProperty(
+        "Description",
+        "StopFindService will return a valid result from the binding on "
+        "success for a regular Proxy (Communication.ProxyStopFindService) and a GenericProxy (SCR-21790756).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
@@ -392,11 +395,13 @@ TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillReturnValidResultOnSu
 
 TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillReturnPropagateErrorFromBinding)
 {
-    RecordProperty("ParentRequirement", "SCR-21792394, SCR-21790756");
+    RecordProperty("ParentRequirement", "SCR-21790756");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
     RecordProperty("Description",
                    "StopFindService will return an error containing "
                    "kInvalidHandle if the "
-                   "call to the binding returns an error for a regular Proxy (SCR-21792394) and a GenericProxy "
+                   "call to the binding returns an error for a regular Proxy (Communication.ProxyStopFindService) and "
+                   "a GenericProxy "
                    "(SCR-21790756).");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");

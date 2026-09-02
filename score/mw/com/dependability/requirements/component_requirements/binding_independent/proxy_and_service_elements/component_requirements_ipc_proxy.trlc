@@ -193,7 +193,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/21792394 */
             ScoreReq.CompReq ProxyStopFindService {
                 description = '''The {{Proxy}} class shall contain a public method:
 

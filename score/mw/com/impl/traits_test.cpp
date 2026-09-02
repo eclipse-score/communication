@@ -600,7 +600,7 @@ TEST(GeneratedProxyStartFindServiceTest, GeneratedProxyUsesProxyBaseStartFindSer
 
 TEST(GeneratedProxyStopFindServiceTest, GeneratedProxyUsesProxyBaseStopFindServiceWithInstanceIdentifier)
 {
-    RecordProperty("Verifies", "SCR-21792394");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
     RecordProperty("Description", "Checks that a generated proxy uses StopFindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

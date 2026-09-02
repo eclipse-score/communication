@@ -772,7 +772,7 @@ TEST_F(ServiceDiscoveryStopFindServiceFixture, StopFindServiceWillDestroyRegiste
 
 TEST_F(ServiceDiscoveryStopFindServiceFixture, StopFindServiceSilentlyIgnoresSecondCallWithSameHandle)
 {
-    RecordProperty("ParentRequirement", "SCR-21792394");
+    RecordProperty("lobster-tracing", "Communication.ProxyStopFindService");
     RecordProperty(
         "Description",
         "Checks that calling StopFindService multiple times with the same FindServiceHandle returns without an error.");
