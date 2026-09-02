@@ -207,7 +207,8 @@ TYPED_TEST(LolaProxyEventCommonFixture, SubscriptionFailsWhenProviderRejectsSubs
 
 TYPED_TEST(LolaProxyEventCommonFixture, UnsubscribeImmediatelyAfterSubscribing)
 {
-    this->RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-21286218");
+    this->RecordProperty("Verifies", "SCR-14033377, SCR-21286218");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldUnsubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventUnsubscribe");
     this->RecordProperty("Description",
                          "Unsubscribe will be succesfully processed if a user unsubscribes from an event immediately "

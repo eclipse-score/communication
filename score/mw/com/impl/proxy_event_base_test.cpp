@@ -155,7 +155,8 @@ TEST(ProxyEventBaseTest, IsMoveable)
 
 TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscribedCallsUnsubscribeOnBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-21286218");
+    this->RecordProperty("Verifies", "SCR-14033377, SCR-21286218");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldUnsubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventUnsubscribe");
     this->RecordProperty("Description", "Checks that unsubscribe will dispatch to binding if currently subscribed");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -183,7 +184,8 @@ TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscribedCa
 
 TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscriptionIsPendingCallsUnsubscribeOnBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-21286218");
+    this->RecordProperty("Verifies", "SCR-14033377, SCR-21286218");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldUnsubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventUnsubscribe");
     this->RecordProperty("Description",
                          "Checks that unsubscribe will dispatch to binding if subscription is currently pending");
@@ -212,7 +214,8 @@ TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileSubscription
 
 TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileNotSubscribedDoesNothing)
 {
-    this->RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-21286218");
+    this->RecordProperty("Verifies", "SCR-14033377, SCR-21286218");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldUnsubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventUnsubscribe");
     this->RecordProperty("Description", "Checks that unsubscribe will do nothing if not already subscribed");
     this->RecordProperty("TestType", "Requirements-based test");

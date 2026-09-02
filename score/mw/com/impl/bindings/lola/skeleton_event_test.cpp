@@ -352,7 +352,8 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionRejectedIfNumberOfSubscribe
 
 TEST_F(SkeletonEventPrepareOfferFixture, UnsubscribeIncreasesAvailableSampleSlots)
 {
-    RecordProperty("Verifies", "SCR-14033377, SCR-17292399, SCR-21286218");
+    RecordProperty("Verifies", "SCR-14033377, SCR-21286218");
+    RecordProperty("lobster-tracing", "Communication.ProxyFieldUnsubscribe");
     RecordProperty("lobster-tracing", "Communication.ProxyEventUnsubscribe");
     RecordProperty("Description",
                    "The available sample count will be incremented when an unsubscribe message is received.");

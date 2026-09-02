@@ -75,7 +75,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/17292399 */
                 ScoreReq.CompReq ProxyFieldUnsubscribe {
                     description = '''A {{ProxyField}} class shall provide a public method:
 
