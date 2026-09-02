@@ -208,7 +208,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/14110935 */
             ScoreReq.CompReq ProxyGetHandle {
                 description = '''The {{Proxy}} class shall contain a public method:
 

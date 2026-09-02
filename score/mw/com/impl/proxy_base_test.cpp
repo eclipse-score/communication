@@ -144,7 +144,8 @@ TEST_F(ProxyBaseFixture, GetImplReturnsProxyBindingPassedToConstructor)
 
 TEST_F(ProxyBaseFixture, StoredHandleTypeEqualToSuppliedOne)
 {
-    RecordProperty("Verifies", "SCR-14030261, SCR-14110935");
+    RecordProperty("Verifies", "SCR-14030261");
+    RecordProperty("lobster-tracing", "Communication.ProxyGetHandle");
     RecordProperty("Description", "Checks that GetHandle gets the handle from which the ProxyBase has been created.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

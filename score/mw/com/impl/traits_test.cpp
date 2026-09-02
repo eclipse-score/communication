@@ -614,7 +614,7 @@ TEST(GeneratedProxyStopFindServiceTest, GeneratedProxyUsesProxyBaseStopFindServi
 
 TEST(GeneratedProxyHandleTest, GeneratedProxyUsesProxyBaseGetHandle)
 {
-    RecordProperty("Verifies", "SCR-14110935");
+    RecordProperty("lobster-tracing", "Communication.ProxyGetHandle");
     RecordProperty("Description", "Checks that a generated proxy uses GetHandle in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
