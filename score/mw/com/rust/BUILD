@@ -18,7 +18,7 @@ rust_library(
     name = "score_com",
     srcs = ["score_com.rs"],
     crate_name = "score_com",
-    edition = "2024",
+    edition = "2021",
     visibility = [
         "//visibility:public",  # platform_only
     ],
@@ -36,7 +36,7 @@ rust_library(
     testonly = True,
     srcs = ["score_com_mock.rs"],
     crate_name = "score_com",
-    edition = "2024",
+    edition = "2021",
     visibility = [
         "//visibility:public",
     ],
