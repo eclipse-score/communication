@@ -34,7 +34,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/29235459 */
                 ScoreReq.CompReq ProxyFieldClassDefinition {
                     description = '''For different field data types also different {{ProxyField}}
                     {{ProxyField}}

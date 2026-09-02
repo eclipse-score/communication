@@ -216,7 +216,7 @@ TEST(ProxyFieldTest, IsMoveable)
 
 TEST(ProxyFieldTest, ClassTypeDependsOnFieldDataType)
 {
-    RecordProperty("Verifies", "SCR-29235459");
+    RecordProperty("lobster-tracing", "Communication.ProxyFieldClassDefinition");
     RecordProperty("Description", "ProxyFields with different field data types should be different classes.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
