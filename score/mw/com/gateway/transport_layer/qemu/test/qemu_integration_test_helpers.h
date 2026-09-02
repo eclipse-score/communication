@@ -24,9 +24,9 @@
 
 #include "score/result/result.h"
 
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
-#include <chrono>
 #include <memory>
 #include <thread>
 

@@ -16,7 +16,7 @@
 
 #include <cerrno>
 #include <cstring>
-#include <vector>
+#include <optional>
 
 #if defined(__QNXNTO__)
 extern "C" {
@@ -27,18 +27,6 @@ extern "C" {
 
 namespace score::mw::com::gateway::qemu::ivshmem
 {
-
-std::optional<IvshmemBar> SelectIvshmemBar(const std::vector<IvshmemBar>& bars, std::uint32_t required_bar_num) noexcept
-{
-    for (const auto& bar : bars)
-    {
-        if (bar.is_memory && bar.bar_num == required_bar_num)
-        {
-            return bar;
-        }
-    }
-    return std::nullopt;
-}
 
 #if defined(__QNXNTO__)
 
@@ -103,26 +91,30 @@ bool DiscoverIvshmemBar(std::uint64_t& paddr, std::uint64_t& size, std::uint32_t
         return false;
     }
 
-    std::vector<IvshmemBar> bars;
-    bars.reserve(static_cast<std::size_t>(nba));
+    // Scan for the required BAR
+    std::optional<IvshmemBar> shared;
     for (int_t i = 0; i < nba; ++i)
     {
-        bars.push_back(IvshmemBar{static_cast<std::uint32_t>(ba[i].bar_num),
-                                  static_cast<std::uint64_t>(ba[i].addr),
-                                  static_cast<std::uint64_t>(ba[i].size),
-                                  ba[i].type == pci_asType_e_MEM});
-    }
-    for (const auto& bar : bars)
-    {
-        ::score::mw::log::LogInfo() << "ivshmem: BAR" << static_cast<int>(bar.bar_num)
-                                    << " type=" << (bar.is_memory ? "MEM" : "IO") << " addr=0x"
-                                    << static_cast<std::uint64_t>(bar.addr) << " size=0x"
-                                    << static_cast<std::uint64_t>(bar.size);
+        const IvshmemBar bar{static_cast<std::uint32_t>(ba[i].bar_num),
+                             static_cast<std::uint64_t>(ba[i].addr),
+                             static_cast<std::uint64_t>(ba[i].size),
+                             ba[i].type == pci_asType_e_MEM};
+        if (bar.is_memory && bar.bar_num == required_bar_num)
+        {
+            shared = bar;
+            break;
+        }
     }
 
-    const auto shared = SelectIvshmemBar(bars, required_bar_num);
     if (!shared.has_value())
     {
+        for (int_t i = 0; i < nba; ++i)
+        {
+            ::score::mw::log::LogInfo() << "ivshmem: BAR" << static_cast<int>(ba[i].bar_num)
+                                        << " type=" << (ba[i].type == pci_asType_e_MEM ? "MEM" : "IO") << " addr=0x"
+                                        << static_cast<std::uint64_t>(ba[i].addr) << " size=0x"
+                                        << static_cast<std::uint64_t>(ba[i].size);
+        }
         ::score::mw::log::LogError() << "required ivshmem BAR" << static_cast<unsigned int>(required_bar_num)
                                      << " not found on the ivshmem device";
         (void)pci_device_detach(hdl);
