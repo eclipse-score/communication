@@ -28,6 +28,16 @@ cc_args(
     ],
 )
 
+cc_args(
+    name = "default_link_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-Wl,--warn-execstack",
+    ],
+)
+
 # The sysroot needs its "mergedusr" bin/lib/lib64 compat symlinks (see
 # MODULE.bazel's ubuntu24_04_sysroot apt.install()) so that glibc's linker-script
 # stub .so files (e.g. libm.so's `GROUP ( /lib/x86_64-linux-gnu/libm.so.6 ... )`,
@@ -68,6 +78,7 @@ cc_feature(
         "//quality/compiler_warnings:default_compile_args",
         "//quality/compiler_warnings:default_link_args",
         ":default_compile_args",
+        ":default_link_args",
     ] + select(
         {
             "@platforms//cpu:aarch64": [":gcc_install_dir_args_arm64"],

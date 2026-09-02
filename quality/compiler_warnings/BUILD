@@ -84,7 +84,6 @@ cc_args(
         "-lm",
         "-lstdc++",
         "-Wl,--build-id=sha1",
-        "-Wl,--warn-execstack",
         "-Wl,--no-fatal-warnings",
     ],
     visibility = ["//quality/compiler_warnings:__subpackages__"],
