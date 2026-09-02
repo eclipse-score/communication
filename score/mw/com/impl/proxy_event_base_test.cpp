@@ -845,7 +845,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture,
 
 TYPED_TEST(ProxyEventBaseGetSubscriptionStatefixture, GetSubscriptionStateDispatchesToBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14034825, SCR-17292400");
+    this->RecordProperty("Verifies", "SCR-14034825");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldGetSubscriptionState");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventGetSubscriptionState");
     this->RecordProperty("Description",
                          "Checks that GetSubscriptionState will return the free sample count returned by the binding");

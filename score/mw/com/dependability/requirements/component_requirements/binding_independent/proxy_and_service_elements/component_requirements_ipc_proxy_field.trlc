@@ -86,7 +86,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/17292400 */
                 ScoreReq.CompReq ProxyFieldGetSubscriptionState {
                     description = '''The {{ProxyField}} shall provide a public method:
 
