@@ -530,7 +530,7 @@ TEST_F(GeneratedProxyMoveConstructionFixture, DestroyingMovedFromProxyDoesNotCal
 
 TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithInstanceSpecifier)
 {
-    RecordProperty("Verifies", "SCR-14110930");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "Checks that a generated proxy uses FindService in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

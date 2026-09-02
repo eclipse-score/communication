@@ -102,7 +102,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/14110930 */
             ScoreReq.CompReq ProxyFindServiceWithInstanceSpecifier {
                 description = '''The {{Proxy}} class shall contain a public method:
 

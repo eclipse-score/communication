@@ -162,7 +162,8 @@ using ServiceDiscoveryFindServiceInstanceSpecifierFixture = ServiceDiscoveryTest
 TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierFixture,
        FindServiceReturnsHandlesForEachIdentifierIfBindingReturnsNoErrors)
 {
-    RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
+    RecordProperty("ParentRequirement", "SCR-14005977, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "FindService can find a service using an instance specifier.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -192,7 +193,8 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierFixture,
 TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierFixture,
        FindServiceReturnsHandlesOnlyForIdentifiersWithNoBindingErrors)
 {
-    RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
+    RecordProperty("ParentRequirement", "SCR-14005977, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "FindService can find a service using an instance specifier.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -219,7 +221,8 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierFixture,
 
 TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierFixture, FindServiceShouldReturnErrorIfBindingReturnsOnlyErrors)
 {
-    RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
+    RecordProperty("ParentRequirement", "SCR-14005977, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description",
                    "FindService returns a kBindingFailure error code if binding returns an error for all instances.");
     RecordProperty("TestingTechnique", "Requirements-based test");
@@ -247,7 +250,8 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierFixture, FindServiceShouldRet
 using ServiceDiscoveryFindServiceInstanceSpecifierDeathTest = ServiceDiscoveryFindServiceInstanceSpecifierFixture;
 TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceReturnsErrorIfNoInstancesCanBeResolved)
 {
-    RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
+    RecordProperty("ParentRequirement", "SCR-14005977, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "FindService terminates if InstanceSpecifier cannot be resolved.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -285,7 +289,8 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceTermina
 using ServiceDiscoveryFindServiceInstanceIdentifierFixture = ServiceDiscoveryTest;
 TEST_F(ServiceDiscoveryFindServiceInstanceIdentifierFixture, FindServiceReturnsHandleIfBindingReturnsNoError)
 {
-    RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
+    RecordProperty("ParentRequirement", "SCR-14005977, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "FindService can find a service using an instance identifier.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -309,7 +314,8 @@ TEST_F(ServiceDiscoveryFindServiceInstanceIdentifierFixture, FindServiceReturnsH
 TEST_F(ServiceDiscoveryFindServiceInstanceIdentifierFixture,
        FindServiceForInstanceIdentifierReturnsErrorIfBindingReturnsError)
 {
-    RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
+    RecordProperty("ParentRequirement", "SCR-14005977, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description",
                    "FindService returns an empty handles containing if binding cannot find any instances.");
     RecordProperty("TestingTechnique", "Requirements-based test");

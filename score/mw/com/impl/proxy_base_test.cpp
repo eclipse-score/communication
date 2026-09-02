@@ -163,7 +163,8 @@ TEST_F(ProxyBaseFixture, StoredHandleTypeEqualToSuppliedOne)
 using ProxyBaseFindServiceInstanceSpecifierFixture = ProxyBaseFixture;
 TEST_F(ProxyBaseFindServiceInstanceSpecifierFixture, FindServiceShouldReturnHandlesContainerIfRuntimeCanResolve)
 {
-    RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
+    RecordProperty("ParentRequirement", "SCR-14005977, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "FindService can find a service using an instance specifier.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -190,7 +191,8 @@ TEST_F(ProxyBaseFindServiceInstanceSpecifierFixture, FindServiceShouldReturnHand
 
 TEST_F(ProxyBaseFindServiceInstanceSpecifierFixture, FindServiceShouldReturnErrorIfBindingReturnsError)
 {
-    RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
+    RecordProperty("ParentRequirement", "SCR-14005977, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "FindService can find a service using an instance specifier.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
