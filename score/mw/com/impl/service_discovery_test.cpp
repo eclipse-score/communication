@@ -342,7 +342,8 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
        StartFindServiceCallsBindingSpecificStartFindServiceForEachIdentifer)
 {
     // @todo: Right now this is only testing the Lola binding, no other. Can be extended in future.
-    RecordProperty("ParentRequirement", "SCR-21792392, SCR-21788845");
+    RecordProperty("ParentRequirement", "SCR-21788845");
+    RecordProperty("lobster-tracing", "Communication.ProxyStartFindServiceWithInstanceSpecifier");
     RecordProperty("Description", "All instance identifiers specific to a Instance specifier are called.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");

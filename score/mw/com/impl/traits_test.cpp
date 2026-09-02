@@ -562,7 +562,7 @@ TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithIn
 
 TEST(GeneratedProxyStartFindServiceTest, GeneratedProxyUsesProxyBaseStartFindServiceWithInstanceSpecifier)
 {
-    RecordProperty("Verifies", "SCR-21792392");
+    RecordProperty("lobster-tracing", "Communication.ProxyStartFindServiceWithInstanceSpecifier");
     RecordProperty("Description",
                    "Checks that a generated proxy uses StartFindService with InstanceSpecifier in ProxyBase");
     RecordProperty("TestType", "Requirements-based test");
