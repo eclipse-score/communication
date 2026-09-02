@@ -405,7 +405,8 @@ using ProxyBaseFindServiceInstanceIdentifierFixture = ProxyBaseFixture;
 TEST_F(ProxyBaseFindServiceInstanceIdentifierFixture,
        FindServiceWithInstanceIdentifierShouldReturnHandlesContainerIfServiceCanBeFound)
 {
-    RecordProperty("Verifies", "SCR-14005991, SCR-14110933, SCR-18804932");
+    RecordProperty("Verifies", "SCR-14005991, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceIdentifier");
     RecordProperty("Description", "Checks finding a service with instance identifier");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -433,7 +434,8 @@ TEST_F(ProxyBaseFindServiceInstanceIdentifierFixture,
 TEST_F(ProxyBaseFindServiceInstanceIdentifierFixture,
        FindServiceWithInstanceIdentifierShouldReturnErrorIfBindingReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14005991, SCR-14110933, SCR-18804932");
+    RecordProperty("Verifies", "SCR-14005991, SCR-18804932");
+    RecordProperty("lobster-tracing", "Communication.ProxyFindServiceWithInstanceIdentifier");
     RecordProperty("Description", "FindService returns a kBindingFailure error code if binding returns any error.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
