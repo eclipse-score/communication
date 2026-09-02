@@ -328,6 +328,10 @@ score::cpp::expected_blank<score::os::Error> IvshmemTypedMemoryProvider::BindShm
     }
     // COV_JUSTIFIED_STOP
 #endif
+    // Fallback path (and the only path on non-x86_64 QNX targets): SHMCTL_PHYS binds the shm
+    // object's backing pages directly to the physical address range [sub_paddr, sub_paddr +
+    // alloc_size) of the ivshmem BAR, without the write-back caching hint requested above. This
+    // is what actually makes the shm object alias the shared BAR memory rather than anonymous RAM.
     const auto shm_ctl_result = mman_qnx_->shm_ctl(fd, SHMCTL_PHYS, sub_paddr, alloc_size);
     if (!shm_ctl_result.has_value())
     {

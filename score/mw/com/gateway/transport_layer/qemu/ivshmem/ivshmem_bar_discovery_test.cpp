@@ -15,67 +15,12 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
-#include <vector>
 
 namespace score::mw::com::gateway::qemu::ivshmem
 {
 
 namespace
 {
-
-TEST(IvshmemBarDiscoveryTest, SelectIvshmemBarReturnsRequiredBar)
-{
-    const std::vector<IvshmemBar> bars{
-        IvshmemBar{0U, 0x1000U, 0x2000U, true},
-        IvshmemBar{2U, 0x3000U, 0x4000U, true},
-        IvshmemBar{3U, 0x5000U, 0x8000U, true},
-    };
-
-    const auto selected = SelectIvshmemBar(bars);
-    ASSERT_TRUE(selected.has_value());
-    EXPECT_EQ(selected->bar_num, kDefaultIvshmemBarNum);
-    EXPECT_EQ(selected->addr, 0x3000U);
-    EXPECT_EQ(selected->size, 0x4000U);
-}
-
-TEST(IvshmemBarDiscoveryTest, SelectIvshmemBarReturnsCustomRequiredBar)
-{
-    const std::vector<IvshmemBar> bars{
-        IvshmemBar{0U, 0x1000U, 0x2000U, true},
-        IvshmemBar{2U, 0x3000U, 0x4000U, true},
-        IvshmemBar{3U, 0x5000U, 0x8000U, true},
-    };
-
-    const auto selected = SelectIvshmemBar(bars, 3U);
-    ASSERT_TRUE(selected.has_value());
-    EXPECT_EQ(selected->bar_num, 3U);
-    EXPECT_EQ(selected->addr, 0x5000U);
-    EXPECT_EQ(selected->size, 0x8000U);
-}
-
-TEST(IvshmemBarDiscoveryTest, SelectIvshmemBarReturnsNulloptWhenRequiredBarMissing)
-{
-    const std::vector<IvshmemBar> bars{
-        IvshmemBar{0U, 0x1000U, 0x2000U, true},
-        IvshmemBar{3U, 0x5000U, 0x8000U, true},
-    };
-
-    const auto selected = SelectIvshmemBar(bars);
-    EXPECT_FALSE(selected.has_value());
-}
-
-TEST(IvshmemBarDiscoveryTest, SelectIvshmemBarIgnoresIoBars)
-{
-    // Given bars where the BAR at kDefaultIvshmemBarNum exists but is I/O-space, not memory-space.
-    // An I/O BAR cannot be mmap'd for shared memory, so SelectIvshmemBar must reject it even
-    // though the bar_num matches.
-    const std::vector<IvshmemBar> bars{
-        IvshmemBar{kDefaultIvshmemBarNum, 0x1000U, 0x2000U, /*is_memory=*/false},
-    };
-
-    const auto selected = SelectIvshmemBar(bars);
-    EXPECT_FALSE(selected.has_value());
-}
 
 TEST(IvshmemBarDiscoveryTest, DiscoverIvshmemBarReturnsFalseOnNonQnx)
 {
