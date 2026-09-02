@@ -181,7 +181,7 @@ TEST(GeneratedProxyTest, NotCopyable)
 
 TEST(GeneratedProxyTest, IsMoveable)
 {
-    RecordProperty("Verifies", "SCR-21290799");
+    RecordProperty("lobster-tracing", "Communication.ProxyMoveSemantics");
     RecordProperty("Description", "Checks move semantics for proxies");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

@@ -94,7 +94,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/21290799 */
             ScoreReq.CompReq ProxyMoveSemantics {
                 description = '''The {{Proxy}}
                 class shall be move-constructible as well as being move-assignable.'''

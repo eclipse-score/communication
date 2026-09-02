@@ -704,7 +704,7 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferenc
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
 {
-    RecordProperty("Verifies", "SCR-21290799");
+    RecordProperty("lobster-tracing", "Communication.ProxyMoveSemantics");
     RecordProperty("Description", "Proxy is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
