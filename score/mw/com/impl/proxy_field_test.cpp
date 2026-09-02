@@ -230,7 +230,7 @@ TEST(ProxyFieldTest, ClassTypeDependsOnFieldDataType)
 
 TEST(ProxyFieldTest, ProxyFieldContainsPublicFieldType)
 {
-    RecordProperty("Verifies", "SCR-17291997");
+    RecordProperty("lobster-tracing", "Communication.ProxyFieldMemberTypeFieldType");
     RecordProperty("Description",
                    "A ProxyField contains a public member type FieldType which denotes the type of the field.");
     RecordProperty("TestType", "Requirements-based test");

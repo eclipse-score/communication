@@ -45,7 +45,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/17291997 */
                 ScoreReq.CompReq ProxyFieldMemberTypeFieldType {
                     description = '''The {{ProxyField}} class shall have a public member type {{FieldType}}, which denotes the data type of a field.
 
