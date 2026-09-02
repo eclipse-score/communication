@@ -22,7 +22,8 @@
 namespace score::mw::com::impl
 {
 
-using LolaServiceTypeDeployment = BindingServiceTypeDeployment<LolaEventId, LolaFieldId, LolaMethodId, LolaServiceId>;
+using LolaServiceTypeDeployment =
+    BindingServiceTypeDeployment<LolaEventId, LolaFieldId, LolaMethodId, LolaServiceId, BindingType::kLoLa>;
 
 }  // namespace score::mw::com::impl
 

@@ -184,6 +184,12 @@ Here we have a mapping of `"abc/abc/TirePressurePort"` to two different concrete
 hypothetical SOME/IP based instance (so it is most likely used for inter-ECU network communication) and the second is a
 concrete instance based on our shared-memory IPC for ECU-local communication.
 
+**Note:** The JSON format describes `bindings` and `instances` as lists, but the current implementation does not
+support multi-binding yet: a service type must configure exactly one entry in `bindings` and an `instanceSpecifier`
+must map to exactly one entry in `instances`. A configuration which violates this is rejected during parsing and the
+application terminates. The example above therefore shows the intended target state, not a configuration that can be
+parsed today.
+
 #### C++ representation of configuration and mappings
 The JSON representation of the configuration shown above gets read and parsed at application startup within call to one
 of the static `score::mw::com::impl::Runtime::Initialize()` methods. We do provide various overloads, to either allow

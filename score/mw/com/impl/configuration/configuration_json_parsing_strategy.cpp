@@ -18,6 +18,8 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -108,6 +110,7 @@ constexpr auto kNumberOfIpcTracingSlotsDefault = static_cast<NumberOfIpcTracingS
 constexpr auto kPermissionChecksKey = "permission-checks"sv;
 
 constexpr auto kShmBinding = "SHM"sv;
+constexpr auto kSomeIpBinding = "SOME/IP"sv;
 constexpr auto kShmSizeCalcModeSimulation = "SIMULATION"sv;
 constexpr auto kShmSizeCalcModeAnalysis = "ANALYSIS"sv;
 
@@ -670,6 +673,29 @@ auto ParseLolaServiceInstanceDeployment(const score::json::Object& json_map) -> 
     return service;
 }
 
+auto ParseSomeIpServiceInstanceDeployment(const score::json::Object& json_map) -> SomeIpServiceInstanceDeployment
+{
+    // The SOME/IP binding transports serialized messages over a socket, so none of the shared memory properties of the
+    // LoLa binding may be configured for it.
+    AbortIfFound(json_map.find(kLolaShmSizeKey), json_map);
+    AbortIfFound(json_map.find(kLolaControlAsilBShmSizeKey), json_map);
+    AbortIfFound(json_map.find(kLolaControlQmShmSizeKey), json_map);
+    AbortIfFound(json_map.find(kInterVmSupport), json_map);
+    AbortIfFound(json_map.find(kInterVmForwarded), json_map);
+
+    std::optional<SomeIpServiceInstanceId> instance_id{};
+    const auto& instance_id_it = json_map.find(kInstanceIdKey);
+    if (instance_id_it != json_map.cend())
+    {
+        const auto instance_id_casted = instance_id_it->second.As<SomeIpServiceInstanceId::InstanceId>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(instance_id_casted.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        instance_id = SomeIpServiceInstanceId{instance_id_casted.value()};
+    }
+
+    return SomeIpServiceInstanceDeployment{instance_id};
+}
+
 auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
                                      TracingConfiguration& tracing_configuration,
                                      const ServiceIdentifierType& service,
@@ -709,6 +735,14 @@ auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
                 // Return Value not needed in this context
                 score::cpp::ignore = deployments.emplace_back(service,
                                                               ParseLolaServiceInstanceDeployment(deployment_map),
+                                                              asil_level.value(),
+                                                              instance_specifier);
+            }
+            else if (bindingValue == kSomeIpBinding)
+            {
+                // Return Value not needed in this context
+                score::cpp::ignore = deployments.emplace_back(service,
+                                                              ParseSomeIpServiceInstanceDeployment(deployment_map),
                                                               asil_level.value(),
                                                               instance_specifier);
             }
@@ -775,7 +809,8 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-void ParseLolaEventTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service)
+template <typename ServiceTypeDeploymentType>
+void ParseEventTypeDeployments(const score::json::Object& json_map, ServiceTypeDeploymentType& service)
 {
     const auto& events = json_map.find(kEventsKey);
     if (events == json_map.cend())
@@ -811,7 +846,8 @@ void ParseLolaEventTypeDeployments(const score::json::Object& json_map, LolaServ
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-void ParseLolaFieldTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service)
+template <typename ServiceTypeDeploymentType>
+void ParseFieldTypeDeployments(const score::json::Object& json_map, ServiceTypeDeploymentType& service)
 {
     const auto& fields = json_map.find(kFieldsKey);
     if (fields == json_map.cend())
@@ -848,7 +884,8 @@ void ParseLolaFieldTypeDeployments(const score::json::Object& json_map, LolaServ
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-void ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service)
+template <typename ServiceTypeDeploymentType>
+void ParseMethodTypeDeployments(const score::json::Object& json_map, ServiceTypeDeploymentType& service)
 {
     const auto& methods = json_map.find(kMethodsKey);
     if (methods == json_map.cend())
@@ -883,23 +920,26 @@ void ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaSer
     }
 }
 
-// See Note 1
-// coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLoLaServiceTypeDeployments(const score::json::Object& json_map) -> LolaServiceTypeDeployment
+/// \brief Parses the service element ids of a service type deployment of any binding.
+///
+/// Events, fields and methods are described identically for every binding: a name and a 16 bit id. Only the deployment
+/// type they are written into differs, so a new binding does not need its own parsing code here.
+template <typename ServiceTypeDeploymentType>
+auto ParseBindingServiceTypeDeployment(const score::json::Object& json_map) -> ServiceTypeDeploymentType
 {
     const auto& service_id = json_map.find(kServiceIdKey);
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(service_id != json_map.cend(),
                                                       "Configuration corrupted, check with json schema");
 
-    const auto service_id_casted = service_id->second.As<std::uint16_t>();
+    const auto service_id_casted = service_id->second.As<typename ServiceTypeDeploymentType::ServiceId>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(service_id_casted.has_value(),
                                                       "Configuration corrupted, check with json schema");
-    LolaServiceTypeDeployment lola{service_id_casted.value()};
-    ParseLolaEventTypeDeployments(json_map, lola);
-    ParseLolaFieldTypeDeployments(json_map, lola);
-    ParseLolaMethodTypeDeployments(json_map, lola);
-    ValidateUniqueServiceElementIds(lola);
-    return lola;
+    ServiceTypeDeploymentType deployment{service_id_casted.value()};
+    ParseEventTypeDeployments(json_map, deployment);
+    ParseFieldTypeDeployments(json_map, deployment);
+    ParseMethodTypeDeployments(json_map, deployment);
+    ValidateUniqueServiceElementIds(deployment);
+    return deployment;
 }
 
 // See Note 1
@@ -914,6 +954,7 @@ auto ParseServiceTypeDeployment(const score::json::Object& json_map) -> ServiceT
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(bindings_list_result.has_value(),
                                                       "Configuration corrupted, check with json schema");
     const auto& bindings_list = bindings_list_result.value().get();
+    std::optional<ServiceTypeDeployment> parsed_deployment{};
     for (const auto& binding : bindings_list)
     {
         auto binding_obj = binding.As<score::json::Object>();
@@ -928,16 +969,32 @@ auto ParseServiceTypeDeployment(const score::json::Object& json_map) -> ServiceT
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(value_result.has_value(),
                                                           "Configuration corrupted, check with json schema");
         const auto& value = value_result.value().get();
+        if (parsed_deployment.has_value())
+        {
+            score::mw::log::LogFatal("lola")
+                << "More than one binding configured for a service type. Multi-Binding support right now not supported";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+
         if (value == kShmBinding)
         {
-            LolaServiceTypeDeployment lola_deployment = ParseLoLaServiceTypeDeployments(binding_map);
-            return ServiceTypeDeployment{lola_deployment};
+            parsed_deployment =
+                ServiceTypeDeployment{ParseBindingServiceTypeDeployment<LolaServiceTypeDeployment>(binding_map)};
+        }
+        else if (value == kSomeIpBinding)
+        {
+            parsed_deployment =
+                ServiceTypeDeployment{ParseBindingServiceTypeDeployment<SomeIpServiceTypeDeployment>(binding_map)};
         }
         else
         {
             score::mw::log::LogFatal("lola") << "No unknown binding provided. Required argument.";
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
+    }
+    if (parsed_deployment.has_value())
+    {
+        return parsed_deployment.value();
     }
     return ServiceTypeDeployment{score::cpp::blank{}};
 }

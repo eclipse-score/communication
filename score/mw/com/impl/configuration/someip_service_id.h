@@ -6,8 +6,21 @@
  *
  * This program and the accompanying materials are made available under the
  * terms of the Apache License Version 2.0 which is available at
- * https://www.apache.org/licenses/LICENSE-2.0.
+ * https://www.apache.org/licenses/LICENSE-2.0
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/someip/event_binding_factory.h"
+#ifndef SCORE_MW_COM_IMPL_CONFIGURATION_SOMEIP_SERVICE_ID_H
+#define SCORE_MW_COM_IMPL_CONFIGURATION_SOMEIP_SERVICE_ID_H
+
+#include <cstdint>
+
+namespace score::mw::com::impl
+{
+
+/// \brief Id of a SOME/IP service interface as transmitted on the wire.
+using SomeIpServiceId = std::uint16_t;
+
+}  // namespace score::mw::com::impl
+
+#endif  // SCORE_MW_COM_IMPL_CONFIGURATION_SOMEIP_SERVICE_ID_H

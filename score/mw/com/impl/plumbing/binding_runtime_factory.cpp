@@ -36,7 +36,6 @@ score::mw::com::impl::BindingRuntimeFactory::CreateBindingRuntimes(
     // If other bindings will be relevant, the Configuration class needs to be extended to enable checking
     // for services of this type and the related runtime needs to be created here.
     const auto configuration_has_lola_services = configuration.HasLolaServiceDeployment();
-
     if (configuration_has_lola_services.has_value() && configuration_has_lola_services.value())
     {
         std::unique_ptr<lola::tracing::TracingRuntime> lola_tracing_runtime{nullptr};
@@ -53,9 +52,15 @@ score::mw::com::impl::BindingRuntimeFactory::CreateBindingRuntimes(
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(pair.second, "Failed to emplace lola runtime binding");
     }
 
-    auto someip_runtime = std::make_unique<score::mw::com::impl::someip::Runtime>();
-    const auto pair = result.emplace(BindingType::kSomeIp, std::move(someip_runtime));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(pair.second, "Failed to emplace SOME/IP runtime binding");
+    // A binding runtime is only created for bindings which are actually used by the configuration. Creating it
+    // unconditionally would start a runtime that no service instance can ever dispatch to.
+    const auto configuration_has_someip_services = configuration.HasSomeIpServiceDeployment();
+    if (configuration_has_someip_services.has_value() && configuration_has_someip_services.value())
+    {
+        auto someip_runtime = std::make_unique<score::mw::com::impl::someip::Runtime>();
+        const auto pair = result.emplace(BindingType::kSomeIp, std::move(someip_runtime));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(pair.second, "Failed to emplace SOME/IP runtime binding");
+    }
 
     return result;
 }

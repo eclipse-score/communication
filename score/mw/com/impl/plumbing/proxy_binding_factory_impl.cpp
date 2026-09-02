@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/plumbing/proxy_binding_factory_impl.h"
 
 #include "score/mw/com/impl/bindings/lola/proxy.h"
+#include "score/mw/com/impl/bindings/someip/proxy_binding_factory.h"
 #include "score/mw/com/impl/plumbing/binding_factory_error.h"
 
 #include <score/overload.hpp>
@@ -44,6 +45,26 @@ Result<std::unique_ptr<ProxyBinding>> ProxyBindingFactoryImpl::Create(const Hand
         [handle](const LolaServiceInstanceDeployment&) -> ReturnType {
             // TODO: Return Result<Proxy> from lola::Proxy::Create() and propagate errors to the caller.
             auto proxy_creation_result = lola::Proxy::Create(handle);
+            if (proxy_creation_result == nullptr)
+            {
+                return MakeUnexpected(BindingFactoryErrorCode::kProxyCreationFailed);
+            }
+            return std::move(proxy_creation_result);
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [handle](const SomeIpServiceInstanceDeployment& someip_instance_deployment) -> ReturnType {
+            const auto* const someip_type_deployment =
+                std::get_if<SomeIpServiceTypeDeployment>(&handle.GetServiceTypeDeployment().binding_info_);
+            if (someip_type_deployment == nullptr)
+            {
+                score::mw::log::LogError("someip")
+                    << "Proxy binding could not be created because the service instance deployment is a SOME/IP "
+                       "deployment while the service type deployment is not.";
+                return MakeUnexpected(BindingFactoryErrorCode::kProxyCreationFailed);
+            }
+
+            auto proxy_creation_result =
+                someip::ProxyBindingFactory::Create(someip_instance_deployment, *someip_type_deployment);
             if (proxy_creation_result == nullptr)
             {
                 return MakeUnexpected(BindingFactoryErrorCode::kProxyCreationFailed);

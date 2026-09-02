@@ -10,4 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/someip/event_binding_factory.h"
+#include "score/mw/com/impl/bindings/someip/service_instance_endpoint.h"

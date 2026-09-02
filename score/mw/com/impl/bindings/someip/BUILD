@@ -58,13 +58,41 @@ cc_library(
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         ":event_binding_factory",
+        ":proxy",
         ":proxy_binding_factory",
         ":proxy_event",
-        ":proxy",
         ":runtime",
+        ":skeleton",
         ":skeleton_binding_factory",
         ":skeleton_event",
-        ":skeleton",
+    ],
+)
+
+cc_library(
+    name = "service_instance_endpoint",
+    srcs = ["service_instance_endpoint.cpp"],
+    hdrs = ["service_instance_endpoint.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        "//score/mw/com/impl/configuration:someip_service_id",
+        "//score/mw/com/impl/configuration:someip_service_instance_id",
+    ],
+)
+
+cc_library(
+    name = "deployment_resources",
+    srcs = ["deployment_resources.cpp"],
+    hdrs = ["deployment_resources.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        ":service_instance_endpoint",
+        "//score/mw/com/impl:service_element_type",
+        "//score/mw/com/impl/configuration:someip_service_instance_deployment",
+        "//score/mw/com/impl/configuration:someip_service_type_deployment",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -88,6 +116,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
+        ":service_instance_endpoint",
         "//score/mw/com/impl:proxy_binding",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -100,8 +129,10 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
+        ":proxy",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:proxy_event_binding",
+        "//score/mw/com/impl/configuration:someip_service_type_deployment",
     ],
 )
 
@@ -111,7 +142,10 @@ cc_library(
     hdrs = ["proxy_binding_factory.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com:__subpackages__"],
-    deps = [":proxy"],
+    deps = [
+        ":deployment_resources",
+        ":proxy",
+    ],
 )
 
 cc_library(
@@ -121,6 +155,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
+        ":service_instance_endpoint",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:skeleton_binding",
         "@score_baselibs//score/language/futurecpp",
@@ -134,8 +169,10 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
+        ":skeleton",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:skeleton_event_binding",
+        "//score/mw/com/impl/configuration:someip_service_type_deployment",
     ],
 )
 
@@ -145,7 +182,10 @@ cc_library(
     hdrs = ["skeleton_binding_factory.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com:__subpackages__"],
-    deps = [":skeleton"],
+    deps = [
+        ":deployment_resources",
+        ":skeleton",
+    ],
 )
 
 cc_library(
@@ -155,6 +195,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
+        ":deployment_resources",
         ":proxy_event",
         ":skeleton_event",
     ],

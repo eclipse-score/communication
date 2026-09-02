@@ -26,6 +26,7 @@ enum class BindingFactoryErrorCode : score::result::ErrorCode
     kParentBindingIsNotLola,
     kUnsupportedBindingType,
     kProxyCreationFailed,
+    kParentBindingTypeMismatch,
     kNumEnumElements
 };
 
@@ -42,6 +43,8 @@ class BindingFactoryErrorDomain final : public score::result::ErrorDomain
                 return "Service type deployment contains an unsupported binding type.";
             case static_cast<score::result::ErrorCode>(BindingFactoryErrorCode::kProxyCreationFailed):
                 return "Proxy binding creation failed.";
+            case static_cast<score::result::ErrorCode>(BindingFactoryErrorCode::kParentBindingTypeMismatch):
+                return "Parent binding does not belong to the binding selected by the deployment.";
             case static_cast<score::result::ErrorCode>(BindingFactoryErrorCode::kInvalid):
             case static_cast<score::result::ErrorCode>(BindingFactoryErrorCode::kNumEnumElements):
                 SCORE_LANGUAGE_FUTURECPP_UNREACHABLE_MESSAGE(
