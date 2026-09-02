@@ -12,20 +12,16 @@
  ********************************************************************************/
 /// Gateway transport layer integration test — VM-A (bidirectional).
 ///
-/// Tests the full bidirectional gateway use case over ivshmem, using per-service
-/// CTRL + DATA shared memory — matching the production LoLa pattern.
+/// VM-A creates CTRL+DATA shm for "service_a" and VM-B creates it for "service_b"; each VM
+/// makes the peer's shm visible via the transport, then reads and verifies it.
 ///
-///   - VM-A creates CTRL+DATA shm for service "service_a", writes payload, signals via CTRL
-///   - VM-B creates CTRL+DATA shm for service "service_b", writes payload, signals via CTRL
-///   - Each VM uses the transport to make peer's shm visible, then reads and verifies
+/// Shared memory (the ivshmem BAR) carries the data plane only (DATA + CTRL's event_count,
+/// matching production LoLa's ServiceDataControl). ivshmem-plain has no MSI-X/doorbell, so
+/// cross-VM signaling ("data ready", "peer verified") travels over the real transport via
+/// QemuHypervisorTransport::NotifyUpdate() instead of polling shared memory.
 ///
-/// Synchronization uses each service's CTRL shm (like production LoLa's ServiceDataControl)
-/// instead of a separate raw handshake page:
-///   - Provider writes DATA, then sets ctrl->event_count to signal readiness
-///   - Consumer polls peer's CTRL shm event_count until it becomes non-zero
-///
-/// Both VMs run QemuHypervisorTransport. Each VM is simultaneously a source gateway
-/// (for its own service) and a destination gateway (for the peer's service).
+/// Both VMs run QemuHypervisorTransport, each acting as source (own service) and destination
+/// (peer's service) simultaneously.
 
 #include "score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_bar_discovery.h"
 #include "score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_typed_memory_provider.h"
@@ -57,12 +53,9 @@ using score::mw::com::impl::InstanceSpecifier;
 namespace
 {
 
-// Static IPs of each VM on the "intervm" virtio-net NIC (see dual_qemu_transport_config.json's
-// intervm_network block, which bridges the two VMs via a QEMU socket netdev). vtnet1 arrives
-// unconfigured on both guests, so each app assigns its own static IP at startup — see
-// ConfigureIntervmNic() in qemu_integration_test_helpers.h.
-constexpr char kIntervmIpVmA[] = "10.0.3.1";  // This VM's (VM-A's) own static IP.
-constexpr char kIntervmIpVmB[] = "10.0.3.2";  // VM-B's static IP — this VM's transport peer.
+// Static IPs on the "intervm" NIC (vtnet1) bridging the two VMs; see ConfigureIntervmNic().
+constexpr char kIntervmIpVmA[] = "10.0.3.1";
+constexpr char kIntervmIpVmB[] = "10.0.3.2";  // this VM's transport peer
 constexpr std::uint16_t kTransportPortVmA = 46001U;
 constexpr std::uint16_t kTransportPortVmB = 46002U;
 
@@ -81,8 +74,7 @@ int main()
 {
     std::fprintf(stderr, "=== app1 (VM-A): bidirectional gateway transport test ===\n");
 
-    // Bring up the intervm NIC before touching BidirectionalTransport, which needs it ready
-    // for listen()/connect().
+    // Bring up the intervm NIC before BidirectionalTransport needs it for listen()/connect().
     if (!ConfigureIntervmNic(kIntervmIpVmA))
     {
         std::fprintf(stderr, "app1: failed to configure intervm NIC\n");
@@ -116,9 +108,7 @@ int main()
     }
 
     // ========================================================================
-    // SOURCE SIDE: Create CTRL + DATA shm for service_a via SharedMemoryFactory::Create().
-    // This is exactly what the LoLa skeleton does in production — the factory routes
-    // through our InterVM provider which allocates in the BAR directory.
+    // SOURCE SIDE: Create CTRL + DATA shm for service_a, matching the LoLa skeleton pattern.
     // ========================================================================
     auto spec_a = InstanceSpecifier::Create(std::string{kServiceA});
     if (!spec_a.has_value())
@@ -155,7 +145,6 @@ int main()
     // Initialize CTRL to zero (no events yet).
     auto* ctrl_a_ptr = static_cast<ServiceControl*>(ctrl_a->getUsableBaseAddress());
     ctrl_a_ptr->event_count = 0U;
-    ctrl_a_ptr->verified = 0U;
 
     // Write payload into DATA shm.
     auto* write_data = static_cast<std::uint32_t*>(data_a->getUsableBaseAddress());
@@ -168,9 +157,8 @@ int main()
     ctrl_a_ptr->event_count = 1U;
     std::fprintf(stderr, "app1: wrote service_a [magic=0x%08x, 100, 200] and signalled via CTRL\n", kMagicA);
 
-    // Notify VM-B over the real intervm socket transport that service_a is available.
-    // This sends an actual ProvideServiceRequest and waits for its ACK (BidirectionalTransport
-    // retries internally); it does not, by itself, wait for VM-B to have processed it.
+    // Notify VM-B over the real transport that service_a is available. Waits for the ACK
+    // (BidirectionalTransport retries internally), not for VM-B to have processed it.
     const auto provide_result =
         qemu_transport.ProvideService(spec_a.value(), std::vector<score::mw::com::impl::EventInfo>{});
     if (!provide_result.has_value())
@@ -180,8 +168,20 @@ int main()
     }
     std::fprintf(stderr, "app1: sent ProvideServiceRequest for service_a to VM-B\n");
 
+    // Notify VM-B (over the transport, not shared memory) that service_a's DATA is ready.
+    // Both messages share one TCP connection with FIFO dispatch on the receiver, so this is
+    // guaranteed to be handled after the ProvideServiceRequest above (shm already bound).
+    const auto notify_result = qemu_transport.NotifyUpdate(
+        spec_a.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameDataReady);
+    if (!notify_result.has_value())
+    {
+        std::fprintf(stderr, "app1: DataReady notification for service_a failed to send\n");
+        return 1;
+    }
+    std::fprintf(stderr, "app1: sent DataReady notification for service_a to VM-B\n");
+
     // ========================================================================
-    // DESTINATION SIDE: Wait for service_b's CTRL to signal data is ready, then read.
+    // DESTINATION SIDE: Wait for service_b's data-ready notification, then read.
     // The transport must first make service_b's CTRL+DATA visible on this VM.
     // ========================================================================
     auto spec_b = InstanceSpecifier::Create(std::string{kServiceB});
@@ -192,10 +192,8 @@ int main()
     }
     const auto paths_b = ResolveInterVmShmPaths(spec_b.value());
 
-    // Wait for VM-B's ProvideServiceRequest for service_b to arrive over the real transport.
-    // On arrival, QemuHypervisorTransport::OnMessageReceived binds service_b's CTRL+DATA to
-    // this VM's shm at the correct BAR offsets (via PreCreateInterVmSharedMemory) before
-    // calling GatewayCore::ProvideService.
+    // Wait for VM-B's ProvideServiceRequest for service_b. On arrival, OnMessageReceived binds
+    // service_b's CTRL+DATA to this VM's shm before calling GatewayCore::ProvideService.
     std::fprintf(stderr, "app1: waiting for ProvideServiceRequest for service_b from VM-B...\n");
     if (!WaitForFlag(gateway_core.provide_service_called))
     {
@@ -204,7 +202,17 @@ int main()
     }
     std::fprintf(stderr, "app1: transport made service_b CTRL+DATA visible on this VM\n");
 
-    // Open service_b's CTRL shm and poll for readiness — like the proxy reading EventDataControl.
+    // Wait for VM-B's "DataReady" notification instead of polling service_b's CTRL shm.
+    std::fprintf(stderr, "app1: waiting for DataReady notification for service_b from VM-B...\n");
+    if (!WaitForFlag(gateway_core.data_ready_notified))
+    {
+        std::fprintf(stderr, "app1: timed out waiting for DataReady notification for service_b\n");
+        return 1;
+    }
+    std::fprintf(stderr, "app1: DataReady notification for service_b received\n");
+
+    // Sanity-check event_count (FIFO ordering guarantees it's already set by this point) —
+    // the notification above is the actual synchronization signal, not this check.
     auto ctrl_b = score::memory::shared::SharedMemoryFactory::Open(paths_b.control, /*is_read_write=*/true);
     if (ctrl_b == nullptr)
     {
@@ -212,17 +220,14 @@ int main()
         return 1;
     }
     auto* ctrl_b_ptr = static_cast<ServiceControl*>(ctrl_b->getUsableBaseAddress());
-
-    std::fprintf(stderr, "app1: polling service_b CTRL for event_count >= 1...\n");
-    if (!WaitForCtrl(ctrl_b_ptr->event_count, 1U))
+    std::atomic_thread_fence(std::memory_order_acquire);
+    if (ctrl_b_ptr->event_count < 1U)
     {
         std::fprintf(stderr,
-                     "app1: timed out waiting for service_b CTRL event_count (final value=%u)\n",
+                     "app1: service_b event_count not signalled despite DataReady notification (value=%u)\n",
                      ctrl_b_ptr->event_count);
         return 1;
     }
-    std::atomic_thread_fence(std::memory_order_acquire);
-    std::fprintf(stderr, "app1: service_b event_count signal received\n");
 
     // Open service_b's DATA shm and verify the payload.
     auto data_b = score::memory::shared::SharedMemoryFactory::Open(paths_b.data, /*is_read_write=*/false);
@@ -244,15 +249,21 @@ int main()
     }
     std::fprintf(stderr, "app1: service_b verified [magic=0x%08x, 300, 400] — read from VM-B OK\n", kMagicB);
 
-    // Signal back to VM-B that we verified its data (write to service_b's CTRL verified field).
-    ctrl_b_ptr->verified = 1U;
-
-    // Wait for VM-B to verify our data (polls our CTRL verified field).
-    std::fprintf(stderr, "app1: waiting for VM-B to verify service_a...\n");
-    if (!WaitForCtrl(ctrl_a_ptr->verified, 1U))
+    // Confirm back to VM-B over the transport that we verified its data.
+    const auto verified_result = qemu_transport.NotifyUpdate(
+        spec_b.value(), score::mw::com::impl::ServiceElementType::EVENT, kElementNameVerified);
+    if (!verified_result.has_value())
     {
-        std::fprintf(
-            stderr, "app1: timed out waiting for VM-B to verify service_a (final verified=%u)\n", ctrl_a_ptr->verified);
+        std::fprintf(stderr, "app1: Verified notification for service_b failed to send\n");
+        return 1;
+    }
+    std::fprintf(stderr, "app1: sent Verified notification for service_b to VM-B\n");
+
+    // Wait for VM-B to confirm it verified our data.
+    std::fprintf(stderr, "app1: waiting for VM-B to verify service_a...\n");
+    if (!WaitForFlag(gateway_core.verified_notified))
+    {
+        std::fprintf(stderr, "app1: timed out waiting for VM-B's Verified notification for service_a\n");
         return 1;
     }
     std::fprintf(stderr, "app1: VM-B verified service_a successfully!\n");

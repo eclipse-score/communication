@@ -225,7 +225,8 @@ TEST_F(QemuHypervisorTransportTest, OfferServiceSendsOfferServiceRequest)
         .WillOnce(::testing::Return(score::ResultBlank{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
-    transport_->OfferService(specifier);
+    const auto result = transport_->OfferService(specifier);
+    EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(QemuHypervisorTransportTest, StopOfferServiceSendsStopOfferServiceRequest)
@@ -238,7 +239,8 @@ TEST_F(QemuHypervisorTransportTest, StopOfferServiceSendsStopOfferServiceRequest
         .WillOnce(::testing::Return(score::ResultBlank{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
-    transport_->StopOfferService(specifier);
+    const auto result = transport_->StopOfferService(specifier);
+    EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(QemuHypervisorTransportTest, NotifyUpdateSendsUpdateNotification)
@@ -251,7 +253,8 @@ TEST_F(QemuHypervisorTransportTest, NotifyUpdateSendsUpdateNotification)
         .WillOnce(::testing::Return(score::ResultBlank{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
-    transport_->NotifyUpdate(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
+    const auto result = transport_->NotifyUpdate(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
+    EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(QemuHypervisorTransportTest, RegisterUpdateNotificationSendsRegisterRequest)
@@ -264,7 +267,9 @@ TEST_F(QemuHypervisorTransportTest, RegisterUpdateNotificationSendsRegisterReque
         .WillOnce(::testing::Return(score::ResultBlank{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
-    transport_->RegisterUpdateNotification(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
+    const auto result =
+        transport_->RegisterUpdateNotification(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
+    EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(QemuHypervisorTransportTest, UnregisterUpdateNotificationSendsUnregisterRequest)
@@ -278,7 +283,9 @@ TEST_F(QemuHypervisorTransportTest, UnregisterUpdateNotificationSendsUnregisterR
         .WillOnce(::testing::Return(score::ResultBlank{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
-    transport_->UnregisterUpdateNotification(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
+    const auto result =
+        transport_->UnregisterUpdateNotification(specifier, impl::ServiceElementType::EVENT, "SpeedEvent");
+    EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(QemuHypervisorTransportTest, ProvideServiceSendsProvideServiceRequestWithShmSizes)
@@ -291,7 +298,8 @@ TEST_F(QemuHypervisorTransportTest, ProvideServiceSendsProvideServiceRequestWith
         .WillOnce(::testing::Return(score::ResultBlank{}));
     EXPECT_CALL(*bi_directional_transport_mock_, Shutdown()).Times(1);
 
-    transport_->ProvideService(specifier, std::vector<impl::EventInfo>{});
+    const auto result = transport_->ProvideService(specifier, std::vector<impl::EventInfo>{});
+    EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(QemuHypervisorTransportTest,
