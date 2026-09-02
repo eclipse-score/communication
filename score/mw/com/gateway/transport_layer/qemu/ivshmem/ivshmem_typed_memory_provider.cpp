@@ -101,11 +101,6 @@ DirectoryHeader* AsDirectoryHeader(void* dir) noexcept
     return static_cast<DirectoryHeader*>(dir);
 }
 
-const DirectoryHeader* AsDirectoryHeader(const void* dir) noexcept
-{
-    return static_cast<const DirectoryHeader*>(dir);
-}
-
 IvshmemTypedMemoryProvider::DirectoryEntry* GetDirectoryEntries(DirectoryHeader* header) noexcept
 {
     return reinterpret_cast<IvshmemTypedMemoryProvider::DirectoryEntry*>(
@@ -129,7 +124,7 @@ static_assert(sizeof(DirectoryHeader) == IvshmemTypedMemoryProvider::kDirectoryH
 IvshmemTypedMemoryProvider::IvshmemTypedMemoryProvider(std::uint64_t paddr,
                                                        std::uint64_t size,
                                                        std::unique_ptr<score::os::qnx::MmanQnx> mman_qnx) noexcept
-    : paddr_{paddr}, mman_qnx_{std::move(mman_qnx)}, usable_size_{size > kDirectorySize ? size - kDirectorySize : 0U}
+    : mman_qnx_{std::move(mman_qnx)}, paddr_{paddr}, usable_size_{size > kDirectorySize ? size - kDirectorySize : 0U}
 {
 }
 #else

@@ -16,9 +16,12 @@ Both VMs run QemuHypervisorTransport simultaneously as source and destination:
   - VM-A creates shm for service_a (payload [0xCAFEBABE, 100, 200]) → VM-B reads
   - VM-B creates shm for service_b (payload [0xDEADBEEF, 300, 400]) → VM-A reads
 
-The handshake uses the last page of the ivshmem BAR with a phased protocol.
+Shared memory (the ivshmem BAR) carries only the data plane; cross-VM synchronization
+(data-ready / verified signaling) travels over the real socket-based BidirectionalTransport
+via QemuHypervisorTransport::NotifyUpdate, matching ivshmem-plain's lack of a doorbell/MSI-X.
 Both apps print "verified" on success.
 """
+
 import logging
 import threading
 import time
