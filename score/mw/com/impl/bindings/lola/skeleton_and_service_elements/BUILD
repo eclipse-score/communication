@@ -16,6 +16,15 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "un
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
+unit(
+    name = "skeleton_unit",
+    scope = [ "//score/mw/com/impl/bindings/lola/skeleton_and_service_elements:skeleton"],
+    implementation = [":skeleton"],
+    unit_design    = ["//score/mw/com/impl/bindings/lola/skeleton_and_service_elements/dependability:skeleton_unit_design"],
+    tests          = [],
+    # visibility = ["//visibility:public"],
+)
+
 cc_library(
     name = "i_lola_skeleton",
     srcs = ["i_lola_skeleton.cpp"],

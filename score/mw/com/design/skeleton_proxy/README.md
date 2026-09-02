@@ -21,8 +21,12 @@ The following sequence shows the instantiation of a service class up to its serv
 
 <img alt="SKELETON_CREATE_OFFER_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/skeleton_create_offer_seq.puml">
 
-#### Binding independent level Registration of skeleton events/fields/methods at their parent skeleton
+### LoLa skeleton shared memory
 
+The following structural view shows how `lola::Skeleton` delegates shared-memory lifecycle and service-element
+storage handling to its owned `SkeletonMemoryManager`:
+
+<img alt="LOLA_SKELETON_MEMORY_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/lola_skeleton_memory_model.puml">
 
 
 
