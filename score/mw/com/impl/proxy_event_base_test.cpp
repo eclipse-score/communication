@@ -929,7 +929,8 @@ TYPED_TEST(ProxyEventBaseGetFreeSampleCountFixture, GetFreeSampleCountReturnsCou
 
 TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvailableDispatchesToBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14035142, SCR-17292403");
+    this->RecordProperty("Verifies", "SCR-14035142");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldGetNumNewSamplesAvailable");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventGetNumNewSamplesAvailable");
     this->RecordProperty(
         "Description",
@@ -957,7 +958,8 @@ TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvail
 
 TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvailableReturnsErrorIfNotSubscribed)
 {
-    this->RecordProperty("Verifies", "SCR-14035142, SCR-17292403");
+    this->RecordProperty("Verifies", "SCR-14035142");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldGetNumNewSamplesAvailable");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventGetNumNewSamplesAvailable");
     this->RecordProperty("Description",
                          "Checks that GetNumNewSamplesAvailable will forward an error kNotSubscribed from the binding");
@@ -983,7 +985,8 @@ TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvail
 
 TYPED_TEST(ProxyEventBaseGetNumNewSamplesAvailableFixture, GetNumNewSamplesAvailableReturnsErrorFromBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14035142, SCR-17292403");
+    this->RecordProperty("Verifies", "SCR-14035142");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldGetNumNewSamplesAvailable");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventGetNumNewSamplesAvailable");
     this->RecordProperty(
         "Description",

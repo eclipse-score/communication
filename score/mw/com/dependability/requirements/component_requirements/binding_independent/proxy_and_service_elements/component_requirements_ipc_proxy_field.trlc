@@ -199,7 +199,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/17292403 */
                 ScoreReq.CompReq ProxyFieldGetNumNewSamplesAvailable {
                     description = '''The {{ProxyField}}
                     shall provide a public method:
