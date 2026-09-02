@@ -14,13 +14,11 @@
 #define SCORE_MW_COM_GATEWAY_TRANSPORT_LAYER_QEMU_IVSHMEM_BAR_DISCOVERY_H
 
 #include <cstdint>
-#include <optional>
-#include <vector>
 
 namespace score::mw::com::gateway::qemu::ivshmem
 {
 
-/// Descriptor for one PCI BAR returned by the selector helper.
+/// Descriptor for one PCI BAR discovered during ivshmem BAR discovery.
 struct IvshmemBar
 {
     std::uint32_t bar_num;
@@ -31,13 +29,6 @@ struct IvshmemBar
 
 /// Default BAR number used by QEMU ivshmem-plain for the shared-memory region.
 static constexpr std::uint32_t kDefaultIvshmemBarNum = 2U;
-
-/// Selects the ivshmem BAR that matches the required BAR number.
-///
-/// The selector is intentionally strict: it returns the exact BAR that QEMU exposes for the
-/// shared-memory region, rather than guessing by size.
-std::optional<IvshmemBar> SelectIvshmemBar(const std::vector<IvshmemBar>& bars,
-                                           std::uint32_t required_bar_num = kDefaultIvshmemBarNum) noexcept;
 
 /// \brief Discovers the ivshmem shared-memory PCI device through pci-server.
 ///
