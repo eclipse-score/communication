@@ -32,12 +32,41 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
+        "-Wall",
+        "-Werror",
+        "-Wtype-limits",  # Helps to achieve MISRA C++:2023 Rule 0-0-2
+        "-Wunused-variable",  # Helps to achieve MISRA C++:2023 Rule 0-2-1
+        "-Wunused-local-typedefs",  # Helps to achieve MISRA C++:2023 Rule 0-2-3
+        "-Wunused-function",  # Helps to achieve MISRA C++:2023 Rule 0-2-4
+        "-Wtrigraphs",  # Helps to achieve MISRA C++:2023 Rule 5-0-1
+        "-Wcomment",  # Helps to achieve MISRA C++:2023 Rule 5-7-1 and 5-7-3
+        "-Wparentheses",  # Helps to achieve MISRA C++:2023 Rule 6-0-1, 8-0-1, and 8-18-2
+        "-Wshadow",  # Helps to achieve MISRA C++:2023 Rule 6-4-1
+        "-Wreturn-local-addr",  # Helps to achieve MISRA C++:2023 Rule 6-8-2
+        "-Wswitch-bool",  # Helps to achieve MISRA C++:2023 Rule 7-0-1
+        "-Wsign-compare",  # Helps to achieve MISRA C++:2023 Rule 7-0-5
+        # Enable once we have no warnings
+        # "-Wconversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-5 and 7-0-6
+        "-Wfloat-conversion",  # Helps to achieve MISRA C++:2023 Rule 7-0-6
+        "-Waddress",  # Helps to achieve MISRA C++:2023 Rule 7-11-3
+        "-Wcast-function-type",  # Helps to achieve MISRA C++:2023 Rule 8-2-4
+        "-Wdangling-else",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
+        "-Wmisleading-indentation",  # Helps to achieve MISRA C++:2023 Rule 9-3-1
+        "-Wreturn-type",  # Helps to achieve MISRA C++:2023 Rule 9-6-5
+        "-Wignored-qualifiers",  # Helps to achieve MISRA C++:2023 Rule 10-1-2
+        "-Wenum-compare",  # Helps to achieve MISRA C++:2023 Rule 10-2-3
+        "-Wuninitialized",  # Helps to achieve MISRA C++:2023 Rule 11-6-2
+        "-Wexpansion-to-defined",  # Helps to achieve MISRA C++:2023 Rule 19-1-1
+        "-Wno-error=deprecated-declarations",
+        "-Wno-error=cpp",
         "-Wno-builtin-macro-redefined",
-        # Reduce known GCC false positives.
-        "-Wno-maybe-uninitialized",
-        # GCC-only diagnostics (Clang has no equivalent flag).
         "-Wno-format-y2k",
         "-Wno-free-nonheap-object",
+        "-Wno-maybe-uninitialized",
+        "-Wno-unused-macros",
+        "-Wunused-parameter",
+        "-Wunused-variable",
+        "-Wunused-but-set-parameter",
     ],
 )
 
@@ -47,6 +76,8 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
     ],
     args = [
+        "-Wterminate",  # Helps to achieve MISRA C++:2023 Rule 18-5-1
+        "-Wdelete-incomplete",  # Helps to achieve MISRA C++:2023 Rule 21-6-5
         "-Wno-literal-suffix",
         "-Wno-noexcept-type",
     ],
