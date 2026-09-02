@@ -16,12 +16,10 @@ use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use crate::{
-    LolaConsumerDiscovery, LolaConsumerInfo, LolaProducerBuilder, LolaProviderInfo, LolaPublisher,
-    LolaSubscribableImpl,
+    LolaConsumerDiscovery, LolaConsumerInfo, LolaProducerBuilder, LolaProviderInfo, LolaPublisher, LolaSubscribableImpl,
 };
 use score_com_concept::{
-    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime,
-    RuntimeBuilder,
+    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, Result, Runtime, RuntimeBuilder,
 };
 
 use bridge_ffi_lola::LolaFFIBridge;
@@ -39,10 +37,7 @@ impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
     type ProviderInfo = LolaProviderInfo<B>;
     type ConsumerInfo = LolaConsumerInfo<B>;
 
-    fn find_service<I: Interface + Send>(
-        &self,
-        instance_specifier: FindServiceSpecifier,
-    ) -> Self::ServiceDiscovery<I> {
+    fn find_service<I: Interface + Send>(&self, instance_specifier: FindServiceSpecifier) -> Self::ServiceDiscovery<I> {
         LolaConsumerDiscovery {
             instance_specifier: match instance_specifier {
                 FindServiceSpecifier::Any => panic!(
@@ -56,10 +51,7 @@ impl<B: FFIBridge> Runtime for LolaRuntimeImpl<B> {
         }
     }
 
-    fn producer_builder<I: Interface>(
-        &self,
-        instance_specifier: InstanceSpecifier,
-    ) -> Self::ProducerBuilder<I> {
+    fn producer_builder<I: Interface>(&self, instance_specifier: InstanceSpecifier) -> Self::ProducerBuilder<I> {
         LolaProducerBuilder::new(self, instance_specifier)
     }
 }

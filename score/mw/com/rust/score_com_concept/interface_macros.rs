@@ -760,10 +760,7 @@ mod validation_tests {
                 // the compiler enforces the name at compile time.
                 let interface_id = <VehicleInterface as score_com::Interface>::INTERFACE_ID;
                 let expected_id = concat!(module_path!(), "::", "Vehicle");
-                assert_eq!(
-                    interface_id, expected_id,
-                    "Interface ID mismatch for VehicleInterface"
-                );
+                assert_eq!(interface_id, expected_id, "Interface ID mismatch for VehicleInterface");
             }
         }
         test_module::validate();
@@ -773,8 +770,7 @@ mod validation_tests {
     fn test_consumer_type_generated() {
         mod test_module {
             use score_com::{
-                CommData, Consumer, LolaRuntimeImpl as LolaRuntime, ProviderInfo, Publisher, Reloc,
-                Subscriber,
+                CommData, Consumer, LolaRuntimeImpl as LolaRuntime, ProviderInfo, Publisher, Reloc, Subscriber,
             };
 
             #[derive(Debug, Reloc, Clone)]
@@ -818,8 +814,7 @@ mod validation_tests {
     fn test_producer_type_generated() {
         mod test_module {
             use score_com::{
-                CommData, LolaRuntimeImpl as LolaRuntime, Producer, ProviderInfo, Publisher, Reloc,
-                Subscriber,
+                CommData, LolaRuntimeImpl as LolaRuntime, Producer, ProviderInfo, Publisher, Reloc, Subscriber,
             };
 
             #[derive(Debug, Reloc, Clone)]
@@ -849,8 +844,7 @@ mod validation_tests {
     fn test_offered_producer_type_generated() {
         mod test_module {
             use score_com::{
-                CommData, LolaRuntimeImpl as LolaRuntime, Producer, ProviderInfo, Publisher, Reloc,
-                Subscriber,
+                CommData, LolaRuntimeImpl as LolaRuntime, Producer, ProviderInfo, Publisher, Reloc, Subscriber,
             };
 
             #[derive(Debug, Reloc, Clone)]
@@ -919,8 +913,7 @@ mod validation_tests {
     fn test_interface_with_multiple_events_validation() {
         mod test_module {
             use score_com::{
-                CommData, Interface, LolaRuntimeImpl as LolaRuntime, ProviderInfo, Publisher,
-                Reloc, Subscriber,
+                CommData, Interface, LolaRuntimeImpl as LolaRuntime, ProviderInfo, Publisher, Reloc, Subscriber,
             };
 
             #[derive(Debug, Reloc, Clone)]
@@ -981,8 +974,7 @@ mod validation_tests {
     fn test_interface_type_consistency_across_traits() {
         mod test_module {
             use score_com::{
-                CommData, Interface, LolaRuntimeImpl as LolaRuntime, ProviderInfo, Publisher,
-                Reloc, Subscriber,
+                CommData, Interface, LolaRuntimeImpl as LolaRuntime, ProviderInfo, Publisher, Reloc, Subscriber,
             };
 
             #[derive(Debug, Reloc, Clone)]
@@ -1022,10 +1014,7 @@ mod validation_tests {
     #[test]
     fn test_interface_naming_convention_validation() {
         mod test_module {
-            use score_com::{
-                CommData, LolaRuntimeImpl as LolaRuntime, ProviderInfo, Publisher, Reloc,
-                Subscriber,
-            };
+            use score_com::{CommData, LolaRuntimeImpl as LolaRuntime, ProviderInfo, Publisher, Reloc, Subscriber};
 
             #[derive(Debug, Reloc, Clone)]
             #[repr(C)]

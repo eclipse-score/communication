@@ -135,11 +135,10 @@ pub use com_api_runtime_lola::LolaRuntimeImpl;
 pub use com_api_runtime_lola::RuntimeBuilderImpl as LolaRuntimeBuilderImpl;
 
 pub use score_com_concept::{
-    interface, interface_common, interface_consumer, interface_producer, Builder, CommData,
-    Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier, InstanceSpecifier,
-    Interface, OfferedProducer, PlacementDefault, Producer, ProducerBuilder, ProviderInfo,
-    Publisher, Reloc, Result, Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit,
-    SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    interface, interface_common, interface_consumer, interface_producer, Builder, CommData, Consumer, ConsumerBuilder,
+    ConsumerDescriptor, Error, FindServiceSpecifier, InstanceSpecifier, Interface, OfferedProducer, PlacementDefault,
+    Producer, ProducerBuilder, ProviderInfo, Publisher, Reloc, Result, Runtime, RuntimeBuilder, SampleContainer,
+    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
 
 #[doc(hidden)]

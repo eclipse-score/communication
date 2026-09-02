@@ -36,10 +36,9 @@ use std::collections::VecDeque;
 use std::path::Path;
 
 use score_com_concept::{
-    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, FindServiceSpecifier,
-    InstanceSpecifier, Interface, Producer, ProducerBuilder, ProviderInfo, Publisher, Result,
-    Runtime, RuntimeBuilder, Sample, SampleContainer, SampleMaybeUninit, SampleMut,
-    ServiceDiscovery, Subscriber, Subscription,
+    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, FindServiceSpecifier, InstanceSpecifier,
+    Interface, Producer, ProducerBuilder, ProviderInfo, Publisher, Result, Runtime, RuntimeBuilder, Sample,
+    SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
 
 pub struct MockRuntimeImpl {}
@@ -81,10 +80,7 @@ impl Runtime for MockRuntimeImpl {
         }
     }
 
-    fn producer_builder<I: Interface>(
-        &self,
-        instance_specifier: InstanceSpecifier,
-    ) -> Self::ProducerBuilder<I> {
+    fn producer_builder<I: Interface>(&self, instance_specifier: InstanceSpecifier) -> Self::ProducerBuilder<I> {
         MockProducerBuilder::new(self, instance_specifier)
     }
 }
@@ -412,9 +408,7 @@ where
     }
 
     #[allow(clippy::manual_async_fn)]
-    fn get_available_instances_async(
-        &self,
-    ) -> impl Future<Output = Result<Self::ServiceEnumerator>> + Send {
+    fn get_available_instances_async(&self) -> impl Future<Output = Result<Self::ServiceEnumerator>> + Send {
         async { Ok(Vec::new()) }
     }
 }
@@ -520,12 +514,8 @@ mod test {
             match receive_result {
                 Ok(0) => panic!("No sample received"),
                 Ok(x) => {
-                    println!(
-                        "{} samples received: sample[0] = {}",
-                        x,
-                        *sample_buf.front().unwrap()
-                    )
-                }
+                    println!("{} samples received: sample[0] = {}", x, *sample_buf.front().unwrap())
+                },
                 Err(e) => panic!("{:?}", e),
             }
         }
@@ -539,7 +529,7 @@ mod test {
             let sample_buf = SampleContainer::new(1);
             let (_returned_buf, result) = test_subscriber.receive(sample_buf, 1, 1).await;
             match result {
-                Ok(()) => {}
+                Ok(()) => {},
                 Err(e) => panic!("{:?}", e),
             }
         })

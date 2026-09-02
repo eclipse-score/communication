@@ -71,9 +71,7 @@ use std::path::Path;
 use std::ptr::NonNull;
 
 pub mod common;
-pub use common::{
-    HandleContainer, HandleType, InstanceSpecifier, NativeHandleContainer, NativeInstanceSpecifier,
-};
+pub use common::{HandleContainer, HandleType, InstanceSpecifier, NativeHandleContainer, NativeInstanceSpecifier};
 
 /// Opaque C++ void* pointer wrapper
 pub type CVoidPtr = *const std::ffi::c_void;
@@ -100,11 +98,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// # Safety
     /// `allocatee_ptr` must be a valid pointer previously returned by `get_allocatee_ptr`
     /// and `type_ops` must be the corresponding `TypeOperationsManager` for the type T.
-    unsafe fn delete_allocatee_ptr(
-        &self,
-        allocatee_ptr: *mut std::ffi::c_void,
-        type_ops: &TypeOperationsManager,
-    );
+    unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_ops: &TypeOperationsManager);
 
     /// # Safety
     /// `allocatee_ptr` must be a valid pointer previously returned by `get_allocatee_ptr`
@@ -138,11 +132,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// # Safety
     /// `sample_ptr` must be a valid pointer to a `SamplePtr<T>` of the specified `type_name`,
     /// and must not be used after this call.
-    unsafe fn sample_ptr_delete(
-        &self,
-        sample_ptr: *mut std::ffi::c_void,
-        type_ops: &TypeOperationsManager,
-    );
+    unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_ops: &TypeOperationsManager);
 
     /// # Safety
     /// `skeleton_ptr` must be a valid, non-null pointer to a `SkeletonBase` previously created
@@ -224,11 +214,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// # Safety
     /// `event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
     /// `get_event_from_proxy`. Must be called before `get_samples_from_event`.
-    unsafe fn subscribe_to_event(
-        &self,
-        event_ptr: *mut ProxyEventBase,
-        max_sample_count: u32,
-    ) -> bool;
+    unsafe fn subscribe_to_event(&self, event_ptr: *mut ProxyEventBase, max_sample_count: u32) -> bool;
 
     /// # Safety
     /// `event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
@@ -240,11 +226,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// `proxy_event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
     /// `get_event_from_proxy`. `handler` must be a valid `FatPtr` referencing a callable
     /// compatible with the receive-handler signature expected by the implementation.
-    unsafe fn set_event_receive_handler(
-        &self,
-        proxy_event_ptr: *mut ProxyEventBase,
-        handler: &FatPtr,
-    ) -> bool;
+    unsafe fn set_event_receive_handler(&self, proxy_event_ptr: *mut ProxyEventBase, handler: &FatPtr) -> bool;
 
     /// # Safety
     /// `proxy_event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
@@ -269,11 +251,7 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
     /// Caller must ensure that the provided interface_id and member_name correspond to
     /// a valid TypeOperations instance in the C++ registry. The returned TypeOperationsManager
     /// must not be used after the underlying TypeOperations instance is destroyed on the C++ side.
-    unsafe fn get_type_ops_instance(
-        &self,
-        interface_id: &str,
-        member_name: &str,
-    ) -> Option<TypeOperationsManager>;
+    unsafe fn get_type_ops_instance(&self, interface_id: &str, member_name: &str) -> Option<TypeOperationsManager>;
 
     /// Find all service instances matching `instance_specifier`.
     ///

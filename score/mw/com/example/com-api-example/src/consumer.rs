@@ -11,13 +11,13 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use score_com::{
-    ConsumerBuilder, FindServiceSpecifier, InstanceSpecifier, Result, Runtime, SampleContainer,
-    ServiceDiscovery, Subscriber, Subscription,
-};
 use com_api_gen::{Exhaust, Tire, VehicleInterface};
 use futures::channel::oneshot;
 use futures::{FutureExt, StreamExt};
+use score_com::{
+    ConsumerBuilder, FindServiceSpecifier, InstanceSpecifier, Result, Runtime, SampleContainer, ServiceDiscovery,
+    Subscriber, Subscription,
+};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -31,8 +31,7 @@ const SYNC_RECEIVE_POLL_INTERVAL_MS: u64 = 1000;
 
 pub struct VehicleMonitorConsumer<R: Runtime> {
     tire_subscriber: <<R as Runtime>::Subscriber<Tire> as Subscriber<Tire, R>>::Subscription,
-    _exhaust_subscriber:
-        <<R as Runtime>::Subscriber<Exhaust> as Subscriber<Exhaust, R>>::Subscription,
+    _exhaust_subscriber: <<R as Runtime>::Subscriber<Exhaust> as Subscriber<Exhaust, R>>::Subscription,
 }
 
 impl<R: Runtime> VehicleMonitorConsumer<R> {
@@ -65,11 +64,9 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
         match result {
             Ok(0) => log::info!("No tire data received"),
             Ok(x) => {
-                let sample = sample_buf
-                    .pop_front()
-                    .expect("Sample buffer pop operation error");
+                let sample = sample_buf.pop_front().expect("Sample buffer pop operation error");
                 log::info!("{} samples received: sample[0] = {:?}", x, *sample);
-            }
+            },
             Err(e) => log::error!("Error receiving tire data: {:?}", e),
         }
     }
@@ -77,20 +74,15 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
     /// Finds available service instances and constructs a VehicleMonitorConsumer.
     /// It will return immediately regardless of whether any instances are available or not.
     pub fn find_available_instances(runtime: &R, service_id: InstanceSpecifier) -> Result<Self> {
-        let consumer_discovery =
-            runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
+        let consumer_discovery = runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
         let instances = consumer_discovery.get_available_instances()?;
         Self::from_service_instances(instances)
     }
 
     /// Finds available service instances asynchronously and constructs a VehicleMonitorConsumer.
     /// It will wait for the service availability and return once an instance is found.
-    pub async fn find_available_instances_async(
-        runtime: &R,
-        service_id: InstanceSpecifier,
-    ) -> Result<Self> {
-        let consumer_discovery =
-            runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
+    pub async fn find_available_instances_async(runtime: &R, service_id: InstanceSpecifier) -> Result<Self> {
+        let consumer_discovery = runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
         let instances = consumer_discovery.get_available_instances_async().await?;
         Self::from_service_instances(instances)
     }
@@ -136,9 +128,7 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
         for _ in 0..count {
             // Request a timeout from the shared timer thread.
             let (tx, rx) = oneshot::channel();
-            timer_tx
-                .send(tx)
-                .expect("Timer thread unexpectedly stopped");
+            timer_tx.send(tx).expect("Timer thread unexpectedly stopped");
 
             // Map the receiver to resolve to () instead of Result<(), Canceled>
             let timeout_future = rx.map(|_| ());
@@ -162,7 +152,7 @@ impl<R: Runtime> VehicleMonitorConsumer<R> {
                 None => {
                     log::info!("Stream ended");
                     break;
-                }
+                },
             }
         }
     }

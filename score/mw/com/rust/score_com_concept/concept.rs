@@ -50,12 +50,12 @@
 
 use crate::error::*;
 use crate::Reloc;
-pub use score_com_macros::CommData;
 use containers::fixed_capacity::FixedCapacityQueue;
 use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
 use futures::stream::Stream;
+pub use score_com_macros::CommData;
 use std::path::Path;
 
 /// Result type alias with `std::result::Result` using `score_com::Error` as error type
@@ -118,10 +118,7 @@ pub trait Runtime {
     ///
     /// # Returns
     /// Service discovery handle for querying available instances
-    fn find_service<I: Interface + Send>(
-        &self,
-        instance_specifier: FindServiceSpecifier,
-    ) -> Self::ServiceDiscovery<I>;
+    fn find_service<I: Interface + Send>(&self, instance_specifier: FindServiceSpecifier) -> Self::ServiceDiscovery<I>;
 
     /// Create a producer builder for the given interface and producer type.
     /// Constructs a producer builder for offering services.
@@ -133,10 +130,7 @@ pub trait Runtime {
     /// # Returns
     ///
     /// A configured builder ready for finalization via `build()`
-    fn producer_builder<I: Interface>(
-        &self,
-        instance_specifier: InstanceSpecifier,
-    ) -> Self::ProducerBuilder<I>;
+    fn producer_builder<I: Interface>(&self, instance_specifier: InstanceSpecifier) -> Self::ProducerBuilder<I>;
 }
 
 /// This trait contains the APIs required for producer service instance management.
@@ -239,9 +233,8 @@ impl InstanceSpecifier {
 
         // Check each character
         // Allowed: digits, lowercase, uppercase, underscore
-        let is_legal_char = |c: char| {
-            c.is_ascii_digit() || c.is_ascii_lowercase() || c.is_ascii_uppercase() || c == '_'
-        };
+        let is_legal_char =
+            |c: char| c.is_ascii_digit() || c.is_ascii_lowercase() || c.is_ascii_uppercase() || c == '_';
 
         //validation of each path segment
         !service_name.is_empty()
@@ -272,9 +265,7 @@ impl InstanceSpecifier {
                 specifier: service_name.to_string(),
             })
         } else {
-            Err(Error::ServiceError(
-                ServiceFailedReason::InstanceSpecifierInvalid,
-            ))
+            Err(Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid))
         }
     }
 }
@@ -588,9 +579,7 @@ pub trait ServiceDiscovery<I: Interface, R: Runtime + ?Sized> {
     /// # Errors
     /// Returns 'Error' if the query operation fails.
     #[allow(clippy::manual_async_fn)]
-    fn get_available_instances_async(
-        &self,
-    ) -> impl Future<Output = Result<Self::ServiceEnumerator>> + Send;
+    fn get_available_instances_async(&self) -> impl Future<Output = Result<Self::ServiceEnumerator>> + Send;
 }
 
 /// Metadata and identification for a discovered service instance.
@@ -613,10 +602,7 @@ pub trait ConsumerDescriptor<R: Runtime + ?Sized> {
 /// # Type Parameters
 /// * `I` - The service interface
 /// * `R` - The runtime managing the consumer
-pub trait ConsumerBuilder<I: Interface, R: Runtime + ?Sized>:
-    ConsumerDescriptor<R> + Builder<I::Consumer<R>>
-{
-}
+pub trait ConsumerBuilder<I: Interface, R: Runtime + ?Sized>: ConsumerDescriptor<R> + Builder<I::Consumer<R>> {}
 
 /// Event subscription management interface.
 ///
@@ -858,12 +844,7 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         new_samples: usize,
         max_samples: usize,
     ) -> impl Future<Output = (SampleContainer<Self::Sample<'a>>, Result<usize>)> + 'a {
-        self.cancellable_receive(
-            scratch,
-            new_samples,
-            max_samples,
-            core::future::pending::<()>(),
-        )
+        self.cancellable_receive(scratch, new_samples, max_samples, core::future::pending::<()>())
     }
 
     /// This method is an extension of `receive` with an additional `cancellation` parameter
@@ -982,11 +963,7 @@ mod tests {
         ];
 
         for spec in &valid_specifiers {
-            assert!(
-                InstanceSpecifier::check_str(spec),
-                "Expected '{}' to be valid",
-                spec
-            );
+            assert!(InstanceSpecifier::check_str(spec), "Expected '{}' to be valid", spec);
         }
 
         // Invalid specifiers
@@ -1004,11 +981,7 @@ mod tests {
         ];
 
         for spec in &invalid_specifiers {
-            assert!(
-                !InstanceSpecifier::check_str(spec),
-                "Expected '{}' to be invalid",
-                spec
-            );
+            assert!(!InstanceSpecifier::check_str(spec), "Expected '{}' to be invalid", spec);
         }
     }
 }
