@@ -23,6 +23,7 @@ section "com" {
             section "Functionality" {
 
             /* broken_link_c/issue/14087509 */
+            /* ToDo: Potentially uncovered requirement! */
             ScoreReq.CompReq ProxyClass {
                 description = '''A {{Proxy}} class shall be based on a specific strongly typed service interface definition.
 
@@ -60,6 +61,7 @@ section "com" {
             }
 
             /* broken_link_c/issue/14110934 */
+            /* ToDo: Potentially uncovered requirement! */
             ScoreReq.CompReq ProxyConstructor {
                 description = '''Construction of a {{Proxy}} instance by the user shall only be possible via the public static {{Create()}} method (See Proxy Exception-less Creation).
 
