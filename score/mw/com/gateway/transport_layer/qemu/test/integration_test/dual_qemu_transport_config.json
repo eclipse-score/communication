@@ -1,6 +1,6 @@
 {
     "ivshmem": { "size": "4M" },
-    "intervm_network": { "enabled": false, "host_port": 12345 },
+    "intervm_network": { "enabled": true, "host_port": 12345 },
     "vms": [
         {
             "networks": [
