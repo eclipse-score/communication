@@ -1,0 +1,7 @@
+{
+  "appId": "ASET",
+  "appDesc": "all_service_elements",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote"
+}

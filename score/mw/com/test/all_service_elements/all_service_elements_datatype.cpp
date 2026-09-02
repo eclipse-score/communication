@@ -1,4 +1,4 @@
-/********************************************************************************
+/*******************************************************************************
  * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -9,10 +9,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  *
  * SPDX-License-Identifier: Apache-2.0
- ********************************************************************************/
-#include "score/mw/com/test/fields/mixed_criticality/common_resources.h"
+ *******************************************************************************/
 
-namespace score::mw::com::test
-{
-
-}  // namespace score::mw::com::test
+#include "score/mw/com/test/all_service_elements/all_service_elements_datatype.h"

@@ -221,6 +221,23 @@ cc_unit_test(
 )
 
 cc_library(
+    name = "service_instance_manifest_parser",
+    srcs = [
+        "service_instance_manifest_parser.cpp",
+    ],
+    hdrs = [
+        "service_instance_manifest_parser.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/test:__subpackages__",
+    ],
+    deps = [
+        ":command_line_parser",
+    ],
+)
+
+cc_library(
     name = "sctf_test_runner",
     srcs = [
         "sctf_test_runner.cpp",

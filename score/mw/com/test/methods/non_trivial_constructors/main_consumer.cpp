@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/test/common_test_resources/assert_handler.h"
-#include "score/mw/com/test/methods/methods_test_resources/common_resources.h"
+#include "score/mw/com/test/common_test_resources/service_instance_manifest_parser.h"
 #include "score/mw/com/test/methods/non_trivial_constructors/consumer.h"
 
 int main(int argc, const char** argv)

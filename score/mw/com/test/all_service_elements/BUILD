@@ -17,20 +17,29 @@ load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 validate_json_schema_test(
-    name = "validate_config_schema",
+    name = "validate_lola_schema",
     json = "config/mw_com_config.json",
     schema = "//score/mw/com:config_schema",
     tags = ["lint"],
 )
 
 cc_library(
-    name = "test_method_datatype",
-    srcs = ["test_method_datatype.cpp"],
-    hdrs = ["test_method_datatype.h"],
+    name = "test_constants",
+    srcs = ["test_constants.cpp"],
+    hdrs = ["test_constants.h"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
+        ":datatype",
         "//score/mw/com",
     ],
+)
+
+cc_library(
+    name = "datatype",
+    srcs = ["all_service_elements_datatype.cpp"],
+    hdrs = ["all_service_elements_datatype.h"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = ["//score/mw/com"],
 )
 
 cc_library(
@@ -38,11 +47,16 @@ cc_library(
     srcs = ["consumer.cpp"],
     hdrs = ["consumer.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        ":test_method_datatype",
+    deps = [
+        ":datatype",
+        ":test_constants",
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:proxy_container",
+        "//score/mw/com/test/common_test_resources:proxy_event_receiver",
+        "//score/mw/com/test/common_test_resources:proxy_event_state_change_notifier",
+        "//score/mw/com/test/fields/test_resources:getter_and_setter_checkers",
     ],
 )
 
@@ -51,21 +65,22 @@ cc_library(
     srcs = ["provider.cpp"],
     hdrs = ["provider.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        ":test_method_datatype",
+    deps = [
+        ":datatype",
+        ":test_constants",
         "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/common_test_resources:process_synchronizer",
         "//score/mw/com/test/common_test_resources:skeleton_container",
-    ],
-    deps = [
-        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
 cc_binary(
     name = "main_provider",
     srcs = ["main_provider.cpp"],
-    data = ["config/mw_com_config.json"],
+    data = [
+        "config/mw_com_config.json",
+    ],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
@@ -73,15 +88,20 @@ cc_binary(
         ":provider",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
+        "//score/mw/com/test/common_test_resources:command_line_parser",
+        "//score/mw/com/test/common_test_resources:fail_test",
         "//score/mw/com/test/common_test_resources:service_instance_manifest_parser",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
 cc_binary(
     name = "main_consumer",
     srcs = ["main_consumer.cpp"],
-    data = ["config/mw_com_config.json"],
+    data = [
+        "config/mw_com_config.json",
+    ],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
@@ -90,13 +110,17 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:service_instance_manifest_parser",
+        "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
 cc_binary(
     name = "main_consumer_and_provider",
     srcs = ["main_consumer_and_provider.cpp"],
-    data = ["config/mw_com_config.json"],
+    data = [
+        "config/mw_com_config.json",
+    ],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
@@ -107,6 +131,7 @@ cc_binary(
         "//score/mw/com/test/common_test_resources:assert_handler",
         "//score/mw/com/test/common_test_resources:service_instance_manifest_parser",
         "//score/mw/com/test/common_test_resources:stop_token_sig_term_handler",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -115,11 +140,12 @@ pkg_application(
     app_name = "MainProviderApp",
     bin = [":main_provider"],
     etc = [
-        "config/mw_com_config.json",
         "config/logging.json",
+        "config/mw_com_config.json",
     ],
     visibility = [
-        "//score/mw/com/test/methods/basic_acceptance_test:__subpackages__",
+        "//platform/aas/test/mw/com:__pkg__",
+        "//score/mw/com/test/all_service_elements:__subpackages__",
     ],
 )
 
@@ -128,11 +154,12 @@ pkg_application(
     app_name = "MainConsumerApp",
     bin = [":main_consumer"],
     etc = [
-        "config/mw_com_config.json",
         "config/logging.json",
+        "config/mw_com_config.json",
     ],
     visibility = [
-        "//score/mw/com/test/methods/basic_acceptance_test:__subpackages__",
+        "//platform/aas/test/mw/com:__pkg__",
+        "//score/mw/com/test/all_service_elements:__subpackages__",
     ],
 )
 
@@ -141,10 +168,11 @@ pkg_application(
     app_name = "MainConsumerAndProviderApp",
     bin = [":main_consumer_and_provider"],
     etc = [
-        "config/mw_com_config.json",
         "config/logging.json",
+        "config/mw_com_config.json",
     ],
     visibility = [
-        "//score/mw/com/test/methods/basic_acceptance_test:__subpackages__",
+        "//platform/aas/test/mw/com:__pkg__",
+        "//score/mw/com/test/all_service_elements:__subpackages__",
     ],
 )
