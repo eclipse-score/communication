@@ -194,7 +194,7 @@ TEST(GeneratedProxyTest, IsMoveable)
 using GeneratedProxyCreationTestFixture = ProxyCreationFixture;
 TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCreatingProxyWithValidBindings)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description", "Proxy shall be created with Create function.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
@@ -235,7 +235,8 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458, SCR-31295722, SCR-32158471, SCR-32158442, SCR-33047276");
+    RecordProperty("Verifies", "SCR-31295722, SCR-32158471, SCR-32158442, SCR-33047276");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty(
         "Description",
         "Proxy shall be created with Create function which returns an error if the Proxy binding cannot be created.");
@@ -257,7 +258,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyBind
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyEventBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description",
                    "Proxy shall be created with Create function which returns an error if a ProxyEvent binding cannot "
                    "be created.");
@@ -281,7 +282,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyEven
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldEventBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty(
         "Description",
         "Proxy shall be created with Create function which returns an error if a ProxyField's event binding cannot "
@@ -304,7 +305,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFiel
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldGetterBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description",
                    "Proxy shall be created with Create function which returns an error if a ProxyMethods getter "
                    "binding cannot be created.");
@@ -326,7 +327,7 @@ TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFiel
 
 TEST_F(GeneratedProxyCreationTestFixture, CreatingProxyReturnsErrorWhenProxyFieldSetterBindingCreationReturnsError)
 {
-    RecordProperty("Verifies", "SCR-14108458");
+    RecordProperty("lobster-tracing", "Communication.ProxyExceptionlessCreation");
     RecordProperty("Description",
                    "Proxy shall be created with Create function which returns an error if a ProxyMethods setter "
                    "binding cannot be created.");

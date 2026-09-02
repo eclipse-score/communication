@@ -71,7 +71,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/14108458 */
             ScoreReq.CompReq ProxyExceptionlessCreation {
                 description = '''The {{Proxy}}
 
