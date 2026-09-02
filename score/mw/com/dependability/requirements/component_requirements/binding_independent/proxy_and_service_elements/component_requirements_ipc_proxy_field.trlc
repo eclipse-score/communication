@@ -22,7 +22,7 @@ section "com" {
 
             section "Proxy_Field" {
 
-                /* broken_link_c/issue/17291542 */
+                /* ToDo: Potentially uncovered requirement! */
                 ScoreReq.CompReq ProxyFieldClass {
                     description = '''Field members within a Proxy Class shall be of a {{ProxyField}} class, whose properties are defined in this section.
 
@@ -103,7 +103,7 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/18860207 */
+                /* ToDo: Potentially uncovered requirement! */
                 ScoreReq.CompReq ProxyFieldSetSubscriptionStateChangeHandler {
                     description = '''The {{ProxyField}}
                      class shall provide a public method:
@@ -120,7 +120,7 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/18876709 */
+                /* ToDo: Potentially uncovered requirement! */
                 ScoreReq.CompReq ProxyFieldUnsetSubscriptionStateChangeHandler {
                     description = '''The {{ProxyField}}
                      class shall provide a public method:
@@ -180,7 +180,7 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/17292405 */
+                /* ToDo: Potentially uncovered requirement! */
                 ScoreReq.CompReq ProxyFieldUnsetReceiveHandler {
                     description = '''The {{ProxyField}}
                      shall provide a public method:
