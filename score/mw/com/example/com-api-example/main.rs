@@ -86,62 +86,54 @@ const ASYNC_PRODUCER_STARTUP_DELAY_MS: u64 = 2000;
 // Run the consumer with the specified runtime and example type
 fn run_consumer<R: Runtime>(name: &str, example_type: &ExampleType, runtime: &R) {
     log::info!("Running with {} runtime", name);
-    let service_id = InstanceSpecifier::new("/Vehicle/Service1/Instance")
-        .expect("Failed to create InstanceSpecifier");
+    let service_id = InstanceSpecifier::new("/Vehicle/Service1/Instance").expect("Failed to create InstanceSpecifier");
     if matches!(example_type, ExampleType::Sync) {
-        std::thread::sleep(std::time::Duration::from_millis(
-            SYNC_CONSUMER_STARTUP_DELAY_MS,
-        ));
+        std::thread::sleep(std::time::Duration::from_millis(SYNC_CONSUMER_STARTUP_DELAY_MS));
     }
 
     let consumer_monitor = match example_type {
         // it does the service discovery and receving data synchronously
         ExampleType::Sync => {
-            let consumer_monitor =
-                VehicleMonitorConsumer::find_available_instances(runtime, service_id)
-                    .expect("Failed to create consumer");
+            let consumer_monitor = VehicleMonitorConsumer::find_available_instances(runtime, service_id)
+                .expect("Failed to create consumer");
             consumer_monitor
                 .read_tire_data(SAMPLE_COUNT)
                 .expect("Failed to read tire data synchronously");
             consumer_monitor
-        }
+        },
         // it does the service discovery asynchronously and receving data synchronously
         ExampleType::AsyncServiceDiscovery => {
-            let consumer_monitor = futures::executor::block_on(
-                VehicleMonitorConsumer::find_available_instances_async(runtime, service_id),
-            )
+            let consumer_monitor = futures::executor::block_on(VehicleMonitorConsumer::find_available_instances_async(
+                runtime, service_id,
+            ))
             .expect("Failed to create consumer");
             consumer_monitor
                 .read_tire_data(SAMPLE_COUNT)
                 .expect("Failed to read tire data synchronously");
             consumer_monitor
-        }
+        },
         // it does the service discovery asynchronously and receving data asynchronously without timeout
         // for the receive operation, it will wait until the data is received.
         ExampleType::AsyncReceive => {
-            let consumer_monitor = futures::executor::block_on(
-                VehicleMonitorConsumer::find_available_instances_async(runtime, service_id),
-            )
+            let consumer_monitor = futures::executor::block_on(VehicleMonitorConsumer::find_available_instances_async(
+                runtime, service_id,
+            ))
             .expect("Failed to create consumer");
-            futures::executor::block_on(
-                consumer_monitor.read_tire_data_async_without_timeout(SAMPLE_COUNT),
-            )
-            .expect("Failed to read tire data asynchronously");
+            futures::executor::block_on(consumer_monitor.read_tire_data_async_without_timeout(SAMPLE_COUNT))
+                .expect("Failed to read tire data asynchronously");
             consumer_monitor
-        }
+        },
         // it does the service discovery asynchronously and receving data asynchronously with timeout
         // for the receive operation, it will wait until the data is received or timeout occurs.
         ExampleType::AsyncReceiveWithTimeout => {
-            let consumer_monitor = futures::executor::block_on(
-                VehicleMonitorConsumer::find_available_instances_async(runtime, service_id),
-            )
+            let consumer_monitor = futures::executor::block_on(VehicleMonitorConsumer::find_available_instances_async(
+                runtime, service_id,
+            ))
             .expect("Failed to create consumer");
-            futures::executor::block_on(
-                consumer_monitor.read_tire_data_async_with_timeout(SAMPLE_COUNT),
-            )
-            .expect("Failed to read tire data asynchronously with timeout");
+            futures::executor::block_on(consumer_monitor.read_tire_data_async_with_timeout(SAMPLE_COUNT))
+                .expect("Failed to read tire data asynchronously with timeout");
             consumer_monitor
-        }
+        },
         // it does the service discovery asynchronously and receving data asynchronously with streaming
         ExampleType::Streaming => {
             let mut consumer_monitor = futures::executor::block_on(
@@ -150,7 +142,7 @@ fn run_consumer<R: Runtime>(name: &str, example_type: &ExampleType, runtime: &R)
             .expect("Failed to create consumer");
             futures::executor::block_on(consumer_monitor.read_tire_data_stream(SAMPLE_COUNT));
             consumer_monitor
-        }
+        },
     };
     consumer_monitor.unsubscribe();
     log::info!("runtime execution completed");
@@ -159,16 +151,12 @@ fn run_consumer<R: Runtime>(name: &str, example_type: &ExampleType, runtime: &R)
 // Run the producer with the specified runtime and example type
 fn run_producer<R: Runtime>(name: &str, example_type: &ExampleType, runtime: &R) {
     log::info!("Running with {} runtime", name);
-    let service_id = InstanceSpecifier::new("/Vehicle/Service1/Instance")
-        .expect("Failed to create InstanceSpecifier");
+    let service_id = InstanceSpecifier::new("/Vehicle/Service1/Instance").expect("Failed to create InstanceSpecifier");
     // In async examples, we will not wait before offering the service to simulate async discovery.
     if !matches!(example_type, ExampleType::Sync) {
-        std::thread::sleep(std::time::Duration::from_millis(
-            ASYNC_PRODUCER_STARTUP_DELAY_MS,
-        ));
+        std::thread::sleep(std::time::Duration::from_millis(ASYNC_PRODUCER_STARTUP_DELAY_MS));
     }
-    let producer_monitor =
-        VehicleMonitorProducer::new(runtime, service_id).expect("Failed to create producer");
+    let producer_monitor = VehicleMonitorProducer::new(runtime, service_id).expect("Failed to create producer");
     log::info!("Producer created and offered successfully");
     producer_monitor.run_publish_loop(INITIAL_TIRE_PRESSURE, SAMPLE_COUNT);
     producer_monitor.unoffer();
@@ -199,11 +187,7 @@ fn main() {
     init_logging();
     let args = Arguments::parse();
     let lola_runtime_builder = create_lola_runtime_builder(&args.service_instance_manifest);
-    let lola_runtime = Arc::new(
-        lola_runtime_builder
-            .build()
-            .expect("Failed to build Lola runtime"),
-    );
+    let lola_runtime = Arc::new(lola_runtime_builder.build().expect("Failed to build Lola runtime"));
 
     let example_type = args.example_type.clone();
     let runtime_producer = Arc::clone(&lola_runtime);

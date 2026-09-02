@@ -34,8 +34,7 @@ unsafe extern "C" fn mw_com_impl_call_dyn_fnmut(ptr: *const FatPtr) {
     // SAFETY: caller guarantees ptr is valid; transmute reconstructs the fat pointer.
     let dyn_fnmut: *mut (dyn FnMut() + Send + 'static) = unsafe { std::mem::transmute(*ptr) };
     // SAFETY: the box is still alive (C++ only calls dispose after all invocations finish).
-    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe { (*dyn_fnmut)() })).is_err()
-    {
+    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe { (*dyn_fnmut)() })).is_err() {
         log::error!("Panic caught in mw_com_impl_call_dyn_fnmut: aborting to prevent unwind across FFI boundary");
         // Abort to prevent a Rust panic from unwinding across the C++ stack boundary.
         std::process::abort();
@@ -63,10 +62,7 @@ unsafe extern "C" fn mw_com_impl_delete_boxed_fnmut(ptr: *mut FatPtr) {
 /// - `ptr` must point to a valid FatPtr
 /// - `sample_ptr` must point to valid placement-new storage containing SamplePtr<T>
 #[unsafe(no_mangle)]
-unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_sample(
-    ptr: *const FatPtr,
-    sample_ptr: *mut std::ffi::c_void,
-) {
+unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_sample(ptr: *const FatPtr, sample_ptr: *mut std::ffi::c_void) {
     if ptr.is_null() || sample_ptr.is_null() {
         return;
     }
@@ -81,7 +77,9 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_sample(
     // Invoke the closure with the void* sample pointer.
     // catch_unwind prevents a Rust panic from unwinding across the C++ stack boundary.
     if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callable(sample_ptr))).is_err() {
-        log::error!("Panic caught in mw_com_impl_call_dyn_ref_fnmut_sample: aborting to prevent unwind across FFI boundary");
+        log::error!(
+            "Panic caught in mw_com_impl_call_dyn_ref_fnmut_sample: aborting to prevent unwind across FFI boundary"
+        );
         // Abort to prevent unwinding across FFI boundary
         std::process::abort();
     }
@@ -109,8 +107,7 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_find_service(
     }
 
     // Reconstruct the closure from FatPtr
-    let callable: &mut dyn FnMut(HandleContainer, NativeFindServiceHandle) =
-        unsafe { std::mem::transmute(*ptr) };
+    let callable: &mut dyn FnMut(HandleContainer, NativeFindServiceHandle) = unsafe { std::mem::transmute(*ptr) };
 
     // Invoke with correct types.
     // catch_unwind prevents a Rust panic from unwinding across the C++ stack boundary.
@@ -122,7 +119,9 @@ unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_find_service(
     }))
     .is_err()
     {
-        log::error!("Panic caught in mw_com_impl_call_dyn_ref_fnmut_find_service: aborting to prevent unwind across FFI boundary");
+        log::error!(
+            "Panic caught in mw_com_impl_call_dyn_ref_fnmut_find_service: aborting to prevent unwind across FFI boundary"
+        );
         // Abort to prevent unwinding across FFI boundary
         std::process::abort();
     }
@@ -302,10 +301,7 @@ unsafe extern "C" {
     /// # Arguments
     /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
     /// * `type_ops` - Pointer to TypeOperations instance
-    fn mw_com_delete_allocatee_ptr(
-        allocatee_ptr: *mut std::ffi::c_void,
-        type_ops: *const TypeOperations,
-    );
+    fn mw_com_delete_allocatee_ptr(allocatee_ptr: *mut std::ffi::c_void, type_ops: *const TypeOperations);
 
     /// Get allocatee data pointer from allocatee of specific type
     ///
@@ -343,10 +339,7 @@ unsafe extern "C" {
     ///
     /// # Returns
     /// True if handler was set successfully, false otherwise
-    fn mw_com_proxy_set_event_receive_handler(
-        proxy_event_ptr: *mut ProxyEventBase,
-        handler: *const FatPtr,
-    ) -> bool;
+    fn mw_com_proxy_set_event_receive_handler(proxy_event_ptr: *mut ProxyEventBase, handler: *const FatPtr) -> bool;
 
     /// Clear event receive handler for proxy event
     ///
@@ -387,10 +380,7 @@ unsafe extern "C" {
     ///
     /// # Returns
     /// Pointer to TypeOperations instance, or nullptr on failure
-    fn mw_com_get_type_ops_instance(
-        interface_id: StringView,
-        member_name: StringView,
-    ) -> *mut TypeOperations;
+    fn mw_com_get_type_ops_instance(interface_id: StringView, member_name: StringView) -> *mut TypeOperations;
 
     /// Find available service instances and return a pointer to NativeHandleContainer
     ///
@@ -399,9 +389,7 @@ unsafe extern "C" {
     ///
     /// # Returns
     /// Pointer to NativeHandleContainer containing available service instances, or nullptr if none found
-    fn mw_com_impl_find_service(
-        instance_specifier: *mut NativeInstanceSpecifier,
-    ) -> *mut NativeHandleContainer;
+    fn mw_com_impl_find_service(instance_specifier: *mut NativeInstanceSpecifier) -> *mut NativeHandleContainer;
 
     /// Initialize the communication implementation with the provided configuration.
     ///
@@ -454,11 +442,7 @@ impl FFIBridge for LolaFFIBridge {
     /// # Safety
     /// `allocatee_ptr` must be a valid pointer previously returned by `get_allocatee_ptr`
     /// and `type_ops` must be the corresponding `TypeOperationsManager` for the type T.
-    unsafe fn delete_allocatee_ptr(
-        &self,
-        allocatee_ptr: *mut std::ffi::c_void,
-        type_ops: &TypeOperationsManager,
-    ) {
+    unsafe fn delete_allocatee_ptr(&self, allocatee_ptr: *mut std::ffi::c_void, type_ops: &TypeOperationsManager) {
         // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // type_ops provides the correct type operations for this allocatee.
         unsafe {
@@ -545,11 +529,7 @@ impl FFIBridge for LolaFFIBridge {
     /// # Safety
     /// `sample_ptr` must be a valid pointer to a `SamplePtr<T>` of the specified `type_name`,
     /// and must not be used after this call.
-    unsafe fn sample_ptr_delete(
-        &self,
-        sample_ptr: *mut std::ffi::c_void,
-        type_ops: &TypeOperationsManager,
-    ) {
+    unsafe fn sample_ptr_delete(&self, sample_ptr: *mut std::ffi::c_void, type_ops: &TypeOperationsManager) {
         // SAFETY: sample_ptr is guaranteed to be valid per the caller's contract.
         // The C++ implementation handles type checking and deletion safely using type_ops.
         unsafe {
@@ -747,14 +727,7 @@ impl FFIBridge for LolaFFIBridge {
         // SAFETY: event_ptr and callback are guaranteed to be valid per the caller's contract.
         // type_ops provides the correct type operations for sample handling.
         // The C++ implementation handles sample retrieval and callback invocation safely.
-        unsafe {
-            mw_com_type_registry_get_samples_from_event(
-                event_ptr,
-                type_ops.as_ptr(),
-                callback,
-                max_samples,
-            )
-        }
+        unsafe { mw_com_type_registry_get_samples_from_event(event_ptr, type_ops.as_ptr(), callback, max_samples) }
     }
 
     /// Unsafe wrapper around mw_com_skeleton_send_event
@@ -793,11 +766,7 @@ impl FFIBridge for LolaFFIBridge {
     /// event_ptr must be a valid pointer to a ProxyEventBase previously obtained
     /// from get_event_from_proxy().
     /// This function must be called before attempting to retrieve samples via get_samples_from_event().
-    unsafe fn subscribe_to_event(
-        &self,
-        event_ptr: *mut ProxyEventBase,
-        max_sample_count: u32,
-    ) -> bool {
+    unsafe fn subscribe_to_event(&self, event_ptr: *mut ProxyEventBase, max_sample_count: u32) -> bool {
         // SAFETY: event_ptr is guaranteed to be valid per the caller's contract.
         // The C++ implementation handles subscription and buffer allocation safely.
         unsafe { mw_com_proxy_event_subscribe(event_ptr, max_sample_count) }
@@ -832,11 +801,7 @@ impl FFIBridge for LolaFFIBridge {
     /// `proxy_event_ptr` must be a valid pointer to a `ProxyEventBase` obtained from
     /// `get_event_from_proxy`. `handler` must be a valid `FatPtr` referencing a callable
     /// compatible with the receive-handler signature expected by the implementation.
-    unsafe fn set_event_receive_handler(
-        &self,
-        proxy_event_ptr: *mut ProxyEventBase,
-        handler: &FatPtr,
-    ) -> bool {
+    unsafe fn set_event_receive_handler(&self, proxy_event_ptr: *mut ProxyEventBase, handler: &FatPtr) -> bool {
         // SAFETY: proxy_event_ptr must be valid per the caller's contract,
         // and handler must be a valid FatPtr referencing a callable compatible with the callback
         // signature expected by the C++ implementation.
@@ -905,11 +870,7 @@ impl FFIBridge for LolaFFIBridge {
     /// Caller must ensure that the provided interface_id and member_name correspond to
     /// a valid TypeOperations instance in the C++ registry. The returned TypeOperationsManager
     /// must not be used after the underlying TypeOperations instance is destroyed on the C++ side.
-    unsafe fn get_type_ops_instance(
-        &self,
-        interface_id: &str,
-        member_name: &str,
-    ) -> Option<TypeOperationsManager> {
+    unsafe fn get_type_ops_instance(&self, interface_id: &str, member_name: &str) -> Option<TypeOperationsManager> {
         let interface_id = StringView::from(interface_id);
         let member_name = StringView::from(member_name);
         // SAFETY: interface_id and member_name are valid ids that correspond to a TypeOperations instance in the C++ registry, as per the caller's contract.

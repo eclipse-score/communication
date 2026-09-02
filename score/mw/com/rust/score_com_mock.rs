@@ -15,6 +15,6 @@
 //!
 //! Depend on `//score/mw/com/rust:score_com_mock` (instead of `:score_com`).
 
-pub use score_com::*;
 pub use com_api_runtime_mock::MockRuntimeImpl;
 pub use com_api_runtime_mock::RuntimeBuilderImpl as MockRuntimeBuilderImpl;
+pub use score_com::*;
