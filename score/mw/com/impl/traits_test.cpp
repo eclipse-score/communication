@@ -169,7 +169,7 @@ class ProxyCreationFixture : public ::testing::Test
 
 TEST(GeneratedProxyTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-21290780");
+    RecordProperty("lobster-tracing", "Communication.ProxyCopySemantics");
     RecordProperty("Description", "Checks copy semantics for proxies");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

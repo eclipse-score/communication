@@ -86,7 +86,6 @@ section "com" {
                 version = 1
             }
 
-            /* broken_link_c/issue/21290780 */
             ScoreReq.CompReq ProxyCopySemantics {
                 description = '''The {{Proxy}}
                 class shall neither be copy-constructible nor copy-assignable.'''
