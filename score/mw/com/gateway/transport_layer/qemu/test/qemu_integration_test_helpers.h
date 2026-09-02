@@ -17,17 +17,20 @@
 /// (app1_main.cpp = VM-A, app2_main.cpp = VM-B). Both apps run the identical protocol in
 /// mirrored roles, so the constants and test doubles below are defined once here instead of
 /// being duplicated verbatim in both translation units.
+///
+/// Both message transport (real BidirectionalTransport over the intervm socket NIC) and shared
+/// memory (ivshmem BAR) are exercised end-to-end; only GatewayCore is stubbed, since driving a
+/// full GenericSkeleton is out of scope for this transport-layer test.
 
 #include "score/mw/com/gateway/gateway_application/gateway_core.h"
-#include "score/mw/com/gateway/transport_layer/sample/i_bidirectional_transport.h"
-#include "score/mw/com/gateway/transport_layer/sample/messages/gateway_messages.h"
 
 #include "score/result/result.h"
 
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
-#include <memory>
+#include <cstdlib>
+#include <string>
 #include <thread>
 
 namespace
@@ -76,46 +79,60 @@ bool WaitForCtrl(const volatile std::uint32_t& field, std::uint32_t expected, in
     return field >= expected;
 }
 
-/// Test IBidirectionalTransport stub — captures the message handler for injection.
-///
-/// This stub bypasses the real socket-based BidirectionalTransport on purpose: it lets the test
-/// deliver a ProvideServiceRequest directly into QemuHypervisorTransport::OnMessageReceived so
-/// the test focuses on verifying ivshmem shared-memory visibility across VMs (the part specific
-/// to this transport), independent of the message-transport socket plumbing, which is already
-/// covered by the sample transport's own tests/integration test.
-class TestBidirectionalTransport final : public score::mw::com::gateway::IBidirectionalTransport
+/// Polls a bool flag until it becomes true or times out. Used to wait for the real
+/// BidirectionalTransport to deliver a ProvideServiceRequest asynchronously over the
+/// intervm socket, since (unlike message injection) arrival time is no longer deterministic.
+bool WaitForFlag(const bool& flag, int timeout_ms = 60000)
 {
-  public:
-    score::Result<void> Setup() override
+    constexpr int kSleepMs = 50;
+    int elapsed = 0;
+    while (!flag && elapsed < timeout_ms)
     {
-        return {};
+        std::this_thread::sleep_for(std::chrono::milliseconds(kSleepMs));
+        elapsed += kSleepMs;
     }
-    void Shutdown() override {}
-    bool IsConnected() const override
+    return flag;
+}
+
+/// Brings up the "intervm" virtio-net NIC (vtnet1) and assigns it the given static IP.
+///
+/// This NIC is the point-to-point link between the two dual_qemu VMs (see
+/// dual_qemu_transport_config.json's intervm_network block); QNX only auto-configures the
+/// first NIC (vtnet0, used for SSH) in the shared qnx8_qemu boot image, so vtnet1 arrives
+/// unconfigured. Each app configures its own side directly via if_up/ifconfig at startup
+/// instead of doing this in the shared boot script, because:
+///   - each app binary already has a fixed, known VM role (app1 = VM-A, app2 = VM-B), whereas
+///     the boot script is one image shared by both VMs and would need runtime MAC-based
+///     branching to tell them apart;
+///   - the boot script is parsed by mkifs at image-build time using a restricted, largely
+///     undocumented buildfile grammar (no real shell, and even backslash-escaped `$`
+///     substitutions caused parser errors in inline file bodies) — ordinary compiled code
+///     avoids that fragility entirely and is easy to reason about/test.
+///
+/// Returns true if both if_up and ifconfig succeeded.
+bool ConfigureIntervmNic(const char* local_ip)
+{
+    constexpr const char* kIntervmInterface = "vtnet1";
+
+    const int up_rc = std::system((std::string{"if_up -p "} + kIntervmInterface).c_str());
+    if (up_rc != 0)
     {
-        return true;
-    }
-    score::Result<void> SendRequest(score::mw::com::gateway::TransportMessage& /*msg*/) override
-    {
-        return {};
-    }
-    score::Result<void> SendNotification(score::mw::com::gateway::TransportMessage& /*msg*/) override
-    {
-        return {};
-    }
-    void SetMessageHandler(MessageHandler handler) override
-    {
-        handler_ = std::move(handler);
+        std::fprintf(stderr, "ConfigureIntervmNic: if_up -p %s failed (rc=%d)\n", kIntervmInterface, up_rc);
+        return false;
     }
 
-    void DeliverMessage(std::unique_ptr<score::mw::com::gateway::TransportMessage> msg)
+    const std::string ifconfig_cmd =
+        std::string{"ifconfig "} + kIntervmInterface + " " + local_ip + " netmask 255.255.255.0";
+    const int ifconfig_rc = std::system(ifconfig_cmd.c_str());
+    if (ifconfig_rc != 0)
     {
-        handler_(std::move(msg));
+        std::fprintf(stderr, "ConfigureIntervmNic: ifconfig %s failed (rc=%d)\n", kIntervmInterface, ifconfig_rc);
+        return false;
     }
 
-  private:
-    MessageHandler handler_;
-};
+    std::fprintf(stderr, "ConfigureIntervmNic: %s configured as %s\n", kIntervmInterface, local_ip);
+    return true;
+}
 
 /// Test GatewayCore stub — records ProvideService calls.
 class TestGatewayCore final : public score::mw::com::gateway::GatewayCore

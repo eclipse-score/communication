@@ -21,8 +21,6 @@ cc_library(
     visibility = ["//score/mw/com/gateway/transport_layer/qemu/test:__subpackages__"],
     deps = [
         "//score/mw/com/gateway/gateway_application:gateway_core",
-        "//score/mw/com/gateway/transport_layer/sample:i_bidirectional_transport",
-        "//score/mw/com/gateway/transport_layer/sample/messages:gateway_messages",
         "@score_baselibs//score/result",
     ],
 )
@@ -38,6 +36,8 @@ cc_binary(
         "//score/mw/com/gateway/transport_layer/qemu:qemu_hypervisor_transport",
         "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_bar_discovery",
         "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_typed_memory_provider",
+        "//score/mw/com/gateway/transport_layer/sample:bidirectional_transport",
+        "//score/mw/com/gateway/transport_layer/sample/configuration:hypervisor_socket_configuration",
         "//score/mw/com/gateway/transport_layer/sample/messages:gateway_messages",
         "@score_baselibs//score/mw/log:console",
         "@score_baselibs//score/result",
@@ -55,6 +55,8 @@ cc_binary(
         "//score/mw/com/gateway/transport_layer/qemu:qemu_hypervisor_transport",
         "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_bar_discovery",
         "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_typed_memory_provider",
+        "//score/mw/com/gateway/transport_layer/sample:bidirectional_transport",
+        "//score/mw/com/gateway/transport_layer/sample/configuration:hypervisor_socket_configuration",
         "//score/mw/com/gateway/transport_layer/sample/messages:gateway_messages",
         "@score_baselibs//score/mw/log:console",
         "@score_baselibs//score/result",
