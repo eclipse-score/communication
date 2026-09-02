@@ -182,7 +182,8 @@ TYPED_TEST(LolaProxyEventCommonFixture, CallingSetReceiveHandlerRegistersEventNo
 
 TYPED_TEST(LolaProxyEventCommonFixture, SubscriptionFailsWhenProviderRejectsSubscription)
 {
-    this->RecordProperty("Verifies", "SCR-21269964, SCR-17292398, SCR-14033248");
+    this->RecordProperty("Verifies", "SCR-21269964, SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     this->RecordProperty("Description",
                          "Checks that a subscription will fail when the provider rejects the subscription due to "

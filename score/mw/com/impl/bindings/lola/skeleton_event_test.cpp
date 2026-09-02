@@ -207,7 +207,8 @@ TEST_F(SkeletonEventPrepareOfferFixture, RegisterEventNotificationExistenceChang
 
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionsAcceptedIfMaxSamplesCanBeProvided)
 {
-    RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-17292398, SCR-14033248");
+    RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     RecordProperty("Description",
                    "Checks that a subscription will be accepted by the provider if the requested max_sample_count can "
@@ -241,7 +242,8 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionsAcceptedIfMaxSamplesCanBeP
 
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionRejectedIfMaxSubscriptionCountOverflowOccurs)
 {
-    RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-17292398, SCR-14033248");
+    RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     RecordProperty("Description",
                    "Checks that a subscription will be rejected if an 'over-subscription' occurs on the skeleton.");
@@ -274,7 +276,8 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionRejectedIfMaxSubscriptionCo
 
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionAcceptedIfOversubscriptionAllowedOnConstruction)
 {
-    RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-17292398, SCR-14033248");
+    RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     RecordProperty("Description",
                    "Checks that a skeleton event allows 'over-subscription' in case it is constructed accordingly");
@@ -306,7 +309,8 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionAcceptedIfOversubscriptionA
 
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionRejectedIfNumberOfSubscriberExceedsLimit)
 {
-    RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-17292398, SCR-14033248");
+    RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     RecordProperty("Description",
                    "Checks that a subscription will be rejected if the number of subscriptions is already equal or "

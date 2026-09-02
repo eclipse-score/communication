@@ -605,7 +605,8 @@ TYPED_TEST(AServiceElement,
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWhileUnsubscribedDispatchesToBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     this->RecordProperty("Description", "Checks that Subscribe will dispatch to binding if not already subscribed");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -634,7 +635,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWhileUnsubscribedDisp
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeTwiceWithSameMaxSamplesOnlyPerformsSubscriptionOnce)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     this->RecordProperty("Description", "Checks that Subscribe will do nothing if subscription is pending");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -669,7 +671,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeTwiceWithSameMaxSampl
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, SubscribeShouldReturnErrorIfBindingReturnsError)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     this->RecordProperty("Description",
                          "Checks that Subscribe returns a kBindingFailure error code if binding returns any error.");
@@ -699,7 +702,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, SubscribeShouldReturnErrorIfBindingRe
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWithSameMaxSampleCountWhileSubscriptionIsPendingDoesNothing)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     this->RecordProperty("Description",
                          "Checks that Subscribe will do nothing if subscribing again with same max sample count");
@@ -731,7 +735,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWithSameMaxSampleCoun
 
 TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWithSameMaxSampleCountWhileAlreadySubscribedDoesNothing)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     this->RecordProperty("Description",
                          "Checks that Subscribe will do nothing if subscribing again with same max sample count");
@@ -764,7 +769,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeWithSameMaxSampleCoun
 TYPED_TEST(ProxyEventBaseSubscribeFixture,
            CallingSubscribeWithDifferentMaxSampleCountWhileSubscriptionIsPendingReturnsError)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     this->RecordProperty(
         "Description",
@@ -800,7 +806,8 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture,
 TYPED_TEST(ProxyEventBaseSubscribeFixture,
            CallingSubscribeWithDifferentMaxSampleCountWhileAlreadySubscribedReturnsError)
 {
-    this->RecordProperty("Verifies", "SCR-14033248, SCR-17292398");
+    this->RecordProperty("Verifies", "SCR-14033248");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSubscribe");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSubscribe");
     this->RecordProperty(
         "Description",
