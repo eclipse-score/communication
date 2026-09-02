@@ -53,6 +53,22 @@ bool DeserializeWithTemplate(T& message, score::cpp::span<const std::uint8_t> da
 
 }  // namespace
 
+ProvideServiceRequest::ProvideServiceRequest(const score::mw::com::InstanceSpecifier& service_instance_specifier,
+                                             const std::vector<score::mw::com::EventInfo>& service_elements,
+                                             std::uint32_t shm_control_size,
+                                             std::uint32_t shm_data_size)
+    : TransportMessage(MessageType::kProvideServiceRequest),
+      instance_specifier_(std::string{service_instance_specifier.ToString()}),
+      shm_control_size_(shm_control_size),
+      shm_data_size_(shm_data_size)
+{
+    elements_.reserve(service_elements.size());
+    for (const auto& element : service_elements)
+    {
+        elements_.emplace_back(element);
+    }
+}
+
 std::size_t ProvideServiceRequest::Serialize(score::cpp::span<std::uint8_t> buffer) const
 {
     return SerializeWithTemplate(*this, buffer);
