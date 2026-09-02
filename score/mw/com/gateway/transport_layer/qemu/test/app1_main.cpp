@@ -27,11 +27,10 @@
 /// Both VMs run QemuHypervisorTransport. Each VM is simultaneously a source gateway
 /// (for its own service) and a destination gateway (for the peer's service).
 
-#include "score/mw/com/gateway/gateway_application/gateway_core.h"
 #include "score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_bar_discovery.h"
 #include "score/mw/com/gateway/transport_layer/qemu/ivshmem/ivshmem_typed_memory_provider.h"
 #include "score/mw/com/gateway/transport_layer/qemu/qemu_hypervisor_transport.h"
-#include "score/mw/com/gateway/transport_layer/sample/i_bidirectional_transport.h"
+#include "score/mw/com/gateway/transport_layer/qemu/test/qemu_integration_test_helpers.h"
 #include "score/mw/com/gateway/transport_layer/sample/messages/gateway_messages.h"
 
 #include "score/memory/shared/i_shared_memory_resource.h"
@@ -45,132 +44,11 @@
 #include <memory>
 #include <thread>
 
-using score::mw::com::gateway::GatewayCore;
-using score::mw::com::gateway::IBidirectionalTransport;
 using score::mw::com::gateway::QemuHypervisorTransport;
 using score::mw::com::gateway::ResolveInterVmShmPaths;
 using score::mw::com::gateway::qemu::ivshmem::DiscoverIvshmemBar;
 using score::mw::com::gateway::qemu::ivshmem::IvshmemTypedMemoryProvider;
 using score::mw::com::impl::InstanceSpecifier;
-
-namespace
-{
-constexpr std::uint32_t kShmSize = 4096U;
-
-// Payload magic values — different per direction to prove correct routing.
-constexpr std::uint32_t kMagicA = 0xCAFEBABEU;  // VM-A → VM-B
-constexpr std::uint32_t kMagicB = 0xDEADBEEFU;  // VM-B → VM-A
-
-// Service specifiers for each direction.
-constexpr char kServiceA[] = "service_a";  // produced by VM-A, consumed on VM-B
-constexpr char kServiceB[] = "service_b";  // produced by VM-B, consumed on VM-A
-
-/// Simplified control structure placed in each service's CTRL shm.
-/// In production, this would be ServiceDataControl with EventControl/TransactionLogSet.
-/// Here we use a minimal version: the skeleton writes data, then increments event_count.
-/// The proxy polls event_count to know when data is ready.
-struct ServiceControl
-{
-    volatile std::uint32_t event_count;  // incremented by provider after writing DATA
-    volatile std::uint32_t verified;     // set by consumer after successful read
-};
-
-/// Polls a volatile uint32 until it reaches the expected value or times out.
-bool WaitForCtrl(const volatile std::uint32_t& field, std::uint32_t expected, int timeout_ms = 60000)
-{
-    constexpr int kSleepMs = 50;
-    int elapsed = 0;
-    while (field < expected && elapsed < timeout_ms)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(kSleepMs));
-        elapsed += kSleepMs;
-        if (elapsed % 5000 == 0)
-        {
-            std::fprintf(stderr,
-                         "  [polling] elapsed %d/%d ms, current value=%u, expected=%u\n",
-                         elapsed,
-                         timeout_ms,
-                         field,
-                         expected);
-            std::fflush(stderr);
-        }
-    }
-    return field >= expected;
-}
-
-/// Test IBidirectionalTransport stub — captures the message handler for injection.
-class TestBidirectionalTransport final : public IBidirectionalTransport
-{
-  public:
-    score::Result<void> Setup() override
-    {
-        return {};
-    }
-    void Shutdown() override {}
-    bool IsConnected() const override
-    {
-        return true;
-    }
-    score::Result<void> SendRequest(score::mw::com::gateway::TransportMessage& /*msg*/) override
-    {
-        return {};
-    }
-    score::Result<void> SendNotification(score::mw::com::gateway::TransportMessage& /*msg*/) override
-    {
-        return {};
-    }
-    void SetMessageHandler(MessageHandler handler) override
-    {
-        handler_ = std::move(handler);
-    }
-
-    void DeliverMessage(std::unique_ptr<score::mw::com::gateway::TransportMessage> msg)
-    {
-        handler_(std::move(msg));
-    }
-
-  private:
-    MessageHandler handler_;
-};
-
-/// Test GatewayCore stub — records ProvideService calls.
-class TestGatewayCore final : public GatewayCore
-{
-  public:
-    bool provide_service_called{false};
-
-    score::Result<void> ProvideService(score::mw::com::impl::InstanceSpecifier /*s*/,
-                                       std::vector<score::mw::com::impl::EventInfo> /*e*/) override
-    {
-        provide_service_called = true;
-        return {};
-    }
-    score::Result<void> OfferService(score::mw::com::impl::InstanceSpecifier /*s*/) override
-    {
-        return {};
-    }
-    void StopOfferService(score::mw::com::impl::InstanceSpecifier /*s*/) override {}
-    score::Result<void> NotifyUpdate(score::mw::com::impl::InstanceSpecifier /*s*/,
-                                     score::mw::com::impl::ServiceElementType /*t*/,
-                                     std::string /*n*/) override
-    {
-        return {};
-    }
-    score::Result<void> RegisterUpdateNotification(score::mw::com::impl::InstanceSpecifier /*s*/,
-                                                   score::mw::com::impl::ServiceElementType /*t*/,
-                                                   std::string /*n*/) override
-    {
-        return {};
-    }
-    score::Result<void> UnregisterUpdateNotification(score::mw::com::impl::InstanceSpecifier /*s*/,
-                                                     score::mw::com::impl::ServiceElementType /*t*/,
-                                                     std::string /*n*/) override
-    {
-        return {};
-    }
-};
-
-}  // namespace
 
 int main()
 {

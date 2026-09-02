@@ -27,6 +27,7 @@ using score::json::operator""_json;
 
 TEST(QemuTransportConfigParserTest, UsesDefaultIvshmemBarNumWhenMissing)
 {
+    // Given a config without an "ivshmem" section
     auto json = R"JSON(
     {
       "hypervisor-socket": {
@@ -37,12 +38,16 @@ TEST(QemuTransportConfigParserTest, UsesDefaultIvshmemBarNumWhenMissing)
     }
     )JSON"_json;
 
+    // When parsing the config
     const auto config = ParseQemuTransportConfig(std::move(json));
+
+    // Then the parser falls back to the default preferred BAR number
     EXPECT_EQ(config.GetPreferredIvshmemBarNum(), ivshmem::kDefaultIvshmemBarNum);
 }
 
 TEST(QemuTransportConfigParserTest, ReadsPreferredIvshmemBarNum)
 {
+    // Given a config with an explicit "ivshmem.preferred-bar-num" value
     auto json = R"JSON(
     {
       "hypervisor-socket": {
@@ -56,7 +61,10 @@ TEST(QemuTransportConfigParserTest, ReadsPreferredIvshmemBarNum)
     }
     )JSON"_json;
 
+    // When parsing the config
     const auto config = ParseQemuTransportConfig(std::move(json));
+
+    // Then the configured preferred BAR number is used
     EXPECT_EQ(config.GetPreferredIvshmemBarNum(), 3U);
 }
 

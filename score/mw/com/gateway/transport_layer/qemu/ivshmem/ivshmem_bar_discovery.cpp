@@ -48,6 +48,9 @@ bool DiscoverIvshmemBar(std::uint64_t& paddr, std::uint64_t& size, std::uint32_t
     constexpr pci_vid_t kVendor = 0x1af4U;
     constexpr pci_did_t kDevice = 0x1110U;
 
+    // Request I/O privileges for this thread. On QNX, accessing PCI configuration space (via
+    // pci_device_attach/pci_device_read_cmd/pci_device_write_cmd below) requires the calling
+    // thread to hold I/O privilege; without this call those operations fail with EPERM.
     if (::ThreadCtl(_NTO_TCTL_IO, nullptr) == -1)
     {
         ::score::mw::log::LogError() << "ThreadCtl(_NTO_TCTL_IO) failed: " << std::strerror(errno);
@@ -87,7 +90,11 @@ bool DiscoverIvshmemBar(std::uint64_t& paddr, std::uint64_t& size, std::uint32_t
         return false;
     }
 
-    pci_ba_t ba[7];
+    // Per the PCI spec, a device exposes at most 6 Base Address Registers plus one optional
+    // Expansion ROM BAR; pci_device_read_ba() reports all of them through a single array, so
+    // 7 slots are enough to hold every BAR a PCI function can have.
+    constexpr std::size_t kMaxPciBarCount = 7U;
+    pci_ba_t ba[kMaxPciBarCount];
     int_t nba = static_cast<int_t>(sizeof(ba) / sizeof(ba[0]));
     err = pci_device_read_ba(hdl, &nba, ba, pci_reqType_e_UNSPECIFIED);
     if (err != PCI_ERR_OK)

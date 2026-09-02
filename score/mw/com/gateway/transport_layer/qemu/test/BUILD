@@ -10,9 +10,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
+
+cc_library(
+    name = "qemu_integration_test_helpers",
+    hdrs = ["qemu_integration_test_helpers.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/gateway/transport_layer/qemu/test:__subpackages__"],
+    deps = [
+        "//score/mw/com/gateway/gateway_application:gateway_core",
+        "//score/mw/com/gateway/transport_layer/sample:i_bidirectional_transport",
+        "//score/mw/com/gateway/transport_layer/sample/messages:gateway_messages",
+        "@score_baselibs//score/result",
+    ],
+)
 
 cc_binary(
     name = "app1",
@@ -20,6 +33,7 @@ cc_binary(
     features = COMPILER_WARNING_FEATURES + ["aborts_upon_exception"],
     target_compatible_with = ["@platforms//os:qnx"],
     deps = [
+        ":qemu_integration_test_helpers",
         "//score/memory/shared",
         "//score/mw/com/gateway/transport_layer/qemu:qemu_hypervisor_transport",
         "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_bar_discovery",
@@ -36,6 +50,7 @@ cc_binary(
     features = COMPILER_WARNING_FEATURES + ["aborts_upon_exception"],
     target_compatible_with = ["@platforms//os:qnx"],
     deps = [
+        ":qemu_integration_test_helpers",
         "//score/memory/shared",
         "//score/mw/com/gateway/transport_layer/qemu:qemu_hypervisor_transport",
         "//score/mw/com/gateway/transport_layer/qemu/ivshmem:ivshmem_bar_discovery",
