@@ -129,7 +129,7 @@ bool QemuHypervisorTransport::IsMemorySharingSupported() const
     return true;
 }
 
-score::ResultBlank QemuHypervisorTransport::Setup()
+score::Result<void> QemuHypervisorTransport::Setup()
 {
     message_transport_->SetMessageHandler([this](std::unique_ptr<TransportMessage> message) {
         OnMessageReceived(std::move(message));
@@ -192,7 +192,13 @@ void QemuHypervisorTransport::HandleProvideServiceRequest(std::unique_ptr<Transp
         return;
     }
     PreCreateInterVmSharedMemory(specifier_result.value(), request.GetShmControlSize(), request.GetShmDataSize());
-    gateway_app_.ProvideService(specifier_result.value(), request.GetServiceElements());
+    const auto provide_service_result =
+        gateway_app_.ProvideService(specifier_result.value(), request.GetServiceElements());
+    if (!provide_service_result.has_value())
+    {
+        log::LogError("LoLa") << "QemuTransport: Failed to provide service in ProvideServiceRequest!";
+        return;
+    }
 }
 
 void QemuHypervisorTransport::HandleStopOfferServiceRequest(std::unique_ptr<TransportMessage> message)
@@ -228,7 +234,12 @@ void QemuHypervisorTransport::HandleOfferServiceRequest(std::unique_ptr<Transpor
         log::LogError("LoLa") << "QemuTransport: Invalid instance specifier in OfferServiceRequest!";
         return;
     }
-    gateway_app_.OfferService(specifier_result.value());
+    const auto offer_service_result = gateway_app_.OfferService(specifier_result.value());
+    if (!offer_service_result.has_value())
+    {
+        log::LogError("LoLa") << "QemuTransport: Failed to offer service in OfferServiceRequest!";
+        return;
+    }
 }
 
 void QemuHypervisorTransport::HandleUpdateNotification(std::unique_ptr<TransportMessage> message)
@@ -246,7 +257,13 @@ void QemuHypervisorTransport::HandleUpdateNotification(std::unique_ptr<Transport
         log::LogError("LoLa") << "QemuTransport: Invalid instance specifier in UpdateNotification!";
         return;
     }
-    gateway_app_.NotifyUpdate(specifier_result.value(), notification.GetElementType(), notification.GetElementName());
+    const auto notify_update_result = gateway_app_.NotifyUpdate(
+        specifier_result.value(), notification.GetElementType(), notification.GetElementName());
+    if (!notify_update_result.has_value())
+    {
+        log::LogError("LoLa") << "QemuTransport: Failed to notify update in UpdateNotification!";
+        return;
+    }
 }
 
 void QemuHypervisorTransport::HandleRegisterNotificationRequest(std::unique_ptr<TransportMessage> message)
@@ -264,8 +281,14 @@ void QemuHypervisorTransport::HandleRegisterNotificationRequest(std::unique_ptr<
         log::LogError("LoLa") << "QemuTransport: Invalid instance specifier in RegisterNotificationRequest!";
         return;
     }
-    gateway_app_.RegisterUpdateNotification(
+    const auto register_update_notification_result = gateway_app_.RegisterUpdateNotification(
         specifier_result.value(), request.GetElementType(), request.GetElementName());
+    if (!register_update_notification_result.has_value())
+    {
+        log::LogError("LoLa")
+            << "QemuTransport: Failed to register update notification in RegisterNotificationRequest!";
+        return;
+    }
 }
 
 void QemuHypervisorTransport::HandleUnregisterNotificationRequest(std::unique_ptr<TransportMessage> message)
@@ -283,8 +306,14 @@ void QemuHypervisorTransport::HandleUnregisterNotificationRequest(std::unique_pt
         log::LogError("LoLa") << "QemuTransport: Invalid instance specifier in UnregisterNotificationRequest!";
         return;
     }
-    gateway_app_.UnregisterUpdateNotification(
+    const auto unregister_update_notification_result = gateway_app_.UnregisterUpdateNotification(
         specifier_result.value(), request.GetElementType(), request.GetElementName());
+    if (!unregister_update_notification_result.has_value())
+    {
+        log::LogError("LoLa")
+            << "QemuTransport: Failed to unregister update notification in UnregisterNotificationRequest!";
+        return;
+    }
 }
 
 void QemuHypervisorTransport::Shutdown()
@@ -292,8 +321,8 @@ void QemuHypervisorTransport::Shutdown()
     message_transport_->Shutdown();
 }
 
-score::ResultBlank QemuHypervisorTransport::ProvideService(impl::InstanceSpecifier service_instance_specifier,
-                                                           std::vector<impl::EventInfo> service_elements)
+score::Result<void> QemuHypervisorTransport::ProvideService(impl::InstanceSpecifier service_instance_specifier,
+                                                            std::vector<impl::EventInfo> service_elements)
 {
 #if defined(__QNXNTO__)
     const auto shm_sizes = GetInterVmShmSizes(service_instance_specifier, ivshmem_provider_->GetMmanQnx());
@@ -306,27 +335,27 @@ score::ResultBlank QemuHypervisorTransport::ProvideService(impl::InstanceSpecifi
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank QemuHypervisorTransport::OfferService(impl::InstanceSpecifier service_instance_specifier)
+score::Result<void> QemuHypervisorTransport::OfferService(impl::InstanceSpecifier service_instance_specifier)
 {
     OfferServiceRequest request{service_instance_specifier};
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank QemuHypervisorTransport::StopOfferService(impl::InstanceSpecifier service_instance_specifier)
+score::Result<void> QemuHypervisorTransport::StopOfferService(impl::InstanceSpecifier service_instance_specifier)
 {
     StopOfferServiceRequest request{service_instance_specifier};
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank QemuHypervisorTransport::NotifyUpdate(impl::InstanceSpecifier service_instance_specifier,
-                                                         impl::ServiceElementType updated_element_type,
-                                                         std::string updated_element_name)
+score::Result<void> QemuHypervisorTransport::NotifyUpdate(impl::InstanceSpecifier service_instance_specifier,
+                                                          impl::ServiceElementType updated_element_type,
+                                                          std::string updated_element_name)
 {
     UpdateNotification notification{service_instance_specifier, updated_element_type, std::move(updated_element_name)};
     return message_transport_->SendNotification(notification);
 }
 
-score::ResultBlank QemuHypervisorTransport::RegisterUpdateNotification(
+score::Result<void> QemuHypervisorTransport::RegisterUpdateNotification(
     impl::InstanceSpecifier service_instance_specifier,
     impl::ServiceElementType element_type,
     std::string element_name)
@@ -335,7 +364,7 @@ score::ResultBlank QemuHypervisorTransport::RegisterUpdateNotification(
     return message_transport_->SendRequest(request);
 }
 
-score::ResultBlank QemuHypervisorTransport::UnregisterUpdateNotification(
+score::Result<void> QemuHypervisorTransport::UnregisterUpdateNotification(
     impl::InstanceSpecifier service_instance_specifier,
     impl::ServiceElementType element_type,
     std::string element_name)
