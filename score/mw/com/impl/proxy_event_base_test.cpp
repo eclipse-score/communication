@@ -364,7 +364,8 @@ TYPED_TEST(AServiceElement, CanBeConstructedWithAReceiveHandler)
 
 TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenItWillDispatchToTheBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14034916, SCR-17292404");
+    this->RecordProperty("Verifies", "SCR-14034916");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSetReceiveHandler");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSetReceiveHandler");
     this->RecordProperty("Description", "Checks whether a set receive handler is correctly forwarded to the binding.");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -382,7 +383,8 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenItWillDispatchToTheBin
 
 TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenAValidResultWillBeReturned)
 {
-    this->RecordProperty("Verifies", "SCR-14034916, SCR-17292404");
+    this->RecordProperty("Verifies", "SCR-14034916");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSetReceiveHandler");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSetReceiveHandler");
     this->RecordProperty("Description", "Checks whether a set receive handler will return a valid result.");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -400,7 +402,8 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenAValidResultWillBeRetu
 
 TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerTwiceThenItWillDispatchToTheBindingTwice)
 {
-    this->RecordProperty("Verifies", "SCR-14034916, SCR-17292404");
+    this->RecordProperty("Verifies", "SCR-14034916");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSetReceiveHandler");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSetReceiveHandler");
     this->RecordProperty("Description", "Checks whether a set receive handler is correctly forwarded");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -421,7 +424,8 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerTwiceThenItWillDispatchToT
 
 TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerTwiceThenAValidResultWillBeReturnedTwice)
 {
-    this->RecordProperty("Verifies", "SCR-14034916, SCR-17292404");
+    this->RecordProperty("Verifies", "SCR-14034916");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSetReceiveHandler");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSetReceiveHandler");
     this->RecordProperty("Description", "Checks whether a set receive handler is correctly forwarded");
     this->RecordProperty("TestType", "Requirements-based test");
@@ -441,7 +445,8 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerTwiceThenAValidResultWillB
 
 TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenItWillPropagateAnErrorFromTheBinding)
 {
-    this->RecordProperty("Verifies", "SCR-14034916, SCR-17292404");
+    this->RecordProperty("Verifies", "SCR-14034916");
+    this->RecordProperty("lobster-tracing", "Communication.ProxyFieldSetReceiveHandler");
     this->RecordProperty("lobster-tracing", "Communication.ProxyEventSetReceiveHandler");
     this->RecordProperty(
         "Description",

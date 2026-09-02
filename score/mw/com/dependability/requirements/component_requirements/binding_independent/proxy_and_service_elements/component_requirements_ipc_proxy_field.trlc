@@ -154,7 +154,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/17292404 */
                 ScoreReq.CompReq ProxyFieldSetReceiveHandler {
                     description = '''The {{ProxyField}}
                      shall provide a public method:
