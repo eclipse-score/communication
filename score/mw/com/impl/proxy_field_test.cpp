@@ -194,7 +194,7 @@ struct has_set<T, std::void_t<decltype(std::declval<T&>().Set(std::declval<typen
 
 TEST(ProxyFieldTest, NotCopyable)
 {
-    RecordProperty("Verifies", "SCR-17397027");
+    RecordProperty("lobster-tracing", "Communication.ProxyFieldCopySemantics");
     RecordProperty("Description", "Checks copy semantics for ProxyField");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");

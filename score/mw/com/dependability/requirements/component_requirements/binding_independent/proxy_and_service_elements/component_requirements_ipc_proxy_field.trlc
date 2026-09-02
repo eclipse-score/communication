@@ -54,7 +54,6 @@ section "com" {
                     version = 1
                 }
 
-                /* broken_link_c/issue/17397027 */
                 ScoreReq.CompReq ProxyFieldCopySemantics {
                     description = '''The {{ProxyField}}
                      class shall neither be copy-constructible nor copy-assignable.'''
